@@ -1,0 +1,237 @@
+#!/usr/bin/perl
+# $Id: oarstat,v 1.27 2005/06/01 16:20:42 capitn Exp $
+# print active job properties
+
+use strict;
+use warnings;
+use Data::Dumper;
+use oar_iolib;
+use Getopt::Std;
+use Sys::Hostname;
+
+my %opts;
+Getopt::Std::getopts('asvfsxj:h:d', \%opts);
+
+my $base = iolib::connect();
+my %hashetat = ('Waiting' => 'W',
+                'toLaunch' => 'L',
+                'Launching' => 'L',
+                'Hold'        => 'H',
+                'Running' => 'R',
+                'Terminated' => 'T',
+                'Error' => 'E',
+                'toError' => 'E',
+                'toAckReservation' => 'W'
+               );
+
+my @jobids;
+my %jobGantted;
+
+sub getVal {
+    my $val = shift;
+    return (defined $val and $val ne "")?$val:"-- ";
+}
+
+# first print our output headers...
+if (defined($opts{x}) || defined($opts{j}) || defined($opts{f}) || defined($opts{h}) || defined($opts{s})) {
+}elsif (defined($opts{a}) || defined($opts{s})){
+    print <<EOS;
+
+OAR server:
+                                                            Req\'d  Req\'d   Elap
+Job ID          Username Queue    Jobname    SessID NDS TSK Memory Time  S Time
+--------------- -------- -------- ---------- ------ --- --- ------ ----- - -----
+EOS
+}else{
+    print <<EOS;
+Job id           Name             User             Time Use S Queue
+---------------- ---------------- ---------------- -------- - -----
+EOS
+}
+
+sub print_job ( $ ) {
+    my $jobid = shift;
+    #get job info
+    my $job_info = iolib::get_job($base,$jobid);
+
+    return if (!defined($job_info));
+
+    if ( defined($opts{f}) ) {
+        my @nodes = iolib::get_job_host_distinct($base,$jobid);
+        print "Job Id: ".$job_info->{idJob}.".oar\n";
+        print "    Job_Name = ".$job_info->{idJob}."\n";
+        print "    Job_Owner = ".$job_info->{user}."\n";
+        print "    job_state = ".$hashetat{$job_info->{'state'}}."\n";
+        print "    comment = Job state: ".$job_info->{'state'}."\n";
+        print "    exec_host = ".join("+",@nodes)."\n";
+        print "    queue = ".$job_info->{queueName}."\n";
+        print "    nbNodes = ".$job_info->{nbNodes}."\n";
+        print "    weight = ".$job_info->{weight}."\n";
+        print "    command = ".$job_info->{command}."\n";
+        print "    launchingDirectory = ".$job_info->{launchingDirectory}."\n";
+        print "    jobType = ".$job_info->{jobType}."\n";
+        print "    properties = ".$job_info->{properties}."\n";
+        print "    reservation = ".$job_info->{reservation}."\n";
+        print "    walltime = ".$job_info->{maxTime}."\n";
+        print "    submissionTime = ".$job_info->{submissionTime}."\n";
+        print "    startTime = ".$job_info->{startTime}."\n";
+        if (defined($jobGantted{$jobid}->[0])){
+            print "    scheduledStart = ".$jobGantted{$jobid}->[0]."\n";
+        }else{
+            print "    scheduledStart = no prediction\n";
+        }
+        print "\n";
+  }elsif ( defined($opts{x}) || defined($opts{j}) ) {
+      print "Job Id: ".$job_info->{idJob}."\n";
+      while (my ($key,$value) = each %$job_info) {
+          unless ($key eq "idJob") {
+              print "     ".$key." = ".(defined($value)?$value:"")."\n";
+          }
+      }
+      print "\n";
+  } elsif ( defined($opts{a}) || defined($opts{s}) ){
+      printf "%-15.15s %-8.8s %-8.8s %-10.10s %6.6s %3.3s %3.3s %6.6s %5.5s %1.1s %5.5s\n",
+              getVal($job_info->{'idJob'}.hostname()),
+              getVal($job_info->{'user'}),
+              #getVal("GameQ"),
+              getVal($job_info->{'queueName'}),
+              getVal($job_info->{'command'}),
+              getVal(),
+              getVal($job_info->{'nbNodes'}),
+              getVal("1"),
+              getVal(),
+              getVal($job_info->{'submissionTime'}),
+              getVal($hashetat{$job_info->{'state'}}),
+              getVal() ;
+
+      print "  Job state: $job_info->{'state'}\n";
+  }else{
+      printf "%-16.16s %-16.16s %-16.16s %-8.8s %1.1s %5.5s\n",
+              $job_info->{'idJob'},
+              $job_info->{'command'},
+              $job_info->{'user'},
+              $job_info->{'submissionTime'},
+              $hashetat{$job_info->{'state'}},
+              $job_info->{'queueName'};
+  }
+}
+
+sub print_history($){
+    my $arg = shift;
+    my ($date_start,$date_stop) = split(/,/,$arg);
+
+    my %hashDumperResult;
+    #print each nodes with their weight
+    my @nodes = iolib::list_nodes($base);
+    my $maxWeight;
+    my $i;
+    foreach $i (@nodes){
+        $maxWeight = iolib::get_maxweight_one_node($base,$i);
+        if (defined($opts{d})){
+            $hashDumperResult{nodes}{$i}{maxWeight} = $maxWeight;
+        }else{
+            print("\'$i\' \'$maxWeight\' ");
+        }
+    }
+    print("\n") if (!defined($opts{d}));
+
+    my %jobGantt = iolib::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
+    if (defined($opts{d})){
+        $hashDumperResult{jobs} = \%jobGantt;
+    }else{
+        foreach $i (keys(%jobGantt)){
+            if ($jobGantt{$i}->{queueName} ne "besteffort"){
+                if (defined($opts{d})){
+                    $hashDumperResult{jobs}{$i} = $jobGantt{$i};
+                }else{
+                    print("\'$i\' \'$jobGantt{$i}->{jobType}\' \'$jobGantt{$i}->{user}\' \'$jobGantt{$i}->{state}\' \'$jobGantt{$i}->{command}\' \'$jobGantt{$i}->{properties}\' \'$jobGantt{$i}->{submissionTime}\' \'$jobGantt{$i}->{queueName}\' \'$jobGantt{$i}->{startTime}\' \'$jobGantt{$i}->{stopTime}\'");
+                    foreach my $j (@{$jobGantt{$i}->{nodes}}){
+                        print(" \'$j\' \'$jobGantt{$i}->{weight}\'");
+                    }
+                    print("\n");
+                }
+            }
+        }
+    }
+
+    #print finished or running jobs
+    my %jobsHistory = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
+    foreach $i (keys(%jobsHistory)){
+        if (!defined($jobGantt{$i}) || $jobGantt{$i}->{queueName} eq "besteffort"){
+            if (($jobsHistory{$i}->{state} eq "Running") ||
+                ($jobsHistory{$i}->{state} eq "toLaunch") ||
+                ($jobsHistory{$i}->{state} eq "Launching")){
+                if ($jobsHistory{$i}->{queueName} eq "besteffort"){
+                    $jobsHistory{$i}->{stopTime} = iolib::get_gantt_visu_date($base);
+                }else{
+                    #This job must be already  printed by gantt
+                    next;
+                }
+            }
+            if (defined($opts{d})){
+                $hashDumperResult{jobs}{$i} = $jobsHistory{$i};
+            }else{
+                print("\'$i\' \'$jobsHistory{$i}->{jobType}\' \'$jobsHistory{$i}->{user}\' \'$jobsHistory{$i}->{state}\' \'$jobsHistory{$i}->{command}\' \'$jobsHistory{$i}->{properties}\' \'$jobsHistory{$i}->{submissionTime}\' \'$jobsHistory{$i}->{queueName}\' \'$jobsHistory{$i}->{startTime}\' \'$jobsHistory{$i}->{stopTime}\'");
+                foreach my $j (@{$jobsHistory{$i}->{nodes}}){
+                    print(" \'$j\' \'$jobsHistory{$i}->{weight}\'");
+                }
+                print("\n");
+            }
+        }
+    }
+
+    #print Down or Suspected nodes
+    my %deadNodeDates = iolib::get_node_dead_range_date($base,$date_start,$date_stop);
+    if (defined($opts{d})){
+        $hashDumperResult{dead_nodes} = \%deadNodeDates;
+    }else{
+        foreach $i (keys(%deadNodeDates)){
+            foreach my $j ($deadNodeDates{$i}){
+                while (my $range = shift(@{$j})){
+                    print("\'0\' \'$$range[2]\' \'oar\' \'null\' \'null\' \'null\' \'0000-00-00 00:00:00\' \'default\' \'$$range[0]\' \'$$range[1]\' \'$i\' ");
+                    print("\'".iolib::get_maxweight_one_node($base,$i)."\'\n");
+                }
+            }
+        }
+    }
+
+    if (defined($opts{d})){
+        # suitable Data::Dumper configuration for serialization
+        $Data::Dumper::Purity = 1;
+        $Data::Dumper::Terse = 1;
+        $Data::Dumper::Indent = 0;
+        $Data::Dumper::Deepcopy = 1;
+
+        print(Dumper(\%hashDumperResult));
+    }
+}
+
+sub print_node_stats(){
+    my @stats = iolib::get_node_stats($base);
+    print("Free nodes = $stats[0]\n");
+    print("Suspected nodes = $stats[1]\n");
+    print("Dead nodes = $stats[2]\n");
+}
+
+
+
+# then print real stuff
+if (defined($opts{h})){
+    print_history($opts{h});
+}else{
+    @jobids= iolib::list_current_jobs($base);
+    %jobGantted = iolib::get_gantt_visu_scheduled_jobs($base);
+    if (defined($opts{j})){
+        print_job($opts{j});
+    }elsif(defined($opts{s})){
+        print_node_stats();
+    }else{
+        foreach my $jobid (@jobids) {
+            print_job($jobid);
+        }
+    }
+}
+
+
+iolib::disconnect($base);
+

@@ -1,0 +1,156 @@
+Installing the OAR batch system
+===============================
+
+
+What do you need?
+    - a cluster
+    - to be an admin of this cluster
+    - to get the install package of OAR (normally you have already done that)
+
+Requirements
+------------
+
+There a three kinds of nodes, each requiring a specific software configuration.
+
+These are :
+
+    - the server node, which will hold all of OAR "smartness" ;
+    - the login nodes, on which you will be allowed to login, then reserve some
+      computational nodes ;
+    - the computational nodes (a.k.a. the nodes), on which the jobs will run.
+
+On every node, the "sentinelle" binary can be installed (it is not necessary).
+This tool is used to launch commands on several computers, at a same time.
+It ships with the current OAR package (but it is also available
+separately in Taktuk in an Open Source License).
+
+On every nodes (server, login, computational), the following packages must be
+installed :
+
+    - sudo
+    - Perl
+    - Perl-base
+
+On the OAR server and on the login nodes, the following packages must be
+installed:
+
+    - Perl-Mysql
+    - Perl-DBI
+    - MySQL
+    - MySQL-shared
+    - libmysql
+
+From now on, we will suppose all the Perl/Mysql packages are
+correctly installed and configured and mysql database is started.
+
+
+Configuration of the cluster
+----------------------------
+
+The following steps have to be done, prior to installing OAR:
+
+    - add a user named "oar" in the group "oar" on every node
+
+    - let the user "oar" connect through ssh from any node to any node WITHOUT
+      password. To achieve this, here is some standard procedure for OpenSSH:
+      
+        * create a set of ssh keys for the user "oar" with ssh-keygen (for
+          instance 'id_dsa.pub' and 'id_dsa')
+        * copy these keys on each node of the cluster in the ".ssh" folder of
+          the user "oar"
+        * append the contents of 'id_dsa.pub' to the file
+          "~/.ssh/authorized_keys"
+        * in "~/.ssh/config" add the lines::
+        
+            Host *
+                ForwardX11 no
+                StrictHostKeyChecking no
+                PasswordAuthentication no
+                AddressFamily inet
+
+        * test the ssh connection between (every) two nodes : there should not
+          be any prompt.
+
+    - grant the user "oar" the permission to execute commands with root
+      privileges. To achieve that, OAR makes use of sudo. As a consequence,
+      /etc/sudoers must be configured. Please use visudo to add the following
+      lines::
+
+            Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
+            /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
+            /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume
+            %oar ALL=(oar) NOPASSWD: OARCMD
+            oar ALL=(ALL) NOPASSWD:ALL
+            www-data ALL=(oar) NOPASSWD: /usr/lib/oar/oar-cgi
+
+There are a three different flavors of installation :
+
+    * server:  install the daemon which must be running on the server
+    * user:    install all the tools needed to submit and manage jobs for the
+      users (oarsub, oarstat, oarnodes, ...)
+    * node:    install the tools for a computing node
+
+The installation is straightforward:
+
+    - become root
+    - go to OAR source repository
+    - You can set Makefile variables in the command line to suit your configuration
+      (change "OARHOMEDIR" to the home of your user oar and "PREFIX" where you want
+      to copy all OAR files).
+    - run make  <module> [module] ...
+        where module := { server-install | user-install | node-install | doc-install | debian-package }
+              OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }
+    - Edit /etc/oar.conf file to match your cluster configuration.
+    - Make sure that the PATH environnement variable contains $PREFIX/$BINDIR of
+      your installation (default is /usr/local/bin).
+
+
+Initialization of OAR database (MySQL) is achieved using oar_db_init.pl script provided
+with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).
+
+The same machine may host several or even all modules.
+
+Visualization tools installation
+--------------------------------
+There are two different tools. One, named Monika, displays the current cluster state
+with all active and waiting jobs. The other, named DrawOARGantt, diplays node occupation
+in a lapse of time.
+These tools are CGI scripts and generate HTML pages.
+
+You can install these in this way:
+    DrawOARGantt:
+    
+        - Make sure you installed "perl-GD" and "perl-GD-Text-Util" packages.
+        - Copy "DrawOARGantt.pl" and "DrawGantt.conf" in the CGI folder of your web server
+          (ex: /usr/lib/cgi-bin/ for Debian).
+        - Copy all icons and javascript files in a folder that web server can find them
+          (ex: /var/www/oar/Icons and /var/www/oar/Icons).
+        - Make sure that these files can be read by web server user.
+        - Edit "DrawGantt.conf" and change tags:
+        
+            * "oarstatCmd" --> path of oarstat command (ex: oarstat).
+            * "path_cache_directory" --> directory where images will be stored (ex: /var/www/oar/tmp/).
+            * "web_cache_directory" --> this path corresponds of "path_cache_directory" in the web server repository (ex: /oar/tmp/).
+            * "web_icons_directory" --> web server path where CGI can find icon files (ex: /oar/Icons/).
+            * "web_path_js_directory" --> web server path where CGI can find the javascript file (ex: /oar/js/).
+
+    Monika:
+    
+        - The package "perl-AppConfig" is required.
+        - Read INSTALL file in the monika repository.
+
+Starting
+--------
+
+First, you must start OAR daemon on the server (its name is "Almighty").
+
+    - if you have installed OAR from sources, become oar user and launch command
+      "Almighty" (it stands in $PREFIX/sbin).
+    - if you have installed OAR from Debian packages, use the script
+      "/etc/init.d/oar-server" to start the daemon.
+
+Further information
+-------------------
+For further information, please check http://oar.imag.fr/.
+
+.. $Id: INSTALL,v 1.23 2005/09/27 13:59:34 capitn Exp $

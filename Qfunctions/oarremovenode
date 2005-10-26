@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+# $Id: oarremovenode,v 1.1 2005/06/11 15:27:50 capitn Exp $
+# remove a node entirely
+use strict;
+use warnings;
+use Data::Dumper;
+use DBI();
+use oar_iolib;
+
+sub usage(){
+    print("\tusage: oarremovenode nade_name\n");
+    exit(1);
+}
+
+usage if (@ARGV < 1);
+
+my $node = $ARGV[0];
+print "Node to remove : $node\n";
+
+my $exit_code = 0;
+
+my $base = iolib::connect();
+$base->do("LOCK TABLE nodes WRITE, nodeProperties WRITE, nodeState_log WRITE, processJobs WRITE, processJobs_log WRITE, jobs WRITE, fragJobs WRITE, event_log WRITE");
+
+my $nodeInfo = iolib::get_node_info($base,$node);
+if (defined($nodeInfo->{state}) && ($nodeInfo->{state} eq "Dead")){
+    my $sth = $base->prepare("SELECT idJob FROM processJobs_log
+                             WHERE hostname = \"$node\"");
+    $sth->execute();
+    my @jobList;
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@jobList, $ref[0]);
+    }
+    $sth->finish();
+    foreach my $i (@jobList){
+        print("\tRemove the job $i, it was run on the node $node\n");
+        $base->do("DELETE from event_log       WHERE idJob = $i");
+        $base->do("DELETE from fragJobs        WHERE fragIdJob = $i");
+        $base->do("DELETE from jobs            WHERE idJob = $i");
+        $base->do("DELETE from processJobs_log WHERE idJob = $i");
+    }
+    $base->do("DELETE from nodeState_log  WHERE hostname = \"$node\"");
+    $base->do("DELETE from nodeProperties WHERE hostname = \"$node\"");
+    $base->do("DELETE from nodes          WHERE hostname = \"$node\"");
+    print("Node $node removed.\n");
+}else{
+    print("/!\\ The state of the node $node must be set to Dead.\n");
+    $exit_code = 2;
+}
+
+$base->do("UNLOCK TABLES");
+iolib::disconnect($base);
+
+exit($exit_code);

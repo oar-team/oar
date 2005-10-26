@@ -1,0 +1,128 @@
+#!/usr/bin/perl
+# $Id: oarnodes,v 1.13 2005/07/20 09:29:20 capitn Exp $
+# print OAR node properties
+#
+# EXAMPLES:
+# oarnodes -l
+#   => returns the complete list without information  - status = 0
+# oarnodes -a
+#   => returns the complete list with information  - status = 0
+# oarnodes -s
+#   => returns only the state of nodes - status = 0
+# oarnodes -h|--help
+#   => returns a help message - status = 0
+# oarnodes host1 [.. hostn]
+#   => returns the information for hostX - status is 0 for every host known - 1 otherwise
+#
+
+use strict;
+use warnings;
+use Data::Dumper;
+use oar_iolib;
+use Getopt::Long;
+
+Getopt::Long::Configure ("gnu_getopt");
+my $stateMode;
+my $usage;
+my $listall;
+my $listallwithinfo;
+GetOptions ("state|s" => \$stateMode,
+            "help|h"  => \$usage,
+            "list|l"  => \$listall,
+            "all|a"   => \$listallwithinfo
+           );
+
+if ($usage){
+    print <<EOS;
+Usage: $0 [OPTIONS]
+Display information on the nodes
+Options:
+ -a, --all     show all nodes with their properties
+ -s, --state   show only node states
+ -l, --list    show only node list
+ -h, --help    show this help screen
+EOS
+    exit(0);
+}
+
+my $base = iolib::connect();
+
+# Nodes list handling (set @nodes to what has been requested)
+my @nodes;
+if($ARGV[0]){
+    @nodes = @ARGV;
+}else{
+    @nodes = iolib::list_nodes($base);
+}
+
+my $exitstatus = 0;
+
+if (defined($stateMode)){
+    foreach my $node ( @nodes ) {
+        my $node_info = iolib::get_node_info($base,$node);
+        print("$node --> $node_info->{state}\n");
+    }
+}elsif(defined($listall)){
+    # Simple list handling
+    foreach my $node ( @nodes ) {
+        print($node,"\n");
+    }
+}else{
+    foreach my $node ( @nodes ) {
+        my $node_info = iolib::get_node_info($base,$node);
+        if (!$node_info) {
+                print("$node UNKNOWN\n\n");
+                $exitstatus = 1;
+                next;
+        }
+        print $node,"\n";
+        while (my ($key,$value) = each %$node_info) {
+            if ($key eq "maxWeight"){
+                print("     pcpus = $value\n");
+            }else{
+                print "     ".$key." = ";
+                if ($key eq "state") {
+                    if ($value eq "Alive") {
+                        if ($node_info->{weight} > 0) {
+                            print "job";
+                            print "\n     jobs = ";
+                            my @jobs = iolib::get_host_job_distinct($base,$node);
+                            if (@jobs) {
+                                my $compteurCPU = 0;
+                                my $debStr = "";
+                                for (my $jobid=0; $jobid <= $#jobs; $jobid++) {
+                                    my $refJob =  iolib::get_job($base, $jobs[$jobid]);
+                                    for (my $i=0; $i < $refJob->{'weight'}; $i++){
+                                        print "$debStr$compteurCPU/".$jobs[$jobid].".oarserver";
+                                        $compteurCPU++;
+                                        $debStr = ",";
+                                    }
+                                }
+                            } else {
+                                print "???";
+                            }
+                        } else {
+                            print "free";
+                        }
+                    } else {
+                        print "$value";
+                    }
+                } else {
+                    print (defined($value)?$value:"");
+                }
+                print "\n";
+            }
+        }
+        my %properties = iolib::get_all_node_properties($base,$node);
+        my $strProperties = "     properties = ";
+        foreach my $property (keys(%properties)){
+	    $strProperties .= "$property=$properties{$property},";
+        }
+        chop($strProperties);
+        print "$strProperties\n";
+        print "\n";
+    }
+}
+iolib::disconnect($base);
+
+exit($exitstatus);

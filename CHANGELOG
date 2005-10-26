@@ -1,0 +1,106 @@
+=============
+OAR CHANGELOG
+=============
+
+version 1.6.1:
+==============
+    - add possibility to use sentinelle.rb script in the ping_checker module
+    - add a GRID5000 specific scheduler which implement e specific policy
+      (oar_sched_gant_g5k)
+    - add -s option to oarnodes command --> show only state of nodes
+    - add -l option to oarnodes command --> show only the node list
+    - now root can delete all jobs like oar user
+    - change oardel messages
+    - add limitation of the command (with arguments) specified by users::
+
+        regular expression : [\w\s\/\.\-]*
+
+    - change oaremovenode command to oarremovenode
+    - enhance job error management and decisions to suspect nodes
+    - bugs fix about accounting
+
+version 1.6:
+============
+    - debug reservation jobs (if the job has not the right amount requested nodes then it will wait a timeout. After it will be launched on rest nodes).
+    - add a cache for visualization of the gantt scheme (add two gantt table for the visu)
+    - add an event log mechanism. It permits to know all decisions and events that occure in OAR for jobs.
+    - detection of errors (they can be traced via event_log table):
+        * job working directory does not exist on the node
+        * output files can not be created
+    - add deploy scheduler awareness (schedule on non deploy nodes firstly)
+    - possibility to change property value via oarnodesetting command (-p option)
+    - add the command "oaremovenode" that allows to delete a node of the database definitely
+    - bug fix : now oarsub can read the user script even if oar has no right
+    - now, you can use special value "all" in oarsub ("nodes" resource). It gives all free nodes corresponding to the weight and properties specified.
+    - debug Gantt visualization
+    - add the possibility to check nodes via nmap
+    - add accounting features (accounting table)
+    - change nodeState_log table scheme to increase rapidity
+
+version 1.5:
+============
+    - internal development version
+
+version 1.4:
+============
+    - add "DEPLOY_HOSTNAME" tag in oar.conf
+      It specifies the node where OAR will be connected to submit a job in the deploy queue.
+    - "besteffort" jobs are now killed by the oar_meta_sched. It simplifies the write of schedulers (they do not care about "besteffort" jobs).
+    - bug fix about job startTime and stopTime (no more overlapping)
+
+version 1.3:
+============
+    - Merge of the desktop computing branch.
+    - Add some changes for the kaDeploy mode (for a kaDeploy reservation, you are logged on the server instead of the first node).
+    - Add a new module "finaud" : check every 5 minutes if "Suspected" are still suspected and "Alive" nodes are still alive.
+
+version 1.2:
+============
+    - change ping checker default strategy. do 10 pings in root.
+
+version 1.1.2:
+==============
+    - bug fix on stopTime affectation in bipbip
+
+version 1.1.1:
+==============
+    - bug fix on oarexec waitpid
+
+version 1.1.0:
+==============
+    - bug fix (MySQL database deconnection)
+    - oarexec can be detached from the server. So OAR is now more scalable and the server can be rebooted without to lose running jobs. To allow or not this feature, see the DETACH_JOB tag in the oar.conf file.
+
+version 1.0.0:
+==============
+    - 0.9.7 version released as the stable version
+    - fix CHANGELOG :-)
+
+version 0.9.7:
+==============
+    - complete change of installation procedure (Makefile)
+    - Debian packages are now available
+    - Examples of prologue/epilogue that can clean SMP better
+    - use of a sudo wrapper instead of setuid bit on perl scripts (now users must be in oar group)
+
+version 0.9.6:
+==============
+    - socket connection between server and node is removed (this socket permitted to send kill notification to oarexec. Now you can kill oarexec directely)
+    - user commands are launched by a wrapper. It executes sudo command and set variables for perl library and OAR install path. So you must configure sudo for oar group (there is no suid bit in the new install).
+
+version 0.9.5:
+==============
+    - add reservation feature
+    - bug fix
+    - remise en place de la généricité des politiques de scheduling pour chacune des queues
+
+version 0.9.4:
+==============
+    - Gantt scheduling notion in scheduler architecture
+
+version 0.9.3:
+==============
+    - bug fix
+    - change kill method of Leon
+
+.. $Id: CHANGELOG,v 1.41 2005/10/03 14:36:36 capitn Exp $

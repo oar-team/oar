@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# scp command can also work in this way:
+#   scp -S /path/to/oarsh ...
+
+DEFAULT_SHELL=/bin/bash
+
+if [ "$SUDO_USER" == "" ]
+then
+    # It must be oar
+    export SHELL=$DEFAULT_SHELL
+    exec $DEFAULT_SHELL "$@"
+else
+    # CPUSET assignation
+    CPUSETFILE="/tmp/cpuset/$OARJOBID/tasks"
+    if [ ! -w $CPUSETFILE ]
+    then
+        echo "[OARSH] Can not find cpuset file : $CPUSETFILE" 1>&2
+        exit 1
+    fi
+    /bin/echo $$ > $CPUSETFILE
+            
+    if [ "$1" == "" ]
+    then
+        # Simulate initial login
+        exec sudo -i -u $SUDO_USER
+    else
+        # Get user shell (must be optimized)
+        PASSWD_LINE=$(getent passwd $SUDO_USER)
+        export SHELL=$(echo $PASSWD_LINE | cut -d : -f 7)
+        if [ "$SHELL" == "" ]
+        then
+            echo "[OARSH_SHELL] ERROR: No shell found for user $SUDO_USER." 1>&2
+            exit 1
+        else
+            export HOME=$(echo $PASSWD_LINE | cut -d : -f 6)
+            cd $HOME
+            exec sudo -H -u $SUDO_USER $SHELL "$@"
+        fi
+    fi
+fi

@@ -1,0 +1,108 @@
+=head1 NAME
+
+oarsub - submit a job to OAR batch scheduler.
+
+=head1 SYNOPSIS
+
+B<oarsub> [B<-l> resource_list][B<-q> queuename][B<-p> property_query][B<-I>][B<-v>][B<-r> date][B<-c> job id][script|program][B<-s> stagein_directory][B<-m> stagein_md5sum]
+
+=head1 DESCRIPTION
+
+This command is used to submit jobs a to OAR batch scheduler. Jobs can be a program or a script which contains description of this job.
+
+
+=head1 OPTIONS
+
+=over
+
+=item B<-l, --resource> resource=value[,[resource=value]...]
+
+Defines resource list requested for a job.
+
+Defined resources :
+  nodes : Request number of nodes (special value "all" is replaced by the number of free nodes corresponding to the weight and properties; special value "max" is replaced by the number of free,absent and suspected nodes corresponding to the weight and properties).
+  walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|mn]
+  weight : the weight that you want to reserve on each node
+
+=item B<-q, --queue> queuename
+
+Specifies the destination queue. If not defined the job is enqueued in default queue
+
+=item B<-p, --property> property
+
+Specify with SQL syntax reservation properties.
+
+=item B<-I, --interactive>
+
+Interactive mode.
+Give you a shell on the first reserved node.
+
+=item B<-r, --reservation> date
+
+Ask for a reservation job on the date in argument
+
+=item B<-c, --connect> jobId
+
+Connect to a reservation in Running state
+
+=item B<-v, --verbose>
+
+verbose mode.
+
+=item B<-s, --stagein> directory|tgz
+
+Set the stagein directory or archive.
+
+=item B<-m, --stagein-md5sum> md5sum
+
+Set the stagein file md5sum.
+
+=back
+
+=head1 SCRIPT
+
+Script can contain the description of the job. Lines with options must begin by the key B<#OAR>. There the same options as previous.
+
+=head1 EXAMPLE
+
+Job submission with arguments :
+
+=over
+
+=item oarsub -l nodes=4 -I
+
+=item oarsub -q default -l walltime=50:30:00,nodes=10,weight=1 -p "switch = 'sw1'" /home/users/toto/prog
+
+=item oarsub -r "2004-04-27 11:00:00" -l nodes=12,weight=2
+
+=item oarsub -c 154 -I
+
+=back
+
+Script example:
+
+=over
+
+=item #OAR -l nodes=4
+
+=item #OAR -q long -l walltime=2:30
+
+=item /home/users/toto/prog
+
+=back
+
+Submit the script :
+
+=over
+
+=item oarsub /home/users/toto/script
+
+=back
+
+=head1 SEE ALSO
+
+oardel(1), oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
+
+=head1 COPYRIGHTS
+
+ Copyright © 2003 Laboratoire Id-Imag (http://www-id.imag.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

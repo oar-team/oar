@@ -1,0 +1,111 @@
+#!/usr/bin/perl
+# $Id: sarko,v 1.18 2005/06/02 15:55:49 capitn Exp $
+#Almighty module : check walltimes and jobs to frag
+use strict;
+use DBI();
+use Data::Dumper;
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use IO::Socket::INET;
+
+my $leonSoftWalltime = 20;
+my $leonWalltime = 60;
+init_conf("oar.conf");
+if (is_conf("JOBDEL_SOFTWALLTIME")){
+    $leonSoftWalltime = get_conf("JOBDEL_SOFTWALLTIME");
+}
+if (is_conf("JOBDEL_WALLTIME")){
+    $leonWalltime = get_conf("JOBDEL_WALLTIME");
+}
+
+oar_debug("[sarko] JOBDEL_SOFTWALLTIME = $leonSoftWalltime; JOBDEL_WALLTIME = $leonWalltime\n");
+
+# get script args
+my $base = iolib::connect();
+if (!defined($base)){
+    oar_error("[sarko] Can not connect to the database\n");
+    exit(1);
+}
+
+oar_debug("[sarko] Bonjour, controle d'identite !!!\n");
+
+my $guilty_found=0;
+my $current = iolib::get_date($base);
+$current = iolib::sql_to_local($current);
+oar_debug("[sarko] Current time : $current\n");
+
+# Look at leon timers
+my @JobToFrag = iolib::get_timered_job($base);
+my $Jid;
+while(scalar(@JobToFrag)){
+    $Jid=shift(@JobToFrag);
+    my $refJob = iolib::get_job($base,$Jid);
+    if (($refJob->{'state'} eq "Terminated") || ($refJob->{'state'} eq "Error")){
+        iolib::job_fragged($base,$Jid);
+        oar_debug("[sarko] I set to FRAGGED the job $Jid\n");
+    }else{
+        my $fragDate = iolib::get_frag_date($base,$Jid);
+        $fragDate = iolib::sql_to_local($fragDate);
+        oar_debug("[sarko] frag date : $fragDate\n");
+        if (($current > $fragDate+$leonSoftWalltime) && ($current <= $fragDate+$leonWalltime)){
+            oar_debug("[sarko] Leon will RE-FRAG bipbip of job $Jid\n");
+            iolib::job_refrag($base,$Jid);
+            $guilty_found=1;
+        }elsif ($current > $fragDate+$leonWalltime){
+            oar_debug("[sarko] Leon will EXTERMINATE bipbip of job $Jid\n");
+            iolib::job_leon_exterminate($base,$Jid);
+            $guilty_found=1;
+        }else{
+            oar_debug("[sarko] The leon timer is not yet expired for the job $Jid; I do nothing\n");
+        }
+    }
+}
+
+# Look at walltimes
+my @result = iolib::get_job_list($base, "State", "Running");
+while (scalar @result){
+    my %job = iolib::shift_job(@result);
+    my ($date, $start, $max);
+
+    # Get starting time
+    $date = $job{startTime};
+    #print "Job [$job{idJob}] startTime $date\n";
+    $start = iolib::sql_to_local($date);
+
+    # Get maxtime
+    $date = $job{maxTime};
+    $max = iolib::sql_to_duration($date);
+
+    oar_debug("[sarko] Job [$job{idJob}] from $start with $max; current time=$current");
+    if ($current > $start+$max){
+        oar_debug " (Elapsed)";
+        $guilty_found=1;
+        iolib::frag_job($base, $job{idJob});
+        iolib::add_new_event($base,"WALLTIME",$job{idJob},"[sarko] Job [$job{idJob}] from $start with $max; current time=$current (Elapsed)");
+    }
+    oar_debug("\n");
+}
+
+# Retrieve nodes with expiryDates in the past
+my @nodes = iolib::get_expired_nodes($base);
+if (defined @nodes) {
+    # First mark the nodes as dead
+    foreach my $node (@nodes) {
+        iolib::set_node_nextState($base, $node, 'Suspected');
+    }
+    # Then notify Almighty
+    my $remote_host = get_conf("SERVER_HOSTNAME");
+    my $remote_port = get_conf("SERVER_PORT");
+    my $socket = IO::Socket::INET->new( PeerAddr => $remote_host,
+                                        PeerPort => $remote_port,
+                                        Type => SOCK_STREAM,
+                                        Proto => "tcp")
+        or die("Couldn't connect executor $remote_host:$remote_port\n");
+    print $socket "ChState\n";
+    close $socket;
+}
+
+iolib::disconnect($base);
+
+exit $guilty_found;

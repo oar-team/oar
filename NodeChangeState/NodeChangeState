@@ -1,0 +1,100 @@
+#!/usr/bin/perl
+# $Id: NodeChangeState,v 1.11 2005/10/03 14:36:36 capitn Exp $
+#Almighty module which changes node state
+
+use English;
+use oar_iolib;
+use Data::Dumper;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use IO::Socket::INET;
+use strict;
+
+my $exitCode = 0;
+
+my $base = iolib::connect();
+if (!defined($base)){
+    oar_error("[NodeChangeState] Can not connect to the database\n");
+    exit(1);
+}
+
+$base->do("LOCK TABLE nodes WRITE,processJobs WRITE,processJobs_log WRITE,jobs WRITE,nodeState_log WRITE, event_log WRITE, event_log_hosts WRITE");
+
+# Check event logs
+my @events_to_check = iolib::get_to_check_events($base);
+foreach my $i (@events_to_check){
+    oar_debug("[NodeChangeState] Check event for the job $i->{idJob} with type $i->{type}\n");
+    if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
+        ($i->{type} eq "PROLOGUE_ERROR") ||
+        ($i->{type} eq "EPILOGUE_ERROR") ||
+        ($i->{type} eq "CAN_NOT_WRITE_NODE_FILE") ||
+        ($i->{type} eq "CAN_NOT_WRITE_PID_FILE") ||
+        ($i->{type} eq "USER_SHELL") ||
+        ($i->{type} eq "EXIT_VALUE_OAREXEC")
+       ){
+        my @hosts;
+        my $finaudTag;
+        # Restrict Suspected state to the first node (node really connected with OAR) for some event types
+        if (($i->{type} ne "PING_CHECKER_NODE_SUSPECTED")){
+            @hosts = iolib::get_job_host_log($base,$i->{idJob});
+            @hosts = ($hosts[0]);
+            $finaudTag = "NO";
+        }else{
+            @hosts = iolib::get_hostname_event($base,$i->{idEvent});
+            $finaudTag = "YES";
+        }
+        foreach my $j (@hosts){
+            if (iolib::get_weight_node($base,$j) == 0){
+                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting this node\n");
+                iolib::set_node_state($base,$j,"Suspected",$finaudTag);
+                $exitCode = 1;
+            }else{
+                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we can not Suspect this node because there is at least one other job on it\n");
+            }
+        }
+    }
+    iolib::check_event($base, $i->{type}, $i->{idJob});
+}
+
+
+# Treate nextState field
+my %nodeToChange = iolib::get_node_change_state($base);
+
+#A Term command must be added in the Almighty
+oar_debug("[NodeChangeState] number of nodes to change state = ".keys(%nodeToChange)."\n");
+if (keys(%nodeToChange) > 0){
+    $exitCode = 1;
+}
+
+my $nodeInfo;
+foreach my $i (keys(%nodeToChange)){
+    $nodeInfo = iolib::get_node_info($base,$i);
+    if ($nodeInfo->{state} ne $nodeToChange{$i}){
+        if ($nodeInfo->{nextFinaudDecision} eq "YES"){
+            oar_warn("[NodeChangeState] Finaud is automatically changing the state of the node $i into $nodeToChange{$i}\n");
+        }else{
+            oar_warn("[NodeChangeState] $i --> $nodeToChange{$i}\n");
+        }
+
+        iolib::set_node_state($base,$i,$nodeToChange{$i},$nodeInfo->{nextFinaudDecision});
+        iolib::set_node_nextState($base,$i,'UnChanged');
+
+        if (($nodeToChange{$i} eq 'Dead') || ($nodeToChange{$i} eq 'Absent')){
+            oar_debug("[NodeChangeState] Check jobs to delete on $i :\n");
+            my @jobs = iolib::get_host_job_distinct($base,$i);
+            foreach my $j (@jobs){
+                oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
+                iolib::frag_job($base,$j);
+                # A Leon must be run
+                $exitCode = 2;
+            }
+            oar_debug("[NodeChangeState] Check done\n");
+        }
+    }else{
+        oar_warn("[NodeChangeState] $i is already in the $nodeToChange{$i} state\n");
+        iolib::set_node_nextState($base,$i,'UnChanged');
+    }
+}
+$base->do("UNLOCK TABLES");
+iolib::disconnect($base);
+
+exit($exitCode);

@@ -1,0 +1,74 @@
+#!/usr/bin/perl
+# $Id: oar_uninstall,v 1.15 2004/08/24 15:56:56 neyron Exp $
+
+
+use strict;
+use warnings;
+use Data::Dumper;
+use oar_conflib qw(init_conf get_conf);
+
+my $usrName = getpwuid($<);
+
+if ("$usrName" ne "root"){
+    die("[ERROR] You must be root to run this script\n");
+}
+
+init_conf("oar.conf");
+# Configure module perl path
+my $perlLibPath = get_conf("PerlLibraryPath");
+if (!$perlLibPath){
+    die("/!\\Can't find PerlLibraryPath in the oar.conf file. Set this tag and try again\n");
+}
+
+# Lists all links to delete and where
+my $prefixLinks = "/usr";
+my $fileLink = {
+                'Almighty/Almighty' => $prefixLinks.'/bin/Almighty',
+#                'Leon/Leon' => $prefixLinks.'/bin/Leon',
+                'Runner/oarexec' => $prefixLinks.'/bin/oarexec',
+                'Leon/oarkill' => $prefixLinks.'/bin/oarkill',
+#                'Runner/bipbip' => $prefixLinks.'/bin/bipbip',
+                'Qfunctions/oarnodes' => $prefixLinks.'/bin/oarnodes',
+                'Qfunctions/oardel' => $prefixLinks.'/bin/oardel',
+                'Qfunctions/oarstat' => $prefixLinks.'/bin/oarstat',
+                'Qfunctions/oarsub' => $prefixLinks.'/bin/oarsub',
+#                'Runner/runner' => $prefixLinks.'/bin/runner',
+#                'Sarko/sarko' => $prefixLinks.'/bin/sarko',
+#                'Scheduler/sched_fifo' => $prefixLinks.'/bin/oar_sched_fifo',
+                'ConfLib/oar_conflib.pm' => $perlLibPath.'/oar_conflib.pm',
+                'Iolib/oar_iolib.pm' => $perlLibPath.'/oar_iolib.pm',
+                'Scheduler/Gant.pm' => $perlLibPath.'/Gant.pm',
+                'Runner/ping_checker.pm' => $perlLibPath.'/ping_checker.pm',
+                'Tools/oar.conf' => '/etc/oar.conf',
+#                'Scheduler/oar_meta_sched' => 'bin/oar_meta_sched' ,
+#                'Scheduler/oar_sched_fifo_queue' => 'bin/oar_sched_fifo_queue',
+#                'Scheduler/oar_sched_fifo_queue_killer' => 'bin/oar_sched_fifo_queue_killer',
+                'Qfunctions/oarhold' => $prefixLinks.'/bin/oarhold',
+                'Qfunctions/oarresume' => $prefixLinks.'/bin/oarresume',
+                'Qfunctions/oarnodesetting' => $prefixLinks.'/bin/oarnodesetting',
+                'Qfunctions/oarnotify' => $prefixLinks.'/bin/oarnotify',
+                'Judas/oar_Judas.pm' =>  $perlLibPath.'/oar_Judas.pm',
+                'Docs/man/oardel.1' => $prefixLinks.'/share/man/man1/oardel.1',
+                'Docs/man/oarnodes.1' => $prefixLinks.'/share/man/man1/oarnodes.1',
+                'Docs/man/oarresume.1' => $prefixLinks.'/share/man/man1/oarresume.1',
+                'Docs/man/oarstat.1' => $prefixLinks.'/share/man/man1/oarstat.1',
+                'Docs/man/oarsub.1' => $prefixLinks.'/share/man/man1/oarsub.1',
+                'Docs/man/oarhold.1' => $prefixLinks.'/share/man/man1/oarhold.1'
+};
+
+my $installPreviousPath = get_conf("installPath");
+if ($installPreviousPath){
+    print("rm -rf $installPreviousPath \n");
+    system("rm -rf $installPreviousPath");
+}else{
+    die("Can't find oar.conf\n");
+}
+
+my @tabLinks = values(%$fileLink);
+foreach my $link (@tabLinks){
+    if (lstat($link)){
+        print("rm ".$link."\n");
+        system("rm ".$link);
+    }
+}
+

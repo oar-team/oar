@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+# $Id: runner,v 1.21 2005/03/31 08:52:26 capitn Exp $
+#Almighty module : launch job bipbips
+
+use strict;
+use DBI();
+use Data::Dumper;
+use IO::Socket::INET;
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+
+init_conf("oar.conf");
+my $binpath;
+if (defined($ENV{OARDIR})){
+    $binpath = $ENV{OARDIR}."/";
+}else{
+    oar_error("[Runner] OARDIR env variable must be defined\n");
+    exit(3);
+}
+
+my $batch = $binpath."bipbip";
+my $inter = $binpath."bipbip";
+
+my $exitCode = 0;
+
+sub answer ($$$){
+    my $jobid = shift;
+    my $info = shift;
+    my $message = shift;
+
+    my $error = 0;
+    my ($addr,$port) = split(/:/,$info);
+    oar_debug("[Runner] oarsub addr:port = $addr:$port info = $info\n");
+    my $client = IO::Socket::INET->new(PeerPort=> $port,
+                                      PeerAddr=> $addr,
+                                      Type => SOCK_STREAM,
+                                      Proto => "tcp") or $error=1;
+    if($error == 0){
+        print($client $message);
+        close($client);
+        oar_debug("[Runner] Notification done\n");
+    }else{
+        oar_error("[Runner] Can not open connection to oarsub client for job $jobid !!!!!!\n");
+    }
+    return($error);
+}
+
+
+sub forkexec ($){
+    my $cmd=shift;
+
+    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
+    my $pid=0;
+    $pid=fork;
+    if($pid eq "undef"){
+        $pid=-1;
+    }
+    if($pid != 0){
+        #father
+        $SIG{CHLD}="IGNORE";
+        return $pid;
+    }else{
+        #child
+        exec $cmd;
+    }
+
+    return $pid;
+}
+
+
+
+my $base = iolib::connect();
+if (!defined($base)){
+    oar_error("[Runner] Can not connect to the database\n");
+    exit(2);
+}
+
+# for toError jobs
+my @jobErrorList = iolib::get_jobs_in_state($base,"toError");
+for (my $i = 0; $i <= $#jobErrorList; $i ++){
+    oar_debug("[Runner] Treate job $jobErrorList[$i]->{idJob} in toError state\n");
+    if (($jobErrorList[$i]->{jobType} eq "INTERACTIVE") || (($jobErrorList[$i]->{jobType} eq "PASSIVE") && $jobErrorList[$i]->{reservation} eq "Scheduled")){
+        oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$jobErrorList[$i]->{idJob}) in error; jobInfo=$jobErrorList[$i]->{infoType}\n");
+        answer($jobErrorList[$i]->{idJob},$jobErrorList[$i]->{infoType},"BAD JOB");
+    }
+    oar_debug("[Runner] Set job $jobErrorList[$i]->{idJob} to state Error\n");
+    iolib::set_job_state($base, $jobErrorList[$i]->{idJob}, "Error");
+}
+
+# for toAckReservation jobs
+my @jobResaToAck = iolib::get_jobs_in_state($base,"toAckReservation");
+for (my $i = 0; $i <= $#jobResaToAck; $i ++){
+    oar_debug("[Runner] Treate job $jobResaToAck[$i]->{idJob} in toAckReservation state\n");
+    if (answer($jobResaToAck[$i]->{idJob},$jobResaToAck[$i]->{infoType},"GOOD RESERVATION") == 1){
+        oar_warn("[Runner] Frag job $jobResaToAck[$i]->{idJob}), I can not notify oarsub for the reservation\n");
+        iolib::add_new_event($base,"CAN_NOT_NOTIFY_OARSUB",$jobResaToAck[$i]->{idJob},"[runner] Can not notify oarsub for the job $jobResaToAck[$i]->{idJob}");
+        iolib::frag_job($base,$jobResaToAck[$i]->{idJob});
+        $exitCode = 1;
+    }else{
+        oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$jobResaToAck[$i]->{idJob}) --> OK; jobInfo=$jobResaToAck[$i]->{infoType}\n");
+        iolib::set_job_state($base, $jobResaToAck[$i]->{idJob}, "Waiting");
+        # Test if we must notify Almighty to Launch scheduler for the reservation
+        if ($exitCode == 0){
+            if (iolib::sql_to_local($jobResaToAck[$i]->{startTime}) - 1 <= iolib::sql_to_local(iolib::get_date($base))){
+                $exitCode = 2;
+            }
+        }
+    }
+}
+
+# for toLaunch jobs
+my @joblist = iolib::get_jobs_in_state($base,"toLaunch");
+
+foreach my $job (@joblist) {
+    my $jobid = $job->{idJob};
+    my $jobtype = $job->{jobType};
+    my $jobinfo = $job->{infoType};
+    my $is_desktop_computing = iolib::is_job_desktopComputing($base,$jobid);
+    oar_debug("[Runner] is_desktop_computing=$is_desktop_computing\n");
+    if ($is_desktop_computing) {
+        oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
+    } else {
+        iolib::set_job_state($base,$jobid,"Launching");
+        my $cmdtofork = "";
+        if($jobtype eq "INTERACTIVE"){
+            oar_debug("[Runner] Interactive request nothing to do Answer to the client Qsub -I\n");
+            # repondre au client sur jobinfo
+            if (answer($jobid,$jobinfo,"GOOD JOB") == 1){
+                oar_warn("[Runner] Frag job $jobid, I can not notify oarsub\n");
+                iolib::frag_job($base,$jobid);
+                $exitCode = 1;
+            }
+        }else{
+            $cmdtofork = $batch;
+            oar_debug("[Runner] try to execute $cmdtofork $jobid \n");
+            my $res = forkexec ("$cmdtofork $jobid ");
+            oar_debug("[Runner] $res\n");
+        }
+    }
+}
+
+
+iolib::disconnect($base);
+
+exit($exitCode);

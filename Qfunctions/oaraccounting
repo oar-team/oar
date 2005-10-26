@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+# $Id: oaraccounting,v 1.2 2005/04/13 16:40:27 capitn Exp $
+
+use strict;
+use warnings;
+use Data::Dumper;
+use oar_iolib;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+
+# Default window size
+my $windowSize = 86400;
+init_conf("oar.conf");
+if (is_conf("ACCOUNTING_WINDOW")){
+    $windowSize = get_conf("ACCOUNTING_WINDOW");
+}
+
+my $base = iolib::connect();
+
+my $lockName = "ACCOUNTING";
+iolib::get_lock($base,$lockName,3600);
+iolib::check_accounting_update($base,$windowSize);
+iolib::release_lock($base,$lockName);
+
+iolib::disconnect($base);
+
+exit 0;

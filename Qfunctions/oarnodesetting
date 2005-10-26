@@ -1,0 +1,183 @@
+#!/usr/bin/perl
+# $Id: oarnodesetting,v 1.27 2005/10/26 12:32:21 capitn Exp $
+# change node state dynamically
+
+use strict;
+use DBI();
+use Data::Dumper;
+use oar_iolib;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Sys::Hostname;
+use Getopt::Long;
+use IO::Socket::INET;
+
+$| = 1;
+
+my $hostname ;
+my $base;
+my $maxWeight;
+my $Weight;
+my $state ;
+my $node_info;
+my $expiryDate;
+my $desktopComputing;
+my $nowaitMode;
+my @properties;
+
+# Get OAR configuration
+init_conf("oar.conf");
+my $remote_host = get_conf("SERVER_HOSTNAME");
+my $remote_port = get_conf("SERVER_PORT");
+
+# print explainations for the user and exit
+sub usage {
+    print <<EOS;
+Usage: $0 [OPTIONS]
+Change the state of a node in OAR.
+Options:
+ -s, --state=STATE               set the new state of the node
+ -h, --hostname=HOSTNAME         set the node hostname
+ -w, --max-weight=WEIGHT         set the max weight of the node
+ -e, --expiry-date=DATE          set the node expiry date
+     --desktop-computing         declare the node as a desktop-computing node
+ -p, --property="PROPERTY=VALUE" set the property of the node to the given
+                                 value
+ -n, --nowait                    do not wait for job end when the node
+                                 switches to Absent or Dead
+N.B.:
+ - Only the --state (-s) or --property (-p) is mandatory.
+ - The states allowed are: Alive, Absent or Dead
+ - If not specified, the hostname will be retrieved via the 'hostname'
+   utility.
+ - If the hostname is not in the OAR database yet, a new node entry will be
+   added.
+ - The default max-weight is 1.
+ - Max-weight is only used when the node is created.
+ - The default expiry date is set to '0000-00-00 00:00:00', which means the
+   node never will never expire.
+EOS
+    exit 1;
+}
+
+# notify Almighty
+# arg1 --> type of notification
+sub notifyAlmighty($){
+    my $sig = shift;
+
+    my $socket = IO::Socket::INET->new( PeerAddr => $remote_host,
+                                        PeerPort => $remote_port,
+                                        Proto => "tcp",
+                                        Type  => SOCK_STREAM)
+    or die("Couldn't connect executor $remote_host:$remote_port\n");
+    if (defined($socket)){
+        print $socket "$sig\n";
+        #my $answer=<$socket>;
+        #return "Almigthy answers : $answer\n";
+    }
+}
+
+sub set_properties($$$){
+    my $base = shift;
+    my $hostname = shift;
+    my $arrayProp = shift;
+
+    foreach my $p (@{$arrayProp}){
+        if ($p =~ m/(.+)\s*=\s*(.+)/m){
+            print("Update property $1 with value $2 ...");
+            my $ret = iolib::set_node_property($base,$hostname,$1,$2);
+            if ($ret == 0){
+                print("DONE\n");
+            }elsif($ret == 2){
+                print("SAME (the property is already equal to the value)\n");
+            }else{
+                print("ERROR (wrong property or wrong value)\n");
+            }
+        }else{
+            print("/!\\ Bad property syntax : -p property=value\n");
+        }
+    }
+}
+
+# Options on arg command line
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions ("state|s=s" => \$state,
+            "hostname|h=s"   => \$hostname,
+            "max-weight|w=s" => \$maxWeight,
+	    "expiry-date|e=s" => \$expiryDate,
+            "desktop-computing" => \$desktopComputing,
+            "nowait|n" => \$nowaitMode,
+            "property|p=s" => \@properties
+           );
+
+defined(@properties) || defined($state) or usage();
+if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){
+    usage();
+}
+defined $hostname or $hostname = hostname();
+defined $maxWeight or $maxWeight = 1;
+
+my $base = iolib::connect() or die "can not connect to the data base\n";
+
+$node_info = iolib::get_node_info($base,$hostname);
+
+if (defined(@properties) && !defined($state)){
+    if ($node_info eq undef){
+        die("/!\\ The node $hostname does not exist in OAR database, you must specify a state with the -s option to create it first.\n");
+    }else{
+        set_properties($base,$hostname,\@properties);
+        iolib::disconnect($base);
+        exit(0);
+    }
+}
+
+print("$hostname --> $state\n");
+if ($node_info eq undef){
+    print("new node\n");
+    $base->do("LOCK TABLE nodes WRITE, nodeProperties WRITE, nodeState_log WRITE");
+    print("$hostname added in the database\n");
+    iolib::add_node($base, $hostname, $state, $maxWeight, $desktopComputing);
+    #iolib::set_node_nextState($base,$hostname,$state);
+    defined $expiryDate and iolib::set_node_expiryDate($base,$hostname,"\"$expiryDate\"");
+    defined @properties and set_properties($base,$hostname,\@properties);
+    $base->do("UNLOCK TABLES");
+    notifyAlmighty("ChState");
+}else{
+    print("update node $hostname to $state state\n");
+    $base->do("LOCK TABLE nodes WRITE, nodeProperties WRITE");
+    iolib::set_node_nextState($base,$hostname,$state);
+    defined $expiryDate and iolib::set_node_expiryDate($base,$hostname,"\"$expiryDate\"");
+    defined @properties and set_properties($base,$hostname,\@properties);
+    $base->do("UNLOCK TABLES");
+    notifyAlmighty("ChState");
+    if (($state eq 'Dead') || ($state eq 'Absent')){
+        if ($nowaitMode){
+            print("Done\n");
+        }else{
+            print("Check jobs to delete on $hostname :\n");
+            my @jobs = iolib::get_host_job_distinct($base,$hostname);
+            my $jobInfo;
+            foreach my $i (sort(@jobs)){
+                $jobInfo = {'state' => 'Running'};
+                # active waiting : it is not very nice but it works!!
+                print("\t$i ");
+                my $timeCount = 0;
+                while ((($jobInfo->{'state'} eq "Running") || ($jobInfo->{'state'} eq "toLaunch") || ($jobInfo->{'state'} eq "Launching")) && ($timeCount < 20)){
+                    $jobInfo = iolib::get_job($base,$i);
+                    sleep(1);
+                    print(".");
+                    $timeCount++;
+                }
+                print(" Deleted\n");
+            }
+            print("Check done\n");
+        }
+    }elsif ($state eq 'Alive'){
+        print("Done\n");
+    }else{
+        die("Internal error, BAD STATE $state\n");
+    }
+}
+
+
+iolib::disconnect($base);
+

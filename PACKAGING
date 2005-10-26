@@ -1,0 +1,16 @@
+How to add files in the packages:
+---------------------------------
+Debian and RPM packages are based on the main Makefile.
+Both packaging systems use it to put the files in the right sub-package.
+So, if new files, not yet packaged, must be in a .deb or .rpm, just modify the main Makefile, and rebuild the packages (eg: use make debian-package and make rpm-package).
+How to modify the Makefile is pretty staight forward: just add the needed lines in the correct Makefile target (eg: server, node, user, common, drawgantt doc, ...), depending of the files you actually add.
+
+How to update changelog:
+------------------------
+There is 3 changelogs:
+- the main one, reflecting the changes in the sources. Versions are of the form x.y.z
+- the Debian one, reflecting the changes in the debian packaging system. Versions are of the form x.y.z-t, were t is basically 1, meaning the 1st release of a debian package for the version x.y.z of OAR. Note: If the packaing system is stable, there is no reason t be greater than 1 :). Please use dch also known as debchange (man dch) to edit Debian changelogs.
+- the RPM one, reflecting the changes in the mandrake packaging system. Vesrions are of the form x.y.z-t, just like for Debian. RPM changelogs are located at the end of the file rpm/oar.spec, You may use vi to edit it :).
+All changelogs have to be updated separatly.
+
+$Id: PACKAGING,v 1.3 2004/08/24 16:10:33 neyron Exp $

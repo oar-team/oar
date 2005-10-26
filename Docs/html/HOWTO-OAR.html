@@ -1,0 +1,624 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>HOWTO-OAR</title>
+</head>
+<body>
+<table
+ style="width: 100px; text-align: left; margin-left: auto; margin-right: auto;"
+ border="0" cellspacing="2" cellpadding="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;"><img
+ style="width: 280px; height: 176px;" alt="OAR_logo" src="oar_logo.png"><br>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+      <h1><span style="font-weight: bold;">HOWTO</span><br>
+      </h1>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<ol>
+  <li><a href="#1">Introduction</a></li>
+  <li><a href="#2">User guide</a></li>
+  <ol>
+    <li><a href="#2.1">Description of the different commands</a><br>
+    </li>
+    <li><a href="#2.2">Visualisation tools</a><br>
+    </li>
+  </ol>
+  <li><a href="#3">Admin guide</a></li>
+  <ol>
+    <li><a href="#3.1">Admin commands</a></li>
+    <li><a href="#3.2">Database scheme</a></li>
+    <li><a href="#3.3">Some tricks</a></li>
+  </ol>
+</ol>
+<br>
+<hr style="width: 100%; height: 2px;"><span style="font-weight: bold;"><br>
+&nbsp;&nbsp;&nbsp; <a name="1"></a>1. Introduction</span><br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; <span
+ style="color: rgb(0, 0, 0);">OAR is a resource manager or (<span
+ style="font-style: italic;">batch
+schedule</span>r) for large clusters. In functionnalities, it's near of
+PBS, LSF, CCS and Condor. It's suitable for productive plateforms
+and research experiments.</span><span style="font-weight: bold;"><br>
+<br>
+</span>&nbsp;&nbsp;&nbsp; <span style="font-weight: bold;"><a name="2"></a>2.
+User guide</span><br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a name="2.1"></a>2.1.
+Description of the different commands<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; All user commands are installed on cluster login
+nodes. So you must connect to one of these computers first.
+<ul>
+  <ul>
+    <ul>
+      <li>oarstat</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This command
+prints jobs in execution mode on the terminal.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Options:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -f prints each job
+in full details<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -a prints more
+details and keeps table format<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Examples:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; # oarstat<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; # oarstat -f<br>
+<br>
+<ul>
+  <ul>
+    <ul>
+      <li>oarnodes</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; This command prints informations
+about cluster nodes (state, which jobs on which nodes, node properties,
+...)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; Example:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarnodes<br>
+<br>
+<ul>
+  <ul>
+    <ul>
+      <li>oarsub</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; The user can submit a job with
+this command.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; So what is a job in our context?<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; A job is defined by
+needed resources and a script/program to run. So, the user must specify
+how many nodes and what kind of resources needed by his application.
+Thus, OAR system will give him or not what he wants and will
+control the execution.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; When a job is
+launched, OAR executes user program only on the first reservation node.
+So this program can access some environnement variables to know its
+environnement:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+$OAR_NODEFILE&nbsp;&nbsp;&nbsp; contains the name of a file which lists
+all reserved nodes for this job<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+$OAR_JOBID&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; contains
+the OAR job identificator<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+$OAR_NB_NODES&nbsp;&nbsp; contains the number of reserved nodes<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; Options:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -q queuename :
+specify the queue for this job<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -I : turn on
+INTERACTIVE mode (OAR gives you a shell instead of executing a script)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -l : defines
+resource list requested for this job; the different parameters are:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; nodes
+: request number of nodes<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; weight
+: the weight that you want to reserve on each node<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|hour];
+after this elapsed time, the job will be killed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; -p
+"properties" : specify with SQL syntax reservation properties<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; -r
+"2004-05-11 23:32:03" : ask for a reservation job to begin at the date
+in argument<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -c jobId : connect
+to a reservation in Running state<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -v : turn on
+verbose mode<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; Exemples:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarsub test.sh<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (the "test.sh"
+script will be run on 1 node of default weight in the default queue
+with a walltime of 1 hour)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarsub -l
+nodes=2,walltime=2:15:00 test.sh<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (the "test.sh"
+script will be run on 2 nodes of default weight in the default queue
+with a walltime of&nbsp; 2:15:00)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarsub -p
+"hostname = 'host2' OR hostname = 'host3'" test.sh<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (the "test.sh"
+script will be run on the node host2 or on the node host3)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarsub -I<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (gives a shell on a
+node)<br>
+<br>
+<ul>
+  <ul>
+    <ul>
+      <li>oardel</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; The user can delete his jobs
+with this command.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; Exemples:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oardel 14<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (delete job 14)<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a name="2.2"></a>2.2.
+Visualisation tools<br>
+<br>
+<ul>
+  <ul>
+    <ul>
+      <li>Monika</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; This is a web cgi normally
+installed on the cluster frontal. This tool executes oarnodes and
+oarstat then format data in a html page. Thus you can have a global
+view of cluster state and where your jobs are running.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (<a href="OAR_monika.jpg">Monika
+screenshot</a>)<br>
+<br>
+<ul>
+  <ul>
+    <ul>
+      <li>DrawOARGantt</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; This is also a web cgi. It
+creates a Gantt chart which shows job repartition on nodes in the time.
+It is very usefull to see cluster occupation in the past and to know
+when a job will be launched in the futur.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (<a href="OAR_Gantt.jpg">DrawOARGantt
+screenshot</a>)<br>
+<br>
+&nbsp;&nbsp;&nbsp; <span style="font-weight: bold;"><a name="3"></a>3.
+Admin guide</span><br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a name="3.1"></a>3.1.
+Admin commands<br>
+<br>
+<ul>
+  <ul>
+    <ul>
+      <li>oarnodesetting</li>
+    </ul>
+  </ul>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; This comman must be run by oar
+user. It change node state dynamically or add a new node in OAR
+database if it does not already exist.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; Options:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -s : specify the
+new node state (Alive, Absent or Dead)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -h : specify node
+name<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; -w : specify
+mawWeight for this node. This option is relevant only if this is a new
+node otherwise it is not interpreted.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; Exemple:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarnodesetting -s
+Alive -h host1.imag.fr -w 2<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (add a new node
+"host1" in OAR database with a maxWeight od 2)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; # oarnodesetting -s
+Absent -h host1.imag.fr<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; (turn node "host1"
+in Absent state. So it will be unaccessible in OAR)<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a name="3.2"></a>3.2.
+Database scheme<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE jobs :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Each oarsub inserts a new line in
+this table.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; idJob INT
+UNSIGNED NOT NULL AUTO_INCREMENT<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; job identity number. it is given to users when they
+submit a job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; jobType
+ENUM('INTERACTIVE','PASSIVE') DEFAULT 'PASSIVE' NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; INTERACTIVE means that the user ask for a shell on
+the reserved nodes. PASSIVE means that the job is a script/executable
+to run on the reserved nodes.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; infoType
+VARCHAR( 255 )<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; string with syntax "host:port". This field is not
+NULL for interactive jobs. "host" is the host where oarsub command was
+launched and port is the socket port where oarsub waits for a
+connection. When the interactive job is run, OAR connects to the oarsub
+socket to wake it up and launch its bipbip (log on the reserved nodes).<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; state
+ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')
+NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; this is the job state.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; message
+VARCHAR( 255 )<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; log message. This is usefull when a job is in ERROR
+and we want to know why.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; user VARCHAR(
+20 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; user name.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; nbNodes INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; number of nodes to reserve.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; weight INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; weight to reserve on each node<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; command
+VARCHAR( 255 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; the command to launch if it is a PASSIVE job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; bpid VARCHAR(
+255 )<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; string with syntax "host:pid:port". "host" is the
+hostname where bipbip is launched. "pid" is the process id of bipbip.
+"port" is the socket port which is opened by bipbip. Leon connects to
+this socket to give kill instructions.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; queueName
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; queue used for this job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; reservation
+ENUM('None','toSchedule','Scheduled') DEFAULT 'None'&nbsp; NOT NULL ,<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; This is for job in reservation mode (different
+states for a reservation job).<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; maxTime TIME
+NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; walltime for this job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; properties
+VARCHAR( 255 )<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; this string is a sub-request to give constraints on
+nodes that this job wants. It is a "WHERE" clause SQL syntaxe on the
+table nodeProperties.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+launchingDirectory VARCHAR( 255 ) DEFAULT ' ' NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; This the folder where user has launched oarsub
+command.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; submissionTime
+DATETIME NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; Time when the job was inserted in the database.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; startTime
+DATETIME NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; Time when the job was started its execution.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; stopTime
+DATETIME NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; Time when the job was finished or killed.<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE admissionRules :<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This table is used when a
+new job is submitted. You can give default behavior when all properties
+are not given by the user. For example you can specify a default
+walltime when it is not set on the oarsub command line.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; rule VARCHAR(
+255 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; this a string in Perl langage.<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE nodes :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This table contains node
+informations.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; hostname
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; node name.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; state
+ENUM('Alive','Dead','Suspected','Absent') NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; node state:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - Alive : this node can be
+reserved<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - Absent : the node is not in
+pool but will come back soon.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - Dead : this node is out of
+order and will not come back soon.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - Suspected : OAR suspects that
+the node is down.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; maxWeight INT
+UNSIGNED DEFAULT 1 NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; maximum weight for the node. For example you can
+give a weight of 2 for a dual processor computer, thus users can
+reserved half nodes.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; weight INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; current weight used on this node.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; nextState
+ENUM('UnChanged','Alive','Dead','Absent','Suspected') DEFAULT
+'UnChanged' NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; this field is used for dynamic nodes. When a node
+wants to change its state, this field is set to the next state and OAR
+manages this action. For example OAR can kill some jobs when a node go
+out.<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE CREATE nodeState_log :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; hostname
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; node hostname.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; changeState
+ENUM('Alive','Dead','Suspected','Absent') NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+after change node state.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; date DATETIME
+NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; event date.<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE nodeProperties :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This table specify some node
+properties. You can add all properties that you want (just add new
+fields).<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; hostname
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; hostname that you can find in the nodes table.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; besteffort
+ENUM('YES','NO') DEFAULT 'YES' NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; This property indicates if a node accepts or not
+besteffort job.<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE processJobs :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This table links current jobs and
+nodes (you can know where a is launched)<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; idJob INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; job identity<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; hostname
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; node where the job is running<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE processJobs_log :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This is the same table as
+processJobs but it contains old jobs.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; idJob INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; hostname
+VARCHAR( 100 ) NOT NULL<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE fragJobs :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; When a job is killed, this table
+is set up<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; fragIdJob INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; job identity to kill<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; fragDate
+DATETIME NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; request date.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; fragState
+ENUM('LEON','TIMER_ARMED','LEON_EXTERMINATE','FRAGGED') DEFAULT 'LEON'
+NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; job kill state:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - LEON : "soft" Leon must be run
+on this job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - TIMER_ARMED : a Leon was
+launched and we wait the end of this job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - LEON_EXTERMINATE : "hard" Leon
+must be run on this job.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; - FRAGGED : job is fragged,
+nothing to do.<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE queue :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This table give the right
+scheduler for a queue.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; queueName
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; queue name that you can also find in the job table.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; priority INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; queue priority.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+schedulerPolicy VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; program name that corresponds to the scheduler which
+implements this policy.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; state
+ENUM('Active','notActive') NOT NULL DEFAULT 'Active'<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; you can activate or not a queue.<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE ganttJobsPrediction :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This table store scheduler
+decisions. You can know when a job will start.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; idJob INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+job identity.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; startTime
+DATETIME NOT NULL ,<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+date when the job will start.<br>
+<br>
+&nbsp;&nbsp;&nbsp; TABLE ganttJobsNodes :<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This table indicates which nodes
+a job will be assigned to a job<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; idJob INT
+UNSIGNED NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+job identity.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; hostname
+VARCHAR( 100 ) NOT NULL<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+assigned node by scheduler<br>
+<br>
+&nbsp;&nbsp;&nbsp; DEFAULT DATA IN DATABASE:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; INSERT IGNORE INTO
+`admissionRules` ( `rule` ) VALUES ('if (not defined($maxTime))
+{$maxTime = "1:00:00";}');<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; The default
+walltime is 1 hour.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; INSERT IGNORE INTO
+`admissionRules` ( `rule` ) VALUES ('if (not defined($queueName))
+{$queueName="default";}');<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; The default
+job queue is default.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; INSERT IGNORE INTO
+`admissionRules` ( `rule` ) VALUES ('if ((defined($maxTime)) &amp;&amp;
+($jobType eq "INTERACTIVE") &amp;&amp;<br>
+(sql_to_duration($maxTime) &gt; sql_to_duration("12:00:00"))) {$maxTime
+= "12:00:00";}');<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; The maximum
+walltime for an interactive job is 12 hours.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; INSERT IGNORE INTO
+`admissionRules` ( `rule` ) VALUES ('if (($queueName eq "admin")
+&amp;&amp; ($user ne "oar")) {$queueName="default";}');<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; oar user can
+use the admin queue. So he can pass before all waiting other jobs.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; INSERT IGNORE INTO `queue`
+(`queueName` , `priority` , `schedulerPolicy`) VALUES
+('default','1','oar_sched_fifo_queue_killer');<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Define the
+scheduler to use for the default queue.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; INSERT IGNORE INTO `queue`
+(`queueName` , `priority` , `schedulerPolicy`) VALUES
+('besteffort','0','oar_sched_fifo_queue');<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Define the
+scheduler to use for the besteffort queue.<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a name="3.3"></a>3.3.
+Some tricks<br>
+<br>
+</body>
+</html>

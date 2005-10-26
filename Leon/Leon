@@ -1,0 +1,211 @@
+#!/usr/bin/perl
+# $Id: Leon,v 1.33 2005/05/12 08:54:27 capitn Exp $
+
+use English;
+use oar_iolib;
+use Sys::Hostname;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use IPC::Open2;
+use IPC::Open3;
+use Data::Dumper;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use IO::Socket::INET;
+
+# timeout for commands executed via ssh
+my $timeoutSSH = 30;
+
+init_conf("oar.conf");
+my $server_hostname = get_conf("SERVER_HOSTNAME");
+
+my $deploy_hostname = get_conf("DEPLOY_HOSTNAME");
+if (!defined($deploy_hostname)){
+    $deploy_hostname = $server_hostname;
+}
+
+sub forkexecwait($){
+    my $cmd=shift;
+
+    my $pid=0;
+    $pid=fork;
+    if($pid==0){
+        #CHILD
+        oar_debug("[Leon] child exec: $cmd\n");
+        $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
+        $ENV{USER}="oar";
+        $ENV{USERNAME}="oar";
+        $ENV{LOGNAME}="oar";
+        #print "real user: $UID effective user: $EUID\n";
+        $UID=$EUID;
+        #print "real user: $UID effective user: $EUID\n";
+        exec("$cmd");
+    }
+
+    waitpid($pid,0);
+    my $exit_value  = $? >> 8;
+    return($exit_value);
+}
+
+my $base;
+
+#Answer oarsub in Waiting state
+sub answer ($$$){
+    my $jobid = shift;
+    my $info = shift;
+    my $message = shift;
+
+    my $error = 0;
+    my ($addr,$port) = split(/:/,$info);
+    oar_debug("[Leon] oarsub addr:port = $addr:$port info = $info\n");
+    my $client = IO::Socket::INET->new(PeerPort=> $port,
+                                      PeerAddr=> $addr,
+                                      Type => SOCK_STREAM,
+                                      Proto => "tcp") or $error=1;
+    if($error == 0){
+        print($client $message);
+        close($client);
+        oar_debug("[Leon] Notification done\n");
+    }else{
+        oar_debug("[Leon] Can not open connection to oarsub client for job $jobid, it is normal if user typed Ctrl-C !!!!!!\n");
+    }
+    return($error);
+}
+
+# arg1 --> host+pid of bipbip process
+# return -1 if the ssh connection timed out, else return the return code of the command kill
+sub killbipbip($){
+    my $hostpid=shift;
+
+    my ($host,$pid)=split /:/, $hostpid;
+    my $cmd = "oarkill $pid";
+    my $res=0;
+    if($host eq hostname ){
+        oar_warn("[Leon] Kill local bipbip with : $cmd\n");
+        $res=forkexecwait("$cmd");
+    }else{
+        oar_warn("[Leon] Kill remote bipbip : go on $host and execute : $cmd\n");
+        eval {
+            $SIG{ALRM} = sub { die "alarm\n" };
+            alarm($timeoutSSH);
+            $res=forkexecwait("ssh -qx $host \"$cmd\"");
+            alarm(0);
+        };
+        if ($@){
+            if ($@ eq "alarm\n"){
+                oar_error("[Leon] Killbipbip : ssh timeout $?, on node $host\n");
+                $res=-1;
+            }
+        }
+    }
+    return($res);
+}
+
+# connect to oarexec host and send KILL
+# arg1 --> host
+# arg2 --> job ID
+sub sendKillToOarexec($$){
+    my $host = shift;
+    my $jobId = shift;
+
+    oar_debug("[Leon] connecting to $host to send kill signal on oarexec for job $jobId\n");
+
+    my $pid=0;
+    $pid=fork;
+    if($pid==0){
+        #CHILD
+        my $file = "/tmp/pid_of_oarexec_for_jobId_$jobId";
+        exec("ssh $host \"test -e $file && cat $file | xargs kill \"");
+    }
+}
+
+
+my $Jid=0;
+#my $error=0;
+my $exitCode = 0;
+
+$base = iolib::connect();
+if (!defined($base)){
+    oar_error("[Leon] Can not connect to the database\n");
+    exit(8);
+}
+
+my @tmp = iolib::get_job_cmd_user($base,$Jid);
+my $user=shift @tmp;
+my $usercmd=shift @tmp;
+
+#do it for all job in state LEON in the data base table fragJobs
+$base->do("LOCK TABLE jobs WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, fragJobs WRITE,nodeState_log WRITE, nodeProperties WRITE, event_log WRITE");
+my @JobToFrag = iolib::get_tokill_job($base);
+while(scalar(@JobToFrag)){
+    $Jid=shift(@JobToFrag);
+  if (iolib::is_job_desktopComputing($base,$Jid)) {
+    oar_debug("[Leon] Job $Jid is affected to a DesktopComputing node, I don't handle it\n");
+	} else {
+    oar_debug("[Leon] Normal kill : I treate the job $Jid\n");
+    my $refJob = iolib::get_job($base,$Jid);
+    if (($refJob->{'state'} eq "Waiting") || ($refJob->{'state'} eq "Hold")){
+        oar_debug("[Leon] Job is not launched\n");
+        iolib::set_job_state($base,$Jid,"Error");
+        iolib::set_job_message($base,$Jid,"job killed by Leon directly");
+        iolib::decrease_weight($base,$Jid);
+        if ($refJob->{'jobType'} eq "INTERACTIVE"){
+            oar_debug("[Leon] I notify oarsub in waiting mode\n");
+            answer($Jid,$refJob->{'infoType'},"JOB KILLED");
+        }
+        $exitCode = 1;
+    }elsif (($refJob->{'state'} eq "Terminated") || ($refJob->{'state'} eq "Error")){
+        oar_debug("[Leon] Job is terminated, I do nothing\n");
+    }else{
+        my @hosts = iolib::get_job_host_distinct($base,$Jid);
+        my $hostToConnectViaSSH = $hosts[0];
+        #deploy part
+        if ($refJob->{'queueName'} eq "deploy"){
+            $hostToConnectViaSSH = $deploy_hostname;
+        }
+        #deploy part
+        if (defined($hostToConnectViaSSH)){
+            iolib::add_new_event($base,"SEND_KILL_JOB",$Jid,"[Leon] Send kill signal to oarexec on $hostToConnectViaSSH for the job $Jid");
+            sendKillToOarexec($hostToConnectViaSSH,$Jid);
+        }
+    }
+    iolib::job_arm_leon_timer($base,$Jid);
+  }
+}
+
+#I treate jobs in state EXTERMINATED in the table fragJobs
+my @JobToFrag = iolib::get_toexterminate_job($base);
+while(scalar(@JobToFrag)){
+    $Jid=shift(@JobToFrag);
+    my $refJob = iolib::get_job($base,$Jid);
+
+    my $bipbippid=iolib::get_job_bpid($base,$Jid);
+    if (defined($bipbippid) && ($bipbippid ne "")){
+        my $resultKillBipbip = 0;
+        $resultKillBipbip = killbipbip($bipbippid);
+        if ($resultKillBipbip == -1){
+            iolib::add_new_event($base,"LEON_KILL_BIPBIP_TIMEOUT",$Jid,"[Leon] kill bipbip with $bipbippid for the job $Jid and ssh timeouts");
+        }
+    }
+
+    oar_warn("[Leon] I exterminate the job $Jid\n");
+    #my @hosts = iolib::get_job_host_distinct($base,$Jid);
+    #foreach my $i (@hosts){
+        iolib::add_new_event($base,"EXTERMINATE_JOB",$Jid,"[Leon] I exterminate the job $Jid");
+    #}
+    
+    iolib::set_job_state($base,$Jid,"Error");
+    if ($refJob->{startTime} eq "0000-00-00 00:00:00"){
+        iolib::set_running_date($base,$Jid);
+    }
+
+    iolib::set_finish_date($base,$Jid);
+    iolib::set_job_message($base,$Jid,"job exterminated by Leon");
+    iolib::decrease_weight($base,$Jid);
+    iolib::delete_job_process($base,$Jid);
+    iolib::job_arm_leon_timer($base,$Jid);
+    $exitCode = 1;
+}
+$base->do("UNLOCK TABLES");
+
+iolib::disconnect($base);
+
+exit($exitCode);

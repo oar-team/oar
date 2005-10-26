@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+# $Id: finaud,v 1.4 2005/05/04 13:03:36 capitn Exp $
+# This program aims to change node state automatically when they are inaccesible or they become alive
+
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use ping_checker qw(test_hosts);
+use Data::Dumper;
+use strict;
+use IO::Socket::INET;
+#use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+
+
+oar_debug("[finaud] Finaud started\n");
+
+# Get OAR configuration
+#init_conf("oar.conf");
+#my $remote_host = get_conf("SERVER_HOSTNAME");
+#my $remote_port = get_conf("SERVER_PORT");
+
+
+oar_debug("[finaud] Check Alive and Suspected nodes\n");
+my $base = iolib::connect();
+
+my @AliveNodes = iolib::get_really_alive_node($base);
+my @SuspectedNodes = iolib::get_suspected_node($base);
+
+my %previousNodeStateHash; # value 1: Alive state; 0: Suspected value
+
+oar_debug("[finaud] Alive node(s): @AliveNodes\n");
+oar_debug("[finaud] Suspected node(s): @SuspectedNodes\n");
+
+foreach my $i (@AliveNodes){
+    $previousNodeStateHash{$i} = 1;
+}
+
+foreach my $i (@SuspectedNodes){
+    $previousNodeStateHash{$i} = 0;
+}
+
+# Call the right program to test each nodes
+my @badNodes = test_hosts(@AliveNodes, @SuspectedNodes);
+
+my %badNodeHash;
+foreach my $i (@badNodes){
+    $badNodeHash{$i} = 0;
+}
+
+#Make the decisions
+my $returnValue = 0;
+foreach my $i (keys(%previousNodeStateHash)){
+    if (defined($badNodeHash{$i}) and ($previousNodeStateHash{$i} == 1)){
+        iolib::set_node_nextState($base,$i,"Suspected");
+        iolib::update_node_nextFinaudDecision($base,$i,"YES");
+        $returnValue = 1;
+        oar_debug("[finaud] Set the next state of $i to Suspected\n");
+    }elsif (!defined($badNodeHash{$i}) and ($previousNodeStateHash{$i} == 0)){
+        iolib::set_node_nextState($base,$i,"Alive");
+        iolib::update_node_nextFinaudDecision($base,$i,"YES");
+        $returnValue = 1;
+        oar_debug("[finaud] Set the next state of $i to Alive\n");
+    }
+}
+
+iolib::disconnect($base);
+
+oar_debug("[finaud] Finaud ended : $returnValue\n");
+
+exit($returnValue);

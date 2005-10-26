@@ -1,0 +1,1690 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.3.9: http://docutils.sourceforge.net/" />
+<title>OAR Documentation</title>
+<link rel="stylesheet" href="default.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="oar-documentation">
+<h1 class="title">OAR Documentation</h1>
+<div align="center" class="image align-center"><img align="center" alt="../oar_logo.png" src="../oar_logo.png" /></div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Author:</th><td class="field-body">Capit Nicolas</td>
+</tr>
+<tr class="field"><th class="field-name">Address:</th><td class="field-body">Laboratoire Informatique et Distribution (ID)-IMAG
+ENSIMAG - antenne de Montbonnot
+ZIRST 51, avenue Jean Kuntzmann
+38330 MONTBONNOT SAINT MARTIN</td>
+</tr>
+<tr class="field"><th class="field-name">Contact:</th><td class="field-body"><a class="reference" href="mailto:nicolas.capit&#64;imag.fr">nicolas.capit&#64;imag.fr</a></td>
+</tr>
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">ID laboratory</td>
+</tr>
+<tr class="field"><th class="field-name">organization:</th><td class="field-body">ID laboratory</td>
+</tr>
+<tr class="field"><th class="field-name">status:</th><td class="field-body">This is a &quot;work in progress&quot;</td>
+</tr>
+<tr class="field"><th class="field-name">license:</th><td class="field-body">GNU GENERAL PUBLIC LICENSE</td>
+</tr>
+<tr class="field"><th class="field-name">Dedication:</th><td class="field-body">For users, administrators and developpers.</td>
+</tr>
+<tr class="field"><th class="field-name">abstract:</th><td class="field-body">OAR is a resource manager or (batch scheduler) for large clusters. In
+functionnalities, it's near of PBS, LSF, CCS and Condor. It's suitable for
+productive plateforms and research experiments.</td>
+</tr>
+</tbody>
+</table>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first"><a name="table-of-contents">Table of Contents</a></p>
+<ul class="auto-toc simple">
+<li><a class="reference" href="#installing-the-oar-batch-system" id="id1" name="id1">1&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a><ul class="auto-toc">
+<li><a class="reference" href="#requirements" id="id2" name="id2">1.1&nbsp;&nbsp;&nbsp;Requirements</a></li>
+<li><a class="reference" href="#configuration-of-the-cluster" id="id3" name="id3">1.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a></li>
+<li><a class="reference" href="#visualization-tools-installation" id="id4" name="id4">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></li>
+<li><a class="reference" href="#starting" id="id5" name="id5">1.4&nbsp;&nbsp;&nbsp;Starting</a></li>
+<li><a class="reference" href="#further-information" id="id6" name="id6">1.5&nbsp;&nbsp;&nbsp;Further information</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#user-guide" id="id7" name="id7">2&nbsp;&nbsp;&nbsp;User guide</a><ul class="auto-toc">
+<li><a class="reference" href="#description-of-the-different-commands" id="id8" name="id8">2.1&nbsp;&nbsp;&nbsp;Description of the different commands</a><ul class="auto-toc">
+<li><a class="reference" href="#oarstat" id="id9" name="id9">2.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></li>
+<li><a class="reference" href="#oarnodes" id="id10" name="id10">2.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></li>
+<li><a class="reference" href="#oarsub" id="id11" name="id11">2.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></li>
+<li><a class="reference" href="#oardel" id="id12" name="id12">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#visualisation-tools" id="id13" name="id13">2.2&nbsp;&nbsp;&nbsp;Visualisation tools</a><ul class="auto-toc">
+<li><a class="reference" href="#monika" id="id14" name="id14">2.2.1&nbsp;&nbsp;&nbsp;Monika</a></li>
+<li><a class="reference" href="#drawoargantt" id="id15" name="id15">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#administrator-guide" id="id16" name="id16">3&nbsp;&nbsp;&nbsp;Administrator guide</a><ul class="auto-toc">
+<li><a class="reference" href="#administrator-commands" id="id17" name="id17">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a><ul class="auto-toc">
+<li><a class="reference" href="#oarnodesetting" id="id18" name="id18">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></li>
+<li><a class="reference" href="#oarremovenode" id="id19" name="id19">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></li>
+<li><a class="reference" href="#oaraccounting" id="id20" name="id20">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
+<li><a class="reference" href="#oarnotify" id="id21" name="id21">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#database-scheme" id="id22" name="id22">3.2&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
+<li><a class="reference" href="#accounting" id="id23" name="id23">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
+<li><a class="reference" href="#admissionrules" id="id24" name="id24">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></li>
+<li><a class="reference" href="#event-log" id="id25" name="id25">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></li>
+<li><a class="reference" href="#files" id="id26" name="id26">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
+<li><a class="reference" href="#fragjobs" id="id27" name="id27">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></li>
+<li><a class="reference" href="#ganttjobsnodes" id="id28" name="id28">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></li>
+<li><a class="reference" href="#ganttjobsnode-visu" id="id29" name="id29">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></li>
+<li><a class="reference" href="#ganttjobsprediction" id="id30" name="id30">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></li>
+<li><a class="reference" href="#ganttjobsprediction-visu" id="id31" name="id31">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></li>
+<li><a class="reference" href="#jobs" id="id32" name="id32">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
+<li><a class="reference" href="#nodeproperties" id="id33" name="id33">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></li>
+<li><a class="reference" href="#nodestate-log" id="id34" name="id34">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></li>
+<li><a class="reference" href="#nodes" id="id35" name="id35">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></li>
+<li><a class="reference" href="#processjobs" id="id36" name="id36">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></li>
+<li><a class="reference" href="#processjobs-log" id="id37" name="id37">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></li>
+<li><a class="reference" href="#queue" id="id38" name="id38">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#configuration-file" id="id39" name="id39">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
+<li><a class="reference" href="#module-description" id="id40" name="id40">5&nbsp;&nbsp;&nbsp;Module description</a><ul class="auto-toc">
+<li><a class="reference" href="#almighty" id="id41" name="id41">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
+<li><a class="reference" href="#sarko" id="id42" name="id42">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
+<li><a class="reference" href="#judas" id="id43" name="id43">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
+<li><a class="reference" href="#leon" id="id44" name="id44">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
+<li><a class="reference" href="#nodechangestate" id="id45" name="id45">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
+<li><a class="reference" href="#scheduler" id="id46" name="id46">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
+<li><a class="reference" href="#runner" id="id47" name="id47">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="installing-the-oar-batch-system">
+<h1><a class="toc-backref" href="#id1" name="installing-the-oar-batch-system">1&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a></h1>
+<dl class="docutils">
+<dt>What do you need?</dt>
+<dd><ul class="first last simple">
+<li>a cluster</li>
+<li>to be an admin of this cluster</li>
+<li>to get the install package of OAR (normally you have already done that)</li>
+</ul>
+</dd>
+</dl>
+<div class="section" id="requirements">
+<h2><a class="toc-backref" href="#id2" name="requirements">1.1&nbsp;&nbsp;&nbsp;Requirements</a></h2>
+<p>There a three kinds of nodes, each requiring a specific software configuration.</p>
+<p>These are :</p>
+<blockquote>
+<ul class="simple">
+<li>the server node, which will hold all of OAR &quot;smartness&quot; ;</li>
+<li>the login nodes, on which you will be allowed to login, then reserve some
+computational nodes ;</li>
+<li>the computational nodes (a.k.a. the nodes), on which the jobs will run.</li>
+</ul>
+</blockquote>
+<p>On every node, the &quot;sentinelle&quot; binary can be installed (it is not necessary).
+This tool is used to launch commands on several computers, at a same time.
+It ships with the current OAR package (but it is also available
+separately in Taktuk in an Open Source License).</p>
+<p>On every nodes (server, login, computational), the following packages must be
+installed :</p>
+<blockquote>
+<ul class="simple">
+<li>sudo</li>
+<li>Perl</li>
+<li>Perl-base</li>
+</ul>
+</blockquote>
+<p>On the OAR server and on the login nodes, the following packages must be
+installed:</p>
+<blockquote>
+<ul class="simple">
+<li>Perl-Mysql</li>
+<li>Perl-DBI</li>
+<li>MySQL</li>
+<li>MySQL-shared</li>
+<li>libmysql</li>
+</ul>
+</blockquote>
+<p>From now on, we will suppose all the Perl/Mysql packages are
+correctly installed and configured and mysql database is started.</p>
+</div>
+<div class="section" id="configuration-of-the-cluster">
+<h2><a class="toc-backref" href="#id3" name="configuration-of-the-cluster">1.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a></h2>
+<p>The following steps have to be done, prior to installing OAR:</p>
+<blockquote>
+<ul>
+<li><p class="first">add a user named &quot;oar&quot; in the group &quot;oar&quot; on every node</p>
+</li>
+<li><p class="first">let the user &quot;oar&quot; connect through ssh from any node to any node WITHOUT
+password. To achieve this, here is some standard procedure for OpenSSH:</p>
+<blockquote>
+<ul>
+<li><p class="first">create a set of ssh keys for the user &quot;oar&quot; with ssh-keygen (for
+instance 'id_dsa.pub' and 'id_dsa')</p>
+</li>
+<li><p class="first">copy these keys on each node of the cluster in the &quot;.ssh&quot; folder of
+the user &quot;oar&quot;</p>
+</li>
+<li><p class="first">append the contents of 'id_dsa.pub' to the file
+&quot;~/.ssh/authorized_keys&quot;</p>
+</li>
+<li><p class="first">in &quot;~/.ssh/config&quot; add the lines:</p>
+<pre class="literal-block">
+Host *
+    ForwardX11 no
+    StrictHostKeyChecking no
+    PasswordAuthentication no
+</pre>
+</li>
+<li><p class="first">test the ssh connection between (every) two nodes : there should not
+be any prompt.</p>
+</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">grant the user &quot;oar&quot; the permission to execute commands with root
+privileges. To achieve that, OAR makes use of sudo. As a consequence,
+/etc/sudoers must be configured. Please use visudo to add the following
+lines:</p>
+<pre class="literal-block">
+Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
+/usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
+/usr/lib/oar/oarnotify, /usr/lib/oar/oarresume
+%oar ALL=(oar) NOPASSWD: OARCMD
+oar ALL=(ALL) NOPASSWD:ALL
+www-data ALL=(oar) NOPASSWD: /usr/lib/oar/oar-cgi
+</pre>
+</li>
+</ul>
+</blockquote>
+<p>There are a three different flavors of installation :</p>
+<blockquote>
+<ul class="simple">
+<li>server:  install the daemon which must be running on the server</li>
+<li>user:    install all the tools needed to submit and manage jobs for the
+users (oarsub, oarstat, oarnodes, ...)</li>
+<li>node:    install the tools for a computing node</li>
+</ul>
+</blockquote>
+<p>The installation is straightforward:</p>
+<blockquote>
+<ul>
+<li><p class="first">become root</p>
+</li>
+<li><p class="first">go to OAR source repository</p>
+</li>
+<li><p class="first">You can set Makefile variables in the command line to suit your configuration
+(change &quot;OARHOMEDIR&quot; to the home of your user oar and &quot;PREFIX&quot; where you want
+to copy all OAR files).</p>
+</li>
+<li><dl class="first docutils">
+<dt>run make  &lt;module&gt; [module] ...</dt>
+<dd><dl class="first last docutils">
+<dt>where module := { server-install | user-install | node-install | doc-install | debian-package }</dt>
+<dd><p class="first last">OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><p class="first">Edit /etc/oar.conf file to match your cluster configuration.</p>
+</li>
+<li><p class="first">Make sure that the PATH environnement variable contains $PREFIX/$BINDIR of
+your installation (default is /usr/local/bin).</p>
+</li>
+</ul>
+</blockquote>
+<p>Initialization of OAR database (MySQL) is achieved using oar_db_init.pl script provided
+with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).</p>
+<p>The same machine may host several or even all modules.</p>
+</div>
+<div class="section" id="visualization-tools-installation">
+<h2><a class="toc-backref" href="#id4" name="visualization-tools-installation">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></h2>
+<p>There are two different tools. One, named Monika, displays the current cluster state
+with all active and waiting jobs. The other, named DrawOARGantt, diplays node occupation
+in a lapse of time.
+These tools are CGI scripts and generate HTML pages.</p>
+<dl class="docutils">
+<dt>You can install these in this way:</dt>
+<dd><p class="first">DrawOARGantt:</p>
+<blockquote>
+<ul>
+<li><p class="first">Make sure you installed &quot;perl-GD&quot; and &quot;perl-GD-Text-Util&quot; packages.</p>
+</li>
+<li><p class="first">Copy &quot;DrawOARGantt.pl&quot; and &quot;DrawGantt.conf&quot; in the CGI folder of your web server
+(ex: /usr/lib/cgi-bin/ for Debian).</p>
+</li>
+<li><p class="first">Copy all icons and javascript files in a folder that web server can find them
+(ex: /var/www/oar/Icons and /var/www/oar/Icons).</p>
+</li>
+<li><p class="first">Make sure that these files can be read by web server user.</p>
+</li>
+<li><p class="first">Edit &quot;DrawGantt.conf&quot; and change tags:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;oarstatCmd&quot; --&gt; path of oarstat command (ex: oarstat).</li>
+<li>&quot;path_cache_directory&quot; --&gt; directory where images will be stored (ex: /var/www/oar/tmp/).</li>
+<li>&quot;web_cache_directory&quot; --&gt; this path corresponds of &quot;path_cache_directory&quot; in the web server repository (ex: /oar/tmp/).</li>
+<li>&quot;web_icons_directory&quot; --&gt; web server path where CGI can find icon files (ex: /oar/Icons/).</li>
+<li>&quot;web_path_js_directory&quot; --&gt; web server path where CGI can find the javascript file (ex: /oar/js/).</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+<p>Monika:</p>
+<blockquote class="last">
+<ul class="simple">
+<li>The package &quot;perl-AppConfig&quot; is required.</li>
+<li>Read INSTALL file in the monika repository.</li>
+</ul>
+</blockquote>
+</dd>
+</dl>
+</div>
+<div class="section" id="starting">
+<h2><a class="toc-backref" href="#id5" name="starting">1.4&nbsp;&nbsp;&nbsp;Starting</a></h2>
+<p>First, you must start OAR daemon on the server (its name is &quot;Almighty&quot;).</p>
+<blockquote>
+<ul class="simple">
+<li>if you have installed OAR from sources, become oar user and launch command
+&quot;Almighty&quot; (it stands in $PREFIX/sbin).</li>
+<li>if you have installed OAR from Debian packages, use the script
+&quot;/etc/init.d/oar-server&quot; to start the daemon.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="further-information">
+<h2><a class="toc-backref" href="#id6" name="further-information">1.5&nbsp;&nbsp;&nbsp;Further information</a></h2>
+<p>For further information, please check <a class="reference" href="http://oar.imag.fr/">http://oar.imag.fr/</a>.</p>
+<!-- $Id: OAR-DOCUMENTATION.html,v 1.7 2005/09/23 12:31:32 capitn Exp $ -->
+</div>
+</div>
+<div class="section" id="user-guide">
+<h1><a class="toc-backref" href="#id7" name="user-guide">2&nbsp;&nbsp;&nbsp;User guide</a></h1>
+<div class="section" id="description-of-the-different-commands">
+<h2><a class="toc-backref" href="#id8" name="description-of-the-different-commands">2.1&nbsp;&nbsp;&nbsp;Description of the different commands</a></h2>
+<p>All user commands are installed on cluster login nodes. So you must connect to
+one of these computers first.</p>
+<div class="section" id="oarstat">
+<h3><a class="toc-backref" href="#id9" name="oarstat">2.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></h3>
+<p>This command prints jobs in execution mode on the terminal.</p>
+<p>Options</p>
+<pre class="literal-block">
+-f    prints each job in full details
+-a    prints more details and keeps table format
+</pre>
+<p>Examples</p>
+<pre class="literal-block">
+# oarstat
+# oarstat -f
+</pre>
+</div>
+<div class="section" id="oarnodes">
+<h3><a class="toc-backref" href="#id10" name="oarnodes">2.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></h3>
+<p>This command prints informations about cluster nodes (state, which jobs on
+which nodes, node properties, ...)</p>
+<p>Example</p>
+<pre class="literal-block">
+# oarnodes
+</pre>
+</div>
+<div class="section" id="oarsub">
+<h3><a class="toc-backref" href="#id11" name="oarsub">2.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></h3>
+<p>The user can submit a job with this command. So, what is a job in our context?</p>
+<blockquote>
+<p>A job is defined by needed resources and a script/program to run. So, the user
+must specify how many nodes and what kind of resources needed by his
+application. Thus, OAR system will give him or not what he wants and will
+control the execution. When a job is launched, OAR executes user program only
+on the first reservation node. So this program can access some environnement
+variables to know its environnement</p>
+<pre class="literal-block">
+$OAR_NODEFILE    contains the name of a file which lists all reserved nodes
+                 for this job
+$OAR_JOBID       contains the OAR job identificator
+$OAR_NB_NODES    contains the number of reserved nodes
+</pre>
+</blockquote>
+<p>Options:</p>
+<pre class="literal-block">
+-q &quot;queuename&quot; : specify the queue for this job
+-I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a script)
+-l : defines resource list requested for this job; the different parameters are: 
+      nodes : request number of nodes
+      weight : the weight that you want to reserve on each node
+      walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|hour];
+                 after this elapsed time, the job will be killed 
+-p &quot;properties&quot; : specify with SQL syntax reservation properties
+-r &quot;2004-05-11 23:32:03&quot; : ask for a reservation job to begin at the date in argument
+-c jobId : connect to a reservation in Running state
+-v : turn on verbose mode
+</pre>
+<p>Exemples</p>
+<pre class="literal-block">
+# oarsub test.sh
+</pre>
+<p>(the &quot;test.sh&quot; script will be run on 1 node of default weight in the default 
+queue with a walltime of 1 hour)</p>
+<pre class="literal-block">
+# oarsub -l nodes=2,walltime=2:15:00 test.sh
+</pre>
+<p>(the &quot;test.sh&quot; script will be run on 2 nodes of default weight in the default
+queue with a walltime of  2:15:00)</p>
+<pre class="literal-block">
+# oarsub -p &quot;hostname = 'host2' OR hostname = 'host3'&quot; test.sh
+</pre>
+<p>(the &quot;test.sh&quot; script will be run on the node host2 or on the node host3)</p>
+<pre class="literal-block">
+# oarsub -I
+</pre>
+<p>(gives a shell on a node)</p>
+</div>
+<div class="section" id="oardel">
+<h3><a class="toc-backref" href="#id12" name="oardel">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></h3>
+<p>The user can delete his jobs with this command.</p>
+<p>Exemples</p>
+<pre class="literal-block">
+# oardel 14
+</pre>
+<p>(delete job 14)</p>
+</div>
+</div>
+<div class="section" id="visualisation-tools">
+<h2><a class="toc-backref" href="#id13" name="visualisation-tools">2.2&nbsp;&nbsp;&nbsp;Visualisation tools</a></h2>
+<div class="section" id="monika">
+<h3><a class="toc-backref" href="#id14" name="monika">2.2.1&nbsp;&nbsp;&nbsp;Monika</a></h3>
+<p>This is a web cgi normally installed on the cluster frontal. This tool executes
+<em>oarnodes</em> and <em>oarstat</em> then format data in a html page.</p>
+<p>Thus you can have a global view of cluster state and where your jobs are running.</p>
+</div>
+<div class="section" id="drawoargantt">
+<h3><a class="toc-backref" href="#id15" name="drawoargantt">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></h3>
+<p>This is also a web cgi. It creates a Gantt chart which shows job repartition on
+nodes in the time. It is very usefull to see cluster occupation in the past
+and to know when a job will be launched in the futur.</p>
+</div>
+</div>
+</div>
+<div class="section" id="administrator-guide">
+<h1><a class="toc-backref" href="#id16" name="administrator-guide">3&nbsp;&nbsp;&nbsp;Administrator guide</a></h1>
+<div class="section" id="administrator-commands">
+<h2><a class="toc-backref" href="#id17" name="administrator-commands">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a></h2>
+<div class="section" id="oarnodesetting">
+<h3><a class="toc-backref" href="#id18" name="oarnodesetting">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></h3>
+<p>This command permits to change the state or a property of a node. If it does
+not exist it is created.</p>
+<p>By default the node name used by <em>oarnodesetting</em> is the result of the command
+<em>hostname</em>.</p>
+<p>Options are:</p>
+<blockquote>
+<ul>
+<li><p class="first">-s : state to assign to the node:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;Alive&quot; : a job can be run on the node.</li>
+<li>&quot;Absent&quot; : administrator wants to remove the node from the pool for a moment.</li>
+<li>&quot;Dead&quot; : the node will not be used and will be deleted.</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">-h : specify the node name.</p>
+</li>
+<li><p class="first">-w : if the node does not exist, it will be created in the database and its
+maxWeight will be the value of this option (default is 1).</p>
+</li>
+<li><p class="first">-p : change the value of a property of the node.</p>
+</li>
+<li><p class="first">-n : specify this option if you do not want to wait the end of jobs running
+on this node when you change its state into &quot;Absent&quot; or &quot;Dead&quot;.</p>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="oarremovenode">
+<h3><a class="toc-backref" href="#id19" name="oarremovenode">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></h3>
+<p>This command permits to remove a node from the database.</p>
+<p>The node must be in the state &quot;Dead&quot; (use <em>oarnodesetting</em> to do this) and then
+you can use this command to delete it.</p>
+</div>
+<div class="section" id="oaraccounting">
+<h3><a class="toc-backref" href="#id20" name="oaraccounting">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></h3>
+<p>This command permits to update the <em>accounting</em> table for jobs ended since the
+last launch.</p>
+</div>
+<div class="section" id="oarnotify">
+<h3><a class="toc-backref" href="#id21" name="oarnotify">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></h3>
+<p>This command sends commands to the &quot;Almighty&quot; module. It is dedicated to
+developpers.</p>
+<p>You can use the &quot;-v&quot; option to show the OAR version.</p>
+</div>
+</div>
+<div class="section" id="database-scheme">
+<h2><a class="toc-backref" href="#id22" name="database-scheme">3.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
+<div class="section" id="accounting">
+<h3><a class="toc-backref" href="#id23" name="accounting">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>window_start</td>
+<td>DATETIME</td>
+<td>start date of the accounting interval</td>
+</tr>
+<tr><td>window_stop</td>
+<td>DATETIME</td>
+<td>stop date of the accounting interval</td>
+</tr>
+<tr><td>user</td>
+<td>VARCHAR(20)</td>
+<td>user name</td>
+</tr>
+<tr><td>queue_name</td>
+<td>VARCHAR(100)</td>
+<td>queue name</td>
+</tr>
+<tr><td>consumption_type</td>
+<td>ENUM(&quot;ASKED&quot;,&quot;USED&quot;)</td>
+<td>&quot;ASKED&quot; corresponds to the walltimes
+specified by the user. &quot;USED&quot;
+corresponds to the effective time
+used by the user.</td>
+</tr>
+<tr><td>consumption</td>
+<td>INT UNSIGNED</td>
+<td>number of seconds used</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">window_start, window_stop, user, queue_name, consumption_type</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">window_start, window_stop, user, queue_name, consumption_type</td>
+</tr>
+</tbody>
+</table>
+<p>This table is a summary of the comsumption for each user on each queue. This
+increases the speed of queries about user consumptions and statistic
+generation.</p>
+<p>Data are inserted through the command <em>oaraccounting</em> (when a job is treated
+the field <em>accounted</em> in table jobs is passed into &quot;YES&quot;). So it is possible to
+regenerate this table completely in this way :</p>
+<blockquote>
+<ul>
+<li><p class="first">Delete all data of the table:</p>
+<pre class="literal-block">
+DELETE FROM accounting;
+</pre>
+</li>
+<li><p class="first">Set the field <em>accounted</em> in the table jobs to &quot;NO&quot; for each row:</p>
+<pre class="literal-block">
+UPDATE jobs SET accounted = &quot;NO&quot;;
+</pre>
+</li>
+<li><p class="first">Run the <em>oaraccounting</em> command.</p>
+</li>
+</ul>
+</blockquote>
+<p>You can change the amount of time for each window : edit the oar configuration
+file and change the value of the tag <em>ACCOUNTING_WINDOW</em>.</p>
+</div>
+<div class="section" id="admissionrules">
+<h3><a class="toc-backref" href="#id24" name="admissionrules">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>rule</td>
+<td>VARCHAR(255)</td>
+<td>rule written in Perl applied when a
+job is going to be registered</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>You can use these rules to change some values of some properties when a job is
+submitted. Some examples are better than a long description :</p>
+<blockquote>
+<ul>
+<li><p class="first">Specify the default walltime</p>
+<pre class="literal-block">
+INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
+('if (not defined($maxTime)) {
+    $maxTime = &quot;1:00:00&quot;;
+}');
+</pre>
+</li>
+<li><p class="first">Specify the default value for queue parameter</p>
+<pre class="literal-block">
+INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
+('if (not defined($queueName)) {
+    $queueName=&quot;default&quot;;
+}');
+</pre>
+</li>
+<li><p class="first">Restrict the maximum of the walltime for intercative jobs</p>
+<pre class="literal-block">
+INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
+('if ((defined($maxTime)) &amp;&amp;
+      ($jobType eq &quot;INTERACTIVE&quot;) &amp;&amp;
+      (sql_to_duration($maxTime) &gt; sql_to_duration(&quot;12:00:00&quot;))){
+      $maxTime = &quot;12:00:00&quot;;
+}');
+</pre>
+</li>
+<li><p class="first">Avoid users except oar to go in the admin queue</p>
+<pre class="literal-block">
+INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
+('if (($queueName eq &quot;admin&quot;) &amp;&amp; ($user ne &quot;oar&quot;)) {
+    $queueName=&quot;default&quot;;
+}');
+</pre>
+</li>
+<li><p class="first">Force besteffort jobs to go on nodes with the besteffort property</p>
+<pre class="literal-block">
+INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
+('if ( &quot;$queueName&quot; eq &quot;besteffort&quot; ){
+    if ($jobproperties ne &quot;&quot;){
+        $jobproperties = &quot;($jobproperties)
+        AND besteffort = \\\\\\&quot;YES\\\\\\&quot;&quot;;
+    }else{
+        $jobproperties = &quot;besteffort = \\\\\\&quot;YES\\\\\\&quot;&quot;;
+    } 
+}');
+</pre>
+</li>
+<li><p class="first">Force deploy jobs to go on nodes with the deploy property</p>
+<pre class="literal-block">
+INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
+('if ( &quot;$queueName&quot; eq &quot;deploy&quot; ){
+    if ($jobproperties ne &quot;&quot;){
+        $jobproperties = &quot;($jobproperties)
+        AND deploy = \\\\\\&quot;YES\\\\\\&quot;&quot;;
+    }else{
+        $jobproperties = &quot;deploy = \\\\\\&quot;YES\\\\\\&quot;&quot;;
+    }
+}');
+</pre>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="event-log">
+<h3><a class="toc-backref" href="#id25" name="event-log">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>type</td>
+<td>VARCHAR(50)</td>
+<td>event type</td>
+</tr>
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job related of the event</td>
+</tr>
+<tr><td>date</td>
+<td>DATETIME</td>
+<td>event date</td>
+</tr>
+<tr><td>description</td>
+<td>VARCHAR(255)</td>
+<td>textual description of the event</td>
+</tr>
+<tr><td>toCheck</td>
+<td>ENUM('YES','NO')</td>
+<td>specify if the module <em>NodeChangeState</em>
+must check this event to Suspect or not
+some nodes</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">type, toCheck</td>
+</tr>
+</tbody>
+</table>
+<p>The different event types are:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;PING_CHECKER_NODE_SUSPECTED&quot; : the system detected via the module &quot;finaud&quot;
+that a node is not responding.</li>
+<li>&quot;PROLOGUE_ERROR&quot; : an error occured during the execution of the job
+prologue (exit code != 0).</li>
+<li>&quot;EPILOGUE_ERROR&quot; : an error occured during the execution of the job
+epilogue (exit code != 0).</li>
+<li>&quot;CAN_NOT_WRITE_NODE_FILE&quot; : the system was not able to write file which had
+to contain the node list on the first node (<em>/tmp/OAR_idJob</em>).</li>
+<li>&quot;CAN_NOT_WRITE_PID_FILE&quot; : the system was not able to write the file which had
+to contain the pid of oarexec process on the first node
+(<em>/tmp/pid_of_oarexec_for_jobId_idJob</em>).</li>
+<li>&quot;USER_SHELL&quot; : the system was not able to get informations about the user
+shell on the first node.</li>
+<li>&quot;EXIT_VALUE_OAREXEC&quot; : the oarexec process terminated with an unknown exit
+code.</li>
+<li>&quot;SEND_KILL_JOB&quot; : signal that OAR has transmitted a kill signal to the
+oarexec of the specified job.</li>
+<li>&quot;LEON_KILL_BIPBIP_TIMEOUT&quot; : Leon module has detected that somehing wrong
+occured during the kill of a job and so kill the local <em>bipbip</em> process.</li>
+<li>&quot;EXTERMINATE_JOB&quot; : Leon module has detected that something wrong occured
+during the kill of a job and so clean the database and terminate the job
+artificially.</li>
+<li>&quot;WORKING_DIRECTORY&quot; : the directory from which the job was submitted does
+not exist on the node assigned by the system.</li>
+<li>&quot;OUTPUT_FILES&quot; : OAR can not write the output files (stdout and stderr) in
+the working directory.</li>
+<li>&quot;CAN_NOT_NOTIFY_OARSUB&quot; : OAR can not notify the oarsub process for an
+interactive job (maybe the user has killed this process).</li>
+<li>&quot;WALLTIME&quot; : the job has reached its walltime.</li>
+<li>&quot;SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION&quot; : this means that there is not
+enough nodes for the reservation and so the scheduler do the best and
+gives less nodes than the user wanted (this occures when nodes become
+Suspected or Absent).</li>
+<li>&quot;BESTEFFORT_KILL&quot; : the job is of the type <em>besteffort</em> and was killed
+because a normal job wanted the nodes.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="files">
+<h3><a class="toc-backref" href="#id26" name="files">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idFile</td>
+<td>INT UNSIGNED</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>md5sum</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>location</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>method</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>compression</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>size</td>
+<td>INT UNSIGNED</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idFile</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">md5sum</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="fragjobs">
+<h3><a class="toc-backref" href="#id27" name="fragjobs">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="35%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>fragIdJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>fragDate</td>
+<td>DATETIME</td>
+<td>kill job decision date</td>
+</tr>
+<tr><td>fragState</td>
+<td>ENUM('LEON','TIMER_ARMED',
+'LEON_EXTERMINATE',
+'FRAGGED')
+DEFAULT 'LEON'</td>
+<td>state to tell Leon what to do</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">fragIdJob</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">fragState</td>
+</tr>
+</tbody>
+</table>
+<p>What mean the states:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;LEON&quot; : the Leon module must try to kill the job and change the state into
+&quot;TIMER_ARMED&quot;.</li>
+<li>&quot;TIMER_ARMED&quot; : the Sarko module must wait a response from the job during
+a timeout (default is 60s)</li>
+<li>&quot;LEON_EXTERMINATE&quot; : the Sarko module has decided that the job timeouted and
+asked Leon to clean up the database.</li>
+<li>&quot;FRAGGED&quot; : job is fragged.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="ganttjobsnodes">
+<h3><a class="toc-backref" href="#id28" name="ganttjobsnodes">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob, hostname</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table specifies which node is attributed to which job.</p>
+</div>
+<div class="section" id="ganttjobsnode-visu">
+<h3><a class="toc-backref" href="#id29" name="ganttjobsnode-visu">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob, hostname</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table is the same as <em>ganttJobsNode</em> and is used by visualisation tools.
+It is made up to date in an atomic action (with a lock).</p>
+</div>
+<div class="section" id="ganttjobsprediction">
+<h3><a class="toc-backref" href="#id30" name="ganttjobsprediction">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>startTime</td>
+<td>DATETIME</td>
+<td>date when the job is scheduled to start</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>With this table and <em>ganttJobsNode</em> you can know exactly what are the decisions
+taken by the schedulers for each waiting jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">note:</th><td class="field-body">The special job id &quot;0&quot; is ued to store the scheduling reference date.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="ganttjobsprediction-visu">
+<h3><a class="toc-backref" href="#id31" name="ganttjobsprediction-visu">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>startTime</td>
+<td>DATETIME</td>
+<td>date when the job is scheduled to start</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table is the same as <em>ganttJobsPrediction</em> and is used by visualisation
+tools. It is made up to date in an atomic action (with a lock).</p>
+</div>
+<div class="section" id="jobs">
+<h3><a class="toc-backref" href="#id32" name="jobs">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="28%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>jobType</td>
+<td>ENUM('INTERACTIVE',
+'PASSIVE') DEFAULT
+'PASSIVE'</td>
+<td>specify if the use want to launch a
+program or get an interactive shell</td>
+</tr>
+<tr><td>infoType</td>
+<td>VARCHAR(255)</td>
+<td>some informations about <em>oarsub</em>
+command</td>
+</tr>
+<tr><td>state</td>
+<td>ENUM('Waiting','Hold',
+'toLaunch','toError',
+'toAckReservation',
+'Launching','Running',
+'Terminated','Error')</td>
+<td>job state</td>
+</tr>
+<tr><td>reservation</td>
+<td>ENUM('None',
+'toSchedule',
+'Scheduled') DEFAULT
+'None'</td>
+<td>specify if the job is a reservation
+and the state of this one</td>
+</tr>
+<tr><td>message</td>
+<td>VARCHAR(255)</td>
+<td>readable information message for the
+user</td>
+</tr>
+<tr><td>user</td>
+<td>VARCHAR(20)</td>
+<td>user name</td>
+</tr>
+<tr><td>nbNodes</td>
+<td>INT UNSIGNED</td>
+<td>number of requested nodes</td>
+</tr>
+<tr><td>weight</td>
+<td>INT UNSIGNED</td>
+<td>number of subdivision per node
+requested</td>
+</tr>
+<tr><td>command</td>
+<td>TEXT</td>
+<td>program to run</td>
+</tr>
+<tr><td>bpid</td>
+<td>VARCHAR(255)</td>
+<td>pid of the &quot;bipbip&quot; process</td>
+</tr>
+<tr><td>queueName</td>
+<td>VARCHAR(100)</td>
+<td>queue name</td>
+</tr>
+<tr><td>maxTime</td>
+<td>TIME</td>
+<td>walltime</td>
+</tr>
+<tr><td>properties</td>
+<td>TEXT</td>
+<td>properties that assigned nodes must
+match</td>
+</tr>
+<tr><td>launchingDirectory</td>
+<td>VARCHAR(255)</td>
+<td>path of the directory where <em>oarsub</em>
+command was launched</td>
+</tr>
+<tr><td>submissionTime</td>
+<td>DATETIME</td>
+<td>date when the job was submitted</td>
+</tr>
+<tr><td>startTime</td>
+<td>DATETIME</td>
+<td>date when the job was launched</td>
+</tr>
+<tr><td>stopTime</td>
+<td>DATETIME</td>
+<td>date when the job was stopped</td>
+</tr>
+<tr><td>idFile</td>
+<td>INT</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>accounted</td>
+<td>ENUM(&quot;YES&quot;,&quot;NO&quot;)
+DEFAULT &quot;NO&quot;</td>
+<td>specify if the job was considered by
+the accounting mechanism or not</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">state, reservation, queueName, accounted</td>
+</tr>
+</tbody>
+</table>
+<p>Explications about the &quot;state&quot; field:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;Waiting&quot; : the job is waiting OAR sheduler decision.</li>
+<li>&quot;Hold&quot; : user or administrator wants to hold the job (<em>oarhold</em> command).
+So it will not be scheduled by the system.</li>
+<li>&quot;toLaunch&quot; : the OAR scheduler has attributed some nodes to the job. So it
+will be launched.</li>
+<li>&quot;toError&quot; : something wrong occured and the job is going into the error
+state.</li>
+<li>&quot;toAckReservation&quot; : the OAR sheduler must say &quot;YES&quot; or &quot;NO&quot; to the waiting
+<em>oarsub</em> command because it requested a reservation.</li>
+<li>&quot;Launching&quot; : OAR has launched the job and will execute the user command
+on the first node.</li>
+<li>&quot;Running&quot; : the user command is executing on the first node.</li>
+<li>&quot;Terminated&quot; : the job is terminated normally.</li>
+<li>&quot;Error&quot; : a problem has occured.</li>
+</ul>
+</blockquote>
+<p>Explications about the &quot;reservation&quot; field:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;None&quot; : the job is not a reservation.</li>
+<li>&quot;toSchedule&quot; : the job is a reservation and must be approved by the
+scheduler.</li>
+<li>&quot;Scheduled&quot; : the job is a reservation and is scheduled by OAR.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="nodeproperties">
+<h3><a class="toc-backref" href="#id33" name="nodeproperties">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node name</td>
+</tr>
+<tr><td>besteffort</td>
+<td>ENUM('YES','NO')
+DEFAULT 'YES'</td>
+<td>specify if the node accepts or not
+besteffort jobs</td>
+</tr>
+<tr><td>deploy</td>
+<td>ENUM('YES','NO')
+DEFAULT 'NO'</td>
+<td>specify if the node accepts or not
+deployment jobs</td>
+</tr>
+<tr><td>expiryDate</td>
+<td>DATETIME</td>
+<td>used in desktop computing mode to know
+when a node is considered to be offline</td>
+</tr>
+<tr><td>desktopComputing</td>
+<td>ENUM('YES','NO')
+DEFAULT 'NO'</td>
+<td>specify if the node is a desktop
+computing node or not</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">hostname</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table permits to specify differents properties for each nodes. These can
+be used with the <em>oarsub</em> command (&quot;-p&quot; option).</p>
+<p>You can add your own properties, for exemple:</p>
+<pre class="literal-block">
+ALTER TALE nodeProperties ADD memory INT DEFAULT 256;
+</pre>
+<p>This adds a column &quot;memory&quot; where you can specify the amount of memory for each
+nodes.</p>
+<p>These properties can be updated with the <em>oarnodesetting</em> command (&quot;-p&quot; option).</p>
+</div>
+<div class="section" id="nodestate-log">
+<h3><a class="toc-backref" href="#id34" name="nodestate-log">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node name</td>
+</tr>
+<tr><td>changeState</td>
+<td>ENUM('Alive','Dead'
+,'Suspected',
+'Absent')</td>
+<td>node state during the interval</td>
+</tr>
+<tr><td>dateStart</td>
+<td>DATETIME</td>
+<td>start date of the interval</td>
+</tr>
+<tr><td>dateStop</td>
+<td>DATETIME</td>
+<td>end date of the interval</td>
+</tr>
+<tr><td>finaudDecision</td>
+<td>ENUM('YES','NO')
+DEFAULT 'NO'</td>
+<td>specify if that was a &quot;finaud&quot; module
+decision</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">hostname, changeState, finaudDecision</td>
+</tr>
+</tbody>
+</table>
+<p>This table keeps informations about state changes of nodes.</p>
+</div>
+<div class="section" id="nodes">
+<h3><a class="toc-backref" href="#id35" name="nodes">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="26%" />
+<col width="51%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node name</td>
+</tr>
+<tr><td>state</td>
+<td>ENUM('Alive','Dead',
+'Suspected',
+'Absent')</td>
+<td>node state</td>
+</tr>
+<tr><td>maxWeight</td>
+<td>INT UNSIGNED
+DEFAULT 1</td>
+<td>maximum of the subdivision number</td>
+</tr>
+<tr><td>weight</td>
+<td>INT UNSIGNED</td>
+<td>number of subdivision used</td>
+</tr>
+<tr><td>nextState</td>
+<td>ENUM('UnChanged',
+'Alive','Dead',
+'Absent','Suspected'
+) DEFAULT
+'UnChanged'</td>
+<td>state for the node to switch</td>
+</tr>
+<tr><td>finaudDecision</td>
+<td>ENUM('YES','NO')
+DEFAULT 'NO'</td>
+<td>tell if the actual state results in a
+&quot;finaud&quot; module decision</td>
+</tr>
+<tr><td>nextFinaudDecision</td>
+<td>ENUM('YES','NO')
+DEFAULT 'NO'</td>
+<td>tell if the next node state results in
+a &quot;finaud&quot; module decision</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">hostname</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">state, nextState</td>
+</tr>
+</tbody>
+</table>
+<p>States explication:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;Alive&quot; : the node is ready to accept a job.</li>
+<li>&quot;Absent&quot; : the oar administrator has decided to pull out the node. This
+computer can come back.</li>
+<li>&quot;Suspected&quot; : OAR system has detected a problem on this node and so has
+supectected it (you can look in the <em>event_log</em> table to know what has
+happened). This computer can come back (automatically if this is a 
+&quot;finaud&quot; module decision).</li>
+<li>&quot;Dead&quot; : The oar administrator considers that the node will not come back
+and will be removed from the pool.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="processjobs">
+<h3><a class="toc-backref" href="#id36" name="processjobs">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob, hostname</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">idJob</td>
+</tr>
+</tbody>
+</table>
+<p>This table keeps information for running jobs on which nodes they are
+scheduled.</p>
+</div>
+<div class="section" id="processjobs-log">
+<h3><a class="toc-backref" href="#id37" name="processjobs-log">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idJob</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>hostname</td>
+<td>VARCHAR(100)</td>
+<td>node assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob, hostname</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">idJob</td>
+</tr>
+</tbody>
+</table>
+<p>It is a log table for terminated jobs. It keeps the information on which nodes
+was scheduled a job.</p>
+</div>
+<div class="section" id="queue">
+<h3><a class="toc-backref" href="#id38" name="queue">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>queueName</td>
+<td>VARCHAR(100)</td>
+<td>queue name</td>
+</tr>
+<tr><td>priority</td>
+<td>INT UNSIGNED</td>
+<td>the scheduling priority</td>
+</tr>
+<tr><td>schedulerPolicy</td>
+<td>VARCHAR(100)</td>
+<td>path of the associated scheduler</td>
+</tr>
+<tr><td>state</td>
+<td>ENUM('Active',
+'notActive')
+DEFAULT 'Active'</td>
+<td>permits to stop the scheduling for a
+queue</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">queueName</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table contains the schedulers executed by the <em>oar_meta_scheduler</em> module.
+Executables are launched one after one in the specified priority.</p>
+</div>
+</div>
+</div>
+<div class="section" id="configuration-file">
+<h1><a class="toc-backref" href="#id39" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
+<p>This is the meanings for each configuration tags that you can find in /etc/oar.conf:</p>
+<blockquote>
+<ul>
+<li><p class="first">DataBase hostname:</p>
+<pre class="literal-block">
+DB_HOSTNAME=localhost
+</pre>
+</li>
+<li><p class="first">Database base name:</p>
+<pre class="literal-block">
+DB_BASE_NAME=oar
+</pre>
+</li>
+<li><p class="first">DataBase user name:</p>
+<pre class="literal-block">
+DB_BASE_LOGIN=oar
+</pre>
+</li>
+<li><p class="first">DataBase user password:</p>
+<pre class="literal-block">
+DB_BASE_PASSWD=oar
+</pre>
+</li>
+<li><p class="first">OAR server hostname:</p>
+<pre class="literal-block">
+SERVER_HOSTNAME=localhost
+</pre>
+</li>
+<li><p class="first">OAR server port:</p>
+<pre class="literal-block">
+SERVER_PORT=6666
+</pre>
+</li>
+<li><p class="first">Specify where we are connected in the deploy queue(the node to connect
+to when the job is in the deploy queue):</p>
+<pre class="literal-block">
+DEPLOY_HOSTNAME = 127.0.0.1
+</pre>
+</li>
+<li><p class="first">Set DETACH_JOB to 1 if you do not want to keep a ssh connection between the
+node and the server. Otherwise set this tag to 0:</p>
+<pre class="literal-block">
+DETACH_JOB=1
+</pre>
+</li>
+<li><p class="first">By default OAR uses the ping command to detect if nodes are down or not.
+To enhance this diagnostic you can specify one of these other methods (
+give the complete command path):</p>
+<blockquote>
+<ul>
+<li><p class="first">OAR sentinelle:</p>
+<pre class="literal-block">
+SENTINELLE_COMMAND=/usr/bin/sentinelle -cconnect=ssh,timeout=3000
+</pre>
+</li>
+<li><p class="first">OAR fping:</p>
+<pre class="literal-block">
+FPING_COMMAND=/usr/bin/fping -q 
+</pre>
+</li>
+<li><p class="first">OAR nmap : it will test to connect on the ssh port (22):</p>
+<pre class="literal-block">
+NMAP_COMMAND=/usr/bin/nmap -p 22 -n -T5
+</pre>
+</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">OAR nodes default weight(when the user does not specify a weight in the
+oarsub invocation, then it is the used value):</p>
+<pre class="literal-block">
+NODE_DEFAULT_WEIGHT=1
+</pre>
+</li>
+<li><p class="first">OAR log level: 3(debug+warnings+errors), 2(warnings+errors), 1(errors):</p>
+<pre class="literal-block">
+LOG_LEVEL=2
+</pre>
+</li>
+<li><p class="first">OAR log file:</p>
+<pre class="literal-block">
+LOG_FILE=/var/log/oar.log
+</pre>
+</li>
+<li><p class="first">OAR Allowed networks, Networks or hosts allowed to submit jobs to OAR and
+compute nodes may be specified here(0.0.0.0/0 means all IPs are allowed
+and 127.0.0.1/32 means only IP 127.0.0.1 is allowed):</p>
+<pre class="literal-block">
+ALLOWED_NETWORKS= 127.0.0.1/32 0.0.0.0/0
+</pre>
+</li>
+<li><p class="first">Set the granularity of the OAR accounting feature (in seconds). Default is
+1 day (86400s):</p>
+<pre class="literal-block">
+ACCOUNTING_WINDOW= 86400
+</pre>
+</li>
+<li><p class="first">OAR informations may be notified by email to the administror.
+Set accordingly to your configuration the next lines to activate
+the feature:</p>
+<pre class="literal-block">
+MAIL_SMTP_SERVER = smtp.serveur.com
+MAIL_RECIPIENT = user&#64;domain.com
+MAIL_SENDER = oar&#64;domain.com
+</pre>
+</li>
+<li><p class="first">Limitation configuration for the oar_sched_gant_g5k scheduler
+(0:Sunday, 1:Monday, 2:Tuesday, 3:Wednesday, 4:Thursday, 5:Friday,
+6:Saturday):</p>
+<pre class="literal-block">
+G5K_LIMIT_WEEK_DAYS = 1 2 3 4 5
+G5K_LIMIT_DAY_HOURS = 7 22
+</pre>
+</li>
+<li><p class="first">These are configuration tags for OAR in the desktop-computing mode:</p>
+<pre class="literal-block">
+DESKTOP_COMPUTING_ALLOW_CREATE_NODE=0
+DESKTOP_COMPUTING_EXPIRY=10
+STAGEOUT_DIR=/var/lib/oar/stageouts/
+STAGEIN_DIR=/var/lib/oar/stageins
+STAGEIN_CACHE_EXPIRY=144
+</pre>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="module-description">
+<h1><a class="toc-backref" href="#id40" name="module-description">5&nbsp;&nbsp;&nbsp;Module description</a></h1>
+<p>OAR can be decomposed into several modules which perform different tasks.</p>
+<div class="section" id="almighty">
+<h2><a class="toc-backref" href="#id41" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
+<p>This module is the OAR server. It decides what actions must be performed. It
+is divided into 2 processes:</p>
+<blockquote>
+<ul class="simple">
+<li>One listen to a TCP/IP socket. It waits informations or commands from OAR
+user program or from the other modules.</li>
+<li>Another one treates each commands thanks to an automaton and launch right
+modules one after one.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="sarko">
+<h2><a class="toc-backref" href="#id42" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
+<p>This module is executed periodically by the Almighty (default is every
+30 seconds).</p>
+<p>The jobs of Sarko are :</p>
+<blockquote>
+<ul class="simple">
+<li>Look at running job walltimes and ask to frag them if they had expired.</li>
+<li>Detect if fragged jobs are really fragged otherwise asks to exterminate
+them.</li>
+<li>In &quot;Desktop Computing&quot; mode, it detects if a node date has expired and
+asks to change its state into &quot;Suspected&quot;.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="judas">
+<h2><a class="toc-backref" href="#id43" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
+<p>This is the module dedicated to print and log every debugging, warning and
+error text.</p>
+</div>
+<div class="section" id="leon">
+<h2><a class="toc-backref" href="#id44" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
+<p>This module is in charge of the frag of jobs. Other OAR modules or commands
+can ask to kill a job and this is Leon which perform that.</p>
+<p>There are 2 frag types :</p>
+<blockquote>
+<ul class="simple">
+<li><em>normal</em> : Leon tries to connect to on the first node of the job and tell it
+to kill itself.</li>
+<li><em>exterminate</em> : after a timeout if the <em>normal</em> method did not succeeded
+then Leon notifies this case and clean up the database for these jobs.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="nodechangestate">
+<h2><a class="toc-backref" href="#id45" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
+<p>This module is in charge of changing node states and check if there are jobs
+on these.</p>
+</div>
+<div class="section" id="scheduler">
+<h2><a class="toc-backref" href="#id46" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
+<p>This module checks for each reservation job it validity and the moment to
+launch it. And it launches all gantt scheduler in the order of the priority
+of the database.</p>
+</div>
+<div class="section" id="runner">
+<h2><a class="toc-backref" href="#id47" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
+<p>This module launches OAR effective jobs. These processes are run asynchronously
+with all modules.</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2005-09-23 12:06 UTC.
+Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

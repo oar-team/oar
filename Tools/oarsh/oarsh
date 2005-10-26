@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# In sshd_config you must have this line :
+#     AcceptEnv OARJOBID SUDO_USER
+# User to become is in $SUDO_USER
+# $OARJOBID contains the cpuset name
+
+#CPUSETFILE=/proc/self/cpuset
+CPUSETFILE=/tmp/toto.txt
+
+if [ ! -r $CPUSETFILE ]
+then
+    echo "[OARSH] Can not find cpuset file : $CPUSETFILE" 1>&2
+    exit 1
+fi
+
+export OARJOBID=$(< $CPUSETFILE)
+
+if [ "$OARJOBID" == "" ] || [ "$OARJOBID" == "/" ]
+then
+    echo "[OARSH] You are not in a OAR job : go away!" 1>&2
+    exit 2
+else 
+    exec ssh -oSendEnv=OARJOBID -oSendEnv=SUDO_USER "$@"
+fi
