@@ -1,0 +1,109 @@
+#!/usr/bin/perl
+# $Id: oar_sched_fifo,v 1.7 2004/08/24 15:56:56 neyron Exp $
+
+use strict;
+use DBI();
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_iolib;
+
+my $base = &iolib::connect();
+
+my $done =0;
+my $doneToLaunch=0;
+
+oar_debug "Begining of scheduler FIFO\n";
+while(! $done)
+{
+    $done = 1;
+    # recuperer le premier (date de soumission) job W
+    my $idJob = &iolib::get_oldest_waiting_idjob($base);
+    if ($idJob == -1)
+    {
+	last;
+    }
+
+    my $ref =  &iolib::get_job($base, $idJob);
+
+    # recuperer le nombre de noeud total
+    my @noeuds_vivants = &iolib::get_alive_node_job($base,$idJob);
+    my $nbnoeuds_demandes = $ref->{'nbNodes'};
+
+    # verifier qu'il y a suffisament de noeud vivant
+    if ($#noeuds_vivants+1 < $nbnoeuds_demandes)
+    {
+	# mettre le job en erreur
+	&iolib::set_job_state($base, $idJob, 'Error');
+
+	$done=0;
+	next;
+    }
+
+    # construire la liste des noeuds a utiliser :
+
+    my $jobweight = $ref->{'weight'};
+
+
+    # recuperer le maxpoid
+    my $maxpoid = &iolib::get_maxweight_node($base);
+
+
+    my @liste_noeuds = ();
+    # si le job est en mode partage
+    if ($jobweight < $maxpoid)
+    {
+
+	# recuperer les noeuds vivants libres sans les noeuds
+	# occupes exclusivement
+
+	@liste_noeuds = &iolib::get_free_shareable_nodes_job($base,$idJob,$jobweight);
+
+    }
+    # si le job en mode exclusif
+    else {
+	if ($jobweight == $maxpoid )
+	{
+	    # recuperer la liste des noeuds vivants non occupes
+
+	    @liste_noeuds = &iolib::get_free_exclusive_nodes_job($base,$idJob,$jobweight);
+	}
+	else
+	{
+	    die "job $idJob weight ($jobweight) greater than maxWeight ($maxpoid)\n";
+	}
+    }
+
+    # si il y a suffisament de noeuds
+    if( $#liste_noeuds+1 >= $nbnoeuds_demandes)
+    {
+	$doneToLaunch = 1;
+	my $i=0;
+	for($i=0; $i < $nbnoeuds_demandes; $i++)
+	{
+	    # ajouter le couple id:noeuds
+	    &iolib::add_node_job_pair($base,$idJob,$liste_noeuds[$i]);
+	    #incrementer les poids
+	    my $nodeweight = &iolib::get_weight_node($base,$liste_noeuds[$i]);
+	    &iolib::set_weight_node($base,$liste_noeuds[$i], $nodeweight+$jobweight);
+	}
+	# passer le job a l'etat L
+	&iolib::set_job_state($base, $idJob, 'toLaunch');
+
+	#recommencer
+	$done = 0;
+    }
+}
+
+&iolib::disconnect($base);
+
+oar_debug "End of scheduler FIFO\n";
+
+# TO CHANGE : launch runner unconditionnally for debug !!!
+#exit 1;
+if ($doneToLaunch == 1)
+{
+    exit 1;
+}
+if ($doneToLaunch == 0)
+{
+    exit 0;
+}

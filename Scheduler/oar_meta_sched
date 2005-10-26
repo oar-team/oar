@@ -1,0 +1,91 @@
+#!/usr/bin/perl
+# $Id: oar_meta_sched,v 1.31 2005/02/16 18:47:10 capitn Exp $
+
+use strict;
+use warnings;
+use DBI();
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Gant;
+use Data::Dumper;
+use oar_scheduler;
+
+sub launch_command($){
+        my $command = shift;
+        oar_debug("[MetaSched] Launching command : [$command]\n");
+        $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
+        system($command);
+        my $exit_value  = $? >> 8;
+        my $signal_num  = $? & 127;
+        my $dumped_core = $? & 128;
+        oar_debug("[MetaSched] $command terminated :\n");
+        oar_debug("[MetaSched] Exit value : $exit_value\n");
+        oar_debug("[MetaSched] Signal num : $signal_num\n");
+        oar_debug("[MetaSched] Core dumped : $dumped_core\n");
+        if ($signal_num || $dumped_core){
+            die("[MetaSched] Something wrong occured (signal or core dumped) !!!\n");
+        }
+        return($exit_value);
+}
+
+
+my $exit_code = 0;
+my $base = iolib::connect();
+
+init_conf("oar.conf");
+my $binpath;
+if (defined($ENV{OARDIR})){
+    $binpath = $ENV{OARDIR}."/";
+}else{
+    die("[MetaSched] OARDIR env variable must be defined\n");
+}
+
+oar_debug("[MetaSched] Begining of meta scheduler\n");
+
+oar_scheduler::init_scheduler($base);
+
+my %initialTime = oar_scheduler::get_initial_time();
+my @queues = iolib::get_queues($base);
+my $name;
+my $policy;
+foreach my $i (@queues){
+    $name = $i->[0];
+    $policy = $i->[1];
+    my $waitingJobs = iolib::is_waiting_job_specific_queue_present($base,$name);
+    if ($waitingJobs == 1){
+        oar_debug("[MetaSched] Launching scheduler $name with $policy at time $initialTime{sql}\n");
+        my $sched_exit_code = launch_command("$binpath/$policy $name $initialTime{sec} \"$initialTime{sql}\"");
+        if ($sched_exit_code == 1){
+            $exit_code = 1;
+        }elsif($sched_exit_code != 0){
+            oar_error("[MetaSched] Scheduler $binpath/$policy on queue $name at time $initialTime{sec} returns a bad value : $sched_exit_code\n");
+            $exit_code = 3;
+        }
+        if (oar_scheduler::treate_waiting_reservation_jobs($base,$name) != 0){
+            $exit_code = 1;
+        }
+        if (oar_scheduler::check_reservation_jobs($base,$name) != 0){
+            $exit_code = 1;
+        }
+    }else{
+        oar_debug("[MetaSched] No waiting job in $name queue\n");
+    }
+}
+
+if ($exit_code == 0){
+    if (oar_scheduler::check_jobs_to_kill($base) == 1){
+        # We must kill besteffort jobs
+        $exit_code = 2;
+    }elsif (oar_scheduler::check_jobs_to_launch($base) == 1){
+        $exit_code = 1;
+    }
+}
+
+#Update visu gantt tables
+oar_scheduler::update_gantt_visu_tables($base);
+
+iolib::disconnect($base);
+oar_debug("[MetaSched] End of meta scheduler\n");
+
+exit $exit_code;

@@ -1,0 +1,211 @@
+#!/usr/bin/perl
+# $Id: oar_sched_gant_compute_mode_aware,v 1.1 2005/06/22 12:57:27 capitn Exp $
+#-I../Iolib -I../ConfLib -I../Judas -w
+
+use strict;
+use DBI();
+use oar_iolib;
+use Data::Dumper;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Gant;
+
+# Constant duration time of a besteffort job
+my $besteffort_duration = 5*60;
+
+# $security_time_overhead is the security time (second) used to be sure there
+# are no problem with overlaping jobs
+my $security_time_overhead = 1;
+
+my $current_time ;
+
+my $queue;
+if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
+    $queue = $ARGV[0];
+    $current_time = $ARGV[1];
+}else{
+    oar_error("[oar_sched_gant_deploy_aware] no queue specified on command line\n");
+    exit(1);
+}
+
+# Init
+my $base = iolib::connect();
+
+oar_debug("[oar_sched_gant_deploy_aware] Begining of Gantt scheduler on queue $queue at time $current_time\n");
+
+# Create the list of nodes and the hash table of their weight
+my %node_max_weight;     # max weight of the nodes
+my %node_current_weight; # current weight of the nodes
+my %node_current_weight_init; # current weight of the nodes in beginning
+my @alive_nodes = iolib::get_alive_node($base);
+foreach my $node (@alive_nodes) {
+    $node_max_weight{$node} = iolib::get_maxweight_one_node($base, $node);
+    $node_current_weight{$node} = 0;
+    $node_current_weight_init{$node} = 0;
+}
+
+# search all node properties
+my %nodeProperties = iolib::get_all_nodes_properties($base);
+
+# Create the Gantt Diagram
+
+my $gant = Gant::create_empty_gant($current_time, \%node_max_weight);
+
+# Will be used to list the nodes to be killed if necessary and associate the
+# id of the job that runs on it
+my %killable_nodes;
+# killable_nodes_occupation keep the weight of the killable jobs in order
+# to calculate the current free space on such nodes
+my %killable_nodes_occupation;
+
+# Keep the list of jobs already scheduled that have to be run now
+# It's the scheduler that mark to "toLaunch" the jobs marked with "Scheduled"="Yes"
+my @jobs_scheduled_to_run;
+
+# Take care of currently scheduled jobs (gantt in the database)
+my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($base);
+foreach my $i (keys(%alreadyScheduledJobs)){
+    if (($alreadyScheduledJobs{$i}->[3] eq "besteffort") && ($queue ne "besteffort")) {
+        foreach my $node (@{$alreadyScheduledJobs{$i}->[4]}) {
+            ${$killable_nodes{$node}}{$i} = $alreadyScheduledJobs{$i}->[1];
+            if (!defined($killable_nodes_occupation{$node})){
+                $killable_nodes_occupation{$node} = $alreadyScheduledJobs{$i}->[1];
+            }else{
+                $killable_nodes_occupation{$node} += $alreadyScheduledJobs{$i}->[1];
+            }
+        }
+    }else{
+        if ($alreadyScheduledJobs{$i}->[5] ne "Waiting"){
+            foreach my $node (@{$alreadyScheduledJobs{$i}->[4]}) {
+                $node_current_weight{$node} += $alreadyScheduledJobs{$i}->[1];
+                $node_current_weight_init{$node} += $alreadyScheduledJobs{$i}->[1];
+            }
+        }
+
+        Gant::set_occupation($gant,
+                             iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
+                             $alreadyScheduledJobs{$i}->[1],
+                             iolib::sql_to_duration($alreadyScheduledJobs{$i}->[2]) + $security_time_overhead,
+                             $alreadyScheduledJobs{$i}->[4]);
+    }
+}
+
+#Gant::pretty_print_gant($gant);
+
+
+# End of the initialisation
+
+# Begining of the real scheduling
+
+my $true = 1;
+my $false = 0;
+
+# $to_error is set if some jobs are set to toError by the scheduler
+my $to_error = $false;
+
+# @jobs lists the jobs of the queue $queue
+my @jobs = iolib::get_job_list($base, "state", "Waiting", "reservation", "None", "queueName", $queue);
+
+while (scalar @jobs) {
+    my %job = iolib::shift_job(@jobs);
+
+    # Take some caracteristics of the current job
+    my $idJob = $job{'idJob'};
+    my $weight = $job{'weight'};
+    my $nb_nodes = $job{'nbNodes'};
+    my $job_type = $job{'jobType'};
+    my $job_user = $job{'user'};
+    my $duration = iolib::sql_to_duration($job{'maxTime'});
+
+    # If the queue is best effort, we do not take care of
+    # the wall time, and keep the duration at
+    if($queue eq "besteffort") {
+        $duration = $besteffort_duration;
+    }
+
+    # @nodes list the nodes available for this job with respect
+    # to the constraints takes the Alive, suspected and Absents nodes
+    # Set to error only if there is not enough of these nodes
+    my @available_nodes = iolib::get_alive_node_job($base, $idJob, $weight);
+    if( $#available_nodes+1 < $nb_nodes) {
+        oar_debug("[oar_sched_gant_deploy_aware] Not enough available nodes for job $idJob\n");
+        iolib::set_job_state($base, $idJob, 'toError');
+        $to_error = $true;
+        next;
+    }
+
+    # @available_nodes returns the node currently Alive that respect the
+    # constraints of the current job
+    @available_nodes = iolib::get_really_alive_node_job($base, $idJob, $weight);
+
+    # Verify if there are enouth nodes currently alive to schedule the job
+    # If there are not enouth, just schedule the next job
+    if( $#available_nodes + 1 < $nb_nodes) {
+        oar_debug("[oar_sched_gant_deploy_aware] Not enough alive nodes for job $idJob\n");
+        next;
+    }
+
+    # Find the first time the job can be scheduled
+    my @nodes_list = Gant::find_first_hole($gant, $nb_nodes, $weight, $duration + $security_time_overhead, \@available_nodes);
+    
+    # $running_time is the time the job will be scheduled
+    my $running_time = shift @nodes_list;
+    
+    #order node list in function of besteffort and deploy properties
+    @nodes_list = iolib::order_property_node($base, \@nodes_list, "p.deploy DESC, p.besteffort DESC");
+
+    # We seek the nodes on which the job will run
+    # $current_to_kill is a boolean, true when the job need to kill
+    # a besteffort job
+    my @n;
+    #my $current_to_kill = $false;
+
+    # We need $nb_nodes different nodes to run the jobs, so we tests
+    # each one to verify if there is a killable job on them
+    while( $#n+1 < $nb_nodes) {
+        my $free_node = shift @nodes_list;
+
+        # if there are enough free nodes and the current node is killable
+        # just skip it
+        my $try_to_skip = defined($killable_nodes{$free_node}) ;
+            #&& $node_current_weight{$free_node}+$weight+$killable_nodes_occupation{$free_node}>$node_max_weight{$free_node};
+        # also consider deploy parameter of nodes
+        #my $try_to_skip = ((defined($killable_nodes{$free_node})) && (defined($killable_nodes_occupation{$free_node})) &&
+        #                  ($node_current_weight{$free_node}+$weight+$killable_nodes_occupation{$free_node}>$node_max_weight{$free_node}))
+        #                  || ($nodeProperties{$free_node}->{deploy} eq "YES");
+
+        if( $try_to_skip && ($#n+1) + ($#nodes_list+1) >= $nb_nodes) {
+            next;
+        }
+        push(@n, $free_node);
+    }
+
+    # @n is the list of nodes
+
+    for my $current_node (@n) {
+        # If the job is to be launched now
+        if( $running_time <= $current_time) {
+            die "I'm not sure..." unless defined($node_current_weight{$current_node});
+            $node_current_weight{$current_node} +=  $weight;
+        }
+    }
+    Gant::set_occupation($gant,
+                         $running_time,
+                         $weight,
+                         $duration + $security_time_overhead,
+                         \@n
+                        );
+
+    #update database
+    my ($year,$mon,$day,$hour,$min,$sec) = iolib::local_to_ymdhms($running_time);
+    iolib::add_gantt_scheduled_jobs($base,$idJob,"$year-$mon-$day $hour:$min:$sec",\@n);
+}
+
+iolib::disconnect($base);
+oar_debug("[oar_sched_gant_deploy_aware] End of meta scheduler\n");
+
+if($to_error == $true){
+    exit 1;
+}else{
+    exit 0;
+}

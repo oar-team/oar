@@ -1,0 +1,88 @@
+Template: oar/node/list
+Type: string
+Default: 
+Description: OAR node list
+ You may provide now a list of execution nodes for OAR. Nodes in this list will be configured (OAR configuration files deployment, OAR SSH keys and known hosts base setup) so that once oar-exec is installed on each of them, they can be used to execute jobs submited to OAR.
+ To do so, please enter the path to a file containing the list of node hostnames (one hostname per line).
+
+Template: oar/db/doinstall
+Type: boolean
+Default: false
+Description: OAR database initialization
+ Do you want to initialize OAR database now ?
+
+Template: oar/db/hostname
+Type: string
+Default: localhost
+Description: OAR MySQL server hostname
+ Please enter OAR database server hostname
+
+Template: oar/db/adminlogin
+Type: string
+Default: root
+Description: OAR MySQL admin login
+ Please enter OAR database administrator's login
+
+Template: oar/db/adminpasswd
+Type: password
+Description: OAR MySQL admin passwd
+ Please enter OAR database administrator's password
+
+Template: oar/db/basename
+Type: string
+Default: oar
+Description: OAR MySQL database name
+ Please enter OAR database name
+
+Template: oar/db/baselogin
+Type: string
+Default: oar
+Description: OAR MySQL base login
+ Please enter OAR database base login
+
+Template: oar/db/basepasswd
+Type: password
+Description: OAR MySQL user passwd
+ Please enter OAR database base passwd
+
+Template: oar/server/hostname
+Type: string
+Default: localhost
+Description: OAR server hostname
+	Please enter OAR server hostname
+
+Template: oar/server/port
+Type: string
+Default: 6666
+Description: OAR server port
+	Please enter the port you want OAR server to listen to
+
+Template: oar/user/dosetup
+Type: boolean
+Default: false
+Description: OAR user setup
+ Do you want to setup OAR users now ?
+
+Template: oar/user/listmethod
+Type: select
+Choices: inline, file
+Default: inline
+Description: Users list input method
+ How would you like to enter OAR users list ?
+
+Template: oar/user/listinline
+Type: string
+Default: 
+Description: OAR users list (inline)
+ You may now provide a list of OAR users. Users in this list will 
+ be configured to be able to launch jobs, etc... 
+ To do so, please enter those users list, using white spaces as separator.
+
+Template: oar/user/listfile
+Type: string
+Default: 
+Description: OAR users list (file)
+ You may now provide a list of OAR users. Users in this list will 
+ be configured to be able to launch jobs, etc... 
+ To do so, please enter the path to a file containing the list of usernames (one per line).
+	

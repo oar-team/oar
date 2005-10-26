@@ -1,0 +1,60 @@
+Source: oar
+Section: contrib/misc
+Priority: optional
+Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
+Build-Depends: debhelper (>= 4.0.0)
+Standards-Version: 3.6.0
+
+Package: oar-common
+Architecture: all
+Depends: ${perl:Depends}, sudo, adduser, libdbi-perl, libdbd-mysql-perl
+Suggests: oar-server, oar-user, oar-node, oar-doc
+Description: OAR batch scheduler common package
+ This package installs the common part or the OAR batch scheduler
+
+Package: oar-server
+Architecture: all
+Depends: oar-common (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, ssh | ssh-client
+Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, rsh-client, rsh-server, taktuk2
+Description: OAR batch scheduler server package
+ This package installs the server part or the OAR batch scheduler
+
+Package: oar-node
+Architecture: all
+Depends: oar-common (= ${Source-Version}), ${perl:Depends}
+Suggests: oar-doc, rsh-client, rsh-server, ssh, taktuk
+Description: OAR batch scheduler node package
+ This package installs the execution node part or the OAR batch scheduler
+
+Package: oar-user
+Architecture: all
+Depends: oar-common (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, adduser
+Suggests: oar-doc, rsh-client, rsh-server, ssh, taktuk
+Description: OAR batch scheduler user package
+ This package install the submition and query part or the OAR batch scheduler
+
+Package: oar-draw-gantt
+Architecture: all
+Depends: oar-user (= ${Source-Version}), monika, ${perl:Depends}, apache | httpd-cgi, libgd-text-perl, adduser
+Suggests: oar-doc
+Description: OAR batch scheduler Gantt reservation diagram
+ This package install the OAR batch scheduler Gantt reservation diagram CGI
+
+Package: oar-desktop-computing-agent
+Architecture: all
+Depends: ${perl:Depends}, libwww-perl, liburi-perl
+Suggests: oar-doc
+Description: OAR desktop computing agent
+ This package install the OAR batch scheduler desktop computing agent
+
+Package: oar-desktop-computing-cgi
+Architecture: all
+Depends: oar-common (= ${Source-Version}), ${perl:Depends}, apache | httpd-cgi, libcgi-perl, adduser
+Suggests: oar-doc
+Description: OAR desktop computing HTTP proxy CGI
+ This package install the OAR batch scheduler desktop computing HTTP proxy CGI
+
+Package: oar-doc
+Architecture: all
+Description: OAR batch scheduler documentation package
+ This package install some documentation for OAR batch scheduler
