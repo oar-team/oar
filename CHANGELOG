@@ -4,6 +4,7 @@ OAR CHANGELOG
 
 version 1.6.1:
 ==============
+    - add node properties log table
     - add possibility to use sentinelle.rb script in the ping_checker module
     - add a GRID5000 specific scheduler which implement e specific policy
       (oar_sched_gant_g5k)
