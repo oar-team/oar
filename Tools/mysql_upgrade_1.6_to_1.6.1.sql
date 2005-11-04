@@ -24,3 +24,23 @@ hostname VARCHAR(255) NOT NULL,
 INDEX eventHostname (hostname)
 );
 
+CREATE TABLE IF NOT EXISTS jobState_log (
+jobId INT UNSIGNED NOT NULL ,
+jobState ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')  NOT NULL ,
+dateStart DATETIME NOT NULL,
+dateStop DATETIME ,
+INDEX id (jobId),
+INDEX state (jobState)
+);
+
+CREATE TABLE IF NOT EXISTS nodeProperties_log (
+hostname VARCHAR( 100 ) NOT NULL ,
+property VARCHAR( 50 ) NOT NULL ,
+value VARCHAR( 100 ) NOT NULL,
+dateStart DATETIME NOT NULL,
+dateStop DATETIME ,
+INDEX host (hostname),
+INDEX prop (property),
+INDEX val (value)
+);
+

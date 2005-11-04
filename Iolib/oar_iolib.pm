@@ -194,10 +194,17 @@ sub connect() {
     $user = get_conf("DB_BASE_LOGIN");
     $pwd = get_conf("DB_BASE_PASSWD");
 
-    my $dbh = DBI->connect("DBI:mysql:database=$name;host=$host",
-    $user, $pwd,
-    {'RaiseError' => 1,'InactiveDestroy' => 1});
-    return $dbh;
+    #my $dbh = DBI->connect("DBI:mysql:database=$name;host=$host",
+    #$user, $pwd,
+    #{'RaiseError' => 1,'InactiveDestroy' => 1});
+
+    my $dbh;
+    if ($dbh = DBI->connect("DBI:mysql:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1})){
+        return $dbh;
+    }else{
+        oar_error("[IOlib] Can not connect to database (host=$host, user=$user, database=$name) : $DBI::errstr\n");
+        exit(50);
+    }
 }
 
 
@@ -676,7 +683,7 @@ sub add_micheline_job($$$$$$$$$$$) {
     }
 
     #Insert job
-    $dbh->do("LOCK TABLE jobs WRITE");
+    $dbh->do("LOCK TABLE jobs WRITE, jobState_log WRITE");
     $sth = $dbh->prepare("SELECT MAX(idJob)+1 FROM jobs");
     $sth->execute();
     $ref = $sth->fetchrow_hashref();
@@ -691,6 +698,10 @@ sub add_micheline_job($$$$$$$$$$$) {
               (idJob,jobType,infoType,state,user,nbNodes,weight,command,submissionTime,maxTime,queueName,properties,launchingDirectory, reservation, startTime, idFile) VALUES
               ($id,\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",$nbNodes,$weight,\"$command\",NOW(),\"$maxTime\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile)");
 
+    my $date = get_date($dbh);
+    $dbh->do("INSERT INTO jobState_log (jobId,jobState,dateStart)
+              VALUES ($id,\"Waiting\",\"$date\")");
+    
     $dbh->do("UNLOCK TABLES");
 
     return $id;
@@ -860,10 +871,14 @@ sub set_job_state($$$) {
     my $dbh = shift;
     my $idJob = shift;
     my $state = shift;
-    my $sth = $dbh->prepare("UPDATE jobs SET state = \"$state\"
-                             WHERE idJob =\"$idJob\"");
-    $sth->execute();
-    $sth->finish();
+    
+    $dbh->do("UPDATE jobs SET state = \"$state\"
+              WHERE idJob =\"$idJob\"");
+    
+    my $date = get_date($dbh);
+    $dbh->do("UPDATE jobState_log SET dateStop = \"$date\" WHERE dateStop IS NULL AND jobId = $idJob");
+    $dbh->do("INSERT INTO jobState_log (jobId,jobState,dateStart)
+              VALUES ($idJob,\"$state\",\"$date\")");
 }
 
 

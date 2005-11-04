@@ -29,19 +29,23 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "CAN_NOT_WRITE_NODE_FILE") ||
         ($i->{type} eq "CAN_NOT_WRITE_PID_FILE") ||
         ($i->{type} eq "USER_SHELL") ||
+        ($i->{type} eq "EXTERMINATE_JOB") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         my @hosts;
         my $finaudTag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
-        if (($i->{type} ne "PING_CHECKER_NODE_SUSPECTED")){
-            @hosts = iolib::get_job_host_log($base,$i->{idJob});
-            @hosts = ($hosts[0]);
-            $finaudTag = "NO";
-        }else{
+        if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")){
             @hosts = iolib::get_hostname_event($base,$i->{idEvent});
             $finaudTag = "YES";
+        }else{
+            @hosts = iolib::get_job_host_log($base,$i->{idJob});
+            $finaudTag = "NO";
+            if (($i->{type} ne "EXTERMINATE_JOB")){
+                @hosts = ($hosts[0]);
+            }
         }
+
         foreach my $j (@hosts){
             if (iolib::get_weight_node($base,$j) == 0){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting this node\n");

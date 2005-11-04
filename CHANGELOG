@@ -4,6 +4,8 @@ OAR CHANGELOG
 
 version 1.6.1:
 ==============
+    - treate event EXTERMINATE_JOB and suspect all nodes if possible
+    - add job state log table
     - add node properties log table
     - add possibility to use sentinelle.rb script in the ping_checker module
     - add a GRID5000 specific scheduler which implement e specific policy

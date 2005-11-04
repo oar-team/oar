@@ -49,6 +49,16 @@ INDEX accounted (accounted),
 PRIMARY KEY (idJob)
 );
 
+#DROP TABLE IF EXISTS jobState_log;
+CREATE TABLE IF NOT EXISTS jobState_log (
+jobId INT UNSIGNED NOT NULL ,
+jobState ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')  NOT NULL ,
+dateStart DATETIME NOT NULL,
+dateStop DATETIME ,
+INDEX id (jobId),
+INDEX state (jobState)
+);
+
 #DROP TABLE IF EXISTS fragJobs;
 CREATE TABLE IF NOT EXISTS fragJobs (
 fragIdJob INT UNSIGNED NOT NULL ,

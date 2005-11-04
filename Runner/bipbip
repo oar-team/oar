@@ -174,7 +174,7 @@ if ($#bad >= 0){
     #}
     #iolib::add_new_event($base,"PING_CHECKER_NODE_SUSPECTED",$Jid,"[bipbip] Ping_checker suspects  nodes for the job $Jid : @bad");
     #Resubmit the job
-    $base->do("LOCK TABLE jobs WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, fragJobs WRITE,nodeState_log WRITE");
+    $base->do("LOCK TABLE jobs WRITE, jobState_log WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, fragJobs WRITE,nodeState_log WRITE");
     my $refHashJob = iolib::get_job($base,$Jid);
     iolib::decrease_weight($base,$Jid);
     iolib::delete_job_process($base,$Jid);
@@ -247,7 +247,7 @@ sub checkEndOfJob($){
     #oar_debug("[bipbip $Jid] Job $Jid is ended\n");
     #iolib::set_finish_date($base,$Jid);
 
-    $base->do("LOCK TABLE jobs WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, nodeState_log WRITE, event_log WRITE");
+    $base->do("LOCK TABLE jobs WRITE, jobState_log WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, nodeState_log WRITE, event_log WRITE");
     my $refJob = iolib::get_job($base,$Jid);
     if ($refJob->{'state'} eq "Running"){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
