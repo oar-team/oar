@@ -198,12 +198,27 @@ sub connect() {
     #$user, $pwd,
     #{'RaiseError' => 1,'InactiveDestroy' => 1});
 
-    my $dbh;
-    if ($dbh = DBI->connect("DBI:mysql:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1})){
-        return $dbh;
-    }else{
-        oar_error("[IOlib] Can not connect to database (host=$host, user=$user, database=$name) : $DBI::errstr\n");
+    my $maxConnectTries = 5;
+    my $nbConnectTry = 0;
+    my $dbh = undef;
+    while ((!defined($dbh)) && ($nbConnectTry < $maxConnectTries)){
+        $dbh = DBI->connect("DBI:mysql:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
+        
+        if (!defined($dbh)){
+            oar_error("[IOlib] Can not connect to database (host=$host, user=$user, database=$name) : $DBI::errstr\n");
+            $nbConnectTry++;
+            if ($nbConnectTry < $maxConnectTries){
+                oar_warn("[IOlib] I will retry to connect to the database in ".2*$nbConnectTry."s\n");
+                sleep(2*$nbConnectTry);
+            }
+        }
+    }
+    
+    if (!defined($dbh)){
+        oar_error("[IOlib] Max connection tries reached ($maxConnectTries).\n");
         exit(50);
+    }else{
+        return $dbh;
     }
 }
 
