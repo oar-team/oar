@@ -71,5 +71,5 @@ You can disable all authentication on reserved nodes except for the user of this
 ###################
 
 The processus executed by OAR to prepare and launch the user job may be detached from its ssh connexion. So we must redirect STDIN, STDOUT and STDERR into /dev/null (when you detach a processus you are obliged to do that or some programs could hang).
-In this way you can not see the results of "echo" command in the prologue and epilogue. I suggest to write your debug informations in files instead.
+In this way you cannot see the results of "echo" command in the prologue and epilogue. I suggest to write your debug informations in files instead.
 

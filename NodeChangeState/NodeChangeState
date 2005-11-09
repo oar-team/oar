@@ -52,7 +52,7 @@ foreach my $i (@events_to_check){
                 iolib::set_node_state($base,$j,"Suspected",$finaudTag);
                 $exitCode = 1;
             }else{
-                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we can not Suspect this node because there is at least one other job on it\n");
+                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because there is at least one other job on it\n");
             }
         }
     }

@@ -160,7 +160,7 @@ sub treate_waiting_reservation_jobs($$){
         if ($current_time_sec > $start+$max ){
             oar_debug("[oar_scheduler] treate_waiting_reservation_jobs :  Reservation $job->{idJob} in ERROR\n");
             iolib::set_job_state($dbh, $job->{idJob}, "Error");
-            iolib::set_job_message($dbh,$job->{idJob},"[oar_scheduler] Reservation has expired and it can not be started.");
+            iolib::set_job_message($dbh,$job->{idJob},"[oar_scheduler] Reservation has expired and it cannot be started.");
             $return = 1;
         }
         my $nbNodes = scalar(iolib::get_gantt_Alive_nodes_for_job($dbh,$job->{idJob}));

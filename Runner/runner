@@ -93,7 +93,7 @@ my @jobResaToAck = iolib::get_jobs_in_state($base,"toAckReservation");
 for (my $i = 0; $i <= $#jobResaToAck; $i ++){
     oar_debug("[Runner] Treate job $jobResaToAck[$i]->{idJob} in toAckReservation state\n");
     if (answer($jobResaToAck[$i]->{idJob},$jobResaToAck[$i]->{infoType},"GOOD RESERVATION") == 1){
-        oar_warn("[Runner] Frag job $jobResaToAck[$i]->{idJob}), I can not notify oarsub for the reservation\n");
+        oar_warn("[Runner] Frag job $jobResaToAck[$i]->{idJob}), I cannot notify oarsub for the reservation\n");
         iolib::add_new_event($base,"CAN_NOT_NOTIFY_OARSUB",$jobResaToAck[$i]->{idJob},"[runner] Can not notify oarsub for the job $jobResaToAck[$i]->{idJob}");
         iolib::frag_job($base,$jobResaToAck[$i]->{idJob});
         $exitCode = 1;
@@ -127,7 +127,7 @@ foreach my $job (@joblist) {
             oar_debug("[Runner] Interactive request nothing to do Answer to the client Qsub -I\n");
             # repondre au client sur jobinfo
             if (answer($jobid,$jobinfo,"GOOD JOB") == 1){
-                oar_warn("[Runner] Frag job $jobid, I can not notify oarsub\n");
+                oar_warn("[Runner] Frag job $jobid, I cannot notify oarsub\n");
                 iolib::frag_job($base,$jobid);
                 $exitCode = 1;
             }

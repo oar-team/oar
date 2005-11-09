@@ -77,7 +77,7 @@ setup_conf() {
 
 setup_db() {
 	if [ ! -x /usr/sbin/oar_db_init ]; then
-		echo "Error: can not execute OAR database initialization script"
+		echo "Error: cannot execute OAR database initialization script"
 		exit 1
 	fi
 	db_get oar/db/doinit

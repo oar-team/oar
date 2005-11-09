@@ -37,7 +37,7 @@ oar (1.5) unstable; urgency=low
     events that occure in OAR for jobs.
   * detection of errors (they can be treced via event_log table):
       - job working directory does not exist on the node
-      - output files can not be created
+      - output files cannot be created
   * add deploy scheduler awareness (schedule on non deploy nodes firstly)
   * possibility to change property value via oarnodesetting command (-p option)
   * add the command "oaremovenode" that permits to delete a node of the

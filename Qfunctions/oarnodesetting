@@ -116,7 +116,7 @@ if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state 
 defined $hostname or $hostname = hostname();
 defined $maxWeight or $maxWeight = 1;
 
-my $base = iolib::connect() or die "can not connect to the data base\n";
+my $base = iolib::connect() or die "cannot connect to the data base\n";
 
 $node_info = iolib::get_node_info($base,$hostname);
 

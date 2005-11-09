@@ -101,7 +101,7 @@ sub pull() {
 	my $quit=$cgi->param('QUIT');
 	my $hostname=$cgi->param('HOSTNAME') or die "Node hostname missing.";
 	my $maxweight=$cgi->param('MAXWEIGHT') or die "Node max weight missing.";
-	my $base = iolib::connect() or die "can not connect to the data base\n";
+	my $base = iolib::connect() or die "cannot connect to the data base\n";
 	my $is_desktop_computing = iolib::is_node_desktop_computing($base,$hostname);
 	my $do_notify;
 	$do_notify=undef;
@@ -205,7 +205,7 @@ sub pull() {
 	foreach my $jobid (keys %$agentJobs) {
 		if (defined $agentJobs->{$jobid}->{'terminated'}) {
 			# TODO: As soon as BibBip becomes a library, replace this copy of BipBip code by a function call.
-			#	my $base = iolib::connect() or die "cgi-job-end: can not connect to the data base\n";
+			#	my $base = iolib::connect() or die "cgi-job-end: cannot connect to the data base\n";
 			message("Job $jobid terminated\n");
 			$base->do("LOCK TABLE jobs WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE,nodeState_log WRITE");
 			my $refJob = iolib::get_job($base,$jobid);
@@ -260,7 +260,7 @@ sub pull() {
 # gives the stagein for a job
 sub jobStageIn() {
 	my $jobid =$cgi->param('JOBID') or die "JOBID not found.\n";
-	my $base = iolib::connect() or die "can not connect to the data base\n";
+	my $base = iolib::connect() or die "cannot connect to the data base\n";
 	my $stagein = iolib::get_job_stagein($base,$jobid);
 	iolib::disconnect($base);
 	if ($stagein->{'method'} eq "FILE") {

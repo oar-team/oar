@@ -4,40 +4,41 @@ OAR CHANGELOG
 
 version 1.6.1:
 ==============
-    - now when the connection to the DB fails, OAR retry until 5 tries
-    - treate event EXTERMINATE_JOB and suspect all nodes if possible
+    - when a connection to the DB fails, OAR retrie 5 times
+    - handle the EXTERMINATE_JOB event and suspect all nodes if possible
     - add job state log table
     - add node properties log table
     - add possibility to use sentinelle.rb script in the ping_checker module
-    - add a GRID5000 specific scheduler which implement e specific policy
+    - add a GRID5000 specific scheduler which implements specific policy
       (oar_sched_gant_g5k)
     - add -s option to oarnodes command --> show only state of nodes
     - add -l option to oarnodes command --> show only the node list
-    - now root can delete all jobs like oar user
-    - change oardel messages
-    - add limitation of the command (with arguments) specified by users::
+    - root can now delete any jobs in the same way the oar user could
+    - change a few oardel messages
+    - limit the commands (with arguments) specified by users::
 
         regular expression : [\w\s\/\.\-]*
 
     - change oaremovenode command to oarremovenode
-    - enhance job error management and decisions to suspect nodes
-    - bugs fix about accounting
+    - enhance job error management
+    - enhance suspicious nodes detection
+    - fix bugs about accounting
 
 version 1.6:
 ============
-    - debug reservation jobs (if the job has not the right amount requested nodes then it will wait a timeout. After it will be launched on rest nodes).
+    - debug reservation jobs (if the job has not the right number of requested nodes then it will wait for a delay. Once expired, the job will be launched on the nodes available).
     - add a cache for visualization of the gantt scheme (add two gantt table for the visu)
-    - add an event log mechanism. It permits to know all decisions and events that occure in OAR for jobs.
+    - add an event log mechanism. It permits to know all decisions and events occuring in OAR with regards to jobs.
     - detection of errors (they can be traced via event_log table):
         * job working directory does not exist on the node
-        * output files can not be created
+        * output files cannot be created
     - add deploy scheduler awareness (schedule on non deploy nodes firstly)
     - possibility to change property value via oarnodesetting command (-p option)
     - add the command "oaremovenode" that allows to delete a node of the database definitely
-    - bug fix : now oarsub can read the user script even if oar has no right
+    - bug fix : now oarsub can use the user's script even if the oar user cannot
     - now, you can use special value "all" in oarsub ("nodes" resource). It gives all free nodes corresponding to the weight and properties specified.
     - debug Gantt visualization
-    - add the possibility to check nodes via nmap
+    - add the possibility to test nodes via nmap
     - add accounting features (accounting table)
     - change nodeState_log table scheme to increase rapidity
 
@@ -48,19 +49,19 @@ version 1.5:
 version 1.4:
 ============
     - add "DEPLOY_HOSTNAME" tag in oar.conf
-      It specifies the node where OAR will be connected to submit a job in the deploy queue.
-    - "besteffort" jobs are now killed by the oar_meta_sched. It simplifies the write of schedulers (they do not care about "besteffort" jobs).
+      This variable specifies the node where OAR will be connected to submit a job in the deploy queue.
+    - "besteffort" jobs are now killed by the oar_meta_sched. This feature simplifies the writing of new schedulers as they do nothave to care about "besteffort" jobs.
     - bug fix about job startTime and stopTime (no more overlapping)
 
 version 1.3:
 ============
-    - Merge of the desktop computing branch.
+    - Merging of the desktop computing branch.
     - Add some changes for the kaDeploy mode (for a kaDeploy reservation, you are logged on the server instead of the first node).
-    - Add a new module "finaud" : check every 5 minutes if "Suspected" are still suspected and "Alive" nodes are still alive.
+    - Add a new module "finaud" : check every 5 minutes if nodes in state "Suspected" are still suspected and if the ones in state"Alive" are still alive.
 
 version 1.2:
 ============
-    - change ping checker default strategy. do 10 pings in root.
+    - change ping checker default strategy - do 10 pings in root.
 
 version 1.1.2:
 ==============
@@ -73,30 +74,30 @@ version 1.1.1:
 version 1.1.0:
 ==============
     - bug fix (MySQL database deconnection)
-    - oarexec can be detached from the server. So OAR is now more scalable and the server can be rebooted without to lose running jobs. To allow or not this feature, see the DETACH_JOB tag in the oar.conf file.
+    - oarexec can be detached from the server. So OAR is now more scalable and the server can be rebooted without risking losing the running jobs. To enable/disable this feature, look for the DETACH_JOB tag in the oar.conf file.
 
 version 1.0.0:
 ==============
     - 0.9.7 version released as the stable version
-    - fix CHANGELOG :-)
+    - Fix CHANGELOG :-)
 
 version 0.9.7:
 ==============
-    - complete change of installation procedure (Makefile)
+    - Complete change of installation procedure (Makefile)
     - Debian packages are now available
-    - Examples of prologue/epilogue that can clean SMP better
-    - use of a sudo wrapper instead of setuid bit on perl scripts (now users must be in oar group)
+    - Examples of prologue/epilogue that can clean SMP better are provided
+    - Use of a sudo wrapper instead of setuid bit on perl scripts (now users must be in oar group)
 
 version 0.9.6:
 ==============
-    - socket connection between server and node is removed (this socket permitted to send kill notification to oarexec. Now you can kill oarexec directely)
-    - user commands are launched by a wrapper. It executes sudo command and set variables for perl library and OAR install path. So you must configure sudo for oar group (there is no suid bit in the new install).
+    - Socket connection between server and node is removed (this socket permitted to send kill notification to oarexec. Now you can kill oarexec directly)
+    - User commands are launched by means of a wrapper. It executes sudo command and set variables for the perl library and OAR installation paths. You must configure sudo for oar group (there is no longer a suid bit in the new installation).
 
 version 0.9.5:
 ==============
-    - add reservation feature
-    - bug fix
-    - remise en place de la généricité des politiques de scheduling pour chacune des queues
+    - Add reservation feature
+    - Bug fix
+    - Scheduling policy templating has been re-enabled for each of the queues.
 
 version 0.9.4:
 ==============

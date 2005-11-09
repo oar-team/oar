@@ -1,11 +1,16 @@
+                    OAR resource manager
+                    --------------------
 
-	Welcome !
+OAR is a resource manager (or batch scheduler if you prefer this wording) for
+small to large clusters.
 
-OAR is a resource manager or (batch scheduler) for little to large clusters. It's suitable for productive plateforms and research experiments.
+It is suitable for production use and may also be used as a tool to do research
+experiments.
 
-See INSTALL file for intall procedure.
+See INSTALL file to be shown with a detailed installation procedure.
 
-See manpages and site (http://oar.imag.fr) for documentation. 
+Feel free to check the manpages and the OAR web site (http://oar.imag.fr/) for
+further information.
 
 Some features of OAR :
 
@@ -20,7 +25,6 @@ Some features of OAR :
 - Check compute nodes before launching
 - Epilogue/Prologue scripts
 - No Daemon on compute nodes
-- rsh and ssh as remote execution protocols (managed by Taktuk)
 - Dynamic insertion/deletion of compute node
 - Logging
 - Backfiling

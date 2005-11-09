@@ -315,7 +315,7 @@ if (defined($connectResa)){
         system($cmd);
         print("Disconnect from OAR reservation $connectResa\n");
     }else{
-        print("/!\\ You can not connect to the job $connectResa (maybe you are not the right user OR the job $connectResa is not a reservation OR this job is not Running OR it is not an Interactive connection)\n");
+        print("/!\\ You cannot connect to the job $connectResa (maybe you are not the right user OR the job $connectResa is not a reservation OR this job is not Running OR it is not an Interactive connection)\n");
         exit(1);
     }
     exit(0);

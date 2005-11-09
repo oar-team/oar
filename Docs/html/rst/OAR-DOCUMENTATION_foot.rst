@@ -338,9 +338,9 @@ The different event types are:
    artificially.
  - "WORKING_DIRECTORY" : the directory from which the job was submitted does
    not exist on the node assigned by the system.
- - "OUTPUT_FILES" : OAR can not write the output files (stdout and stderr) in
+ - "OUTPUT_FILES" : OAR cannot write the output files (stdout and stderr) in
    the working directory.
- - "CAN_NOT_NOTIFY_OARSUB" : OAR can not notify the oarsub process for an
+ - "CAN_NOT_NOTIFY_OARSUB" : OAR cannot notify the oarsub process for an
    interactive job (maybe the user has killed this process).
  - "WALLTIME" : the job has reached its walltime.
  - "SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION" : this means that there is not

@@ -87,11 +87,11 @@ sub quit_oarexec($){
                     oar_debug("[oarexec $OAR_JOBID] I notified Almighty with my exit value $exit_value;so I am exiting\n");
                     exit($exit_value);
                 }else{
-                    oar_error("[oarexec $OAR_JOBID] I can not notify Almighty; maybe the server is down\n");
+                    oar_error("[oarexec $OAR_JOBID] I cannot notify Almighty; maybe the server is down\n");
                 }
                 close($socket);
             }else{
-                oar_error("[oarexec $OAR_JOBID] I can not notify Almighty; maybe the server is down or network is wrong configured\n");
+                oar_error("[oarexec $OAR_JOBID] I cannot notify Almighty; maybe the server is down or network is wrong configured\n");
             }
             sleep($waitTime);
             if ($waitTime < $maxWaitTime){
@@ -182,7 +182,7 @@ oar_debug("[oarexec $OAR_JOBID] job id : $OAR_JOBID user : $user; launchingDirec
 #create node set file and parse command args
 $OAR_FILE_NODES="/tmp/OAR_$OAR_JOBID";
 if (! open(FILE,">$OAR_FILE_NODES")){
-    oar_error("[oarexec $OAR_JOBID] I can not write file $OAR_FILE_NODES\n");
+    oar_error("[oarexec $OAR_JOBID] I cannot write file $OAR_FILE_NODES\n");
     exit(5);
     #quit_oarexec(5);
 }
@@ -232,7 +232,7 @@ if ( $job_detached == 1 ){
 #Write file with this oarexec pid
 $oarPidFile = "/tmp/pid_of_oarexec_for_jobId_$OAR_JOBID";
 if (! open(FILEPID,">$oarPidFile")){
-    oar_error("[oarexec $OAR_JOBID] I can not write file $oarPidFile\n");
+    oar_error("[oarexec $OAR_JOBID] I cannot write file $oarPidFile\n");
     CleanAll();
     #exit(6);
     quit_oarexec(6);
