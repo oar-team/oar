@@ -75,6 +75,7 @@ common:
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodesetting
 	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
+	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 
 server:
 	install -d -m 0755 $(OARDIR)

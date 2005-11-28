@@ -6,6 +6,7 @@
 use strict;
 use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_Tools;
 use Sys::Hostname;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
@@ -322,6 +323,10 @@ autoflush pipeKillWrite 1;
 autoflush pipeKillRead 1;
 
 sub killSignalHandler {
+    $SIG{TERM} = \&killSignalHandler;
+    $SIG{INT} = \&killSignalHandler;
+    $SIG{QUIT} = \&killSignalHandler;
+
     oar_debug("[oarexec $OAR_JOBID] In signal handler of @_\n");
     print(pipeKillWrite "KILL\n");
 }
@@ -329,6 +334,26 @@ sub killSignalHandler {
 $SIG{TERM} = \&killSignalHandler;
 $SIG{INT} = \&killSignalHandler;
 $SIG{QUIT} = \&killSignalHandler;
+
+sub chekpointSignalHandler {
+    $SIG{USR2} = \&chekpointSignalHandler;
+
+    oar_debug("[oarexec $OAR_JOBID] In checkpoint signal handler of @_\n");
+    #We must send SIGUSR2 to the child of $pid
+    
+    if ($pid > 0){
+        my %tmpHash = oar_Tools::getAllProcessChilds();
+        my $pidToSendKill = @{$tmpHash{$pid}}[0];
+        if (defined($pidToSendKill)){
+            oar_debug("[oarexec $OAR_JOBID] Send signal SIGUSR2 to the pid $pidToSendKill\n");
+            system("sudo kill -s SIGUSR2 $pidToSendKill");
+        }else{
+            oar_warn("[oarexec $OAR_JOBID] Cannot find pid of user process???\n");
+        }
+    }
+}
+
+$SIG{USR2} = \&chekpointSignalHandler;
 
 sigprocmask(SIG_UNBLOCK, $blockset);
 

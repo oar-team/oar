@@ -4,6 +4,8 @@ OAR TODO
 
 .. contents:: Table des matières
 
+my $quotedString = $dbh->quote( $string );
+
 -------------
 Documentation
 -------------
@@ -225,3 +227,10 @@ Tests de non regression
 Faire les *man* des commandes qui manquent
 ------------------------------------------
 
+----
+BUGS
+----
+Regarder le bug des systemes sous redhat : il faut lancer le Almighty dans un
+screen et sans detachement du oarexec pour que ca marche. Certainement un 
+probleme de SSH avec le -t (essayer plusieurs -t ???). Probleme de tty???
+Probleme de sudo???

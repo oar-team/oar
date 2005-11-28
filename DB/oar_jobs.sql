@@ -23,18 +23,16 @@
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
 idJob INT UNSIGNED NOT NULL AUTO_INCREMENT,
+jobName VARCHAR( 255 ) NOT NULL ,
 jobType ENUM('INTERACTIVE','PASSIVE') DEFAULT 'PASSIVE' NOT NULL ,
 infoType VARCHAR( 255 ) ,
 state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')  NOT NULL ,
 reservation ENUM('None','toSchedule','Scheduled') DEFAULT 'None'  NOT NULL ,
 message VARCHAR( 255 ) ,
 user VARCHAR( 20 ) NOT NULL ,
-nbNodes INT UNSIGNED NOT NULL ,
-weight INT UNSIGNED NOT NULL ,
 command TEXT ,
 bpid VARCHAR( 255 ) ,
 queueName VARCHAR( 100 ) NOT NULL ,
-maxTime TIME NOT NULL ,
 properties TEXT ,
 launchingDirectory VARCHAR( 255 ) DEFAULT ' ' NOT NULL ,
 submissionTime DATETIME NOT NULL ,
@@ -49,12 +47,33 @@ INDEX accounted (accounted),
 PRIMARY KEY (idJob)
 );
 
-#DROP TABLE IF EXISTS jobState_log;
-CREATE TABLE IF NOT EXISTS jobState_log (
+#DROP TABLE IF EXISTS moldableJobs_description;
+CREATE TABLE IF NOT EXISTS moldableJobs_description (
+moldableId INT UNSIGNED NOT NULL AUTO_INCREMENT,
+moldableJobId INT UNSIGNED NOT NULL ,
+moldableWalltime INT UNSIGNED NOT NULL ,
+moldableOrder INT UNSIGNED NOT NULL DEFAULT 0,
+INDEX job (moldableJobId),
+PRIMARY KEY (moldableId)
+);
+
+#DROP TABLE IF EXISTS jobResources_description;
+CREATE TABLE IF NOT EXISTS jobResources_description (
+resJobMoldableId INT UNSIGNED NOT NULL,
+resJobResourceType VARCHAR(255) NOT NULL,
+resJobValue INT UNSIGNED NOT NULL,
+resJobOrder INT UNSIGNED NOT NULL DEFAULT 0,
+INDEX moldableJob (resJobMoldableId),
+PRIMARY KEY (resJobMoldableId,resJobResourceType)
+);
+
+#DROP TABLE IF EXISTS jobStates_log;
+CREATE TABLE IF NOT EXISTS jobStates_log (
 jobId INT UNSIGNED NOT NULL ,
 jobState ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')  NOT NULL ,
 dateStart DATETIME NOT NULL,
-dateStop DATETIME ,
+#dateStop DATETIME ,
+dateStop INT UNSIGNED NOT NULL DEFAULT 0,
 INDEX id (jobId),
 INDEX state (jobState)
 );
@@ -68,72 +87,57 @@ INDEX fragState (fragState),
 PRIMARY KEY (fragIdJob)
 );
 
-#DROP TABLE IF EXISTS processJobs;
-CREATE TABLE IF NOT EXISTS processJobs (
-idJob INT UNSIGNED NOT NULL ,
-hostname VARCHAR( 100 ) NOT NULL,
-INDEX idJob (idJob),
-PRIMARY KEY (idJob,hostname)
+#DROP TABLE IF EXISTS assignedResources;
+CREATE TABLE IF NOT EXISTS assignedResources (
+idMoldableJob INT UNSIGNED NOT NULL ,
+idResource INT UNSIGNED NOT NULL ,
+assignedResourceIndex ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
+INDEX idMJob (idMoldableJob),
+INDEX log (assignedResourceIndex),
+PRIMARY KEY (idMoldableJob,idResource)
 );
 
-#DROP TABLE IF EXISTS processJobs_log;
-CREATE TABLE IF NOT EXISTS processJobs_log (
-idJob INT UNSIGNED NOT NULL ,
-hostname VARCHAR( 100 ) NOT NULL,
-INDEX idJob (idJob),
-PRIMARY KEY (idJob,hostname)
-);
-
-#DROP TABLE IF EXISTS nodes;
-CREATE TABLE IF NOT EXISTS nodes (
-hostname VARCHAR( 100 ) NOT NULL ,
+#DROP TABLE IF EXISTS resources;
+CREATE TABLE IF NOT EXISTS resources (
+resourceId INT UNSIGNED NOT NULL AUTO_INCREMENT,
+networkAddress VARCHAR( 100 ) NOT NULL ,
 state ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
-maxWeight INT UNSIGNED DEFAULT 1 NOT NULL ,
-weight INT UNSIGNED NOT NULL ,
 nextState ENUM('UnChanged','Alive','Dead','Absent','Suspected') DEFAULT 'UnChanged'  NOT NULL ,
 finaudDecision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 nextFinaudDecision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 INDEX state (state),
 INDEX nextState (nextState),
-PRIMARY KEY (hostname)
+PRIMARY KEY (resourceId)
 );
 
-#DROP TABLE IF EXISTS nodeState_log;
-CREATE TABLE IF NOT EXISTS nodeState_log (
-hostname VARCHAR( 100 ) NOT NULL ,
-changeState ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
+#DROP TABLE IF EXISTS resources_log;
+CREATE TABLE IF NOT EXISTS resources_log (
+resourceId INT UNSIGNED NOT NULL ,
+attribute VARCHAR( 50 ) NOT NULL ,
+value VARCHAR( 100 ) NOT NULL ,
 dateStart DATETIME NOT NULL,
 dateStop DATETIME ,
 finaudDecision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
-INDEX host (hostname),
-INDEX state (changeState),
+INDEX resource (resourceId),
+INDEX attribute (attribute),
 INDEX finaud (finaudDecision)
 );
 
-#DROP TABLE IF EXISTS nodeProperties;
-CREATE TABLE IF NOT EXISTS nodeProperties (
-hostname VARCHAR( 100 ) NOT NULL ,
+#DROP TABLE IF EXISTS resourceProperties;
+CREATE TABLE IF NOT EXISTS resourceProperties (
+resourceId INT UNSIGNED NOT NULL ,
+switch  VARCHAR( 50 ) NOT NULL DEFAULT "0" ,
+node VARCHAR( 100 ) NOT NULL DEFAULT "default" ,
+cpu INT UNSIGNED NOT NULL DEFAULT 0 ,
 besteffort ENUM('YES','NO') DEFAULT 'YES' NOT NULL ,
 deploy ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 expiryDate DATETIME NOT NULL ,
 desktopComputing ENUM('YES','NO') DEFAULT 'NO' NOT NULL,
-PRIMARY KEY (hostname)
+PRIMARY KEY (resourceId)
 );
 
-#DROP TABLE IF EXISTS nodeProperties_log;
-CREATE TABLE IF NOT EXISTS nodeProperties_log (
-hostname VARCHAR( 100 ) NOT NULL ,
-property VARCHAR( 50 ) NOT NULL ,
-value VARCHAR( 100 ) NOT NULL,
-dateStart DATETIME NOT NULL,
-dateStop DATETIME ,
-INDEX host (hostname),
-INDEX prop (property),
-INDEX val (value)
-);
-
-#DROP TABLE IF EXISTS queue;
-CREATE TABLE IF NOT EXISTS queue (
+#DROP TABLE IF EXISTS queues;
+CREATE TABLE IF NOT EXISTS queues (
 queueName VARCHAR( 100 ) NOT NULL ,
 priority INT UNSIGNED NOT NULL ,
 schedulerPolicy VARCHAR( 100 ) NOT NULL ,
@@ -147,32 +151,32 @@ rule VARCHAR( 255 ) NOT NULL
 #priority INT UNSIGNED NOT NULL DEFAULT 1
 );
 
-#DROP TABLE IF EXISTS ganttJobsPrediction;
-CREATE TABLE IF NOT EXISTS ganttJobsPrediction (
-idJob INT UNSIGNED NOT NULL ,
+#DROP TABLE IF EXISTS ganttJobsPredictions;
+CREATE TABLE IF NOT EXISTS ganttJobsPredictions (
+idMoldableJob INT UNSIGNED NOT NULL ,
 startTime DATETIME NOT NULL ,
-PRIMARY KEY (idJob)
+PRIMARY KEY (idMoldableJob)
 );
 
-#DROP TABLE IF EXISTS ganttJobsPrediction_visu;
-CREATE TABLE IF NOT EXISTS ganttJobsPrediction_visu (
-idJob INT UNSIGNED NOT NULL ,
+#DROP TABLE IF EXISTS ganttJobsPredictions_visu;
+CREATE TABLE IF NOT EXISTS ganttJobsPredictions_visu (
+idMoldableJob INT UNSIGNED NOT NULL ,
 startTime DATETIME NOT NULL ,
-PRIMARY KEY (idJob)
+PRIMARY KEY (idMoldableJob)
 );
 
-#DROP TABLE IF EXISTS ganttJobsNodes;
-CREATE TABLE IF NOT EXISTS ganttJobsNodes (
-idJob INT UNSIGNED NOT NULL ,
-hostname VARCHAR( 100 ) NOT NULL ,
-PRIMARY KEY (idJob,hostname)
+#DROP TABLE IF EXISTS ganttJobsResources;
+CREATE TABLE IF NOT EXISTS ganttJobsResources (
+idMoldableJob INT UNSIGNED NOT NULL ,
+idResource INT UNSIGNED NOT NULL ,
+PRIMARY KEY (idMoldableJob,idResource)
 );
 
-#DROP TABLE IF EXISTS ganttJobsNodes_visu;
-CREATE TABLE IF NOT EXISTS ganttJobsNodes_visu (
-idJob INT UNSIGNED NOT NULL ,
-hostname VARCHAR( 100 ) NOT NULL ,
-PRIMARY KEY (idJob,hostname)
+#DROP TABLE IF EXISTS ganttJobsResources_visu;
+CREATE TABLE IF NOT EXISTS ganttJobsResources_visu (
+idMoldableJob INT UNSIGNED NOT NULL ,
+idResource INT UNSIGNED NOT NULL ,
+PRIMARY KEY (idMoldableJob,idResource)
 );
 
 #DROP TABLE IF EXISTS files;
@@ -187,8 +191,8 @@ INDEX md5sum (md5sum),
 PRIMARY KEY (idFile)
 );
 
-#DROP TABLE IF EXISTS event_log;
-CREATE TABLE IF NOT EXISTS event_log (
+#DROP TABLE IF EXISTS events_log;
+CREATE TABLE IF NOT EXISTS events_log (
 idEvent INT UNSIGNED NOT NULL AUTO_INCREMENT,
 type VARCHAR(50) NOT NULL,
 idJob INT UNSIGNED NOT NULL ,
@@ -200,11 +204,12 @@ INDEX eventCheck (toCheck),
 PRIMARY KEY (idEvent)
 );
 
-#DROP TABLE IF EXISTS event_log_hosts;
-CREATE TABLE IF NOT EXISTS event_log_hosts (
+#DROP TABLE IF EXISTS events_log_resources;
+CREATE TABLE IF NOT EXISTS events_log_resources (
 idEvent INT UNSIGNED NOT NULL,
-hostname VARCHAR(255) NOT NULL,
-INDEX eventHostname (hostname)
+idResource INT UNSIGNED NOT NULL ,
+INDEX eventHostname (idResource),
+PRIMARY KEY (idEvent, idResource)
 );
 
 #DROP TABLE IF EXISTS accounting;
@@ -215,12 +220,18 @@ user VARCHAR( 20 ) NOT NULL ,
 queue_name VARCHAR( 100 ) NOT NULL ,
 consumption_type ENUM("ASKED","USED") NOT NULL ,
 consumption INT UNSIGNED NOT NULL ,
-INDEX accounting_start (window_start),
-INDEX accounting_stop (window_stop),
 INDEX accounting_user (user),
 INDEX accounting_queue (queue_name),
 INDEX accounting_type (consumption_type),
 PRIMARY KEY (window_start,window_stop,user,queue_name,consumption_type)
+);
+
+#DROP TABLE IF EXISTS jobDependencies;
+CREATE TABLE IF NOT EXISTS jobDependencies (
+idJob INT UNSIGNED NOT NULL ,
+idJobRequired INT UNSIGNED NOT NULL,
+INDEX id (idJob),
+PRIMARY KEY (idJob,idJobRequired)
 );
 
 #Insertion par defaut
@@ -237,8 +248,8 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ( "$queueName" eq "be
 # Force deploy jobs to go on nodes with the deploy property
 INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ( "$queueName" eq "deploy" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND deploy = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "deploy = \\\\\\"YES\\\\\\"";} }');
 
-INSERT IGNORE INTO `queue` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('admin','10','oar_sched_gant');
-INSERT IGNORE INTO `queue` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('default','2','oar_sched_gant');
-INSERT IGNORE INTO `queue` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('deploy','1','oar_sched_gant');
-INSERT IGNORE INTO `queue` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('besteffort','0','oar_sched_gant');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('admin','10','oar_sched_gant');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('default','2','oar_sched_gant');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('deploy','1','oar_sched_gant');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('besteffort','0','oar_sched_gant');
 

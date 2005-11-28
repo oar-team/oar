@@ -103,32 +103,37 @@ sub scan_script($){
     if ($noscript == 1) {
         return;
     }
-    while (<FILE>) {
-        if ( /(^#PBS|^#OAR)/ ){
-            my $resourceTmp;
-            ($resourceTmp) = /-l\s*(.+)\s*$/;
-            if (defined $resourceTmp) {
-                @resource_list = split(',', $resourceTmp );
-                foreach $index (0 .. $#resource_list) {
-                    ($resourceTmp,$value) = split("=",$resource_list[$index]);
-                    print("Resource = $resourceTmp Value = $value\n");
-                    if($resourceTmp eq 'nodes'){
-                        $nbnodes = $value;
-                    }elsif ($resourceTmp eq 'walltime') {
-                        $walltime = $value;
-                        ($w_h,$w_mn,$w_sec)=split(':',$value);
-                        if (not defined($w_sec)) {
-                            $walltime = $walltime.":00";
+
+    if (<FILE> =~ /^#/){
+        while (<FILE>) {
+            if ( /^#OAR\s+/ ){
+                my $line = $_;
+                if ($line =~ m/^#OAR\s+-l\s*(.+)\s*$/m){
+                    my $resourceTmp = $1;
+                    @resource_list = split(',', $resourceTmp );
+                    foreach $index (0 .. $#resource_list) {
+                        ($resourceTmp,$value) = split("=",$resource_list[$index]);
+                        print("Resource = $resourceTmp Value = $value\n");
+                        if($resourceTmp eq 'nodes'){
+                            $nbnodes = $value;
+                        }elsif ($resourceTmp eq 'walltime') {
+                            $walltime = $value;
+                            ($w_h,$w_mn,$w_sec)=split(':',$value);
+                            if (not defined($w_sec)) {
+                                $walltime = $walltime.":00";
+                            }
+                        }elsif ($resourceTmp eq 'weight'){
+                            $weight = $value;
+                        }else {
+                            print("/!\\I don t recognize the resource $resourceTmp\n");
                         }
-                    }elsif ($resourceTmp eq 'weight'){
-                        $weight = $value;
-                    }else {
-                        print("/!\\I don t recognize the resource $resourceTmp\n");
                     }
+                }elsif ((not defined($queueName)) && ($line =~ m/^#OAR\s+\-q\s*(.+)\s*$/m)) {
+                    print $_;
+                    ($queueName) = $1;
+                }elsif ((not defined($jobSQLproperties)) && ($line =~ m/^#OAR\s+-p\s*"(.+)"\s*$/m)) {
+                    $jobSQLproperties = $1;
                 }
-            }
-            if (not defined($queueName)) {
-                ($queueName) = /-q\s*(.+)\s*$/;
             }
         }
     }

@@ -2,6 +2,11 @@
 OAR CHANGELOG
 =============
 
+version 2.0.0++ enhanced:
+=========================
+    - Add a signal handler in oarexec and propagate this signal to the user process
+    - Support '#OAR -p ...' options in user script
+
 version 1.6.1:
 ==============
     - when a connection to the DB fails, OAR retrie 5 times
