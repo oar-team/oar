@@ -24,6 +24,11 @@ my $binPath = $ENV{OARDIR}."/";
 my $OARPROLOG=$ENV{HOME}."/oar_prologue";
 my $OAREPILOG=$ENV{HOME}."/oar_epilogue";
 
+my $timeout = 60;
+if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
+   $timeout = get_conf("PROLOGUE_EPILOGUE_TIMEOUT"); 
+}
+
 my $OAR_FILE_NODES = "";
 my $oarPidFile = "";
 my $j=0;
@@ -43,7 +48,6 @@ my $user="";
 my $launchingDirectory = "";
 my $weight=1;
 
-my $timeout = 60;
 my $scriptError = 0;
 
 my $job_detached = 0;
