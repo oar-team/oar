@@ -21,10 +21,10 @@ print more informations
 give some stats about state of nodes
 
 =item B<-f>
-detailed display
+very detailed display
 
 =item B<-x>
-like -f
+detailed display
 
 =item B<-j> idJob;
 print detailed informations from a specific job

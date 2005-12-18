@@ -55,6 +55,8 @@ sub print_job ( $ ) {
     my $job_info = iolib::get_job($base,$jobid);
 
     return if (!defined($job_info));
+    
+    my @job_events = iolib::get_job_events($base,$jobid);
 
     if ( defined($opts{f}) ) {
         my @nodes = iolib::get_job_host_distinct($base,$jobid);
@@ -79,6 +81,11 @@ sub print_job ( $ ) {
             print "    scheduledStart = ".$jobGantted{$jobid}->[0]."\n";
         }else{
             print "    scheduledStart = no prediction\n";
+        }
+        print "    events = ";
+        foreach my $e (@job_events){
+            print "[$e->{date}] $e->{type}:$e->{description}";
+            print " , ";
         }
         print "\n";
   }elsif ( defined($opts{x}) || defined($opts{j}) ) {

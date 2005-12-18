@@ -12,13 +12,16 @@ then
     exec $DEFAULT_SHELL "$@"
 else
     # CPUSET assignation
-    CPUSETFILE="/tmp/cpuset/$OARJOBID/tasks"
-    if [ ! -w $CPUSETFILE ]
+    CPUSET_MOUNT_POINT=$(mount -t cpuset | cut -d " " -f 3 | head -1)
+    CPUSETFILE="$CPUSET_MOUNT_POINT/$OAR_CPUSET/tasks"
+    
+    if ( ! $(sudo test -w $CPUSETFILE) )
     then
-        echo "[OARSH] Can not find cpuset file : $CPUSETFILE" 1>&2
+        echo "[OARSH] Cannot find cpuset file : $CPUSETFILE" 1>&2
         exit 1
     fi
-    /bin/echo $$ > $CPUSETFILE
+    MY_PID=$$
+    sudo sh -c "/bin/echo $MY_PID > $CPUSETFILE"
             
     if [ "$1" == "" ]
     then

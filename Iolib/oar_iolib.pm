@@ -32,7 +32,6 @@ sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
 sub get_job_host_distinct($$);
 sub get_job_host_log($$);
-sub get_job_host_to_frag($$);
 sub get_job_cmd_user($$);
 sub get_tokill_job($);
 sub is_tokill_job($$);
@@ -44,7 +43,7 @@ sub set_running_date_arbitrary($$$);
 sub set_finish_date($$);
 sub set_job_number_of_nodes($$$);
 sub form_job_properties($$);
-sub add_micheline_job($$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job_list(@);
@@ -53,7 +52,9 @@ sub get_job($$);
 sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
+sub set_job_autoCheckpointed($$);
 sub frag_job($$);
+sub ask_checkpoint_job($$);
 sub hold_job($$);
 sub resume_job($$);
 sub job_fragged($$);
@@ -162,6 +163,7 @@ sub add_new_event_with_host($$$$$);
 sub check_event($$$);
 sub get_to_check_events($);
 sub get_hostname_event($$);
+sub get_job_events($$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -345,69 +347,6 @@ sub get_job_host_log($$) {
     }
     return @res;
 }
-
-
-# get_job_host_to_frag
-# gets the list of hosts associated to the job passed in parameter (that should
-# be in state 'ToKill') and on which the user has no other jobs running
-# parameters : base, jobid
-# return value : list of hostnames
-# side effects : /
-sub get_job_host_to_frag($$) {
-    my $dbh = shift;
-    my $jobid= shift;
-
-    # gets the user associated to the job
-    my $sth1 = $dbh->prepare("DROP TABLE IF EXISTS userJob");
-    my $sth2 = $dbh->prepare("create temporary table userJob
-                              select user
-                              from jobs
-                              where idJob = '".$jobid."'");
-
-    # gets the list of hosts on which the job is deployed
-    my $sth3 = $dbh->prepare("DROP TABLE IF EXISTS hostnameJob");
-    my $sth4 = $dbh->prepare("create temporary table hostnameJob
-                              select distinct hostname
-                              from processJobs
-                              where idJob = '".$jobid."'");
-
-    # gets the list of running jobs associated to the user
-    my $sth5 = $dbh->prepare("DROP TABLE IF EXISTS idUserJob");
-    my $sth6 = $dbh->prepare("create temporary table idUserJob
-                              select j.idJob
-                              from jobs as j, userJob as u
-                              where     j.user = u.user
-                              and j.state = \"Running\"");
-
-    # gets the list of hosts on which there exists some running job of the user
-    my $sth7 = $dbh->prepare("DROP TABLE IF EXISTS hostnameOtherJob");
-    my $sth8 = $dbh->prepare("create temporary table hostnameOtherJob
-                              select distinct p.hostname
-                              from processJobs as p, idUserJob as h
-                              where p.idJob = h.idJob");
-
-    # gets the list of hosts associated to the job and on which the user has
-    # no other running jobs
-    my $sth9 = $dbh->prepare("select hostnameJob.hostname
-                              from hostnameJob left join hostnameOtherJob on hostnameJob.hostname = hostnameOtherJob.hostname
-                              where hostnameOtherJob.hostname is NULL");
-    $sth1->execute();
-    $sth2->execute();
-    $sth3->execute();
-    $sth4->execute();
-    $sth5->execute();
-    $sth6->execute();
-    $sth7->execute();
-    $sth8->execute();
-    $sth9->execute();
-
-    my @res = ();
-    while (my $ref = $sth9->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    return @res;
-}
-
 
 
 # get_job_cmd_user
@@ -627,8 +566,8 @@ sub form_job_properties($$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$) {
-    my ($dbh, $jobType, $nbNodes , $weight, $command, $infoType, $maxTime, $queueName, $jobproperties, $startTimeReservation, $idFile) = @_;
+sub add_micheline_job($$$$$$$$$$$$) {
+    my ($dbh, $jobType, $nbNodes , $weight, $command, $infoType, $maxTime, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint) = @_;
 
     my $startTimeJob = "0000-00-00 00:00:00";
     my $reservationField = "None";
@@ -710,8 +649,8 @@ sub add_micheline_job($$$$$$$$$$$) {
     }
 
     $dbh->do("INSERT INTO jobs
-              (idJob,jobType,infoType,state,user,nbNodes,weight,command,submissionTime,maxTime,queueName,properties,launchingDirectory, reservation, startTime, idFile) VALUES
-              ($id,\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",$nbNodes,$weight,\"$command\",NOW(),\"$maxTime\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile)");
+              (idJob,jobType,infoType,state,user,nbNodes,weight,command,submissionTime,maxTime,queueName,properties,launchingDirectory, reservation, startTime, idFile, checkpoint) VALUES
+              ($id,\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",$nbNodes,$weight,\"$command\",NOW(),\"$maxTime\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint)");
 
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO jobState_log (jobId,jobState,dateStart)
@@ -929,6 +868,18 @@ sub set_job_message($$$) {
                 WHERE idJob = $idJob");
 }
 
+# set_job_autoCheckpointed
+# sets the autoCheckpointed field into YES of the job of id passed in parameter
+# parameters : base, jobid
+# return value : /
+sub set_job_autoCheckpointed($$) {
+    my $dbh = shift;
+    my $idJob = shift;
+    $dbh->do("UPDATE jobs
+                SET autoCheckpointed = \"YES\"
+                WHERE idJob = $idJob");
+}
+
 
 # frag_job
 # sets the flag 'ToFrag' of a job to 'Yes'
@@ -946,17 +897,18 @@ sub frag_job($$) {
     my $job = get_job($dbh, $idJob);
 
     if((defined($job)) && (($lusr eq $job->{'user'}) or ($lusr eq "oar") or ($lusr eq "root"))) {
-        $dbh->do("LOCK TABLE fragJobs WRITE");
+        $dbh->do("LOCK TABLE fragJobs WRITE, event_log WRITE");
         my $nbRes = $dbh->do("SELECT *
-                             FROM fragJobs
-                             WHERE fragIdJob = $idJob
-                            ");
+                              FROM fragJobs
+                              WHERE fragIdJob = $idJob
+                             ");
 
         if ( $nbRes < 1 ){
             #my $time = get_date();
             $dbh->do("INSERT INTO fragJobs (fragIdJob,fragDate)
-            VALUES ($idJob,NOW())
-            ");
+                      VALUES ($idJob,NOW())
+                     ");
+            add_new_event($dbh,"FRAG_JOB_REQUEST",$idJob,"User $lusr requested to frag the job $idJob");
         }
         $dbh->do("UNLOCK TABLES");
         return 0;
@@ -965,6 +917,32 @@ sub frag_job($$) {
     }
 }
 
+
+# ask_checkpoint_job
+# Verify if the user is able to checkpoint the job
+# args : database ref, job id
+# returns : 0 if all is good, 1 if the user cannot do this, 2 if the job is not running
+sub ask_checkpoint_job($$){
+    my $dbh = shift;
+    my $idJob = shift;
+
+    my $lusr= getpwuid($ENV{SUDO_UID});
+
+    my $job = get_job($dbh, $idJob);
+
+    if((defined($job)) && (($lusr eq $job->{'user'}) or ($lusr eq "oar") or ($lusr eq "root"))) {
+        if ($job->{state} eq "Running"){
+            #$dbh->do("LOCK TABLE event_log WRITE");
+            add_new_event($dbh,"CHECKPOINT",$idJob,"User $lusr requested a checkpoint on the job $idJob");
+            #$dbh->do("UNLOCK TABLES");
+            return 0;
+        }else{
+            return 2;
+        }
+    }else{
+        return 1;
+    }   
+}
 
 
 # hold_job
@@ -3380,6 +3358,23 @@ sub get_hostname_event($$){
 }
 
 
+# Get events for the specified job
+# args: database ref, job id
+sub get_job_events($$){
+    my $dbh =shift;
+    my $jobId = shift;
+
+    my $sth = $dbh->prepare("SELECT * FROM event_log WHERE idJob = $jobId");
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
 
 # LOCK FUNCTIONS:
 

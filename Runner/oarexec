@@ -14,7 +14,7 @@ use POSIX qw(:signal_h :errno_h :sys_wait_h);
 $| = 1;
 #hang signals
 my $sigset   = POSIX::SigSet->new;
-my $blockset = POSIX::SigSet->new(SIGINT, SIGTERM, SIGQUIT, SIGCHLD);
+my $blockset = POSIX::SigSet->new(SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIGUSR2);
 sigprocmask(SIG_BLOCK, $blockset, $sigset);
 
 init_conf("oar.conf");
@@ -172,6 +172,16 @@ sub killChilds($){
 
     #system("sudo kill -9 $childPid 2>&1 > /dev/null");
     system("$binPath/oarkill $childPid");
+}
+
+sub sendKillSignalToMyself(){
+    my $father = $$;
+    my $pid=fork;
+    if($pid==0){
+        sleep(5);
+        kill('SIGUSR2', $father);
+        exit();
+    }
 }
 
 $host=hostname;
@@ -343,18 +353,7 @@ sub chekpointSignalHandler {
     $SIG{USR2} = \&chekpointSignalHandler;
 
     oar_debug("[oarexec $OAR_JOBID] In checkpoint signal handler of @_\n");
-    #We must send SIGUSR2 to the child of $pid
-    
-    if ($pid > 0){
-        my %tmpHash = oar_Tools::getAllProcessChilds();
-        my $pidToSendKill = @{$tmpHash{$pid}}[0];
-        if (defined($pidToSendKill)){
-            oar_debug("[oarexec $OAR_JOBID] Send signal SIGUSR2 to the pid $pidToSendKill\n");
-            system("sudo kill -s SIGUSR2 $pidToSendKill");
-        }else{
-            oar_warn("[oarexec $OAR_JOBID] Cannot find pid of user process???\n");
-        }
-    }
+    print(pipeKillWrite "CHECKPOINT\n");
 }
 
 $SIG{USR2} = \&chekpointSignalHandler;
@@ -397,6 +396,17 @@ while ($lineRead != $pid){
             oar_debug("[oarexec $OAR_JOBID] Kill children\n");
             killChilds($pid);
             $killMySelf = 1;
+        }elsif ($lineRead eq "CHECKPOINT"){
+            #We must send SIGUSR2 to the child of $pid
+            my %tmpHash = oar_Tools::getAllProcessChilds();
+            my $pidToSendKill = @{$tmpHash{$pid}}[0];
+            if (defined($pidToSendKill)){
+                oar_debug("[oarexec $OAR_JOBID] Send signal SIGUSR2 to the pid $pidToSendKill\n");
+                system("sudo kill -s SIGUSR2 $pidToSendKill");
+            }else{
+                oar_warn("[oarexec $OAR_JOBID] Cannot find pid of user process??? I will retry in 5 seconds\n");
+                sendKillSignalToMyself();
+            }
         }
     }else{
         $lineRead =~ m/(\d+) (\d+)/m;

@@ -1,0 +1,184 @@
+#!/usr/bin/perl -w
+# $Id$
+#
+# This script aims at managing the node properties (list, add, delete).
+# To set the properties values, use oarnodesettings.
+#
+# To use the quiet mode, just do something like:
+#   echo -e "mysqlroot\nmysqlpassword\n" | oar_property.pl -q -l
+
+
+use strict;
+use warnings;
+use DBI;
+use oar_conflib qw(init_conf get_conf is_conf);
+use File::Basename;
+use Getopt::Long;
+
+# The functions are appended at the end of this file
+sub print_usage();
+sub check_property_name($);
+
+Getopt::Long::Configure ("gnu_getopt");
+
+my ($help, $addproperty, $deleteproperty, $renameproperty, $listproperties, $quiet);
+GetOptions ("help|h"   => \$help,
+	    "add|a"    => \$addproperty,
+	    "delete|d" => \$deleteproperty,
+	    "rename|r" => \$renameproperty,
+	    "list|l"   => \$listproperties,
+	    "quiet|q"  => \$quiet);
+
+my $ARGC = scalar @ARGV;
+
+if ($help || ( !$ARGC && !$listproperties) ) {
+	print_usage();
+	exit(0);
+}
+
+init_conf("oar.conf");
+my $dbHost = get_conf("DB_HOSTNAME");
+my $dbName = get_conf("DB_BASE_NAME");
+my $dbUserName = get_conf("DB_BASE_LOGIN");
+my $dbUserPassword = get_conf("DB_BASE_PASSWD");
+
+
+if (!$quiet) {
+	print "## OAR properties - MySQL database ##\n";
+	print "Retrieving OAR base configuration for OAR configuration file:\n";
+	print "\tMySQL server hostname: $dbHost\n";
+	print "\tOAR base name: $dbName\n";
+	print "\tOAR base login: $dbUserName\n";
+
+	$| = 1;
+# DataBase login
+	print "Please enter MySQL admin login information:\n";
+	print "\tAdmin login: ";
+}
+my $dbLogin = <STDIN>;
+chomp $dbLogin;
+if (!$quiet) {
+	# DataBase password or the dbLogin
+	print "\tAdmin password: ";
+}
+system("tty &> /dev/null && stty -echo");
+my $dbPassword = <STDIN>;
+chomp $dbPassword;
+system("tty &> /dev/null && stty echo");
+if (!$quiet) {
+	print("\n\n");
+}
+
+
+
+my $dbh = DBI->connect("DBI:mysql:database=$dbName;host=$dbHost", $dbLogin, $dbPassword, {'RaiseError' => 0});
+my $query;
+
+if ($listproperties) {
+	$query = $dbh->prepare("SHOW COLUMNS FROM nodeProperties") or die "DB error: " . $dbh->errstr;
+	$query->execute() or die "DB error: " . $dbh->errstr;
+
+	while (my $ref = $query->fetchrow_hashref()) {
+		print $ref->{'Field'} . "\n";
+	}
+
+} elsif ($addproperty) {
+	if ($ARGC < 1) {
+		die "Error: missing property name";
+	} elsif ($ARGC > 1) {
+		die "Error: too many property names";
+	}
+
+	my $propertyname = shift(@ARGV);
+	check_property_name($propertyname);
+
+	$query = $dbh->prepare("ALTER TABLE nodeProperties ADD COLUMN ".$propertyname." INT DEFAULT 0")
+		or die "DB error: " . $dbh->errstr;
+	$query->execute()
+		or die "DB error: " . $dbh->errstr;
+
+	if (! $quiet) {
+		print "Added property: $propertyname\n";
+	}
+
+} elsif ($deleteproperty) {
+	if ($ARGC < 1) {
+		die "Error: missing property name";
+	} elsif ($ARGC > 1) {
+		die "Error: too many property names";
+	}
+
+	my $propertyname = shift(@ARGV);
+	check_property_name($propertyname);
+
+	$query = $dbh->prepare("ALTER TABLE nodeProperties DROP COLUMN ".$propertyname)
+		or die "DB error: " . $dbh->errstr;
+	$query->execute()
+		or die "DB error: " . $dbh->errstr;
+
+	if (! $quiet) {
+		print "Removed property: $propertyname\n";
+	}
+
+} elsif ($renameproperty) {
+	if ($ARGC < 2) {
+		die "Error: missing property name";
+	} elsif ($ARGC > 2) {
+		die "Error: too many property names";
+	}
+
+	my $oldpropertyname = shift(@ARGV);
+	my $newpropertyname = shift(@ARGV);
+
+	check_property_name($oldpropertyname);
+	check_property_name($newpropertyname);
+
+	$query = $dbh->prepare("ALTER TABLE nodeProperties CHANGE ".$oldpropertyname." ".$newpropertyname." INT DEFAULT 0")
+		or die "DB error: " . $dbh->errstr;
+	$query->execute()
+		or die "DB error: " . $dbh->errstr;
+
+	if (! $quiet) {
+		print "Renamed property: $oldpropertyname to $newpropertyname\n";
+	}
+
+} else {
+	die "Error: no such option";
+}
+
+$query->finish();
+$dbh->disconnect();
+exit(0);
+
+
+#############################################################################
+# FUNCTIONS
+#
+#Display usage
+sub print_usage() {
+	print <<EOS;
+Usage: $0 [options]
+Manage OAR properties
+Options:
+ -l, --list                               list properties
+ -a NAME, --add NAME                      add property
+ -d NAME, --delete NAME                   delete property
+ -r OLDNAME NAME, --rename OLDNAME NAME   rename property
+ -q, --quiet                              quiet mode (no extra output)
+ -h, --help                               show this help screen
+EOS
+}
+
+# Check that the given parameter is a valid column name to avoid issues within
+# MySQL
+sub check_property_name($) {
+	my $propertyname = shift;
+	if (! $propertyname =~ /^[A-Za-z0-9_]$/) {
+		die "Error: '$propertyname' is not a valid property name";
+	}
+	if ($propertyname =~ /^(hostname|besteffort|deploy|expiryDate|desktopComputing)$/ ) {
+		die "Error: '$propertyname' is a OAR system property and may not be altered";
+	}
+}
+#############################################################################
+

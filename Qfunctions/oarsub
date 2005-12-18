@@ -50,6 +50,7 @@ my $idFile = undef;
 my $md5sum = undef;
 my $stageindir;
 my $sos;
+my $checkpoint=0;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -200,6 +201,7 @@ Options are:
  -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
  -m, --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -v, --verbose                 increase verbosity
+ -k, --checkpoint              enable the job to be checkpointed
  -h, --help                    print this help message
 EOS
 }
@@ -238,8 +240,9 @@ GetOptions ("resource|l=s" => \@resource,
             "property|p=s" => \$jobSQLproperties,
             "reservation|r=s" => \$reservation,
             "connect|c=i" => \$connectResa,
-						"stagein|s=s" => \$stagein,
-            "stagein-md5sum=s" => \$md5sum,
+            "stagein|s=s" => \$stagein,
+            "stagein-md5sum|m=s" => \$md5sum,
+            "checkpoint|k=i" => \$checkpoint,
             "help|h" => \$sos
            );
 
@@ -375,7 +378,7 @@ if ($interactive == 0) {
         print("Host:Port = $host:$serverport \n ");
     }
 
-    $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL");
+    $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL",$checkpoint);
     print("IdJob = $idJob \n");
 }else{
     $cmd_executor = "Qsub -I\n";
@@ -388,7 +391,7 @@ if ($interactive == 0) {
     }
     check_params();
 
-    $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL");
+    $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL",$checkpoint);
     print("IdJob = $idJob \n");
 }
 

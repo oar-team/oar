@@ -31,4 +31,4 @@ mkdir -p /tmp/oar-$VERSION
 cp -a * /tmp/oar-$VERSION
 tar cfj $RPM_HOME/SOURCES/oar-$VERSION.tar.bz2 -C /tmp oar-$VERSION
 
-$FAKEROOT rpm -ba $RPM_HOME/SPECS/oar.spec
+$FAKEROOT rpmbuild -ba $RPM_HOME/SPECS/oar.spec

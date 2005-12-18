@@ -10,6 +10,14 @@ version 2.0.0++ enhanced:
 
 version 1.6.1:
 ==============
+    - initialise the "ganttJobsPrediction" table with a right reference date (1970-01-01 00:00:01)
+    - oarsub has the "-k, --checkpoint" option. It specifies the number of seconds before job walltime to send a SIGUSR2 on it.
+    - You can see the list of events for jobs with -f option in oarstat
+    - oardel can now send SIGUSR2 to the oarexec of a job (-c option)
+    - oardel can now delete several jobs
+    - Add a signal handler in oarexec and propagate this signal to the user process
+    - Support '#OAR -p ...' options in user script
+    - Add in oar.conf the possibility to specify a different timeout for prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT)
     - when a connection to the DB fails, OAR retrie 5 times
     - handle the EXTERMINATE_JOB event and suspect all nodes if possible
     - add job state log table

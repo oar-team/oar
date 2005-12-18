@@ -8,45 +8,114 @@ use DBI();
 use oar_iolib;
 use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_Tools;
+use Getopt::Long;
 
+my $exitValue = 0;
 
+# Display command help
 sub usage {
-    print STDERR "usage: oardel [idJob]\n";
+    warn("usage: oardel [ [-c idJob] | [idJob] ]\n");
     exit 1;
 }
 
+usage if (@ARGV < 1);
+
+# Retrieve informations from OAR configuration file
 init_conf("oar.conf");
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
-usage if (@ARGV < 1);
+# Parse command line
+Getopt::Long::Configure("gnu_getopt");
+my @checkpoint;
+my $sos;
+GetOptions ("checkpoint|c=s" => \@checkpoint,
+            "help|h" => \$sos
+           );
 
-my $idJob = $ARGV[0];
-if ($idJob !~ m/^\s*\d+\s*$/m){
-    die("\"$idJob\" is not a valid OAR job identifier. It must be a number.\n");
-}
+usage if (defined($sos));
 
 my $base = iolib::connect();
-print("Deleting the job = $idJob...");
-my $err = iolib::frag_job($base,$idJob);
-iolib::disconnect($base);
-
-if ($err != 0) {
-    print("ERROR.\n");
-    warn("Can't frag $idJob ; You are not the right user.\n");
-    exit 1;
+# oardel is used to checkpoint some jobs
+if (@checkpoint){
+    foreach my $idJob (@checkpoint){
+        print("Checkpointing the job $idJob ...");
+        # Try to insert checkpoint informations in the database
+        my $err = iolib::ask_checkpoint_job($base,$idJob); 
+        if ($err > 0) {
+            print("ERROR.\n");
+            $exitValue = 1;
+            if ($err == 1){
+                warn("Cannot checkpoint $idJob ; You are not the right user.\n");
+            }else{
+                warn("Cannot checkpoint $idJob ; This job is not running.\n");
+            }
+        }else{
+            my $strComment;
+            # Retrieve node names used by the job
+            my @hosts = iolib::get_job_host_distinct($base,$idJob);
+            my $timeoutSSH = oar_Tools::getSSHTimeout();
+            # Timeout the ssh command
+            eval {
+                $SIG{ALRM} = sub { die "alarm\n" };
+                alarm($timeoutSSH);
+                oar_Tools::signalOarexec($hosts[0],$idJob,"SIGUSR2");
+                alarm(0);
+            };
+            if ($@){
+                print("ERROR.\n");
+                if ($@ eq "alarm\n"){
+                    $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
+                    warn("$strComment\n");
+                    iolib::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
+                }else{
+                    $strComment = "An unknown error occured.";
+                    warn("$strComment\n");
+                    iolib::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
+                }
+            }else{
+                print("DONE.\n");
+                $strComment = "The job $idJob was notified to checkpoint itself (send SIGUSR2).";
+                print("$strComment\n");
+                iolib::add_new_event($base,"CHECKPOINT_SUCCESS",$idJob,$strComment);
+            }
+        }
+    }
 }else{
-    print("REGISTERED.\n");
-    #Signal Almigthy
+    # oardel is used to delete some jobs
+    my @jobRegistered;
+    foreach my $idJob (@ARGV) {
+        if ($idJob !~ m/^\s*\d+\s*$/m){
+            warn("\"$idJob\" is not a valid OAR job identifier. It must be a number.\n");
+            next;
+        }
 
-    my $socket = IO::Socket::INET->new(PeerAddr => $remote_host,
-                                       PeerPort => $remote_port,
-                                       Proto => "tcp",
-                                       Type  => SOCK_STREAM)
-                 or die("Couldn't connect executor $remote_host:$remote_port\nContact your OAR administrator and relaunch the oardel command.\n");
+        print("Deleting the job = $idJob ...");
+        # Try to insert delete informations in the database
+        my $err = iolib::frag_job($base,$idJob);
+        if ($err != 0) {
+            print("ERROR.\n");
+            warn("Cannot frag $idJob ; You are not the right user.\n");
+            $exitValue = 1;
+        }else{
+            print("REGISTERED.\n");
+            push(@jobRegistered,$idJob);
+        }
 
-    print $socket "Qdel\n";
-    print("The job $idJob will be deleted in a near futur.\n");
+    }
+    if (@jobRegistered){
+        #Signal Almigthy
+        my $strError = oar_Tools::notifyAlmighty($remote_host,$remote_port,"Qdel");
+        if (defined($strError)){
+            warn("$strError\n");
+            $exitValue = 2;
+        }else{
+            print("The job(s) [ @jobRegistered ] will be deleted in a near futur.\n");
+        }
+    }
 }
+
+iolib::disconnect($base);
 
 exit 0;
