@@ -6,6 +6,7 @@ use Data::Dumper;
 use IO::Socket::INET;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_Tools;
 
 #Everything is run by oar user
 $ENV{SUDO_UID}=$<;
@@ -152,26 +153,7 @@ sub qget_appendice(){
         my $client=$server->accept();
 
         #Test if this peer is allowed
-        my $extrem = getpeername($client);
-        my ($remotePort,$addr_in) = unpack_sockaddr_in($extrem);
-        my $remoteHost = inet_ntoa($addr_in);
-        oar_debug("[Almighty] Remote host = $remoteHost ; remote port = $remotePort\n");
-        $remoteHost =~ m/^\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*$/m;
-        $remoteHost = ($1 << 24)+($2 << 16)+($3 << 8)+$4;
-        my $i = 0;
-        my $hostAllow = 0;
-        while (($hostAllow == 0) && ($#authorizedHosts >= $i)){
-            oar_debug("[Almighty] Check host with $authorizedHosts[$i]->[0].$authorizedHosts[$i]->[1].$authorizedHosts[$i]->[2].$authorizedHosts[$i]->[3]/$authorizedHosts[$i]->[4] --> ");
-            my $network = ($authorizedHosts[$i]->[0] << 24)+($authorizedHosts[$i]->[1] << 16)+($authorizedHosts[$i]->[2] << 8)+$authorizedHosts[$i]->[3];
-            my $mask = 2**32 - 2**(32-$authorizedHosts[$i]->[4]);
-            if (($remoteHost & $mask) == $network){
-                oar_debug("OK\n");
-                $hostAllow = 1;
-            }else{
-                oar_debug("BAD\n");
-            }
-            $i++;
-        }
+        my $hostAllow = oar_Tools::checkClientHostIP("Almighty",$client,\@authorizedHosts);
         if ($hostAllow == 0){
             $client->close();
             #return nothing

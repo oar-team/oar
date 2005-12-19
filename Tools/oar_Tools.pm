@@ -1,6 +1,7 @@
 package oar_Tools;
 
 use IO::Socket::INET;
+use oar_Judas qw(oar_debug oar_warn oar_error);
 use warnings;
 use strict;
 
@@ -17,6 +18,7 @@ sub getOarPidFileName($);
 sub getSSHTimeout();
 sub getDefaultLeonSoftWalltime();
 sub getDefaultLeonWalltime();
+sub checkClientHostIP($$$);
 
 
 # Get default Leon walltime value for Sarko
@@ -119,4 +121,40 @@ sub signalOarexec($$$){
 
     return($exitiValue,$signalNum,$dumpedCore);
 }
+
+
+# Check if a client socket is authorized to connect to us
+# args : OAR module name, client socket, ref of an array of authorized networks
+# return 1 for success else 0
+sub checkClientHostIP($$$){
+    my $moduleName = shift;
+    my $client = shift;
+    my $refArray = shift;
+
+    my @authorizedHosts = @{$refArray};
+
+    my $extrem = getpeername($client);
+    my ($remotePort,$addr_in) = unpack_sockaddr_in($extrem);
+    my $remoteHost = inet_ntoa($addr_in);
+    oar_debug("[$moduleName] [checkClientHostIP] Remote host = $remoteHost ; remote port = $remotePort\n");
+    $remoteHost =~ m/^\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*$/m;
+    $remoteHost = ($1 << 24)+($2 << 16)+($3 << 8)+$4;
+    my $i = 0;
+    my $hostAllow = 0;
+    while (($hostAllow == 0) && ($#authorizedHosts >= $i)){
+        my $str = "Check host with $authorizedHosts[$i]->[0].$authorizedHosts[$i]->[1].$authorizedHosts[$i]->[2].$authorizedHosts[$i]->[3]/$authorizedHosts[$i]->[4] --> ";
+        my $network = ($authorizedHosts[$i]->[0] << 24)+($authorizedHosts[$i]->[1] << 16)+($authorizedHosts[$i]->[2] << 8)+$authorizedHosts[$i]->[3];
+        my $mask = 2**32 - 2**(32-$authorizedHosts[$i]->[4]);
+        if (($remoteHost & $mask) == $network){
+            $str .= "OK";
+            $hostAllow = 1;
+        }else{
+            $str .= "BAD";
+        }
+        oar_debug("[$moduleName] [checkClientHostIP] $str\n");
+        $i++;
+    }
+    return($hostAllow);
+}
+
 return 1;

@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#
 # In sshd_config you must have this line :
 #     AcceptEnv OAR_CPUSET SUDO_USER
 # User to become is in $SUDO_USER
@@ -10,7 +10,7 @@ CPUSETFILE=/proc/self/cpuset
 
 if [ ! -r $CPUSETFILE ]
 then
-    echo "[OARSH] Can not find cpuset file : $CPUSETFILE" 1>&2
+    echo "[OARSH] Cannot find cpuset file : $CPUSETFILE" 1>&2
     exit 1
 fi
 

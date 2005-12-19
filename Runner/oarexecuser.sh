@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id: oarexecuser.sh,v 1.12 2005/03/09 15:21:29 capitn Exp $
 # launch user shell with OAR variables
 # $1 --> file name where to find reservation node names
 # $2 --> number of nodes

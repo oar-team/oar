@@ -1,7 +1,8 @@
 #!/bin/sh
-
-# scp command can also work in this way:
-#   scp -S /path/to/oarsh ...
+#
+# This is the shell program used with the oarsh script.
+# It adds its own process in the cpuset OAR_CPUSET and launches
+# the shell or the script of the user SUDO_USER.
 
 DEFAULT_SHELL=/bin/bash
 
