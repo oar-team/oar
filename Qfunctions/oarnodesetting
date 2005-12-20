@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id: oarnodesetting,v 1.27 2005/10/26 12:32:21 capitn Exp $
 # change node state dynamically
 
 use strict;
@@ -9,7 +8,7 @@ use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Sys::Hostname;
 use Getopt::Long;
-use IO::Socket::INET;
+use oar_Tools;
 
 $| = 1;
 
@@ -57,23 +56,6 @@ N.B.:
    node never will never expire.
 EOS
     exit 1;
-}
-
-# notify Almighty
-# arg1 --> type of notification
-sub notifyAlmighty($){
-    my $sig = shift;
-
-    my $socket = IO::Socket::INET->new( PeerAddr => $remote_host,
-                                        PeerPort => $remote_port,
-                                        Proto => "tcp",
-                                        Type  => SOCK_STREAM)
-    or die("Couldn't connect executor $remote_host:$remote_port\n");
-    if (defined($socket)){
-        print $socket "$sig\n";
-        #my $answer=<$socket>;
-        #return "Almigthy answers : $answer\n";
-    }
 }
 
 sub set_properties($$$){
@@ -140,7 +122,7 @@ if ($node_info eq undef){
     defined $expiryDate and iolib::set_node_expiryDate($base,$hostname,"\"$expiryDate\"");
     defined @properties and set_properties($base,$hostname,\@properties);
     $base->do("UNLOCK TABLES");
-    notifyAlmighty("ChState");
+    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
 }else{
     print("update node $hostname to $state state\n");
     $base->do("LOCK TABLE nodes WRITE, nodeProperties WRITE");
@@ -148,7 +130,7 @@ if ($node_info eq undef){
     defined $expiryDate and iolib::set_node_expiryDate($base,$hostname,"\"$expiryDate\"");
     defined @properties and set_properties($base,$hostname,\@properties);
     $base->do("UNLOCK TABLES");
-    notifyAlmighty("ChState");
+    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
     if (($state eq 'Dead') || ($state eq 'Absent')){
         if ($nowaitMode){
             print("Done\n");

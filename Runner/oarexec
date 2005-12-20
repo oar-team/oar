@@ -1,15 +1,14 @@
 #!/usr/bin/perl
-# $Id: oarexec,v 1.46 2005/09/27 13:56:33 capitn Exp $
 #script executed on the first reserved node
 #it launches user command
 
 use strict;
-use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 use Sys::Hostname;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
+use oar_Tools;
 
 $| = 1;
 #hang signals
@@ -82,19 +81,9 @@ sub quit_oarexec($){
         my $waitTime = 30;
         
         while (1){
-            my $socket = IO::Socket::INET->new(PeerAddr => $OARSERVER,
-                                               PeerPort => $OARPORT,
-                                               Proto => "tcp",
-                                               Type  => SOCK_STREAM
-                                              );
-            if ($socket) {
-                if (print($socket "OAREXEC_$OAR_JOBID"."_$exit_value")){
+            if (!defined(oar_Tools::notifyAlmighty($OARSERVER,$OARPORT,"OAREXEC_$OAR_JOBID"."_$exit_value"))){
                     oar_debug("[oarexec $OAR_JOBID] I notified Almighty with my exit value $exit_value;so I am exiting\n");
                     exit($exit_value);
-                }else{
-                    oar_error("[oarexec $OAR_JOBID] I cannot notify Almighty; maybe the server is down\n");
-                }
-                close($socket);
             }else{
                 oar_error("[oarexec $OAR_JOBID] I cannot notify Almighty; maybe the server is down or network is wrong configured\n");
             }
@@ -170,8 +159,11 @@ sub readSocketLine($$){
 sub killChilds($){
     my $childPid = shift;
 
-    #system("sudo kill -9 $childPid 2>&1 > /dev/null");
-    system("$binPath/oarkill $childPid");
+    #system("$binPath/oarkill $childPid");
+    
+    my @childs = oar_Tools::getOneProcessChilds($childPid);
+
+    system("sudo /bin/kill -9 @childs 2>&1 > /dev/null");
 }
 
 sub sendKillSignalToMyself(){

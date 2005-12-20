@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id: oarresume,v 1.9 2005/05/04 13:03:36 capitn Exp $
 # resume a job --> it will be rescheduled
 
 use strict;
@@ -7,11 +6,8 @@ use warnings;
 use Data::Dumper;
 use DBI();
 use oar_iolib;
-use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-
-#my $remote_host = "icluster4.imag.fr";
-#my $remote_port = "6666";
+use oar_Tools;
 
 sub usage {
     print STDERR "usage: qresume [idJob]\n";
@@ -38,16 +34,6 @@ if ($err != 0) {
 
 #Signal Almigthy
 
-my $socket = IO::Socket::INET->new(PeerAddr => $remote_host,
-             PeerPort => $remote_port,
-                         Proto => "tcp",
-                         Type  => SOCK_STREAM)
-            or die "Couldn't connect executor $remote_host:$remote_port\n";
-
-print $socket "Qresume\n";
-
-#my $answer=<$socket>;
-
-#print "Almigthy answers : $answer\n";
+oar_Tools::notifyAlmighty($remote_host,$remote_port,"Qresume");
 
 exit 0;

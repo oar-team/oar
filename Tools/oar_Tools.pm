@@ -31,7 +31,7 @@ sub getDefaultLeonWalltime(){
     return($defaultLeonWalltime);
 }
 
-# return a hashtable of all child arrays
+# return a hashtable of all child in arrays
 sub getAllProcessChilds(){
     my %processHash;
     open(CMD, "ps -e -o pid,ppid |");

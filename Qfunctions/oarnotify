@@ -1,14 +1,13 @@
 #!/usr/bin/perl
-# $Id: oarnotify,v 1.9 2004/08/24 15:56:56 neyron Exp $
 # notify Almighty
 
 use strict;
 use warnings;
 use Data::Dumper;
-use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Getopt::Std;
 use oarversion;
+use oar_Tools;
 
 init_conf("oar.conf");
 my $remote_host = get_conf("SERVER_HOSTNAME");
@@ -28,14 +27,6 @@ if (defined($ARGV[0])){
 }
 print("tag = $tag\n");
 
-
-#Signal Almigthy
-my $socket = IO::Socket::INET->new(PeerAddr => $remote_host,
-                                   PeerPort => $remote_port,
-                                   Proto => "tcp",
-                                   Type  => SOCK_STREAM)
-             or die "Couldn't connect executor $remote_host:$remote_port\n";
-print $socket "$tag\n";
-close($socket);
+oar_Tools::notifyAlmighty($remote_host,$remote_port,"$tag");
 
 exit 0;

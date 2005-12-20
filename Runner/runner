@@ -1,14 +1,13 @@
 #!/usr/bin/perl
-# $Id: runner,v 1.21 2005/03/31 08:52:26 capitn Exp $
 #Almighty module : launch job bipbips
 
 use strict;
 use DBI();
 use Data::Dumper;
-use IO::Socket::INET;
 use oar_iolib;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_Tools;
 
 init_conf("oar.conf");
 my $binpath;
@@ -32,16 +31,11 @@ sub answer ($$$){
     my $error = 0;
     my ($addr,$port) = split(/:/,$info);
     oar_debug("[Runner] oarsub addr:port = $addr:$port info = $info\n");
-    my $client = IO::Socket::INET->new(PeerPort=> $port,
-                                      PeerAddr=> $addr,
-                                      Type => SOCK_STREAM,
-                                      Proto => "tcp") or $error=1;
-    if($error == 0){
-        print($client $message);
-        close($client);
+    if(!defined(oar_Tools::notifyAlmighty($addr,$port,"$message"))){
         oar_debug("[Runner] Notification done\n");
     }else{
-        oar_error("[Runner] Can not open connection to oarsub client for job $jobid !!!!!!\n");
+        oar_error("[Runner] Cannot open connection to oarsub client for job $jobid !\n");
+        $error = 1;
     }
     return($error);
 }

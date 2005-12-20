@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id: Leon,v 1.33 2005/05/12 08:54:27 capitn Exp $
 
 use English;
 use oar_iolib;
@@ -187,10 +186,7 @@ while(scalar(@JobToFrag)){
     }
 
     oar_warn("[Leon] I exterminate the job $Jid\n");
-    #my @hosts = iolib::get_job_host_distinct($base,$Jid);
-    #foreach my $i (@hosts){
-        iolib::add_new_event($base,"EXTERMINATE_JOB",$Jid,"[Leon] I exterminate the job $Jid");
-    #}
+    iolib::add_new_event($base,"EXTERMINATE_JOB",$Jid,"[Leon] I exterminate the job $Jid");
     
     iolib::set_job_state($base,$Jid,"Error");
     if ($refJob->{startTime} eq "0000-00-00 00:00:00"){

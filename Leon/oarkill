@@ -1,9 +1,9 @@
 #!/usr/bin/perl
-# $Id: oarkill,v 1.15 2005/07/26 14:51:27 capitn Exp $
 # kill all childs of a pid
 use strict;
 use Data::Dumper;
 use Getopt::Long;
+use oar_Tools;
 
 Getopt::Long::Configure ("gnu_getopt");
 my $usage;
@@ -24,42 +24,18 @@ if (!($ARGV[0] =~ /\d+/)){
     exit(1);
 }
 
-# pid --> array of childs
-my %processHash;
-open(CMD, "ps -e -o pid,ppid |");
-while (<CMD>){
-    chomp($_);
-    $_ =~ /(\d+)\s+(\d+)/;
-    if (defined($1) && defined($2)){
-        if (!defined($processHash{$2})){
-            $processHash{$2} = [$1];
-        }else{
-            push(@{$processHash{$2}}, $1);
-        }
-    }
-}
-
-my @pidToKill;
-my @potentialFather;
-my $oneFather = $ARGV[0];
-#search all pids to kill
-while (defined($oneFather)){
-       push(@pidToKill, $oneFather);
-       #Get childs of this process
-       foreach my $i (@{$processHash{$oneFather}}){
-           push(@potentialFather, $i);
-       }
-       $oneFather = shift(@potentialFather);
-}
-#print(Dumper(@pidToKill));
-
 #Kill all
-while ($#pidToKill >= 0){
-        my $pid = shift(@pidToKill);
-        #print("sudo kill -9 $pid\n");
-#        print("OAR is killing the job with pid=$pid\n");
-        system("sudo /bin/kill -9 $pid 2>&1 > /dev/null");
-}
+my @childs = oar_Tools::getOneProcessChilds($ARGV[0]);
+
+my $cmd = "sudo /bin/kill -9 @childs 2>&1 > /dev/null";
+print("$cmd\n");
+system("$cmd");
+
+#for my $pid (@childs){
+#    #print("sudo kill -9 $pid\n");
+#    #print("OAR is killing the job with pid=$pid\n");
+#    system("sudo /bin/kill -9 $pid 2>&1 > /dev/null");
+#}
 
 exit(0);
 

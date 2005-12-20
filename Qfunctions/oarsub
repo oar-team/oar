@@ -1,6 +1,5 @@
 #!/usr/bin/perl
-# $Id: oarsub,v 1.39 2005/06/15 11:54:52 capitn Exp $
-
+#
 #Sumbit job for execution
 
 use strict;
@@ -12,6 +11,7 @@ use Getopt::Long;
 use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use File::Temp qw/ tempfile /;
+use oar_Tools;
 
 #For interactive
 my $server;
@@ -68,14 +68,7 @@ sub qdel($) {
         print("Job deleted\n");
         #Signal Almigthy
         if ($Al_dead == 0) {
-            my $socket = IO::Socket::INET->new( PeerAddr => $remote_host,
-                                                PeerPort => $remote_port,
-                                                Proto => "tcp",
-                                                Type  => SOCK_STREAM)
-                         or die("Couldn't connect executor $remote_host:$remote_port\n");
-            print($socket "Qdel\n");
-            my $answer=<$socket>;
-            print("Almigthy answers : $answer\n");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"Qdel");
             exit(1);
         }
     }
@@ -299,7 +292,6 @@ $base = iolib::connect();
 
 # Connect to a reservation
 if (defined($connectResa)){
-    #my $lusr= getpwuid($<);
     my $lusr= getpwuid($ENV{SUDO_UID});
     my $job = iolib::get_job($base, $connectResa);
     if ((($lusr eq $job->{'user'}) or ($lusr eq "oar")) && ($job->{'reservation'} eq "Scheduled") && ($interactive == 1) && ($job->{'state'} eq "Running")) {
@@ -365,7 +357,7 @@ if ($interactive == 0) {
         }
     }
 
-    $cmd_executor = "Qsub\n";
+    $cmd_executor = "Qsub";
     $mode = "PASSIVE";
 
     if (defined($verbose)) {
@@ -381,7 +373,7 @@ if ($interactive == 0) {
     $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL",$checkpoint);
     print("IdJob = $idJob \n");
 }else{
-    $cmd_executor = "Qsub -I\n";
+    $cmd_executor = "Qsub -I";
     init_TCP_server();
     print("Host:Port = $host:$serverport \n ");
     $mode = "INTERACTIVE";
@@ -404,27 +396,13 @@ if ($idJob < 0){
 
 #Signal Almigthy
 
-my $socket = IO::Socket::INET->new(PeerAddr => $remote_host,
-                                   PeerPort => $remote_port,
-                                   Proto => "tcp",
-                                   Type  => SOCK_STREAM
-                                  );
-
-if (not $socket) {
+if (defined(oar_Tools::notifyAlmighty($remote_host,$remote_port,"$cmd_executor"))){
     qdel(1);
-    print("Couldn't connect executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
+    print("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
     exit(0);
 }
 
-print($socket $cmd_executor);
 my $answer;
-
-#my $answer = <$socket>;
-#if (defined($verbose)) {
-#    print("Almigthy answers : $answer\n");
-#}
-
-
 if ($reservation ne "0"){
     #Reservation mode
     print("Reservation mode : waiting validation\n");
@@ -433,7 +411,7 @@ if ($reservation ne "0"){
     if (defined($verbose)) {
         print("Runner says $answer\n");
     }
-    if ($answer eq "GOOD RESERVATION"){
+    if ($answer eq "GOOD RESERVATION\n"){
         print("Reservation valid --> OK\n");
     }else{
         print("Reservation not valid --> KO\n");
@@ -446,7 +424,7 @@ if ($reservation ne "0"){
     if (defined($verbose)) {
         print("Runner says $answer\n");
     }
-    if ($answer eq "GOOD JOB"){
+    if ($answer eq "GOOD JOB\n"){
         my $pid=0;
         $pid=fork;
         if($pid == 0){

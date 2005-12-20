@@ -6,7 +6,6 @@ use Data::Dumper;
 use oar_iolib;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use IO::Socket::INET;
 use oar_Tools;
 
 # Get job delete and checkpoint walltime values
@@ -144,13 +143,8 @@ if (defined @nodes) {
     # Then notify Almighty
     my $remote_host = get_conf("SERVER_HOSTNAME");
     my $remote_port = get_conf("SERVER_PORT");
-    my $socket = IO::Socket::INET->new( PeerAddr => $remote_host,
-                                        PeerPort => $remote_port,
-                                        Type => SOCK_STREAM,
-                                        Proto => "tcp")
-        or die("Couldn't connect executor $remote_host:$remote_port\n");
-    print $socket "ChState\n";
-    close $socket;
+
+    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
 }
 
 iolib::disconnect($base);

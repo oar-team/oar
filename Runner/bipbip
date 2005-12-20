@@ -1,13 +1,12 @@
 #!/usr/bin/perl
-# $Id: bipbip,v 1.44 2005/10/03 14:36:36 capitn Exp $
 
 use oar_iolib;
 use Sys::Hostname;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use IO::Socket::INET;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use ping_checker qw(test_hosts);
 use POSIX qw(:signal_h :sys_wait_h);
+use oar_Tools;
 
 #essential : you become oar instead of the user
 #UID=EUID
@@ -95,24 +94,6 @@ sub launch($$$){
     return($exit_value);
 }
 
-# notify Almighty
-# arg1 --> type of notification
-sub notifyAlmighty($){
-    my $sig = shift;
-
-    my $socket = IO::Socket::INET->new( PeerAddr => $remote_host,
-                                        PeerPort => $remote_port,
-                                        Proto => "tcp",
-                                        Type  => SOCK_STREAM);
-    if (defined($socket)){
-        print $socket "$sig\n";
-    }else{
-        oar_error("[bipbip $Jid] Couldn't connect executor $remote_host:$remote_port\n");
-        #exit(2);
-    }
-}
-
-#my $error=0;
 my $base;
 my @hosts;
 
@@ -167,30 +148,17 @@ oar_debug("[bipbip $Jid] JOB: $Jid User: $user Command: $usercmd ==> hosts :[@ho
 oar_debug("[bipbip $Jid] Check nodes\n");
 my @bad = test_hosts(@hosts);
 if ($#bad >= 0){
-    #foreach my $i (@bad){
-    #    iolib::set_node_nextState($base,$i,"Suspected");
-    #    iolib::update_node_nextFinaudDecision($base,$i,"YES");
-    #    oar_debug("[bipbip $Jid] BAD node $i; set to Suspected\n");
-    #}
-    #iolib::add_new_event($base,"PING_CHECKER_NODE_SUSPECTED",$Jid,"[bipbip] Ping_checker suspects  nodes for the job $Jid : @bad");
-    #Resubmit the job
     $base->do("LOCK TABLE jobs WRITE, jobState_log WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, fragJobs WRITE,nodeState_log WRITE");
     my $refHashJob = iolib::get_job($base,$Jid);
     iolib::decrease_weight($base,$Jid);
     iolib::delete_job_process($base,$Jid);
     oar_debug("[bipbip $Jid] COMMAND=$usercmd\n");
-    #if ($usercmd eq ""){
-        iolib::set_job_state($base,$Jid,"Error");
-        iolib::set_job_message($base,$Jid,"Blacklist job nodes");
-    #}else{
-    #    iolib::delete_job_process_log($base,$Jid);
-    #    iolib::set_job_state($base,$Jid,"Waiting");
-    #}
+    iolib::set_job_state($base,$Jid,"Error");
+    iolib::set_job_message($base,$Jid,"Blacklist job nodes");
     $base->do("UNLOCK TABLES");
     oar_error("[bipbip $Jid] /!\\ Sorry but some nodes are inaccessible\n");
-    #notifyAlmighty("ChState");
     iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Jid,"[bipbip] Ping_checker suspects  nodes for the job $Jid : @bad",\@bad);
-    notifyAlmighty("ChState");
+    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
     exit(2);
 }else{
     oar_debug("[bipbip $Jid] No bad nodes\n");
@@ -198,10 +166,7 @@ if ($#bad >= 0){
 
 # end of verif
 
-
-#iolib::set_running_date($base,$Jid);
 iolib::set_job_state($base,$Jid,"Running");
-#iolib::disconnect($base);
 
 #CALL OAREXEC ON THE FIRST NODE
 if($usercmd eq ""){
@@ -244,9 +209,6 @@ sub checkEndOfJob($){
         exit(1);
     }
 
-    #oar_debug("[bipbip $Jid] Job $Jid is ended\n");
-    #iolib::set_finish_date($base,$Jid);
-
     $base->do("LOCK TABLE jobs WRITE, jobState_log WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, nodeState_log WRITE, event_log WRITE");
     my $refJob = iolib::get_job($base,$Jid);
     if ($refJob->{'state'} eq "Running"){
@@ -266,16 +228,14 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 2){
             #Epilogue error
             my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts[0] is Suspected; (jobId = $Jid)";
             oar_warn("$strWARN\n");
             iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Terminated");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
             my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
@@ -289,8 +249,7 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 5){
             #Oarexec is not able write in the node file
             my $strWARN = "[bipbip $Jid] oarexec can t create the node file";
@@ -298,8 +257,7 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"CAN_NOT_WRITE_NODE_FILE",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 6){
             #Oarexec can not write its pid file
             my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
@@ -307,8 +265,7 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"CAN_NOT_WRITE_PID_FILE",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 7){
             #Can t get shell of user
             my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts[0]";
@@ -316,8 +273,7 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
             my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts[0]";
@@ -340,8 +296,7 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }elsif ($error == 22){
             #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
             my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts[0] AND epilogue is in error";
@@ -350,16 +305,14 @@ sub checkEndOfJob($){
             iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts[0] is Suspected";
             oar_warn("$strWARN\n");
             iolib::add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
             iolib::set_job_state($base,$Jid,"Error");
             iolib::set_job_message($base,$Jid,"$strWARN");
-            #iolib::set_node_nextState($base,$hosts[0],"Suspected");
-            notifyAlmighty("ChState");
+            oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
         }
     }else{
         oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
@@ -368,7 +321,7 @@ sub checkEndOfJob($){
     iolib::disconnect($base);
 
 
-    notifyAlmighty("BipBip");
+    oar_Tools::notifyAlmighty($remote_host,$remote_port,"BipBip");
 }
 
 exit(0);
