@@ -1,6 +1,12 @@
 #!/usr/bin/perl
 # $Id: oarremovenode,v 1.1 2005/06/11 15:27:50 capitn Exp $
 # remove a node entirely
+
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
+
 use strict;
 use warnings;
 use Data::Dumper;

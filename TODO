@@ -4,8 +4,6 @@ OAR TODO
 
 .. contents:: Table des matières
 
-my $quotedString = $dbh->quote( $string );
-
 -------------
 Documentation
 -------------
@@ -118,7 +116,7 @@ Scheduling : nouvelle approche
 
   Ainsi il serait possible de réaliser des requêtes du type:
 
-    oarsub switch="s2" noeud=10 cpu=1 -p "memory > 256"
+    oarsub switch="2" noeud=10 cpu=1 -p "memory > 256"
   
   Dans cet exemple, nous voulons utiliser 1 CPU sur 10 noeuds différents
   appartenant au switch "s2". De plus les ressources devront posséder une
@@ -181,6 +179,12 @@ Sécurité
   - NFS, une image déployée sur un noeud peut tout monter ou restreindre le
     NFS pour certaines IP (prologue/epilogue executés côté serveur)?
   - VLAN?
+
+------------------------
+Notification utilisateur
+------------------------
+    Ajouter une option -m a oarsub pour specifier une adresse mail pour
+    notifier les utilisateurs.
 
 ------------------------------------
 Comparaison avec les autres systèmes

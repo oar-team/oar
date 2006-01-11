@@ -92,7 +92,7 @@ foreach my $job (@result){
         # OAR must notify the job to checkpoint itself
         oar_debug("[sarko] Send checkpoint signal to the job $job->{idJob}\n");
         # Retrieve node names used by the job
-        my @hosts = iolib::get_job_host_distinct($base,$job->{idJob});
+        my @hosts = iolib::get_job_current_hostnames($base,$job->{idJob});
         iolib::add_new_event($base,"CHECKPOINT",$job->{idJob},"User oar (sarko) requested a checkpoint on the job $job->{idJob}");
         my $timeoutSSH = oar_Tools::getSSHTimeout();
         my $strComment;

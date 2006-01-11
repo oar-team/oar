@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 # change node state dynamically
 
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
+
 use strict;
 use DBI();
 use Data::Dumper;

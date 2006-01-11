@@ -46,7 +46,7 @@ oar_debug("[MetaSched] Begining of meta scheduler\n");
 oar_scheduler::init_scheduler($base);
 
 my %initialTime = oar_scheduler::get_initial_time();
-my @queues = iolib::get_queues($base);
+my @queues = iolib::get_active_queues($base);
 my $name;
 my $policy;
 foreach my $i (@queues){

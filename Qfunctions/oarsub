@@ -2,6 +2,11 @@
 #
 #Sumbit job for execution
 
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
+
 use strict;
 use IO::Socket::INET;
 use DBI();
@@ -14,56 +19,40 @@ use File::Temp qw/ tempfile /;
 use oar_Tools;
 
 #For interactive
-my $server;
-my $serverport;
 my $remote_host;
 my $remote_port;
 my $deploy_hostname;
-my $host = hostname ;
+my $Host = hostname ;
 
 my $base;
-my $err;
-my $FILE;
-my $idJob;
-my $interactive = 0;
-my $reservation = "0";
+my $Job_id;
+my $Interactive = 0;
+my $Reservation = "0";
 my $connectResa ;
-my @resource_list;
+my @Resource_list;
 my @resource;
-my $value;
-my $index;
-my $res_type;
-my $res_value;
-my $nbnodes = 1;
-my $weight = 1;
-my $walltime;
-my $queueName;
-my $jobSQLproperties;
-my $label;
-my $exec = "";
-my $cmd_executor;
-my $mode;
-my $w_h; my $w_mn; my $w_sec;
-my $verbose;
+my $Queue_name;
+my $Job_sql_properties;
+my $Cmd_executor;
 my $stagein = undef;
 my $idFile = undef;
 my $md5sum = undef;
 my $stageindir;
 my $sos;
-my $checkpoint=0;
+my $Checkpoint=0;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
 
-# to adress ^C in interactive submission
+# to address ^C in interactive submission
 sub qdel($) {
     my $Al_dead = shift;
-    if (defined($idJob)) {
+    if (defined($Job_id)) {
         if ($Al_dead eq "INT" ) {
-            print("\n\nCaught Interrupt (^C), Deleting the job $idJob\n");
+            print("\n\nCaught Interrupt (^C), Deleting the job $Job_id\n");
         }
         $base = iolib::connect();
-        $err = iolib::frag_job($base,$idJob);
+        my $err = iolib::frag_job($base,$Job_id);
         iolib::disconnect($base);
         print("Job deleted\n");
         #Signal Almigthy
@@ -74,126 +63,60 @@ sub qdel($) {
     }
 }
 
-sub init_TCP_server(){
-    $server = IO::Socket::INET->new(Type => SOCK_STREAM,
-                                    Reuse => 1,
-                                    Listen => 1)
-                                or die("ARGL....");
-    $serverport = $server->sockport();
-    if (defined($verbose)) {
-        print("init_TCP_server Port : $serverport\n");
-    }
+#Used when we must have a response from the server
+sub init_tcp_server(){
+    my $server = IO::Socket::INET->new( Type => SOCK_STREAM,
+                                        Reuse => 1,
+                                        Listen => 1
+                                      ) or die("/!\\ Cannot initialize a TCP socket server.");
+    my $server_port = $server->sockport();
+
+    return($server,$server_port);
 }
 
+#Read user script and extract OAR submition options
 sub scan_script($){
-#Catch #OAR -l nodes=N and other #OAR
-    $FILE = shift;
-    my $noscript = 0;
+    my $file = shift;
 
-    #open(FILE,"<$FILE") or $noscript = 1;
+    my %result;
+
     my $lusr= getpwuid($ENV{SUDO_UID});
-    open(FILE, "sudo -u $lusr cat $FILE 2> /dev/null|") or $noscript = 1;
-
-    if ($noscript == 1) {
-        return;
-    }
+    open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return;
 
     if (<FILE> =~ /^#/){
         while (<FILE>) {
             if ( /^#OAR\s+/ ){
                 my $line = $_;
-                if ($line =~ m/^#OAR\s+-l\s*(.+)\s*$/m){
-                    my $resourceTmp = $1;
-                    @resource_list = split(',', $resourceTmp );
-                    foreach $index (0 .. $#resource_list) {
-                        ($resourceTmp,$value) = split("=",$resource_list[$index]);
-                        print("Resource = $resourceTmp Value = $value\n");
-                        if($resourceTmp eq 'nodes'){
-                            $nbnodes = $value;
-                        }elsif ($resourceTmp eq 'walltime') {
-                            $walltime = $value;
-                            ($w_h,$w_mn,$w_sec)=split(':',$value);
-                            if (not defined($w_sec)) {
-                                $walltime = $walltime.":00";
-                            }
-                        }elsif ($resourceTmp eq 'weight'){
-                            $weight = $value;
-                        }else {
-                            print("/!\\I don t recognize the resource $resourceTmp\n");
-                        }
-                    }
-                }elsif ((not defined($queueName)) && ($line =~ m/^#OAR\s+\-q\s*(.+)\s*$/m)) {
-                    print $_;
-                    ($queueName) = $1;
-                }elsif ((not defined($jobSQLproperties)) && ($line =~ m/^#OAR\s+-p\s*"(.+)"\s*$/m)) {
-                    $jobSQLproperties = $1;
+                if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
+                    push(@{$result{resources}}, $2);
+                }elsif ($line =~ m/^#OAR\s+\(-q|--queue)\s*(.+)\s*$/m) {
+                    $result{queue} = $2;
+                }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*"(.+)"\s*$/m) {
+                    $result{property} = $2;
                 }
             }
         }
     }
     close(FILE);
+
+    return(%return);
 }
 
-sub print_asked_resources(){
-    print("\nResources asked\n");
-    print("Nb_nodes = $nbnodes \tQueueName = $queueName \tWalltime = $walltime\n");
-    print("Mode = $mode Command = $cmd_executor\n");
-    print("Job_properties : $jobSQLproperties\n");
-}
 
-sub check_params(){
-    # replace all by the maximum of nodes
-    if (($nbnodes eq "all") || ($nbnodes eq "max")){
-        my $criteria = $nbnodes;
-        my $properties = iolib::form_job_properties($base, $jobSQLproperties);
-        if ($properties ne ""){
-            $properties =~ s/\\//g ;
-            $properties = "AND ($properties)";
-        }
-        my $whereState = "n.state = \"Alive\"";
-        if ($nbnodes eq "max"){
-            $whereState = "($whereState OR n.state = \"Absent\" OR n.state = \"Suspected\")";
-        }
-        $nbnodes = $base->do("SELECT * FROM nodeProperties p, nodes n
-                              WHERE n.hostname = p.hostname
-                                AND (n.maxWeight - n.weight) >= $weight
-                                AND $whereState
-                                   $properties");
-        print(" <$criteria> = $nbnodes\n");
-    }
-    
-    my @listNodes = iolib::list_nodes($base);
-    my $maxMaxNbNodes = $#listNodes+1;
-    if($nbnodes > $maxMaxNbNodes){
-        die("[ERROR] $nbnodes is too big. the maximum of nodes is $maxMaxNbNodes\n");
-    }
-    if($nbnodes <= 0){
-        die("[ERROR] $nbnodes : not enough nodes\n");
-    }
-
-    my $maxmaxweight = iolib::get_maxweight_node($base);
-    if ($weight > $maxmaxweight){
-       die("[ERROR] MAX weight = $maxmaxweight, ... $weight is too heavy\n");
-    }
-    if($weight < 1){
-       die("[ERROR] weight $weight must be heavier than 0\n");
-    }
-}
-
+#Print help message
 sub usage() {
     print <<EOS;
 Usage: oarsub [OPTIONS] [-I|<SCRIPT>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --interactive             request an interactive job
- -l, --resource=<LIST>         set the resource list
+ -l, --resource=<LIST>         set the resource list( ex: nodes=4/cpu=1,walltime=2:00:00 )
  -q, --queue=<QUEUE>           set the the queue to submit the job to
  -p, --property=<LIST>         set the property list
  -r, --reservation=<DATE>      request a reservation
- -c, --connect=<RESERVATION>   connect a reservation
+ -c, --connect=<RESERVATION>   connect to a running job
  -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
  -m, --stagein-md5sum=<MD5SUM> set the stagein file md5sum
- -v, --verbose                 increase verbosity
  -k, --checkpoint              enable the job to be checkpointed
  -h, --help                    print this help message
 EOS
@@ -220,22 +143,17 @@ if (defined($ENV{OARDIR})){
     die("OARDIR env variable must be defined\n");
 }
 
-if (is_conf("NODE_DEFAULT_WEIGHT")){
-    $weight = get_conf("NODE_DEFAULT_WEIGHT");
-}
-
 Getopt::Long::Configure ("gnu_getopt");
 
 GetOptions ("resource|l=s" => \@resource,
-            "queue|q=s"   => \$queueName,
-            "interactive|I"  => \$interactive,
-            "verbose|V" => \$verbose,
-            "property|p=s" => \$jobSQLproperties,
-            "reservation|r=s" => \$reservation,
+            "queue|q=s"   => \$Queue_name,
+            "interactive|I"  => \$Interactive,
+            "property|p=s" => \$Job_sql_properties,
+            "reservation|r=s" => \$Reservation,
             "connect|c=i" => \$connectResa,
             "stagein|s=s" => \$stagein,
             "stagein-md5sum|m=s" => \$md5sum,
-            "checkpoint|k=i" => \$checkpoint,
+            "checkpoint|k=i" => \$Checkpoint,
             "help|h" => \$sos
            );
 
@@ -244,7 +162,7 @@ if (defined $sos){
     exit(0);
 }
 
-if ((@ARGV != 1) && ($interactive == 0) && ($reservation == 0)){
+if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation == 0)){
     usage();
     exit(1);
 }
@@ -294,19 +212,19 @@ $base = iolib::connect();
 if (defined($connectResa)){
     my $lusr= getpwuid($ENV{SUDO_UID});
     my $job = iolib::get_job($base, $connectResa);
-    if ((($lusr eq $job->{'user'}) or ($lusr eq "oar")) && ($job->{'reservation'} eq "Scheduled") && ($interactive == 1) && ($job->{'state'} eq "Running")) {
-        my @hosts = iolib::get_job_host_distinct($base,$connectResa);
+    if ((($lusr eq $job->{'user'}) or ($lusr eq "oar")) && ($job->{'state'} eq "Running")) {
+        my @hosts = iolib::get_job_current_hostnames($base,$connectResa);
         my $hostToConnectViaSSH = $hosts[0];
         #deploy part
-        if ($job->{'queueName'} eq "deploy"){
+        my %queuesInfo = iolib::get_all_queue_informations($base);
+        if ($queuesInfo{$job->{'queueName'}}->{execJobsOnFrontal} eq "YES"){
             $hostToConnectViaSSH = $deploy_hostname;
         }
         #deploy part
         my $OAR_NB_NODES = $#hosts + 1;
         my @passinfo=getpwnam($lusr);
-        my $shell=pop(@passinfo);
-        #my $cmd = "ssh -t $hosts[0] \"/bin/sh -c \\\"TTY=\\`/usr/bin/tty\\` && /usr/bin/test -e \\\\\\\$TTY && sudo /bin/chown $lusr:oar \\\\\\\$TTY && sudo /bin/chmod 660 \\\\\\\$TTY \\\" && /usr/bin/sudo /bin/su - $lusr -c \\\"$binpath/oarexecuser.sh /tmp/OAR_$connectResa $OAR_NB_NODES $connectResa $lusr $shell $job->{launchingDirectory} I\\\"\"";
-        my $cmd = "ssh -t $hostToConnectViaSSH \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"$binpath/oarexecuser.sh /tmp/OAR_$connectResa $OAR_NB_NODES $connectResa $lusr $shell $job->{launchingDirectory} I\\\"\"";
+        my $shell=$passinfo[8];
+        my $cmd = "ssh -t $hostToConnectViaSSH \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh /tmp/OAR_$connectResa $OAR_NB_NODES $connectResa $lusr $shell $job->{launchingDirectory} I\\\"\"";
         #print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
@@ -322,32 +240,63 @@ if (defined($connectResa)){
 }
 # End connection to a reservation
 
-if (defined(@resource)) {
-    foreach my $i (@resource){
-        push(@resource_list, split(',',$i));
-    }
-
-    foreach  my $index (0 .. $#resource_list) {
-        ($res_type,$res_value) = split ('=',@resource_list[$index]);
-        if ($res_type eq 'nodes') {
-            $nbnodes = $res_value;
-        }elsif ($res_type eq 'walltime') {
-            $walltime = $res_value;
-            ($w_h,$w_mn,$w_sec) = split(':',$walltime);
-            if (not defined($w_sec)) {
-                $walltime = $walltime.":00";
+# Parse -l options and return an array of hashtables with resources for a moldable job
+sub parse_resource_descriptions(@){
+    my @resource = shift;
+   
+    my @result;
+    foreach my $r (@resource){
+        my %tmp_resources;
+        my @comma_split = split(',',$r);
+        foreach my $f (@comma_split){
+            if ($f =~ /walltime\s*=\s*([\d|:]+)/){
+                #walltime part
+                my ($w_h,$w_mn,$w_sec) = split(':',$1);
+                if (defined($w_h)){
+                    if (not defined($w_mn)){
+                        $tmp_resources{walltime} = $w_h.":00:00";
+                    }elsif (not defined($w_sec)){
+                        $tmp_resources{walltime} = $w_h.":00";
+                    }else{
+                        $tmp_resources{walltime} = $1;
+                    }
+                }else{
+                    die("/!\\I cannot recognize walltime resource value\n");
+                }
+            }else{
+                #hierarchical resource part
+                my @slash_split = split('/', $f);
+                my @resources_list;
+                foreach my $l (@slash_split){
+                    if ($l =~ /(\w+)\s*=\s*(\d+)/){
+                        push(@resources_list, [$1, $2]);
+                    }else{
+                        die("/!\\I cannot recognize the resource description : $l\n");
+                    }
+                }
+                $tmp_resources{resources} = \@resources_list;
             }
-        }elsif ($res_type eq 'weight'){
-            $weight = $res_value;
-        }else{
-            print("/!\\I don t recognize the resource $res_type\n");
         }
+        push(@result, \%tmp_resources);
     }
+    return(@result);
 }
 
-if ($interactive == 0) {
-    $exec = $ARGV[0];
-    scan_script($exec) if ($exec ne "");
+@Resource_list = parse_resource_descriptions(@resource);
+
+if ($Interactive == 0) {
+    my $exec = $ARGV[0];
+    my %scan_result = scan_script($exec) if ($exec ne "");
+    if (defined($scan_script{queue}) && !defined($Queue_name)){
+        $Queue_name = $scan_script{queue}
+    }else{
+        warn("/!\\ Ignore script value for queue parameter : $scan_script{queue}; another value was given on the command line.");
+    }
+    if (defined($scan_script{property}) && !defined($Job_sql_properties)){
+        $Job_sql_properties = $scan_script{property}
+    }else{
+        warn("/!\\ Ignore script value for property parameter : $scan_script{property}; another value was given on the command line.");
+    }
 
     if (!($exec =~ m/^\/.+$/m)){
         # WARNING: we are not the real user, we are oar user!!!
@@ -357,73 +306,55 @@ if ($interactive == 0) {
         }
     }
 
-    $cmd_executor = "Qsub";
-    $mode = "PASSIVE";
+    $Cmd_executor = "Qsub";
 
-    if (defined($verbose)) {
-        print_asked_resources();
-    }
-    check_params();
-
-    if ($reservation ne "0"){
-        init_TCP_server();
-        print("Host:Port = $host:$serverport \n ");
+    my $server;
+    my $serveur_port;
+    if ($Reservation ne "0"){
+        ($server, $serveur_port) = init_tcp_server();
     }
 
-    $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL",$checkpoint);
-    print("IdJob = $idJob \n");
+    $Job_id = iolib::add_micheline_job($base, "PASSIVE", \@Resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
+    print("IdJob = $Job_id \n");
 }else{
-    $cmd_executor = "Qsub -I";
-    init_TCP_server();
-    print("Host:Port = $host:$serverport \n ");
-    $mode = "INTERACTIVE";
+    $Cmd_executor = "Qsub -I";
+    my ($server, $serveur_port) = init_tcp_server();
 
-    if (defined($verbose)) {
-        print_asked_resources();
-    }
-    check_params();
-
-    $idJob= iolib::add_micheline_job($base,$mode,$nbnodes,$weight,$exec,"$host:$serverport",$walltime,$queueName,$jobSQLproperties,$reservation,defined ($idFile)?$idFile:"NULL",$checkpoint);
-    print("IdJob = $idJob \n");
+    $Job_id = iolib::add_micheline_job($base, "INTERACTIVE", \@Resource_list, "", "$Host:$serveur_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
+    print("IdJob = $Job_id \n");
 }
 
 iolib::disconnect($base);
 
-if ($idJob < 0){
+if ($Job_id < 0){
     print("Error in oarsub, verify your syntax or call administrator\n");
     exit(2);
 }
 
 #Signal Almigthy
 
-if (defined(oar_Tools::notifyAlmighty($remote_host,$remote_port,"$cmd_executor"))){
+if (defined(oar_Tools::notifyAlmighty($remote_host,$remote_port,"$Cmd_executor"))){
     qdel(1);
-    print("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
+    warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
     exit(0);
 }
 
 my $answer;
-if ($reservation ne "0"){
+if ($Reservation ne "0"){
     #Reservation mode
     print("Reservation mode : waiting validation\n");
     my $client = $server->accept();
     $answer = <$client>;
-    if (defined($verbose)) {
-        print("Runner says $answer\n");
-    }
     if ($answer eq "GOOD RESERVATION\n"){
         print("Reservation valid --> OK\n");
     }else{
         print("Reservation not valid --> KO\n");
     }
-}elsif ($interactive==1) {
+}elsif ($Interactive==1) {
     #Interactive mode
     print("Interactive mode : waiting \n");
     my $client = $server->accept();
     $answer = <$client>;
-    if (defined($verbose)) {
-        print("Runner says $answer\n");
-    }
     if ($answer eq "GOOD JOB\n"){
         my $pid=0;
         $pid=fork;
@@ -436,7 +367,7 @@ if ($reservation ne "0"){
             $ENV{USER}="oar";
             $ENV{USERNAME}="oar";
             $ENV{LOGNAME}="oar";
-            exec("$binpath/bipbip $idJob");
+            exec("$binpath/bipbip $Job_id");
         }
         wait;
         my $exit_value  = $? >> 8;

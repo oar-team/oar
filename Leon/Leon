@@ -154,7 +154,7 @@ while(scalar(@JobToFrag)){
     }elsif (($refJob->{'state'} eq "Terminated") || ($refJob->{'state'} eq "Error")){
         oar_debug("[Leon] Job is terminated, I do nothing\n");
     }else{
-        my @hosts = iolib::get_job_host_distinct($base,$Jid);
+        my @hosts = iolib::get_job_current_hostnames($base,$Jid);
         my $hostToConnectViaSSH = $hosts[0];
         #deploy part
         if ($refJob->{'queueName'} eq "deploy"){

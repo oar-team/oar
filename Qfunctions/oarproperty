@@ -7,6 +7,10 @@
 # To use the quiet mode, just do something like:
 #   echo -e "mysqlroot\nmysqlpassword\n" | oar_property.pl -q -l
 
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
 
 use strict;
 use warnings;

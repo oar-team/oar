@@ -42,6 +42,7 @@ idFile INT UNSIGNED,
 accounted ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
 checkpoint INT UNSIGNED NOT NULL DEFAULT 0 ,
 autoCheckpointed ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
+mail VARCHAR( 255 ) DEFAULT NULL ,
 INDEX state (state),
 INDEX reservation (reservation),
 INDEX queueName (queueName),
@@ -144,6 +145,7 @@ queueName VARCHAR( 100 ) NOT NULL ,
 priority INT UNSIGNED NOT NULL ,
 schedulerPolicy VARCHAR( 100 ) NOT NULL ,
 state ENUM('Active','notActive')  NOT NULL DEFAULT 'Active',
+execJobsOnFrontal ENUM('YES','NO') NOT NULL DEFAULT 'NO' ,
 PRIMARY KEY (queueName)
 );
 
@@ -252,8 +254,8 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ( "$queueName" eq "de
 
 INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('admin','10','oar_sched_gant');
 INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('default','2','oar_sched_gant');
-INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('deploy','1','oar_sched_gant');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`,`execJobsOnFrontal`)  VALUES ('deploy','1','oar_sched_gant','YES');
 INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('besteffort','0','oar_sched_gant');
 
-INSERT INTO `ganttJobsPrediction` (`idJob` , `startTime`)  VALUES ('0','1970-01-01 01:00:01');
+INSERT INTO `ganttJobsPredictions` (`idMoldableJob` , `startTime`)  VALUES ('0','1970-01-01 01:00:01');
 

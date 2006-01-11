@@ -2,6 +2,11 @@
 # $Id: oarstat,v 1.27 2005/06/01 16:20:42 capitn Exp $
 # print active job properties
 
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
+
 use strict;
 use warnings;
 use Data::Dumper;
@@ -59,7 +64,7 @@ sub print_job ( $ ) {
     my @job_events = iolib::get_job_events($base,$jobid);
 
     if ( defined($opts{f}) ) {
-        my @nodes = iolib::get_job_host_distinct($base,$jobid);
+        my @nodes = iolib::get_job_current_hostnames($base,$jobid);
         print "Job Id: ".$job_info->{idJob}.".oar\n";
         print "    Job_Name = ".$job_info->{idJob}."\n";
         print "    Job_Owner = ".$job_info->{user}."\n";

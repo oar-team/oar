@@ -1,5 +1,8 @@
 #!/usr/bin/perl
-# $Id: oar_db_init.pl,v 1.7 2005/07/20 09:29:20 capitn Exp $
+
+BEGIN{
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
 
 use strict;
 use warnings;

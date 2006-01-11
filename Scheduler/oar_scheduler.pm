@@ -71,7 +71,7 @@ sub init_scheduler($){
     
     foreach my $i (@initial_jobs){
         # The list of nodes on which the job is running
-        my @node_list = iolib::get_job_host_distinct($dbh, $i->{idJob});
+        my @node_list = iolib::get_job_current_hostnames($dbh, $i->{idJob});
 
         my $date ;
         if ($i->{startTime} eq "0000-00-00 00:00:00") {

@@ -30,7 +30,7 @@ sub get_job_bpid($$);
 sub set_job_bpid($$$);
 sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
-sub get_job_host_distinct($$);
+sub get_job_current_hostnames($$);
 sub get_job_host_log($$);
 sub get_job_cmd_user($$);
 sub get_tokill_job($);
@@ -43,7 +43,8 @@ sub set_running_date_arbitrary($$$);
 sub set_finish_date($$);
 sub set_job_number_of_nodes($$$);
 sub form_job_properties($$);
-sub add_micheline_job($$$$$$$$$$$$);
+sub get_possible_wanted_resources($$$);
+sub add_micheline_job($$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job_list(@);
@@ -121,8 +122,8 @@ sub get_node_stats($);
 sub order_property_node($$$);
 
 # QUEUES MANAGEMENT
-sub get_highestpriority_nonempty_queue($);
-sub get_queues($);
+sub get_active_queues($);
+sub get_all_queue_informations($);
 
 # GANTT MANAGEMENT
 sub get_gantt_scheduled_jobs($);
@@ -312,15 +313,23 @@ sub is_job_desktopComputing($$) {
 		return ($count > 0);
 }
 
-# get_job_host_distinct
+# get_job_current_hostnames
 # returns the list of hosts associated to the job passed in parameter
 # parameters : base, jobid
 # return value : list of distinct hostnames
 # side effects : /
-sub get_job_host_distinct($$) {
+sub get_job_current_hostnames($$) {
     my $dbh = shift;
     my $jobid= shift;
-    my $sth = $dbh->prepare("SELECT distinct hostname FROM processJobs WHERE idJob = $jobid ORDER BY hostname");
+
+    my $sth = $dbh->prepare("SELECT b.networkAddress hostname
+                             FROM assignedResources a, resources b, moldableJobs_description c
+                             WHERE 
+                                a.assignedResourceIndex = \"CURRENT\"
+                                AND a.idResource = b.resourceId
+                                AND c.moldableId = a.idMoldableJob
+                                AND c.moldableJobId = $jobid
+                             ORDER BY b.resourceId");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -554,6 +563,127 @@ sub form_job_properties($$){
     return($jobproperties);
 }
 
+
+
+# get_possible_wanted_resources
+# return a data structure with corresponding resources with what is asked
+sub get_possible_wanted_resources($$$){
+    my $dbh = shift;
+    my $properties = shift;
+    my $wanted_resources_ref = shift;
+
+    my @wanted_resources = @{$wanted_resources_ref};
+    push(@wanted_resources, {
+                                resource => "resourceId",
+                                value    => "1",
+                            });
+    my $property_string = "";
+    if ($properties ne ""){
+        $property_string = "WHERE $properties";
+    }
+    
+    #Get only wanted resources
+    my %resource_hash;
+    my $resource_string;
+    foreach my $r (@wanted_resources){
+        $resource_string .= " $r->{resource},";
+        $resource_hash{$r->{resource}} = $r->{value};
+    }
+    chop($resource_string);
+
+    my $sth = $dbh->prepare("SELECT $resource_string
+                             FROM resourceProperties
+                             $property_string
+                            ");
+    if (!$sth->execute()){
+        return(undef);
+    }
+    
+    # Initialize root
+    my $result ;
+    my $root_tree = [];
+    $result->[0] = $root_tree;
+    $result->[2] = $wanted_resources[0]->{resource};
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $father_ref = $result;
+        for (my $i = 0; $i <= $#wanted_resources; $i++){
+            # Feed thee tree for all resources
+            my $resource_value = $ref->{$wanted_resources[$i]->{resource}};
+            if ($i >= $#wanted_resources){
+                # Leaf
+                $father_ref->[1]->{$resource_value} = [ $father_ref, {} ];
+            }else{
+                if (!defined($father_ref->[1]->{$resource_value})){
+                    # Initialize value of the father
+                    $father_ref->[1]->{$resource_value} = [ $father_ref, undef, $wanted_resources[$i + 1]->{resource} ];
+                }
+                $father_ref = \@{$father_ref->[1]->{$resource_value}};
+            }
+        }
+    }
+    
+    $sth->finish();
+
+#print(Dumper($result));
+#return($result);
+
+    # Search if there are enough values for each resource
+    # Tremaux algorithm
+    my $current_node = $result;
+    my %level_index;
+    do{
+        if (!defined($level_index{$current_node})){
+            # Initialize index where we are for the node
+            $level_index{$current_node} = 0;
+        }
+        my @child = sort(keys(%{$current_node->[1]}));
+        #print("Child = @child --> $resource_hash{$current_node->[2]} ; $level_index{$current_node}\n");
+        if ($resource_hash{$current_node->[2]} > ($#child + 1)){
+            # Delete sub tree that does not fit with wanted resources 
+            #print("Delete @child\n");
+            $tmp_current_node = $current_node->[0];
+            my @tmp = sort(keys(%{$current_node->[0]->[1]}));
+            my $father_key_name = $tmp[$level_index{$current_node->[0]} - 1];
+            if (!defined($father_key_name)){
+                # No matching records (we want to delete the root)
+                return(undef);
+            }
+            #print("Key father : $father_key_name\n");
+            $current_node = $tmp_current_node;
+            delete($current_node->[1]->{$father_key_name});
+            $level_index{$current_node} --;
+        }else{
+            if (defined($child[$level_index{$current_node}]) and defined($current_node->[1]->{$child[$level_index{$current_node}]})){
+                # Go to child
+                print("GO to  Child = $child[$level_index{$current_node}]\n");
+                my $tmp_current_node = $current_node;
+                $current_node = $current_node->[1]->{$child[$level_index{$current_node}]};
+                $level_index{$tmp_current_node} ++;
+            }else{
+                # Treate leaf
+                my @brothers = sort(keys(%{$current_node->[0]->[1]}));
+                while(($current_node != $root_tree) and !defined($brothers[$level_index{$current_node->[0]}])){
+                    $level_index{$current_node->[0]} ++;
+                    $current_node = $current_node->[0];
+                    @brothers = sort(keys(%{$current_node->[0]->[1]}));
+                }
+                if (defined($brothers[$level_index{$current_node->[0]}])){
+                    # Treate brother
+                    print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
+                    $current_node = $current_node->[0]->[1]->{$brothers[$level_index{$current_node->[0]}]};
+                    $level_index{$current_node->[0]} ++;
+                }
+            }
+        }
+    }while($current_node != $root_tree);
+
+    #Clean result 
+    $result->[0] = [];
+    return($result);
+}
+
+
+
 # add_micheline_job
 # adds a new job to the table Jobs applying the admission rules from the base
 # parameters : base, jobtype, nbnodes, weight, command, infotype, maxtime,
@@ -566,8 +696,8 @@ sub form_job_properties($$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$) {
-    my ($dbh, $jobType, $nbNodes , $weight, $command, $infoType, $maxTime, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint) = @_;
+sub add_micheline_job($$$$$$$$$$) {
+    my ($dbh, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint) = @_;
 
     my $startTimeJob = "0000-00-00 00:00:00";
     my $reservationField = "None";
@@ -585,7 +715,6 @@ sub add_micheline_job($$$$$$$$$$$$) {
     }
 
     my $rules;
-    #my $user= getpwuid($<);
     my $user= getpwuid($ENV{SUDO_UID});
 
     # Verify the content of user command
@@ -595,7 +724,6 @@ sub add_micheline_job($$$$$$$$$$$$) {
     }
     
     #Retrieve Micheline's rules from the table
-    #my $sth = $dbh->prepare("SELECT rule FROM admissionRules ORDER BY priority ASC");
     my $sth = $dbh->prepare("SELECT rule FROM admissionRules");
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -2250,7 +2378,7 @@ sub set_weight_node($$$) {
 sub decrease_weight($$) {
     my $dbh = shift;
     my $idjob = shift;
-    my @hosts = get_job_host_distinct($dbh,$idjob);
+    my @hosts = get_job_current_hostnames($dbh,$idjob);
 
     my $job = get_job($dbh,$idjob);
     my $w = $job->{'weight'};
@@ -2568,53 +2696,15 @@ sub order_property_node($$$){
 
 # QUEUES MANAGEMENT
 
-# get_highestpriority_nonempty_queue
-# get one of the non empty queues of highest priority (unique if all the
-# priorities are different !).
-# (eg. by looking within the waiting jobs the one affected to the highest
-# priority queue).
-# parameters : base
-# return value : queuename, schedulerpolicy
-# side effects : /
-sub get_highestpriority_nonempty_queue($){
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT MAX(q.priority)
-                             FROM jobs j, queue q
-                             WHERE j.state = \"Waiting\"
-                             AND j.queueName = q.queueName
-                             AND q.state = \"Active\" ");
-    $sth->execute();
-
-    my @res = $sth->fetchrow_array();
-    $sth->finish();
-    my $maximum = shift @res;
-
-    if (defined($maximum)){
-        $sth = $dbh->prepare("SELECT q.queueName, q.schedulerPolicy
-                              FROM jobs j, queue q
-                              WHERE j.state = \"Waiting\"
-                              AND j.queueName = q.queueName
-                              AND q.priority = $maximum
-                              AND q.state = \"Active\"");
-        $sth->execute();
-        my $ref = $sth->fetchrow_hashref();
-        $sth->finish();
-
-        return ($ref->{'queueName'}, $ref->{'schedulerPolicy'});
-    }else{
-        return ();
-    }
-}
-
 # get_queues
 # create the list of queues sorted by descending priority
 # only return the Active queues.
 # return value : list of queues
 # side effects : /
-sub get_queues($) {
+sub get_active_queues($) {
     my $dbh = shift;
     my $sth = $dbh->prepare("SELECT queueName,schedulerPolicy
-                             FROM queue
+                             FROM queues
                              WHERE state = \"Active\"
                              ORDER BY priority DESC");
     $sth->execute();
@@ -2624,6 +2714,24 @@ sub get_queues($) {
     }
     $sth->finish();
     return @res;
+}
+
+
+# get_all_queue_informations
+# return a hashtable with all queues and their properties
+sub get_all_queue_informations($){
+    my $dbh = shift;
+    
+    my $sth = $dbh->prepare("SELECT *
+                             FROM queues");
+    $sth->execute();
+    my %res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $res{$ref->{queueName}} = $ref ;
+    }
+    $sth->finish();
+   
+    return %res;
 }
 
 

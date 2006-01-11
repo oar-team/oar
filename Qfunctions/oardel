@@ -1,6 +1,12 @@
 #!/usr/bin/perl
 # $Id: oardel,v 1.13 2005/06/01 16:20:42 capitn Exp $
 # delete a job
+
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
+
 use strict;
 use warnings;
 use Data::Dumper;
@@ -54,7 +60,7 @@ if (@checkpoint){
         }else{
             my $strComment;
             # Retrieve node names used by the job
-            my @hosts = iolib::get_job_host_distinct($base,$idJob);
+            my @hosts = iolib::get_job_current_hostnames($base,$idJob);
             my $timeoutSSH = oar_Tools::getSSHTimeout();
             # Timeout the ssh command
             eval {

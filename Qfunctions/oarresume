@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 # resume a job --> it will be rescheduled
 
+BEGIN {
+    # Get library path for OAR modules
+    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+}
+
 use strict;
 use warnings;
 use Data::Dumper;

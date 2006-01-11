@@ -110,7 +110,7 @@ my $launchingDirectory=shift(@tmp);
 my $weight = shift(@tmp);
 my $queue = shift(@tmp);
 
-@hosts = iolib::get_job_host_distinct($base,$Jid);
+@hosts = iolib::get_job_current_hostnames($base,$Jid);
 
 if(scalar @hosts eq 0){
     oar_error("[bipbip $Jid] A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???\n");

@@ -1,4 +1,3 @@
-# $Id: oar_Judas.pm,v 1.13 2005/09/14 14:45:58 capitn Exp $
 package oar_Judas;
 require Exporter;
 # this module allows to log on a file and stdout with three different level
@@ -27,6 +26,7 @@ my $logFile = get_conf("LOG_FILE");
 if (!defined($logFile)){
     $logFile = "/var/log/oar.log";
 }
+my $mail_recipient = get_conf("MAIL_RECIPIENT");
 
 # this function writes both on the stdout and in the log file
 sub write_log($){
@@ -48,7 +48,7 @@ sub oar_warn($){
         $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
         print("$string");
         write_log("[info] $string");
-        sendMail("OAR Info on ".hostname()." : ".substr($string,0,70),$string);
+        send_mail($mail_recipient, "OAR Info on ".hostname()." : ".substr($string,0,70),$string);
     }
 }
 
@@ -70,19 +70,19 @@ sub oar_error($){
     $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
     print("$string");
     write_log("[error] $string");
-    sendMail("OAR Error on ".hostname()." : ".substr($string,0,70),$string);
+    send_mail($mail_recipient, "OAR Error on ".hostname()." : ".substr($string,0,70),$string);
 }
 
 # send mail to OAR admin
 # arg1 --> object
 # arg2 --> body
-sub sendMail($$){
+sub send_mail($$$){
+    my $mailRecipientAddress = shift;
     my $object = shift;
     my $body = shift;
 
     my $smtpServer = get_conf("MAIL_SMTP_SERVER");
     my $mailSenderAddress = get_conf("MAIL_SENDER");
-    my $mailRecipientAddress = get_conf("MAIL_RECIPIENT");
     if (!defined($smtpServer) || !defined($mailSenderAddress) || !defined($mailRecipientAddress)){
         oar_debug("[Judas] Mail is not configured\n");
         return();
