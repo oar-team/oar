@@ -60,14 +60,23 @@ INDEX job (moldableJobId),
 PRIMARY KEY (moldableId)
 );
 
+#DROP TABLE IF EXISTS jobResources_group;
+CREATE TABLE IF NOT EXISTS jobResources_group (
+resGroupId INT UNSIGNED NOT NULL AUTO_INCREMENT ,
+resGroupMoldableId INT UNSIGNED NOT NULL ,
+resGroupProperty TEXT ,
+INDEX moldableJob (resGroupMoldableId),
+PRIMARY KEY (resGroupId)
+);
+
 #DROP TABLE IF EXISTS jobResources_description;
 CREATE TABLE IF NOT EXISTS jobResources_description (
-resJobMoldableId INT UNSIGNED NOT NULL,
+resJobGroupId INT UNSIGNED NOT NULL,
 resJobResourceType VARCHAR(255) NOT NULL,
 resJobValue INT UNSIGNED NOT NULL,
 resJobOrder INT UNSIGNED NOT NULL DEFAULT 0,
-INDEX moldableJob (resJobMoldableId),
-PRIMARY KEY (resJobMoldableId,resJobResourceType)
+INDEX resgroup (resJobGroupId),
+PRIMARY KEY (resJobGroupId,resJobResourceType)
 );
 
 #DROP TABLE IF EXISTS jobStates_log;

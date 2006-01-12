@@ -3,7 +3,9 @@
 #it launches user command
 
 BEGIN{
-    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+    # Add path to OAR modules
+    $ENV{PERL5LIB} = $ENV{OARLIB};
+    unshift(@INC, $ENV{OARLIB});
 }
 
 use strict;

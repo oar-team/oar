@@ -2,9 +2,10 @@
 # $Id: oardel,v 1.13 2005/06/01 16:20:42 capitn Exp $
 # delete a job
 
-BEGIN {
-    # Get library path for OAR modules
-    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+BEGIN{
+    # Add path to OAR modules
+    $ENV{PERL5LIB} = $ENV{OARLIB};
+    unshift(@INC, $ENV{OARLIB});
 }
 
 use strict;

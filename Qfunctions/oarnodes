@@ -15,9 +15,10 @@
 #   => returns the information for hostX - status is 0 for every host known - 1 otherwise
 #
 
-BEGIN {
-    # Get library path for OAR modules
-    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
+BEGIN{
+    # Add path to OAR modules
+    $ENV{PERL5LIB} = $ENV{OARLIB};
+    unshift(@INC, $ENV{OARLIB});
 }
 
 use strict;

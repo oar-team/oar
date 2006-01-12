@@ -1,9 +1,5 @@
 #!/usr/bin/perl
 
-BEGIN{
-    $ENV{PERL5LIB} = $ENV{PERL5LIB}.":".$ENV{OARLIB};
-}
-
 use strict;
 use warnings;
 use DBI;
