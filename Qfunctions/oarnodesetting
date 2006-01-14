@@ -20,59 +20,48 @@ $| = 1;
 
 my $hostname ;
 my $base;
-my $maxWeight;
-my $Weight;
 my $state ;
-my $node_info;
-my $expiryDate;
-my $desktopComputing;
 my $nowaitMode;
 my @properties;
+my $new_resource;
+my $sos;
+my $resource;
 
 # Get OAR configuration
 init_conf("oar.conf");
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
-# print explainations for the user and exit
-sub usage {
-    print <<EOS;
-Usage: $0 [OPTIONS]
-Change the state of a node in OAR.
-Options:
- -s, --state=STATE               set the new state of the node
- -h, --hostname=HOSTNAME         set the node hostname
- -w, --max-weight=WEIGHT         set the max weight of the node
- -e, --expiry-date=DATE          set the node expiry date
-     --desktop-computing         declare the node as a desktop-computing node
- -p, --property="PROPERTY=VALUE" set the property of the node to the given
-                                 value
- -n, --nowait                    do not wait for job end when the node
-                                 switches to Absent or Dead
-N.B.:
- - Only the --state (-s) or --property (-p) is mandatory.
- - The states allowed are: Alive, Absent or Dead
- - If not specified, the hostname will be retrieved via the 'hostname'
-   utility.
- - If the hostname is not in the OAR database yet, a new node entry will be
-   added.
- - The default max-weight is 1.
- - Max-weight is only used when the node is created.
- - The default expiry date is set to '0000-00-00 00:00:00', which means the
-   node never will never expire.
-EOS
-    exit 1;
-}
-
-sub set_properties($$$){
+sub set_hostname_properties($$$){
     my $base = shift;
     my $hostname = shift;
     my $arrayProp = shift;
 
     foreach my $p (@{$arrayProp}){
         if ($p =~ m/(.+)\s*=\s*(.+)/m){
-            print("Update property $1 with value $2 ...");
+            print("Update property $1 with value $2 on node $hostname ...");
             my $ret = iolib::set_node_property($base,$hostname,$1,$2);
+            if ($ret == 0){
+                print("DONE\n");
+            }else{
+                print("ERROR (wrong property or wrong value)\n");
+            }
+        }else{
+            print("/!\\ Bad property syntax : -p property=value\n");
+        }
+    }
+}
+
+
+sub set_resource_properties($$$){
+    my $base = shift;
+    my $resource = shift;
+    my $arrayProp = shift;
+
+    foreach my $p (@{$arrayProp}){
+        if ($p =~ m/(.+)\s*=\s*(.+)/m){
+            print("Update property $1 with value $2 ...");
+            my $ret = iolib::set_resource_property($base,$resource,$1,$2);
             if ($ret == 0){
                 print("DONE\n");
             }elsif($ret == 2){
@@ -86,84 +75,165 @@ sub set_properties($$$){
     }
 }
 
+sub wait_end_of_running_jobs($$){
+    my $dbh = shift;
+    my $job_list = shift;
+
+    my $max_timeout = 30;
+    my $jobInfo;
+    foreach my $j (sort(@{$job_list})){
+        $jobInfo = {'state' => 'Running'};
+        # active waiting : it is not very nice but it works!!
+        print("\t$j ");
+        my $timeCount = 0;
+        while ((($jobInfo->{'state'} eq "Running") || ($jobInfo->{'state'} eq "toLaunch") || ($jobInfo->{'state'} eq "Launching")) && ($timeCount < $max_timeout)){
+            $jobInfo = iolib::get_job($base,$j);
+            sleep(1);
+            print(".");
+            $timeCount++;
+        }
+        if ($timeCount >= $max_timeout){
+            print(" Timouted\n");
+        }else{
+            print(" Deleted\n");
+        }
+    }
+    print("Check done\n");
+}
+
+
+# print explainations for the user and exit
+sub usage {
+    print <<EOS;
+Usage: $0 [-h hostname | [-r resource_number | -a]] [-a] [-p "property=value"] [-s state]
+Change the state and properties of a node in OAR.
+You can also create a new resource.
+Options:
+ -a, --add                       add a new resource
+ -s, --state=STATE               set the new state of the node
+ -h, --hostname=HOSTNAME         set the node hostname
+ -r, --resource                  set the resource
+ -p, --property="PROPERTY=VALUE" set the property of the node to the given
+                                 value
+ -n, --nowait                    do not wait for job end when the node
+                                 switches to Absent or Dead
+     --help                      display this help
+N.B.:
+ - The states allowed are: Alive, Absent or Dead.
+ - If not specified, the hostname will be retrieved via the 'hostname'
+   utility.
+ - You cannot specify "-a" and "-r" together.
+EOS
+    exit 1;
+}
+
+
 # Options on arg command line
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
             "hostname|h=s"   => \$hostname,
-            "max-weight|w=s" => \$maxWeight,
-	    "expiry-date|e=s" => \$expiryDate,
-            "desktop-computing" => \$desktopComputing,
             "nowait|n" => \$nowaitMode,
-            "property|p=s" => \@properties
+            "property|p=s" => \@properties,
+            "add|a" => \$new_resource,
+            "help" => \$sos,
+            "resource|r=i" => \$resource
            );
 
-defined(@properties) || defined($state) or usage();
+usage() if (defined($sos));
+
+defined(@properties) || defined($state) || defined($new_resource) or usage();
 if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){
+    warn("/!\\ Bad state value. Possibilities are : Alive | Absent | Dead \n");
     usage();
 }
-defined $hostname or $hostname = hostname();
-defined $maxWeight or $maxWeight = 1;
 
-my $base = iolib::connect() or die "cannot connect to the data base\n";
-
-$node_info = iolib::get_node_info($base,$hostname);
-
-if (defined(@properties) && !defined($state)){
-    if ($node_info eq undef){
-        die("/!\\ The node $hostname does not exist in OAR database, you must specify a state with the -s option to create it first.\n");
-    }else{
-        set_properties($base,$hostname,\@properties);
-        iolib::disconnect($base);
-        exit(0);
+if (defined($new_resource)){
+    if (defined($resource)){
+        warn("/!\\ You cannot use -r|--resource and -a|--add options together\n");
+        usage();
     }
 }
 
-print("$hostname --> $state\n");
-if ($node_info eq undef){
-    print("new node\n");
-    $base->do("LOCK TABLE nodes WRITE, nodeProperties WRITE, nodeState_log WRITE");
+defined $hostname or $hostname = hostname();
+print "$hostname\n";
+my $base = iolib::connect() or die "cannot connect to the data base\n";
+
+my $notify_almighty = 0;
+if (defined($new_resource)){
+    # Create a new resource
+    print("new resource\n");
+    #$base->do("LOCK TABLE resources WRITE, resourceProperties WRITE, resourceProperties_log WRITE");
     print("$hostname added in the database\n");
-    iolib::add_node($base, $hostname, $state, $maxWeight, $desktopComputing);
-    #iolib::set_node_nextState($base,$hostname,$state);
-    defined $expiryDate and iolib::set_node_expiryDate($base,$hostname,"\"$expiryDate\"");
-    defined @properties and set_properties($base,$hostname,\@properties);
-    $base->do("UNLOCK TABLES");
-    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
+    $state = "Alive" if (!defined($state));
+    $resource = iolib::add_resource($base, $hostname, $state);
+    #$base->do("UNLOCK TABLES");
+    $notify_almighty = 1;
 }else{
-    print("update node $hostname to $state state\n");
-    $base->do("LOCK TABLE nodes WRITE, nodeProperties WRITE");
-    iolib::set_node_nextState($base,$hostname,$state);
-    defined $expiryDate and iolib::set_node_expiryDate($base,$hostname,"\"$expiryDate\"");
-    defined @properties and set_properties($base,$hostname,\@properties);
-    $base->do("UNLOCK TABLES");
-    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
-    if (($state eq 'Dead') || ($state eq 'Absent')){
-        if ($nowaitMode){
-            print("Done\n");
-        }else{
-            print("Check jobs to delete on $hostname :\n");
-            my @jobs = iolib::get_host_job_distinct($base,$hostname);
-            my $jobInfo;
-            foreach my $i (sort(@jobs)){
-                $jobInfo = {'state' => 'Running'};
-                # active waiting : it is not very nice but it works!!
-                print("\t$i ");
-                my $timeCount = 0;
-                while ((($jobInfo->{'state'} eq "Running") || ($jobInfo->{'state'} eq "toLaunch") || ($jobInfo->{'state'} eq "Launching")) && ($timeCount < 20)){
-                    $jobInfo = iolib::get_job($base,$i);
-                    sleep(1);
-                    print(".");
-                    $timeCount++;
+    if (defined($resource)){
+        if (defined($state)){
+            #$base->do("LOCK TABLE resources WRITE");
+            iolib::set_resource_nextState($base,$resource,$state);
+            #$base->do("UNLOCK TABLES");
+            $notify_almighty = 1;
+            print("$resource --> $state\n");
+            if (($state eq 'Dead') || ($state eq 'Absent')){
+                if ($nowaitMode){
+                    print("Done\n");
+                }else{
+                    print("Check jobs to delete on resource $resource :\n");
+                    my @jobs = iolib::get_resource_job($base,$resource);
+                    wait_end_of_running_jobs($base,\@jobs);
                 }
-                print(" Deleted\n");
+            }elsif ($state eq 'Alive'){
+                print("Done\n");
             }
-            print("Check done\n");
         }
-    }elsif ($state eq 'Alive'){
-        print("Done\n");
     }else{
-        die("Internal error, BAD STATE $state\n");
+        # update all resources with netwokAdress = $hostname
+        if (defined($state)){
+            #$base->do("LOCK TABLE resources WRITE");
+            iolib::set_node_nextState($base,$hostname,$state);
+            #$base->do("UNLOCK TABLES");
+            $notify_almighty = 1;
+            print("$hostname --> $state\n");
+            if (($state eq 'Dead') || ($state eq 'Absent')){
+                if ($nowaitMode){
+                    print("Done\n");
+                }else{
+                    print("Check jobs to delete on node $hostname :\n");
+                    my @jobs = iolib::get_node_job($base,$hostname);
+                    wait_end_of_running_jobs($base,\@jobs);
+                }
+            }elsif ($state eq 'Alive'){
+                print("Done\n");
+            }
+        }
     }
+}
+
+# Update properties
+if (defined(@properties)){
+    if (defined($resource)){
+        if (!defined(iolib::get_resource_info($base,$resource))){
+            die("/!\\ The resource $resource does not exist in OAR database.\n");
+        }else{
+            set_resource_properties($base,$resource,\@properties);
+            iolib::disconnect($base);
+            exit(0);
+        }
+    }else{
+        if (iolib::is_node_exists($base,$hostname) == 0){
+            die("/!\\ The node $hostname does not exist in OAR database. First you must add it with -a|--add option.\n");
+        }else{
+            set_hostname_properties($base,$hostname,\@properties);
+            iolib::disconnect($base);
+            exit(0);
+        }
+    }
+}
+
+if ($notify_almighty == 1){
+    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
 }
 
 

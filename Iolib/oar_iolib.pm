@@ -43,7 +43,7 @@ sub set_running_date_arbitrary($$$);
 sub set_finish_date($$);
 sub set_job_number_of_nodes($$$);
 sub form_job_properties($$);
-sub get_possible_wanted_resources($$$);
+sub get_possible_wanted_resources($$$$$);
 sub add_micheline_job($$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
@@ -79,13 +79,14 @@ sub del_stagein($$);
 # PROCESSJOBS MANAGEMENT (Host assignment to jobs)
 sub delete_job_process($$);
 sub delete_job_process_log($$);
-sub get_host_job_distinct($$);
+sub get_resource_job($$);
+sub get_node_job($$);
 sub get_running_host($);
 sub add_node_job_pair($$$);
 sub remove_node_job_pair($$$);
 
 # NODES MANAGEMENT
-sub add_node($$$$$);
+sub add_resource($$$);
 sub get_maxweight_node($);
 sub get_free_nodes_job($$$);
 sub get_free_nodes_job_killer($$$$);
@@ -101,7 +102,8 @@ sub get_alive_node($);
 sub get_really_alive_node($);
 sub get_suspected_node($);
 sub list_nodes($);
-sub get_node_info($$);
+sub get_resource_info($$);
+sub is_node_exists($$);
 sub get_weight_node($$);
 sub set_weight_node($$$);
 sub decrease_weight($$);
@@ -110,9 +112,11 @@ sub update_node_nextFinaudDecision($$$);
 sub get_all_node_properties($$);
 sub get_all_nodes_properties($);
 sub get_node_change_state($);
+sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
 sub set_node_property($$$$);
+sub set_resource_property($$$$);
 sub get_constraint_string($$);
 sub get_maxweight_one_node($$);
 sub get_node_dead_range_date($$$);
@@ -566,9 +570,11 @@ sub form_job_properties($$){
 
 
 # get_possible_wanted_resources
-# return a data structure with corresponding resources with what is asked
-sub get_possible_wanted_resources($$$){
+# return a tree ref : a data structure with corresponding resources with what is asked
+sub get_possible_wanted_resources($$$$$){
     my $dbh = shift;
+    my $possible_resources = shift;
+    my $unpossible_resources = shift;
     my $properties = shift;
     my $wanted_resources_ref = shift;
 
@@ -577,9 +583,26 @@ sub get_possible_wanted_resources($$$){
                                 resource => "resourceId",
                                 value    => "1",
                             });
-    my $property_string = "";
-    if ($properties ne ""){
-        $property_string = "WHERE $properties";
+    
+    my $sql_where_string = "resourceId IN(";
+    foreach my $i (@{$possible_resources}){
+        $sql_where_string .= "$i,";
+    }
+    chop($sql_where_string);
+    return(undef) if (!defined(@{$possible_resources}));
+    $sql_where_string .= ") ";
+
+    if (defined(@{$unpossible_resources})){
+        $sql_where_string .= "AND resourceId NOT IN (" ;
+        foreach my $i (@{$unpossible_resources}){
+            $sql_where_string .= "$i,";
+        }
+        chop($sql_where_string);
+        $sql_where_string .= ") ";
+    }
+    
+    if ($properties =~ m/\w+/m){
+        $sql_where_string .= "AND ( $properties )";
     }
     
     #Get only wanted resources
@@ -591,9 +614,11 @@ sub get_possible_wanted_resources($$$){
     }
     chop($resource_string);
 
+    #print("$sql_where_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resourceProperties
-                             $property_string
+                             WHERE
+                                $sql_where_string
                             ");
     if (!$sth->execute()){
         return(undef);
@@ -655,7 +680,7 @@ sub get_possible_wanted_resources($$$){
         }else{
             if (defined($child[$level_index{$current_node}]) and defined($current_node->[1]->{$child[$level_index{$current_node}]})){
                 # Go to child
-                print("GO to  Child = $child[$level_index{$current_node}]\n");
+                #print("GO to  Child = $child[$level_index{$current_node}]\n");
                 my $tmp_current_node = $current_node;
                 $current_node = $current_node->[1]->{$child[$level_index{$current_node}]};
                 $level_index{$tmp_current_node} ++;
@@ -669,7 +694,7 @@ sub get_possible_wanted_resources($$$){
                 }
                 if (defined($brothers[$level_index{$current_node->[0]}])){
                     # Treate brother
-                    print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
+                    #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
                     $current_node = $current_node->[0]->[1]->{$brothers[$level_index{$current_node->[0]}]};
                     $level_index{$current_node->[0]} ++;
                 }
@@ -683,6 +708,63 @@ sub get_possible_wanted_resources($$$){
 }
 
 
+# get_tree_leaf_names
+# return a list of tree leaf names
+# arg: tree ref
+sub get_tree_leaf_names($){
+    my $tree = shift;
+
+    return(undef) if (!defined($tree));
+    
+    my @result;
+    my $root_tree = $tree->[0];
+    # Search leafs
+    # Tremaux algorithm
+    my $current_node = $tree;
+    my %level_index;
+    my @node_name_pile;
+    do{
+        if (!defined($level_index{$current_node})){
+            # Initialize index where we are for the node
+            $level_index{$current_node} = 0;
+        }
+        my @child = sort(keys(%{$current_node->[1]}));
+        if (defined($child[$level_index{$current_node}]) and defined($current_node->[1]->{$child[$level_index{$current_node}]})){
+            # Go to child
+            #print("GO to  Child = $child[$level_index{$current_node}]\n");
+            unshift(@node_name_pile, $child[$level_index{$current_node}]);
+            my $tmp_current_node = $current_node;
+            $current_node = $current_node->[1]->{$child[$level_index{$current_node}]};
+            $level_index{$tmp_current_node} ++;
+        }else{
+            # Treate leaf
+            if (!defined($current_node->[1]->{$child[$level_index{$current_node}]})){
+                push(@result, $node_name_pile[0]);
+                #print("Leaf: ".$node_name_pile[0]."\n");
+            }
+            # Look at brothers
+            my @brothers = sort(keys(%{$current_node->[0]->[1]}));
+            while(($current_node != $root_tree) and !defined($brothers[$level_index{$current_node->[0]}])){
+                shift(@node_name_pile);
+                $level_index{$current_node->[0]} ++;
+                $current_node = $current_node->[0];
+                @brothers = sort(keys(%{$current_node->[0]->[1]}));
+            }
+            if (defined($brothers[$level_index{$current_node->[0]}])){
+                # Treate brother
+                unshift(@node_name_pile, $brothers[$level_index{$current_node->[0]}]);
+                #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
+                $current_node = $current_node->[0]->[1]->{$brothers[$level_index{$current_node->[0]}]};
+                $level_index{$current_node->[0]} ++;
+            }
+        }
+    }while($current_node != $root_tree);
+
+    #Clean tree
+    $tree->[0] = [];
+    
+    return(@result);
+}
 
 # add_micheline_job
 # adds a new job to the table Jobs applying the admission rules from the base
@@ -933,7 +1015,11 @@ sub get_job($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM jobs WHERE idJob = $idJob");
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    idJob = $idJob
+                            ");
     $sth->execute();
 
     my $ref = $sth->fetchrow_hashref();
@@ -1367,16 +1453,22 @@ sub delete_job_process_log($$){
 
 
 
-# get_host_job_distinct
-# returns the list of jobs associated to the hosts passed in parameter
-# parameters : base, hostname
+# get_resource_job
+# returns the list of jobs associated to the resource passed in parameter
+# parameters : base, resource
 # return value : list of jobid
 # side effects : /
-sub get_host_job_distinct($$) {
+sub get_resource_job($$) {
     my $dbh = shift;
-    my $hostname= shift;
-    my $sth = $dbh->prepare("SELECT distinct idJob FROM processJobs
-                             WHERE hostname = '".$hostname."'");
+    my $resource = shift;
+    my $sth = $dbh->prepare("   SELECT c.idJob
+                                FROM assignedResources a, moldableJobs_description b, jobs c
+                                WHERE
+                                    a.assignedResourceIndex = \"CURRENT\"
+                                    AND a.idResource = $resource
+                                    AND a.idMoldableJob = b.moldableId
+                                    AND b.moldableJobId = c.idJob
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -1385,6 +1477,31 @@ sub get_host_job_distinct($$) {
     return @res;
 }
 
+
+# get_node_job
+# returns the list of jobs associated to the hostname passed in parameter
+# parameters : base, hostname
+# return value : list of jobid
+# side effects : /
+sub get_node_job($$) {
+    my $dbh = shift;
+    my $hostname = shift;
+    my $sth = $dbh->prepare("   SELECT c.idJob
+                                FROM assignedResources a, moldableJobs_description b, jobs c, resources d
+                                WHERE
+                                    a.assignedResourceIndex = \"CURRENT\"
+                                    AND d.networkAddress = \"$hostname\"
+                                    AND a.idResource = d.resourceId
+                                    AND a.idMoldableJob = b.moldableId
+                                    AND b.moldableJobId = c.idJob
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{'idJob'});
+    }
+    return @res;
+}
 
 
 # get_running_host
@@ -1688,31 +1805,33 @@ EOF
 
 # NODES MANAGEMENT
 
-# add_node
-# adds a new node in the table nodes
-# parameters : base, name, maxweight
-# return value : /
-# side effects : adds a new nodes entry to the table nodes
-sub add_node($$$$$) {
+# add_resource
+# adds a new resource in the table resources and resourceProperties
+# parameters : base, name, state
+# return value : new resource id
+sub add_resource($$$) {
     my $dbh = shift;
     my $name = shift;
     my $state = shift;
-    my $maxweight = shift;
-    my $desktopComputing = shift;
 
-    $dbh->do("INSERT INTO nodes (hostname,state,maxWeight,weight)
-              VALUES (\"$name\",\"$state\",$maxweight,0)");
-    if ($desktopComputing) {
-      $dbh->do("INSERT INTO nodeProperties (hostname,desktopComputing)
-                VALUES (\"$name\",\"YES\")");
-		} else {
-      $dbh->do("INSERT INTO nodeProperties (hostname)
-                VALUES (\"$name\")");
-    }
-    
-    $dbh->do("INSERT INTO nodeState_log (hostname,changeState,dateStart)
-              VALUES (\"$name\",\"$state\",NOW())");
+    $dbh->do("  INSERT INTO resources (networkAddress,state)
+                VALUES (\"$name\",\"$state\")
+             ");
+    $dbh->do("  INSERT INTO resourceProperties (resourceId)
+                VALUES (LAST_INSERT_ID())
+             ");
+    my $date = get_date($dbh);
+    $dbh->do("  INSERT INTO resourceStates_log (resourceId,changeState,dateStart)
+                VALUES (LAST_INSERT_ID(),\"$state\",\"$date\")
+             ");
+    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    my @tmp = values(%$ref);
+    my $id = $tmp[0];
+    $sth->finish();
 
+    return($id);
 }
 
 
@@ -2310,16 +2429,20 @@ sub list_nodes($) {
 
 
 
-# get_node_info
-# returns a ref to some hash containing data for the nodes of hostname passed in parameter
-# parameters : base, hostname
+# get_resource_info
+# returns a ref to some hash containing data for the nodes of the resource passed in parameter
+# parameters : base, resource id
 # return value : ref
 # side effects : /
-sub get_node_info($$) {
+sub get_resource_info($$) {
     my $dbh = shift;
-    my $hostname = shift;
+    my $resource = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM nodes WHERE hostname=\"$hostname\"");
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    resourceId = $resource
+                            ");
     $sth->execute();
 
     my $ref = $sth->fetchrow_hashref();
@@ -2327,6 +2450,34 @@ sub get_node_info($$) {
 
     return $ref;
 }
+
+
+# is_node_exists
+# returns 1 if the given hostname exists in the database otherwise 0.
+# parameters : base, hostname
+# return value : ref
+# side effects : /
+sub is_node_exists($$) {
+    my $dbh = shift;
+    my $hostname = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    networkAddress=\"$hostname\"
+                            ");
+    $sth->execute();
+
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    if (defined($ref)){
+        return(1);
+    }else{
+        return(0);
+    }
+}
+
 
 # get_weight_node
 # returns the current weight of node whose hostname is passed in parameter
@@ -2412,18 +2563,37 @@ sub set_node_state($$$$) {
               VALUES (\"$hostname\",\"$state\",\"$date\",\"$finaud\")");
 }
 
-# set_node_nextState
-# sets the nextState field of some node identified by its hostname in the base.
-# parameters : base, hostname, nextState
+# set_resource_nextState
+# sets the nextState field of a resource identified by its resourceId
+# parameters : base, resource id, nextState
 # return value : /
-# side effects : changes the nextState value in some field of the nodes table
+sub set_resource_nextState($$$) {
+    my $dbh = shift;
+    my $resource = shift;
+    my $nextState = shift;
+
+    my $result = $dbh->do(" UPDATE resources
+                            SET nextState = \"$nextState\", nextFinaudDecision = \"NO\"
+                            WHERE resourceId = $resource
+                          ");
+    return($result);
+}
+
+
+# set_node_nextState
+# sets the nextState field of a node identified by its networkAddress
+# parameters : base, networkAddress, nextState
+# return value : /
 sub set_node_nextState($$$) {
     my $dbh = shift;
     my $hostname = shift;
     my $nextState = shift;
 
-    $dbh->do("UPDATE nodes SET nextState = \"$nextState\", nextFinaudDecision = \"NO\"
-              WHERE hostname =\"$hostname\"");
+    my $result = $dbh->do(" UPDATE resources
+                            SET nextState = \"$nextState\", nextFinaudDecision = \"NO\"
+                            WHERE networkAddress = \"$hostname\"
+                          ");
+    return($result);
 }
 
 
@@ -2458,7 +2628,7 @@ sub set_node_expiryDate($$$) {
 
 
 # set a node property
-# change nodeProperties table value for the hostname and the property specified
+# change resourceProperties table value for resources with the specified networkAddress
 # parameters : base, hostname, property name, value
 # return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
 sub set_node_property($$$$){
@@ -2469,22 +2639,71 @@ sub set_node_property($$$$){
 
     # Test if we must change the property
     my $nbRowsAffected;
-    $nbRowsAffected = $dbh->do("SELECT * FROM nodeProperties WHERE hostname = \"$hostname\" AND $property = \"$value\"");
-    if ($nbRowsAffected > 0){
-        return(2);
-    }
     eval{
-        $nbRowsAffected = $dbh->do("UPDATE nodeProperties SET $property = \"$value\"
-                                    WHERE hostname =\"$hostname\"");
+        $nbRowsAffected = $dbh->do("UPDATE resources a, resourceProperties b
+                                    SET b.$property = \"$value\"
+                                    WHERE 
+                                        a.networkAddress =\"$hostname\"
+                                        AND a.resourceId = b.resourceId
+                                    ");
     };
-    if ($nbRowsAffected != 1){
+    if ($nbRowsAffected < 1){
         return(1);
     }else{
         #Update LOG table
         my $date = get_date($dbh);
-        $dbh->do("UPDATE nodeProperties_log SET dateStop = \"$date\" WHERE dateStop IS NULL AND hostname = \"$hostname\" AND property = \"$property\"");
-        $dbh->do("INSERT INTO nodeProperties_log (hostname,property,value,dateStart)
-                  VALUES (\"$hostname\",\"$property\",\"$value\",\"$date\")");
+        $dbh->do("  UPDATE resources a, resourceProperties_log b
+                    SET b.dateStop = \"$date\"
+                    WHERE
+                        b.dateStop IS NULL
+                        AND a.networkAddress = \"$hostname\"
+                        AND b.attribute = \"$property\"
+                 ");
+        $dbh->do("  INSERT INTO resourceProperties_log (resourceId,attribute,value,dateStart)
+                        SELECT a.resourceId, \"$property\", \"$value\", \"$date\"
+                        FROM resources a
+                        WHERE
+                            a.networkAddress = \"$hostname\"
+                  ");
+        return(0);
+    }
+}
+
+
+# set a resource property
+# change resourceProperties table value for resource specified
+# parameters : base, resource, property name, value
+# return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
+sub set_resource_property($$$$){
+    my $dbh = shift;
+    my $resource = shift;
+    my $property = shift;
+    my $value = shift;
+
+    # Test if we must change the property
+    my $nbRowsAffected;
+    eval{
+        $nbRowsAffected = $dbh->do("UPDATE resourceProperties a
+                                    SET a.$property = \"$value\"
+                                    WHERE 
+                                        a.resourceId = \"$resource\"
+                                   ");
+    };
+    if ($nbRowsAffected < 1){
+        return(1);
+    }else{
+        #Update LOG table
+        my $date = get_date($dbh);
+        $dbh->do("  UPDATE resourceProperties_log a
+                    SET a.dateStop = \"$date\"
+                    WHERE
+                        a.dateStop IS NULL
+                        AND a.resourceId = \"$resource\"
+                        AND a.attribute = \"$property\"
+                 ");
+        $dbh->do("  INSERT INTO resourceProperties_log (resourceId,attribute,value,dateStart)
+                    VALUES ($resource, \"$property\", \"$value\", \"$date\")
+                 ");
         return(0);
     }
 }

@@ -1,5 +1,11 @@
 #!/usr/bin/perl
 
+BEGIN{
+    # Add path to OAR modules
+    $ENV{PERL5LIB} = $ENV{OARLIB};
+    unshift(@INC, $ENV{OARLIB});
+}
+
 use strict;
 use warnings;
 use DBI;

@@ -238,3 +238,11 @@ Regarder le bug des systemes sous redhat : il faut lancer le Almighty dans un
 screen et sans detachement du oarexec pour que ca marche. Certainement un 
 probleme de SSH avec le -t (essayer plusieurs -t ???). Probleme de tty???
 Probleme de sudo???
+
+----
+DUKE
+----
+Julien veut que lorsu il y a ambiguite sur la commande a lancer, demander
+a l utilisateur de la valider (eviter les jobs avec un script s appelant
+walltime=2).
+Il faut aussi une option -y pour eviter ce check...

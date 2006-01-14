@@ -122,18 +122,30 @@ INDEX nextState (nextState),
 PRIMARY KEY (resourceId)
 );
 
-#DROP TABLE IF EXISTS resources_log;
-CREATE TABLE IF NOT EXISTS resources_log (
+#DROP TABLE IF EXISTS resourceProperties_log;
+CREATE TABLE IF NOT EXISTS resourceProperties_log (
 resourceId INT UNSIGNED NOT NULL ,
 attribute VARCHAR( 50 ) NOT NULL ,
 value VARCHAR( 100 ) NOT NULL ,
 dateStart DATETIME NOT NULL,
 dateStop DATETIME ,
-finaudDecision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 INDEX resource (resourceId),
-INDEX attribute (attribute),
+INDEX attribute (attribute)
+);
+
+
+#DROP TABLE IF EXISTS resourceStates_log;
+CREATE TABLE IF NOT EXISTS resourceStates_log (
+resourceId INT UNSIGNED NOT NULL ,
+changeState ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
+dateStart DATETIME NOT NULL,
+dateStop DATETIME ,
+finaudDecision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
+INDEX resourceId (resourceId),
+INDEX state (changeState),
 INDEX finaud (finaudDecision)
 );
+
 
 #DROP TABLE IF EXISTS resourceProperties;
 CREATE TABLE IF NOT EXISTS resourceProperties (
@@ -266,5 +278,5 @@ INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALU
 INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`,`execJobsOnFrontal`)  VALUES ('deploy','1','oar_sched_gant','YES');
 INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('besteffort','0','oar_sched_gant');
 
-INSERT INTO `ganttJobsPredictions` (`idMoldableJob` , `startTime`)  VALUES ('0','1970-01-01 01:00:01');
+INSERT IGNORE INTO `ganttJobsPredictions` (`idMoldableJob` , `startTime`)  VALUES ('0','1970-01-01 01:00:01');
 
