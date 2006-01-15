@@ -66,7 +66,7 @@ GetOptions ("state|s" => \$stateMode,
 
 if ($usage){
     print <<EOS;
-Usage: $0 [OPTIONS]
+Usage: $0 [OPTIONS] [hostnames]
 Display information on the nodes
 Options:
  -a, --all     show all nodes with their properties
@@ -80,9 +80,71 @@ EOS
     exit(0);
 }
 
-die("/!\\ (-r) Not yet implemented\n") if ($#resources >= 0);
-
+my $exitstatus = 0;
 my $base = iolib::connect();
+
+if ($#resources >= 0){
+    my %data_to_display;
+    foreach my $r (@resources) {
+        my $resource_info = iolib::get_resource_info($base,$r);
+        if (!defined($resource_info)) {
+            warn("/!\\ $r UNKNOWN\n");
+            $exitstatus = 1;
+            next;
+        }
+        my %tmp_hash;
+        $tmp_hash{state} = $resource_info->{state};
+        if ($resource_info->{state} eq "Alive") {    
+            my @jobs = iolib::get_resource_job($base,$resource_info->{resourceId});
+            if ($#jobs >= 0){
+                $tmp_hash{jobs} = \@jobs;
+            }
+            my %properties = iolib::get_resource_properties($base,$resource_info->{resourceId});
+            $tmp_hash{properties} = \%properties;
+        }
+        $data_to_display{$r} = \%tmp_hash;
+    }
+    if (defined($DUMPER_mode)){
+        print(Dumper(\%data_to_display));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+            print(XMLout(\%data_to_display));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exitstatus = 5;
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(YAML::Dump(\%data_to_display));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exitstatus = 6;
+        }
+    }else{
+        foreach my $a (sort(keys(%data_to_display))){
+            print("$a\n");
+            foreach my $b (sort(keys(%{$data_to_display{$a}}))){
+                if ($b eq "properties"){
+                    my $str = "properties = ";
+                    foreach my $prop (sort(keys(%{$data_to_display{$a}->{$b}}))){
+                        $str .= "$prop=$data_to_display{$a}->{$b}->{$prop},"
+                    }
+                    chop($str);
+                    print("        $str\n");
+                }elsif ($b eq "jobs"){
+                    print("        jobs = @{$data_to_display{$a}->{$b}}\n");
+                }else{
+                    print("        $b --> $data_to_display{$a}->{$b}\n");
+                }
+            }
+            print("\n");
+        }
+    }
+    iolib::disconnect($base);
+
+    exit($exitstatus);
+}
+
 
 # Nodes list handling (set @nodes to what has been requested)
 my @nodes;
@@ -92,7 +154,6 @@ if($ARGV[0]){
     @nodes = iolib::list_nodes($base);
 }
 
-my $exitstatus = 0;
 
 if (defined($stateMode)){
     # Display the state of each resources
@@ -126,9 +187,9 @@ if (defined($stateMode)){
             $exitstatus = 6;
         }
     }else{
-        foreach my $d (keys(%data_to_display)){
+        foreach my $d (sort(keys(%data_to_display))){
             print("$d\n");
-            foreach my $e (keys(%{$data_to_display{$d}})){
+            foreach my $e (sort(keys(%{$data_to_display{$d}}))){
                 print("    $e --> $data_to_display{$d}->{$e}\n");
             }
             print("\n");
@@ -200,14 +261,14 @@ if (defined($stateMode)){
             $exitstatus = 6;
         }
     }else{
-        foreach my $a (keys(%data_to_display)){
+        foreach my $a (sort(keys(%data_to_display))){
             print("$a\n");
-            foreach my $b (keys(%{$data_to_display{$a}})){
+            foreach my $b (sort(keys(%{$data_to_display{$a}}))){
                 print("    $b\n");
-                foreach my $c (keys(%{$data_to_display{$a}->{$b}})){
+                foreach my $c (sort(keys(%{$data_to_display{$a}->{$b}}))){
                     if ($c eq "properties"){
                         my $str = "properties = ";
-                        foreach my $prop (keys(%{$data_to_display{$a}->{$b}->{$c}})){
+                        foreach my $prop (sort(keys(%{$data_to_display{$a}->{$b}->{$c}}))){
                             $str .= "$prop=$data_to_display{$a}->{$b}->{$c}->{$prop},"
                         }
                         chop($str);
