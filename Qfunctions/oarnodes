@@ -27,15 +27,41 @@ use Data::Dumper;
 use oar_iolib;
 use Getopt::Long;
 
+#Try to load XML module
+my $XML_enabled = 1;
+unless (eval "use XML::Simple qw(XMLout);1"){
+    $XML_enabled = 0;
+}
+
+#Try to load YAML module
+my $YAML_enabled = 1;
+unless (eval "use YAML;1"){
+    $YAML_enabled = 0;
+}
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
 Getopt::Long::Configure ("gnu_getopt");
 my $stateMode;
 my $usage;
 my $listall;
 my $listallwithinfo;
+my @resources;
+my $XML_mode;
+my $YAML_mode;
+my $DUMPER_mode;
 GetOptions ("state|s" => \$stateMode,
             "help|h"  => \$usage,
             "list|l"  => \$listall,
-            "all|a"   => \$listallwithinfo
+            "all|a"   => \$listallwithinfo,
+            "resource|r=i" => \@resources,
+            "XML|X" => \$XML_mode,
+            "YAML|Y" => \$YAML_mode,
+            "DUMPER|D" => \$DUMPER_mode
            );
 
 if ($usage){
@@ -46,10 +72,15 @@ Options:
  -a, --all     show all nodes with their properties
  -s, --state   show only node states
  -l, --list    show only node list
+ -D, --DUMPER  print result in DUMPER format
+ -X, --XML     print result in XML format
+ -Y, --YAML    print result in YAML format
  -h, --help    show this help screen
 EOS
     exit(0);
 }
+
+die("/!\\ (-r) Not yet implemented\n") if ($#resources >= 0);
 
 my $base = iolib::connect();
 
@@ -64,69 +95,133 @@ if($ARGV[0]){
 my $exitstatus = 0;
 
 if (defined($stateMode)){
+    # Display the state of each resources
+    my %data_to_display;
     foreach my $node ( @nodes ) {
-        my $node_info = iolib::get_node_info($base,$node);
-        print("$node --> $node_info->{state}\n");
+        my @node_info = iolib::get_node_info($base,$node);
+        if ($#node_info >= 0){
+            my %tmp_data;
+            foreach my $n (@node_info){
+                $tmp_data{$n->{resourceId}} = $n->{state};
+            }
+            $data_to_display{$node} = \%tmp_data;
+        }else{
+            $data_to_display{$node} = undef;
+        }
+    }
+    if (defined($DUMPER_mode)){
+        print(Dumper(\%data_to_display));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+            print(XMLout(\%data_to_display));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exitstatus = 5;
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(YAML::Dump(\%data_to_display));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exitstatus = 6;
+        }
+    }else{
+        foreach my $d (keys(%data_to_display)){
+            print("$d\n");
+            foreach my $e (keys(%{$data_to_display{$d}})){
+                print("    $e --> $data_to_display{$d}->{$e}\n");
+            }
+            print("\n");
+        }
     }
 }elsif(defined($listall)){
     # Simple list handling
-    foreach my $node ( @nodes ) {
-        print($node,"\n");
+    if (defined($DUMPER_mode)){
+        print(Dumper(\@nodes));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+            print(XMLout(\@nodes));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exitstatus = 5;
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(YAML::Dump(\@nodes));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exitstatus = 6;
+        }
+    }else{
+        foreach my $node ( @nodes ) {
+            print($node,"\n");
+        }
     }
 }else{
+    # Default display of oarnodes
+    my %data_to_display;
     foreach my $node ( @nodes ) {
-        my $node_info = iolib::get_node_info($base,$node);
-        if (!$node_info) {
-                print("$node UNKNOWN\n\n");
-                $exitstatus = 1;
-                next;
+        my @node_info = iolib::get_node_info($base,$node);
+        if ($#node_info < 0) {
+            warn("/!\\ $node UNKNOWN\n");
+            $exitstatus = 1;
+            next;
         }
-        print $node,"\n";
-        while (my ($key,$value) = each %$node_info) {
-            if ($key eq "maxWeight"){
-                print("     pcpus = $value\n");
-            }else{
-                print "     ".$key." = ";
-                if ($key eq "state") {
-                    if ($value eq "Alive") {
-                        if ($node_info->{weight} > 0) {
-                            print "job";
-                            print "\n     jobs = ";
-                            my @jobs = iolib::get_host_job_distinct($base,$node);
-                            if (@jobs) {
-                                my $compteurCPU = 0;
-                                my $debStr = "";
-                                for (my $jobid=0; $jobid <= $#jobs; $jobid++) {
-                                    my $refJob =  iolib::get_job($base, $jobs[$jobid]);
-                                    for (my $i=0; $i < $refJob->{'weight'}; $i++){
-                                        print "$debStr$compteurCPU/".$jobs[$jobid].".oarserver";
-                                        $compteurCPU++;
-                                        $debStr = ",";
-                                    }
-                                }
-                            } else {
-                                print "???";
-                            }
-                        } else {
-                            print "free";
-                        }
-                    } else {
-                        print "$value";
-                    }
-                } else {
-                    print (defined($value)?$value:"");
+        my %tmp_hash1;
+        foreach my $r (@node_info){
+            my %tmp_hash2;
+            $tmp_hash2{state} = $r->{state};
+            if ($r->{state} eq "Alive") {    
+                my @jobs = iolib::get_resource_job($base,$r->{resourceId});
+                if ($#jobs >= 0){
+                    $tmp_hash2{jobs} = \@jobs;
                 }
-                print "\n";
+            }
+            my %properties = iolib::get_resource_properties($base,$r->{resourceId});
+            $tmp_hash2{properties} = \%properties;
+            $tmp_hash1{$r->{resourceId}} = \%tmp_hash2;
+        }
+        $data_to_display{$node} = \%tmp_hash1;
+    }
+    if (defined($DUMPER_mode)){
+        print(Dumper(\%data_to_display));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+            print(XMLout(\%data_to_display));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exitstatus = 5;
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(YAML::Dump(\%data_to_display));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exitstatus = 6;
+        }
+    }else{
+        foreach my $a (keys(%data_to_display)){
+            print("$a\n");
+            foreach my $b (keys(%{$data_to_display{$a}})){
+                print("    $b\n");
+                foreach my $c (keys(%{$data_to_display{$a}->{$b}})){
+                    if ($c eq "properties"){
+                        my $str = "properties = ";
+                        foreach my $prop (keys(%{$data_to_display{$a}->{$b}->{$c}})){
+                            $str .= "$prop=$data_to_display{$a}->{$b}->{$c}->{$prop},"
+                        }
+                        chop($str);
+                        print("        $str\n");
+                    }elsif ($c eq "jobs"){
+                        print("        jobs = @{$data_to_display{$a}->{$b}->{$c}}\n");
+                    }else{
+                        print("        $c --> $data_to_display{$a}->{$b}->{$c}\n");
+                    }
+                }
+                print("\n");
             }
         }
-        my %properties = iolib::get_all_node_properties($base,$node);
-        my $strProperties = "     properties = ";
-        foreach my $property (keys(%properties)){
-	    $strProperties .= "$property=$properties{$property},";
-        }
-        chop($strProperties);
-        print "$strProperties\n";
-        print "\n";
+
     }
 }
 iolib::disconnect($base);

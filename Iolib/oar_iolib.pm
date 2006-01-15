@@ -2417,16 +2417,17 @@ sub get_suspected_node($) {
 sub list_nodes($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM nodes ORDER BY hostname ASC");
+    my $sth = $dbh->prepare("   SELECT distinct(networkAddress)
+                                FROM resources
+                                ORDER BY networkAddress ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
+        push(@res, $ref->{'networkAddress'});
     }
     $sth->finish();
     return @res;
 }
-
 
 
 # get_resource_info
@@ -2449,6 +2450,32 @@ sub get_resource_info($$) {
     $sth->finish();
 
     return $ref;
+}
+
+
+# get_node_info
+# returns a ref to some hash containing data for the node passed in parameter
+# parameters : base, hostname
+# return value : ref
+sub get_node_info($$) {
+    my $dbh = shift;
+    my $hostname = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    networkAddress = \"$hostname\"
+                                ORDER BY resourceId ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
 }
 
 
@@ -2709,41 +2736,21 @@ sub set_resource_property($$$$){
 }
 
 
-# return all properties for a specific node
-# parameters : base, hostname
-sub get_all_node_properties($$){
+# return all properties for a specific resource
+# parameters : base, resource
+sub get_resource_properties($$){
     my $dbh = shift;
-    my $node = shift;
-#show fields from nodeProperties
+    my $resource = shift;
 
-    my $sth = $dbh->prepare("SHOW FIELDS FROM nodeProperties");
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resourceProperties
+                                WHERE
+                                    resourceId = $resource");
     $sth->execute();
-    my @fields;
-    while (my @ref = $sth->fetchrow_array()) {
-        push(@fields,$ref[0]);
-    }
+    my %results = %{$sth->fetchrow_hashref()};
     $sth->finish();
 
-    my $properties;
-    foreach my $i (@fields){
-        $properties .= ",p.$i ";
-    }
-    $properties =~ s/^,//s;
-
-    $sth = $dbh->prepare("SELECT $properties FROM nodeProperties p WHERE hostname = \"$node\"");
-    $sth->execute();
-
-    my %results;
-    my @res = $sth->fetchrow_array();
-    for (my $i=0; $i <= $#res; $i++){
-        if (defined($res[$i])){
-            $results{$fields[$i]} = $res[$i];
-        }
-    }
-
-    $sth->finish();
-
-    return %results;
+    return(%results);
 }
 
 
