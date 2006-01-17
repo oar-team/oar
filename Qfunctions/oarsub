@@ -26,6 +26,7 @@ my $deploy_hostname;
 my $Host = hostname ;
 
 my $base;
+my $Server;
 my $Job_id;
 my $Interactive = 0;
 my $Reservation = "0";
@@ -90,7 +91,7 @@ sub scan_script($){
                 my $line = $_;
                 if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
                     push(@{$result{resources}}, $2);
-                }elsif ($line =~ m/^#OAR\s+\(-q|--queue)\s*(.+)\s*$/m) {
+                }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {
                     $result{queue} = $2;
                 }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*"(.+)"\s*$/m) {
                     $result{property} = $2;
@@ -100,7 +101,7 @@ sub scan_script($){
     }
     close(FILE);
 
-    return(%return);
+    return(%result);
 }
 
 
@@ -242,61 +243,86 @@ if (defined($connectResa)){
 # End connection to a reservation
 
 # Parse -l options and return an array of hashtables with resources for a moldable job
-sub parse_resource_descriptions(@){
-    my @resource = shift;
-   
+sub parse_resource_descriptions($){
+    my $resource_ref = shift;
+    
+    my @resource= @{$resource_ref};
+    #print "@resource\n";
+
     my @result;
     foreach my $r (@resource){
-        my %tmp_resources;
-        my @comma_split = split(',',$r);
-        foreach my $f (@comma_split){
-            if ($f =~ /walltime\s*=\s*([\d|:]+)/){
-                #walltime part
-                my ($w_h,$w_mn,$w_sec) = split(':',$1);
-                if (defined($w_h)){
-                    if (not defined($w_mn)){
-                        $tmp_resources{walltime} = $w_h.":00:00";
-                    }elsif (not defined($w_sec)){
-                        $tmp_resources{walltime} = $w_h.":00";
-                    }else{
-                        $tmp_resources{walltime} = $1;
-                    }
-                }else{
-                    die("/!\\I cannot recognize walltime resource value\n");
-                }
-            }else{
-                #hierarchical resource part
-                my @slash_split = split('/', $f);
+        my @resource_groups;
+        my $end_loop = 0;
+        while ($end_loop == 0){
+            my $initial_resource = $r;
+            my %tmp_result;
+            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+)}(.*)$/){
+                # $1 = property string
+                $tmp_result{property} = $2;
+                $r = $3;
+            }
+            if ($r =~ /^\s*(\++|\,+|\s*)\s*\/([^\,\+]+)\s*(.*)$/){
+                $r = $3;
+                my @slash_split = split('\/', $2);
                 my @resources_list;
                 foreach my $l (@slash_split){
                     if ($l =~ /(\w+)\s*=\s*(\d+)/){
                         push(@resources_list, [$1, $2]);
                     }else{
-                        die("/!\\I cannot recognize the resource description : $l\n");
+                        die("/!\\ Cannot recognize the resource description : $l\n");
                     }
                 }
-                $tmp_resources{resources} = \@resources_list;
+                $tmp_result{resources} = \@resources_list;
+            }
+            if ($r =~ /^\s*\,*\s*walltime\s*=\s*([\d|:]+)\s*(\,.+|\s*)$/){
+                #walltime part
+                my ($w_h,$w_mn,$w_sec) = split(':',$1);
+                if (defined($w_h)){
+                    if (not defined($w_mn)){
+                        $tmp_result{walltime} = $w_h.":00:00";
+                    }elsif (not defined($w_sec)){
+                        $tmp_result{walltime} = $w_h.":00";
+                    }else{
+                        $tmp_result{walltime} = $1;
+                    }
+                }else{
+                    die("/!\\ Cannot recognize walltime resource value\n");
+                }
+                $r = $2;
+            }
+            if ($r eq $initial_resource){
+                die("/!\\ Cannot recognize -- $r -- resource\n");
+            }else{
+                push(@resource_groups, \%tmp_result);
+
+            }
+
+            if ($r =~ /^\s*$/){
+                $end_loop = 1;
             }
         }
-        push(@result, \%tmp_resources);
+        push(@result, \@resource_groups);
     }
     return(@result);
 }
 
-@Resource_list = parse_resource_descriptions(@resource);
+@Resource_list = parse_resource_descriptions(\@resource);
+
+print(Dumper(\@Resource_list));
+exit;
 
 if ($Interactive == 0) {
     my $exec = $ARGV[0];
     my %scan_result = scan_script($exec) if ($exec ne "");
-    if (defined($scan_script{queue}) && !defined($Queue_name)){
-        $Queue_name = $scan_script{queue}
+    if (defined($scan_result{queue}) && !defined($Queue_name)){
+        $Queue_name = $scan_result{queue}
     }else{
-        warn("/!\\ Ignore script value for queue parameter : $scan_script{queue}; another value was given on the command line.");
+        warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.");
     }
-    if (defined($scan_script{property}) && !defined($Job_sql_properties)){
-        $Job_sql_properties = $scan_script{property}
+    if (defined($scan_result{property}) && !defined($Job_sql_properties)){
+        $Job_sql_properties = $scan_result{property}
     }else{
-        warn("/!\\ Ignore script value for property parameter : $scan_script{property}; another value was given on the command line.");
+        warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
     }
 
     if (!($exec =~ m/^\/.+$/m)){
@@ -309,19 +335,19 @@ if ($Interactive == 0) {
 
     $Cmd_executor = "Qsub";
 
-    my $server;
-    my $serveur_port;
+    my $server_port;
     if ($Reservation ne "0"){
-        ($server, $serveur_port) = init_tcp_server();
+        ($Server, $server_port) = init_tcp_server();
     }
 
     $Job_id = iolib::add_micheline_job($base, "PASSIVE", \@Resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
     print("IdJob = $Job_id \n");
 }else{
     $Cmd_executor = "Qsub -I";
-    my ($server, $serveur_port) = init_tcp_server();
+    my $server_port;
+    ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, "INTERACTIVE", \@Resource_list, "", "$Host:$serveur_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
+    $Job_id = iolib::add_micheline_job($base, "INTERACTIVE", \@Resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
     print("IdJob = $Job_id \n");
 }
 
@@ -344,7 +370,7 @@ my $answer;
 if ($Reservation ne "0"){
     #Reservation mode
     print("Reservation mode : waiting validation\n");
-    my $client = $server->accept();
+    my $client = $Server->accept();
     $answer = <$client>;
     if ($answer eq "GOOD RESERVATION\n"){
         print("Reservation valid --> OK\n");
@@ -354,7 +380,7 @@ if ($Reservation ne "0"){
 }elsif ($Interactive==1) {
     #Interactive mode
     print("Interactive mode : waiting \n");
-    my $client = $server->accept();
+    my $client = $Server->accept();
     $answer = <$client>;
     if ($answer eq "GOOD JOB\n"){
         my $pid=0;
