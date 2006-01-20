@@ -2,12 +2,6 @@
 #script executed on the first reserved node
 #it launches user command
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;

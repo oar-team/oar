@@ -1,12 +1,6 @@
 #!/usr/bin/perl
 #Hold a job --> it will not be scheduled
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use warnings;
 use Data::Dumper;

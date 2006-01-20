@@ -4,7 +4,9 @@
 OARDIR=
 OARUSER=
 
-export OARLIB=$OARDIR
+
+PERL5LIB=$OARDIR
+export PERL5LIB
 export OARDIR
 export OARUSER
 

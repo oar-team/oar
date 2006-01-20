@@ -1,12 +1,6 @@
 #!/usr/bin/perl
 # $Id: oaraccounting,v 1.2 2005/04/13 16:40:27 capitn Exp $
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use warnings;
 use Data::Dumper;

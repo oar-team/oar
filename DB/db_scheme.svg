@@ -370,9 +370,9 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
      inkscape:cx="770.93997"
-     inkscape:cy="277.70969"
+     inkscape:cy="420.56683"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g2881"
      showguides="true"
      inkscape:guide-bbox="true"
      fill="#ff0000"
@@ -810,12 +810,12 @@
            id="g2881"
            transform="translate(-85.71429,7.142857)">
           <rect
-             y="82.477287"
+             y="82.242989"
              x="298.24902"
-             height="65.377930"
+             height="55.846531"
              width="182.07326"
              id="rect2329"
-             style="opacity:1.0000000;fill:#00001f;fill-opacity:0.075697191;fill-rule:evenodd;stroke:#000000;stroke-width:3.2142322;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:0.63346612" />
+             style="opacity:1;fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:#000000;stroke-width:2.9707067;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611" />
           <rect
              y="60.804325"
              x="300.25729"
@@ -847,14 +847,10 @@
                y="111.6479"
                x="305.71426"
                sodipodi:role="line">moldableJobId</tspan><tspan
-               id="tspan2479"
+               id="tspan2481"
                y="126.6479"
                x="305.71426"
-               sodipodi:role="line">moldableWalltime</tspan><tspan
-               id="tspan2481"
-               y="141.6479"
-               x="305.71426"
-               sodipodi:role="line">moldableOrder</tspan></text>
+               sodipodi:role="line">moldableWalltime</tspan></text>
         </g>
         <path
            style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#0000ff;stroke-width:1.6804323px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000"

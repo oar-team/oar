@@ -1,12 +1,6 @@
 #!/usr/bin/perl
 # $Id: Almighty,v 1.35 2005/06/02 15:55:48 capitn Exp $
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use Data::Dumper;
 use IO::Socket::INET;

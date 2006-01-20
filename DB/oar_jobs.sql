@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS moldableJobs_description (
 moldableId INT UNSIGNED NOT NULL AUTO_INCREMENT,
 moldableJobId INT UNSIGNED NOT NULL ,
 moldableWalltime INT UNSIGNED NOT NULL ,
-moldableOrder INT UNSIGNED NOT NULL DEFAULT 0,
 INDEX job (moldableJobId),
 PRIMARY KEY (moldableId)
 );

@@ -2,12 +2,6 @@
 #
 #Sumbit job for execution
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use IO::Socket::INET;
 use DBI();
@@ -31,7 +25,6 @@ my $Job_id;
 my $Interactive = 0;
 my $Reservation = "0";
 my $connectResa ;
-my @Resource_list;
 my @resource;
 my $Queue_name;
 my $Job_sql_properties;
@@ -42,6 +35,8 @@ my $md5sum = undef;
 my $stageindir;
 my $sos;
 my $Checkpoint=0;
+my $mail;
+my $job_name;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -118,7 +113,7 @@ Options are:
  -r, --reservation=<DATE>      request a reservation
  -c, --connect=<RESERVATION>   connect to a running job
  -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
- -m, --stagein-md5sum=<MD5SUM> set the stagein file md5sum
+     --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -k, --checkpoint              enable the job to be checkpointed
  -h, --help                    print this help message
 EOS
@@ -154,9 +149,11 @@ GetOptions ("resource|l=s" => \@resource,
             "reservation|r=s" => \$Reservation,
             "connect|c=i" => \$connectResa,
             "stagein|s=s" => \$stagein,
-            "stagein-md5sum|m=s" => \$md5sum,
+            "stagein-md5sum=s" => \$md5sum,
             "checkpoint|k=i" => \$Checkpoint,
-            "help|h" => \$sos
+            "help|h" => \$sos,
+            "mail|m=s" => \$mail,
+            "name|n=s" => \$job_name
            );
 
 if (defined $sos){
@@ -267,7 +264,7 @@ sub parse_resource_descriptions($){
                 my @resources_list;
                 foreach my $l (@slash_split){
                     if ($l =~ /(\w+)\s*=\s*(\d+)/){
-                        push(@resources_list, [$1, $2]);
+                        push(@resources_list, { resource => $1, value => $2 });
                     }else{
                         die("/!\\ Cannot recognize the resource description : $l\n");
                     }
@@ -279,11 +276,11 @@ sub parse_resource_descriptions($){
                 my ($w_h,$w_mn,$w_sec) = split(':',$1);
                 if (defined($w_h)){
                     if (not defined($w_mn)){
-                        $tmp_result{walltime} = $w_h.":00:00";
+                        $resource_groups[1] = $w_h.":00:00";
                     }elsif (not defined($w_sec)){
-                        $tmp_result{walltime} = $w_h.":00";
+                        $resource_groups[1] = $w_h.":00";
                     }else{
-                        $tmp_result{walltime} = $1;
+                        $resource_groups[1] = $1;
                     }
                 }else{
                     die("/!\\ Cannot recognize walltime resource value\n");
@@ -293,8 +290,7 @@ sub parse_resource_descriptions($){
             if ($r eq $initial_resource){
                 die("/!\\ Cannot recognize -- $r -- resource\n");
             }else{
-                push(@resource_groups, \%tmp_result);
-
+                push(@{$resource_groups[0]}, \%tmp_result);
             }
 
             if ($r =~ /^\s*$/){
@@ -306,10 +302,6 @@ sub parse_resource_descriptions($){
     return(@result);
 }
 
-@Resource_list = parse_resource_descriptions(\@resource);
-
-print(Dumper(\@Resource_list));
-exit;
 
 if ($Interactive == 0) {
     my $exec = $ARGV[0];
@@ -324,6 +316,12 @@ if ($Interactive == 0) {
     }else{
         warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
     }
+    if (defined($scan_result{resources})){
+        push(@resource, @{$scan_result{resource}});
+    }
+
+    my @resource_list = parse_resource_descriptions(\@resource);
+    
 
     if (!($exec =~ m/^\/.+$/m)){
         # WARNING: we are not the real user, we are oar user!!!
@@ -340,16 +338,18 @@ if ($Interactive == 0) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, "PASSIVE", \@Resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
-    print("IdJob = $Job_id \n");
+    $Job_id = iolib::add_micheline_job($base, $base, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
 }else{
     $Cmd_executor = "Qsub -I";
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, "INTERACTIVE", \@Resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint);
-    print("IdJob = $Job_id \n");
+    my @resource_list = parse_resource_descriptions(\@resource);
+    print(Dumper(\@resource_list));
+    
+    $Job_id = iolib::add_micheline_job($base, $base, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
 }
+print("IdJob = $Job_id \n");
 
 iolib::disconnect($base);
 

@@ -2,12 +2,6 @@
 # $Id: oarstat,v 1.27 2005/06/01 16:20:42 capitn Exp $
 # print active job properties
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use warnings;
 use Data::Dumper;

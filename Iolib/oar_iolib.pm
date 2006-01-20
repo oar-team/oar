@@ -44,7 +44,7 @@ sub set_finish_date($$);
 sub set_job_number_of_nodes($$$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job_list(@);
@@ -535,37 +535,37 @@ sub set_job_number_of_nodes($$$){
 
 # treate job properties and add a "p." before each field
 # return formed job properties
-sub form_job_properties($$){
-    my $dbh = shift;
-    my $jobproperties = shift;
-    
-    # add a \" instead of '
-    #$jobproperties =~ s/'/\\"/g;
-    #add a p. before each field names
-    if ($jobproperties ne ""){
-        $sth = $dbh->prepare("SHOW FIELDS FROM nodeProperties");
-        $sth->execute();
-        my $fields = "";
-        while (my @ref = $sth->fetchrow_array()) {
-            $fields .= "$ref[0]|";
-        }
-        chop($fields);
-        $sth->finish();
-
-        my @strSep = split("'",$jobproperties." '");
-        $jobproperties = "";
-        for (my $i=0; $i <= $#strSep; $i++){
-            if (int($i % 2) == 0){
-                $strSep[$i] =~ s/($fields)/p.$1/g ;
-            }
-            $jobproperties .= "$strSep[$i]\\\"";
-        }
-        chop($jobproperties);
-        chop($jobproperties);
-    }
-
-    return($jobproperties);
-}
+#sub form_job_properties($$){
+#    my $dbh = shift;
+#    my $jobproperties = shift;
+#    
+#    # add a \" instead of '
+#    #$jobproperties =~ s/'/\\"/g;
+#    #add a p. before each field names
+#    if ($jobproperties ne ""){
+#        $sth = $dbh->prepare("SHOW FIELDS FROM nodeProperties");
+#        $sth->execute();
+#        my $fields = "";
+#        while (my @ref = $sth->fetchrow_array()) {
+#            $fields .= "$ref[0]|";
+#        }
+#        chop($fields);
+#        $sth->finish();
+#
+#        my @strSep = split("'",$jobproperties." '");
+#        $jobproperties = "";
+#        for (my $i=0; $i <= $#strSep; $i++){
+#            if (int($i % 2) == 0){
+#                $strSep[$i] =~ s/($fields)/p.$1/g ;
+#            }
+#            $jobproperties .= "$strSep[$i]\\\"";
+#        }
+#        chop($jobproperties);
+#        chop($jobproperties);
+#    }
+#
+#    return($jobproperties);
+#}
 
 
 
@@ -574,7 +574,7 @@ sub form_job_properties($$){
 sub get_possible_wanted_resources($$$$$){
     my $dbh = shift;
     my $possible_resources = shift;
-    my $unpossible_resources = shift;
+    my $impossible_resources = shift;
     my $properties = shift;
     my $wanted_resources_ref = shift;
 
@@ -584,17 +584,21 @@ sub get_possible_wanted_resources($$$$$){
                                 value    => "1",
                             });
     
-    my $sql_where_string = "resourceId IN(";
-    foreach my $i (@{$possible_resources}){
-        $sql_where_string .= "$i,";
+    my $sql_where_string ;
+    if (defined(@{$possible_resources})){
+        $sql_where_string = "resourceId IN(";
+        foreach my $i (@{$possible_resources}){
+            $sql_where_string .= "$i,";
+        }
+        chop($sql_where_string);
+        $sql_where_string .= ") ";
+    }else{
+        $sql_where_string = "TRUE ";
     }
-    chop($sql_where_string);
-    return(undef) if (!defined(@{$possible_resources}));
-    $sql_where_string .= ") ";
 
-    if (defined(@{$unpossible_resources})){
+    if (defined(@{$impossible_resources})){
         $sql_where_string .= "AND resourceId NOT IN (" ;
-        foreach my $i (@{$unpossible_resources}){
+        foreach my $i (@{$impossible_resources}){
             $sql_where_string .= "$i,";
         }
         chop($sql_where_string);
@@ -614,7 +618,7 @@ sub get_possible_wanted_resources($$$$$){
     }
     chop($resource_string);
 
-    #print("$sql_where_string\n");
+    print("$sql_where_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resourceProperties
                              WHERE
@@ -778,9 +782,10 @@ sub get_tree_leaf_names($){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$) {
-    my ($dbh, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint) = @_;
+sub add_micheline_job($$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name) = @_;
 
+    my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
     my $reservationField = "None";
     my $setCommandReservation = 0;
@@ -821,54 +826,84 @@ sub add_micheline_job($$$$$$$$$$) {
     }
 
     if (($setCommandReservation == 1) && ($command eq "")){
-        $command = "/bin/sleep ".sql_to_duration($maxTime);
+        $command = "/bin/sleep ".sql_to_duration(3600);
     }
 
-    $jobproperties = form_job_properties($dbh, $jobproperties);
-
-    # Test if properties are coherent
-    if ($jobproperties ne ""){
-        my $nbResults = 0;
-        eval{
-            my $strTmp = $jobproperties;
-            $strTmp =~ s/\\//g ;
-            $nbResults = $dbh->do("SELECT * FROM nodeProperties p, nodes n
-                                   WHERE n.hostname = p.hostname
-                                         AND n.maxWeight >= $weight
-                                         AND ($strTmp)");
-        };
-        if ($@) {
-            print("Property matching ERROR, change your -p option value\n");
-            return(-1);
-        }elsif ($nbResults < $nbNodes){
-            printf("Not enough nodes with specified properties and weight (you want $nbNodes with a weight of $weight and only %d match) :-(\n",$nbResults);
-            return(-2);
+    # Test if properties and resources are coherent
+    my $wanted_resources;
+    foreach my $moldable_resource (@{$ref_resource_list}){
+        if (!defined($moldable_resource->[1])){
+            $moldable_resource->[1] = $default_walltime;
+        }
+        my @resource_id_list;
+        foreach my $r (@{$moldable_resource->[0]}){
+            # SECURITY : we must use read only database access for this request
+            my $tmp_properties = $r->{property};
+            if ($jobproperties ne ""){
+                if (!defined($tmp_properties)){
+                    $tmp_properties = $jobproperties;
+                }else{
+                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
+                }
+            }
+            print(Dumper($r->{resources}));
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, \@resource_id_list, $tmp_properties, $r->{resources});
+            if (!defined($tree)){
+                # Resource description does not match with the content of the database
+                print("There are not enough resources for your request\n");
+                return(-5);
+            }else{
+                my @id_list = get_tree_leaf_names($tree);
+                push(@resource_id_list, @id_list);
+            }
         }
     }
 
     #Insert job
-    $dbh->do("LOCK TABLE jobs WRITE, jobState_log WRITE");
-    $sth = $dbh->prepare("SELECT MAX(idJob)+1 FROM jobs");
+    my $date = get_date($dbh);
+    $dbh->do("INSERT INTO jobs
+              (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail)
+              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\")
+             ");
+
+    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
     $sth->execute();
-    $ref = $sth->fetchrow_hashref();
-    my @tmp = values %$ref;
-    my $id = $tmp[0];
+    my $ref = $sth->fetchrow_hashref();
+    my @tmp_array = values(%$ref);
+    my $job_id = $tmp_array[0];
     $sth->finish();
-    if($id eq "") {
-        $id = 1;
+ 
+    $dbh->do("INSERT INTO jobStates_log (jobId,jobState,dateStart)
+              VALUES ($job_id,\"Waiting\",\"$date\")
+             ");
+
+    foreach my $moldable_resource (@{$ref_resource_list}){
+        $dbh->do("  INSERT INTO moldableJobs_description (moldableId,moldableJobId,moldableWalltime)
+                    VALUES (\"NULL\",LAST_INSERT_ID(),\"$moldable_resource->[1]\")
+                 ");
+        my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
+        $sth->execute();
+        my $ref = $sth->fetchrow_hashref();
+        my @tmp_array = values(%$ref);
+        my $moldable_id = $tmp_array[0];
+        $sth->finish();
+        foreach my $r (@{$moldable_resource->[0]}){
+            $dbh->do("  INSERT INTO jobResources_group (resGroupId,resGroupMoldableId,resGroupProperty)
+                        VALUES (\"NULL\",$moldable_id,\'$r->{property}\')
+                     ");
+            my $order = 0;
+            foreach my $l (@{$r->{resources}}){
+                $dbh->do("  INSERT INTO jobResources_description (resJobGroupId,resJobResourceType,resJobValue,resJobOrder)
+                            VALUES (LAST_INSERT_ID(),\"$l->{resource}\",\"$l->{value}\",$order)
+                         ");
+                $order ++;
+            }
+        }
     }
 
-    $dbh->do("INSERT INTO jobs
-              (idJob,jobType,infoType,state,user,nbNodes,weight,command,submissionTime,maxTime,queueName,properties,launchingDirectory, reservation, startTime, idFile, checkpoint) VALUES
-              ($id,\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",$nbNodes,$weight,\"$command\",NOW(),\"$maxTime\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint)");
+    #$dbh->do("UNLOCK TABLES");
 
-    my $date = get_date($dbh);
-    $dbh->do("INSERT INTO jobState_log (jobId,jobState,dateStart)
-              VALUES ($id,\"Waiting\",\"$date\")");
-    
-    $dbh->do("UNLOCK TABLES");
-
-    return $id;
+    return($job_id);
 }
 
 
@@ -1111,16 +1146,16 @@ sub frag_job($$) {
     my $job = get_job($dbh, $idJob);
 
     if((defined($job)) && (($lusr eq $job->{'user'}) or ($lusr eq "oar") or ($lusr eq "root"))) {
-        $dbh->do("LOCK TABLE fragJobs WRITE, event_log WRITE");
+        $dbh->do("LOCK TABLE fragJobs WRITE, events_log WRITE");
         my $nbRes = $dbh->do("SELECT *
                               FROM fragJobs
                               WHERE fragIdJob = $idJob
                              ");
 
         if ( $nbRes < 1 ){
-            #my $time = get_date();
+            my $date = get_date($dbh);
             $dbh->do("INSERT INTO fragJobs (fragIdJob,fragDate)
-                      VALUES ($idJob,NOW())
+                      VALUES ($idJob,\"$date\")
                      ");
             add_new_event($dbh,"FRAG_JOB_REQUEST",$idJob,"User $lusr requested to frag the job $idJob");
         }
@@ -3608,7 +3643,7 @@ sub add_new_event($$$$){
     my $description = shift;
 
     my $date = get_date($dbh);
-    $dbh->do("INSERT INTO event_log (type,idJob,date,description) VALUES (\"$type\",$idJob,\"$date\",\"$description\")");
+    $dbh->do("INSERT INTO events_log (type,idJob,date,description) VALUES (\"$type\",$idJob,\"$date\",\"$description\")");
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();

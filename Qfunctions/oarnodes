@@ -15,12 +15,6 @@
 #   => returns the information for hostX - status is 0 for every host known - 1 otherwise
 #
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use warnings;
 use Data::Dumper;

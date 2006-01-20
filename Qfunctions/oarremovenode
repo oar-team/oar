@@ -2,12 +2,6 @@
 # $Id: oarremovenode,v 1.1 2005/06/11 15:27:50 capitn Exp $
 # remove a node entirely
 
-BEGIN{
-    # Add path to OAR modules
-    $ENV{PERL5LIB} = $ENV{OARLIB};
-    unshift(@INC, $ENV{OARLIB});
-}
-
 use strict;
 use warnings;
 use Data::Dumper;
