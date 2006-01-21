@@ -585,7 +585,7 @@ sub get_possible_wanted_resources($$$$$){
                             });
     
     my $sql_where_string ;
-    if (defined(@{$possible_resources})){
+    if (defined($possible_resources->[0])){
         $sql_where_string = "resourceId IN(";
         foreach my $i (@{$possible_resources}){
             $sql_where_string .= "$i,";
@@ -596,7 +596,7 @@ sub get_possible_wanted_resources($$$$$){
         $sql_where_string = "TRUE ";
     }
 
-    if (defined(@{$impossible_resources})){
+    if (defined($impossible_resources->[0])){
         $sql_where_string .= "AND resourceId NOT IN (" ;
         foreach my $i (@{$impossible_resources}){
             $sql_where_string .= "$i,";
@@ -794,7 +794,6 @@ sub add_micheline_job($$$$$$$$$$$$$) {
         $reservationField = "toSchedule";
         $startTimeJob = "$1 $2";
         $setCommandReservation = 1;
-        #$command = "/bin/sleep ".sql_to_duration($maxTime);
         $jobType = "PASSIVE";
     }elsif($startTimeReservation ne "0"){
         print("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
@@ -825,9 +824,9 @@ sub add_micheline_job($$$$$$$$$$$$$) {
         return(-2);
     }
 
-    if (($setCommandReservation == 1) && ($command eq "")){
-        $command = "/bin/sleep ".sql_to_duration(3600);
-    }
+    #if (($setCommandReservation == 1) && ($command eq "")){
+    #    $command = "/bin/sleep ".sql_to_duration();
+    #}
 
     # Test if properties and resources are coherent
     my $wanted_resources;
@@ -879,7 +878,7 @@ sub add_micheline_job($$$$$$$$$$$$$) {
 
     foreach my $moldable_resource (@{$ref_resource_list}){
         $dbh->do("  INSERT INTO moldableJobs_description (moldableId,moldableJobId,moldableWalltime)
-                    VALUES (\"NULL\",LAST_INSERT_ID(),\"$moldable_resource->[1]\")
+                    VALUES (\"NULL\",$job_id,\"$moldable_resource->[1]\")
                  ");
         my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
         $sth->execute();

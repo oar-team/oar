@@ -302,6 +302,7 @@ sub check_jobs_to_kill($){
 sub check_jobs_to_launch($){
     my $dbh = shift;
 
+    # /!\ Pour les reservations il faut mettre a jour la commande a lancer en fonction du job moldable selectionne
     oar_debug("[oar_scheduler] check_jobs_to_launch : check jobs with a start time <= $current_time_sql\n");
     my $returnCode = 0;
     my %jobs_to_launch = iolib::get_gantt_jobs_to_launch($dbh,$current_time_sql);

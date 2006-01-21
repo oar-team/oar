@@ -150,6 +150,7 @@ sub checkClientHostIP($$$){
             $hostAllow = 1;
         }else{
             $str .= "BAD";
+            oar_warn("[$moduleName] [checkClientHostIP] $str\n");
         }
         oar_debug("[$moduleName] [checkClientHostIP] $str\n");
         $i++;
