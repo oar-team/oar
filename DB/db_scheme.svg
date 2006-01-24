@@ -369,10 +369,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="770.93997"
+     inkscape:cx="378.7929"
      inkscape:cy="420.56683"
      inkscape:document-units="px"
-     inkscape:current-layer="g2881"
+     inkscape:current-layer="layer1"
      showguides="true"
      inkscape:guide-bbox="true"
      fill="#ff0000"
@@ -445,13 +445,12 @@
     <g
        id="g1786">
       <rect
-         style="opacity:1;fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:#000000;stroke-width:6.34364319;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
+         style="opacity:1;fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:#000000;stroke-width:6.48699379;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
          id="rect2227"
          width="148.08537"
-         height="313.10364"
-         x="34.528744"
-         y="54.122795"
-         transform="translate(258.5497,10.09569)" />
+         height="327.41425"
+         x="293.07843"
+         y="64.363457" />
       <g
          id="g2842"
          transform="translate(261.0235,-7.11563)">
@@ -559,7 +558,11 @@
            id="tspan1757"
            sodipodi:role="line"
            x="46.237278"
-           y="357.11598">mail</tspan></text>
+           y="357.11598">mail</tspan><tspan
+           sodipodi:role="line"
+           x="46.237278"
+           y="372.11598"
+           id="tspan1768">assignedMoldableJob</tspan></text>
       <path
          style="fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke:#ff0000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="M 46.237259,90.1575 L 74.521529,90.1575"
@@ -1647,7 +1650,7 @@
        sodipodi:nodetypes="cccc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 208.06250,488.57527 L 317.24308,488.57527 L 317.24308,380.88995"
+       d="M 208.0625,488.57527 L 317.24308,488.57527 L 317.24308,390.88995"
        id="path3958"
        sodipodi:nodetypes="ccc" />
     <path
@@ -1662,12 +1665,12 @@
        sodipodi:nodetypes="cc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 339.60347,379.66961 L 340.61362,687.15698 L 395.07265,687.15698"
+       d="M 341.03204,392.52675 L 340.61362,687.15698 L 395.07265,687.15698"
        id="path3964"
        sodipodi:nodetypes="ccc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 622.83555,606.21207 L 380.06250,605.85313 L 379.84925,380.12142"
+       d="M 622.83555,606.21207 L 380.0625,605.85313 L 379.84925,391.54999"
        id="path3966"
        sodipodi:nodetypes="ccc" />
     <path
@@ -1782,24 +1785,24 @@
          y="179.09448">1</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
-       x="342.82227"
-       y="392.84253"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       x="347.20117"
+       y="409.84253"
        id="text4067"><tspan
          sodipodi:role="line"
          id="tspan4069"
-         x="342.82227"
-         y="392.84253">N</tspan></text>
+         x="347.20117"
+         y="409.84253">N</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
-       x="384.20117"
-       y="393.09448"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       x="385.82227"
+       y="408.84253"
        id="text4071"><tspan
          sodipodi:role="line"
          id="tspan4073"
-         x="384.20117"
-         y="393.09448">N</tspan></text>
+         x="385.82227"
+         y="408.84253">N</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
@@ -1962,14 +1965,14 @@
          y="319.09448">1</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
-       x="307.47266"
-       y="392.09448"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       x="303.47266"
+       y="410.84253"
        id="text4155"><tspan
          sodipodi:role="line"
          id="tspan4157"
-         x="307.47266"
-         y="392.09448">1</tspan></text>
+         x="303.47266"
+         y="410.84253">1</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"

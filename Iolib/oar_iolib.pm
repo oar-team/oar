@@ -23,6 +23,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 
 # CONNECTION
 sub connect();
+sub connect_ro();
 sub disconnect($);
 
 # JOBS MANAGEMENT
@@ -50,6 +51,7 @@ sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job_list(@);
 sub shift_job(\@);
 sub get_job($$);
+sub get_moldable_job($$);
 sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
@@ -187,23 +189,14 @@ my $besteffortQueueName = "besteffort";
 
 # CONNECTION
 
-# connect
+# connect_db
 # Connects to database and returns the base identifier
-# parameters : /
 # return value : base
-# side effects : opens a connection to the base specified in ConfLib
-sub connect() {
-    # Connect to the database.
-    init_conf("oar.conf");
-
-    $host = get_conf("DB_HOSTNAME");
-    $name = get_conf("DB_BASE_NAME");
-    $user = get_conf("DB_BASE_LOGIN");
-    $pwd = get_conf("DB_BASE_PASSWD");
-
-    #my $dbh = DBI->connect("DBI:mysql:database=$name;host=$host",
-    #$user, $pwd,
-    #{'RaiseError' => 1,'InactiveDestroy' => 1});
+sub connect_db($$$$) {
+    my $host = shift;
+    my $name = shift;
+    my $user = shift;
+    my $pwd = shift;
 
     my $maxConnectTries = 5;
     my $nbConnectTry = 0;
@@ -229,6 +222,41 @@ sub connect() {
     }
 }
 
+
+# connect
+# Connects to database and returns the base identifier
+# parameters : /
+# return value : base
+# side effects : opens a connection to the base specified in ConfLib
+sub connect() {
+    # Connect to the database.
+    init_conf("oar.conf");
+
+    my $host = get_conf("DB_HOSTNAME");
+    my $name = get_conf("DB_BASE_NAME");
+    my $user = get_conf("DB_BASE_LOGIN");
+    my $pwd = get_conf("DB_BASE_PASSWD");
+
+    return(connect_db($host,$name,$user,$pwd));
+}
+
+
+# connect_ro
+# Connects to database and returns the base identifier
+# parameters : /
+# return value : base
+# side effects : opens a connection to the base specified in ConfLib
+sub connect_ro() {
+    # Connect to the database.
+    init_conf("oar.conf");
+
+    my $host = get_conf("DB_HOSTNAME");
+    my $name = get_conf("DB_BASE_NAME");
+    my $user = get_conf("DB_BASE_LOGIN_RO");
+    my $pwd = get_conf("DB_BASE_PASSWD_RO");
+
+    return(connect_db($host,$name,$user,$pwd));
+}
 
 
 # disconnect
@@ -302,6 +330,7 @@ sub get_jobs_in_state($$) {
     }
     return(@res);
 }
+
 
 # is_job_desktopComputing
 # return true if the job will run on desktopComputing nodes
@@ -1062,6 +1091,29 @@ sub get_job($$) {
     return $ref;
 }
 
+
+# get_moldable_job
+# returns a ref to some hash containing data for the moldable job of id passed in
+# parameter
+# parameters : base, moldable job id
+# return value : ref
+# side effects : /
+sub get_moldable_job($$) {
+    my $dbh = shift;
+    my $moldableJobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM moldableJobs_description
+                                WHERE
+                                    moldableId = $moldableJobId
+                            ");
+    $sth->execute();
+
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return $ref;
+}
 
 
 # set_job_state
@@ -3651,7 +3703,7 @@ sub add_new_event($$$$){
 }
 
 #add a new entry in event_log_hosts table
-#args : database ref, type, job id, description, ref of an array of host names
+#args : database ref, type, job id, description, ref of an array of resource ids
 sub add_new_event_with_host($$$$$){
     my $dbh = shift;
     my $type = shift;
@@ -3660,8 +3712,10 @@ sub add_new_event_with_host($$$$$){
     my $hostnames = shift;
     
     my $date = get_date($dbh);
-    $dbh->do("LOCK TABLE event_log WRITE, event_log_hosts WRITE");
-    $dbh->do("INSERT INTO event_log (type,idJob,date,description) VALUES (\"$type\",$idJob,\"$date\",\"$description\")");
+    #$dbh->do("LOCK TABLE event_log WRITE, event_log_hosts WRITE");
+    $dbh->do("  INSERT INTO events_log (type,idJob,date,description)
+                VALUES (\"$type\",$idJob,\"$date\",\"$description\")
+             ");
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
@@ -3669,9 +3723,11 @@ sub add_new_event_with_host($$$$$){
     $sth->finish();
     
     foreach my $n (@{$hostnames}){
-        $dbh->do("INSERT INTO event_log_hosts (idEvent,hostname) VALUES ($idEvent,\"$n\")");
+        $dbh->do("  INSERT INTO events_log_resources (idEvent,idResource)
+                    VALUES ($idEvent,$n)
+                 ");
     }
-    $dbh->do("UNLOCK TABLES");
+    #$dbh->do("UNLOCK TABLES");
 }
 
 

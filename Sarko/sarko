@@ -79,7 +79,8 @@ foreach my $job (@result){
     $start = iolib::sql_to_local($date);
 
     # Get maxtime
-    $date = $job->{maxTime};
+    my $moldJob = iolib::get_moldable_job($base,$job->{assignedMoldableJob});
+    $date = $moldJob->{moldableWalltime};
     $max = iolib::sql_to_duration($date);
 
     oar_debug("[sarko] Job [$job->{idJob}] from $start with $max; current time=$current");
@@ -132,20 +133,20 @@ foreach my $job (@result){
 
 
 
-# Retrieve nodes with expiryDates in the past
-# special for Desktop computing
-my @nodes = iolib::get_expired_nodes($base);
-if (defined @nodes) {
-    # First mark the nodes as dead
-    foreach my $node (@nodes) {
-        iolib::set_node_nextState($base, $node, 'Suspected');
-    }
-    # Then notify Almighty
-    my $remote_host = get_conf("SERVER_HOSTNAME");
-    my $remote_port = get_conf("SERVER_PORT");
-
-    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
-}
+## Retrieve nodes with expiryDates in the past
+## special for Desktop computing
+#my @nodes = iolib::get_expired_nodes($base);
+#if (defined @nodes) {
+#    # First mark the nodes as dead
+#    foreach my $node (@nodes) {
+#        iolib::set_node_nextState($base, $node, 'Suspected');
+#    }
+#    # Then notify Almighty
+#    my $remote_host = get_conf("SERVER_HOSTNAME");
+#    my $remote_port = get_conf("SERVER_PORT");
+#
+#    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
+#}
 
 iolib::disconnect($base);
 

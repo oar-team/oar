@@ -302,6 +302,7 @@ sub parse_resource_descriptions($){
     return(@result);
 }
 
+my $dbh_ro = iolib::connect_ro();
 
 if ($Interactive == 0) {
     my $exec = $ARGV[0];
@@ -338,7 +339,7 @@ if ($Interactive == 0) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
 }else{
     $Cmd_executor = "Qsub -I";
     my $server_port;
@@ -347,10 +348,11 @@ if ($Interactive == 0) {
     my @resource_list = parse_resource_descriptions(\@resource);
     print(Dumper(\@resource_list));
     
-    $Job_id = iolib::add_micheline_job($base, $base, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
 }
 print("IdJob = $Job_id \n");
 
+iolib::disconnect($base_ro);
 iolib::disconnect($base);
 
 if ($Job_id < 0){
