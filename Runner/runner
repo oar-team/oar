@@ -31,7 +31,7 @@ sub answer ($$$){
     my $error = 0;
     my ($addr,$port) = split(/:/,$info);
     oar_debug("[Runner] oarsub addr:port = $addr:$port info = $info\n");
-    if(!defined(oar_Tools::notifyAlmighty($addr,$port,"$message"))){
+    if(!defined(oar_Tools::notifyTCPSocket($addr,$port,"$message"))){
         oar_debug("[Runner] Notification done\n");
     }else{
         oar_error("[Runner] Cannot open connection to oarsub client for job $jobid !\n");

@@ -27,6 +27,6 @@ if (defined($ARGV[0])){
 }
 print("tag = $tag\n");
 
-oar_Tools::notifyAlmighty($remote_host,$remote_port,"$tag");
+oar_Tools::notifyTCPSocket($remote_host,$remote_port,"$tag");
 
 exit 0;

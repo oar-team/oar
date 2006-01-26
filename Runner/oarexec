@@ -81,7 +81,7 @@ sub quit_oarexec($){
         my $waitTime = 30;
         
         while (1){
-            if (!defined(oar_Tools::notifyAlmighty($OARSERVER,$OARPORT,"OAREXEC_$OAR_JOBID"."_$exit_value"))){
+            if (!defined(oar_Tools::notifyTCPSocket($OARSERVER,$OARPORT,"OAREXEC_$OAR_JOBID"."_$exit_value"))){
                     oar_debug("[oarexec $OAR_JOBID] I notified Almighty with my exit value $exit_value;so I am exiting\n");
                     exit($exit_value);
             }else{

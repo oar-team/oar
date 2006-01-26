@@ -102,7 +102,7 @@ foreach my $job (@result){
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm($timeoutSSH);
-            @exitCodes = oar_Tools::signalOarexec($hosts[0],$job->{idJob},"SIGUSR2");
+            @exitCodes = oar_Tools::signalOarexec($hosts[0],$job->{idJob},"SIGUSR2",1);
             alarm(0);
         };
         if ($@){

@@ -12,12 +12,8 @@ use strict;
 my $exitCode = 0;
 
 my $base = iolib::connect();
-if (!defined($base)){
-    oar_error("[NodeChangeState] Can not connect to the database\n");
-    exit(1);
-}
 
-$base->do("LOCK TABLE nodes WRITE,processJobs WRITE,processJobs_log WRITE,jobs WRITE,nodeState_log WRITE, event_log WRITE, event_log_hosts WRITE");
+$base->do("LOCK TABLE resources WRITE, assignedResources WRITE, jobs WRITE, resourceStates_log WRITE, events_log WRITE, events_log_resources WRITE");
 
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);
@@ -39,7 +35,7 @@ foreach my $i (@events_to_check){
             @hosts = iolib::get_hostname_event($base,$i->{idEvent});
             $finaudTag = "YES";
         }else{
-            @hosts = iolib::get_job_host_log($base,$i->{idJob});
+            @hosts = iolib::get_job_host_log($base,$i->{assignedMoldableJob});
             $finaudTag = "NO";
             if (($i->{type} ne "EXTERMINATE_JOB")){
                 @hosts = ($hosts[0]);
@@ -47,13 +43,15 @@ foreach my $i (@events_to_check){
         }
 
         foreach my $j (@hosts){
-            if (iolib::get_weight_node($base,$j) == 0){
-                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting this node\n");
-                iolib::set_node_state($base,$j,"Suspected",$finaudTag);
-                $exitCode = 1;
-            }else{
-                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because there is at least one other job on it\n");
-            }
+            my @current_resources = iolib::get_current_assigned_resources($base);
+            #my @tmp_array = iolib::get_free_resources_on_node($base,$j)
+            #if ($#tmp_array < 0){
+            #    oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting this node\n");
+            #    iolib::set_node_state($base,$j,"Suspected",$finaudTag);
+            #    $exitCode = 1;
+            #}else{
+            #    oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because there is at least one other job on it\n");
+            #}
         }
     }
     iolib::check_event($base, $i->{type}, $i->{idJob});

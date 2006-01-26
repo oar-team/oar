@@ -8,12 +8,14 @@ use strict;
 # Constants
 my $defaultLeonSoftWalltime = 20;
 my $defaultLeonWalltime = 60;
+my $timeoutSSH = 30;
+my $oarexecPidFileName = "/tmp/pid_of_oarexec_for_jobId_";
 
 # Prototypes
 sub getAllProcessChilds();
 sub getOneProcessChilds($);
-sub notifyAlmighty($$$);
-sub signalOarexec($$$);
+sub notifyTCPSocket($$$);
+sub signalOarexec($$$$);
 sub getOarPidFileName($);
 sub getSSHTimeout();
 sub getDefaultLeonSoftWalltime();
@@ -70,9 +72,9 @@ sub getOneProcessChilds($){
     return(@childPids);
 }
 
-# Send a Tag on a socket of an Almighty
+# Send a Tag on a socket
 # args = hostname, socket port, Tag 
-sub notifyAlmighty($$$){
+sub notifyTCPSocket($$$){
     my $almightyHost = shift;
     my $almightyPort = shift;
     my $tag = shift;
@@ -81,7 +83,7 @@ sub notifyAlmighty($$$){
                                        PeerPort => $almightyPort,
                                        Proto => "tcp",
                                        Type  => SOCK_STREAM)
-             or return("Could not connect to Almighty $almightyHost:$almightyPort");
+             or return("Could not connect to the socket $almightyHost:$almightyPort");
 
     print($socket "$tag\n");
 
@@ -93,7 +95,7 @@ sub notifyAlmighty($$$){
 
 # Return the constant SSH timeout to use
 sub getSSHTimeout(){
-    return 30;
+    return($timeoutSSH);
 }
 
 
@@ -102,24 +104,35 @@ sub getSSHTimeout(){
 sub getOarPidFileName($){
     my $jobId = shift;
 
-    return("/tmp/pid_of_oarexec_for_jobId_$jobId");
+    return($oarexecPidFileName.$jobId);
 }
 
 # Send the given signal to the right oarexec process
-# args : host name, job id, signal
+# args : host name, job id, signal, wait or not (0 or 1)
 # return an array with exit values
-sub signalOarexec($$$){
+sub signalOarexec($$$$){
     my $host = shift;
     my $jobId = shift;
     my $signal = shift;
+    my $wait = shift;
 
     my $file = getOarPidFileName($jobId);
-    system("ssh $host \"test -e $file && cat $file | xargs kill -s $signal\"");
-    my $exitiValue  = $? >> 8;
-    my $signalNum  = $? & 127;
-    my $dumpedCore = $? & 128;
+    my $cmd = "ssh $host \"test -e $file && cat $file | xargs kill -s $signal\"";
+    my $pid;
+    if($pid == 0){
+        #CHILD
+        exec("$cmd");
+    }
+    if ($wait > 0){
+        waitpid($pid,0);
+        my $exitiValue  = $? >> 8;
+        my $signalNum  = $? & 127;
+        my $dumpedCore = $? & 128;
 
-    return($exitiValue,$signalNum,$dumpedCore);
+        return($exitiValue,$signalNum,$dumpedCore);
+    }else{
+        return(undef);
+    }
 }
 
 

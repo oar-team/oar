@@ -78,9 +78,8 @@ sub get_job_stagein($$);
 sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 
-# PROCESSJOBS MANAGEMENT (Host assignment to jobs)
-sub delete_job_process($$);
-sub delete_job_process_log($$);
+# PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
+sub remove_current_assigned_resources($$);
 sub get_resource_job($$);
 sub get_node_job($$);
 sub get_running_host($);
@@ -106,7 +105,7 @@ sub get_suspected_node($);
 sub list_nodes($);
 sub get_resource_info($$);
 sub is_node_exists($$);
-sub get_weight_node($$);
+sub get_resources_on_node($$);
 sub set_weight_node($$$);
 sub decrease_weight($$);
 sub set_node_state($$$$);
@@ -362,7 +361,7 @@ sub get_job_current_hostnames($$) {
                                 AND a.idResource = b.resourceId
                                 AND c.moldableId = a.idMoldableJob
                                 AND c.moldableJobId = $jobid
-                             ORDER BY b.resourceId");
+                             ORDER BY b.resourceId ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -374,18 +373,24 @@ sub get_job_current_hostnames($$) {
 
 
 # get_job_host_log
-# returns the list of hosts associated to the job passed in parameter
-# parameters : base, jobid
+# returns the list of hosts associated to the moldable job passed in parameter
+# parameters : base, moldablejobid
 # return value : list of distinct hostnames
 # side effects : /
 sub get_job_host_log($$) {
     my $dbh = shift;
-    my $jobid= shift;
-    my $sth = $dbh->prepare("SELECT distinct hostname FROM processJobs_log WHERE idJob = $jobid ORDER BY hostname");
+    my $moldablejobid = shift;
+    
+    my $sth = $dbh->prepare("   SELECT b.networkAddress
+                                FROM assignedResources a, resources b
+                                WHERE
+                                    a.idMoldableJob = $moldablejobid
+                                ORDER BY b.resourceId ASC
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
+        push(@res, $ref->{networkAddress});
     }
     return @res;
 }
@@ -434,8 +439,11 @@ sub is_tokill_job($$) {
 # side effects : /
 sub get_tokill_job($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT fragIdJob FROM fragJobs
-                             WHERE fragState = \"LEON\"");
+    my $sth = $dbh->prepare("SELECT fragIdJob
+                             FROM fragJobs
+                             WHERE
+                                fragState = \"LEON\"
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -471,8 +479,11 @@ sub get_timered_job($) {
 # side effects : /
 sub get_toexterminate_job($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT fragIdJob FROM fragJobs
-                             WHERE fragState = \"LEON_EXTERMINATE\"");
+    my $sth = $dbh->prepare("   SELECT fragIdJob
+                                FROM fragJobs
+                                WHERE
+                                    fragState = \"LEON_EXTERMINATE\"
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -501,8 +512,11 @@ sub set_running_date($$) {
         $runningDate = $date;
     }
     
-    my $sth = $dbh->prepare("UPDATE jobs SET startTime = \"$runningDate\"
-                             WHERE idJob =\"$idJob\"");
+    my $sth = $dbh->prepare("   UPDATE jobs
+                                SET startTime = \"$runningDate\"
+                                WHERE
+                                    idJob =\"$idJob\"
+                            ");
     $sth->execute();
     $sth->finish();
 }
@@ -545,8 +559,11 @@ sub set_finish_date($$) {
     }else{
         $finishDate = $date;
     }
-    my $sth = $dbh->prepare("UPDATE jobs SET stopTime = \"$finishDate\"
-                             WHERE idJob =\"$idJob\"");
+    my $sth = $dbh->prepare("   UPDATE jobs
+                                SET stopTime = \"$finishDate\"
+                                WHERE
+                                    idJob =\"$idJob\"
+                            ");
     $sth->execute();
     $sth->finish();
 }
@@ -1126,13 +1143,22 @@ sub set_job_state($$$) {
     my $idJob = shift;
     my $state = shift;
     
-    $dbh->do("UPDATE jobs SET state = \"$state\"
-              WHERE idJob =\"$idJob\"");
+    $dbh->do("  UPDATE jobs
+                SET state = \"$state\"
+                WHERE
+                    idJob =\"$idJob\"
+             ");
     
     my $date = get_date($dbh);
-    $dbh->do("UPDATE jobState_log SET dateStop = \"$date\" WHERE dateStop IS NULL AND jobId = $idJob");
-    $dbh->do("INSERT INTO jobState_log (jobId,jobState,dateStart)
-              VALUES ($idJob,\"$state\",\"$date\")");
+    $dbh->do("  UPDATE jobStates_log
+                SET dateStop = \"$date\"
+                WHERE
+                    dateStop IS NULL
+                    AND jobId = $idJob
+             ");
+    $dbh->do("INSERT INTO jobStates_log (jobId,jobState,dateStart)
+              VALUES ($idJob,\"$state\",\"$date\")
+             ");
 }
 
 
@@ -1163,9 +1189,11 @@ sub set_job_message($$$) {
     my $dbh = shift;
     my $idJob = shift;
     my $message = shift;
-    $dbh->do("UPDATE jobs
+    $dbh->do("  UPDATE jobs
                 SET message = \"$message\"
-                WHERE idJob = $idJob");
+                WHERE
+                    idJob = $idJob
+             ");
 }
 
 # set_job_autoCheckpointed
@@ -1330,8 +1358,10 @@ sub job_arm_leon_timer($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    $dbh->do("UPDATE fragJobs SET fragState = \"TIMER_ARMED\"
-              WHERE fragIdJob = $idJob
+    $dbh->do("  UPDATE fragJobs
+                SET fragState = \"TIMER_ARMED\"
+                WHERE
+                    fragIdJob = $idJob
              ");
 }
 
@@ -1504,39 +1534,20 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
 
 # PROCESSJOBS MANAGEMENT (Host assignment to jobs)
 
-# delete_job_process
-# destroys all the entries of a given job from the processJobs table
-# parameters : base, jobid
+# remove_current_assigned_resources
+# chenge assignedResourceIndex into "LOG" for the given moldable job
+# parameters : base, moldableJobId
 # return value : /
-# side effects : deletes from the ProcessJobs table all the selected entries
-sub delete_job_process($$){
+sub remove_current_assigned_resources($$){
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldableJobId= shift;
 
-    #$dbh->do("INSERT INTO processJobs_log (idJob,hostname)
-    #          SELECT idJob,hostname
-    #          FROM processJobs
-    #          WHERE idJob = '".$jobid."'");
-
-    $dbh->do("DELETE  FROM processJobs WHERE idJob = '".$jobid."'");
-#    $dbh->do("OPTIMIZE TABLE processJobs");
+    $dbh->do("  UPDATE assignedResources
+                SET assignedResourceIndex = \"LOG\"
+                WHERE
+                    idMoldableJob = $moldableJobId
+            ");
 }
-
-
-
-# delete_job_process_log
-# destroys all the entries of a given job from the processJobs_log table
-# parameters : base, jobid
-# return value : /
-# side effects : deletes from the ProcessJobs_log table all the selected entries
-sub delete_job_process_log($$){
-    my $dbh = shift;
-    my $jobid= shift;
-
-    $dbh->do("DELETE  FROM processJobs_log WHERE idJob = '".$jobid."'");
-#    $dbh->do("OPTIMIZE TABLE processJobs_log");
-}
-
 
 
 # get_resource_job
@@ -2505,7 +2516,7 @@ sub list_nodes($) {
 
     my $sth = $dbh->prepare("   SELECT distinct(networkAddress)
                                 FROM resources
-                                ORDER BY networkAddress ASC");
+                                ORDER BY resourceId ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -2592,25 +2603,53 @@ sub is_node_exists($$) {
 }
 
 
-# get_weight_node
-# returns the current weight of node whose hostname is passed in parameter
+# get_current_assigned_resources
+# returns the current resources
+# parameters : base
+sub get_current_assigned_resources($) {
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT idResource
+                                FROM assignedResources
+                                WHERE
+                                    assignedResourceIndex = \"CURRENT\"
+                            ");
+    $sth->execute();
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        push(@result, $ref->{idResource});
+    }
+    $sth->finish();
+
+    return @result;
+}
+
+
+
+# get_resources_on_node
+# returns the current resources on node whose hostname is passed in parameter
 # parameters : base, hostname
 # return value : weight
 # side effects : /
-sub get_weight_node($$) {
+sub get_resources_on_node($$) {
     my $dbh = shift;
     my $hostname = shift;
 
-    my $sth = $dbh->prepare("SELECT weight FROM nodes
-                             WHERE hostname=\"$hostname\"");
+    my $sth = $dbh->prepare("   SELECT b.resourceId resource
+                                FROM assignedResources a, resources b
+                                WHERE
+                                    a.assignedResourceIndex = \"CURRENT\"
+                                    AND b.networkAddress = \"$hostname\"
+                                    AND b.resourceId = a.idResource
+                            ");
     $sth->execute();
-
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp = values %$ref;
-    my $w = $tmp[0];
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        push(@result, $ref->{resource});
+    }
     $sth->finish();
 
-    return $w;
+    return @result;
 }
 
 
@@ -2658,17 +2697,34 @@ sub decrease_weight($$) {
 
 # set_node_state
 # sets the state field of some node identified by its hostname in the base.
-# parameters : base, hostname, state, finaudDecision
+# parameters : base, hostname, state, finaudDecision, array ref of resources
 # return value : /
 # side effects : changes the state value in some field of the nodes table
-sub set_node_state($$$$) {
+sub set_node_state($$$$$) {
     my $dbh = shift;
     my $hostname = shift;
     my $state = shift;
     my $finaud = shift;
+    my $resources_to_ignore = shift;
 
-    $dbh->do("UPDATE nodes SET state = \"$state\", finaudDecision = \"$finaud\"
-              WHERE hostname =\"$hostname\"");
+    my $restriction;
+    if (defined($resources_to_ignore->[0])){
+        $restriction = "resourceId NOT IN ("
+        foreach my $r (@{$resources_to_ignore}){
+            $restriction .= "$r,"
+        }
+        chop($restriction);
+        $restriction .= ")"
+    }else{
+        $restriction = "TRUE";
+    }
+    
+    $dbh->do("  UPDATE resources
+                SET state = \"$state\", finaudDecision = \"$finaud\"
+                WHERE
+                    networkAddress = \"$hostname\"
+                    AND $restriction
+             ");
 
     my $date = get_date($dbh);
     $dbh->do("UPDATE nodeState_log SET dateStop = \"$date\" WHERE dateStop IS NULL AND hostname = \"$hostname\"");
@@ -3149,10 +3205,8 @@ sub set_gantt_date($$){
     my $dbh = shift;
     my $date = shift;
 
-    $dbh->do("INSERT INTO ganttJobsPrediction
-              (idJob,startTime)
-              VALUES
-              (0,\"$date\")
+    $dbh->do("INSERT INTO ganttJobsPredictions (idMoldableJob,startTime)
+              VALUES (0,\"$date\")
              ");
 }
 
@@ -3203,8 +3257,9 @@ sub get_gantt_date($){
     my $dbh = shift;
 
     my $sth = $dbh->prepare("SELECT startTime
-                             FROM ganttJobsPrediction
-                             WHERE idJob = 0
+                             FROM ganttJobsPredictions
+                             WHERE
+                                idMoldableJob = 0
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
@@ -3747,7 +3802,11 @@ sub check_event($$$){
 # args: database ref
 sub get_to_check_events($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT type, idJob, idEvent FROM event_log WHERE toCheck = \"YES\"");
+    my $sth = $dbh->prepare("   SELECT type, idJob, idEvent 
+                                FROM events_log
+                                WHERE
+                                    toCheck = \"YES\"
+                            ");
     $sth->execute();
 
     my @results;
@@ -3769,12 +3828,17 @@ sub get_hostname_event($$){
     my $dbh = shift;
     my $eventId = shift;
 
-    my $sth = $dbh->prepare("SELECT hostname FROM event_log_hosts WHERE idEvent = $eventId");
+    my $sth = $dbh->prepare("   SELECT b.networkAddress
+                                FROM events_log_resources a, resources b
+                                WHERE
+                                    idEvent = $eventId
+                                    AND a.idResource = b.resourceId
+                            ");
     $sth->execute();
 
     my @results;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@results, $ref->{hostname});
+        push(@results, $ref->{networkAddress});
     }
     $sth->finish();
 

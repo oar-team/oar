@@ -227,7 +227,7 @@ if (defined(@properties)){
 }
 
 if ($notify_almighty == 1){
-    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
+    oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
 }
 
 

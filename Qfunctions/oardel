@@ -61,7 +61,7 @@ if (@checkpoint){
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signalOarexec($hosts[0],$idJob,"SIGUSR2");
+                oar_Tools::signalOarexec($hosts[0],$idJob,"SIGUSR2",1);
                 alarm(0);
             };
             if ($@){
@@ -107,7 +107,7 @@ if (@checkpoint){
     }
     if (@jobRegistered){
         #Signal Almigthy
-        my $strError = oar_Tools::notifyAlmighty($remote_host,$remote_port,"Qdel");
+        my $strError = oar_Tools::notifyTCPSocket($remote_host,$remote_port,"Qdel");
         if (defined($strError)){
             warn("$strError\n");
             $exitValue = 2;

@@ -68,7 +68,7 @@ common:
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 700 Leon/oarkill $(OARDIR)
-	ln -s -f $(BINLINKPATH)/oarkill $(BINDIR)/oarkill
+	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarkill
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
