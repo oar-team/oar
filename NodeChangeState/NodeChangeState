@@ -43,15 +43,16 @@ foreach my $i (@events_to_check){
         }
 
         foreach my $j (@hosts){
-            my @current_resources = iolib::get_current_assigned_resources($base);
-            #my @tmp_array = iolib::get_free_resources_on_node($base,$j)
-            #if ($#tmp_array < 0){
-            #    oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting this node\n");
-            #    iolib::set_node_state($base,$j,"Suspected",$finaudTag);
-            #    $exitCode = 1;
-            #}else{
-            #    oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because there is at least one other job on it\n");
-            #}
+            my @free_resources = iolib::get_current_free_resources_of_node($base, $j);
+            if ($#free_resources < 0){
+                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting resource(s) : @free_resources\n");
+                foreach my $r (@free_resources){
+                    iolib::set_node_state($base,$j,"Suspected",$finaudTag);
+                    $exitCode = 1;
+                }
+            }else{
+                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because there is at least one other job on it\n");
+            }
         }
     }
     iolib::check_event($base, $i->{type}, $i->{idJob});
@@ -59,30 +60,29 @@ foreach my $i (@events_to_check){
 
 
 # Treate nextState field
-my %nodeToChange = iolib::get_node_change_state($base);
+my %resources_to_change = iolib::get_resource_change_state($base);
 
 #A Term command must be added in the Almighty
-oar_debug("[NodeChangeState] number of nodes to change state = ".keys(%nodeToChange)."\n");
-if (keys(%nodeToChange) > 0){
+oar_debug("[NodeChangeState] number of resources to change state = ".keys(%resources_to_change)."\n");
+if (keys(%resources_to_change) > 0){
     $exitCode = 1;
 }
 
-my $nodeInfo;
-foreach my $i (keys(%nodeToChange)){
-    $nodeInfo = iolib::get_node_info($base,$i);
-    if ($nodeInfo->{state} ne $nodeToChange{$i}){
-        if ($nodeInfo->{nextFinaudDecision} eq "YES"){
-            oar_warn("[NodeChangeState] Finaud is automatically changing the state of the node $i into $nodeToChange{$i}\n");
+foreach my $i (keys(%resources_to_change)){
+    my $resource_info = iolib::get_resource_info($base,$i);
+    if ($resource_info->{state} ne $resources_to_change{$i}){
+        if ($resource_info->{nextFinaudDecision} eq "YES"){
+            oar_warn("[NodeChangeState] Finaud is automatically changing the state of the resource $i into $resources_to_change{$i}\n");
         }else{
-            oar_warn("[NodeChangeState] $i --> $nodeToChange{$i}\n");
+            oar_warn("[NodeChangeState] $i --> $resources_to_change{$i}\n");
         }
 
-        iolib::set_node_state($base,$i,$nodeToChange{$i},$nodeInfo->{nextFinaudDecision});
-        iolib::set_node_nextState($base,$i,'UnChanged');
+        iolib::set_resource_state($base,$i,$resources_to_change{$i},$resource_info->{nextFinaudDecision});
+        iolib::set_resource_nextState($base,$i,'UnChanged');
 
-        if (($nodeToChange{$i} eq 'Dead') || ($nodeToChange{$i} eq 'Absent')){
+        if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
             oar_debug("[NodeChangeState] Check jobs to delete on $i :\n");
-            my @jobs = iolib::get_host_job_distinct($base,$i);
+            my @jobs = iolib::get_resource_job($base,$i);
             foreach my $j (@jobs){
                 oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
                 iolib::frag_job($base,$j);
@@ -92,8 +92,8 @@ foreach my $i (keys(%nodeToChange)){
             oar_debug("[NodeChangeState] Check done\n");
         }
     }else{
-        oar_warn("[NodeChangeState] $i is already in the $nodeToChange{$i} state\n");
-        iolib::set_node_nextState($base,$i,'UnChanged');
+        oar_warn("[NodeChangeState] $i is already in the $resources_to_change{$i} state\n");
+        iolib::set_resource_nextState($base,$i,'UnChanged');
     }
 }
 $base->do("UNLOCK TABLES");

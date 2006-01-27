@@ -112,7 +112,7 @@ sub set_node_state($$$$);
 sub update_node_nextFinaudDecision($$$);
 sub get_all_node_properties($$);
 sub get_all_nodes_properties($);
-sub get_node_change_state($);
+sub get_resources_change_state($);
 sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
@@ -2624,6 +2624,40 @@ sub get_current_assigned_resources($) {
     return @result;
 }
 
+# get_current_free_resources_of_node
+# return an array of free resources for the specified networkAddress
+sub get_current_free_resources_of_node($$){
+    my $dbh = shift;
+    my $host = shift;
+
+    my @busy_resources = get_current_assigned_resources($dbh);
+    my $where_str;
+    if ($#busy_resources >= 0){
+        $where_str = "resourceId NOT IN (";
+        foreach my $r (@busy_resources){
+            $where_str .= "$r,";
+        }
+        chop($where_str);
+        $where_str .= ")";
+    else{
+        $where_str = "TRUE";
+    }
+    
+    my $sth = $dbh->prepare("   SELECT resourceId
+                                FROM resources
+                                WHERE
+                                    networkAddress = \"$host\"
+                                    AND $where_str
+                            ");
+    $sth->execute();
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        push(@result, $ref->{resourceId});
+    }
+    $sth->finish();
+
+    return @result;
+}
 
 
 # get_resources_on_node
@@ -2697,39 +2731,35 @@ sub decrease_weight($$) {
 
 # set_node_state
 # sets the state field of some node identified by its hostname in the base.
-# parameters : base, hostname, state, finaudDecision, array ref of resources
+# parameters : base, hostname, state, finaudDecision
 # return value : /
 # side effects : changes the state value in some field of the nodes table
-sub set_node_state($$$$$) {
+sub set_node_state($$$$) {
     my $dbh = shift;
     my $hostname = shift;
     my $state = shift;
     my $finaud = shift;
-    my $resources_to_ignore = shift;
 
-    my $restriction;
-    if (defined($resources_to_ignore->[0])){
-        $restriction = "resourceId NOT IN ("
-        foreach my $r (@{$resources_to_ignore}){
-            $restriction .= "$r,"
-        }
-        chop($restriction);
-        $restriction .= ")"
-    }else{
-        $restriction = "TRUE";
-    }
-    
     $dbh->do("  UPDATE resources
                 SET state = \"$state\", finaudDecision = \"$finaud\"
                 WHERE
                     networkAddress = \"$hostname\"
-                    AND $restriction
              ");
 
     my $date = get_date($dbh);
-    $dbh->do("UPDATE nodeState_log SET dateStop = \"$date\" WHERE dateStop IS NULL AND hostname = \"$hostname\"");
-    $dbh->do("INSERT INTO nodeState_log (hostname,changeState,dateStart,finaudDecision)
-              VALUES (\"$hostname\",\"$state\",\"$date\",\"$finaud\")");
+    $dbh->do("  UPDATE resourceStates_log a, resources b
+                SET a.dateStop = \"$date\"
+                WHERE
+                    a.dateStop IS NULL
+                    AND b.networkAddress = \"$hostname\"
+                    AND a.resourceId = b.resourceId
+             ");
+    $dbh->do("INSERT INTO resourceStates_log (resourceId,changeState,dateStart,finaudDecision)
+                SELECT a.resourceId,\"$state\",\"$date\",\"$finaud\"
+                FROM resources a
+                WHERE
+                    a.networkAddress = \"$hostname\"
+             ");
 }
 
 # set_resource_nextState
@@ -2746,6 +2776,34 @@ sub set_resource_nextState($$$) {
                             WHERE resourceId = $resource
                           ");
     return($result);
+}
+
+
+# set_resource_state
+# sets the state field of a resource
+# parameters : base, resource id, state, finaudDecision
+sub set_resource_state($$$$) {
+    my $dbh = shift;
+    my $resource_id = shift;
+    my $state = shift;
+    my $finaud = shift;
+
+    $dbh->do("  UPDATE resources
+                SET state = \"$state\", finaudDecision = \"$finaud\"
+                WHERE
+                    resourceId = $resource_id
+             ");
+
+    my $date = get_date($dbh);
+    $dbh->do("  UPDATE resourceStates_log
+                SET dateStop = \"$date\"
+                WHERE
+                    dateStop IS NULL
+                    AND resourceId = $resource_id
+             ");
+    $dbh->do("INSERT INTO resourceStates_log (resourceId,changeState,dateStart,finaudDecision)
+              VALUES ($resource_id, \"$state\",\"$date\",\"$finaud\")
+             ");
 }
 
 
@@ -2916,12 +2974,15 @@ sub get_all_nodes_properties($){
 }
 
 
-# get node names that will change their state
+# get resource names that will change their state
 # parameters : base
-sub get_node_change_state($){
+sub get_resources_change_state($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT hostname,nextState FROM nodes WHERE nextState != \"UnChanged\"");
+    my $sth = $dbh->prepare("   SELECT resourceId, nextState
+                                FROM resources
+                                WHERE
+                                    nextState != \"UnChanged\"");
     $sth->execute();
 
     my %results;
@@ -3786,7 +3847,6 @@ sub add_new_event_with_host($$$$$){
 }
 
 
-
 # Turn the field toCheck into NO
 #args : database ref, event type, idJob
 sub check_event($$$){
@@ -3794,7 +3854,13 @@ sub check_event($$$){
     my $type = shift;
     my $idJob = shift;
 
-    $dbh->do("UPDATE event_log SET toCheck = \"NO\" WHERE toCheck = \"YES\" AND type = \"$type\" AND idJob = $idJob");
+    $dbh->do("  UPDATE events_log
+                SET toCheck = \"NO\"
+                WHERE
+                    toCheck = \"YES\"
+                    AND type = \"$type\"
+                    AND idJob = $idJob
+             ");
 }
 
 
