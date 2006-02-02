@@ -22,11 +22,6 @@ if (!defined($deploy_hostname)){
     $deploy_hostname = $server_hostname;
 }
 
-my $Deploy_queue_list = get_conf("DEPLOY_QUEUES");
-if (!defined($Deploy_queue_list)){
-    $Deploy_queue_list = "deploy";
-}
-
 #sub forkexecwait($){
 #    my $cmd=shift;
 #
@@ -168,7 +163,7 @@ while(scalar(@JobToFrag)){
         my @hosts = iolib::get_job_current_hostnames($base,$Jid);
         my $hostToConnectViaSSH = $hosts[0];
         #deploy part
-        if (defined(grep (/^$refJob->{'queueName'}$/,split(" ",$Deploy_queue_list)))){
+        if ($refJob->{deploy_feature} eq "YES"){
         #if ($refJob->{'queueName'} eq "deploy"){
             $hostToConnectViaSSH = $deploy_hostname;
         }

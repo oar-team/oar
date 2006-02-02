@@ -36,40 +36,9 @@ if (!defined($deploy_hostname)){
     $deploy_hostname = $remote_host;
 }
 
-my $Deploy_queue_list = get_conf("DEPLOY_QUEUES");
-if (!defined($Deploy_queue_list)){
-    $Deploy_queue_list = "deploy";
-}
-
 my $detach_job = get_conf("DETACH_JOB");
 if (!defined($detach_job)){
     $detach_job = 1;
-}
-
-# read a line on a socket
-# arg1 --> socket
-# arg2 --> timeout
-# return 0 if the read times out
-sub readSocketLine($$){
-    my $sock = shift;
-    my $timeout= shift;
-
-    my $char = "a";
-    my $res = 1;
-    my $rin = '';
-    my $line;
-    vec($rin,fileno($sock),1) = 1;
-    my $rinTmp;
-    while (($res > 0) && ($char ne "\n") && ($char ne "")){
-        $res = select($rinTmp=$rin, undef, undef, $timeout);
-        if ($res > 0){
-            sysread($sock,$char,1);
-            if ($char ne "\n"){
-                $line .= $char;
-            }
-        }
-    }
-    return($res,$line);
 }
 
 #Launch the oarexec command
@@ -102,29 +71,19 @@ my $base;
 my @hosts;
 
 $base = iolib::connect();
-if (!defined($base)){
-    oar_error("[bipbip $Jid] Can t connect to the data base\n");
-    exit(1);
-}
 
-my @tmp = iolib::get_job_cmd_user($base,$Jid);
-my $user=shift(@tmp);
-my $usercmd=shift(@tmp);
-my $launchingDirectory=shift(@tmp);
-my $weight = shift(@tmp);
-my $queue = shift(@tmp);
+my $job = iolib::get_job($base,$Jid);
 
 @hosts = iolib::get_job_current_hostnames($base,$Jid);
 
-if(scalar @hosts eq 0){
+if($#hosts < 0){
     oar_error("[bipbip $Jid] A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???\n");
     exit 1;
 }
 
 my $hostToConnectViaSSH = $hosts[0];
 #deploy part
-if (defined(grep (/^$queue$/,split(" ",$Deploy_queue_list)))){
-#if ($queue eq "deploy"){
+if ($job->{deploy_feature} eq "YES"){
     $hostToConnectViaSSH = $deploy_hostname;
 }
 #deploy part
@@ -146,18 +105,15 @@ my $hostname = hostname;
 my $hostpid="$hostname:$$";
 iolib::set_job_bpid($base,$Jid,$hostpid);
 
-oar_debug("[bipbip $Jid] JOB: $Jid User: $user Command: $usercmd ==> hosts :[@hosts]\n");
+oar_debug("[bipbip $Jid] JOB: $Jid; User: $job->{user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 
 # check nodes
 oar_debug("[bipbip $Jid] Check nodes\n");
 my @bad = test_hosts(@hosts);
 if ($#bad >= 0){
-    $base->do("LOCK TABLE jobs WRITE, jobState_log WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, fragJobs WRITE,nodeState_log WRITE");
-    my $refHashJob = iolib::get_job($base,$Jid);
-    iolib::decrease_weight($base,$Jid);
-    iolib::delete_job_process($base,$Jid);
-    oar_debug("[bipbip $Jid] COMMAND=$usercmd\n");
+    $base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE, resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE");
+    iolib::remove_current_assigned_resources($base,$job->{assignedMoldableJob});
     iolib::set_job_state($base,$Jid,"Error");
     iolib::set_job_message($base,$Jid,"Blacklist job nodes");
     $base->do("UNLOCK TABLES");
@@ -174,7 +130,7 @@ if ($#bad >= 0){
 iolib::set_job_state($base,$Jid,"Running");
 
 #CALL OAREXEC ON THE FIRST NODE
-if($usercmd eq ""){
+if($job->{command} eq ""){
     iolib::disconnect($base);
     oar_debug("[bipbip $Jid] execute an interactive command\n");
     my $error = launch("oarexec $Jid $user $launchingDirectory $weight 0 @hosts ",$hostToConnectViaSSH,1);
@@ -206,22 +162,15 @@ if($usercmd eq ""){
 sub checkEndOfJob($){
     my $error = shift;
 
-    my $baseerror=0;
-    my $base = iolib::connect() or $baseerror=1;
-    if ($baseerror!=0){
-        oar_debug("[bipbip $Jid] Can t extablish connection with DataBase WARNING finish date not fixed\n");
-        oar_error("[bipbip $Jid] Can t connect to the database\n");
-        exit(1);
-    }
+    my $base = iolib::connect();
 
-    $base->do("LOCK TABLE jobs WRITE, jobState_log WRITE, nodes WRITE, processJobs WRITE, processJobs_log WRITE, nodeState_log WRITE, event_log WRITE");
+    $base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE, resources WRITE, assignedMoldableJob WRITE, resourceStates_log WRITE, events_log WRITE");
     my $refJob = iolib::get_job($base,$Jid);
     if ($refJob->{'state'} eq "Running"){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         iolib::set_finish_date($base,$Jid);
         oar_debug("[bipbip $Jid] Release nodes \n");
-        iolib::decrease_weight($base,$Jid);
-        iolib::delete_job_process($base,$Jid);
+        iolib::remove_current_assigned_resources($base,$refJob->{assignedMoldableJob});
         if($error == 0){
             oar_debug("[bipbip $Jid] User Launch completed OK\n");
             iolib::set_job_state($base,$Jid,"Terminated");

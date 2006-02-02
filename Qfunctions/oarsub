@@ -37,6 +37,7 @@ my $sos;
 my $Checkpoint=0;
 my $mail;
 my $job_name;
+my @Type;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -115,6 +116,7 @@ Options are:
  -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
      --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -k, --checkpoint              enable the job to be checkpointed
+ -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -h, --help                    print this help message
 EOS
 }
@@ -153,6 +155,7 @@ GetOptions ("resource|l=s" => \@resource,
             "checkpoint|k=i" => \$Checkpoint,
             "help|h" => \$sos,
             "mail|m=s" => \$mail,
+            "type|t=s" => \@Type,
             "name|n=s" => \$job_name
            );
 
@@ -215,8 +218,7 @@ if (defined($connectResa)){
         my @hosts = iolib::get_job_current_hostnames($base,$connectResa);
         my $hostToConnectViaSSH = $hosts[0];
         #deploy part
-        my %queuesInfo = iolib::get_all_queue_informations($base);
-        if ($queuesInfo{$job->{'queueName'}}->{execJobsOnFrontal} eq "YES"){
+        if ($job->{deploy_feature} eq "YES"){
             $hostToConnectViaSSH = $deploy_hostname;
         }
         #deploy part
@@ -302,6 +304,27 @@ sub parse_resource_descriptions($){
     return(@result);
 }
 
+# parse -t options
+sub parse_type($){
+    my $array_type_ref = shift;
+
+    my %results = (
+        "deploy"        => "NO" ,
+        "besteffort"    => "NO" ,
+        "cosystem"      => "NO" ,
+        "checkpoint"    => "NO"
+    );
+    foreach my $t (@{$array_type_ref}){
+        if (($t ne "deploy") && ($t ne "besteffort") && ($t ne "cosystem") && ($t ne "checkpoint")){ 
+            die("/!\\ Cannot recognize the type : $t\n");
+        }else{
+            $results{$t} = "YES";
+        }
+    }
+
+    return(%results);
+}
+
 my $base_ro = iolib::connect_ro();
 
 if ($Interactive == 0) {
@@ -322,7 +345,7 @@ if ($Interactive == 0) {
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
-    
+    my %type_values = parse_type(\@Type);
 
     if (!($exec =~ m/^\/.+$/m)){
         # WARNING: we are not the real user, we are oar user!!!
@@ -339,16 +362,17 @@ if ($Interactive == 0) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, $type_values{besteffort}, $type_values{deploy}, $type_values{cosystem}, $type_values{checkpoint});
 }else{
     $Cmd_executor = "Qsub -I";
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
     my @resource_list = parse_resource_descriptions(\@resource);
+    my %type_values = parse_type(\@Type);
     print(Dumper(\@resource_list));
     
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, $type_values{besteffort}, $type_values{deploy}, $type_values{cosystem}, $type_values{checkpoint});
 }
 print("IdJob = $Job_id \n");
 

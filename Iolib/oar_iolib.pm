@@ -33,7 +33,6 @@ sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
 sub get_job_current_hostnames($$);
 sub get_job_host_log($$);
-sub get_job_cmd_user($$);
 sub get_tokill_job($);
 sub is_tokill_job($$);
 sub get_timered_job($);
@@ -45,7 +44,7 @@ sub set_finish_date($$);
 sub set_job_number_of_nodes($$$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job_list(@);
@@ -303,12 +302,12 @@ sub set_job_bpid($$$){
     my $idJob = shift;
     my $bipbippid= shift;
 
-    my $sth = $dbh->prepare("UPDATE jobs SET bpid = \"$bipbippid\" WHERE idJob =\"$idJob\"");
-    $sth->execute();
-    $sth->finish();
-
+    $dbh->do("   UPDATE jobs
+                 SET bpid = \"$bipbippid\"
+                 WHERE
+                     idJob =\"$idJob\"
+             ");
 }
-
 
 
 # get_jobs_in_state
@@ -320,11 +319,14 @@ sub get_jobs_in_state($$) {
     my $dbh = shift;
     my $state = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM jobs WHERE state=\"$state\"");
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state=\"$state\"
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        #push(@res, $ref->{'idJob'}, $ref->{'jobType'}, $ref->{'infoType'});
         push(@res, $ref);
     }
     return(@res);
@@ -392,26 +394,6 @@ sub get_job_host_log($$) {
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref->{networkAddress});
     }
-    return @res;
-}
-
-
-# get_job_cmd_user
-# returns the command associated to the job passed in parameter
-# parameters : base, jobid
-# return value : user, command (flatened list of couples)
-# side effects : /
-sub get_job_cmd_user($$) {
-    my $dbh = shift;
-    my $jobid= shift;
-    my $sth = $dbh->prepare("SELECT command,user,launchingDirectory,weight,queueName
-                             FROM jobs
-                             WHERE $jobid = idJob");
-    $sth->execute();
-    my @res = ();
-    my $ref = $sth->fetchrow_hashref();
-    push(@res, $ref->{'user'}, $ref->{'command'}, $ref->{'launchingDirectory'}, $ref->{'weight'}, $ref->{'queueName'});
-
     return @res;
 }
 
@@ -828,8 +810,8 @@ sub get_tree_leaf_names($){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$besteffort_type,$deploy_type,$cosystem_type,$checkpoint_type) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -907,8 +889,8 @@ sub add_micheline_job($$$$$$$$$$$$$) {
     #Insert job
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO jobs
-              (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail)
-              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\")
+              (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail,besteffort_feature,deploy_feature,autoCheckpointed_feature,cosystem_feature)
+              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\",\"$besteffort_type\",\"$deploy_type\",\"$checkpoint_type\",\"$cosystem_type\")
              ");
 
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
@@ -1228,7 +1210,8 @@ sub frag_job($$) {
         $dbh->do("LOCK TABLE fragJobs WRITE, events_log WRITE");
         my $nbRes = $dbh->do("SELECT *
                               FROM fragJobs
-                              WHERE fragIdJob = $idJob
+                              WHERE
+                                fragIdJob = $idJob
                              ");
 
         if ( $nbRes < 1 ){
@@ -2639,7 +2622,7 @@ sub get_current_free_resources_of_node($$){
         }
         chop($where_str);
         $where_str .= ")";
-    else{
+    }else{
         $where_str = "TRUE";
     }
     
@@ -3529,7 +3512,11 @@ sub local_to_ymdhms($) {
 sub sql_to_local($) {
     my $date=shift;
     my ($year,$mon,$mday,$hour,$min,$sec)=sql_to_ymdhms($date);
-    return ymdhms_to_local($year,$mon,$mday,$hour,$min,$sec);
+    if ($year <= 1971){
+        return(0);
+    }else{
+        return ymdhms_to_local($year,$mon,$mday,$hour,$min,$sec);
+    }
 }
 
 

@@ -21,6 +21,7 @@ sub getSSHTimeout();
 sub getDefaultLeonSoftWalltime();
 sub getDefaultLeonWalltime();
 sub checkClientHostIP($$$);
+sub fork_no_wait($);
 
 
 # Get default Leon walltime value for Sarko
@@ -169,6 +170,24 @@ sub checkClientHostIP($$$){
         $i++;
     }
     return($hostAllow);
+}
+
+
+# exec a command and do not wait its end
+# arg : command
+sub fork_no_wait($){
+    my $cmd = shift;
+
+    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
+    my $pid = 0;
+    $pid = fork;
+    if(defined($pid)){
+        if($pid == 0){
+            #child
+            exec($cmd);
+        }
+    }
+    return($pid);
 }
 
 return 1;
