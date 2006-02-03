@@ -8,38 +8,35 @@ use ping_checker qw(test_hosts);
 use Data::Dumper;
 use strict;
 use IO::Socket::INET;
-#use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-
 
 oar_debug("[finaud] Finaud started\n");
-
-# Get OAR configuration
-#init_conf("oar.conf");
-#my $remote_host = get_conf("SERVER_HOSTNAME");
-#my $remote_port = get_conf("SERVER_PORT");
-
 
 oar_debug("[finaud] Check Alive and Suspected nodes\n");
 my $base = iolib::connect();
 
-my @AliveNodes = iolib::get_really_alive_node($base);
-my @SuspectedNodes = iolib::get_suspected_node($base);
-
-my %previousNodeStateHash; # value 1: Alive state; 0: Suspected value
-
-oar_debug("[finaud] Alive node(s): @AliveNodes\n");
-oar_debug("[finaud] Suspected node(s): @SuspectedNodes\n");
-
-foreach my $i (@AliveNodes){
-    $previousNodeStateHash{$i} = 1;
+my $Occupied_resources_vector;
+for my $r (@{iolib::get_current_assigned_resources($base)}){
+    vec($Occupied_resources_vector,$r,1) = 1;
 }
 
-foreach my $i (@SuspectedNodes){
-    $previousNodeStateHash{$i} = 0;
+my @Resource_list;
+push(@Resource_list, iolib::get_resources_in_state($base,"Alive"));
+push(@Resource_list, iolib::get_resources_in_state($base,"Suspected"));
+
+my %Node_list;
+
+foreach my $i (@Resource_list){
+    #Do not check occupied resources
+    if (!vec($Occupied_resources_vector, $i->{resourceId}, 1)){
+        push(@{$Node_list{$i->{networkAdress}}}, $i->{resourceId});
+    }
 }
+
+my @Nodes_to_check = keys(%Node_list);
+oar_debug("[finaud] Testing resource(s) on : @Nodes_to_check\n");
 
 # Call the right program to test each nodes
-my @badNodes = test_hosts(@AliveNodes, @SuspectedNodes);
+my @badNodes = test_hosts(@Nodes_to_check);
 
 my %badNodeHash;
 foreach my $i (@badNodes){
@@ -48,17 +45,18 @@ foreach my $i (@badNodes){
 
 #Make the decisions
 my $returnValue = 0;
-foreach my $i (keys(%previousNodeStateHash)){
-    if (defined($badNodeHash{$i}) and ($previousNodeStateHash{$i} == 1)){
-        iolib::set_node_nextState($base,$i,"Suspected");
-        iolib::update_node_nextFinaudDecision($base,$i,"YES");
+foreach my $i (@Resource_list){
+    if (defined($badNodeHash{$i->{networkAdress}}) and ($i->{state} eq "Alive")){
+        iolib::set_resource_nextState($base,$i->{resourceId},"Suspected");
+        iolib::update_resource_nextFinaudDecision($base,$i->{resourceId},"YES");
         $returnValue = 1;
-        oar_debug("[finaud] Set the next state of $i to Suspected\n");
-    }elsif (!defined($badNodeHash{$i}) and ($previousNodeStateHash{$i} == 0)){
-        iolib::set_node_nextState($base,$i,"Alive");
-        iolib::update_node_nextFinaudDecision($base,$i,"YES");
+        oar_debug("[finaud] Set the next state of $i->{resourceId}, $i->{networkAdress} to Suspected\n");
+    }elsif (!defined($badNodeHash{$i->{networkAdress}}) and ($i->{state} eq
+    "Suspected")){
+        iolib::set_resource_nextState($base,$i->{resourceId},"Alive");
+        iolib::update_resource_nextFinaudDecision($base,$i->{resourceId},"YES");
         $returnValue = 1;
-        oar_debug("[finaud] Set the next state of $i to Alive\n");
+        oar_debug("[finaud] Set the next state of $i->{resourceId}, $i->{networkAdress} to Alive\n");
     }
 }
 

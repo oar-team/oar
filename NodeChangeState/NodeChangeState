@@ -13,7 +13,8 @@ my $exitCode = 0;
 
 my $base = iolib::connect();
 
-$base->do("LOCK TABLE resources WRITE, assignedResources WRITE, jobs WRITE, resourceStates_log WRITE, events_log WRITE, events_log_resources WRITE");
+$base->do("LOCK TABLE resources WRITE, assignedResources WRITE, jobs WRITE,
+resourceStates_log WRITE, events_log WRITE, events_log_hostnames WRITE");
 
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);

@@ -100,6 +100,9 @@ my $villainstimeout = 30;
 
 # Max waiting time before check node states
 my $checknodestimeout = 300;
+if (is_conf("FINAUD_FREQUENCY")){
+    $checknodestimeout = get_conf("FINAUD_FREQUENCY");
+}
 
 # Internal stuff, not relevant for average user
 my $lastscheduler;

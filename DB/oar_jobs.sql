@@ -241,12 +241,12 @@ INDEX eventCheck (toCheck),
 PRIMARY KEY (idEvent)
 );
 
-#DROP TABLE IF EXISTS events_log_resources;
-CREATE TABLE IF NOT EXISTS events_log_resources (
+#DROP TABLE IF EXISTS events_log_hostnames;
+CREATE TABLE IF NOT EXISTS events_log_hostnames (
 idEvent INT UNSIGNED NOT NULL,
-idResource INT UNSIGNED NOT NULL ,
-INDEX eventHostname (idResource),
-PRIMARY KEY (idEvent, idResource)
+hostname VARCHAR( 255 ) NOT NULL ,
+INDEX eventHostname (hostname),
+PRIMARY KEY (idEvent, hostname)
 );
 
 #DROP TABLE IF EXISTS accounting;

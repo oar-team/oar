@@ -18,6 +18,7 @@ my $timeoutFping = 15;
 my $timeoutNmap = 30;
 my $timeoutSentinelle = 60;
 my $timeoutScriptSentinelle = 60;
+my $Default_timeout = 60;
 
 #resolve host name and give its IP or return 0
 sub getHostIp($){
@@ -44,6 +45,8 @@ sub test_hosts(@){
         return(fping_hosts(@_));
     }elsif (is_conf("NMAP_COMMAND")){
         return(nmap_hosts(@_));
+    }elsif (is_conf("GENERIC_COMMAND")){
+        return(generic_hosts(@_));
     }else{
         return(ping_hosts(@_));
     }
@@ -312,5 +315,60 @@ sub nmap_hosts(@){
         return(@badHosts);
     }
 }   
+
+
+# use a command which takes the list of nodes in arguments and write on STDERR
+# the list of bad nodes
+# arg1 --> array of hosts to test
+sub generic_hosts(@){
+    my @hosts = @_;
+
+    # Get generic command from oar.conf
+    init_conf("oar.conf");
+    my $test_cmd = get_conf("GENERIC_COMMAND");
+    oar_debug("[PingChecker] command to run : $test_cmd\n");
+    my ($cmd, @null) = split(" ",$test_cmd);
+    oar_debug("[PingChecker] command to run with arguments : $cmd\n");
+    if (!defined($test_cmd) || (! -x $cmd)){
+        oar_error("[PingChecker] You want to call a generic test method but GENERIC_COMMAND in oar.conf is not valid\n");
+        return(@hosts);
+    }
+
+    my %checkTestNodes;
+    foreach my $i (@hosts){
+        $test_cmd .= " $i";
+        $checkTestNodes{$i} = 1;
+    }
+
+    my @badHosts;
+    oar_debug("[PingChecker] $test_cmd \n");
+    $ENV{IFS}="";
+    $ENV{ENV}="";
+    eval {
+        $SIG{ALRM} = sub { die("alarm\n") };
+        alarm($Default_timeout);
+        open3(\*WRITER, \*READER, \*ERROR, $test_cmd);
+        while(<ERROR>){
+            chomp($_);
+            $_ =~ m/^\s*([\w\.]+)\s*$/m;
+            if ($checkTestNodes{$1} == 1){
+                oar_debug("[PingChecker] Bad host = $1 \n");
+                push(@badHosts, $1);
+            }
+        }
+        close(ERROR);
+        close(WRITER);
+        close(READER);
+        alarm(0);
+    };
+    oar_debug("[PingChecker] End of command; alarm=$@\n");
+    if ($@){
+        oar_warn("[PingChecker] GENERIC_COMMAND timed out : it is bad\n");
+        return(@hosts);
+    }else{
+        return(@badHosts);
+    }
+}   
+
 
 return 1;

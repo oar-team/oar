@@ -28,6 +28,7 @@ sub disconnect($);
 
 # JOBS MANAGEMENT
 sub get_job_bpid($$);
+sub get_job_challenge($$);
 sub set_job_bpid($$$);
 sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
@@ -41,7 +42,6 @@ sub get_frag_date($$);
 sub set_running_date($$);
 sub set_running_date_arbitrary($$$);
 sub set_finish_date($$);
-sub set_job_number_of_nodes($$$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
 sub add_micheline_job($$$$$$$$$$$$$$$$$);
@@ -81,6 +81,7 @@ sub del_stagein($$);
 sub remove_current_assigned_resources($$);
 sub get_resource_job($$);
 sub get_node_job($$);
+sub get_resources_in_state($$);
 sub get_running_host($);
 sub add_node_job_pair($$$);
 sub remove_node_job_pair($$$);
@@ -108,7 +109,7 @@ sub get_resources_on_node($$);
 sub set_weight_node($$$);
 sub decrease_weight($$);
 sub set_node_state($$$$);
-sub update_node_nextFinaudDecision($$$);
+sub update_resource_nextFinaudDecision($$$);
 sub get_all_node_properties($$);
 sub get_all_nodes_properties($);
 sub get_resources_change_state($);
@@ -158,9 +159,6 @@ sub duration_to_sql($);
 sub sql_to_duration($);
 sub get_date($);
 sub get_unix_timestamp($);
-
-# MESSAGES, INTERNAL STATE AND DEBUGGING
-sub show_table($$);
 
 #EVENTS LOG MANAGEMENT
 sub add_new_event($$$$);
@@ -281,7 +279,11 @@ sub disconnect($) {
 sub get_job_bpid($$){
     my $dbh = shift;
     my $jobid= shift;
-    my $sth = $dbh->prepare("SELECT bpid FROM jobs WHERE idJob = $jobid");
+    my $sth = $dbh->prepare("   SELECT bpid
+                                FROM jobs
+                                WHERE
+                                    idJob = $jobid
+                            ");
     $sth->execute();
 
     my $ref = $sth->fetchrow_hashref();
@@ -290,6 +292,27 @@ sub get_job_bpid($$){
     return($$ref{'bpid'});
 }
 
+
+# get_job_challenge
+# gets the challenge string of a OAR Job
+# parameters : base, jobid
+# return value : challenge
+# side effects : /
+sub get_job_challenge($$){
+    my $dbh = shift;
+    my $jobid = shift;
+    
+    my $sth = $dbh->prepare("SELECT challenge
+                             FROM challenges
+                             WHERE
+                                jobId = $jobid
+                            ");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return($$ref{challenge});
+}
 
 
 # set_job_bpid
@@ -367,7 +390,7 @@ sub get_job_current_hostnames($$) {
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
+        push(@res, $ref->{hostname});
     }
     return @res;
 }
@@ -549,52 +572,6 @@ sub set_finish_date($$) {
     $sth->execute();
     $sth->finish();
 }
-
-
-# Set the number of nodes for the specified job
-# params: base, job, number of nodes
-sub set_job_number_of_nodes($$$){
-    my $dbh = shift;
-    my $job = shift;
-    my $nbNodes = shift;
-
-    $dbh->do("UPDATE jobs SET nbNodes = $nbNodes WHERE idJob = $job");
-}
-
-# treate job properties and add a "p." before each field
-# return formed job properties
-#sub form_job_properties($$){
-#    my $dbh = shift;
-#    my $jobproperties = shift;
-#    
-#    # add a \" instead of '
-#    #$jobproperties =~ s/'/\\"/g;
-#    #add a p. before each field names
-#    if ($jobproperties ne ""){
-#        $sth = $dbh->prepare("SHOW FIELDS FROM nodeProperties");
-#        $sth->execute();
-#        my $fields = "";
-#        while (my @ref = $sth->fetchrow_array()) {
-#            $fields .= "$ref[0]|";
-#        }
-#        chop($fields);
-#        $sth->finish();
-#
-#        my @strSep = split("'",$jobproperties." '");
-#        $jobproperties = "";
-#        for (my $i=0; $i <= $#strSep; $i++){
-#            if (int($i % 2) == 0){
-#                $strSep[$i] =~ s/($fields)/p.$1/g ;
-#            }
-#            $jobproperties .= "$strSep[$i]\\\"";
-#        }
-#        chop($jobproperties);
-#        chop($jobproperties);
-#    }
-#
-#    return($jobproperties);
-#}
-
 
 
 # get_possible_wanted_resources
@@ -928,6 +905,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
         }
     }
 
+    my $random_number = int(rand(1000000000000));
+    $dbh->do("INSERT INTO challenges (jobId,challenge)
+              VALUES ($job_id,\"$random_number\")
+             ");
     #$dbh->do("UNLOCK TABLES");
 
     return($job_id);
@@ -1272,9 +1253,12 @@ sub hold_job($$) {
 
     my $job = get_job($dbh, $idJob);
 
-    if ((defined($job)) && ((($lusr eq $job->{'user'}) || ($lusr eq "oar")) && ($job->{'state'} eq "Waiting"))) {
-        my $sth = $dbh->prepare("UPDATE jobs SET state = \"Hold\"
-                                 WHERE idJob =\"$idJob\"");
+    if ((defined($job)) && ((($lusr eq $job->{'user'}) || ($lusr eq "oar") || ($lusr eq "root")) && ($job->{'state'} eq "Waiting"))) {
+        my $sth = $dbh->prepare("   UPDATE jobs
+                                    SET state = \"Hold\"
+                                    WHERE
+                                        idJob =\"$idJob\"
+                                ");
         $sth->execute();
         $sth->finish();
         return 0;
@@ -1303,9 +1287,12 @@ sub resume_job($$) {
 
     my $job = get_job($dbh, $idJob);
 
-    if ((defined($job)) && ((($lusr eq $job->{'user'}) || ($lusr eq "oar"))  && ($job->{'state'} eq "Hold"))) {
-        my $sth = $dbh->prepare("UPDATE jobs SET state = \"Waiting\"
-                                 WHERE idJob =\"$idJob\"");
+    if ((defined($job)) && ((($lusr eq $job->{'user'}) || ($lusr eq "oar") || ($lusr eq "root"))  && ($job->{'state'} eq "Hold"))) {
+        my $sth = $dbh->prepare("   UPDATE jobs
+                                    SET state = \"Waiting\"
+                                    WHERE
+                                        idJob =\"$idJob\"
+                                ");
         $sth->execute();
         $sth->finish();
         return 0;
@@ -1579,6 +1566,28 @@ sub get_node_job($$) {
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref->{'idJob'});
+    }
+    return @res;
+}
+
+
+# get_resources_in_state
+# returns the list of resources in the state specified
+# parameters : base, state
+# return value : list of resource ref
+sub get_resources_in_state($$) {
+    my $dbh = shift;
+    my $state = shift;
+    
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    state = \"\"
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
     }
     return @res;
 }
@@ -1915,69 +1924,6 @@ sub add_resource($$$) {
 }
 
 
-
-# get_maxweight_node
-# gets the max of the field maxWeight of the entries of the table nodes.
-# parameters : base
-# return value : maxweight
-# side effects : /
-sub get_maxweight_node($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT MAX(maxWeight) FROM nodes");
-    $sth->execute();
-    $ref = $sth->fetchrow_hashref();
-    my @tmp = values %$ref;
-    my $w = $tmp[0];
-    $sth->finish();
-    return $w;
-}
-
-
-# get_maxweight_one_node
-# gets the field maxWeight of the given node
-# parameters : base, node
-# return value : maxweight
-# side effects : /
-sub get_maxweight_one_node($$) {
-    my $dbh = shift;
-    my $node = shift;
-
-    my $sth = $dbh->prepare("SELECT maxWeight FROM nodes
-                              WHERE hostname = \"$node\"");
-    $sth->execute();
-    $ref = $sth->fetchrow_hashref();
-    my @tmp = values %$ref;
-    my $w = $tmp[0];
-    $sth->finish();
-    return $w;
-}
-
-
-
-# get_free_shareable_nodes
-# gets the list of nodes on which a new job can be added (either with
-# exclusive or shared access). This function does not differentiate exclusive
-# and shared accesses.
-# parameters : base
-# return value : list of hostnames
-# side effects : /
-sub get_free_shareable_nodes($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT p.hostname FROM nodes p
-                             WHERE p.state=\"Alive\"
-                             AND p.maxWeight > p.weight");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
-
 # Generate the SQL sub request with property matching
 # params : base, jobId
 # return the string of subrequest
@@ -2028,128 +1974,6 @@ sub get_free_nodes_job($$$) {
     $sth->finish();
     return @res;
 }
-
-
-
-# get_free_nodes_job_killer
-# If possible, returns a triplet (number of nodes, state value, and ref to a list of
-# at least nbmin hostnames) in which the hostnames in the list match properties of the
-# job passed in parameter and can be used for the reservation.
-# The number of nodes can be greater than nbmin and is the actual number of free hosts.
-# The state value state wether some besteffort jobs (that is jobs having their BestEffort
-# flag to 'Yes') have been marked as 'ToFrag' (value 1) or not (value 0) in order to reach
-# the required number of nodes, in such a case the scheduler has to ensure that these
-# jobs have been killed before making use of the hosts.
-# If the number of available hosts required is not reachable even by killing besteffort
-# jobs, the function returns (0,0,"")
-# parameters : base, jobid, nbmin, weight
-# return value : (nbnodes, state value, list of hostnames)
-# side effects : might mark some besteffort jobs as 'ToFrag' in the base
-sub get_free_nodes_job_killer($$$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $nbmin = shift;
-    my $jobWeight = shift;
-
-    my $doKill = 0;
-    my @liste_noeuds = get_free_nodes_job($dbh, $job_id,$jobWeight);
-    my $nbn = $#liste_noeuds+1;
-    my %rehash = ();
-    if ($nbn > 0){
-        %reshash = ("nbnodes"=> $nbn, "retval" => 0,"procs" => \@liste_noeuds);
-    }else{
-        %reshash = ("nbnodes"=> $nbn, "retval" => 0, "procs" => "");
-    }
-
-    # On a trouve assez de noeuds libres
-    if( $#liste_noeuds+1 >= $nbmin){
-        return %reshash;
-    }
-
-    # Chercher les noeuds qui verifient les proprietes et qui sont occupes
-    # par des jobs killable
-
-    # recuperer les contraintes exprime par le jobs
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    # Calcul des contraintes pour ne pas avoir les memes noeuds que le contenu de @liste_noeuds
-    my $hostConstraints = "";
-    foreach my $i (@liste_noeuds){
-        $hostConstraints .= " AND n.hostname != \"$i\"";
-    }
-
-    # Chercher les noeuds occupes ! (pas les libres) par des jobs "killable"
-    # (jobProperties)
-    # A CORRIGER: le poid est a 1 (au lieu de maxPoid ?)
-    # A CORRIGER: Je ne verifie pas que le job est bien a running
-    # (il devrait puisqu'il occupe des noeuds)
-    my $sth = $dbh->prepare("SELECT distinct n.hostname, n.weight, n.maxWeight, j.idJob, jb.weight
-                          FROM jobs jb, processJobs j, nodes n, nodeProperties p
-                          WHERE n.state=\"Alive\"
-                                AND j.hostname = n.hostname
-                                AND j.hostname = p.hostname
-                                AND j.idJob = jb.idJob
-                                AND jb.queueName = \"$besteffortQueueName\"
-                                AND n.maxWeight >= $jobWeight
-                                $hostConstraints
-                                $constraints");
-
-    $sth->execute();
-    my %res_noeuds ;
-    my %potentialNodeWeight ;
-    while (my @ref = $sth->fetchrow_array()) {
-        if ((defined($potentialNodeWeight{$ref[0]})) && ($potentialNodeWeight{$ref[0]} >= $jobWeight)){
-            next;
-        }
-        push(@{$res_noeuds{$ref[0]}}, $ref[3]);
-        if (defined($potentialNodeWeight{$ref[0]})){
-            $potentialNodeWeight{$ref[0]} += $ref[4];
-        }else{
-            $potentialNodeWeight{$ref[0]} = $ref[2] - $ref[1] + $ref[4];
-        }
-    }
-    $sth->finish();
-
-    my @res_empty = ();
-
-    my @goodNodes;
-    foreach my $i (keys(%res_noeuds)){
-        if ($potentialNodeWeight{$i} >= $jobWeight){
-            push(@goodNodes, $i);
-        }
-    }
-    # compter le nombre de noeuds potentiels
-    if ( $#goodNodes+1 + $#liste_noeuds+1 < $nbmin){
-        %reshash = ("nbnodes"=> 0, "retval"=> 0, "procs"=> "" );
-        return %reshash;
-    }
-
-    $doKill = 1;
-    # sinon tuer les jobs jusqu'a liberer suffisament de noeuds
-    # le choix des jobs est fait par
-    my @job_a_tuer;
-    for(my $i=0; $i < ($nbmin - ($#liste_noeuds+1)); $i++){
-        if (defined($res_noeuds{$goodNodes[$i]})){
-            foreach my $j (@{$res_noeuds{$goodNodes[$i]}}){
-                push(@job_a_tuer, $j );
-            }
-        }
-    }
-
-    # sort
-    @tri_job = sort(@job_a_tuer);
-    oar_debug("ICI".Dumper(@tri_job));
-    foreach my $i (@tri_job){
-        # tuer le job correspondant
-        frag_job($dbh, $i);
-    }
-
-    # on a tue des jobs
-    %reshash = ("nbnodes"=> 0, "retval"=> 1, "procs"=> "");
-    return %reshash;
-}
-
 
 
 # get_free_shareable_nodes_job
@@ -2228,115 +2052,6 @@ sub get_free_exclusive_nodes_job($$$) {
     $sth->finish();
     return @res;
 }
-
-
-
-# get_free_exclusive_nodes_job_nbmin
-# If possible, returns a triplet (number of nodes, state value, and ref to a list of
-# at least nbmin hostnames) in which the hostnames in the list match properties of the
-# job passed in parameter and can be used for an exclusive access.
-# The number of nodes can be greater than nbmin and is the actual number of free hosts.
-# The state value state wether some besteffort jobs (that is jobs having their BestEffort
-# flag to 'Yes') have been marked as 'ToFrag' (value 1) or not (value 0) in order to reach
-# the required number of nodes, in such a case the scheduler has to ensure that these
-# jobs have been killed before making use of the hosts.
-# If the number of available hosts required is not reachable even by killing besteffort
-# jobs, the function returns (0,0,"")
-# parameters : base, jobid, nbmin
-# return value : (nbnodes, state value, list of hostnames)
-# side effects : might mark some besteffort jobs as 'ToFrag' in the base
-sub get_free_exclusive_nodes_job_nbmin($$$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $nbmin = shift;
-    my $jobWeight = shift;
-
-    my $doKill = 0;
-    my @liste_noeuds = get_free_exclusive_nodes_job($dbh, $job_id,$jobWeight);
-    my $nbn = $#liste_noeuds+1;
-    my %rehash = ();
-    if ($nbn > 0){
-        %reshash = ("nbnodes"=> $nbn, "retval" => 0,"procs" => \@liste_noeuds);
-    }else{
-        %reshash = ("nbnodes"=> $nbn, "retval" => 0, "procs" => "");
-    }
-
-    # On a trouve assez de noeuds libres
-    if( $#liste_noeuds+1 >= $nbmin){
-        return %reshash;
-    }
-
-    # Chercher les noeuds qui verifie les proprietes et qui sont occupes
-    # par des jobs killable
-
-    # recuperer les contraintes exprime par le jobs
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    # Chercher les noeuds occupes ! (pas les libres) par des jobs "killable"
-    # (jobProperties)
-    # A CORRIGER: le poid est a 1 (au lieu de maxPoid ?)
-    # A CORRIGER: Je ne verifie pas que le job est bien a running
-    # (il devrait puisqu'il occupe des noeuds)
-    my $sth = $dbh->prepare("SELECT distinct n.hostname, j.idJob FROM processJobs j, nodes n, nodeProperties p, jobs jb
-                             WHERE n.state=\"Alive\"
-                             AND j.hostname = n.hostname
-                             AND n.hostname = p.hostname
-                             AND jb.idJob = j.idJob
-                             AND jb.queueName = \"$besteffortQueueName\"
-                             AND n.weight > 0 $constraints");
-
-    #Pour la prise en compte des poids des bestefforts
-    #SELECT distinct n.hostname, j.idJob, jb.weight FROM jobs jb, processJobs j, jobProperties p, nodes n WHERE jb.idJob = p.idJob AND #n.state="Alive" AND j.hostname = n.hostname AND j.idJob = p.idJob AND p.property = "Killable"  AND n.weight > 0 AND n.maxWeight >= 2;
-
-    $sth->execute();
-    my @res_noeuds = ();
-    my @res_job = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res_noeuds, $ref->{'hostname'});
-        push(@res_job, $ref->{'idJob'});
-    }
-    oar_debug("NOEUDS:".Dumper(@res_noeuds));
-    oar_debug("JOBS".Dumper(@res_job));
-    $sth->finish();
-
-    my @res_empty = ();
-
-    # compter le nombre de noeuds
-    if ( $#res_noeuds+1 + $#liste_noeuds+1 < $nbmin){
-        %reshash = ("nbnodes"=> 0, "retval"=> 0, "procs"=> "" );
-        return %reshash;
-    }
-
-    $doKill = 1;
-    my $i;
-    # sinon tuer les jobs jusqu'a liberer suffisament de noeuds
-    # le choix des jobs est fait par
-    for( $i=0; $i < ($nbmin - ($#liste_noeuds+1)); $i++){
-        if (defined($res_job[$i])){
-            push(@job_a_tuer, $res_job[$i] );
-        }
-    }
-
-    # sort
-    @tri_job = sort(@job_a_tuer);
-    oar_debug("ICI".Dumper(@tri_job));
-    # uniq
-    my $prevjob="";
-    for( $i=0; $i < ($nbmin - ($#liste_noeuds+1)); $i++){
-        if ($prevjob ne $tri_job[$i]){
-            # tuer le job correspondant
-            frag_job($dbh, $tri_job[$i]);
-            # ne pas le faire 2 fois
-            $prevjob = $tri_job[$i];
-        }
-    }
-
-    # on a tue des jobs
-    %reshash = ("nbnodes"=> 0, "retval"=> 1, "procs"=> "");
-    return %reshash;
-}
-
 
 
 # get_alive_node_job
@@ -2670,48 +2385,6 @@ sub get_resources_on_node($$) {
 }
 
 
-
-# set_weight_node
-# sets the current weight of node whose hostname is passed in parameter
-# parameters : base, hostname, weight
-# return value : /
-# side effects : changes the weight value in some field of the nodes table
-sub set_weight_node($$$) {
-    my $dbh = shift;
-    my $hostname = shift;
-    my $weight = shift;
-
-    my $sth = $dbh->prepare("UPDATE nodes SET weight = \"$weight\"
-                             WHERE hostname =\"$hostname\"");
-    $sth->execute();
-    $sth->finish();
-}
-
-
-
-# decrease_weight
-# decrease the current weight of all nodes on which some job is executed.
-# The value withdrawn from the weight of nodes is the weight of the job.
-# parameters : base, jobid
-# return value : /
-# side effects : changes the weight value in several fields of the nodes table
-sub decrease_weight($$) {
-    my $dbh = shift;
-    my $idjob = shift;
-    my @hosts = get_job_current_hostnames($dbh,$idjob);
-
-    my $job = get_job($dbh,$idjob);
-    my $w = $job->{'weight'};
-
-    foreach my $host (@hosts) {
-        my $current_w = get_weight_node($dbh,$host) - $w;
-        #print "Decrease weight node : $nodes new weight : $current_w (w $w) \n";
-        set_weight_node($dbh,$host,$current_w);
-    }
-}
-
-
-
 # set_node_state
 # sets the state field of some node identified by its hostname in the base.
 # parameters : base, hostname, state, finaudDecision
@@ -2807,17 +2480,19 @@ sub set_node_nextState($$$) {
 }
 
 
-# update_node_nextFinaudDecision
+# update_resource_nextFinaudDecision
 # update nextFinaudDecision field
-# parameters : base, hostname, "YES" or "NO"
-# return value : /
-sub update_node_nextFinaudDecision($$$){
+# parameters : base, resourceId, "YES" or "NO"
+sub update_resource_nextFinaudDecision($$$){
     my $dbh = shift;
-    my $hostname = shift;
+    my $resourceId = shift;
     my $finaud = shift;
 
-    $dbh->do("UPDATE nodes SET nextFinaudDecision = \"$finaud\"
-              WHERE hostname =\"$hostname\"");
+    $dbh->do("  UPDATE resources
+                SET nextFinaudDecision = \"$finaud\"
+                WHERE
+                    resourceId = $resourceId
+             ");
 }
 
 
@@ -3657,27 +3332,6 @@ sub get_unix_timestamp($) {
     return($timestamp);
 }
 
-# MESSAGES, INTERNAL STATE AND DEBUGGING
-
-# show_table
-# prints (using dumper) the table whose name is passed in parameter
-# parameters : base, table
-# return value : /
-# side effects : prints the required table
-sub show_table($$) {
-    my $dbh = shift;
-    my $table = shift;
-
-    # Now retrieve data from the table.
-    my $sth = $dbh->prepare("SELECT * FROM $table");
-    $sth->execute();
-
-    while (my $ref = $sth->fetchrow_hashref()) {
-        dumper($ref);
-    }
-    $sth->finish();
-}
-
 
 # ACCOUNTING
 
@@ -3826,8 +3480,8 @@ sub add_new_event_with_host($$$$$){
     $sth->finish();
     
     foreach my $n (@{$hostnames}){
-        $dbh->do("  INSERT INTO events_log_resources (idEvent,idResource)
-                    VALUES ($idEvent,$n)
+        $dbh->do("  INSERT INTO events_log_hostnames (idEvent,hostname)
+                    VALUES ($idEvent,\"$n\")
                  ");
     }
     #$dbh->do("UNLOCK TABLES");
@@ -3881,17 +3535,16 @@ sub get_hostname_event($$){
     my $dbh = shift;
     my $eventId = shift;
 
-    my $sth = $dbh->prepare("   SELECT b.networkAddress
-                                FROM events_log_resources a, resources b
+    my $sth = $dbh->prepare("   SELECT hostname
+                                FROM events_log_hostnames
                                 WHERE
                                     idEvent = $eventId
-                                    AND a.idResource = b.resourceId
                             ");
     $sth->execute();
 
     my @results;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@results, $ref->{networkAddress});
+        push(@results, $ref->{hostname});
     }
     $sth->finish();
 
