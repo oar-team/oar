@@ -10,7 +10,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 
 sub usage {
-    print STDERR "usage: qresume [idJob]\n";
+    warn("usage: qresume [idJob]\n");
     exit 1;
 }
 
@@ -21,14 +21,14 @@ my $remote_port = get_conf("SERVER_PORT");
 usage if (@ARGV < 1);
 
 my $idJob = $ARGV[0];
-print "idJob = $idJob\n";
+print("idJob = $idJob\n");
 
 my $base = iolib::connect();
 my $err = iolib::resume_job($base,$idJob);
 iolib::disconnect($base);
 
 if ($err != 0) {
-    print STDERR "Can't resume $idJob error = $err\n";
+    warn("Cannot resume $idJob error = $err\n");
     exit 1;
 }
 
