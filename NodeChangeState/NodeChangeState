@@ -61,7 +61,7 @@ foreach my $i (@events_to_check){
 
 
 # Treate nextState field
-my %resources_to_change = iolib::get_resource_change_state($base);
+my %resources_to_change = iolib::get_resources_change_state($base);
 
 #A Term command must be added in the Almighty
 oar_debug("[NodeChangeState] number of resources to change state = ".keys(%resources_to_change)."\n");
