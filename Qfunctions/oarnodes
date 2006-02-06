@@ -119,16 +119,16 @@ if ($#resources >= 0){
             print("$a\n");
             foreach my $b (sort(keys(%{$data_to_display{$a}}))){
                 if ($b eq "properties"){
-                    my $str = "properties = ";
+                    my $str = "properties : ";
                     foreach my $prop (sort(keys(%{$data_to_display{$a}->{$b}}))){
                         $str .= "$prop=$data_to_display{$a}->{$b}->{$prop},"
                     }
                     chop($str);
                     print("        $str\n");
                 }elsif ($b eq "jobs"){
-                    print("        jobs = @{$data_to_display{$a}->{$b}}\n");
+                    print("        job : @{$data_to_display{$a}->{$b}}\n");
                 }else{
-                    print("        $b --> $data_to_display{$a}->{$b}\n");
+                    print("        $b : $data_to_display{$a}->{$b}\n");
                 }
             }
             print("\n");
@@ -184,7 +184,7 @@ if (defined($stateMode)){
         foreach my $d (sort(keys(%data_to_display))){
             print("$d\n");
             foreach my $e (sort(keys(%{$data_to_display{$d}}))){
-                print("    $e --> $data_to_display{$d}->{$e}\n");
+                print("    $e : $data_to_display{$d}->{$e}\n");
             }
             print("\n");
         }
@@ -261,16 +261,16 @@ if (defined($stateMode)){
                 print("    $b\n");
                 foreach my $c (sort(keys(%{$data_to_display{$a}->{$b}}))){
                     if ($c eq "properties"){
-                        my $str = "properties = ";
+                        my $str = "properties : ";
                         foreach my $prop (sort(keys(%{$data_to_display{$a}->{$b}->{$c}}))){
                             $str .= "$prop=$data_to_display{$a}->{$b}->{$c}->{$prop},"
                         }
                         chop($str);
                         print("        $str\n");
                     }elsif ($c eq "jobs"){
-                        print("        jobs = @{$data_to_display{$a}->{$b}->{$c}}\n");
+                        print("        jobs : @{$data_to_display{$a}->{$b}->{$c}}\n");
                     }else{
-                        print("        $c --> $data_to_display{$a}->{$b}->{$c}\n");
+                        print("        $c : $data_to_display{$a}->{$b}->{$c}\n");
                     }
                 }
                 print("\n");

@@ -22,6 +22,7 @@ sub getDefaultLeonSoftWalltime();
 sub getDefaultLeonWalltime();
 sub checkClientHostIP($$$);
 sub fork_no_wait($);
+sub launch_command($);
 
 
 # Get default Leon walltime value for Sarko
@@ -188,6 +189,21 @@ sub fork_no_wait($){
         }
     }
     return($pid);
+}
+
+
+# exec a command, wait its end and return exit codes
+# arg : command
+sub launch_command($){
+    my $command = shift;
+
+    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin:$ENV{OARDIR}";
+    system($command);
+    my $exit_value  = $? >> 8;
+    my $signal_num  = $? & 127;
+    my $dumped_core = $? & 128;
+        
+    return($exit_value,$signal_num,$dumped_core);
 }
 
 return 1;

@@ -15,7 +15,7 @@ oar_debug("[finaud] Check Alive and Suspected nodes\n");
 my $base = iolib::connect();
 
 my $Occupied_resources_vector;
-for my $r (@{iolib::get_current_assigned_resources($base)}){
+for my $r (iolib::get_current_assigned_resources($base)){
     vec($Occupied_resources_vector,$r,1) = 1;
 }
 

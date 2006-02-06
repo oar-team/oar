@@ -245,7 +245,7 @@
        xlink:href="#linearGradient2074"
        id="linearGradient3929"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.426410,0.000000,0.000000,0.228007,217.2598,222.3275)"
+       gradientTransform="matrix(1.42641,0,0,0.228007,217.2598,222.3275)"
        x1="143.78571"
        y1="244.50504"
        x2="247.64285"
@@ -490,7 +490,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
      inkscape:cx="337.67356"
-     inkscape:cy="492.54614"
+     inkscape:cy="272.99422"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showguides="true"
@@ -1052,25 +1052,24 @@
          style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#ff0000;stroke-width:1.7640572px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000" />
     </g>
     <g
-       id="g3709"
-       transform="translate(-600.3137,-628.3504)">
+       id="g1819">
       <g
-         transform="translate(618.2134,-517.1981)"
+         transform="translate(17.8997,-1145.548)"
          id="g3375">
         <g
            id="g3070">
           <g
-             transform="matrix(1.000000,0.000000,0.000000,1.134404,-375.7142,1462.657)"
+             transform="matrix(1,0,0,1.134404,-375.7142,1462.657)"
              id="g2673">
             <rect
-               style="opacity:1.0000000;fill:#00001f;fill-opacity:0.075697191;fill-rule:evenodd;stroke:#000000;stroke-width:2.3088326;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:0.63346612"
+               style="opacity:1;fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:#000000;stroke-width:2.30883265;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
                id="rect2675"
                width="173.45547"
                height="35.409496"
                x="421.12943"
                y="288.00159" />
             <rect
-               style="opacity:1.0000000;fill:url(#linearGradient3929);fill-opacity:1.0000000;fill-rule:evenodd;stroke:#000000;stroke-width:0.57029086;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:0.63346612"
+               style="opacity:1;fill:url(#linearGradient3929);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.57029086;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
                id="rect2677"
                width="146.71645"
                height="17.914848"
@@ -1081,17 +1080,17 @@
              id="text2689"
              y="1782.3622"
              x="54.285713"
-             style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
              xml:space="preserve"><tspan
                y="1782.3622"
                x="54.285713"
                id="tspan2691"
-               sodipodi:role="line">events_log_resources</tspan></text>
+               sodipodi:role="line">events_log_hostnames</tspan></text>
           <text
              id="text2693"
              y="1806.6479"
              x="54.285713"
-             style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
              xml:space="preserve"><tspan
                id="tspan2697"
                y="1806.6479"
@@ -1100,21 +1099,21 @@
                id="tspan2699"
                y="1821.6479"
                x="54.285713"
-               sodipodi:role="line">idResource</tspan></text>
+               sodipodi:role="line">hostname</tspan></text>
         </g>
         <path
-           style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#0000ff;stroke-width:1.4826182px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000"
+           style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#0000ff;stroke-width:1.48261821px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
            d="M 54.741837,1823.2547 L 120.68654,1823.2547"
            id="path3215" />
       </g>
       <path
          id="path3461"
-         d="M 673.11070,1290.6983 L 719.80980,1290.6983"
-         style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#ff0000;stroke-width:1.3334420px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000" />
+         d="M 72.797,662.3479 L 119.4961,662.3479"
+         style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#ff0000;stroke-width:1.33344197px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
       <path
          id="path3471"
-         d="M 673.46270,1307.8709 L 738.65073,1307.8709"
-         style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#ff0000;stroke-width:1.5754471px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000" />
+         d="M 73.149,679.5205 L 138.33703,679.5205"
+         style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#ff0000;stroke-width:1.57544708px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     </g>
     <g
        id="g3750"

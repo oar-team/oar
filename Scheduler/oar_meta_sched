@@ -10,24 +10,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Gant;
 use Data::Dumper;
 use oar_scheduler;
-
-sub launch_command($){
-        my $command = shift;
-        oar_debug("[MetaSched] Launching command : [$command]\n");
-        $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
-        system($command);
-        my $exit_value  = $? >> 8;
-        my $signal_num  = $? & 127;
-        my $dumped_core = $? & 128;
-        oar_debug("[MetaSched] $command terminated :\n");
-        oar_debug("[MetaSched] Exit value : $exit_value\n");
-        oar_debug("[MetaSched] Signal num : $signal_num\n");
-        oar_debug("[MetaSched] Core dumped : $dumped_core\n");
-        if ($signal_num || $dumped_core){
-            die("[MetaSched] Something wrong occured (signal or core dumped) !!!\n");
-        }
-        return($exit_value);
-}
+use oar_Tools;
 
 
 my $exit_code = 0;
@@ -41,7 +24,7 @@ if (defined($ENV{OARDIR})){
     die("[MetaSched] OARDIR env variable must be defined\n");
 }
 
-oar_debug("[MetaSched] Begining of meta scheduler\n");
+oar_debug("[MetaSched] Start of meta scheduler\n");
 
 oar_scheduler::init_scheduler($base);
 
@@ -55,12 +38,15 @@ foreach my $i (@queues){
     my $waitingJobs = iolib::is_waiting_job_specific_queue_present($base,$name);
     if ($waitingJobs == 1){
         oar_debug("[MetaSched] Launching scheduler $name with $policy at time $initialTime{sql}\n");
-        my $sched_exit_code = launch_command("$binpath/$policy $name $initialTime{sec} \"$initialTime{sql}\"");
+        my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = oar_Tools::launch_command("$binpath/$policy $name $initialTime{sec} \"$initialTime{sql}\"");
+        if (($sched_signal_num != 0) || ($sched_dumped_core != 0)){
+            die("[MetaSched] Something wrong occured (signal or core dumped)!!!\n");
+        }
         if ($sched_exit_code == 1){
             $exit_code = 1;
         }elsif($sched_exit_code != 0){
             oar_error("[MetaSched] Scheduler $binpath/$policy on queue $name at time $initialTime{sec} returns a bad value : $sched_exit_code\n");
-            $exit_code = 3;
+            #$exit_code = 3;
         }
         if (oar_scheduler::treate_waiting_reservation_jobs($base,$name) != 0){
             $exit_code = 1;

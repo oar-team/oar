@@ -25,11 +25,11 @@ WRITE, events_log WRITE, events_log_hostnames WRITE, resourceStates_log WRITE");
 
 my $resource_ref = iolib::get_resource_info($base,$Resource);
 if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
-    my $sth = $base->prepare("  SELECT b.idJob, b.assignedMoldableJob
-                                FROM assignedResources a, jobs b
+    my $sth = $base->prepare("  SELECT jobs.idJob, jobs.assignedMoldableJob
+                                FROM assignedResources, jobs
                                 WHERE
-                                    a.idResource = $Resource
-                                    AND a.idMoldableJob = b.assignedMoldableJob
+                                    assignedResources.idResource = $Resource
+                                    AND assignedResources.idMoldableJob = jobs.assignedMoldableJob
                              ");
     $sth->execute();
     my @jobList;

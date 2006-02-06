@@ -24,6 +24,7 @@ my $Server;
 my $Job_id;
 my $Interactive = 0;
 my $Reservation = "0";
+my $Default_resources;
 my $connectResa ;
 my @resource;
 my $Queue_name;
@@ -129,6 +130,12 @@ init_conf("oar.conf");
 $remote_host = get_conf("SERVER_HOSTNAME");
 $remote_port = get_conf("SERVER_PORT");
 $stageindir = get_conf("STAGEIN_DIR");
+
+$Default_resources = get_conf("OARSUB_DEFAULT_RESOURCES");
+if (!defined($Default_resources)){
+    $Default_resources = "/resourceId=1";
+}
+    
 
 $deploy_hostname = get_conf("DEPLOY_HOSTNAME");
 if (!defined($deploy_hostname)){
@@ -344,6 +351,9 @@ if ($Interactive == 0) {
         push(@resource, @{$scan_result{resource}});
     }
 
+    if ($#resource < 0){
+        push(@resource, $Default_resources);
+    }
     my @resource_list = parse_resource_descriptions(\@resource);
     my %type_values = parse_type(\@Type);
 
@@ -368,6 +378,9 @@ if ($Interactive == 0) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
+    if ($#resource < 0){
+        push(@resource, $Default_resources);
+    }
     my @resource_list = parse_resource_descriptions(\@resource);
     my %type_values = parse_type(\@Type);
     print(Dumper(\@resource_list));

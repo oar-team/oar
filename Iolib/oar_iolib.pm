@@ -1465,10 +1465,12 @@ sub is_waiting_job_specific_queue_present($$){
     my $dbh = shift;
     my $queue = shift;
 
-    my $sth = $dbh->prepare("SELECT count(*) FROM jobs j
-                             WHERE j.state=\"Waiting\"
-                                AND j.queueName = \"$queue\"
-                             LIMIT 1
+    my $sth = $dbh->prepare("   SELECT count(*)
+                                FROM jobs
+                                WHERE
+                                    state=\"Waiting\"
+                                    AND queueName = \"$queue\"
+                                LIMIT 1
                             ");
     $sth->execute();
     my ($res) = $sth->fetchrow_array();
@@ -2790,10 +2792,12 @@ sub order_property_node($$$){
 # side effects : /
 sub get_active_queues($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT queueName,schedulerPolicy
-                             FROM queues
-                             WHERE state = \"Active\"
-                             ORDER BY priority DESC");
+    my $sth = $dbh->prepare("   SELECT queueName,schedulerPolicy
+                                FROM queues
+                                WHERE
+                                    state = \"Active\"
+                                ORDER BY priority DESC
+                            ");
     $sth->execute();
     my $res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
