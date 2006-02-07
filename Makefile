@@ -87,15 +87,12 @@ server:
 	install -m 0755 Runner/runner $(OARDIR)
 	install -m 0755 Sarko/sarko $(OARDIR)
 	install -m 0755 Sarko/finaud $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_fifo $(OARDIR)
 	install -m 0644 Scheduler/Gant.pm $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant_g5k $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant_besteffort_deploy_aware $(OARDIR)
 	install -m 0755 Scheduler/oar_meta_sched $(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_fifo_queue $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_fifo_queue_killer $(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnotify
 	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
@@ -106,6 +103,7 @@ server:
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
+	install -m 0644 Tools/oar_tree.pm $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)
@@ -131,6 +129,7 @@ user:
 	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
+	install -m 0644 Tools/oar_tree.pm $(OARDIR)
 
 node:
 	install -d -m 0755 $(OARDIR)
