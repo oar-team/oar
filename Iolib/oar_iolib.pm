@@ -16,8 +16,8 @@ use oar_conflib qw(init_conf get_conf is_conf);
 use Data::Dumper;
 use Time::Local;
 use oar_Judas qw(oar_debug oar_warn oar_error);
-# WE SHOULD FORCE USE STRICT !!!
-#use strict;
+use strict;
+use oar_tree;
 
 # PROTOTYPES
 
@@ -47,8 +47,6 @@ sub get_possible_wanted_resources($$$$$);
 sub add_micheline_job($$$$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
-sub get_job_list(@);
-sub shift_job(\@);
 sub get_job($$);
 sub get_moldable_job($$);
 sub set_job_state($$$);
@@ -615,15 +613,15 @@ sub get_possible_wanted_resources($$$$$){
     }
     
     #Get only wanted resources
-    my %resource_hash;
+    #my %resource_hash;
     my $resource_string;
     foreach my $r (@wanted_resources){
         $resource_string .= " $r->{resource},";
-        $resource_hash{$r->{resource}} = $r->{value};
+        #$resource_hash{$r->{resource}} = $r->{value};
     }
     chop($resource_string);
 
-    print("$sql_where_string\n");
+    #print("$sql_where_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resourceProperties
                              WHERE
@@ -635,24 +633,12 @@ sub get_possible_wanted_resources($$$$$){
     
     # Initialize root
     my $result ;
-    my $root_tree = [];
-    $result->[0] = $root_tree;
-    $result->[2] = $wanted_resources[0]->{resource};
-    while (my $ref = $sth->fetchrow_hashref()) {
+    $result = oar_tree::new();
+    while (my @sql = $sth->fetchrow_array()) {
         my $father_ref = $result;
-        for (my $i = 0; $i <= $#wanted_resources; $i++){
-            # Feed thee tree for all resources
-            my $resource_value = $ref->{$wanted_resources[$i]->{resource}};
-            if ($i >= $#wanted_resources){
-                # Leaf
-                $father_ref->[1]->{$resource_value} = [ $father_ref, {} ];
-            }else{
-                if (!defined($father_ref->[1]->{$resource_value})){
-                    # Initialize value of the father
-                    $father_ref->[1]->{$resource_value} = [ $father_ref, undef, $wanted_resources[$i + 1]->{resource} ];
-                }
-                $father_ref = \@{$father_ref->[1]->{$resource_value}};
-            }
+        foreach (my $i = 0; $i <= $#wanted_resources; $i++){
+            # Feed the tree for all resources
+            $father_ref = oar_tree::add_child($father_ref, $wanted_resources[$i]->{resource}, $sql[$i]);
         }
     }
     
@@ -670,63 +656,60 @@ sub get_possible_wanted_resources($$$$$){
             # Initialize index where we are for the node
             $level_index{$current_node} = 0;
         }
-        my @child = sort(keys(%{$current_node->[1]}));
+        my @child = sort(oar_tree::get_children_list($current_node));
         #print("Child = @child --> $resource_hash{$current_node->[2]} ; $level_index{$current_node}\n");
-        if ($resource_hash{$current_node->[2]} > ($#child + 1)){
+        if ($wanted_resources[oar_tree::get_current_level($current_node)]->{value} > ($#child + 1)){
             # Delete sub tree that does not fit with wanted resources 
             #print("Delete @child\n");
-            $tmp_current_node = $current_node->[0];
-            my @tmp = sort(keys(%{$current_node->[0]->[1]}));
-            my $father_key_name = $tmp[$level_index{$current_node->[0]} - 1];
+            my $tmp_current_node = oar_tree::get_father($current_node);
+            my @tmp = sort(oar_tree::get_children_list($tmp_current_node));
+            my $father_key_name = $tmp[$level_index{$tmp_current_node} - 1];
             if (!defined($father_key_name)){
                 # No matching records (we want to delete the root)
                 return(undef);
             }
             #print("Key father : $father_key_name\n");
             $current_node = $tmp_current_node;
-            delete($current_node->[1]->{$father_key_name});
+            oar_tree::delete_subtree(oar_tree::get_a_child($current_node, $father_key_name));
             $level_index{$current_node} --;
         }else{
-            if (defined($child[$level_index{$current_node}]) and defined($current_node->[1]->{$child[$level_index{$current_node}]})){
+            if (defined($child[$level_index{$current_node}]) and defined(oar_tree::get_a_child($current_node, $child[$level_index{$current_node}]))){
                 # Go to child
                 #print("GO to  Child = $child[$level_index{$current_node}]\n");
                 my $tmp_current_node = $current_node;
-                $current_node = $current_node->[1]->{$child[$level_index{$current_node}]};
+                $current_node = oar_tree::get_a_child($current_node, $child[$level_index{$current_node}]);
                 $level_index{$tmp_current_node} ++;
             }else{
                 # Treate leaf
-                my @brothers = sort(keys(%{$current_node->[0]->[1]}));
-                while(($current_node != $root_tree) and !defined($brothers[$level_index{$current_node->[0]}])){
-                    $level_index{$current_node->[0]} ++;
-                    $current_node = $current_node->[0];
-                    @brothers = sort(keys(%{$current_node->[0]->[1]}));
+                my @brothers = sort(oar_tree::get_children_list(oar_tree::get_father($current_node)));
+                while(defined($current_node) and !defined($brothers[$level_index{oar_tree::get_father($current_node)}])){
+                    $level_index{oar_tree::get_father($current_node)} ++;
+                    $current_node = oar_tree::get_father($current_node);
+                    @brothers = sort(oar_tree::get_children_list(oar_tree::get_father($current_node)));
                 }
-                if (defined($brothers[$level_index{$current_node->[0]}])){
+                if (defined($brothers[$level_index{oar_tree::get_father($current_node)}])){
                     # Treate brother
                     #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                    $current_node = $current_node->[0]->[1]->{$brothers[$level_index{$current_node->[0]}]};
-                    $level_index{$current_node->[0]} ++;
+                    $current_node = oar_tree::get_a_child(oar_tree::get_father($current_node), $brothers[$level_index{oar_tree::get_father($current_node)}]);
+                    $level_index{oar_tree::get_father($current_node)} ++;
                 }
             }
         }
-    }while($current_node != $root_tree);
+    }while(defined($current_node));
 
-    #Clean result 
-    $result->[0] = [];
     return($result);
 }
 
 
-# get_tree_leaf_names
-# return a list of tree leaf names
+# get_tree_leaf
+# return a list of tree leaf
 # arg: tree ref
-sub get_tree_leaf_names($){
+sub get_tree_leaf($){
     my $tree = shift;
 
-    return(undef) if (!defined($tree));
-    
     my @result;
-    my $root_tree = $tree->[0];
+    return(@result) if (!defined($tree));
+    
     # Search leafs
     # Tremaux algorithm
     my $current_node = $tree;
@@ -737,41 +720,41 @@ sub get_tree_leaf_names($){
             # Initialize index where we are for the node
             $level_index{$current_node} = 0;
         }
-        my @child = sort(keys(%{$current_node->[1]}));
-        if (defined($child[$level_index{$current_node}]) and defined($current_node->[1]->{$child[$level_index{$current_node}]})){
+        my @child = sort(oar_tree::get_children_list($current_node));
+        if (defined($child[$level_index{$current_node}]) and defined(oar_tree::get_a_child($current_node, $child[$level_index{$current_node}]))){
             # Go to child
             #print("GO to  Child = $child[$level_index{$current_node}]\n");
-            unshift(@node_name_pile, $child[$level_index{$current_node}]);
+            #unshift(@node_name_pile, $child[$level_index{$current_node}]);
+            unshift(@node_name_pile, oar_tree::get_a_child($current_node, $child[$level_index{$current_node}]));
             my $tmp_current_node = $current_node;
-            $current_node = $current_node->[1]->{$child[$level_index{$current_node}]};
+            $current_node = oar_tree::get_a_child($current_node, $child[$level_index{$current_node}]);
             $level_index{$tmp_current_node} ++;
         }else{
             # Treate leaf
-            if (!defined($current_node->[1]->{$child[$level_index{$current_node}]})){
+            if (!defined(oar_tree::get_a_child($current_node, $child[$level_index{$current_node}]))){
                 push(@result, $node_name_pile[0]);
+                #push(@result, $current_node);
                 #print("Leaf: ".$node_name_pile[0]."\n");
             }
             # Look at brothers
-            my @brothers = sort(keys(%{$current_node->[0]->[1]}));
-            while(($current_node != $root_tree) and !defined($brothers[$level_index{$current_node->[0]}])){
+            my @brothers = sort(oar_tree::get_children_list(oar_tree::get_father($current_node)));
+            while(defined($current_node) and !defined($brothers[$level_index{oar_tree::get_father($current_node)}])){
                 shift(@node_name_pile);
-                $level_index{$current_node->[0]} ++;
-                $current_node = $current_node->[0];
-                @brothers = sort(keys(%{$current_node->[0]->[1]}));
+                $current_node = oar_tree::get_father($current_node);
+                $level_index{$current_node} ++;
+                @brothers = sort(oar_tree::get_children_list(oar_tree::get_father($current_node)));
             }
-            if (defined($brothers[$level_index{$current_node->[0]}])){
+            if (defined($brothers[$level_index{oar_tree::get_father($current_node)}])){
                 # Treate brother
-                unshift(@node_name_pile, $brothers[$level_index{$current_node->[0]}]);
+                #unshift(@node_name_pile, $brothers[$level_index{oar_tree::get_father($current_node)}]);
+                unshift(@node_name_pile, oar_tree::get_a_child(oar_tree::get_father($current_node), $brothers[$level_index{oar_tree::get_father($current_node)}]));
                 #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                $current_node = $current_node->[0]->[1]->{$brothers[$level_index{$current_node->[0]}]};
-                $level_index{$current_node->[0]} ++;
+                $current_node = oar_tree::get_a_child(oar_tree::get_father($current_node), $brothers[$level_index{oar_tree::get_father($current_node)}]);
+                $level_index{oar_tree::get_father($current_node)} ++;
             }
         }
-    }while($current_node != $root_tree);
+    }while(defined($current_node));
 
-    #Clean tree
-    $tree->[0] = [];
-    
     return(@result);
 }
 
@@ -857,8 +840,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
                 print("There are not enough resources for your request\n");
                 return(-5);
             }else{
-                my @id_list = get_tree_leaf_names($tree);
-                push(@resource_id_list, @id_list);
+                my @leafs = get_tree_leaf($tree);
+                foreach my $l (@leafs){
+                    push(@resource_id_list, oar_tree::get_current_resource_value($l));
+                }
             }
         }
     }
@@ -928,7 +913,7 @@ sub get_oldest_waiting_idjob($) {
 
     my $sth = $dbh->prepare("SELECT MIN(idJob) FROM jobs j WHERE j.state=\"Waiting\"");
     $sth->execute();
-    $ref = $sth->fetchrow_hashref();
+    my $ref = $sth->fetchrow_hashref();
     my @tmp = values %$ref;
     my $id = $tmp[0];
     $sth->finish();
@@ -958,7 +943,7 @@ sub get_oldest_waiting_idjob_by_queue($$) {
                              WHERE j.state=\"Waiting\"
                              AND j.queueName=\"$queue\"");
     $sth->execute();
-    $ref = $sth->fetchrow_hashref();
+    my $ref = $sth->fetchrow_hashref();
     my @tmp = values %$ref;
     my $id = $tmp[0];
     $sth->finish();
@@ -968,84 +953,6 @@ sub get_oldest_waiting_idjob_by_queue($$) {
     }
     return $id;
 }
-
-
-
-# get_job_list
-# generic function, could replace all the special cases.
-# returns a flat list of all jobs matching criterion given as parameters.
-# criterion is given as a flatened list of couples (name, value) and is
-# interpreted as the conjonction of all the relations 'name=value'
-# some minor analysis is made on values to differentiate numerical values from
-# alphabetical ones.
-# parameters : base, criteria list
-# return value : flatened list of job tuples (as found in the base)
-# side effects : /
-sub get_job_list(@) {
-    my $dbh = shift;
-    my @criteria_list=@_;
-    my $request="SELECT * FROM jobs";
-
-    if (scalar @criteria_list){
-        my $criterion=shift @criteria_list;
-        my $value=shift @criteria_list;
-        if ($value =~ /^[0-9]*\.?[0-9]*$/){
-            $request=$request." WHERE $criterion=$value";
-        }
-        else{
-            $request=$request." WHERE $criterion=\"$value\"";
-        }
-    }
-    while (scalar @criteria_list){
-        my $criterion=shift @criteria_list;
-        my $value=shift @criteria_list;
-        if ($value =~ /^[0-9]*\.?[0-9]*$/){
-            $request=$request." AND $criterion=$value ";
-        }else{
-            $request=$request." AND $criterion=\"$value\" ";
-        }
-    }
-    $request=$request." ORDER BY idJob ASC";
-    my $sth = $dbh->prepare($request);
-    $sth->execute();
-
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, %$ref);
-    }
-    $sth->finish();
-    return @res;
-}
-
-
-
-# shift_job
-# extract one job from the flatened list passed in parameter.
-# typically of use to extract jobs from the list returned by get_job_list
-# actually works by reconstituting a hash from the couples of the list,
-# stopping when finding a value already defined.
-# remove the taken job from the passed list (as does shift).
-# parameters : jobs list
-# return value : job (as a flatened hash)
-# side effects : /
-sub shift_job(\@){
-    local(*params)=@_;
-    my %job=();
-
-    if (scalar @params){
-        my $elt=shift @params;
-
-        while (scalar @params && !defined($job{$elt})){
-            my $value=shift @params;
-            $job{$elt}=$value;
-            $elt=shift @params;
-        }if (scalar @params){
-            unshift @params,$elt;
-        }
-    }
-    return %job;
-}
-
 
 
 # get_job
@@ -2069,9 +1976,9 @@ sub get_alive_node_job($$$) {
 
     my $constraints = get_constraint_string($dbh,$job_id);
 
-    $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
-                          WHERE n.hostname = p.hostname
-                          AND n.maxWeight >= $weight
+    my $sth = $dbh->prepare("   SELECT n.hostname FROM nodes n, nodeProperties p
+                                WHERE n.hostname = p.hostname
+                                    AND n.maxWeight >= $weight
                           AND ( n.state = \"Alive\" or
                           n.state = \"Suspected\" or
                           n.state = \"Absent\" )
@@ -2100,7 +2007,7 @@ sub get_really_alive_node_job($$$) {
 
     my $constraints = get_constraint_string($dbh,$job_id);
 
-    $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
+    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
                           WHERE n.hostname = p.hostname
                           AND n.maxWeight >= $weight
                           AND  n.state = \"Alive\"
@@ -2625,7 +2532,7 @@ sub get_all_nodes_properties($){
     my %res ;
     while (my $ref = $sth->fetchrow_hashref()) {
         #push(@res, $ref->{'idJob'}, $ref->{'jobType'}, $ref->{'infoType'});
-        push(@res, $ref);
+        #push(@res, $ref);
         $res{$ref->{hostname}} = $ref;
     }
     $sth->finish();
@@ -2799,7 +2706,7 @@ sub get_active_queues($) {
                                 ORDER BY priority DESC
                             ");
     $sth->execute();
-    my $res = ();
+    my @res ;
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, [ $ref->{'queueName'}, $ref->{'schedulerPolicy'} ]);
     }
@@ -3459,7 +3366,7 @@ sub add_new_event($$$$){
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
-    ($idFile) = values(%$ref);
+    my ($idFile) = values(%$ref);
     $sth->finish();
 }
 
@@ -3480,7 +3387,7 @@ sub add_new_event_with_host($$$$$){
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
-    ($idEvent) = values(%$ref);
+    my ($idEvent) = values(%$ref);
     $sth->finish();
     
     foreach my $n (@{$hostnames}){

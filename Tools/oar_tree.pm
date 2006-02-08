@@ -9,10 +9,12 @@ use Data::Dumper;
 # Prototypes
 sub new();
 sub add_child($$$);
-sub get_children($);
+sub get_children_list($);
 sub get_a_child($$);
 sub get_father($);
-sub get_current_resource($);
+sub get_current_resource_name($);
+sub get_current_resource_value($);
+sub get_current_level($);
 sub delete_subtree($);
 
 
@@ -27,6 +29,7 @@ sub new(){
     $tree_ref->[1] = undef ;            # ref of a hashtable with children
     $tree_ref->[2] = undef ;            # name of the resource
     $tree_ref->[3] = undef ;            # value of this resource
+    $tree_ref->[4] = 0 ;                # level indicator
 
     return($tree_ref);
 }
@@ -41,11 +44,13 @@ sub add_child($$$){
     my $resource_name = shift;
     my $resource_value = shift;
 
-    $tree_ref->[2] = $resource_name;
+    #$tree_ref->[2] = $resource_name;
     if (!defined($tree_ref->[1]->{$resource_value})){
         # Initialize value of the father
-        $tree_ref->[1]->{$resource_value} = [ $tree_ref, undef, undef, $resource_value ];
+        $tree_ref->[1]->{$resource_value} = [ $tree_ref, undef, $resource_name, $resource_value, 0 ];
     }
+
+    $tree_ref->[1]->{$resource_value}->[4] = get_current_level($tree_ref) + 1;
 
     return(\@{$tree_ref->[1]->{$resource_value}});
 }
@@ -57,7 +62,11 @@ sub add_child($$$){
 sub get_children_list($){
     my $tree_ref = shift;
 
-    return(keys(%{$tree_ref->[1]}));
+    if (!defined($tree_ref) || !defined($tree_ref->[1])){
+        return(undef);
+    }else{
+        return(keys(%{$tree_ref->[1]}));
+    }
 }
 
 
@@ -68,7 +77,11 @@ sub get_a_child($$){
     my $tree_ref = shift;
     my $child_name = shift;
 
-    return($tree_ref->[1]->{$child_name});
+    if (!defined($tree_ref) || !defined($tree_ref->[1]) || !defined($tree_ref->[1]->{$child_name})){
+        return(undef);
+    }else{
+        return($tree_ref->[1]->{$child_name});
+    }
 }
 
 # Get the ref of the tree father
@@ -77,17 +90,53 @@ sub get_a_child($$){
 sub get_father($){
     my $tree_ref = shift;
 
-    return($tree_ref->[0]);
+    if (!defined($tree_ref) || !defined($tree_ref->[0])){
+        return(undef);
+    }else{
+        return($tree_ref->[0]);
+    }
 }
 
 
-# Get the current resource name and value
+# Get the current resource name
 # arg : tree ref
-# return the resource name and value
-sub get_current_resource($){
+# return the resource name
+sub get_current_resource_name($){
     my $tree_ref = shift;
 
-    return($tree_ref->[2], $tree_ref->[3]);
+    if (!defined($tree_ref) || !defined($tree_ref->[2])){
+        return(undef);
+    }else{
+        return($tree_ref->[2]);
+    }
+}
+
+
+# Get the current resource value
+# arg : tree ref
+# return the resource value
+sub get_current_resource_value($){
+    my $tree_ref = shift;
+
+    if (!defined($tree_ref) || !defined($tree_ref->[3])){
+        return(undef);
+    }else{
+        return($tree_ref->[3]);
+    }
+}
+
+
+# Get the current level indicator
+# arg : tree ref
+# return the level indicator
+sub get_current_level($){
+    my $tree_ref = shift;
+
+    if (!defined($tree_ref) || !defined($tree_ref->[4])){
+        return(0);
+    }else{
+        return($tree_ref->[4]);
+    }
 }
 
 
