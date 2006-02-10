@@ -1,10 +1,12 @@
-package oar_tree;
+package oar_resource_tree;
 
 use warnings;
 use strict;
 use Data::Dumper;
 
-# Constants
+###############################################################################
+#                       RESOURCE TREE MANAGEMENT                              #
+###############################################################################
 
 # Prototypes
 sub new();

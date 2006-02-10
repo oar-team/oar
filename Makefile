@@ -103,7 +103,7 @@ server:
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
-	install -m 0644 Tools/oar_tree.pm $(OARDIR)
+	install -m 0644 Tools/oar_resource_tree.pm $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)
