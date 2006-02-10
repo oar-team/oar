@@ -129,7 +129,7 @@ user:
 	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
-	install -m 0644 Tools/oar_tree.pm $(OARDIR)
+	install -m 0644 Tools/data_structures/oar_resource_tree.pm $(OARDIR)
 
 node:
 	install -d -m 0755 $(OARDIR)
