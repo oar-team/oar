@@ -273,11 +273,11 @@ PRIMARY KEY (idJob,idJobRequired)
 
 #Insertion par defaut
 # Specify the default walltime
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if (not defined($maxTime)) {$maxTime = "1:00:00";}');
+#INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if (not defined($maxTime)) {$maxTime = "1:00:00";}');
 # Specify the default value for queue parameter
 INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if (not defined($queueName)) {$queueName="default";}');
 # Restrict the maximum of the walltime for intercative jobs
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ((defined($maxTime)) && ($jobType eq "INTERACTIVE") && (sql_to_duration($maxTime) > sql_to_duration("12:00:00"))) {$maxTime = "12:00:00";}');
+#INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ((defined($maxTime)) && ($jobType eq "INTERACTIVE") && (sql_to_duration($maxTime) > sql_to_duration("12:00:00"))) {$maxTime = "12:00:00";}');
 # Avoid users except oar to go in the admin queue
 INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if (($queueName eq "admin") && ($user ne "oar")) {$queueName="default";}');
 # Force besteffort jobs to go on nodes with the besteffort property

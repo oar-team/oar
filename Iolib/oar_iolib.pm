@@ -84,7 +84,7 @@ sub get_running_host($);
 sub add_node_job_pair($$$);
 sub remove_node_job_pair($$$);
 
-# NODES MANAGEMENT
+# RESOURCES MANAGEMENT
 sub add_resource($$$);
 sub get_maxweight_node($);
 sub get_free_nodes_job($$$);
@@ -123,6 +123,7 @@ sub get_expired_nodes($);
 sub is_node_desktop_computing($$);
 sub get_node_stats($);
 sub order_property_node($$$);
+sub get_resources_data_structure_job($$);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
@@ -247,7 +248,9 @@ sub connect_ro() {
     my $host = get_conf("DB_HOSTNAME");
     my $name = get_conf("DB_BASE_NAME");
     my $user = get_conf("DB_BASE_LOGIN_RO");
+    $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
     my $pwd = get_conf("DB_BASE_PASSWD_RO");
+    $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
 
     return(connect_db($host,$name,$user,$pwd));
 }
@@ -613,11 +616,9 @@ sub get_possible_wanted_resources($$$$$){
     }
     
     #Get only wanted resources
-    #my %resource_hash;
     my $resource_string;
     foreach my $r (@wanted_resources){
         $resource_string .= " $r->{resource},";
-        #$resource_hash{$r->{resource}} = $r->{value};
     }
     chop($resource_string);
 
@@ -657,7 +658,6 @@ sub get_possible_wanted_resources($$$$$){
             $level_index{$current_node} = 0;
         }
         my @child = sort(oar_tree::get_children_list($current_node));
-        #print("Child = @child --> $resource_hash{$current_node->[2]} ; $level_index{$current_node}\n");
         if ($wanted_resources[oar_tree::get_current_level($current_node)]->{value} > ($#child + 1)){
             # Delete sub tree that does not fit with wanted resources 
             #print("Delete @child\n");
@@ -2653,6 +2653,69 @@ sub get_node_stats($){
     $sth->finish();
 
     return ($alives,$suspects,$deads);
+}
+
+
+# Return a data structure with the resource description of the given job
+# arg : database ref, job id
+# return a data structure (an array of moldable jobs):
+# example for the first moldable job of the list:
+# $result->[0] = [
+#                   [
+#                       {
+#                           property  => SQL property
+#                           resources => [
+#                                           {
+#                                               resource => resource name
+#                                               value    => number of this wanted resource
+#                                           }
+#                                       ]
+#                       }
+#                   ],
+#                   walltime
+#                ]
+sub get_resources_data_structure_job($$){
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT a.moldableId, b.resGroupId, a.moldableWalltime, b.resGroupProperty, c.resJobResourceType, c.resJobValue
+                                FROM moldableJobs_description a, jobResources_group b, jobResources_description c, jobs d
+                                WHERE
+                                    d.idJob = $job_id
+                                    AND d.idJob = a.moldableJobId
+                                    AND b.resGroupMoldableId = a.moldableId
+                                    AND c.resJobGroupId = b.resGroupId
+                                ORDER BY a.moldableId, b.resGroupId, c.resJobOrder ASC
+                            ");
+    $sth->execute();
+    my $result;
+    my $group_index = -1;
+    my $moldable_index = -1;
+    my $previous_group = 0;
+    my $previous_moldable = 0;
+    while (my @ref = $sth->fetchrow_array()){
+        if ($previous_group != $ref[1]){
+            $group_index++;
+            $previous_group = $ref[1];
+        }
+        if ($previous_moldable != $ref[0]){
+            $moldable_index++;
+            $previous_moldable = $ref[0];
+        }
+        # Store walltime
+        $result->[$moldable_index]->[1] = $ref[2];
+        #Store properties group
+        $result->[$moldable_index]->[0]->[$group_index]->{property} = $ref[3];
+        my %tmp_hash =  (
+                resource    => $ref[4],
+                value       => $ref[5]
+                        );
+        push(@{$result->[$moldable_index]->[0]->[$group_index]->{resources}}, \%tmp_hash);
+        
+    }
+    $sth->finish();
+    
+    return($result);
 }
 
 
