@@ -246,3 +246,10 @@ Julien veut que lorsu il y a ambiguite sur la commande a lancer, demander
 a l utilisateur de la valider (eviter les jobs avec un script s appelant
 walltime=2).
 Il faut aussi une option -y pour eviter ce check...
+
+-----------
+CO-SYSTEMES
+-----------
+Faire un type de job cosystem qui pourrait etre schedule sur les memes resources
+que les autres jobs cosystem. Mettre dans la conf les cosytem pour pouvoir les
+notifier de nouveaux jobs ou autre...
