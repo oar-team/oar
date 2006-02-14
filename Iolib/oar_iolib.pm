@@ -44,7 +44,7 @@ sub set_running_date_arbitrary($$$);
 sub set_finish_date($$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
@@ -663,8 +663,8 @@ sub get_possible_wanted_resources($$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$besteffort_type,$deploy_type,$cosystem_type,$checkpoint_type) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$besteffort_type,$deploy_type,$cosystem_type,$checkpoint_type,$launching_directory) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -745,7 +745,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO jobs
               (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail,besteffort_feature,deploy_feature,autoCheckpointed_feature,cosystem_feature)
-              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$ENV{PWD}\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\",\"$besteffort_type\",\"$deploy_type\",\"$checkpoint_type\",\"$cosystem_type\")
+              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\",\"$besteffort_type\",\"$deploy_type\",\"$checkpoint_type\",\"$cosystem_type\")
              ");
 
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");

@@ -253,3 +253,7 @@ CO-SYSTEMES
 Faire un type de job cosystem qui pourrait etre schedule sur les memes resources
 que les autres jobs cosystem. Mettre dans la conf les cosytem pour pouvoir les
 notifier de nouveaux jobs ou autre...
+
+---------------------------------------------------------------------------
+Rajouter dans oarsub la possibilite de specifier le repertoire de lancement
+---------------------------------------------------------------------------

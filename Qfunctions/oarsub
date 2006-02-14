@@ -38,6 +38,7 @@ my $sos;
 my $Checkpoint=0;
 my $mail;
 my $job_name;
+my $Directory = $ENV{PWD};
 my @Type;
 
 #to catch ^C signal
@@ -118,6 +119,7 @@ Options are:
      --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -k, --checkpoint              enable the job to be checkpointed
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
+ -d, --directory               specify the directory where to launch the command (default is current directory)
  -h, --help                    print this help message
 EOS
 }
@@ -163,6 +165,7 @@ GetOptions ("resource|l=s" => \@resource,
             "help|h" => \$sos,
             "mail|m=s" => \$mail,
             "type|t=s" => \@Type,
+            "directory|q=s" => \$Directory,
             "name|n=s" => \$job_name
            );
 
@@ -361,7 +364,7 @@ if ($Interactive == 0) {
         # WARNING: we are not the real user, we are oar user!!!
         # so $exec properties are not correct
         if ( -e "$exec" ){
-            $exec = $ENV{PWD}."/".$exec ;
+            $exec = $Directory."/".$exec ;
         }
     }
 
@@ -372,7 +375,7 @@ if ($Interactive == 0) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, $type_values{besteffort}, $type_values{deploy}, $type_values{cosystem}, $type_values{checkpoint});
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, $type_values{besteffort}, $type_values{deploy}, $type_values{cosystem}, $type_values{checkpoint}, $Directory);
 }else{
     $Cmd_executor = "Qsub -I";
     my $server_port;
@@ -385,7 +388,7 @@ if ($Interactive == 0) {
     my %type_values = parse_type(\@Type);
     print(Dumper(\@resource_list));
     
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, $type_values{besteffort}, $type_values{deploy}, $type_values{cosystem}, $type_values{checkpoint});
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, $type_values{besteffort}, $type_values{deploy}, $type_values{cosystem}, $type_values{checkpoint}, $Directory);
 }
 print("IdJob = $Job_id \n");
 
