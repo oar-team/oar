@@ -8,9 +8,10 @@ use strict;
 
 # Prototypes
 # gant chart management
-sub create_empty_gantt($);
+sub new($);
+sub add_new_resource($$);
 sub set_occupation($$$$);
-sub available_resources($$$$);
+sub is_resource_free($$$$);
 sub find_first_hole($$$);
 
 # A gant chart is a 4 linked tuple list. Each tuple has got the reference of:
@@ -18,120 +19,142 @@ sub find_first_hole($$$);
 #   - next free interval
 #   - previous free interval for the same resource
 #   - next free interval for the same resource
-# The very first tuple is used as a sentinel for the list sorted tuples and
-# the list of free tuples (not linked by te same field).
 
 sub get_tuple_resource($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
 
     #Name of the resource
     return $tuple_ref->{resource};
 }
 
 sub get_tuple_begin_date($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
     
     # Date in seconds
     return $tuple_ref->{begin_date};
 }
 
 sub get_tuple_end_date($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
 
     #Date in seconds
     return $tuple_ref->{end_date};
 }
 
 sub get_tuple_previous_same_resource($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
 
     #Ref of a tuple
     return $tuple_ref->{previous_resource};
 }
 
 sub get_tuple_next_same_resource($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
     
     #Ref of a tuple
     return $tuple_ref->{next_resource};
 }
 
 sub get_tuple_previous_sorted($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
 
     #Ref of a tuple
     return $tuple_ref->{previous_sorted}
 }
 
 sub get_tuple_next_sorted($){
-    my ($tuple_ref)=@_;
+    my ($tuple_ref) = @_;
 
     #Ref of a tuple
     return $tuple_ref->{next_sorted}
 }
 
 sub set_tuple_resource($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{resource} = $value;
 }
 
 sub set_tuple_begin_date($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{begin_date} = $value;
 }
 
 sub set_tuple_end_date($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{end_date} = $value;
 }
 
 sub set_tuple_previous_same_resource($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{previous_resource} = $value;
 }
 
 sub set_tuple_next_same_resource($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{next_resource} = $value;
 }
 
 sub set_tuple_previous_sorted($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{previous_sorted} = $value;
 }
 
 sub set_tuple_next_sorted($$){
-    my ($tuple_ref,$value)=@_;
+    my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{next_sorted} = $value;
 }
 
-sub pretty_print_tuple($){
-    my ($tuple_ref) = @_;
+sub pretty_print($){
+    my ($gantt) = @_;
 
-    print(Dumper($tuple_ref)."\n");
+    my $result = "All sorted resources\n\n";
+    my $indentation = "";
+    my $current_tuple = $gantt->{sorted_root};
+    while (defined(get_tuple_next_sorted($current_tuple))){
+        $result .= $indentation."name = ".get_tuple_resource($current_tuple)."\n";
+        $result .= $indentation."begin = ".get_tuple_begin_date($current_tuple)."\n";
+        $result.= $indentation."end = ".get_tuple_end_date($current_tuple)."\n";
+        $indentation .= "\t";
+        $current_tuple = get_tuple_next_sorted($current_tuple);
+    }
+    
+    $result .= "\nSame resource sorted\n\n";
+    foreach my $r (keys(%{$gantt->{resource_list}})){
+        $indentation = "";
+        $current_tuple = $gantt->{resource_list}->{$r};
+        while (defined(get_tuple_next_same_resource($current_tuple))){
+            $result .= $indentation."name = ".get_tuple_resource($current_tuple)."\n";
+            $result .= $indentation."begin = ".get_tuple_begin_date($current_tuple)."\n";
+            $result .= $indentation."end = ".get_tuple_end_date($current_tuple)."\n";
+            $indentation .= "\t";
+            $current_tuple = get_tuple_next_same_resource($current_tuple);
+        }
+        $result .= "\n";
+    }
+    return($result);
 }
 
 
 # insert the already "allocated" tuple after the $prev_tuple
-sub add_tuple_after($$){
-  my ($previous_tuple_ref,$current_tuple_ref)=@_;
+sub add_resource_tuple_after($$){
+  my ($previous_tuple_ref,$current_tuple_ref) = @_;
 
   $current_tuple_ref->{previous_resource} = $previous_tuple_ref;
-  $current_tuple_ref->{next_resource} = $prev_tuple_ref->{next_resource};
+  $current_tuple_ref->{next_resource} = $previous_tuple_ref->{next_resource};
   $current_tuple_ref->{next_resource}->{previous_resource} = $current_tuple_ref;
   $previous_tuple_ref->{next_resource} = $current_tuple_ref;
 }
 
 # remove the tuple indicated by $current_tuple
-sub remove_tuple($){
-  my ($tupleref)=@_;
+sub remove_resource_tuple($){
+  my ($tuple_ref) = @_;
 
   my $previous_tuple = $tuple_ref->{previous_resource};
   my $next_tuple = $tuple_ref->{next_resource};
@@ -139,469 +162,145 @@ sub remove_tuple($){
   $previous_tuple->{next_resource} = $next_tuple;
 }
 
-#Allocates a new tuple
-sub allocate_new_tuple($$$$$) {
-    my ($gantt,$resource_name, $begin_date, $end_date) = @_;
-    
-    my $result_tuple;
-    set_tuple_resource($result_tuple, $resource_name);
-    set_tuple_begin_date($resource_name, $begin_date);
-    set_tuple_end_date($resource_name, $end_date);
-    
-    #Insert this tuple in the right place
+sub add_sorted_tuple_after($$){
+  my ($previous_tuple_ref,$current_tuple_ref) = @_;
 
+  $current_tuple_ref->{previous_sorted} = $previous_tuple_ref;
+  $current_tuple_ref->{next_sorted} = $previous_tuple_ref->{next_sorted};
+  $current_tuple_ref->{next_sorted}->{previous_sorted} = $current_tuple_ref;
+  $previous_tuple_ref->{next_sorted} = $current_tuple_ref;
+}
+
+sub remove_sorted_tuple($){
+  my ($tuple_ref) = @_;
+
+  my $previous_tuple = $tuple_ref->{previous_sorted};
+  my $next_tuple = $tuple_ref->{next_sorted};
+  $next_tuple->{previous_sorted} = $previous_tuple;
+  $previous_tuple->{next_sorted} = $next_tuple;
+}
+
+#Allocates a new tuple
+sub allocate_new_tuple($$$){
+    my ($resource_name, $begin_date, $end_date) = @_;
+    
+    my $result_tuple = {};
+    set_tuple_resource($result_tuple, $resource_name);
+    set_tuple_begin_date($result_tuple, $begin_date);
+    set_tuple_end_date($result_tuple, $end_date);
+
+    set_tuple_previous_same_resource($result_tuple, undef);
+    set_tuple_next_same_resource($result_tuple, undef);
+    set_tuple_previous_sorted($result_tuple, undef);
+    set_tuple_next_sorted($result_tuple, undef);
 
     return($result_tuple);
 }
 
-# Creates an empty Gant
-# Parameters : the time of creation of the world
-#              a ref to a hashtable node names <-> max weight
-
-sub create_empty_gant($$)
-{
-    my ($now, $nodes) = @_;
-  # first sentinel :
-  # this is the global sentinel : first field is undef
-  # this is a sentinel : second field is undef
-  # link to an empty hash table
-  # this is the sentinel of the list of free tuples :
-  #      linkage to self in fields 4 and 5.
-  # this is the sentinel of the list of sorted free intervals :
-  #      linkage to self in fields 6 and 7.
-    my $result = [undef, undef, {}, undef, 0, 0, 0, 0];
+# Creates an empty Gantt
+# arg : gantt reference date
+sub new($){
+    my ($now) = @_;
+    
+    my $result = {
+                    now_date => $now,
+                    resource_list => {}
+                 };
   
-    for my $n (keys %{$nodes}) {
-	my $maxweight = $nodes->{$n};
-	insert_new_node($result, $n, $maxweight, $now);
+    return($result);
+}
+
+
+# Adds and initializes a new resource in the gantt chained list
+# args : gantt ref, resource name
+sub add_new_resource($$) {
+    my ($gantt, $resource_name) = @_;
+
+    return(undef) if defined($gantt->{resource_list}->{$resource_name});
+      
+    my $t = allocate_new_tuple($resource_name, 0, 0);
+    $gantt->{resource_list}->{$resource_name} = $t;
+
+    if (!defined($gantt->{sorted_root})){
+        $gantt->{sorted_root} = $t;
     }
     
-    return $result;
+    return($t);
 }
 
 
-# create_node_sentinel
-# Parameters : Gantt chart and node name
-# Creates a new sentinel for the interval list by node
-# Inserts the sentinel into the hashtable
-sub create_node_sentinel($$) {
-    my ($gant, $node) = @_;
+# Insert in the gantt chained list a new occupation time slot
+# args : gantt ref, start slot date, slot duration, resource name
+sub set_occupation($$$$){
+    my ($gantt, $date, $duration, $resource_name) = @_;
+  
+    add_new_resource($gantt,$resource_name);
+  
+    my $new_tuple = allocate_new_tuple($resource_name, $date, $date + $duration);
+    my $current_tuple = $gantt->{resource_list}->{$resource_name};
+    while (defined(get_tuple_begin_date(get_tuple_next_same_resource($current_tuple))) && ($date > get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)))){
+        $current_tuple = get_tuple_next_same_resource($current_tuple);
+    }
+    add_resource_tuple_after($current_tuple, $new_tuple);
 
-#     print "Creating node sentinel for node $node\n";
-
-    my $result = allocate_tuple($gant, $node, undef, undef);
-    set_next_node($gant, $result, $result);
-    set_prev_node($gant, $result, $result);
-
-    my $hash = get_nodes_hash($gant);
-    $hash->{$node} = $result;
-    return $result;
-
-}
-
-# Add a new node (machine) in the Gant
-# Creates a [0, Undef] interval with weight maxweight
-# to indicate that this machine is free from now on.
-sub insert_new_node($$$) {
-    my ($gant, $node, $start_time) = @_;
-
-    my $maxweight = 1;
-    my $node_hash = get_nodes_hash($gant);
-    die "Already existing node $node" if defined($node_hash->{$node});
-      
-    my $sentinel = create_node_sentinel($gant, $node); 
-    my $t = allocate_tuple($gant, $node, $start_time, undef);
-    add_interval_after($gant, $t, 0, $sentinel);
-}
-
-sub add_interval_after($$$$) {
-    my ($gant, $index, $prev_sorted_tuple, $prev_node_tuple) = @_;
+    $current_tuple = $gantt->{sorted_root};
+    while (defined(get_tuple_begin_date(get_tuple_next_sorted($current_tuple))) && ($date > get_tuple_begin_date(get_tuple_next_sorted($current_tuple)))){
+        $current_tuple = get_tuple_next_sorted($current_tuple);
+    }
+    add_sorted_tuple_after($current_tuple, $new_tuple);
     
-    add_tuple_after($gant, $prev_sorted_tuple, $index, $prev_sorted, $next_sorted);
-    add_tuple_after($gant, $prev_node_tuple, $index, $prev_node, $next_node);
-
+    return($new_tuple);
 }
 
 
-# Parameters :
-# - reference to a Gant chart
-# - index in the gant chart of an interval entry to remove
-sub remove_interval($$)
-{
-  my ($gant, $interval) = @_;
-  my $prev;
-  my $next;
-  my $sentinel;
+# Returns 1 if the specified time slot is empty for the given resource. Otherwise it returns 0
+# args : gantt ref, start date, duration, resource name
+sub is_resource_free($$$$){
+    my ($gantt, $begin_date, $duration, $resource_name) = @_;
 
-  # first, manage the links regarding the global sorted list
-
-# Ca c'est sale.
-#   $prev = $gant->[$interval+$prev_sorted];
-#  $next = $gant->[$interval+$next_sorted];
-#  $gant->[$prev+$next_sorted] = $next;
-#  $gant->[$next+$prev_sorted] = $prev;
-
-  remove_tuple($gant, $interval, $prev_sorted, $next_sorted);
-
-# Ou la deuxième version :-)
-#  $prev = get_prev_sorted($gant, $interval);
-#  $next = get_next_sorted($gant, $interval);
-#  set_next_sorted($gant, $prev, $next);
-#  set_prev_sorted($gant, $next, $prev);
-
-
-  remove_tuple($gant, $interval, $prev_node, $next_node);
-  
-# Ou la deuxième version :-)
-#  $next = get_next_node($gant, $interval);
-#  $prev = get_prev_node($gant, $interval);
-#  set_next_node($gant, $prev, $next);
-#  set_prev_node($gant, $next, $prev);
-
-
-  # if next = prev then the tuple about to be suppressed is the
-  # last one of its node and we might suppress as well its sentinel
-  # node. 
-
-
-#  if ($next == $prev)
-#    {
-#     $sentinel = $prev;
-
-      # ${$gant->[$hash_offset]}{$gant->[$sentinel+$node_index]} = undef;
-      # Yoyo: Ca, ca ne marche pas. Cf test_gant.pl
-      # Du coup, je vire tout ca et je laisse la sentinelle tout seule.
-#      $prev = $gant->[$sentinel+$prev_sorted];
-#      $next = $gant->[$sentinel+$next_sorted];
-#      $gant->[$prev+$next_sorted] = $next;
-#      $gant->[$next+$prev_sorted] = $prev;
-
-      # The sentinel tuple is put in the free node list
-#      free_tuple($gant, $sentinel);
-#   }
-
-  # finally, add the unused tuple to the list of free tuples
-
-  free_tuple($gant, $interval);
-}
-
-
-# add the interval $interval after the nodes
-# $node_prev_sorted for the global list and
-# $node_prev_node for the node list
-sub add_after_interval($$$$)
-{
-  my ($gant, $interval, $node_prev_sorted, $node_prev_node) = @_;
-
-  add_tuple_after($gant, $node_prev_sorted, $interval, $prev_sorted, $next_sorted);
-  add_tuple_after($gant, $node_prev_node, $interval, $prev_node, $next_node);
-}
-
-
-# Parameters :
-# - reference to a Gant chart
-# - index in the gant chart of the second interval (possibly to fuse with
-#   the previous one in the list
-# Returns the index of the last resulting interval.
-sub fuse_if_necessary($$)
-{
-  my ($gant, $second) = @_;
-  my $first = get_prev_node($gant, $second);
-
-#   print "Trying to fusion.\n";
-#   pretty_print_tuple($gant, $first);
-#   pretty_print_tuple($gant, $second);
-
-  die "Abnormal interval chaining" unless ((!is_normal_node($gant, $first))
-					   || (defined(get_end($gant, $first))
-					       && get_end($gant, $first) == get_begin($gant, $second)));
-
-  if (is_normal_node($gant, $first) 
-      && (get_weight($gant, $first) == get_weight($gant, $second)) ) {
-     
-      set_end($gant, $first, get_end($gant, $second));
-      remove_interval($gant, $second);
-      return $first;
-  } else {
-      return $second;
-  }
-}
-
-sub set_occupation($$$$)
-{
-    # Est-ce que $duration peut etre infinie ??
-  my ( $gant, $date, $duration, $nodes_list)=@_;
-  my $required_weight = 1;
-  my %required_nodes; # a hashtable for quick decision whether a node is required or not
-  my ($node, $weight, $begin, $end);
-  my ($next_node, $next_weight, $next_begin, $next_end);
-
-  my $occup_end = $date + $duration;
-  my $where = 0; # 0 au début, 1 au milieu, 2 à la fin.
-
-  my $waiting_intervals = 0;
-
-#  oar_debug "Setting Occupation from $date for $duration, w = $required_weight, on @{$nodes_list}\n";
-
-   for my $node (@{$nodes_list}) 
-   {
-#	insert_new_node_if_necessary($gant, $node);
-	$required_nodes{$node} = -1;
+    if (!defined($gantt->{resource_list}->{$resource_name})){
+        return(0);
     }
-  # iterates through the sorted list of free intervals
-
-  # TODO : Il faudrait commencer par vérifier que c'est possible.
-  # Guillaume dit que non.
-
-  my $index = $gant->[$next_sorted];
-  do {
-      while (is_normal_node($gant, $index)) {
-	  $node = get_node($gant, $index);
-	  $begin = get_begin($gant, $index);
-	  
-	  # Ici je fais l'insertion des intervalles en attente.
-	  if ( (($where == 0) && ($begin >= $date))
-	       || (($where == 1) && ($begin >= $occup_end)) ){
-	      for my $n (keys %required_nodes) {
-		  my $new = $required_nodes{$n};
-		  if ($new != -1) {
-		      die "Is this normal ??" unless (get_begin($gant, $new) <= $begin);
-		      if (defined(get_next_node($gant, $new))) {
-			  $required_nodes{$n} = get_next_node($gant, $new);
-		      } else {
-			  $required_nodes{$n} = -1;
-		      }
-		      add_interval_after($gant, $new, get_prev_sorted($gant, $index),
-					 get_prev_node($gant, $new));
-		      $waiting_intervals--;
-		      $index = $new;
-		  }
-	      }
-	      $where++;
-	  }
-	  
-	  my $next = get_next_sorted($gant, $index); # Pour éviter les mauvaises surprises dues aux fusions
-#   	  print ("Parcours en cours... \n\t");
-#  	  pretty_print_tuple($gant, $index);
-#  	  pretty_print_gant($gant);
-	  $node = get_node($gant, $index); # $index peut avoir changé après l'insertion
-	  $begin = get_begin($gant, $index);
-	  
-	  if (defined($required_nodes{$node})) {
-#	      print "Interesting node\n";
-	      $end =  get_end($gant, $index);
-	      if ( ($occup_end > $begin) && (!defined($end) || ($date < $end)) ) {
-#		  print "Interesting time\n";
-		  $weight = get_weight($gant, $index);
-		  if ($date > $begin) {
-#		      print "Date > Begin\n";
-		      set_end($gant, $index, $date);
-		      my $new = allocate_tuple($gant, $node, $date, $end);
-		      $required_nodes{$node} = $new;
-		      $waiting_intervals++;
-		      set_prev_node($gant, $new, $index);
-		  } else { # Here $date <= $begin
-#		      print "Date < Begin\n";
-		      set_weight($gant, $index, $weight - $required_weight);
-		      
-		      $index = fuse_if_necessary($gant, $index);
-		      
-		      if ( (!defined($end)) || ($end > $occup_end) ) {
-			  set_end($gant, $index, $occup_end); # On tronque l'intervalle courant
-			  # Et on cree un intervalle apres.
-			  my $new = allocate_tuple($gant, $node, $occup_end, $end);
-			  die "Ach, Das ist niche gut" unless ($required_nodes{$node} == -1);
-			  $required_nodes{$node} = $new;
-			  $waiting_intervals++;
-			  set_prev_node($gant, $new, $index); # The full chaining will be done later.
-		      } elsif (defined($end) && ($end == $occup_end)) {
-			  fuse_if_necessary($gant, get_next_node($gant, $index));
-		      }
-		  }
-	      }
-	  }
-	  $index = $next;
-	  
-      }
-
-      if ($where < 2) {
-	  for my $n (keys %required_nodes) {
-	      my $new = $required_nodes{$n};
-	      if ($new != -1) {
-		  if (defined(get_next_node($gant, $new))) {
-		      $required_nodes{$n} = get_next_node($gant, $new);
-		  } else {
-		      $required_nodes{$n} = -1;
-		  }
-		  add_interval_after($gant, $new, get_prev_sorted($gant, $index),
-				     get_prev_node($gant, $new));
-		  $waiting_intervals--;
-		  $index = $new;
-	      }
-	  }
-	  $where++;
-      }
-
-  } until ($where >= 2);
-
-}
-
-# Find_stop_time
-# Returns the last time after the beginning of interval $interval
-#  so that at least $required_weight weight is available on the node.
-# Returns -1 if $interval does not have the required weight.
-sub find_stop_time($$) 
-{
-    my($gant, $interval) = @_;
-   
-    my $required_weight = 1;
-    my $result = -1;
-    my $index = $interval;
-    while(is_normal_node($gant, $index)) {
-	my $weight = get_weight($gant, $index);
-	if($weight < $required_weight) {
-	    return $result;
-	} else {
-	    $result = get_end($gant, $index);
-	    $index = get_next_node($gant, $index);
-	}
+    my $end_date = $begin_date + $duration;
+    my $old_tuple = $gantt->{resource_list}->{$resource_name};
+    my $current_tuple = get_tuple_next_same_resource($old_tuple);
+    while (defined(get_tuple_begin_date($current_tuple)) && !($begin_date > get_tuple_end_date(get_tuple_previous_sorted($current_tuple)) && $end_date < get_tuple_begin_date($current_tuple))){
+        $old_tuple = $current_tuple;
+        $current_tuple = get_tuple_next_same_resource($current_tuple);
     }
-    return $result;
+    if ($begin_date > get_tuple_end_date($old_tuple)){
+        return(1);
+    }else{
+        return(0);
+    }
 }
 
 
+#
+sub find_first_hole($$$){
+    my ($gantt, $duration, $tree_description_list) = @_;
 
-# Find First Hole
-# Looks for some place in the Gantt to schedule something
-# Returns a list, the first element is the starting time of the block
-# The others are the nodes that are available. There are at least
-# $nb_nodes_required, but may be more.
+    # $tree_description_list->[0]->{resources}->[0]->{resource}
+    # $tree_description_list->[0]->{resources}->[0]->{value}
+    # $tree_description_list->[0]->{tree}
+    # ...
 
-# Please make sure that there are enough nodes with maxweight >=
-# required_weight.
-# Else you're going to kill me...
+    my $result = [undef, undef]; # Date + resource list
 
-sub find_first_hole($$$$)
-{
-  my ($gant, $nb_nodes_required, $required_duration, $nodes_list) = @_;
-  my $required_weight = 1;
-  my %stop_time;
- 
-#  oar_debug "Searching Hole of $nb_nodes_required nodes for $required_duration, w = $required_weight, on @{$nodes_list}\n"; 
-  
-  for my $node (@{$nodes_list}) {
-      $stop_time{$node} = -1;
-#      insert_new_node_if_necessary($gant, $node);
-  }
-  
-  my $current_time = 0;
-  my $index = get_next_sorted($gant, 0);
-  while(is_normal_node($gant, $index)) {
-      my $begin = get_begin($gant, $index);
-      my $end = get_end($gant, $index);
-      my $weight = get_weight($gant, $index);
-      my $node = get_node($gant, $index);
-      
-      my $nb_ok_nodes;
-      my @ok_nodes;
-      if ($begin > $current_time) {
-	  $nb_ok_nodes = 0; # De toute facon je vais tout parcourir...
-	                       # Si je pouvais je ferai pas comme ca, mais ca a pas l'air facile.
-	  @ok_nodes = ();
-	  push @ok_nodes, $current_time;
-          for my $n (keys %stop_time) {
-	      my $stop = $stop_time{$n};
-	      if( (!defined($stop)) || (($stop - $current_time) >= $required_duration) ) {
-		  $nb_ok_nodes++;
-		  push @ok_nodes, $n;
-	      } else {
-		  $stop_time{$n} = -1;
-	      }
-	  }
-	  if ($nb_ok_nodes >= $nb_nodes_required) {
-	      return @ok_nodes;
-	  }
-	  
-	  $current_time = $begin;
-      }
-      
-      if (defined($stop_time{$node}) && ($stop_time{$node} == -1)) {
-	  my $stop = find_stop_time($gant, $index);
-	  $stop_time{$node} = $stop;
-
-	  # Ca la c'est meme pas necessaire...
-	  if( (!defined($stop)) || (($stop - $current_time) >= $required_duration) ) {
-	      $nb_ok_nodes++;
-	  }
-      }
-
-      $index = get_next_sorted($gant, $index);
-  }
-
-
-  my @ok_nodes = ();
-  my $nb_ok_nodes = 0;
-  push @ok_nodes, $current_time;
-  for my $n (keys %stop_time) {
-      my $stop = $stop_time{$n};
-      if( (!defined($stop)) || (($stop - $current_time) >= $required_duration) ) {
-	  $nb_ok_nodes++;
-	  push @ok_nodes, $n;
-      } else {
-	  $stop_time{$n} = -1;
-      }
-  }
-  if ($nb_ok_nodes >= $nb_nodes_required) {
-      return @ok_nodes;
-  }
-
-  print "Je devrais pas etre la !!\n";
-  print "Time = $current_time \n";
-  for my $n (keys %stop_time) {
-      print "($n, $stop_time{$n})\n";
-  }
-
-  die "Argh. What's going on ?";
-}
-
-# Available Nodes
-# Gives the list of nodes with enough free weight (at least $required_weight)
-# between $begin_date and $begin_date+$required_duration. Consider only the nodes in $nodes_list
-
-sub available_nodes($$$$)
-{
-    my ($gant, $begin_date, $required_duration, $nodes_list) = @_;
-    my $required_weight = 1;
+    # Calculate the minimum number of needed resources (speed up the tests)
+    my $minimum_resource_number = 0;
+    foreach my $i (@{$tree_description_list}){
+        my $tmp = 1;
+        foreach my $r (@{$i->{resources}}){
+            print("TT".Dumper($r));
+            $tmp = $tmp * $r->{value};
+            print("res : $r->{resource} --> $r->{value}\n");
+        }
+        $minimum_resource_number += $tmp;
+    }
+    print("$minimum_resource_number\n"); 
+    my $current_time = $gantt->{now_date};
     
-    my $end_date = $begin_date + $required_duration; 
-    my $hash = get_nodes_hash($gant);
-
-    my @available_nodes = ();
-
-    for my $node (@{$nodes_list}) {
-	
-	if (defined($hash->{$node})) {
-	    my $index = get_next_node($gant, $hash->{$node});
-	    my $is_available = 1;
-	    while (is_normal_node($gant, $index)) {
-		my $b = get_begin($gant, $index);
-		my $e = get_end($gant, $index);
-		my $w = get_weight($gant, $index);
-
-		last if($b >= $end_date);
-
-		if( (!defined($e)) || $begin_date < $e) {
-		    $is_available = 0, last if ($w < $required_weight);
-		}
-		$index = get_next_node($gant, $index);
-	    }
-	    push @available_nodes, $node if ($is_available == 1);
-	}
-	else { push @available_nodes, $node; }
-    }
-
-    return @available_nodes;
-
 }
 
 return 1;

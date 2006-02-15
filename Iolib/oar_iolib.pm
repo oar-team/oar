@@ -748,7 +748,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
               VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\",\"$besteffort_type\",\"$deploy_type\",\"$checkpoint_type\",\"$cosystem_type\")
              ");
 
-    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
+    $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     my @tmp_array = values(%$ref);
@@ -1384,7 +1384,7 @@ sub get_resources_in_state($$) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
-                                    state = \"\"
+                                    state = \"$state\"
                             ");
     $sth->execute();
     my @res = ();
@@ -2001,9 +2001,29 @@ sub get_suspected_node($) {
         push(@res, $ref->{'hostname'});
     }
     $sth->finish();
-    return @res;
+    return(@res);
 }
 
+
+# list_resources
+# gets the list of all resources
+# parameters : base
+# return value : list of resources
+# side effects : /
+sub list_resources($) {
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
 
 
 # list_nodes
