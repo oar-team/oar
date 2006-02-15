@@ -79,7 +79,7 @@ sub get_children_list($){
     my $tree_ref = shift;
 
     if (!defined($tree_ref) || !defined($tree_ref->[1])){
-        return(undef);
+        return(());
     }else{
         return(keys(%{$tree_ref->[1]}));
     }
@@ -187,12 +187,12 @@ sub delete_tree_nodes_with_not_enough_resources($$){
             # Initialize index where we are for the node
             $level_index{$current_node} = 0;
         }
-        my @child = sort(oar_resource_tree::get_children_list($current_node));
-        if ($wanted_resources[oar_resource_tree::get_current_level($current_node)]->{value} > ($#child + 1)){
+        my @child = sort(get_children_list($current_node));
+        if ((defined($wanted_resources[get_current_level($current_node)])) && ($wanted_resources[get_current_level($current_node)]->{value} > ($#child + 1))){
             # Delete sub tree that does not fit with wanted resources 
             #print("Delete @child\n");
-            my $tmp_current_node = oar_resource_tree::get_father($current_node);
-            my @tmp = sort(oar_resource_tree::get_children_list($tmp_current_node));
+            my $tmp_current_node = get_father($current_node);
+            my @tmp = sort(get_children_list($tmp_current_node));
             my $father_key_name = $tmp[$level_index{$tmp_current_node} - 1];
             if (!defined($father_key_name)){
                 # No matching records (we want to delete the root)
@@ -200,28 +200,28 @@ sub delete_tree_nodes_with_not_enough_resources($$){
             }
             #print("Key father : $father_key_name\n");
             $current_node = $tmp_current_node;
-            oar_resource_tree::delete_subtree(oar_resource_tree::get_a_child($current_node, $father_key_name));
+            delete_subtree(get_a_child($current_node, $father_key_name));
             $level_index{$current_node} --;
         }else{
-            if (defined($child[$level_index{$current_node}]) and defined(oar_resource_tree::get_a_child($current_node, $child[$level_index{$current_node}]))){
+            if (defined($child[$level_index{$current_node}]) and defined(get_a_child($current_node, $child[$level_index{$current_node}]))){
                 # Go to child
                 #print("GO to  Child = $child[$level_index{$current_node}]\n");
                 my $tmp_current_node = $current_node;
-                $current_node = oar_resource_tree::get_a_child($current_node, $child[$level_index{$current_node}]);
+                $current_node = get_a_child($current_node, $child[$level_index{$current_node}]);
                 $level_index{$tmp_current_node} ++;
             }else{
                 # Treate leaf
-                my @brothers = sort(oar_resource_tree::get_children_list(oar_resource_tree::get_father($current_node)));
-                while(defined($current_node) and !defined($brothers[$level_index{oar_resource_tree::get_father($current_node)}])){
-                    $level_index{oar_resource_tree::get_father($current_node)} ++;
-                    $current_node = oar_resource_tree::get_father($current_node);
-                    @brothers = sort(oar_resource_tree::get_children_list(oar_resource_tree::get_father($current_node)));
+                my @brothers = sort(get_children_list(get_father($current_node)));
+                while(defined($current_node) and !defined($brothers[$level_index{get_father($current_node)}])){
+                    $level_index{get_father($current_node)} ++ if defined(get_father($current_node));
+                    $current_node = get_father($current_node);
+                    @brothers = sort(get_children_list(get_father($current_node))) ;
                 }
-                if (defined($brothers[$level_index{oar_resource_tree::get_father($current_node)}])){
+                if (defined(get_father($current_node)) &&  defined($brothers[$level_index{get_father($current_node)}])){
                     # Treate brother
                     #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                    $current_node = oar_resource_tree::get_a_child(oar_resource_tree::get_father($current_node), $brothers[$level_index{oar_resource_tree::get_father($current_node)}]);
-                    $level_index{oar_resource_tree::get_father($current_node)} ++;
+                    $current_node = get_a_child(get_father($current_node), $brothers[$level_index{get_father($current_node)}]);
+                    $level_index{get_father($current_node)} ++;
                 }
             }
         }
@@ -250,45 +250,42 @@ sub get_tree_leaf($){
             # Initialize index where we are for the node
             $level_index{$current_node} = 0;
         }
-        my @child = sort(oar_resource_tree::get_children_list($current_node));
-        if (defined($child[$level_index{$current_node}]) and defined(oar_resource_tree::get_a_child($current_node, $child[$level_index{$current_node}]))){
+        my @child = sort(get_children_list($current_node));
+        if (defined($child[$level_index{$current_node}]) and defined(get_a_child($current_node, $child[$level_index{$current_node}]))){
             # Go to child
             #print("GO to  Child = $child[$level_index{$current_node}]\n");
             #unshift(@node_name_pile, $child[$level_index{$current_node}]);
-            unshift(@node_name_pile, oar_resource_tree::get_a_child($current_node, $child[$level_index{$current_node}]));
+            unshift(@node_name_pile, get_a_child($current_node, $child[$level_index{$current_node}]));
             my $tmp_current_node = $current_node;
-            $current_node = oar_resource_tree::get_a_child($current_node, $child[$level_index{$current_node}]);
+            $current_node = get_a_child($current_node, $child[$level_index{$current_node}]);
             $level_index{$tmp_current_node} ++;
         }else{
             # Treate leaf
-            if (!defined(oar_resource_tree::get_a_child($current_node, $child[$level_index{$current_node}]))){
+            if (!defined(get_a_child($current_node, $child[$level_index{$current_node}]))){
                 push(@result, $node_name_pile[0]);
                 #push(@result, $current_node);
                 #print("Leaf: ".$node_name_pile[0]."\n");
             }
             # Look at brothers
-            my @brothers = sort(oar_resource_tree::get_children_list(oar_resource_tree::get_father($current_node)));
-            while(defined($current_node) and !defined($brothers[$level_index{oar_resource_tree::get_father($current_node)}])){
+            my @brothers = sort(get_children_list(get_father($current_node)));
+            while(defined($current_node) and !defined($brothers[$level_index{get_father($current_node)}])){
                 shift(@node_name_pile);
-                $current_node = oar_resource_tree::get_father($current_node);
+                $current_node = get_father($current_node);
                 $level_index{$current_node} ++;
-                @brothers = sort(oar_resource_tree::get_children_list(oar_resource_tree::get_father($current_node)));
+                @brothers = sort(get_children_list(get_father($current_node)));
             }
-            if (defined($brothers[$level_index{oar_resource_tree::get_father($current_node)}])){
+            if (defined($brothers[$level_index{get_father($current_node)}])){
                 # Treate brother
-                #unshift(@node_name_pile, $brothers[$level_index{oar_resource_tree::get_father($current_node)}]);
-                unshift(@node_name_pile, oar_resource_tree::get_a_child(oar_resource_tree::get_father($current_node), $brothers[$level_index{oar_resource_tree::get_father($current_node)}]));
+                #unshift(@node_name_pile, $brothers[$level_index{get_father($current_node)}]);
+                unshift(@node_name_pile, get_a_child(get_father($current_node), $brothers[$level_index{get_father($current_node)}]));
                 #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                $current_node = oar_resource_tree::get_a_child(oar_resource_tree::get_father($current_node), $brothers[$level_index{oar_resource_tree::get_father($current_node)}]);
-                $level_index{oar_resource_tree::get_father($current_node)} ++;
+                $current_node = get_a_child(get_father($current_node), $brothers[$level_index{get_father($current_node)}]);
+                $level_index{get_father($current_node)} ++;
             }
         }
     }while(defined($current_node));
 
     return(@result);
 }
-
-
-
 
 return 1;

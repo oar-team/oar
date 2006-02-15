@@ -35,7 +35,7 @@ Gantt::set_occupation($gantt, 40, 5, "1");
 #print(Dumper($gantt));
 my $resGroup = iolib::get_resources_data_structure_job($base, 2);
 print(Dumper($resGroup));
-my $h1 = iolib::get_possible_wanted_resources($base,[4,6],[],"", $resGroup->[0]->[0]->[0]->{resources});
+my $h1 = iolib::get_possible_wanted_resources($base,[],[],"", $resGroup->[0]->[0]->[0]->{resources});
 
 print(Dumper($h1));
 my $data = ();
