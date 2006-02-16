@@ -86,7 +86,7 @@ PRIMARY KEY (resGroupId)
 CREATE TABLE IF NOT EXISTS jobResources_description (
 resJobGroupId INT UNSIGNED NOT NULL,
 resJobResourceType VARCHAR(255) NOT NULL,
-resJobValue INT UNSIGNED NOT NULL,
+resJobValue INT NOT NULL,
 resJobOrder INT UNSIGNED NOT NULL DEFAULT 0,
 INDEX resgroup (resJobGroupId),
 PRIMARY KEY (resJobGroupId,resJobResourceType)

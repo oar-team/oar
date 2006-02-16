@@ -575,6 +575,39 @@ sub set_finish_date($$) {
 }
 
 
+# get_all_possible_resources_with_childhood
+# returns the number of resources with the same property
+# parameters : base, property name, where restrictions
+# return value : hash table (property_value --> number)
+sub get_all_possible_resources_with_childhood($$$$) {
+    my $dbh = shift;
+    my $tree_node_list = shift;
+    my $wanted_property_name = shift;
+    my $where_clause = shift;
+    
+    my $sql = "TRUE";
+    if (defined($tree_node_list)){
+        foreach my $n (oar_resource_tree::get_parents($tree_node_list)){
+            $sql .= " AND ".oar_resource_tree::get_current_resource_name($n)." = \"".oar_resource_tree::get_current_resource_value($n)."\"";
+        }
+    }
+    if (defined($where_clause)){
+        $sql .= " AND $where_clause";
+    }
+    print("$sql\n");
+    my $sth = $dbh->prepare("   SELECT count(DISTINCT($wanted_property_name))
+                                FROM resourceProperties
+                                WHERE
+                                    $sql
+                            ");
+    $sth->execute();
+    my @tmp = $sth->fetchrow_array();
+    $sth->finish();
+    
+    return($tmp[0]);
+}
+
+
 # get_possible_wanted_resources
 # return a tree ref : a data structure with corresponding resources with what is asked
 sub get_possible_wanted_resources($$$$$){
@@ -587,7 +620,7 @@ sub get_possible_wanted_resources($$$$$){
     my @wanted_resources = @{$wanted_resources_ref};
     push(@wanted_resources, {
                                 resource => "resourceId",
-                                value    => "1",
+                                value    => -1,
                             });
     
     my $sql_where_string ;
@@ -635,18 +668,34 @@ sub get_possible_wanted_resources($$$$$){
     # Initialize root
     my $result ;
     $result = oar_resource_tree::new();
-    while (my @sql = $sth->fetchrow_array()) {
+    my $wanted_children_number = $wanted_resources[0]->{value};
+#    if ($wanted_children_number < 0){
+#        $wanted_children_number = get_all_possible_resources_with_childhood($dbh,undef,$wanted_resources[0]->{resource},$sql_where_string);
+#    }
+    oar_resource_tree::set_needed_children_number($result,$wanted_children_number);
+
+    while (my @sql = $sth->fetchrow_array()){
         my $father_ref = $result;
         foreach (my $i = 0; $i <= $#wanted_resources; $i++){
             # Feed the tree for all resources
             $father_ref = oar_resource_tree::add_child($father_ref, $wanted_resources[$i]->{resource}, $sql[$i]);
+
+            if ($i < $#wanted_resources){
+                $wanted_children_number = $wanted_resources[$i+1]->{value};
+#                if ($wanted_children_number < 0){
+#                    $wanted_children_number = get_all_possible_resources_with_childhood($dbh,$father_ref,$wanted_resources[$i+1]->{resource} , $sql_where_string);
+#                }
+            }else{
+                $wanted_children_number = 0;
+            }
+            oar_resource_tree::set_needed_children_number($father_ref,$wanted_children_number);
         }
     }
     
     $sth->finish();
-
-    oar_resource_tree::delete_tree_nodes_with_not_enough_resources($result, \@wanted_resources);
 #print(Dumper($result));
+    $result = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($result);
+
     return($result);
 }
 

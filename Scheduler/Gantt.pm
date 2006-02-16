@@ -299,12 +299,8 @@ sub is_resource_free($$$$){
 sub find_first_hole($$$){
     my ($gantt, $duration, $tree_description_list) = @_;
 
-    # $tree_description_list->[0]  --> First resource group
-    # $tree_description_list->[1]  --> Second resource group
-    # $tree_description_list->[0]->{resources}  --> Array : described user wanted resources
-    # $tree_description_list->[0]->{resources}->[0]->{resource}  --> First resource name wanted by the user
-    # $tree_description_list->[0]->{resources}->[0]->{value}  --> First resosurce value wanted by the user
-    # $tree_description_list->[0]->{tree}  --> Corresponding tree to the given resource description
+    # $tree_description_list->[0]  --> First resource group corresponding tree
+    # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
 
     my $result = [undef, undef]; # Date + resource list
