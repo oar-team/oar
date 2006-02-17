@@ -270,6 +270,12 @@ sub set_occupation($$$$){
 }
 
 
+# If we can fuse the tuple with the previous or/and the next, we do it.
+# arg : tuple ref
+sub fuse_tuple_if_we_can($){
+    
+}
+
 # Returns 1 if the specified time slot is empty for the given resource. Otherwise it returns 0
 # args : gantt ref, start date, duration, resource name
 sub is_resource_free($$$$){

@@ -31,21 +31,31 @@ foreach my $i (@r){
     Gantt::add_new_resource($gantt, $i->{resourceId});
 }
 
-Gantt::set_occupation($gantt, 40, 5, "1");
+Gantt::set_occupation($gantt, 46, 5, "1");
+Gantt::set_occupation($gantt, 40, 5, "2");
+Gantt::set_occupation($gantt, 59, 15, "1");
+Gantt::set_occupation($gantt, 100, 5, "1");
+
+for (my $i=1000000; $i > 1000; $i-=101){
+    Gantt::set_occupation($gantt, $i, $i-50, "1");
+}
+print("INIT\n");
 #print(Dumper($gantt));
 my $resGroup = iolib::get_resources_data_structure_job($base, 2);
 print(Dumper($resGroup));
 my $h1 = iolib::get_possible_wanted_resources($base,[],[],"", $resGroup->[0]->[0]->[0]->{resources});
 
 print(Dumper($h1));
-my $data = ();
-$data->[0] = {
-    "resources" => $resGroup->[0]->[0]->[0]->{resources},
-    "tree" => $h1
-};
+#my $data = ();
+#$data->[0] = {
+#    "resources" => $resGroup->[0]->[0]->[0]->{resources},
+#    "tree" => $h1
+#};
 
-print(Dumper($data));
+#print(Dumper($data));
 
-Gantt::find_first_hole($gantt, 10, $data);
+#Gantt::find_first_hole($gantt, 10, $data);
+print("TO\n");
+#print(Gantt::pretty_print($gantt)."\n");
 
-print(Gantt::pretty_print($gantt)."\n");
+sleep 30;
