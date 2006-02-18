@@ -10,18 +10,21 @@ use Gantt;
 
 my $gantt = Gantt::new(11);
 
-#Gantt::add_new_resource($gantt, "node1");
-#Gantt::add_new_resource($gantt, "node3");
-#Gantt::set_occupation($gantt, 20, 5, "node1");
-#Gantt::set_occupation($gantt, 26, 10, "node1");
-#Gantt::set_occupation($gantt, 40, 5, "node1");
-#Gantt::set_occupation($gantt, 20, 5, "node2");
-#print(Gantt::pretty_print($gantt)."\n");
+Gantt::add_new_resource($gantt, "node1");
+Gantt::add_new_resource($gantt, "node3");
+Gantt::set_occupation($gantt, 20, 5, "node1");
+Gantt::set_occupation($gantt, 26, 10, "node1");
+Gantt::set_occupation($gantt, 40, 5, "node1");
+Gantt::set_occupation($gantt, 20, 5, "node2");
+Gantt::set_occupation($gantt, 20, 24, "node2");
+print(Gantt::pretty_print($gantt)."\n");
 
 #print(Dumper($gantt));
-#print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
+print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
 #print(Gantt::pretty_print($gantt)."\n");
 #
+
+exit;
 my $base = iolib::connect();
 
 my @r = iolib::list_resources($base);

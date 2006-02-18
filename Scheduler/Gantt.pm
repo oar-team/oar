@@ -17,8 +17,8 @@ sub is_resource_free($$$$);
 sub find_first_hole($$$);
 
 # A gantt chart is a 4 linked tuple list. Each tuple has got the reference to:
-#   - previous busy interval
-#   - next busy interval
+#   - previous end busy interval (last end occupation)
+#   - next end busy interval (next end occupation)
 #   - previous busy interval for the same resource
 #   - next busy interval for the same resource
 
@@ -57,14 +57,14 @@ sub get_tuple_next_same_resource($){
     return $tuple_ref->{next_resource};
 }
 
-sub get_tuple_previous_sorted($){
+sub get_tuple_previous_sorted_end($){
     my ($tuple_ref) = @_;
 
     #Ref of a tuple
     return $tuple_ref->{previous_sorted}
 }
 
-sub get_tuple_next_sorted($){
+sub get_tuple_next_sorted_end($){
     my ($tuple_ref) = @_;
 
     #Ref of a tuple
@@ -101,13 +101,13 @@ sub set_tuple_next_same_resource($$){
     $tuple_ref->{next_resource} = $value;
 }
 
-sub set_tuple_previous_sorted($$){
+sub set_tuple_previous_sorted_end($$){
     my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{previous_sorted} = $value;
 }
 
-sub set_tuple_next_sorted($$){
+sub set_tuple_next_sorted_end($$){
     my ($tuple_ref,$value) = @_;
 
     $tuple_ref->{next_sorted} = $value;
@@ -118,16 +118,16 @@ sub set_tuple_next_sorted($$){
 sub pretty_print($){
     my ($gantt) = @_;
 
-    my $result = "All sorted\n\n";
+    my $result = "All sortedby end date\n\n";
     my $indentation = "";
     my $current_tuple = $gantt->{sorted_root};
     #Follow the chain
-    while (defined(get_tuple_next_sorted($current_tuple))){
+    while (defined(get_tuple_next_sorted_end($current_tuple))){
         $result .= $indentation."name = ".get_tuple_resource($current_tuple)."\n";
         $result .= $indentation."begin = ".get_tuple_begin_date($current_tuple)."\n";
         $result.= $indentation."end = ".get_tuple_end_date($current_tuple)."\n";
         $indentation .= "\t";
-        $current_tuple = get_tuple_next_sorted($current_tuple);
+        $current_tuple = get_tuple_next_sorted_end($current_tuple);
     }
     
     $result .= "\nSame resource sorted\n\n";
@@ -172,7 +172,7 @@ sub remove_resource_tuple($){
 
 # Insert the already "allocated" tuple after the $previous_tuple in the global sorted chain
 # arg : previous tuple ref, tuple to insert after
-sub add_sorted_tuple_after($$){
+sub add_sorted_tuple_end_after($$){
   my ($previous_tuple_ref,$current_tuple_ref) = @_;
 
   $current_tuple_ref->{previous_sorted} = $previous_tuple_ref;
@@ -183,7 +183,7 @@ sub add_sorted_tuple_after($$){
 
 # Remove the tuple indicated by $tuple_ref in the global sorted chain
 # arg = tuple ref to remove
-sub remove_sorted_tuple($){
+sub remove_sorted_end_tuple($){
   my ($tuple_ref) = @_;
 
   my $previous_tuple = $tuple_ref->{previous_sorted};
@@ -205,8 +205,8 @@ sub allocate_new_tuple($$$){
 
     set_tuple_previous_same_resource($result_tuple, undef);
     set_tuple_next_same_resource($result_tuple, undef);
-    set_tuple_previous_sorted($result_tuple, undef);
-    set_tuple_next_sorted($result_tuple, undef);
+    set_tuple_previous_sorted_end($result_tuple, undef);
+    set_tuple_next_sorted_end($result_tuple, undef);
 
     return($result_tuple);
 }
@@ -261,10 +261,10 @@ sub set_occupation($$$$){
 
     $current_tuple = $gantt->{sorted_root};
     # Search the good position in the global resource chained list
-    while (defined(get_tuple_begin_date(get_tuple_next_sorted($current_tuple))) && ($date > get_tuple_begin_date(get_tuple_next_sorted($current_tuple)))){
-        $current_tuple = get_tuple_next_sorted($current_tuple);
+    while (defined(get_tuple_begin_date(get_tuple_next_sorted_end($current_tuple))) && ($date + $duration > get_tuple_end_date(get_tuple_next_sorted_end($current_tuple)))){
+        $current_tuple = get_tuple_next_sorted_end($current_tuple);
     }
-    add_sorted_tuple_after($current_tuple, $new_tuple);
+    add_sorted_tuple_end_after($current_tuple, $new_tuple);
     
     return($new_tuple);
 }
@@ -286,14 +286,12 @@ sub is_resource_free($$$$){
         return(0);
     }
     my $end_date = $begin_date + $duration;
-    my $old_tuple = $gantt->{resource_list}->{$resource_name};
-    my $current_tuple = get_tuple_next_same_resource($old_tuple);
+    my $current_tuple = get_tuple_next_same_resource($gantt->{resource_list}->{$resource_name});
     #Search between which tuples is this interval
-    while (defined(get_tuple_begin_date($current_tuple)) && !($begin_date > get_tuple_end_date(get_tuple_previous_sorted($current_tuple)) && $end_date < get_tuple_begin_date($current_tuple))){
-        $old_tuple = $current_tuple;
+    while (defined(get_tuple_begin_date($current_tuple)) && !($begin_date > get_tuple_end_date(get_tuple_previous_same_resource($current_tuple)) && $end_date < get_tuple_begin_date($current_tuple))){
         $current_tuple = get_tuple_next_same_resource($current_tuple);
     }
-    if ($begin_date > get_tuple_end_date($old_tuple)){
+    if ($begin_date > get_tuple_end_date(get_tuple_previous_same_resource($current_tuple))){
         return(1);
     }else{
         return(0);
@@ -309,23 +307,19 @@ sub find_first_hole($$$){
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
 
-    my $result = [undef, undef]; # Date + resource list
-
-    # Calculate the minimum number of needed resources (speed up futur tests)
-    my $minimum_resource_number = 0;
-    foreach my $i (@{$tree_description_list}){
-        my $tmp = 1;
-        foreach my $r (@{$i->{resources}}){
-            print("TT".Dumper($r));
-            $tmp = $tmp * $r->{value};
-            print("res : $r->{resource} --> $r->{value}\n");
-        }
-        $minimum_resource_number += $tmp;
-    }
-    print("$minimum_resource_number\n");
-
+    my @current_free_resources;
     my $current_time = $gantt->{now_date};
-    
+    my $current_tuple = $gantt->{sorted_root};
+    while (defined($current_tuple) && ($current_time <= get_tuple_end_date($current_tuple))){
+        #Insert tuple in the free current resources arry at the good place
+        
+        my $i = 0;
+        while(($i <= $#current_free_resources) && ($current_free_resources[$i]->[0] < ){
+            
+        }
+        $current_time = get_tuple_end_date($current_tuple);
+        $current_tuple = get_tuple_next_sorted_end($current_tuple);
+    }
 }
 
 return 1;
