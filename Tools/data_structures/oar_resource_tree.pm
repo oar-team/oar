@@ -19,10 +19,13 @@ sub get_father($);
 sub get_current_resource_name($);
 sub get_current_resource_value($);
 sub get_current_level($);
+sub get_max_available_children($);
 sub get_parents($);
 sub set_needed_children_number($$);
 sub get_needed_children_number($);
 sub delete_subtree($);
+
+###############################################################################
 
 sub get_tree_leaf($);
 sub delete_tree_nodes_with_not_enough_resources($);
@@ -43,6 +46,7 @@ sub new(){
     $tree_ref->[5] = 0 ;                        # needed children number :
                                                 #   -1 means ALL (Alive + Absent + Suspected resources)
                                                 #   -2 means BEST (Alive resources at the time)
+    $tree_ref->[6] = 0 ;                        # maximum available children
 
     return($tree_ref);
 }
@@ -69,11 +73,12 @@ sub add_child($$$){
     #$tree_ref->[2] = $resource_name;
     if (!defined($tree_ref->[1]->{$resource_value})){
         # Initialize value of the father
-        $tree_ref->[1]->{$resource_value} = [ $tree_ref, undef, $resource_name, $resource_value, 0 ];
+        $tree_ref->[1]->{$resource_value} = [ $tree_ref, undef, $resource_name, $resource_value, 0 , 0, 0];
+        $tree_ref->[6] ++;
     }
 
     $tree_ref->[1]->{$resource_value}->[4] = get_current_level($tree_ref) + 1;
-
+    
     return(\@{$tree_ref->[1]->{$resource_value}});
 }
 
@@ -169,6 +174,21 @@ sub get_current_level($){
 }
 
 
+# Get the maximum available number of children
+# (just after the creation of the tree)
+# arg : tree ref
+# return an integer >= 0
+sub get_max_available_children($){
+    my $tree_ref = shift;
+    
+    if (!defined($tree_ref) || !defined($tree_ref->[6])){
+        return(0);
+    }else{
+        return($tree_ref->[6]);
+    }
+}
+
+
 # Get the number of needed children
 # arg : tree ref
 # return the number of needed children
@@ -211,6 +231,7 @@ sub delete_subtree($){
     return($father_ref);
 }
 
+###############################################################################
 
 # delete_tree_nodes_with_not_enough_resources
 # Delete subtrees that do not fit wanted resources
