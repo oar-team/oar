@@ -2,6 +2,7 @@ package Gantt;
 require Exporter;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_resource_tree;
+use sorted_chained_list;
 use Data::Dumper;
 use warnings;
 use strict;
@@ -313,7 +314,7 @@ sub find_first_hole($$$){
     my $current_tuple = $gantt->{sorted_root};
     while ($end_loop == 0){
         while (defined($current_tuple) && ($current_time <= get_tuple_end_date($current_tuple))){
-            chained_list::sorted_add_element($current_free_resources,get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)),$current_tuple);
+            sorted_chained_list::sorted_add_element($current_free_resources,get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)),$current_tuple);
             $current_tuple = get_tuple_next_sorted_end($current_tuple);
         }
 

@@ -87,7 +87,7 @@ server:
 	install -m 0755 Runner/runner $(OARDIR)
 	install -m 0755 Sarko/sarko $(OARDIR)
 	install -m 0755 Sarko/finaud $(OARDIR)
-	install -m 0644 Scheduler/Gantt.pm $(OARDIR)
+	install -m 0644 Tools/data_structures/Gantt.pm $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant_g5k $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant_besteffort_deploy_aware $(OARDIR)
