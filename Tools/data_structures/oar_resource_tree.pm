@@ -27,7 +27,7 @@ sub delete_subtree($);
 
 ###############################################################################
 
-sub get_tree_leaf($);
+sub get_tree_leafs($);
 sub delete_tree_nodes_with_not_enough_resources($);
 
 
@@ -241,7 +241,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
     my $tree_ref = shift;
 
     # Search if there are enough values for each resource
-    # Tremaux algorithm
+    # Tremaux algorithm (Deep first)
     my $current_node = $tree_ref;
     my %level_index;
     do{
@@ -250,7 +250,12 @@ sub delete_tree_nodes_with_not_enough_resources($){
             $level_index{$current_node} = 0;
         }
         my @child = sort(get_children_list($current_node));
-        if (get_needed_children_number($current_node) > ($#child + 1)){
+        if ((get_needed_children_number($current_node) > ($#child + 1))
+            or ((get_needed_children_number($current_node) == -1)               # ALL
+                and (get_max_available_children($current_node) > ($#child + 1)))
+            or ((get_needed_children_number($current_node) == -2)                # BEST
+                and ($#child < 0))
+        ){
             # Delete sub tree that does not fit with wanted resources 
             #print("Delete @child\n");
             my $tmp_current_node = get_father($current_node);
@@ -298,14 +303,14 @@ sub delete_tree_nodes_with_not_enough_resources($){
 # get_tree_leaf
 # return a list of tree leaf
 # arg: tree ref
-sub get_tree_leaf($){
+sub get_tree_leafs($){
     my $tree = shift;
 
     my @result;
     return(@result) if (!defined($tree));
     
     # Search leafs
-    # Tremaux algorithm
+    # Tremaux algorithm (Deep first)
     my $current_node = $tree;
     my %level_index;
     my @node_name_pile;

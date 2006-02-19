@@ -104,6 +104,7 @@ server:
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
 	install -m 0644 Tools/data_structures/oar_resource_tree.pm $(OARDIR)
+	install -m 0644 Tools/data_structures/sorted_chained_list.pm $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)
