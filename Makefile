@@ -87,7 +87,7 @@ server:
 	install -m 0755 Runner/runner $(OARDIR)
 	install -m 0755 Sarko/sarko $(OARDIR)
 	install -m 0755 Sarko/finaud $(OARDIR)
-	install -m 0644 Tools/data_structures/Gantt.pm $(OARDIR)
+	install -m 0644 Scheduler/data_structures/Gantt.pm $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant_g5k $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gant_besteffort_deploy_aware $(OARDIR)
@@ -103,8 +103,8 @@ server:
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
-	install -m 0644 Tools/data_structures/oar_resource_tree.pm $(OARDIR)
-	install -m 0644 Tools/data_structures/sorted_chained_list.pm $(OARDIR)
+	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
+	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)
@@ -130,7 +130,7 @@ user:
 	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
-	install -m 0644 Tools/data_structures/oar_resource_tree.pm $(OARDIR)
+	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 
 node:
 	install -d -m 0755 $(OARDIR)
