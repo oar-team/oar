@@ -311,6 +311,8 @@ sub find_first_hole($$$){
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
+    
+    my @result_tree_list;
 
     my $end_loop = 0;
     my $free_resources_vector ;
@@ -352,6 +354,7 @@ sub find_first_hole($$$){
                 }
             }
             oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+            $result_tree_list[$i] = $tree;
             $i ++;
         }while(defined($tree_clone) &&($i <= $#{@{$tree_description_list}}));
         
@@ -363,7 +366,7 @@ sub find_first_hole($$$){
         }
     }
 
-    return($free_resources_vector);
+    return([$current_time, \@result_tree_list]);
 }
 
 return 1;
