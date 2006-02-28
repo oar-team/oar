@@ -412,6 +412,9 @@ sub drawjob ($$$$$$$$$$) {
 
 #print "Formatted  begindate $begindate   enddate $enddate \n";
 
+    #Sort the table
+    @$job_node_ref = sort { $a <=> $b } @$job_node_ref;
+
     #draw job cell
     $y = $offsetgridy +   ($job_node_ref->[0]-1)* $deltay + $gap / 2;
     $preindex = $job_node_ref->[0];
