@@ -257,3 +257,8 @@ notifier de nouveaux jobs ou autre...
 ---------------------------------------------------------------------------
 Rajouter dans oarsub la possibilite de specifier le repertoire de lancement
 ---------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------
+Faire passer a oarexec le niveau de debug voulu et d autres parametres --> plus besoin du fichier de conf pour oarexec
+----------------------------------------------------------------------------------------------------------------------
+

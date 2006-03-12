@@ -251,7 +251,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
         }
         my @child = sort(get_children_list($current_node));
         if ((get_needed_children_number($current_node) > ($#child + 1))
-            or ((get_needed_children_number($current_node) == -1)               # ALL
+            or ((get_needed_children_number($current_node) == -1)                # ALL
                 and (get_max_available_children($current_node) > ($#child + 1)))
             or ((get_needed_children_number($current_node) == -2)                # BEST
                 and ($#child < 0))

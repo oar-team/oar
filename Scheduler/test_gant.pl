@@ -20,11 +20,11 @@ Gantt::set_occupation($gantt, 20, 24, "node2");
 print(Gantt::pretty_print($gantt)."\n");
 
 #print(Dumper($gantt));
-print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
+#print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
 #print(Gantt::pretty_print($gantt)."\n");
 #
 
-exit;
+#exit;
 my $base = iolib::connect();
 
 my @r = iolib::list_resources($base);
@@ -39,13 +39,16 @@ Gantt::set_occupation($gantt, 40, 5, "2");
 Gantt::set_occupation($gantt, 59, 15, "1");
 Gantt::set_occupation($gantt, 100, 5, "1");
 
-for (my $i=1000000; $i > 1000; $i-=101){
-    Gantt::set_occupation($gantt, $i, $i-50, "1");
-}
+#for (my $i=1000000; $i > 1000; $i-=101){
+#    Gantt::set_occupation($gantt, $i, $i-50, "1");
+#}
+
+print(Gantt::pretty_print($gantt)."\n");
+#exit;
 print("INIT\n");
 #print(Dumper($gantt));
 my $resGroup = iolib::get_resources_data_structure_job($base, 2);
-print(Dumper($resGroup));
+#print(Dumper($resGroup));
 my $h1 = iolib::get_possible_wanted_resources($base,[],[],"", $resGroup->[0]->[0]->[0]->{resources});
 
 print(Dumper($h1));
@@ -57,8 +60,8 @@ print(Dumper($h1));
 
 #print(Dumper($data));
 
-#Gantt::find_first_hole($gantt, 10, $data);
+print(Dumper(Gantt::find_first_hole($gantt, 10, [$h1])));
 print("TO\n");
 #print(Gantt::pretty_print($gantt)."\n");
 
-sleep 30;
+#sleep 30;

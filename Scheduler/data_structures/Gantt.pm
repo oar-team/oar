@@ -119,7 +119,7 @@ sub set_tuple_next_sorted_end($$){
 sub pretty_print($){
     my ($gantt) = @_;
 
-    my $result = "All sortedby end date\n\n";
+    my $result = "All sorted by end date\n\n";
     my $indentation = "";
     my $current_tuple = $gantt->{sorted_root};
     #Follow the chain
@@ -315,7 +315,7 @@ sub find_first_hole($$$){
     my @result_tree_list;
 
     my $end_loop = 0;
-    my $free_resources_vector ;
+    my $free_resources_vector = '';
     my $current_free_resources = sorted_chained_list::new();;
     my $current_time = $gantt->{now_date};
     my $current_tuple = $gantt->{sorted_root};
@@ -329,15 +329,17 @@ sub find_first_hole($$$){
         #Remove current free resources with not enough time
         my $current_element = $current_free_resources;
         while ( defined($current_element)
-                && defined(sorted_add_element::get_value($current_element))
+                && defined(sorted_chained_list::get_value($current_element))
                 && (sorted_chained_list::get_value($current_element) < $current_time)){
             sorted_chained_list::remove_element($current_free_resources,$current_element);
             $current_element = sorted_chained_list::get_next($current_element);
         }
        
+        print(sorted_chained_list::pretty_print($current_free_resources)."\n");
         #Get current free resource names
         $current_element = $current_free_resources;
-        while (defined($current_element)){
+        while (defined(sorted_chained_list::get_stored_ref($current_element))){
+#            print(get_tuple_resource(sorted_chained_list::get_stored_ref($current_element))."\n");
             vec($free_resources_vector,get_tuple_resource(sorted_chained_list::get_stored_ref($current_element)),1) = 1;
             $current_element = sorted_chained_list::get_next($current_element);
         }
@@ -349,12 +351,13 @@ sub find_first_hole($$$){
             $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
             #Remove tree leafs that are not free
             foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                if (!vec($free_resources_vector,oar_resource_tree::get_current_resource_name($l),1)){
+                print("$free_resources_vector ".oar_resource_tree::get_current_resource_value($l)."\n");
+                if (!vec($free_resources_vector,oar_resource_tree::get_current_resource_value($l),1)){
                     oar_resource_tree::delete_subtree($l);
                 }
             }
             oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-            $result_tree_list[$i] = $tree;
+            $result_tree_list[$i] = $tree_clone;
             $i ++;
         }while(defined($tree_clone) &&($i <= $#{@{$tree_description_list}}));
         
