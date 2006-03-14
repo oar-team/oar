@@ -15,7 +15,7 @@ sub new($);
 sub add_new_resource($$);
 sub set_occupation($$$$);
 sub is_resource_free($$$$);
-sub find_first_hole($$$);
+sub find_first_hole($$$$);
 
 # A gantt chart is a 4 linked tuple list. Each tuple has got the reference to:
 #   - previous end busy interval (last end occupation)
@@ -306,9 +306,10 @@ sub is_resource_free($$$$){
 }
 
 
-#
-sub find_first_hole($$$){
-    my ($gantt, $duration, $tree_description_list) = @_;
+# Take a list of resoure trees and find a hole that fit
+# args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
+sub find_first_hole($$$$){
+    my ($gantt, $initial_time, $duration, $tree_description_list) = @_;
 
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
@@ -319,7 +320,7 @@ sub find_first_hole($$$){
     my $end_loop = 0;
     # Tuples sorted by begin date
     my $current_free_resources = sorted_chained_list::new();
-    my $current_time = $gantt->{now_date};
+    my $current_time = $initial_time;
     my $current_tuple = $gantt->{sorted_root};
     while ($end_loop == 0){
         # Add in the sorted chain, tuples that will begin just after the current time 
@@ -335,23 +336,22 @@ sub find_first_hole($$$){
             }
             $current_tuple = get_tuple_next_sorted_end($current_tuple);
         }
-        print(sorted_chained_list::pretty_print($current_free_resources)."\n");
+        #print(sorted_chained_list::pretty_print($current_free_resources)."\n");
 
         #Remove current free resources with not enough time
         my $current_element = sorted_chained_list::get_next($current_free_resources);
         while ( defined(sorted_chained_list::get_value($current_element))
-                && (sorted_chained_list::get_value($current_element) <= $current_time + $duration)){
+                && (sorted_chained_list::get_value($current_element) <= $current_time + $duration + 1)){
             sorted_chained_list::remove_element($current_free_resources,$current_element);
             $current_element = sorted_chained_list::get_next($current_element);
         }
 
-        print(sorted_chained_list::pretty_print($current_free_resources)."\n");
+        #print(sorted_chained_list::pretty_print($current_free_resources)."\n");
 
-        #Get current free resource names
+        #Get current free resource names and store it in a vector
         my $free_resources_vector = '';
         $current_element = sorted_chained_list::get_next($current_free_resources);
         while (defined(sorted_chained_list::get_value($current_element))){
-#            print(get_tuple_resource(sorted_chained_list::get_stored_ref($current_element))."\n");
             vec($free_resources_vector,get_tuple_resource(sorted_chained_list::get_stored_ref($current_element)),1) = 1;
             $current_element = sorted_chained_list::get_next($current_element);
         }
@@ -363,31 +363,32 @@ sub find_first_hole($$$){
             $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
             #Remove tree leafs that are not free
             foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                print(oar_resource_tree::get_current_resource_value($l)."\n");
+                #print(oar_resource_tree::get_current_resource_value($l)."\n");
                 if (!vec($free_resources_vector,oar_resource_tree::get_current_resource_value($l),1)){
-                    print("delete subtree $l\n");
+                    #print("delete subtree $l\n");
                     oar_resource_tree::delete_subtree($l);
                 }
             }
-            print(Dumper($tree_clone));
             $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-            print("TTOTOTO\n");
-            print(Dumper($tree_clone));
+            #print(Dumper($tree_clone));
             $result_tree_list[$i] = $tree_clone;
             $i ++;
         }while(defined($tree_clone) && ($i <= $#{@{$tree_description_list}}));
         
         if (defined($tree_clone)){
-            #We find the first hole
+            # We find the first hole
             $end_loop = 1;
         }else{
-            my $initial_current_time = $current_time;
-            while (($current_time <= $initial_current_time) && defined(get_tuple_end_date($current_tuple))){
+            # We search the next time with at least one free resource added
+            #my $initial_current_time = $current_time;
+            #while (($current_time <= $initial_current_time) && defined(get_tuple_end_date($current_tuple))){
                 $current_time = get_tuple_end_date($current_tuple) if (defined($current_tuple));
-            }
+            #}
             if (!defined(get_tuple_end_date($current_tuple))){
                 $end_loop = 1;
                 @result_tree_list = ();
+            }else{
+                $current_time = get_tuple_end_date($current_tuple);
             }
         }
     }

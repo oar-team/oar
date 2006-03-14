@@ -62,7 +62,7 @@ print(Dumper($h1));
 
 #print(Dumper($data));
 
-print(Dumper(Gantt::find_first_hole($gantt, 50, [$h1])));
+print(Dumper(Gantt::find_first_hole($gantt,3, 30, [$h1])));
 print("TO\n");
 #print(Gantt::pretty_print($gantt)."\n");
 

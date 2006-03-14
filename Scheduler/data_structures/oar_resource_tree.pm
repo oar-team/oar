@@ -265,7 +265,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
             #print(" $father_key_name  Deleted\n");
             if (!defined($father_key_name)){
                 # No matching records (we want to delete the root)
-                print("UNDEF tree ref\n");
+                #print("UNDEF tree ref\n");
                 $tree_ref = undef;
                 return($tree_ref);
             }
