@@ -262,12 +262,13 @@ sub delete_tree_nodes_with_not_enough_resources($){
             #my @tmp = sort(get_children_list($tmp_current_node));
             #my $father_key_name = $tmp[$level_index{$tmp_current_node} - 1];
             my $father_key_name = get_current_resource_value($current_node);
+            #print(" $father_key_name  Deleted\n");
             if (!defined($father_key_name)){
                 # No matching records (we want to delete the root)
+                print("UNDEF tree ref\n");
                 $tree_ref = undef;
                 return($tree_ref);
             }
-            #print("Key father : $father_key_name\n");
             $current_node = $tmp_current_node;
             delete_subtree(get_a_child($current_node, $father_key_name));
             $level_index{$current_node} --;

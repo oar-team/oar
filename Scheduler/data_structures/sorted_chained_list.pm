@@ -63,7 +63,7 @@ sub pretty_print($){
     my $indentation = "";
     my $current_element = get_next($chain_ref);
     #Follow the chain
-    while (defined($current_element)){
+    while (defined($current_element) && defined(get_value($current_element))){
         $result .= $indentation."value = ".get_value($current_element)."\n";
         $indentation .= "\t";
         $current_element = get_next($current_element);
@@ -77,6 +77,8 @@ sub pretty_print($){
 # return the new crated element
 sub add_element($$$){
     my ($chain_ref,$value,$ref) = @_;
+
+    return(undef) if (!defined($value));
 
     $chain_ref->{counter} ++;
     my $new = {

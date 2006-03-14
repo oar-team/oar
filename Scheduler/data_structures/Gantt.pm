@@ -239,6 +239,8 @@ sub add_new_resource($$) {
 
     if (!defined($gantt->{sorted_root})){
         $gantt->{sorted_root} = $t;
+    }else{
+        add_sorted_tuple_end_after($gantt->{sorted_root}, $t);
     }
     
     return($t);
@@ -312,33 +314,43 @@ sub find_first_hole($$$){
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
     
-    my @result_tree_list;
+    my @result_tree_list = ();
 
     my $end_loop = 0;
-    my $free_resources_vector = '';
-    my $current_free_resources = sorted_chained_list::new();;
+    # Tuples sorted by begin date
+    my $current_free_resources = sorted_chained_list::new();
     my $current_time = $gantt->{now_date};
     my $current_tuple = $gantt->{sorted_root};
     while ($end_loop == 0){
-        while ( defined($current_tuple)
-                && ($current_time <= get_tuple_end_date($current_tuple))){
-            sorted_chained_list::sorted_add_element($current_free_resources,get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)),$current_tuple);
+        # Add in the sorted chain, tuples that will begin just after the current time 
+        while ( defined(get_tuple_end_date($current_tuple))
+                && ($current_time >= get_tuple_end_date($current_tuple))){
+            if (!defined(get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)))){
+                # store empty resource until infinite
+                # 2^32 is infinite in 32 bits stored time
+                my $infinite = 4294967296;
+                sorted_chained_list::add_element($current_free_resources,$infinite,$current_tuple);
+            }else{
+                sorted_chained_list::add_element($current_free_resources,get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)),$current_tuple);
+            }
             $current_tuple = get_tuple_next_sorted_end($current_tuple);
         }
+        print(sorted_chained_list::pretty_print($current_free_resources)."\n");
 
         #Remove current free resources with not enough time
-        my $current_element = $current_free_resources;
-        while ( defined($current_element)
-                && defined(sorted_chained_list::get_value($current_element))
-                && (sorted_chained_list::get_value($current_element) < $current_time)){
+        my $current_element = sorted_chained_list::get_next($current_free_resources);
+        while ( defined(sorted_chained_list::get_value($current_element))
+                && (sorted_chained_list::get_value($current_element) <= $current_time + $duration)){
             sorted_chained_list::remove_element($current_free_resources,$current_element);
             $current_element = sorted_chained_list::get_next($current_element);
         }
-       
+
         print(sorted_chained_list::pretty_print($current_free_resources)."\n");
+
         #Get current free resource names
-        $current_element = $current_free_resources;
-        while (defined(sorted_chained_list::get_stored_ref($current_element))){
+        my $free_resources_vector = '';
+        $current_element = sorted_chained_list::get_next($current_free_resources);
+        while (defined(sorted_chained_list::get_value($current_element))){
 #            print(get_tuple_resource(sorted_chained_list::get_stored_ref($current_element))."\n");
             vec($free_resources_vector,get_tuple_resource(sorted_chained_list::get_stored_ref($current_element)),1) = 1;
             $current_element = sorted_chained_list::get_next($current_element);
@@ -351,21 +363,32 @@ sub find_first_hole($$$){
             $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
             #Remove tree leafs that are not free
             foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                print("$free_resources_vector ".oar_resource_tree::get_current_resource_value($l)."\n");
+                print(oar_resource_tree::get_current_resource_value($l)."\n");
                 if (!vec($free_resources_vector,oar_resource_tree::get_current_resource_value($l),1)){
+                    print("delete subtree $l\n");
                     oar_resource_tree::delete_subtree($l);
                 }
             }
-            oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+            print(Dumper($tree_clone));
+            $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+            print("TTOTOTO\n");
+            print(Dumper($tree_clone));
             $result_tree_list[$i] = $tree_clone;
             $i ++;
-        }while(defined($tree_clone) &&($i <= $#{@{$tree_description_list}}));
+        }while(defined($tree_clone) && ($i <= $#{@{$tree_description_list}}));
         
         if (defined($tree_clone)){
             #We find the first hole
             $end_loop = 1;
         }else{
-            $current_time = get_tuple_end_date($current_tuple) if (defined($current_tuple));
+            my $initial_current_time = $current_time;
+            while (($current_time <= $initial_current_time) && defined(get_tuple_end_date($current_tuple))){
+                $current_time = get_tuple_end_date($current_tuple) if (defined($current_tuple));
+            }
+            if (!defined(get_tuple_end_date($current_tuple))){
+                $end_loop = 1;
+                @result_tree_list = ();
+            }
         }
     }
 

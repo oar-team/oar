@@ -8,16 +8,16 @@ use oar_iolib;
 use oar_resource_tree;
 use Gantt;
 
-my $gantt = Gantt::new(11);
+my $gantt = Gantt::new(23);
 
-Gantt::add_new_resource($gantt, "node1");
-Gantt::add_new_resource($gantt, "node3");
-Gantt::set_occupation($gantt, 20, 5, "node1");
-Gantt::set_occupation($gantt, 26, 10, "node1");
-Gantt::set_occupation($gantt, 40, 5, "node1");
-Gantt::set_occupation($gantt, 20, 5, "node2");
-Gantt::set_occupation($gantt, 20, 24, "node2");
-print(Gantt::pretty_print($gantt)."\n");
+#Gantt::add_new_resource($gantt, "2");
+#Gantt::add_new_resource($gantt, "4");
+#Gantt::set_occupation($gantt, 20, 5, "2");
+#Gantt::set_occupation($gantt, 26, 10, "2");
+#Gantt::set_occupation($gantt, 40, 5, "2");
+#Gantt::set_occupation($gantt, 20, 5, "2");
+#Gantt::set_occupation($gantt, 20, 24, "2");
+#print(Gantt::pretty_print($gantt)."\n");
 
 #print(Dumper($gantt));
 #print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
@@ -28,16 +28,18 @@ print(Gantt::pretty_print($gantt)."\n");
 my $base = iolib::connect();
 
 my @r = iolib::list_resources($base);
-print(Dumper(@r));
+#print(Dumper(@r));
 
 foreach my $i (@r){
     Gantt::add_new_resource($gantt, $i->{resourceId});
 }
 
-Gantt::set_occupation($gantt, 46, 5, "1");
+Gantt::set_occupation($gantt, 41, 5, "4");
 Gantt::set_occupation($gantt, 40, 5, "2");
-Gantt::set_occupation($gantt, 59, 15, "1");
-Gantt::set_occupation($gantt, 100, 5, "1");
+Gantt::set_occupation($gantt, 59, 15, "5");
+Gantt::set_occupation($gantt, 110, 200, "5");
+Gantt::set_occupation($gantt, 100, 5, "2");
+Gantt::set_occupation($gantt, 40, 50, "6");
 
 #for (my $i=1000000; $i > 1000; $i-=101){
 #    Gantt::set_occupation($gantt, $i, $i-50, "1");
@@ -60,7 +62,7 @@ print(Dumper($h1));
 
 #print(Dumper($data));
 
-print(Dumper(Gantt::find_first_hole($gantt, 10, [$h1])));
+print(Dumper(Gantt::find_first_hole($gantt, 50, [$h1])));
 print("TO\n");
 #print(Gantt::pretty_print($gantt)."\n");
 
