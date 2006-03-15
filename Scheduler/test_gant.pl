@@ -8,7 +8,7 @@ use oar_iolib;
 use oar_resource_tree;
 use Gantt;
 
-my $gantt = Gantt::new(23);
+my $gantt = Gantt::new();
 
 #Gantt::add_new_resource($gantt, "2");
 #Gantt::add_new_resource($gantt, "4");
@@ -34,12 +34,12 @@ foreach my $i (@r){
     Gantt::add_new_resource($gantt, $i->{resourceId});
 }
 
-Gantt::set_occupation($gantt, 41, 5, "4");
-Gantt::set_occupation($gantt, 40, 5, "2");
-Gantt::set_occupation($gantt, 59, 15, "5");
-Gantt::set_occupation($gantt, 110, 200, "5");
-Gantt::set_occupation($gantt, 100, 5, "2");
-Gantt::set_occupation($gantt, 40, 50, "6");
+Gantt::set_occupation($gantt, 20, 50, "4");
+Gantt::set_occupation($gantt, 4, 50, "5");
+#Gantt::set_occupation($gantt, 59, 15, "5");
+#Gantt::set_occupation($gantt, 110, 200, "5");
+#Gantt::set_occupation($gantt, 100, 5, "2");
+#Gantt::set_occupation($gantt, 40, 50, "6");
 
 #for (my $i=1000000; $i > 1000; $i-=101){
 #    Gantt::set_occupation($gantt, $i, $i-50, "1");
@@ -50,7 +50,7 @@ print(Gantt::pretty_print($gantt)."\n");
 print("INIT\n");
 #print(Dumper($gantt));
 my $resGroup = iolib::get_resources_data_structure_job($base, 2);
-#print(Dumper($resGroup));
+print(Dumper($resGroup));
 my $h1 = iolib::get_possible_wanted_resources($base,[],[],"", $resGroup->[0]->[0]->[0]->{resources});
 
 print(Dumper($h1));

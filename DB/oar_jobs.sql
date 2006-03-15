@@ -285,10 +285,10 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ( "$queueName" eq "be
 # Force deploy jobs to go on nodes with the deploy property
 INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES ('if ( "$queueName" eq "deploy" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND deploy = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "deploy = \\\\\\"YES\\\\\\"";} }');
 
-INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('admin','10','oar_sched_gant');
-INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('default','2','oar_sched_gant');
-INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('deploy','1','oar_sched_gant');
-INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('besteffort','0','oar_sched_gant');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('admin','10','oar_sched_gantt');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('default','2','oar_sched_gantt');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('deploy','1','oar_sched_gantt');
+INSERT IGNORE INTO `queues` (`queueName` , `priority` , `schedulerPolicy`)  VALUES ('besteffort','0','oar_sched_gantt');
 
 INSERT IGNORE INTO `ganttJobsPredictions` (`idMoldableJob` , `startTime`)  VALUES ('0','1970-01-01 01:00:01');
 

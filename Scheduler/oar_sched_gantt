@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+# $Id: oar_sched_gant,v 1.42 2005/01/27 10:20:51 capitn Exp $
+#-I../Iolib -I../ConfLib -I../Judas -w
+
+use strict;
+use DBI();
+use oar_iolib;
+use Data::Dumper;
+use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Gantt;
+
+# Constant duration time of a besteffort job
+my $besteffort_duration = 5*60;
+
+# $security_time_overhead is the security time (second) used to be sure there
+# are no problem with overlaping jobs
+my $security_time_overhead = 1;
+
+my $current_time ;
+
+my $queue;
+if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
+    $queue = $ARGV[0];
+    $current_time = $ARGV[1];
+}else{
+    oar_error("[oar_sched_gant] no queue specified on command line\n");
+    exit(1);
+}
+
+# Init
+my $base = iolib::connect();
+
+oar_debug("[oar_sched_gant] Begining of Gantt scheduler on queue $queue at time $current_time\n");
+
+# Create the Gantt Diagram
+my $gantt = Gantt::new($current_time);
+#Init the gantt chart with all resources
+foreach my $r (iolib::list_resources($base)){
+    Gantt::add_new_resource($gantt, $r->{resourceId});
+}
+
+# Take care of currently scheduled jobs (gantt in the database)
+my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($base);
+foreach my $i (keys(%alreadyScheduledJobs)){
+    if ($alreadyScheduledJobs{$i}->[3] ne "besteffort") {
+        foreach my $r (@{$alreadyScheduledJobs{$i}->[4]}){
+            Gantt::set_occupation(  $gantt,
+                                    iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
+                                    iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $security_time_overhead,
+                                    $r
+                                 );
+        }
+    }
+}
+
+print(Gantt::pretty_print($gantt)."\n");
+
+exit;
+# End of the initialisation
+
+# Begining of the real scheduling
+
+iolib::disconnect($base);
+oar_debug("[oar_sched_gant] End of scheduler for queue $queue\n");
+

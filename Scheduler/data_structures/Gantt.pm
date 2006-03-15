@@ -11,7 +11,7 @@ use strict;
 
 # Prototypes
 # gant chart management
-sub new($);
+sub new();
 sub add_new_resource($$);
 sub set_occupation($$$$);
 sub is_resource_free($$$$);
@@ -123,7 +123,7 @@ sub pretty_print($){
     my $indentation = "";
     my $current_tuple = $gantt->{sorted_root};
     #Follow the chain
-    while (defined(get_tuple_next_sorted_end($current_tuple))){
+    while (defined(get_tuple_begin_date($current_tuple))){
         $result .= $indentation."name = ".get_tuple_resource($current_tuple)."\n";
         $result .= $indentation."begin = ".get_tuple_begin_date($current_tuple)."\n";
         $result.= $indentation."end = ".get_tuple_end_date($current_tuple)."\n";
@@ -136,7 +136,7 @@ sub pretty_print($){
     foreach my $r (keys(%{$gantt->{resource_list}})){
         $indentation = "";
         $current_tuple = $gantt->{resource_list}->{$r};
-        while (defined(get_tuple_next_same_resource($current_tuple))){
+        while (defined(get_tuple_begin_date($current_tuple))){
             $result .= $indentation."name = ".get_tuple_resource($current_tuple)."\n";
             $result .= $indentation."begin = ".get_tuple_begin_date($current_tuple)."\n";
             $result .= $indentation."end = ".get_tuple_end_date($current_tuple)."\n";
@@ -214,11 +214,8 @@ sub allocate_new_tuple($$$){
 
 # Creates an empty Gantt
 # arg : gantt reference date
-sub new($){
-    my ($now) = @_;
-    
+sub new(){
     my $result = {
-                    now_date => $now,
                     resource_list => {}
                  };
   
@@ -314,7 +311,7 @@ sub find_first_hole($$$$){
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
-    
+
     my @result_tree_list = ();
 
     my $end_loop = 0;

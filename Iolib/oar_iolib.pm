@@ -1965,22 +1965,25 @@ sub get_really_alive_node_job($$$) {
 
 
 
-# get_alive_node
-# gets the list of alive nodes.
+# get_alive_resources
+# gets the list of resources in the Alive state.
 # parameters : base
-# return value : list of hostnames
+# return value : list of resource refs
 # side effects : /
-sub get_alive_node($) {
+sub get_alive_resources($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n
-                             WHERE ( n.state = \"Alive\" or
-                             n.state = \"Suspected\" or
-                             n.state = \"Absent\" )  ");
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    state = \"Alive\"
+                                    OR state = \"Suspected\"
+                                    OR state = \"Absent\"
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
+        push(@res, $ref);
     }
     $sth->finish();
     return @res;
@@ -2763,13 +2766,15 @@ sub get_all_queue_informations($){
 
 #get previous scheduler decisions
 #args : base
-#return a hashtable : idJob --> [startTime,weight,walltime,queueName,\@nodes]
+#return a hashtable : idJob --> [startTime,walltime,queueName,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT g2.idJob, g2.startTime, j.weight, j.maxTime, g1.hostname, j.queueName, j.state
-                             FROM ganttJobsNodes g1, ganttJobsPrediction g2, jobs j
-                             WHERE g1.idJob = g2.idJob
-                                AND j.idJob = g1.idJob
+    my $sth = $dbh->prepare("SELECT j.idJob, g2.startTime, m.moldableWalltime, g1.idResource, j.queueName, j.state
+                             FROM ganttJobsResources g1, ganttJobsPredictions g2, moldableJobs_description m, jobs j
+                             WHERE
+                                g1.idMoldableJob = g2.idMoldableJob
+                                AND m.moldableId = g2.idMoldableJob
+                                AND j.idJob = m.moldableJobId
                             ");
     $sth->execute();
     my %res ;
@@ -2777,11 +2782,11 @@ sub get_gantt_scheduled_jobs($){
         if (!defined($res{$ref[0]})){
             $res{$ref[0]}->[0] = $ref[1];
             $res{$ref[0]}->[1] = $ref[2];
-            $res{$ref[0]}->[2] = $ref[3];
-            $res{$ref[0]}->[3] = $ref[5];
-            $res{$ref[0]}->[5] = $ref[6];
+            $res{$ref[0]}->[2] = $ref[4];
+            $res{$ref[0]}->[3] = $ref[3];
+            $res{$ref[0]}->[4] = $ref[5];
         }
-        push(@{$res{$ref[0]}->[4]}, $ref[4]);
+        push(@{$res{$ref[0]}->[3]}, $ref[3]);
     }
     $sth->finish();
 
