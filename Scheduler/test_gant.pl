@@ -41,11 +41,11 @@ Gantt::set_occupation($gantt, 4, 50, "5");
 #Gantt::set_occupation($gantt, 100, 5, "2");
 #Gantt::set_occupation($gantt, 40, 50, "6");
 
-#for (my $i=1000000; $i > 1000; $i-=101){
-#    Gantt::set_occupation($gantt, $i, $i-50, "1");
-#}
+for (my $i=100000; $i > 1000; $i-=101){
+    Gantt::set_occupation($gantt, $i, $i-50, "4");
+}
 
-print(Gantt::pretty_print($gantt)."\n");
+#print(Gantt::pretty_print($gantt)."\n");
 #exit;
 print("INIT\n");
 #print(Dumper($gantt));

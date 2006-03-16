@@ -74,6 +74,7 @@ sub set_stagein($$$$$$);
 sub get_job_stagein($$);
 sub is_stagein_deprecated($$$);
 sub del_stagein($$);
+sub get_jobs_to_schedule($$);
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub remove_current_assigned_resources($$);
@@ -1327,6 +1328,29 @@ sub is_waiting_job_specific_queue_present($$){
     return ($res > 0);
 }
 
+
+# get_jobs_to_schedule
+# args : base ref, queue name
+sub get_jobs_to_schedule($$){
+    my $dbh = shift;
+    my $queue = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state = \"Waiting\"
+                                    AND reservation = \"None\"
+                                    AND queueName = \"$queue\"
+                                ORDER BY idJob
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return @res;
+}
 
 
 # Get all waiting toSchedule reservation jobs in the specified queue

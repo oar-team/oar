@@ -1,6 +1,4 @@
 #!/usr/bin/perl
-# $Id: oar_sched_gant,v 1.42 2005/01/27 10:20:51 capitn Exp $
-#-I../Iolib -I../ConfLib -I../Judas -w
 
 use strict;
 use DBI();
@@ -34,7 +32,7 @@ my $base = iolib::connect();
 oar_debug("[oar_sched_gant] Begining of Gantt scheduler on queue $queue at time $current_time\n");
 
 # Create the Gantt Diagram
-my $gantt = Gantt::new($current_time);
+my $gantt = Gantt::new();
 #Init the gantt chart with all resources
 foreach my $r (iolib::list_resources($base)){
     Gantt::add_new_resource($gantt, $r->{resourceId});
@@ -43,6 +41,7 @@ foreach my $r (iolib::list_resources($base)){
 # Take care of currently scheduled jobs (gantt in the database)
 my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($base);
 foreach my $i (keys(%alreadyScheduledJobs)){
+    # Do not take care of besteffort jobs
     if ($alreadyScheduledJobs{$i}->[3] ne "besteffort") {
         foreach my $r (@{$alreadyScheduledJobs{$i}->[4]}){
             Gantt::set_occupation(  $gantt,
@@ -56,10 +55,17 @@ foreach my $i (keys(%alreadyScheduledJobs)){
 
 print(Gantt::pretty_print($gantt)."\n");
 
-exit;
 # End of the initialisation
-
 # Begining of the real scheduling
+
+foreach my $j (iolib::get_jobs_to_schedule($base,$queue)){
+    my $duration;
+    if ($queue eq "besteffort"){
+        $duration = $besteffort_duration;
+    }else{
+        
+    }
+}
 
 iolib::disconnect($base);
 oar_debug("[oar_sched_gant] End of scheduler for queue $queue\n");

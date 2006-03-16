@@ -89,8 +89,6 @@ server:
 	install -m 0755 Sarko/finaud $(OARDIR)
 	install -m 0644 Scheduler/data_structures/Gantt.pm $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gantt $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_gant_g5k $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_gant_besteffort_deploy_aware $(OARDIR)
 	install -m 0755 Scheduler/oar_meta_sched $(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
