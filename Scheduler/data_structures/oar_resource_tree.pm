@@ -29,6 +29,7 @@ sub delete_subtree($);
 
 sub get_tree_leafs($);
 sub delete_tree_nodes_with_not_enough_resources($);
+sub delete_unnecessary_subtrees($);
 
 
 # Create a tree
@@ -358,4 +359,52 @@ sub get_tree_leafs($){
     return(@result);
 }
 
+
+# delete_unnecessary_subtrees
+# Delete subtrees that are not necessary (watch needed_children_number)
+# args: tree ref
+# side effect : modify tree data structure
+sub delete_unnecessary_subtrees($){
+    my $tree_ref = shift;
+
+    # Search if there are enough values for each resource
+    # Tremaux algorithm (Deep first)
+    my $current_node = $tree_ref;
+    my %level_index;
+    do{
+        if (!defined($level_index{$current_node})){
+            # Initialize index where we are for the node
+            $level_index{$current_node} = 0;
+        }
+        my @child = sort(get_children_list($current_node));
+        if ((get_needed_children_number($current_node) >= 0) and (get_needed_children_number($current_node) < ($#child + 1))){
+            # Delete extra sub tree
+            delete_subtree(get_a_child($current_node, $child[0]));
+        }else{
+            if (defined($child[$level_index{$current_node}]) and defined(get_a_child($current_node, $child[$level_index{$current_node}]))){
+                # Go to child
+                #print("GO to  Child = $child[$level_index{$current_node}]\n");
+                my $tmp_current_node = $current_node;
+                $current_node = get_a_child($current_node, $child[$level_index{$current_node}]);
+                $level_index{$tmp_current_node} ++;
+            }else{
+                # Treate leaf
+                my @brothers = sort(get_children_list(get_father($current_node)));
+                while(defined($current_node) and (!defined(get_father($current_node)) or !defined($brothers[$level_index{get_father($current_node)}]))){
+                    $level_index{get_father($current_node)} ++ if defined(get_father($current_node));
+                    $current_node = get_father($current_node);
+                    @brothers = sort(get_children_list(get_father($current_node))) ;
+                }
+                if (defined(get_father($current_node)) &&  defined($brothers[$level_index{get_father($current_node)}])){
+                    # Treate brother
+                    #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
+                    $current_node = get_a_child(get_father($current_node), $brothers[$level_index{get_father($current_node)}]);
+                    $level_index{get_father($current_node)} ++;
+                }
+            }
+        }
+    }while(defined($current_node));
+
+    return($tree_ref);
+}
 return 1;

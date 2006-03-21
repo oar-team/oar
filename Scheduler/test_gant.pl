@@ -34,16 +34,16 @@ foreach my $i (@r){
     Gantt::add_new_resource($gantt, $i->{resourceId});
 }
 
-Gantt::set_occupation($gantt, 20, 50, "4");
+Gantt::set_occupation($gantt, 4, 50, "4");
 Gantt::set_occupation($gantt, 4, 50, "5");
 #Gantt::set_occupation($gantt, 59, 15, "5");
 #Gantt::set_occupation($gantt, 110, 200, "5");
 #Gantt::set_occupation($gantt, 100, 5, "2");
 #Gantt::set_occupation($gantt, 40, 50, "6");
 
-for (my $i=100000; $i > 1000; $i-=101){
-    Gantt::set_occupation($gantt, $i, $i-50, "4");
-}
+#for (my $i=100000; $i > 1000; $i-=101){
+#    Gantt::set_occupation($gantt, $i, $i-50, "4");
+#}
 
 #print(Gantt::pretty_print($gantt)."\n");
 #exit;
@@ -62,8 +62,14 @@ print(Dumper($h1));
 
 #print(Dumper($data));
 
-print(Dumper(Gantt::find_first_hole($gantt,3, 30, [$h1])));
-print("TO\n");
+my @a = Gantt::find_first_hole($gantt,3, 30, [$h1]);
+
+print(Dumper(@a));
+print("TO_OT\n");
 #print(Gantt::pretty_print($gantt)."\n");
+
+foreach my $t (@{$a[1]}){
+    print(Dumper(oar_resource_tree::delete_unnecessary_subtrees($t)));
+}
 
 #sleep 30;

@@ -390,7 +390,7 @@ sub find_first_hole($$$$){
         }
     }
 
-    return([$current_time, \@result_tree_list]);
+    return($current_time, \@result_tree_list);
 }
 
 return 1;

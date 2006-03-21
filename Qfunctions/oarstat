@@ -87,7 +87,7 @@ sub print_job ( $ ) {
             print "[$e->{date}] $e->{type}:$e->{description}";
             print " , ";
         }
-        print "\n";
+        print "\n\n";
   }elsif ( defined($opts{x}) || defined($opts{j}) ) {
       print "Job Id: ".$job_info->{idJob}."\n";
       while (my ($key,$value) = each %$job_info) {
