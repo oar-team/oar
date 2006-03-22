@@ -8,6 +8,13 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Gantt;
 
+my $initial_time = time();
+my $timeout = 10;
+init_conf("oar.conf");
+if (is_conf("SCHEDULER_TIMEOUT")){
+    $timeout = get_conf("SCHEDULER_TIMEOUT");
+}
+
 # Constant duration time of a besteffort job
 my $besteffort_duration = 5*60;
 
@@ -58,12 +65,64 @@ print(Gantt::pretty_print($gantt)."\n");
 # End of the initialisation
 # Begining of the real scheduling
 
-foreach my $j (iolib::get_jobs_to_schedule($base,$queue)){
-    my $duration;
-    if ($queue eq "besteffort"){
+my @jobs = iolib::get_jobs_to_schedule($base,$queue);
+my $job_index = 0;
+while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
+    my $j = $jobs[$job_index];
+    $job_index ++;
+    # Choose the moldable job to schedule
+    # Here we make it simple, we choose the first
+    my $job_descriptions = iolib::get_resources_data_structure_job($base,$j->{idJob});
+    my $moldable = $job_descriptions->[0];
+    
+    my $types = iolib::get_job_types($base,$j->{idJob});
+    my $duration = $moldable->[1];
+    if (defined($types->{"besteffort"})){
         $duration = $besteffort_duration;
-    }else{
-        
+    }
+    
+    # Get list of Alive resources
+    my @alive_resources;
+    foreach my $r (iolib::get_resources_in_state($base,"Alive")){
+        push(@alive_resources, $r->{resourceId});
+    }
+    
+    my $job_properties = "TRUE";
+    if ($j->{properties} ne ""){
+        $job_properties = $j->{properties};
+    }
+
+    my @resource_id_used_list;
+    my @tree_list;
+    foreach my $m (@{$moldable->[0]}){
+        my $tmp_properties = "TRUE";
+        if ($m->{property} ne ""){
+            $tmp_properties = $m->{property};
+        }
+        my $tmp_tree = iolib::get_possible_wanted_resources($base,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+        push(@tree_list, $tmp_tree);
+        my @leafs = oar_resource_tree::get_tree_leaf($tmp_tree);
+        foreach my $l (@leafs){
+            push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+        }
+    }
+    my @hole = Gantt::find_first_hole($gantt,$current_time, $duration, \@tree_list);
+    my @res_trees;
+    my @resources;
+    foreach my $t (@{$hole[1]}){
+        my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+        push(@res_trees, $minimal_tree);
+        push(@resources, oar_resource_tree::get_tree_leafs($minimal_tree));
+    }
+
+    if ($#resources >= 0){
+        # We can schedule the job
+        foreach my $r (@resources){
+            Gantt::set_occupation($gantt, $hole[0], $duration, $r);
+        }
+        #update database
+        my ($year,$mon,$day,$hour,$min,$sec) = iolib::local_to_ymdhms($hole[0]);
+        iolib::add_gantt_scheduled_jobs($base,$moldable->[2],"$year-$mon-$day $hour:$min:$sec",\@resources);
     }
 }
 

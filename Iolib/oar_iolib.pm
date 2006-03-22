@@ -75,6 +75,7 @@ sub get_job_stagein($$);
 sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 sub get_jobs_to_schedule($$);
+sub get_job_types($$);
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub remove_current_assigned_resources($$);
@@ -714,7 +715,7 @@ sub get_possible_wanted_resources($$$$$){
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
 sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$besteffort_type,$deploy_type,$cosystem_type,$checkpoint_type,$launching_directory) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -794,8 +795,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
     #Insert job
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO jobs
-              (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail,besteffort_feature,deploy_feature,autoCheckpointed_feature,cosystem_feature)
-              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\",\"$besteffort_type\",\"$deploy_type\",\"$checkpoint_type\",\"$cosystem_type\")
+              (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail)
+              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\")
              ");
 
     $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
@@ -831,6 +832,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
                 $order ++;
             }
         }
+    }
+
+    foreach my $t (@{$type_list}){
+        $dbh->do("  INSERT INTO job_types (jobId,type)
+                    VALUES ($job_id,\"$t\")
+                 ");
     }
 
     my $random_number = int(rand(1000000000000));
@@ -1350,6 +1357,28 @@ sub get_jobs_to_schedule($$){
     }
     $sth->finish();
     return @res;
+}
+
+
+# get_job_types
+# return a hash table with all types for the given job ID
+sub get_job_types($$){
+    my $dbh = shift;
+    my $jobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT type
+                                FROM job_types
+                                WHERE
+                                    jobId = $jobId
+                            ");
+    $sth->execute();
+    my %res;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $res{$ref->{type}} = 1;
+    }
+    $sth->finish();
+
+    return(\%res);
 }
 
 
@@ -2661,7 +2690,8 @@ sub get_node_stats($){
 #                                       ]
 #                       }
 #                   ],
-#                   walltime
+#                   walltime,
+#                   moldable_job_id
 #                ]
 sub get_resources_data_structure_job($$){
     my $dbh = shift;
@@ -2693,6 +2723,7 @@ sub get_resources_data_structure_job($$){
         }
         # Store walltime
         $result->[$moldable_index]->[1] = $ref[2];
+        $result->[$moldable_index]->[2] = $ref[0];
         #Store properties group
         $result->[$moldable_index]->[0]->[$group_index]->{property} = $ref[3];
         my %tmp_hash =  (
@@ -2847,25 +2878,21 @@ sub get_gantt_visu_scheduled_jobs($){
 
 
 #add scheduler decisions
-#args : base,idJob,startTime,\@nodes
+#args : base,idMoldableJob,startTime,\@resources
 #return nothing
 sub add_gantt_scheduled_jobs($$$$){
     my $dbh = shift;
-    my $idJob = shift;
-    my $startTime = shift;
-    my $nodeList = shift;
+    my $id_moldable_job = shift;
+    my $start_time = shift;
+    my $resource_list = shift;
 
-    $dbh->do("INSERT INTO ganttJobsPrediction
-              (idJob,startTime)
-              VALUES
-              ($idJob,\"$startTime\")
+    $dbh->do("INSERT INTO ganttJobsPredictions (idMoldableJob,startTime)
+              VALUES ($id_moldable_job,\"$start_time\")
              ");
 
-    foreach my $i (@{$nodeList}){
-        $dbh->do("INSERT INTO ganttJobsNodes
-                  (idJob,hostname)
-                  VALUES
-                  ($idJob,\"$i\")
+    foreach my $i (@{$resource_list}){
+        $dbh->do("INSERT INTO ganttJobsResources (idMoldableJob,idResource)
+                  VALUES ($id_moldable_job,$i)
                  ");
     }
 }

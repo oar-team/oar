@@ -58,10 +58,18 @@ INDEX cosystem (cosystem_feature),
 PRIMARY KEY (idJob)
 );
 
+#DROP TABLE IF EXISTS job_types;
+CREATE TABLE IF NOT EXISTS job_types (
+jobId INT UNSIGNED NOT NULL ,
+type VARCHAR(255) NOT NULL ,
+PRIMARY KEY (jobId)
+);
+
 #DROP TABLE IF EXISTS challenges;
 CREATE TABLE IF NOT EXISTS challenges (
 jobId INT UNSIGNED NOT NULL ,
-challenge VARCHAR(255) NOT NULL
+challenge VARCHAR(255) NOT NULL ,
+PRIMARY KEY (jobId)
 );
 
 #DROP TABLE IF EXISTS moldableJobs_description;

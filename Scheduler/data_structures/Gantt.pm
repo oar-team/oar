@@ -23,6 +23,10 @@ sub find_first_hole($$$$);
 #   - previous busy interval for the same resource
 #   - next busy interval for the same resource
 
+
+# 2^32 is infinity in 32 bits stored time
+my $Infinity = 4294967296;
+
 sub get_tuple_resource($){
     my ($tuple_ref) = @_;
 
@@ -324,10 +328,8 @@ sub find_first_hole($$$$){
         while ( defined(get_tuple_end_date($current_tuple))
                 && ($current_time >= get_tuple_end_date($current_tuple))){
             if (!defined(get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)))){
-                # store empty resource until infinite
-                # 2^32 is infinite in 32 bits stored time
-                my $infinite = 4294967296;
-                sorted_chained_list::add_element($current_free_resources,$infinite,$current_tuple);
+                # store empty resource until the infinity
+                sorted_chained_list::add_element($current_free_resources,$Infinity,$current_tuple);
             }else{
                 sorted_chained_list::add_element($current_free_resources,get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)),$current_tuple);
             }
@@ -384,6 +386,7 @@ sub find_first_hole($$$$){
             if (!defined(get_tuple_end_date($current_tuple))){
                 $end_loop = 1;
                 @result_tree_list = ();
+                $current_time = $Infinity;
             }else{
                 $current_time = get_tuple_end_date($current_tuple);
             }
