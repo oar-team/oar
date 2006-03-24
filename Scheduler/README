@@ -5,6 +5,6 @@ What can and must do a scheduler:
         3: reference time in sql format
     - you must decide the scheduling of jobs in your queue with state = "Waiting" and "Reservation" = "None"
     - you can get all informations stored in the database
-    - you must load previous decisions of other schedulers (load informations from tables "ganttJobsPrediction" and "ganttJobsNodes")
-    - you must store your decisions in tables "ganttJobsPrediction" and "ganttJobsNodes"
+    - you must load previous decisions of other schedulers (load informations from tables "ganttJobsPredictions" and "ganttJobsNodes")
+    - you must store your decisions in tables "ganttJobsPredictions" and "ganttJobsNodes"
     - you can set state of jobs to "toError" and OAR will delete them. After you must exit from your program with "exit code" = 1 otherwise 0.

@@ -33,6 +33,7 @@ sub set_job_bpid($$$);
 sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
 sub get_job_current_hostnames($$);
+sub get_job_current_resources($$);
 sub get_job_host_log($$);
 sub get_tokill_job($);
 sub is_tokill_job($$);
@@ -398,6 +399,29 @@ sub get_job_current_hostnames($$) {
     return @res;
 }
 
+
+# get_job_current_resources
+# returns the list of resources associated to the job passed in parameter
+# parameters : base, jobid
+# return value : list of resources
+# side effects : /
+sub get_job_current_resources($$) {
+    my $dbh = shift;
+    my $jobid= shift;
+
+    my $sth = $dbh->prepare("SELECT a.resourceId resource
+                             FROM assignedResources a
+                             WHERE 
+                                a.assignedResourceIndex = \"CURRENT\"
+                                AND a.idMoldableJob = $jobid
+                             ORDER BY a.resourceId ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource});
+    }
+    return @res;
+}
 
 
 # get_job_host_log
@@ -1276,10 +1300,12 @@ sub list_current_jobs($) {
 sub get_waiting_reservation_jobs($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM jobs j
-                             WHERE j.state=\"Waiting\"
-                                AND j.reservation = \"Scheduled\"
-                             ORDER BY j.idJob
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs j
+                                WHERE
+                                    j.state=\"Waiting\"
+                                    AND j.reservation = \"Scheduled\"
+                                ORDER BY j.idJob
                             ");
     $sth->execute();
     my @res = ();
@@ -1298,11 +1324,13 @@ sub get_waiting_reservation_jobs_specific_queue($$){
     my $dbh = shift;
     my $queue = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM jobs j
-                             WHERE j.state=\"Waiting\"
-                                AND j.reservation = \"Scheduled\"
-                                AND j.queueName = \"$queue\"
-                             ORDER BY j.idJob
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs j
+                                WHERE
+                                    j.state=\"Waiting\"
+                                    AND j.reservation = \"Scheduled\"
+                                    AND j.queueName = \"$queue\"
+                                ORDER BY j.idJob
                             ");
     $sth->execute();
     my @res = ();
@@ -2942,20 +2970,20 @@ sub set_gantt_job_startTime($$$){
 sub update_gantt_visualization($){
     my $dbh = shift;
 
-    $dbh->do("LOCK TABLE ganttJobsPrediction_visu WRITE, ganttJobsNodes_visu WRITE, ganttJobsPrediction WRITE, ganttJobsNodes WRITE");
+    $dbh->do("LOCK TABLE ganttJobsPredictions_visu WRITE, ganttJobsResources_visu WRITE, ganttJobsPredictions WRITE, ganttJobsResources WRITE");
 
-    $dbh->do("DELETE FROM ganttJobsPrediction_visu");
-    $dbh->do("DELETE FROM ganttJobsNodes_visu");
-#    $dbh->do("OPTIMIZE TABLE ganttJobsNodes_visu, ganttJobsPrediction_visu");
+    $dbh->do("DELETE FROM ganttJobsPredictions_visu");
+    $dbh->do("DELETE FROM ganttJobsResources_visu");
+#    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
 
-    $dbh->do("INSERT INTO ganttJobsPrediction_visu
-                SELECT *
-                FROM ganttJobsPrediction
+    $dbh->do("INSERT INTO ganttJobsPredictions_visu
+              SELECT *
+              FROM ganttJobsPredictions
              ");
     
-    $dbh->do("INSERT INTO ganttJobsNodes_visu
-                SELECT *
-                FROM ganttJobsNodes
+    $dbh->do("INSERT INTO ganttJobsResources_visu
+              SELECT *
+              FROM ganttJobsResources_visu
              ");
 
     $dbh->do("UNLOCK TABLES");
@@ -2985,8 +3013,9 @@ sub get_gantt_visu_date($){
     my $dbh = shift;
 
     my $sth = $dbh->prepare("SELECT startTime
-                             FROM ganttJobsPrediction_visu
-                             WHERE idJob = 0
+                             FROM ganttJobsPredictions_visu
+                             WHERE
+                                idMoldableJob = 0
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();

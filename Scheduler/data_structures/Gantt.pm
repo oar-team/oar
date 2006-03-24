@@ -287,10 +287,12 @@ sub fuse_tuple_if_we_can($){
 sub is_resource_free($$$$){
     my ($gantt, $begin_date, $duration, $resource_name) = @_;
 
-    if (!defined($gantt->{resource_list}->{$resource_name})){
-        #This resource name was not initialized; use add_new_resource before
-        return(0);
-    }
+    #if (!defined($gantt->{resource_list}->{$resource_name})){
+    #    #This resource name was not initialized; use add_new_resource before
+    #    return(0);
+    #}
+    add_new_resource($gantt,$resource_name); # If it is not yet done
+    
     my $end_date = $begin_date + $duration;
     my $current_tuple = get_tuple_next_same_resource($gantt->{resource_list}->{$resource_name});
     #Search between which tuples is this interval
