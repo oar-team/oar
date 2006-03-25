@@ -49,8 +49,9 @@ foreach my $r (iolib::list_resources($base)){
 my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($base);
 foreach my $i (keys(%alreadyScheduledJobs)){
     # Do not take care of besteffort jobs
-    if ($alreadyScheduledJobs{$i}->[3] ne "besteffort") {
-        foreach my $r (@{$alreadyScheduledJobs{$i}->[4]}){
+    my $types = iolib::get_job_types($base,$i);
+    if (!defined($types->{"besteffort"})){
+        foreach my $r (@{$alreadyScheduledJobs{$i}->[3]}){
             Gantt::set_occupation(  $gantt,
                                     iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
                                     iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $security_time_overhead,

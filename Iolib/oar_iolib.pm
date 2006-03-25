@@ -42,6 +42,7 @@ sub get_toexterminate_job($);
 sub get_frag_date($$);
 sub set_running_date($$);
 sub set_running_date_arbitrary($$$);
+sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
@@ -84,7 +85,7 @@ sub get_resource_job($$);
 sub get_node_job($$);
 sub get_resources_in_state($$);
 sub get_running_host($);
-sub add_node_job_pair($$$);
+sub add_resource_job_pair($$$);
 sub remove_node_job_pair($$$);
 
 # RESOURCES MANAGEMENT
@@ -141,8 +142,8 @@ sub set_gantt_date($$);
 sub get_gantt_date($);
 sub get_gantt_visu_date($);
 sub get_gantt_jobs_to_launch($$);
-sub get_gantt_nodes_for_jobs_to_launch($$);
-sub get_gantt_nodes_for_job($$);
+sub get_gantt_resources_for_jobs_to_launch($$);
+sub get_gantt_resources_for_job($$);
 sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
 
@@ -525,6 +526,23 @@ sub get_toexterminate_job($) {
 }
 
 
+# set_assigned_moldable_job
+# sets the assignedMoldableJob field to the given value
+# parameters : base, jobid, moldable id
+# return value : /
+sub set_assigned_moldable_job($$$) {
+    my $dbh = shift;
+    my $idJob = shift;
+    my $moldable = shift;
+    
+    $dbh->do("  UPDATE jobs
+                SET assignedMoldableJob = $moldable
+                WHERE
+                    idJob = $idJob
+            ");
+}
+
+
 
 # set_running_date
 # sets the starting time of the job passed in parameter to the current time
@@ -760,10 +778,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
     my $user= getpwuid($ENV{SUDO_UID});
 
     # Verify the content of user command
-    if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
-        print("ERROR : The command to launch contains bad characters\n");
-        return(-4);
-    }
+    #if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
+    #    print("ERROR : The command to launch contains bad characters\n");
+    #    return(-4);
+    #}
     
     #Retrieve Micheline's rules from the table
     my $sth = $dbh->prepare("SELECT rule FROM admissionRules");
@@ -780,9 +798,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
         return(-2);
     }
 
-    #if (($setCommandReservation == 1) && ($command eq "")){
-    #    $command = "/bin/sleep ".sql_to_duration();
-    #}
+    if (($setCommandReservation == 1) && ($command eq "")){
+        # For reservations we take the first moldable job
+        $command = "/bin/sleep ".sql_to_duration($ref_resource_list->[0]->[1]);
+    }
 
     # Test if properties and resources are coherent
     my $wanted_resources;
@@ -1417,11 +1436,13 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
     my $dbh = shift;
     my $queue = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM jobs j
-                             WHERE j.state=\"Waiting\"
-                                AND j.reservation = \"toSchedule\"
-                                AND j.queueName = \"$queue\"
-                             ORDER BY j.idJob
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs j
+                                WHERE
+                                    j.state=\"Waiting\"
+                                    AND j.reservation = \"toSchedule\"
+                                    AND j.queueName = \"$queue\"
+                                ORDER BY j.idJob
                             ");
     $sth->execute();
     my @res = ();
@@ -1545,22 +1566,16 @@ sub get_running_host($) {
 
 
 
-# add_node_job_pair
-# adds a new pair (jobid, hostname) to the table processjobs.
-# This should match the execution of some process for the job of given id
-# and on the given host.
-# parameters : base, jobid, hostname
+# add_resource_job_pair
+# adds a new pair (jobid, resource) to the table assignedResources
+# parameters : base, jobid, resource id
 # return value : /
-# side effects : adds a new entry to the table processjobs.
-sub add_node_job_pair($$$) {
+sub add_resource_job_pair($$$) {
     my $dbh = shift;
-    my $idJob = shift;
-    my $hostname = shift;
-    $dbh->do("INSERT INTO processJobs (idJob,hostname)
-              VALUES ($idJob,\"$hostname\")");
-
-    $dbh->do("INSERT INTO processJobs_log (idJob,hostname)
-              VALUES ($idJob,\"$hostname\")");
+    my $moldable = shift;
+    my $resource = shift;
+    $dbh->do("INSERT INTO assignedResources (idMoldableJob,idResource,assignedResourceIndex)
+              VALUES ($moldable,$resource,\"CURRENT\")");
 }
 
 # remove_node_job_pair
@@ -2866,7 +2881,7 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[0] = $ref[1];
             $res{$ref[0]}->[1] = $ref[2];
             $res{$ref[0]}->[2] = $ref[4];
-            $res{$ref[0]}->[3] = $ref[3];
+#            $res{$ref[0]}->[3] = $ref[3];
             $res{$ref[0]}->[4] = $ref[5];
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
@@ -2927,13 +2942,13 @@ sub add_gantt_scheduled_jobs($$$$){
 
 
 # Remove an entry in the gantt
-# params: base, idJob, node
-sub remove_gantt_node_job($$$){
+# params: base, idJob, resource
+sub remove_gantt_resource_job($$$){
     my $dbh = shift;
     my $job = shift;
-    my $node = shift;
+    my $resource = shift;
 
-    $dbh->do("DELETE FROM ganttJobsNodes WHERE idJob = $job AND hostname = \"$node\"");
+    $dbh->do("DELETE FROM ganttJobsResources WHERE idMoldableJob = $job AND idResource = $resource");
 }
 
 
@@ -2957,9 +2972,9 @@ sub set_gantt_job_startTime($$$){
     my $job = shift;
     my $date = shift;
 
-    $dbh->do("UPDATE ganttJobsPrediction
+    $dbh->do("UPDATE ganttJobsPredictions
               SET startTime = \"$date\"
-              WHERE idJob = $job
+              WHERE idMoldableJob = $job
              ");
 }
 
@@ -3045,20 +3060,20 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $sth = $dbh->prepare("SELECT g2.idJob, j.weight, g1.hostname
-                             FROM ganttJobsNodes g1, ganttJobsPrediction g2, jobs j
-                             WHERE g1.idJob = g2.idJob
-                                AND j.idJob = g1.idJob
+    my $sth = $dbh->prepare("SELECT g2.idMoldableJob, g1.idResource, j.idJob
+                             FROM ganttJobsResources g1, ganttJobsPredictions g2, jobs j, moldableJobs_description m
+                             WHERE
+                                g1.idMoldableJob= g2.idMoldableJob
+                                AND m.moldableId = g1.idMoldableJob
+                                AND j.idJob = m.moldableJobId
                                 AND g2.startTime <= \"$date\"
                                 AND j.state = \"Waiting\"
                             ");
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($res{$ref[0]})){
-            $res{$ref[0]}->[0] = $ref[1];
-        }
-        push(@{$res{$ref[0]}->[1]}, $ref[2]);
+        $res{$ref[2]}->[0] = $ref[0];
+        push(@{$res{$ref[2]}->[1]}, $ref[1]);
     }
     $sth->finish();
 
@@ -3067,25 +3082,26 @@ sub get_gantt_jobs_to_launch($$){
 
 
 
-#Get informations about nodes for jobs to launch at a given date
+#Get informations about resources for jobs to launch at a given date
 #args : base, date in sql format
-sub get_gantt_nodes_for_jobs_to_launch($$){
+sub get_gantt_resources_for_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $sth = $dbh->prepare("SELECT g1.hostname, SUM(j.weight)
-                             FROM ganttJobsNodes g1, ganttJobsPrediction g2, jobs j
-                             WHERE g1.idJob = g2.idJob
-                                AND j.idJob = g1.idJob
+    my $sth = $dbh->prepare("SELECT g1.idResource
+                             FROM ganttJobsResources g1, ganttJobsPredictions g2, jobs j, moldableJobs_description m
+                             WHERE
+                                g1.idMoldableJob = m.moldableId
+                                AND m.moldableJobId = j.idJob
+                                AND g1.idMoldableJob = g2.idMoldableJob
                                 AND g2.startTime <= \"$date\"
                                 AND j.state = \"Waiting\"
-                                AND j.queueName != \"besteffort\"
                              GROUP BY g1.hostname
                             ");
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        $res{$ref[0]} = $ref[1]; 
+        $res{$ref[0]} = 1; 
     }
     $sth->finish();
 
@@ -3093,15 +3109,16 @@ sub get_gantt_nodes_for_jobs_to_launch($$){
 }
 
 
-#Get nodes for job in the gantt diagram
+#Get resources for job in the gantt diagram
 #args : base, job id
-sub get_gantt_nodes_for_job($$){
+sub get_gantt_resources_for_job($$){
     my $dbh = shift;
     my $job = shift;
 
-    my $sth = $dbh->prepare("SELECT g.hostname
-                             FROM ganttJobsNodes g
-                             WHERE g.idJob = $job 
+    my $sth = $dbh->prepare("SELECT g.idResource
+                             FROM ganttJobsResources g
+                             WHERE
+                                g.idMoldableJob = $job 
                             ");
     $sth->execute();
     my @res ;
@@ -3114,17 +3131,18 @@ sub get_gantt_nodes_for_job($$){
 }
 
 
-#Get Alive nodes for a job
+#Get Alive resources for a job
 #args : base, job id
-sub get_gantt_Alive_nodes_for_job($$){
+sub get_gantt_Alive_resources_for_job($$){
     my $dbh = shift;
     my $job = shift;
 
-    my $sth = $dbh->prepare("SELECT g.hostname
-                             FROM ganttJobsNodes g, nodes n
-                             WHERE g.idJob = $job 
-                                AND n.hostname = g.hostname
-                                AND n.state = \"Alive\"
+    my $sth = $dbh->prepare("SELECT g.idResource
+                             FROM ganttJobsResources g, resources r
+                             WHERE
+                                g.idMoldableJob = $job 
+                                AND r.resourceId = g.idResource
+                                AND r.state = \"Alive\"
                             ");
     $sth->execute();
     my @res ;
@@ -3133,7 +3151,7 @@ sub get_gantt_Alive_nodes_for_job($$){
     }
     $sth->finish();
 
-    return @res;
+    return(@res);
 }
 
 

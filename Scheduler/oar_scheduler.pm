@@ -14,9 +14,7 @@ my $security_time_overhead = 1;
 my $reservationWaitingTimeout = 300;
 
 # global variables : initialized in init_scheduler function
-#my %reservationJobsNodes;
-my %besteffortResourceOccupation;
-#my %node_max_weight;
+my %besteffort_resource_occupation;
 
 my $current_time_sql = 0;
 my $current_time_sec = "0000-00-00 00:00:00";
@@ -88,7 +86,7 @@ sub init_scheduler($){
         }else{
             #Stock information about besteffort jobs
             foreach my $j (@resource_list){
-                push(@{$besteffortResourceOccupation{$j}}, $i->{assignedMoldableJob});
+                $besteffort_resource_occupation{$j} = $i->{assignedMoldableJob};
             }
         }
     }
@@ -156,6 +154,7 @@ sub init_scheduler($){
             }
             # Update database
             iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{startTime},\@resources);
+        }
     }
 }
 
@@ -175,8 +174,11 @@ sub treate_waiting_reservation_jobs($$){
     my @arrayJobs = iolib::get_waiting_reservation_jobs_specific_queue($dbh,$queueName);
     # See if there are reserved jobs to launch
     foreach my $job (@arrayJobs){
+        my $job_descriptions = iolib::get_resources_data_structure_job($dbh,$job->{idJob});
+        my $moldable = $job_descriptions->[0];
+    
         my $start = iolib::sql_to_local($job->{startTime});
-        my $max = iolib::sql_to_duration($job->{maxTime});
+        my $max = iolib::sql_to_duration($moldable->[1]);
         # Test if the job is in the paste
         if ($current_time_sec > $start+$max ){
             oar_debug("[oar_scheduler] treate_waiting_reservation_jobs :  Reservation $job->{idJob} in ERROR\n");
@@ -184,31 +186,31 @@ sub treate_waiting_reservation_jobs($$){
             iolib::set_job_message($dbh,$job->{idJob},"[oar_scheduler] Reservation has expired and it cannot be started.");
             $return = 1;
         }
-        my $nbNodes = scalar(iolib::get_gantt_Alive_nodes_for_job($dbh,$job->{idJob}));
+        my @resa_alive_resources = iolib::get_gantt_Alive_resources_for_job($dbh,$moldable->[2]);
         # test if the job is going to be launched and there is no Alive node
-        if (($nbNodes == 0) && (iolib::sql_to_local($job->{startTime}) <= $current_time_sec)){
-            oar_debug("[oar_scheduler] Reservation $job->{idJob} is in waiting mode because no node is present\n");
-            iolib::set_gantt_job_startTime($dbh,$job->{idJob},iolib::local_to_sql($current_time_sec + 1));
-        }elsif (($nbNodes < $job->{nbNodes}) && (iolib::sql_to_local($job->{startTime}) <= $current_time_sec) && (iolib::sql_to_local($job->{startTime}) + $reservationWaitingTimeout > $current_time_sec)){
-            # we have not the same number of nodes than in the query --> wait the specified timeout
-            oar_debug("[oar_scheduler] Reservation $job->{idJob} is in waiting mode because all nodes are not yet available : $nbNodes/$job->{nbNodes}\n");
+        if (($#resa_alive_resources < 0) && (iolib::sql_to_local($job->{startTime}) <= $current_time_sec)){
+            oar_debug("[oar_scheduler] Reservation $job->{idJob} is in waiting mode because no resource is present\n");
             iolib::set_gantt_job_startTime($dbh,$job->{idJob},iolib::local_to_sql($current_time_sec + 1));
         }elsif(iolib::sql_to_local($job->{startTime}) <= $current_time_sec){
-            #Check if nodes are in Alive state otherwise remove them, the job is going to be launched
-            my @nodeList = iolib::get_gantt_nodes_for_job($dbh, $job->{idJob}); 
-            my $nbNodes = 0;
-            foreach my $n (@nodeList){
-                my $nodeInfo = iolib::get_node_info($dbh,$n);
-                if ($nodeInfo->{state} ne "Alive"){
-                    oar_debug("[oar_scheduler] Reservation $job->{idJob} : remove node $n because it state is $nodeInfo->{state}\n");
-                    iolib::remove_gantt_node_job($dbh, $job->{idJob}, $n);
-                }else{
-                    $nbNodes++;
+            my @resa_resources = iolib::get_gantt_resources_for_job($dbh,$moldable->[2]);
+            if ((iolib::sql_to_local($job->{startTime}) + $reservationWaitingTimeout > $current_time_sec)){
+                if ($#resa_resources > $#resa_alive_resources){
+                    # we have not the same number of nodes than in the query --> wait the specified timeout
+                    oar_debug("[oar_scheduler] Reservation $job->{idJob} is in waiting mode because all nodes are not yet available.\n");
+                    iolib::set_gantt_job_startTime($dbh,$job->{idJob},iolib::local_to_sql($current_time_sec + 1));
                 }
-            }
-            if ($nbNodes < $job->{nbNodes}){
-                iolib::set_job_number_of_nodes($dbh, $job->{idJob}, $nbNodes);
-                iolib::add_new_event($dbh,"SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION",$job->{idJob},"[oar_scheduler] Reduce the number of nodes for the job $job->{idJob} from $job->{nbNodes} to $nbNodes");
+            }else{
+                #Check if resources are in Alive state otherwise remove them, the job is going to be launched
+                foreach my $r (@resa_resources){
+                    my $resource_info = iolib::get_resource_info($dbh,$r);
+                    if ($resource_info->{state} ne "Alive"){
+                        oar_debug("[oar_scheduler] Reservation $job->{idJob} : remove resource $r because it state is $resource_info->{state}\n");
+                        iolib::remove_gantt_resource_job($dbh, $moldable->[2], $r);
+                    }
+                }
+                if ($#resa_resources > $#resa_alive_resources){
+                    iolib::add_new_event($dbh,"SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION",$job->{idJob},"[oar_scheduler] Reduce the number of resources for the job $job->{idJob}.");
+                }
             }
         }
     }
@@ -229,7 +231,7 @@ sub check_reservation_jobs($$){
 
     my $return = 0;
 
-    my $gant = Gantt::create_empty_gant($current_time_sec, \%node_max_weight);
+    my $gantt = Gantt::new();
 
     # Find jobs to check
     my @jobsToSched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queueName);
@@ -238,20 +240,28 @@ sub check_reservation_jobs($$){
         # Take care of currently scheduled jobs except besteffort jobs if queueName is not besteffort
         my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($dbh);
         foreach my $i (keys(%alreadyScheduledJobs)){
-            if (($alreadyScheduledJobs{$i}->[3] ne "besteffort") || ($queueName eq "besteffort")){
-                Gantt::set_occupation($gant,
-                                     iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
-                                     $alreadyScheduledJobs{$i}->[1],
-                                     iolib::sql_to_duration($alreadyScheduledJobs{$i}->[2]) + $security_time_overhead,
-                                     $alreadyScheduledJobs{$i}->[4]
-                                    );
+            my $types = iolib::get_job_types($dbh,$i);
+            if (!defined($types->{"besteffort"})){
+                foreach my $r (@{$alreadyScheduledJobs{$i}->[3]}){
+                    Gantt::set_occupation(  $gantt,
+                                         iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
+                                            iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $security_time_overhead,
+                                            $r
+                                         );
+                }
             }
         }
         #Gantt::pretty_print_gant($gant);
     }
     foreach my $job (@jobsToSched){
+        my $job_descriptions = iolib::get_resources_data_structure_job($dbh,$job->{idJob});
+        # It is a reservation, we take care only of the first moldable job
+        my $moldable = $job_descriptions->[0];
+        my $duration = $moldable->[1];
+
+        my $types = iolib::get_job_types($dbh,$job->{idJob});
         #look if reservation is too old
-        if ($current_time_sec >= (iolib::sql_to_local($job->{startTime}) + iolib::sql_to_duration($job->{maxTime}))){
+        if ($current_time_sec >= (iolib::sql_to_local($job->{startTime}) + iolib::sql_to_duration($duration))){
             oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{idJob}, job is too old\n");
             iolib::set_job_state($dbh, $job->{idJob}, "toError");
         }else{
@@ -259,31 +269,70 @@ sub check_reservation_jobs($$){
                 $job->{startTime} = $current_time_sql;
                 iolib::set_running_date_arbitrary($dbh,$job->{idJob},$current_time_sql);
             }
-            my @available_nodes = iolib::get_alive_node_job($dbh, $job->{idJob}, $job->{weight});
-            my @gantt_nodes = Gantt::available_nodes($gant,
-                                                    $job->{weight},
-                                                    iolib::sql_to_local($job->{startTime}),
-                                                    iolib::sql_to_duration($job->{maxTime}) + $security_time_overhead,
-                                                    \@available_nodes
-                                                   );
-            my @assignedNodes;
-            while (($#gantt_nodes >= 0) && (($#assignedNodes+1) < $job->{nbNodes})){
-                push(@assignedNodes, shift(@gantt_nodes));
+            
+            my @available_resources;
+            my @tmp_resource_list;
+            # Get the list of resources where the reservation will be able to be launched
+            push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
+            push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
+            push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
+            foreach my $r (@tmp_resource_list){
+                if (Gantt::is_resource_free($gantt,
+                                            iolib::sql_to_local($job->{startTime}),
+                                            iolib::sql_to_duration($duration) + $security_time_overhead,
+                                            $r
+                                           ) == 1
+                   ){                       
+                    push(@available_resources, $r->{resourceId});
+                }
             }
-            if ($#assignedNodes == ($job->{nbNodes} - 1)){
-                Gantt::set_occupation($gant,
-                                     iolib::sql_to_local($job->{startTime}),
-                                     $job->{weight},
-                                     iolib::sql_to_duration($job->{maxTime}) + $security_time_overhead,
-                                     \@assignedNodes
-                                    );
+        
+            my $job_properties = "TRUE";
+            if ($job->{properties} ne ""){
+                $job_properties = $job->{properties};
+            }
+
+            my @resource_id_used_list;
+            my @tree_list;
+            foreach my $m (@{$moldable->[0]}){
+                my $tmp_properties = "TRUE";
+                if ($m->{property} ne ""){
+                    $tmp_properties = $m->{property};
+                }
+                my $tmp_tree = iolib::get_possible_wanted_resources($dbh,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+                push(@tree_list, $tmp_tree);
+                my @leafs = oar_resource_tree::get_tree_leaf($tmp_tree);
+                foreach my $l (@leafs){
+                    push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+                }
+            }
+            my @hole = Gantt::find_first_hole($gantt,iolib::sql_to_local($job->{startTime}), $duration, \@tree_list);
+            if ($hole[0] == iolib::sql_to_local($job->{startTime})){
+                # The reservation can be scheduled
+                my @res_trees;
+                my @resources;
+                foreach my $t (@tree_list){
+                    my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+                    push(@res_trees, $minimal_tree);
+                    push(@resources, oar_resource_tree::get_tree_leafs($minimal_tree));
+                }
+        
+                # We can schedule the job
                 oar_debug("[oar_scheduler] check_reservation_jobs : Confirm reservation $job->{idJob} and add in gantt\n");
-                iolib::add_gantt_scheduled_jobs($dbh,$job->{idJob},$job->{startTime},\@assignedNodes);
-                $reservationJobsNodes{$job->{idJob}} = \@assignedNodes;
+                foreach my $r (@resources){
+                    Gantt::set_occupation(  $gantt,
+                                            iolib::sql_to_local($job->{startTime}),
+                                            iolib::sql_to_duration($moldable->[1]) + $security_time_overhead,
+                                            $r
+                                         );
+                }
+                # Update database
+                iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{startTime},\@resources);
                 iolib::set_job_state($dbh, $job->{idJob}, "toAckReservation");
-            }else{
+            }else{           
                 oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{idJob}, not enough nodes\n");
                 iolib::set_job_state($dbh, $job->{idJob}, "toError");
+                iolib::set_job_message($dbh, $job->{idJob}, "This reservation may be run at ".iolib::local_to_sql($hole[0]));
             }
         }
         iolib::set_job_resa_state($dbh, $job->{idJob}, "Scheduled");
@@ -301,14 +350,12 @@ sub check_jobs_to_kill($){
 
     oar_debug("[oar_scheduler] check_jobs_to_kill : check besteffort jobs\n");
     my $return = 0;
-    my %nodesForJobsToLaunch = iolib::get_gantt_nodes_for_jobs_to_launch($dbh,$current_time_sql); 
-    foreach my $node (keys(%nodesForJobsToLaunch)){
-        if (defined($besteffortNodesOccupation{$node})){
-            foreach my $j (@{$besteffortNodesOccupation{$node}}){
-                oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $j must be killed\n");
-                iolib::add_new_event($dbh,"BESTEFFORT_KILL",$j,"[oar_scheduler] kill the besteffort job $j");
-                iolib::frag_job($dbh, $j);
-            }
+    my %nodesForJobsToLaunch = iolib::get_gantt_resources_for_jobs_to_launch($dbh,$current_time_sql); 
+    foreach my $r (keys(%nodesForJobsToLaunch)){
+        if (defined($besteffort_resource_occupation{$r})){
+            oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $besteffort_resource_occupation{$r} must be killed\n");
+            iolib::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[oar_scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
+            iolib::frag_job($dbh, $besteffort_resource_occupation{$r});
             $return = 1;
         }
      }
@@ -323,7 +370,6 @@ sub check_jobs_to_kill($){
 sub check_jobs_to_launch($){
     my $dbh = shift;
 
-    # /!\ Pour les reservations il faut mettre a jour la commande a lancer en fonction du job moldable selectionne
     oar_debug("[oar_scheduler] check_jobs_to_launch : check jobs with a start time <= $current_time_sql\n");
     my $returnCode = 0;
     my %jobs_to_launch = iolib::get_gantt_jobs_to_launch($dbh,$current_time_sql);
@@ -331,11 +377,9 @@ sub check_jobs_to_launch($){
         oar_debug("[oar_scheduler] check_jobs_to_launch : set job $i in state toLaunch ($current_time_sql)\n");
         iolib::set_job_state($dbh, $i, "toLaunch");
         iolib::set_running_date_arbitrary($dbh,$i,$current_time_sql);
-        foreach my $n (@{$jobs_to_launch{$i}->[1]}){
-            iolib::add_node_job_pair($dbh,$i,$n);
-            $dbh->do("LOCK TABLE nodes WRITE");
-            iolib::set_weight_node($dbh,$n,iolib::get_weight_node($dbh,$n) + $jobs_to_launch{$i}->[0]);
-            $dbh->do("UNLOCK TABLES");
+        iolib::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
+        foreach my $r (@{$jobs_to_launch{$i}->[1]}){
+            iolib::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
         }
         $returnCode = 1;
     }
