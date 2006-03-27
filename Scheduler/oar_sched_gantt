@@ -77,7 +77,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $moldable = $job_descriptions->[0];
     
     my $types = iolib::get_job_types($base,$j->{idJob});
-    my $duration = $moldable->[1];
+    my $duration = iolib::sql_to_duration($moldable->[1]);
     if (defined($types->{"besteffort"})){
         $duration = $besteffort_duration;
     }
@@ -102,7 +102,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         my $tmp_tree = iolib::get_possible_wanted_resources($base,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
         push(@tree_list, $tmp_tree);
-        my @leafs = oar_resource_tree::get_tree_leaf($tmp_tree);
+        my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
         foreach my $l (@leafs){
             push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
         }
@@ -113,7 +113,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     foreach my $t (@{$hole[1]}){
         my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
         push(@res_trees, $minimal_tree);
-        push(@resources, oar_resource_tree::get_tree_leafs($minimal_tree));
+        foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+            push(@resources, oar_resource_tree::get_current_resource_value($r));
+        }
     }
 
     if ($#resources >= 0){

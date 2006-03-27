@@ -120,7 +120,7 @@ sub signalOarexec($$$$){
 
     my $file = getOarPidFileName($jobId);
     my $cmd = "ssh $host \"test -e $file && cat $file | xargs kill -s $signal\"";
-    my $pid;
+    my $pid = fork();
     if($pid == 0){
         #CHILD
         exec("$cmd");
@@ -165,7 +165,7 @@ sub checkClientHostIP($$$){
             $hostAllow = 1;
         }else{
             $str .= "BAD";
-            oar_warn("[$moduleName] [checkClientHostIP] $str\n");
+            oar_debug("[$moduleName] [checkClientHostIP] $str\n");
         }
         oar_debug("[$moduleName] [checkClientHostIP] $str\n");
         $i++;

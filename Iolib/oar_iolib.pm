@@ -46,7 +46,7 @@ sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
@@ -384,14 +384,14 @@ sub get_job_current_hostnames($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT b.networkAddress hostname
-                             FROM assignedResources a, resources b, moldableJobs_description c
+    my $sth = $dbh->prepare("SELECT resources.networkAddress hostname
+                             FROM assignedResources, resources, moldableJobs_description
                              WHERE 
-                                a.assignedResourceIndex = \"CURRENT\"
-                                AND a.idResource = b.resourceId
-                                AND c.moldableId = a.idMoldableJob
-                                AND c.moldableJobId = $jobid
-                             ORDER BY b.resourceId ASC");
+                                assignedResources.assignedResourceIndex = \"CURRENT\"
+                                AND assignedResources.idResource = resources.resourceId
+                                AND moldableJobs_description.moldableId = assignedResources.idMoldableJob
+                                AND moldableJobs_description.moldableJobId = $jobid
+                             ORDER BY resources.resourceId ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -410,12 +410,12 @@ sub get_job_current_resources($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT a.resourceId resource
-                             FROM assignedResources a
+    my $sth = $dbh->prepare("SELECT idResource resource
+                             FROM assignedResources
                              WHERE 
-                                a.assignedResourceIndex = \"CURRENT\"
-                                AND a.idMoldableJob = $jobid
-                             ORDER BY a.resourceId ASC");
+                                assignedResourceIndex = \"CURRENT\"
+                                AND idMoldableJob = $jobid
+                             ORDER BY idResource ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -756,7 +756,7 @@ sub get_possible_wanted_resources($$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
+sub add_micheline_job($$$$$$$$$$$$$$$) {
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory) = @_;
 
     my $default_walltime = "1:00:00";
@@ -827,7 +827,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$) {
                 print("There are not enough resources for your request\n");
                 return(-5);
             }else{
-                my @leafs = oar_resource_tree::get_tree_leaf($tree);
+                my @leafs = oar_resource_tree::get_tree_leafs($tree);
                 foreach my $l (@leafs){
                     push(@resource_id_list, oar_resource_tree::get_current_resource_value($l));
                 }
@@ -2998,7 +2998,7 @@ sub update_gantt_visualization($){
     
     $dbh->do("INSERT INTO ganttJobsResources_visu
               SELECT *
-              FROM ganttJobsResources_visu
+              FROM ganttJobsResources
              ");
 
     $dbh->do("UNLOCK TABLES");
@@ -3045,11 +3045,11 @@ sub gantt_flush_tables($){
     my $dbh = shift;
 
     #$dbh->do("TRUNCATE TABLE ganttJobsPrediction");
-    $dbh->do("DELETE FROM ganttJobsPrediction");
+    $dbh->do("DELETE FROM ganttJobsPredictions");
     #$dbh->do("TRUNCATE TABLE ganttJobsNodes");
-    $dbh->do("DELETE FROM ganttJobsNodes");
+    $dbh->do("DELETE FROM ganttJobsResources");
     
-#    $dbh->do("OPTIMIZE TABLE ganttJobsNodes, ganttJobsPrediction");
+#    $dbh->do("OPTIMIZE TABLE ganttJobs, ganttJobsPrediction");
 }
 
 
@@ -3096,7 +3096,7 @@ sub get_gantt_resources_for_jobs_to_launch($$){
                                 AND g1.idMoldableJob = g2.idMoldableJob
                                 AND g2.startTime <= \"$date\"
                                 AND j.state = \"Waiting\"
-                             GROUP BY g1.hostname
+                             GROUP BY g1.idResource
                             ");
     $sth->execute();
     my %res ;
@@ -3226,11 +3226,11 @@ sub local_to_ymdhms($) {
 sub sql_to_local($) {
     my $date=shift;
     my ($year,$mon,$mday,$hour,$min,$sec)=sql_to_ymdhms($date);
-    if ($year <= 1971){
-        return(0);
-    }else{
+    #if ($year <= 1971){
+    #    return(0);
+    #}else{
         return ymdhms_to_local($year,$mon,$mday,$hour,$min,$sec);
-    }
+    #}
 }
 
 

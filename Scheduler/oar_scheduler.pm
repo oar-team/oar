@@ -74,7 +74,7 @@ sub init_scheduler($){
         iolib::add_gantt_scheduled_jobs($dbh,$i->{assignedMoldableJob},$date,\@resource_list);
 
         # Treate besteffort jobs like nothing!
-        my $types_hash = iolib::get_job_type($dbh, $i->{idJob});
+        my $types_hash = iolib::get_job_types($dbh, $i->{idJob});
         if (!defined($types_hash->{besteffort})){
             foreach my $r (@resource_list){
                 Gantt::set_occupation(  $gantt,
@@ -140,7 +140,9 @@ sub init_scheduler($){
         foreach my $t (@tree_list){
             my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
             push(@res_trees, $minimal_tree);
-            push(@resources, oar_resource_tree::get_tree_leafs($minimal_tree));
+            foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+                push(@resources, oar_resource_tree::get_current_resource_value($r));
+            }
         }
         
         if ($#resources >= 0){
@@ -257,11 +259,11 @@ sub check_reservation_jobs($$){
         my $job_descriptions = iolib::get_resources_data_structure_job($dbh,$job->{idJob});
         # It is a reservation, we take care only of the first moldable job
         my $moldable = $job_descriptions->[0];
-        my $duration = $moldable->[1];
+        my $duration = iolib::sql_to_duration($moldable->[1]);
 
         my $types = iolib::get_job_types($dbh,$job->{idJob});
         #look if reservation is too old
-        if ($current_time_sec >= (iolib::sql_to_local($job->{startTime}) + iolib::sql_to_duration($duration))){
+        if ($current_time_sec >= (iolib::sql_to_local($job->{startTime}) + $duration)){
             oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{idJob}, job is too old\n");
             iolib::set_job_state($dbh, $job->{idJob}, "toError");
         }else{
@@ -279,7 +281,7 @@ sub check_reservation_jobs($$){
             foreach my $r (@tmp_resource_list){
                 if (Gantt::is_resource_free($gantt,
                                             iolib::sql_to_local($job->{startTime}),
-                                            iolib::sql_to_duration($duration) + $security_time_overhead,
+                                            $duration + $security_time_overhead,
                                             $r
                                            ) == 1
                    ){                       
@@ -314,7 +316,9 @@ sub check_reservation_jobs($$){
                 foreach my $t (@tree_list){
                     my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
                     push(@res_trees, $minimal_tree);
-                    push(@resources, oar_resource_tree::get_tree_leafs($minimal_tree));
+                    foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+                        push(@resources, oar_resource_tree::get_current_resource_value($r));
+                    }
                 }
         
                 # We can schedule the job

@@ -7,7 +7,6 @@ use DBI();
 use oar_iolib;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use Gant;
 use Data::Dumper;
 use oar_scheduler;
 use oar_Tools;

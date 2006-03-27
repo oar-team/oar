@@ -100,7 +100,8 @@ foreach my $job (@joblist) {
         }else{
             $cmdtofork = $batch;
             oar_debug("[Runner] try to execute $cmdtofork $jobid \n");
-            my $res = oar_Tools::fork_no_wait("$cmdtofork $jobid ");
+            my $res;
+            #my $res = oar_Tools::fork_no_wait("$cmdtofork $jobid ");
             oar_debug("[Runner] Child PID = $res\n");
         }
     #}

@@ -43,18 +43,10 @@ accounted ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
 mail VARCHAR( 255 ) DEFAULT NULL ,
 assignedMoldableJob INT UNSIGNED DEFAULT 0 ,
 checkpoint INT UNSIGNED NOT NULL DEFAULT 0 ,
-autoCheckpointed_feature ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
-deploy_feature ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
-besteffort_feature ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
-cosystem_feature ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
 INDEX state (state),
 INDEX reservation (reservation),
 INDEX queueName (queueName),
 INDEX accounted (accounted),
-INDEX deploy (deploy_feature),
-INDEX checkpoint (autoCheckpointed_feature),
-INDEX besteffort (besteffort_feature),
-INDEX cosystem (cosystem_feature),
 PRIMARY KEY (idJob)
 );
 

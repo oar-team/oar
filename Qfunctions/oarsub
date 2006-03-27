@@ -81,7 +81,7 @@ sub scan_script($){
     my %result;
 
     my $lusr= getpwuid($ENV{SUDO_UID});
-    open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return;
+    open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return(%result);
 
     if (<FILE> =~ /^#/){
         while (<FILE>) {
@@ -120,6 +120,7 @@ Options are:
  -k, --checkpoint              enable the job to be checkpointed
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -d, --directory               specify the directory where to launch the command (default is current directory)
+ -n, --name                    specify an arbitrary name for the job
  -h, --help                    print this help message
 EOS
 }
@@ -319,14 +320,15 @@ my $base_ro = iolib::connect_ro();
 if ($Interactive == 0) {
     my $exec = $ARGV[0];
     my %scan_result = scan_script($exec) if ($exec ne "");
+    print("$Queue_name \n");
     if (defined($scan_result{queue}) && !defined($Queue_name)){
         $Queue_name = $scan_result{queue}
-    }else{
+    }elsif(defined($scan_result{queue}) && defined($Queue_name)){
         warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.");
     }
     if (defined($scan_result{property}) && !defined($Job_sql_properties)){
         $Job_sql_properties = $scan_result{property}
-    }else{
+    }elsif(defined($scan_result{property}) && defined($Job_sql_properties)){
         warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
     }
     if (defined($scan_result{resources})){
@@ -353,6 +355,7 @@ if ($Interactive == 0) {
         ($Server, $server_port) = init_tcp_server();
     }
 
+print("@Type \n");
     $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, \@Type, $Directory);
 }else{
     $Cmd_executor = "Qsub -I";
@@ -363,9 +366,8 @@ if ($Interactive == 0) {
         push(@resource, $Default_resources);
     }
     my @resource_list = parse_resource_descriptions(\@resource);
-    print(Dumper(\@resource_list));
     
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, \@Type $Directory);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $mail, $job_name, \@Type, $Directory);
 }
 print("IdJob = $Job_id \n");
 
