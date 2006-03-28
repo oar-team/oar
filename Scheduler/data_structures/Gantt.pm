@@ -301,7 +301,7 @@ sub is_resource_free($$$$){
             && $end_date < get_tuple_begin_date($current_tuple))){
         $current_tuple = get_tuple_next_same_resource($current_tuple);
     }
-    if ($begin_date > get_tuple_end_date(get_tuple_previous_same_resource($current_tuple))){
+    if (!defined(get_tuple_end_date(get_tuple_previous_same_resource($current_tuple))) or ($begin_date > get_tuple_end_date(get_tuple_previous_same_resource($current_tuple)))){
         return(1);
     }else{
         return(0);

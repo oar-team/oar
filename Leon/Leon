@@ -132,7 +132,7 @@ my $user = $tmp->{user};
 my $usercmd = $tmp->{command};
 
 #do it for all job in state LEON in the data base table fragJobs
-$base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE , resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE, resourceProperties WRITE, events_log WRITE, moldableJobs_description WRITE");
+$base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE , resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE, resourceProperties WRITE, events_log WRITE, moldableJobs_description WRITE, job_types WRITE, jobResources_description WRITE, jobResources_group WRITE, challenges WRITE");
 my @JobToFrag = iolib::get_tokill_job($base);
 while(scalar(@JobToFrag)){
     $Jid=shift(@JobToFrag);
@@ -145,7 +145,6 @@ while(scalar(@JobToFrag)){
         oar_debug("[Leon] Job is not launched\n");
         iolib::set_job_state($base,$Jid,"Error");
         iolib::set_job_message($base,$Jid,"job killed by Leon directly");
-        #iolib::decrease_weight($base,$Jid);
         if ($refJob->{'jobType'} eq "INTERACTIVE"){
             oar_debug("[Leon] I notify oarsub in waiting mode\n");
             #answer($Jid,$refJob->{'infoType'},"JOB KILLED");
@@ -202,7 +201,6 @@ while(scalar(@JobToFrag)){
 
     iolib::set_finish_date($base,$Jid);
     iolib::set_job_message($base,$Jid,"job exterminated by Leon");
-    #iolib::decrease_weight($base,$Jid);
     iolib::remove_current_assigned_resources($base,$refJob->{assignedMoldableJob});
     iolib::job_arm_leon_timer($base,$Jid);
     $exitCode = 1;

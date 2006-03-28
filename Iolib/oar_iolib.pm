@@ -50,7 +50,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
-sub get_moldable_job($$);
+sub get_current_moldable_job($$);
 sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
@@ -77,7 +77,7 @@ sub get_job_stagein($$);
 sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 sub get_jobs_to_schedule($$);
-sub get_job_types($$);
+sub get_current_job_types($$);
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub remove_current_assigned_resources($$);
@@ -120,14 +120,13 @@ sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
 sub set_node_property($$$$);
 sub set_resource_property($$$$);
-sub get_constraint_string($$);
 sub get_maxweight_one_node($$);
 sub get_node_dead_range_date($$$);
 sub get_expired_nodes($);
 sub is_node_desktop_computing($$);
 sub get_node_stats($);
 sub order_property_node($$$);
-sub get_resources_data_structure_job($$);
+sub get_resources_data_structure_current_job($$);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
@@ -388,6 +387,7 @@ sub get_job_current_hostnames($$) {
                              FROM assignedResources, resources, moldableJobs_description
                              WHERE 
                                 assignedResources.assignedResourceIndex = \"CURRENT\"
+                                AND moldableJobs_description.moldableIndex = \"CURRENT\"
                                 AND assignedResources.idResource = resources.resourceId
                                 AND moldableJobs_description.moldableId = assignedResources.idMoldableJob
                                 AND moldableJobs_description.moldableJobId = $jobid
@@ -839,7 +839,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$) {
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO jobs
               (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail)
-              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\"$jobproperties\",\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\")
+              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\'$jobproperties\',\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\")
              ");
 
     $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
@@ -972,20 +972,21 @@ sub get_job($$) {
 }
 
 
-# get_moldable_job
+# get_current_moldable_job
 # returns a ref to some hash containing data for the moldable job of id passed in
 # parameter
 # parameters : base, moldable job id
 # return value : ref
 # side effects : /
-sub get_moldable_job($$) {
+sub get_current_moldable_job($$) {
     my $dbh = shift;
     my $moldableJobId = shift;
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM moldableJobs_description
                                 WHERE
-                                    moldableId = $moldableJobId
+                                    moldableIndex = \"CURRENT\"
+                                    AND moldableId = $moldableJobId
                             ");
     $sth->execute();
 
@@ -1019,9 +1020,31 @@ sub set_job_state($$$) {
                     dateStop IS NULL
                     AND jobId = $idJob
              ");
-    $dbh->do("INSERT INTO jobStates_log (jobId,jobState,dateStart)
-              VALUES ($idJob,\"$state\",\"$date\")
+    $dbh->do("  INSERT INTO jobStates_log (jobId,jobState,dateStart)
+                VALUES ($idJob,\"$state\",\"$date\")
              ");
+
+    if (($state eq "Terminated") or ($state eq "Error")){
+        $dbh->do("  DELETE FROM challenges
+                    WHERE jobId = $idJob
+                 ");
+        $dbh->do("  UPDATE moldableJobs_description, jobResources_group, jobResources_description, job_types
+                    SET jobResources_group.resGroupIndex = \"LOG\",
+                        jobResources_description.resJobIndex = \"LOG\",
+                        moldableJobs_description.moldableIndex = \"LOG\",
+                        job_types.typesIndex = \"LOG\"
+                    WHERE
+                        moldableJobs_description.moldableIndex = \"CURRENT\"
+                        AND moldableJobs_description.moldableIndex = \"CURRENT\"
+                        AND job_types.typesIndex = \"CURRENT\"
+                        AND jobResources_group.resGroupIndex = \"CURRENT\"
+                        AND jobResources_description.resJobIndex = \"CURRENT\"
+                        AND job_types.jobId = $idJob
+                        AND moldableJobs_description.moldableJobId = $idJob
+                        AND jobResources_group.resGroupMoldableId = moldableJobs_description.moldableId
+                        AND jobResources_description.resJobGroupId = jobResources_group.resGroupId
+                ");
+    }
 }
 
 
@@ -1407,16 +1430,17 @@ sub get_jobs_to_schedule($$){
 }
 
 
-# get_job_types
+# get_current_job_types
 # return a hash table with all types for the given job ID
-sub get_job_types($$){
+sub get_current_job_types($$){
     my $dbh = shift;
     my $jobId = shift;
 
     my $sth = $dbh->prepare("   SELECT type
                                 FROM job_types
                                 WHERE
-                                    jobId = $jobId
+                                    typesIndex = \"CURRENT\"
+                                    AND jobId = $jobId
                             ");
     $sth->execute();
     my %res;
@@ -1468,7 +1492,8 @@ sub remove_current_assigned_resources($$){
     $dbh->do("  UPDATE assignedResources
                 SET assignedResourceIndex = \"LOG\"
                 WHERE
-                    idMoldableJob = $moldableJobId
+                    assignedResourceIndex = \"CURRENT\"
+                    AND idMoldableJob = $moldableJobId
             ");
 }
 
@@ -1485,6 +1510,7 @@ sub get_resource_job($$) {
                                 FROM assignedResources a, moldableJobs_description b, jobs c
                                 WHERE
                                     a.assignedResourceIndex = \"CURRENT\"
+                                    AND b.moldableIndex = \"CURRENT\"
                                     AND a.idResource = $resource
                                     AND a.idMoldableJob = b.moldableId
                                     AND b.moldableJobId = c.idJob
@@ -1510,6 +1536,7 @@ sub get_node_job($$) {
                                 FROM assignedResources a, moldableJobs_description b, jobs c, resources d
                                 WHERE
                                     a.assignedResourceIndex = \"CURRENT\"
+                                    AND b.moldableIndex = \"CURRENT\"
                                     AND d.networkAddress = \"$hostname\"
                                     AND a.idResource = d.resourceId
                                     AND a.idMoldableJob = b.moldableId
@@ -1871,87 +1898,6 @@ sub add_resource($$$) {
 }
 
 
-# Generate the SQL sub request with property matching
-# params : base, jobId
-# return the string of subrequest
-sub get_constraint_string($$){
-    my $dbh = shift;
-    my $jobId = shift;
-
-    #Match user properties
-    my $sth = $dbh->prepare("SELECT properties FROM jobs WHERE idJob = $jobId");
-    $sth->execute();
-    my $constraints = "";
-    $constraints = ($sth->fetchrow_array())[0];
-    $sth->finish();
-
-    if ($constraints ne ""){
-        $constraints = " AND ( $constraints )";
-    }
-
-#    oar_debug("--Constraints = $constraints--\n");
-    return($constraints);
-}
-
-
-
-# get_free_nodes_job
-# gets the list of nodes that match properties of the job passed in parameter
-# and on which a new job can be added (either with exclusive or shared access).
-# This function does not differentiate exclusive and shared accesses.
-# parameters : base, jobid weight
-# return value : list of hostnames
-# side effects : /
-sub get_free_nodes_job($$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $job_weight = shift;
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
-                             WHERE n.state=\"Alive\"
-                             AND n.maxWeight > n.weight AND n.maxWeight - n.weight >= $job_weight
-                             AND p.hostname = n.hostname $constraints");
-    $sth->execute();
-    my @res = ();
-    while (my @ref = $sth->fetchrow_array()) {
-        push(@res, $ref[0]);
-    }
-    $sth->finish();
-    return @res;
-}
-
-
-# get_free_shareable_nodes_job
-# gets the list of nodes that match properties of the job passed in parameter
-# and on which a new job can be added (either with exclusive or shared access).
-# This function does not differentiate exclusive and shared accesses.
-# parameters : base, jobid weight
-# return value : list of hostnames
-# side effects : /
-sub get_free_shareable_nodes_job($$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $job_weight = shift;
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
-                          WHERE n.state=\"Alive\"
-                          AND n.hostname = p.hostname
-                          AND n.maxWeight > n.weight AND n.maxWeight - n.weight >= $job_weight $constraints");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
-
-
 # get_free_exclusive_nodes
 # gets the list of nodes on which a new job can be added with exclusive access.
 # parameters : base
@@ -1971,94 +1917,6 @@ sub get_free_exclusive_nodes($) {
     $sth->finish();
     return @res;
 }
-
-
-
-# get_free_exclusive_nodes_job
-# gets the list of nodes that match properties of the job passed in parameter
-# and on which a new job can be added with exclusive access.
-# parameters : base
-# return value : list of hostnames
-# side effects : /
-sub get_free_exclusive_nodes_job($$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $jobWeight = shift;
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
-                             WHERE n.state=\"Alive\"
-                             AND n.hostname = p.hostname
-                             AND n.weight = 0 AND n.maxWeight >= $jobWeight $constraints");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
-
-# get_alive_node_job
-# gets the list of alive nodes that match properties of the job
-# passed in parameter.
-# parameters : base, jobid, weight
-# return value : list of hostnames
-# side effects : /
-sub get_alive_node_job($$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $weight = shift;
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    my $sth = $dbh->prepare("   SELECT n.hostname FROM nodes n, nodeProperties p
-                                WHERE n.hostname = p.hostname
-                                    AND n.maxWeight >= $weight
-                          AND ( n.state = \"Alive\" or
-                          n.state = \"Suspected\" or
-                          n.state = \"Absent\" )
-                          $constraints");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
-
-
-# get_really_alive_node_job
-# gets the list of really alive nodes that match properties of the job
-# passed in parameter.
-# parameters : base, jobid, weight
-# return value : list of hostnames
-# side effects : /
-sub get_really_alive_node_job($$$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $weight = shift;
-
-    my $constraints = get_constraint_string($dbh,$job_id);
-
-    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
-                          WHERE n.hostname = p.hostname
-                          AND n.maxWeight >= $weight
-                          AND  n.state = \"Alive\"
-                               $constraints");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
 
 
 # get_alive_resources
@@ -2736,14 +2594,17 @@ sub get_node_stats($){
 #                   walltime,
 #                   moldable_job_id
 #                ]
-sub get_resources_data_structure_job($$){
+sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
     my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT a.moldableId, b.resGroupId, a.moldableWalltime, b.resGroupProperty, c.resJobResourceType, c.resJobValue
                                 FROM moldableJobs_description a, jobResources_group b, jobResources_description c, jobs d
                                 WHERE
-                                    d.idJob = $job_id
+                                    a.moldableIndex = \"CURRENT\"
+                                    AND b.resGroupIndex = \"CURRENT\"
+                                    AND c.resJobIndex = \"CURRENT\"
+                                    AND d.idJob = $job_id
                                     AND d.idJob = a.moldableJobId
                                     AND b.resGroupMoldableId = a.moldableId
                                     AND c.resJobGroupId = b.resGroupId
@@ -2870,7 +2731,8 @@ sub get_gantt_scheduled_jobs($){
     my $sth = $dbh->prepare("SELECT j.idJob, g2.startTime, m.moldableWalltime, g1.idResource, j.queueName, j.state
                              FROM ganttJobsResources g1, ganttJobsPredictions g2, moldableJobs_description m, jobs j
                              WHERE
-                                g1.idMoldableJob = g2.idMoldableJob
+                                m.moldableIndex = \"CURRENT\"
+                                AND g1.idMoldableJob = g2.idMoldableJob
                                 AND m.moldableId = g2.idMoldableJob
                                 AND j.idJob = m.moldableJobId
                             ");
@@ -2934,6 +2796,7 @@ sub add_gantt_scheduled_jobs($$$$){
              ");
 
     foreach my $i (@{$resource_list}){
+        print("TTTTTTTTTTTTTTTT $i\n");
         $dbh->do("INSERT INTO ganttJobsResources (idMoldableJob,idResource)
                   VALUES ($id_moldable_job,$i)
                  ");
@@ -3063,7 +2926,8 @@ sub get_gantt_jobs_to_launch($$){
     my $sth = $dbh->prepare("SELECT g2.idMoldableJob, g1.idResource, j.idJob
                              FROM ganttJobsResources g1, ganttJobsPredictions g2, jobs j, moldableJobs_description m
                              WHERE
-                                g1.idMoldableJob= g2.idMoldableJob
+                                m.moldableIndex = \"CURRENT\"
+                                AND g1.idMoldableJob= g2.idMoldableJob
                                 AND m.moldableId = g1.idMoldableJob
                                 AND j.idJob = m.moldableJobId
                                 AND g2.startTime <= \"$date\"
@@ -3091,7 +2955,8 @@ sub get_gantt_resources_for_jobs_to_launch($$){
     my $sth = $dbh->prepare("SELECT g1.idResource
                              FROM ganttJobsResources g1, ganttJobsPredictions g2, jobs j, moldableJobs_description m
                              WHERE
-                                g1.idMoldableJob = m.moldableId
+                                m.moldableIndex = \"CURRENT\"
+                                AND g1.idMoldableJob = m.moldableId
                                 AND m.moldableJobId = j.idJob
                                 AND g1.idMoldableJob = g2.idMoldableJob
                                 AND g2.startTime <= \"$date\"

@@ -49,7 +49,7 @@ foreach my $r (iolib::list_resources($base)){
 my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($base);
 foreach my $i (keys(%alreadyScheduledJobs)){
     # Do not take care of besteffort jobs
-    my $types = iolib::get_job_types($base,$i);
+    my $types = iolib::get_current_job_types($base,$i);
     if (!defined($types->{"besteffort"})){
         foreach my $r (@{$alreadyScheduledJobs{$i}->[3]}){
             Gantt::set_occupation(  $gantt,
@@ -73,10 +73,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     $job_index ++;
     # Choose the moldable job to schedule
     # Here we make it simple, we choose the first
-    my $job_descriptions = iolib::get_resources_data_structure_job($base,$j->{idJob});
+    my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{idJob});
     my $moldable = $job_descriptions->[0];
     
-    my $types = iolib::get_job_types($base,$j->{idJob});
+    my $types = iolib::get_current_job_types($base,$j->{idJob});
     my $duration = iolib::sql_to_duration($moldable->[1]);
     if (defined($types->{"besteffort"})){
         $duration = $besteffort_duration;

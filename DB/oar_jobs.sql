@@ -54,7 +54,8 @@ PRIMARY KEY (idJob)
 CREATE TABLE IF NOT EXISTS job_types (
 jobId INT UNSIGNED NOT NULL ,
 type VARCHAR(255) NOT NULL ,
-PRIMARY KEY (jobId)
+typesIndex ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
+INDEX log (typesIndex)
 );
 
 #DROP TABLE IF EXISTS challenges;
@@ -69,7 +70,9 @@ CREATE TABLE IF NOT EXISTS moldableJobs_description (
 moldableId INT UNSIGNED NOT NULL AUTO_INCREMENT,
 moldableJobId INT UNSIGNED NOT NULL ,
 moldableWalltime VARCHAR(255) NOT NULL ,
-INDEX job (moldableJobId),
+moldableIndex ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
+INDEX job (moldableJobId) ,
+INDEX log (moldableIndex) ,
 PRIMARY KEY (moldableId)
 );
 
@@ -78,7 +81,9 @@ CREATE TABLE IF NOT EXISTS jobResources_group (
 resGroupId INT UNSIGNED NOT NULL AUTO_INCREMENT ,
 resGroupMoldableId INT UNSIGNED NOT NULL ,
 resGroupProperty TEXT ,
+resGroupIndex ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
 INDEX moldableJob (resGroupMoldableId),
+INDEX log (resGroupIndex) ,
 PRIMARY KEY (resGroupId)
 );
 
@@ -88,7 +93,9 @@ resJobGroupId INT UNSIGNED NOT NULL,
 resJobResourceType VARCHAR(255) NOT NULL,
 resJobValue INT NOT NULL,
 resJobOrder INT UNSIGNED NOT NULL DEFAULT 0,
+resJobIndex ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
 INDEX resgroup (resJobGroupId),
+INDEX log (resJobIndex) ,
 PRIMARY KEY (resJobGroupId,resJobResourceType)
 );
 

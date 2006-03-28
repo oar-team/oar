@@ -79,7 +79,7 @@ foreach my $job (@result){
     $start = iolib::sql_to_local($date);
 
     # Get maxtime
-    my $moldJob = iolib::get_moldable_job($base,$job->{assignedMoldableJob});
+    my $moldJob = iolib::get_current_moldable_job($base,$job->{assignedMoldableJob});
     $date = $moldJob->{moldableWalltime};
     $max = iolib::sql_to_duration($date);
 
