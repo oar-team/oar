@@ -46,7 +46,7 @@ sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
@@ -756,8 +756,8 @@ sub get_possible_wanted_resources($$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -880,6 +880,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$) {
     foreach my $t (@{$type_list}){
         $dbh->do("  INSERT INTO job_types (jobId,type)
                     VALUES ($job_id,\"$t\")
+                 ");
+    }
+
+    foreach my $a (@{$anterior_ref}){
+        $dbh->do("  INSERT INTO jobDependencies (idJob,idJobRequired)
+                    VALUES ($job_id,$a)
                  ");
     }
 
@@ -1462,6 +1468,29 @@ sub get_current_job_types($$){
     $sth->finish();
 
     return(\%res);
+}
+
+
+# get_current_job_dependencies
+# return an array table with all dependencies for the given job ID
+sub get_current_job_dependencies($$){
+    my $dbh = shift;
+    my $jobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT idJobRequired
+                                FROM jobDependencies
+                                WHERE
+                                    jobDependencyIndex = \"CURRENT\"
+                                    AND idJob = $jobId
+                            ");
+    $sth->execute();
+    my @res;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{idJobRequired});
+    }
+    $sth->finish();
+
+    return(@res);
 }
 
 
@@ -2852,6 +2881,29 @@ sub set_gantt_job_startTime($$$){
              ");
 }
 
+
+# Get startTime for a given job
+# args : base, job id
+sub get_gantt_job_startTime($$){
+    my $dbh = shift;
+    my $job = shift;
+
+    my $sth = $dbh->prepare("SELECT ganttJobsPredictions.startTime, ganttJobsPredictions.idMoldableJob
+                             FROM ganttJobsPredictions,moldableJobs_description
+                             WHERE
+                                moldableJobs_description.moldableJobId = $job
+                                AND ganttJobsPredictions.idMoldableJob = moldableJobs_description.moldableId
+                            ");
+    $sth->execute();
+    my @res = $sth->fetchrow_array();
+    $sth->finish();
+    
+    if (defined($res[0])){
+        return($res[0],$res[1]);
+    }else{
+        return(undef);
+    }
+}
 
 
 # Update ganttJobsPrediction_visu and ganttJobsNodes_visu with values in ganttJobsPrediction and in ganttJobsNodes

@@ -132,7 +132,7 @@ my $user = $tmp->{user};
 my $usercmd = $tmp->{command};
 
 #do it for all job in state LEON in the data base table fragJobs
-$base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE , resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE, resourceProperties WRITE, events_log WRITE, moldableJobs_description WRITE, job_types WRITE, jobResources_description WRITE, jobResources_group WRITE, challenges WRITE");
+$base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE , resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE, resourceProperties WRITE, events_log WRITE, moldableJobs_description WRITE, job_types WRITE, jobResources_description WRITE, jobResources_group WRITE, challenges WRITE, jobDependencies WRITE");
 my @JobToFrag = iolib::get_tokill_job($base);
 while(scalar(@JobToFrag)){
     $Jid=shift(@JobToFrag);
