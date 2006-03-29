@@ -274,7 +274,9 @@ PRIMARY KEY (window_start,window_stop,user,queue_name,consumption_type)
 CREATE TABLE IF NOT EXISTS jobDependencies (
 idJob INT UNSIGNED NOT NULL ,
 idJobRequired INT UNSIGNED NOT NULL,
+jobDependencyIndex ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
 INDEX id (idJob),
+INDEX log (jobDependencyIndex),
 PRIMARY KEY (idJob,idJobRequired)
 );
 

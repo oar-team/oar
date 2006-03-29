@@ -96,7 +96,7 @@ my $max_successive_read = 10;
 my $schedulertimeout = 60;
 
 # Max waiting time before check for jobs whose time allowed has elapsed
-my $villainstimeout = 30;
+my $villainstimeout = 10;
 
 # Max waiting time before check node states
 my $checknodestimeout = 300;

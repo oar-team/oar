@@ -40,6 +40,7 @@ my $mail;
 my $job_name;
 my $Directory = $ENV{PWD};
 my @Type;
+my @anterior_job;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -109,7 +110,7 @@ sub usage() {
 Usage: oarsub [OPTIONS] [-I|<SCRIPT>]
 Submit a job the OAR batch scheduler
 Options are:
- -I, --interactive             request an interactive job
+ -I, --Interactive             request an interactive job
  -l, --resource=<LIST>         set the resource list( ex: nodes=4/cpu=1,walltime=2:00:00 )
  -q, --queue=<QUEUE>           set the the queue to submit the job to
  -p, --property=<LIST>         set the property list
@@ -121,6 +122,7 @@ Options are:
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -d, --directory               specify the directory where to launch the command (default is current directory)
  -n, --name                    specify an arbitrary name for the job
+ -a, --anterior                anterior job that must be terminated
  -h, --help                    print this help message
 EOS
 }
@@ -156,7 +158,7 @@ Getopt::Long::Configure ("gnu_getopt");
 
 GetOptions ("resource|l=s" => \@resource,
             "queue|q=s"   => \$Queue_name,
-            "interactive|I"  => \$Interactive,
+            "Interactive|I"  => \$Interactive,
             "property|p=s" => \$Job_sql_properties,
             "reservation|r=s" => \$Reservation,
             "connect|c=i" => \$connectResa,
@@ -166,8 +168,9 @@ GetOptions ("resource|l=s" => \@resource,
             "help|h" => \$sos,
             "mail|m=s" => \$mail,
             "type|t=s" => \@Type,
-            "directory|q=s" => \$Directory,
-            "name|n=s" => \$job_name
+            "directory|d=s" => \$Directory,
+            "name|n=s" => \$job_name,
+            "anterior|a=i" => \@anterior_job
            );
 
 if (defined $sos){
@@ -266,7 +269,7 @@ sub parse_resource_descriptions($){
         while ($end_loop == 0){
             my $initial_resource = $r;
             my %tmp_result;
-            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+)}(.*)$/){
+            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/){
                 # $1 = property string
                 $tmp_result{property} = $2;
                 $r = $3;

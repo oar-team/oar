@@ -61,7 +61,7 @@ foreach my $i (keys(%alreadyScheduledJobs)){
     }
 }
 
-print(Gantt::pretty_print($gantt)."\n");
+#print(Gantt::pretty_print($gantt)."\n");
 
 # End of the initialisation
 # Begining of the real scheduling

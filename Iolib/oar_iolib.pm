@@ -1028,22 +1028,33 @@ sub set_job_state($$$) {
         $dbh->do("  DELETE FROM challenges
                     WHERE jobId = $idJob
                  ");
-        $dbh->do("  UPDATE moldableJobs_description, jobResources_group, jobResources_description, job_types
+        $dbh->do("  UPDATE moldableJobs_description, jobResources_group, jobResources_description
                     SET jobResources_group.resGroupIndex = \"LOG\",
                         jobResources_description.resJobIndex = \"LOG\",
-                        moldableJobs_description.moldableIndex = \"LOG\",
-                        job_types.typesIndex = \"LOG\"
+                        moldableJobs_description.moldableIndex = \"LOG\"
                     WHERE
                         moldableJobs_description.moldableIndex = \"CURRENT\"
                         AND moldableJobs_description.moldableIndex = \"CURRENT\"
-                        AND job_types.typesIndex = \"CURRENT\"
                         AND jobResources_group.resGroupIndex = \"CURRENT\"
                         AND jobResources_description.resJobIndex = \"CURRENT\"
-                        AND job_types.jobId = $idJob
                         AND moldableJobs_description.moldableJobId = $idJob
                         AND jobResources_group.resGroupMoldableId = moldableJobs_description.moldableId
                         AND jobResources_description.resJobGroupId = jobResources_group.resGroupId
-                ");
+                 ");
+
+        $dbh->do("  UPDATE job_types
+                    SET job_types.typesIndex = \"LOG\"
+                    WHERE
+                        job_types.typesIndex = \"CURRENT\"
+                        AND job_types.jobId = $idJob
+                 ");
+        
+        $dbh->do("  UPDATE jobDependencies
+                    SET jobDependencies.jobDependencyIndex = \"LOG\"
+                    WHERE
+                        jobDependencies.jobDependencyIndex = \"CURRENT\"
+                        AND jobDependencies.idJob = $idJob
+                 ");
     }
 }
 
@@ -1345,7 +1356,8 @@ sub get_waiting_reservation_jobs($){
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs j
                                 WHERE
-                                    j.state=\"Waiting\"
+                                    (j.state = \"Waiting\"
+                                        OR j.state = \"toAckReservation\")
                                     AND j.reservation = \"Scheduled\"
                                 ORDER BY j.idJob
                             ");
@@ -2796,7 +2808,6 @@ sub add_gantt_scheduled_jobs($$$$){
              ");
 
     foreach my $i (@{$resource_list}){
-        print("TTTTTTTTTTTTTTTT $i\n");
         $dbh->do("INSERT INTO ganttJobsResources (idMoldableJob,idResource)
                   VALUES ($id_moldable_job,$i)
                  ");
