@@ -425,6 +425,29 @@ sub get_job_current_resources($$) {
 }
 
 
+# get_job_resources
+# returns the list of resources associated to the job passed in parameter
+# parameters : base, jobid
+# return value : list of resources
+# side effects : /
+sub get_job_resources($$) {
+    my $dbh = shift;
+    my $jobid= shift;
+
+    my $sth = $dbh->prepare("SELECT idResource resource
+                             FROM assignedResources
+                             WHERE 
+                                idMoldableJob = $jobid
+                             ORDER BY idResource ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource});
+    }
+    return @res;
+}
+
+
 # get_job_host_log
 # returns the list of hosts associated to the moldable job passed in parameter
 # parameters : base, moldablejobid
@@ -974,7 +997,7 @@ sub get_job($$) {
     my $ref = $sth->fetchrow_hashref();
     $sth->finish();
 
-    return $ref;
+    return($ref);
 }
 
 
@@ -993,6 +1016,30 @@ sub get_current_moldable_job($$) {
                                 WHERE
                                     moldableIndex = \"CURRENT\"
                                     AND moldableId = $moldableJobId
+                            ");
+    $sth->execute();
+
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return $ref;
+}
+
+
+# get_moldable_job
+# returns a ref to some hash containing data for the moldable job of id passed in
+# parameter
+# parameters : base, moldable job id
+# return value : ref
+# side effects : /
+sub get_moldable_job($$) {
+    my $dbh = shift;
+    my $moldableJobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM moldableJobs_description
+                                WHERE
+                                    moldableId = $moldableJobId
                             ");
     $sth->execute();
 
@@ -3525,7 +3572,11 @@ sub get_job_events($$){
     my $dbh =shift;
     my $jobId = shift;
 
-    my $sth = $dbh->prepare("SELECT * FROM event_log WHERE idJob = $jobId");
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM events_log
+                                WHERE
+                                    idJob = $jobId
+                            ");
     $sth->execute();
 
     my @results;

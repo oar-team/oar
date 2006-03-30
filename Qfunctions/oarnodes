@@ -60,8 +60,8 @@ GetOptions ("state|s" => \$stateMode,
 
 if ($usage){
     print <<EOS;
-Usage: $0 [OPTIONS] [hostnames]
-Display information on the nodes
+Usage: $0 [ -a | -s | -l | -h ] [list of nodes] [-X | -Y | -D]
+Display node informations
 Options:
  -a, --all     show all nodes with their properties
  -s, --state   show only node states

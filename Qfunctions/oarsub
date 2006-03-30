@@ -122,7 +122,7 @@ Options are:
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -d, --directory               specify the directory where to launch the command (default is current directory)
  -n, --name                    specify an arbitrary name for the job
- -a, --anterior                anterior job that must be terminated
+ -a, --anterior                anterior job that must be terminated to start this new one
  -h, --help                    print this help message
 EOS
 }
