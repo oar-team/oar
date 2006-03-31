@@ -1,0 +1,269 @@
+CREATE TABLE accounting (
+  window_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  window_stop varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  accounting_user varchar(20) NOT NULL default '',
+  queue_name varchar(100) NOT NULL default '',
+  consumption_type varchar(5) check (consumption_type in ('ASKED','USED')) NOT NULL default 'ASKED',
+  consumption integer NOT NULL default '0',
+  PRIMARY KEY  (window_start,window_stop,accounting_user,queue_name,consumption_type)
+);
+CREATE INDEX accounting_user ON accounting (accounting_user);
+CREATE INDEX accounting_queue ON accounting (queue_name);
+CREATE INDEX accounting_type ON accounting (consumption_type);
+
+
+CREATE TABLE admission_rules (
+  id serial,
+  rule varchar(255) NOT NULL default '',
+  PRIMARY KEY  (id)
+);
+
+
+CREATE TABLE assigned_resources (
+  moldable_job_id integer  NOT NULL default '0',
+  resource_id integer NOT NULL default '0',
+  assigned_resource_index varchar(7) check (assigned_resource_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
+  PRIMARY KEY  (moldable_job_id,resource_id)
+);
+CREATE INDEX mjob_id ON assigned_resources (moldable_job_id);
+CREATE INDEX log ON assigned_resources (assigned_resource_index);
+
+
+CREATE TABLE challenges (
+  job_id integer NOT NULL default '0',
+  challenge varchar(255) NOT NULL default '',
+  PRIMARY KEY  (job_id)
+);
+
+
+CREATE TABLE event_log_hostnames (
+  event_id integer NOT NULL default '0',
+  hostname varchar(255) NOT NULL default '',
+  PRIMARY KEY  (event_id,hostname)
+);
+CREATE INDEX event_hostname ON event_log_hostnames (hostname);
+
+
+CREATE TABLE event_logs (
+  event_id serial,
+  type varchar(50) NOT NULL default '',
+  job_id integer NOT NULL default '0',
+  date varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  description varchar(255) NOT NULL default '',
+  to_check varchar(3) check (to_check in ('YES','NO')) NOT NULL default 'YES',
+  PRIMARY KEY  (event_id)
+);
+CREATE INDEX event_type ON event_logs (type);
+CREATE INDEX event_check ON event_logs (to_check);
+
+
+CREATE TABLE files (
+  file_id serial,
+  md5sum varchar(255) default NULL,
+  location varchar(255) default NULL,
+  method varchar(255) default NULL,
+  compression varchar(255) default NULL,
+  size integer NOT NULL default '0',
+  PRIMARY KEY  (file_id)
+);
+CREATE INDEX md5sum ON files (md5sum);
+
+
+CREATE TABLE frag_jobs (
+  frag_id_job integer  NOT NULL default '0',
+  frag_date varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  frag_state varchar(16) check (frag_state in ('LEON','TIMER_ARMED','LEON_EXTERMINATE','FRAGGED')) NOT NULL default 'LEON',
+  PRIMARY KEY  (frag_id_job)
+);
+CREATE INDEX frag_state ON frag_jobs (frag_state);
+
+
+CREATE TABLE gantt_jobs_predictions (
+  moldable_job_id integer NOT NULL default '0',
+  start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  PRIMARY KEY  (moldable_job_id)
+);
+
+
+CREATE TABLE gantt_jobs_predictions_visu (
+  moldable_job_id integer NOT NULL default '0',
+  start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  PRIMARY KEY  (moldable_job_id)
+);
+
+
+CREATE TABLE gantt_jobs_resources (
+  moldable_job_id integer NOT NULL default '0',
+  resource_id integer NOT NULL default '0',
+  PRIMARY KEY  (moldable_job_id,resource_id)
+);
+
+
+CREATE TABLE gantt_jobs_resources_visu (
+  moldable_job_id integer NOT NULL default '0',
+  resource_id integer NOT NULL default '0',
+  PRIMARY KEY  (moldable_job_id,resource_id)
+);
+
+
+CREATE TABLE job_dependencies (
+  job_id integer NOT NULL default '0',
+  job_id_required integer NOT NULL default '0',
+  job_dependency_index varchar(7) check (job_dependency_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
+  PRIMARY KEY  (job_id,job_id_required)
+);
+CREATE INDEX id_dep ON job_dependencies (job_id);
+CREATE INDEX log_dep ON job_dependencies (job_dependency_index);
+
+
+CREATE TABLE job_resource_groups (
+  res_group_id serial,
+  res_group_moldable_id integer NOT NULL default '0',
+  res_group_property text,
+  res_group_index varchar(7) check (res_group_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
+  PRIMARY KEY  (res_group_id)
+);
+CREATE INDEX moldable_job ON job_resource_groups (res_group_moldable_id);
+CREATE INDEX log_res ON job_resource_groups (res_group_index);
+
+
+CREATE TABLE job_resource_descriptions (
+  res_job_group_id integer NOT NULL default '0',
+  res_job_resource_Type varchar(255) NOT NULL default '',
+  res_job_value integer NOT NULL default '0',
+  res_job_order integer NOT NULL default '0',
+  res_job_index varchar(7) check (res_job_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
+  PRIMARY KEY  (res_job_group_id,res_job_resource_Type)
+);
+CREATE INDEX resgroup ON job_resource_descriptions (res_job_group_id);
+CREATE INDEX log_res_desc ON job_resource_descriptions (res_job_index);
+
+
+CREATE TABLE job_state_logs (
+  job_id integer NOT NULL default '0',
+  job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')) NOT NULL default 'Waiting',
+  date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  date_stop integer NOT NULL default '0'
+);
+CREATE INDEX id_job_log ON job_state_logs (job_id);
+CREATE INDEX state_job_log ON job_state_logs (job_state);
+
+
+CREATE TABLE job_types (
+  job_id integer NOT NULL default '0',
+  type varchar(255) NOT NULL default '',
+  types_index varchar(7) check (types_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT'
+);
+CREATE INDEX log_types ON job_types (types_index);
+CREATE INDEX type ON job_types (type);
+CREATE INDEX id_types ON job_types (job_id);
+
+
+CREATE TABLE jobs (
+  job_id serial,
+  job_name varchar(255) NOT NULL default '',
+  job_type varchar(11) check (job_type in ('INTERACTIVE','PASSIVE')) NOT NULL default 'PASSIVE',
+  info_type varchar(255) default NULL,
+  state varchar(16) check (state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')) NOT NULL default 'Waiting',
+  reservation varchar(10) check (reservation in ('None','toSchedule','Scheduled')) NOT NULL default 'None',
+  message varchar(255) NOT NULL default '',
+  job_user varchar(20) NOT NULL default '',
+  command text,
+  bpid varchar(255) default NULL,
+  queue_name varchar(100) NOT NULL default '',
+  properties text,
+  launching_directory varchar(255) NOT NULL default '',
+  submission_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  stop_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  file_id integer default NULL,
+  accounted varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
+  mail varchar(255) default NULL,
+  assigned_moldable_job integer default '0',
+  checkpoint integer NOT NULL default '0',
+  PRIMARY KEY  (job_id)
+);
+CREATE INDEX state ON jobs (state);
+CREATE INDEX reservation ON jobs (reservation);
+CREATE INDEX queue_name ON jobs (queue_name);
+CREATE INDEX accounted ON jobs (accounted);
+
+
+CREATE TABLE moldable_job_descriptions (
+  moldable_id serial,
+  moldable_job_id integer NOT NULL default '0',
+  moldable_walltime varchar(255) NOT NULL default '',
+  moldable_index varchar(7) check (moldable_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
+  PRIMARY KEY  (moldable_id)
+);
+CREATE INDEX job_mold ON moldable_job_descriptions (moldable_job_id);
+CREATE INDEX log_mold_desc ON moldable_job_descriptions (moldable_index);
+
+
+CREATE TABLE queues (
+  queue_name varchar(100) NOT NULL default '',
+  priority integer NOT NULL default '0',
+  scheduler_policy varchar(100) NOT NULL default '',
+  state varchar(9) check (state in ('Active','notActive')) NOT NULL default 'Active',
+  PRIMARY KEY  (queue_name)
+);
+
+
+CREATE TABLE resource_propertie_logs (
+  resource_id integer NOT NULL default '0',
+  attribute varchar(50) NOT NULL default '',
+  value varchar(100) NOT NULL default '',
+  date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  date_stop varchar(19) default NULL
+);
+CREATE INDEX resource ON resource_propertie_logs (resource_id);
+CREATE INDEX attribute ON resource_propertie_logs (attribute);
+
+
+CREATE TABLE resource_properties (
+  resource_id integer NOT NULL default '0',
+  switch varchar(50) NOT NULL default '0',
+  node varchar(100) NOT NULL default 'default',
+  cpu integer NOT NULL default '0',
+  besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
+  deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
+  expiry_date varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
+  PRIMARY KEY  (resource_id)
+);
+
+
+CREATE TABLE resource_state_logs (
+  resource_id integer NOT NULL default '0',
+  change_state varchar(9) check (change_state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
+  date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  date_stop varchar(19) default NULL,
+  finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO'
+);
+CREATE INDEX resource_id ON resource_state_logs (resource_id);
+CREATE INDEX state_log ON resource_state_logs (change_state);
+CREATE INDEX finaud ON resource_state_logs (finaud_decision);
+
+
+CREATE TABLE resources (
+  resource_id serial,
+  network_address varchar(100) NOT NULL default '',
+  state varchar(9) check (state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
+  next_state varchar(9) check (next_state in ('UnChanged','Alive','Dead','Absent','Suspected')) NOT NULL default 'UnChanged',
+  finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
+  next_finaud_decision varchar(3) check (next_finaud_decision in ('YES','NO')) NOT NULL default 'NO',
+  PRIMARY KEY  (resource_id)
+);
+CREATE INDEX resource_state ON resources (state);
+CREATE INDEX resource_next_state ON resources (next_state);
+
+
+
+INSERT INTO admission_rules (rule) VALUES ('if (not defined($queue_name)) {$queue_name="default";}');
+INSERT INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {$queue_name="default";}');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('deploy','1','oar_sched_gantt');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');
+
+INSERT INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
