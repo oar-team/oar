@@ -82,7 +82,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             my @date_tmp = iolib::get_gantt_job_startTime($base,$d);
             if (defined($date_tmp[0])){
                 my $mold_dep = iolib::get_current_moldable_job($base,$date_tmp[1]);
-                $scheduler_init_date = iolib::sql_to_local($date_tmp[0]) + iolib::sql_to_duration($mold_dep->{moldableWalltime}) + 1;
+                my $sched_tmp = iolib::sql_to_local($date_tmp[0]) + iolib::sql_to_duration($mold_dep->{moldableWalltime});
+                if ($scheduler_init_date < $sched_tmp){
+                    $scheduler_init_date = $sched_tmp;
+                }
             }else{
                 my $message = "Cannot determine scheduling time due to job dependencies";
                 iolib::set_job_message($base,$j->{idJob},$message);
@@ -100,7 +103,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $moldable = $job_descriptions->[0];
     
     my $types = iolib::get_current_job_types($base,$j->{idJob});
-    my $duration = iolib::sql_to_duration($moldable->[1]);
+    my $duration = iolib::sql_to_duration($moldable->[1]) + $security_time_overhead;
     if (defined($types->{"besteffort"})){
         $duration = $besteffort_duration;
     }
