@@ -42,7 +42,7 @@ oar_debug("[oar_sched_gantt] Begining of Gantt scheduler on queue $queue at time
 my $gantt = Gantt::new();
 #Init the gantt chart with all resources
 foreach my $r (iolib::list_resources($base)){
-    Gantt::add_new_resource($gantt, $r->{resourceId});
+    Gantt::add_new_resource($gantt, $r->{resource_id});
 }
 
 # Take care of currently scheduled jobs (gantt in the database)
@@ -75,21 +75,21 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $scheduler_init_date = $current_time;
     # Search for dependencies
     my $skip_job = 0;
-    foreach my $d (iolib::get_current_job_dependencies($base,$j->{idJob})){
+    foreach my $d (iolib::get_current_job_dependencies($base,$j->{job_id})){
         next if ($skip_job == 1);
         my $dep_job = iolib::get_job($base,$d);
         if (($dep_job->{state} ne "Error") and ($dep_job->{state} ne "Terminated")){
             my @date_tmp = iolib::get_gantt_job_startTime($base,$d);
             if (defined($date_tmp[0])){
                 my $mold_dep = iolib::get_current_moldable_job($base,$date_tmp[1]);
-                my $sched_tmp = iolib::sql_to_local($date_tmp[0]) + iolib::sql_to_duration($mold_dep->{moldableWalltime});
+                my $sched_tmp = iolib::sql_to_local($date_tmp[0]) + iolib::sql_to_duration($mold_dep->{moldable_walltime});
                 if ($scheduler_init_date < $sched_tmp){
                     $scheduler_init_date = $sched_tmp;
                 }
             }else{
                 my $message = "Cannot determine scheduling time due to job dependencies";
-                iolib::set_job_message($base,$j->{idJob},$message);
-                oar_debug("[oar_sched_gantt] [$j->{idJob}] $message\n");
+                iolib::set_job_message($base,$j->{job_id},$message);
+                oar_debug("[oar_sched_gantt] [$j->{job_id}] $message\n");
                 $skip_job = 1;
                 next;
             }
@@ -99,10 +99,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     
     # Choose the moldable job to schedule
     # Here we make it simple, we choose the first
-    my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{idJob});
+    my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{job_id});
     my $moldable = $job_descriptions->[0];
     
-    my $types = iolib::get_current_job_types($base,$j->{idJob});
+    my $types = iolib::get_current_job_types($base,$j->{job_id});
     my $duration = iolib::sql_to_duration($moldable->[1]) + $security_time_overhead;
     if (defined($types->{"besteffort"})){
         $duration = $besteffort_duration;
@@ -111,7 +111,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     # Get list of Alive resources
     my @alive_resources;
     foreach my $r (iolib::get_resources_in_state($base,"Alive")){
-        push(@alive_resources, $r->{resourceId});
+        push(@alive_resources, $r->{resource_id});
     }
     
     my $job_properties = "TRUE";

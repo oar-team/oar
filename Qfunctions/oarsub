@@ -138,7 +138,7 @@ $stageindir = get_conf("STAGEIN_DIR");
 
 $Default_resources = get_conf("OARSUB_DEFAULT_RESOURCES");
 if (!defined($Default_resources)){
-    $Default_resources = "/resourceId=1";
+    $Default_resources = "/resource_id=1";
 }
     
 
@@ -228,7 +228,7 @@ $base = iolib::connect();
 if (defined($connectResa)){
     my $lusr= getpwuid($ENV{SUDO_UID});
     my $job = iolib::get_job($base, $connectResa);
-    if ((($lusr eq $job->{'user'}) or ($lusr eq "oar")) && ($job->{'state'} eq "Running")) {
+    if ((($lusr eq $job->{'job_user'}) or ($lusr eq "oar")) && ($job->{'state'} eq "Running")) {
         my @hosts = iolib::get_job_current_hostnames($base,$connectResa);
         my $hostToConnectViaSSH = $hosts[0];
         #deploy part
@@ -239,7 +239,7 @@ if (defined($connectResa)){
         my $OAR_NB_NODES = $#hosts + 1;
         my @passinfo=getpwnam($lusr);
         my $shell=$passinfo[8];
-        my $cmd = "ssh -t $hostToConnectViaSSH \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh /tmp/OAR_$connectResa $OAR_NB_NODES $connectResa $lusr $shell $job->{launchingDirectory} I\\\"\"";
+        my $cmd = "ssh -t $hostToConnectViaSSH \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh /tmp/OAR_$connectResa $OAR_NB_NODES $connectResa $lusr $shell $job->{launching_directory} I\\\"\"";
         #print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID

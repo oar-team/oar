@@ -22,53 +22,7 @@ if (!defined($deploy_hostname)){
     $deploy_hostname = $server_hostname;
 }
 
-#sub forkexecwait($){
-#    my $cmd=shift;
-#
-#    my $pid=0;
-#    $pid=fork;
-#    if($pid==0){
-#        #CHILD
-#        oar_debug("[Leon] child exec: $cmd\n");
-#        $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
-#        $ENV{USER}="oar";
-#        $ENV{USERNAME}="oar";
-#        $ENV{LOGNAME}="oar";
-#        #print "real user: $UID effective user: $EUID\n";
-#        $UID=$EUID;
-#        #print "real user: $UID effective user: $EUID\n";
-#        exec("$cmd");
-#    }
-#
-#    waitpid($pid,0);
-#    my $exit_value  = $? >> 8;
-#    return($exit_value);
-#}
-
 my $base;
-
-##Answer oarsub in Waiting state
-#sub answer ($$$){
-#    my $jobid = shift;
-#    my $info = shift;
-#    my $message = shift;
-#
-#    my $error = 0;
-#    my ($addr,$port) = split(/:/,$info);
-#    oar_debug("[Leon] oarsub addr:port = $addr:$port info = $info\n");
-#    my $client = IO::Socket::INET->new(PeerPort=> $port,
-#                                      PeerAddr=> $addr,
-#                                      Type => SOCK_STREAM,
-#                                      Proto => "tcp") or $error=1;
-#    if($error == 0){
-#        print($client $message);
-#        close($client);
-#        oar_debug("[Leon] Notification done\n");
-#    }else{
-#        oar_debug("[Leon] Can not open connection to oarsub client for job $jobid, it is normal if user typed Ctrl-C !!!!!!\n");
-#    }
-#    return($error);
-#}
 
 # arg1 --> host+pid of bipbip process
 # return -1 if the ssh connection timed out, else return the return code of the command kill
@@ -103,36 +57,17 @@ sub killbipbip($){
     return($res);
 }
 
-## connect to oarexec host and send KILL
-## arg1 --> host
-## arg2 --> job ID
-#sub sendKillToOarexec($$){
-#    my $host = shift;
-#    my $jobId = shift;
-#
-#    oar_debug("[Leon] connecting to $host to send kill signal on oarexec for job $jobId\n");
-#
-#    my $pid=0;
-#    $pid=fork;
-#    if($pid==0){
-#        #CHILD
-#        my $file = oar_Tools::getOarPidFileName($jobId);
-#        exec("ssh $host \"test -e $file && cat $file | xargs kill \"");
-#    }
-#}
-
-
 my $Jid=0;
 my $exitCode = 0;
 
 $base = iolib::connect();
 
 my $tmp = iolib::get_job($base,$Jid);
-my $user = $tmp->{user};
+my $user = $tmp->{job_user};
 my $usercmd = $tmp->{command};
 
 #do it for all job in state LEON in the data base table fragJobs
-$base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE , resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE, resourceProperties WRITE, events_log WRITE, moldableJobs_description WRITE, job_types WRITE, jobResources_description WRITE, jobResources_group WRITE, challenges WRITE, jobDependencies WRITE");
+iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","resource_properties","event_logs","moldable_job_descriptions","job_types","job_resource_descriptions","job_resource_groups","challenges","job_dependencies"]);
 my @JobToFrag = iolib::get_tokill_job($base);
 while(scalar(@JobToFrag)){
     $Jid=shift(@JobToFrag);
@@ -145,14 +80,14 @@ while(scalar(@JobToFrag)){
         oar_debug("[Leon] Job is not launched\n");
         iolib::set_job_state($base,$Jid,"Error");
         iolib::set_job_message($base,$Jid,"job killed by Leon directly");
-        if ($refJob->{'jobType'} eq "INTERACTIVE"){
+        if ($refJob->{'job_type'} eq "INTERACTIVE"){
             oar_debug("[Leon] I notify oarsub in waiting mode\n");
             #answer($Jid,$refJob->{'infoType'},"JOB KILLED");
-            my ($addr,$port) = split(/:/,$refJob->{'infoType'});
+            my ($addr,$port) = split(/:/,$refJob->{'info_type'});
             if (!defined(oar_Tools::notifyTCPSocket($addr, $port, "JOB KILLED"))){
                 oar_debug("[Leon] Notification done\n");
             }else{
-                oar_debug("[Leon] Can not open connection to oarsub client for job $Jid, it is normal if user typed Ctrl-C !!!!!!\n");
+                oar_debug("[Leon] Cannot open connection to oarsub client for job $Jid, it is normal if user typed Ctrl-C !!!!!!\n");
             }
         }
         $exitCode = 1;
@@ -201,11 +136,11 @@ while(scalar(@JobToFrag)){
 
     iolib::set_finish_date($base,$Jid);
     iolib::set_job_message($base,$Jid,"job exterminated by Leon");
-    iolib::remove_current_assigned_resources($base,$refJob->{assignedMoldableJob});
+    iolib::remove_current_assigned_resources($base,$refJob->{assignedi_moldable_job});
     iolib::job_arm_leon_timer($base,$Jid);
     $exitCode = 1;
 }
-$base->do("UNLOCK TABLES");
+iolib::unlock_table($base);
 
 iolib::disconnect($base);
 

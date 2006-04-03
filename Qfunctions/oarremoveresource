@@ -19,17 +19,15 @@ print "Resource to remove : $Resource\n";
 my $exit_code = 0;
 
 my $base = iolib::connect();
-$base->do("LOCK TABLE resources WRITE, resourceProperties WRITE,
-resourceProperties_log WRITE, assignedResources WRITE, jobs WRITE, fragJobs
-WRITE, events_log WRITE, events_log_hostnames WRITE, resourceStates_log WRITE");
+iolib::lock_table($base,["resources","resource_properties","resource_properties_logs","assigned_resources","jobs","frag_jobs","event_logs","event_log_hostnames","resource_state_logs"]);
 
 my $resource_ref = iolib::get_resource_info($base,$Resource);
 if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
-    my $sth = $base->prepare("  SELECT jobs.idJob, jobs.assignedMoldableJob
-                                FROM assignedResources, jobs
+    my $sth = $base->prepare("  SELECT jobs.job_id, jobs.assigned_moldable_job
+                                FROM assigned_resources, jobs
                                 WHERE
-                                    assignedResources.idResource = $Resource
-                                    AND assignedResources.idMoldableJob = jobs.assignedMoldableJob
+                                    assigned_resources.resource_id = $Resource
+                                    AND assigned_resources.moldable_job_id = jobs.assigned_moldable_job
                              ");
     $sth->execute();
     my @jobList;
@@ -39,21 +37,21 @@ if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
     $sth->finish();
     foreach my $i (@jobList){
         print("\tRemove the job $i->[0], it was run on the resource $Resource\n");
-        $base->do("DELETE from event_log         WHERE idJob = $i->[0]");
-        $base->do("DELETE from fragJobs          WHERE fragIdJob = $i->[0]");
-        $base->do("DELETE from jobs              WHERE idJob = $i->[0]");
-        $base->do("DELETE from assignedResources WHERE idMoldableJob = $i->[1]");
+        $base->do("DELETE from event_logs         WHERE job_id = $i->[0]");
+        $base->do("DELETE from frag_jobs          WHERE frag_id_job = $i->[0]");
+        $base->do("DELETE from jobs              WHERE job_id = $i->[0]");
+        $base->do("DELETE from assigned_resources WHERE moldable_job_id = $i->[1]");
     }
-    $base->do("DELETE from assignedResources     WHERE idResource = $Resource");
-    $base->do("DELETE from resourceProperties    WHERE resourceId = $Resource");
-    $base->do("DELETE from resources             WHERE resourceId = $Resource");
+    $base->do("DELETE from assigned_resources     WHERE resource_id = $Resource");
+    $base->do("DELETE from resource_properties    WHERE resource_id = $Resource");
+    $base->do("DELETE from resources             WHERE resource_id = $Resource");
     print("Resource $Resource removed.\n");
 }else{
     print("/!\\ The state of the resource $Resource must be set to Dead before.\n");
     $exit_code = 2;
 }
 
-$base->do("UNLOCK TABLES");
+iolib::unlock_table($base);
 iolib::disconnect($base);
 
 exit($exit_code);

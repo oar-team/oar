@@ -45,30 +45,30 @@ my $base = iolib::connect();
 # for toError jobs
 my @jobErrorList = iolib::get_jobs_in_state($base,"toError");
 foreach  my $j (@jobErrorList){
-    oar_debug("[Runner] Treate job $j->{idJob} in toError state\n");
-    if (($j->{jobType} eq "INTERACTIVE") || (($j->{jobType} eq "PASSIVE") && $j->{reservation} eq "Scheduled")){
-        oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$j->{idJob}) in error; jobInfo=$j->{infoType}\n");
-        answer($j->{idJob},$j->{infoType},"BAD JOB");
+    oar_debug("[Runner] Treate job $j->{job_id} in toError state\n");
+    if (($j->{job_type} eq "INTERACTIVE") || (($j->{job_type} eq "PASSIVE") && $j->{reservation} eq "Scheduled")){
+        oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        answer($j->{job_id},$j->{info_type},"BAD JOB");
     }
-    oar_debug("[Runner] Set job $j->{idJob} to state Error\n");
-    iolib::set_job_state($base, $j->{idJob}, "Error");
+    oar_debug("[Runner] Set job $j->{job_id} to state Error\n");
+    iolib::set_job_state($base, $j->{job_id}, "Error");
 }
 
 # for toAckReservation jobs
 my @jobResaToAck = iolib::get_jobs_in_state($base,"toAckReservation");
 for my $j (@jobResaToAck){
-    oar_debug("[Runner] Treate job $j->{idJob} in toAckReservation state\n");
-    if (answer($j->{idJob},$j->{infoType},"GOOD RESERVATION") == 1){
-        oar_warn("[Runner] Frag job $j->{idJob}), I cannot notify oarsub for the reservation\n");
-        iolib::add_new_event($base,"CAN_NOT_NOTIFY_OARSUB",$j->{idJob},"[runner] Can not notify oarsub for the job $j->{idJob}");
-        iolib::frag_job($base,$j->{idJob});
+    oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
+    if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
+        oar_warn("[Runner] Frag job $j->{job_id}), I cannot notify oarsub for the reservation\n");
+        iolib::add_new_event($base,"CAN_NOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
+        iolib::frag_job($base,$j->{job_id});
         $exitCode = 1;
     }else{
-        oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$j->{idJob}) --> OK; jobInfo=$j->{infoType}\n");
-        iolib::set_job_state($base, $j->{idJob}, "Waiting");
+        oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
+        iolib::set_job_state($base, $j->{job_id}, "Waiting");
         # Test if we must notify Almighty to Launch scheduler for the reservation
         if ($exitCode == 0){
-            if (iolib::sql_to_local($j->{startTime}) - 1 <= iolib::sql_to_local(iolib::get_date($base))){
+            if (iolib::sql_to_local($j->{start_time}) - 1 <= iolib::sql_to_local(iolib::get_date($base))){
                 $exitCode = 2;
             }
         }
@@ -79,9 +79,9 @@ for my $j (@jobResaToAck){
 my @joblist = iolib::get_jobs_in_state($base,"toLaunch");
 
 foreach my $job (@joblist) {
-    my $jobid = $job->{idJob};
-    my $jobtype = $job->{jobType};
-    my $jobinfo = $job->{infoType};
+    my $jobid = $job->{job_id};
+    my $jobtype = $job->{job_type};
+    my $jobinfo = $job->{info_type};
     #my $is_desktop_computing = iolib::is_job_desktopComputing($base,$jobid);
     #oar_debug("[Runner] is_desktop_computing=$is_desktop_computing\n");
     #if ($is_desktop_computing) {

@@ -160,7 +160,6 @@ sub duration_to_hms($);
 sub duration_to_sql($);
 sub sql_to_duration($);
 sub get_date($);
-sub get_unix_timestamp($);
 
 #EVENTS LOG MANAGEMENT
 sub add_new_event($$$$);
@@ -181,9 +180,7 @@ sub release_lock($$);
 
 # END OF PROTOTYPES
 
-my $besteffortQueueName = "besteffort";
-
-
+my $Db_type = "mysql";
 
 # CONNECTION
 
@@ -200,10 +197,10 @@ sub connect_db($$$$) {
     my $nbConnectTry = 0;
     my $dbh = undef;
     while ((!defined($dbh)) && ($nbConnectTry < $maxConnectTries)){
-        $dbh = DBI->connect("DBI:mysql:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
+        $dbh = DBI->connect("DBI:$Db_type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
         
         if (!defined($dbh)){
-            oar_error("[IOlib] Can not connect to database (host=$host, user=$user, database=$name) : $DBI::errstr\n");
+            oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
             $nbConnectTry++;
             if ($nbConnectTry < $maxConnectTries){
                 oar_warn("[IOlib] I will retry to connect to the database in ".2*$nbConnectTry."s\n");
@@ -234,6 +231,12 @@ sub connect() {
     my $name = get_conf("DB_BASE_NAME");
     my $user = get_conf("DB_BASE_LOGIN");
     my $pwd = get_conf("DB_BASE_PASSWD");
+    my $type = get_conf("DB_TYPE");
+    if (($type ne "mysql") and ($type ne "Pg")){
+        oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$type\". So we are using \"mysql\" type.\n");
+        $type = "mysql";
+    }
+    $Db_type = $type;
 
     return(connect_db($host,$name,$user,$pwd));
 }
@@ -254,6 +257,12 @@ sub connect_ro() {
     $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
     my $pwd = get_conf("DB_BASE_PASSWD_RO");
     $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
+    my $type = get_conf("DB_TYPE");
+    if (($type ne "mysql") and ($type ne "Pg")){
+        oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$type\". So we are using \"mysql\" type.\n");
+        $type = "mysql";
+    }
+    $Db_type = $type;
 
     return(connect_db($host,$name,$user,$pwd));
 }
@@ -272,6 +281,31 @@ sub disconnect($) {
 }
 
 
+sub get_last_insert_id($$){
+    my $dbh = shift;
+    my $seq = shift;
+    
+    my $id;
+    my $sth;
+    if ($Db_type eq "Pg"){
+        $sth = $dbh->prepare("SELECT CURRVAL('$seq')");
+        $sth->execute();
+        my $ref = $sth->fetchrow_hashref();
+        my @tmp_array = values(%$ref);
+        $id = $tmp_array[0];
+        $sth->finish();
+    }else{
+        $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
+        $sth->execute();
+        my $ref = $sth->fetchrow_hashref();
+        my @tmp_array = values(%$ref);
+        $id = $tmp_array[0];
+        $sth->finish();
+    }
+
+    return($id);
+}
+
 
 # JOBS MANAGEMENT
 
@@ -282,11 +316,12 @@ sub disconnect($) {
 # side effects : /
 sub get_job_bpid($$){
     my $dbh = shift;
-    my $jobid= shift;
+    my $job_id= shift;
+
     my $sth = $dbh->prepare("   SELECT bpid
                                 FROM jobs
                                 WHERE
-                                    idJob = $jobid
+                                    job_id = $job_id
                             ");
     $sth->execute();
 
@@ -304,12 +339,12 @@ sub get_job_bpid($$){
 # side effects : /
 sub get_job_challenge($$){
     my $dbh = shift;
-    my $jobid = shift;
+    my $job_id = shift;
     
     my $sth = $dbh->prepare("SELECT challenge
                              FROM challenges
                              WHERE
-                                jobId = $jobid
+                                job_id = $job_id
                             ");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
@@ -330,9 +365,9 @@ sub set_job_bpid($$$){
     my $bipbippid= shift;
 
     $dbh->do("   UPDATE jobs
-                 SET bpid = \"$bipbippid\"
+                 SET bpid = $bipbippid
                  WHERE
-                     idJob =\"$idJob\"
+                     job_id = $idJob
              ");
 }
 
@@ -344,12 +379,12 @@ sub set_job_bpid($$$){
 # side effects : /
 sub get_jobs_in_state($$) {
     my $dbh = shift;
-    my $state = shift;
+    my $state = $dbh->quote(shift);
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs
                                 WHERE
-                                    state=\"$state\"
+                                    state = $state
                             ");
     $sth->execute();
     my @res = ();
@@ -383,15 +418,15 @@ sub get_job_current_hostnames($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT resources.networkAddress hostname
-                             FROM assignedResources, resources, moldableJobs_description
+    my $sth = $dbh->prepare("SELECT resources.network_address hostname
+                             FROM assigned_resources, resources, moldable_job_descriptions
                              WHERE 
-                                assignedResources.assignedResourceIndex = \"CURRENT\"
-                                AND moldableJobs_description.moldableIndex = \"CURRENT\"
-                                AND assignedResources.idResource = resources.resourceId
-                                AND moldableJobs_description.moldableId = assignedResources.idMoldableJob
-                                AND moldableJobs_description.moldableJobId = $jobid
-                             ORDER BY resources.resourceId ASC");
+                                assigned_resources.assigned_resource_index = \'CURRENT\'
+                                AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                AND assigned_resources.resource_id = resources.resource_id
+                                AND moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id
+                                AND moldable_job_descriptions.moldable_job_id = $jobid
+                             ORDER BY resources.resource_id ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -410,12 +445,12 @@ sub get_job_current_resources($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT idResource resource
-                             FROM assignedResources
+    my $sth = $dbh->prepare("SELECT resource_id resource
+                             FROM assigned_resources
                              WHERE 
-                                assignedResourceIndex = \"CURRENT\"
-                                AND idMoldableJob = $jobid
-                             ORDER BY idResource ASC");
+                                assigned_resource_index = \'CURRENT\'
+                                AND moldable_job_id = $jobid
+                             ORDER BY resource_id ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -434,11 +469,11 @@ sub get_job_resources($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT idResource resource
-                             FROM assignedResources
+    my $sth = $dbh->prepare("SELECT resource_id resource
+                             FROM assigned_resources
                              WHERE 
-                                idMoldableJob = $jobid
-                             ORDER BY idResource ASC");
+                                moldable_job_id = $jobid
+                             ORDER BY resource_id ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -457,16 +492,16 @@ sub get_job_host_log($$) {
     my $dbh = shift;
     my $moldablejobid = shift;
     
-    my $sth = $dbh->prepare("   SELECT b.networkAddress
-                                FROM assignedResources a, resources b
+    my $sth = $dbh->prepare("   SELECT b.network_address
+                                FROM assigned_resources a, resources b
                                 WHERE
-                                    a.idMoldableJob = $moldablejobid
-                                ORDER BY b.resourceId ASC
+                                    a.moldable_job_id = $moldablejobid
+                                ORDER BY b.resource_id ASC
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{networkAddress});
+        push(@res, $ref->{network_address});
     }
     return @res;
 }
@@ -480,12 +515,15 @@ sub get_job_host_log($$) {
 sub is_tokill_job($$) {
     my $dbh = shift;
     my $jobid = shift;
-    my $sth = $dbh->prepare("SELECT fragIdJob FROM fragJobs
-                             WHERE fragState = \"LEON\" AND fragIdJob = \"$jobid\"");
+    my $sth = $dbh->prepare("   SELECT frag_id_job
+                                FROM frag_jobs
+                                WHERE
+                                    frag_state = \'LEON\'
+                                    AND frag_id_job = $jobid");
     $sth->execute();
     my @res = $sth->fetchrow_array();
-		$sth->finish();
-		return ($#res >= 0)
+    $sth->finish();
+    return ($#res >= 0)
 }
 
 # get_tokill_job
@@ -495,15 +533,15 @@ sub is_tokill_job($$) {
 # side effects : /
 sub get_tokill_job($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT fragIdJob
-                             FROM fragJobs
+    my $sth = $dbh->prepare("SELECT frag_id_job
+                             FROM frag_jobs
                              WHERE
-                                fragState = \"LEON\"
+                                frag_state = \'LEON\'
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'fragIdJob'});
+        push(@res, $ref->{'frag_id_job'});
     }
     return @res;
 }
@@ -517,12 +555,12 @@ sub get_tokill_job($) {
 # side effects : /
 sub get_timered_job($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT fragIdJob FROM fragJobs
-                             WHERE fragState = \"TIMER_ARMED\"");
+    my $sth = $dbh->prepare("SELECT frag_id_job FROM frag_jobs
+                             WHERE frag_state = \'TIMER_ARMED\'");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'fragIdJob'});
+        push(@res, $ref->{'frag_id_job'});
     }
     return @res;
 }
@@ -535,22 +573,22 @@ sub get_timered_job($) {
 # side effects : /
 sub get_toexterminate_job($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT fragIdJob
-                                FROM fragJobs
+    my $sth = $dbh->prepare("   SELECT frag_id_job
+                                FROM frag_jobs
                                 WHERE
-                                    fragState = \"LEON_EXTERMINATE\"
+                                    frag_state = \'LEON_EXTERMINATE\'
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'fragIdJob'});
+        push(@res, $ref->{'frag_id_job'});
     }
     return @res;
 }
 
 
 # set_assigned_moldable_job
-# sets the assignedMoldableJob field to the given value
+# sets the assigned_moldable_job field to the given value
 # parameters : base, jobid, moldable id
 # return value : /
 sub set_assigned_moldable_job($$$) {
@@ -559,7 +597,7 @@ sub set_assigned_moldable_job($$$) {
     my $moldable = shift;
     
     $dbh->do("  UPDATE jobs
-                SET assignedMoldableJob = $moldable
+                SET assigned_moldable_job = $moldable
                 WHERE
                     idJob = $idJob
             ");
@@ -586,9 +624,9 @@ sub set_running_date($$) {
     }
     
     my $sth = $dbh->prepare("   UPDATE jobs
-                                SET startTime = \"$runningDate\"
+                                SET start_time = \'$runningDate\'
                                 WHERE
-                                    idJob =\"$idJob\"
+                                    job_id = $idJob
                             ");
     $sth->execute();
     $sth->finish();
@@ -600,14 +638,14 @@ sub set_running_date($$) {
 # sets the starting time of the job passed in parameter to arbitrary time
 # parameters : base, jobid
 # return value : /
-# side effects : changes the field startTime of the job in the table Jobs
+# side effects : changes the field start_time of the job in the table Jobs
 sub set_running_date_arbitrary($$$) {
     my $dbh = shift;
     my $idJob = shift;
     my $date = shift;
 
-    $dbh->do("UPDATE jobs SET startTime = \"$date\"
-              WHERE idJob =\"$idJob\"
+    $dbh->do("UPDATE jobs SET start_time = \'$date\'
+              WHERE job_id = $idJob
              ");
 }
 
@@ -618,7 +656,7 @@ sub set_running_date_arbitrary($$$) {
 # time
 # parameters : base, jobid
 # return value : /
-# side effects : changes the field stopTime of the job in the table Jobs
+# side effects : changes the field stop_time of the job in the table Jobs
 sub set_finish_date($$) {
     my $dbh = shift;
     my $idJob = shift;
@@ -626,16 +664,16 @@ sub set_finish_date($$) {
     my $finishDate;
     my $date = get_date($dbh);
     my $jobInfo = get_job($dbh,$idJob);
-    my $minDate = $jobInfo->{'startTime'};
+    my $minDate = $jobInfo->{'start_time'};
     if (sql_to_local($date) < sql_to_local($minDate)){
         $finishDate = $minDate;
     }else{
         $finishDate = $date;
     }
     my $sth = $dbh->prepare("   UPDATE jobs
-                                SET stopTime = \"$finishDate\"
+                                SET stop_time = \'$finishDate\'
                                 WHERE
-                                    idJob =\"$idJob\"
+                                    job_id = $idJob
                             ");
     $sth->execute();
     $sth->finish();
@@ -655,7 +693,7 @@ sub get_all_possible_resources_with_childhood($$$$) {
     my $sql = "TRUE";
     if (defined($tree_node_list)){
         foreach my $n (oar_resource_tree::get_parents($tree_node_list)){
-            $sql .= " AND ".oar_resource_tree::get_current_resource_name($n)." = \"".oar_resource_tree::get_current_resource_value($n)."\"";
+            $sql .= " AND ".oar_resource_tree::get_current_resource_name($n)." = \'".oar_resource_tree::get_current_resource_value($n)."\'";
         }
     }
     if (defined($where_clause)){
@@ -663,7 +701,7 @@ sub get_all_possible_resources_with_childhood($$$$) {
     }
     print("$sql\n");
     my $sth = $dbh->prepare("   SELECT count(DISTINCT($wanted_property_name))
-                                FROM resourceProperties
+                                FROM resource_properties
                                 WHERE
                                     $sql
                             ");
@@ -686,13 +724,13 @@ sub get_possible_wanted_resources($$$$$){
 
     my @wanted_resources = @{$wanted_resources_ref};
     push(@wanted_resources, {
-                                resource => "resourceId",
+                                resource => "resource_id",
                                 value    => -1,
                             });
     
     my $sql_where_string ;
     if (defined($possible_resources->[0])){
-        $sql_where_string = "resourceId IN(";
+        $sql_where_string = "resource_id IN(";
         foreach my $i (@{$possible_resources}){
             $sql_where_string .= "$i,";
         }
@@ -703,7 +741,7 @@ sub get_possible_wanted_resources($$$$$){
     }
 
     if (defined($impossible_resources->[0])){
-        $sql_where_string .= "AND resourceId NOT IN (" ;
+        $sql_where_string .= "AND resource_id NOT IN (" ;
         foreach my $i (@{$impossible_resources}){
             $sql_where_string .= "$i,";
         }
@@ -724,7 +762,7 @@ sub get_possible_wanted_resources($$$$$){
 
     #print("$sql_where_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
-                             FROM resourceProperties
+                             FROM resource_properties
                              WHERE
                                 $sql_where_string
                             ");
@@ -736,9 +774,6 @@ sub get_possible_wanted_resources($$$$$){
     my $result ;
     $result = oar_resource_tree::new();
     my $wanted_children_number = $wanted_resources[0]->{value};
-#    if ($wanted_children_number < 0){
-#        $wanted_children_number = get_all_possible_resources_with_childhood($dbh,undef,$wanted_resources[0]->{resource},$sql_where_string);
-#    }
     oar_resource_tree::set_needed_children_number($result,$wanted_children_number);
 
     while (my @sql = $sth->fetchrow_array()){
@@ -749,9 +784,6 @@ sub get_possible_wanted_resources($$$$$){
 
             if ($i < $#wanted_resources){
                 $wanted_children_number = $wanted_resources[$i+1]->{value};
-#                if ($wanted_children_number < 0){
-#                    $wanted_children_number = get_all_possible_resources_with_childhood($dbh,$father_ref,$wanted_resources[$i+1]->{resource} , $sql_where_string);
-#                }
             }else{
                 $wanted_children_number = 0;
             }
@@ -780,7 +812,7 @@ sub get_possible_wanted_resources($$$$$){
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
 sub add_micheline_job($$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queueName, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -807,7 +839,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$) {
     #}
     
     #Retrieve Micheline's rules from the table
-    my $sth = $dbh->prepare("SELECT rule FROM admissionRules");
+    my $sth = $dbh->prepare("SELECT rule FROM admission_rules ORDER BY id");
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()) {
         $rules = $rules.$ref->{'rule'};
@@ -861,39 +893,30 @@ sub add_micheline_job($$$$$$$$$$$$$$$$) {
     #Insert job
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO jobs
-              (idJob,jobType,infoType,state,user,command,submissionTime,queueName,properties,launchingDirectory,reservation,startTime,idFile,checkpoint,jobName,mail)
-              VALUES (\"NULL\",\"$jobType\",\"$infoType\",\"Waiting\",\"$user\",\"$command\",\"$date\",\"$queueName\",\'$jobproperties\',\"$launching_directory\",\"$reservationField\",\"$startTimeJob\",$idFile,$checkpoint,\"$job_name\",\"$mail\")
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,mail)
+              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',\'$command\',\'$date\',\'$queue_name\',\'$jobproperties\',\'$launching_directory\',\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,\'$job_name\',\'$mail\')
              ");
 
-    $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp_array = values(%$ref);
-    my $job_id = $tmp_array[0];
-    $sth->finish();
- 
-    $dbh->do("INSERT INTO jobStates_log (jobId,jobState,dateStart)
-              VALUES ($job_id,\"Waiting\",\"$date\")
+    my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
+    
+    $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
+              VALUES ($job_id,\'Waiting\',\'$date\')
              ");
 
     foreach my $moldable_resource (@{$ref_resource_list}){
-        $dbh->do("  INSERT INTO moldableJobs_description (moldableId,moldableJobId,moldableWalltime)
-                    VALUES (\"NULL\",$job_id,\"$moldable_resource->[1]\")
+        $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
+                    VALUES ($job_id,\'$moldable_resource->[1]\')
                  ");
-        my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-        $sth->execute();
-        my $ref = $sth->fetchrow_hashref();
-        my @tmp_array = values(%$ref);
-        my $moldable_id = $tmp_array[0];
-        $sth->finish();
+        my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
         foreach my $r (@{$moldable_resource->[0]}){
-            $dbh->do("  INSERT INTO jobResources_group (resGroupId,resGroupMoldableId,resGroupProperty)
-                        VALUES (\"NULL\",$moldable_id,\'$r->{property}\')
+            $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
+                        VALUES ($moldable_id,\'$r->{property}\')
                      ");
+            my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
             my $order = 0;
             foreach my $l (@{$r->{resources}}){
-                $dbh->do("  INSERT INTO jobResources_description (resJobGroupId,resJobResourceType,resJobValue,resJobOrder)
-                            VALUES (LAST_INSERT_ID(),\"$l->{resource}\",\"$l->{value}\",$order)
+                $dbh->do("  INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order)
+                            VALUES ($res_group_id,\'$l->{resource}\',\'$l->{value}\',$order)
                          ");
                 $order ++;
             }
@@ -901,20 +924,20 @@ sub add_micheline_job($$$$$$$$$$$$$$$$) {
     }
 
     foreach my $t (@{$type_list}){
-        $dbh->do("  INSERT INTO job_types (jobId,type)
-                    VALUES ($job_id,\"$t\")
+        $dbh->do("  INSERT INTO job_types (job_id,type)
+                    VALUES ($job_id,\'$t\')
                  ");
     }
 
     foreach my $a (@{$anterior_ref}){
-        $dbh->do("  INSERT INTO jobDependencies (idJob,idJobRequired)
+        $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
                     VALUES ($job_id,$a)
                  ");
     }
 
     my $random_number = int(rand(1000000000000));
-    $dbh->do("INSERT INTO challenges (jobId,challenge)
-              VALUES ($job_id,\"$random_number\")
+    $dbh->do("INSERT INTO challenges (job_id,challenge)
+              VALUES ($job_id,\'$random_number\')
              ");
     #$dbh->do("UNLOCK TABLES");
 
@@ -933,7 +956,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$) {
 sub get_oldest_waiting_idjob($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT MIN(idJob) FROM jobs j WHERE j.state=\"Waiting\"");
+    my $sth = $dbh->prepare("SELECT MIN(job_id) FROM jobs j WHERE j.state=\'Waiting\'");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     my @tmp = values %$ref;
@@ -960,10 +983,10 @@ sub get_oldest_waiting_idjob_by_queue($$) {
     my $dbh = shift;
     my $queue = shift;
 
-    my $sth = $dbh->prepare("SELECT MIN(idJob)
+    my $sth = $dbh->prepare("SELECT MIN(job_id)
                              FROM jobs j
-                             WHERE j.state=\"Waiting\"
-                             AND j.queueName=\"$queue\"");
+                             WHERE j.state=\'Waiting\'
+                             AND j.queue_name=\'$queue\'");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     my @tmp = values %$ref;
@@ -990,7 +1013,7 @@ sub get_job($$) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs
                                 WHERE
-                                    idJob = $idJob
+                                    job_id = $idJob
                             ");
     $sth->execute();
 
@@ -1012,10 +1035,10 @@ sub get_current_moldable_job($$) {
     my $moldableJobId = shift;
 
     my $sth = $dbh->prepare("   SELECT *
-                                FROM moldableJobs_description
+                                FROM moldable_job_descriptions
                                 WHERE
-                                    moldableIndex = \"CURRENT\"
-                                    AND moldableId = $moldableJobId
+                                    moldable_index = \'CURRENT\'
+                                    AND moldable_id = $moldableJobId
                             ");
     $sth->execute();
 
@@ -1037,9 +1060,9 @@ sub get_moldable_job($$) {
     my $moldableJobId = shift;
 
     my $sth = $dbh->prepare("   SELECT *
-                                FROM moldableJobs_description
+                                FROM moldable_job_descriptions
                                 WHERE
-                                    moldableId = $moldableJobId
+                                    moldable_id = $moldableJobId
                             ");
     $sth->execute();
 
@@ -1061,52 +1084,52 @@ sub set_job_state($$$) {
     my $state = shift;
     
     $dbh->do("  UPDATE jobs
-                SET state = \"$state\"
+                SET state = \'$state\'
                 WHERE
-                    idJob =\"$idJob\"
+                    job_id = $idJob
              ");
     
     my $date = get_date($dbh);
-    $dbh->do("  UPDATE jobStates_log
-                SET dateStop = \"$date\"
+    $dbh->do("  UPDATE job_state_logs
+                SET date_stop = \'$date\'
                 WHERE
                     dateStop IS NULL
-                    AND jobId = $idJob
+                    AND job_id = $idJob
              ");
-    $dbh->do("  INSERT INTO jobStates_log (jobId,jobState,dateStart)
-                VALUES ($idJob,\"$state\",\"$date\")
+    $dbh->do("  INSERT INTO job_state_logs (job_id,job_state,date_start)
+                VALUES ($idJob,\'$state\',\'$date\')
              ");
 
     if (($state eq "Terminated") or ($state eq "Error")){
         $dbh->do("  DELETE FROM challenges
                     WHERE jobId = $idJob
                  ");
-        $dbh->do("  UPDATE moldableJobs_description, jobResources_group, jobResources_description
-                    SET jobResources_group.resGroupIndex = \"LOG\",
-                        jobResources_description.resJobIndex = \"LOG\",
-                        moldableJobs_description.moldableIndex = \"LOG\"
+        $dbh->do("  UPDATE moldable_job_descriptions, job_resource_groups, job_resource_descriptions
+                    SET job_resource_groups.res_group_index = \'LOG\',
+                        job_resource_descriptions.res_job_index = \'LOG\',
+                        moldable_job_descriptions.moldable_index = \'LOG\'
                     WHERE
-                        moldableJobs_description.moldableIndex = \"CURRENT\"
-                        AND moldableJobs_description.moldableIndex = \"CURRENT\"
-                        AND jobResources_group.resGroupIndex = \"CURRENT\"
-                        AND jobResources_description.resJobIndex = \"CURRENT\"
-                        AND moldableJobs_description.moldableJobId = $idJob
-                        AND jobResources_group.resGroupMoldableId = moldableJobs_description.moldableId
-                        AND jobResources_description.resJobGroupId = jobResources_group.resGroupId
+                        moldable_job_descriptions.moldable_index = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                        AND job_resource_groups.res_group_index = \'CURRENT\'
+                        AND job_resource_descriptions.resJobIndex = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_job_id = $idJob
+                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
                  ");
 
         $dbh->do("  UPDATE job_types
-                    SET job_types.typesIndex = \"LOG\"
+                    SET job_types.types_index = \'LOG\'
                     WHERE
-                        job_types.typesIndex = \"CURRENT\"
-                        AND job_types.jobId = $idJob
+                        job_types.types_index = \'CURRENT\'
+                        AND job_types.job_id = $idJob
                  ");
         
-        $dbh->do("  UPDATE jobDependencies
-                    SET jobDependencies.jobDependencyIndex = \"LOG\"
+        $dbh->do("  UPDATE job_dependencies
+                    SET job_dependencies.job_dependency_index = \'LOG\'
                     WHERE
-                        jobDependencies.jobDependencyIndex = \"CURRENT\"
-                        AND jobDependencies.idJob = $idJob
+                        job_dependencies.job_dependency_index = \'CURRENT\'
+                        AND job_dependencies.job_id = $idJob
                  ");
     }
 }
@@ -1122,8 +1145,8 @@ sub set_job_resa_state($$$){
     my $dbh = shift;
     my $idJob = shift;
     my $state = shift;
-    my $sth = $dbh->prepare("UPDATE jobs SET reservation = \"$state\"
-                             WHERE idJob =\"$idJob\"");
+    my $sth = $dbh->prepare("UPDATE jobs SET reservation = \'$state\'
+                             WHERE job_id = $idJob");
     $sth->execute();
     $sth->finish();
 }
@@ -1140,9 +1163,9 @@ sub set_job_message($$$) {
     my $idJob = shift;
     my $message = shift;
     $dbh->do("  UPDATE jobs
-                SET message = \"$message\"
+                SET message = \'$message\'
                 WHERE
-                    idJob = $idJob
+                    job_id = $idJob
              ");
 }
 
@@ -1154,8 +1177,8 @@ sub set_job_autoCheckpointed($$) {
     my $dbh = shift;
     my $idJob = shift;
     $dbh->do("UPDATE jobs
-                SET autoCheckpointed = \"YES\"
-                WHERE idJob = $idJob");
+                SET autoCheckpointed = \'YES\'
+                WHERE job_id = $idJob");
 }
 
 
@@ -1175,21 +1198,21 @@ sub frag_job($$) {
     my $job = get_job($dbh, $idJob);
 
     if((defined($job)) && (($lusr eq $job->{'user'}) or ($lusr eq "oar") or ($lusr eq "root"))) {
-        $dbh->do("LOCK TABLE fragJobs WRITE, events_log WRITE");
+        lock_table($dbh, ["frag_jobs","event_logs"]);
         my $nbRes = $dbh->do("SELECT *
-                              FROM fragJobs
+                              FROM frag_jobs
                               WHERE
-                                fragIdJob = $idJob
+                                frag_id_job = $idJob
                              ");
 
         if ( $nbRes < 1 ){
             my $date = get_date($dbh);
-            $dbh->do("INSERT INTO fragJobs (fragIdJob,fragDate)
-                      VALUES ($idJob,\"$date\")
+            $dbh->do("INSERT INTO frag_jobs (frag_id_job,fragDate)
+                      VALUES ($idJob,\'$date\')
                      ");
             add_new_event($dbh,"FRAG_JOB_REQUEST",$idJob,"User $lusr requested to frag the job $idJob");
         }
-        $dbh->do("UNLOCK TABLES");
+        unlock_table($dbh);
         return 0;
     }else{
         return -1;
@@ -1242,9 +1265,9 @@ sub hold_job($$) {
 
     if ((defined($job)) && ((($lusr eq $job->{'user'}) || ($lusr eq "oar") || ($lusr eq "root")) && ($job->{'state'} eq "Waiting"))) {
         my $sth = $dbh->prepare("   UPDATE jobs
-                                    SET state = \"Hold\"
+                                    SET state = \'Hold\'
                                     WHERE
-                                        idJob =\"$idJob\"
+                                        job_id = $idJob
                                 ");
         $sth->execute();
         $sth->finish();
@@ -1276,9 +1299,9 @@ sub resume_job($$) {
 
     if ((defined($job)) && ((($lusr eq $job->{'user'}) || ($lusr eq "oar") || ($lusr eq "root"))  && ($job->{'state'} eq "Hold"))) {
         my $sth = $dbh->prepare("   UPDATE jobs
-                                    SET state = \"Waiting\"
+                                    SET state = \'Waiting\'
                                     WHERE
-                                        idJob =\"$idJob\"
+                                        job_id = $idJob
                                 ");
         $sth->execute();
         $sth->finish();
@@ -1299,9 +1322,9 @@ sub job_fragged($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    $dbh->do("UPDATE fragJobs
-              SET fragState = \"FRAGGED\"
-              WHERE fragIdJob = $idJob
+    $dbh->do("UPDATE frag_jobs
+              SET frag_state = \'FRAGGED\'
+              WHERE frag_id_job = $idJob
              ");
 }
 
@@ -1315,10 +1338,10 @@ sub job_arm_leon_timer($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    $dbh->do("  UPDATE fragJobs
-                SET fragState = \"TIMER_ARMED\"
+    $dbh->do("  UPDATE frag_jobs
+                SET fragi_state = \'TIMER_ARMED\'
                 WHERE
-                    fragIdJob = $idJob
+                    frag_id_job = $idJob
              ");
 }
 
@@ -1331,8 +1354,8 @@ sub job_refrag($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    $dbh->do("UPDATE fragJobs SET fragState = \"LEON\"
-              WHERE fragIdJob = $idJob
+    $dbh->do("UPDATE frag_jobs SET frag_state = \'LEON\'
+              WHERE frag_id_job = $idJob
              ");
 }
 
@@ -1346,8 +1369,8 @@ sub job_leon_exterminate($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    $dbh->do("UPDATE fragJobs SET fragState = \"LEON_EXTERMINATE\"
-              WHERE fragIdJob = $idJob
+    $dbh->do("UPDATE frag_jobs SET frag_state = \'LEON_EXTERMINATE\'
+              WHERE frag_id_job = $idJob
              ");
 }
 
@@ -1361,9 +1384,9 @@ sub get_frag_date($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    my $sth = $dbh->prepare("SELECT fragDate
-                             FROM fragJobs
-                             WHERE fragIdJob = $idJob
+    my $sth = $dbh->prepare("SELECT frag_date
+                             FROM frag_jobs
+                             WHERE frag_id_job = $idJob
                             ");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
@@ -1383,18 +1406,18 @@ sub list_current_jobs($) {
     my $dbh = shift;
 
     my $sth = $dbh->prepare("SELECT * FROM jobs j
-                             WHERE j.state=\"Waiting\"
-                             OR    j.state=\"toLaunch\"
-                             OR    j.state=\"Running\"
-                             OR    j.state=\"Launching\"
-                             OR    j.state=\"Hold\"
-                             OR    j.state=\"toError\"
-                             OR    j.state=\"toAckReservation\"
+                             WHERE j.state=\'Waiting\'
+                             OR    j.state=\'toLaunch\'
+                             OR    j.state=\'Running\'
+                             OR    j.state=\'Launching\'
+                             OR    j.state=\'Hold\'
+                             OR    j.state=\'toError\'
+                             OR    j.state=\'toAckReservation\'
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'idJob'});
+        push(@res, $ref->{'job_id'});
     }
     $sth->finish();
     return @res;
@@ -1409,10 +1432,10 @@ sub get_waiting_reservation_jobs($){
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs j
                                 WHERE
-                                    (j.state = \"Waiting\"
-                                        OR j.state = \"toAckReservation\")
-                                    AND j.reservation = \"Scheduled\"
-                                ORDER BY j.idJob
+                                    (j.state = \'Waiting\'
+                                        OR j.state = \'toAckReservation\')
+                                    AND j.reservation = \'Scheduled\'
+                                ORDER BY j.job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -1434,10 +1457,10 @@ sub get_waiting_reservation_jobs_specific_queue($$){
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs j
                                 WHERE
-                                    j.state=\"Waiting\"
-                                    AND j.reservation = \"Scheduled\"
-                                    AND j.queueName = \"$queue\"
-                                ORDER BY j.idJob
+                                    j.state=\'Waiting\'
+                                    AND j.reservation = \'Scheduled\'
+                                    AND j.queue_name = \'$queue\'
+                                ORDER BY j.job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -1460,8 +1483,8 @@ sub is_waiting_job_specific_queue_present($$){
     my $sth = $dbh->prepare("   SELECT count(*)
                                 FROM jobs
                                 WHERE
-                                    state=\"Waiting\"
-                                    AND queueName = \"$queue\"
+                                    state=\'Waiting\'
+                                    AND queue_name = \'$queue\'
                                 LIMIT 1
                             ");
     $sth->execute();
@@ -1480,10 +1503,10 @@ sub get_jobs_to_schedule($$){
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs
                                 WHERE
-                                    state = \"Waiting\"
-                                    AND reservation = \"None\"
-                                    AND queueName = \"$queue\"
-                                ORDER BY idJob
+                                    state = \'Waiting\'
+                                    AND reservation = \'None\'
+                                    AND queue_name = \'$queue\'
+                                ORDER BY job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -1504,8 +1527,8 @@ sub get_current_job_types($$){
     my $sth = $dbh->prepare("   SELECT type
                                 FROM job_types
                                 WHERE
-                                    typesIndex = \"CURRENT\"
-                                    AND jobId = $jobId
+                                    types_index = \'CURRENT\'
+                                    AND job_id = $jobId
                             ");
     $sth->execute();
     my %res;
@@ -1524,16 +1547,16 @@ sub get_current_job_dependencies($$){
     my $dbh = shift;
     my $jobId = shift;
 
-    my $sth = $dbh->prepare("   SELECT idJobRequired
-                                FROM jobDependencies
+    my $sth = $dbh->prepare("   SELECT job_id_required
+                                FROM job_dependencies
                                 WHERE
-                                    jobDependencyIndex = \"CURRENT\"
-                                    AND idJob = $jobId
+                                    job_dependency_index = \'CURRENT\'
+                                    AND job_id = $jobId
                             ");
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{idJobRequired});
+        push(@res, $ref->{job_id_required});
     }
     $sth->finish();
 
@@ -1551,10 +1574,10 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs j
                                 WHERE
-                                    j.state=\"Waiting\"
-                                    AND j.reservation = \"toSchedule\"
-                                    AND j.queueName = \"$queue\"
-                                ORDER BY j.idJob
+                                    j.state=\'Waiting\'
+                                    AND j.reservation = \'toSchedule\'
+                                    AND j.queue_name = \'$queue\'
+                                ORDER BY j.job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -1577,11 +1600,11 @@ sub remove_current_assigned_resources($$){
     my $dbh = shift;
     my $moldableJobId= shift;
 
-    $dbh->do("  UPDATE assignedResources
-                SET assignedResourceIndex = \"LOG\"
+    $dbh->do("  UPDATE assigned_resources
+                SET assigned_resource_index = \'LOG\'
                 WHERE
-                    assignedResourceIndex = \"CURRENT\"
-                    AND idMoldableJob = $moldableJobId
+                    assigned_resource_index = \'CURRENT\'
+                    AND moldable_job_id = $moldableJobId
             ");
 }
 
@@ -1594,19 +1617,19 @@ sub remove_current_assigned_resources($$){
 sub get_resource_job($$) {
     my $dbh = shift;
     my $resource = shift;
-    my $sth = $dbh->prepare("   SELECT c.idJob
-                                FROM assignedResources a, moldableJobs_description b, jobs c
+    my $sth = $dbh->prepare("   SELECT c.job_id
+                                FROM assigned_resources a, moldable_job_descriptions b, jobs c
                                 WHERE
-                                    a.assignedResourceIndex = \"CURRENT\"
-                                    AND b.moldableIndex = \"CURRENT\"
-                                    AND a.idResource = $resource
-                                    AND a.idMoldableJob = b.moldableId
-                                    AND b.moldableJobId = c.idJob
+                                    a.assigned_resource_index = \'CURRENT\'
+                                    AND b.moldable_index = \'CURRENT\'
+                                    AND a.resource_id = $resource
+                                    AND a.moldable_job_id = b.moldable_id
+                                    AND b.moldable_job_id = c.job_id
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'idJob'});
+        push(@res, $ref->{'job_id'});
     }
     return @res;
 }
@@ -1620,20 +1643,20 @@ sub get_resource_job($$) {
 sub get_node_job($$) {
     my $dbh = shift;
     my $hostname = shift;
-    my $sth = $dbh->prepare("   SELECT c.idJob
-                                FROM assignedResources a, moldableJobs_description b, jobs c, resources d
+    my $sth = $dbh->prepare("   SELECT c.job_id
+                                FROM assigned_resources a, moldable_job_descriptions b, jobs c, resources d
                                 WHERE
-                                    a.assignedResourceIndex = \"CURRENT\"
-                                    AND b.moldableIndex = \"CURRENT\"
-                                    AND d.networkAddress = \"$hostname\"
-                                    AND a.idResource = d.resourceId
-                                    AND a.idMoldableJob = b.moldableId
-                                    AND b.moldableJobId = c.idJob
+                                    a.assigned_resource_index = \'CURRENT\'
+                                    AND b.moldableIndex = \'CURRENT\'
+                                    AND d.network_address = \'$hostname\'
+                                    AND a.resource_id = d.resource_id
+                                    AND a.moldable_job_id = b.moldable_id
+                                    AND b.moldable_job_id = c.job_id
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'idJob'});
+        push(@res, $ref->{'job_id'});
     }
     return @res;
 }
@@ -1650,7 +1673,7 @@ sub get_resources_in_state($$) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
-                                    state = \"$state\"
+                                    state = \'$state\'
                             ");
     $sth->execute();
     my @res = ();
@@ -1668,9 +1691,10 @@ sub get_resources_in_state($$) {
 # side effects : /
 sub get_running_host($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT distinct p.hostname FROM jobs j,processJobs p
-                             WHERE j.state=\"Running\"
-                             AND j.idJob = p.idJob");
+    my $sth = $dbh->prepare("   SELECT distinct p.hostname
+                                FROM jobs j,processJobs p
+                                WHERE j.state=\'Running\'
+                                AND j.job_id = p.job_id");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -1682,15 +1706,15 @@ sub get_running_host($) {
 
 
 # add_resource_job_pair
-# adds a new pair (jobid, resource) to the table assignedResources
+# adds a new pair (jobid, resource) to the table assigned_resources
 # parameters : base, jobid, resource id
 # return value : /
 sub add_resource_job_pair($$$) {
     my $dbh = shift;
     my $moldable = shift;
     my $resource = shift;
-    $dbh->do("INSERT INTO assignedResources (idMoldableJob,idResource,assignedResourceIndex)
-              VALUES ($moldable,$resource,\"CURRENT\")");
+    $dbh->do("INSERT INTO assigned_resources (moldable_job_id,resource_id,assigned_resource_index)
+              VALUES ($moldable,$resource,\'CURRENT\')");
 }
 
 # remove_node_job_pair
@@ -1705,11 +1729,11 @@ sub remove_node_job_pair($$$) {
     my $idJob = shift;
     my $hostname = shift;
 
-    #$dbh->do("INSERT INTO processJobs_log (idJob,hostname)
+    #$dbh->do("INSERT INTO processJobs_log (job_id,hostname)
     #          VALUES ($idJob,\"$hostname\")");
 
     $dbh->do("DELETE FROM processJobs
-              WHERE idJob = $idJob
+              WHERE job_id = $idJob
               AND hostname = \"$hostname\"");
 #    $dbh->do("OPTIMIZE TABLE processJobs");
 }
@@ -1723,18 +1747,18 @@ sub get_jobs_range_dates($$$){
     my $dateStart = shift;
     my $dateEnd = shift;
 
-    my $sth = $dbh->prepare("SELECT j.idJob,j.jobType,j.state,j.user,j.weight,j.command,j.queueName,j.maxTime,
-                                    j.properties,j.launchingDirectory,j.submissionTime,j.startTime,j.stopTime,p.hostname,
-                                    (DATE_ADD(j.startTime, INTERVAL j.maxTime HOUR_SECOND))
+    my $sth = $dbh->prepare("SELECT j.job_id,j.job_type,j.state,j.user,j.weight,j.command,j.queue_name,j.maxTime,
+                                    j.properties,j.launchingDirectory,j.submissionTime,j.start_time,j.stop_time,p.hostname,
+                                    (DATE_ADD(j.start_time, INTERVAL j.maxTime HOUR_SECOND))
                              FROM jobs j, processJobs_log p
-                             WHERE ( j.stopTime >= \"$dateStart\"
-                                     OR (j.stopTime = \"0000-00-00 00:00:00\"
+                             WHERE ( j.stop_time >= \"$dateStart\"
+                                     OR (j.stop_time = \"0000-00-00 00:00:00\"
                                          AND j.state = \"Running\"
                                         )
                                    )
-                                   AND j.startTime < \"$dateEnd\"
-                                   AND j.idJob = p.idJob
-                             ORDER BY j.idJob
+                                   AND j.start_time < \"$dateEnd\"
+                                   AND j.job_id = p.job_id
+                             ORDER BY j.job_id
                             ");
     $sth->execute();
 
@@ -1775,14 +1799,14 @@ sub get_jobs_gantt_scheduled($$$){
     my $dateStart = shift;
     my $dateEnd = shift;
 
-    my $sth = $dbh->prepare("SELECT j.idJob,j.jobType,j.state,j.user,j.weight,j.command,j.queueName,j.maxTime,
-                                    j.properties,j.launchingDirectory,j.submissionTime,g2.startTime,(DATE_ADD(g2.startTime, INTERVAL j.maxTime HOUR_SECOND)),g1.hostname
+    my $sth = $dbh->prepare("SELECT j.job_id,j.jobType,j.state,j.user,j.weight,j.command,j.queue_name,j.maxTime,
+                                    j.properties,j.launchingDirectory,j.submissionTime,g2.start_time,(DATE_ADD(g2.start_time, INTERVAL j.maxTime HOUR_SECOND)),g1.hostname
                              FROM jobs j, ganttJobsNodes_visu g1, ganttJobsPrediction_visu g2
-                             WHERE  g2.idJob = g1.idJob
-                                AND g2.idJob = j.idJob
-                                AND g2.startTime < \"$dateEnd\"
-                                AND (DATE_ADD(g2.startTime, INTERVAL j.maxTime HOUR_SECOND)) >= \"$dateStart\"
-                             ORDER BY j.idJob
+                             WHERE  g2.job_id = g1.job_id
+                                AND g2.job_id = j.job_id
+                                AND g2.start_time < \"$dateEnd\"
+                                AND (DATE_ADD(g2.start_time, INTERVAL j.maxTime HOUR_SECOND)) >= \"$dateStart\"
+                             ORDER BY j.job_id
                             ");
     $sth->execute();
 
@@ -1823,7 +1847,7 @@ sub get_desktop_computing_host_jobs($$) {
 		my $hostname = shift;
 		my $sth = $dbh->prepare(<<EOF
 SELECT
-	j.idJob, j.state, j.weight, j.command, j.launchingDirectory
+	j.job_id, j.state, j.weight, j.command, j.launchingDirectory
 FROM
 	jobs j,
 	processJobs pj,
@@ -1835,7 +1859,7 @@ WHERE
 	AND
 	pj.hostname=np.hostname
 	AND
-	pj.idJob=j.idJob
+	pj.job_id=j.job_id
 EOF
 );
 		$sth->execute;
@@ -1922,7 +1946,7 @@ sub is_stagein_deprecated($$$) {
     my $dbh = shift;
     my $md5sum = shift;
 		my $expiry_delay = shift;
-    my $sth = $dbh->prepare("SELECT (max(jobs.startTime) + INTERVAL $expiry_delay MINUTE) > NOW() FROM jobs, files WHERE jobs.idFile = files.idFile AND files.md5sum = \"$md5sum\"");
+    my $sth = $dbh->prepare("SELECT (max(jobs.start_time) + INTERVAL $expiry_delay MINUTE) > NOW() FROM jobs, files WHERE jobs.idFile = files.idFile AND files.md5sum = \"$md5sum\"");
     $sth->execute();
     my ($res) = $sth->fetchrow_array();
     return ($res eq "NULL" or $res eq "0");
@@ -1943,7 +1967,7 @@ FROM
 	jobs,
 	files
 WHERE	
-	jobs.idJob=\"$jobid\"
+	jobs.job_id=\"$jobid\"
 	AND
 	jobs.idFile=files.idFile
 EOF
@@ -1957,7 +1981,7 @@ EOF
 # NODES MANAGEMENT
 
 # add_resource
-# adds a new resource in the table resources and resourceProperties
+# adds a new resource in the table resources and resource_properties
 # parameters : base, name, state
 # return value : new resource id
 sub add_resource($$$) {
@@ -1965,22 +1989,17 @@ sub add_resource($$$) {
     my $name = shift;
     my $state = shift;
 
-    $dbh->do("  INSERT INTO resources (networkAddress,state)
-                VALUES (\"$name\",\"$state\")
+    $dbh->do("  INSERT INTO resources (network_address,state)
+                VALUES (\'$name\',\'$state\')
              ");
-    $dbh->do("  INSERT INTO resourceProperties (resourceId)
-                VALUES (LAST_INSERT_ID())
+    my $id = get_last_insert_id($dbh,"resources_resource_id_seq");
+    $dbh->do("  INSERT INTO resource_properties (resource_id)
+                VALUES ($id)
              ");
     my $date = get_date($dbh);
-    $dbh->do("  INSERT INTO resourceStates_log (resourceId,changeState,dateStart)
-                VALUES (LAST_INSERT_ID(),\"$state\",\"$date\")
+    $dbh->do("  INSERT INTO resource_state_logs (resource_id,change_state,date_start)
+                VALUES ($id,\'$state\',\'$date\')
              ");
-    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp = values(%$ref);
-    my $id = $tmp[0];
-    $sth->finish();
 
     return($id);
 }
@@ -2018,9 +2037,9 @@ sub get_alive_resources($) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
-                                    state = \"Alive\"
-                                    OR state = \"Suspected\"
-                                    OR state = \"Absent\"
+                                    state = \'Alive\'
+                                    OR state = \'Suspected\'
+                                    OR state = \'Absent\'
                             ");
     $sth->execute();
     my @res = ();
@@ -2128,13 +2147,13 @@ sub list_resources($) {
 sub list_nodes($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT distinct(networkAddress)
+    my $sth = $dbh->prepare("   SELECT distinct(network_address), resource_id
                                 FROM resources
-                                ORDER BY resourceId ASC");
+                                ORDER BY resource_id ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'networkAddress'});
+        push(@res, $ref->{'network_address'});
     }
     $sth->finish();
     return @res;
@@ -2153,7 +2172,7 @@ sub get_resource_info($$) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
-                                    resourceId = $resource
+                                    resource_id = $resource
                             ");
     $sth->execute();
 
@@ -2175,8 +2194,8 @@ sub get_node_info($$) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
-                                    networkAddress = \"$hostname\"
-                                ORDER BY resourceId ASC
+                                    network_address = \'$hostname\'
+                                ORDER BY resource_id ASC
                             ");
     $sth->execute();
 
@@ -2202,7 +2221,7 @@ sub is_node_exists($$) {
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
-                                    networkAddress=\"$hostname\"
+                                    network_address = \'$hostname\'
                             ");
     $sth->execute();
 
@@ -2223,15 +2242,15 @@ sub is_node_exists($$) {
 sub get_current_assigned_resources($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT idResource
-                                FROM assignedResources
+    my $sth = $dbh->prepare("   SELECT resource_id
+                                FROM assigned_resources
                                 WHERE
-                                    assignedResourceIndex = \"CURRENT\"
+                                    assigned_resource_index = \'CURRENT\'
                             ");
     $sth->execute();
     my @result;
     while (my $ref = $sth->fetchrow_hashref()){
-        push(@result, $ref->{idResource});
+        push(@result, $ref->{resource_id});
     }
     $sth->finish();
 
@@ -2239,7 +2258,7 @@ sub get_current_assigned_resources($) {
 }
 
 # get_current_free_resources_of_node
-# return an array of free resources for the specified networkAddress
+# return an array of free resources for the specified network_address
 sub get_current_free_resources_of_node($$){
     my $dbh = shift;
     my $host = shift;
@@ -2247,7 +2266,7 @@ sub get_current_free_resources_of_node($$){
     my @busy_resources = get_current_assigned_resources($dbh);
     my $where_str;
     if ($#busy_resources >= 0){
-        $where_str = "resourceId NOT IN (";
+        $where_str = "resource_id NOT IN (";
         foreach my $r (@busy_resources){
             $where_str .= "$r,";
         }
@@ -2257,16 +2276,16 @@ sub get_current_free_resources_of_node($$){
         $where_str = "TRUE";
     }
     
-    my $sth = $dbh->prepare("   SELECT resourceId
+    my $sth = $dbh->prepare("   SELECT resource_id
                                 FROM resources
                                 WHERE
-                                    networkAddress = \"$host\"
+                                    network_address = \'$host\'
                                     AND $where_str
                             ");
     $sth->execute();
     my @result;
     while (my $ref = $sth->fetchrow_hashref()){
-        push(@result, $ref->{resourceId});
+        push(@result, $ref->{resource_id});
     }
     $sth->finish();
 
@@ -2283,12 +2302,12 @@ sub get_resources_on_node($$) {
     my $dbh = shift;
     my $hostname = shift;
 
-    my $sth = $dbh->prepare("   SELECT b.resourceId resource
-                                FROM assignedResources a, resources b
+    my $sth = $dbh->prepare("   SELECT b.resource_id resource
+                                FROM assigned_resources a, resources b
                                 WHERE
-                                    a.assignedResourceIndex = \"CURRENT\"
-                                    AND b.networkAddress = \"$hostname\"
-                                    AND b.resourceId = a.idResource
+                                    a.assigned_resource_index = \'CURRENT\'
+                                    AND b.network_address = \'$hostname\'
+                                    AND b.resource_id = a.resource_id
                             ");
     $sth->execute();
     my @result;
@@ -2313,29 +2332,29 @@ sub set_node_state($$$$) {
     my $finaud = shift;
 
     $dbh->do("  UPDATE resources
-                SET state = \"$state\", finaudDecision = \"$finaud\"
+                SET state = \'$state\', finaud_decision = \'$finaud\'
                 WHERE
-                    networkAddress = \"$hostname\"
+                    network_address = \'$hostname\'
              ");
 
     my $date = get_date($dbh);
-    $dbh->do("  UPDATE resourceStates_log a, resources b
-                SET a.dateStop = \"$date\"
+    $dbh->do("  UPDATE resource_state_logs a, resources b
+                SET a.date_stop = \'$date\'
                 WHERE
-                    a.dateStop IS NULL
-                    AND b.networkAddress = \"$hostname\"
-                    AND a.resourceId = b.resourceId
+                    a.date_stop IS NULL
+                    AND b.network_address = \'$hostname\'
+                    AND a.resource_id = b.resource_id
              ");
-    $dbh->do("INSERT INTO resourceStates_log (resourceId,changeState,dateStart,finaudDecision)
-                SELECT a.resourceId,\"$state\",\"$date\",\"$finaud\"
+    $dbh->do("INSERT INTO resource_state_logs (resource_id,change_state,date_start,finaud_decision)
+                SELECT a.resource_id,\'$state\',\'$date\',\'$finaud\'
                 FROM resources a
                 WHERE
-                    a.networkAddress = \"$hostname\"
+                    a.network_address = \'$hostname\'
              ");
 }
 
 # set_resource_nextState
-# sets the nextState field of a resource identified by its resourceId
+# sets the nextState field of a resource identified by its resource_id
 # parameters : base, resource id, nextState
 # return value : /
 sub set_resource_nextState($$$) {
@@ -2344,8 +2363,8 @@ sub set_resource_nextState($$$) {
     my $nextState = shift;
 
     my $result = $dbh->do(" UPDATE resources
-                            SET nextState = \"$nextState\", nextFinaudDecision = \"NO\"
-                            WHERE resourceId = $resource
+                            SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
+                            WHERE resource_id = $resource
                           ");
     return($result);
 }
@@ -2361,27 +2380,27 @@ sub set_resource_state($$$$) {
     my $finaud = shift;
 
     $dbh->do("  UPDATE resources
-                SET state = \"$state\", finaudDecision = \"$finaud\"
+                SET state = \'$state\', finaud_decision = \'$finaud\'
                 WHERE
-                    resourceId = $resource_id
+                    resource_id = $resource_id
              ");
 
     my $date = get_date($dbh);
-    $dbh->do("  UPDATE resourceStates_log
-                SET dateStop = \"$date\"
+    $dbh->do("  UPDATE resource_state_logs
+                SET date_stop = \'$date\'
                 WHERE
-                    dateStop IS NULL
-                    AND resourceId = $resource_id
+                    date_stop IS NULL
+                    AND resource_id = $resource_id
              ");
-    $dbh->do("INSERT INTO resourceStates_log (resourceId,changeState,dateStart,finaudDecision)
-              VALUES ($resource_id, \"$state\",\"$date\",\"$finaud\")
+    $dbh->do("INSERT INTO resource_state_logs (resource_id,change_state,date_start,finaud_decision)
+              VALUES ($resource_id, \'$state\',\'$date\',\'$finaud\')
              ");
 }
 
 
 # set_node_nextState
-# sets the nextState field of a node identified by its networkAddress
-# parameters : base, networkAddress, nextState
+# sets the nextState field of a node identified by its network_address
+# parameters : base, network_address, nextState
 # return value : /
 sub set_node_nextState($$$) {
     my $dbh = shift;
@@ -2389,8 +2408,8 @@ sub set_node_nextState($$$) {
     my $nextState = shift;
 
     my $result = $dbh->do(" UPDATE resources
-                            SET nextState = \"$nextState\", nextFinaudDecision = \"NO\"
-                            WHERE networkAddress = \"$hostname\"
+                            SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
+                            WHERE network_address = \'$hostname\'
                           ");
     return($result);
 }
@@ -2398,16 +2417,16 @@ sub set_node_nextState($$$) {
 
 # update_resource_nextFinaudDecision
 # update nextFinaudDecision field
-# parameters : base, resourceId, "YES" or "NO"
+# parameters : base, resource_id, "YES" or "NO"
 sub update_resource_nextFinaudDecision($$$){
     my $dbh = shift;
     my $resourceId = shift;
     my $finaud = shift;
 
     $dbh->do("  UPDATE resources
-                SET nextFinaudDecision = \"$finaud\"
+                SET next_finaud_decision = \'$finaud\'
                 WHERE
-                    resourceId = $resourceId
+                    resource_id = $resourceId
              ");
 }
 
@@ -2429,7 +2448,7 @@ sub set_node_expiryDate($$$) {
 
 
 # set a node property
-# change resourceProperties table value for resources with the specified networkAddress
+# change resource_properties table value for resources with the specified network_address
 # parameters : base, hostname, property name, value
 # return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
 sub set_node_property($$$$){
@@ -2441,11 +2460,11 @@ sub set_node_property($$$$){
     # Test if we must change the property
     my $nbRowsAffected;
     eval{
-        $nbRowsAffected = $dbh->do("UPDATE resources a, resourceProperties b
-                                    SET b.$property = \"$value\"
+        $nbRowsAffected = $dbh->do("UPDATE resources a, resource_properties b
+                                    SET b.$property = \'$value\'
                                     WHERE 
-                                        a.networkAddress =\"$hostname\"
-                                        AND a.resourceId = b.resourceId
+                                        a.network_address =\'$hostname\'
+                                        AND a.resource_id = b.resource_id
                                     ");
     };
     if ($nbRowsAffected < 1){
@@ -2453,18 +2472,18 @@ sub set_node_property($$$$){
     }else{
         #Update LOG table
         my $date = get_date($dbh);
-        $dbh->do("  UPDATE resources a, resourceProperties_log b
-                    SET b.dateStop = \"$date\"
+        $dbh->do("  UPDATE resources a, resource_properties_log b
+                    SET b.date_stop = \'$date\'
                     WHERE
-                        b.dateStop IS NULL
-                        AND a.networkAddress = \"$hostname\"
-                        AND b.attribute = \"$property\"
+                        b.date_stop IS NULL
+                        AND a.network_address = \'$hostname\'
+                        AND b.attribute = \'$property\'
                  ");
-        $dbh->do("  INSERT INTO resourceProperties_log (resourceId,attribute,value,dateStart)
-                        SELECT a.resourceId, \"$property\", \"$value\", \"$date\"
+        $dbh->do("  INSERT INTO resource_properties_log (resource_id,attribute,value,date_start)
+                        SELECT a.resource_id, \'$property\', \'$value\', \'$date\'
                         FROM resources a
                         WHERE
-                            a.networkAddress = \"$hostname\"
+                            a.network_address = \'$hostname\'
                   ");
         return(0);
     }
@@ -2472,7 +2491,7 @@ sub set_node_property($$$$){
 
 
 # set a resource property
-# change resourceProperties table value for resource specified
+# change resource_properties table value for resource specified
 # parameters : base, resource, property name, value
 # return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
 sub set_resource_property($$$$){
@@ -2484,10 +2503,10 @@ sub set_resource_property($$$$){
     # Test if we must change the property
     my $nbRowsAffected;
     eval{
-        $nbRowsAffected = $dbh->do("UPDATE resourceProperties a
-                                    SET a.$property = \"$value\"
+        $nbRowsAffected = $dbh->do("UPDATE resource_properties a
+                                    SET a.$property = \'$value\'
                                     WHERE 
-                                        a.resourceId = \"$resource\"
+                                        a.resource_id = \'$resource\'
                                    ");
     };
     if ($nbRowsAffected < 1){
@@ -2495,15 +2514,15 @@ sub set_resource_property($$$$){
     }else{
         #Update LOG table
         my $date = get_date($dbh);
-        $dbh->do("  UPDATE resourceProperties_log a
-                    SET a.dateStop = \"$date\"
+        $dbh->do("  UPDATE resource_properties_log a
+                    SET a.date_stop = \'$date\'
                     WHERE
-                        a.dateStop IS NULL
-                        AND a.resourceId = \"$resource\"
-                        AND a.attribute = \"$property\"
+                        a.date_stop IS NULL
+                        AND a.resource_id = \'$resource\'
+                        AND a.attribute = \'$property\'
                  ");
-        $dbh->do("  INSERT INTO resourceProperties_log (resourceId,attribute,value,dateStart)
-                    VALUES ($resource, \"$property\", \"$value\", \"$date\")
+        $dbh->do("  INSERT INTO resource_properties_log (resource_id,attribute,value,date_start)
+                    VALUES ($resource, \'$property\', \'$value\', \'$date\')
                  ");
         return(0);
     }
@@ -2517,9 +2536,9 @@ sub get_resource_properties($$){
     my $resource = shift;
 
     my $sth = $dbh->prepare("   SELECT *
-                                FROM resourceProperties
+                                FROM resource_properties
                                 WHERE
-                                    resourceId = $resource");
+                                    resource_id = $resource");
     $sth->execute();
     my %results = %{$sth->fetchrow_hashref()};
     $sth->finish();
@@ -2538,7 +2557,7 @@ sub get_all_nodes_properties($){
     
     my %res ;
     while (my $ref = $sth->fetchrow_hashref()) {
-        #push(@res, $ref->{'idJob'}, $ref->{'jobType'}, $ref->{'infoType'});
+        #push(@res, $ref->{'job_id'}, $ref->{'jobType'}, $ref->{'infoType'});
         #push(@res, $ref);
         $res{$ref->{hostname}} = $ref;
     }
@@ -2553,10 +2572,10 @@ sub get_all_nodes_properties($){
 sub get_resources_change_state($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT resourceId, nextState
+    my $sth = $dbh->prepare("   SELECT resource_id, next_state
                                 FROM resources
                                 WHERE
-                                    nextState != \"UnChanged\"");
+                                    nextState != \'UnChanged\'");
     $sth->execute();
 
     my %results;
@@ -2578,8 +2597,8 @@ sub get_node_dead_range_date($$$){
     my $dateEnd = shift;
 
     # get dead node between two dates
-    my $sth = $dbh->prepare("SELECT hostname,dateStart,dateStop,changeState
-                             FROM nodeState_log
+    my $sth = $dbh->prepare("SELECT hostname,date_start,date_stop,change_state
+                             FROM node_state_log
                              WHERE
                                    (changeState = \"Absent\"
                                     OR changeState = \"Dead\"
@@ -2686,17 +2705,17 @@ sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT a.moldableId, b.resGroupId, a.moldableWalltime, b.resGroupProperty, c.resJobResourceType, c.resJobValue
-                                FROM moldableJobs_description a, jobResources_group b, jobResources_description c, jobs d
+    my $sth = $dbh->prepare("   SELECT a.moldable_id, b.res_group_id, a.moldable_walltime, b.res_group_property, c.res_job_resource_type, c.res_job_value
+                                FROM moldable_job_descriptions a, job_resource_groups b, job_resource_descriptions c, jobs d
                                 WHERE
-                                    a.moldableIndex = \"CURRENT\"
-                                    AND b.resGroupIndex = \"CURRENT\"
-                                    AND c.resJobIndex = \"CURRENT\"
-                                    AND d.idJob = $job_id
-                                    AND d.idJob = a.moldableJobId
-                                    AND b.resGroupMoldableId = a.moldableId
-                                    AND c.resJobGroupId = b.resGroupId
-                                ORDER BY a.moldableId, b.resGroupId, c.resJobOrder ASC
+                                    a.moldable_index = \'CURRENT\'
+                                    AND b.res_group_index = \'CURRENT\'
+                                    AND c.res_job_index = \'CURRENT\'
+                                    AND d.job_id = $job_id
+                                    AND d.job_id = a.moldable_job_id
+                                    AND b.res_group_moldable_id = a.moldable_id
+                                    AND c.res_job_group_id = b.res_group_id
+                                ORDER BY a.moldable_id, b.res_group_id, c.res_job_order ASC
                             ");
     $sth->execute();
     my $result;
@@ -2774,16 +2793,16 @@ sub order_property_node($$$){
 # side effects : /
 sub get_active_queues($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT queueName,schedulerPolicy
+    my $sth = $dbh->prepare("   SELECT queue_name,scheduler_policy
                                 FROM queues
                                 WHERE
-                                    state = \"Active\"
+                                    state = \'Active\'
                                 ORDER BY priority DESC
                             ");
     $sth->execute();
     my @res ;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, [ $ref->{'queueName'}, $ref->{'schedulerPolicy'} ]);
+        push(@res, [ $ref->{'queue_name'}, $ref->{'scheduler_policy'} ]);
     }
     $sth->finish();
     return @res;
@@ -2795,12 +2814,13 @@ sub get_active_queues($) {
 sub get_all_queue_informations($){
     my $dbh = shift;
     
-    my $sth = $dbh->prepare("SELECT *
-                             FROM queues");
+    my $sth = $dbh->prepare(" SELECT *
+                              FROM queues
+                            ");
     $sth->execute();
     my %res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        $res{$ref->{queueName}} = $ref ;
+        $res{$ref->{queue_name}} = $ref ;
     }
     $sth->finish();
    
@@ -2813,16 +2833,16 @@ sub get_all_queue_informations($){
 
 #get previous scheduler decisions
 #args : base
-#return a hashtable : idJob --> [startTime,walltime,queueName,\@resources,state]
+#return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.idJob, g2.startTime, m.moldableWalltime, g1.idResource, j.queueName, j.state
-                             FROM ganttJobsResources g1, ganttJobsPredictions g2, moldableJobs_description m, jobs j
+    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state
+                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
-                                m.moldableIndex = \"CURRENT\"
-                                AND g1.idMoldableJob = g2.idMoldableJob
-                                AND m.moldableId = g2.idMoldableJob
-                                AND j.idJob = m.moldableJobId
+                                m.moldable_index = \'CURRENT\'
+                                AND g1.moldable_job_id = g2.moldable_job_id
+                                AND m.moldable_id = g2.moldable_job_id
+                                AND j.job_id = m.moldable_job_id
                             ");
     $sth->execute();
     my %res ;
@@ -2844,13 +2864,13 @@ sub get_gantt_scheduled_jobs($){
 
 #get previous scheduler decisions for visu
 #args : base
-#return a hashtable : idJob --> [startTime,weight,walltime,queueName,\@nodes]
+#return a hashtable : job_id --> [start_time,weight,walltime,queue_name,\@nodes]
 sub get_gantt_visu_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT g2.idJob, g2.startTime, j.weight, j.maxTime, g1.hostname, j.queueName, j.state
+    my $sth = $dbh->prepare("SELECT g2.job_id, g2.start_time, j.weight, j.maxTime, g1.hostname, j.queue_name, j.state
                              FROM ganttJobsNodes_visu g1, ganttJobsPrediction_visu g2, jobs j
-                             WHERE g1.idJob = g2.idJob
-                                AND j.idJob = g1.idJob
+                             WHERE g1.job_id = g2.job_id
+                                AND j.job_id = g1.job_id
                             ");
     $sth->execute();
     my %res ;
@@ -2871,7 +2891,7 @@ sub get_gantt_visu_scheduled_jobs($){
 
 
 #add scheduler decisions
-#args : base,idMoldableJob,startTime,\@resources
+#args : base,moldable_job_id,start_time,\@resources
 #return nothing
 sub add_gantt_scheduled_jobs($$$$){
     my $dbh = shift;
@@ -2879,12 +2899,12 @@ sub add_gantt_scheduled_jobs($$$$){
     my $start_time = shift;
     my $resource_list = shift;
 
-    $dbh->do("INSERT INTO ganttJobsPredictions (idMoldableJob,startTime)
-              VALUES ($id_moldable_job,\"$start_time\")
+    $dbh->do("INSERT INTO gantt_jobs_predictions (moldable_job_id,start_time)
+              VALUES ($id_moldable_job,\'$start_time\')
              ");
 
     foreach my $i (@{$resource_list}){
-        $dbh->do("INSERT INTO ganttJobsResources (idMoldableJob,idResource)
+        $dbh->do("INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)
                   VALUES ($id_moldable_job,$i)
                  ");
     }
@@ -2892,13 +2912,13 @@ sub add_gantt_scheduled_jobs($$$$){
 
 
 # Remove an entry in the gantt
-# params: base, idJob, resource
+# params: base, job_id, resource
 sub remove_gantt_resource_job($$$){
     my $dbh = shift;
     my $job = shift;
     my $resource = shift;
 
-    $dbh->do("DELETE FROM ganttJobsResources WHERE idMoldableJob = $job AND idResource = $resource");
+    $dbh->do("DELETE FROM gantt_jobs_resources WHERE moldable_job_id = $job AND resource_id = $resource");
 }
 
 
@@ -2909,37 +2929,37 @@ sub set_gantt_date($$){
     my $dbh = shift;
     my $date = shift;
 
-    $dbh->do("INSERT INTO ganttJobsPredictions (idMoldableJob,startTime)
-              VALUES (0,\"$date\")
+    $dbh->do("INSERT INTO gantt_jobs_predictions (moldable_job_id,start_time)
+              VALUES (0,\'$date\')
              ");
 }
 
 
-# Update startTime in gantt for a specified job
+# Update start_time in gantt for a specified job
 # args : base, job id, date
 sub set_gantt_job_startTime($$$){
     my $dbh = shift;
     my $job = shift;
     my $date = shift;
 
-    $dbh->do("UPDATE ganttJobsPredictions
-              SET startTime = \"$date\"
-              WHERE idMoldableJob = $job
+    $dbh->do("UPDATE gantt_jobs_predictions
+              SET start_time = \'$date\'
+              WHERE moldable_job_id = $job
              ");
 }
 
 
-# Get startTime for a given job
+# Get start_time for a given job
 # args : base, job id
 sub get_gantt_job_startTime($$){
     my $dbh = shift;
     my $job = shift;
 
-    my $sth = $dbh->prepare("SELECT ganttJobsPredictions.startTime, ganttJobsPredictions.idMoldableJob
-                             FROM ganttJobsPredictions,moldableJobs_description
+    my $sth = $dbh->prepare("SELECT gantt_jobs_predictions.start_time, gantt_jobs_predictions.moldable_job_id
+                             FROM gantt_jobs_predictions,moldable_job_descriptions
                              WHERE
-                                moldableJobs_description.moldableJobId = $job
-                                AND ganttJobsPredictions.idMoldableJob = moldableJobs_description.moldableId
+                                moldable_job_descriptions.moldable_job_id = $job
+                                AND gantt_jobs_predictions.moldable_job_id = moldable_job_descriptions.moldable_id
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
@@ -2958,23 +2978,23 @@ sub get_gantt_job_startTime($$){
 sub update_gantt_visualization($){
     my $dbh = shift;
 
-    $dbh->do("LOCK TABLE ganttJobsPredictions_visu WRITE, ganttJobsResources_visu WRITE, ganttJobsPredictions WRITE, ganttJobsResources WRITE");
+    lock_table($dbh, ["gantt_jobs_predictions_visu","gantt_jobs_resources_visu","gantt_jobs_predictions","gantt_jobs_resources"]);
 
-    $dbh->do("DELETE FROM ganttJobsPredictions_visu");
-    $dbh->do("DELETE FROM ganttJobsResources_visu");
+    $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
+    $dbh->do("DELETE FROM gantt_jobs_resources_visu");
 #    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
 
-    $dbh->do("INSERT INTO ganttJobsPredictions_visu
+    $dbh->do("INSERT INTO gantt_jobs_predictions_visu
               SELECT *
-              FROM ganttJobsPredictions
+              FROM gantt_jobs_predictions
              ");
     
-    $dbh->do("INSERT INTO ganttJobsResources_visu
+    $dbh->do("INSERT INTO gantt_jobs_resources_visu
               SELECT *
-              FROM ganttJobsResources
+              FROM gantt_jobs_resources
              ");
 
-    $dbh->do("UNLOCK TABLES");
+    unlock_table($dbh);
 }
 
 
@@ -2983,10 +3003,10 @@ sub update_gantt_visualization($){
 sub get_gantt_date($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT startTime
-                             FROM ganttJobsPredictions
+    my $sth = $dbh->prepare("SELECT start_time
+                             FROM gantt_jobs_predictions
                              WHERE
-                                idMoldableJob = 0
+                                moldable_job_id = 0
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
@@ -3000,10 +3020,10 @@ sub get_gantt_date($){
 sub get_gantt_visu_date($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT startTime
-                             FROM ganttJobsPredictions_visu
+    my $sth = $dbh->prepare("SELECT start_time
+                             FROM gantt_jobs_predictions_visu
                              WHERE
-                                idMoldableJob = 0
+                                moldable_job_id = 0
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
@@ -3017,12 +3037,12 @@ sub get_gantt_visu_date($){
 sub gantt_flush_tables($){
     my $dbh = shift;
 
-    #$dbh->do("TRUNCATE TABLE ganttJobsPrediction");
-    $dbh->do("DELETE FROM ganttJobsPredictions");
-    #$dbh->do("TRUNCATE TABLE ganttJobsNodes");
-    $dbh->do("DELETE FROM ganttJobsResources");
+    #$dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
+    $dbh->do("DELETE FROM gantt_jobs_predictions");
+    #$dbh->do("TRUNCATE TABLE gantt_jobs_resources");
+    $dbh->do("DELETE FROM gantt_jobs_resources");
     
-#    $dbh->do("OPTIMIZE TABLE ganttJobs, ganttJobsPrediction");
+#   $dbh->do("OPTIMIZE TABLE ganttJobs, ganttJobsPrediction");
 }
 
 
@@ -3033,15 +3053,15 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $sth = $dbh->prepare("SELECT g2.idMoldableJob, g1.idResource, j.idJob
-                             FROM ganttJobsResources g1, ganttJobsPredictions g2, jobs j, moldableJobs_description m
+    my $sth = $dbh->prepare("SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
                              WHERE
-                                m.moldableIndex = \"CURRENT\"
-                                AND g1.idMoldableJob= g2.idMoldableJob
-                                AND m.moldableId = g1.idMoldableJob
-                                AND j.idJob = m.moldableJobId
-                                AND g2.startTime <= \"$date\"
-                                AND j.state = \"Waiting\"
+                                m.moldable_index = \'CURRENT\'
+                                AND g1.moldable_job_id= g2.moldable_job_id
+                                AND m.moldable_id = g1.moldable_job_id
+                                AND j.job_id = m.moldable_job_id
+                                AND g2.start_time <= \'$date\'
+                                AND j.state = \'Waiting\'
                             ");
     $sth->execute();
     my %res ;
@@ -3062,16 +3082,16 @@ sub get_gantt_resources_for_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $sth = $dbh->prepare("SELECT g1.idResource
-                             FROM ganttJobsResources g1, ganttJobsPredictions g2, jobs j, moldableJobs_description m
+    my $sth = $dbh->prepare("SELECT g1.resource_id
+                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
                              WHERE
-                                m.moldableIndex = \"CURRENT\"
-                                AND g1.idMoldableJob = m.moldableId
-                                AND m.moldableJobId = j.idJob
-                                AND g1.idMoldableJob = g2.idMoldableJob
-                                AND g2.startTime <= \"$date\"
-                                AND j.state = \"Waiting\"
-                             GROUP BY g1.idResource
+                                m.moldable_index = \'CURRENT\'
+                                AND g1.moldable_job_id = m.moldable_id
+                                AND m.moldable_job_id = j.job_id
+                                AND g1.moldable_job_id = g2.moldable_job_id
+                                AND g2.start_time <= \'$date\'
+                                AND j.state = \'Waiting\'
+                             GROUP BY g1.resource_id
                             ");
     $sth->execute();
     my %res ;
@@ -3090,10 +3110,10 @@ sub get_gantt_resources_for_job($$){
     my $dbh = shift;
     my $job = shift;
 
-    my $sth = $dbh->prepare("SELECT g.idResource
-                             FROM ganttJobsResources g
+    my $sth = $dbh->prepare("SELECT g.resource_id
+                             FROM gantt_jobs_resources g
                              WHERE
-                                g.idMoldableJob = $job 
+                                g.moldable_job_id = $job 
                             ");
     $sth->execute();
     my @res ;
@@ -3112,12 +3132,12 @@ sub get_gantt_Alive_resources_for_job($$){
     my $dbh = shift;
     my $job = shift;
 
-    my $sth = $dbh->prepare("SELECT g.idResource
-                             FROM ganttJobsResources g, resources r
+    my $sth = $dbh->prepare("SELECT g.resource_id
+                             FROM gantt_jobs_resources g, resources r
                              WHERE
-                                g.idMoldableJob = $job 
-                                AND r.resourceId = g.idResource
-                                AND r.state = \"Alive\"
+                                g.moldable_job_id = $job 
+                                AND r.resource_id = g.resource_id
+                                AND r.state = \'Alive\'
                             ");
     $sth->execute();
     my @res ;
@@ -3322,28 +3342,18 @@ sub get_date($) {
 
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT NOW()");
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "select to_char(current_timestamp,'YYYY-MM-DD HH24:MI:SS')";
+    }else{
+        $req = "SELECT DATE_FORMAT(NOW(),'%Y-%m-%d %H:%i:%s')";
+    }
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     my @ref = $sth->fetchrow_array();
     $sth->finish();
 
     return($ref[0]);
-}
-
-
-# get_unix_timestamp
-# returns seconds since epoch 00:00:00 01-01-1970
-# parameters : database
-# return value : int
-# side effects : /
-sub get_unix_timestamp($) {
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT UNIX_TIMESTAMP()");
-    $sth->execute();
-    my ($timestamp) = $sth->fetchrow_array();
-    $sth->finish();
-
-    return($timestamp);
 }
 
 
@@ -3359,20 +3369,20 @@ sub check_accounting_update($$){
                              FROM jobs
                              WHERE accounted = \"NO\"
                                 AND (state = \"Terminated\" OR state = \"Error\")
-                                AND stopTime >= startTime
-                                AND startTime > \"0000-00-00 00:00:00\"
+                                AND stop_time >= start_time
+                                AND start_time > \"0000-00-00 00:00:00\"
                                 AND maxTime > 0
                                 ");
     $sth->execute();
 
     while (my $ref = $sth->fetchrow_hashref()) {
-        my $start = sql_to_local($ref->{startTime});
-        my $stop = sql_to_local($ref->{stopTime});
+        my $start = sql_to_local($ref->{start_time});
+        my $stop = sql_to_local($ref->{stop_time});
         my $theoricalStopTime = sql_to_duration($ref->{maxTime}) + $start;
-        oar_debug("[ACCOUNTING] Treate job $ref->{idJob}\n");
-        update_accounting($dbh,$start,$stop,$windowSize,$ref->{user},$ref->{queueName},"USED",$ref->{nbNodes},$ref->{weight});
-        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref->{user},$ref->{queueName},"ASKED",$ref->{nbNodes},$ref->{weight});
-        $dbh->do("UPDATE jobs SET accounted = \"YES\" WHERE idJob = $ref->{idJob}");
+        oar_debug("[ACCOUNTING] Treate job $ref->{job_id}\n");
+        update_accounting($dbh,$start,$stop,$windowSize,$ref->{user},$ref->{queue_name},"USED",$ref->{nbNodes},$ref->{weight});
+        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref->{user},$ref->{queue_name},"ASKED",$ref->{nbNodes},$ref->{weight});
+        $dbh->do("UPDATE jobs SET accounted = \"YES\" WHERE job_id = $ref->{job_id}");
     }
 }
 
@@ -3457,7 +3467,7 @@ sub add_accounting_row($$$$$$$){
 #EVENTS LOG MANAGEMENT
 
 #add a new entry in event_log table
-#args : database ref, event type, idJob , description
+#args : database ref, event type, job_id , description
 sub add_new_event($$$$){
     my $dbh = shift;
     my $type = shift;
@@ -3465,12 +3475,7 @@ sub add_new_event($$$$){
     my $description = shift;
 
     my $date = get_date($dbh);
-    $dbh->do("INSERT INTO events_log (type,idJob,date,description) VALUES (\"$type\",$idJob,\"$date\",\"$description\")");
-    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my ($idFile) = values(%$ref);
-    $sth->finish();
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$idJob,\'$date\',\'$description\')");
 }
 
 #add a new entry in event_log_hosts table
@@ -3484,18 +3489,14 @@ sub add_new_event_with_host($$$$$){
     
     my $date = get_date($dbh);
     #$dbh->do("LOCK TABLE event_log WRITE, event_log_hosts WRITE");
-    $dbh->do("  INSERT INTO events_log (type,idJob,date,description)
-                VALUES (\"$type\",$idJob,\"$date\",\"$description\")
+    $dbh->do("  INSERT INTO event_logs (type,job_id,date,description)
+                VALUES (\'$type\',$idJob,\'$date\',\'$description\')
              ");
-    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my ($idEvent) = values(%$ref);
-    $sth->finish();
+    my $idEvent = get_last_insert_id($dbh,"event_logs_event_id_seq");
     
     foreach my $n (@{$hostnames}){
-        $dbh->do("  INSERT INTO events_log_hostnames (idEvent,hostname)
-                    VALUES ($idEvent,\"$n\")
+        $dbh->do("  INSERT INTO event_log_hostnames (event_id,hostname)
+                    VALUES ($idEvent,\'$n\')
                  ");
     }
     #$dbh->do("UNLOCK TABLES");
@@ -3503,18 +3504,18 @@ sub add_new_event_with_host($$$$$){
 
 
 # Turn the field toCheck into NO
-#args : database ref, event type, idJob
+#args : database ref, event type, job_id
 sub check_event($$$){
     my $dbh = shift;
     my $type = shift;
     my $idJob = shift;
 
-    $dbh->do("  UPDATE events_log
-                SET toCheck = \"NO\"
+    $dbh->do("  UPDATE event_logs
+                SET to_check = \'NO\'
                 WHERE
-                    toCheck = \"YES\"
-                    AND type = \"$type\"
-                    AND idJob = $idJob
+                    to_check = \'YES\'
+                    AND type = \'$type\'
+                    AND job_id = $idJob
              ");
 }
 
@@ -3523,17 +3524,17 @@ sub check_event($$$){
 # args: database ref
 sub get_to_check_events($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT type, idJob, idEvent 
-                                FROM events_log
+    my $sth = $dbh->prepare("   SELECT type, job_id, event_id
+                                FROM event_logs
                                 WHERE
-                                    toCheck = \"YES\"
+                                    to_check = \'YES\'
                             ");
     $sth->execute();
 
     my @results;
     while (my $ref = $sth->fetchrow_hashref()) {
         my %tmp = ( 'type' => $ref->{type},
-                    'idJob' => $ref->{idJob},
+                    'idJob' => $ref->{job_id},
                     'idEvent' => $ref->{idEvent}
                   );
         push(@results, \%tmp);
@@ -3550,9 +3551,9 @@ sub get_hostname_event($$){
     my $eventId = shift;
 
     my $sth = $dbh->prepare("   SELECT hostname
-                                FROM events_log_hostnames
+                                FROM event_log_hostnames
                                 WHERE
-                                    idEvent = $eventId
+                                    event_id = $eventId
                             ");
     $sth->execute();
 
@@ -3573,9 +3574,9 @@ sub get_job_events($$){
     my $jobId = shift;
 
     my $sth = $dbh->prepare("   SELECT *
-                                FROM events_log
+                                FROM event_logs
                                 WHERE
-                                    idJob = $jobId
+                                    job_id = $jobId
                             ");
     $sth->execute();
 
@@ -3633,6 +3634,37 @@ sub release_lock($$) {
     return undef;
 }
 
+
+sub lock_table($$){
+    my $dbh = shift;
+    my $tables= shift;
+
+    my $str = "LOCK TABLE ";
+    foreach my $t (@{$tables}){
+        if ($Db_type eq "Pg"){
+            $str .= "$t,";
+        }else{
+            $str .= "$t WRITE,";
+        }
+    }
+    chop($str);
+    if ($Db_type eq "Pg"){
+        $dbh->begin_work();
+    }
+    
+    $dbh->do($str);
+}
+
+
+sub unlock_table($){
+    my $dbh = shift;
+
+    if ($Db_type eq "Pg"){
+        $dbh->commit();
+    }else{
+        $dbh->do("UNLOCK TABLE");
+    }
+}
 
 # END OF THE MODULE
 return 1;

@@ -13,7 +13,7 @@ CREATE INDEX accounting_type ON accounting (consumption_type);
 
 
 CREATE TABLE admission_rules (
-  id serial,
+  id bigserial,
   rule varchar(255) NOT NULL default '',
   PRIMARY KEY  (id)
 );
@@ -45,7 +45,7 @@ CREATE INDEX event_hostname ON event_log_hostnames (hostname);
 
 
 CREATE TABLE event_logs (
-  event_id serial,
+  event_id bigserial,
   type varchar(50) NOT NULL default '',
   job_id integer NOT NULL default '0',
   date varchar(19) NOT NULL default '0000-00-00 00:00:00',
@@ -58,7 +58,7 @@ CREATE INDEX event_check ON event_logs (to_check);
 
 
 CREATE TABLE files (
-  file_id serial,
+  file_id bigserial,
   md5sum varchar(255) default NULL,
   location varchar(255) default NULL,
   method varchar(255) default NULL,
@@ -117,7 +117,7 @@ CREATE INDEX log_dep ON job_dependencies (job_dependency_index);
 
 
 CREATE TABLE job_resource_groups (
-  res_group_id serial,
+  res_group_id bigserial,
   res_group_moldable_id integer NOT NULL default '0',
   res_group_property text,
   res_group_index varchar(7) check (res_group_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
@@ -143,7 +143,7 @@ CREATE TABLE job_state_logs (
   job_id integer NOT NULL default '0',
   job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')) NOT NULL default 'Waiting',
   date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  date_stop integer NOT NULL default '0'
+  date_stop varchar(19) default NULL 
 );
 CREATE INDEX id_job_log ON job_state_logs (job_id);
 CREATE INDEX state_job_log ON job_state_logs (job_state);
@@ -160,7 +160,7 @@ CREATE INDEX id_types ON job_types (job_id);
 
 
 CREATE TABLE jobs (
-  job_id serial,
+  job_id bigserial,
   job_name varchar(255) NOT NULL default '',
   job_type varchar(11) check (job_type in ('INTERACTIVE','PASSIVE')) NOT NULL default 'PASSIVE',
   info_type varchar(255) default NULL,
@@ -190,7 +190,7 @@ CREATE INDEX accounted ON jobs (accounted);
 
 
 CREATE TABLE moldable_job_descriptions (
-  moldable_id serial,
+  moldable_id bigserial,
   moldable_job_id integer NOT NULL default '0',
   moldable_walltime varchar(255) NOT NULL default '',
   moldable_index varchar(7) check (moldable_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
@@ -246,7 +246,7 @@ CREATE INDEX finaud ON resource_state_logs (finaud_decision);
 
 
 CREATE TABLE resources (
-  resource_id serial,
+  resource_id bigserial,
   network_address varchar(100) NOT NULL default '',
   state varchar(9) check (state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
   next_state varchar(9) check (next_state in ('UnChanged','Alive','Dead','Absent','Suspected')) NOT NULL default 'UnChanged',

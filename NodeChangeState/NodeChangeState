@@ -13,8 +13,7 @@ my $exitCode = 0;
 
 my $base = iolib::connect();
 
-$base->do("LOCK TABLE resources WRITE, assignedResources WRITE, jobs WRITE,
-resourceStates_log WRITE, events_log WRITE, events_log_hostnames WRITE");
+iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state_logs","event_logs","events_log_hostnames"]);
 
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);
@@ -33,10 +32,10 @@ foreach my $i (@events_to_check){
         my $finaudTag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
         if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")){
-            @hosts = iolib::get_hostname_event($base,$i->{idEvent});
+            @hosts = iolib::get_hostname_event($base,$i->{event_id});
             $finaudTag = "YES";
         }else{
-            @hosts = iolib::get_job_host_log($base,$i->{assignedMoldableJob});
+            @hosts = iolib::get_job_host_log($base,$i->{assigned_moldable_job});
             $finaudTag = "NO";
             if (($i->{type} ne "EXTERMINATE_JOB")){
                 @hosts = ($hosts[0]);
@@ -56,7 +55,7 @@ foreach my $i (@events_to_check){
             }
         }
     }
-    iolib::check_event($base, $i->{type}, $i->{idJob});
+    iolib::check_event($base, $i->{type}, $i->{job_id});
 }
 
 
@@ -72,13 +71,13 @@ if (keys(%resources_to_change) > 0){
 foreach my $i (keys(%resources_to_change)){
     my $resource_info = iolib::get_resource_info($base,$i);
     if ($resource_info->{state} ne $resources_to_change{$i}){
-        if ($resource_info->{nextFinaudDecision} eq "YES"){
+        if ($resource_info->{next_finaud_decision} eq "YES"){
             oar_warn("[NodeChangeState] Finaud is automatically changing the state of the resource $i into $resources_to_change{$i}\n");
         }else{
             oar_warn("[NodeChangeState] $i --> $resources_to_change{$i}\n");
         }
 
-        iolib::set_resource_state($base,$i,$resources_to_change{$i},$resource_info->{nextFinaudDecision});
+        iolib::set_resource_state($base,$i,$resources_to_change{$i},$resource_info->{next_finaud_decision});
         iolib::set_resource_nextState($base,$i,'UnChanged');
 
         if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
@@ -97,7 +96,7 @@ foreach my $i (keys(%resources_to_change)){
         iolib::set_resource_nextState($base,$i,'UnChanged');
     }
 }
-$base->do("UNLOCK TABLES");
+iolib::unlock_table($base);
 iolib::disconnect($base);
 
 exit($exitCode);

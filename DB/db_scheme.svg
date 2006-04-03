@@ -15,7 +15,10 @@
    sodipodi:version="0.32"
    inkscape:version="0.43"
    sodipodi:docbase="/home/capitn/oar/trunk/DB"
-   sodipodi:docname="db_scheme.svg">
+   sodipodi:docname="db_scheme.svg"
+   inkscape:export-filename="/home/capitn/oar/trunk/DB/db_scheme.png"
+   inkscape:export-xdpi="280"
+   inkscape:export-ydpi="280">
   <defs
      id="defs4">
     <linearGradient
@@ -235,7 +238,7 @@
        xlink:href="#linearGradient2074"
        id="linearGradient4015"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.326941,0,0,0.228007,231.5943,222.3275)"
+       gradientTransform="matrix(1.384801,0,0,0.228007,223.2588,222.3275)"
        x1="143.78571"
        y1="244.50504"
        x2="247.64285"
@@ -520,9 +523,9 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
      inkscape:cx="717.4064"
-     inkscape:cy="499.10018"
+     inkscape:cy="620.31848"
      inkscape:document-units="px"
-     inkscape:current-layer="g1884"
+     inkscape:current-layer="g2437"
      showguides="true"
      inkscape:guide-bbox="true"
      fill="#ff0000"
@@ -789,7 +792,7 @@
              sodipodi:role="line"
              id="tspan2471"
              x="307.14288"
-             y="73.790756">moldableJobs_description</tspan></text>
+             y="73.790756">moldable_job_descriptions</tspan></text>
         <text
            xml:space="preserve"
            style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
@@ -1017,11 +1020,11 @@
              style="opacity:1.0000000;fill:#00001f;fill-opacity:0.075697191;fill-rule:evenodd;stroke:#000000;stroke-width:2.1285665;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:0.63346612" />
           <rect
              y="269.11905"
-             x="423.05319"
+             x="423.06598"
              height="17.914848"
-             width="136.48547"
+             width="142.43675"
              id="rect2441"
-             style="opacity:1;fill:url(#linearGradient4015);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.55004752;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611" />
+             style="opacity:1;fill:url(#linearGradient4015);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.56191164;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611" />
         </g>
         <text
            xml:space="preserve"
@@ -1032,7 +1035,7 @@
              sodipodi:role="line"
              id="tspan2619"
              x="584.35577"
-             y="1103.4584">gantt_job_predictions</tspan></text>
+             y="1103.4584">gantt_jobs_predictions</tspan></text>
         <text
            xml:space="preserve"
            style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"

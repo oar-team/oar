@@ -74,27 +74,27 @@ foreach my $job (@result){
     my ($date, $start, $max);
 
     # Get starting time
-    $date = $job->{startTime};
+    $date = $job->{start_time};
     #print "Job [$job{idJob}] startTime $date\n";
     $start = iolib::sql_to_local($date);
 
     # Get maxtime
-    my $moldJob = iolib::get_current_moldable_job($base,$job->{assignedMoldableJob});
+    my $moldJob = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
     $date = $moldJob->{moldableWalltime};
     $max = iolib::sql_to_duration($date);
 
-    oar_debug("[sarko] Job [$job->{idJob}] from $start with $max; current time=$current");
+    oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current");
     if ($current > $start+$max){
         oar_debug(" (Elapsed)");
         $guilty_found=1;
-        iolib::frag_job($base, $job->{idJob});
-        iolib::add_new_event($base,"WALLTIME",$job->{idJob},"[sarko] Job [$job->{idJob}] from $start with $max; current time=$current (Elapsed)");
-    }elsif (($job->{checkpoint} > 0) && ($job->{autoCheckpointed} eq "NO") && ($current >= ($start+$max-$job->{checkpoint}))){
+        iolib::frag_job($base, $job->{job_id});
+        iolib::add_new_event($base,"WALLTIME",$job->{job_id},"[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
+    }elsif (($job->{checkpoint} > 0) && ($job->{auto_checkpointed} eq "NO") && ($current >= ($start+$max-$job->{checkpoint}))){
         # OAR must notify the job to checkpoint itself
-        oar_debug("[sarko] Send checkpoint signal to the job $job->{idJob}\n");
+        oar_debug("[sarko] Send checkpoint signal to the job $job->{job_id}\n");
         # Retrieve node names used by the job
-        my @hosts = iolib::get_job_current_hostnames($base,$job->{idJob});
-        iolib::add_new_event($base,"CHECKPOINT",$job->{idJob},"User oar (sarko) requested a checkpoint on the job $job->{idJob}");
+        my @hosts = iolib::get_job_current_hostnames($base,$job->{job_id});
+        iolib::add_new_event($base,"CHECKPOINT",$job->{job_id},"User oar (sarko) requested a checkpoint on the job $job->{job_id}");
         my $timeoutSSH = oar_Tools::getSSHTimeout();
         my $strComment;
         my @exitCodes;
@@ -102,29 +102,29 @@ foreach my $job (@result){
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm($timeoutSSH);
-            @exitCodes = oar_Tools::signalOarexec($hosts[0],$job->{idJob},"SIGUSR2",1);
+            @exitCodes = oar_Tools::signalOarexec($hosts[0],$job->{job_id},"SIGUSR2",1);
             alarm(0);
         };
         if ($@){
             if ($@ eq "alarm\n"){
-                $strComment = "[sarko] Cannot contact $hosts[0], operation timouted ($timeoutSSH s). So I cannot send checkpoint signal to the job $job->{idJob}";
+                $strComment = "[sarko] Cannot contact $hosts[0], operation timouted ($timeoutSSH s). So I cannot send checkpoint signal to the job $job->{job_id}";
                 oar_warn("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{idJob},$strComment);
+                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$strComment);
             }else{
-                $strComment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{idJob} on the host $hosts[0]";
+                $strComment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $hosts[0]";
                 oar_warn("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{idJob},$strComment);
+                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$strComment);
             }
         }else{
             if ($exitCodes[0] == 0){
-                iolib::set_job_autoCheckpointed($base, $job->{idJob});
-                $strComment = "[sarko] The job $job->{idJob} was notified to checkpoint itself (send SIGUSR2) on the node $hosts[0]";
+                iolib::set_job_autoCheckpointed($base, $job->{job_id});
+                $strComment = "[sarko] The job $job->{job_id} was notified to checkpoint itself (send SIGUSR2) on the node $hosts[0]";
                 oar_debug("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{idJob},$strComment);
+                iolib::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$strComment);
             }else{
-                $strComment = "[sarko] The kill command return a bad exit code (@exitCodes) for the job $job->{idJob} on the node $hosts[0]";
+                $strComment = "[sarko] The kill command return a bad exit code (@exitCodes) for the job $job->{job_id} on the node $hosts[0]";
                 oar_warn("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{idJob},$strComment);
+                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$strComment);
             }
         }
     }

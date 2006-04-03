@@ -27,8 +27,8 @@ my %Node_list;
 
 foreach my $i (@Resource_list){
     #Do not check occupied resources
-    if (!vec($Occupied_resources_vector, $i->{resourceId}, 1)){
-        push(@{$Node_list{$i->{networkAddress}}}, $i->{resourceId});
+    if (!vec($Occupied_resources_vector, $i->{resource_id}, 1)){
+        push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
     }
 }
 
@@ -46,17 +46,17 @@ foreach my $i (@badNodes){
 #Make the decisions
 my $returnValue = 0;
 foreach my $i (@Resource_list){
-    if (defined($badNodeHash{$i->{networkAddress}}) and ($i->{state} eq "Alive")){
-        iolib::set_resource_nextState($base,$i->{resourceId},"Suspected");
-        iolib::update_resource_nextFinaudDecision($base,$i->{resourceId},"YES");
+    if (defined($badNodeHash{$i->{network_address}}) and ($i->{state} eq "Alive")){
+        iolib::set_resource_nextState($base,$i->{resource_id},"Suspected");
+        iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
         $returnValue = 1;
-        oar_debug("[finaud] Set the next state of $i->{resourceId}, $i->{networkAddress} to Suspected\n");
-    }elsif (!defined($badNodeHash{$i->{networkAddress}}) and ($i->{state} eq
+        oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Suspected\n");
+    }elsif (!defined($badNodeHash{$i->{network_address}}) and ($i->{state} eq
     "Suspected")){
-        iolib::set_resource_nextState($base,$i->{resourceId},"Alive");
-        iolib::update_resource_nextFinaudDecision($base,$i->{resourceId},"YES");
+        iolib::set_resource_nextState($base,$i->{resource_id},"Alive");
+        iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
         $returnValue = 1;
-        oar_debug("[finaud] Set the next state of $i->{resourceId}, $i->{networkAddress} to Alive\n");
+        oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Alive\n");
     }
 }
 

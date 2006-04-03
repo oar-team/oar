@@ -89,11 +89,11 @@ if ($#resources >= 0){
         my %tmp_hash;
         $tmp_hash{state} = $resource_info->{state};
         if ($resource_info->{state} eq "Alive") {    
-            my @jobs = iolib::get_resource_job($base,$resource_info->{resourceId});
+            my @jobs = iolib::get_resource_job($base,$resource_info->{resource_id});
             if ($#jobs >= 0){
                 $tmp_hash{jobs} = \@jobs;
             }
-            my %properties = iolib::get_resource_properties($base,$resource_info->{resourceId});
+            my %properties = iolib::get_resource_properties($base,$resource_info->{resource_id});
             $tmp_hash{properties} = \%properties;
         }
         $data_to_display{$r} = \%tmp_hash;
@@ -157,7 +157,7 @@ if (defined($stateMode)){
         if ($#node_info >= 0){
             my %tmp_data;
             foreach my $n (@node_info){
-                $tmp_data{$n->{resourceId}} = $n->{state};
+                $tmp_data{$n->{resource_id}} = $n->{state};
             }
             $data_to_display{$node} = \%tmp_data;
         }else{
@@ -227,14 +227,14 @@ if (defined($stateMode)){
             my %tmp_hash2;
             $tmp_hash2{state} = $r->{state};
             if ($r->{state} eq "Alive") {    
-                my @jobs = iolib::get_resource_job($base,$r->{resourceId});
+                my @jobs = iolib::get_resource_job($base,$r->{resource_id});
                 if ($#jobs >= 0){
                     $tmp_hash2{jobs} = \@jobs;
                 }
             }
-            my %properties = iolib::get_resource_properties($base,$r->{resourceId});
+            my %properties = iolib::get_resource_properties($base,$r->{resource_id});
             $tmp_hash2{properties} = \%properties;
-            $tmp_hash1{$r->{resourceId}} = \%tmp_hash2;
+            $tmp_hash1{$r->{resource_id}} = \%tmp_hash2;
         }
         $data_to_display{$node} = \%tmp_hash1;
     }

@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS job_state_logs (
 job_id INT UNSIGNED NOT NULL ,
 job_state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')  NOT NULL ,
 date_start DATETIME NOT NULL,
-date_stop INT UNSIGNED NOT NULL DEFAULT 0,
+date_stop DATETIME DEFAULT NULL,
 INDEX id (job_id),
 INDEX state (job_state)
 );

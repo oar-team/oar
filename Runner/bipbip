@@ -112,18 +112,18 @@ my $hostname = hostname;
 my $hostpid="$hostname:$$";
 iolib::set_job_bpid($base,$Jid,$hostpid);
 
-oar_debug("[bipbip $Jid] JOB: $Jid; User: $job->{user}; Command: $job->{command} ==> hosts :[@hosts]\n");
+oar_debug("[bipbip $Jid] JOB: $Jid; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 
 # check nodes
 oar_debug("[bipbip $Jid] Check nodes\n");
 my @bad = test_hosts(@hosts);
 if ($#bad >= 0){
-    $base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE, resources WRITE, assignedResources WRITE, fragJobs WRITE, resourceStates_log WRITE");
-    iolib::remove_current_assigned_resources($base,$job->{assignedMoldableJob});
+    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_log"]);
+    iolib::remove_current_assigned_resources($base,$job->{assigned_moldable_job});
     iolib::set_job_state($base,$Jid,"Error");
     iolib::set_job_message($base,$Jid,"Blacklist job nodes");
-    $base->do("UNLOCK TABLES");
+    iolib::unlock_table($base);
     oar_error("[bipbip $Jid] /!\\ Sorry but some nodes are inaccessible\n");
     iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Jid,"[bipbip] Ping_checker suspects  nodes for the job $Jid : @bad",\@bad);
     oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
@@ -171,13 +171,13 @@ sub checkEndOfJob($){
 
     my $base = iolib::connect();
 
-    $base->do("LOCK TABLE jobs WRITE, jobStates_log WRITE, resources WRITE, assignedMoldableJob WRITE, resourceStates_log WRITE, events_log WRITE");
+    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_moldable_job","resource_state_logs","event_logs"]);
     my $refJob = iolib::get_job($base,$Jid);
     if ($refJob->{'state'} eq "Running"){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         iolib::set_finish_date($base,$Jid);
         oar_debug("[bipbip $Jid] Release nodes \n");
-        iolib::remove_current_assigned_resources($base,$refJob->{assignedMoldableJob});
+        iolib::remove_current_assigned_resources($base,$refJob->{assigned_moldable_job});
         if($error == 0){
             oar_debug("[bipbip $Jid] User Launch completed OK\n");
             iolib::set_job_state($base,$Jid,"Terminated");
@@ -278,7 +278,7 @@ sub checkEndOfJob($){
     }else{
         oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
     }
-    $base->do("UNLOCK TABLES");
+    iolib::unlock_table($base);
     iolib::disconnect($base);
 
 
