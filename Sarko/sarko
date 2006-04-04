@@ -50,9 +50,9 @@ foreach my $Jid (@JobToFrag){
         iolib::job_fragged($base,$Jid);
         oar_debug("[sarko] I set to FRAGGED the job $Jid\n");
     }else{
-        my $fragDate = iolib::get_frag_date($base,$Jid);
-        $fragDate = iolib::sql_to_local($fragDate);
-        oar_debug("[sarko] frag date : $fragDate\n");
+        my $fragDate_sql = iolib::get_frag_date($base,$Jid);
+        my $fragDate = iolib::sql_to_local($fragDate_sql);
+        oar_debug("[sarko] frag date : $fragDate , $fragDate_sql\n");
         if (($current > $fragDate+$leonSoftWalltime) && ($current <= $fragDate+$leonWalltime)){
             oar_debug("[sarko] Leon will RE-FRAG bipbip of job $Jid\n");
             iolib::job_refrag($base,$Jid);
@@ -87,7 +87,9 @@ foreach my $job (@result){
     if ($current > $start+$max){
         oar_debug(" (Elapsed)");
         $guilty_found=1;
+        iolib::lock_table($base,["frag_jobs","event_logs"]);
         iolib::frag_job($base, $job->{job_id});
+        iolib::unlock_table($base);
         iolib::add_new_event($base,"WALLTIME",$job->{job_id},"[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
     }elsif (($job->{checkpoint} > 0) && ($job->{auto_checkpointed} eq "NO") && ($current >= ($start+$max-$job->{checkpoint}))){
         # OAR must notify the job to checkpoint itself

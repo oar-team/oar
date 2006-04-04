@@ -61,7 +61,9 @@ for my $j (@jobResaToAck){
     if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
         oar_warn("[Runner] Frag job $j->{job_id}), I cannot notify oarsub for the reservation\n");
         iolib::add_new_event($base,"CAN_NOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
+        iolib::lock_table($base,["frag_jobs","event_logs"]);
         iolib::frag_job($base,$j->{job_id});
+        iolib::unlock_table($base);
         $exitCode = 1;
     }else{
         oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
@@ -94,7 +96,9 @@ foreach my $job (@joblist) {
             # repondre au client sur jobinfo
             if (answer($jobid,$jobinfo,"GOOD JOB") == 1){
                 oar_warn("[Runner] Frag job $jobid, I cannot notify oarsub\n");
+                iolib::lock_table($base,["frag_jobs","event_logs"]);
                 iolib::frag_job($base,$jobid);
+                iolib::unlock_table($base);
                 $exitCode = 1;
             }
         }else{

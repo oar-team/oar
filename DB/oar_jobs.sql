@@ -141,8 +141,8 @@ INDEX next_state (next_state),
 PRIMARY KEY (resource_id)
 );
 
-#DROP TABLE IF EXISTS resource_propertie_logs;
-CREATE TABLE IF NOT EXISTS resource_propertie_logs (
+#DROP TABLE IF EXISTS resource_property_logs;
+CREATE TABLE IF NOT EXISTS resource_property_logs (
 resource_id INT UNSIGNED NOT NULL ,
 attribute VARCHAR( 50 ) NOT NULL ,
 value VARCHAR( 100 ) NOT NULL ,

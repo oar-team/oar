@@ -35,7 +35,7 @@ sub init_scheduler($){
 
     # Take care of the currently (or nearly) running jobs
     # Lock to prevent bipbip update in same time
-    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types"]);
+    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions"]);
    
     #calculate now date with no overlap with other jobs
     my $previousRefTimeSec = iolib::sql_to_local(iolib::get_gantt_date($dbh));
@@ -358,7 +358,9 @@ sub check_jobs_to_kill($){
         if (defined($besteffort_resource_occupation{$r})){
             oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $besteffort_resource_occupation{$r} must be killed\n");
             iolib::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[oar_scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
+            iolib::lock_table($dbh,["frag_jobs","event_logs"]);
             iolib::frag_job($dbh, $besteffort_resource_occupation{$r});
+            iolib::unlock_table($dbh);
             $return = 1;
         }
      }

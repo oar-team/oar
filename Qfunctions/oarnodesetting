@@ -81,7 +81,7 @@ sub wait_end_of_running_jobs($$){
         print("\t$j ");
         my $timeCount = 0;
         while ((($jobInfo->{'state'} eq "Running") || ($jobInfo->{'state'} eq "toLaunch") || ($jobInfo->{'state'} eq "Launching")) && ($timeCount < $max_timeout)){
-            $jobInfo = iolib::get_job($base,$j);
+            $jobInfo = iolib::get_job($dbh,$j);
             sleep(1);
             print(".");
             $timeCount++;
@@ -156,11 +156,9 @@ my $notify_almighty = 0;
 if (defined($new_resource)){
     # Create a new resource
     print("new resource\n");
-    #$base->do("LOCK TABLE resources WRITE, resourceProperties WRITE, resourceProperties_log WRITE");
     print("$hostname added in the database\n");
     $state = "Alive" if (!defined($state));
     $resource = iolib::add_resource($base, $hostname, $state);
-    #$base->do("UNLOCK TABLES");
     $notify_almighty = 1;
 }else{
     if (defined($resource)){

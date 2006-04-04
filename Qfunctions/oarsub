@@ -53,7 +53,9 @@ sub qdel($) {
             print("\n\nCaught Interrupt (^C), Deleting the job $Job_id\n");
         }
         $base = iolib::connect();
+        iolib::lock_table($base,["frag_jobs","event_logs"]);
         my $err = iolib::frag_job($base,$Job_id);
+        iolib::unlock_table($base);
         iolib::disconnect($base);
         print("Job deleted\n");
         #Signal Almigthy

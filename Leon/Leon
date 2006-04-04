@@ -136,7 +136,7 @@ while(scalar(@JobToFrag)){
 
     iolib::set_finish_date($base,$Jid);
     iolib::set_job_message($base,$Jid,"job exterminated by Leon");
-    iolib::remove_current_assigned_resources($base,$refJob->{assignedi_moldable_job});
+    iolib::remove_current_assigned_resources($base,$refJob->{assigned_moldable_job});
     iolib::job_arm_leon_timer($base,$Jid);
     $exitCode = 1;
 }

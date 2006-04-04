@@ -13,7 +13,7 @@ my $exitCode = 0;
 
 my $base = iolib::connect();
 
-iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state_logs","event_logs","events_log_hostnames"]);
+iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state_logs","event_logs","event_log_hostnames","frag_jobs"]);
 
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);
@@ -32,10 +32,11 @@ foreach my $i (@events_to_check){
         my $finaudTag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
         if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")){
-            @hosts = iolib::get_hostname_event($base,$i->{event_id});
+            @hosts = iolib::get_hostname_event($base,$i->{idEvent});
             $finaudTag = "YES";
         }else{
-            @hosts = iolib::get_job_host_log($base,$i->{assigned_moldable_job});
+            my $job = iolib::get_job($base,$i->{idJob});
+            @hosts = iolib::get_job_host_log($base,$job->{assigned_moldable_job});
             $finaudTag = "NO";
             if (($i->{type} ne "EXTERMINATE_JOB")){
                 @hosts = ($hosts[0]);
@@ -44,18 +45,18 @@ foreach my $i (@events_to_check){
 
         foreach my $j (@hosts){
             my @free_resources = iolib::get_current_free_resources_of_node($base, $j);
-            if ($#free_resources < 0){
+            if ($#free_resources >= 0){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting resource(s) : @free_resources\n");
                 foreach my $r (@free_resources){
                     iolib::set_node_state($base,$j,"Suspected",$finaudTag);
                     $exitCode = 1;
                 }
             }else{
-                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because there is at least one other job on it\n");
+                oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because all resources are busy\n");
             }
         }
     }
-    iolib::check_event($base, $i->{type}, $i->{job_id});
+    iolib::check_event($base, $i->{type}, $i->{idJob});
 }
 
 

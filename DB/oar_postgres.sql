@@ -209,15 +209,15 @@ CREATE TABLE queues (
 );
 
 
-CREATE TABLE resource_propertie_logs (
+CREATE TABLE resource_property_logs (
   resource_id integer NOT NULL default '0',
   attribute varchar(50) NOT NULL default '',
   value varchar(100) NOT NULL default '',
   date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
   date_stop varchar(19) default NULL
 );
-CREATE INDEX resource ON resource_propertie_logs (resource_id);
-CREATE INDEX attribute ON resource_propertie_logs (attribute);
+CREATE INDEX resource ON resource_property_logs (resource_id);
+CREATE INDEX attribute ON resource_property_logs (attribute);
 
 
 CREATE TABLE resource_properties (

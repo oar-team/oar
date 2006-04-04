@@ -522,10 +522,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="717.4064"
-     inkscape:cy="620.31848"
+     inkscape:cx="913.37599"
+     inkscape:cy="272.82601"
      inkscape:document-units="px"
-     inkscape:current-layer="g2437"
+     inkscape:current-layer="layer1"
      showguides="true"
      inkscape:guide-bbox="true"
      fill="#ff0000"
@@ -1797,7 +1797,7 @@
          sodipodi:role="line"
          id="tspan2557"
          x="894.26868"
-         y="588.11029">resource_properties_logs</tspan></text>
+         y="588.11029">resource_property_logs</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
