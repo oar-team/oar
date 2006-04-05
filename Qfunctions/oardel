@@ -94,7 +94,7 @@ if (@checkpoint){
 
         print("Deleting the job = $idJob ...");
         # Try to insert delete informations in the database
-        iolib::lock_table($base,["frag_jobs","event_logs"]);
+        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         my $err = iolib::frag_job($base,$idJob);
         iolib::unlock_table($base);
         if ($err != 0) {

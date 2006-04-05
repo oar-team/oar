@@ -114,6 +114,17 @@ iolib::set_job_bpid($base,$Jid,$hostpid);
 
 oar_debug("[bipbip $Jid] JOB: $Jid; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
+###################################
+# PROLOGUE EXECUTED ON OAR SERVER #
+###################################
+#
+# Script is executing with arguments : 
+#     - job id
+#     - user
+#     - queue name
+#     - list of job types
+
+
 
 # check nodes
 oar_debug("[bipbip $Jid] Check nodes\n");

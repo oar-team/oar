@@ -358,7 +358,7 @@ sub check_jobs_to_kill($){
         if (defined($besteffort_resource_occupation{$r})){
             oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $besteffort_resource_occupation{$r} must be killed\n");
             iolib::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[oar_scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
-            iolib::lock_table($dbh,["frag_jobs","event_logs"]);
+            iolib::lock_table($dbh,["frag_jobs","event_logs","jobs"]);
             iolib::frag_job($dbh, $besteffort_resource_occupation{$r});
             iolib::unlock_table($dbh);
             $return = 1;

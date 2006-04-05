@@ -87,7 +87,7 @@ foreach my $job (@result){
     if ($current > $start+$max){
         oar_debug(" (Elapsed)");
         $guilty_found=1;
-        iolib::lock_table($base,["frag_jobs","event_logs"]);
+        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         iolib::frag_job($base, $job->{job_id});
         iolib::unlock_table($base);
         iolib::add_new_event($base,"WALLTIME",$job->{job_id},"[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
