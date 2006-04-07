@@ -169,18 +169,19 @@ CREATE TABLE jobs (
   message varchar(255) NOT NULL default '',
   job_user varchar(20) NOT NULL default '',
   command text,
-  bpid varchar(255) default NULL,
   queue_name varchar(100) NOT NULL default '',
   properties text,
-  launching_directory varchar(255) NOT NULL default '',
+  launching_directory text NOT NULL ,
   submission_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
   start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
   stop_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
   file_id integer default NULL,
   accounted varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
-  mail varchar(255) default NULL,
+  notify varchar(255) default NULL,
   assigned_moldable_job integer default '0',
   checkpoint integer NOT NULL default '0',
+  stdout_file text NOT NULL ,
+  stderr_file text NOT NULL ,
   PRIMARY KEY  (job_id)
 );
 CREATE INDEX state ON jobs (state);

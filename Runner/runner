@@ -19,7 +19,6 @@ if (defined($ENV{OARDIR})){
 }
 
 my $batch = $binpath."bipbip";
-my $inter = $binpath."bipbip";
 
 my $exitCode = 0;
 
@@ -90,10 +89,8 @@ foreach my $job (@joblist) {
     #    oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
     #} else {
         iolib::set_job_state($base,$jobid,"Launching");
-        my $cmdtofork = "";
         if($jobtype eq "INTERACTIVE"){
-            oar_debug("[Runner] Interactive request nothing to do Answer to the client Qsub -I\n");
-            # repondre au client sur jobinfo
+            oar_debug("[Runner] Interactive request ;Answer to the client Qsub -I\n");
             if (answer($jobid,$jobinfo,"GOOD JOB") == 1){
                 oar_warn("[Runner] Frag job $jobid, I cannot notify oarsub\n");
                 iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
@@ -101,13 +98,10 @@ foreach my $job (@joblist) {
                 iolib::unlock_table($base);
                 $exitCode = 1;
             }
-        }else{
-            $cmdtofork = $batch;
-            oar_debug("[Runner] try to execute $cmdtofork $jobid \n");
-            my $res;
-            #my $res = oar_Tools::fork_no_wait("$cmdtofork $jobid ");
-            oar_debug("[Runner] Child PID = $res\n");
         }
+        oar_debug("[Runner] try to execute $batch $jobid \n");
+        my $res = oar_Tools::fork_no_wait("$batch $jobid ");
+        oar_debug("[Runner] Child PID = $res\n");
     #}
 }
 

@@ -4,115 +4,70 @@ use oar_iolib;
 use Sys::Hostname;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Judas qw(oar_debug oar_warn oar_error);
-use ping_checker qw(test_hosts);
-use POSIX qw(:signal_h :sys_wait_h);
+use ping_checker;
 use oar_Tools;
+use Data::Dumper;
 
-#essential : you become oar instead of the user
-#UID=EUID
-$< = $>;
-
-my $Jid= shift;
-my $OarExecReattachExitValue = shift;
+my $Job_id= shift;
+my $Oarexec_reattach_exit_value = shift;
 my $Oarexec_challenge = shift;
-
-#overwrite env variables because we execute this script suid
-$ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
-$ENV{USER}="oar";
-$ENV{USERNAME}="oar";
-$ENV{LOGNAME}="oar";
-
-#hang signals
-my $sigset   = POSIX::SigSet->new;
-my $blockset = POSIX::SigSet->new(SIGINT, SIGQUIT, SIGUSR1);
-sigprocmask(SIG_BLOCK, $blockset, $sigset);
 
 #get server conf
 init_conf("oar.conf");
-my $remote_host = get_conf("SERVER_HOSTNAME");
-my $remote_port = get_conf("SERVER_PORT");
+my $Remote_host = get_conf("SERVER_HOSTNAME");
+my $Remote_port = get_conf("SERVER_PORT");
 
-my $deploy_hostname = get_conf("DEPLOY_HOSTNAME");
-if (!defined($deploy_hostname)){
-    $deploy_hostname = $remote_host;
-}
-
-my $detach_job = get_conf("DETACH_JOB");
-if (!defined($detach_job)){
-    $detach_job = 1;
-}
-
-#Launch the oarexec command
-# arg1 --> command
-# arg2 --> host
-# arg3 --> enable or not pseudo tty option for ssh
-sub launch($$$){
-    my $usercmd=shift;
-    my $host=shift;
-    my $tty=shift;
-
-    my $opt="";
-
-    if($tty==1){
-        $opt="-t";
-    }
-    my $cmd = "ssh -x $opt ".$host." $usercmd ";
-
-    oar_debug("[bipbip $Jid] Launch command : $cmd\n");
-    
-    system($cmd);
-    
-    my $exit_value  = $? >> 8;
-    oar_debug("[bipbip $Jid] oarexec return code = $exit_value\n");
-
-    return($exit_value);
+my $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
+if (!defined($Deploy_hostname)){
+    $Deploy_hostname = $Remote_host;
 }
 
 my $base;
-my @hosts;
 
 $base = iolib::connect();
 
-my $job = iolib::get_job($base,$Jid);
-my $job_challenge = iolib::get_job_challenge($base,$Jid);
+my $job = iolib::get_job($base,$Job_id);
+my $job_challenge = iolib::get_job_challenge($base,$Job_id);
 
-@hosts = iolib::get_job_current_hostnames($base,$Jid);
+my @hosts = iolib::get_job_current_hostnames($base,$Job_id);
 
 if($#hosts < 0){
-    oar_error("[bipbip $Jid] A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???\n");
+    oar_error("[bipbip $Job_id] A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???\n");
+    iolib::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???");
+    iolib::disconnect($base);
     exit 1;
 }
 
-my $hostToConnectViaSSH = $hosts[0];
+my $host_to_connect_via_ssh = $hosts[0];
 #deploy part
-if ($job->{deploy_feature} eq "YES"){
-    $hostToConnectViaSSH = $deploy_hostname;
+my $types = iolib::get_current_job_types($base,$Job_id);
+if (defined($types->{deploy})){
+    $host_to_connect_via_ssh = $Deploy_hostname;
 }
 #deploy part
 
-#check if we must reconnect an oarexec?
-if (defined($OarExecReattachExitValue)){
-    iolib::disconnect($base);
-    if ($OarExecReattachExitValue =~ m/\d+/m){
+#check if we must treate the end of a oarexec
+if (defined($Oarexec_reattach_exit_value)){
+    if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
-            checkEndOfJob($OarExecReattachExitValue);
+            iolib::check_end_of_job($base, $Job_id, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory});
+            iolib::disconnect($base);
             exit(0);
         }else{
-            oar_error("[bipbip $Jid] Bad challenge from oarexec, perhaps a pirate attack??? ($Oarexec_challenge).\n");
+            oar_error("[bipbip $Job_id] Bad challenge from oarexec, perhaps a pirate attack??? ($Oarexec_challenge).\n");
+            iolib::add_new_event($base, "BIPBIP_CHALLENGE", $Job_id, "Bad challenge from oarexec, perhaps a pirate attack??? ($Oarexec_challenge)");
+            iolib::disconnect($base);
             exit(2);
         }
     }else{
-        oar_error("[bipbip $Jid] Bad argument for bipbip : $OarExecReattachExitValue\n");
+        oar_error("[bipbip $Job_id] Bad argument for bipbip : $Oarexec_reattach_exit_value\n");
+        iolib::disconnect($base);
         exit(2);
     }
 }
 
-#record bipbip pid and host in data base (I'm bipbip :-) )
-my $hostname = hostname;
-my $hostpid="$hostname:$$";
-iolib::set_job_bpid($base,$Jid,$hostpid);
-
-oar_debug("[bipbip $Jid] JOB: $Jid; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
+# ELSE we must launch oarexec on the first node
+oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 ###################################
 # PROLOGUE EXECUTED ON OAR SERVER #
@@ -126,175 +81,68 @@ oar_debug("[bipbip $Jid] JOB: $Jid; User: $job->{job_user}; Command: $job->{comm
 
 
 
-# check nodes
-oar_debug("[bipbip $Jid] Check nodes\n");
-my @bad = test_hosts(@hosts);
+# CHECK nodes
+oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
+my @bad = ping_checker::test_hosts(@hosts);
 if ($#bad >= 0){
     iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_log"]);
+    iolib::set_job_state($base,$Job_id,"Error");
     iolib::remove_current_assigned_resources($base,$job->{assigned_moldable_job});
-    iolib::set_job_state($base,$Jid,"Error");
-    iolib::set_job_message($base,$Jid,"Blacklist job nodes");
+    iolib::set_job_message($base,$Job_id,"Several nodes are not responding");
     iolib::unlock_table($base);
-    oar_error("[bipbip $Jid] /!\\ Sorry but some nodes are inaccessible\n");
-    iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Jid,"[bipbip] Ping_checker suspects  nodes for the job $Jid : @bad",\@bad);
-    oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+    oar_error("[bipbip $Job_id] /!\\ Sorry but some nodes are inaccessiblei : @bad\n");
+    iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Job_id,"[bipbip] Ping_checker suspects  nodes for the job $Job_id : @bad",\@bad);
+    oar_Tools::notifyTCPSocket($Remote_host,$Remote_port,"ChState");
+    iolib::disconnect($base);
     exit(2);
 }else{
-    oar_debug("[bipbip $Jid] No bad nodes\n");
+    oar_debug("[bipbip $Job_id] No bad node\n");
 }
+# end CHECK
 
-# end of verif
-
-iolib::set_job_state($base,$Jid,"Running");
+iolib::set_job_state($base,$Job_id,"Running");
 
 #CALL OAREXEC ON THE FIRST NODE
-if($job->{command} eq ""){
-    iolib::disconnect($base);
-    oar_debug("[bipbip $Jid] execute an interactive command\n");
-    my $error = launch("oarexec $Jid $user $launchingDirectory $weight 0 @hosts ",$hostToConnectViaSSH,1);
-    checkEndOfJob($error);
+my $moldable = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
+my $types = iolib::get_current_job_types($base,$Job_id);
+my @resources = iolib::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
+my %data_to_transfer = (
+        job_id              => $Job_id,
+        stdout_file         => $job->{stdout_file},
+        stderr_file         => $job->{stderr_file},
+        launching_directory => $job->{launching_directory},
+        resources           => \@resources,
+        user                => $job->{job_user},
+        types               => $types,
+        name                => $job->{job_name},
+        reservation         => $job->{reservation},
+        walltime            => $moldable->{moldable_walltime},
+        command             => $job->{command},
+        challenge           => $job_challenge
+    );
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
+my ($w,$r,$e);
+open3($w, $r, $e, "ssh -x $host_to_connect_via_ssh oarexec $Job_id");
+print($w Dumper(\%data_to_transfer)."\n");
+
+wait();
+my $error = $? >> 8;
+    
+if ($error == 0){
+    oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");
 }else{
-    if ($detach_job == 1){
-        oar_debug("[bipbip $Jid] execute a NON interactive command and detach the oarexec\n");
-        my $error = launch(" \' oarexec $Jid $user $launchingDirectory $weight 1 @hosts -- $usercmd  \'",$hostToConnectViaSSH,0);
-    
-        iolib::set_job_bpid($base,$Jid,"");
-        iolib::disconnect($base);
-    
-        if ($error == 0){
-            oar_debug("[bipbip $Jid] Exit from bipbip normaly\n");
-            exit(0);
-        }else{
-            oar_debug("[bipbip $Jid] Oarexec returned an early error --> check end of job\n");
-            checkEndOfJob($error);
-        }
-    }else{
-        iolib::disconnect($base);
-        oar_debug("[bipbip $Jid] execute a NON interactive command WITHOUT detaching oarexec\n");
-        my $error = launch(" \' oarexec $Jid $user $launchingDirectory $weight 0 @hosts -- $usercmd \'",$hostToConnectViaSSH,0);
-        checkEndOfJob($error);
-    }
+    oar_debug("[bipbip $Job_id] Oarexec returned an early error --> check end of job\n");
+    iolib::check_end_of_job($base,$Job_id,$error,\@hosts,$Remote_host,$Remote_port,$job->{job_user},$job->{launching_directory});
 }
 
-
-sub checkEndOfJob($){
-    my $error = shift;
-
-    my $base = iolib::connect();
-
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_moldable_job","resource_state_logs","event_logs"]);
-    my $refJob = iolib::get_job($base,$Jid);
-    if ($refJob->{'state'} eq "Running"){
-        oar_debug("[bipbip $Jid] Job $Jid is ended\n");
-        iolib::set_finish_date($base,$Jid);
-        oar_debug("[bipbip $Jid] Release nodes \n");
-        iolib::remove_current_assigned_resources($base,$refJob->{assigned_moldable_job});
-        if($error == 0){
-            oar_debug("[bipbip $Jid] User Launch completed OK\n");
-            iolib::set_job_state($base,$Jid,"Terminated");
-            iolib::set_job_message($base,$Jid,"ALL is GOOD");
-        }elsif ($error == 1){
-            #Prologue error
-            my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts[0] is Suspected";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 2){
-            #Epilogue error
-            my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts[0] is Suspected; (jobId = $Jid)";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Terminated");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 3){
-            #Oarexec is killed by Leon normaly
-            my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
-            oar_debug("$strWARN\n");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-        }elsif ($error == 4){
-            #Oarexec was killed by Leon and epilogue of oarexec is in error
-            my $strWARN = "[bipbip $Jid] The job $Jid was killing by Leon and oarexec epilogue was in error";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 5){
-            #Oarexec is not able write in the node file
-            my $strWARN = "[bipbip $Jid] oarexec can t create the node file";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"CAN_NOT_WRITE_NODE_FILE",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 6){
-            #Oarexec can not write its pid file
-            my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"CAN_NOT_WRITE_PID_FILE",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 7){
-            #Can t get shell of user
-            my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts[0]";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 10){
-            #oarexecuser.sh can not go into working directory
-            my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts[0]";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-        }elsif ($error == 20){
-            #oarexecuser.sh can not write stdout and stderr files
-            my $strWARN = "[bipbip $Jid] Can't create .stdout and .stderr files in $launchingDirectory on the node $hosts[0]";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-        }elsif ($error == 12){
-            #oarexecuser.sh can not go into working directory and epilogue is in error
-            my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts[0] AND epilogue is in error";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
-            iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 22){
-            #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
-            my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts[0] AND epilogue is in error";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
-            iolib::add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }else{
-            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts[0] is Suspected";
-            oar_warn("$strWARN\n");
-            iolib::add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
-            iolib::set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
-        }
-    }else{
-        oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
-    }
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-
-
-    oar_Tools::notifyTCPSocket($remote_host,$remote_port,"BipBip");
-}
+iolib::disconnect($base);
 
 exit(0);
 

@@ -10,6 +10,7 @@ my $defaultLeonSoftWalltime = 20;
 my $defaultLeonWalltime = 60;
 my $timeoutSSH = 30;
 my $oarexecPidFileName = "/tmp/pid_of_oarexec_for_jobId_";
+my $oarexec_init_string = "line_to_mark_init_connexion_between_bipbip_and_oarexec_after_ssh_initialisation\n";
 
 # Prototypes
 sub getAllProcessChilds();
@@ -20,6 +21,7 @@ sub getOarPidFileName($);
 sub getSSHTimeout();
 sub getDefaultLeonSoftWalltime();
 sub getDefaultLeonWalltime();
+sub getInitSSHString();
 sub checkClientHostIP($$$);
 sub fork_no_wait($);
 sub launch_command($);
@@ -33,6 +35,11 @@ sub getDefaultLeonSoftWalltime(){
 # Get default Leon soft walltime value for Sarko
 sub getDefaultLeonWalltime(){
     return($defaultLeonWalltime);
+}
+
+# Get string to init SSH connexion
+sub getInitSSHString(){
+    return($oarexec_init_string);
 }
 
 # return a hashtable of all child in arrays

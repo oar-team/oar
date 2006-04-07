@@ -18,6 +18,7 @@ use Time::Local;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use strict;
 use oar_resource_tree;
+use oar_Tools;
 
 # PROTOTYPES
 
@@ -29,7 +30,6 @@ sub disconnect($);
 # JOBS MANAGEMENT
 sub get_job_bpid($$);
 sub get_job_challenge($$);
-sub set_job_bpid($$$);
 sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
 sub get_job_current_hostnames($$);
@@ -355,24 +355,6 @@ sub get_job_challenge($$){
 }
 
 
-# set_job_bpid
-# sets the bipbip pid of a OAR Job
-# parameters : base, jobid, pid
-# return value : /
-# side effects : changes the bpid of the job in the base
-sub set_job_bpid($$$){
-    my $dbh = shift;
-    my $idJob = shift;
-    my $bipbippid= shift;
-
-    $dbh->do("   UPDATE jobs
-                 SET bpid = $bipbippid
-                 WHERE
-                     job_id = $idJob
-             ");
-}
-
-
 # get_jobs_in_state
 # returns the list of ids of jobs in the specified state
 # parameters : base, job state
@@ -419,7 +401,7 @@ sub get_job_current_hostnames($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT resources.network_address as hostname
+    my $sth = $dbh->prepare("SELECT distinct(resources.network_address) as hostname, resources.resource_id
                              FROM assigned_resources, resources, moldable_job_descriptions
                              WHERE 
                                 assigned_resources.assigned_resource_index = \'CURRENT\'
@@ -2298,8 +2280,34 @@ sub get_current_assigned_resources($) {
     }
     $sth->finish();
 
-    return @result;
+    return(@result);
 }
+
+
+# get_current_assigned_job_resources
+# returns the current resources ref for a job
+# parameters : base, moldable id
+sub get_current_assigned_job_resources($$){
+    my $dbh = shift;
+    my $mold_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT resources.*
+                                FROM assigned_resources, resources
+                                WHERE
+                                    assigned_resource_index = \'CURRENT\'
+                                    AND assigned_resources.moldable_job_id = $mold_id
+                                    AND resources.resource_id = assigned_resources.resource_id
+                            ");
+    $sth->execute();
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        push(@result, $ref);
+    }
+    $sth->finish();
+
+    return(@result);
+}
+
 
 # get_current_free_resources_of_node
 # return an array of free resources for the specified network_address
@@ -3742,6 +3750,130 @@ sub unlock_table($){
     }else{
         $dbh->do("UNLOCK TABLE");
     }
+}
+
+
+# check_end_job($$$){
+sub check_end_of_job($$$$$$$$){
+    my $base = shift;
+    my $Jid = shift;
+    my $error = shift;
+    my $hosts = shift;
+    my $remote_host = shift;
+    my $remote_port = shift;
+    my $user = shift;
+    my $launchingDirectory = shift;
+
+    lock_table($base,["jobs","job_state_logs","resources","assigned_moldable_job","resource_state_logs","event_logs"]);
+    my $refJob = get_job($base,$Jid);
+    if ($refJob->{'state'} eq "Running"){
+        oar_debug("[bipbip $Jid] Job $Jid is ended\n");
+        set_finish_date($base,$Jid);
+        oar_debug("[bipbip $Jid] Release nodes \n");
+        remove_current_assigned_resources($base,$refJob->{assigned_moldable_job});
+        if($error == 0){
+            oar_debug("[bipbip $Jid] User Launch completed OK\n");
+            set_job_state($base,$Jid,"Terminated");
+            set_job_message($base,$Jid,"ALL is GOOD");
+        }elsif ($error == 1){
+            #Prologue error
+            my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 2){
+            #Epilogue error
+            my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts->[0] is Suspected; (jobId = $Jid)";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Terminated");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 3){
+            #Oarexec is killed by Leon normaly
+            my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
+            oar_debug("$strWARN\n");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+        }elsif ($error == 4){
+            #Oarexec was killed by Leon and epilogue of oarexec is in error
+            my $strWARN = "[bipbip $Jid] The job $Jid was killing by Leon and oarexec epilogue was in error";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 5){
+            #Oarexec is not able write in the node file
+            my $strWARN = "[bipbip $Jid] oarexec can t create the node file";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"CAN_NOT_WRITE_NODE_FILE",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            iolib::set_job_message($base,$Jid,"$strWARN");
+            notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 6){
+            #Oarexec can not write its pid file
+            my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"CAN_NOT_WRITE_PID_FILE",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 7){
+            #Can t get shell of user
+            my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts->[0]";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 10){
+            #oarexecuser.sh can not go into working directory
+            my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts->[0]";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+        }elsif ($error == 20){
+            #oarexecuser.sh can not write stdout and stderr files
+            my $strWARN = "[bipbip $Jid] Can't create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+        }elsif ($error == 12){
+            #oarexecuser.sh can not go into working directory and epilogue is in error
+            my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
+            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 22){
+            #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
+            my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
+            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }else{
+            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }
+    }else{
+        oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
+    }
+    unlock_table($base);
+
+    oar_Tools::notifyTCPSocket($remote_host,$remote_port,"BipBip");
 }
 
 # END OF THE MODULE
