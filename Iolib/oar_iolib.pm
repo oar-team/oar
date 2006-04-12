@@ -46,7 +46,7 @@ sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
@@ -794,8 +794,8 @@ sub get_possible_wanted_resources($$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $mail, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $mail, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -877,8 +877,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$) {
     my $date = get_date($dbh);
     lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,mail)
-              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',\'$command\',\'$date\',\'$queue_name\',\'$jobproperties\',\'$launching_directory\',\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,\'$job_name\',\'$mail\')
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,mail,checkpoint_signal)
+              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',\'$command\',\'$date\',\'$queue_name\',\'$jobproperties\',\'$launching_directory\',\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,\'$job_name\',\'$mail\',\'$checkpoint_signal\')
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -3806,7 +3806,7 @@ sub check_end_of_job($$$$$$$$){
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 5){
             #Oarexec is not able write in the node file
-            my $strWARN = "[bipbip $Jid] oarexec can t create the node file";
+            my $strWARN = "[bipbip $Jid] oarexec cannot create the node file";
             oar_warn("$strWARN\n");
             add_new_event($base,"CAN_NOT_WRITE_NODE_FILE",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
@@ -3822,7 +3822,7 @@ sub check_end_of_job($$$$$$$$){
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 7){
             #Can t get shell of user
-            my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts->[0]";
+            my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
@@ -3830,21 +3830,21 @@ sub check_end_of_job($$$$$$$$){
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
-            my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts->[0]";
+            my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
             set_job_message($base,$Jid,"$strWARN");
         }elsif ($error == 20){
             #oarexecuser.sh can not write stdout and stderr files
-            my $strWARN = "[bipbip $Jid] Can't create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
+            my $strWARN = "[bipbip $Jid] Cannot create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
             set_job_message($base,$Jid,"$strWARN");
         }elsif ($error == 12){
             #oarexecuser.sh can not go into working directory and epilogue is in error
-            my $strWARN = "[bipbip $Jid] Can't go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
+            my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
             oar_warn("$strWARN\n");
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
@@ -3853,7 +3853,7 @@ sub check_end_of_job($$$$$$$$){
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 22){
             #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
-            my $strWARN = "[bipbip $Jid] Can't get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
+            my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
             oar_warn("$strWARN\n");
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");

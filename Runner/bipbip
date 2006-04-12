@@ -17,6 +17,11 @@ init_conf("oar.conf");
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 
+my $Almighty_hostname = $Remote_host;
+if (($Almighty_hostname =~ /^\s*localhost.*$/) or ($Almighty_hostname =~ /^\s*127.*$/)){
+    $Almighty_hostname = hostname();
+}
+
 my $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
 if (!defined($Deploy_hostname)){
     $Deploy_hostname = $Remote_host;
@@ -119,7 +124,10 @@ my %data_to_transfer = (
         reservation         => $job->{reservation},
         walltime            => $moldable->{moldable_walltime},
         command             => $job->{command},
-        challenge           => $job_challenge
+        challenge           => $job_challenge,
+        almighty_hostname   => $Almighty_hostname,
+        almighty_port       => $Remote_port,
+        checkpoint_signal   => $job->{checkpoint_signal}
     );
 
 # suitable Data::Dumper configuration for serialization

@@ -180,6 +180,7 @@ CREATE TABLE jobs (
   notify varchar(255) default NULL,
   assigned_moldable_job integer default '0',
   checkpoint integer NOT NULL default '0',
+  checkpoint_signal integer NOT NULL,
   stdout_file text NOT NULL ,
   stderr_file text NOT NULL ,
   PRIMARY KEY  (job_id)

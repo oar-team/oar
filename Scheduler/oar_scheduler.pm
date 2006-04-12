@@ -9,6 +9,9 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 
 #minimum of seconds between each jobs
 my $security_time_overhead = 1;
+if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
+    $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
+}
 
 # waiting time when a reservation has not all of its nodes
 my $reservationWaitingTimeout = 300;
