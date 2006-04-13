@@ -3774,14 +3774,12 @@ sub check_end_of_job($$$$$$$$){
         if($error == 0){
             oar_debug("[bipbip $Jid] User Launch completed OK\n");
             set_job_state($base,$Jid,"Terminated");
-            set_job_message($base,$Jid,"ALL is GOOD");
         }elsif ($error == 1){
             #Prologue error
             my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             oar_warn("$strWARN\n");
             add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 2){
             #Epilogue error
@@ -3795,14 +3793,12 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
             oar_debug("$strWARN\n");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
         }elsif ($error == 4){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
             my $strWARN = "[bipbip $Jid] The job $Jid was killing by Leon and oarexec epilogue was in error";
             oar_warn("$strWARN\n");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 5){
             #Oarexec is not able write in the node file
@@ -3810,7 +3806,6 @@ sub check_end_of_job($$$$$$$$){
             oar_warn("$strWARN\n");
             add_new_event($base,"CAN_NOT_WRITE_NODE_FILE",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            iolib::set_job_message($base,$Jid,"$strWARN");
             notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 6){
             #Oarexec can not write its pid file
@@ -3818,7 +3813,6 @@ sub check_end_of_job($$$$$$$$){
             oar_warn("$strWARN\n");
             add_new_event($base,"CAN_NOT_WRITE_PID_FILE",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 7){
             #Can t get shell of user
@@ -3826,7 +3820,6 @@ sub check_end_of_job($$$$$$$$){
             oar_warn("$strWARN\n");
             add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
@@ -3834,14 +3827,12 @@ sub check_end_of_job($$$$$$$$){
             oar_warn("$strWARN\n");
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
         }elsif ($error == 20){
             #oarexecuser.sh can not write stdout and stderr files
             my $strWARN = "[bipbip $Jid] Cannot create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
         }elsif ($error == 12){
             #oarexecuser.sh can not go into working directory and epilogue is in error
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
@@ -3849,7 +3840,6 @@ sub check_end_of_job($$$$$$$$){
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }elsif ($error == 22){
             #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
@@ -3858,14 +3848,26 @@ sub check_end_of_job($$$$$$$$){
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 30){
+            #oarexec timeout on bipbip hashtable transfer via SSH
+            my $strWARN = "[bipbip $Jid] Timeout SSH hashtable transfer on $hosts->[0]";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"SSH_TRANSFER_TIMEOUT",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 31){
+            #oarexec got a bad hashtable dump from bipbip
+            my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"BAD_HASHTABLE_DUMP",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             oar_warn("$strWARN\n");
             add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            set_job_message($base,$Jid,"$strWARN");
             oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
         }
     }else{
