@@ -3780,14 +3780,14 @@ sub check_end_of_job($$$$$$$$){
             oar_warn("$strWARN\n");
             add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 2){
             #Epilogue error
             my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts->[0] is Suspected; (jobId = $Jid)";
             oar_warn("$strWARN\n");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Terminated");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
             my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
@@ -3799,28 +3799,35 @@ sub check_end_of_job($$$$$$$$){
             oar_warn("$strWARN\n");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 5){
             #Oarexec is not able write in the node file
             my $strWARN = "[bipbip $Jid] oarexec cannot create the node file";
             oar_warn("$strWARN\n");
-            add_new_event($base,"CAN_NOT_WRITE_NODE_FILE",$Jid,"$strWARN");
+            add_new_event($base,"CANNOT_WRITE_NODE_FILE",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 6){
             #Oarexec can not write its pid file
             my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
             oar_warn("$strWARN\n");
-            add_new_event($base,"CAN_NOT_WRITE_PID_FILE",$Jid,"$strWARN");
+            add_new_event($base,"CANNOT_WRITE_PID_FILE",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 7){
             #Can t get shell of user
             my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 8){
+            #Oarexec can not create tmp directory
+            my $strWARN = "[bipbip $Jid] oarexec cannot create tmp directory on $hosts->[0] : ".oar_Tools::get_default_oarexec_directory();
+            oar_warn("$strWARN\n");
+            add_new_event($base,"CANNOT_CREATE_TMP_DIRECTORY",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0]";
@@ -3840,7 +3847,7 @@ sub check_end_of_job($$$$$$$$){
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 22){
             #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
             my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
@@ -3848,34 +3855,46 @@ sub check_end_of_job($$$$$$$$){
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 30){
             #oarexec timeout on bipbip hashtable transfer via SSH
             my $strWARN = "[bipbip $Jid] Timeout SSH hashtable transfer on $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"SSH_TRANSFER_TIMEOUT",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 31){
             #oarexec got a bad hashtable dump from bipbip
             my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"BAD_HASHTABLE_DUMP",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 33){
+            #oarexec received a SIGUSR1 signal and there was an epilogue error
+            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal and there was an epilogue error";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 34){
+            #oarexec received a SIGUSR1 signal
+            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             oar_warn("$strWARN\n");
             add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }
     }else{
         oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
     }
     unlock_table($base);
 
-    oar_Tools::notifyTCPSocket($remote_host,$remote_port,"BipBip");
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"BipBip");
 }
 
 # END OF THE MODULE

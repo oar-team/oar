@@ -84,7 +84,7 @@ while(scalar(@JobToFrag)){
             oar_debug("[Leon] I notify oarsub in waiting mode\n");
             #answer($Jid,$refJob->{'infoType'},"JOB KILLED");
             my ($addr,$port) = split(/:/,$refJob->{'info_type'});
-            if (!defined(oar_Tools::notifyTCPSocket($addr, $port, "JOB KILLED"))){
+            if (!defined(oar_Tools::notify_tcp_socket($addr, $port, "JOB KILLED"))){
                 oar_debug("[Leon] Notification done\n");
             }else{
                 oar_debug("[Leon] Cannot open connection to oarsub client for job $Jid, it is normal if user typed Ctrl-C !!!!!!\n");

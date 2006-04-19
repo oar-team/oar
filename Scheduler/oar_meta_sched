@@ -16,6 +16,11 @@ my $exit_code = 0;
 my $base = iolib::connect();
 
 init_conf("oar.conf");
+my $security_time_overhead = 1;
+if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
+    $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
+}
+
 my $binpath;
 if (defined($ENV{OARDIR})){
     $binpath = $ENV{OARDIR}."/";
@@ -25,7 +30,7 @@ if (defined($ENV{OARDIR})){
 
 oar_debug("[MetaSched] Start of meta scheduler\n");
 
-oar_scheduler::init_scheduler($base);
+oar_scheduler::init_scheduler($base,$security_time_overhead);
 
 my %initialTime = oar_scheduler::get_initial_time();
 my @queues = iolib::get_active_queues($base);

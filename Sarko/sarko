@@ -150,6 +150,27 @@ foreach my $job (@result){
 #    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
 #}
 
+my $dead_switch_time = 300;
+if (is_conf("DEAD_SWITCH_TIME")){
+    $dead_switch_time = get_conf("DEAD_SWITCH_TIME");
+}
+# Get Absent and Suspected nodes for more than 5 mn (default)
+if ($dead_switch_time > 0){
+    my $notify = 0;
+    foreach my $r (iolib::get_absent_suspected_resources_for_a_timeout($base,$dead_switch_time)){
+        iolib::set_resource_nextState($base,$r,"Dead");
+        iolib::update_resource_nextFinaudDecision($base,$r,"YES");
+        oar_debug("[Sarko] Set the next state of $r to Dead\n");
+        $notify = 1;
+    }
+    if ($notify > 0){
+        my $remote_host = get_conf("SERVER_HOSTNAME");
+        my $remote_port = get_conf("SERVER_PORT");
+        oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+    }
+}
+                                                                             
+
 iolib::disconnect($base);
 
 exit $guilty_found;

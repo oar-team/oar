@@ -101,7 +101,7 @@ if ($#bad >= 0){
     iolib::unlock_table($base);
     oar_error("[bipbip $Job_id] /!\\ Sorry but some nodes are inaccessiblei : @bad\n");
     iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Job_id,"[bipbip] Ping_checker suspects  nodes for the job $Job_id : @bad",\@bad);
-    oar_Tools::notifyTCPSocket($Remote_host,$Remote_port,"ChState");
+    oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
     iolib::disconnect($base);
     exit(2);
 }else{
@@ -126,13 +126,14 @@ my %data_to_transfer = (
         types               => $types,
         name                => $job->{job_name},
         reservation         => $job->{reservation},
-        walltime            => $moldable->{moldable_walltime},
+        walltime            => iolib::sql_to_duration($moldable->{moldable_walltime}),
         command             => $job->{command},
         challenge           => $job_challenge,
         almighty_hostname   => $Almighty_hostname,
         almighty_port       => $Remote_port,
         checkpoint_signal   => $job->{checkpoint_signal},
-        debug_mode          => $Debug_mode
+        debug_mode          => $Debug_mode,
+        mode                => $job->{job_type}
     );
 
 # suitable Data::Dumper configuration for serialization

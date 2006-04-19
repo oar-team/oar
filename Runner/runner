@@ -30,7 +30,7 @@ sub answer ($$$){
     my $error = 0;
     my ($addr,$port) = split(/:/,$info);
     oar_debug("[Runner] oarsub addr:port = $addr:$port info = $info\n");
-    if(!defined(oar_Tools::notifyTCPSocket($addr,$port,"$message"))){
+    if(!defined(oar_Tools::notify_tcp_socket($addr,$port,"$message"))){
         oar_debug("[Runner] Notification done\n");
     }else{
         oar_error("[Runner] Cannot open connection to oarsub client for job $jobid !\n");
@@ -59,7 +59,7 @@ for my $j (@jobResaToAck){
     oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
     if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
         oar_warn("[Runner] Frag job $j->{job_id}), I cannot notify oarsub for the reservation\n");
-        iolib::add_new_event($base,"CAN_NOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
+        iolib::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         iolib::frag_job($base,$j->{job_id});
         iolib::unlock_table($base);
@@ -89,6 +89,7 @@ foreach my $job (@joblist) {
     #    oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
     #} else {
         iolib::set_job_state($base,$jobid,"Launching");
+        my $do_not_launch = 0;
         if($jobtype eq "INTERACTIVE"){
             oar_debug("[Runner] Interactive request ;Answer to the client Qsub -I\n");
             if (answer($jobid,$jobinfo,"GOOD JOB") == 1){
@@ -96,12 +97,15 @@ foreach my $job (@joblist) {
                 iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
                 iolib::frag_job($base,$jobid);
                 iolib::unlock_table($base);
+                $do_not_launch = 1;
                 $exitCode = 1;
             }
         }
-        oar_debug("[Runner] try to execute $batch $jobid \n");
-        my $res = oar_Tools::fork_no_wait("$batch $jobid ");
-        oar_debug("[Runner] Child PID = $res\n");
+        if ($do_not_launch == 0){
+            oar_debug("[Runner] try to execute $batch $jobid \n");
+            #my $res = oar_Tools::fork_no_wait("$batch $jobid ");
+            #oar_debug("[Runner] Child PID = $res\n");
+        }
     #}
 }
 

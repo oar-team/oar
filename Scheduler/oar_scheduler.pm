@@ -8,10 +8,7 @@ use Gantt;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 
 #minimum of seconds between each jobs
-my $security_time_overhead = 1;
-if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
-    $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
-}
+my $Security_time_overhead = 1;
 
 # waiting time when a reservation has not all of its nodes
 my $reservationWaitingTimeout = 300;
@@ -33,8 +30,13 @@ sub get_initial_time(){
 
 #Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs;
 # arg1 --> database ref
-sub init_scheduler($){
+sub init_scheduler($$){
     my $dbh = shift;
+    my $secure_time = shift;
+
+    if ($secure_time > 1){
+        $Security_time_overhead = $secure_time;
+    }
 
     # Take care of the currently (or nearly) running jobs
     # Lock to prevent bipbip update in same time
@@ -83,7 +85,7 @@ sub init_scheduler($){
             foreach my $r (@resource_list){
                 Gantt::set_occupation(  $gantt,
                                         iolib::sql_to_local($date),
-                                        iolib::sql_to_duration($mold->{moldable_walltime}) + $security_time_overhead,
+                                        iolib::sql_to_duration($mold->{moldable_walltime}) + $Security_time_overhead,
                                         $r
                                      );
             }
@@ -111,7 +113,7 @@ sub init_scheduler($){
         foreach my $r (@tmp_resource_list){
             if (Gantt::is_resource_free($gantt,
                                         iolib::sql_to_local($job->{start_time}),
-                                        iolib::sql_to_duration($moldable->[1]) + $security_time_overhead,
+                                        iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
                                         $r->{resource_id}
                                        ) == 1
                ){                       
@@ -154,7 +156,7 @@ sub init_scheduler($){
             foreach my $r (@resources){
                 Gantt::set_occupation(  $gantt,
                                         iolib::sql_to_local($job->{start_time}),
-                                        iolib::sql_to_duration($moldable->[1]) + $security_time_overhead,
+                                        iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
                                         $r
                                      );
             }
@@ -251,7 +253,7 @@ sub check_reservation_jobs($$){
                 foreach my $r (@{$alreadyScheduledJobs{$i}->[3]}){
                     Gantt::set_occupation(  $gantt,
                                          iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
-                                            iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $security_time_overhead,
+                                            iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $Security_time_overhead,
                                             $r
                                          );
                 }
@@ -284,7 +286,7 @@ sub check_reservation_jobs($$){
             foreach my $r (@tmp_resource_list){
                 if (Gantt::is_resource_free($gantt,
                                             iolib::sql_to_local($job->{start_time}),
-                                            $duration + $security_time_overhead,
+                                            $duration + $Security_time_overhead,
                                             $r->{resource_id}
                                            ) == 1
                    ){                       
@@ -328,7 +330,7 @@ sub check_reservation_jobs($$){
                 foreach my $r (@resources){
                     Gantt::set_occupation(  $gantt,
                                             iolib::sql_to_local($job->{start_time}),
-                                            iolib::sql_to_duration($moldable->[1]) + $security_time_overhead,
+                                            iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
                                             $r
                                          );
                 }
@@ -381,10 +383,20 @@ sub check_jobs_to_launch($){
     oar_debug("[oar_scheduler] check_jobs_to_launch : check jobs with a start time <= $current_time_sql\n");
     my $returnCode = 0;
     my %jobs_to_launch = iolib::get_gantt_jobs_to_launch($dbh,$current_time_sql);
+    
     foreach my $i (keys(%jobs_to_launch)){
         oar_debug("[oar_scheduler] check_jobs_to_launch : set job $i in state toLaunch ($current_time_sql)\n");
         iolib::set_job_state($dbh, $i, "toLaunch");
         iolib::set_running_date_arbitrary($dbh,$i,$current_time_sql);
+        # We must look at reservations to not go after the initial stop time
+        my $mold = iolib::get_current_moldable_job($dbh,$jobs_to_launch{$i}->[0]);
+        my $job = iolib::get_job($dbh,$i);
+        if (($job->{reservation} eq "Scheduled") and (iolib::sql_to_local($job->{startTime}) < $current_time_sec)){
+            my $max_time = iolib::duration_to_sql(iolib::sql_to_duration($mold->{moldable_walltime}) - ($current_time_sec - iolib::sql_to_local($job->{start_time})));
+            iolib::set_moldable_job_max_time($dbh,$jobs_to_launch{$i}->[0], $max_time);
+            oar_debug("[oar_scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
+            iolib::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
+        }
         iolib::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
         foreach my $r (@{$jobs_to_launch{$i}->[1]}){
             iolib::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);

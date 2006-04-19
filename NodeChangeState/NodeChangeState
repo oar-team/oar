@@ -22,10 +22,11 @@ foreach my $i (@events_to_check){
     if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
         ($i->{type} eq "PROLOGUE_ERROR") ||
         ($i->{type} eq "EPILOGUE_ERROR") ||
-        ($i->{type} eq "CAN_NOT_WRITE_NODE_FILE") ||
-        ($i->{type} eq "CAN_NOT_WRITE_PID_FILE") ||
+        ($i->{type} eq "CANNOT_WRITE_NODE_FILE") ||
+        ($i->{type} eq "CANNOT_WRITE_PID_FILE") ||
         ($i->{type} eq "USER_SHELL") ||
         ($i->{type} eq "EXTERMINATE_JOB") ||
+        ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         my @hosts;

@@ -1,13 +1,13 @@
 #!/bin/sh
 # launch user shell with OAR variables
 # $1 --> file name where to find reservation node names
-# $2 --> number of nodes
-# $3 --> ID job
-# $4 --> user
-# $5 --> shell
-# $6 --> launchingDirectory
-# $7 --> I if it is an interactive submission else N
-# $8 --> command name
+# $2 --> ID job
+# $3 --> user
+# $4 --> shell
+# $5 --> launchingDirectory
+# $6 --> I if it is an interactive submission else P
+# $7 --> stdout file name
+# $8 --> stderr file name
 # $9 --> command to launch with arguments
 
 
@@ -17,42 +17,44 @@ then
 fi
 
 export OAR_FILE_NODES=$1
-export OAR_NB_NODES=$2
-export OAR_JOBID=$3
-export OAR_USER=$4
-export OAR_WORKDIR=$6
+export OAR_JOBID=$2
+export OAR_USER=$3
+export OAR_WORKDIR=$5
 
 export OAR_NODEFILE=$OAR_FILE_NODES
-export OAR_NODENUM=$OAR_NB_NODES
-export OAR_NODECOUNT=$OAR_NODENUM
-export OAR_O_WORKDIR=$6
+export OAR_O_WORKDIR=$OAR_WORKDIR
+export OAR_NODE_FILE=$OAR_FILE_NODES
+export OAR_RESOURCE_FILE=$OAR_FILE_NODES
+export OAR_WORKING_DIRECTORY=$OAR_WORKDIR
+export OAR_JOB_ID=$OAR_JOBID
 
 #go to working directory
 #( cd $6 >& /dev/null ) && cd $6
-if ( cd $6 &> /dev/null )
+if ( cd $OAR_WORKING_DIRECTORY &> /dev/null )
 then
-    cd $6
+    cd $OAR_WORKING_DIRECTORY
 else
     #Can not go into working directory
     exit 1
 fi
 
-if [ "$7" == "I" ]
+if [ "$6" == "I" ]
 then
-    $5
-elif [ "$7" == "N" ]
+    $4
+elif [ "$6" == "P" ]
 then
-    OUT_FILE="OAR.$8.$OAR_JOBID.stdout"
-    ERR_FILE="OAR.$8.$OAR_JOBID.stderr"
-
+    #OUT_FILE="OAR.$8.$OAR_JOBID.stdout"
+    #ERR_FILE="OAR.$8.$OAR_JOBID.stderr"
+    export OAR_STDOUT=$7
+    export OAR_STDERR=$8
+    
     #Test if we can write into stout and stderr files
-    if ! ( > $OUT_FILE ) &> /dev/null || ! ( > $ERR_FILE ) &> /dev/null
+    if ! ( > $OAR_STDOUT ) &> /dev/null || ! ( > $OAR_STDERR ) &> /dev/null
     then
         exit 2
     fi
     shift 8
-#    ($@ > OAR.$COMMAND_NAME.$OAR_JOBID.stdout) >& OAR.$COMMAND_NAME.$OAR_JOBID.stderr
-    ($@ > $OUT_FILE) >& $ERR_FILE
+    ($@ > $OAR_STDOUT) >& $OAR_STDERR
 fi
 
 exit 0

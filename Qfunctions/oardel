@@ -109,7 +109,7 @@ if (@checkpoint){
     }
     if (@jobRegistered){
         #Signal Almigthy
-        my $strError = oar_Tools::notifyTCPSocket($remote_host,$remote_port,"Qdel");
+        my $strError = oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
         if (defined($strError)){
             warn("$strError\n");
             $exitValue = 2;

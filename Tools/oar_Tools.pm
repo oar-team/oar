@@ -2,7 +2,6 @@ package oar_Tools;
 
 use IO::Socket::INET;
 use oar_Judas qw(oar_debug oar_warn oar_error);
-use warnings;
 use strict;
 
 # Constants

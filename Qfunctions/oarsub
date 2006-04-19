@@ -61,7 +61,7 @@ sub qdel($) {
         print("Job deleted\n");
         #Signal Almigthy
         if ($Al_dead == 0) {
-            oar_Tools::notifyTCPSocket($remote_host,$remote_port,"Qdel");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
             exit(1);
         }
     }
@@ -389,7 +389,7 @@ if ($Job_id < 0){
 
 #Signal Almigthy
 
-if (defined(oar_Tools::notifyTCPSocket($remote_host,$remote_port,"$Cmd_executor"))){
+if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$Cmd_executor"))){
     qdel(1);
     warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
     exit(0);
