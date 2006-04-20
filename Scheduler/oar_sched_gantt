@@ -82,7 +82,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         next if ($skip_job == 1);
         my $dep_job = iolib::get_job($base,$d);
         if (($dep_job->{state} ne "Error") and ($dep_job->{state} ne "Terminated")){
-            my @date_tmp = iolib::get_gantt_job_startTime($base,$d);
+            my @date_tmp = iolib::get_gantt_job_start_time($base,$d);
             if (defined($date_tmp[0])){
                 my $mold_dep = iolib::get_current_moldable_job($base,$date_tmp[1]);
                 my $sched_tmp = iolib::sql_to_local($date_tmp[0]) + iolib::sql_to_duration($mold_dep->{moldable_walltime});

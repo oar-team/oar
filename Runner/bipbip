@@ -7,6 +7,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use ping_checker;
 use oar_Tools;
 use Data::Dumper;
+#use IPC::Open3;
 
 my $Job_id= shift;
 my $Oarexec_reattach_exit_value = shift;
@@ -142,17 +143,21 @@ $Data::Dumper::Terse = 1;
 $Data::Dumper::Indent = 0;
 $Data::Dumper::Deepcopy = 1;
 
-my ($w,$r,$e);
-open3($w, $r, $e, "ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-print($w Dumper(\%data_to_transfer)."\n");
+#my ($w,$r,$e);
+#open3($w, $r, $e, "ssh -x $host_to_connect_via_ssh oarexec $Job_id");
+#print($w Dumper(\%data_to_transfer)."\n");
+open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
+select(OAREXEC);
+$| = 1;
+print(OAREXEC Dumper(\%data_to_transfer)."\n");
 
-wait();
+close(OAREXEC);
 my $error = $? >> 8;
     
 if ($error == 0){
     oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");
 }else{
-    oar_debug("[bipbip $Job_id] Oarexec returned an early error --> check end of job\n");
+    oar_debug("[bipbip $Job_id] Oarexec returned an early error ($error) --> check end of job\n");
     iolib::check_end_of_job($base,$Job_id,$error,\@hosts,$Remote_host,$Remote_port,$job->{job_user},$job->{launching_directory});
 }
 

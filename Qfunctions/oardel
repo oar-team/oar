@@ -7,7 +7,7 @@ use warnings;
 use Data::Dumper;
 use DBI();
 use oar_iolib;
-use IO::Socket::INET;
+#use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 use Getopt::Long;
@@ -56,17 +56,18 @@ if (@checkpoint){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = iolib::get_job_current_hostnames($base,$idJob);
-            my $timeoutSSH = oar_Tools::getSSHTimeout();
+            my $timeoutSSH = oar_Tools::get_ssh_timeout();
             # Timeout the ssh command
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signalOarexec($hosts[0],$idJob,"SIGUSR2",1);
+                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1);
                 alarm(0);
             };
             if ($@){
                 print("ERROR.\n");
                 if ($@ eq "alarm\n"){
+                    $exitValue = 3;
                     $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
                     warn("$strComment\n");
                     iolib::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
@@ -88,6 +89,7 @@ if (@checkpoint){
     my @jobRegistered;
     foreach my $idJob (@ARGV) {
         if ($idJob !~ m/^\s*\d+\s*$/m){
+            $exitValue = 4;
             warn("\"$idJob\" is not a valid OAR job identifier. It must be a number.\n");
             next;
         }
@@ -121,4 +123,4 @@ if (@checkpoint){
 
 iolib::disconnect($base);
 
-exit 0;
+exit($exitValue);

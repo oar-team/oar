@@ -1,13 +1,14 @@
 package oar_Tools;
 
 use IO::Socket::INET;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas;
 use strict;
 
 # Constants
 my $Default_leon_soft_walltime = 20;
 my $Default_leon_walltime = 60;
 my $Timeout_ssh = 30;
+my $Default_Dead_switch_time = 0;
 my $Default_oarexec_directory = "/tmp/oar/";
 my $Oarexec_pid_file_name = "pid_of_oarexec_for_jobId_";
 
@@ -21,11 +22,16 @@ sub get_oar_pid_file_name($);
 sub get_ssh_timeout();
 sub get_default_leon_soft_walltime();
 sub get_default_leon_walltime();
+sub get_default_dead_switch_time();
 sub check_client_host_ip($$$);
 sub fork_no_wait($);
 sub launch_command($);
 
 
+# Get default value for DEAD_SWITCH_TIME tag
+sub get_default_dead_switch_time(){
+    return($Default_Dead_switch_time);
+}
 
 # Get default Leon walltime value for Sarko
 sub get_default_leon_soft_walltime(){
@@ -161,7 +167,7 @@ sub check_client_host_ip($$$){
     my $extrem = getpeername($client);
     my ($remote_port,$addr_in) = unpack_sockaddr_in($extrem);
     my $remote_host = inet_ntoa($addr_in);
-    oar_debug("[$module_name] [checkClientHostIP] Remote host = $remote_host ; remote port = $remote_port\n");
+    oar_Judas::oar_debug("[$module_name] [checkClientHostIP] Remote host = $remote_host ; remote port = $remote_port\n");
     $remote_host =~ m/^\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*$/m;
     $remote_host = ($1 << 24)+($2 << 16)+($3 << 8)+$4;
     my $i = 0;
@@ -175,9 +181,9 @@ sub check_client_host_ip($$$){
             $host_allow = 1;
         }else{
             $str .= "BAD";
-            oar_debug("[$module_name] [checkClientHostIP] $str\n");
+            oar_Judas::oar_debug("[$module_name] [checkClientHostIP] $str\n");
         }
-        oar_debug("[$module_name] [checkClientHostIP] $str\n");
+        oar_Judas::oar_debug("[$module_name] [checkClientHostIP] $str\n");
         $i++;
     }
     return($host_allow);

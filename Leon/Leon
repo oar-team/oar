@@ -12,7 +12,7 @@ use IO::Socket::INET;
 use oar_Tools;
 
 # timeout for commands executed via ssh
-my $timeoutSSH = oar_Tools::getSSHTimeout();
+my $timeoutSSH = oar_Tools::get_ssh_timeout();
 
 init_conf("oar.conf");
 my $server_hostname = get_conf("SERVER_HOSTNAME");
@@ -104,7 +104,7 @@ while(scalar(@JobToFrag)){
         #deploy part
         if (defined($hostToConnectViaSSH)){
             iolib::add_new_event($base,"SEND_KILL_JOB",$Jid,"[Leon] Send kill signal to oarexec on $hostToConnectViaSSH for the job $Jid");
-            oar_Tools::signalOarexec($hostToConnectViaSSH, $Jid, "TERM", 0);
+            oar_Tools::signal_oarexec($hostToConnectViaSSH, $Jid, "TERM", 0);
         }
     }
     iolib::job_arm_leon_timer($base,$Jid);

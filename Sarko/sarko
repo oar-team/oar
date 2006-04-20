@@ -9,8 +9,8 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 
 # Get job delete and checkpoint walltime values
-my $leonSoftWalltime = oar_Tools::getDefaultLeonSoftWalltime();
-my $leonWalltime = oar_Tools::getDefaultLeonWalltime();
+my $leonSoftWalltime = oar_Tools::get_default_leon_soft_walltime();
+my $leonWalltime = oar_Tools::get_default_leon_walltime();
 init_conf("oar.conf");
 if (is_conf("JOBDEL_SOFTWALLTIME")){
     $leonSoftWalltime = get_conf("JOBDEL_SOFTWALLTIME");
@@ -80,12 +80,12 @@ foreach my $job (@result){
 
     # Get maxtime
     my $moldJob = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
-    $date = $moldJob->{moldableWalltime};
+    $date = $moldJob->{moldable_walltime};
     $max = iolib::sql_to_duration($date);
 
-    oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current");
+    oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current\n");
     if ($current > $start+$max){
-        oar_debug(" (Elapsed)");
+        oar_debug("--> (Elapsed)\n");
         $guilty_found=1;
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         iolib::frag_job($base, $job->{job_id});
@@ -97,14 +97,14 @@ foreach my $job (@result){
         # Retrieve node names used by the job
         my @hosts = iolib::get_job_current_hostnames($base,$job->{job_id});
         iolib::add_new_event($base,"CHECKPOINT",$job->{job_id},"User oar (sarko) requested a checkpoint on the job $job->{job_id}");
-        my $timeoutSSH = oar_Tools::getSSHTimeout();
+        my $timeoutSSH = oar_Tools::get_ssh_timeout();
         my $strComment;
         my @exitCodes;
         # Timeout the ssh command
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm($timeoutSSH);
-            @exitCodes = oar_Tools::signalOarexec($hosts[0],$job->{job_id},"SIGUSR2",1);
+            @exitCodes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1);
             alarm(0);
         };
         if ($@){
@@ -130,7 +130,6 @@ foreach my $job (@result){
             }
         }
     }
-    oar_debug("\n");
 }
 
 
@@ -150,7 +149,7 @@ foreach my $job (@result){
 #    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
 #}
 
-my $dead_switch_time = 300;
+my $dead_switch_time = oar_Tools::get_default_dead_switch_time();
 if (is_conf("DEAD_SWITCH_TIME")){
     $dead_switch_time = get_conf("DEAD_SWITCH_TIME");
 }
@@ -173,4 +172,4 @@ if ($dead_switch_time > 0){
 
 iolib::disconnect($base);
 
-exit $guilty_found;
+exit($guilty_found);

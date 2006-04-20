@@ -32,14 +32,14 @@ sub print_job($$);
 
 Getopt::Long::Configure ("gnu_getopt");
 my $sos;
-my @jobs;
+my @job_ids;
 my $full_view;
 my $gantt_query;
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
 GetOptions ("help|h" => \$sos,
-            "job|j=i"  => \@jobs,
+            "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
             "gantt|g=s"   => \$gantt_query,
             "XML|X" => \$XML_mode,
@@ -65,13 +65,19 @@ EOS
 
 my $base = iolib::connect();
 
-if ((!defined($gantt_query)) and ($#jobs < 0)){
+my @jobs;
+
+if ((!defined($gantt_query)) and ($#job_ids < 0)){
     push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
     push(@jobs, iolib::get_jobs_in_state($base, "Hold"));
     push(@jobs, iolib::get_jobs_in_state($base, "toAckReservation"));
     push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
     push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
     push(@jobs, iolib::get_jobs_in_state($base, "Running"));
+}elsif($#job_ids >= 0){
+    foreach my $j (@job_ids){
+        push(@jobs, iolib::get_job($base,$j));
+    }
 }
 
 if (!defined($gantt_query)){
@@ -93,7 +99,7 @@ sub print_job($$){
     
     my @nodes;
     my $mold;
-    my @date_tmp = iolib::get_gantt_job_startTime($dbh,$job_info->{job_id});
+    my @date_tmp = iolib::get_gantt_job_start_time($dbh,$job_info->{job_id});
     my @job_events = iolib::get_job_events($dbh,$job_info->{job_id});
    
     if ($job_info->{assigned_moldable_job} ne ""){

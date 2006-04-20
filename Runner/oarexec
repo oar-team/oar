@@ -30,7 +30,6 @@ use oar_Tools;
 use Sys::Hostname;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
-use oar_Tools;
 
 my $Job_id = shift;
 
@@ -67,7 +66,7 @@ sub quit_oarexec($$){
     my $wait_time = 30;
     
     while (1){
-        if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$Job_id"."_$exit_value"."_$job_data->{challenge}"))){
+        if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$job_data->{challenge}"))){
             oar_debug("[oarexec $Job_id] I notified Almighty with my exit value $exit_value;so I am exiting\n");
             exit($exit_value);
         }else{
@@ -122,7 +121,7 @@ sub read_socket_line($$){
 sub kill_childs($){
     my $child_pid = shift;
 
-    my @childs = oar_Tools::getOneProcessChilds($child_pid);
+    my @childs = oar_Tools::get_one_process_childs($child_pid);
     system("sudo /bin/kill -9 @childs 2>&1 > /dev/null");
 }
 
@@ -148,9 +147,9 @@ if( $@ ){
     oar_error("[oarexec $Job_id] Timeout of hashtable SSH transfer\n");
     exit(30);
 }
-my $Job = eval( <STDIN> );
+my $Job = eval( $bipbip_line );
 if (!defined($Job->{job_id})){
-    oar_error("[oarexec $Job_id] Bad SSH ashtable transfered\n");
+    oar_error("[oarexec $Job_id] Bad SSH hashtable transfered\n$bipbip_line\n");
     exit(31);
 }
 
@@ -170,7 +169,7 @@ if (! open(FILE,">$Node_file")){
     exit(5);
 }
 #Feed the node file
-my %tmp_res;
+my @tmp_res;
 foreach my $r (@{$Job->{resources}}){
     push(@tmp_res, $r->{network_address}); 
 }

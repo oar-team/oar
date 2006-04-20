@@ -298,6 +298,7 @@ sub nmap_hosts(@){
                 }
             }
         }
+        wait();
         close(ERROR);
         close(READER);
         alarm(0);

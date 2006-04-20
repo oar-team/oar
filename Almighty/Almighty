@@ -156,7 +156,7 @@ sub qget_appendice(){
         my $client=$server->accept();
 
         #Test if this peer is allowed
-        my $hostAllow = oar_Tools::checkClientHostIP("Almighty",$client,\@authorizedHosts);
+        my $hostAllow = oar_Tools::check_client_host_ip("Almighty",$client,\@authorizedHosts);
         if ($hostAllow == 0){
             $client->close();
             #return nothing
@@ -441,12 +441,12 @@ while (1){
             $state="Time update";
         }elsif ($command eq "ChState"){
             $state="Change node state";
-        }elsif ($command =~ m/OAREXEC_(\d+)_(\d+)/m){
+        }elsif ($command =~ m/OAREXEC_(\d+)_(\d+)_(\d+)/m){
             my $pid=0;
             $pid=fork;
             if($pid==0){
                 #CHILD
-                exec("$bipbip_command $1 $2"); 
+                exec("$bipbip_command $1 $2 $3"); 
             }
             #launch_command("$bipbip_command $1 ATTACH &"); 
         }else{

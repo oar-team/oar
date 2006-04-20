@@ -795,7 +795,7 @@ sub get_possible_wanted_resources($$$$$){
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
 sub add_micheline_job($$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $mail, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -877,8 +877,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
     my $date = get_date($dbh);
     lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,mail,checkpoint_signal)
-              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',\'$command\',\'$date\',\'$queue_name\',\'$jobproperties\',\'$launching_directory\',\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,\'$job_name\',\'$mail\',\'$checkpoint_signal\')
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal)
+              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',\'$command\',\'$date\',\'$queue_name\',\'$jobproperties\',\'$launching_directory\',\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,\'$job_name\',\'$notify\',\'$checkpoint_signal\')
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -2870,6 +2870,41 @@ sub order_property_node($$$){
 }
 
 
+# get_absent_suspected_resources_for_a_timeout
+# args : base ref, timeout in seconds
+sub get_absent_suspected_resources_for_a_timeout($$){
+    my $dbh = shift;
+    my $timeout = shift;
+
+    my $date = sql_to_local(get_date($dbh));
+    my $req; 
+    if ($Db_type eq "Pg"){
+        $req = "SELECT resource_id
+                FROM resource_state_logs
+                WHERE
+                    date_stop IS NULL
+                    AND EXTRACT(EPOCH FROM TO_TIMESTAMP(date_start,'YYYY-MM-DD HH24:MI:SS')) + $timeout < $date";
+    }else{
+        $req = "SELECT resource_id
+                FROM resource_state_logs
+                WHERE
+                    date_stop IS NULL
+                    AND UNIX_TIMESTAMP(date_start) + $timeout < $date";
+    }
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my @results;
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@results, $ref[0]);
+    }
+    $sth->finish();
+
+    return(@results);
+
+}
+
+
 # QUEUES MANAGEMENT
 
 # get_queues
@@ -3037,7 +3072,7 @@ sub set_gantt_job_startTime($$$){
 
 # Get start_time for a given job
 # args : base, job id
-sub get_gantt_job_startTime($$){
+sub get_gantt_job_start_time($$){
     my $dbh = shift;
     my $job = shift;
 
@@ -3764,7 +3799,7 @@ sub check_end_of_job($$$$$$$$){
     my $user = shift;
     my $launchingDirectory = shift;
 
-    lock_table($base,["jobs","job_state_logs","resources","assigned_moldable_job","resource_state_logs","event_logs"]);
+    lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
     my $refJob = get_job($base,$Jid);
     if ($refJob->{'state'} eq "Running"){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
