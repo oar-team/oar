@@ -121,7 +121,7 @@ sub get_default_oarexec_directory(){
 sub get_oar_pid_file_name($){
     my $job_id = shift;
 
-    return($Oarexec_pid_file_name.$job_id);
+    return($Default_oarexec_directory."/".$Oarexec_pid_file_name.$job_id);
 }
 
 

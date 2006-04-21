@@ -157,8 +157,8 @@ my $host = hostname();
 
 oar_debug("[oarexec $Job_id] job id : $Job_id user : $Job->{user}; launchingDirectory : $Job->{launching_directory}\n");
 
-if (! mkdir($Tmp_file_prefix)){
-    oar_error("[oarexec $Job_id] I cannot create directory $Tmp_file_prefix\n");
+if (!(chdir($Tmp_file_prefix) or (! mkdir($Tmp_file_prefix)))){
+    oar_error("[oarexec $Job_id] Directory $Tmp_file_prefix does not exist and I cannot create it\n");
     exit(8);
 }
 
@@ -293,7 +293,7 @@ open(STDOUT, ">/dev/null");
 open(STDERR, ">/dev/null");
 
 #Write file with this oarexec pid
-my $oarexec_pid_file = "$Tmp_file_prefix/".oar_Tools::get_oar_pid_file_name($Job_id);
+my $Pid_file = oar_Tools::get_oar_pid_file_name($Job_id);
 if ((!open(FILEPID,">$Pid_file")) or (!print(FILEPID "$$"))){
     oar_error("[oarexec $Job_id] I cannot write file $Pid_file\n");
     clean_all();

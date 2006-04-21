@@ -146,14 +146,19 @@ $Data::Dumper::Deepcopy = 1;
 #my ($w,$r,$e);
 #open3($w, $r, $e, "ssh -x $host_to_connect_via_ssh oarexec $Job_id");
 #print($w Dumper(\%data_to_transfer)."\n");
+oar_debug("[bipbip $Job_id] Before open\n");
 open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
+oar_debug("[bipbip $Job_id] After open\n");
 select(OAREXEC);
 $| = 1;
+oar_debug("[bipbip $Job_id] Before sending hashtable\n");
 print(OAREXEC Dumper(\%data_to_transfer)."\n");
+oar_debug("[bipbip $Job_id] After sending hashtable\n");
 
 close(OAREXEC);
 my $error = $? >> 8;
-    
+oar_debug("[bipbip $Job_id] After close\n");
+
 if ($error == 0){
     oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");
 }else{
