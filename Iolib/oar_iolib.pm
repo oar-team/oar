@@ -795,7 +795,7 @@ sub get_possible_wanted_resources($$$$$){
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
 sub add_micheline_job($$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -883,7 +883,22 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     unlock_table($dbh);
-    
+
+    if (!defined($stdout)){
+        $stdout = "OAR.$job_id.stdout";
+    }
+    if (!defined($stderr)){
+        $stderr = "OAR.$job_id.stderr";
+    }
+    $dbh->do("UPDATE jobs
+              SET
+                  stdout_file = \'$stdout\',
+                  stderr_file = \'$stderr\'
+              WHERE
+                  state = \'Waiting\'
+                  AND job_id = $job_id
+            ");
+
     $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
               VALUES ($job_id,\'Waiting\',\'$date\')
              ");
@@ -3921,6 +3936,14 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             oar_warn("$strWARN\n");
             add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        }
+    }elsif ($error == 40){
+    	# launching oarexec timeout
+            my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"LAUNCHING_OAREXEC_TIMEOUT",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }

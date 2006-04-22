@@ -8,9 +8,11 @@ use strict;
 my $Default_leon_soft_walltime = 20;
 my $Default_leon_walltime = 60;
 my $Timeout_ssh = 30;
+my $bipbip_oarexec_hashtable_send_timeout = 30;
 my $Default_Dead_switch_time = 0;
 my $Default_oarexec_directory = "/tmp/oar/";
 my $Oarexec_pid_file_name = "pid_of_oarexec_for_jobId_";
+my $Default_prologue_epilogue_timeout = 60;
 
 # Prototypes
 sub get_all_process_childs();
@@ -26,7 +28,18 @@ sub get_default_dead_switch_time();
 sub check_client_host_ip($$$);
 sub fork_no_wait($);
 sub launch_command($);
+sub get_default_prologue_epilogue_timeout();
+sub get_bipbip_ssh_hashtable_send_timeout();
 
+# Get default value for PROLOGUE_EPILOGUE_TIMEOUT
+sub get_default_prologue_epilogue_timeout(){
+    return($Default_prologue_epilogue_timeout);
+}
+
+# Get value for ssh hashtable timeout
+sub get_bipbip_ssh_hashtable_send_timeout(){
+    return($bipbip_oarexec_hashtable_send_timeout);
+}
 
 # Get default value for DEAD_SWITCH_TIME tag
 sub get_default_dead_switch_time(){

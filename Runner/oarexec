@@ -45,11 +45,6 @@ my $Prologue = $ENV{HOME}."/oar_prologue";
 my $Epilogue = $ENV{HOME}."/oar_epilogue";
 my $Tmp_file_prefix = oar_Tools::get_default_oarexec_directory();
 
-my $Timeout = 60;
-if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
-   $Timeout = get_conf("PROLOGUE_EPILOGUE_TIMEOUT"); 
-}
-
 my $Debug_mode;
 my $Node_file;
 my $Pid_file;
@@ -82,6 +77,7 @@ sub quit_oarexec($$){
     }
     exit($exit_value);
 }
+
 
 
 #delete temporary file
@@ -135,11 +131,11 @@ sub send_kill_signal_to_myself(){
     }
 }
 
-# Retrieve job oinformations from bipbip
+# Retrieve job informations from bipbip
 my $bipbip_line;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Timeout);
+    alarm(oar_Tools::get_bipbip_ssh_hashtable_send_timeout());
     $bipbip_line = <STDIN>;
     alarm(0);
 };
@@ -157,10 +153,12 @@ my $host = hostname();
 
 oar_debug("[oarexec $Job_id] job id : $Job_id user : $Job->{user}; launchingDirectory : $Job->{launching_directory}\n");
 
-if (!(chdir($Tmp_file_prefix) or (! mkdir($Tmp_file_prefix)))){
+# Test if OAR directory exists and is owned by oar or if we can to create it
+if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_prefix)))){
     oar_error("[oarexec $Job_id] Directory $Tmp_file_prefix does not exist and I cannot create it\n");
     exit(8);
 }
+chdir($Tmp_file_prefix);
 
 #create node set file and parse command args
 $Node_file = "$Tmp_file_prefix/OAR_$Job_id";
@@ -185,7 +183,7 @@ oar_debug("[oarexec $Job_id] nom de commande [$Job->{command}]\n");
 my $Script_error = 0;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Timeout);
+    alarm($Job->{pro_epi_timeout});
     oar_debug("[oarexec $Job_id] LAUNCH prologue : $Prologue $Job_id $Job->{user} $Node_file\n");
     $Script_error = system("$Prologue $Job_id $Job->{user} $Node_file");
     oar_debug("[oarexec $Job_id] END prologue : $Prologue\n");
@@ -391,7 +389,7 @@ oar_debug("[oarexec $Job_id] Job Terminated\n");
 # Launch epilogue script
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Timeout);
+    alarm($Job->{pro_epi_timeout});
     oar_debug("[oarexec $Job_id] LAUNCH epilogue : $Epilogue $Job_id $Job->{user} $Node_file $Job->{command}\n");
     $Script_error = system("$Epilogue $Job_id $Job->{user} $Node_file $Job->{command}");
     oar_debug("[oarexec $Job_id] END epilogue : $Epilogue\n");

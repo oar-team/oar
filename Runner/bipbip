@@ -116,6 +116,11 @@ iolib::set_job_state($base,$Job_id,"Running");
 my $moldable = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
 my $types = iolib::get_current_job_types($base,$Job_id);
 my @resources = iolib::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+my $pro_epi_timeout = oar_Tools::get_default_prologue_epilogue_timeout();
+if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
+   $pro_epi_timeout = get_conf("PROLOGUE_EPILOGUE_TIMEOUT"); 
+}
+
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
         job_id              => $Job_id,
@@ -134,7 +139,8 @@ my %data_to_transfer = (
         almighty_port       => $Remote_port,
         checkpoint_signal   => $job->{checkpoint_signal},
         debug_mode          => $Debug_mode,
-        mode                => $job->{job_type}
+        mode                => $job->{job_type},
+        pro_epi_timeout	    => $pro_epi_timeout
     );
 
 # suitable Data::Dumper configuration for serialization
@@ -143,21 +149,19 @@ $Data::Dumper::Terse = 1;
 $Data::Dumper::Indent = 0;
 $Data::Dumper::Deepcopy = 1;
 
-#my ($w,$r,$e);
-#open3($w, $r, $e, "ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-#print($w Dumper(\%data_to_transfer)."\n");
-oar_debug("[bipbip $Job_id] Before open\n");
-open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-oar_debug("[bipbip $Job_id] After open\n");
-select(OAREXEC);
-$| = 1;
-oar_debug("[bipbip $Job_id] Before sending hashtable\n");
-print(OAREXEC Dumper(\%data_to_transfer)."\n");
-oar_debug("[bipbip $Job_id] After sending hashtable\n");
+my $error = 40;
+eval {
+    $SIG{ALRM} = sub { die "alarm\n" };
+    alarm(oar_Tools::get_default_prologue_epilogue_timeout() + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
+    open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
+    select(OAREXEC);
+    $| = 1;
+    print(OAREXEC Dumper(\%data_to_transfer)."\n");
 
-close(OAREXEC);
-my $error = $? >> 8;
-oar_debug("[bipbip $Job_id] After close\n");
+    close(OAREXEC);
+    $error = $? >> 8;
+    alarm(0);
+};
 
 if ($error == 0){
     oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");

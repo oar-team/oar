@@ -8,6 +8,7 @@ use DBI();
 use Data::Dumper;
 use Sys::Hostname;
 use Getopt::Long;
+use File::Basename;
 use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use File::Temp qw/ tempfile /;
@@ -36,12 +37,14 @@ my $md5sum = undef;
 my $stageindir;
 my $sos;
 my $Checkpoint=0;
-my $mail;
+my $notify;
 my $job_name;
 my $Directory = $ENV{PWD};
 my @Type;
 my @Anterior_job;
 my $Checkpoint_signal = 12; # SIGUSR2
+my $Stdout_file;
+my $Stderr_file;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -127,6 +130,11 @@ Options are:
  -d, --directory               specify the directory where to launch the command (default is current directory)
  -n, --name                    specify an arbitrary name for the job
  -a, --anterior                anterior job that must be terminated to start this new one
+     --notify                  specify a notification method(mail or program to launch); ex: 
+                                   --notify "mail:name@domain.com"
+				   --notify "exec:/path/to/script args"
+     --stdout                  specify the name of the standard output file
+     --stderr                  specify the name of the error output file
  -h, --help                    print this help message
 EOS
 }
@@ -170,12 +178,14 @@ GetOptions ("resource|l=s" => \@resource,
             "stagein-md5sum=s" => \$md5sum,
             "checkpoint|k=i" => \$Checkpoint,
             "help|h" => \$sos,
-            "mail|m=s" => \$mail,
+            "notify=s" => \$notify,
             "type|t=s" => \@Type,
             "directory|d=s" => \$Directory,
             "name|n=s" => \$job_name,
             "anterior|a=i" => \@Anterior_job,
-            "signal=i" => \$Checkpoint_signal
+            "signal=i" => \$Checkpoint_signal,
+	    "stdout=s" => \$Stdout_file,
+	    "stderr=s" => \$Stderr_file
            );
 
 if (defined $sos){
@@ -184,6 +194,13 @@ if (defined $sos){
 }
 
 if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation == 0)){
+    usage();
+    exit(1);
+}
+
+# Test right notify syntax
+if ((defined($notify)) and ($notify !~ m/^\s*(mail:|exec:)\.+$/m)){
+    warn("/!\\Bad syntax for the notify option\n");
     usage();
     exit(1);
 }
@@ -364,7 +381,7 @@ if ($Interactive == 0) {
     }
 
 print("@Type \n");
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $mail, $job_name, \@Type, $Directory,\@Anterior_job);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$stdout,$stderr);
 }else{
     $Cmd_executor = "Qsub -I";
     my $server_port;
@@ -375,7 +392,7 @@ print("@Type \n");
     }
     my @resource_list = parse_resource_descriptions(\@resource);
     
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $mail, $job_name, \@Type, $Directory,\@Anterior_job);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$stdout,$stderr);
 }
 print("IdJob = $Job_id \n");
 

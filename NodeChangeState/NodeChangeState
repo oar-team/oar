@@ -27,6 +27,7 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "USER_SHELL") ||
         ($i->{type} eq "EXTERMINATE_JOB") ||
         ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
+        ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         my @hosts;
