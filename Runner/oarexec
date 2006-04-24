@@ -208,7 +208,7 @@ if (!defined($shell)){
 my $cmd;
 if ( $Job->{mode} eq "PASSIVE" ){
     oar_debug("[oarexec $Job_id] Begin a passive command\n");
-    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} $Job->{command}\"";
+    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
 }
 
 #resolve terminal type problems

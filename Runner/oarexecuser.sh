@@ -54,7 +54,7 @@ then
         exit 2
     fi
     shift 8
-    ($@ > $OAR_STDOUT) >& $OAR_STDERR
+    ("$@" > $OAR_STDOUT) >& $OAR_STDERR
 fi
 
 exit 0

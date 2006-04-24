@@ -808,12 +808,20 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
         $setCommandReservation = 1;
         $jobType = "PASSIVE";
     }elsif($startTimeReservation ne "0"){
-        print("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
+        warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
         return(-3);
     }
 
     my $rules;
     my $user= getpwuid($ENV{SUDO_UID});
+
+    # Verify notify syntax
+    if ((defined($notify)) and ($notify !~ m/^\s*(mail:|exec:)\.+$/m)){
+        warn("/!\\Bad syntax for the notify option\n");
+        return(-6);
+    }
+    
+    # Verify
 
     # Verify the content of user command
     #if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
@@ -1228,7 +1236,8 @@ sub set_job_autoCheckpointed($$) {
 # sets the flag 'ToFrag' of a job to 'Yes'
 # parameters : base, jobid
 # return value : 0 on success, -1 on error (if the user calling this method
-#                is not the user running the job or oar)
+#                is not the user running the job or oar), -2 if the job was
+#                already killed
 # side effects : changes the field ToFrag of the job in the table Jobs
 sub frag_job($$) {
     my $dbh = shift;
@@ -1251,10 +1260,13 @@ sub frag_job($$) {
                       VALUES ($idJob,\'$date\')
                      ");
             add_new_event($dbh,"FRAG_JOB_REQUEST",$idJob,"User $lusr requested to frag the job $idJob");
+            return(0);
+        }else{
+            # Job already killed
+            return(-2);
         }
-        return 0;
     }else{
-        return -1;
+        return(-1);
     }
 }
 

@@ -46,11 +46,12 @@ if (@checkpoint){
         my $err = iolib::ask_checkpoint_job($base,$idJob); 
         if ($err > 0) {
             print("ERROR.\n");
-            $exitValue = 1;
             if ($err == 1){
                 warn("Cannot checkpoint $idJob ; You are not the right user.\n");
+                $exitValue = 1;
             }else{
                 warn("Cannot checkpoint $idJob ; This job is not running.\n");
+                $exitValue = 5;
             }
         }else{
             my $strComment;
@@ -99,11 +100,15 @@ if (@checkpoint){
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         my $err = iolib::frag_job($base,$idJob);
         iolib::unlock_table($base);
-        if ($err != 0) {
+        if ($err == -1) {
             print("ERROR.\n");
             warn("Cannot frag $idJob ; You are not the right user.\n");
             $exitValue = 1;
-        }else{
+        }elsif ($err == -2){
+            print("ERROR.\n");
+            warn("Cannot frag $idJob ; This job was already killed.\n");
+            $exitValue = 6;
+	else{
             print("REGISTERED.\n");
             push(@jobRegistered,$idJob);
         }

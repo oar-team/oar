@@ -117,6 +117,7 @@ sub sentinelle_hosts(@){
                 push(@badHosts, $1);
             }
         }
+	wait();
         close(ERROR);
         close(WRITER);
         close(READER);
@@ -171,6 +172,7 @@ sub sentinelle_script_hosts(@){
                 }
             }
         }
+	wait();
         close(ERROR);
         close(WRITER);
         close(READER);
@@ -230,6 +232,7 @@ sub fping_hosts(@){
                 }
             }
         }
+	wait();
         close(ERROR);
         close(READER);
         alarm(0);
@@ -357,6 +360,7 @@ sub generic_hosts(@){
                 push(@badHosts, $1);
             }
         }
+	wait();
         close(ERROR);
         close(WRITER);
         close(READER);
