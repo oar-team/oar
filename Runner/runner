@@ -45,9 +45,12 @@ my $base = iolib::connect();
 my @jobErrorList = iolib::get_jobs_in_state($base,"toError");
 foreach  my $j (@jobErrorList){
     oar_debug("[Runner] Treate job $j->{job_id} in toError state\n");
-    if (($j->{job_type} eq "INTERACTIVE") || (($j->{job_type} eq "PASSIVE") && $j->{reservation} eq "Scheduled")){
+    if ($j->{job_type} eq "INTERACTIVE"){
         oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
-        answer($j->{job_id},$j->{info_type},"BAD JOB");
+        answer($j->{job_id},$j->{info_type},"BAD JOB, $j->{message}");
+    }elsif(($j->{job_type} eq "PASSIVE") && ($j->{reservation} eq "Scheduled")){
+        oar_debug("[Runner] Notify oarsub for a reservation job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        answer($j->{job_id},$j->{info_type},"BAD JOB, $j->{message}");
     }
     oar_debug("[Runner] Set job $j->{job_id} to state Error\n");
     iolib::set_job_state($base, $j->{job_id}, "Error");

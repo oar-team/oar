@@ -10,6 +10,7 @@ use Sys::Hostname;
 use POSIX qw(strftime);
 use Time::HiRes qw(gettimeofday);
 use oar_iolib;
+use oar_Tools;
 
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
@@ -135,6 +136,42 @@ sub send_mail($$$){
         $smtp->quit
             or treate_mail_error($smtpServer,$mailSenderAddress,$mailRecipientAddress,$object,$body,"QUIT");
         exit(0);
+    }
+}
+
+
+# Parse notify method and send an email or execute a command
+# args : notify method string,user , job id, job name, tag, commentaries
+sub notify_user($$$$$$){
+    my $method = shift;
+    my $user = shift;
+    my $job_id = shift;
+    my $job_name = shift;
+    my $tag = shift;
+    my $comments = shift;
+
+    if ($method =~ m/^\s*mail:(.+)$/m){
+        my $base = iolib::connect();
+        iolib::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
+        iolib::disconnect($base);
+        send_mail($1,"-OAR- $tag: $job_id($job_name)",$comments);
+    }elsif($method =~ m/\s*exec:(.+)$/m){
+        my $cmd = "sudo -H -u $user '$1 $job_id $job_name $tag $comments'";
+        my $pid;
+        $pid = fork();
+        if (defined($pid)){
+            system($cmd);
+            my $exit_value  = $? >> 8;
+            my $signal_num  = $? & 127;
+            my $dumped_core = $? & 128;
+            my $base = iolib::connect();
+            iolib::add_new_event($base,"USER_EXEC_NOTIFICATION",$job_id,"[Judas] Launched user notification command : $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core");
+            iolib::disconnect($base);
+        }else{
+            oar_error("[Judas] Error when forking process to execute noty user command : $cmd; Not enough resources???\n");
+        }
+    }else{
+        oar_error("[Judas] Notification error when parsing $method for the job $job_id\n");
     }
 }
 

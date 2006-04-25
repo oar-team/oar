@@ -17,7 +17,7 @@ use oar_Tools;
 #For interactive
 my $remote_host;
 my $remote_port;
-my $deploy_hostname;
+my $Deploy_hostname;
 my $Host = hostname ;
 
 my $base;
@@ -26,7 +26,7 @@ my $Job_id;
 my $Interactive = 0;
 my $Reservation = "0";
 my $Default_resources;
-my $connectResa ;
+my $connect_job ;
 my @resource;
 my $Queue_name;
 my $Job_sql_properties;
@@ -109,6 +109,44 @@ sub scan_script($){
     return(%result);
 }
 
+# Connect to a job and give the shell of the user on te remote host
+sub connect_job($$){
+    my $dbh = shift;
+    my $job_id = shift;
+    
+    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $job = iolib::get_job($dbh, $job_id);
+    if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
+        my @hosts = iolib::get_job_current_hostnames($dbh,$job_id);
+        my $host_to_connect_via_ssh = $hosts[0];
+        #deploy part
+        my $types = iolib::get_current_job_types($dbh,$job_id);
+        if (defined($types->{deploy})){
+            $host_to_connect_via_ssh = $Deploy_hostname;
+        }
+        #deploy part
+        my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
+        my $shell=$passinfo[8];
+        my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
+        my $cmd = "ssh -t $hostToConnectViaSSH \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
+        #print("oarsub launchs command : $cmd\n");
+        #essential : you become oar instead of the user
+        #UID=EUID
+        $< = $>;
+        print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
+        system($cmd);
+        print("Disconnected from OAR job $job_id\n");
+    }else{
+        if ($job->{state} ne "Running"){
+            print("/!\\ ERROR : the job $job_id is not running. Its current state is $job->{state}.\n");
+        }
+        if (($lusr ne $job->{job_user}) and ($lusr ne "oar"))){
+            print("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
+        }
+        return(1);
+    }
+    return(0);
+}
 
 #Print help message
 sub usage() {
@@ -121,7 +159,7 @@ Options are:
  -q, --queue=<QUEUE>           set the the queue to submit the job to
  -p, --property=<LIST>         set the property list
  -r, --reservation=<DATE>      request a reservation
- -c, --connect=<RESERVATION>   connect to a running job
+ -C, --Connect=<JOB_ID>        connect to a running job
  -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
      --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -k, --checkpoint              enable the job to be checkpointed
@@ -154,9 +192,9 @@ if (!defined($Default_resources)){
 }
     
 
-$deploy_hostname = get_conf("DEPLOY_HOSTNAME");
-if (!defined($deploy_hostname)){
-    $deploy_hostname = $remote_host;
+$Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
+if (!defined($Deploy_hostname)){
+    $Deploy_hostname = $remote_host;
 }
 
 my $binpath;
@@ -173,7 +211,7 @@ GetOptions ("resource|l=s" => \@resource,
             "Interactive|I"  => \$Interactive,
             "property|p=s" => \$Job_sql_properties,
             "reservation|r=s" => \$Reservation,
-            "connect|c=i" => \$connectResa,
+            "Connect|C=i" => \$connect_job,
             "stagein|s=s" => \$stagein,
             "stagein-md5sum=s" => \$md5sum,
             "checkpoint|k=i" => \$Checkpoint,
@@ -240,33 +278,8 @@ if (defined $stagein) {
 $base = iolib::connect();
 
 # Connect to a reservation
-if (defined($connectResa)){
-    my $lusr= getpwuid($ENV{SUDO_UID});
-    my $job = iolib::get_job($base, $connectResa);
-    if ((($lusr eq $job->{'job_user'}) or ($lusr eq "oar")) && ($job->{'state'} eq "Running")) {
-        my @hosts = iolib::get_job_current_hostnames($base,$connectResa);
-        my $hostToConnectViaSSH = $hosts[0];
-        #deploy part
-        if ($job->{deploy_feature} eq "YES"){
-            $hostToConnectViaSSH = $deploy_hostname;
-        }
-        #deploy part
-        my $OAR_NB_NODES = $#hosts + 1;
-        my @passinfo=getpwnam($lusr);
-        my $shell=$passinfo[8];
-        my $cmd = "ssh -t $hostToConnectViaSSH \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh /tmp/OAR_$connectResa $OAR_NB_NODES $connectResa $lusr $shell $job->{launching_directory} I\\\"\"";
-        #print("oarsub launchs command : $cmd\n");
-        #essential : you become oar instead of the user
-        #UID=EUID
-        $< = $>;
-        print("Connect to OAR reservation $connectResa via the node $hostToConnectViaSSH\n");
-        system($cmd);
-        print("Disconnect from OAR reservation $connectResa\n");
-    }else{
-        print("/!\\ You cannot connect to the job $connectResa (maybe you are not the right user OR the job $connectResa is not a reservation OR this job is not Running OR it is not an Interactive connection)\n");
-        exit(1);
-    }
-    exit(0);
+if (defined($connect_job)){
+    exit(connect_job($base,$connect_job));
 }
 # End connection to a reservation
 
@@ -358,13 +371,13 @@ if ($Interactive == 0) {
     }
     my @resource_list = parse_resource_descriptions(\@resource);
 
-    if (!($exec =~ m/^\/.+$/m)){
+    #if (!($exec =~ m/^\/.+$/m)){
         # WARNING: we are not the real user, we are oar user!!!
         # so $exec properties are not correct
-        if ( -e "$exec" ){
-            $exec = $Directory."/".$exec ;
-        }
-    }
+    #    if ( -e "$exec" ){
+    #        $exec = $Directory."/".$exec ;
+    #    }
+    #}
 
     $Cmd_executor = "Qsub";
 
@@ -398,7 +411,6 @@ if ($Job_id < 0){
 }
 
 #Signal Almigthy
-
 if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$Cmd_executor"))){
     qdel(1);
     warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
@@ -411,10 +423,11 @@ if ($Reservation ne "0"){
     print("Reservation mode : waiting validation\n");
     my $client = $Server->accept();
     $answer = <$client>;
-    if ($answer eq "GOOD RESERVATION\n"){
+    chop($answer);
+    if ($answer eq "GOOD RESERVATION"){
         print("Reservation valid --> OK\n");
     }else{
-        print("Reservation not valid --> KO\n");
+        print("Reservation not valid --> KO ($answer)\n");
     }
 }elsif ($Interactive==1) {
     #Interactive mode
@@ -422,22 +435,7 @@ if ($Reservation ne "0"){
     my $client = $Server->accept();
     $answer = <$client>;
     if ($answer eq "GOOD JOB\n"){
-        my $pid=0;
-        $pid=fork;
-        if($pid == 0){
-            #CHILD
-            #Pid process registered by bipbip.pl
-            $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
-            $ENV{IFS}="";
-            $ENV{ENV}="";
-            $ENV{USER}="oar";
-            $ENV{USERNAME}="oar";
-            $ENV{LOGNAME}="oar";
-            exec("$binpath/bipbip $Job_id");
-        }
-        wait;
-        my $exit_value  = $? >> 8;
-        exit($exit_value);
+        connect_job();
     }else{
         print("Sorry but the system returned : $answer\n");
     }

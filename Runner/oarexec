@@ -161,7 +161,7 @@ if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_pref
 chdir($Tmp_file_prefix);
 
 #create node set file and parse command args
-$Node_file = "$Tmp_file_prefix/OAR_$Job_id";
+$Node_file = "$Tmp_file_prefix/$Job_id";
 if (! open(FILE,">$Node_file")){
     oar_error("[oarexec $Job_id] I cannot write file $Node_file\n");
     exit(5);

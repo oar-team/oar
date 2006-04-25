@@ -3944,18 +3944,17 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal";
             oar_warn("$strWARN\n");
             add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
-        }else{
-            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-        }
-    }elsif ($error == 40){
+        }elsif ($error == 40){
     	# launching oarexec timeout
             my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             oar_warn("$strWARN\n");
             add_new_event($base,"LAUNCHING_OAREXEC_TIMEOUT",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        }else{
+            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }

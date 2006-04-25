@@ -209,8 +209,8 @@ sub fork_no_wait($){
     my $cmd = shift;
 
     $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
-    my $pid = 0;
-    $pid = fork;
+    my $pid;
+    $pid = fork();
     if(defined($pid)){
         if($pid == 0){
             #child
