@@ -35,7 +35,7 @@ sub is_job_desktopComputing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$);
 sub get_job_host_log($$);
-sub get_tokill_job($);
+sub get_to_kill_jobs($);
 sub is_tokill_job($$);
 sub get_timered_job($);
 sub get_toexterminate_job($);
@@ -509,24 +509,27 @@ sub is_tokill_job($$) {
     return ($#res >= 0)
 }
 
-# get_tokill_job
+# get_to_kill_jobs
 # returns the list of jobs that have their frag state to LEON
 # parameters : base
 # return value : list of jobid
 # side effects : /
-sub get_tokill_job($) {
+sub get_to_kill_jobs($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT frag_id_job
-                             FROM frag_jobs
+    my $sth = $dbh->prepare("SELECT jobs.*
+                             FROM frag_jobs, jobs
                              WHERE
                                 frag_state = \'LEON\'
+                                AND jobs.job_id = frag_jobs.frag_id_job
+                                AND jobs.state != \'Error\'
+                                AND jobs.state != \'Terminated\'
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'frag_id_job'});
+        push(@res, $ref);
     }
-    return @res;
+    return(@res);
 }
 
 
@@ -538,14 +541,18 @@ sub get_tokill_job($) {
 # side effects : /
 sub get_timered_job($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT frag_id_job FROM frag_jobs
-                             WHERE frag_state = \'TIMER_ARMED\'");
+    my $sth = $dbh->prepare("   SELECT jobs.*
+                                FROM frag_jobs, jobs
+                                WHERE
+                                    frag_jobs.frag_state = \'TIMER_ARMED\'
+                                    AND frag_jobs.frag_id_job = jobs.job_id
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'frag_id_job'});
+        push(@res, $ref);
     }
-    return @res;
+    return(@res);
 }
 
 

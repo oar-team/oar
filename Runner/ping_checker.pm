@@ -13,20 +13,20 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(ping_hosts sentinelle_hosts test_hosts);
 
-my $timeoutPing = 5;
-my $timeoutFping = 15;
-my $timeoutNmap = 30;
-my $timeoutSentinelle = 60;
-my $timeoutScriptSentinelle = 60;
+my $Timeout_ping = 5;
+my $Timeout_fping = 15;
+my $Timeout_nmap = 30;
+my $Timeout_sentinelle = 60;
+my $Timeout_script_sentinelle = 60;
 my $Default_timeout = 60;
 
 #resolve host name and give its IP or return 0
-sub getHostIp($){
-    my ($hostName) = shift;
+sub get_host_ip($){
+    my ($host_name) = shift;
     my (@addrlist,$name,$altnames,$addrtype,$len);
     my ($ip);
  
-    if (!(($name, $altnames, $addrtype, $len, @addrlist) = gethostbyname ($hostName))) {
+    if (!(($name, $altnames, $addrtype, $len, @addrlist) = gethostbyname($host_name))) {
         return (0);
     }else{
         $ip=join('.',(unpack("C4",$addrlist[0])));
@@ -57,7 +57,7 @@ sub test_hosts(@){
 sub ping_hosts(@){
     my @hosts = @_;
 
-    my @badHosts;
+    my @bad_hosts;
     my $exit_value;
     foreach my $i (@hosts){
         oar_debug("[PingChecker] PING $i\n");
@@ -65,18 +65,18 @@ sub ping_hosts(@){
         $ENV{ENV}="";
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
-            alarm($timeoutPing);
+            alarm($Timeout_Ping);
             #$exit_value = system("ping -c 1 $i > /dev/null");
             $exit_value = system("sudo ping -c 10 -l 9 $i > /dev/null");
             alarm(0);
         };
         oar_debug("[PingChecker] PONG with exit_value=$exit_value and alarm=$@\n");
         if (($exit_value != 0) || ($@)){
-            push(@badHosts, $i);
+            push(@bad_hosts, $i);
         }
     }
 
-    return(@badHosts);
+    return(@bad_hosts);
 }
 
 #Test hosts with sentinelle and return each one dead
@@ -86,35 +86,35 @@ sub sentinelle_hosts(@){
 
     # Set the parameter of the -c option of sentinelle
     init_conf("oar.conf");
-    my $sentinelleCmd = get_conf("SENTINELLE_COMMAND");
-    oar_debug("[PingChecker] command to run : $sentinelleCmd\n");
-    my ($cmd, @null) = split(" ",$sentinelleCmd);
+    my $sentinelle_cmd = get_conf("SENTINELLE_COMMAND");
+    oar_debug("[PingChecker] command to run : $sentinelle_cmd\n");
+    my ($cmd, @null) = split(" ",$sentinelle_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
-    if (!defined($sentinelleCmd) || (! -x $cmd)){
+    if (!defined($sentinelle_cmd) || (! -x $cmd)){
         oar_warn("[PingChecker] You call sentinelle_hosts but SENTINELLE_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
 
-    my %checkTestNodes;
+    my %check_test_nodes;
     foreach my $i (@hosts){
-        $sentinelleCmd .= " -m$i";
-        $checkTestNodes{$i} = 1;
+        $sentinelle_cmd .= " -m$i";
+        $check_test_nodes{$i} = 1;
     }
 
-    my @badHosts;
-    oar_debug("[PingChecker] $sentinelleCmd \n");
+    my @bad_hosts;
+    oar_debug("[PingChecker] $sentinelle_cmd \n");
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
-        alarm($timeoutSentinelle);
-        open3(\*WRITER, \*READER, \*ERROR, $sentinelleCmd);
+        alarm($Timeout_sentinelle);
+        open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
         while(<ERROR>){
             chomp($_);
             $_ =~ m/^\s*([\w\.]+)\s*$/m;
-            if ($checkTestNodes{$1} == 1){
+            if ($check_test_nodes{$1} == 1){
                 oar_debug("[PingChecker] Bad host = $1 \n");
-                push(@badHosts, $1);
+                push(@bad_hosts, $1);
             }
         }
 	wait();
@@ -128,7 +128,7 @@ sub sentinelle_hosts(@){
         oar_warn("[PingChecker] sentinelle command times out : it is bad\n");
         return(@hosts);
     }else{
-        return(@badHosts);
+        return(@bad_hosts);
     }
 }
 
@@ -140,35 +140,35 @@ sub sentinelle_script_hosts(@){
 
     # Set the parameter of the -c option of sentinelle
     init_conf("oar.conf");
-    my $sentinelleCmd = get_conf("SENTINELLE_SCRIPT_COMMAND");
-    oar_debug("[PingChecker] command to run : $sentinelleCmd\n");
-    my ($cmd, @null) = split(" ",$sentinelleCmd);
+    my $sentinelle_cmd = get_conf("SENTINELLE_SCRIPT_COMMAND");
+    oar_debug("[PingChecker] command to run : $sentinelle_cmd\n");
+    my ($cmd, @null) = split(" ",$sentinelle_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
-    if (!defined($sentinelleCmd) || (! -x $cmd)){
+    if (!defined($sentinelle_cmd) || (! -x $cmd)){
         oar_warn("[PingChecker] You call sentinelle_script_hosts but SENTINELLE_script_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
 
-    my %checkTestNodes;
+    my %check_test_nodes;
     foreach my $i (@hosts){
-        $sentinelleCmd .= " -m $i";
-        $checkTestNodes{$i} = 1;
+        $sentinelle_cmd .= " -m $i";
+        $check_test_nodes{$i} = 1;
     }
 
-    my @badHosts;
-    oar_debug("[PingChecker] $sentinelleCmd \n");
+    my @bad_hosts;
+    oar_debug("[PingChecker] $sentinelle_cmd \n");
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
-        alarm($timeoutScriptSentinelle);
-        open3(\*WRITER, \*READER, \*ERROR, $sentinelleCmd);
+        alarm($Timeout_script_sentinelle);
+        open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
         while(<READER>){
             chomp($_);
             if ($_ =~ m/^([\w\.]+)\s:\sBAD\s.*$/m){
-                if ($checkTestNodes{$1} == 1){
+                if ($check_test_nodes{$1} == 1){
                     oar_debug("[PingChecker] Bad host = $1 \n");
-                    push(@badHosts, $1);
+                    push(@bad_hosts, $1);
                 }
             }
         }
@@ -183,7 +183,7 @@ sub sentinelle_script_hosts(@){
         oar_warn("[PingChecker] sentinelle script command times out : it is bad\n");
         return(@hosts);
     }else{
-        return(@badHosts);
+        return(@bad_hosts);
     }
 }
 
@@ -194,40 +194,40 @@ sub fping_hosts(@){
 
     # Get fping command from oar.conf
     init_conf("oar.conf");
-    my $fpingCmd = get_conf("FPING_COMMAND");
-    oar_debug("[PingChecker] command to run : $fpingCmd\n");
-    my ($cmd, @null) = split(" ",$fpingCmd);
+    my $fping_cmd = get_conf("FPING_COMMAND");
+    oar_debug("[PingChecker] command to run : $fping_cmd\n");
+    my ($cmd, @null) = split(" ",$fping_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
-    if (!defined($fpingCmd) || (! -x $cmd)){
+    if (!defined($fping_cmd) || (! -x $cmd)){
         oar_warn("[PingChecker] You want to call fping test method but FPING_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
 
-    $fpingCmd .= " -u";
-    my %checkTestNodes;
+    $fping_cmd .= " -u";
+    my %check_test_nodes;
     foreach my $i (@hosts){
-        $fpingCmd .= " $i";
-        $checkTestNodes{$i} = 1;
+        $fping_cmd .= " $i";
+        $check_test_nodes{$i} = 1;
     }
 
-    my @badHosts;
-    oar_debug("[PingChecker] $fpingCmd\n");
+    my @bad_hosts;
+    oar_debug("[PingChecker] $fping_cmd\n");
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
-        alarm($timeoutFping);
-        open3(\*WRITER, \*READER, \*ERROR, $fpingCmd);
+        alarm($Timeout_fping);
+        open3(\*WRITER, \*READER, \*ERROR, $fping_cmd);
         close(WRITER);
         foreach my $i (\*READER, \*ERROR){
             while(<$i>){
                 chomp($_);
                 #$_ =~ m/^\s*([\w\.]+)\s*$/m;
                 $_ =~ m/^\s*([\w\.-\d]+)\s*(.*)$/m;
-                if ($checkTestNodes{$1} == 1){
+                if ($check_test_nodes{$1} == 1){
                     if (!defined($2) || !($2 =~ m/alive/m)){
                         oar_debug("[PingChecker] Bad host = $1 \n");
-                        push(@badHosts, $1);
+                        push(@bad_hosts, $1);
                     }
                 }
             }
@@ -242,7 +242,7 @@ sub fping_hosts(@){
         oar_warn("[PingChecker] fping command times out : it is bad\n");
         return(@hosts);
     }else{
-        return(@badHosts);
+        return(@bad_hosts);
     }
 }
  
@@ -254,48 +254,48 @@ sub nmap_hosts(@){
 
     # Get nmap command from oar.conf
     init_conf("oar.conf");
-    my $nmapCmd = get_conf("NMAP_COMMAND");
-    oar_debug("[PingChecker] command to run : $nmapCmd\n");
-    my ($cmd, @null) = split(" ",$nmapCmd);
+    my $nmap_cmd = get_conf("NMAP_COMMAND");
+    oar_debug("[PingChecker] command to run : $nmap_cmd\n");
+    my ($cmd, @null) = split(" ",$nmap_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
-    if (!defined($nmapCmd) || (! -x $cmd)){
+    if (!defined($nmap_cmd) || (! -x $cmd)){
         oar_warn("[PingChecker] You want to call nmap test method but NMAP_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
 
-    $nmapCmd .= " -oG -";
+    $nmap_cmd .= " -oG -";
     my %ip2name;
-    my @badHosts;
+    my @bad_hosts;
     foreach my $i (@hosts){
         my $ip = getHostIp($i);
         if ($ip == 0){
-            push(@badHosts, $i);
+            push(@bad_hosts, $i);
         }else{
             if (!defined($ip2name{$ip})){
-                $nmapCmd .= " $ip";
+                $nmap_cmd .= " $ip";
             }
             push(@{$ip2name{$ip}}, $i);
         }
     }
 
-    my %goodHosts;
-    oar_debug("[PingChecker] $nmapCmd\n");
+    my %good_hosts;
+    oar_debug("[PingChecker] $nmap_cmd\n");
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
-        alarm($timeoutNmap);
-        open3(\*WRITER, \*READER, \*ERROR, $nmapCmd);
+        alarm($Timeout_nmap);
+        open3(\*WRITER, \*READER, \*ERROR, $nmap_cmd);
         close(WRITER);
         while(<READER>){
             chomp($_);
             if ($_ =~ m/^Host:\s(\d+\.\d+\.\d+\.\d+)\s(.*)$/m){
                 if (defined($ip2name{$1})){
-                    my $tmpIp = $1;
+                    my $tmp_ip = $1;
                     if (defined($2) && ($2 =~ m/open/m)){
-                        oar_debug("[PingChecker] Good host = $tmpIp \n");
-                        foreach my $i (@{$ip2name{$tmpIp}}){
-                            $goodHosts{$i} = 1;
+                        oar_debug("[PingChecker] Good host = $tmp_ip \n");
+                        foreach my $i (@{$ip2name{$tmp_ip}}){
+                            $good_hosts{$i} = 1;
                         }
                     }
                 }
@@ -312,11 +312,11 @@ sub nmap_hosts(@){
         return(@hosts);
     }else{
         foreach my $n (@hosts){
-            if (!defined($goodHosts{$n})){
-                push(@badHosts, $n);
+            if (!defined($good_hosts{$n})){
+                push(@bad_hosts, $n);
             }
         }
-        return(@badHosts);
+        return(@bad_hosts);
     }
 }   
 
@@ -338,13 +338,13 @@ sub generic_hosts(@){
         return(@hosts);
     }
 
-    my %checkTestNodes;
+    my %check_test_nodes;
     foreach my $i (@hosts){
         $test_cmd .= " $i";
-        $checkTestNodes{$i} = 1;
+        $check_test_nodes{$i} = 1;
     }
 
-    my @badHosts;
+    my @bad_hosts;
     oar_debug("[PingChecker] $test_cmd \n");
     $ENV{IFS}="";
     $ENV{ENV}="";
@@ -355,9 +355,9 @@ sub generic_hosts(@){
         while(<ERROR>){
             chomp($_);
             $_ =~ m/^\s*([\w\.]+)\s*$/m;
-            if ($checkTestNodes{$1} == 1){
+            if ($check_test_nodes{$1} == 1){
                 oar_debug("[PingChecker] Bad host = $1 \n");
-                push(@badHosts, $1);
+                push(@bad_hosts, $1);
             }
         }
 	wait();
@@ -371,7 +371,7 @@ sub generic_hosts(@){
         oar_warn("[PingChecker] GENERIC_COMMAND timed out : it is bad\n");
         return(@hosts);
     }else{
-        return(@badHosts);
+        return(@bad_hosts);
     }
 }   
 

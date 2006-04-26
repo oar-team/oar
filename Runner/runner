@@ -20,9 +20,9 @@ if (defined($ENV{OARDIR})){
 
 my $batch = $binpath."bipbip";
 
-my $exitCode = 0;
+my $Exit_code = 0;
 
-sub answer ($$$){
+sub answer($$$){
     my $jobid = shift;
     my $info = shift;
     my $message = shift;
@@ -42,8 +42,7 @@ sub answer ($$$){
 my $base = iolib::connect();
 
 # for toError jobs
-my @jobErrorList = iolib::get_jobs_in_state($base,"toError");
-foreach  my $j (@jobErrorList){
+foreach my $j (iolib::get_jobs_in_state($base,"toError")){
     oar_debug("[Runner] Treate job $j->{job_id} in toError state\n");
     if ($j->{job_type} eq "INTERACTIVE"){
         oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
@@ -57,8 +56,7 @@ foreach  my $j (@jobErrorList){
 }
 
 # for toAckReservation jobs
-my @jobResaToAck = iolib::get_jobs_in_state($base,"toAckReservation");
-for my $j (@jobResaToAck){
+for my $j (iolib::get_jobs_in_state($base,"toAckReservation"){
     oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
     if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
         oar_warn("[Runner] Frag job $j->{job_id}), I cannot notify oarsub for the reservation\n");
@@ -66,23 +64,21 @@ for my $j (@jobResaToAck){
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         iolib::frag_job($base,$j->{job_id});
         iolib::unlock_table($base);
-        $exitCode = 1;
+        $Exit_code = 1;
     }else{
         oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
-        iolib::set_job_state($base, $j->{job_id}, "Waiting");
+        iolib::set_job_state($base,$j->{job_id} , "Waiting");
         # Test if we must notify Almighty to Launch scheduler for the reservation
-        if ($exitCode == 0){
+        if ($Exit_code == 0){
             if (iolib::sql_to_local($j->{start_time}) - 1 <= iolib::sql_to_local(iolib::get_date($base))){
-                $exitCode = 2;
+                $Exit_code = 2;
             }
         }
     }
 }
 
 # for toLaunch jobs
-my @joblist = iolib::get_jobs_in_state($base,"toLaunch");
-
-foreach my $job (@joblist) {
+foreach my $job (iolib::get_jobs_in_state($base,"toLaunch") {
     my $jobid = $job->{job_id};
     my $jobtype = $job->{job_type};
     my $jobinfo = $job->{info_type};
@@ -101,13 +97,13 @@ foreach my $job (@joblist) {
                 iolib::frag_job($base,$jobid);
                 iolib::unlock_table($base);
                 $do_not_launch = 1;
-                $exitCode = 1;
+                $Exit_code = 1;
             }
         }
         if ($do_not_launch == 0){
             oar_debug("[Runner] try to execute $batch $jobid \n");
-            #my $res = oar_Tools::fork_no_wait("$batch $jobid ");
-            #oar_debug("[Runner] Child PID = $res\n");
+            my $res = oar_Tools::fork_no_wait("$batch $jobid ");
+            oar_debug("[Runner] Child PID = $res\n");
         }
     #}
 }
@@ -115,4 +111,4 @@ foreach my $job (@joblist) {
 
 iolib::disconnect($base);
 
-exit($exitCode);
+exit($Exit_code);

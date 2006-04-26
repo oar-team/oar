@@ -36,32 +36,30 @@ my @Nodes_to_check = keys(%Node_list);
 oar_debug("[finaud] Testing resource(s) on : @Nodes_to_check\n");
 
 # Call the right program to test each nodes
-my @badNodes = test_hosts(@Nodes_to_check);
-
-my %badNodeHash;
-foreach my $i (@badNodes){
-    $badNodeHash{$i} = 0;
+my %bad_node_hash;
+foreach my $i (test_hosts(@Nodes_to_check)){
+    $bad_node_hash{$i} = 0;
 }
 
 #Make the decisions
-my $returnValue = 0;
+my $return_value = 0;
 foreach my $i (@Resource_list){
-    if (defined($badNodeHash{$i->{network_address}}) and ($i->{state} eq "Alive")){
+    if (defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq "Alive")){
         iolib::set_resource_nextState($base,$i->{resource_id},"Suspected");
         iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
-        $returnValue = 1;
+        $return_value = 1;
         oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Suspected\n");
-    }elsif (!defined($badNodeHash{$i->{network_address}}) and ($i->{state} eq
+    }elsif (!defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq
     "Suspected")){
         iolib::set_resource_nextState($base,$i->{resource_id},"Alive");
         iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
-        $returnValue = 1;
+        $return_value = 1;
         oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Alive\n");
     }
 }
 
 iolib::disconnect($base);
 
-oar_debug("[finaud] Finaud ended : $returnValue\n");
+oar_debug("[finaud] Finaud ended : $return_value\n");
 
-exit($returnValue);
+exit($return_value);

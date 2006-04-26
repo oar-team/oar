@@ -11,7 +11,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 my $Security_time_overhead = 1;
 
 # waiting time when a reservation has not all of its nodes
-my $reservationWaitingTimeout = 300;
+my $Reservation_waiting_timeout = 300;
 
 # global variables : initialized in init_scheduler function
 my %besteffort_resource_occupation;
@@ -43,11 +43,11 @@ sub init_scheduler($$){
     iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions"]);
    
     #calculate now date with no overlap with other jobs
-    my $previousRefTimeSec = iolib::sql_to_local(iolib::get_gantt_date($dbh));
+    my $previous_ref_time_sec = iolib::sql_to_local(iolib::get_gantt_date($dbh));
     $current_time_sec = iolib::sql_to_local(iolib::get_date($dbh));
-    if ($current_time_sec < $previousRefTimeSec){
+    if ($current_time_sec < $previous_ref_time_sec){
         # The system is very fast!!!
-        $current_time_sec = $previousRefTimeSec;
+        $current_time_sec = $previous_ref_time_sec;
     }
     $current_time_sec++;
     $current_time_sql = iolib::local_to_sql($current_time_sec);
@@ -201,7 +201,7 @@ sub treate_waiting_reservation_jobs($$){
             iolib::set_gantt_job_startTime($dbh,$job->{job_id},iolib::local_to_sql($current_time_sec + 1));
         }elsif(iolib::sql_to_local($job->{start_time}) <= $current_time_sec){
             my @resa_resources = iolib::get_gantt_resources_for_job($dbh,$moldable->[2]);
-            if ((iolib::sql_to_local($job->{start_time}) + $reservationWaitingTimeout > $current_time_sec)){
+            if ((iolib::sql_to_local($job->{start_time}) + $Reservation_waiting_timeout > $current_time_sec)){
                 if ($#resa_resources > $#resa_alive_resources){
                     # we have not the same number of nodes than in the query --> wait the specified timeout
                     oar_debug("[oar_scheduler] Reservation $job->{job_id} is in waiting mode because all nodes are not yet available.\n");
@@ -233,34 +233,34 @@ sub treate_waiting_reservation_jobs($$){
 # return 1 if there is at least a job to treate else 0
 sub check_reservation_jobs($$){
     my $dbh = shift;
-    my $queueName = shift;
+    my $queue_name = shift;
 
-    oar_debug("[oar_scheduler] check_reservation_jobs : Check for new reservation in the $queueName queue\n");
+    oar_debug("[oar_scheduler] check_reservation_jobs : Check for new reservation in the $queue_name queue\n");
 
     my $return = 0;
 
     my $gantt = Gantt::new();
 
     # Find jobs to check
-    my @jobsToSched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queueName);
-    if ($#jobsToSched >= 0){
+    my @jobs_to_sched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queue_name);
+    if ($#jobs_to_sched >= 0){
         # Build gantt diagram of other jobs
         # Take care of currently scheduled jobs except besteffort jobs if queueName is not besteffort
-        my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($dbh);
-        foreach my $i (keys(%alreadyScheduledJobs)){
+        my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($dbh);
+        foreach my $i (keys(%already_scheduled_jobs)){
             my $types = iolib::get_current_job_types($dbh,$i);
             if (!defined($types->{"besteffort"})){
-                foreach my $r (@{$alreadyScheduledJobs{$i}->[3]}){
+                foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
                     Gantt::set_occupation(  $gantt,
-                                         iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
-                                            iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $Security_time_overhead,
+                                         iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
+                                            iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $Security_time_overhead,
                                             $r
                                          );
                 }
             }
         }
     }
-    foreach my $job (@jobsToSched){
+    foreach my $job (@jobs_to_sched){
         my $job_descriptions = iolib::get_resources_data_structure_current_job($dbh,$job->{job_id});
         # It is a reservation, we take care only of the first moldable job
         my $moldable = $job_descriptions->[0];
@@ -358,8 +358,8 @@ sub check_jobs_to_kill($){
 
     oar_debug("[oar_scheduler] check_jobs_to_kill : check besteffort jobs\n");
     my $return = 0;
-    my %nodesForJobsToLaunch = iolib::get_gantt_resources_for_jobs_to_launch($dbh,$current_time_sql); 
-    foreach my $r (keys(%nodesForJobsToLaunch)){
+    my %nodes_for_jobs_to_launch = iolib::get_gantt_resources_for_jobs_to_launch($dbh,$current_time_sql); 
+    foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($besteffort_resource_occupation{$r})){
             oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $besteffort_resource_occupation{$r} must be killed\n");
             iolib::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[oar_scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
@@ -381,7 +381,7 @@ sub check_jobs_to_launch($){
     my $dbh = shift;
 
     oar_debug("[oar_scheduler] check_jobs_to_launch : check jobs with a start time <= $current_time_sql\n");
-    my $returnCode = 0;
+    my $return_code = 0;
     my %jobs_to_launch = iolib::get_gantt_jobs_to_launch($dbh,$current_time_sql);
     
     foreach my $i (keys(%jobs_to_launch)){
@@ -401,10 +401,10 @@ sub check_jobs_to_launch($){
         foreach my $r (@{$jobs_to_launch{$i}->[1]}){
             iolib::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
         }
-        $returnCode = 1;
+        $return_code = 1;
     }
 
-    return($returnCode);
+    return($return_code);
 }
 
 #Update gantt visualization tables with new scheduling
@@ -415,4 +415,4 @@ sub update_gantt_visu_tables($){
     iolib::update_gantt_visualization($dbh); 
 }
 
-return 1;
+return(1);

@@ -9,7 +9,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use IO::Socket::INET;
 use strict;
 
-my $exitCode = 0;
+my $Exit_code = 0;
 
 my $base = iolib::connect();
 
@@ -31,15 +31,15 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         my @hosts;
-        my $finaudTag;
+        my $finaud_tag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
         if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")){
             @hosts = iolib::get_hostname_event($base,$i->{idEvent});
-            $finaudTag = "YES";
+            $finaud_tag = "YES";
         }else{
             my $job = iolib::get_job($base,$i->{idJob});
             @hosts = iolib::get_job_host_log($base,$job->{assigned_moldable_job});
-            $finaudTag = "NO";
+            $finaud_tag = "NO";
             if (($i->{type} ne "EXTERMINATE_JOB")){
                 @hosts = ($hosts[0]);
             }
@@ -50,8 +50,8 @@ foreach my $i (@events_to_check){
             if ($#free_resources >= 0){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting resource(s) : @free_resources\n");
                 foreach my $r (@free_resources){
-                    iolib::set_node_state($base,$j,"Suspected",$finaudTag);
-                    $exitCode = 1;
+                    iolib::set_node_state($base,$j,"Suspected",$finaud_tag);
+                    $Exit_code = 1;
                 }
             }else{
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because all resources are busy\n");
@@ -68,7 +68,7 @@ my %resources_to_change = iolib::get_resources_change_state($base);
 #A Term command must be added in the Almighty
 oar_debug("[NodeChangeState] number of resources to change state = ".keys(%resources_to_change)."\n");
 if (keys(%resources_to_change) > 0){
-    $exitCode = 1;
+    $Exit_code = 1;
 }
 
 foreach my $i (keys(%resources_to_change)){
@@ -90,7 +90,7 @@ foreach my $i (keys(%resources_to_change)){
                 oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
                 iolib::frag_job($base,$j);
                 # A Leon must be run
-                $exitCode = 2;
+                $Exit_code = 2;
             }
             oar_debug("[NodeChangeState] Check done\n");
         }
@@ -102,4 +102,4 @@ foreach my $i (keys(%resources_to_change)){
 iolib::unlock_table($base);
 iolib::disconnect($base);
 
-exit($exitCode);
+exit($Exit_code);

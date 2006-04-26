@@ -226,7 +226,7 @@ GetOptions ("resource|l=s" => \@resource,
 	    "stderr=s" => \$Stderr_file
            );
 
-if (defined $sos){
+if (defined($sos)){
     usage();
     exit(0);
 }
@@ -386,7 +386,6 @@ if ($Interactive == 0) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-print("@Type \n");
     $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$stdout,$stderr);
 }else{
     $Cmd_executor = "Qsub -I";
@@ -434,7 +433,8 @@ if ($Reservation ne "0"){
     print("Interactive mode : waiting \n");
     my $client = $Server->accept();
     $answer = <$client>;
-    if ($answer eq "GOOD JOB\n"){
+    chop($answer);
+    if ($answer eq "GOOD JOB"){
         connect_job();
     }else{
         print("Sorry but the system returned : $answer\n");

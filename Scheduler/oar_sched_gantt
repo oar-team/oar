@@ -49,15 +49,15 @@ foreach my $r (iolib::list_resources($base)){
 }
 
 # Take care of currently scheduled jobs (gantt in the database)
-my %alreadyScheduledJobs = iolib::get_gantt_scheduled_jobs($base);
-foreach my $i (keys(%alreadyScheduledJobs)){
+my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($base);
+foreach my $i (keys(%already_scheduled_jobs)){
     # Do not take care of besteffort jobs
     my $types = iolib::get_current_job_types($base,$i);
     if (!defined($types->{"besteffort"})){
-        foreach my $r (@{$alreadyScheduledJobs{$i}->[3]}){
+        foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
             Gantt::set_occupation(  $gantt,
-                                    iolib::sql_to_local($alreadyScheduledJobs{$i}->[0]),
-                                    iolib::sql_to_duration($alreadyScheduledJobs{$i}->[1]) + $security_time_overhead,
+                                    iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
+                                    iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $security_time_overhead,
                                     $r
                                  );
         }

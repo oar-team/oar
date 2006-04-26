@@ -9,22 +9,22 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 
 # Get job delete and checkpoint walltime values
-my $leonSoftWalltime = oar_Tools::get_default_leon_soft_walltime();
-my $leonWalltime = oar_Tools::get_default_leon_walltime();
+my $Leon_soft_walltime = oar_Tools::get_default_leon_soft_walltime();
+my $Leon_walltime = oar_Tools::get_default_leon_walltime();
 init_conf("oar.conf");
 if (is_conf("JOBDEL_SOFTWALLTIME")){
-    $leonSoftWalltime = get_conf("JOBDEL_SOFTWALLTIME");
+    $Leon_soft_walltime = get_conf("JOBDEL_SOFTWALLTIME");
 }
 if (is_conf("JOBDEL_WALLTIME")){
-    $leonWalltime = get_conf("JOBDEL_WALLTIME");
+    $Leon_walltime = get_conf("JOBDEL_WALLTIME");
 }
 
-if ($leonWalltime <= $leonSoftWalltime){
-    $leonWalltime = $leonSoftWalltime + 1;
-    oar_warn("[sarko] (JOBDEL_WALLTIME <= JOBDEL_SOFTWALLTIME) so I must set JOBDEL_WALLTIME to $leonWalltime\n");
+if ($Leon_walltime <= $Leon_soft_walltime){
+    $Leon_walltime = $Leon_soft_walltime + 1;
+    oar_warn("[sarko] (JOBDEL_WALLTIME <= JOBDEL_SOFTWALLTIME) so I must set JOBDEL_WALLTIME to $Leon_walltime\n");
 }
 
-oar_debug("[sarko] JOBDEL_SOFTWALLTIME = $leonSoftWalltime; JOBDEL_WALLTIME = $leonWalltime\n");
+oar_debug("[sarko] JOBDEL_SOFTWALLTIME = $Leon_soft_walltime; JOBDEL_WALLTIME = $Leon_walltime\n");
 
 # get script args
 my $base = iolib::connect();
@@ -41,36 +41,33 @@ $current = iolib::sql_to_local($current);
 oar_debug("[sarko] Current time : $current\n");
 
 # Look at leon timers
-my @JobToFrag = iolib::get_timered_job($base);
-my $Jid;
 # Decide if OAR must retry to delete the job or just change values in the database
-foreach my $Jid (@JobToFrag){
-    my $refJob = iolib::get_job($base,$Jid);
-    if (($refJob->{'state'} eq "Terminated") || ($refJob->{'state'} eq "Error")){
-        iolib::job_fragged($base,$Jid);
-        oar_debug("[sarko] I set to FRAGGED the job $Jid\n");
+foreach my $j (iolib::get_timered_job($base)){
+    my $job_ref = iolib::get_job($base,$j->{job_id});
+    if (($job_ref->{state} eq "Terminated") || ($job_ref->{state} eq "Error")){
+        iolib::job_fragged($base,$j->{job_id});
+        oar_debug("[sarko] I set to FRAGGED the job $j->{job_id}\n");
     }else{
-        my $fragDate_sql = iolib::get_frag_date($base,$Jid);
-        my $fragDate = iolib::sql_to_local($fragDate_sql);
-        oar_debug("[sarko] frag date : $fragDate , $fragDate_sql\n");
-        if (($current > $fragDate+$leonSoftWalltime) && ($current <= $fragDate+$leonWalltime)){
-            oar_debug("[sarko] Leon will RE-FRAG bipbip of job $Jid\n");
-            iolib::job_refrag($base,$Jid);
+        my $frag_date_sql = iolib::get_frag_date($base,$j->{job_id});
+        my $frag_date = iolib::sql_to_local($frag_date_sql);
+        oar_debug("[sarko] frag date : $frag_date , $frag_date_sql\n");
+        if (($current > $frag_date+$Leon_soft_walltime) && ($current <= $frag_date+$Leon_walltime)){
+            oar_debug("[sarko] Leon will RE-FRAG bipbip of job $j->{job_id}\n");
+            iolib::job_refrag($base,$j->{job_id});
             $guilty_found=1;
-        }elsif ($current > $fragDate+$leonWalltime){
-            oar_debug("[sarko] Leon will EXTERMINATE bipbip of job $Jid\n");
-            iolib::job_leon_exterminate($base,$Jid);
+        }elsif ($current > $frag_date+$Leon_walltime){
+            oar_debug("[sarko] Leon will EXTERMINATE bipbip of job $j->{job_id}\n");
+            iolib::job_leon_exterminate($base,$j->{job_id});
             $guilty_found=1;
         }else{
-            oar_debug("[sarko] The leon timer is not yet expired for the job $Jid; I do nothing\n");
+            oar_debug("[sarko] The leon timer is not yet expired for the job $j->{job_id}; I do nothing\n");
         }
     }
 }
 
 
 # Look at job walltimes
-my @result = iolib::get_jobs_in_state($base, "Running");
-foreach my $job (@result){
+foreach my $job (iolib::get_jobs_in_state($base, "Running"){
     my ($date, $start, $max);
 
     # Get starting time
@@ -79,8 +76,8 @@ foreach my $job (@result){
     $start = iolib::sql_to_local($date);
 
     # Get maxtime
-    my $moldJob = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
-    $date = $moldJob->{moldable_walltime};
+    my $mold_job = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
+    $date = $mold_job->{moldable_walltime};
     $max = iolib::sql_to_duration($date);
 
     oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current\n");
@@ -97,36 +94,35 @@ foreach my $job (@result){
         # Retrieve node names used by the job
         my @hosts = iolib::get_job_current_hostnames($base,$job->{job_id});
         iolib::add_new_event($base,"CHECKPOINT",$job->{job_id},"User oar (sarko) requested a checkpoint on the job $job->{job_id}");
-        my $timeoutSSH = oar_Tools::get_ssh_timeout();
-        my $strComment;
-        my @exitCodes;
+        my $str_comment;
+        my @exit_codes;
         # Timeout the ssh command
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
-            alarm($timeoutSSH);
-            @exitCodes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1);
+            alarm(oar_Tools::get_ssh_timeout());
+            @exit_codes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1);
             alarm(0);
         };
         if ($@){
             if ($@ eq "alarm\n"){
-                $strComment = "[sarko] Cannot contact $hosts[0], operation timouted ($timeoutSSH s). So I cannot send checkpoint signal to the job $job->{job_id}";
-                oar_warn("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$strComment);
+                $str_comment = "[sarko] Cannot contact $hosts[0], operation timouted (".oar_Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $job->{job_id}";
+                oar_warn("$str_comment\n");
+                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }else{
-                $strComment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $hosts[0]";
-                oar_warn("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$strComment);
+                $str_comment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $hosts[0]";
+                oar_warn("$str_comment\n");
+                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }
         }else{
-            if ($exitCodes[0] == 0){
+            if ($exit_codes[0] == 0){
                 iolib::set_job_autoCheckpointed($base, $job->{job_id});
                 $strComment = "[sarko] The job $job->{job_id} was notified to checkpoint itself (send SIGUSR2) on the node $hosts[0]";
-                oar_debug("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$strComment);
+                oar_debug("$str_comment\n");
+                iolib::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$str_comment);
             }else{
-                $strComment = "[sarko] The kill command return a bad exit code (@exitCodes) for the job $job->{job_id} on the node $hosts[0]";
-                oar_warn("$strComment\n");
-                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$strComment);
+                $str_comment = "[sarko] The kill command return a bad exit code (@exit_codes) for the job $job->{job_id} on the node $hosts[0]";
+                oar_warn("$str_comment\n");
+                iolib::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }
         }
     }
