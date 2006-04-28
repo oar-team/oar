@@ -110,7 +110,6 @@ if ($#bad >= 0){
 }
 # end CHECK
 
-iolib::set_job_state($base,$Job_id,"Running");
 
 #CALL OAREXEC ON THE FIRST NODE
 my $moldable = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
@@ -164,6 +163,7 @@ eval {
 };
 
 if ($error == 0){
+    iolib::set_job_state($base,$Job_id,"Running");
     oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");
 }else{
     oar_debug("[bipbip $Job_id] Oarexec returned an early error ($error) --> check end of job\n");

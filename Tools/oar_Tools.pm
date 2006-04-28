@@ -1,7 +1,6 @@
 package oar_Tools;
 
 use IO::Socket::INET;
-use oar_Judas;
 use strict;
 
 # Constants
@@ -25,11 +24,12 @@ sub get_ssh_timeout();
 sub get_default_leon_soft_walltime();
 sub get_default_leon_walltime();
 sub get_default_dead_switch_time();
-sub check_client_host_ip($$$);
+sub check_client_host_ip($$);
 sub fork_no_wait($);
 sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
+sub get_oarexecuser_script($$$$$@);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -168,19 +168,19 @@ sub signal_oarexec($$$$){
 
 
 # Check if a client socket is authorized to connect to us
-# args : OAR module name, client socket, ref of an array of authorized networks
+# args : client socket, ref of an array of authorized networks
 # return 1 for success else 0
-sub check_client_host_ip($$$){
-    my $module_name = shift;
+sub check_client_host_ip($$){
     my $client = shift;
     my $ref_array = shift;
 
     my @authorized_hosts = @{$ref_array};
 
+    my @logs;
     my $extrem = getpeername($client);
     my ($remote_port,$addr_in) = unpack_sockaddr_in($extrem);
     my $remote_host = inet_ntoa($addr_in);
-    oar_Judas::oar_debug("[$module_name] [checkClientHostIP] Remote host = $remote_host ; remote port = $remote_port\n");
+    push(@logs, "[checkClientHostIP] Remote host = $remote_host ; remote port = $remote_port\n");
     $remote_host =~ m/^\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*$/m;
     $remote_host = ($1 << 24)+($2 << 16)+($3 << 8)+$4;
     my $i = 0;
@@ -194,12 +194,12 @@ sub check_client_host_ip($$$){
             $host_allow = 1;
         }else{
             $str .= "BAD";
-            oar_Judas::oar_debug("[$module_name] [checkClientHostIP] $str\n");
+            push(@logs, "[checkClientHostIP] $str\n");
         }
-        oar_Judas::oar_debug("[$module_name] [checkClientHostIP] $str\n");
+        push(@logs, "[checkClientHostIP] $str\n");
         $i++;
     }
-    return($host_allow);
+    return($host_allow,@logs);
 }
 
 
@@ -235,4 +235,70 @@ sub launch_command($){
     return($exit_value,$signal_num,$dumped_core);
 }
 
-return 1;
+
+# Create the shell script used to execute right command for the user
+# The resulting script can be launched with : sh -c 'script'
+sub get_oarexecuser_script($$$$$@){
+    my ($node_file,
+        $job_id,
+        $user,
+        $shell,
+        $launching_directory,
+        $tag,
+        $stdout_file,
+        $stderr_file,
+        $cmd) = @_;
+
+    my $script = '
+if [ "a$TERM" == "a" ] || [ "$TERM" == "unknown" ]
+then
+    export TERM=xterm
+fi
+
+export OAR_FILE_NODES='.$node_file.'
+export OAR_JOBID='.$job_id.'
+export OAR_USER='.$user.'
+export OAR_WORKDIR='.$launching_directory.'
+
+export OAR_NODEFILE=$OAR_FILE_NODES
+export OAR_O_WORKDIR=$OAR_WORKDIR
+export OAR_NODE_FILE=$OAR_FILE_NODES
+export OAR_RESOURCE_FILE=$OAR_FILE_NODES
+export OAR_WORKING_DIRECTORY=$OAR_WORKDIR
+export OAR_JOB_ID=$OAR_JOBID
+
+if ( cd $OAR_WORKING_DIRECTORY &> /dev/null )
+then
+    cd $OAR_WORKING_DIRECTORY
+else
+    #Can not go into working directory
+    exit 1
+fi
+';
+
+    if ($tag eq "I"){
+        $script .= "\n".$shell."\n";
+    }elsif($tag eq "P"){
+        $script .= '
+export OAR_STDOUT='.$stdout_file.'
+export OAR_STDERR='.$stderr_file.'
+    
+#Test if we can write into stout and stderr files
+if ! ( > $OAR_STDOUT ) &> /dev/null || ! ( > $OAR_STDERR ) &> /dev/null
+then
+    exit 2
+fi
+('."$cmd".' > $OAR_STDOUT) >& $OAR_STDERR
+';
+    }else{
+        return(undef);
+    }
+
+    $script .= '
+exit 0
+';
+
+    return($script);
+}
+
+1;

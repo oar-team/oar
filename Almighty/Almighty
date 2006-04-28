@@ -156,7 +156,10 @@ sub qget_appendice(){
         my $client=$server->accept();
 
         #Test if this peer is allowed
-        my $hostAllow = oar_Tools::check_client_host_ip("Almighty",$client,\@authorizedHosts);
+        my ($hostAllow,@logs) = oar_Tools::check_client_host_ip($client,\@authorizedHosts);
+        foreach my $l (@logs){
+            oar_debug("[Almighty] $l");
+        }
         if ($hostAllow == 0){
             $client->close();
             #return nothing
