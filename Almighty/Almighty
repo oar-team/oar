@@ -519,10 +519,12 @@ while (1){
     # LEON
     elsif($state eq "Leon"){
         my $check_result = leon();
+        $state="Time update";
         if ($check_result == 1){
             add_command("Term");
+        }elsif($check_result == 2){
+            $state = "Change node state";
         }
-        $state="Time update";
     }
 
     # Change state for dynamic nodes

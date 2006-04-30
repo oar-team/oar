@@ -56,7 +56,7 @@ foreach my $j (iolib::get_jobs_in_state($base,"toError")){
 }
 
 # for toAckReservation jobs
-for my $j (iolib::get_jobs_in_state($base,"toAckReservation"){
+foreach my $j (iolib::get_jobs_in_state($base,"toAckReservation")){
     oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
     if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
         oar_warn("[Runner] Frag job $j->{job_id}), I cannot notify oarsub for the reservation\n");
@@ -78,7 +78,7 @@ for my $j (iolib::get_jobs_in_state($base,"toAckReservation"){
 }
 
 # for toLaunch jobs
-foreach my $job (iolib::get_jobs_in_state($base,"toLaunch") {
+foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
     my $jobid = $job->{job_id};
     my $jobtype = $job->{job_type};
     my $jobinfo = $job->{info_type};

@@ -15,7 +15,6 @@
 #     - 20 : cannot create STDOUT and STDERR files
 #     - 22 : cannot go into the launching directory of the job and epilogue was in error
 #     - 30 : timeout of the bipbip hashtable send
-#     - 31 : bad hashtable sent by bipbip
 #     - 33 : oarexec was stopped normally via USR1 signal but there were an epilogue error
 #     - 34 : all worked normally and this is the result of an USR1 signal
 #
@@ -43,8 +42,6 @@ my $Blockset = POSIX::SigSet->new(SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIGUSR2, SI
 sigprocmask(SIG_BLOCK, $Blockset, $sigset);
 
 my $Bin_Path = $ENV{OARDIR}."/";
-my $Prologue = $ENV{HOME}."/oar_prologue";
-my $Epilogue = $ENV{HOME}."/oar_epilogue";
 my $Tmp_file_prefix = oar_Tools::get_default_oarexec_directory();
 
 my $Debug_mode;
@@ -134,22 +131,23 @@ sub send_kill_signal_to_myself(){
 }
 
 # Retrieve job informations from bipbip
-my $bipbip_line;
+my $Job;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm(oar_Tools::get_bipbip_ssh_hashtable_send_timeout());
-    $bipbip_line = <STDIN>;
+    while(!defined($Job->{job_id})){
+        $Job = eval( <STDIN> );
+    }
     alarm(0);
 };
 if( $@ ){
     print("[oarexec $Job_id] Timeout of hashtable SSH transfer\n");
     exit(30);
 }
-my $Job = eval( $bipbip_line );
-if (!defined($Job->{job_id})){
-    print("[oarexec $Job_id] Bad SSH hashtable transfered\n$bipbip_line\n");
-    exit(31);
-}
+#if (!defined($Job->{job_id})){
+#    print("[oarexec $Job_id] Bad SSH hashtable transfered\n$bipbip_line\n");
+#    exit(31);
+#}
 
 my $host = hostname();
 
@@ -180,22 +178,23 @@ close FILE;
 
 print("[oarexec $Job_id] nom de commande [$Job->{command}]\n");
 
+if (defined($Job->{prologue})){
 # Launch prologue script
-# Exit code of prologue and epilogue
-my $Script_error = 0;
-eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Job->{pro_epi_timeout});
-    print("[oarexec $Job_id] LAUNCH prologue : $Prologue $Job_id $Job->{user} $Node_file\n");
-    $Script_error = system("$Prologue $Job_id $Job->{user} $Node_file");
-    print("[oarexec $Job_id] END prologue : $Prologue\n");
-    alarm(0);
-};
-if( $@ || ($Script_error != 0)){
-    print("[oarexec $Job_id] Prologue error : $@; return code = $Script_error\n");
-    clean_all();
-    print("[oarexec $Job_id] Error in the OAR prolog execution\n");
-    exit(1);
+    my $script_error = 0;
+    eval {
+        $SIG{ALRM} = sub { die "alarm\n" };
+        alarm($Job->{pro_epi_timeout});
+        print("[oarexec $Job_id] LAUNCH prologue : $Job->{prologue} $Job_id $Job->{user} $Node_file\n");
+        $script_error = system("$Job->{prologue} $Job_id $Job->{user} $Node_file");
+        print("[oarexec $Job_id] END prologue : $Job->{prologue}\n");
+        alarm(0);
+    };
+    if( $@ || ($script_error != 0)){
+        print("[oarexec $Job_id] Prologue error : $@; return code = $script_error\n");
+        clean_all();
+        print("[oarexec $Job_id] Error in the OAR prolog execution\n");
+        exit(1);
+    }
 }
 
 # Get user shell
@@ -210,7 +209,9 @@ if (!defined($shell)){
 my $cmd;
 if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
-    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
+#    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
+    my $str = oar_Tools::get_oarexecuser_script($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},"P",$Job->{stdout_file},$Job->{stderr_file},$Job->{command});
+    $cmd = "sudo -H -u $Job->{user} sh -c '$str'";
 }
 
 #resolve terminal type problems
@@ -289,8 +290,13 @@ if(fork() != 0){
 #    close(STDOUT);
 #    close(STDERR);
 open(STDIN, "/dev/zero");
-open(STDOUT, ">/dev/null");
-open(STDERR, ">/dev/null");
+if ($Job->{debug_mode} > 0){
+    open(STDOUT, ">>$Tmp_file_prefix/oar.log");
+    open(STDERR, ">>$Tmp_file_prefix/oar.log");
+}else{
+    open(STDOUT, ">/dev/null");
+    open(STDERR, ">/dev/null");
+}
 
 #Write file with this oarexec pid
 my $Pid_file = oar_Tools::get_oar_pid_file_name($Job_id);
@@ -306,7 +312,7 @@ sigprocmask(SIG_UNBLOCK, $Blockset);
 my $pid = $$;
 if ($Job->{mode} eq "PASSIVE"){
     print("[oarexec $Job_id] Launch the command : $cmd\n");
-    my $pid = fork;
+    $pid = fork;
     if($pid == 0){
         #CHILD
         $SIG{CHLD} = 'DEFAULT';
@@ -345,7 +351,7 @@ while (($line_read != $pid) and ($Stop_signal == 0)){
         print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
         if ($line_read eq "KILL"){
             print("[oarexec $Job_id] Kill children\n");
-            killChilds($pid);
+            kill_childs($pid);
             $kill_myself = 1;
         }elsif ($line_read eq "STOP"){
             print("[oarexec $Job_id] Receive STOP notification\n");
@@ -388,25 +394,29 @@ close(pipe_kill_write);
 close(pipe_kill_read);
 
 print("[oarexec $Job_id] Job Terminated\n");
-# Launch epilogue script
-eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Job->{pro_epi_timeout});
-    print("[oarexec $Job_id] LAUNCH epilogue : $Epilogue $Job_id $Job->{user} $Node_file $Job->{command}\n");
-    $Script_error = system("$Epilogue $Job_id $Job->{user} $Node_file $Job->{command}");
-    print("[oarexec $Job_id] END epilogue : $Epilogue\n");
-    alarm(0);
-};
-if( $@ || ($Script_error != 0)){
-    print("[oarexec $Job_id] Epilogue error : $@; return code = $Script_error\n");
-    clean_all();
-    print("[oarexec $Job_id] Error in the OAR epilog execution\n");
-    if ($Kill_myself == 1){
-        quit_oarexec(4,$Job);
-    }elsif($Stop_signal == 1){
-        quit_oarexec(33,$Job);
-    }else{
-        quit_oarexec(2+$Oarexec_exit_code,$Job);
+
+if (defined($Job->{epilogue})){
+    # Launch epilogue script
+    my $script_error = 0;
+    eval {
+        $SIG{ALRM} = sub { die "alarm\n" };
+        alarm($Job->{pro_epi_timeout});
+        print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}\n");
+        $script_error = system("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
+        print("[oarexec $Job_id] END epilogue : $Job->{epilogue}\n");
+        alarm(0);
+    };
+    if( $@ || ($script_error != 0)){
+        print("[oarexec $Job_id] Epilogue error : $@; return code = $script_error\n");
+        clean_all();
+        print("[oarexec $Job_id] Error in the OAR epilog execution\n");
+        if ($Kill_myself == 1){
+            quit_oarexec(4,$Job);
+        }elsif($Stop_signal == 1){
+            quit_oarexec(33,$Job);
+        }else{
+            quit_oarexec(2+$Oarexec_exit_code,$Job);
+        }
     }
 }
 

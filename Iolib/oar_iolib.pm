@@ -38,7 +38,7 @@ sub get_job_host_log($$);
 sub get_to_kill_jobs($);
 sub is_tokill_job($$);
 sub get_timered_job($);
-sub get_toexterminate_job($);
+sub get_to_exterminate_jobs($);
 sub get_frag_date($$);
 sub set_running_date($$);
 sub set_running_date_arbitrary($$$);
@@ -46,7 +46,7 @@ sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$);
 sub get_oldest_waiting_idjob($);
 sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
@@ -561,19 +561,20 @@ sub get_timered_job($) {
 # parameters : base
 # return value : list of jobid
 # side effects : /
-sub get_toexterminate_job($) {
+sub get_to_exterminate_jobs($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT frag_id_job
-                                FROM frag_jobs
+    my $sth = $dbh->prepare("   SELECT jobs.*
+                                FROM frag_jobs, jobs
                                 WHERE
                                     frag_state = \'LEON_EXTERMINATE\'
+                                    AND frag_jobs.frag_id_job = jobs.job_id
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'frag_id_job'});
+        push(@res, $ref);
     }
-    return @res;
+    return(@res);
 }
 
 
@@ -801,7 +802,7 @@ sub get_possible_wanted_resources($$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$) {
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr) = @_;
 
     my $default_walltime = "1:00:00";
@@ -827,6 +828,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
         warn("/!\\Bad syntax for the notify option\n");
         return(-6);
     }
+    
     
     # Verify
 
@@ -899,10 +901,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$) {
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     unlock_table($dbh);
 
-    if (!defined($stdout)){
+    if (!defined($stdout) or ($stdout eq "")){
         $stdout = "OAR.$job_id.stdout";
     }
-    if (!defined($stderr)){
+    if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR.$job_id.stderr";
     }
     $dbh->do("UPDATE jobs
@@ -1101,14 +1103,14 @@ sub get_moldable_job($$) {
 # side effects : changes the field reservation of the job in the table Jobs
 sub set_job_state($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $state = shift;
     
     $dbh->do("  UPDATE jobs
                 SET
                     state = \'$state\'
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
              ");
     
     my $date = get_date($dbh);
@@ -1117,15 +1119,15 @@ sub set_job_state($$$) {
                     date_stop = \'$date\'
                 WHERE
                     date_stop IS NULL
-                    AND job_id = $idJob
+                    AND job_id = $job_id
              ");
     $dbh->do("  INSERT INTO job_state_logs (job_id,job_state,date_start)
-                VALUES ($idJob,\'$state\',\'$date\')
+                VALUES ($job_id,\'$state\',\'$date\')
              ");
 
     if (($state eq "Terminated") or ($state eq "Error")){
         $dbh->do("  DELETE FROM challenges
-                    WHERE job_id = $idJob
+                    WHERE job_id = $job_id
                  ");
         
         if ($Db_type eq "Pg"){
@@ -1134,7 +1136,7 @@ sub set_job_state($$$) {
                             moldable_index = \'LOG\'
                         WHERE
                             moldable_job_descriptions.moldable_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_job_id = $idJob
+                            AND moldable_job_descriptions.moldable_job_id = $job_id
                      ");
 
             $dbh->do("  UPDATE job_resource_descriptions
@@ -1145,7 +1147,7 @@ sub set_job_state($$$) {
                             job_resource_groups.res_group_index = \'CURRENT\'
                             AND moldable_job_descriptions.moldable_index = \'LOG\'
                             AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_job_id = $idJob
+                            AND moldable_job_descriptions.moldable_job_id = $job_id
                             AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
                             AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
                  ");
@@ -1157,7 +1159,7 @@ sub set_job_state($$$) {
                         WHERE
                             job_resource_groups.res_group_index = \'CURRENT\'
                             AND moldable_job_descriptions.moldable_index = \'LOG\'
-                            AND moldable_job_descriptions.moldable_job_id = $idJob
+                            AND moldable_job_descriptions.moldable_job_id = $job_id
                             AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
                  ");
         }else{
@@ -1169,7 +1171,7 @@ sub set_job_state($$$) {
                             moldable_job_descriptions.moldable_index = \'CURRENT\'
                             AND job_resource_groups.res_group_index = \'CURRENT\'
                             AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_job_id = $idJob
+                            AND moldable_job_descriptions.moldable_job_id = $job_id
                             AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
                             AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
                     ");
@@ -1179,14 +1181,14 @@ sub set_job_state($$$) {
                     SET types_index = \'LOG\'
                     WHERE
                         job_types.types_index = \'CURRENT\'
-                        AND job_types.job_id = $idJob
+                        AND job_types.job_id = $job_id
                  ");
         
         $dbh->do("  UPDATE job_dependencies
                     SET job_dependency_index = \'LOG\'
                     WHERE
                         job_dependencies.job_dependency_index = \'CURRENT\'
-                        AND job_dependencies.job_id = $idJob
+                        AND job_dependencies.job_id = $job_id
                  ");
     }
 }
@@ -3626,11 +3628,11 @@ sub add_accounting_row($$$$$$$){
 sub add_new_event($$$$){
     my $dbh = shift;
     my $type = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $description = shift;
 
     my $date = get_date($dbh);
-    $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$idJob,\'$date\',\'$description\')");
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$job_id,\'$date\',\'$description\')");
 }
 
 #add a new entry in event_log_hosts table
@@ -3835,7 +3837,7 @@ sub check_end_of_job($$$$$$$$){
 
     lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
     my $refJob = get_job($base,$Jid);
-    if ($refJob->{'state'} eq "Running"){
+    if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
         oar_debug("[bipbip $Jid] Release nodes \n");
@@ -3930,13 +3932,6 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] Timeout SSH hashtable transfer on $hosts->[0]";
             oar_warn("$strWARN\n");
             add_new_event($base,"SSH_TRANSFER_TIMEOUT",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-        }elsif ($error == 31){
-            #oarexec got a bad hashtable dump from bipbip
-            my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"BAD_HASHTABLE_DUMP",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 33){

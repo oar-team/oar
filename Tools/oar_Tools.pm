@@ -1,3 +1,4 @@
+{
 package oar_Tools;
 
 use IO::Socket::INET;
@@ -302,3 +303,4 @@ exit 0
 }
 
 1;
+}

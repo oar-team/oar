@@ -80,7 +80,7 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
             }
         }
         $Exit_code = 1;
-    }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error")){
+    }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error") || ($j->{state} eq "Ending")){
         oar_debug("[Leon] Job is terminated, I do nothing\n");
     }else{
         my @hosts = iolib::get_job_current_hostnames($base,$j->{job_id});
@@ -105,7 +105,7 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
     my $bipbippid = $j->{bpid};
     if (defined($bipbippid) && ($bipbippid ne "")){
         my $result_kill_bipbip = 0;
-        $result_kill_bipbip = killbipbip($bipbippid);
+        #$result_kill_bipbip = killbipbip($bipbippid);
         if ($result_kill_bipbip == -1){
             iolib::add_new_event($base,"LEON_KILL_BIPBIP_TIMEOUT",$j->{job_id},"[Leon] kill bipbip with $bipbippid for the job $j->{job_id} and ssh timeouts");
         }
@@ -123,7 +123,7 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
     iolib::set_job_message($base,$j->{job_id},"job exterminated by Leon");
     iolib::remove_current_assigned_resources($base,$j->{assigned_moldable_job});
     iolib::job_arm_leon_timer($base,$j->{job_id});
-    $Exit_code = 1;
+    $Exit_code = 2;
 }
 iolib::unlock_table($base);
 

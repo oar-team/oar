@@ -7,7 +7,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use ping_checker;
 use oar_Tools;
 use Data::Dumper;
-#use IPC::Open3;
+use IPC::Open2;
 
 my $Job_id= shift;
 my $Oarexec_reattach_exit_value = shift;
@@ -119,6 +119,16 @@ my $pro_epi_timeout = oar_Tools::get_default_prologue_epilogue_timeout();
 if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
    $pro_epi_timeout = get_conf("PROLOGUE_EPILOGUE_TIMEOUT"); 
 }
+my $prologue_exec_file;
+if (is_conf("PROLOGUE_EXEC_FILE")){
+   $prologue_exec_file = get_conf("PROLOGUE_EXEC_FILE"); 
+}
+my $epilogue_exec_file;
+if (is_conf("EPILOGUE_EXEC_FILE")){
+   $epilogue_exec_file = get_conf("EPILOGUE_EXEC_FILE"); 
+}
+
+my @oarexec_files = ("$ENV{OARDIR}/oar_Tools.pm","$ENV{OARDIR}/oarexec");
 
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
@@ -139,7 +149,9 @@ my %data_to_transfer = (
         checkpoint_signal   => $job->{checkpoint_signal},
         debug_mode          => $Debug_mode,
         mode                => $job->{job_type},
-        pro_epi_timeout	    => $pro_epi_timeout
+        pro_epi_timeout	    => $pro_epi_timeout,
+        prologue            => $prologue_exec_file,
+        epilogue            => $epilogue_exec_file
     );
 
 # suitable Data::Dumper configuration for serialization
@@ -152,16 +164,33 @@ my $error = 40;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm(oar_Tools::get_default_prologue_epilogue_timeout() + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
-    open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-    select(OAREXEC);
-    $| = 1;
-    print(OAREXEC Dumper(\%data_to_transfer)."\n");
+    #open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
+    my $pid = open2(\*READ, \*WRITE, "ssh -x $host_to_connect_via_ssh perl - $Job_id");
+    foreach my $f (@oarexec_files){
+        open(FILE, $f) or die("Cannot open $f\n");
+        while(<FILE>){
+            print(WRITE);
+        }
+        close(FILE);
+    }
+    # End of oarexec script transfer
+    print(WRITE "\n\cd\n");
 
-    close(OAREXEC);
+    # Send data structure for oarexec
+    print(WRITE Dumper(\%data_to_transfer)."\n");
+
+    close(WRITE);
+
+    while(<READ>){
+        oar_debug("[bipbip $Job_id] $_");
+    }
+    close(READ);
+
+    waitpid($pid, 0);
     $error = $? >> 8;
     alarm(0);
 };
-
+print("$@\n");
 if ($error == 0){
     iolib::set_job_state($base,$Job_id,"Running");
     oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");

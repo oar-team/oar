@@ -108,7 +108,7 @@ if (@checkpoint){
             print("ERROR.\n");
             warn("Cannot frag $idJob ; This job was already killed.\n");
             $exitValue = 6;
-	else{
+	}else{
             print("REGISTERED.\n");
             push(@jobRegistered,$idJob);
         }

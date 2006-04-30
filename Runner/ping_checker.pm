@@ -65,7 +65,7 @@ sub ping_hosts(@){
         $ENV{ENV}="";
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
-            alarm($Timeout_Ping);
+            alarm($Timeout_ping);
             #$exit_value = system("ping -c 1 $i > /dev/null");
             $exit_value = system("sudo ping -c 10 -l 9 $i > /dev/null");
             alarm(0);
@@ -267,7 +267,7 @@ sub nmap_hosts(@){
     my %ip2name;
     my @bad_hosts;
     foreach my $i (@hosts){
-        my $ip = getHostIp($i);
+        my $ip = get_host_ip($i);
         if ($ip == 0){
             push(@bad_hosts, $i);
         }else{

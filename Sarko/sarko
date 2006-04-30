@@ -67,7 +67,7 @@ foreach my $j (iolib::get_timered_job($base)){
 
 
 # Look at job walltimes
-foreach my $job (iolib::get_jobs_in_state($base, "Running"){
+foreach my $job (iolib::get_jobs_in_state($base, "Running")){
     my ($date, $start, $max);
 
     # Get starting time
@@ -116,7 +116,7 @@ foreach my $job (iolib::get_jobs_in_state($base, "Running"){
         }else{
             if ($exit_codes[0] == 0){
                 iolib::set_job_autoCheckpointed($base, $job->{job_id});
-                $strComment = "[sarko] The job $job->{job_id} was notified to checkpoint itself (send SIGUSR2) on the node $hosts[0]";
+                $str_comment = "[sarko] The job $job->{job_id} was notified to checkpoint itself (send SIGUSR2) on the node $hosts[0]";
                 oar_debug("$str_comment\n");
                 iolib::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$str_comment);
             }else{
