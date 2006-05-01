@@ -30,7 +30,8 @@ sub fork_no_wait($);
 sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
-sub get_oarexecuser_script($$$$$@);
+sub get_oarexecuser_script_for_oarexec($$$$$$$@);
+sub get_oarexecuser_script_for_oarsub($$$$$);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -239,16 +240,15 @@ sub launch_command($){
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script($$$$$@){
+sub get_oarexecuser_script_for_oarexec($$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
         $shell,
         $launching_directory,
-        $tag,
         $stdout_file,
         $stderr_file,
-        $cmd) = @_;
+        @cmd) = @_;
 
     my $script = '
 if [ "a$TERM" == "a" ] || [ "$TERM" == "unknown" ]
@@ -275,12 +275,7 @@ else
     #Can not go into working directory
     exit 1
 fi
-';
 
-    if ($tag eq "I"){
-        $script .= "\n".$shell."\n";
-    }elsif($tag eq "P"){
-        $script .= '
 export OAR_STDOUT='.$stdout_file.'
 export OAR_STDERR='.$stderr_file.'
     
@@ -289,13 +284,52 @@ if ! ( > $OAR_STDOUT ) &> /dev/null || ! ( > $OAR_STDERR ) &> /dev/null
 then
     exit 2
 fi
-('."$cmd".' > $OAR_STDOUT) >& $OAR_STDERR
-';
-    }else{
-        return(undef);
-    }
+('."@cmd".' > $OAR_STDOUT) >& $OAR_STDERR
 
-    $script .= '
+exit 0
+';
+
+    return($script);
+}
+
+
+# Create the shell script used to execute right command for the user
+# The resulting script can be launched with : sh -c 'script'
+sub get_oarexecuser_script_for_oarsub($$$$$){
+    my ($node_file,
+        $job_id,
+        $user,
+        $shell,
+        $launching_directory) = @_;
+
+    my $script = '
+if [ \"a$TERM\" == \"a\" ] || [ \"$TERM\" == \"unknown\" ]
+then
+    export TERM=xterm
+fi
+
+export OAR_FILE_NODES='.$node_file.'
+export OAR_JOBID='.$job_id.'
+export OAR_USER='.$user.'
+export OAR_WORKDIR='.$launching_directory.'
+
+export OAR_NODEFILE=\$OAR_FILE_NODES
+export OAR_O_WORKDIR=\$OAR_WORKDIR
+export OAR_NODE_FILE=\$OAR_FILE_NODES
+export OAR_RESOURCE_FILE=\$OAR_FILE_NODES
+export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
+export OAR_JOB_ID=\$OAR_JOBID
+
+if ( cd \$OAR_WORKING_DIRECTORY &> /dev/null )
+then
+    cd \$OAR_WORKING_DIRECTORY
+else
+    #Can not go into working directory
+    exit 1
+fi
+
+'.$shell.'
+
 exit 0
 ';
 

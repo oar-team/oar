@@ -110,8 +110,9 @@ sub scan_script($){
 }
 
 # Connect to a job and give the shell of the user on te remote host
-sub connect_job($){
+sub connect_job($$){
     my $job_id = shift;
+    my $stop_oarexec = shift;
     
     my $dbh = iolib::connect_ro();
     my $lusr= getpwuid($ENV{SUDO_UID});
@@ -129,13 +130,18 @@ sub connect_job($){
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
-        my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
-        #print("oarsub launchs command : $cmd\n");
+        #my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
+        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory});
+        my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
+        print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
         $< = $>;
         print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
         system($cmd);
+        if ($stop_oarexec > 0){
+            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0);
+        }
         print("Disconnected from OAR job $job_id\n");
     }else{
         if ($job->{state} ne "Running"){
@@ -281,7 +287,7 @@ $base = iolib::connect();
 
 # Connect to a reservation
 if (defined($connect_job)){
-    exit(connect_job($connect_job));
+    exit(connect_job($connect_job,0));
 }
 # End connection to a reservation
 
@@ -407,7 +413,7 @@ iolib::disconnect($base_ro);
 iolib::disconnect($base);
 
 if ($Job_id < 0){
-    print("Error in oarsub, verify your syntax or call administrator\n");
+    warn("Error in oarsub, verify your syntax or call administrator\n");
     exit(2);
 }
 
@@ -437,7 +443,7 @@ if ($Reservation ne "0"){
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD JOB"){
-        connect_job($Job_id);
+        connect_job($Job_id,1);
     }else{
         print("Sorry but the system returned : $answer\n");
     }

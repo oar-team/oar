@@ -3845,6 +3845,7 @@ sub check_end_of_job($$$$$$$$){
         if($error == 0){
             oar_debug("[bipbip $Jid] User Launch completed OK\n");
             set_job_state($base,$Jid,"Terminated");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 1){
             #Prologue error
             my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts->[0] is Suspected";
@@ -3934,6 +3935,13 @@ sub check_end_of_job($$$$$$$$){
             add_new_event($base,"SSH_TRANSFER_TIMEOUT",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Error");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        }elsif ($error == 31){
+            #oarexec got a bad hashtable dump from bipbip
+            my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
+            oar_warn("$strWARN\n");
+            add_new_event($base,"BAD_HASHTABLE_DUMP",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Error");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 33){
             #oarexec received a SIGUSR1 signal and there was an epilogue error
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal and there was an epilogue error";
@@ -3946,6 +3954,8 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal";
             oar_warn("$strWARN\n");
             add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
+            set_job_state($base,$Jid,"Terminated");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 40){
     	# launching oarexec timeout
             my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";

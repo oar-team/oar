@@ -193,6 +193,17 @@ eval {
 print("$@\n");
 if ($error == 0){
     iolib::set_job_state($base,$Job_id,"Running");
+    # Notify interactive oarsub
+    if ($job->{job_type} eq "INTERACTIVE"){
+        oar_debug("[bipbip $Job_id] Interactive request ;Answer to the client Qsub -I\n");
+        my ($addr,$port) = split(/:/,$job->{info_type});
+        if (defined(oar_Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
+            oar_warn("[bipbip $Job_id] Frag job $Job_id because I cannot notify oarsub\n");
+            iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+            iolib::frag_job($base,$Job_id);
+            iolib::unlock_table($base);
+        }
+    }
     oar_debug("[bipbip $Job_id] Exit from bipbip normaly\n");
 }else{
     oar_debug("[bipbip $Job_id] Oarexec returned an early error ($error) --> check end of job\n");

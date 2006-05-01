@@ -24,7 +24,7 @@
 # So the SSH return just after job initialisation and prologue
 
 BEGIN{
-    if (!defined(&oar_Tools::get_oarexecuser_script)){
+    if (!defined(&oar_Tools::get_oarexecuser_script_for_oarexec)){
         require(oar_Tools);
     }
 }
@@ -135,19 +135,17 @@ my $Job;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm(oar_Tools::get_bipbip_ssh_hashtable_send_timeout());
-    while(!defined($Job->{job_id})){
-        $Job = eval( <STDIN> );
-    }
+    $Job = eval( <STDIN> );
     alarm(0);
 };
 if( $@ ){
     print("[oarexec $Job_id] Timeout of hashtable SSH transfer\n");
     exit(30);
 }
-#if (!defined($Job->{job_id})){
-#    print("[oarexec $Job_id] Bad SSH hashtable transfered\n$bipbip_line\n");
-#    exit(31);
-#}
+if (!defined($Job->{job_id})){
+    print("[oarexec $Job_id] Bad SSH hashtable transfered\n");
+    exit(31);
+}
 
 my $host = hostname();
 
@@ -210,7 +208,7 @@ my $cmd;
 if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
 #    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
-    my $str = oar_Tools::get_oarexecuser_script($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},"P",$Job->{stdout_file},$Job->{stderr_file},$Job->{command});
+    my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Job->{command});
     $cmd = "sudo -H -u $Job->{user} sh -c '$str'";
 }
 
@@ -339,8 +337,9 @@ vec($rin_pipe,fileno(pipe_child_read),1) = 1;
 $rin = $rin_sig | $rin_pipe;
 my $rin_tmp;
 my $Stop_signal = 0;
+my $stop_loop = 0;
 # wait end of the child process or KILL notification
-while (($line_read != $pid) and ($Stop_signal == 0)){
+while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
     print("[oarexec $Job_id] wait end of child process or kill notification\n");
     select($rin_tmp = $rin, undef, undef, undef);
     print("[oarexec $Job_id] A CHLD or kill signal arrived\n");
@@ -351,7 +350,11 @@ while (($line_read != $pid) and ($Stop_signal == 0)){
         print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
         if ($line_read eq "KILL"){
             print("[oarexec $Job_id] Kill children\n");
-            kill_childs($pid);
+            if ($Job->{mode} eq "INTERACTIVE"){
+                $stop_loop = 1;
+            }else{
+                kill_childs($pid);
+            }
             $kill_myself = 1;
         }elsif ($line_read eq "STOP"){
             print("[oarexec $Job_id] Receive STOP notification\n");
