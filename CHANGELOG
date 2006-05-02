@@ -4,10 +4,35 @@ OAR CHANGELOG
 
 version 2.0.0++ enhanced:
 =========================
-    - Add a signal handler in oarexec and propagate this signal to the user process
-    - Support '#OAR -p ...' options in user script
-    - Add in oar.conf the possibility to specify a different timeout for prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT)
-    - Add wait in pingchecker to avoid zombies
+    - Add PostGresSQL support. So there is a choice to make between MySQL and PostgresSQL. 
+    - New approach for the scheduling : administrators have to insert into the databases descriptions about resources and not nodes. Resources have a network address (physical node) and properties. For example, if you have dual-processor, then you can create 2 different resources with the same natwork address but with 2 different processor names.
+    - The scheduler can now handle resource properties in a hierarchical manner. Thus, for example, you can do "oarsub -l /switch=1/cpu=5" which submit a job on 5 processors on the same switch.
+    - Add a signal handler in oarexec and propagate this signal to the user process.
+    - Support '#OAR -p ...' options in user script.
+    - Add in oar.conf:
+        * DB_BASE_PASSWD_RO : for security issues, it is possible to execute request with parts specified by users with a read only account (like "-p" option).
+        * OARSUB_DEFAULT_RESOURCES : when nothing is specified with the oarsub command then OAR takes this default resource description.
+        * OAREXEC_DEBUG_MODE : turn on or off debug mode in oarexec (create /tmp/oar/oar.log on nodes).
+        * FINAUD_FREQUENCY : indicates the frequency when OAR launchs Finaud (search dead nodes).
+        * SCHEDULER_TIMEOUT : indicates to the scheduler the amount of time after what it must end itself.
+        * SCHEDULER_JOB_SECURITY_TIME : time between each job.
+        * DEAD_SWITCH_TIME : after this time Absent and Suspected resources are turned on the Dead state.
+        * PROLOGUE_EPILOGUE_TIMEOUT : the possibility to specify a different timeout for prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT).
+        * PROLOGUE_EXEC_FILE : you can specify the path of the prologue script executed on nodes.
+        * EPILOGUE_EXEC_FILE : you can specify the path of the epilogue script executed on nodes.
+        * GENERIC_COMMAND : a specific script may be used instead of ping to check aliveness of nodes. The script must return bad nodes on STDERR (1 line for a bad node and it must have exactly the same name that OAR has given in argument of the command).
+        * JOBDEL_SOFTWALLTIME : time after a normal frag that the system waits to retry to frag the job.
+        * JOBDEL_WALLTIME : time after a normal frag that the system waits before to delete the job arbitrary and suspects nodes.
+        * LOG_FILE : specify the path of OAR log file (default : /var/log/oar.log).
+        
+    - Add wait() in pingchecker to avoid zombies.
+    - Better code modularization.
+    - Remove node install part to launch jobs. So it is easier to upgrade from one version to an other (oarnodesetting must already be installed on each nodes if we want to use it).
+    - Users can specify a method to be notified (mail or script).
+    - Add cpuset support
+    - Add prologue and epilogue script to be executed on the OAR server before and after launching a job.
+    - Add dependancy support between jobs.
+    - In oarsub you can specify the launching directory ("-d" option).
 
 version 1.6.1:
 ==============

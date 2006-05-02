@@ -824,7 +824,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     my $user= getpwuid($ENV{SUDO_UID});
 
     # Verify notify syntax
-    if ((defined($notify)) and ($notify !~ m/^\s*(mail:|exec:)\.+$/m)){
+    if ((defined($notify)) and ($notify !~ m/^\s*(mail:|exec:).+$/m)){
         warn("/!\\Bad syntax for the notify option\n");
         return(-6);
     }
@@ -3951,8 +3951,8 @@ sub check_end_of_job($$$$$$$$){
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 34){
             #oarexec received a SIGUSR1 signal
-            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal";
-            oar_warn("$strWARN\n");
+            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
+            oar_debug("$strWARN\n");
             add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
             set_job_state($base,$Jid,"Terminated");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");

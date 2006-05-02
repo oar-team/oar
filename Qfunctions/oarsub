@@ -133,7 +133,7 @@ sub connect_job($$){
         #my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
         my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory});
         my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
-        print("oarsub launchs command : $cmd\n");
+        #print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
         $< = $>;
