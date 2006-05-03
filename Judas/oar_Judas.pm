@@ -50,7 +50,7 @@ sub oar_warn($){
         $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
         print("$string");
         write_log("[info] $string");
-        send_mail($mail_recipient, "OAR Info on ".hostname()." : ".substr($string,0,70),$string);
+        send_mail(undef,$mail_recipient, "OAR Info on ".hostname()." : ".substr($string,0,70),$string,0);
     }
 }
 
@@ -72,22 +72,23 @@ sub oar_error($){
     $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
     print("$string");
     write_log("[error] $string");
-    send_mail($mail_recipient, "OAR Error on ".hostname()." : ".substr($string,0,70),$string);
+    send_mail(undef,$mail_recipient, "OAR Error on ".hostname()." : ".substr($string,0,70),$string,0);
 }
 
 
 # Must be only used in the fork of the send_mail function to store errors in OAR DB
-sub treate_mail_error($$$$$$){
+sub treate_mail_error($$$$$$$){
     my $smtpServer = shift;
     my $mailSenderAddress = shift;
     my $mailRecipientAddress = shift;
     my $object = shift;
     my $body = shift;
     my $error = shift;
+    my $job_id = shift;
 
     my $base = iolib::connect();
 
-    iolib::add_new_event($base,"MAIL_NOTIFICATION",0,"$error --> SMTP server used : $smtpServer, sender : $mailSenderAddress, recipients : $mailRecipientAddress, object : $object, body : $body");
+    iolib::add_new_event($base,"MAIL_NOTIFICATION_ERROR",$job_id,"$error --> SMTP server used : $smtpServer, sender : $mailSenderAddress, recipients : $mailRecipientAddress, object : $object, body : $body");
 
     iolib::disconnect($base);
     exit(1);
@@ -98,10 +99,12 @@ sub treate_mail_error($$$$$$){
 # send mail to OAR admin
 # arg1 --> object
 # arg2 --> body
-sub send_mail($$$){
+sub send_mail($$$$$){
+    my $base = shift;
     my $mail_recipient_address = shift;
     my $object = shift;
     my $body = shift;
+    my $job_id = shift;
 
     my $smtp_server = get_conf("MAIL_SMTP_SERVER");
     my $mail_sender_address = get_conf("MAIL_SENDER");
@@ -112,37 +115,41 @@ sub send_mail($$$){
 
     my $pid=fork;
     if ($pid == 0){
+        if (defined($base)){
+            undef($base);
+        }
         my $smtp = Net::SMTP->new(  Host    => $smtp_server ,
                                     Timeout => 120 ,
                                     Hello   => hostname(),
                                     Debug   => 0
                                  )
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"No SMTP connexion");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"No SMTP connexion",$job_id);
         $smtp->mail($mail_sender_address)
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"MAIL FROM");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"MAIL FROM",$job_id);
         my @recipients = split(',',$mail_recipient_address);
         $smtp->to(@recipients)
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"RCPT TO");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"RCPT TO",$job_id);
         $smtp->data()
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"DATA");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"DATA",$job_id);
         $smtp->datasend("To: $mail_recipient_address\n")
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"Cannot send");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"Cannot send",$job_id);
         $smtp->datasend("Subject: $object\n")
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"Cannot send");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"Cannot send",$job_id);
         $smtp->datasend($body)
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"Cannot send");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"Cannot send",$job_id);
         $smtp->dataend()
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"DATA END");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"DATA END",$job_id);
         $smtp->quit
-            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"QUIT");
+            or treate_mail_error($smtp_server,$mail_sender_address,$mail_recipient_address,$object,$body,"QUIT",$job_id);
         exit(0);
     }
 }
 
 
 # Parse notify method and send an email or execute a command
-# args : notify method string, frontal host, user, job id, job name, tag, commentaries
-sub notify_user($$$$$$$){
+# args : DB ref, notify method string, frontal host, user, job id, job name, tag, commentaries
+sub notify_user($$$$$$$$){
+    my $base = shift;
     my $method = shift;
     my $host = shift;
     my $user = shift;
@@ -152,15 +159,14 @@ sub notify_user($$$$$$$){
     my $comments = shift;
 
     if ($method =~ m/^\s*mail:(.+)$/m){
-        my $base = iolib::connect();
         iolib::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
-        iolib::disconnect($base);
-        send_mail($1,"-OAR- $tag: $job_id($job_name)",$comments);
+        my $server_hostname = hostname();
+        send_mail($base,$1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
     }elsif($method =~ m/\s*exec:(.+)$/m){
-        my $cmd = "ssh -x $host sudo -H -u $user '$1 $job_id $job_name $tag $comments'";
-        my $pid;
-        $pid = fork();
-        if (defined($pid)){
+        my $cmd = "ssh -x $host sudo -H -u $user '$1 $job_id $job_name $tag \"$comments\"'";
+        my $pid = fork;
+        if ($pid == 0){
+            undef($base);
             my $exit_value;
             my $signal_num;
             my $dumped_core;
@@ -178,17 +184,17 @@ sub notify_user($$$$$$$){
                     oar_error("[Judas] User notification failed : ssh timeout, on node $host (cmd : $cmd)\n");
                 }
             }else{
-                my $base = iolib::connect();
-                iolib::add_new_event($base,"USER_EXEC_NOTIFICATION",$job_id,"[Judas] Launched user notification command : $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core");
-                iolib::disconnect($base);
+                my $dbh = iolib::connect();
+                iolib::add_new_event($dbh,"USER_EXEC_NOTIFICATION",$job_id,"[Judas] Launched user notification command : $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core");
+                iolib::disconnect($dbh);
             }
             # Exit from child
             exit(0);
-        }else{
+        }elsif (!defined($pid)){
             oar_error("[Judas] Error when forking process to execute notify user command : $cmd\n");
         }
     }else{
-        oar_error("[Judas] Notification error when parsing $method for the job $job_id\n");
+        oar_debug("[Judas] No correct notification method found ($method) for the job $job_id\n");
     }
 }
 

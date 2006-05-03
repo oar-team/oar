@@ -13,7 +13,7 @@ my $Exit_code = 0;
 
 my $base = iolib::connect();
 
-iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state_logs","event_logs","event_log_hostnames","frag_jobs"]);
+iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions"]);
 
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);

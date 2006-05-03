@@ -690,7 +690,7 @@ sub get_all_possible_resources_with_childhood($$$$) {
     if (defined($where_clause)){
         $sql .= " AND $where_clause";
     }
-    print("$sql\n");
+    #print("$sql\n");
     my $sth = $dbh->prepare("   SELECT count(DISTINCT($wanted_property_name))
                                 FROM resource_properties
                                 WHERE
@@ -833,10 +833,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     # Verify
 
     # Verify the content of user command
-    #if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
-    #    print("ERROR : The command to launch contains bad characters\n");
-    #    return(-4);
-    #}
+    if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
+        warn("ERROR : The command to launch contains bad characters\n");
+        return(-4);
+    }
     
     #Retrieve Micheline's rules from the table
     my $sth = $dbh->prepare("SELECT rule FROM admission_rules ORDER BY id");
@@ -849,7 +849,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     #print "Admission rules => $rules \n";
     eval $rules;
     if ($@) {
-        print("Admission Rule ERROR : $@ \n");
+        warn("Admission Rule ERROR : $@ \n");
         return(-2);
     }
 
@@ -875,11 +875,11 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
                     $tmp_properties = "($tmp_properties) AND ($jobproperties)"
                 }
             }
-            print(Dumper($r->{resources}));
+            #print(Dumper($r->{resources}));
             my $tree = get_possible_wanted_resources($dbh_ro, undef, \@resource_id_list, $tmp_properties, $r->{resources});
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
-                print("There are not enough resources for your request\n");
+                warn("There are not enough resources for your request\n");
                 return(-5);
             }else{
                 my @leafs = oar_resource_tree::get_tree_leafs($tree);
@@ -1190,6 +1190,13 @@ sub set_job_state($$$) {
                         job_dependencies.job_dependency_index = \'CURRENT\'
                         AND job_dependencies.job_id = $job_id
                  ");
+        my $job = get_job($dbh,$job_id);
+        my ($addr,$port) = split(/:/,$job->{info_type});
+        if ($state eq "Terminated"){
+            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
+        }else{
+            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped normally.");
+        }
     }
 }
 
@@ -3629,7 +3636,7 @@ sub add_new_event($$$$){
     my $dbh = shift;
     my $type = shift;
     my $job_id = shift;
-    my $description = shift;
+    my $description = substr(shift,0,254);
 
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$job_id,\'$date\',\'$description\')");
