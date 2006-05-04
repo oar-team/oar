@@ -31,7 +31,7 @@ sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_oarexecuser_script_for_oarexec($$$$$$$@);
-sub get_oarexecuser_script_for_oarsub($$$$$);
+sub get_oarexecuser_script_for_oarsub($$$$$$);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -295,12 +295,13 @@ exit 0
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$){
     my ($node_file,
         $job_id,
         $user,
         $shell,
-        $launching_directory) = @_;
+        $launching_directory,
+        $display) = @_;
 
     my $script = '
 if [ \"a$TERM\" == \"a\" ] || [ \"$TERM\" == \"unknown\" ]
@@ -312,6 +313,7 @@ export OAR_FILE_NODES='.$node_file.'
 export OAR_JOBID='.$job_id.'
 export OAR_USER='.$user.'
 export OAR_WORKDIR='.$launching_directory.'
+export DISPLAY='.$display.'
 
 export OAR_NODEFILE=\$OAR_FILE_NODES
 export OAR_O_WORKDIR=\$OAR_WORKDIR

@@ -18,7 +18,7 @@ iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);
 foreach my $i (@events_to_check){
-    oar_debug("[NodeChangeState] Check event for the job $i->{idJob} with type $i->{type}\n");
+    oar_debug("[NodeChangeState] Check event for the job $i->{job_id} with type $i->{type}\n");
     if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
         ($i->{type} eq "PROLOGUE_ERROR") ||
         ($i->{type} eq "EPILOGUE_ERROR") ||
@@ -34,10 +34,10 @@ foreach my $i (@events_to_check){
         my $finaud_tag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
         if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")){
-            @hosts = iolib::get_hostname_event($base,$i->{idEvent});
+            @hosts = iolib::get_hostname_event($base,$i->{event_id});
             $finaud_tag = "YES";
         }else{
-            my $job = iolib::get_job($base,$i->{idJob});
+            my $job = iolib::get_job($base,$i->{job_id});
             @hosts = iolib::get_job_host_log($base,$job->{assigned_moldable_job});
             $finaud_tag = "NO";
             if (($i->{type} ne "EXTERMINATE_JOB")){
@@ -58,7 +58,7 @@ foreach my $i (@events_to_check){
             }
         }
     }
-    iolib::check_event($base, $i->{type}, $i->{idJob});
+    iolib::check_event($base, $i->{type}, $i->{job_id});
 }
 
 

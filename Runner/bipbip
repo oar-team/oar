@@ -95,7 +95,7 @@ oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job-
 oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
 my @bad = ping_checker::test_hosts(@hosts);
 if ($#bad >= 0){
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_log"]);
+    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
     iolib::set_job_state($base,$Job_id,"Error");
     iolib::remove_current_assigned_resources($base,$job->{assigned_moldable_job});
     iolib::set_job_message($base,$Job_id,"Several nodes are not responding");
@@ -103,6 +103,8 @@ if ($#bad >= 0){
     oar_error("[bipbip $Job_id] /!\\ Sorry but some nodes are inaccessiblei : @bad\n");
     iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Job_id,"[bipbip] Ping_checker suspects  nodes for the job $Job_id : @bad",\@bad);
     oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+    my ($addr,$port) = split(/:/,$job->{info_type});
+    oar_Tools::notify_tcp_socket($addr,$port,"INVALID RESOURCES");
     iolib::disconnect($base);
     exit(2);
 }else{

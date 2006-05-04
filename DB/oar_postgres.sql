@@ -161,7 +161,7 @@ CREATE INDEX id_types ON job_types (job_id);
 
 CREATE TABLE jobs (
   job_id bigserial,
-  job_name varchar(255) NOT NULL default '',
+  job_name varchar(255) ,
   job_type varchar(11) check (job_type in ('INTERACTIVE','PASSIVE')) NOT NULL default 'PASSIVE',
   info_type varchar(255) default NULL,
   state varchar(16) check (state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Ending','Terminated','Error')) NOT NULL default 'Waiting',

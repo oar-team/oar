@@ -21,7 +21,7 @@
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
 job_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-job_name VARCHAR( 255 ) NOT NULL ,
+job_name VARCHAR( 255 ) ,
 job_type ENUM('INTERACTIVE','PASSIVE') DEFAULT 'PASSIVE' NOT NULL ,
 info_type VARCHAR( 255 ) ,
 state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Ending','Terminated','Error')  NOT NULL ,

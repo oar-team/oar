@@ -163,17 +163,26 @@ sub notify_user($$$$$$$$){
         my $server_hostname = hostname();
         send_mail($base,$1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
     }elsif($method =~ m/\s*exec:(.+)$/m){
-        my $cmd = "ssh -x $host sudo -H -u $user '$1 $job_id $job_name $tag \"$comments\"'";
-        my $pid = fork;
+        my $cmd = "ssh -x -T $host sudo -H -u $user '$1 $job_id $job_name $tag \"$comments\"' > /dev/null 2>&1";
+        my $pid = fork();
         if ($pid == 0){
             undef($base);
             my $exit_value;
             my $signal_num;
             my $dumped_core;
+            my $ssh_pid;
             eval{
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm(oar_Tools::get_ssh_timeout());
-                system($cmd);
+                $ssh_pid = fork();
+                if ($ssh_pid == 0){
+                    exec($cmd);
+                }
+                my $wait_res = 0;
+                # Avaoid to be disrupted by a signal
+                while ($wait_res != $ssh_pid){
+                    $wait_res = waitpid($ssh_pid,0);
+                }
                 alarm(0);
                 $exit_value  = $? >> 8;
                 $signal_num  = $? & 127;
@@ -181,11 +190,21 @@ sub notify_user($$$$$$$$){
             };
             if ($@){
                 if ($@ eq "alarm\n"){
-                    oar_error("[Judas] User notification failed : ssh timeout, on node $host (cmd : $cmd)\n");
+                    if (defined($ssh_pid)){
+                        my @childs = oar_Tools::get_one_process_childs($ssh_pid);
+                        kill(9,@childs);
+                    }
+                    my $dbh = iolib::connect();
+                    my $str = "[Judas] User notification failed : ssh timeout, on node $host (cmd : $cmd)";
+                    oar_error("$str\n");
+                    iolib::add_new_event($dbh,"USER_EXEC_NOTIFICATION_ERROR",$job_id,"$str");
+                    iolib::disconnect($dbh);
                 }
             }else{
                 my $dbh = iolib::connect();
-                iolib::add_new_event($dbh,"USER_EXEC_NOTIFICATION",$job_id,"[Judas] Launched user notification command : $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core");
+                my $str = "[Judas] Launched user notification command : $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core";
+                oar_debug("$str\n");
+                iolib::add_new_event($dbh,"USER_EXEC_NOTIFICATION",$job_id,"$str");
                 iolib::disconnect($dbh);
             }
             # Exit from child

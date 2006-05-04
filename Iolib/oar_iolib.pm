@@ -808,12 +808,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
     my $reservationField = "None";
-    my $setCommandReservation = 0;
+    #my $setCommandReservation = 0;
     #Test if this job is a reservation
     if ($startTimeReservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
         $reservationField = "toSchedule";
         $startTimeJob = "$1 $2";
-        $setCommandReservation = 1;
+        #$setCommandReservation = 1;
         $jobType = "PASSIVE";
     }elsif($startTimeReservation ne "0"){
         warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
@@ -853,10 +853,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
         return(-2);
     }
 
-    if (($setCommandReservation == 1) && ($command eq "")){
-        # For reservations we take the first moldable job
-        $command = "/bin/sleep ".sql_to_duration($ref_resource_list->[0]->[1]);
-    }
+    #if (($setCommandReservation == 1) && ($command eq "")){
+    #    # For reservations we take the first moldable job
+    #    $command = "/bin/sleep ".sql_to_duration($ref_resource_list->[0]->[1]);
+    #}
 
     # Test if properties and resources are coherent
     my $wanted_resources;
@@ -893,9 +893,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     #Insert job
     my $date = get_date($dbh);
     lock_table($dbh,["jobs"]);
+    $job_name = $dbh->quote($job_name);
+    $notify = $dbh->quote($notify);
+    $command = $dbh->quote($command);
+    $jobproperties = $dbh->quote($jobproperties);
+    $launching_directory = $dbh->quote($launching_directory);
     $dbh->do("INSERT INTO jobs
               (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal)
-              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',\'$command\',\'$date\',\'$queue_name\',\'$jobproperties\',\'$launching_directory\',\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,\'$job_name\',\'$notify\',\'$checkpoint_signal\')
+              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\')
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -907,10 +912,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR.$job_id.stderr";
     }
+    $stdout = $dbh->quote($stdout);
+    $stderr = $dbh->quote($stderr);
     $dbh->do("UPDATE jobs
               SET
-                  stdout_file = \'$stdout\',
-                  stderr_file = \'$stderr\'
+                  stdout_file = $stdout,
+                  stderr_file = $stderr
               WHERE
                   state = \'Waiting\'
                   AND job_id = $job_id
@@ -930,8 +937,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
 
         foreach my $r (@{$moldable_resource->[0]}){
             lock_table($dbh,["job_resource_groups"]);
+            my $property = $r->{property};
+            $property = $dbh->quote($property);
             $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
-                        VALUES ($moldable_id,\'$r->{property}\')
+                        VALUES ($moldable_id,$property)
                      ");
             my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
             unlock_table($dbh);
@@ -947,8 +956,9 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     }
 
     foreach my $t (@{$type_list}){
+        $t = $dbh->quote($t);
         $dbh->do("  INSERT INTO job_types (job_id,type)
-                    VALUES ($job_id,\'$t\')
+                    VALUES ($job_id,$t)
                  ");
     }
 
@@ -1228,8 +1238,10 @@ sub set_job_message($$$) {
     my $dbh = shift;
     my $idJob = shift;
     my $message = shift;
+
+    $message = $dbh->quote($message);
     $dbh->do("  UPDATE jobs
-                SET message = \'$message\'
+                SET message = $message
                 WHERE
                     job_id = $idJob
              ");
@@ -3638,8 +3650,9 @@ sub add_new_event($$$$){
     my $job_id = shift;
     my $description = substr(shift,0,254);
 
+    my $description = $dbh->quote($description);
     my $date = get_date($dbh);
-    $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$job_id,\'$date\',\'$description\')");
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$job_id,\'$date\',$description)");
 }
 
 #add a new entry in event_log_hosts table
@@ -3656,12 +3669,12 @@ sub add_new_event_with_host($$$$$){
     $dbh->do("  INSERT INTO event_logs (type,job_id,date,description)
                 VALUES (\'$type\',$idJob,\'$date\',\'$description\')
              ");
-    my $idEvent = get_last_insert_id($dbh,"event_logs_event_id_seq");
+    my $event_id = get_last_insert_id($dbh,"event_logs_event_id_seq");
     unlock_table($dbh);
 
     foreach my $n (@{$hostnames}){
         $dbh->do("  INSERT INTO event_log_hostnames (event_id,hostname)
-                    VALUES ($idEvent,\'$n\')
+                    VALUES ($event_id,\'$n\')
                  ");
     }
 }
@@ -3697,11 +3710,7 @@ sub get_to_check_events($){
 
     my @results;
     while (my $ref = $sth->fetchrow_hashref()) {
-        my %tmp = ( 'type' => $ref->{type},
-                    'idJob' => $ref->{job_id},
-                    'idEvent' => $ref->{idEvent}
-                  );
-        push(@results, \%tmp);
+        push(@results, $ref);
     }
     $sth->finish();
     
