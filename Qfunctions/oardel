@@ -62,7 +62,7 @@ if (@checkpoint){
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1);
+                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base);
                 alarm(0);
             };
             if ($@){

@@ -89,7 +89,7 @@ foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
     #} else {
     iolib::set_job_state($base,$jobid,"Launching");
     oar_debug("[Runner] try to execute $batch $jobid \n");
-    my $res = oar_Tools::fork_no_wait("$batch $jobid ");
+    my $res = oar_Tools::fork_no_wait("$batch $jobid",$base);
     oar_debug("[Runner] Child PID = $res\n");
     #}
 }

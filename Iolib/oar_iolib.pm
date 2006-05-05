@@ -80,7 +80,6 @@ sub get_jobs_to_schedule($$);
 sub get_current_job_types($$);
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
-sub remove_current_assigned_resources($$);
 sub get_resource_job($$);
 sub get_node_job($$);
 sub get_resources_in_state($$);
@@ -1200,7 +1199,17 @@ sub set_job_state($$$) {
                         job_dependencies.job_dependency_index = \'CURRENT\'
                         AND job_dependencies.job_id = $job_id
                  ");
+
         my $job = get_job($dbh,$job_id);
+        if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
+            $dbh->do("  UPDATE assigned_resources
+                        SET assigned_resource_index = \'LOG\'
+                        WHERE
+                            assigned_resource_index = \'CURRENT\'
+                            AND moldable_job_id = $job->{assigned_moldable_job}
+                    ");
+        }
+
         my ($addr,$port) = split(/:/,$job->{info_type});
         if ($state eq "Terminated"){
             oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
@@ -1670,23 +1679,6 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
 
 
 # PROCESSJOBS MANAGEMENT (Host assignment to jobs)
-
-# remove_current_assigned_resources
-# chenge assignedResourceIndex into "LOG" for the given moldable job
-# parameters : base, moldableJobId
-# return value : /
-sub remove_current_assigned_resources($$){
-    my $dbh = shift;
-    my $moldableJobId= shift;
-
-    $dbh->do("  UPDATE assigned_resources
-                SET assigned_resource_index = \'LOG\'
-                WHERE
-                    assigned_resource_index = \'CURRENT\'
-                    AND moldable_job_id = $moldableJobId
-            ");
-}
-
 
 # get_resource_job
 # returns the list of jobs associated to the resource passed in parameter
@@ -3856,8 +3848,8 @@ sub check_end_of_job($$$$$$$$){
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
+        set_job_state($base,$Jid,"Finishing");
         oar_debug("[bipbip $Jid] Release nodes \n");
-        remove_current_assigned_resources($base,$refJob->{assigned_moldable_job});
         if($error == 0){
             oar_debug("[bipbip $Jid] User Launch completed OK\n");
             set_job_state($base,$Jid,"Terminated");
@@ -3867,14 +3859,14 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             oar_warn("$strWARN\n");
             add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
+            set_job_state($base,$Jid,"Finishing");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 2){
             #Epilogue error
             my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts->[0] is Suspected; (jobId = $Jid)";
             oar_warn("$strWARN\n");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Terminated");
+            set_job_state($base,$Jid,"Finishing");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
@@ -3886,7 +3878,7 @@ sub check_end_of_job($$$$$$$$){
             my $strWARN = "[bipbip $Jid] The job $Jid was killing by Leon and oarexec epilogue was in error";
             oar_warn("$strWARN\n");
             add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
+            set_job_state($base,$Jid,"Finishing");
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         }elsif ($error == 5){
             #Oarexec is not able write in the node file

@@ -18,7 +18,7 @@ my $Default_prologue_epilogue_timeout = 60;
 sub get_all_process_childs();
 sub get_one_process_childs($);
 sub notify_tcp_socket($$$);
-sub signal_oarexec($$$$);
+sub signal_oarexec($$$$$);
 sub get_default_oarexec_directory();
 sub get_oar_pid_file_name($);
 sub get_ssh_timeout();
@@ -26,7 +26,7 @@ sub get_default_leon_soft_walltime();
 sub get_default_leon_walltime();
 sub get_default_dead_switch_time();
 sub check_client_host_ip($$);
-sub fork_no_wait($);
+sub fork_no_wait($$);
 sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
@@ -141,20 +141,48 @@ sub get_oar_pid_file_name($){
 
 
 # Send the given signal to the right oarexec process
-# args : host name, job id, signal, wait or not (0 or 1)
+# args : host name, job id, signal, wait or not (0 or 1), DB ref (to close it in the child process)
 # return an array with exit values
-sub signal_oarexec($$$$){
+sub signal_oarexec($$$$$){
     my $host = shift;
     my $job_id = shift;
     my $signal = shift;
     my $wait = shift;
+    my $base = shift;
 
     my $file = get_oar_pid_file_name($job_id);
     my $cmd = "ssh $host \"test -e $file && cat $file | xargs kill -s $signal\"";
     my $pid = fork();
     if($pid == 0){
         #CHILD
-        exec("$cmd");
+        undef($base);
+        my $exit_code;
+        my $ssh_pid;
+        eval{
+            $SIG{ALRM} = sub { die "alarm\n" };
+            alarm(get_ssh_timeout());
+            $ssh_pid = fork();
+            if ($ssh_pid == 0){
+                exec($cmd);
+            }
+            my $wait_res = 0;
+            # Avaoid to be disrupted by a signal
+            while ($wait_res != $ssh_pid){
+                $wait_res = waitpid($ssh_pid,0);
+            }
+            alarm(0);
+            $exit_code  = $?;
+        };
+        if ($@){
+            if ($@ eq "alarm\n"){
+                if (defined($ssh_pid)){
+                    my @childs = get_one_process_childs($ssh_pid);
+                    kill(9,@childs);
+                }
+            }
+        }
+        # Exit from child
+        exit($exit_code);
     }
     if ($wait > 0){
         waitpid($pid,0);
@@ -206,9 +234,10 @@ sub check_client_host_ip($$){
 
 
 # exec a command and do not wait its end
-# arg : command
-sub fork_no_wait($){
+# arg : command, DB ref (to close it in the child)
+sub fork_no_wait($$){
     my $cmd = shift;
+    my $base = shift;
 
     $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
     my $pid;
@@ -216,6 +245,7 @@ sub fork_no_wait($){
     if(defined($pid)){
         if($pid == 0){
             #child
+            undef($base);
             exec($cmd);
         }
     }

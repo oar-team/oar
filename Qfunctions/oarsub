@@ -52,18 +52,17 @@ $SIG{'INT'} = 'qdel';
 # to address ^C in interactive submission
 sub qdel($) {
     my $Al_dead = shift;
+    
     if (defined($Job_id)) {
         if ($Al_dead eq "INT" ) {
             print("\n\nCaught Interrupt (^C), Deleting the job $Job_id\n");
-        }
-        $base = iolib::connect();
-        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
-        my $err = iolib::frag_job($base,$Job_id);
-        iolib::unlock_table($base);
-        iolib::disconnect($base);
-        print("Job deleted\n");
-        #Signal Almigthy
-        if ($Al_dead == 0) {
+            my $base = iolib::connect();
+            iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+            my $err = iolib::frag_job($base,$Job_id);
+            iolib::unlock_table($base);
+            iolib::disconnect($base);
+            print("Job deleted\n");
+            #Signal Almigthy
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
             exit(1);
         }
@@ -145,7 +144,7 @@ sub connect_job($$){
         print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
         system($cmd);
         if ($stop_oarexec > 0){
-            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0);
+            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0, undef);
         }
         print("Disconnected from OAR job $job_id\n");
     }else{

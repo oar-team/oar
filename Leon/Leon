@@ -22,36 +22,36 @@ if (!defined($Deploy_hostname)){
 
 # arg1 --> host+pid of bipbip process
 # return -1 if the ssh connection timed out, else return the return code of the command kill
-sub killbipbip($){
-    my $hostpid=shift;
-
-    my ($host,$pid)=split /:/, $hostpid;
-    my $cmd = "oarkill $pid";
-    my $res=0;
-    if($host eq hostname ){
-        oar_warn("[Leon] Kill local bipbip with : $cmd\n");
-        #$res=forkexecwait("$cmd");
-        system("$cmd");
-        $res = $? >> 8;
-    }else{
-        oar_warn("[Leon] Kill remote bipbip : go on $host and execute : $cmd\n");
-        eval {
-            $SIG{ALRM} = sub { die "alarm\n" };
-            alarm(oar_Tools::get_ssh_timeout());
-            #$res=forkexecwait("ssh -qx $host \"$cmd\"");
-            system("ssh -x $host \"$cmd\"");
-            $res = $? >> 8;
-            alarm(0);
-        };
-        if ($@){
-            if ($@ eq "alarm\n"){
-                oar_error("[Leon] Killbipbip : ssh timeout $?, on node $host\n");
-                $res=-1;
-            }
-        }
-    }
-    return($res);
-}
+#sub killbipbip($){
+#    my $hostpid=shift;
+#
+#    my ($host,$pid)=split /:/, $hostpid;
+#    my $cmd = "oarkill $pid";
+#    my $res=0;
+#    if($host eq hostname ){
+#        oar_warn("[Leon] Kill local bipbip with : $cmd\n");
+#        #$res=forkexecwait("$cmd");
+#        system("$cmd");
+#        $res = $? >> 8;
+#    }else{
+#        oar_warn("[Leon] Kill remote bipbip : go on $host and execute : $cmd\n");
+#        eval {
+#            $SIG{ALRM} = sub { die "alarm\n" };
+#            alarm(oar_Tools::get_ssh_timeout());
+#            #$res=forkexecwait("ssh -qx $host \"$cmd\"");
+#            system("ssh -x $host \"$cmd\"");
+#            $res = $? >> 8;
+#            alarm(0);
+#        };
+#        if ($@){
+#            if ($@ eq "alarm\n"){
+#                oar_error("[Leon] Killbipbip : ssh timeout $?, on node $host\n");
+#                $res=-1;
+#            }
+#        }
+#    }
+#    return($res);
+#}
 
 my $Exit_code = 0;
 
@@ -80,8 +80,8 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
             }
         }
         $Exit_code = 1;
-    }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error") || ($j->{state} eq "Ending")){
-        oar_debug("[Leon] Job is terminated, I do nothing\n");
+    }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error") || ($j->{state} eq "Finishing")){
+        oar_debug("[Leon] Job is terminated or is terminating I do nothing\n");
     }else{
         my @hosts = iolib::get_job_current_hostnames($base,$j->{job_id});
         my $host_to_connect_via_ssh = $hosts[0];
@@ -93,7 +93,7 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
         #deploy part
         if (defined($host_to_connect_via_ssh)){
             iolib::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send kill signal to oarexec on $host_to_connect_via_ssh for the job $j->{job_id}");
-            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0);
+            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base);
         }
     }
     iolib::job_arm_leon_timer($base,$j->{job_id});
@@ -102,14 +102,14 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
 
 #I treate jobs in state EXTERMINATED in the table fragJobs
 foreach my $j (iolib::get_to_exterminate_jobs($base)){
-    my $bipbippid = $j->{bpid};
-    if (defined($bipbippid) && ($bipbippid ne "")){
-        my $result_kill_bipbip = 0;
-        #$result_kill_bipbip = killbipbip($bipbippid);
-        if ($result_kill_bipbip == -1){
-            iolib::add_new_event($base,"LEON_KILL_BIPBIP_TIMEOUT",$j->{job_id},"[Leon] kill bipbip with $bipbippid for the job $j->{job_id} and ssh timeouts");
-        }
-    }
+    #my $bipbippid = $j->{bpid};
+    #if (defined($bipbippid) && ($bipbippid ne "")){
+    #    my $result_kill_bipbip = 0;
+    #    #$result_kill_bipbip = killbipbip($bipbippid);
+    #    if ($result_kill_bipbip == -1){
+    #        iolib::add_new_event($base,"LEON_KILL_BIPBIP_TIMEOUT",$j->{job_id},"[Leon] kill bipbip with $bipbippid for the job $j->{job_id} and ssh timeouts");
+    #    }
+    #}
 
     oar_warn("[Leon] I exterminate the job $j->{job_id}\n");
     iolib::add_new_event($base,"EXTERMINATE_JOB",$j->{job_id},"[Leon] I exterminate the job $j->{job_id}");
@@ -121,7 +121,6 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
 
     iolib::set_finish_date($base,$j->{job_id});
     iolib::set_job_message($base,$j->{job_id},"job exterminated by Leon");
-    iolib::remove_current_assigned_resources($base,$j->{assigned_moldable_job});
     iolib::job_arm_leon_timer($base,$j->{job_id});
     $Exit_code = 2;
 }
