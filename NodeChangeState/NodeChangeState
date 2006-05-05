@@ -13,7 +13,7 @@ my $Exit_code = 0;
 
 my $base = iolib::connect();
 
-iolib::lock_table($base,["resources","assigned_resources","jobs","resource_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions"]);
+iolib::lock_table($base,["resources","assigned_resources","jobs","job_state_logs","resource_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions","challenges","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
 
 # Check event logs
 my @events_to_check = iolib::get_to_check_events($base);
@@ -57,6 +57,18 @@ foreach my $i (@events_to_check){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because all resources are busy\n");
             }
         }
+        iolib::set_job_state($base,$i->{job_id},"Error");
+    }elsif (($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
+            ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
+            ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||
+            ($i->{type} eq "SERVER_EPILOGUE_TIMEOUT") ||
+            ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR") ||
+            ($i->{type} eq "SERVER_EPILOGUE_ERROR")){
+        iolib::stop_all_queues($base);
+        iolib::set_job_state($base,$i->{job_id},"Error");
+
+            
+    
     }
     iolib::check_event($base, $i->{type}, $i->{job_id});
 }

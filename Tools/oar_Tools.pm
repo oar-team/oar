@@ -8,6 +8,7 @@ use strict;
 my $Default_leon_soft_walltime = 20;
 my $Default_leon_walltime = 60;
 my $Timeout_ssh = 30;
+my $Default_server_prologue_epilogue_Timeout = 60;
 my $bipbip_oarexec_hashtable_send_timeout = 30;
 my $Default_Dead_switch_time = 0;
 my $Default_oarexec_directory = "/tmp/oar/";
@@ -29,6 +30,7 @@ sub check_client_host_ip($$);
 sub fork_no_wait($$);
 sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
+sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_oarexecuser_script_for_oarexec($$$$$$$@);
 sub get_oarexecuser_script_for_oarsub($$$$$$);
@@ -36,6 +38,11 @@ sub get_oarexecuser_script_for_oarsub($$$$$$);
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
     return($Default_prologue_epilogue_timeout);
+}
+
+# Get default value for SERVER_PROLOGUE_EPILOGUE_TIMEOUT
+sub get_default_server_prologue_epilogue_timeout(){
+    return($Default_server_prologue_epilogue_Timeout);
 }
 
 # Get value for ssh hashtable timeout

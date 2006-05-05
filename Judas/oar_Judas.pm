@@ -115,9 +115,7 @@ sub send_mail($$$$$){
 
     my $pid=fork;
     if ($pid == 0){
-        if (defined($base)){
-            undef($base);
-        }
+        undef($base);
         my $smtp = Net::SMTP->new(  Host    => $smtp_server ,
                                     Timeout => 120 ,
                                     Hello   => hostname(),

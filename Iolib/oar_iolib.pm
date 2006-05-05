@@ -2996,6 +2996,15 @@ sub get_all_queue_informations($){
 }
 
 
+# stop_all_queues
+sub stop_all_queues($){
+    my $dbh = shift;
+    
+    $dbh->do("  UPDATE queues
+                SET state = \'notActive\'
+             ");
+}
+
 
 # GANTT MANAGEMENT
 
@@ -3833,7 +3842,7 @@ sub unlock_table($){
 
 
 # check_end_job($$$){
-sub check_end_of_job($$$$$$$$){
+sub check_end_of_job($$$$$$$$$){
     my $base = shift;
     my $Jid = shift;
     my $error = shift;
@@ -3842,148 +3851,183 @@ sub check_end_of_job($$$$$$$$){
     my $remote_port = shift;
     my $user = shift;
     my $launchingDirectory = shift;
+    my $server_epilogue_script = shift;
 
-    lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    #lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    lock_table($base,["jobs","job_state_logs"]);
     my $refJob = get_job($base,$Jid);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
         oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
         set_job_state($base,$Jid,"Finishing");
-        oar_debug("[bipbip $Jid] Release nodes \n");
+        unlock_table($base);
         if($error == 0){
             oar_debug("[bipbip $Jid] User Launch completed OK\n");
-            set_job_state($base,$Jid,"Terminated");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 1){
             #Prologue error
             my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"PROLOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Finishing");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"PROLOGUE_ERROR",$strWARN);
         }elsif ($error == 2){
             #Epilogue error
             my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts->[0] is Suspected; (jobId = $Jid)";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Finishing");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
             my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
             oar_debug("$strWARN\n");
-            set_job_state($base,$Jid,"Error");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
         }elsif ($error == 4){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
             my $strWARN = "[bipbip $Jid] The job $Jid was killing by Leon and oarexec epilogue was in error";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Finishing");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 5){
             #Oarexec is not able write in the node file
             my $strWARN = "[bipbip $Jid] oarexec cannot create the node file";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"CANNOT_WRITE_NODE_FILE",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_WRITE_NODE_FILE",$strWARN);
         }elsif ($error == 6){
             #Oarexec can not write its pid file
             my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"CANNOT_WRITE_PID_FILE",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_WRITE_PID_FILE",$strWARN);
         }elsif ($error == 7){
             #Can t get shell of user
             my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0]";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"USER_SHELL",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"USER_SHELL",$strWARN);
         }elsif ($error == 8){
             #Oarexec can not create tmp directory
             my $strWARN = "[bipbip $Jid] oarexec cannot create tmp directory on $hosts->[0] : ".oar_Tools::get_default_oarexec_directory();
-            oar_warn("$strWARN\n");
-            add_new_event($base,"CANNOT_CREATE_TMP_DIRECTORY",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_CREATE_TMP_DIRECTORY",$strWARN);
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0]";
-            oar_warn("$strWARN\n");
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
         }elsif ($error == 20){
             #oarexecuser.sh can not write stdout and stderr files
             my $strWARN = "[bipbip $Jid] Cannot create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
-            oar_warn("$strWARN\n");
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
         }elsif ($error == 12){
             #oarexecuser.sh can not go into working directory and epilogue is in error
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
             oar_warn("$strWARN\n");
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
-            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 22){
             #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
             my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
             oar_warn("$strWARN\n");
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
-            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 30){
             #oarexec timeout on bipbip hashtable transfer via SSH
             my $strWARN = "[bipbip $Jid] Timeout SSH hashtable transfer on $hosts->[0]";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"SSH_TRANSFER_TIMEOUT",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"SSH_TRANSFER_TIMEOUT",$strWARN);
         }elsif ($error == 31){
             #oarexec got a bad hashtable dump from bipbip
             my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"BAD_HASHTABLE_DUMP",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"BAD_HASHTABLE_DUMP",$strWARN);
         }elsif ($error == 33){
             #oarexec received a SIGUSR1 signal and there was an epilogue error
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal and there was an epilogue error";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"EPILOGUE_ERROR",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 34){
             #oarexec received a SIGUSR1 signal
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
             oar_debug("$strWARN\n");
             add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Terminated");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 40){
     	# launching oarexec timeout
             my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"LAUNCHING_OAREXEC_TIMEOUT",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"LAUNCHING_OAREXEC_TIMEOUT",$strWARN);
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            oar_warn("$strWARN\n");
-            add_new_event($base,"EXIT_VALUE_OAREXEC",$Jid,"$strWARN");
-            set_job_state($base,$Jid,"Error");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EXIT_VALUE_OAREXEC",$strWARN);
         }
     }else{
         oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
+        unlock_table($base);
     }
-    unlock_table($base);
 
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"BipBip");
+}
+
+
+sub job_finishing_sequence($$$$$$$$){
+    my ($dbh,
+        $epilogue_script,
+        $almighty_host,
+        $almighty_port,
+        $job_id,
+        $state_to_switch,
+        $event_tag,
+        $event_string) = shift;
+
+    # launch server epilogue
+    if (-x $epilogue_script){
+        my $cmd = "$epilogue_script $job_id";
+        my $pid;
+        my $exit_value;
+        my $signal_num;
+        my $dumped_core;
+        eval{
+            $SIG{ALRM} = sub { die "alarm\n" };
+            alarm(oar_Tools::get_default_server_prologue_epilogue_timeout());
+            $pid = fork();
+            if ($pid == 0){
+                undef($dbh);
+                exec($cmd);
+            }
+            my $wait_res = 0;
+            # Avaoid to be disrupted by a signal
+            while ($wait_res != $pid){
+                $wait_res = waitpid($pid,0);
+            }
+            alarm(0);
+            $exit_value  = $? >> 8;
+            $signal_num  = $? & 127;
+            $dumped_core = $? & 128;
+        };
+        if ($@){
+            if ($@ eq "alarm\n"){
+                undef($state_to_switch);
+                if (defined($pid)){
+                    my @childs = oar_Tools::get_one_process_childs($pid);
+                    kill(9,@childs);
+                }
+                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
+                oar_error("$str\n");
+                iolib::add_new_event($dbh,"SERVER_EPILOGUE_TIMEOUT",$job_id,"$str");
+                oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+            }
+        }elsif ($exit_value != 0){
+            undef($state_to_switch);
+            my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
+            oar_error("$str\n");
+            iolib::add_new_event($dbh,"SERVER_EPILOGUE_EXIT_CODE_ERROR",$job_id,"$str");
+            oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+        }
+    }else{
+        undef($state_to_switch);
+        my $str = "[JOB FINISHING SEQUENCE] Try to execute $epilogue_script but I cannot find it or it is not executable";
+        oar_warn("$str\n");
+        add_new_event($dbh,"SERVER_EPILOGUE_ERROR",$job_id,$str);
+        oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+    }
+    if (defined($event_tag)){
+        oar_warn("$event_string\n");
+        add_new_event($dbh,$event_tag,$job_id,$event_string);
+        oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+    }
+    if (defined($state_to_switch)){
+        lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+        set_job_state($dbh,$job_id,$state_to_switch);
+        unlock_table($dbh);
+    }
 }
 
 # END OF THE MODULE
