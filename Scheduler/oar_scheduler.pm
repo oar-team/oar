@@ -30,8 +30,9 @@ sub get_initial_time(){
 
 #Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs;
 # arg1 --> database ref
-sub init_scheduler($$){
+sub init_scheduler($$$){
     my $dbh = shift;
+    my $dbh_ro = shift;
     my $secure_time = shift;
 
     if ($secure_time > 1){
@@ -122,7 +123,7 @@ sub init_scheduler($$){
         }
         
         my $job_properties = "TRUE";
-        if ($job->{properties} ne ""){
+        if ((defined($job->{properties})) and ($job->{properties} ne "")){
             $job_properties = $job->{properties};
         }
 
@@ -130,10 +131,10 @@ sub init_scheduler($$){
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
             my $tmp_properties = "TRUE";
-            if ($m->{property} ne ""){
+            if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = iolib::get_possible_wanted_resources($dbh,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+            my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){
@@ -231,8 +232,9 @@ sub treate_waiting_reservation_jobs($$){
 # arg1 : database ref
 # arg2 : queue name
 # return 1 if there is at least a job to treate else 0
-sub check_reservation_jobs($$){
+sub check_reservation_jobs($$$){
     my $dbh = shift;
+    my $dbh_ro = shift;
     my $queue_name = shift;
 
     oar_debug("[oar_scheduler] check_reservation_jobs : Check for new reservation in the $queue_name queue\n");
@@ -252,7 +254,7 @@ sub check_reservation_jobs($$){
             if (!defined($types->{"besteffort"})){
                 foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
                     Gantt::set_occupation(  $gantt,
-                                         iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
+                                            iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
                                             iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $Security_time_overhead,
                                             $r
                                          );
@@ -294,7 +296,8 @@ sub check_reservation_jobs($$){
                 }
             }
             my $job_properties = "TRUE";
-            if ($job->{properties} ne ""){
+            #print(Dumper($job));
+            if ((defined($job->{properties})) and ($job->{properties} ne "")){
                 $job_properties = $job->{properties};
             }
 
@@ -302,10 +305,11 @@ sub check_reservation_jobs($$){
             my @tree_list;
             foreach my $m (@{$moldable->[0]}){
                 my $tmp_properties = "TRUE";
-                if ($m->{property} ne ""){
+                #print(Dumper($m));
+                if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
                 }
-                my $tmp_tree = iolib::get_possible_wanted_resources($dbh,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
                 push(@tree_list, $tmp_tree);
                 my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
                 foreach my $l (@leafs){
@@ -336,7 +340,7 @@ sub check_reservation_jobs($$){
                 }
                 # Update database
                 iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
-                iolib::set_job_state($dbh, $job->{id_job}, "toAckReservation");
+                iolib::set_job_state($dbh, $job->{job_id}, "toAckReservation");
             }else{           
                 oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{id_job}, not enough nodes\n");
                 iolib::set_job_state($dbh, $job->{job_id}, "toError");

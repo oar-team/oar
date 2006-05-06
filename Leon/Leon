@@ -13,12 +13,15 @@ use oar_Tools;
 
 
 init_conf("oar.conf");
-my $server_hostname = get_conf("SERVER_HOSTNAME");
+my $Server_hostname = get_conf("SERVER_HOSTNAME");
+my $Server_port = get_conf("SERVER_PORT");
 
 my $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
 if (!defined($Deploy_hostname)){
-    $Deploy_hostname = $server_hostname;
+    $Deploy_hostname = $Server_hostname;
 }
+
+my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
 # arg1 --> host+pid of bipbip process
 # return -1 if the ssh connection timed out, else return the return code of the command kill
@@ -111,17 +114,23 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
     #    }
     #}
 
-    oar_warn("[Leon] I exterminate the job $j->{job_id}\n");
-    iolib::add_new_event($base,"EXTERMINATE_JOB",$j->{job_id},"[Leon] I exterminate the job $j->{job_id}");
-    
-    iolib::set_job_state($base,$j->{job_id},"Error");
+    iolib::set_job_state($base,$j->{job_id},"Finishing");
     if ($j->{start_time} eq "0000-00-00 00:00:00"){
         iolib::set_running_date($base,$j->{job_id});
     }
-
     iolib::set_finish_date($base,$j->{job_id});
     iolib::set_job_message($base,$j->{job_id},"job exterminated by Leon");
     iolib::job_arm_leon_timer($base,$j->{job_id});
+    my $pid = fork();
+    if ($pid == 0){
+        #CHILD
+        undef($base);
+        my $str = "[Leon] I exterminate the job $j->{job_id}";
+        my $dbh = iolib::connect();
+        iolib::job_finishing_sequence($dbh,$Server_epilogue,$Server_hostname,$Server_port,$j->{job_id},undef,"EXTERMINATE_JOB",$str);
+        iolib::disconnect($dbh);
+        exit(0);
+    }
     $Exit_code = 2;
 }
 iolib::unlock_table($base);

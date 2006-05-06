@@ -14,6 +14,7 @@ use oar_Tools;
 
 my $exit_code = 0;
 my $base = iolib::connect();
+my $base_ro = iolib::connect_ro();
 
 init_conf("oar.conf");
 my $security_time_overhead = 1;
@@ -30,7 +31,7 @@ if (defined($ENV{OARDIR})){
 
 oar_debug("[MetaSched] Start of meta scheduler\n");
 
-oar_scheduler::init_scheduler($base,$security_time_overhead);
+oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead);
 
 my %initial_time = oar_scheduler::get_initial_time();
 my @queues = iolib::get_active_queues($base);
@@ -55,7 +56,7 @@ foreach my $i (@queues){
         if (oar_scheduler::treate_waiting_reservation_jobs($base,$name) != 0){
             $exit_code = 1;
         }
-        if (oar_scheduler::check_reservation_jobs($base,$name) != 0){
+        if (oar_scheduler::check_reservation_jobs($base,$base_ro,$name) != 0){
             $exit_code = 1;
         }
     }else{
@@ -76,6 +77,7 @@ if ($exit_code == 0){
 oar_scheduler::update_gantt_visu_tables($base);
 
 iolib::disconnect($base);
+iolib::disconnect($base_ro);
 oar_debug("[MetaSched] End of meta scheduler\n");
 
 exit($exit_code);

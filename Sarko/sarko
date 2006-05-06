@@ -44,7 +44,7 @@ oar_debug("[sarko] Current time : $current\n");
 # Decide if OAR must retry to delete the job or just change values in the database
 foreach my $j (iolib::get_timered_job($base)){
     my $job_ref = iolib::get_job($base,$j->{job_id});
-    if (($job_ref->{state} eq "Terminated") || ($job_ref->{state} eq "Error")){
+    if (($job_ref->{state} eq "Terminated") || ($job_ref->{state} eq "Error") || ($job_ref->{state} eq "Finishing")){
         iolib::job_fragged($base,$j->{job_id});
         oar_debug("[sarko] I set to FRAGGED the job $j->{job_id}\n");
     }else{

@@ -156,6 +156,8 @@ sub notify_user($$$$$$$$){
     my $tag = shift;
     my $comments = shift;
 
+    return() if (!defined($method));
+
     if ($method =~ m/^\s*mail:(.+)$/m){
         iolib::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
         my $server_hostname = hostname();

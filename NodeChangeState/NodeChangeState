@@ -66,9 +66,6 @@ foreach my $i (@events_to_check){
             ($i->{type} eq "SERVER_EPILOGUE_ERROR")){
         iolib::stop_all_queues($base);
         iolib::set_job_state($base,$i->{job_id},"Error");
-
-            
-    
     }
     iolib::check_event($base, $i->{type}, $i->{job_id});
 }

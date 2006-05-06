@@ -63,7 +63,7 @@ EOS
     exit(0);
 }
 
-my $base = iolib::connect();
+my $base = iolib::connect_ro();
 
 my @jobs;
 
@@ -191,6 +191,7 @@ EOS
                 'Terminated' => 'T',
                 'Error' => 'E',
                 'toError' => 'E',
+                'Finishing' => 'F',
                 'toAckReservation' => 'W'
             );
  

@@ -75,7 +75,7 @@ EOS
 }
 
 my $exitstatus = 0;
-my $base = iolib::connect();
+my $base = iolib::connect_ro();
 
 if ($#resources >= 0){
     my %data_to_display;
@@ -183,7 +183,7 @@ if (defined($stateMode)){
     }else{
         foreach my $d (sort(keys(%data_to_display))){
             print("$d\n");
-            foreach my $e (sort(keys(%{$data_to_display{$d}}))){
+            foreach my $e (sort({$a <=> $b} keys(%{$data_to_display{$d}}))){
                 print("    $e : $data_to_display{$d}->{$e}\n");
             }
             print("\n");
@@ -255,22 +255,22 @@ if (defined($stateMode)){
             $exitstatus = 6;
         }
     }else{
-        foreach my $a (sort(keys(%data_to_display))){
-            print("$a\n");
-            foreach my $b (sort(keys(%{$data_to_display{$a}}))){
-                print("    $b\n");
-                foreach my $c (sort(keys(%{$data_to_display{$a}->{$b}}))){
-                    if ($c eq "properties"){
+        foreach my $aa (sort(keys(%data_to_display))){
+            print("$aa\n");
+            foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
+                print("    $bb\n");
+                foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
+                    if ($cc eq "properties"){
                         my $str = "properties : ";
-                        foreach my $prop (sort(keys(%{$data_to_display{$a}->{$b}->{$c}}))){
-                            $str .= "$prop=$data_to_display{$a}->{$b}->{$c}->{$prop},"
+                        foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
+                            $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},"
                         }
                         chop($str);
                         print("        $str\n");
-                    }elsif ($c eq "jobs"){
-                        print("        jobs : @{$data_to_display{$a}->{$b}->{$c}}\n");
+                    }elsif ($cc eq "jobs"){
+                        print("        jobs : @{$data_to_display{$aa}->{$bb}->{$cc}}\n");
                     }else{
-                        print("        $c : $data_to_display{$a}->{$b}->{$c}\n");
+                        print("        $cc : $data_to_display{$aa}->{$bb}->{$cc}\n");
                     }
                 }
                 print("\n");

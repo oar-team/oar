@@ -112,12 +112,14 @@ with the server module installation and located in $PREFIX/sbin (/usr/local/sbin
 The same machine may host several or even all modules.
 
 Note about X11:
-Users can use X11 forwarding via ssh to access cluster frontal. After that you must configure ssh server on this frontal with
+The easiest and scalable way to use X11 application on cluster nodes is to open X11 ports and set the right DISPLAY environment variable by hand.
+
+Otherwise users can use X11 forwarding via ssh to access cluster frontal. After that you must configure ssh server on this frontal with
 
     X11Forwarding yes
     X11UseLocalhost no
 
-With this configuration, users can launch X11 applications after a 'oarsub -I' on given node.
+With this configuration, users can launch X11 applications after a 'oarsub -I' on the given node.
 
 Visualization tools installation
 --------------------------------

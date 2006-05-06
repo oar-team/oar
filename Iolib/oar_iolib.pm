@@ -198,7 +198,7 @@ sub connect_db($$$$) {
     }elsif ($Db_type eq "mysql"){
         $type = "mysql";
     }else{
-        oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
+        oar_Judas::oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
         $type = "mysql";
         $Db_type = "mysql";
     }
@@ -210,17 +210,17 @@ sub connect_db($$$$) {
         $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
         
         if (!defined($dbh)){
-            oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
+            oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
             $nbConnectTry++;
             if ($nbConnectTry < $maxConnectTries){
-                oar_warn("[IOlib] I will retry to connect to the database in ".2*$nbConnectTry."s\n");
+                oar_Judas::oar_warn("[IOlib] I will retry to connect to the database in ".2*$nbConnectTry."s\n");
                 sleep(2*$nbConnectTry);
             }
         }
     }
     
     if (!defined($dbh)){
-        oar_error("[IOlib] Max connection tries reached ($maxConnectTries).\n");
+        oar_Judas::oar_error("[IOlib] Max connection tries reached ($maxConnectTries).\n");
         exit(50);
     }else{
         return $dbh;
@@ -522,6 +522,7 @@ sub get_to_kill_jobs($) {
                                 AND jobs.job_id = frag_jobs.frag_id_job
                                 AND jobs.state != \'Error\'
                                 AND jobs.state != \'Terminated\'
+                                AND jobs.state != \'Finishing\'
                             ");
     $sth->execute();
     my @res = ();
@@ -739,7 +740,8 @@ sub get_possible_wanted_resources($$$$$){
         $sql_where_string .= ") ";
     }
     
-    if ($properties =~ m/\w+/m){
+    #if ((defined($properties)) and ($properties =~ m/\w+/m)){
+    if ((defined($properties)) and ($properties ne "")){
         $sql_where_string .= "AND ( $properties )";
     }
     
@@ -813,7 +815,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
         $reservationField = "toSchedule";
         $startTimeJob = "$1 $2";
         #$setCommandReservation = 1;
-        $jobType = "PASSIVE";
+        #$jobType = "PASSIVE";
     }elsif($startTimeReservation ne "0"){
         warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
         return(-3);
@@ -829,7 +831,11 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     }
     
     
-    # Verify
+    # Verify job name
+    if ($job_name !~ m/^\w*$/m){
+        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
+        return(-7);
+    }
 
     # Verify the content of user command
     if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
@@ -867,7 +873,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
         foreach my $r (@{$moldable_resource->[0]}){
             # SECURITY : we must use read only database access for this request
             my $tmp_properties = $r->{property};
-            if ($jobproperties ne ""){
+            if ((defined($jobproperties)) and ($jobproperties ne "")){
                 if (!defined($tmp_properties)){
                     $tmp_properties = $jobproperties;
                 }else{
@@ -906,10 +912,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     unlock_table($dbh);
 
     if (!defined($stdout) or ($stdout eq "")){
-        $stdout = "OAR.$job_id.stdout";
+        $stdout = "OAR";
+        $stdout .= ".$job_name" if ($job_name ne "NULL");
+        $stdout .= ".$job_id.stdout";
     }
     if (!defined($stderr) or ($stderr eq "")){
-        $stderr = "OAR.$job_id.stderr";
+        $stderr = "OAR";
+        $stderr .= ".$job_name" if ($job_name ne "NULL");
+        $stderr .= ".$job_id.stderr";
     }
     $stdout = $dbh->quote($stdout);
     $stderr = $dbh->quote($stderr);
@@ -1490,26 +1500,26 @@ sub get_frag_date($$) {
 # parameters : base
 # return value : list of jobid
 # side effects : /
-sub list_current_jobs($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT * FROM jobs j
-                             WHERE j.state=\'Waiting\'
-                             OR    j.state=\'toLaunch\'
-                             OR    j.state=\'Running\'
-                             OR    j.state=\'Launching\'
-                             OR    j.state=\'Hold\'
-                             OR    j.state=\'toError\'
-                             OR    j.state=\'toAckReservation\'
-                            ");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'job_id'});
-    }
-    $sth->finish();
-    return @res;
-}
+#sub list_current_jobs($) {
+#    my $dbh = shift;
+#
+#    my $sth = $dbh->prepare("SELECT * FROM jobs j
+#                             WHERE j.state=\'Waiting\'
+#                             OR    j.state=\'toLaunch\'
+#                             OR    j.state=\'Running\'
+#                             OR    j.state=\'Launching\'
+#                             OR    j.state=\'Hold\'
+#                             OR    j.state=\'toError\'
+#                             OR    j.state=\'toAckReservation\'
+#                            ");
+#    $sth->execute();
+#    my @res = ();
+#    while (my $ref = $sth->fetchrow_hashref()) {
+#        push(@res, $ref->{'job_id'});
+#    }
+#    $sth->finish();
+#    return @res;
+#}
 
 # Get all waiting reservation jobs
 # parameter : database ref
@@ -1659,7 +1669,7 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
     my $dbh = shift;
     my $queue = shift;
 
-    my $sth = $dbh->prepare("   SELECT *
+    my $sth = $dbh->prepare("   SELECT j.*
                                 FROM jobs j
                                 WHERE
                                     j.state=\'Waiting\'
@@ -1760,19 +1770,19 @@ sub get_resources_in_state($$) {
 # parameters : base
 # return value : list of hostnames
 # side effects : /
-sub get_running_host($) {
-    my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT distinct p.hostname
-                                FROM jobs j,processJobs p
-                                WHERE j.state=\'Running\'
-                                AND j.job_id = p.job_id");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    return @res;
-}
+#sub get_running_host($) {
+#    my $dbh = shift;
+#    my $sth = $dbh->prepare("   SELECT distinct p.hostname
+#                                FROM jobs j,processJobs p
+#                                WHERE j.state=\'Running\'
+#                                AND j.job_id = p.job_id");
+#    $sth->execute();
+#    my @res = ();
+#    while (my $ref = $sth->fetchrow_hashref()) {
+#        push(@res, $ref->{'hostname'});
+#    }
+#    return @res;
+#}
 
 
 
@@ -3556,7 +3566,7 @@ sub check_accounting_update($$){
         my $start = sql_to_local($ref->{start_time});
         my $stop = sql_to_local($ref->{stop_time});
         my $theoricalStopTime = sql_to_duration($ref->{maxTime}) + $start;
-        oar_debug("[ACCOUNTING] Treate job $ref->{job_id}\n");
+        oar_Judas::oar_debug("[ACCOUNTING] Treate job $ref->{job_id}\n");
         update_accounting($dbh,$start,$stop,$windowSize,$ref->{job_user},$ref->{queue_name},"USED",$ref->{nbNodes},$ref->{weight});
         update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref->{job_user},$ref->{queue_name},"ASKED",$ref->{nbNodes},$ref->{weight});
         $dbh->do("UPDATE jobs SET accounted = \"YES\" WHERE job_id = $ref->{job_id}");
@@ -3622,7 +3632,7 @@ sub add_accounting_row($$$$$$$){
     if (defined($ref->{consumption})){
         # Update the existing window
         $conso += $ref->{consumption};
-        oar_debug("[ACCOUNTING] Update the existing window $start --> $stop , user $user, queue $queue, type $type with conso = $conso\n");
+        oar_Judas::oar_debug("[ACCOUNTING] Update the existing window $start --> $stop , user $user, queue $queue, type $type with conso = $conso\n");
         $dbh->do("  UPDATE accounting
                     SET consumption = $conso
                     WHERE   user = \"$user\"
@@ -3633,7 +3643,7 @@ sub add_accounting_row($$$$$$$){
                 ");
     }else{
         # Create the window
-        oar_debug("[ACCOUNTING] Create new window $start --> $stop , user $user, queue $queue, type $type with conso = $conso\n");
+        oar_Judas::oar_debug("[ACCOUNTING] Create new window $start --> $stop , user $user, queue $queue, type $type with conso = $conso\n");
         $dbh->do("  INSERT INTO accounting (user,consumption_type,queue_name,window_start,window_stop,consumption)
                     VALUES (\"$user\",\"$type\",\"$queue\",\"$start\",\"$stop\",$conso)
                  ");
@@ -3857,12 +3867,12 @@ sub check_end_of_job($$$$$$$$$){
     lock_table($base,["jobs","job_state_logs"]);
     my $refJob = get_job($base,$Jid);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
-        oar_debug("[bipbip $Jid] Job $Jid is ended\n");
+        oar_Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
         set_job_state($base,$Jid,"Finishing");
         unlock_table($base);
         if($error == 0){
-            oar_debug("[bipbip $Jid] User Launch completed OK\n");
+            oar_Judas::oar_debug("[bipbip $Jid] User Launch completed OK\n");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 1){
@@ -3876,7 +3886,7 @@ sub check_end_of_job($$$$$$$$$){
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
             my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
-            oar_debug("$strWARN\n");
+            oar_Judas::oar_debug("$strWARN\n");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
         }elsif ($error == 4){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
@@ -3911,13 +3921,13 @@ sub check_end_of_job($$$$$$$$$){
         }elsif ($error == 12){
             #oarexecuser.sh can not go into working directory and epilogue is in error
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
-            oar_warn("$strWARN\n");
+            oar_Judas::oar_warn("$strWARN\n");
             add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 22){
             #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
             my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
-            oar_warn("$strWARN\n");
+            oar_Judas::oar_warn("$strWARN\n");
             add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 30){
@@ -3931,13 +3941,13 @@ sub check_end_of_job($$$$$$$$$){
         }elsif ($error == 33){
             #oarexec received a SIGUSR1 signal and there was an epilogue error
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal and there was an epilogue error";
-            add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
+            #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 34){
             #oarexec received a SIGUSR1 signal
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
-            oar_debug("$strWARN\n");
-            add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
+            oar_Judas::oar_debug("$strWARN\n");
+            #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 40){
@@ -3949,7 +3959,7 @@ sub check_end_of_job($$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EXIT_VALUE_OAREXEC",$strWARN);
         }
     }else{
-        oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
+        oar_Judas::oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
         unlock_table($base);
     }
 
@@ -3965,66 +3975,77 @@ sub job_finishing_sequence($$$$$$$$){
         $job_id,
         $state_to_switch,
         $event_tag,
-        $event_string) = shift;
+        $event_string) = @_;
 
-    # launch server epilogue
-    if (-x $epilogue_script){
-        my $cmd = "$epilogue_script $job_id";
-        my $pid;
-        my $exit_value;
-        my $signal_num;
-        my $dumped_core;
-        eval{
-            $SIG{ALRM} = sub { die "alarm\n" };
-            alarm(oar_Tools::get_default_server_prologue_epilogue_timeout());
-            $pid = fork();
-            if ($pid == 0){
+    if (defined($epilogue_script)){
+        # launch server epilogue
+        if (-x $epilogue_script){
+            my $cmd = "$epilogue_script $job_id";
+            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Launching command : $cmd\n");
+            my $pid;
+            my $exit_value;
+            my $signal_num;
+            my $dumped_core;
+            my $timeout = oar_Tools::get_default_server_prologue_epilogue_timeout();
+            if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
+                $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
+            }
+            eval{
                 undef($dbh);
-                exec($cmd);
-            }
-            my $wait_res = 0;
-            # Avaoid to be disrupted by a signal
-            while ($wait_res != $pid){
-                $wait_res = waitpid($pid,0);
-            }
-            alarm(0);
-            $exit_value  = $? >> 8;
-            $signal_num  = $? & 127;
-            $dumped_core = $? & 128;
-        };
-        if ($@){
-            if ($@ eq "alarm\n"){
-                undef($state_to_switch);
-                if (defined($pid)){
-                    my @childs = oar_Tools::get_one_process_childs($pid);
-                    kill(9,@childs);
+                $SIG{ALRM} = sub { die "alarm\n" };
+                alarm($timeout);
+                $pid = fork();
+                if ($pid == 0){
+                    exec($cmd);
                 }
-                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
-                oar_error("$str\n");
-                iolib::add_new_event($dbh,"SERVER_EPILOGUE_TIMEOUT",$job_id,"$str");
+                my $wait_res = 0;
+                # Avaoid to be disrupted by a signal
+                while ($wait_res != $pid){
+                    $wait_res = waitpid($pid,0);
+                }
+                alarm(0);
+                $exit_value  = $? >> 8;
+                $signal_num  = $? & 127;
+                $dumped_core = $? & 128;
+            };
+            if ($@){
+                if ($@ eq "alarm\n"){
+                    undef($state_to_switch);
+                    if (defined($pid)){
+                        my @childs = oar_Tools::get_one_process_childs($pid);
+                        kill(9,@childs);
+                    }
+                    my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
+                    oar_Judas::oar_error("$str\n");
+                    iolib::add_new_event($dbh,"SERVER_EPILOGUE_TIMEOUT",$job_id,"$str");
+                    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+                }
+            }elsif ($exit_value != 0){
+                undef($state_to_switch);
+                my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
+                oar_Judas::oar_error("$str\n");
+                iolib::add_new_event($dbh,"SERVER_EPILOGUE_EXIT_CODE_ERROR",$job_id,"$str");
                 oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
             }
-        }elsif ($exit_value != 0){
+        }else{
+            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] 2\n");
             undef($state_to_switch);
-            my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
-            oar_error("$str\n");
-            iolib::add_new_event($dbh,"SERVER_EPILOGUE_EXIT_CODE_ERROR",$job_id,"$str");
+            my $str = "[JOB FINISHING SEQUENCE] Try to execute $epilogue_script but I cannot find it or it is not executable";
+            oar_Judas::oar_warn("$str\n");
+            add_new_event($dbh,"SERVER_EPILOGUE_ERROR",$job_id,$str);
             oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
         }
-    }else{
-        undef($state_to_switch);
-        my $str = "[JOB FINISHING SEQUENCE] Try to execute $epilogue_script but I cannot find it or it is not executable";
-        oar_warn("$str\n");
-        add_new_event($dbh,"SERVER_EPILOGUE_ERROR",$job_id,$str);
-        oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
     }
+    
     if (defined($event_tag)){
-        oar_warn("$event_string\n");
+        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] 4\n");
+        oar_Judas::oar_warn("$event_string\n");
         add_new_event($dbh,$event_tag,$job_id,$event_string);
         oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
     }
     if (defined($state_to_switch)){
         lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Set job $job_id into state $state_to_switch\n");
         set_job_state($dbh,$job_id,$state_to_switch);
         unlock_table($dbh);
     }

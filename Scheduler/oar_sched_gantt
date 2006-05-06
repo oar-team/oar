@@ -38,6 +38,7 @@ if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
 
 # Init
 my $base = iolib::connect();
+my $base_ro = iolib::connect_ro();
 
 oar_debug("[oar_sched_gantt] Begining of Gantt scheduler on queue $queue at time $current_time\n");
 
@@ -118,7 +119,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     
     my $job_properties = "TRUE";
-    if ($j->{properties} ne ""){
+    if ((defined($j->{properties})) and ($j->{properties} ne "")){
         $job_properties = $j->{properties};
     }
 
@@ -126,10 +127,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my @tree_list;
     foreach my $m (@{$moldable->[0]}){
         my $tmp_properties = "TRUE";
-        if ($m->{property} ne ""){
+        if ((defined($m->{property})) and ($m->{property} ne "")){
             $tmp_properties = $m->{property};
         }
-        my $tmp_tree = iolib::get_possible_wanted_resources($base,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+        my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
         push(@tree_list, $tmp_tree);
         my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
         foreach my $l (@leafs){
@@ -159,5 +160,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 }
 
 iolib::disconnect($base);
+iolib::disconnect($base_ro);
 oar_debug("[oar_sched_gantt] End of scheduler for queue $queue\n");
 

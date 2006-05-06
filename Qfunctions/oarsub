@@ -29,7 +29,7 @@ my $Default_resources;
 my $connect_job ;
 my @resource;
 my $Queue_name;
-my $Job_sql_properties;
+my $Job_sql_properties = "";
 my $Cmd_executor;
 my $stagein = undef;
 my $idFile = undef;
@@ -243,7 +243,7 @@ if (defined($sos)){
     exit(0);
 }
 
-if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation == 0)){
+if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation == 0) && (!defined($connect_job))){
     usage();
     exit(1);
 }

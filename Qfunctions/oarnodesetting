@@ -80,7 +80,7 @@ sub wait_end_of_running_jobs($$){
         # active waiting : it is not very nice but it works!!
         print("\t$j ");
         my $timeCount = 0;
-        while ((($jobInfo->{'state'} eq "Running") || ($jobInfo->{'state'} eq "toLaunch") || ($jobInfo->{'state'} eq "Launching")) && ($timeCount < $max_timeout)){
+        while ((($jobInfo->{'state'} ne "Terminated") and ($jobInfo->{'state'} ne "Error")) and ($timeCount < $max_timeout)){
             $jobInfo = iolib::get_job($dbh,$j);
             sleep(1);
             print(".");
