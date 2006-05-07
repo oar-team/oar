@@ -70,6 +70,12 @@ foreach my $i (keys(%already_scheduled_jobs)){
 # End of the initialisation
 # Begining of the real scheduling
 
+# Get list of Alive resources
+my @alive_resources;
+foreach my $r (iolib::get_resources_in_state($base,"Alive")){
+    push(@alive_resources, $r->{resource_id});
+}
+
 my @jobs = iolib::get_jobs_to_schedule($base,$queue);
 my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
@@ -82,7 +88,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     foreach my $d (iolib::get_current_job_dependencies($base,$j->{job_id})){
         next if ($skip_job == 1);
         my $dep_job = iolib::get_job($base,$d);
-        if (($dep_job->{state} ne "Error") and ($dep_job->{state} ne "Terminated")){
+        if (($dep_job->{state} ne "Terminated")){
             my @date_tmp = iolib::get_gantt_job_start_time($base,$d);
             if (defined($date_tmp[0])){
                 my $mold_dep = iolib::get_current_moldable_job($base,$date_tmp[1]);
@@ -91,7 +97,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                     $scheduler_init_date = $sched_tmp;
                 }
             }else{
-                my $message = "Cannot determine scheduling time due to job dependencies";
+                my $message = "Cannot determine scheduling time due to dependency with the job $d";
                 iolib::set_job_message($base,$j->{job_id},$message);
                 oar_debug("[oar_sched_gantt] [$j->{job_id}] $message\n");
                 $skip_job = 1;
@@ -101,61 +107,83 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     next if ($skip_job == 1);
     
-    # Choose the moldable job to schedule
-    # Here we make it simple, we choose the first
-    my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{job_id});
-    my $moldable = $job_descriptions->[0];
-    
     my $types = iolib::get_current_job_types($base,$j->{job_id});
-    my $duration = iolib::sql_to_duration($moldable->[1]) + $security_time_overhead;
-    if (defined($types->{"besteffort"})){
-        $duration = $besteffort_duration;
-    }
-    
-    # Get list of Alive resources
-    my @alive_resources;
-    foreach my $r (iolib::get_resources_in_state($base,"Alive")){
-        push(@alive_resources, $r->{resource_id});
-    }
     
     my $job_properties = "TRUE";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
         $job_properties = $j->{properties};
     }
-
-    my @resource_id_used_list;
-    my @tree_list;
-    foreach my $m (@{$moldable->[0]}){
-        my $tmp_properties = "TRUE";
-        if ((defined($m->{property})) and ($m->{property} ne "")){
-            $tmp_properties = $m->{property};
+    
+    # Choose the moldable job to schedule
+    my @moldable_results;
+    my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{job_id});
+    foreach my $moldable (@{$job_descriptions}){
+    #my $moldable = $job_descriptions->[0];
+    #print(Dumper($moldable));
+        my $duration;
+        if (defined($types->{"besteffort"})){
+            $duration = $besteffort_duration;
+        }else{
+            $duration = iolib::sql_to_duration($moldable->[1]) + $security_time_overhead;
         }
-        my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
-        push(@tree_list, $tmp_tree);
-        my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
-        foreach my $l (@leafs){
-            push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+    
+        my @resource_id_used_list;
+        my @tree_list;
+        foreach my $m (@{$moldable->[0]}){
+            my $tmp_properties = "TRUE";
+            if ((defined($m->{property})) and ($m->{property} ne "")){
+                $tmp_properties = $m->{property};
+            }
+            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+            push(@tree_list, $tmp_tree);
+            my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
+            foreach my $l (@leafs){
+                push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+            }
+        }
+        my @hole = Gantt::find_first_hole($gantt, $scheduler_init_date, $duration, \@tree_list);
+        my @res_trees;
+        my @resources;
+        foreach my $t (@{$hole[1]}){
+            my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+            push(@res_trees, $minimal_tree);
+            foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+                push(@resources, oar_resource_tree::get_current_resource_value($r));
+            }
+        }
+        push(@moldable_results, {
+                                    resources => \@resources,
+                                    start_date => $hole[0],
+                                    duration => $duration,
+                                    moldable_id => $moldable->[2]
+                                });
+    }
+
+    # Choose moldable job which will finish the first
+    my $index_to_choose = -1;
+    my $best_stop_time;
+    for (my $i=0; $i <= $#moldable_results; $i++){
+        my @tmp_array = @{$moldable_results[$i]->{resources}};
+        if ($#tmp_array >= 0){
+            my $tmp_stop_date = $moldable_results[$i]->{start_date} + $moldable_results[$i]->{duration};
+            if ((!defined($best_stop_time)) or ($best_stop_time > $tmp_stop_date)){
+                $best_stop_time = $tmp_stop_date;
+                $index_to_choose = $i;
+            }
         }
     }
-    my @hole = Gantt::find_first_hole($gantt, $scheduler_init_date, $duration, \@tree_list);
-    my @res_trees;
-    my @resources;
-    foreach my $t (@{$hole[1]}){
-        my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
-        push(@res_trees, $minimal_tree);
-        foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
-            push(@resources, oar_resource_tree::get_current_resource_value($r));
-        }
-    }
-
-    if ($#resources >= 0){
+    if ($index_to_choose >= 0){
         # We can schedule the job
-        foreach my $r (@resources){
-            Gantt::set_occupation($gantt, $hole[0], $duration, $r);
+        foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
+            Gantt::set_occupation($gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $r);
         }
         #update database
-        my ($year,$mon,$day,$hour,$min,$sec) = iolib::local_to_ymdhms($hole[0]);
-        iolib::add_gantt_scheduled_jobs($base,$moldable->[2],"$year-$mon-$day $hour:$min:$sec",\@resources);
+        my ($year,$mon,$day,$hour,$min,$sec) = iolib::local_to_ymdhms($moldable_results[$index_to_choose]->{start_date});
+        iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id},"$year-$mon-$day $hour:$min:$sec",$moldable_results[$index_to_choose]->{resources});
+    }else{
+        my $message = "Cannot find enough resources which fite for the job $j->{job_id}";
+        iolib::set_job_message($base,$j->{job_id},$message);
+        oar_debug("[oar_sched_gantt] [$j->{job_id}] $message\n");
     }
 }
 

@@ -55,13 +55,13 @@ sub qdel($) {
     
     if (defined($Job_id)) {
         if ($Al_dead eq "INT" ) {
-            print("\n\nCaught Interrupt (^C), Deleting the job $Job_id\n");
+            warn("\n\nCaught Interrupt (^C), Deleting the job $Job_id\n");
             my $base = iolib::connect();
             iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
             my $err = iolib::frag_job($base,$Job_id);
             iolib::unlock_table($base);
             iolib::disconnect($base);
-            print("Job deleted\n");
+            warn("Job deleted\n");
             #Signal Almigthy
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
             exit(1);
@@ -149,10 +149,10 @@ sub connect_job($$){
         print("Disconnected from OAR job $job_id\n");
     }else{
         if ($job->{state} ne "Running"){
-            print("/!\\ ERROR : the job $job_id is not running. Its current state is $job->{state}.\n");
+            warn("/!\\ ERROR : the job $job_id is not running. Its current state is $job->{state}.\n");
         }
         if (($lusr ne $job->{job_user}) and ($lusr ne "oar")){
-            print("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
+            warn("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
         }
         iolib::disconnect($dbh);
         return(1);
@@ -300,7 +300,10 @@ sub parse_resource_descriptions($){
     my $resource_ref = shift;
     
     my @resource= @{$resource_ref};
-    #print "@resource\n";
+    if ($#resource < 0){
+        push(@resource,$Default_resources);
+    }
+    print "--@resource--\n";
 
     my @result;
     foreach my $r (@resource){
@@ -346,7 +349,12 @@ sub parse_resource_descriptions($){
             if ($r eq $initial_resource){
                 die("/!\\ Cannot recognize -- $r -- resource\n");
             }else{
-                push(@{$resource_groups[0]}, \%tmp_result);
+                if (!defined($tmp_result{resources})){
+                    # if nothing specified, use default config file value
+                    $r = $Default_resources;
+                }else{ 
+                    push(@{$resource_groups[0]}, \%tmp_result);
+                }
             }
 
             if ($r =~ /^\s*$/){
@@ -363,7 +371,7 @@ my $base_ro = iolib::connect_ro();
 if ($Interactive == 0) {
     my $exec = $ARGV[0];
     my %scan_result = scan_script($exec) if ($exec ne "");
-    print("$Queue_name \n");
+    #print("$Queue_name \n");
     if (defined($scan_result{queue}) && !defined($Queue_name)){
         $Queue_name = $scan_result{queue}
     }elsif(defined($scan_result{queue}) && defined($Queue_name)){
@@ -378,9 +386,6 @@ if ($Interactive == 0) {
         push(@resource, @{$scan_result{resource}});
     }
 
-    if ($#resource < 0){
-        push(@resource, $Default_resources);
-    }
     my @resource_list = parse_resource_descriptions(\@resource);
 
     #if (!($exec =~ m/^\/.+$/m)){
@@ -404,14 +409,11 @@ if ($Interactive == 0) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    if ($#resource < 0){
-        push(@resource, $Default_resources);
-    }
     my @resource_list = parse_resource_descriptions(\@resource);
     
     $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file);
 }
-print("IdJob = $Job_id \n");
+print("JOB_ID = $Job_id \n");
 
 iolib::disconnect($base_ro);
 iolib::disconnect($base);
@@ -431,7 +433,7 @@ if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$Cmd_executo
 my $answer;
 if ($Reservation ne "0"){
     #Reservation mode
-    print("Reservation mode : waiting validation\n");
+    print("Reservation mode : waiting validation...\n");
     my $client = $Server->accept();
     $answer = <$client>;
     chop($answer);
@@ -442,14 +444,14 @@ if ($Reservation ne "0"){
     }
 }elsif ($Interactive==1) {
     #Interactive mode
-    print("Interactive mode : waiting \n");
+    print("Interactive mode : waiting...\n");
     my $client = $Server->accept();
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD JOB"){
         connect_job($Job_id,1);
     }else{
-        print("Sorry but the system returned : $answer\n");
+        warn("Sorry but the system returned : $answer\n");
     }
 }
 

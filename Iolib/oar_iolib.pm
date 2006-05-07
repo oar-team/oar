@@ -2867,13 +2867,14 @@ sub get_resources_data_structure_current_job($$){
     my $previous_group = 0;
     my $previous_moldable = 0;
     while (my @ref = $sth->fetchrow_array()){
-        if ($previous_group != $ref[1]){
-            $group_index++;
-            $previous_group = $ref[1];
-        }
         if ($previous_moldable != $ref[0]){
             $moldable_index++;
             $previous_moldable = $ref[0];
+            $group_index = 0;
+            $previous_group = $ref[1];
+        }elsif ($previous_group != $ref[1]){
+            $group_index++;
+            $previous_group = $ref[1];
         }
         # Store walltime
         $result->[$moldable_index]->[1] = $ref[2];
