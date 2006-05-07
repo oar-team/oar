@@ -45,7 +45,10 @@ foreach my $i (@events_to_check){
             }
         }
 
+        my %already_treated_host;
         foreach my $j (@hosts){
+            next if (defined($already_treated_host{$j}));
+            $already_treated_host{$j} = 1;
             my @free_resources = iolib::get_current_free_resources_of_node($base, $j);
             if ($#free_resources >= 0){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting resource(s) : @free_resources\n");

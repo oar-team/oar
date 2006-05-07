@@ -32,6 +32,12 @@ if (!defined($Debug_mode)){
     $Debug_mode = 0;
 }
 
+my $Detach_oarexec = get_conf("DETACH_JOB_FROM_SERVER");
+if (!defined($Detach_oarexec)){
+    $Detach_oarexec = 0;
+}
+
+
 my $Server_prologue = get_conf("SERVER_PROLOGUE_EXEC_FILE");
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
@@ -203,7 +209,8 @@ my %data_to_transfer = (
         mode                => $job->{job_type},
         pro_epi_timeout	    => $pro_epi_timeout,
         prologue            => $prologue_exec_file,
-        epilogue            => $epilogue_exec_file
+        epilogue            => $epilogue_exec_file,
+        detach_oarexec      => $Detach_oarexec
     );
 
 # suitable Data::Dumper configuration for serialization
@@ -215,7 +222,7 @@ $Data::Dumper::Deepcopy = 1;
 my $error = 40;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
-    alarm(oar_Tools::get_default_prologue_epilogue_timeout() + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
+    alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     #open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
     my $pid = open2(\*READ, \*WRITE, "ssh -x $host_to_connect_via_ssh perl - $Job_id");
     foreach my $f (@oarexec_files){
@@ -233,8 +240,30 @@ eval {
 
     close(WRITE);
 
+    my $init_done = 0;
     while(<READ>){
         oar_debug("[bipbip $Job_id] $_");
+        if (($init_done == 0) and ($_ eq oar_Tools::get_bipbip_oarexec_rendez_vous())){
+            $init_done = 1;
+            if ($Detach_oarexec == 0){
+                alarm(0);
+            }
+            iolib::set_job_state($base,$Job_id,"Running");
+            my ($addr,$port) = split(/:/,$job->{info_type});
+            oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"START","Job is launched and all resources are initialised correctly.");
+            # Notify interactive oarsub
+            if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
+                oar_debug("[bipbip $Job_id] Interactive request ;Answer to the client Qsub -I\n");
+                if (defined(oar_Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
+                    oar_warn("[bipbip $Job_id] Frag job $Job_id because I cannot notify oarsub\n");
+                    iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+                    iolib::frag_job($base,$Job_id);
+                    iolib::unlock_table($base);
+                    oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
+                }
+            }
+            iolib::disconnect($base) if ($Detach_oarexec == 0);
+        }
     }
     close(READ);
 
@@ -243,24 +272,11 @@ eval {
     alarm(0);
 };
 #print("$@\n");
-if ($error == 0){
-    iolib::set_job_state($base,$Job_id,"Running");
-    my ($addr,$port) = split(/:/,$job->{info_type});
-    oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"START","Job is launched and all resources are initialised correctly.");
-    # Notify interactive oarsub
-    if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
-        oar_debug("[bipbip $Job_id] Interactive request ;Answer to the client Qsub -I\n");
-        if (defined(oar_Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
-            oar_warn("[bipbip $Job_id] Frag job $Job_id because I cannot notify oarsub\n");
-            iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
-            iolib::frag_job($base,$Job_id);
-            iolib::unlock_table($base);
-            oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
-        }
-    }
+if (($Detach_oarexec == 1) and ($error == 0)){
     oar_debug("[bipbip $Job_id] Exit from bipbip normally\n");
+    exit(0);
 }else{
-    oar_debug("[bipbip $Job_id] Oarexec returned an early error ($error) --> check end of job\n");
+    $base = iolib::connect() if ($Detach_oarexec == 0);
     iolib::check_end_of_job($base,$Job_id,$error,\@hosts,$Remote_host,$Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
 }
 

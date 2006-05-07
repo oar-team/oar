@@ -146,7 +146,11 @@ sub print_job($$){
     }else{
         if (defined($full_view)){
             print("Job_Id: $job_info->{job_id}\n");
-            print("    name = $job_info->{job_name}\n");
+            if (defined($job_info->{job_name})){
+                print("    name = $job_info->{job_name}\n");
+            }else{
+                print("    name = \n");
+            }
             print("    owner = $job_info->{job_user}\n");
             print("    state = $job_info->{state}\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
@@ -163,6 +167,7 @@ sub print_job($$){
             }
             print("    submissionTime = $job_info->{submission_time}\n");
             print("    startTime = $job_info->{start_time}\n");
+            print("    stopTime = $job_info->{stop_time}\n");
             print("    message = $job_info->{message}\n");
             if (defined($date_tmp[0])){
                 print("    scheduledStart = $date_tmp[0]\n");

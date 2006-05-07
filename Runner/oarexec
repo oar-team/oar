@@ -56,24 +56,28 @@ sub quit_oarexec($$){
     my $exit_value = shift;
     my $job_data = shift;
     
-    my $max_wait_time = 300;
-    my $wait_time = 30;
+    if ($job_data->{detach_oarexec} == 1){
+        # We must contact Almighty
+        my $max_wait_time = 300;
+        my $wait_time = 30;
     
-    while (1){
-        if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$job_data->{challenge}"))){
-            print("[oarexec $Job_id] I notified Almighty with my exit value $exit_value;so I am exiting\n");
-            exit($exit_value);
-        }else{
-            print("[oarexec $Job_id] I cannot notify Almighty; maybe the server is down or network is wrong configured\n");
-        }
-        sleep($wait_time);
-        if ($wait_time < $max_wait_time){
-            $wait_time = 2 * $wait_time;
-            if ($wait_time > $max_wait_time){
-                $wait_time = $max_wait_time;
+        while (1){
+            if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$job_data->{challenge}"))){
+                print("[oarexec $Job_id] I notified Almighty with my exit value $exit_value;so I am exiting\n");
+                exit($exit_value);
+            }else{
+                print("[oarexec $Job_id] I cannot notify Almighty; maybe the server is down or network is wrong configured\n");
+            }
+            sleep($wait_time);
+            if ($wait_time < $max_wait_time){
+                $wait_time = 2 * $wait_time;
+                if ($wait_time > $max_wait_time){
+                    $wait_time = $max_wait_time;
+                }
             }
         }
     }
+    
     exit($exit_value);
 }
 
@@ -276,24 +280,25 @@ sub chekpoint_signal_handler {
 
 $SIG{USR2} = \&chekpoint_signal_handler;
 
-#Detach process from bipbip SSH
-print("[oarexec $Job_id] I am detaching the oarexec process\n");
+if ($Job->{detach_oarexec} == 1){
+    #Detach process from bipbip SSH
+    print("[oarexec $Job_id] I am detaching the oarexec process\n");
 
-if(fork() != 0){
-    # Exit from main oarexec
-    exit(0);
-}
-#with these 3 lines, ssh will close the connection
-#    close(STDIN);
-#    close(STDOUT);
-#    close(STDERR);
-open(STDIN, "/dev/zero");
-if ($Job->{debug_mode} > 0){
-    open(STDOUT, ">>$Tmp_file_prefix/oar.log");
-    open(STDERR, ">>$Tmp_file_prefix/oar.log");
+    if(fork() != 0){
+        # Exit from main oarexec
+        exit(0);
+    }
+    # We must redirect STD to close SSH
+    open(STDIN, "/dev/zero");
+    if ($Job->{debug_mode} > 0){
+        open(STDOUT, ">>$Tmp_file_prefix/oar.log");
+        open(STDERR, ">>$Tmp_file_prefix/oar.log");
+    }else{
+        open(STDOUT, ">/dev/null");
+        open(STDERR, ">/dev/null");
+    }
 }else{
-    open(STDOUT, ">/dev/null");
-    open(STDERR, ">/dev/null");
+    print(oar_Tools::get_bipbip_oarexec_rendez_vous());
 }
 
 #Write file with this oarexec pid

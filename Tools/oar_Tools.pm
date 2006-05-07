@@ -14,6 +14,7 @@ my $Default_Dead_switch_time = 0;
 my $Default_oarexec_directory = "/tmp/oar/";
 my $Oarexec_pid_file_name = "pid_of_oarexec_for_jobId_";
 my $Default_prologue_epilogue_timeout = 60;
+my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 
 # Prototypes
 sub get_all_process_childs();
@@ -34,6 +35,7 @@ sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_oarexecuser_script_for_oarexec($$$$$$$@);
 sub get_oarexecuser_script_for_oarsub($$$$$$);
+sub get_bipbip_oarexec_rendez_vous();
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -373,6 +375,10 @@ exit 0
 ';
 
     return($script);
+}
+
+sub get_bipbip_oarexec_rendez_vous(){
+    return($Ssh_rendez_vous);
 }
 
 1;
