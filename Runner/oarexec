@@ -87,6 +87,23 @@ sub quit_oarexec($$){
 sub clean_all(){
     #system("rm -f $OAR_FILE_NODES $oarPidFile");
     unlink($Node_file,$Pid_file);
+    # Kill oarsub connections
+    my $file = oar_Tools::get_oarsub_connections_file_name($Job_id);
+    if (open(OARSUBS,$file)){
+        while (<OARSUBS>){
+            if ($_ =~ m/^(\d+)$/m){
+                my $ppid = $1;
+                my @childs = oar_Tools::get_one_process_childs($ppid);
+                # remove ppid
+                shift(@childs);
+                shift(@childs);
+                print("[oarexec $Job_id] kill oarsub connections @childs\n");
+                system("sudo kill -9 @childs > /dev/null 2>&1") if ($#childs >= 0);
+            }
+        }
+        close(OARSUBS);
+    }
+    unlink($file);
 }
 
 # read a line on a socket
@@ -121,7 +138,7 @@ sub kill_childs($){
     my $child_pid = shift;
 
     my @childs = oar_Tools::get_one_process_childs($child_pid);
-    system("sudo /bin/kill -9 @childs 2>&1 > /dev/null");
+    system("sudo kill -9 @childs 2>&1 > /dev/null");
 }
 
 sub send_kill_signal_to_myself(){
@@ -302,7 +319,7 @@ if ($Job->{detach_oarexec} == 1){
 }
 
 #Write file with this oarexec pid
-my $Pid_file = oar_Tools::get_oar_pid_file_name($Job_id);
+$Pid_file = oar_Tools::get_oar_pid_file_name($Job_id);
 if ((!open(FILEPID,">$Pid_file")) or (!print(FILEPID "$$"))){
     print("[oarexec $Job_id] I cannot write file $Pid_file\n");
     clean_all();

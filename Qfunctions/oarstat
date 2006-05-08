@@ -99,7 +99,7 @@ sub print_job($$){
     
     my @nodes;
     my $mold;
-    my @date_tmp = iolib::get_gantt_job_start_time($dbh,$job_info->{job_id});
+    my @date_tmp = iolib::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
     my @job_events = iolib::get_job_events($dbh,$job_info->{job_id});
    
     if ($job_info->{assigned_moldable_job} ne ""){

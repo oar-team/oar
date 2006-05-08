@@ -262,3 +262,9 @@ Rajouter dans oarsub la possibilite de specifier le repertoire de lancement
 Faire passer a oarexec le niveau de debug voulu et d autres parametres --> plus besoin du fichier de conf pour oarexec
 ----------------------------------------------------------------------------------------------------------------------
 
+resubmit_job
+kill oarsub -I script on node when exit
+    Attention : oarsub enregistre son pid dans un fichier et ensuite oarexec le regarde pour savoir ce qu il y a a tuer...
+    --> il se peut que oarsub plus la et oarexec tue de mauvais PIDs :-(
+scheduling besteffort (ne pas tuer un besteffort pour lancer un autre besteffort)
+co-system

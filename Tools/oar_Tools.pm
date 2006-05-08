@@ -13,6 +13,7 @@ my $bipbip_oarexec_hashtable_send_timeout = 30;
 my $Default_Dead_switch_time = 0;
 my $Default_oarexec_directory = "/tmp/oar/";
 my $Oarexec_pid_file_name = "pid_of_oarexec_for_jobId_";
+my $Oarsub_file_name_prefix = "oarsub_connections_";
 my $Default_prologue_epilogue_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 
@@ -23,6 +24,7 @@ sub notify_tcp_socket($$$);
 sub signal_oarexec($$$$$);
 sub get_default_oarexec_directory();
 sub get_oar_pid_file_name($);
+sub get_oarsub_connections_file_name($);
 sub get_ssh_timeout();
 sub get_default_leon_soft_walltime();
 sub get_default_leon_walltime();
@@ -149,6 +151,15 @@ sub get_oar_pid_file_name($){
 }
 
 
+# Get the name of the file which contains parent pids of oarsub connections
+# arg : job id
+sub get_oarsub_connections_file_name($){
+    my $job_id = shift;
+
+    return($Default_oarexec_directory."/".$Oarsub_file_name_prefix.$job_id);
+}
+
+
 # Send the given signal to the right oarexec process
 # args : host name, job id, signal, wait or not (0 or 1), DB ref (to close it in the child process)
 # return an array with exit values
@@ -160,7 +171,7 @@ sub signal_oarexec($$$$$){
     my $base = shift;
 
     my $file = get_oar_pid_file_name($job_id);
-    my $cmd = "ssh $host \"test -e $file && cat $file | xargs kill -s $signal\"";
+    my $cmd = "ssh -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
     my $pid = fork();
     if($pid == 0){
         #CHILD

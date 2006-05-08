@@ -189,5 +189,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 
 iolib::disconnect($base);
 iolib::disconnect($base_ro);
+
+if ($job_index <= $#jobs){
+    oar_debug("[oar_sched_gantt] I am not able to schedule all waiting jobs in the specified time : $timeout s\n");
+}
+
 oar_debug("[oar_sched_gantt] End of scheduler for queue $queue\n");
 

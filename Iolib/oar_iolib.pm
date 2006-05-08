@@ -3161,6 +3161,30 @@ sub get_gantt_job_start_time($$){
 }
 
 
+# Get start_time for a given job
+# args : base, job id
+sub get_gantt_job_start_time_visu($$){
+    my $dbh = shift;
+    my $job = shift;
+
+    my $sth = $dbh->prepare("SELECT gantt_jobs_predictions_visu.start_time, gantt_jobs_predictions_visu.moldable_job_id
+                             FROM gantt_jobs_predictions_visu,moldable_job_descriptions
+                             WHERE
+                                moldable_job_descriptions.moldable_job_id = $job
+                                AND gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id
+                            ");
+    $sth->execute();
+    my @res = $sth->fetchrow_array();
+    $sth->finish();
+    
+    if (defined($res[0])){
+        return($res[0],$res[1]);
+    }else{
+        return(undef);
+    }
+}
+
+
 # Update ganttJobsPrediction_visu and ganttJobsNodes_visu with values in ganttJobsPrediction and in ganttJobsNodes
 # arg: database ref
 sub update_gantt_visualization($){
