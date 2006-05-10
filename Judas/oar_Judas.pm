@@ -46,7 +46,8 @@ sub oar_warn($){
     
     if ($log_level >= 2){
         my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = sprintf("%06d",$microseconds);
+        $microseconds = int($microseconds / 1000);
+        $microseconds = sprintf("%03d",$microseconds);
         $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
         print("$string");
         write_log("[info] $string");
@@ -59,7 +60,8 @@ sub oar_debug($){
     
     if ($log_level >= 3){
         my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = sprintf("%06d",$microseconds);
+        $microseconds = int($microseconds / 1000);
+        $microseconds = sprintf("%03d",$microseconds);
         $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
         write_log("[debug] $string");
     }
@@ -68,7 +70,8 @@ sub oar_debug($){
 sub oar_error($){
     my $string = shift;
     my ($seconds, $microseconds) = gettimeofday();
-    $microseconds = sprintf("%06d",$microseconds);
+    $microseconds = int($microseconds / 1000);
+    $microseconds = sprintf("%03d",$microseconds);
     $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
     print("$string");
     write_log("[error] $string");
@@ -116,6 +119,9 @@ sub send_mail($$$$$){
     my $pid=fork;
     if ($pid == 0){
         undef($base);
+        $SIG{USR1} = 'IGNORE';
+        $SIG{INT}  = 'IGNORE';
+        $SIG{TERM} = 'IGNORE';
         my $smtp = Net::SMTP->new(  Host    => $smtp_server ,
                                     Timeout => 120 ,
                                     Hello   => hostname(),
@@ -167,6 +173,9 @@ sub notify_user($$$$$$$$){
         my $pid = fork();
         if ($pid == 0){
             undef($base);
+            $SIG{USR1} = 'IGNORE';
+            $SIG{INT}  = 'IGNORE';
+            $SIG{TERM} = 'IGNORE';
             my $exit_value;
             my $signal_num;
             my $dumped_core;
@@ -191,8 +200,8 @@ sub notify_user($$$$$$$$){
             if ($@){
                 if ($@ eq "alarm\n"){
                     if (defined($ssh_pid)){
-                        my @childs = oar_Tools::get_one_process_childs($ssh_pid);
-                        kill(9,@childs);
+                        my ($children,$cmd_name) = oar_Tools::get_one_process_children($ssh_pid);
+                        kill(9,@{$children});
                     }
                     my $dbh = iolib::connect();
                     my $str = "[Judas] User notification failed : ssh timeout, on node $host (cmd : $cmd)";

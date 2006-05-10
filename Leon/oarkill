@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# kill all childs of a pid
+# kill all children of a pid
 use strict;
 use Data::Dumper;
 use Getopt::Long;
@@ -25,9 +25,9 @@ if (!($ARGV[0] =~ /\d+/)){
 }
 
 #Kill all
-my @childs = oar_Tools::get_one_process_childs($ARGV[0]);
+my ($children,$cmd) = oar_Tools::get_one_process_children($ARGV[0]);
 
-my $cmd = "sudo /bin/kill -9 @childs 2>&1 > /dev/null";
+my $cmd = "sudo /bin/kill -9 @{$children} 2>&1 > /dev/null";
 print("$cmd\n");
 system("$cmd");
 

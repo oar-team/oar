@@ -123,6 +123,9 @@ sub launch_command($){
         $pid=fork;
         if($pid==0){
             #CHILD
+            $SIG{USR1} = 'IGNORE';
+            $SIG{INT}  = 'IGNORE';
+            $SIG{TERM} = 'IGNORE';
             exec($command); 
         }
         my $kid;
@@ -449,6 +452,10 @@ while (1){
             $pid=fork;
             if($pid==0){
                 #CHILD
+                $SIG{USR1} = 'IGNORE';
+                $SIG{INT}  = 'IGNORE';
+                $SIG{TERM} = 'IGNORE';
+
                 exec("$bipbip_command $1 $2 $3"); 
             }
             #launch_command("$bipbip_command $1 ATTACH &"); 

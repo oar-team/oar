@@ -93,12 +93,17 @@ sub clean_all(){
         while (<OARSUBS>){
             if ($_ =~ m/^(\d+)$/m){
                 my $ppid = $1;
-                my @childs = oar_Tools::get_one_process_childs($ppid);
-                # remove ppid
-                shift(@childs);
-                shift(@childs);
-                print("[oarexec $Job_id] kill oarsub connections @childs\n");
-                system("sudo kill -9 @childs > /dev/null 2>&1") if ($#childs >= 0);
+                my ($children,$cmd_name) = oar_Tools::get_one_process_children($ppid);
+                my @pid_list = @{$children};
+                shift(@pid_list);
+                shift(@pid_list);
+                if ($cmd_name =~ m/$file/m){
+                    # remove ppid
+                    print("[oarexec $Job_id] kill oarsub connections @pid_list\n");
+                    system("sudo kill -9 @pid_list > /dev/null 2>&1") if ($#pid_list >= 0);
+                }else{
+                    print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that it is not OAR oarsub processes\n");
+                }
             }
         }
         close(OARSUBS);
@@ -134,11 +139,11 @@ sub read_socket_line($$){
 
 #kill all child of the pid
 # arg1 --> child pid
-sub kill_childs($){
+sub kill_children($){
     my $child_pid = shift;
 
-    my @childs = oar_Tools::get_one_process_childs($child_pid);
-    system("sudo kill -9 @childs 2>&1 > /dev/null");
+    my ($children, $cmd_name) = oar_Tools::get_one_process_children($child_pid);
+    system("sudo kill -9 @{$children} 2>&1 > /dev/null");
 }
 
 sub send_kill_signal_to_myself(){
@@ -375,7 +380,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             if ($Job->{mode} eq "INTERACTIVE"){
                 $stop_loop = 1;
             }else{
-                kill_childs($pid);
+                kill_children($pid);
             }
             $kill_myself = 1;
         }elsif ($line_read eq "STOP"){
@@ -387,8 +392,8 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }
         }elsif ($line_read eq "CHECKPOINT"){
             #We must send SIGUSR2 to the child of $pid
-            my %tmp_hash = oar_Tools::get_all_process_childs();
-            my $pid_to_send_kill = @{$tmp_hash{$pid}}[0];
+            my ($tmp_hash, $tmp_cmd_hash) = oar_Tools::get_all_process_children();
+            my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
             if (defined($pid_to_send_kill)){
                 print("[oarexec $Job_id] Send signal SIGUSR2 to the pid $pid_to_send_kill\n");
                 system("sudo kill -s $Job->{checkpoint_signal} $pid_to_send_kill");

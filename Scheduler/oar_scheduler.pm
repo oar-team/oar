@@ -41,7 +41,7 @@ sub init_scheduler($$$){
 
     # Take care of the currently (or nearly) running jobs
     # Lock to prevent bipbip update in same time
-    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions"]);
+    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions","resources"]);
    
     #calculate now date with no overlap with other jobs
     my $previous_ref_time_sec = iolib::sql_to_local(iolib::get_gantt_date($dbh));
@@ -63,6 +63,10 @@ sub init_scheduler($$$){
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Launching"));
 
     my $gantt = Gantt::new();
+    #Init the gantt chart with all resources
+    foreach my $r (iolib::list_resources($dbh)){
+        Gantt::add_new_resource($gantt, $r->{resource_id});
+    }
     
     foreach my $i (@initial_jobs){
         my $mold = iolib::get_current_moldable_job($dbh,$i->{assigned_moldable_job});
@@ -105,7 +109,7 @@ sub init_scheduler($$$){
         my $job_descriptions = iolib::get_resources_data_structure_current_job($dbh,$job->{job_id});
         # For reservation we take the first moldable job
         my $moldable = $job_descriptions->[0];
-        my @available_resources;
+        my $available_resources_vector = '';
         my @tmp_resource_list;
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
@@ -117,8 +121,8 @@ sub init_scheduler($$$){
                                         iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
                                         $r->{resource_id}
                                        ) == 1
-               ){                       
-                push(@available_resources, $r->{resource_id});
+               ){
+                vec($available_resources_vector, $r->{resource_id}, 1) = 1;
             }
         }
         
@@ -127,18 +131,18 @@ sub init_scheduler($$$){
             $job_properties = $job->{properties};
         }
 
-        my @resource_id_used_list;
+        my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
             my $tmp_properties = "TRUE";
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+            my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){
-                push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+                vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
         
@@ -242,6 +246,10 @@ sub check_reservation_jobs($$$){
     my $return = 0;
 
     my $gantt = Gantt::new();
+    #Init the gantt chart with all resources
+    foreach my $r (iolib::list_resources($dbh)){
+        Gantt::add_new_resource($gantt, $r->{resource_id});
+    }
 
     # Find jobs to check
     my @jobs_to_sched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queue_name);
@@ -272,6 +280,7 @@ sub check_reservation_jobs($$$){
         #look if reservation is too old
         if ($current_time_sec >= (iolib::sql_to_local($job->{start_time}) + $duration)){
             oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{job_id}, job is too old\n");
+            iolib::set_job_message($dbh, $job->{job_id}, "reservation too old");
             iolib::set_job_state($dbh, $job->{job_id}, "toError");
         }else{
             if (iolib::sql_to_local($job->{start_time}) < $current_time_sec){
@@ -279,21 +288,14 @@ sub check_reservation_jobs($$$){
                 iolib::set_running_date_arbitrary($dbh,$job->{job_id},$current_time_sql);
             }
             
-            my @available_resources;
+            my $available_resources_vector = '';
             my @tmp_resource_list;
             # Get the list of resources where the reservation will be able to be launched
             push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
             push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
             push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
             foreach my $r (@tmp_resource_list){
-                if (Gantt::is_resource_free($gantt,
-                                            iolib::sql_to_local($job->{start_time}),
-                                            $duration + $Security_time_overhead,
-                                            $r->{resource_id}
-                                           ) == 1
-                   ){                       
-                    push(@available_resources, $r->{resource_id});
-                }
+                vec($available_resources_vector, $r->{resource_id}, 1) = 1;
             }
             my $job_properties = "TRUE";
             #print(Dumper($job));
@@ -301,7 +303,7 @@ sub check_reservation_jobs($$$){
                 $job_properties = $job->{properties};
             }
 
-            my @resource_id_used_list;
+            my $resource_id_used_list_vector = '';
             my @tree_list;
             foreach my $m (@{$moldable->[0]}){
                 my $tmp_properties = "TRUE";
@@ -309,14 +311,15 @@ sub check_reservation_jobs($$$){
                 if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
                 }
-                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,\@available_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
                 push(@tree_list, $tmp_tree);
                 my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
                 foreach my $l (@leafs){
-                    push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+                    vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
                 }
             }
             my @hole = Gantt::find_first_hole($gantt,iolib::sql_to_local($job->{start_time}), $duration, \@tree_list);
+            #print(Dumper(@hole));
             if ($hole[0] == iolib::sql_to_local($job->{start_time})){
                 # The reservation can be scheduled
                 my @res_trees;
@@ -342,7 +345,7 @@ sub check_reservation_jobs($$$){
                 iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
                 iolib::set_job_state($dbh, $job->{job_id}, "toAckReservation");
             }else{           
-                oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{id_job}, not enough nodes\n");
+                oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{job_id}, not enough nodes\n");
                 iolib::set_job_state($dbh, $job->{job_id}, "toError");
                 iolib::set_job_message($dbh, $job->{job_id}, "This reservation may be run at ".iolib::local_to_sql($hole[0]));
             }

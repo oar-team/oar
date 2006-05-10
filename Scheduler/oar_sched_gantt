@@ -42,7 +42,7 @@ my $base_ro = iolib::connect_ro();
 
 oar_debug("[oar_sched_gantt] Begining of Gantt scheduler on queue $queue at time $current_time\n");
 
-# Create the Gantt Diagram
+# Create the Gantt Diagrams
 my $gantt = Gantt::new();
 #Init the gantt chart with all resources
 foreach my $r (iolib::list_resources($base)){
@@ -54,7 +54,7 @@ my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($base);
 foreach my $i (keys(%already_scheduled_jobs)){
     # Do not take care of besteffort jobs
     my $types = iolib::get_current_job_types($base,$i);
-    if (!defined($types->{"besteffort"})){
+    if (($already_scheduled_jobs{$i}->[2] ne "besteffort") or ($queue eq "besteffort")){
         foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
             Gantt::set_occupation(  $gantt,
                                     iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
@@ -71,9 +71,9 @@ foreach my $i (keys(%already_scheduled_jobs)){
 # Begining of the real scheduling
 
 # Get list of Alive resources
-my @alive_resources;
+my $alive_resources_vector = '';
 foreach my $r (iolib::get_resources_in_state($base,"Alive")){
-    push(@alive_resources, $r->{resource_id});
+    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
 }
 
 my @jobs = iolib::get_jobs_to_schedule($base,$queue);
@@ -121,24 +121,24 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     #my $moldable = $job_descriptions->[0];
     #print(Dumper($moldable));
         my $duration;
-        if (defined($types->{"besteffort"})){
+        if ($queue eq "besteffort"){
             $duration = $besteffort_duration;
         }else{
             $duration = iolib::sql_to_duration($moldable->[1]) + $security_time_overhead;
         }
     
-        my @resource_id_used_list;
+        my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
             my $tmp_properties = "TRUE";
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,\@alive_resources,\@resource_id_used_list,"$job_properties AND $tmp_properties", $m->{resources});
+            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){
-                push(@resource_id_used_list, oar_resource_tree::get_current_resource_value($l));
+                vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
         my @hole = Gantt::find_first_hole($gantt, $scheduler_init_date, $duration, \@tree_list);
@@ -175,7 +175,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if ($index_to_choose >= 0){
         # We can schedule the job
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
-            Gantt::set_occupation($gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $r);
+            Gantt::set_occupation(  $gantt,
+                                    $moldable_results[$index_to_choose]->{start_date},
+                                    $moldable_results[$index_to_choose]->{duration}, $r
+                                 );
         }
         #update database
         my ($year,$mon,$day,$hour,$min,$sec) = iolib::local_to_ymdhms($moldable_results[$index_to_choose]->{start_date});

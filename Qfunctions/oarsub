@@ -325,6 +325,10 @@ sub parse_resource_descriptions($){
                 foreach my $l (@slash_split){
                     if ($l =~ /(\w+)\s*=\s*(\d+)/){
                         push(@resources_list, { resource => $1, value => $2 });
+                    }elsif ($l =~ /(\w+)\s*=\s*ALL/){
+                        push(@resources_list, { resource => $1, value => -1 });
+                    }elsif ($l =~ /(\w+)\s*=\s*BEST/){
+                        push(@resources_list, { resource => $1, value => -2 });
                     }else{
                         die("/!\\ Cannot recognize the resource description : $l\n");
                     }
@@ -369,7 +373,7 @@ sub parse_resource_descriptions($){
 
 my $base_ro = iolib::connect_ro();
 
-if ($Interactive == 0) {
+if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
     my %scan_result = scan_script($exec) if ($exec ne "");
     #print("$Queue_name \n");
@@ -406,6 +410,9 @@ if ($Interactive == 0) {
 
     $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file);
 }else{
+    if ($ARGV[0] ne ""){
+        warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
+    }
     $Cmd_executor = "Qsub -I";
     my $server_port;
     ($Server, $server_port) = init_tcp_server();

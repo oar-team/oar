@@ -318,8 +318,9 @@ sub find_first_hole($$$$){
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
 
-    my @result_tree_list = ();
+    return ($Infinity, ()) if (!defined($tree_description_list->[0]));
 
+    my @result_tree_list = ();
     my $end_loop = 0;
     # Tuples sorted by begin date
     my $current_free_resources = sorted_chained_list::new();

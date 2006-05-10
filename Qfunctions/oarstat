@@ -146,34 +146,26 @@ sub print_job($$){
     }else{
         if (defined($full_view)){
             print("Job_Id: $job_info->{job_id}\n");
-            if (defined($job_info->{job_name})){
-                print("    name = $job_info->{job_name}\n");
-            }else{
-                print("    name = \n");
-            }
+            $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+            print("    name = $job_info->{job_name}\n");
             print("    owner = $job_info->{job_user}\n");
             print("    state = $job_info->{state}\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
             print("    queue = $job_info->{queue_name}\n");
+            $job_info->{command} = '' if (!defined($job_info->{command}));
             print("    command = $job_info->{command}\n");
             print("    launchingDirectory = $job_info->{launching_directory}\n");
             print("    jobType = $job_info->{job_type}\n");
             print("    properties = $job_info->{properties}\n");
             print("    reservation = $job_info->{reservation}\n");
-            if (defined($mold->{moldable_walltime})){
-                print("    walltime = $mold->{moldable_walltime}\n");
-            }else{
-                print("    walltime = \n");
-            }
+            $mold->{moldable_walltime} = '' if (!defined($mold->{moldable_walltime}));
+            print("    walltime = $mold->{moldable_walltime}\n");
             print("    submissionTime = $job_info->{submission_time}\n");
             print("    startTime = $job_info->{start_time}\n");
             print("    stopTime = $job_info->{stop_time}\n");
             print("    message = $job_info->{message}\n");
-            if (defined($date_tmp[0])){
-                print("    scheduledStart = $date_tmp[0]\n");
-            }else{
-                print("    scheduledStart = no prediction\n");
-            }
+            $date_tmp[0] = "no prediction" if (!defined($date_tmp[0]));
+            print("    scheduledStart = $date_tmp[0]\n");
             print("    events = ");
             foreach my $e (@job_events){
                 print("[$e->{date}] $e->{type}:$e->{description}");
@@ -200,6 +192,7 @@ EOS
                 'toAckReservation' => 'W'
             );
  
+            $job_info->{'command'} = '' if (!defined($job_info->{'command'}));
             printf("%-16.16s %-16.16s %-16.16s %-8.8s %1.1s %5.5s\n",
               $job_info->{'job_id'},
               $job_info->{'command'},

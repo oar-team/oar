@@ -367,6 +367,8 @@ sub get_tree_leafs($){
 sub delete_unnecessary_subtrees($){
     my $tree_ref = shift;
 
+    return($tree_ref) if (!defined($tree_ref));
+
     # Search if there are enough values for each resource
     # Tremaux algorithm (Deep first)
     my $current_node = $tree_ref;

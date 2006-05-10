@@ -49,6 +49,9 @@ if (@checkpoint){
             if ($err == 1){
                 warn("Cannot checkpoint $idJob ; You are not the right user.\n");
                 $exitValue = 1;
+            }elsif ($err == 3){
+                warn("Cannot checkpoint $idJob ; The job is Interactive.\n");
+                $exitValue = 7;
             }else{
                 warn("Cannot checkpoint $idJob ; This job is not running.\n");
                 $exitValue = 5;
@@ -121,7 +124,7 @@ if (@checkpoint){
             warn("$strError\n");
             $exitValue = 2;
         }else{
-            print("The job(s) [ @jobRegistered ] will be deleted in a near futur.\n");
+            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n");
         }
     }
 }

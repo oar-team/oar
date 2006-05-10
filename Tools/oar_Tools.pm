@@ -18,8 +18,8 @@ my $Default_prologue_epilogue_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 
 # Prototypes
-sub get_all_process_childs();
-sub get_one_process_childs($);
+sub get_all_process_children();
+sub get_one_process_children($);
 sub notify_tcp_socket($$$);
 sub signal_oarexec($$$$$);
 sub get_default_oarexec_directory();
@@ -71,44 +71,47 @@ sub get_default_leon_walltime(){
 }
 
 
-# return a hashtable of all child in arrays
-sub get_all_process_childs(){
+# return a hashtable of all child in arrays and a hashtable with process command names
+sub get_all_process_children(){
     my %process_hash;
-    open(CMD, "ps -e -o pid,ppid |");
+    my %process_cmd_hash;
+    open(CMD, "ps -e -o pid,ppid,args |");
     while (<CMD>){
         chomp($_);
-        $_ =~ /(\d+)\s+(\d+)/;
-        if (defined($1) && defined($2)){
+        if ($_ =~ /^\s*(\d+)\s+(\d+)\s+(.+)$/){
             if (!defined($process_hash{$2})){
                 $process_hash{$2} = [$1];
             }else{
                 push(@{$process_hash{$2}}, $1);
             }
+            $process_cmd_hash{$1} = $3;
         }
     }
     close(CMD);
 
-    return(%process_hash);
+    return(\%process_hash,\%process_cmd_hash);
 }
 
 
-# return an array of childs
-sub get_one_process_childs($){
-    my $one_father = shift;
+# return an array of children
+sub get_one_process_children($){
+    my $pid = shift;
 
-    my %process_hash = get_all_process_childs();
+    my $one_father = $pid;
+    my ($tmp1,$pid_cmd_hash) = get_all_process_children();
+    my %process_hash = %{$tmp1};
     my @child_pids;
     my @potential_father;
     while (defined($one_father)){
         push(@child_pids, $one_father);
-        #Get childs of this process
+        #Get children of this process
         foreach my $i (@{$process_hash{$one_father}}){
             push(@potential_father, $i);
         }
         $one_father = shift(@potential_father);
     }
 
-    return(@child_pids);
+    return(\@child_pids,$pid_cmd_hash->{$pid});
 }
 
 
@@ -196,8 +199,8 @@ sub signal_oarexec($$$$$){
         if ($@){
             if ($@ eq "alarm\n"){
                 if (defined($ssh_pid)){
-                    my @childs = get_one_process_childs($ssh_pid);
-                    kill(9,@childs);
+                    my ($children,$cmd_name) = get_one_process_children($ssh_pid);
+                    kill(9,@{$children});
                 }
             }
         }
@@ -266,6 +269,9 @@ sub fork_no_wait($$){
         if($pid == 0){
             #child
             undef($base);
+            $SIG{USR1} = 'IGNORE';
+            $SIG{INT}  = 'IGNORE';
+            $SIG{TERM} = 'IGNORE';
             exec($cmd);
         }
     }

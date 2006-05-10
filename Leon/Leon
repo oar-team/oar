@@ -125,6 +125,9 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
     if ($pid == 0){
         #CHILD
         undef($base);
+        $SIG{USR1} = 'IGNORE';
+        $SIG{INT}  = 'IGNORE';
+        $SIG{TERM} = 'IGNORE';
         my $str = "[Leon] I exterminate the job $j->{job_id}";
         my $dbh = iolib::connect();
         iolib::job_finishing_sequence($dbh,$Server_epilogue,$Server_hostname,$Server_port,$j->{job_id},undef,"EXTERMINATE_JOB",$str);

@@ -708,8 +708,8 @@ sub get_all_possible_resources_with_childhood($$$$) {
 # return a tree ref : a data structure with corresponding resources with what is asked
 sub get_possible_wanted_resources($$$$$){
     my $dbh = shift;
-    my $possible_resources = shift;
-    my $impossible_resources = shift;
+    my $possible_resources_vector = shift;
+    my $impossible_resources_vector = shift;
     my $properties = shift;
     my $wanted_resources_ref = shift;
 
@@ -719,30 +719,31 @@ sub get_possible_wanted_resources($$$$$){
                                 value    => -1,
                             });
     
-    my $sql_where_string ;
-    if (defined($possible_resources->[0])){
-        $sql_where_string = "resource_id IN(";
-        foreach my $i (@{$possible_resources}){
-            $sql_where_string .= "$i,";
-        }
-        chop($sql_where_string);
-        $sql_where_string .= ") ";
-    }else{
-        $sql_where_string = "TRUE ";
-    }
+    #print(Dumper(@wanted_resources));
+    my $sql_where_string = "TRUE";
+    #if (defined($possible_resources->[0])){
+    #    $sql_where_string = "resource_id IN(";
+    #    foreach my $i (@{$possible_resources}){
+    #        $sql_where_string .= "$i,";
+    #    }
+    #    chop($sql_where_string);
+    #    $sql_where_string .= ") ";
+    #}else{
+    #    $sql_where_string = "TRUE ";
+    #}
 
-    if (defined($impossible_resources->[0])){
-        $sql_where_string .= "AND resource_id NOT IN (" ;
-        foreach my $i (@{$impossible_resources}){
-            $sql_where_string .= "$i,";
-        }
-        chop($sql_where_string);
-        $sql_where_string .= ") ";
-    }
+    #if (defined($impossible_resources->[0])){
+    #    $sql_where_string .= "AND resource_id NOT IN (" ;
+    #    foreach my $i (@{$impossible_resources}){
+    #        $sql_where_string .= "$i,";
+    #    }
+    #    chop($sql_where_string);
+    #    $sql_where_string .= ") ";
+    #}
     
     #if ((defined($properties)) and ($properties =~ m/\w+/m)){
     if ((defined($properties)) and ($properties ne "")){
-        $sql_where_string .= "AND ( $properties )";
+        $sql_where_string .= " AND ( $properties )";
     }
     
     #Get only wanted resources
@@ -780,6 +781,16 @@ sub get_possible_wanted_resources($$$$$){
                 $wanted_children_number = 0;
             }
             oar_resource_tree::set_needed_children_number($father_ref,$wanted_children_number);
+            # Verify if we must keep this child if this is resource_id resource name
+            if ($wanted_resources[$i]->{resource} eq "resource_id"){
+                if ((defined($impossible_resources_vector)) and (vec($impossible_resources_vector, $sql[$i], 1))){
+                    oar_resource_tree::delete_subtree($father_ref);
+                    $i = $#wanted_resources + 1;
+                }elsif ((defined($possible_resources_vector)) and (!vec($possible_resources_vector, $sql[$i], 1))){
+                    oar_resource_tree::delete_subtree($father_ref);
+                    $i = $#wanted_resources + 1;
+                }
+            }
         }
     }
     
@@ -869,7 +880,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
         if (!defined($moldable_resource->[1])){
             $moldable_resource->[1] = $default_walltime;
         }
-        my @resource_id_list;
+        my $resource_id_list_vector = '';
         foreach my $r (@{$moldable_resource->[0]}){
             # SECURITY : we must use read only database access for this request
             my $tmp_properties = $r->{property};
@@ -881,7 +892,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
                 }
             }
             #print(Dumper($r->{resources}));
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, \@resource_id_list, $tmp_properties, $r->{resources});
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, $tmp_properties, $r->{resources});
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
                 warn("There are not enough resources for your request\n");
@@ -889,7 +900,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
             }else{
                 my @leafs = oar_resource_tree::get_tree_leafs($tree);
                 foreach my $l (@leafs){
-                    push(@resource_id_list, oar_resource_tree::get_current_resource_value($l));
+                    vec($resource_id_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
                 }
             }
         }
@@ -1321,7 +1332,7 @@ sub frag_job($$) {
 # ask_checkpoint_job
 # Verify if the user is able to checkpoint the job
 # args : database ref, job id
-# returns : 0 if all is good, 1 if the user cannot do this, 2 if the job is not running
+# returns : 0 if all is good, 1 if the user cannot do this, 2 if the job is not running, 3 if the job is Interactive
 sub ask_checkpoint_job($$){
     my $dbh = shift;
     my $idJob = shift;
@@ -1330,17 +1341,18 @@ sub ask_checkpoint_job($$){
 
     my $job = get_job($dbh, $idJob);
 
-    if((defined($job)) && (($lusr eq $job->{'user'}) or ($lusr eq "oar") or ($lusr eq "root"))) {
+    return(3) if ((defined($job)) and ($job->{job_type} eq "INTERACTIVE"));
+    if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         if ($job->{state} eq "Running"){
             #$dbh->do("LOCK TABLE event_log WRITE");
             add_new_event($dbh,"CHECKPOINT",$idJob,"User $lusr requested a checkpoint on the job $idJob");
             #$dbh->do("UNLOCK TABLES");
-            return 0;
+            return(0);
         }else{
-            return 2;
+            return(2);
         }
     }else{
-        return 1;
+        return(1);
     }   
 }
 
@@ -4037,8 +4049,8 @@ sub job_finishing_sequence($$$$$$$$){
                 if ($@ eq "alarm\n"){
                     undef($state_to_switch);
                     if (defined($pid)){
-                        my @childs = oar_Tools::get_one_process_childs($pid);
-                        kill(9,@childs);
+                        my ($children,$cmd_name) = oar_Tools::get_one_process_children($pid);
+                        kill(9,@{$children});
                     }
                     my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
                     oar_Judas::oar_error("$str\n");
