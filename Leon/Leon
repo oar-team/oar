@@ -86,11 +86,15 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
     }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error") || ($j->{state} eq "Finishing")){
         oar_debug("[Leon] Job is terminated or is terminating I do nothing\n");
     }else{
+        my $types = iolib::get_current_job_types($base,$j->{job_id});
+        if (defined($types->{cosystem})){
+            iolib::set_job_state($base,$j->{job_id},"Terminated");
+            iolib::set_finish_date($base,$j->{job_id});
+        }
         my @hosts = iolib::get_job_current_hostnames($base,$j->{job_id});
         my $host_to_connect_via_ssh = $hosts[0];
         #deploy part
-        my $types = iolib::get_current_job_types($base,$j->{job_id});
-        if (defined($types->{"deploy"})){
+        if (defined($types->{deploy})){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
         #deploy part

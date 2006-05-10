@@ -85,8 +85,7 @@ sub init_scheduler($$$){
         iolib::add_gantt_scheduled_jobs($dbh,$i->{assigned_moldable_job},$date,\@resource_list);
 
         # Treate besteffort jobs like nothing!
-        my $types_hash = iolib::get_current_job_types($dbh, $i->{job_id});
-        if (!defined($types_hash->{besteffort})){
+        if ($i->{queue_name} ne "besteffort"){
             foreach my $r (@resource_list){
                 Gantt::set_occupation(  $gantt,
                                         iolib::sql_to_local($date),
@@ -97,7 +96,7 @@ sub init_scheduler($$$){
         }else{
             #Stock information about besteffort jobs
             foreach my $j (@resource_list){
-                $besteffort_resource_occupation{$j} = $i->{assigned_moldable_job};
+                $besteffort_resource_occupation{$j} = $i->{job_id};
             }
         }
     }
@@ -255,11 +254,10 @@ sub check_reservation_jobs($$$){
     my @jobs_to_sched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queue_name);
     if ($#jobs_to_sched >= 0){
         # Build gantt diagram of other jobs
-        # Take care of currently scheduled jobs except besteffort jobs if queueName is not besteffort
+        # Take care of currently scheduled jobs except besteffort jobs if queue_name is not besteffort
         my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($dbh);
         foreach my $i (keys(%already_scheduled_jobs)){
-            my $types = iolib::get_current_job_types($dbh,$i);
-            if (!defined($types->{"besteffort"})){
+            if (($already_scheduled_jobs{$i}->[2] ne "besteffort") or ($queue_name eq "besteffort")){
                 foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
                     Gantt::set_occupation(  $gantt,
                                             iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
@@ -276,7 +274,6 @@ sub check_reservation_jobs($$$){
         my $moldable = $job_descriptions->[0];
         my $duration = iolib::sql_to_duration($moldable->[1]);
 
-        my $types = iolib::get_current_job_types($dbh,$job->{job_id});
         #look if reservation is too old
         if ($current_time_sec >= (iolib::sql_to_local($job->{start_time}) + $duration)){
             oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{job_id}, job is too old\n");
@@ -365,7 +362,7 @@ sub check_jobs_to_kill($){
 
     oar_debug("[oar_scheduler] check_jobs_to_kill : check besteffort jobs\n");
     my $return = 0;
-    my %nodes_for_jobs_to_launch = iolib::get_gantt_resources_for_jobs_to_launch($dbh,$current_time_sql); 
+    my %nodes_for_jobs_to_launch = iolib::get_gantt_resources_for_jobs_to_launch($dbh,$current_time_sql);
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($besteffort_resource_occupation{$r})){
             oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $besteffort_resource_occupation{$r} must be killed\n");
