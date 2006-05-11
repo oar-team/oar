@@ -28,7 +28,6 @@ sub connect_ro();
 sub disconnect($);
 
 # JOBS MANAGEMENT
-sub get_job_bpid($$);
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub is_job_desktopComputing($$);
@@ -44,11 +43,8 @@ sub set_running_date($$);
 sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
-sub form_job_properties($$);
 sub get_possible_wanted_resources($$$$$);
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$);
-sub get_oldest_waiting_idjob($);
-sub get_oldest_waiting_idjob_by_queue($$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -63,11 +59,9 @@ sub job_fragged($$);
 sub job_arm_leon_timer($$);
 sub job_refrag($$);
 sub job_leon_exterminate($$);
-sub list_current_jobs($);
 sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
-sub get_waiting_jobs_specific_queue($$);
 sub get_jobs_range_dates($$$);
 sub get_jobs_gantt_scheduled($$$);
 sub get_desktop_computing_host_jobs($$);
@@ -83,48 +77,26 @@ sub get_current_job_types($$);
 sub get_resource_job($$);
 sub get_node_job($$);
 sub get_resources_in_state($$);
-sub get_running_host($);
 sub add_resource_job_pair($$$);
-sub remove_node_job_pair($$$);
 
 # RESOURCES MANAGEMENT
 sub add_resource($$$);
-sub get_maxweight_node($);
-sub get_free_nodes_job($$$);
-sub get_free_nodes_job_killer($$$$);
-sub get_free_shareable_nodes($);
-sub get_free_shareable_nodes_job($$$);
-sub get_free_exclusive_nodes($);
-sub get_free_exclusive_nodes_job($$$);
-sub get_free_exclusive_nodes_job_nbmin($$$$);
-sub get_alive_node_job($$$);
-sub get_really_alive_node_job($$$);
-sub get_number_Alive_state_nodes($);
-sub get_alive_node($);
-sub get_really_alive_node($);
-sub get_suspected_node($);
 sub list_nodes($);
 sub get_resource_info($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
-sub set_weight_node($$$);
-sub decrease_weight($$);
 sub set_node_state($$$$);
 sub update_resource_nextFinaudDecision($$$);
-sub get_all_node_properties($$);
-sub get_all_nodes_properties($);
 sub get_resources_change_state($);
 sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
 sub set_node_property($$$$);
 sub set_resource_property($$$$);
-sub get_maxweight_one_node($$);
 sub get_node_dead_range_date($$$);
 sub get_expired_nodes($);
 sub is_node_desktop_computing($$);
 sub get_node_stats($);
-sub order_property_node($$$);
 sub get_resources_data_structure_current_job($$);
 
 # QUEUES MANAGEMENT
@@ -308,29 +280,6 @@ sub get_last_insert_id($$){
 
 
 # JOBS MANAGEMENT
-
-# get_job_bpid
-# gets the bipbip pid of a OAR Job
-# parameters : base, jobid
-# return value : pid
-# side effects : /
-sub get_job_bpid($$){
-    my $dbh = shift;
-    my $job_id= shift;
-
-    my $sth = $dbh->prepare("   SELECT bpid
-                                FROM jobs
-                                WHERE
-                                    job_id = $job_id
-                            ");
-    $sth->execute();
-
-    my $ref = $sth->fetchrow_hashref();
-    $sth->finish();
-
-    return($$ref{'bpid'});
-}
-
 
 # get_job_challenge
 # gets the challenge string of a OAR Job
@@ -916,7 +865,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     $launching_directory = $dbh->quote($launching_directory);
     $dbh->do("INSERT INTO jobs
               (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal)
-              VALUES (\'$jobType\',\'$infoType\',\'Waiting\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\')
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\')
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -939,13 +888,9 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
                   stdout_file = $stdout,
                   stderr_file = $stderr
               WHERE
-                  state = \'Waiting\'
+                  state = \'Hold\'
                   AND job_id = $job_id
             ");
-
-    $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
-              VALUES ($job_id,\'Waiting\',\'$date\')
-             ");
 
     foreach my $moldable_resource (@{$ref_resource_list}){
         lock_table($dbh,["moldable_job_descriptions"]);
@@ -992,64 +937,19 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     $dbh->do("INSERT INTO challenges (job_id,challenge)
               VALUES ($job_id,\'$random_number\')
              ");
+
+    $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
+              VALUES ($job_id,\'Waiting\',\'$date\')
+             ");
+    
+    $dbh->do("  UPDATE jobs
+                SET state = \'Waiting\'
+                WHERE
+                    job_id = $job_id
+             ");
     #$dbh->do("UNLOCK TABLES");
 
     return($job_id);
-}
-
-
-
-# get_oldest_waiting_idjob
-# returns the jobid of the oldest job in state "Waiting" (the oldest is found
-# by taking the one of minimal id, using the fact that ids are given in non
-# decreasing order)
-# parameters : base
-# return value : jobid
-# side effects : /
-sub get_oldest_waiting_idjob($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT MIN(job_id) FROM jobs j WHERE j.state=\'Waiting\'");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp = values %$ref;
-    my $id = $tmp[0];
-    $sth->finish();
-
-    if (! defined $id){
-        return -1;
-    }
-
-    return $id;
-}
-
-
-
-# get_oldest_waiting_idjob_by_queue
-# returns the jobid of the oldest job in state "Waiting" and belonging to the
-# execution queue passed in parameter (the oldest is found by taking the one
-# of minimal id, using the fact that ids are given in non decreasing order)
-# parameters : base, queuename
-# return value : jobid
-# side effects : /
-sub get_oldest_waiting_idjob_by_queue($$) {
-    my $dbh = shift;
-    my $queue = shift;
-
-    my $sth = $dbh->prepare("SELECT MIN(job_id)
-                             FROM jobs j
-                             WHERE j.state=\'Waiting\'
-                             AND j.queue_name=\'$queue\'");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp = values %$ref;
-    my $id = $tmp[0];
-    $sth->finish();
-
-    if (! defined $id){
-        return -1;
-    }
-    return $id;
 }
 
 
@@ -1241,6 +1141,65 @@ sub set_job_state($$$) {
 }
 
 
+# Resubmit a job and give the new job_id
+# args : database, job id
+sub resubmit_job($$){
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $job = get_job($dbh, $job_id);
+    return(0) if (!defined($job->{job_id}));
+    return(-1) if ($job->{reservation} ne "None");
+    return(-2) if ($job->{job_type} ne "PASSIVE");
+    return(-3) if (($job->{state} ne "Error") or ($job->{state} ne "Terminated"));
+    
+    my $command = $dbh->quote($job->{command});
+    my $jobproperties = $dbh->quote($job->{properties});
+    my $launching_directory = $dbh->quote($job->{launching_directory});
+    my $stdout_file = $dbh->quote($job->{stdout_file});
+    my $stderr_file = $dbh->quote($job->{stderr_file});
+    my $date = get_date($dbh);
+    lock_table($dbh,["jobs"]);
+    $dbh->do("INSERT INTO jobs
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,\'job->{reservation}\',$job->{file_id},$job->{checkpoint},$job->{job_name},$job->{notify},\'$job->{checkpoint_signal}\',$stdout_file,$stderr_file)
+             ");
+
+    my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
+    unlock_table($dbh);
+
+    $dbh->do("  INSERT INTO job_types (job_id,type)
+                SELECT $new_job_id, type
+                FROM job_types
+                WHERE
+                   job_id = $job_id
+            ");
+
+    $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
+                    SELECT $new_job_id, job_id_required
+                    FROM job_dependencies
+                    WHERE
+                        job_id = $job_id
+             ");
+
+    my $random_number = int(rand(1000000000000));
+    $dbh->do("INSERT INTO challenges (job_id,challenge)
+              VALUES ($new_job_id,\'$random_number\')
+             ");
+    
+    $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
+              VALUES ($new_job_id,\'Waiting\',\'$date\')
+             ");
+    
+    $dbh->do("  UPDATE jobs
+                SET state = \'Waiting\'
+                WHERE
+                    job_id = $new_job_id
+             ");
+
+    return($job_id);
+
+}
 
 # set_job_resa_state
 # sets the reservation field of the job of id passed in parameter
@@ -1505,34 +1464,6 @@ sub get_frag_date($$) {
 }
 
 
-
-# list_current_jobs
-# returns a list of jobid for jobs that are in one of the states
-# Waiting, toLaunch, Running, Launching, Hold or toKill.
-# parameters : base
-# return value : list of jobid
-# side effects : /
-#sub list_current_jobs($) {
-#    my $dbh = shift;
-#
-#    my $sth = $dbh->prepare("SELECT * FROM jobs j
-#                             WHERE j.state=\'Waiting\'
-#                             OR    j.state=\'toLaunch\'
-#                             OR    j.state=\'Running\'
-#                             OR    j.state=\'Launching\'
-#                             OR    j.state=\'Hold\'
-#                             OR    j.state=\'toError\'
-#                             OR    j.state=\'toAckReservation\'
-#                            ");
-#    $sth->execute();
-#    my @res = ();
-#    while (my $ref = $sth->fetchrow_hashref()) {
-#        push(@res, $ref->{'job_id'});
-#    }
-#    $sth->finish();
-#    return @res;
-#}
-
 # Get all waiting reservation jobs
 # parameter : database ref
 # return an array of job informations
@@ -1777,27 +1708,6 @@ sub get_resources_in_state($$) {
 }
 
 
-# get_running_host
-# returns the list of hosts on which some jobs in the 'Running' state exist
-# parameters : base
-# return value : list of hostnames
-# side effects : /
-#sub get_running_host($) {
-#    my $dbh = shift;
-#    my $sth = $dbh->prepare("   SELECT distinct p.hostname
-#                                FROM jobs j,processJobs p
-#                                WHERE j.state=\'Running\'
-#                                AND j.job_id = p.job_id");
-#    $sth->execute();
-#    my @res = ();
-#    while (my $ref = $sth->fetchrow_hashref()) {
-#        push(@res, $ref->{'hostname'});
-#    }
-#    return @res;
-#}
-
-
-
 # add_resource_job_pair
 # adds a new pair (jobid, resource) to the table assigned_resources
 # parameters : base, jobid, resource id
@@ -1809,28 +1719,6 @@ sub add_resource_job_pair($$$) {
     $dbh->do("INSERT INTO assigned_resources (moldable_job_id,resource_id,assigned_resource_index)
               VALUES ($moldable,$resource,\'CURRENT\')");
 }
-
-# remove_node_job_pair
-# removes a pair (jobid, hostname) to the table processjobs.
-# This should match the execution of some process for the job of given id
-# and on the given host.
-# parameters : base, jobid, hostname
-# return value : /
-# side effects : adds a new entry to the table processjobs_log and remove one in processjobs.
-sub remove_node_job_pair($$$) {
-    my $dbh = shift;
-    my $idJob = shift;
-    my $hostname = shift;
-
-    #$dbh->do("INSERT INTO processJobs_log (job_id,hostname)
-    #          VALUES ($idJob,\"$hostname\")");
-
-    $dbh->do("DELETE FROM processJobs
-              WHERE job_id = $idJob
-              AND hostname = \"$hostname\"");
-#    $dbh->do("OPTIMIZE TABLE processJobs");
-}
-
 
 
 # get all jobs in a range of date
@@ -2100,27 +1988,6 @@ sub add_resource($$$) {
 }
 
 
-# get_free_exclusive_nodes
-# gets the list of nodes on which a new job can be added with exclusive access.
-# parameters : base
-# return value : list of hostnames
-# side effects : /
-sub get_free_exclusive_nodes($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT p.hostname FROM nodes p
-                             WHERE p.state=\"Alive\"
-                             AND p.weight = 0");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
-
 # get_alive_resources
 # gets the list of resources in the Alive state.
 # parameters : base
@@ -2143,73 +2010,6 @@ sub get_alive_resources($) {
     }
     $sth->finish();
     return @res;
-}
-
-
-# get_number_Alive_state_nodes
-# return the number of nodes in Alive state
-# arg: database ref
-sub get_number_Alive_state_nodes($){
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT COUNT(n.hostname) FROM nodes n
-                             WHERE n.state = \"Alive\"
-                             ");
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
-    my $res = $ref[0];
-
-    $sth->finish();
-    return $res;
-}
-
-# get_really_alive_node
-# gets the list of really alive nodes.
-# parameters : base
-# return value : list of hostnames
-# side effects : /
-sub get_really_alive_node($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT n.hostname FROM nodes n, nodeProperties p
-                             WHERE  n.state = \"Alive\"
-                                AND n.weight = 0
-                                AND n.hostname = p.hostname
-                                AND p.desktopComputing = \"NO\"
-                            ");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return @res;
-}
-
-
-
-# get_suspected_node
-# gets the list of suspected nodes.
-# parameters : base
-# return value : list of hostnames
-# side effects : /
-sub get_suspected_node($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT n.hostname
-                             FROM nodes n, nodeProperties p
-                             WHERE n.state = \"Suspected\"
-                                AND n.finaudDecision = \"YES\"
-                                AND n.hostname = p.hostname
-                                AND p.desktopComputing = \"NO\"
-                            ");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'hostname'});
-    }
-    $sth->finish();
-    return(@res);
 }
 
 
@@ -2701,27 +2501,6 @@ sub get_resource_properties($$){
     return(%results);
 }
 
-
-# return all properties for all nodes
-# parameters : base, hostname
-sub get_all_nodes_properties($){
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT * FROM nodeProperties");
-    $sth->execute();
-    
-    my %res ;
-    while (my $ref = $sth->fetchrow_hashref()) {
-        #push(@res, $ref->{'job_id'}, $ref->{'jobType'}, $ref->{'infoType'});
-        #push(@res, $ref);
-        $res{$ref->{hostname}} = $ref;
-    }
-    $sth->finish();
-
-    return(%res);
-}
-
-
 # get resource names that will change their state
 # parameters : base
 sub get_resources_change_state($){
@@ -2903,40 +2682,6 @@ sub get_resources_data_structure_current_job($$){
     $sth->finish();
     
     return($result);
-}
-
-
-# Order the node list with specified argument
-# parameters : base, node list array pointer, order spec
-sub order_property_node($$$){
-    my $dbh = shift;
-    my $nodeList = shift;
-    my $orderClause = shift;
-
-    my @result;
-    if (scalar(@{$nodeList}) > 0){
-        # construct WHERE clause
-        my $whereClause;
-        foreach my $n (@{$nodeList}){
-            if (!defined($whereClause)){
-                $whereClause = "n.hostname = \"$n\"";
-            }else{
-                $whereClause .= " OR n.hostname = \"$n\""
-            }
-        }
-        my $sth = $dbh->prepare("SELECT n.hostname
-                                 FROM nodes n, nodeProperties p
-                                 WHERE n.hostname = p.hostname
-                                    AND ($whereClause)                     
-                                 ORDER BY $orderClause");
-        $sth->execute();
-        while (my @ref = $sth->fetchrow_array()) {
-            push(@result, $ref[0]);
-        }
-        $sth->finish();
-    }
-
-    return(@result);
 }
 
 

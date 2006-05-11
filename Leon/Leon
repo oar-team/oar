@@ -125,6 +125,15 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
     iolib::set_finish_date($base,$j->{job_id});
     iolib::set_job_message($base,$j->{job_id},"job exterminated by Leon");
     iolib::job_arm_leon_timer($base,$j->{job_id});
+    $Exit_code = 2;
+
+    my $types = iolib::get_current_job_types($base,$j->{job_id});
+    if (defined($types->{cosystem})){
+        iolib::set_job_state($base,$j->{job_id},"Error");
+        iolib::set_finish_date($base,$j->{job_id});
+        next;
+    }
+ 
     my $pid = fork();
     if ($pid == 0){
         #CHILD
@@ -138,7 +147,6 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
         iolib::disconnect($dbh);
         exit(0);
     }
-    $Exit_code = 2;
 }
 iolib::unlock_table($base);
 
