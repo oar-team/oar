@@ -1153,7 +1153,7 @@ sub resubmit_job($$){
     return(0) if (!defined($job->{job_id}));
     return(-1) if ($job->{reservation} ne "None");
     return(-2) if ($job->{job_type} ne "PASSIVE");
-    return(-3) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated"));
+    return(-3) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
     return(-4) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
     my $command = $dbh->quote($job->{command});
