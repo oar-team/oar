@@ -45,6 +45,7 @@ my @Anterior_job;
 my $Checkpoint_signal = 12; # SIGUSR2
 my $Stdout_file;
 my $Stderr_file;
+my $Resubmit;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -55,17 +56,18 @@ sub qdel($) {
     
     if (defined($Job_id)) {
         if ($Al_dead eq "INT" ) {
-            warn("\n\nCaught Interrupt (^C), Deleting the job $Job_id\n");
-            my $base = iolib::connect();
-            iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
-            my $err = iolib::frag_job($base,$Job_id);
-            iolib::unlock_table($base);
-            iolib::disconnect($base);
-            warn("Job deleted\n");
-            #Signal Almigthy
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
-            exit(1);
+            warn("\n\nCaught Interrupt (^C),");
         }
+        warn("Deleting the job $Job_id ...\n");
+        my $base = iolib::connect();
+        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        my $err = iolib::frag_job($base,$Job_id);
+        iolib::unlock_table($base);
+        iolib::disconnect($base);
+        warn("Job deleted\n");
+        #Signal Almigthy
+        oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
+        exit(1);
     }
 }
 
@@ -186,6 +188,7 @@ Options are:
 				   --notify "exec:/path/to/script args"
      --stdout                  specify the name of the standard output file
      --stderr                  specify the name of the error output file
+     --resubmit                resubmit the given job to a new one
  -h, --help                    print this help message
 EOS
 }
@@ -236,7 +239,8 @@ GetOptions ("resource|l=s" => \@resource,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
 	    "stdout=s" => \$Stdout_file,
-	    "stderr=s" => \$Stderr_file
+	    "stderr=s" => \$Stderr_file,
+            "resubmit=i" => \$Resubmit
            );
 
 if (defined($sos)){
@@ -244,7 +248,44 @@ if (defined($sos)){
     exit(0);
 }
 
-if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation == 0) && (!defined($connect_job))){
+$base = iolib::connect();
+
+if (defined($Resubmit)){
+    print("Resubmitting job $Resubmit ...");
+    my $err = iolib::resubmit_job($base,$Resubmit);
+    if ($err > 0){
+        print("DONE\n");
+        print("JOB_ID = $err\n");
+        $Job_id = $err;
+        if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qsub"))){
+            warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
+            exit(1);
+        }
+        exit(0);
+    }else{
+        print("ERROR\n");
+        if ($err == -1){
+            warn("/!\\ A reservation cannot be resubmitted\n");
+        }elsif ($err == -2){
+            warn("/!\\ An interactive job cannot be resubmitted\n");
+        }elsif ($err == -3){
+            warn("/!\\ The job must be in Error or Terminated state\n");
+        }elsif ($err == -4){
+            warn("/!\\ You are not the right user\n");
+        }else{
+            warn("/!\\ Unknown error\n");
+        }
+        exit(1);
+    }
+}
+
+if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($connect_job))){
+    usage();
+    exit(1);
+}
+
+if (($Interactive == 1) and ($Reservation ne "0")){
+    warn("/!\\ A reservation cannot be interactive.\n");
     usage();
     exit(1);
 }
@@ -287,8 +328,6 @@ if (defined $stagein) {
     iolib::disconnect($base);
     print "Stagein completed.\n";
 }
-
-$base = iolib::connect();
 
 # Connect to a reservation
 if (defined($connect_job)){
@@ -433,9 +472,9 @@ if ($Job_id < 0){
 
 #Signal Almigthy
 if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$Cmd_executor"))){
-    qdel(1);
+    #qdel(1);
     warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
-    exit(0);
+    exit(1);
 }
 
 my $answer;

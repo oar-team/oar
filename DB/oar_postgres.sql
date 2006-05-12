@@ -183,8 +183,7 @@ CREATE TABLE jobs (
   checkpoint_signal integer NOT NULL,
   stdout_file text NOT NULL ,
   stderr_file text NOT NULL ,
-  resubmit_prev_job_id integer NOT NULL default '0',
-  resubmit_next_job_id integer NOT NULL default '0',
+  resubmit_job_id integer NOT NULL default '0',
   PRIMARY KEY  (job_id)
 );
 CREATE INDEX state ON jobs (state);

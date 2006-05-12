@@ -857,7 +857,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
 
     #Insert job
     my $date = get_date($dbh);
-    lock_table($dbh,["jobs"]);
+    #lock_table($dbh,["jobs"]);
     $job_name = $dbh->quote($job_name);
     $notify = $dbh->quote($notify);
     $command = $dbh->quote($command);
@@ -869,7 +869,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
-    unlock_table($dbh);
+    #unlock_table($dbh);
 
     if (!defined($stdout) or ($stdout eq "")){
         $stdout = "OAR";
@@ -890,25 +890,25 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
               WHERE
                   state = \'Hold\'
                   AND job_id = $job_id
-            ");
+    ");
 
     foreach my $moldable_resource (@{$ref_resource_list}){
-        lock_table($dbh,["moldable_job_descriptions"]);
+        #lock_table($dbh,["moldable_job_descriptions"]);
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
                     VALUES ($job_id,\'$moldable_resource->[1]\')
                  ");
         my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
-        unlock_table($dbh);
+        #unlock_table($dbh);
 
         foreach my $r (@{$moldable_resource->[0]}){
-            lock_table($dbh,["job_resource_groups"]);
+            #lock_table($dbh,["job_resource_groups"]);
             my $property = $r->{property};
             $property = $dbh->quote($property);
             $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
                         VALUES ($moldable_id,$property)
                      ");
             my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
-            unlock_table($dbh);
+            #unlock_table($dbh);
 
             my $order = 0;
             foreach my $l (@{$r->{resources}}){
@@ -1147,32 +1147,101 @@ sub resubmit_job($$){
     my $dbh = shift;
     my $job_id = shift;
 
+    my $lusr= getpwuid($ENV{SUDO_UID});
+    
     my $job = get_job($dbh, $job_id);
     return(0) if (!defined($job->{job_id}));
     return(-1) if ($job->{reservation} ne "None");
     return(-2) if ($job->{job_type} ne "PASSIVE");
-    return(-3) if (($job->{state} ne "Error") or ($job->{state} ne "Terminated"));
+    return(-3) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated"));
+    return(-4) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
     my $command = $dbh->quote($job->{command});
     my $jobproperties = $dbh->quote($job->{properties});
     my $launching_directory = $dbh->quote($job->{launching_directory});
-    my $stdout_file = $dbh->quote($job->{stdout_file});
-    my $stderr_file = $dbh->quote($job->{stderr_file});
+    my $file_id = $dbh->quote($job->{file_id});
     my $date = get_date($dbh);
-    lock_table($dbh,["jobs"]);
+    #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,\'job->{reservation}\',$job->{file_id},$job->{checkpoint},$job->{job_name},$job->{notify},\'$job->{checkpoint_signal}\',$stdout_file,$stderr_file)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'None\',$job_id)
              ");
-
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
-    unlock_table($dbh);
+    #unlock_table($dbh);
+    
+    $job->{stdout_file} =~ m/^(.+)\.$job_id\.stdout$/m;
+    my $stdout_file = $dbh->quote("$1.$new_job_id.stdout");
+    $job->{stderr_file} =~ m/^(.+)\.$job_id\.stderr$/m;
+    my $stderr_file = $dbh->quote("$1.$new_job_id.stderr");
+
+    $dbh->do("UPDATE jobs
+              SET
+                  stdout_file = $stdout_file,
+                  stderr_file = $stderr_file
+              WHERE
+                  state = \'Hold\'
+                  AND job_id = $new_job_id
+    ");
+
+    my $sth = $dbh->prepare("   SELECT moldable_id
+                                FROM moldable_job_descriptions
+                                WHERE
+                                    moldable_job_id = $job_id
+                            ");
+    $sth->execute();
+    my @moldable_ids = ();
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@moldable_ids, $ref[0]);
+    }
+
+    foreach my $moldable_resource (@moldable_ids){
+        #lock_table($dbh,["moldable_job_descriptions"]);
+        $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
+                        SELECT $new_job_id, moldable_walltime
+                        FROM moldable_job_descriptions
+                        WHERE
+                            moldable_id = $moldable_resource
+                 ");
+        my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
+        #unlock_table($dbh);
+    
+        $sth = $dbh->prepare("  SELECT res_group_id 
+                                FROM job_resource_groups
+                                WHERE
+                                    res_group_moldable_id = $moldable_resource
+                             ");
+        $sth->execute();
+        my @groups = ();
+        while (my @ref = $sth->fetchrow_array()) {
+            push(@groups, $ref[0]);
+        }
+
+        foreach my $r (@groups){
+            #lock_table($dbh,["job_resource_groups"]);
+            $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
+                            SELECT $moldable_id, res_group_property
+                            FROM job_resource_groups
+                            WHERE
+                                res_group_id = $r
+                     ");
+            my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
+            #unlock_table($dbh);
+
+            
+            $dbh->do("  INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order)
+                            SELECT $res_group_id, res_job_resource_type,res_job_value,res_job_order
+                            FROM job_resource_descriptions
+                            WHERE
+                                res_job_group_id = $r
+                     ");
+        }
+    }
 
     $dbh->do("  INSERT INTO job_types (job_id,type)
-                SELECT $new_job_id, type
-                FROM job_types
-                WHERE
-                   job_id = $job_id
+                    SELECT $new_job_id, type
+                    FROM job_types
+                    WHERE
+                        job_id = $job_id
             ");
 
     $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
@@ -1197,7 +1266,7 @@ sub resubmit_job($$){
                     job_id = $new_job_id
              ");
 
-    return($job_id);
+    return($new_job_id);
 
 }
 
@@ -1970,12 +2039,12 @@ sub add_resource($$$) {
     my $name = shift;
     my $state = shift;
 
-    lock_table($dbh,["resources"]);
+    #lock_table($dbh,["resources"]);
     $dbh->do("  INSERT INTO resources (network_address,state)
                 VALUES (\'$name\',\'$state\')
              ");
     my $id = get_last_insert_id($dbh,"resources_resource_id_seq");
-    unlock_table($dbh);
+    #unlock_table($dbh);
     $dbh->do("  INSERT INTO resource_properties (resource_id)
                 VALUES ($id)
              ");
@@ -3458,12 +3527,12 @@ sub add_new_event_with_host($$$$$){
     my $hostnames = shift;
     
     my $date = get_date($dbh);
-    lock_table($dbh,["event_logs"]);
+    #lock_table($dbh,["event_logs"]);
     $dbh->do("  INSERT INTO event_logs (type,job_id,date,description)
                 VALUES (\'$type\',$idJob,\'$date\',\'$description\')
              ");
     my $event_id = get_last_insert_id($dbh,"event_logs_event_id_seq");
-    unlock_table($dbh);
+    #unlock_table($dbh);
 
     foreach my $n (@{$hostnames}){
         $dbh->do("  INSERT INTO event_log_hostnames (event_id,hostname)
