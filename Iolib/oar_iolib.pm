@@ -1643,7 +1643,11 @@ sub get_current_job_types($$){
     $sth->execute();
     my %res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        $res{$ref->{type}} = 1;
+        if ($ref->{type} =~ m/^\s*(\w+)\s*=\s*(.+)$/m){
+            $res{$1} = $2;
+        }else{
+            $res{$ref->{type}} = "true";
+        }
     }
     $sth->finish();
 
@@ -2850,7 +2854,7 @@ sub stop_all_queues($){
 #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state
+    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name
                              FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
                                 m.moldable_index = \'CURRENT\'
@@ -2867,6 +2871,8 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[2] = $ref[4];
 #            $res{$ref[0]}->[3] = $ref[3];
             $res{$ref[0]}->[4] = $ref[5];
+            $res{$ref[0]}->[5] = $ref[6];
+            $res{$ref[0]}->[6] = $ref[7];
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
     }

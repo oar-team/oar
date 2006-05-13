@@ -357,7 +357,7 @@ sub parse_resource_descriptions($){
                 $tmp_result{property} = $2;
                 $r = $3;
             }
-            if ($r =~ /^\s*(\++|\,+|\s*)\s*\/([^\,\+]+)\s*(.*)$/){
+            if ($r =~ /^\s*(\++|\,+|\s*)\s*\/*([^\,\+]+)\s*(.*)$/){
                 $r = $3;
                 my @slash_split = split('\/', $2);
                 my @resources_list;
