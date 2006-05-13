@@ -235,7 +235,8 @@ eval {
         close(FILE);
     }
     # End of oarexec script transfer
-    print(WRITE "\n\cd\n");
+    #print(WRITE "\n\cd\n");
+    print(WRITE "\n__END__\n");
 
     # Send data structure for oarexec
     print(WRITE Dumper(\%data_to_transfer)."\n");
