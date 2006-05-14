@@ -840,7 +840,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
                     $tmp_properties = "($tmp_properties) AND ($jobproperties)"
                 }
             }
-            #print(Dumper($r->{resources}));
+            print(Dumper($r->{resources}));
             my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, $tmp_properties, $r->{resources});
             if (!defined($tree)){
                 # Resource description does not match with the content of the database

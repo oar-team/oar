@@ -109,6 +109,7 @@ sub init_scheduler($$$){
         # For reservation we take the first moldable job
         my $moldable = $job_descriptions->[0];
         my $available_resources_vector = '';
+        my $alive_resources_vector = '';
         my @tmp_resource_list;
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
@@ -121,6 +122,9 @@ sub init_scheduler($$$){
                                         $r->{resource_id}
                                        ) == 1
                ){
+                if ($r->{state} eq "Alive"){
+                    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
+                }
                 vec($available_resources_vector, $r->{resource_id}, 1) = 1;
             }
         }
@@ -137,7 +141,12 @@ sub init_scheduler($$$){
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
+            my $tmp_tree;
+            # Try first with only alive nodes
+            $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
+            if (!defined($tmp_tree)){
+                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
+            }
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){
