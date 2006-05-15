@@ -4,6 +4,9 @@ OAR CHANGELOG
 
 version 2.0.0++ enhanced:
 =========================
+    - Now you can connect to your jobs (not only for reservations).
+    - Add "cosystem" job type (execute and do nothing for these jobs).
+    - New scheduler : "oar_sched_gantt_with_timesharing". You can specify jobs with the type "timesharing" that indicates that this scheduler can launch more than 1 job on a resource at a time. It is possible to restrict this feature with words "user and name". For example, '-t timesharing=user,name' indicates that only a job from the same user with the same name can be launched in the same time than it.
     - Add PostGresSQL support. So there is a choice to make between MySQL and PostgresSQL. 
     - New approach for the scheduling : administrators have to insert into the databases descriptions about resources and not nodes. Resources have a network address (physical node) and properties. For example, if you have dual-processor, then you can create 2 different resources with the same natwork address but with 2 different processor names.
     - The scheduler can now handle resource properties in a hierarchical manner. Thus, for example, you can do "oarsub -l /switch=1/cpu=5" which submit a job on 5 processors on the same switch.
@@ -31,8 +34,12 @@ version 2.0.0++ enhanced:
     - Users can specify a method to be notified (mail or script).
     - Add cpuset support
     - Add prologue and epilogue script to be executed on the OAR server before and after launching a job.
-    - Add dependancy support between jobs.
+    - Add dependancy support between jobs ("-a" option in oarsub).
     - In oarsub you can specify the launching directory ("-d" option).
+    - In oarsub you can specify a job name ("-n" option).
+    - In oarsub you can specify stdout and stderr file names.
+    - User can resubmit a job (option "--resubmit" in oarsub).
+    - It is possible to specify a read only database account and it will be used to evaluate SQL properties given by the user with the oarsub command (more scecure).
 
 version 1.6.1:
 ==============

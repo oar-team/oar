@@ -840,7 +840,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
                     $tmp_properties = "($tmp_properties) AND ($jobproperties)"
                 }
             }
-            print(Dumper($r->{resources}));
+            #print(Dumper($r->{resources}));
             my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, $tmp_properties, $r->{resources});
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
@@ -1151,20 +1151,21 @@ sub resubmit_job($$){
     
     my $job = get_job($dbh, $job_id);
     return(0) if (!defined($job->{job_id}));
-    return(-1) if ($job->{reservation} ne "None");
-    return(-2) if ($job->{job_type} ne "PASSIVE");
-    return(-3) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
-    return(-4) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
+    return(-1) if ($job->{job_type} ne "PASSIVE");
+    return(-2) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
+    return(-3) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
     my $command = $dbh->quote($job->{command});
     my $jobproperties = $dbh->quote($job->{properties});
     my $launching_directory = $dbh->quote($job->{launching_directory});
     my $file_id = $dbh->quote($job->{file_id});
     my $date = get_date($dbh);
+    my $start_time = "0000-00-00 00:00:00";
+    $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'None\',$job_id)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\')
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
@@ -1244,11 +1245,16 @@ sub resubmit_job($$){
                         job_id = $job_id
             ");
 
-    $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
-                    SELECT $new_job_id, job_id_required
-                    FROM job_dependencies
-                    WHERE
-                        job_id = $job_id
+    #$dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
+    #                SELECT $new_job_id, job_id_required
+    #                FROM job_dependencies
+    #                WHERE
+    #                    job_id = $job_id
+    #         ");
+    $dbh->do("  UPDATE job_dependencies
+                SET job_id_required = $new_job_id
+                WHERE
+                    job_id_required = $job_id
              ");
 
     my $random_number = int(rand(1000000000000));

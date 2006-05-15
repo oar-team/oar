@@ -265,12 +265,10 @@ if (defined($Resubmit)){
     }else{
         print("ERROR\n");
         if ($err == -1){
-            warn("/!\\ A reservation cannot be resubmitted\n");
-        }elsif ($err == -2){
             warn("/!\\ An interactive job cannot be resubmitted\n");
-        }elsif ($err == -3){
+        }elsif ($err == -2){
             warn("/!\\ The job must be in Error or Terminated state\n");
-        }elsif ($err == -4){
+        }elsif ($err == -3){
             warn("/!\\ You are not the right user\n");
         }else{
             warn("/!\\ Unknown error\n");
