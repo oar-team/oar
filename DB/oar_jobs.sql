@@ -294,8 +294,7 @@ INSERT IGNORE INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") 
 #INSERT IGNORE INTO admissionRules (rule) VALUES ('if ( "$queueName" eq "deploy" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND deploy = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "deploy = \\\\\\"YES\\\\\\"";} }');
 
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
-INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt');
-INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('deploy','1','oar_sched_gantt');
+INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');
 
 INSERT IGNORE INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');

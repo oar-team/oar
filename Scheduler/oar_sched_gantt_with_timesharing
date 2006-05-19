@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -d:DProf
 
 use strict;
 use DBI();
@@ -114,6 +114,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
 }
 
 #print(Gantt::pretty_print($gantt)."\n");
+oar_debug("[oar_sched_gantt_with_timesharing] End gantt initialization\n");
 
 # End of the initialisation
 # Begining of the real scheduling
@@ -129,6 +130,8 @@ my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];
     $job_index ++;
+    
+    oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] Start scheduling\n");
     
     my $scheduler_init_date = $current_time;
     # Search for dependencies
@@ -261,6 +264,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         iolib::set_job_message($base,$j->{job_id},$message);
         oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
     }
+    oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] End scheduling\n");
 }
 
 iolib::disconnect($base);

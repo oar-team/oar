@@ -268,3 +268,8 @@ kill oarsub -I script on node when exit
     --> il se peut que oarsub plus la et oarexec tue de mauvais PIDs :-(
 scheduling besteffort (ne pas tuer un besteffort pour lancer un autre besteffort)
 co-system
+
+Proposer une methode de check qui consiste a tout checker et laisser une socket ouverte si tout va bien...
+--> nmap ensuite qui check ça...
+
+

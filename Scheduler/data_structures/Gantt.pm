@@ -375,7 +375,7 @@ sub find_first_hole($$$$){
             #print(Dumper($tree_clone));
             $result_tree_list[$i] = $tree_clone;
             $i ++;
-        }while(defined($tree_clone) && ($i <= $#{@{$tree_description_list}}));
+        }while(defined($tree_clone) && ($i <= $#$tree_description_list));
         
         if (defined($tree_clone)){
             # We find the first hole

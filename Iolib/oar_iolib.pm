@@ -2121,9 +2121,13 @@ sub list_resources($) {
 sub list_nodes($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT distinct(network_address), resource_id
+    #my $sth = $dbh->prepare("   SELECT distinct(network_address), resource_id
+    #                            FROM resources
+    #                            ORDER BY resource_id ASC");
+    my $sth = $dbh->prepare("   SELECT distinct(network_address)
                                 FROM resources
-                                ORDER BY resource_id ASC");
+                                ORDER BY network_address ASC
+                            ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
