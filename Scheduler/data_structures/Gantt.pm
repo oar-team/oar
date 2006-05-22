@@ -6,6 +6,9 @@ use sorted_chained_list;
 use Data::Dumper;
 use warnings;
 use strict;
+use Time::HiRes qw(gettimeofday);
+
+my $count = 0;
 
 # Note : All dates are in seconds
 
@@ -73,6 +76,8 @@ sub get_tuple_next_sorted_end($){
     my ($tuple_ref) = @_;
 
     #Ref of a tuple
+    $count ++;
+    #print("[GANTT] $count\n");
     return($tuple_ref->{next_sorted});
 }
 
@@ -309,7 +314,7 @@ sub is_resource_free($$$$){
 }
 
 
-# Take a list of resoure trees and find a hole that fit
+# Take a list of resource trees and find a hole that fit
 # args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
 sub find_first_hole($$$$){
     my ($gantt, $initial_time, $duration, $tree_description_list) = @_;
@@ -327,6 +332,7 @@ sub find_first_hole($$$$){
     my $current_time = $initial_time;
     my $current_tuple = $gantt->{sorted_root};
     while ($end_loop == 0){
+        #print("[GANTT] 1 ".gettimeofday."\n");
         # Add in the sorted chain, tuples that will begin just after the current time 
         while ( defined(get_tuple_end_date($current_tuple))
                 && ($current_time >= get_tuple_end_date($current_tuple))){
@@ -339,6 +345,7 @@ sub find_first_hole($$$$){
             $current_tuple = get_tuple_next_sorted_end($current_tuple);
         }
         #print(sorted_chained_list::pretty_print($current_free_resources)."\n");
+        #print("[GANTT] 2 ".gettimeofday."\n");
 
         #Remove current free resources with not enough time
         my $current_element = sorted_chained_list::get_next($current_free_resources);
@@ -347,6 +354,7 @@ sub find_first_hole($$$$){
             sorted_chained_list::remove_element($current_free_resources,$current_element);
             $current_element = sorted_chained_list::get_next($current_element);
         }
+        #print("[GANTT] 3 ".gettimeofday."\n");
 
         #print(sorted_chained_list::pretty_print($current_free_resources)."\n");
 
@@ -357,12 +365,15 @@ sub find_first_hole($$$$){
             vec($free_resources_vector,get_tuple_resource(sorted_chained_list::get_stored_ref($current_element)),1) = 1;
             $current_element = sorted_chained_list::get_next($current_element);
         }
+        #print("[GANTT] 4 ".gettimeofday."\n");
         
         #Check all trees
         my $tree_clone;
         my $i = 0;
         do{
+        #print("[GANTT] 5 ".gettimeofday."\n");
             $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
+        #print("[GANTT] 6 ".gettimeofday."\n");
             #Remove tree leafs that are not free
             foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
                 #print(oar_resource_tree::get_current_resource_value($l)."\n");
@@ -371,7 +382,9 @@ sub find_first_hole($$$$){
                     oar_resource_tree::delete_subtree($l);
                 }
             }
+        #print("[GANTT] 7 ".gettimeofday."\n");
             $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+        #print("[GANTT] 8 ".gettimeofday."\n");
             #print(Dumper($tree_clone));
             $result_tree_list[$i] = $tree_clone;
             $i ++;
@@ -396,6 +409,7 @@ sub find_first_hole($$$$){
         }
     }
 
+        #print("[GANTT] 9 ".gettimeofday."\n");
     return($current_time, \@result_tree_list);
 }
 

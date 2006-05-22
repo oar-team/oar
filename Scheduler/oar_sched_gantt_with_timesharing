@@ -1,4 +1,5 @@
-#!/usr/bin/perl -d:DProf
+#!/usr/bin/perl
+#-d:DProf
 
 use strict;
 use DBI();
@@ -8,6 +9,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Gantt;
 use Storable qw(dclone);
+use Time::HiRes qw(gettimeofday);
 
 my $initial_time = time();
 my $timeout = 10;
@@ -205,14 +207,18 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         my @hole = Gantt::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
         
+#        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;
         my @resources;
         foreach my $t (@{$hole[1]}){
+#        print("[GANTT] 11 ".gettimeofday."\n");
             my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+#        print("[GANTT] 12 ".gettimeofday."\n");
             push(@res_trees, $minimal_tree);
             foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
                 push(@resources, oar_resource_tree::get_current_resource_value($r));
             }
+#        print("[GANTT] 13 ".gettimeofday."\n");
         }
         push(@moldable_results, {
                                     resources => \@resources,
@@ -225,9 +231,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     # Choose moldable job which will finish the first
     my $index_to_choose = -1;
     my $best_stop_time;
+#        print("[GANTT] 14 ".gettimeofday."\n");
     for (my $i=0; $i <= $#moldable_results; $i++){
-        my @tmp_array = @{$moldable_results[$i]->{resources}};
-        if ($#tmp_array >= 0){
+        #my @tmp_array = @{$moldable_results[$i]->{resources}};
+        if ($#{@{$moldable_results[$i]->{resources}}} >= 0){
             my $tmp_stop_date = $moldable_results[$i]->{start_date} + $moldable_results[$i]->{duration};
             if ((!defined($best_stop_time)) or ($best_stop_time > $tmp_stop_date)){
                 $best_stop_time = $tmp_stop_date;
@@ -237,6 +244,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     if ($index_to_choose >= 0){
         # We can schedule the job
+#        print("[GANTT] 15 ".gettimeofday."\n");
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
             Gantt::set_occupation(  $gantt,
                                     $moldable_results[$index_to_choose]->{start_date},
@@ -245,6 +253,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                                  );
             #Fill all other gantts
             foreach my $u (keys(%{$timesharing_gantts})){
+#        print("[GANTT] 17 ".gettimeofday."\n");
                 foreach my $n (keys(%{$timesharing_gantts->{$u}})){
                     if (($gantt_to_use != $timesharing_gantts->{$u}->{$n})){
                         Gantt::set_occupation(  $timesharing_gantts->{$u}->{$n},
@@ -264,6 +273,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         iolib::set_job_message($base,$j->{job_id},$message);
         oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
     }
+#        print("[GANTT] 18 ".gettimeofday."\n");
     oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] End scheduling\n");
 }
 

@@ -663,12 +663,14 @@ sub get_possible_wanted_resources($$$$$){
     my $wanted_resources_ref = shift;
 
     my @wanted_resources = @{$wanted_resources_ref};
-    push(@wanted_resources, {
-                                resource => "resource_id",
-                                value    => -1,
-                            });
+    if ($wanted_resources[$#wanted_resources]->{resource} ne "resource_id"){
+        push(@wanted_resources, {
+                                    resource => "resource_id",
+                                    value    => -1,
+                                });
+    }
     
-    #print(Dumper(@wanted_resources));
+    print(Dumper(@wanted_resources));
     my $sql_where_string = "TRUE";
     #if (defined($possible_resources->[0])){
     #    $sql_where_string = "resource_id IN(";

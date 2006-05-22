@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use Data::Dumper;
 use Storable qw(dclone);
-#use Time::HiRes qw(gettimeofday);
+use Time::HiRes qw(gettimeofday);
 
 ###############################################################################
 #                       RESOURCE TREE MANAGEMENT                              #
@@ -15,16 +15,21 @@ sub new();
 sub clone($);
 sub add_child($$$);
 sub get_children_list($);
+sub is_node_a_leaf($);
 sub get_a_child($$);
 sub get_father($);
 sub get_current_resource_name($);
 sub get_current_resource_value($);
+sub get_current_children_number($);
 sub get_current_level($);
 sub get_max_available_children($);
-sub get_parents($);
 sub set_needed_children_number($$);
 sub get_needed_children_number($);
 sub delete_subtree($);
+sub get_previous_brother($);
+sub get_next_brother($);
+sub get_initial_child($);
+
 
 ###############################################################################
 
@@ -49,7 +54,11 @@ sub new(){
                                                 #   -1 means ALL (Alive + Absent + Suspected resources)
                                                 #   -2 means BEST (Alive resources at the time)
     $tree_ref->[6] = 0 ;                        # maximum available children
-    $tree_ref->[7] = undef ;                    # ref of an array of children
+    $tree_ref->[7] = undef ;                    # previous brother ref
+    $tree_ref->[8] = undef ;                    # next brother ref
+    $tree_ref->[9] = undef ;                    # first child ref
+    $tree_ref->[10] = 0 ;                       # current children number
+
 
     return($tree_ref);
 }
@@ -64,28 +73,50 @@ sub clone($){
 }
 
 
+# return 1 if node is a leaf (no child)
+# otherwise retuurn 0
+sub is_node_a_leaf($){
+    my $tree_ref = shift;
+
+    if (defined($tree_ref->[1])){
+        return(0);
+    }else{
+        return(1);
+    }
+}
+
 # add a child to the given tree ref (if child resource name is undef it seems
 # that this child is a leaf of the tree)
-# arg : tree ref, resource value, child resource name or undef, number of needed children
+# arg : tree ref, resource name, resource value
 # return the ref of the child
 sub add_child($$$){
     my $tree_ref = shift;
     my $resource_name = shift;
     my $resource_value = shift;
 
-    #$tree_ref->[2] = $resource_name;
+    my $tmp_ref;
     if (!defined($tree_ref->[1]->{$resource_value})){
-        # Initialize value of the father
-        $tree_ref->[1]->{$resource_value} = [ $tree_ref, undef, $resource_name, $resource_value, 0 , 0, 0, undef];
-        $tree_ref->[6] ++;
-        push(@{$tree_ref->[7]}, $resource_value);
-    }
+        # Create a new tree node
+        $tmp_ref = [ $tree_ref, undef, $resource_name, $resource_value, $tree_ref->[4] + 1, 0, 0, undef, undef, undef, 0];
+        
+        $tree_ref->[1]->{$resource_value} = $tmp_ref;
+        $tree_ref->[6] = $tree_ref->[6] + 1;
+        $tree_ref->[10] = $tree_ref->[10] + 1;
 
-    $tree_ref->[1]->{$resource_value}->[4] = get_current_level($tree_ref) + 1;
+        # Add new brother
+        if (defined($tree_ref->[9])){
+            $tmp_ref->[8] = $tree_ref->[9];
+            $tree_ref->[9]->[7] = $tmp_ref;
+        }
+        $tree_ref->[9] = $tmp_ref;
+    }else{
+        $tmp_ref = $tree_ref->[1]->{$resource_value};
+    }
     
-    return(\@{$tree_ref->[1]->{$resource_value}});
+    return($tmp_ref);
 }
 
+# Store information about the number of needed children
 sub set_needed_children_number($$){
     my $tree_ref = shift;
     my $needed_children_number = shift;
@@ -94,17 +125,38 @@ sub set_needed_children_number($$){
 }
 
 
-# Get an array with all children of the tree ref
-# arg : tree ref
-# return array of tree ref
-sub get_children_list($){
+# Get previous brother on the same level for the same father
+sub get_previous_brother($){
     my $tree_ref = shift;
 
-    if (!defined($tree_ref) || !defined($tree_ref->[1])){
-        return(());
+    if (!defined($tree_ref)){
+        return(undef);
     }else{
-        #return(keys(%{$tree_ref->[1]}));
         return($tree_ref->[7]);
+    }
+}
+
+
+# Get next brother on the same level for the same father
+sub get_next_brother($){
+    my $tree_ref = shift;
+
+    if (!defined($tree_ref)){
+        return(undef);
+    }else{
+        return($tree_ref->[8]);
+    }
+}
+
+
+# Get initial child ref
+sub get_initial_child($){
+    my $tree_ref = shift;
+
+    if (!defined($tree_ref)){
+        return(undef);
+    }else{
+        return($tree_ref->[9]);
     }
 }
 
@@ -123,7 +175,7 @@ sub get_a_child($$){
     }
 }
 
-# Get the ref of the tree father
+# Get the ref of the father tree
 # arg : tree ref
 # return a tree ref
 sub get_father($){
@@ -161,6 +213,20 @@ sub get_current_resource_value($){
         return(undef);
     }else{
         return($tree_ref->[3]);
+    }
+}
+
+
+# Get the current children number
+# arg : tree ref
+# return the resource value
+sub get_current_children_number($){
+    my $tree_ref = shift;
+
+    if (!defined($tree_ref) || !defined($tree_ref->[10])){
+        return(undef);
+    }else{
+        return($tree_ref->[10]);
     }
 }
 
@@ -208,22 +274,6 @@ sub get_needed_children_number($){
 }
 
 
-# Get the list of parent nodes
-# arg : tree ref
-# return an arry of tree references
-sub get_parents($){
-    my $tree_ref = shift;
-
-    my @results;
-    my $current_node = $tree_ref;
-    while (defined(get_current_resource_name($current_node))){
-        push(@results, $current_node);
-        $current_node = get_father($current_node);
-    }
-
-    return(@results);
-}
-
 # Delete a subtree
 # arg : tree ref to delete
 # return father tree ref
@@ -232,13 +282,25 @@ sub delete_subtree($){
     
     return(undef) if (!defined($tree_ref));
 
-    my $father_ref = get_father($tree_ref);
-    
-   #     splice(@{$father_ref->[7]}, $father_ref->[8]->{$tree_ref->[3]}, 1);
+    my $father_ref = $tree_ref->[0];
+
+    my $prev_brother = $tree_ref->[7];
+    my $next_brother = $tree_ref->[8];
+
+    if (!defined($prev_brother)){
+        if (defined($father_ref)){
+            $father_ref->[9] = $next_brother;
+        }
+    }else{
+        $prev_brother->[8] = $next_brother;
+    }
+
+    if (defined($next_brother)){
+        $next_brother->[7] = $prev_brother;
+    }
     
     delete($father_ref->[1]->{$tree_ref->[3]});
-    
-    @{$father_ref->[7]} = keys(%{$father_ref->[1]});
+    $father_ref->[10] = $father_ref->[10] - 1;
 
     return($father_ref);
 }
@@ -255,58 +317,36 @@ sub delete_tree_nodes_with_not_enough_resources($){
     # Search if there are enough values for each resource
     # Tremaux algorithm (Deep first)
     my $current_node = $tree_ref;
-    my %level_index;
     do{
-        if (!defined($level_index{$current_node})){
-            # Initialize index where we are for the node
-            $level_index{$current_node} = 0;
-        }
-        #my @child = sort(get_children_list($current_node));
-        my $child = get_children_list($current_node);
-        if ((get_needed_children_number($current_node) > ($#$child + 1))
+        if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
             or ((get_needed_children_number($current_node) == -1)                # ALL
-                and (get_max_available_children($current_node) > ($#$child + 1)))
+                and (get_max_available_children($current_node) > get_current_children_number($current_node)))
             or ((get_needed_children_number($current_node) == -2)                # BEST
-                and ($#$child < 0))
+                and (get_current_children_number($current_node) <= 0))
         ){
             # Delete sub tree that does not fit with wanted resources 
-            #print("Delete @child\n");
-            my $tmp_current_node = get_father($current_node);
-            #my @tmp = sort(get_children_list($tmp_current_node));
-            #my $father_key_name = $tmp[$level_index{$tmp_current_node} - 1];
-            my $father_key_name = get_current_resource_value($current_node);
-            #print(" $father_key_name  Deleted\n");
-            if (!defined($father_key_name)){
+            my $current_node = delete_subtree($current_node);
+            if (!defined(get_current_resource_value($current_node))){
                 # No matching records (we want to delete the root)
-                #print("UNDEF tree ref\n");
                 $tree_ref = undef;
                 return($tree_ref);
             }
-            $current_node = $tmp_current_node;
-            delete_subtree(get_a_child($current_node, $father_key_name));
-            $level_index{$current_node} --;
         }else{
-            if (defined($child->[$level_index{$current_node}]) and defined(get_a_child($current_node, $child->[$level_index{$current_node}]))){
+            if (defined(get_initial_child($current_node))){
                 # Go to child
-                #print("GO to  Child = $child[$level_index{$current_node}]\n");
-                my $tmp_current_node = $current_node;
-                $current_node = get_a_child($current_node, $child->[$level_index{$current_node}]);
-                $level_index{$tmp_current_node} ++;
+                $current_node = get_initial_child($current_node);
+                #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
             }else{
                 # Treate leaf
-                #my @brothers = sort(get_children_list(get_father($current_node)));
-                my $brothers = get_children_list(get_father($current_node));
-                while(defined($current_node) and (!defined(get_father($current_node)) or !defined($brothers->[$level_index{get_father($current_node)}]))){
-                    $level_index{get_father($current_node)} ++ if defined(get_father($current_node));
+                while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+                    # Step up
                     $current_node = get_father($current_node);
-                    #@brothers = sort(get_children_list(get_father($current_node))) ;
-                    $brothers = get_children_list(get_father($current_node)) ;
+                    #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 }
-                if (defined(get_father($current_node)) &&  defined($brothers->[$level_index{get_father($current_node)}])){
+                if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
                     # Treate brother
-                    #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                    $current_node = get_a_child(get_father($current_node), $brothers->[$level_index{get_father($current_node)}]);
-                    $level_index{get_father($current_node)} ++;
+                    $current_node = get_next_brother($current_node);
+                    #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
                 }
             }
         }
@@ -328,46 +368,28 @@ sub get_tree_leafs($){
     # Search leafs
     # Tremaux algorithm (Deep first)
     my $current_node = $tree;
-    my %level_index;
-    my @node_name_pile;
     do{
-        if (!defined($level_index{$current_node})){
-            # Initialize index where we are for the node
-            $level_index{$current_node} = 0;
-        }
-        #my @child = sort(get_children_list($current_node));
-        my $child = get_children_list($current_node);
-        if (defined($child->[$level_index{$current_node}]) and defined(get_a_child($current_node, $child->[$level_index{$current_node}]))){
+        if (defined(get_initial_child($current_node))){
             # Go to child
-            #print("GO to  Child = $child[$level_index{$current_node}]\n");
-            #unshift(@node_name_pile, $child[$level_index{$current_node}]);
-            unshift(@node_name_pile, get_a_child($current_node, $child->[$level_index{$current_node}]));
-            my $tmp_current_node = $current_node;
-            $current_node = get_a_child($current_node, $child->[$level_index{$current_node}]);
-            $level_index{$tmp_current_node} ++;
+            $current_node = get_initial_child($current_node);
+            #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
         }else{
             # Treate leaf
-            if (!defined(get_a_child($current_node, $child->[$level_index{$current_node}]))){
-                push(@result, $node_name_pile[0]);
-                #push(@result, $current_node);
-                #print("Leaf: ".$node_name_pile[0]."\n");
+            if (is_node_a_leaf($current_node) == 1){
+                #push(@result, $node_name_pile[0]);
+                push(@result, $current_node);
+                #print("Leaf: ".get_current_resource_value($current_node)."\n");
             }
             # Look at brothers
-            #my @brothers = sort(get_children_list(get_father($current_node)));
-            my $brothers = get_children_list(get_father($current_node));
-            while(defined($current_node) and (!defined(get_father($current_node)) or !defined($brothers->[$level_index{get_father($current_node)}]))){
-                shift(@node_name_pile);
-                $level_index{$current_node} ++ if defined(get_father($current_node));
+            while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+                # Step up
                 $current_node = get_father($current_node);
-                $brothers = get_children_list(get_father($current_node));
+                #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
             }
-            if (defined(get_father($current_node)) and defined($brothers->[$level_index{get_father($current_node)}])){
+            if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
                 # Treate brother
-                #unshift(@node_name_pile, $brothers[$level_index{get_father($current_node)}]);
-                unshift(@node_name_pile, get_a_child(get_father($current_node), $brothers->[$level_index{get_father($current_node)}]));
-                #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                $current_node = get_a_child(get_father($current_node), $brothers->[$level_index{get_father($current_node)}]);
-                $level_index{get_father($current_node)} ++;
+                $current_node = get_next_brother($current_node);
+                #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
             }
         }
     }while(defined($current_node));
@@ -388,39 +410,26 @@ sub delete_unnecessary_subtrees($){
     # Search if there are enough values for each resource
     # Tremaux algorithm (Deep first)
     my $current_node = $tree_ref;
-    my %level_index;
     do{
-        if (!defined($level_index{$current_node})){
-            # Initialize index where we are for the node
-            $level_index{$current_node} = 0;
-        }
-        #my @child = sort(get_children_list($current_node));
-        my $child = get_children_list($current_node); 
-        if ((get_needed_children_number($current_node) >= 0) and (get_needed_children_number($current_node) < ($#$child + 1))){
+        if ((get_needed_children_number($current_node) >= 0) and (get_needed_children_number($current_node) < (get_current_children_number($current_node)))){
             # Delete extra sub tree
-            delete_subtree(get_a_child($current_node, $child->[0]));
+            delete_subtree(get_initial_child($current_node));
         }else{
-            if (defined($child->[$level_index{$current_node}]) and defined(get_a_child($current_node, $child->[$level_index{$current_node}]))){
+            if (defined(get_initial_child($current_node))){
                 # Go to child
-                #print("GO to  Child = $child[$level_index{$current_node}]\n");
-                my $tmp_current_node = $current_node;
-                $current_node = get_a_child($current_node, $child->[$level_index{$current_node}]);
-                $level_index{$tmp_current_node} ++;
+                $current_node = get_initial_child($current_node);
+                #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
             }else{
-                # Treate leaf
-                #my @brothers = sort(get_children_list(get_father($current_node)));
-                my $brothers = get_children_list(get_father($current_node));
-                while(defined($current_node) and (!defined(get_father($current_node)) or !defined($brothers->[$level_index{get_father($current_node)}]))){
-                    $level_index{get_father($current_node)} ++ if defined(get_father($current_node));
+                # Look at brothers
+                while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+                    # Step up
                     $current_node = get_father($current_node);
-                    #@brothers = sort(get_children_list(get_father($current_node))) ;
-                    $brothers = get_children_list(get_father($current_node)) ;
+                    #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 }
-                if (defined(get_father($current_node)) &&  defined($brothers->[$level_index{get_father($current_node)}])){
+                if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
                     # Treate brother
-                    #print("Treate brother $brothers[$level_index{$current_node->[0]}] \n");
-                    $current_node = get_a_child(get_father($current_node), $brothers->[$level_index{get_father($current_node)}]);
-                    $level_index{get_father($current_node)} ++;
+                    $current_node = get_next_brother($current_node);
+                    #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
                 }
             }
         }
