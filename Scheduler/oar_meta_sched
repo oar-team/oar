@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -d:DProf
 # $Id: oar_meta_sched,v 1.31 2005/02/16 18:47:10 capitn Exp $
 
 use strict;
@@ -73,8 +73,12 @@ if ($exit_code == 0){
     }
 }
 
+oar_debug("SCHED 1\n");
+
 #Update visu gantt tables
 oar_scheduler::update_gantt_visu_tables($base);
+
+oar_debug("SCHED 2\n");
 
 iolib::disconnect($base);
 iolib::disconnect($base_ro);

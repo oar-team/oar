@@ -349,7 +349,7 @@ sub get_job_current_hostnames($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT distinct(resources.network_address) as hostname, resources.resource_id
+    my $sth = $dbh->prepare("SELECT resources.network_address as hostname, resources.resource_id
                              FROM assigned_resources, resources, moldable_job_descriptions
                              WHERE 
                                 assigned_resources.assigned_resource_index = \'CURRENT\'
@@ -357,6 +357,7 @@ sub get_job_current_hostnames($$) {
                                 AND assigned_resources.resource_id = resources.resource_id
                                 AND moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id
                                 AND moldable_job_descriptions.moldable_job_id = $jobid
+                             GROUP BY resources.network_address
                              ORDER BY resources.resource_id ASC");
     $sth->execute();
     my @res = ();
@@ -3530,7 +3531,7 @@ sub add_new_event($$$$){
     my $job_id = shift;
     my $description = substr(shift,0,254);
 
-    my $description = $dbh->quote($description);
+    $description = $dbh->quote($description);
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO event_logs (type,job_id,date,description) VALUES (\'$type\',$job_id,\'$date\',$description)");
 }

@@ -6,12 +6,24 @@ use strict;
 use Data::Dumper;
 use oar_iolib;
 use oar_resource_tree;
-use Gantt;
+use Gantt_2;
 
-my $gantt = Gantt::new();
+my $gantt = Gantt_2::new();
 
-#Gantt::add_new_resource($gantt, "2");
-#Gantt::add_new_resource($gantt, "4");
+my $vec = '';
+vec($vec,30,1) = 1;
+Gantt_2::add_new_resource($gantt, $vec);
+#Gantt_2::add_new_resource($gantt, $vec);
+$vec = '';
+vec($vec,5,1) = 1;
+vec($vec,3,1) = 1;
+Gantt_2::add_new_resource($gantt, $vec);
+
+print("---\n");
+print vec($gantt->[3]->[0]->[1], 3, 1)."\n";
+print vec($gantt->[4], 5, 1)."\n";
+#print unpack("b*",$gantt->[4])."\n";
+#print unpack("%2b*",$gantt->[4])."\n";
 #Gantt::set_occupation($gantt, 20, 5, "2");
 #Gantt::set_occupation($gantt, 26, 10, "2");
 #Gantt::set_occupation($gantt, 40, 5, "2");
@@ -19,12 +31,12 @@ my $gantt = Gantt::new();
 #Gantt::set_occupation($gantt, 20, 24, "2");
 #print(Gantt::pretty_print($gantt)."\n");
 
-#print(Dumper($gantt));
+print(Dumper($gantt));
 #print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
 #print(Gantt::pretty_print($gantt)."\n");
 #
 
-#exit;
+exit;
 my $base = iolib::connect();
 
 my @r = iolib::list_resources($base);

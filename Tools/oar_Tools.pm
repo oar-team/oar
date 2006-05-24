@@ -3,6 +3,7 @@ package oar_Tools;
 
 use IO::Socket::INET;
 use strict;
+use POSIX ":sys_wait_h";
 
 # Constants
 my $Default_leon_soft_walltime = 20;
@@ -38,6 +39,7 @@ sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_oarexecuser_script_for_oarexec($$$$$$$@);
 sub get_oarexecuser_script_for_oarsub($$$$$$);
 sub get_bipbip_oarexec_rendez_vous();
+sub sentinelle($$$);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -396,6 +398,71 @@ exit 0
 
 sub get_bipbip_oarexec_rendez_vous(){
     return($Ssh_rendez_vous);
+}
+
+sub sentinelle($$$){
+    my $window = shift;
+    my $timeout = shift;
+    my $nodes = shift;
+
+    my @bad_nodes;
+    my $index = 0;
+    my %running_processes;
+    my $nb_running_processes = 0;
+    my %finished_processes;
+
+
+    # Start to launch subprocesses with the window limitation
+    my @timeout;
+    my $pid;
+    while (($index <= $#$nodes) or ($#timeout >= 0)){
+        # Check if window is full or not
+        while((($nb_running_processes) < $window) and ($index <= $#$nodes)){
+            $pid = fork();
+            if (defined($pid)){
+                $running_processes{$pid} = $index;
+                $nb_running_processes++;
+                push(@timeout, [$pid,time()+$timeout]);
+                if ($pid == 0){
+                    #In the child
+                    exec($nodes->[$index]);
+                }
+            }else{
+                push(@bad_nodes, $index);
+            }
+            $index++;
+        }
+        while(($pid = waitpid(-1, WNOHANG)) > 0) {
+            my $exit_value = $? >> 8;
+            my $signal_num  = $? & 127;
+            my $dumped_core = $? & 128;
+            if ($pid > 0){
+                if (defined($running_processes{$pid})){
+                    if (($exit_value != 0) or ($signal_num != 0) or ($dumped_core != 0)){
+                        push(@bad_nodes, $running_processes{$pid});
+                    }
+                    delete($running_processes{$pid});
+                    $nb_running_processes--;
+                }
+            } 
+        }
+
+        my $t = 0;
+        while(defined($timeout[$t]) and (($timeout[$t]->[1] <= time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
+            if (!defined($running_processes{$timeout[$t]->[0]})){
+                shift(@timeout);
+            }else{
+                if ($timeout[$t]->[1] <= time()){
+                    # DRING, timeout !!!
+                    kill(9,$timeout[$t]->[0]);
+                }
+            }
+            $t++;
+        }
+        select(undef,undef,undef,0.1) if ($t == 0);
+    }
+    
+    return(@bad_nodes);
 }
 
 1;
