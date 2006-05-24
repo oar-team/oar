@@ -41,7 +41,7 @@ sub new(){
                     ''                              # Store all inserted resources
                  ];
     
-    vec($result->[4], $Max_resource_number, 1) = 0;
+    vec($result->[4], $Max_resource_number, 1) = 0; # Init bit vector of all resources
     return($result);
 }
 
@@ -62,8 +62,6 @@ sub add_new_resource($$) {
             $current_hole = $current_hole->[1];
         }while(defined($current_hole));
         $gantt->[4] |= $resource_vec;
-    }else{
-        print("TO\n");
     }
 }
 

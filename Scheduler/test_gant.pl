@@ -15,13 +15,23 @@ vec($vec,30,1) = 1;
 Gantt_2::add_new_resource($gantt, $vec);
 #Gantt_2::add_new_resource($gantt, $vec);
 $vec = '';
-vec($vec,5,1) = 1;
-vec($vec,3,1) = 1;
-Gantt_2::add_new_resource($gantt, $vec);
+#vec($vec,5,1) = 1;
+#vec($vec,30,1) = 1;
+#Gantt_2::add_new_resource($gantt, $vec);
 
-print("---\n");
-print vec($gantt->[3]->[0]->[1], 3, 1)."\n";
-print vec($gantt->[4], 5, 1)."\n";
+$vec = '';
+for (my $i = 0; $i < 10000000; $i++){
+    vec($vec,$i,1) = 1;
+}
+print("---S\n");
+Gantt_2::add_new_resource($gantt, $vec);
+print("---E\n");
+$vec = '';
+vec($vec,100000,1) = 1;
+Gantt_2::add_new_resource($gantt, $vec);
+sleep 10;
+#print vec($gantt->[3]->[0]->[1], 30, 1)."\n";
+#print vec($gantt->[4], 5, 1)."\n";
 #print unpack("b*",$gantt->[4])."\n";
 #print unpack("%2b*",$gantt->[4])."\n";
 #Gantt::set_occupation($gantt, 20, 5, "2");
@@ -31,7 +41,7 @@ print vec($gantt->[4], 5, 1)."\n";
 #Gantt::set_occupation($gantt, 20, 24, "2");
 #print(Gantt::pretty_print($gantt)."\n");
 
-print(Dumper($gantt));
+#print(Dumper($gantt));
 #print(Gantt::is_resource_free($gantt, 337, 1, "node1"));
 #print(Gantt::pretty_print($gantt)."\n");
 #
