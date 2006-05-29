@@ -8,28 +8,30 @@ use oar_iolib;
 use oar_resource_tree;
 use Gantt_2;
 
-my $gantt = Gantt_2::new();
+my $max = 30;
+
+my $gantt = Gantt_2::new($max);
 
 my $vec = '';
-vec($vec,30,1) = 1;
-Gantt_2::add_new_resource($gantt, $vec);
+vec($vec,3,1) = 1;
+Gantt_2::add_new_resources($gantt, $vec);
 #Gantt_2::add_new_resource($gantt, $vec);
 $vec = '';
-#vec($vec,5,1) = 1;
-#vec($vec,30,1) = 1;
-#Gantt_2::add_new_resource($gantt, $vec);
+vec($vec,2,1) = 1;
+vec($vec,1,1) = 1;
+Gantt_2::add_new_resources($gantt, $vec);
 
-$vec = '';
-for (my $i = 0; $i < 10000000; $i++){
-    vec($vec,$i,1) = 1;
-}
-print("---S\n");
-Gantt_2::add_new_resource($gantt, $vec);
-print("---E\n");
-$vec = '';
-vec($vec,100000,1) = 1;
-Gantt_2::add_new_resource($gantt, $vec);
-sleep 10;
+#$vec = '';
+#for (my $i = 0; $i < $max; $i++){
+#    vec($vec,$i,1) = 1;
+#}
+#print("---S\n");
+#Gantt_2::add_new_resource($gantt, $vec);
+#print("---E\n");
+#$vec = '';
+#vec($vec,100000,1) = 1;
+#Gantt_2::add_new_resource($gantt, $vec);
+#sleep 10;
 #print vec($gantt->[3]->[0]->[1], 30, 1)."\n";
 #print vec($gantt->[4], 5, 1)."\n";
 #print unpack("b*",$gantt->[4])."\n";
@@ -46,22 +48,31 @@ sleep 10;
 #print(Gantt::pretty_print($gantt)."\n");
 #
 
-exit;
 my $base = iolib::connect();
 
-my @r = iolib::list_resources($base);
+#my @r = iolib::list_resources($base);
 #print(Dumper(@r));
 
-foreach my $i (@r){
-    Gantt::add_new_resource($gantt, $i->{resourceId});
-}
+#foreach my $i (@r){
+#    Gantt::add_new_resource($gantt, $i->{resourceId});
+#}
 
-Gantt::set_occupation($gantt, 4, 50, "4");
-Gantt::set_occupation($gantt, 4, 50, "5");
+$vec = '';
+vec($vec,3,1) = 1;
+Gantt_2::set_occupation($gantt, 4, 50, $vec);
+
+$vec = '';
+vec($vec,2,1) = 1;
+Gantt_2::set_occupation($gantt, 6, 56, $vec);
 #Gantt::set_occupation($gantt, 59, 15, "5");
 #Gantt::set_occupation($gantt, 110, 200, "5");
 #Gantt::set_occupation($gantt, 100, 5, "2");
 #Gantt::set_occupation($gantt, 40, 50, "6");
+
+#print(Dumper($gantt));
+Gantt_2::pretty_print($gantt);
+exit;
+
 
 #for (my $i=100000; $i > 1000; $i-=101){
 #    Gantt::set_occupation($gantt, $i, $i-50, "4");

@@ -11,7 +11,7 @@ use strict;
 # 2^32 is infinity in 32 bits stored time
 my $Infinity = 4294967296;
 
-my $Max_resource_number = 1000000;
+#my $Max_resource_number = 1000000;
 
 #my $Empty = '';
 #vec($Empty, 1,1) = 0;
@@ -19,78 +19,155 @@ my $Max_resource_number = 1000000;
 
 # Prototypes
 # gantt chart management
-sub new();
+sub new($);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub is_resource_free($$$$);
 sub find_first_hole($$$$);
+sub pretty_print($);
 
 ###############################################################################
 
+sub pretty_print($){
+    my $gantt = shift;
+   
+    my @bits = split(//, unpack("b*", $gantt->[0]->[2]));
+    print("@bits\n");
+    foreach my $g (@{$gantt}){
+        print("BEGIN : $g->[0]\n");
+        foreach my $h (@{$g->[1]}){
+            @bits = split(//, unpack("b*", $h->[1]));
+            print("    $h->[0] : @bits\n");
+        }
+        print("\n");
+    }
+}
+
 # Creates an empty Gantt
-# arg : gantt reference
-sub new(){
+# arg : number of the max resource id
+sub new($){
+    my $max_resource_number = shift;
+
     my $empty_vec = '';
-    my $result = [
-                    undef,                          # ref of the previous hole
-                    undef,                          # ref of the next hole
-                    0,                              # start time of this hole
-                    [                               # ref of a structure which contains hole stop time and corresponding resources
-                        [$Infinity, $empty_vec]
-                    ],
-                    ''                              # Store all inserted resources
-                 ];
+    vec($empty_vec, $max_resource_number, 1) = 0;
     
-    vec($result->[4], $Max_resource_number, 1) = 0; # Init bit vector of all resources
+    my $result =[
+                    [
+                        0,                              # start time of this hole
+                        [                               # ref of a structure which contains hole stop times and corresponding resources (ordered by end time)
+                            [$Infinity, $empty_vec]
+                        ],
+                        $empty_vec,                             # Store all inserted resources (Only for the first Gantt hole)
+                        $empty_vec                      # Store empty vec with enough 0 (Only for the first hole)
+                    ]
+                ];
+    
     return($result);
 }
 
 
 # Adds and initializes new resources in the gantt
 # args : gantt ref, bit vector of resources
-sub add_new_resource($$) {
-    my ($gantt, $resource_vec) = @_;
+sub add_new_resources($$) {
+    my ($gantt, $resources_vec) = @_;
 
+    # Feed vector with enough 0
+    $resources_vec |= $gantt->[0]->[3]; 
+    
     # Verify which resources are not already inserted
-    my $resources_to_add_vec = $resource_vec & (~ $gantt->[4]);
+    my $resources_to_add_vec = $resources_vec & (~ $gantt->[0]->[2]);
    
-    if (unpack("%2b*",$resources_to_add_vec) > 0){
-        my $current_hole = $gantt;
-        do{
+    if (unpack("%32b*",$resources_to_add_vec) > 0){
+        # We need to insert new resources on all hole
+        my $g = 0;
+        while ($g <= $#{@{$gantt}}){
             # Add resources
-            $current_hole->[3]->[$#{@{$current_hole->[3]}}]->[1] |= $resources_to_add_vec;
-            $current_hole = $current_hole->[1];
-        }while(defined($current_hole));
-        $gantt->[4] |= $resource_vec;
+            if ($gantt->[$g]->[1]->[$#{@{$gantt->[$g]->[1]}}]->[0] == $Infinity){
+                $gantt->[$g]->[1]->[$#{@{$gantt->[$g]->[1]}}]->[1] |= $resources_to_add_vec;
+            }else{
+                push(@{$gantt->[$g]->[1]}, [$Infinity, $resources_vec]);
+            }
+            $g++;
+        }
+        # Keep already inserted resources in mind
+        $gantt->[0]->[2] |= $resources_vec;
     }
 }
 
 
-# Inserts in the gantt chained list a new occupation time slot
-# args : gantt ref, start slot date, slot duration, resource name
+# Inserts in the gantt new resource occupations
+# args : gantt ref, start slot date, slot duration, resources bit vector
 sub set_occupation($$$$){
-    my ($gantt, $date, $duration, $resource_name) = @_;
-  
-    add_new_resource($gantt,$resource_name); # If it is not yet done
-  
-    my $new_tuple = allocate_new_tuple($resource_name, $date, $date + $duration);
-    my $current_tuple = $gantt->{resource_list}->{$resource_name};
-    # Search the good position in the same resource chained list
-    while ( defined(get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)))
-            && ($date > get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)))){
-        $current_tuple = get_tuple_next_same_resource($current_tuple);
-    }
-    add_resource_tuple_after($current_tuple, $new_tuple);
+    my ($gantt, $date, $duration, $resources_vec) = @_;
 
-    $current_tuple = $gantt->{sorted_root};
-    # Search the good position in the global resource chained list
-    while ( defined(get_tuple_begin_date(get_tuple_next_sorted_end($current_tuple)))
-            && ($date + $duration > get_tuple_end_date(get_tuple_next_sorted_end($current_tuple)))){
-        $current_tuple = get_tuple_next_sorted_end($current_tuple);
-    }
-    add_sorted_tuple_end_after($current_tuple, $new_tuple);
+    # Feed vector with enough 0
+    $resources_vec |= $gantt->[0]->[3];
+
+    # If a resource was not initialized
+    add_new_resources($gantt,$resources_vec); # If it is not yet done
+
+    my $new_hole = [
+                        $date + $duration + 1,
+                        []
+                    ];
     
-    return($new_tuple);
+    my $g = 0;
+    while (($g <= $#{@{$gantt}}) and ($gantt->[$g]->[0] < $new_hole->[0])){
+        # Look at all holes that are before the end of the occupation
+        if ($gantt->[$g]->[1]->[$#{@{$gantt->[$g]->[1]}}]->[0] >= $date){
+            # Look at holes with a biggest slot >= $date
+            my $h = 0;
+            while ($h <= $#{@{$gantt->[$g]->[1]}}){
+                # Look at all slots
+                if ($gantt->[$g]->[1]->[$h]->[0] >= $date){
+                    # This slot ends after $date
+                    if ($gantt->[$g]->[0] < $date){
+                        # We must create a smaller slot (hole start time < $date)
+                        splice(@{$gantt->[$g]->[1]}, $h, 0, [ $date , $gantt->[$g]->[1]->[$h]->[1] ]);
+                        $h++;   # Go to the slot that we were on it before the splice
+                    }
+                    # Add new slots in the new hole
+                    if ($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]){
+                        # copy slot in the new hole if needed
+                        my $slot = 0;
+                        while (($slot <= $#{@{$new_hole->[1]}}) and ($new_hole->[1]->[$slot]->[0] < $gantt->[$g]->[1]->[$h]->[0])){
+                            # Find right index in the sorted slot array
+                            $slot++;
+                        }
+                        if ($slot <= $#{@{$new_hole->[1]}}){
+                            if ($new_hole->[1]->[$slot]->[0] == $gantt->[$g]->[1]->[$h]->[0]){
+                                # If the slot already exists
+                                $new_hole->[1]->[$slot]->[1] |= $gantt->[$g]->[1]->[$h]->[1];
+                            }else{
+                                # Insert the new slot
+                                splice(@{$new_hole->[1]}, $slot, 0, [$gantt->[$g]->[1]->[$h]->[0], $gantt->[$g]->[1]->[$h]->[1]]);
+                            }
+                        }elsif ($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]){
+                            # There is no slot so we create one
+                            push(@{$new_hole->[1]}, [ $gantt->[$g]->[1]->[$h]->[0], $gantt->[$g]->[1]->[$h]->[1] ]);
+                        }
+                    }
+                    # Remove new occupied resources from the current slot
+                    $gantt->[$g]->[1]->[$h]->[1] &= (~ $resources_vec);
+                    if (unpack("%32b*",$gantt->[$g]->[1]->[$h]->[1]) == 0){
+                        # There is no free resource on this slot so we delete it
+                        splice(@{$gantt->[$g]->[1]}, $h);
+                        if ($#{@{$gantt->[$g]->[1]}} < 0){
+                            # There is no free slot on the current hole so we delete it
+                            splice(@{$gantt}, $g);
+                        }
+                    }
+                }
+                # Go to the next slot
+                $h++;
+            }
+        }
+        # Go to the next hole
+        $g++;
+    }
+    # Add the new hole
+    splice(@{$gantt}, $g, 0, $new_hole);
+    #Verifier que le prochain trou n a pas la meme date de debut....
 }
 
 
