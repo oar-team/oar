@@ -17,7 +17,7 @@ my $Infinity = 4294967296;
 sub new($);
 sub add_new_resources($$);
 sub set_occupation($$$$);
-sub is_resources_free($$$$);
+sub get_free_resources($$$);
 sub find_first_hole($$$$);
 sub pretty_print($);
 
@@ -194,27 +194,21 @@ sub find_hole($$$){
 
 # Returns 1 if the specified time slot is empty for the given resources. Otherwise it returns 0
 # args : gantt ref, start date, duration, bits resources vector
-sub is_resources_free($$$$){
-    my ($gantt, $begin_date, $duration, $resources_vec) = @_;
+sub get_free_resources($$$){
+    my ($gantt, $begin_date, $duration) = @_;
     
     # Feed vector with enough 0
     $resources_vec |= $gantt->[0]->[3];
     
     my $hole_index = find_hole($gantt, $begin_date, $duration);
-    return(0) if ($hole_index > $#{@{$gantt}});
+    return($gantt->[0]->[4]) if ($hole_index > $#{@{$gantt}});
 
     my $end_date = $begin_date + $duration;
     my $h = 0;
     while (($h <= $#{@{$gantt->[$hole_index]->[1]}}) and ($gantt->[$hole_index]->[1]->[$h]->[0] < $end_date)){
         $h++;
     }
-    my $free_resources_vec = $gantt->[$hole_index]->[1]->[$h]->[1];
-    my $result_vec = ($free_resources_vec & $resources_vec) ^ $resources_vec;
-    if (unpack("%32b*",$result_vec) == 0){
-        return(1);
-    }else{
-        return(0);
-    }
+    return($gantt->[$hole_index]->[1]->[$h]->[1]);
 }
 
 

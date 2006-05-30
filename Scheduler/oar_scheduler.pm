@@ -120,20 +120,18 @@ sub init_scheduler($$$){
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
-        push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
-        my $vec = '';
+        push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));	
+	my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
+                                     				iolib::sql_to_local($job->{start_time}),
+                                        			iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
+                                       			    );
         foreach my $r (@tmp_resource_list){
-            if (Gantt::is_resource_free($gantt,
-                                        iolib::sql_to_local($job->{start_time}),
-                                        iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
-                                        $r->{resource_id}
-                                       ) == 1
-               ){
-                if ($r->{state} eq "Alive"){
-                    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
-                }
-                vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-            }
+        	if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
+			if ($r->{state} eq "Alive"){
+                    		vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
+                	}
+                	vec($available_resources_vector, $r->{resource_id}, 1) = 1;
+            	}
         }
         
         my $job_properties = "TRUE";
