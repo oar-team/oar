@@ -4,7 +4,7 @@ use Data::Dumper;
 use strict;
 use warnings;
 use oar_iolib;
-use Gantt;
+use Gantt_2;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 
 #minimum of seconds between each jobs
@@ -62,11 +62,15 @@ sub init_scheduler($$$){
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "toLaunch"));
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Launching"));
 
-    my $gantt = Gantt::new();
+    my $max_resources = 50;
     #Init the gantt chart with all resources
+    my $vec = '';
     foreach my $r (iolib::list_resources($dbh)){
-        Gantt::add_new_resource($gantt, $r->{resource_id});
+        vec($vec,$r->{resource_id},1) = 1;
+        $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
+    my $gantt = Gantt_2::new($max_resources);
+    Gantt_2::add_new_resources($gantt, $vec);
     
     foreach my $i (@initial_jobs){
         my $mold = iolib::get_current_moldable_job($dbh,$i->{assigned_moldable_job});
@@ -86,13 +90,15 @@ sub init_scheduler($$$){
 
         # Treate besteffort jobs like nothing!
         if ($i->{queue_name} ne "besteffort"){
+            my $vec = '';
             foreach my $r (@resource_list){
-                Gantt::set_occupation(  $gantt,
-                                        iolib::sql_to_local($date),
-                                        iolib::sql_to_duration($mold->{moldable_walltime}) + $Security_time_overhead,
-                                        $r
-                                     );
+                vec($vec, $r, 1) = 1;
             }
+            Gantt_2::set_occupation(  $gantt,
+                                      iolib::sql_to_local($date),
+                                      iolib::sql_to_duration($mold->{moldable_walltime}) + $Security_time_overhead,
+                                      $vec
+                                   );
         }else{
             #Stock information about besteffort jobs
             foreach my $j (@resource_list){
@@ -115,6 +121,7 @@ sub init_scheduler($$$){
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
+        my $vec = '';
         foreach my $r (@tmp_resource_list){
             if (Gantt::is_resource_free($gantt,
                                         iolib::sql_to_local($job->{start_time}),
@@ -166,13 +173,15 @@ sub init_scheduler($$$){
         
         if ($#resources >= 0){
             # We can schedule the job
+            my $vec = '';
             foreach my $r (@resources){
-                Gantt::set_occupation(  $gantt,
-                                        iolib::sql_to_local($job->{start_time}),
-                                        iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
-                                        $r
-                                     );
+                vec($vec, $r, 1) = 1;
             }
+            Gantt_2::set_occupation(  $gantt,
+                                      iolib::sql_to_local($job->{start_time}),
+                                      iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
+                                      $vec
+                                 );
             # Update database
             iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
         }
@@ -253,11 +262,15 @@ sub check_reservation_jobs($$$){
 
     my $return = 0;
 
-    my $gantt = Gantt::new();
     #Init the gantt chart with all resources
+    my $max_resources = 50;
+    my $vec = '';
     foreach my $r (iolib::list_resources($dbh)){
-        Gantt::add_new_resource($gantt, $r->{resource_id});
+        vec($vec,$r->{resource_id},1) = 1;
+        $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
+    my $gantt = Gantt_2::new($max_resources);
+    Gantt_2::add_new_resources($gantt, $vec);
 
     # Find jobs to check
     my @jobs_to_sched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queue_name);
@@ -267,13 +280,15 @@ sub check_reservation_jobs($$$){
         my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($dbh);
         foreach my $i (keys(%already_scheduled_jobs)){
             if (($already_scheduled_jobs{$i}->[2] ne "besteffort") or ($queue_name eq "besteffort")){
+                my $vec = '';
                 foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
-                    Gantt::set_occupation(  $gantt,
-                                            iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
-                                            iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $Security_time_overhead,
-                                            $r
-                                         );
+                    vec($vec, $r, 1) = 1;
                 }
+                Gantt_2::set_occupation(  $gantt,
+                                          iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
+                                          iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $Security_time_overhead,
+                                          $vec
+                                       );
             }
         }
     }
@@ -324,7 +339,7 @@ sub check_reservation_jobs($$$){
                     vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
                 }
             }
-            my @hole = Gantt::find_first_hole($gantt,iolib::sql_to_local($job->{start_time}), $duration, \@tree_list);
+            my @hole = Gantt_2::find_first_hole($gantt,iolib::sql_to_local($job->{start_time}), $duration, \@tree_list);
             #print(Dumper(@hole));
             if ($hole[0] == iolib::sql_to_local($job->{start_time})){
                 # The reservation can be scheduled
@@ -340,13 +355,15 @@ sub check_reservation_jobs($$$){
         
                 # We can schedule the job
                 oar_debug("[oar_scheduler] check_reservation_jobs : Confirm reservation $job->{job_id} and add in gantt\n");
+                my $vec = '';
                 foreach my $r (@resources){
-                    Gantt::set_occupation(  $gantt,
-                                            iolib::sql_to_local($job->{start_time}),
-                                            iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
-                                            $r
-                                         );
+                    vec($vec, $r, 1) = 1;
                 }
+                Gantt_2::set_occupation(  $gantt,
+                                          iolib::sql_to_local($job->{start_time}),
+                                          iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
+                                          $vec
+                                       );
                 # Update database
                 iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
                 iolib::set_job_state($dbh, $job->{job_id}, "toAckReservation");

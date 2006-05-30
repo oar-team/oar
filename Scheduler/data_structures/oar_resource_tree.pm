@@ -299,10 +299,13 @@ sub delete_subtree($){
         $next_brother->[7] = $prev_brother;
     }
     
-    delete($father_ref->[1]->{$tree_ref->[3]});
-    $father_ref->[10] = $father_ref->[10] - 1;
-
-    return($father_ref);
+    if (defined($father_ref->[1])){
+        delete($father_ref->[1]->{$tree_ref->[3]});
+        $father_ref->[10] = $father_ref->[10] - 1;
+        return($father_ref);
+    }else{
+        return(undef);
+    }
 }
 
 ###############################################################################

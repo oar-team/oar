@@ -7,7 +7,7 @@ use oar_iolib;
 use Data::Dumper;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use Gantt;
+use Gantt_2;
 use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
 
@@ -47,11 +47,15 @@ oar_debug("[oar_sched_gantt_with_timesharing] Begining of Gantt scheduler on que
 
 my $timesharing_gantts;
 # Create the Gantt Diagrams
-my $gantt = Gantt::new();
 #Init the gantt chart with all resources
+my $vec = '';
+my $max_resources = 50;
 foreach my $r (iolib::list_resources($base)){
-    Gantt::add_new_resource($gantt, $r->{resource_id});
+    vec($vec,$r->{resource_id},1) = 1;
+    $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
+my $gantt = Gantt_2::new($max_resources);
+Gantt_2::add_new_resources($gantt, $vec);
 
 sub parse_timesharing($$$){
     my $str = shift;
@@ -60,12 +64,11 @@ sub parse_timesharing($$$){
             
     my $user = "*";
     my $name = "*";
-    if ($str =~ m/^\s*([\w\*]+)[\,\/\s](.+)$/m){
-        if ($1 eq "user"){
-            $user = $job_user;
-        }
-        if ($2 =~ m/^\s*([\w\*]+)\s*$/m){
-            if (($1 eq "name") and ($job_name ne "")){
+    foreach my $s (split(',', $str)){
+        if ($s =~ m/^\s*([\w\*]+)\s*$/m){
+            if ($1 eq "user"){
+                $user = $job_user;
+            }elsif (($1 eq "name") and ($job_name ne "")){
                 $name = $job_name;
             }
         }
@@ -89,33 +92,33 @@ foreach my $i (keys(%already_scheduled_jobs)){
                 oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt for ($user, $name)\n");
             }
         }
+        my $vec = '';
+        foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
+            vec($vec,$r,1) = 1;
+        }
         #Fill all other gantts
         foreach my $u (keys(%{$timesharing_gantts})){
             foreach my $n (keys(%{$timesharing_gantts->{$u}})){
                 if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
-                    foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
-                        Gantt::set_occupation(  $timesharing_gantts->{$u}->{$n},
-                                                iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
-                                                iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $security_time_overhead,
-                                                $r
-                                             );
-                    }
+                    Gantt_2::set_occupation(  $timesharing_gantts->{$u}->{$n},
+                                            iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
+                                            iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $security_time_overhead,
+                                            $vec
+                                         );
                 }
 #                oar_debug("[oar_sched_gantt_with_timesharing] Gantt for ($u, $n) :\n".Gantt::pretty_print($timesharing_gantts->{$u}->{$n})."\n");
             }
         }
-        foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
-            Gantt::set_occupation(  $gantt,
-                                    iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
-                                    iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $security_time_overhead,
-                                    $r
-                                 );
-        }
+        Gantt_2::set_occupation(  $gantt,
+                                  iolib::sql_to_local($already_scheduled_jobs{$i}->[0]),
+                                  iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $security_time_overhead,
+                                  $vec
+                             );
 #        oar_debug("[oar_sched_gantt_with_timesharing] Default Gantt :\n".Gantt::pretty_print($gantt)."\n");
     }
 }
 
-#print(Gantt::pretty_print($gantt)."\n");
+print(Gantt_2::pretty_print($gantt)."\n");
 oar_debug("[oar_sched_gantt_with_timesharing] End gantt initialization\n");
 
 # End of the initialisation
@@ -205,7 +208,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
-        my @hole = Gantt::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
+        my @hole = Gantt_2::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
         
 #        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;
@@ -245,26 +248,29 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if ($index_to_choose >= 0){
         # We can schedule the job
 #        print("[GANTT] 15 ".gettimeofday."\n");
+        my $vec = '';
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
-            Gantt::set_occupation(  $gantt,
+            vec($vec, $r, 1) = 1;
+        }
+        Gantt_2::set_occupation(    $gantt,
                                     $moldable_results[$index_to_choose]->{start_date},
                                     $moldable_results[$index_to_choose]->{duration},
-                                    $r
-                                 );
-            #Fill all other gantts
-            foreach my $u (keys(%{$timesharing_gantts})){
+                                    $vec
+                                );
+        #Fill all other gantts
+        foreach my $u (keys(%{$timesharing_gantts})){
 #        print("[GANTT] 17 ".gettimeofday."\n");
-                foreach my $n (keys(%{$timesharing_gantts->{$u}})){
-                    if (($gantt_to_use != $timesharing_gantts->{$u}->{$n})){
-                        Gantt::set_occupation(  $timesharing_gantts->{$u}->{$n},
-                                                $moldable_results[$index_to_choose]->{start_date},
-                                                $moldable_results[$index_to_choose]->{duration},
-                                                $r
-                                             );
-                    }
+            foreach my $n (keys(%{$timesharing_gantts->{$u}})){
+                if (($gantt_to_use != $timesharing_gantts->{$u}->{$n})){
+                    Gantt_2::set_occupation(  $timesharing_gantts->{$u}->{$n},
+                                              $moldable_results[$index_to_choose]->{start_date},
+                                              $moldable_results[$index_to_choose]->{duration},
+                                              $vec
+                                         );
                 }
             }
         }
+        
         #update database
         my ($year,$mon,$day,$hour,$min,$sec) = iolib::local_to_ymdhms($moldable_results[$index_to_choose]->{start_date});
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id},"$year-$mon-$day $hour:$min:$sec",$moldable_results[$index_to_choose]->{resources});

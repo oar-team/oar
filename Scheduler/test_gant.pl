@@ -15,7 +15,6 @@ my $gantt = Gantt_2::new($max);
 my $vec = '';
 vec($vec,3,1) = 1;
 Gantt_2::add_new_resources($gantt, $vec);
-#Gantt_2::add_new_resource($gantt, $vec);
 $vec = '';
 vec($vec,2,1) = 1;
 vec($vec,1,1) = 1;
@@ -58,19 +57,35 @@ my $base = iolib::connect();
 #}
 
 $vec = '';
-vec($vec,3,1) = 1;
-Gantt_2::set_occupation($gantt, 4, 50, $vec);
+#vec($vec,1,1) = 1;
+#vec($vec,2,1) = 1;
+#vec($vec,3,1) = 1;
+#Gantt_2::set_occupation($gantt, 2, 30, $vec);
 
 $vec = '';
+vec($vec,3,1) = 1;
+Gantt_2::set_occupation($gantt, 5, 5, $vec);
 vec($vec,2,1) = 1;
-Gantt_2::set_occupation($gantt, 6, 56, $vec);
-#Gantt::set_occupation($gantt, 59, 15, "5");
-#Gantt::set_occupation($gantt, 110, 200, "5");
-#Gantt::set_occupation($gantt, 100, 5, "2");
-#Gantt::set_occupation($gantt, 40, 50, "6");
+Gantt_2::set_occupation($gantt, 8, 5, $vec);
+
+$vec = '';
+vec($vec,1,1) = 1;
+Gantt_2::set_occupation($gantt, 5, 10, $vec);
+#Gantt_2::set_occupation($gantt, 2, 1, $vec);
+#$vec = '';
+#vec($vec,1,1) = 1;
+#Gantt_2::set_occupation($gantt, 7, 8, $vec);
+#$vec = '';
+#vec($vec,3,1) = 1;
+#Gantt_2::set_occupation($gantt, 13, 3, $vec);
 
 #print(Dumper($gantt));
 Gantt_2::pretty_print($gantt);
+
+$vec = '';
+vec($vec,2,1) = 1;
+vec($vec,1,1) = 1;
+print(Gantt_2::is_resources_free($gantt,2,2,$vec)."\n");
 exit;
 
 

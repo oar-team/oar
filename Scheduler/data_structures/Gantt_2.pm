@@ -7,22 +7,17 @@ use strict;
 
 # Note : All dates are in seconds
 # Resources are integer so we store them in bit vectors
+# Warning : this gantt cannot manage overlaping time slots
 
 # 2^32 is infinity in 32 bits stored time
 my $Infinity = 4294967296;
-
-#my $Max_resource_number = 1000000;
-
-#my $Empty = '';
-#vec($Empty, 1,1) = 0;
-#my $Full = ~ $Empty;
 
 # Prototypes
 # gantt chart management
 sub new($);
 sub add_new_resources($$);
 sub set_occupation($$$$);
-sub is_resource_free($$$$);
+sub is_resources_free($$$$);
 sub find_first_hole($$$$);
 sub pretty_print($);
 
@@ -112,19 +107,23 @@ sub set_occupation($$$$){
                     ];
     
     my $g = 0;
-    while (($g <= $#{@{$gantt}}) and ($gantt->[$g]->[0] < $new_hole->[0])){
+    while (($g <= $#{@{$gantt}}) and ($gantt->[$g]->[0] <= $new_hole->[0])){
+        my $slot_deleted = 0;
         # Look at all holes that are before the end of the occupation
-        if ($gantt->[$g]->[1]->[$#{@{$gantt->[$g]->[1]}}]->[0] >= $date){
+        if (($#{@{$gantt->[$g]->[1]}} >= 0) and ($gantt->[$g]->[1]->[$#{@{$gantt->[$g]->[1]}}]->[0] >= $date)){
             # Look at holes with a biggest slot >= $date
             my $h = 0;
+            my $slot_date_here = 0;
             while ($h <= $#{@{$gantt->[$g]->[1]}}){
                 # Look at all slots
-                if ($gantt->[$g]->[1]->[$h]->[0] >= $date){
+                $slot_date_here = 1 if ($gantt->[$g]->[1]->[$h]->[0] == $date);
+                if ($gantt->[$g]->[1]->[$h]->[0] > $date){
                     # This slot ends after $date
-                    if ($gantt->[$g]->[0] < $date){
+                    if (($gantt->[$g]->[0] < $date) and ($slot_date_here == 0)){
                         # We must create a smaller slot (hole start time < $date)
                         splice(@{$gantt->[$g]->[1]}, $h, 0, [ $date , $gantt->[$g]->[1]->[$h]->[1] ]);
                         $h++;   # Go to the slot that we were on it before the splice
+                        $slot_date_here = 1;
                     }
                     # Add new slots in the new hole
                     if ($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]){
@@ -151,46 +150,67 @@ sub set_occupation($$$$){
                     $gantt->[$g]->[1]->[$h]->[1] &= (~ $resources_vec);
                     if (unpack("%32b*",$gantt->[$g]->[1]->[$h]->[1]) == 0){
                         # There is no free resource on this slot so we delete it
-                        splice(@{$gantt->[$g]->[1]}, $h);
-                        if ($#{@{$gantt->[$g]->[1]}} < 0){
-                            # There is no free slot on the current hole so we delete it
-                            splice(@{$gantt}, $g);
-                        }
+                        splice(@{$gantt->[$g]->[1]}, $h, 1);
+                        $h--;
+                        $slot_deleted = 1;
                     }
                 }
                 # Go to the next slot
                 $h++;
             }
         }
+        if (($slot_deleted == 1) and ($#{@{$gantt->[$g]->[1]}} < 0)){
+            # There is no free slot on the current hole so we delete it
+            splice(@{$gantt}, $g, 1);
+            $g--;
+        }
         # Go to the next hole
         $g++;
     }
-    # Add the new hole
-    splice(@{$gantt}, $g, 0, $new_hole);
-    #Verifier que le prochain trou n a pas la meme date de debut....
+    if ($#{@{$new_hole->[1]}} >= 0){
+        # Add the new hole
+        
+        if (($g > 0) and ($g - 1 <= $#{@{$gantt}}) and ($gantt->[$g - 1]->[0] == $new_hole->[0])){
+            # Verify if the hole does not already exist
+            splice(@{$gantt}, $g - 1, 1, $new_hole);
+        }else{
+            splice(@{$gantt}, $g, 0, $new_hole);
+        }
+    }
 }
 
 
-# Returns 1 if the specified time slot is empty for the given resource. Otherwise it returns 0
-# args : gantt ref, start date, duration, resource name
-sub is_resource_free($$$$){
-    my ($gantt, $begin_date, $duration, $resource_name) = @_;
+sub find_hole($$$){
+    my ($gantt, $begin_date, $duration) = @_;
 
-    #if (!defined($gantt->{resource_list}->{$resource_name})){
-    #    #This resource name was not initialized; use add_new_resource before
-    #    return(0);
-    #}
-    add_new_resource($gantt,$resource_name); # If it is not yet done
-    
     my $end_date = $begin_date + $duration;
-    my $current_tuple = get_tuple_next_same_resource($gantt->{resource_list}->{$resource_name});
-    #Search between which tuples is this interval
-    while ( defined(get_tuple_begin_date($current_tuple))
-            && !($begin_date > get_tuple_end_date(get_tuple_previous_same_resource($current_tuple))
-            && $end_date < get_tuple_begin_date($current_tuple))){
-        $current_tuple = get_tuple_next_same_resource($current_tuple);
+    my $g = 0;
+    while (($g <= $#{@{$gantt}}) and ($gantt->[$g]->[0] < $begin_date) and ($gantt->[$g]->[1]->[$#{@{$gantt->[$g]->[1]}}]->[0] < $end_date)){
+        $g++
     }
-    if (!defined(get_tuple_end_date(get_tuple_previous_same_resource($current_tuple))) or ($begin_date > get_tuple_end_date(get_tuple_previous_same_resource($current_tuple)))){
+
+    return($g);
+}
+
+# Returns 1 if the specified time slot is empty for the given resources. Otherwise it returns 0
+# args : gantt ref, start date, duration, bits resources vector
+sub is_resources_free($$$$){
+    my ($gantt, $begin_date, $duration, $resources_vec) = @_;
+    
+    # Feed vector with enough 0
+    $resources_vec |= $gantt->[0]->[3];
+    
+    my $hole_index = find_hole($gantt, $begin_date, $duration);
+    return(0) if ($hole_index > $#{@{$gantt}});
+
+    my $end_date = $begin_date + $duration;
+    my $h = 0;
+    while (($h <= $#{@{$gantt->[$hole_index]->[1]}}) and ($gantt->[$hole_index]->[1]->[$h]->[0] < $end_date)){
+        $h++;
+    }
+    my $free_resources_vec = $gantt->[$hole_index]->[1]->[$h]->[1];
+    my $result_vec = ($free_resources_vec & $resources_vec) ^ $resources_vec;
+    if (unpack("%32b*",$result_vec) == 0){
         return(1);
     }else{
         return(0);
@@ -212,88 +232,77 @@ sub find_first_hole($$$$){
     my @result_tree_list = ();
     my $end_loop = 0;
     # Tuples sorted by begin date
-    my $current_free_resources = sorted_chained_list::new();
     my $current_time = $initial_time;
-    my $current_tuple = $gantt->{sorted_root};
+    my $current_hole_index = find_hole($gantt, $initial_time, $duration);
+    my $h = 0;
     while ($end_loop == 0){
-        #print("[GANTT] 1 ".gettimeofday."\n");
-        # Add in the sorted chain, tuples that will begin just after the current time 
-        while ( defined(get_tuple_end_date($current_tuple))
-                && ($current_time >= get_tuple_end_date($current_tuple))){
-            if (!defined(get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)))){
-                # store empty resource until the infinity
-                sorted_chained_list::add_element($current_free_resources,$Infinity,$current_tuple);
-            }else{
-                sorted_chained_list::add_element($current_free_resources,get_tuple_begin_date(get_tuple_next_same_resource($current_tuple)),$current_tuple);
+        # Go to a right hole
+        print("[GANTT] 1\n");
+        while (($current_hole_index <= $#{@{$gantt}}) and
+                (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
+                   (($initial_time > $gantt->[$current_hole_index]->[0]) and
+                        ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0])))){
+        print("[GANTT] 2\n");
+            while (($h <= $#{@{$gantt->[$current_hole_index]->[1]}}) and
+                    (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
+                        (($initial_time > $gantt->[$current_hole_index]->[0]) and
+                        ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0])))){
+        print("[GANTT] 3\n");
+                $h++;
             }
-            $current_tuple = get_tuple_next_sorted_end($current_tuple);
-        }
-        #print(sorted_chained_list::pretty_print($current_free_resources)."\n");
-        #print("[GANTT] 2 ".gettimeofday."\n");
-
-        #Remove current free resources with not enough time
-        my $current_element = sorted_chained_list::get_next($current_free_resources);
-        while ( defined(sorted_chained_list::get_value($current_element))
-                && (sorted_chained_list::get_value($current_element) <= $current_time + $duration + 1)){
-            sorted_chained_list::remove_element($current_free_resources,$current_element);
-            $current_element = sorted_chained_list::get_next($current_element);
-        }
-        #print("[GANTT] 3 ".gettimeofday."\n");
-
-        #print(sorted_chained_list::pretty_print($current_free_resources)."\n");
-
-        #Get current free resource names and store it in a vector
-        my $free_resources_vector = '';
-        $current_element = sorted_chained_list::get_next($current_free_resources);
-        while (defined(sorted_chained_list::get_value($current_element))){
-            vec($free_resources_vector,get_tuple_resource(sorted_chained_list::get_stored_ref($current_element)),1) = 1;
-            $current_element = sorted_chained_list::get_next($current_element);
-        }
-        #print("[GANTT] 4 ".gettimeofday."\n");
-        
-        #Check all trees
-        my $tree_clone;
-        my $i = 0;
-        do{
-        #print("[GANTT] 5 ".gettimeofday."\n");
-            $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
-        #print("[GANTT] 6 ".gettimeofday."\n");
-            #Remove tree leafs that are not free
-            foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                #print(oar_resource_tree::get_current_resource_value($l)."\n");
-                if (!vec($free_resources_vector,oar_resource_tree::get_current_resource_value($l),1)){
-                    #print("delete subtree $l\n");
-                    oar_resource_tree::delete_subtree($l);
-                }
+            if ($h > $#{@{$gantt->[$current_hole_index]->[1]}}){
+            #if (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
+            #        (($initial_time > $gantt->[$current_hole_index]->[0]) and
+            #         ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]))){
+                $h = 0;
+                $current_hole_index++;
+        print("[GANTT] 4\n");
             }
-        #print("[GANTT] 7 ".gettimeofday."\n");
-            $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-        #print("[GANTT] 8 ".gettimeofday."\n");
-            #print(Dumper($tree_clone));
-            $result_tree_list[$i] = $tree_clone;
-            $i ++;
-        }while(defined($tree_clone) && ($i <= $#$tree_description_list));
-        
-        if (defined($tree_clone)){
-            # We find the first hole
+        }
+        if ($current_hole_index > $#{@{$gantt}}){
+        print("[GANTT] 5\n");
+            $current_time = $Infinity;
+            @result_tree_list = ();
             $end_loop = 1;
         }else{
-            # We search the next time with at least one free resource added
-            #my $initial_current_time = $current_time;
-            #while (($current_time <= $initial_current_time) && defined(get_tuple_end_date($current_tuple))){
-                $current_time = get_tuple_end_date($current_tuple) if (defined($current_tuple));
-            #}
-            if (!defined(get_tuple_end_date($current_tuple))){
+        print("[GANTT] 6\n");
+            $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
+            #Check all trees
+            my $tree_clone;
+            my $i = 0;
+            do{
+        print("[GANTT] 7\n");
+                $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
+                #Remove tree leafs that are not free
+                foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
+                    #print(oar_resource_tree::get_current_resource_value($l)."\n");
+                    if (!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],oar_resource_tree::get_current_resource_value($l),1)){
+                        #print("delete subtree $l\n");
+                        oar_resource_tree::delete_subtree($l);
+                    }
+                }
+                $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+                #print(Dumper($tree_clone));
+                $result_tree_list[$i] = $tree_clone;
+                $i ++;
+            }while(defined($tree_clone) && ($i <= $#$tree_description_list));
+            if (defined($tree_clone)){
+                # We find the first hole
                 $end_loop = 1;
-                @result_tree_list = ();
-                $current_time = $Infinity;
             }else{
-                $current_time = get_tuple_end_date($current_tuple);
+                if ($h >= $#{@{$gantt->[$current_hole_index]->[1]}}){
+                    $h = 0;
+                    $current_hole_index++;
+                }else{
+                    $h++;
+                }
             }
+        print("[GANTT] 8\n");
         }
+        print("[GANTT] 9\n");
     }
 
-        #print("[GANTT] 9 ".gettimeofday."\n");
+        print("[GANTT] 10\n");
     return($current_time, \@result_tree_list);
 }
 
