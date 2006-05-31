@@ -90,7 +90,7 @@ sub clean_all(){
     # Kill oarsub connections
     my $file = oar_Tools::get_oarsub_connections_file_name($Job_id);
     if (open(OARSUBS,$file)){
-        while (<OARSUBS>){
+        while ($_ = <OARSUBS>){
             if ($_ =~ m/^(\d+)$/m){
                 my $ppid = $1;
                 my ($children,$cmd_name) = oar_Tools::get_one_process_children($ppid);

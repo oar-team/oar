@@ -8,6 +8,8 @@ use oar_iolib;
 
 sub usage(){
     print("\tusage: oarremoveresource resource_number\n");
+    print("WARNING : this command remove all records in the database about \"resource_number\".\n");
+    print("          So you will loose this resource history and jobs executes on this.\n");
     exit(1);
 }
 

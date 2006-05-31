@@ -14,7 +14,7 @@ CREATE INDEX accounting_type ON accounting (consumption_type);
 
 CREATE TABLE admission_rules (
   id bigserial,
-  rule varchar(255) NOT NULL default '',
+  rule text NOT NULL,
   PRIMARY KEY  (id)
 );
 
