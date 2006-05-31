@@ -671,29 +671,9 @@ sub get_possible_wanted_resources($$$$$){
                                 });
     }
     
-    print(Dumper(@wanted_resources));
+    #print(Dumper(@wanted_resources));
     my $sql_where_string = "TRUE";
-    #if (defined($possible_resources->[0])){
-    #    $sql_where_string = "resource_id IN(";
-    #    foreach my $i (@{$possible_resources}){
-    #        $sql_where_string .= "$i,";
-    #    }
-    #    chop($sql_where_string);
-    #    $sql_where_string .= ") ";
-    #}else{
-    #    $sql_where_string = "TRUE ";
-    #}
-
-    #if (defined($impossible_resources->[0])){
-    #    $sql_where_string .= "AND resource_id NOT IN (" ;
-    #    foreach my $i (@{$impossible_resources}){
-    #        $sql_where_string .= "$i,";
-    #    }
-    #    chop($sql_where_string);
-    #    $sql_where_string .= ") ";
-    #}
     
-    #if ((defined($properties)) and ($properties =~ m/\w+/m)){
     if ((defined($properties)) and ($properties ne "")){
         $sql_where_string .= " AND ( $properties )";
     }
@@ -747,7 +727,7 @@ sub get_possible_wanted_resources($$$$$){
     }
     
     $sth->finish();
-#print(Dumper($result));
+    #print(Dumper($result));
     $result = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($result);
 
     return($result);
@@ -772,13 +752,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
     my $reservationField = "None";
-    #my $setCommandReservation = 0;
     #Test if this job is a reservation
     if ($startTimeReservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
         $reservationField = "toSchedule";
         $startTimeJob = "$1 $2";
-        #$setCommandReservation = 1;
-        #$jobType = "PASSIVE";
     }elsif($startTimeReservation ne "0"){
         warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
         return(-3);
@@ -792,7 +769,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
         warn("/!\\Bad syntax for the notify option\n");
         return(-6);
     }
-    
     
     # Verify job name
     if ($job_name !~ m/^\w*$/m){
@@ -820,11 +796,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
         warn("Admission Rule ERROR : $@ \n");
         return(-2);
     }
-
-    #if (($setCommandReservation == 1) && ($command eq "")){
-    #    # For reservations we take the first moldable job
-    #    $command = "/bin/sleep ".sql_to_duration($ref_resource_list->[0]->[1]);
-    #}
 
     # Test if properties and resources are coherent
     my $wanted_resources;

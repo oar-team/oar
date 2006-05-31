@@ -327,4 +327,26 @@ INSERT IGNORE INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES 
 #close(FILE);
 #');
 
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+my $max_walltime = "12:00:00";
+if ($jobType eq "INTERACTIVE"){ 
+    foreach my $mold (@{$ref_resource_list}){
+        if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
+            print("Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
+            $mold->[1] = $max_walltime;
+        }
+    }
+}
+');
+
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+my $default_wall = "2:00:00";
+foreach my $mold (@{$ref_resource_list}){
+    if (!defined($mold->[1])){
+        print("Set default walltime to $default_wall.\\n");
+        $mold->[1] = $default_wall;
+    }
+}
+');
+
 
