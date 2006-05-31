@@ -307,6 +307,7 @@ if ($Job->{detach_oarexec} == 1){
     print("[oarexec $Job_id] I am detaching the oarexec process\n");
 
     if(fork() != 0){
+        print(oar_Tools::get_bipbip_oarexec_rendez_vous());
         # Exit from main oarexec
         exit(0);
     }

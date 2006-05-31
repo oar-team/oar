@@ -230,7 +230,7 @@ eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     #open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-    my $pid = open2(\*READ, \*WRITE, "ssh -x -T $host_to_connect_via_ssh perl - $Job_id");
+    my $pid = open2(\*READ, \*WRITE, "ssh -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
     foreach my $f (@oarexec_files){
         open(FILE, $f) or die("Cannot open $f\n");
         while(<FILE>){

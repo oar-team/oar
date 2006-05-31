@@ -10,6 +10,9 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 #minimum of seconds between each jobs
 my $Security_time_overhead = 1;
 
+#minimum of seconds to be considered like a hole in the gantt
+my $Minimum_hole_time = 0;
+
 # waiting time when a reservation has not all of its nodes
 my $Reservation_waiting_timeout = 300;
 
@@ -30,13 +33,18 @@ sub get_initial_time(){
 
 #Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs;
 # arg1 --> database ref
-sub init_scheduler($$$){
+sub init_scheduler($$$$){
     my $dbh = shift;
     my $dbh_ro = shift;
     my $secure_time = shift;
+    my $hole_time = shift;
 
     if ($secure_time > 1){
         $Security_time_overhead = $secure_time;
+    }
+
+    if ($hole_time >= 0){
+        $Minimum_hole_time = $hole_time;
     }
 
     # Take care of the currently (or nearly) running jobs
@@ -69,7 +77,7 @@ sub init_scheduler($$$){
         vec($vec,$r->{resource_id},1) = 1;
         $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
-    my $gantt = Gantt_2::new($max_resources);
+    my $gantt = Gantt_2::new($max_resources, $Minimum_hole_time);
     Gantt_2::add_new_resources($gantt, $vec);
     
     foreach my $i (@initial_jobs){
@@ -267,7 +275,7 @@ sub check_reservation_jobs($$$){
         vec($vec,$r->{resource_id},1) = 1;
         $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
-    my $gantt = Gantt_2::new($max_resources);
+    my $gantt = Gantt_2::new($max_resources, $Minimum_hole_time);
     Gantt_2::add_new_resources($gantt, $vec);
 
     # Find jobs to check

@@ -28,6 +28,11 @@ if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
     $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
 }
 
+my $minimum_hole_time = 0;
+if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){
+    $minimum_hole_time = get_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME");
+}
+
 my $current_time ;
 
 my $queue;
@@ -49,12 +54,12 @@ my $timesharing_gantts;
 # Create the Gantt Diagrams
 #Init the gantt chart with all resources
 my $vec = '';
-my $max_resources = 50;
+my $max_resources = 1;
 foreach my $r (iolib::list_resources($base)){
     vec($vec,$r->{resource_id},1) = 1;
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
-my $gantt = Gantt_2::new($max_resources);
+my $gantt = Gantt_2::new($max_resources, $minimum_hole_time);
 Gantt_2::add_new_resources($gantt, $vec);
 
 sub parse_timesharing($$$){
@@ -106,7 +111,6 @@ foreach my $i (keys(%already_scheduled_jobs)){
                                             $vec
                                          );
                 }
-#                oar_debug("[oar_sched_gantt_with_timesharing] Gantt for ($u, $n) :\n".Gantt::pretty_print($timesharing_gantts->{$u}->{$n})."\n");
             }
         }
         Gantt_2::set_occupation(  $gantt,
@@ -114,11 +118,9 @@ foreach my $i (keys(%already_scheduled_jobs)){
                                   iolib::sql_to_duration($already_scheduled_jobs{$i}->[1]) + $security_time_overhead,
                                   $vec
                              );
-#        oar_debug("[oar_sched_gantt_with_timesharing] Default Gantt :\n".Gantt::pretty_print($gantt)."\n");
     }
 }
 
-print(Gantt_2::pretty_print($gantt)."\n");
 oar_debug("[oar_sched_gantt_with_timesharing] End gantt initialization\n");
 
 # End of the initialisation
@@ -292,3 +294,4 @@ if ($job_index <= $#jobs){
 
 oar_debug("[oar_sched_gantt_with_timesharing] End of scheduler for queue $queue\n");
 
+print(Gantt_2::pretty_print($gantt)."\n");

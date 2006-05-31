@@ -14,7 +14,7 @@ my $Infinity = 4294967296;
 
 # Prototypes
 # gantt chart management
-sub new($);
+sub new($$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
@@ -40,8 +40,11 @@ sub pretty_print($){
 
 # Creates an empty Gantt
 # arg : number of the max resource id
-sub new($){
+sub new($$){
     my $max_resource_number = shift;
+    my $minimum_hole_duration = shift;
+
+    $minimum_hole_duration = 0 if (!defined($minimum_hole_duration));
 
     my $empty_vec = '';
     vec($empty_vec, $max_resource_number, 1) = 0;
@@ -53,7 +56,8 @@ sub new($){
                             [$Infinity, $empty_vec]
                         ],
                         $empty_vec,                             # Store all inserted resources (Only for the first Gantt hole)
-                        $empty_vec                      # Store empty vec with enough 0 (Only for the first hole)
+                        $empty_vec,                     # Store empty vec with enough 0 (Only for the first hole)
+                        $minimum_hole_duration          # minimum time for a hole 
                     ]
                 ];
     
@@ -119,14 +123,15 @@ sub set_occupation($$$$){
                 $slot_date_here = 1 if ($gantt->[$g]->[1]->[$h]->[0] == $date);
                 if ($gantt->[$g]->[1]->[$h]->[0] > $date){
                     # This slot ends after $date
-                    if (($gantt->[$g]->[0] < $date) and ($slot_date_here == 0)){
+                    #print($date - $gantt->[$g]->[0]." -- $gantt->[0]->[4]\n");
+                    if (($gantt->[$g]->[0] < $date) and ($slot_date_here == 0) and ($date - $gantt->[$g]->[0] > $gantt->[0]->[4])){
                         # We must create a smaller slot (hole start time < $date)
                         splice(@{$gantt->[$g]->[1]}, $h, 0, [ $date , $gantt->[$g]->[1]->[$h]->[1] ]);
                         $h++;   # Go to the slot that we were on it before the splice
                         $slot_date_here = 1;
                     }
                     # Add new slots in the new hole
-                    if ($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]){
+                    if (($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]) and ($gantt->[$g]->[1]->[$h]->[0] - $new_hole->[0] > $gantt->[0]->[4])){
                         # copy slot in the new hole if needed
                         my $slot = 0;
                         while (($slot <= $#{@{$new_hole->[1]}}) and ($new_hole->[1]->[$slot]->[0] < $gantt->[$g]->[1]->[$h]->[0])){
@@ -147,7 +152,7 @@ sub set_occupation($$$$){
                         }
                     }
                     # Remove new occupied resources from the current slot
-                    $gantt->[$g]->[1]->[$h]->[1] &= (~ $resources_vec);
+                    $gantt->[$g]->[1]->[$h]->[1] &= (~ $resources_vec) ;
                     if (unpack("%32b*",$gantt->[$g]->[1]->[$h]->[1]) == 0){
                         # There is no free resource on this slot so we delete it
                         splice(@{$gantt->[$g]->[1]}, $h, 1);
@@ -169,7 +174,6 @@ sub set_occupation($$$$){
     }
     if ($#{@{$new_hole->[1]}} >= 0){
         # Add the new hole
-        
         if (($g > 0) and ($g - 1 <= $#{@{$gantt}}) and ($gantt->[$g - 1]->[0] == $new_hole->[0])){
             # Verify if the hole does not already exist
             splice(@{$gantt}, $g - 1, 1, $new_hole);
@@ -179,7 +183,7 @@ sub set_occupation($$$$){
     }
 }
 
-
+# Find the first hole in the data structure that can fit the given slot
 sub find_hole($$$){
     my ($gantt, $begin_date, $duration) = @_;
 
@@ -192,13 +196,9 @@ sub find_hole($$$){
     return($g);
 }
 
-# Returns 1 if the specified time slot is empty for the given resources. Otherwise it returns 0
-# args : gantt ref, start date, duration, bits resources vector
+# Returns the vector of the maximum free resources at the given date for the given duration
 sub get_free_resources($$$){
     my ($gantt, $begin_date, $duration) = @_;
-    
-    # Feed vector with enough 0
-    $resources_vec |= $gantt->[0]->[3];
     
     my $hole_index = find_hole($gantt, $begin_date, $duration);
     return($gantt->[0]->[4]) if ($hole_index > $#{@{$gantt}});
@@ -225,58 +225,48 @@ sub find_first_hole($$$$){
 
     my @result_tree_list = ();
     my $end_loop = 0;
-    # Tuples sorted by begin date
     my $current_time = $initial_time;
+    # begin research at the first potential hole
     my $current_hole_index = find_hole($gantt, $initial_time, $duration);
     my $h = 0;
     while ($end_loop == 0){
         # Go to a right hole
-        print("[GANTT] 1\n");
         while (($current_hole_index <= $#{@{$gantt}}) and
                 (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
                    (($initial_time > $gantt->[$current_hole_index]->[0]) and
                         ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0])))){
-        print("[GANTT] 2\n");
             while (($h <= $#{@{$gantt->[$current_hole_index]->[1]}}) and
                     (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
                         (($initial_time > $gantt->[$current_hole_index]->[0]) and
                         ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0])))){
-        print("[GANTT] 3\n");
                 $h++;
             }
             if ($h > $#{@{$gantt->[$current_hole_index]->[1]}}){
-            #if (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
-            #        (($initial_time > $gantt->[$current_hole_index]->[0]) and
-            #         ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]))){
+                # in this hole no slot fits so we must search in the next hole
                 $h = 0;
                 $current_hole_index++;
-        print("[GANTT] 4\n");
             }
         }
         if ($current_hole_index > $#{@{$gantt}}){
-        print("[GANTT] 5\n");
+            # no hole fits
             $current_time = $Infinity;
             @result_tree_list = ();
             $end_loop = 1;
         }else{
-        print("[GANTT] 6\n");
             $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
             #Check all trees
             my $tree_clone;
             my $i = 0;
             do{
-        print("[GANTT] 7\n");
+                # clone the tree, so we can work on it without damage
                 $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
                 #Remove tree leafs that are not free
                 foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                    #print(oar_resource_tree::get_current_resource_value($l)."\n");
                     if (!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],oar_resource_tree::get_current_resource_value($l),1)){
-                        #print("delete subtree $l\n");
                         oar_resource_tree::delete_subtree($l);
                     }
                 }
                 $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-                #print(Dumper($tree_clone));
                 $result_tree_list[$i] = $tree_clone;
                 $i ++;
             }while(defined($tree_clone) && ($i <= $#$tree_description_list));
@@ -284,6 +274,7 @@ sub find_first_hole($$$$){
                 # We find the first hole
                 $end_loop = 1;
             }else{
+                # Go to the next slot of this hole
                 if ($h >= $#{@{$gantt->[$current_hole_index]->[1]}}){
                     $h = 0;
                     $current_hole_index++;
@@ -291,12 +282,9 @@ sub find_first_hole($$$$){
                     $h++;
                 }
             }
-        print("[GANTT] 8\n");
         }
-        print("[GANTT] 9\n");
     }
 
-        print("[GANTT] 10\n");
     return($current_time, \@result_tree_list);
 }
 
