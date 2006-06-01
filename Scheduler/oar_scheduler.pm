@@ -312,7 +312,7 @@ sub check_reservation_jobs($$$){
         }else{
             if (iolib::sql_to_local($job->{start_time}) < $current_time_sec){
                 $job->{start_time} = $current_time_sql;
-                iolib::set_running_date_arbitrary($dbh,$job->{job_id},$current_time_sql);
+                #iolib::set_running_date_arbitrary($dbh,$job->{job_id},$current_time_sql);
             }
             
             my $available_resources_vector = '';

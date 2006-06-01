@@ -72,7 +72,7 @@ sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 sub get_jobs_to_schedule($$);
 sub get_current_job_types($$);
-
+sub set_moldable_job_max_time($$$);
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub get_resource_job($$);
 sub get_node_job($$);
@@ -1682,6 +1682,18 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
     return @res;
 }
 
+
+# set walltime for a moldable job
+sub set_moldable_job_max_time($$$){
+    my ($dbh, $mol, $walltime) = @_;
+
+    my $walltime = duration_to_sql($walltime);
+    $dbh->do("  UPDATE moldable_job_descriptions
+                SET moldable_walltime = \'$walltime\'
+                WHERE
+                    moldable_id = $mol
+             ");
+}
 
 
 # PROCESSJOBS MANAGEMENT (Host assignment to jobs)
@@ -3324,7 +3336,7 @@ sub duration_to_hms($) {
     my $sec=$date%60;
     $date/=60;
     my $min=$date%60;
-    $date/=60;
+    $date = int($date / 60);
     my $hour=$date;
     return ($hour,$min,$sec);
 }

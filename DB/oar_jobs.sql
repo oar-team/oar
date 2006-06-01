@@ -292,6 +292,8 @@ INSERT IGNORE INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") 
 #INSERT IGNORE INTO admission_rules (rule) VALUES ('if ( "$queueName" eq "besteffort" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND besteffort = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "besteffort = \\\\\\"YES\\\\\\"";} }');
 # Force deploy jobs to go on nodes with the deploy property
 #INSERT IGNORE INTO admissionRules (rule) VALUES ('if ( "$queueName" eq "deploy" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND deploy = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "deploy = \\\\\\"YES\\\\\\"";} }');
+
+# How to limit reservation number by user
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if ($reservationField eq "toSchedule") {
     my $max_nb_resa = 2;
@@ -316,6 +318,7 @@ INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('best
 
 INSERT IGNORE INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
 
+## How to perform actions if the user name is in a file
 #INSERT IGNORE INTO admission_rules (rule) VALUES ('
 #open(FILE, "/tmp/users.txt");
 #while (($queue_name ne "admin") and ($_ = <FILE>)){
@@ -327,6 +330,7 @@ INSERT IGNORE INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES 
 #close(FILE);
 #');
 
+# Limit walltime for interactive jobs
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 my $max_walltime = "12:00:00";
 if ($jobType eq "INTERACTIVE"){ 
@@ -339,6 +343,7 @@ if ($jobType eq "INTERACTIVE"){
 }
 ');
 
+# specify the default walltime if it is not specified
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 my $default_wall = "2:00:00";
 foreach my $mold (@{$ref_resource_list}){
