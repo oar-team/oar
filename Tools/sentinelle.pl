@@ -6,7 +6,7 @@
 #               rsh in parrallel. There is a window which limits the number of
 #               processus at the same time; usefull in a cluster
 # Author      : nicolas.capit@imag.fr
-# Copyright   : 2005 - Laboratoire Iformatique et Distribution (ID-IMAG)
+# Copyright   : 2005 - Laboratoire Informatique et Distribution (ID-IMAG)
 # License     : GNU GPL version 2
 #
 
@@ -101,6 +101,7 @@ $| = 1;
 my $nbNodes = $#nodes + 1;
 my $index = 0;
 my %running_processes;
+my $nb_running_processes = 0;
 my %finished_processes;
 my %processDuration;
 
@@ -114,37 +115,33 @@ sub register_wait_results($$){
     my $dumped_core = $returnCode & 128;
     if ($pid > 0){
         if (defined($running_processes{$pid})){
-            if ($useTime == 1){
-                $processDuration{$running_processes{$pid}}{"end"} = [gettimeofday()];
-            }
+            $processDuration{$running_processes{$pid}}{"end"} = [gettimeofday()] if ($useTime == 1);
             print("[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
             $finished_processes{$running_processes{$pid}} = [$exit_value,$signal_num,$dumped_core];
             delete($running_processes{$pid});
+            $nb_running_processes--;
         }
     }  
 }
 
-if ($useTime == 1){
-    $timeStart = [gettimeofday()];
-}
+$timeStart = [gettimeofday()] if ($useTime == 1);
+
 # Start to launch subprocesses with the window limitation
-my $resultWait = 0;
-while ($resultWait >= 0){
+my @timeout;
+my $pid;
+while (($index <= $#nodes) or ($#timeout >= 0)){
     # Check if window is full or not
-    while((scalar(keys(%running_processes)) < $window_size) && ($index <= $#nodes)){
+    while((($nb_running_processes) < $window_size) and ($index <= $#nodes)){
         print("[VERBOSE] fork process for the node $nodes[$index]\n") if ($verbose);
+        $processDuration{$index}{"start"} = [gettimeofday()] if ($useTime == 1);
         
-        if ($useTime == 1){
-            $processDuration{$index}{"start"} = [gettimeofday()];
-        }
-        
-        my $pid = fork();
+        $pid = fork();
         if (defined($pid)){
             $running_processes{$pid} = $index;
+            $nb_running_processes++;
+            push(@timeout, [$pid,time()+$timeout]);
             if ($pid == 0){
                 #In the child
-                # Initiate timeout
-                alarm($timeout);
 	    	my $cmd = "$connector $nodes[$index] $command";
                 print("[VERBOSE] Execute command : $cmd\n") if ($verbose);
                 exec($cmd);
@@ -153,14 +150,23 @@ while ($resultWait >= 0){
             warn("/!\\ fork system call failed for node $nodes[$index].\n");
         }
         $index++;
-
-        # Check if a process is finished before the window gets full
-        while(($pid = waitpid(-1, WNOHANG)) > 0) {
-            register_wait_results($pid, $?);
-        }
     }
-    $resultWait = wait();
-    register_wait_results($resultWait, $?);
+    while(($pid = waitpid(-1, WNOHANG)) > 0) {
+        register_wait_results($pid, $?);
+    }
+
+    my $t = 0;
+    while(defined($timeout[$t]) and (($timeout[$t]->[1] <= time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
+        if (!defined($running_processes{$timeout[$t]->[0]})){
+            shift(@timeout);
+        }else{
+            if ($timeout[$t]->[1] <= time()){
+                kill(9,$timeout[$t]->[0]);
+            }
+        }
+        $t++;
+    }
+    select(undef,undef,undef,0.1) if ($t == 0);
 }
 
 

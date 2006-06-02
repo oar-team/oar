@@ -17,13 +17,15 @@ my $Oarexec_pid_file_name = "pid_of_oarexec_for_jobId_";
 my $Oarsub_file_name_prefix = "oarsub_connections_";
 my $Default_prologue_epilogue_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
+my $Default_openssh_cmd = "ssh";
 
 # Prototypes
 sub get_all_process_children();
 sub get_one_process_children($);
 sub notify_tcp_socket($$$);
-sub signal_oarexec($$$$$);
+sub signal_oarexec($$$$$$);
 sub get_default_oarexec_directory();
+sub get_default_openssh_cmd();
 sub get_oar_pid_file_name($);
 sub get_oarsub_connections_file_name($);
 sub get_ssh_timeout();
@@ -72,6 +74,10 @@ sub get_default_leon_walltime(){
     return($Default_leon_walltime);
 }
 
+# Get default value for OPENSSH_CMD tag
+sub get_default_openssh_cmd(){
+    return($Default_openssh_cmd);
+}
 
 # return a hashtable of all child in arrays and a hashtable with process command names
 sub get_all_process_children(){
@@ -168,15 +174,16 @@ sub get_oarsub_connections_file_name($){
 # Send the given signal to the right oarexec process
 # args : host name, job id, signal, wait or not (0 or 1), DB ref (to close it in the child process)
 # return an array with exit values
-sub signal_oarexec($$$$$){
+sub signal_oarexec($$$$$$){
     my $host = shift;
     my $job_id = shift;
     my $signal = shift;
     my $wait = shift;
     my $base = shift;
+    my $ssh_cmd = shift;
 
     my $file = get_oar_pid_file_name($job_id);
-    my $cmd = "ssh -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
+    my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
     my $pid = fork();
     if($pid == 0){
         #CHILD
@@ -400,6 +407,9 @@ sub get_bipbip_oarexec_rendez_vous(){
     return($Ssh_rendez_vous);
 }
 
+# Execute comands with a specified timeout and a maximum number in the same time : window.
+# Aavoid to overload the computer.
+# args : window size, timeout, command to execute
 sub sentinelle($$$){
     my $window = shift;
     my $timeout = shift;
@@ -432,6 +442,7 @@ sub sentinelle($$$){
             }
             $index++;
         }
+        # Check ended proceses
         while(($pid = waitpid(-1, WNOHANG)) > 0) {
             my $exit_value = $? >> 8;
             my $signal_num  = $? & 127;
