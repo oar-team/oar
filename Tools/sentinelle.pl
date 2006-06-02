@@ -115,7 +115,7 @@ sub register_wait_results($$){
     my $dumped_core = $returnCode & 128;
     if ($pid > 0){
         if (defined($running_processes{$pid})){
-            $processDuration{$running_processes{$pid}}{"end"} = [gettimeofday()] if ($useTime == 1);
+            $processDuration{$running_processes{$pid}}->{"end"} = [gettimeofday()] if ($useTime == 1);
             print("[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
             $finished_processes{$running_processes{$pid}} = [$exit_value,$signal_num,$dumped_core];
             delete($running_processes{$pid});
@@ -133,7 +133,7 @@ while (($index <= $#nodes) or ($#timeout >= 0)){
     # Check if window is full or not
     while((($nb_running_processes) < $window_size) and ($index <= $#nodes)){
         print("[VERBOSE] fork process for the node $nodes[$index]\n") if ($verbose);
-        $processDuration{$index}{"start"} = [gettimeofday()] if ($useTime == 1);
+        $processDuration{$index}->{"start"} = [gettimeofday()] if ($useTime == 1);
         
         $pid = fork();
         if (defined($pid)){
@@ -156,9 +156,9 @@ while (($index <= $#nodes) or ($#timeout >= 0)){
     }
 
     my $t = 0;
-    while(defined($timeout[$t]) and (($timeout[$t]->[1] <= time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
+    while(defined($timeout[$t]) and (($timeout[$t]->[1] < time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
         if (!defined($running_processes{$timeout[$t]->[0]})){
-            shift(@timeout);
+            splice(@timeout,$t,1);
         }else{
             if ($timeout[$t]->[1] <= time()){
                 kill(9,$timeout[$t]->[0]);
@@ -182,7 +182,7 @@ foreach my $i (keys(%finished_processes)){
     print("$nodes[$i] : $verdict ($finished_processes{$i}->[0],$finished_processes{$i}->[1],$finished_processes{$i}->[2]) ");
 
     if ($useTime == 1){
-        my $duration = tv_interval($processDuration{$i}{"start"}, $processDuration{$i}{"end"});
+        my $duration = tv_interval($processDuration{$i}->{"start"}, $processDuration{$i}->{"end"});
         printf("%.3f s",$duration);
     }
 
