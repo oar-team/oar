@@ -23,6 +23,9 @@ if (!defined($Deploy_hostname)){
 
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
 # arg1 --> host+pid of bipbip process
 # return -1 if the ssh connection timed out, else return the return code of the command kill
 #sub killbipbip($){
@@ -100,7 +103,7 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
         #deploy part
         if (defined($host_to_connect_via_ssh)){
             iolib::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send kill signal to oarexec on $host_to_connect_via_ssh for the job $j->{job_id}");
-            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base);
+            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base, $Openssh_cmd);
         }
     }
     iolib::job_arm_leon_timer($base,$j->{job_id});

@@ -18,6 +18,9 @@ init_conf("oar.conf");
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
 my $Almighty_hostname = $Remote_host;
 if (($Almighty_hostname =~ /^\s*localhost.*$/) or ($Almighty_hostname =~ /^\s*127.*$/)){
     $Almighty_hostname = hostname();
@@ -37,9 +40,10 @@ if (!defined($Detach_oarexec)){
     $Detach_oarexec = 0;
 }
 
-
 my $Server_prologue = get_conf("SERVER_PROLOGUE_EXEC_FILE");
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
+
+my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
 my $base;
 
@@ -88,32 +92,51 @@ if (defined($Oarexec_reattach_exit_value)){
 # ELSE we must launch oarexec on the first node
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
+if (!defined($types->{deploy})){
+    my @bad;
+    if (defined($cpuset_nodes_array)){
+        my $cpuset_nodes_array = iolib::get_cpuset_values_per_node($base,$Cpuset_field,\@hosts);
 
-# CHECK nodes
-oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
-my @bad = ping_checker::test_hosts(@hosts);
-if ($#bad >= 0){
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    iolib::set_job_message($base,$Job_id,"One or several nodes are not responding");
-    oar_error("[bipbip $Job_id] /!\\ Sorry but some nodes are inaccessible : @bad\n");
-    if ($job->{job_type} eq "INTERACTIVE"){
-        my ($addr,$port) = split(/:/,$job->{info_type});
-        oar_Tools::notify_tcp_socket($addr,$port,"INVALID RESOURCES : some resources did not respond");
+        # Prepare commands to run on each node
+        my @node_commands;
+        my @node_corresponding;
+        foreach my $n (keys(%{$cpuset_nodes_array})){
+            my $cmd = "$Openssh_cmd -x -T $n";
+            
+            foreach my $c ($cpuset_nodes_array->{$n}){
+               $cmd .= " $c"; 
+            }
+            push(@node_commands, $cmd);
+            push(@node_corresponding, $n);
+        }
     }else{
-        # Resubmit this passive job
-        my $new_job_id = iolib::resubmit_job($base, $job->{job_id});
-        add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$job->{job_id},"Some resources are not responding and this is a PASSIVE job so I resubmit it (new id = $new_job_id).");
+        # CHECK nodes
+        oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
+        @bad = ping_checker::test_hosts(@hosts);
     }
-    iolib::set_job_state($base,$Job_id,"Error");
-    iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Job_id,"[bipbip] Ping_checker suspects  nodes for the job $Job_id : @bad",\@bad);
-    oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-    exit(2);
-}else{
-    oar_debug("[bipbip $Job_id] No bad node\n");
+    if ($#bad >= 0){
+        iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+        iolib::set_job_message($base,$Job_id,"One or several nodes are not responding");
+        oar_error("[bipbip $Job_id] /!\\ Sorry but some nodes are inaccessible : @bad\n");
+        if ($job->{job_type} eq "INTERACTIVE"){
+            my ($addr,$port) = split(/:/,$job->{info_type});
+            oar_Tools::notify_tcp_socket($addr,$port,"INVALID RESOURCES : some resources did not respond");
+        }else{
+            # Resubmit this passive job
+            my $new_job_id = iolib::resubmit_job($base, $job->{job_id});
+            add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$job->{job_id},"Some resources are not responding and this is a PASSIVE job so I resubmit it (new id = $new_job_id).");
+        }
+        iolib::set_job_state($base,$Job_id,"Error");
+        iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Job_id,"[bipbip] Ping_checker suspects  nodes for the job $Job_id : @bad",\@bad);
+        oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+        iolib::unlock_table($base);
+        iolib::disconnect($base);
+        exit(2);
+    }else{
+        oar_debug("[bipbip $Job_id] No bad node\n");
+    }
+    # end CHECK
 }
-# end CHECK
 
 ###################################
 # PROLOGUE EXECUTED ON OAR SERVER #
@@ -193,6 +216,7 @@ if (is_conf("EPILOGUE_EXEC_FILE")){
 }
 
 my @oarexec_files = ("$ENV{OARDIR}/oar_Tools.pm","$ENV{OARDIR}/oarexec");
+my $oarexecuser_script = "$ENV{OARDIR}/oarexecuser.sh";
 
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
@@ -230,7 +254,7 @@ eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     #open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-    my $pid = open2(\*READ, \*WRITE, "ssh -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
+    my $pid = open2(\*READ, \*WRITE, "$Openssh_cmd -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
     foreach my $f (@oarexec_files){
         open(FILE, $f) or die("Cannot open $f\n");
         while(<FILE>){
@@ -244,6 +268,14 @@ eval {
 
     # Send data structure for oarexec
     print(WRITE Dumper(\%data_to_transfer)."\n");
+
+    # Send oarexecuser script
+    open(FILE, $oarexecuser_script) or die("Cannot open $oarexecuser_script\n");
+    while (<FILE>){
+        print(WRITE);
+    }
+    print(WRITE "\n".oar_Tools::get_bipbip_oarexec_rendez_vous());
+    close(FILE);
 
     close(WRITE);
 

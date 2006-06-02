@@ -111,9 +111,11 @@ sub scan_script($){
 }
 
 # Connect to a job and give the shell of the user on te remote host
-sub connect_job($$){
+sub connect_job($$$){
     my $job_id = shift;
     my $stop_oarexec = shift;
+    my $openssh_cmd = shift;
+    my $oarexecuser_script = shift;
     
     my $dbh = iolib::connect_ro();
     my $lusr= getpwuid($ENV{SUDO_UID});
@@ -138,8 +140,9 @@ sub connect_job($$){
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
         #my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display);
-        my $cmd = "ssh -x -t $host_to_connect_via_ssh \"sh -c \\\"echo \\\\\\\$PPID >> $oarsub_pids && TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
+        #my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display);
+        #my $cmd = "$openssh_cmd -x -t $host_to_connect_via_ssh \"sh -c \\\"echo \\\\\\\$PPID >> $oarsub_pids && TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
+        my $cmd = "cat $oarexecuser_script | $openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
         #print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
@@ -147,7 +150,7 @@ sub connect_job($$){
         print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
         system($cmd);
         if ($stop_oarexec > 0){
-            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0, undef);
+            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0, undef, $openssh_cmd);
         }
         print("Disconnected from OAR job $job_id\n");
     }else{
@@ -219,6 +222,10 @@ if (defined($ENV{OARDIR})){
 }else{
     die("OARDIR env variable must be defined\n");
 }
+
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
 
 Getopt::Long::Configure ("gnu_getopt");
 
@@ -329,7 +336,8 @@ if (defined $stagein) {
 
 # Connect to a reservation
 if (defined($connect_job)){
-    exit(connect_job($connect_job,0));
+    my $oarexecuser_script = $binpath.oar_Tools::get_oarexecuser_script_name();
+    exit(connect_job($connect_job,0,$Openssh_cmd,$oarexecuser_script));
 }
 # End connection to a reservation
 
@@ -494,7 +502,8 @@ if ($Reservation ne "0"){
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD JOB"){
-        connect_job($Job_id,1);
+        my $oarexecuser_script = $binpath.oar_Tools::get_oarexecuser_script_name();
+        connect_job($Job_id,1,$Openssh_cmd,$oarexecuser_script);
     }else{
         warn("Sorry but the system returned : $answer\n");
     }

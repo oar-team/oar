@@ -30,6 +30,9 @@ if (!defined($log_file)){
 }
 my $mail_recipient = get_conf("MAIL_RECIPIENT");
 
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;
@@ -169,7 +172,7 @@ sub notify_user($$$$$$$$){
         my $server_hostname = hostname();
         send_mail($base,$1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
     }elsif($method =~ m/\s*exec:(.+)$/m){
-        my $cmd = "ssh -x -T $host sudo -H -u $user '$1 $job_id $job_name $tag \"$comments\"' > /dev/null 2>&1";
+        my $cmd = "$Openssh_cmd -x -T $host sudo -H -u $user '$1 $job_id $job_name $tag \"$comments\"' > /dev/null 2>&1";
         my $pid = fork();
         if ($pid == 0){
             undef($base);

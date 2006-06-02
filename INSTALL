@@ -30,6 +30,7 @@ installed :
     - sudo
     - Perl
     - Perl-base
+    - openssh (server and client)
 
 On the OAR server and on the login nodes, the following packages must be
 installed:

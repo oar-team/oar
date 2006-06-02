@@ -8,7 +8,8 @@
 # $6 --> I if it is an interactive submission else P
 # $7 --> stdout file name
 # $8 --> stderr file name
-# $9 --> command to launch with arguments
+# $9 --> file name where to store my PID for oarexec
+# $10 --> command to launch with arguments
 
 
 if [ "a$TERM" == "a" ] || [ "$TERM" == "unknown" ]
@@ -34,17 +35,17 @@ if ( cd $OAR_WORKING_DIRECTORY &> /dev/null )
 then
     cd $OAR_WORKING_DIRECTORY
 else
-    #Can not go into working directory
+    #Cannot go into working directory
     exit 1
 fi
 
 if [ "$6" == "I" ]
 then
+    # Change TTY owner to the right user
+    /bin/echo $$ | cat >> $9 && TTY=$(tty) && test -e $TTY && sudo chown $3:oar $TTY && sudo chmod 660 $TTY || exit 3
     $4
 elif [ "$6" == "P" ]
 then
-    #OUT_FILE="OAR.$8.$OAR_JOBID.stdout"
-    #ERR_FILE="OAR.$8.$OAR_JOBID.stderr"
     export OAR_STDOUT=$7
     export OAR_STDERR=$8
     
@@ -53,7 +54,7 @@ then
     then
         exit 2
     fi
-    shift 8
+    shift 9
     ("$@" > $OAR_STDOUT) >& $OAR_STDERR
 fi
 

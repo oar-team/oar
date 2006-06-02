@@ -27,6 +27,9 @@ init_conf("oar.conf");
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
 my @checkpoint;
@@ -65,7 +68,7 @@ if (@checkpoint){
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base);
+                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base, $Openssh_cmd);
                 alarm(0);
             };
             if ($@){

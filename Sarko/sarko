@@ -24,6 +24,9 @@ if ($Leon_walltime <= $Leon_soft_walltime){
     oar_warn("[sarko] (JOBDEL_WALLTIME <= JOBDEL_SOFTWALLTIME) so I must set JOBDEL_WALLTIME to $Leon_walltime\n");
 }
 
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
 oar_debug("[sarko] JOBDEL_SOFTWALLTIME = $Leon_soft_walltime; JOBDEL_WALLTIME = $Leon_walltime\n");
 
 # get script args
@@ -100,7 +103,7 @@ foreach my $job (iolib::get_jobs_in_state($base, "Running")){
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm(oar_Tools::get_ssh_timeout());
-            @exit_codes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1,$base);
+            @exit_codes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1,$base, $Openssh_cmd);
             alarm(0);
         };
         if ($@){

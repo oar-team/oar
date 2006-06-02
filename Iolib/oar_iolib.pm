@@ -153,6 +153,7 @@ sub release_lock($$);
 
 my $Db_type = "mysql";
 
+
 # CONNECTION
 
 # connect_db
@@ -2788,6 +2789,38 @@ sub get_absent_suspected_resources_for_a_timeout($$){
 
 }
 
+
+sub get_cpuset_values_per_node($$){
+    my $dbh = shift;
+    my $cpuset_field = shift;
+    my $host_list = shift;
+
+    my $constraint = "";
+    foreach my $h (@{$host_list}){
+        $constraint .= "\'$h\',";
+    }
+    chop($constraint);
+    $constraint .= ")";
+    
+    my $sth = $dbh->prepare("   SELECT resources.network_address, resource_properties.$cpuset_field
+                                FROM resource_properties, resources
+                                WHERE
+                                    resources.network_address IN ($constraint) AND
+                                    resource_properties.resource_id = resources.resource_id
+                            ");
+    $sth->execute();
+
+    my $results;
+    my $tmp_hash = {};
+    while (my @ref = $sth->fetchrow_array()) {
+        if ((!defined($tmp_hash->{$ref[0]})) and (!defined($tmp_hash->{$ref[0]}->{$ref[1]}))){
+            push(@{$results->{$ref[0]}}, $ref[1]);
+        }
+        $tmp_hash->{$ref[0]}->{$ref[1]} = 1;
+    }
+
+    return($results);
+}
 
 # QUEUES MANAGEMENT
 

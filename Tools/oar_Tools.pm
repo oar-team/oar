@@ -38,8 +38,7 @@ sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
-sub get_oarexecuser_script_for_oarexec($$$$$$$@);
-sub get_oarexecuser_script_for_oarsub($$$$$$);
+sub get_oarexecuser_script_name();
 sub get_bipbip_oarexec_rendez_vous();
 sub sentinelle($$$);
 
@@ -77,6 +76,11 @@ sub get_default_leon_walltime(){
 # Get default value for OPENSSH_CMD tag
 sub get_default_openssh_cmd(){
     return($Default_openssh_cmd);
+}
+
+# Get name of the oarexecuser script
+sub get_oarexecuser_script_name(){
+    return("oarexecuser.sh");
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names
@@ -303,6 +307,7 @@ sub launch_command($){
 }
 
 
+
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
 sub get_oarexecuser_script_for_oarexec($$$$$$$@){
@@ -461,7 +466,7 @@ sub sentinelle($$$){
         my $t = 0;
         while(defined($timeout[$t]) and (($timeout[$t]->[1] <= time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
             if (!defined($running_processes{$timeout[$t]->[0]})){
-                shift(@timeout);
+                splice(@timeout,$t,1);
             }else{
                 if ($timeout[$t]->[1] <= time()){
                     # DRING, timeout !!!
