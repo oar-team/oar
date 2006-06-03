@@ -14,7 +14,7 @@ my $Oarexec_reattach_exit_value = shift;
 my $Oarexec_challenge = shift;
 
 #get server conf
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 

@@ -67,10 +67,10 @@ common:
 	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
-	install -o $(OARUSER) -g $(OARGROUP) -m 700 Leon/oarkill $(OARDIR)
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarkill
-	install -m 0755 Runner/bipbip $(OARDIR)
-	install -m 0644 Runner/ping_checker.pm $(OARDIR)
+#	install -o $(OARUSER) -g $(OARGROUP) -m 700 Leon/oarkill $(OARDIR)
+#	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarkill
+#	install -m 0755 Runner/bipbip $(OARDIR)
+#	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodesetting
 	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
@@ -105,6 +105,8 @@ server:
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
 	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
+	install -m 0755 Runner/bipbip $(OARDIR)
+	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)
@@ -134,17 +136,21 @@ user:
 
 node:
 	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
-	install -m 0755 Runner/oarexec $(OARDIR)
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarexec
-	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Runner/oarexecuser.sh $(OARDIR)
+#	install -m 0755 Runner/oarexec $(OARDIR)
+#	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarexec
+#	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Runner/oarexecuser.sh $(OARDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0644 Scripts/lock_user.sh $(OARHOMEDIR)
+
+cpuset:
+	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
+	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsh
+	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 
 doc:
 	install -d -m 0755 $(DOCDIR)
@@ -179,6 +185,8 @@ server-install: sanity-check configuration common server dbinit
 user-install: sanity-check configuration common user
 
 node-install: sanity-check configuration common node
+
+cpuset-install: sanity-check configuration common cpuset
 
 doc-install: doc
 

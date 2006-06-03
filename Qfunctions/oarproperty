@@ -35,7 +35,7 @@ if ($help || ( !$ARGC && !$listproperties) ) {
 	exit(0);
 }
 
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $dbHost = get_conf("DB_HOSTNAME");
 my $dbName = get_conf("DB_BASE_NAME");
 my $dbUserName = get_conf("DB_BASE_LOGIN");

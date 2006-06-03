@@ -12,7 +12,7 @@ use IO::Socket::INET;
 use oar_Tools;
 
 
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $Server_hostname = get_conf("SERVER_HOSTNAME");
 my $Server_port = get_conf("SERVER_PORT");
 

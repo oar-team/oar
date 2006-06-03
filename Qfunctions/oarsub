@@ -201,7 +201,7 @@ EOS
 # Main
 #
 
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 $remote_host = get_conf("SERVER_HOSTNAME");
 $remote_port = get_conf("SERVER_PORT");
 $stageindir = get_conf("STAGEIN_DIR");

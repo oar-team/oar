@@ -22,7 +22,7 @@ my $sos;
 my $resource;
 
 # Get OAR configuration
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 

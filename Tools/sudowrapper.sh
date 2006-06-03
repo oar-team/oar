@@ -9,5 +9,6 @@ PERL5LIB=$OARDIR
 export PERL5LIB
 export OARDIR
 export OARUSER
+export OARCONFFILE=/etc/oar.conf
 
 exec sudo -u $OARUSER $OARDIR/`basename $0` "$@"

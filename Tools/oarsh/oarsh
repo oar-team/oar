@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # In sshd_config you must have this line :
 #     AcceptEnv OAR_CPUSET SUDO_USER
@@ -6,7 +6,6 @@
 # $OAR_CPUSET contains the cpuset name
 
 CPUSETFILE=/proc/self/cpuset
-#CPUSETFILE=/tmp/toto.txt
 
 if [ ! -r $CPUSETFILE ]
 then

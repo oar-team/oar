@@ -208,7 +208,7 @@ sub connect_db($$$$) {
 # side effects : opens a connection to the base specified in ConfLib
 sub connect() {
     # Connect to the database.
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
 
     my $host = get_conf("DB_HOSTNAME");
     my $name = get_conf("DB_BASE_NAME");
@@ -227,7 +227,7 @@ sub connect() {
 # side effects : opens a connection to the base specified in ConfLib
 sub connect_ro() {
     # Connect to the database.
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
 
     my $host = get_conf("DB_HOSTNAME");
     my $name = get_conf("DB_BASE_NAME");

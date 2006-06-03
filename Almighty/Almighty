@@ -26,7 +26,7 @@ $SIG{USR1}  = \&signalHandler;
 $SIG{INT}  = \&signalHandler;
 $SIG{TERM}  = \&signalHandler;
 
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $binpath;
 if (defined($ENV{OARDIR})){
     $binpath = $ENV{OARDIR}."/";

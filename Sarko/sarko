@@ -11,7 +11,7 @@ use oar_Tools;
 # Get job delete and checkpoint walltime values
 my $Leon_soft_walltime = oar_Tools::get_default_leon_soft_walltime();
 my $Leon_walltime = oar_Tools::get_default_leon_walltime();
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 if (is_conf("JOBDEL_SOFTWALLTIME")){
     $Leon_soft_walltime = get_conf("JOBDEL_SOFTWALLTIME");
 }

@@ -36,7 +36,7 @@ sub get_host_ip($){
 
 #Launch the right sub
 sub test_hosts(@){
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
     if (is_conf("SENTINELLE_COMMAND")){
         return(sentinelle_hosts(@_));
     }elsif (is_conf("SENTINELLE_SCRIPT_COMMAND")){
@@ -85,7 +85,7 @@ sub sentinelle_hosts(@){
     my @hosts = @_;
 
     # Set the parameter of the -c option of sentinelle
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
     my $sentinelle_cmd = get_conf("SENTINELLE_COMMAND");
     oar_debug("[PingChecker] command to run : $sentinelle_cmd\n");
     my ($cmd, @null) = split(" ",$sentinelle_cmd);
@@ -139,7 +139,7 @@ sub sentinelle_script_hosts(@){
     my @hosts = @_;
 
     # Set the parameter of the -c option of sentinelle
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
     my $sentinelle_cmd = get_conf("SENTINELLE_SCRIPT_COMMAND");
     oar_debug("[PingChecker] command to run : $sentinelle_cmd\n");
     my ($cmd, @null) = split(" ",$sentinelle_cmd);
@@ -193,7 +193,7 @@ sub fping_hosts(@){
     my @hosts = @_;
 
     # Get fping command from oar.conf
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
     my $fping_cmd = get_conf("FPING_COMMAND");
     oar_debug("[PingChecker] command to run : $fping_cmd\n");
     my ($cmd, @null) = split(" ",$fping_cmd);
@@ -253,7 +253,7 @@ sub nmap_hosts(@){
     my @hosts = @_;
 
     # Get nmap command from oar.conf
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
     my $nmap_cmd = get_conf("NMAP_COMMAND");
     oar_debug("[PingChecker] command to run : $nmap_cmd\n");
     my ($cmd, @null) = split(" ",$nmap_cmd);
@@ -328,7 +328,7 @@ sub generic_hosts(@){
     my @hosts = @_;
 
     # Get generic command from oar.conf
-    init_conf("oar.conf");
+    init_conf($ENV{OARCONFFILE});
     my $test_cmd = get_conf("GENERIC_COMMAND");
     oar_debug("[PingChecker] command to run : $test_cmd\n");
     my ($cmd, @null) = split(" ",$test_cmd);

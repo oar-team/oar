@@ -19,7 +19,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 
 
 #Get log level in oar.conf file
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $log_level = get_conf("LOG_LEVEL");
 if (!defined($log_level)){
     $log_level = 2;

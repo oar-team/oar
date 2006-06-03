@@ -31,7 +31,7 @@ my $mysqlFile = $ENV{'OARDIR'}.'/oar_jobs.sql';
 print "Using $mysqlFile for the database creation\n";
 ( -r $mysqlFile ) or die "[ERROR] Initialization SQL file not found ($mysqlFile)\n";
 
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $dbHost = get_conf("DB_HOSTNAME");
 my $dbName = get_conf("DB_BASE_NAME");
 my $dbUserName = get_conf("DB_BASE_LOGIN");

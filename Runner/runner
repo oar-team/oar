@@ -9,7 +9,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 my $binpath;
 if (defined($ENV{OARDIR})){
     $binpath = $ENV{OARDIR}."/";

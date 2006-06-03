@@ -9,7 +9,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
 # Default window size
 my $windowSize = 86400;
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 if (is_conf("ACCOUNTING_WINDOW")){
     $windowSize = get_conf("ACCOUNTING_WINDOW");
 }

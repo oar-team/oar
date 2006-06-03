@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This is the shell program used with the oarsh script.
 # It adds its own process in the cpuset OAR_CPUSET and launches
@@ -22,7 +22,7 @@ else
         exit 1
     fi
     MY_PID=$$
-    sudo sh -c "/bin/echo $MY_PID > $CPUSETFILE"
+    sudo sh -c "echo $MY_PID > $CPUSETFILE"
             
     if [ "$1" == "" ]
     then

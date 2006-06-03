@@ -10,7 +10,7 @@ use Gantt;
 
 my $initial_time = time();
 my $timeout = 10;
-init_conf("oar.conf");
+init_conf($ENV{OARCONFFILE});
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout = get_conf("SCHEDULER_TIMEOUT");
 }
