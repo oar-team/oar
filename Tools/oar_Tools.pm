@@ -38,7 +38,6 @@ sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
-sub get_oarexecuser_script_name();
 sub get_bipbip_oarexec_rendez_vous();
 sub sentinelle($$$);
 
@@ -76,11 +75,6 @@ sub get_default_leon_walltime(){
 # Get default value for OPENSSH_CMD tag
 sub get_default_openssh_cmd(){
     return($Default_openssh_cmd);
-}
-
-# Get name of the oarexecuser script
-sub get_oarexecuser_script_name(){
-    return("oarexecuser.sh");
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names
@@ -349,7 +343,7 @@ fi
 export OAR_STDOUT='.$stdout_file.'
 export OAR_STDERR='.$stderr_file.'
     
-#Test if we can write into stout and stderr files
+#Test if we can write into stdout and stderr files
 if ! ( > $OAR_STDOUT ) &> /dev/null || ! ( > $OAR_STDERR ) &> /dev/null
 then
     exit 2
@@ -365,13 +359,14 @@ exit 0
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$){
     my ($node_file,
         $job_id,
         $user,
         $shell,
         $launching_directory,
-        $display) = @_;
+        $display,
+        $cpuset_name) = @_;
 
     my $script = '
 if [ \"a$TERM\" == \"a\" ] || [ \"$TERM\" == \"unknown\" ]
@@ -384,6 +379,7 @@ export OAR_JOBID='.$job_id.'
 export OAR_USER='.$user.'
 export OAR_WORKDIR='.$launching_directory.'
 export DISPLAY='.$display.'
+export OAR_CPUSET='.$cpuset_name.'
 
 export OAR_NODEFILE=\$OAR_FILE_NODES
 export OAR_O_WORKDIR=\$OAR_WORKDIR
@@ -396,7 +392,7 @@ if ( cd \$OAR_WORKING_DIRECTORY &> /dev/null )
 then
     cd \$OAR_WORKING_DIRECTORY
 else
-    #Can not go into working directory
+    #Cannot go into working directory
     exit 1
 fi
 

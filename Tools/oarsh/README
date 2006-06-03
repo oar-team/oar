@@ -4,7 +4,7 @@ What are "oarsh" and "oarsh_shell" scripts?
 "oarsh" and "oarsh_shell" are two scripts that can restrict user processes to
 stay in the same cpuset on all nodes.
 
-This feature is very usefull to restrict processor concumption on
+This feature is very usefull to restrict processor consumption on
 multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
@@ -83,7 +83,7 @@ OARSH_SHELL
 -----------
 
 "oarsh_shell" must be the shell of the oar user on each nodes where you want
-oarsh worked.
+oarsh to worked.
 This script takes "OAR_CPUSET" and "SUDO_USER" environment variables and
 adds its PID in OAR_CPUSET cpuset. Then it searchs user shell and home and
 executes the right command (like ssh).

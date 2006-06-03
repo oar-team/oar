@@ -282,6 +282,32 @@ sub get_last_insert_id($$){
 
 # JOBS MANAGEMENT
 
+# Get the cpuset name for the given job
+# args : database ref, job id
+sub get_job_cpuset_name($$){
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT job_id, job_name, job_user
+                                FROM jobs
+                                WHERE
+                                    job_id = $job_id
+                            ");
+    $sth->execute();
+    my @res = ();
+    my @ref = $sth->fetchrow_array();
+    if (defined($ref[0])){
+        if ($ref[1] ne ""){
+            return("$ref[2]_$ref[1]");
+        }else{
+            return("$ref[2]_$ref[0]");
+        }
+    }else{
+        return("");
+    }
+}
+
+
 # get_job_challenge
 # gets the challenge string of a OAR Job
 # parameters : base, jobid
@@ -2790,7 +2816,7 @@ sub get_absent_suspected_resources_for_a_timeout($$){
 }
 
 
-sub get_cpuset_values_per_node($$){
+sub get_cpuset_values_per_node($$$){
     my $dbh = shift;
     my $cpuset_field = shift;
     my $host_list = shift;

@@ -24,7 +24,7 @@
 # So the SSH return just after job initialisation and prologue
 
 BEGIN{
-    if (!defined(&oar_Tools::get_oarexecuser_script_for_oarexec)){
+    if (!defined(&oar_Tools::get_all_process_children())){
         require(oar_Tools);
     }
 }
@@ -173,26 +173,6 @@ if (!defined($Job->{job_id})){
     exit(31);
 }
 
-# Retrieve oarexecuserscript from bipbip
-my $Oarexecuser_script;
-eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
-    alarm(oar_Tools::get_bipbip_ssh_hashtable_send_timeout());
-    my $str = "";
-    while (($str = <STDIN>) and ($str ne oar_Tools::get_bipbip_oarexec_rendez_vous())){
-        $Oarexecuser_script .= $str;
-    }
-    alarm(0);
-};
-if( $@ ){
-    print("[oarexec $Job_id] Timeout of oarexecuser script SSH transfer\n");
-    exit(40);
-}
-if ($str ne oar_Tools::get_bipbip_oarexec_rendez_vous()){
-    print("[oarexec $Job_id] Bad oarexecuser script transfered\n");
-    exit(41);
-}
-
 my $host = hostname();
 
 print("[oarexec $Job_id] job id : $Job_id user : $Job->{user}; launchingDirectory : $Job->{launching_directory}\n");
@@ -256,6 +236,7 @@ if ( $Job->{mode} eq "PASSIVE" ){
 #    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
     my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Job->{command});
     $cmd = "sudo -H -u $Job->{user} sh -c '$str'";
+    #$cmd = "sudo -H -u $Job->{user} sh -s $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} -1 \'$Job->{command}\'";
 }
 
 #resolve terminal type problems

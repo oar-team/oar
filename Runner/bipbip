@@ -216,7 +216,6 @@ if (is_conf("EPILOGUE_EXEC_FILE")){
 }
 
 my @oarexec_files = ("$ENV{OARDIR}/oar_Tools.pm","$ENV{OARDIR}/oarexec");
-my $oarexecuser_script = "$ENV{OARDIR}/oarexecuser.sh";
 
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
@@ -268,14 +267,6 @@ eval {
 
     # Send data structure for oarexec
     print(WRITE Dumper(\%data_to_transfer)."\n");
-
-    # Send oarexecuser script
-    open(FILE, $oarexecuser_script) or die("Cannot open $oarexecuser_script\n");
-    while (<FILE>){
-        print(WRITE);
-    }
-    print(WRITE "\n".oar_Tools::get_bipbip_oarexec_rendez_vous());
-    close(FILE);
 
     close(WRITE);
 
