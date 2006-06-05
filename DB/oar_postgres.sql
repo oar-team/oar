@@ -228,6 +228,7 @@ CREATE TABLE resource_properties (
   switch varchar(50) NOT NULL default '0',
   node varchar(100) NOT NULL default 'default',
   cpu integer NOT NULL default '0',
+  cpuset integer NOT NULL default '0',
   besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
   deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
   expiry_date varchar(19) NOT NULL default '0000-00-00 00:00:00',

@@ -107,6 +107,7 @@ server:
 	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
+	install -m 0755 Runner/oarexec $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)

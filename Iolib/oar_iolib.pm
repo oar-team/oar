@@ -176,28 +176,23 @@ sub connect_db($$$$) {
         $Db_type = "mysql";
     }
 
-    my $maxConnectTries = 5;
-    my $nbConnectTry = 0;
+    my $max_timeout = 10;
+    my $timeout = 0;
     my $dbh = undef;
-    while ((!defined($dbh)) && ($nbConnectTry < $maxConnectTries)){
+    while (!defined($dbh)){
         $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
         
         if (!defined($dbh)){
             oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
-            $nbConnectTry++;
-            if ($nbConnectTry < $maxConnectTries){
-                oar_Judas::oar_warn("[IOlib] I will retry to connect to the database in ".2*$nbConnectTry."s\n");
-                sleep(2*$nbConnectTry);
+            if ($timeout < $max_timeout){
+                $timeout += 2;
             }
+            oar_Judas::oar_warn("[IOlib] I will retry to connect to the database in $timeout s\n");
+            sleep($timeout);
         }
     }
     
-    if (!defined($dbh)){
-        oar_Judas::oar_error("[IOlib] Max connection tries reached ($maxConnectTries).\n");
-        exit(50);
-    }else{
-        return $dbh;
-    }
+    return $dbh;
 }
 
 
@@ -2826,7 +2821,6 @@ sub get_cpuset_values_per_node($$$){
         $constraint .= "\'$h\',";
     }
     chop($constraint);
-    $constraint .= ")";
     
     my $sth = $dbh->prepare("   SELECT resources.network_address, resource_properties.$cpuset_field
                                 FROM resource_properties, resources
@@ -3955,6 +3949,51 @@ sub job_finishing_sequence($$$$$$$$){
         add_new_event($dbh,$event_tag,$job_id,$event_string);
         oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
     }
+    
+    # Clean all CPUSETs if needed
+    my $cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+    if (defined($cpuset_field)){
+        my $job = get_job($dbh,$job_id);
+        # Search if other other jobs share the same CPUSET NAME
+        my $sth = $dbh->prepare("
+                                    SELECT resources.network_address
+                                    FROM jobs, assigned_resources, resources
+                                    WHERE
+                                        (jobs.state = \'Launching\' OR
+                                            jobs.state = \'Running\') AND
+                                        jobs.job_user = \'$job->{job_user}\' AND
+                                        jobs.job_name IS NOT NULL AND jobs.job_name = \'$job->{job_name}\' AND
+                                        assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                                        assigned_resources.resource_id = resources.resource_id 
+                                ");
+        $sth->execute();
+        my %same_cpuset;
+        while (my @ref = $sth->fetchrow_array()) {
+            $same_cpuset{$ref[0]} = 1; 
+        }
+        $sth->finish();
+
+        my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
+        my $clean_script = oar_Tools::get_cpuset_clean_script($cpuset_name);
+        my $openssh_cmd = get_conf("OPENSSH_CMD");
+        $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+        my @node_commands;
+        my @node_corresponding;
+        foreach my $h (iolib::get_job_current_hostnames($dbh,$job_id)){
+            if (!defined($same_cpuset{$h})){
+                my $cmd = "$openssh_cmd -x -T $h '$clean_script'";
+                push(@node_commands, $cmd);
+                push(@node_corresponding, $h);
+            }
+        }
+        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes : @node_commands\n");
+        my @bad = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+        if ($#bad >= 0){
+            iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
+            oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+        }
+    }
+    
     if (defined($state_to_switch)){
         lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
         oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Set job $job_id into state $state_to_switch\n");

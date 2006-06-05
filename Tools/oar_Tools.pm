@@ -40,6 +40,8 @@ sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_bipbip_oarexec_rendez_vous();
 sub sentinelle($$$);
+sub get_cpuset_script($$);
+sub get_cpuset_clean_script($);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -475,6 +477,55 @@ sub sentinelle($$$){
     }
     
     return(@bad_nodes);
+}
+
+sub get_cpuset_script($$){
+    my $cpus = shift;
+    my $cpuset_name = shift;
+
+    my $cpus_str = '';
+    foreach my $c (@{$cpus}){
+        $cpus_str .= "$c,";
+    }
+    chop($cpus_str);
+
+    my $script = '
+mount -t cpuset | grep \" /dev/cpuset \" > /dev/null 2>&1
+if [ \$? != 0 ]
+then
+    mkdir -p /dev/cpuset && mount -t cpuset none /dev/cpuset
+    [ \$? != 0 ] && exit \$?
+fi
+
+mkdir -p /dev/cpuset/'.$cpuset_name.' &&\
+  /bin/echo 0 | cat > /dev/cpuset/'.$cpuset_name.'/notify_on_release &&\
+  /bin/echo 0 | cat > /dev/cpuset/'.$cpuset_name.'/cpu_exclusive &&\
+  cat /dev/cpuset/mems > /dev/cpuset/'.$cpuset_name.'/mems &&\
+  /bin/echo '.$cpus_str.' | cat > /dev/cpuset/'.$cpuset_name.'/cpus &&\
+  chown oar /dev/cpuset/'.$cpuset_name.'/tasks
+
+exit \$?
+';
+
+    return($script);
+}
+
+sub get_cpuset_clean_script($){
+    my $cpuset_name = shift;
+
+    my $script = '
+PROCESSES=$(cat /dev/cpuset/'.$cpuset_name.'/tasks)
+while [ "$PROCESSES" != "" ]
+do
+    sudo kill -9 $PROCESSES
+    PROCESSES=$(cat /dev/cpuset/'.$cpuset_name.'/tasks)
+done
+
+sudo rmdir /dev/cpuset/'.$cpuset_name.'
+exit $?
+';
+
+    return($script);
 }
 
 1;

@@ -45,9 +45,12 @@ my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
 my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
+
 my $base;
 
 $base = iolib::connect();
+my $Cpuset_name;
+$Cpuset_name = iolib::get_job_cpuset_name($base, $Job_id) if (defined($Cpuset_field));
 
 my $job = iolib::get_job($base,$Job_id);
 my $job_challenge = iolib::get_job_challenge($base,$Job_id);
@@ -93,41 +96,43 @@ if (defined($Oarexec_reattach_exit_value)){
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 if (!defined($types->{deploy})){
+    my $event_type;
     my @bad;
+    my $cpuset_nodes_array;
+    $cpuset_nodes_array = iolib::get_cpuset_values_per_node($base,$Cpuset_field,\@hosts) if (defined($Cpuset_field));
     if (defined($cpuset_nodes_array)){
-        my $cpuset_nodes_array = iolib::get_cpuset_values_per_node($base,$Cpuset_field,\@hosts);
-
         # Prepare commands to run on each node
         my @node_commands;
         my @node_corresponding;
         foreach my $n (keys(%{$cpuset_nodes_array})){
-            my $cmd = "$Openssh_cmd -x -T $n";
-            
-            foreach my $c ($cpuset_nodes_array->{$n}){
-               $cmd .= " $c"; 
-            }
+            my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
+            my $cmd = "$Openssh_cmd -x -T $n \"sudo sh -c \'$tmp\'\"";
             push(@node_commands, $cmd);
             push(@node_corresponding, $n);
         }
-    }else{
+        $event_type = "CPUSET_ERROR";
+        @bad = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+    }
+    if (($#bad < 0) and (!defined($cpuset_nodes_array))){
         # CHECK nodes
         oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
+        $event_type = "PING_CHECKER_NODE_SUSPECTED";
         @bad = ping_checker::test_hosts(@hosts);
     }
     if ($#bad >= 0){
-        iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-        iolib::set_job_message($base,$Job_id,"One or several nodes are not responding");
-        oar_error("[bipbip $Job_id] /!\\ Sorry but some nodes are inaccessible : @bad\n");
+        iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
+        iolib::set_job_message($base,$Job_id,"One or several nodes are not responding correctly");
+        oar_error("[bipbip $Job_id] /!\\ Some nodes are inaccessible : @bad\n");
         if ($job->{job_type} eq "INTERACTIVE"){
             my ($addr,$port) = split(/:/,$job->{info_type});
             oar_Tools::notify_tcp_socket($addr,$port,"INVALID RESOURCES : some resources did not respond");
         }else{
             # Resubmit this passive job
             my $new_job_id = iolib::resubmit_job($base, $job->{job_id});
-            add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$job->{job_id},"Some resources are not responding and this is a PASSIVE job so I resubmit it (new id = $new_job_id).");
+            iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$job->{job_id},"Some resources are not responding and this is a PASSIVE job so I resubmit it (new id = $new_job_id).");
         }
-        iolib::set_job_state($base,$Job_id,"Error");
-        iolib::add_new_event_with_host($base,"PING_CHECKER_NODE_SUSPECTED",$Job_id,"[bipbip] Ping_checker suspects  nodes for the job $Job_id : @bad",\@bad);
+        #iolib::set_job_state($base,$Job_id,"Error");
+        iolib::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id : @bad",\@bad);
         oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         iolib::unlock_table($base);
         iolib::disconnect($base);
@@ -239,7 +244,8 @@ my %data_to_transfer = (
         pro_epi_timeout	    => $pro_epi_timeout,
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
-        detach_oarexec      => $Detach_oarexec
+        detach_oarexec      => $Detach_oarexec,
+        cpuset_name         => $Cpuset_name
     );
 
 # suitable Data::Dumper configuration for serialization
