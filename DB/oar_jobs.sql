@@ -21,13 +21,14 @@
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
 job_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-job_name VARCHAR( 255 ) ,
+job_name VARCHAR( 100 ) ,
+cpuset_name VARCHAR(255),
 job_type ENUM('INTERACTIVE','PASSIVE') DEFAULT 'PASSIVE' NOT NULL ,
 info_type VARCHAR( 255 ) ,
 state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')  NOT NULL ,
 reservation ENUM('None','toSchedule','Scheduled') DEFAULT 'None'  NOT NULL ,
 message VARCHAR( 255 ) NOT NULL ,
-job_user VARCHAR( 20 ) NOT NULL ,
+job_user VARCHAR( 50 ) NOT NULL ,
 command TEXT ,
 queue_name VARCHAR( 100 ) NOT NULL ,
 properties TEXT ,

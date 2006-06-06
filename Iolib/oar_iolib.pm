@@ -44,7 +44,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -283,23 +283,14 @@ sub get_job_cpuset_name($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_id, job_name, job_user
+    my $sth = $dbh->prepare("   SELECT cpuset_name
                                 FROM jobs
                                 WHERE
                                     job_id = $job_id
                             ");
     $sth->execute();
-    my @res = ();
-    my @ref = $sth->fetchrow_array();
-    if (defined($ref[0])){
-        if ($ref[1] ne ""){
-            return("$ref[2]_$ref[1]");
-        }else{
-            return("$ref[2]_$ref[0]");
-        }
-    }else{
-        return("");
-    }
+    my @res = $sth->fetchrow_array();
+    return($res[0]);
 }
 
 
@@ -768,8 +759,8 @@ sub get_possible_wanted_resources($$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -888,6 +879,20 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$) {
                   AND job_id = $job_id
     ");
 
+    # Form cpuset name
+    if (defined($cpuset)){
+        $cpuset = $user."_".$cpuset;
+    }else{
+        $cpuset = $user."_".$job_id;
+    }
+    $dbh->do("UPDATE jobs
+              SET
+                  cpuset_name = \'$cpuset\'
+              WHERE
+                  state = \'Hold\'
+                  AND job_id = $job_id
+    ");
+    
     foreach my $moldable_resource (@{$ref_resource_list}){
         #lock_table($dbh,["moldable_job_descriptions"]);
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
@@ -3953,26 +3958,6 @@ sub job_finishing_sequence($$$$$$$$){
     # Clean all CPUSETs if needed
     my $cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
     if (defined($cpuset_field)){
-        my $job = get_job($dbh,$job_id);
-        # Search if other other jobs share the same CPUSET NAME
-        my $sth = $dbh->prepare("
-                                    SELECT resources.network_address
-                                    FROM jobs, assigned_resources, resources
-                                    WHERE
-                                        (jobs.state = \'Launching\' OR
-                                            jobs.state = \'Running\') AND
-                                        jobs.job_user = \'$job->{job_user}\' AND
-                                        jobs.job_name IS NOT NULL AND jobs.job_name = \'$job->{job_name}\' AND
-                                        assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                                        assigned_resources.resource_id = resources.resource_id 
-                                ");
-        $sth->execute();
-        my %same_cpuset;
-        while (my @ref = $sth->fetchrow_array()) {
-            $same_cpuset{$ref[0]} = 1; 
-        }
-        $sth->finish();
-
         my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
         my $clean_script = oar_Tools::get_cpuset_clean_script($cpuset_name);
         my $openssh_cmd = get_conf("OPENSSH_CMD");
@@ -3980,17 +3965,61 @@ sub job_finishing_sequence($$$$$$$$){
         my @node_commands;
         my @node_corresponding;
         foreach my $h (iolib::get_job_current_hostnames($dbh,$job_id)){
-            if (!defined($same_cpuset{$h})){
                 my $cmd = "$openssh_cmd -x -T $h '$clean_script'";
                 push(@node_commands, $cmd);
                 push(@node_corresponding, $h);
-            }
         }
         oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes : @node_commands\n");
-        my @bad = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
-        if ($#bad >= 0){
-            iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
-            oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+        my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+        if ($#bad_tmp >= 0){
+            # Verify if the errors are not from another job with the same cpuset_name
+            my $job = get_job($dbh, $job_id);
+            my $req;
+            if ($Db_type eq "Pg"){
+                $req = "
+                        SELECT resources.network_address
+                        FROM jobs, assigned_resources, resources
+                        WHERE
+                            jobs.job_user = \'$job->{job_user}\' AND
+                            jobs.cpuset_name = \'$job->{cpuset_name}\' AND
+                            EXTRACT(EPOCH FROM TO_TIMESTAMP(stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(\'$job->{start_time}\','YYYY-MM-DD HH24:MI:SS')) AND
+                            assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                            assigned_resources.resource_id = resources.resource_id 
+                        "
+            }else{
+                $req = "
+                        SELECT resources.network_address
+                        FROM jobs, assigned_resources, resources
+                        WHERE
+                            jobs.job_user = \'$job->{job_user}\' AND
+                            jobs.cpuset_name = \'$job->{cpuset_name}\' AND
+                            UNIX_TIMESTAMP(stop_time) >= UNIX_TIMESTAMP(\'$job->{start_time}\') AND
+                            assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                            assigned_resources.resource_id = resources.resource_id 
+                        "
+            }
+ 
+            my $sth = $dbh->prepare("$req");
+            $sth->execute();
+            my %potential_same_cpuset;
+            while (my @ref = $sth->fetchrow_array()) {
+                $potential_same_cpuset{$ref[0]} = 1; 
+            }
+            $sth->finish();
+
+            my @bad;
+            foreach my $b (@bad_tmp){
+                if (!defined($potential_same_cpuset{$node_corresponding[$b]})){
+                    push(@bad, $node_corresponding[$b]);
+                }
+            }
+            if ($#bad >= 0){
+                oar_warn("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR\n");
+                iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
+                oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+            }else{
+                oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
+            }
         }
     }
     

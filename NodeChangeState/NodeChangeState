@@ -32,6 +32,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
+        iolib::set_job_state($base,$i->{job_id},"Error");
+        
         my @hosts;
         my $finaud_tag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
@@ -64,7 +66,6 @@ foreach my $i (@events_to_check){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because all resources are busy\n");
             }
         }
-        iolib::set_job_state($base,$i->{job_id},"Error");
     }elsif (($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
             ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
             ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||

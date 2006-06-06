@@ -46,6 +46,7 @@ my $Checkpoint_signal = 12; # SIGUSR2
 my $Stdout_file;
 my $Stderr_file;
 my $Resubmit;
+my $Cpuset_name;
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -193,6 +194,7 @@ Options are:
      --stdout                  specify the name of the standard output file
      --stderr                  specify the name of the error output file
      --resubmit                resubmit the given job to a new one
+     --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
  -h, --help                    print this help message
 EOS
 }
@@ -248,7 +250,8 @@ GetOptions ("resource|l=s" => \@resource,
             "signal=i" => \$Checkpoint_signal,
 	    "stdout=s" => \$Stdout_file,
 	    "stderr=s" => \$Stderr_file,
-            "resubmit=i" => \$Resubmit
+            "resubmit=i" => \$Resubmit,
+            "force_cpuset_name=s" => \$Cpuset_name
            );
 
 if (defined($sos)){
@@ -453,7 +456,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -464,7 +467,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my @resource_list = parse_resource_descriptions(\@resource);
     
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name);
 }
 print("JOB_ID = $Job_id \n");
 

@@ -111,7 +111,10 @@ if (!defined($types->{deploy})){
             push(@node_corresponding, $n);
         }
         $event_type = "CPUSET_ERROR";
-        @bad = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+        my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+        foreach my $b (@bad_tmp){
+            push(@bad, $node_corresponding[$b]);
+        }
     }
     if (($#bad < 0) and (!defined($cpuset_nodes_array))){
         # CHECK nodes
