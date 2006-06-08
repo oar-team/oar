@@ -264,11 +264,75 @@ CREATE INDEX resource_next_state ON resources (next_state);
 
 
 
+-- Default insertions
+-- Specify the default value for queue parameter
 INSERT INTO admission_rules (rule) VALUES ('if (not defined($queue_name)) {$queue_name="default";}');
+-- Avoid users except oar to go in the admin queue
 INSERT INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {$queue_name="default";}');
+-- Force besteffort jobs to go on nodes with the besteffort property
+--INSERT INTO admission_rules (rule) VALUES ('if ( "$queueName" eq "besteffort" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND besteffort = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "besteffort = \\\\\\"YES\\\\\\"";} }');
+-- Force deploy jobs to go on nodes with the deploy property
+--INSERT INTO admissionRules (rule) VALUES ('if ( "$queueName" eq "deploy" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND deploy = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "deploy = \\\\\\"YES\\\\\\"";} }');
+
+-- How to limit reservation number by user
+INSERT INTO admission_rules (rule) VALUES ('
+if ($reservationField eq "toSchedule") {
+    my $max_nb_resa = 2;
+    my $nb_resa = $dbh->do("    SELECT job_id
+                                FROM jobs
+                                WHERE
+                                    job_user = \\\'$user\\\' AND
+                                    (reservation = \\\'toSchedule\\\' OR
+                                    reservation = \\\'Scheduled\\\') AND
+                                    (state = \\\'Waiting\\\' OR
+                                     state = \\\'Hold\\\')
+             ");
+    if ($nb_resa >= $max_nb_resa){
+        die("Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
+    }
+}
+');
+
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
-INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt');
-INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('deploy','1','oar_sched_gantt');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');
 
 INSERT INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
+
+--# How to perform actions if the user name is in a file
+--INSERT INTO admission_rules (rule) VALUES ('
+--open(FILE, "/tmp/users.txt");
+--while (($queue_name ne "admin") and ($_ = <FILE>)){
+--    if ($_ =~ m/^\\s*$user\\s*$/m){
+--        print("Change assigned queue into admin\\n");
+--        $queue_name = "admin";
+--    }
+--}
+--close(FILE);
+--');
+
+-- Limit walltime for interactive jobs
+INSERT INTO admission_rules (rule) VALUES ('
+my $max_walltime = "12:00:00";
+if ($jobType eq "INTERACTIVE"){ 
+    foreach my $mold (@{$ref_resource_list}){
+        if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
+            print("Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
+            $mold->[1] = $max_walltime;
+        }
+    }
+}
+');
+
+-- specify the default walltime if it is not specified
+INSERT INTO admission_rules (rule) VALUES ('
+my $default_wall = "2:00:00";
+foreach my $mold (@{$ref_resource_list}){
+    if (!defined($mold->[1])){
+        print("Set default walltime to $default_wall.\\n");
+        $mold->[1] = $default_wall;
+    }
+}
+');
+
+
