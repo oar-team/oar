@@ -142,7 +142,7 @@ sub get_job_events($$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
-sub update_accounting($$$$$$$$$);
+sub update_accounting($$$$$$$$);
 
 # LOCK FUNCTIONS:
 
@@ -3463,30 +3463,56 @@ sub check_accounting_update($$){
     my $dbh = shift;
     my $windowSize = shift;
 
-    my $sth = $dbh->prepare("SELECT *
-                             FROM jobs
-                             WHERE accounted = \"NO\"
-                                AND (state = \"Terminated\" OR state = \"Error\")
-                                AND stop_time >= start_time
-                                AND start_time > \"0000-00-00 00:00:00\"
-                                AND maxTime > 0
-                                ");
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
+
+                FROM jobs, moldable_job_descriptions, assigned_moldable_job
+                WHERE 
+                    jobs.accounted = \'NO\' AND
+                    (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
+                    EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.start_time,'YYYY-MM-DD HH24:MI:SS')) AND
+                    EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.start_time,'YYYY-MM-DD HH24:MI:SS')) > EXTRACT(EPOCH FROM TO_TIMESTAMP(\'0000-00-00 00:00:00\','YYYY-MM-DD HH24:MI:SS')) AND
+                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+                    assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name
+               "; 
+
+    }else{
+        $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
+                FROM jobs, moldable_job_descriptions, assigned_resources
+                WHERE
+                    jobs.accounted = \'NO\' AND
+                    (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
+                    UNIX_TIMESTAMP(jobs.stop_time) >= UNIX_TIMESTAMP(jobs.start_time) AND
+                    UNIX_TIMESTAMP(jobs.start_time) > UNIX_TIMESTAMP(\'0000-00-00 00:00:00\') AND
+                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+                    assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name
+               ";
+    }
+    
+    my $sth = $dbh->prepare("$req");
     $sth->execute();
 
-    while (my $ref = $sth->fetchrow_hashref()) {
-        my $start = sql_to_local($ref->{start_time});
-        my $stop = sql_to_local($ref->{stop_time});
-        my $theoricalStopTime = sql_to_duration($ref->{maxTime}) + $start;
-        oar_Judas::oar_debug("[ACCOUNTING] Treate job $ref->{job_id}\n");
-        update_accounting($dbh,$start,$stop,$windowSize,$ref->{job_user},$ref->{queue_name},"USED",$ref->{nbNodes},$ref->{weight});
-        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref->{job_user},$ref->{queue_name},"ASKED",$ref->{nbNodes},$ref->{weight});
-        $dbh->do("UPDATE jobs SET accounted = \"YES\" WHERE job_id = $ref->{job_id}");
+    while (my @ref = $sth->fetchrow_array()) {
+        my $start = sql_to_local($ref[0]);
+        my $stop = sql_to_local($ref[1]);
+        my $theoricalStopTime = sql_to_duration($ref[2]) + $start;
+        print("[ACCOUNTING] Treate job $ref[3]\n");
+        update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[5],"USED",$ref[6]);
+        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[5],"ASKED",$ref[6]);
+        $dbh->do("  UPDATE jobs
+                    SET accounted = \'YES\'
+                    WHERE
+                        job_id = $ref[3]
+                 ");
     }
 }
 
 # insert accounting data in table accounting
 # params : base, start date in second, stop date in second, window size, user, queue, type(ASKED or USED)
-sub update_accounting($$$$$$$$$){
+sub update_accounting($$$$$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
@@ -3494,8 +3520,7 @@ sub update_accounting($$$$$$$$$){
     my $user = shift;
     my $queue = shift;
     my $type = shift;
-    my $nbNodes = shift;
-    my $weight = shift;
+    my $nb_resources = shift;
 
     use integer;
 
@@ -3511,7 +3536,7 @@ sub update_accounting($$$$$$$$$){
         }else{
             $conso = $windowStop - $start + 1;
         }
-        $conso = $conso * $nbNodes * $weight;
+        $conso = $conso * $nb_resources;
         add_accounting_row($dbh,local_to_sql($windowStart),local_to_sql($windowStop),$user,$queue,$type,$conso);
         $windowStart = $windowStop + 1;
         $start = $windowStart;
@@ -3530,33 +3555,35 @@ sub add_accounting_row($$$$$$$){
     my $conso = shift;
 
     # Test if the window exists
-    my $sth = $dbh->prepare("   SELECT * 
+    my $sth = $dbh->prepare("   SELECT consumption
                                 FROM accounting
-                                WHERE   accounting_user = \"$user\"
-                                    AND consumption_type = \"$type\"
-                                    AND queue_name = \"$queue\"
-                                    AND window_start = \"$start\"
-                                    AND window_stop = \"$stop\"
+                                WHERE
+                                    accounting_user = \'$user\' AND
+                                    consumption_type = \'$type\' AND
+                                    queue_name = \'$queue\' AND
+                                    window_start = \'$start\' AND
+                                    window_stop = \'$stop\'
                             ");
     $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    if (defined($ref->{consumption})){
+    my @ref = $sth->fetchrow_array();
+    if (defined($ref[0])){
         # Update the existing window
-        $conso += $ref->{consumption};
-        oar_Judas::oar_debug("[ACCOUNTING] Update the existing window $start --> $stop , user $user, queue $queue, type $type with conso = $conso\n");
+        $conso += $ref[0];
+        print("[ACCOUNTING] Update the existing window $start --> $stop , user $user, queue $queue, type $type with conso = $conso s\n");
         $dbh->do("  UPDATE accounting
                     SET consumption = $conso
-                    WHERE   user = \"$user\"
-                        AND consumption_type = \"$type\"
-                        AND queue_name = \"$queue\"
-                        AND window_start = \"$start\"
-                        AND window_stop = \"$stop\"
+                    WHERE
+                        accounting_user = \'$user\' AND
+                        consumption_type = \'$type\' AND
+                        queue_name = \'$queue\' AND
+                        window_start = \'$start\' AND
+                        window_stop = \'$stop\'
                 ");
     }else{
         # Create the window
-        oar_Judas::oar_debug("[ACCOUNTING] Create new window $start --> $stop , user $user, queue $queue, type $type with conso = $conso\n");
-        $dbh->do("  INSERT INTO accounting (user,consumption_type,queue_name,window_start,window_stop,consumption)
-                    VALUES (\"$user\",\"$type\",\"$queue\",\"$start\",\"$stop\",$conso)
+        print("[ACCOUNTING] Create new window $start --> $stop , user $user, queue $queue, type $type with conso = $conso s\n");
+        $dbh->do("  INSERT INTO accounting (accounting_user,consumption_type,queue_name,window_start,window_stop,consumption)
+                    VALUES (\'$user\',\'$type\',\'$queue\',\'$start\',\'$stop\',$conso)
                  ");
     }
 }
