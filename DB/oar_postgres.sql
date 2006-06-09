@@ -141,7 +141,7 @@ CREATE INDEX log_res_desc ON job_resource_descriptions (res_job_index);
 
 CREATE TABLE job_state_logs (
   job_id integer NOT NULL default '0',
-  job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Terminated','Error')) NOT NULL default 'Waiting',
+  job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
   date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
   date_stop varchar(19) default NULL 
 );
@@ -182,8 +182,8 @@ CREATE TABLE jobs (
   assigned_moldable_job integer default '0',
   checkpoint integer NOT NULL default '0',
   checkpoint_signal integer NOT NULL,
-  stdout_file text NOT NULL ,
-  stderr_file text NOT NULL ,
+  stdout_file text ,
+  stderr_file text ,
   resubmit_job_id integer NOT NULL default '0',
   PRIMARY KEY  (job_id)
 );

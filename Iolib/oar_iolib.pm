@@ -362,7 +362,7 @@ sub get_job_current_hostnames($$) {
     my $dbh = shift;
     my $jobid= shift;
 
-    my $sth = $dbh->prepare("SELECT resources.network_address as hostname, resources.resource_id
+    my $sth = $dbh->prepare("SELECT resources.network_address as hostname
                              FROM assigned_resources, resources, moldable_job_descriptions
                              WHERE 
                                 assigned_resources.assigned_resource_index = \'CURRENT\'
@@ -371,7 +371,7 @@ sub get_job_current_hostnames($$) {
                                 AND moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id
                                 AND moldable_job_descriptions.moldable_job_id = $jobid
                              GROUP BY resources.network_address
-                             ORDER BY resources.resource_id ASC");
+                             ORDER BY resources.network_address ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -1136,7 +1136,7 @@ sub set_job_state($$$) {
         if ($state eq "Terminated"){
             oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
         }else{
-            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped normally.");
+            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally.");
         }
     }
 }
@@ -3467,7 +3467,7 @@ sub check_accounting_update($$){
     if ($Db_type eq "Pg"){
         $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
 
-                FROM jobs, moldable_job_descriptions, assigned_moldable_job
+                FROM jobs, moldable_job_descriptions, assigned_resources
                 WHERE 
                     jobs.accounted = \'NO\' AND
                     (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
@@ -3723,14 +3723,18 @@ sub get_lock($$$) {
     my $mutex = shift;
     my $timeout = shift;
 
-    my $sth = $dbh->prepare("SELECT GET_LOCK(\"$mutex\",$timeout)");
-    $sth->execute();
-    my ($res) = $sth->fetchrow_array();
-    $sth->finish();
-		if ($res eq "0") {
-        return 0;
-    } elsif ($res eq "1") {
-        return 1;
+    if ($Db_type eq "Pg"){
+        $dbh->begin_work();
+    }else{
+        my $sth = $dbh->prepare("SELECT GET_LOCK(\"$mutex\",$timeout)");
+        $sth->execute();
+        my ($res) = $sth->fetchrow_array();
+        $sth->finish();
+	if ($res eq "0") {
+            return 0;
+        } elsif ($res eq "1") {
+            return 1;
+        }
     }
     return undef;
 }
@@ -3744,14 +3748,18 @@ sub release_lock($$) {
     my $dbh = shift;
     my $mutex = shift;
 
-    my $sth = $dbh->prepare("SELECT RELEASE_LOCK(\"$mutex\")");
-    $sth->execute();
-    my ($res) = $sth->fetchrow_array();
-    $sth->finish();
-		if ($res eq "0") {
-        return 0;
-    } elsif ($res eq "1") {
-        return 1;
+    if ($Db_type eq "Pg"){
+        $dbh->commit();
+    }else{
+        my $sth = $dbh->prepare("SELECT RELEASE_LOCK(\"$mutex\")");
+        $sth->execute();
+        my ($res) = $sth->fetchrow_array();
+        $sth->finish();
+	if ($res eq "0") {
+            return 0;
+        } elsif ($res eq "1") {
+            return 1;
+        }
     }
     return undef;
 }
@@ -4041,7 +4049,7 @@ sub job_finishing_sequence($$$$$$$$){
                 }
             }
             if ($#bad >= 0){
-                oar_warn("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR\n");
+                oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
                 iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
                 oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
             }else{
@@ -4049,7 +4057,7 @@ sub job_finishing_sequence($$$$$$$$){
             }
         }
     }
-    
+
     if (defined($state_to_switch)){
         lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
         oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Set job $job_id into state $state_to_switch\n");
