@@ -152,21 +152,20 @@ defined $hostname or $hostname = hostname();
 print "$hostname\n";
 my $base = iolib::connect() or die "cannot connect to the data base\n";
 
-my $notify_almighty = 0;
 if (defined($new_resource)){
     # Create a new resource
     print("new resource\n");
     print("$hostname added in the database\n");
     $state = "Alive" if (!defined($state));
     $resource = iolib::add_resource($base, $hostname, $state);
-    $notify_almighty = 1;
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 }else{
     if (defined($resource)){
         if (defined($state)){
             #$base->do("LOCK TABLE resources WRITE");
             iolib::set_resource_nextState($base,$resource,$state);
             #$base->do("UNLOCK TABLES");
-            $notify_almighty = 1;
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
             print("$resource --> $state\n");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if ($nowaitMode){
@@ -186,7 +185,7 @@ if (defined($new_resource)){
             #$base->do("LOCK TABLE resources WRITE");
             iolib::set_node_nextState($base,$hostname,$state);
             #$base->do("UNLOCK TABLES");
-            $notify_almighty = 1;
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
             print("$hostname --> $state\n");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if ($nowaitMode){
@@ -222,10 +221,6 @@ if (defined(@properties)){
             exit(0);
         }
     }
-}
-
-if ($notify_almighty == 1){
-    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 }
 
 

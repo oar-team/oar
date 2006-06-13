@@ -494,7 +494,8 @@ mount -t cpuset | grep \" /dev/cpuset \" > /dev/null 2>&1
 if [ \$? != 0 ]
 then
     mkdir -p /dev/cpuset && mount -t cpuset none /dev/cpuset
-    [ \$? != 0 ] && exit \$?
+    RES=$?
+    [ \$RES != 0 ] && exit \$RES
 fi
 
 mkdir -p /dev/cpuset/'.$cpuset_name.' &&\

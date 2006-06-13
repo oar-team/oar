@@ -153,6 +153,9 @@ sub release_lock($$);
 
 my $Db_type = "mysql";
 
+sub get_database_type(){
+    return($Db_type);
+}
 
 # CONNECTION
 
@@ -1714,7 +1717,7 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
 sub set_moldable_job_max_time($$$){
     my ($dbh, $mol, $walltime) = @_;
 
-    my $walltime = duration_to_sql($walltime);
+    $walltime = duration_to_sql($walltime);
     $dbh->do("  UPDATE moldable_job_descriptions
                 SET moldable_walltime = \'$walltime\'
                 WHERE
@@ -2614,10 +2617,40 @@ sub get_resources_change_state($){
     }
     $sth->finish();
 
-    return %results;
+    return(%results);
 }
 
 
+# list property fields of the resource_properties table
+# args : db ref
+sub list_resource_properties_fields($){
+    my $dbh = shift;
+    
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT pg_attribute.attname AS field
+                FROM pg_class, pg_attribute
+                WHERE
+                    pg_class.relname = \'resource_properties\'
+                    and pg_attribute.attnum > 0
+                    and pg_attribute.attrelid = pg_class.oid
+               ";
+    }else{
+        $req = "SHOW COLUMNS FROM resource_properties";
+    }
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my %results;
+    while (my @ref = $sth->fetchrow_array()) {
+        $results{$ref[0]} = 1;
+    }
+    $sth->finish();
+
+    return(%results);
+
+}
 
 #get the range when nodes are dead between two dates
 # arg : base, start date, end date
@@ -4019,7 +4052,8 @@ sub job_finishing_sequence($$$$$$$$){
                             jobs.cpuset_name = \'$job->{cpuset_name}\' AND
                             EXTRACT(EPOCH FROM TO_TIMESTAMP(stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(\'$job->{start_time}\','YYYY-MM-DD HH24:MI:SS')) AND
                             assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                            assigned_resources.resource_id = resources.resource_id 
+                            assigned_resources.resource_id = resources.resource_id AND
+                            jobs.job_id != $job_id
                         "
             }else{
                 $req = "
@@ -4030,7 +4064,8 @@ sub job_finishing_sequence($$$$$$$$){
                             jobs.cpuset_name = \'$job->{cpuset_name}\' AND
                             UNIX_TIMESTAMP(stop_time) >= UNIX_TIMESTAMP(\'$job->{start_time}\') AND
                             assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                            assigned_resources.resource_id = resources.resource_id 
+                            assigned_resources.resource_id = resources.resource_id AND
+                            jobs.job_id != $job_id
                         "
             }
  
