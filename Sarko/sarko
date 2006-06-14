@@ -133,20 +133,20 @@ foreach my $job (iolib::get_jobs_in_state($base, "Running")){
 
 
 
-## Retrieve nodes with expiryDates in the past
-## special for Desktop computing
-#my @nodes = iolib::get_expired_nodes($base);
-#if (defined @nodes) {
-#    # First mark the nodes as dead
-#    foreach my $node (@nodes) {
-#        iolib::set_node_nextState($base, $node, 'Suspected');
-#    }
-#    # Then notify Almighty
-#    my $remote_host = get_conf("SERVER_HOSTNAME");
-#    my $remote_port = get_conf("SERVER_PORT");
-#
-#    oar_Tools::notifyAlmighty($remote_host,$remote_port,"ChState");
-#}
+# Retrieve nodes with expiry_dates in the past
+# special for Desktop computing
+my @resources = iolib::get_expired_resources($base);
+if ($#resources >= 0) {
+    # First mark the nodes as dead
+    foreach my $r (@resources) {
+        iolib::set_resource_nextState($base, $r, 'Suspected');
+    }
+    # Then notify Almighty
+    my $remote_host = get_conf("SERVER_HOSTNAME");
+    my $remote_port = get_conf("SERVER_PORT");
+
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+}
 
 my $dead_switch_time = oar_Tools::get_default_dead_switch_time();
 if (is_conf("DEAD_SWITCH_TIME")){

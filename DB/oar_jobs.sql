@@ -335,9 +335,14 @@ if (grep(/^desktop_computing$/, @{$type_list})){
     }else{
         $jobproperties = "desktop_computing = \\\'YES\\\'";
     }
-
-    print("[ADMISSION RULE] Added automatically deploy resource constraints\\n");
+}else{
+    if ($jobproperties ne ""){
+        $jobproperties = "($jobproperties) AND desktop_computing = \\\'NO\\\'";
+    }else{
+        $jobproperties = "desktop_computing = \\\'NO\\\'";
+    }
 }
+print("[ADMISSION RULE] Added automatically desktop_computing resource constraints\\n");
 ');
 
 # How to limit reservation number by user

@@ -30,7 +30,7 @@ sub disconnect($);
 # JOBS MANAGEMENT
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
-sub is_job_desktopComputing($$);
+sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$);
 sub get_job_host_log($$);
@@ -94,7 +94,7 @@ sub set_node_expiryDate($$$);
 sub set_node_property($$$$);
 sub set_resource_property($$$$);
 sub get_node_dead_range_date($$$);
-sub get_expired_nodes($);
+sub get_expired_resources($);
 sub is_node_desktop_computing($$);
 sub get_node_stats($);
 sub get_resources_data_structure_current_job($$);
@@ -342,18 +342,26 @@ sub get_jobs_in_state($$) {
 }
 
 
-# is_job_desktopComputing
-# return true if the job will run on desktopComputing nodes
+# is_job_desktop_computing
+# return true if the job will run on desktop_computing nodes
 # parameters: base, jobid
 # return value: boolean
 # side effects: /
-sub is_job_desktopComputing($$) {
+sub is_job_desktop_computing($$){
     my $dbh = shift;
     my $jobid = shift;
-    my $sth = $dbh->prepare("SELECT COUNT(desktopComputing) FROM processJobs, nodeProperties WHERE processJobs.idJob=$jobid AND nodeProperties.hostname=processJobs.hostname AND desktopComputing=\"YES\"");
+
+    my $sth = $dbh->prepare("   SELECT COUNT(desktop_computing)
+                                FROM assigned_resources, resource_properties, jobs
+                                WHERE
+                                    jobs.job_id = $jobid AND
+                                    assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                                    assigned_resources.resource_id = resource_properties.resource_id AND
+                                    resource_properties.desktop_computing = \'YES\'
+                            ");
     $sth->execute();
     my ($count) = $sth->fetchrow_array();
-		return ($count > 0);
+    return($count > 0);
 }
 
 # get_job_current_hostnames
@@ -1886,36 +1894,28 @@ sub get_jobs_gantt_scheduled($$$){
 # return value: jobs hash
 # side effects: none
 sub get_desktop_computing_host_jobs($$) {
-		my $dbh = shift;
-		my $hostname = shift;
-		my $sth = $dbh->prepare(<<EOF
-SELECT
-	j.job_id, j.state, j.weight, j.command, j.launchingDirectory
-FROM
-	jobs j,
-	processJobs pj,
-	nodeProperties np
-WHERE	
-	np.hostname=\"$hostname\"
-	AND 
-	np.desktopComputing=\"YES\"
-	AND
-	pj.hostname=np.hostname
-	AND
-	pj.job_id=j.job_id
-EOF
-);
-		$sth->execute;
-		my $results;
-		while (my @array = $sth->fetchrow_array()) {
-				$results->{$array[0]} = {
-						'state' => $array[1],
-						'weight' => $array[2],
-						'command' => $array[3],
-						'directory' => $array[4]
+    my $dbh = shift;
+    my $hostname = shift;
+
+    my $sth = $dbh->prepare("   SELECT jobs.job_id, jobs.state, jobs.command, jobs.launching_directory
+                                FROM jobs, assigned_resources, resource_properties
+                                WHERE	
+	                            resource_properties.node = \'$hostname\' AND 
+                                    resource_properties.desktop_computing = \'YES\' AND
+                                    resource_properties.resource_id = assigned_resources.resource_id AND
+                                    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+                                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                            ");
+    $sth->execute;
+    my $results;
+    while (my @array = $sth->fetchrow_array()) {
+        $results->{$array[0]} = {
+                                    state => $array[1],
+                                    command => $array[2],
+                                    directory => $array[3]
 				};
     }
-		return $results;
+    return($results);
 }
 
 # get_stagein_id($$);
@@ -1924,21 +1924,18 @@ EOF
 # return value: idFile or undef if md5sum is not found
 # side effects: none
 sub get_stagein_id($$) {
-		my $dbh = shift;
-		my $md5sum = shift;
-		my $sth = $dbh->prepare(<<EOF
-SELECT
-	idFile
-FROM
-	files
-WHERE	
-	md5sum=\"$md5sum\"
-EOF
-);
+    my $dbh = shift;
+    my $md5sum = shift;
+
+    my $sth = $dbh->prepare("   SELECT file_id
+                                FROM files
+                                WHERE
+                                    md5sum = \'$md5sum\'
+                            ");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     $sth->finish();
-    return $ref->{'idFile'};
+    return($ref->{file_id});
 }
 
 # set_stagein($$$$$$);
@@ -1974,10 +1971,10 @@ sub set_stagein($$$$$$) {
 sub del_stagein($$) {
     my $dbh = shift;
     my $md5sum = shift;
-    $dbh->do("LOCK TABLE files WRITE");
-    $dbh->do("DELETE FROM files WHERE md5sum = \"$md5sum\"");
-    $dbh->do("UNLOCK TABLE");
-    return;
+    
+    lock_table($dbh, ["files"]);
+    $dbh->do("DELETE FROM files WHERE md5sum = \'$md5sum\'");
+    unlock_table($dbh);
 }
 
 # is_stagein_deprecated($$$);
@@ -1988,11 +1985,24 @@ sub del_stagein($$) {
 sub is_stagein_deprecated($$$) {
     my $dbh = shift;
     my $md5sum = shift;
-		my $expiry_delay = shift;
-    my $sth = $dbh->prepare("SELECT (max(jobs.start_time) + INTERVAL $expiry_delay MINUTE) > NOW() FROM jobs, files WHERE jobs.idFile = files.idFile AND files.md5sum = \"$md5sum\"");
+    my $expiry_delay = shift;
+    
+    my $sth = $dbh->prepare("   SELECT jobs.start_time + INTERVAL $expiry_delay MINUTE) > NOW()
+                                FROM jobs, files
+                                WHERE
+                                    jobs.file_id = files.file_id AND
+                                    files.md5sum = \'$md5sum\'
+                            ");
     $sth->execute();
-    my ($res) = $sth->fetchrow_array();
-    return ($res eq "NULL" or $res eq "0");
+    my $now = sql_to_local(get_date($dbh));
+    my $result = 1;
+    while (my @res = $sth->fetchrow_array()){
+        if ((sql_to_local($res[0]) + $expiry_delay) > $now){
+            $result = 0;
+            return(0);
+        }
+    }
+    return ($result);
 }
 
 # get_job_stagein($$);
@@ -2001,20 +2011,14 @@ sub is_stagein_deprecated($$$) {
 # return value: a hash with 2 keys: pathname and md5sum
 # side effects: none
 sub get_job_stagein($$) {
-		my $dbh = shift;
-		my $jobid = shift;
-		my $sth = $dbh->prepare(<<EOF
-SELECT
-	files.md5sum,files.location,files.method,files.compression,files.size
-FROM
-	jobs,
-	files
-WHERE	
-	jobs.job_id=\"$jobid\"
-	AND
-	jobs.idFile=files.idFile
-EOF
-);
+    my $dbh = shift;
+    my $jobid = shift;
+    my $sth = $dbh->prepare("   SELECT files.md5sum,files.location,files.method,files.compression,files.size
+                                FROM jobs, files
+                                WHERE	
+                                    jobs.job_id = $jobid AND
+                                    jobs.file_id = files.file_id
+                            ");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     $sth->finish();
@@ -2440,9 +2444,12 @@ sub set_node_expiryDate($$$) {
     my $hostname = shift;
     my $expiryDate = shift;
 
-		# FIX ME: check first that the expiryDate is actually in the future, return error else
-    $dbh->do("UPDATE nodeProperties SET expiryDate = $expiryDate
-              WHERE hostname =\"$hostname\"");
+    # FIX ME: check first that the expiryDate is actually in the future, return error else
+    $dbh->do("  UPDATE resource_properties
+                SET expiry_date = \'$expiryDate\'
+                WHERE
+                    hostname =\'$hostname\'
+             ");
 }
 
 
@@ -2668,25 +2675,48 @@ sub get_node_dead_range_date($$$){
     return %results;
 }
 
-# get_expired_nodes
-# get the list of node whose expiryDate is in the past and which are not dead yet.
+# get_expired_resources
+# get the list of resources whose expiry_date is in the past and which are not dead yet.
 # 0000-00-00 00:00:00 is always considered as in the future
 # parameters: base
-# return value: list of nodes hostnames
+# return value: list of resources
 # side effects: /
-sub get_expired_nodes($){
-	  my $dbh = shift;
+sub get_expired_resources($){
+    my $dbh = shift;
     # get expired nodes
-    my $sth = $dbh->prepare("SELECT n.hostname
-                             FROM nodes n, nodeProperties np
-                             WHERE n.hostname = np.hostname
-														 AND n.state = \"Alive\"
-                             AND np.expiryDate != \"0000-00-00 00:00:00\"
-                             AND np.expiryDate < NOW()");
+
+    my $date = sql_to_local(get_date($dbh));
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT resources.resource_id
+                FROM resources, resource_properties
+                WHERE
+                    resources.resource_id = resource_properties.resource_id AND
+                    resources.state = \'Alive\' AND
+                    resource_properties.expiry_date != \'0000-00-00 00:00:00\' AND
+                    resource_properties.desktop_computing = \'YES\' AND
+                    EXTRACT(EPOCH FROM TO_TIMESTAMP(resource_properties.expiry_date, 'YYYY-MM-DD HH24:MI:SS')) < $date
+               ";
+    }else{
+        $req = "SELECT resources.resource_id
+                FROM resources, resource_properties
+                WHERE
+                    resources.resource_id = resource_properties.resource_id AND
+                    resources.state = \'Alive\' AND
+                    resource_properties.expiry_date != \'0000-00-00 00:00:00\' AND
+                    resource_properties.desktop_computing = \'YES\' AND
+                    UNIX_TIMESTAMP(resource_properties.expiry_date) < $date
+               ";
+    }
+    my $sth = $dbh->prepare($req);
     $sth->execute();
-    my @results = $sth->fetchrow_array();
+    my @results;
+    while (my @res = $sth->fetchrow_array()){
+        push(@results, $res[0]);
+    }
     $sth->finish();
-    return @results;
+    
+    return(@results);
 }
 
 # is_node_desktop_computing
@@ -2697,10 +2727,22 @@ sub get_expired_nodes($){
 sub is_node_desktop_computing($$){
     my $dbh = shift;
     my $hostname = shift;
-    my $sth = $dbh->prepare("SELECT desktopComputing FROM nodeProperties WHERE hostname=\"$hostname\"");
+    
+    my $sth = $dbh->prepare("   SELECT desktop_computing
+                                FROM resource_properties
+                                WHERE
+                                    node = \'$hostname\'
+                            ");
     $sth->execute();
-    my ($res) = $sth->fetchrow_array();
-		return $res;
+    my @ref;
+    my $result = "NO";
+    while (@ref = $sth->fetchrow_array()){
+        $result = $ref[0];
+        if ($result ne "YES"){
+	    return($result);
+        }
+    }
+    return($result);
 }
 
 

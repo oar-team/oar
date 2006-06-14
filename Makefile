@@ -96,7 +96,7 @@ server:
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnotify
 	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
-	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)
+#	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarremoveresource
 	install -m 0755 Qfunctions/oaraccounting $(OARDIR)

@@ -82,11 +82,14 @@ foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
     my $jobid = $job->{job_id};
     my $jobtype = $job->{job_type};
     my $jobinfo = $job->{info_type};
-    #my $is_desktop_computing = iolib::is_job_desktopComputing($base,$jobid);
-    #oar_debug("[Runner] is_desktop_computing=$is_desktop_computing\n");
-    #if ($is_desktop_computing) {
-    #    oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
-    #} else {
+    
+    my $is_desktop_computing = iolib::is_job_desktop_computing($base,$jobid);
+    oar_debug("[Runner] is_desktop_computing = $is_desktop_computing\n");
+    if ($is_desktop_computing) {
+        oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
+        next;
+    }
+    
     iolib::set_job_state($base,$jobid,"Launching");
     my $types = iolib::get_current_job_types($base,$jobid);
     if (defined($types->{cosystem})){
@@ -95,7 +98,6 @@ foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
         oar_debug("[Runner] Launching job : $batch $jobid\n");
         oar_Tools::fork_no_wait("$batch $jobid",$base);
     }
-    #}
 }
 
 

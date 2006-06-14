@@ -314,12 +314,12 @@ if (defined $stagein) {
     ( -r $stagein ) or die "Stagein file not found: $stagein\n";
     unless (defined $md5sum) {
         print "Computing stagein md5sum...\n";
-		    ($md5sum) = split(" ",`md5sum $stagein`);
+        ($md5sum) = split(" ",`md5sum $stagein`);
         print "md5sum = $md5sum\n";
         print "(You may use the -m option with this md5sum for other job submitions with the same stagein)\n";
     }
     $base = iolib::connect();
-		iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
+    iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
     $idFile = iolib::get_stagein_id($base,$md5sum);
     if (defined $idFile) {
         print "This stagein is already stored on the server.\n";
@@ -330,7 +330,7 @@ if (defined $stagein) {
         print "Uploading stagein...\n";
         system "scp $stagein $location" and die "Stagein upload failed\n";
         my @stats = stat $stagein;
-		    $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
+        $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
         defined $idFile or die "Failed to setup stagein\n";
     }
     iolib::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";

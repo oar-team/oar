@@ -24,7 +24,6 @@ use File::Basename;
 ######
 # {{{
 my $hostname;
-my $maxWeight;
 my $sleep_next_pull;
 my $stageindir;
 my $cache_timeout;
@@ -35,7 +34,6 @@ my $help;
 Getopt::Long::Configure ("gnu_getopt");
 
 GetOptions ("nodename|n=s" => \$hostname,
-            "max-weight|w=i"   => \$maxWeight,
             "pull-interval|i=i"  => \$sleep_next_pull,
             "stagein-directory|d=s" => \$stageindir,
             "stagein-timeout|t=s" => \$cache_timeout,
@@ -50,7 +48,6 @@ Usage: $0 [OPTIONS] <URL>
 Run OAR Desktop Computing HTTP agent, using URL as the CGI proxy to OAR server
 Options are:
  -n, --nodename=           OAR node hostname (default: system hostname)
- -w, --max-weight=         OAR node max weight (default: 1)
  -i, --pull-interval=      OAR server pull interval in seconds (default: 30)
  -d, --stagein-directory=  directory where stageins are stored (default: ./stageins)
  -r, --stagein-timeout=    how long do we keep a stagein in cache (default: 300)
@@ -65,7 +62,6 @@ EOS
 my $url = $ARGV[0];
 (defined $url) or usage();
 (defined $hostname) or $hostname = hostname();
-(defined $maxWeight) or $maxWeight = 1;
 (defined $sleep_next_pull) or $sleep_next_pull = 30;
 (defined $stageindir) or $stageindir = "stageins";
 system "mkdir -p $stageindir";
@@ -275,7 +271,7 @@ sub pull() {
 		}
 	}	
 	message "\t\tpull send:".serialize($jobs)."\n";
-	my ($out,$content_type) = request('form-data',[ 'REQTYPE' => 'PULL', 'HOSTNAME' => $hostname, 'MAXWEIGHT' => $maxWeight, 'QUIT' => $quit, 'JOBS' => serialize($jobs) ],undef);
+	my ($out,$content_type) = request('form-data',[ 'REQTYPE' => 'PULL', 'HOSTNAME' => $hostname, 'QUIT' => $quit, 'JOBS' => serialize($jobs) ],undef);
 	$content_type eq "application/data" or die "HTTP bad content type for pull response.\n";
 	my $data=unserialize($out);
 	message "\t\tpull recv:".serialize($data)."\n";

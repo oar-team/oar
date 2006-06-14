@@ -67,9 +67,11 @@ my $base = iolib::connect();
 iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","resource_properties","event_logs","moldable_job_descriptions","job_types","job_resource_descriptions","job_resource_groups","challenges","job_dependencies"]);
 
 foreach my $j (iolib::get_to_kill_jobs($base)){
-#  if (iolib::is_job_desktopComputing($base,$Jid)) {
-#    oar_debug("[Leon] Job $Jid is affected to a DesktopComputing node, I don't handle it\n");
-#	} else {
+    if (iolib::is_job_desktop_computing($base,$j->{job_id})) {
+        oar_debug("[Leon] Job $j->{job_id} is affected to a DesktopComputing resource, I do not handle it\n");
+        next;
+    }
+
     oar_debug("[Leon] Normal kill : I treate the job $j->{job_id}\n");
     if (($j->{state} eq "Waiting") || ($j->{state} eq "Hold")){
         oar_debug("[Leon] Job is not launched\n");
@@ -107,7 +109,6 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
         }
     }
     iolib::job_arm_leon_timer($base,$j->{job_id});
-#  }
 }
 
 #I treate jobs in state EXTERMINATED in the table fragJobs
