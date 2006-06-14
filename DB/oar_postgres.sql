@@ -133,7 +133,7 @@ CREATE TABLE job_resource_descriptions (
   res_job_value integer NOT NULL default '0',
   res_job_order integer NOT NULL default '0',
   res_job_index varchar(7) check (res_job_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
-  PRIMARY KEY  (res_job_group_id,res_job_resource_Type)
+  PRIMARY KEY  (res_job_group_id,res_job_resource_Type,res_job_order)
 );
 CREATE INDEX resgroup ON job_resource_descriptions (res_job_group_id);
 CREATE INDEX log_res_desc ON job_resource_descriptions (res_job_index);
@@ -227,7 +227,7 @@ CREATE INDEX attribute ON resource_property_logs (attribute);
 CREATE TABLE resource_properties (
   resource_id integer NOT NULL default '0',
   switch varchar(50) NOT NULL default '0',
-  node varchar(100) NOT NULL default 'default',
+  node varchar(200) NOT NULL default 'default',
   cpu integer NOT NULL default '0',
   cpuset integer NOT NULL default '0',
   besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
@@ -268,11 +268,58 @@ CREATE INDEX resource_next_state ON resources (next_state);
 -- Specify the default value for queue parameter
 INSERT INTO admission_rules (rule) VALUES ('if (not defined($queue_name)) {$queue_name="default";}');
 -- Avoid users except oar to go in the admin queue
-INSERT INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {$queue_name="default";}');
+INSERT INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n");}');
+
 -- Force besteffort jobs to go on nodes with the besteffort property
---INSERT INTO admission_rules (rule) VALUES ('if ( "$queueName" eq "besteffort" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND besteffort = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "besteffort = \\\\\\"YES\\\\\\"";} }');
+INSERT INTO admission_rules (rule) VALUES ('
+if (grep(/^besteffort$/, @{$type_list})){
+    if ($jobproperties ne ""){
+        $jobproperties = "($jobproperties) AND besteffort = \\\'YES\\\'";
+    }else{
+        $jobproperties = "besteffort = \\\'YES\\\'";
+    }
+    print("[ADMISSION RULE] Added automatically besteffort resource constraint\\n");
+}
+');
 -- Force deploy jobs to go on nodes with the deploy property
---INSERT INTO admissionRules (rule) VALUES ('if ( "$queueName" eq "deploy" ){ if ($jobproperties ne ""){ $jobproperties = "($jobproperties) AND deploy = \\\\\\"YES\\\\\\""; }else{ $jobproperties = "deploy = \\\\\\"YES\\\\\\"";} }');
+INSERT INTO admission_rules (rule) VALUES ('
+if (grep(/^deploy$/, @{$type_list})){
+    if ($jobproperties ne ""){
+        $jobproperties = "($jobproperties) AND deploy = \\\'YES\\\'";
+    }else{
+        $jobproperties = "deploy = \\\'YES\\\'";
+    }
+    foreach my $mold (@{$ref_resource_list}){
+        foreach my $r (@{$mold->[0]}){
+            my $i = 0;
+            while (($i <= $#{@{$r->{resources}}}) and ($r->{resources}->[$i]->{resource} ne "resource_id")){
+                $i++;
+            }
+            splice(@{$r->{resources}}, $i, $#{@{$r->{resources}}} - $i + 1, {
+                                                                                resource => "node",
+                                                                                value    => 1,
+                                                                            });
+            
+        }
+    }
+
+    print("[ADMISSION RULE] Modify resource description with deploy constraints\\n");
+}
+');
+
+-- Force desktop_computing jobs to go on nodes with the desktop_computing property
+INSERT INTO admission_rules (rule) VALUES ('
+if (grep(/^desktop_computing$/, @{$type_list})){
+    if ($jobproperties ne ""){
+        $jobproperties = "($jobproperties) AND desktop_computing = \\\'YES\\\'";
+    }else{
+        $jobproperties = "desktop_computing = \\\'YES\\\'";
+    }
+
+    print("[ADMISSION RULE] Added automatically desktop_computing resource constraints\\n");
+}
+');
+
 
 -- How to limit reservation number by user
 INSERT INTO admission_rules (rule) VALUES ('
@@ -288,23 +335,17 @@ if ($reservationField eq "toSchedule") {
                                      state = \\\'Hold\\\')
              ");
     if ($nb_resa >= $max_nb_resa){
-        die("Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
+        die("[ADMISSION RULE] Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
     }
 }
 ');
-
-INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
-INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
-INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');
-
-INSERT INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
 
 --# How to perform actions if the user name is in a file
 --INSERT INTO admission_rules (rule) VALUES ('
 --open(FILE, "/tmp/users.txt");
 --while (($queue_name ne "admin") and ($_ = <FILE>)){
 --    if ($_ =~ m/^\\s*$user\\s*$/m){
---        print("Change assigned queue into admin\\n");
+--        print("[ADMISSION RULE] Change assigned queue into admin\\n");
 --        $queue_name = "admin";
 --    }
 --}
@@ -317,7 +358,7 @@ my $max_walltime = "12:00:00";
 if ($jobType eq "INTERACTIVE"){ 
     foreach my $mold (@{$ref_resource_list}){
         if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
-            print("Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
+            print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
             $mold->[1] = $max_walltime;
         }
     }
@@ -329,10 +370,15 @@ INSERT INTO admission_rules (rule) VALUES ('
 my $default_wall = "2:00:00";
 foreach my $mold (@{$ref_resource_list}){
     if (!defined($mold->[1])){
-        print("Set default walltime to $default_wall.\\n");
+        print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
         $mold->[1] = $default_wall;
     }
 }
 ');
 
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
+INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');
+
+INSERT INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
 

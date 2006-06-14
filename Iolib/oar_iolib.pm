@@ -637,39 +637,6 @@ sub set_finish_date($$) {
 }
 
 
-# get_all_possible_resources_with_childhood
-# returns the number of resources with the same property
-# parameters : base, property name, where restrictions
-# return value : hash table (property_value --> number)
-sub get_all_possible_resources_with_childhood($$$$) {
-    my $dbh = shift;
-    my $tree_node_list = shift;
-    my $wanted_property_name = shift;
-    my $where_clause = shift;
-    
-    my $sql = "TRUE";
-    if (defined($tree_node_list)){
-        foreach my $n (oar_resource_tree::get_parents($tree_node_list)){
-            $sql .= " AND ".oar_resource_tree::get_current_resource_name($n)." = \'".oar_resource_tree::get_current_resource_value($n)."\'";
-        }
-    }
-    if (defined($where_clause)){
-        $sql .= " AND $where_clause";
-    }
-    #print("$sql\n");
-    my $sth = $dbh->prepare("   SELECT count(DISTINCT($wanted_property_name))
-                                FROM resource_properties
-                                WHERE
-                                    $sql
-                            ");
-    $sth->execute();
-    my @tmp = $sth->fetchrow_array();
-    $sth->finish();
-    
-    return($tmp[0]);
-}
-
-
 # get_possible_wanted_resources
 # return a tree ref : a data structure with corresponding resources with what is asked
 sub get_possible_wanted_resources($$$$$){
@@ -2071,8 +2038,8 @@ sub add_resource($$$) {
              ");
     my $id = get_last_insert_id($dbh,"resources_resource_id_seq");
     #unlock_table($dbh);
-    $dbh->do("  INSERT INTO resource_properties (resource_id)
-                VALUES ($id)
+    $dbh->do("  INSERT INTO resource_properties (resource_id,node)
+                VALUES ($id,\'$name\')
              ");
     my $date = get_date($dbh);
     $dbh->do("  INSERT INTO resource_state_logs (resource_id,change_state,date_start)
@@ -2512,6 +2479,14 @@ sub set_node_property($$$$){
     if ($nbRowsAffected < 1){
         return(1);
     }else{
+        if ($property eq "node"){
+            $dbh->do("  UPDATE resources
+                        SET network_address = \'$value\'
+                        WHERE 
+                            network_address = \'$hostname\'
+                     ");
+        }
+
         #Update LOG table
         my $date = get_date($dbh);
         if ($Db_type eq "Pg"){
@@ -2566,6 +2541,14 @@ sub set_resource_property($$$$){
     if ($nbRowsAffected < 1){
         return(1);
     }else{
+        if ($property eq "node"){
+            $dbh->do("  UPDATE resources
+                        SET network_address = \'$value\'
+                        WHERE 
+                            resource_id = \'$resource\'
+                     ");
+        }
+
         #Update LOG table
         my $date = get_date($dbh);
         $dbh->do("  UPDATE resource_property_logs
@@ -4023,72 +4006,75 @@ sub job_finishing_sequence($$$$$$$$){
         oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
     }
     
-    # Clean all CPUSETs if needed
-    my $cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
-    if (defined($cpuset_field)){
-        my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
-        my $clean_script = oar_Tools::get_cpuset_clean_script($cpuset_name);
-        my $openssh_cmd = get_conf("OPENSSH_CMD");
-        $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
-        my @node_commands;
-        my @node_corresponding;
-        foreach my $h (iolib::get_job_current_hostnames($dbh,$job_id)){
+    my $types = iolib::get_current_job_types($dbh,$job_id);
+    if (!defined($types->{deploy})){
+        # Clean all CPUSETs if needed
+        my $cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+        if (defined($cpuset_field)){
+            my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
+            my $clean_script = oar_Tools::get_cpuset_clean_script($cpuset_name);
+            my $openssh_cmd = get_conf("OPENSSH_CMD");
+            $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+            my @node_commands;
+            my @node_corresponding;
+            foreach my $h (iolib::get_job_current_hostnames($dbh,$job_id)){
                 my $cmd = "$openssh_cmd -x -T $h '$clean_script'";
                 push(@node_commands, $cmd);
                 push(@node_corresponding, $h);
-        }
-        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes : @node_commands\n");
-        my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
-        if ($#bad_tmp >= 0){
-            # Verify if the errors are not from another job with the same cpuset_name
-            my $job = get_job($dbh, $job_id);
-            my $req;
-            if ($Db_type eq "Pg"){
-                $req = "
-                        SELECT resources.network_address
-                        FROM jobs, assigned_resources, resources
-                        WHERE
-                            jobs.job_user = \'$job->{job_user}\' AND
-                            jobs.cpuset_name = \'$job->{cpuset_name}\' AND
-                            EXTRACT(EPOCH FROM TO_TIMESTAMP(stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(\'$job->{start_time}\','YYYY-MM-DD HH24:MI:SS')) AND
-                            assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                            assigned_resources.resource_id = resources.resource_id AND
-                            jobs.job_id != $job_id
-                        "
-            }else{
-                $req = "
-                        SELECT resources.network_address
-                        FROM jobs, assigned_resources, resources
-                        WHERE
-                            jobs.job_user = \'$job->{job_user}\' AND
-                            jobs.cpuset_name = \'$job->{cpuset_name}\' AND
-                            UNIX_TIMESTAMP(stop_time) >= UNIX_TIMESTAMP(\'$job->{start_time}\') AND
-                            assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                            assigned_resources.resource_id = resources.resource_id AND
-                            jobs.job_id != $job_id
-                        "
             }
- 
-            my $sth = $dbh->prepare("$req");
-            $sth->execute();
-            my %potential_same_cpuset;
-            while (my @ref = $sth->fetchrow_array()) {
-                $potential_same_cpuset{$ref[0]} = 1; 
-            }
-            $sth->finish();
-
-            my @bad;
-            foreach my $b (@bad_tmp){
-                if (!defined($potential_same_cpuset{$node_corresponding[$b]})){
-                    push(@bad, $node_corresponding[$b]);
+            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes : @node_commands\n");
+            my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+            if ($#bad_tmp >= 0){
+                # Verify if the errors are not from another job with the same cpuset_name
+                my $job = get_job($dbh, $job_id);
+                my $req;
+                if ($Db_type eq "Pg"){
+                    $req = "
+                            SELECT resources.network_address
+                            FROM jobs, assigned_resources, resources
+                            WHERE
+                                jobs.job_user = \'$job->{job_user}\' AND
+                                jobs.cpuset_name = \'$job->{cpuset_name}\' AND
+                                EXTRACT(EPOCH FROM TO_TIMESTAMP(stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(\'$job->{start_time}\','YYYY-MM-DD HH24:MI:SS')) AND
+                                assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                                assigned_resources.resource_id = resources.resource_id AND
+                                jobs.job_id != $job_id
+                            "
+                }else{
+                    $req = "
+                            SELECT resources.network_address
+                            FROM jobs, assigned_resources, resources
+                            WHERE
+                                jobs.job_user = \'$job->{job_user}\' AND
+                                jobs.cpuset_name = \'$job->{cpuset_name}\' AND
+                                UNIX_TIMESTAMP(stop_time) >= UNIX_TIMESTAMP(\'$job->{start_time}\') AND
+                                assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                                assigned_resources.resource_id = resources.resource_id AND
+                                jobs.job_id != $job_id
+                            "
                 }
-            }
-            if ($#bad >= 0){
-                oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
-                iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
-                oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
-            }else{
-                oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
+ 
+                my $sth = $dbh->prepare("$req");
+                $sth->execute();
+                my %potential_same_cpuset;
+                while (my @ref = $sth->fetchrow_array()) {
+                    $potential_same_cpuset{$ref[0]} = 1; 
+                }
+                $sth->finish();
+
+                my @bad;
+                foreach my $b (@bad_tmp){
+                    if (!defined($potential_same_cpuset{$node_corresponding[$b]})){
+                        push(@bad, $node_corresponding[$b]);
+                    }
+                }
+                if ($#bad >= 0){
+                    oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
+                    iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
+                    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+                }else{
+                    oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
+                }
             }
         }
     }
