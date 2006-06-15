@@ -306,7 +306,7 @@ sub launch_command($){
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarexec($$$$$$$@){
+sub get_oarexecuser_script_for_oarexec($$$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
@@ -314,6 +314,7 @@ sub get_oarexecuser_script_for_oarexec($$$$$$$@){
         $launching_directory,
         $stdout_file,
         $stderr_file,
+        $resource_file,
         @cmd) = @_;
 
     my $script = '
@@ -326,6 +327,7 @@ export OAR_FILE_NODES='.$node_file.'
 export OAR_JOBID='.$job_id.'
 export OAR_USER='.$user.'
 export OAR_WORKDIR='.$launching_directory.'
+export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.'
 
 export OAR_NODEFILE=$OAR_FILE_NODES
 export OAR_O_WORKDIR=$OAR_WORKDIR
@@ -361,14 +363,15 @@ exit 0
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
         $shell,
         $launching_directory,
         $display,
-        $cpuset_name) = @_;
+        $cpuset_name,
+        $resource_file) = @_;
 
     my $script = '
 if [ \"a$TERM\" == \"a\" ] || [ \"$TERM\" == \"unknown\" ]
@@ -382,6 +385,7 @@ export OAR_USER='.$user.'
 export OAR_WORKDIR='.$launching_directory.'
 export DISPLAY='.$display.'
 export OAR_CPUSET='.$cpuset_name.'
+export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.'
 
 export OAR_NODEFILE=\$OAR_FILE_NODES
 export OAR_O_WORKDIR=\$OAR_WORKDIR

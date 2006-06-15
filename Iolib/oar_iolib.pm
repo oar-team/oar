@@ -2248,6 +2248,31 @@ sub get_current_assigned_job_resources($$){
 }
 
 
+# get_current_assigned_job_resource_properties
+# returns the current resource properties ref for a job
+# parameters : base, moldable id
+sub get_current_assigned_job_resource_properties($$){
+    my $dbh = shift;
+    my $mold_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT resource_properties.*
+                                FROM assigned_resources, resource_properties
+                                WHERE
+                                    assigned_resource_index = \'CURRENT\'
+                                    AND assigned_resources.moldable_job_id = $mold_id
+                                    AND resource_properties.resource_id = assigned_resources.resource_id
+                            ");
+    $sth->execute();
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        push(@result, $ref);
+    }
+    $sth->finish();
+
+    return(@result);
+}
+
+
 # get_current_free_resources_of_node
 # return an array of free resources for the specified network_address
 sub get_current_free_resources_of_node($$){

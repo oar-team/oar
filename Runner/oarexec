@@ -46,6 +46,7 @@ my $Tmp_file_prefix = oar_Tools::get_default_oarexec_directory();
 
 my $Debug_mode;
 my $Node_file;
+my $Res_file;
 my $Pid_file;
 my $Kill_myself = 0;
 my $Oarexec_exit_code = 0;
@@ -86,7 +87,7 @@ sub quit_oarexec($$){
 #delete temporary file
 sub clean_all(){
     #system("rm -f $OAR_FILE_NODES $oarPidFile");
-    unlink($Node_file,$Pid_file);
+    unlink($Node_file,$Res_file,$Pid_file);
     # Kill oarsub connections
     my $file = oar_Tools::get_oarsub_connections_file_name($Job_id);
     if (open(OARSUBS,$file)){
@@ -177,14 +178,14 @@ my $host = hostname();
 
 print("[oarexec $Job_id] job id : $Job_id user : $Job->{user}; launchingDirectory : $Job->{launching_directory}\n");
 
-# Test if OAR directory exists and is owned by oar or if we can to create it
+# Test if OAR directory exists and is owned by oar or if we can create it
 if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_prefix)))){
     print("[oarexec $Job_id] Directory $Tmp_file_prefix does not exist and I cannot create it\n");
     exit(8);
 }
 chdir($Tmp_file_prefix);
 
-#create node set file and parse command args
+#create node set file
 $Node_file = "$Tmp_file_prefix/$Job_id";
 if (! open(FILE,">$Node_file")){
     print("[oarexec $Job_id] I cannot write file $Node_file\n");
@@ -198,7 +199,24 @@ foreach my $r (@{$Job->{resources}}){
 foreach my $f (sort(@tmp_res)){
     print(FILE "$f\n") or exit(5);
 }
-close FILE;
+close(FILE);
+
+#create resource set file
+$Res_file = "$Tmp_file_prefix/$Job_id"."_resources";
+if (! open(FILE,">$Res_file")){
+    print("[oarexec $Job_id] I cannot write file $Res_file\n");
+    exit(5);
+}
+#Feed the resource file
+foreach my $r (@{$Job->{resource_properties}}){
+    my $line = "";
+    foreach my $p (keys(%{$r})){
+        $line .= " $p = '$r->{$p}' ,"
+    }
+    chop($line);
+    print(FILE "$line\n") or exit(5);
+}
+close(FILE);
 
 print("[oarexec $Job_id] nom de commande [$Job->{command}]\n");
 
@@ -234,7 +252,7 @@ my $cmd;
 if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
 #    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
-    my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Job->{command});
+    my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{command});
     $cmd = "sudo -H -u $Job->{user} sh -c '$str'";
     #$cmd = "sudo -H -u $Job->{user} sh -s $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} -1 \'$Job->{command}\'";
 }
