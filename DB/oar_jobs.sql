@@ -12,8 +12,10 @@
 #				('%.imag.fr','oar','oar','Y','Y','Y','Y','Y','Y');
 #FLUSH PRIVILEGES;
 
-#GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP ON oar.* TO oar@localhost;
-#GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP ON oar.* TO oar@"%.imag.fr";
+#GRANT ALL ON oar.* TO oar@localhost;
+#GRANT ALL ON oar.* TO oar@localhost;
+#GRANT SELECT ON oar.* TO oarreader@"%.imag.fr";
+#GRANT SELECT ON oar.* TO oarreader@"%.imag.fr";
 #FLUSH PRIVILEGES;
 
 #CONNECT oar;
@@ -94,7 +96,7 @@ PRIMARY KEY (res_group_id)
 #DROP TABLE IF EXISTS job_resource_descriptions;
 CREATE TABLE IF NOT EXISTS job_resource_descriptions (
 res_job_group_id INT UNSIGNED NOT NULL,
-res_job_resource_Type VARCHAR(255) NOT NULL,
+res_job_resource_type VARCHAR(255) NOT NULL,
 res_job_value INT NOT NULL,
 res_job_order INT UNSIGNED NOT NULL DEFAULT 0,
 res_job_index ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
@@ -148,8 +150,8 @@ PRIMARY KEY (resource_id)
 #DROP TABLE IF EXISTS resource_property_logs;
 CREATE TABLE IF NOT EXISTS resource_property_logs (
 resource_id INT UNSIGNED NOT NULL ,
-attribute VARCHAR( 50 ) NOT NULL ,
-value VARCHAR( 100 ) NOT NULL ,
+attribute VARCHAR( 255 ) NOT NULL ,
+value VARCHAR( 255 ) NOT NULL ,
 date_start DATETIME NOT NULL,
 date_stop DATETIME ,
 INDEX resource (resource_id),

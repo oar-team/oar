@@ -129,11 +129,11 @@ CREATE INDEX log_res ON job_resource_groups (res_group_index);
 
 CREATE TABLE job_resource_descriptions (
   res_job_group_id integer NOT NULL default '0',
-  res_job_resource_Type varchar(255) NOT NULL default '',
+  res_job_resource_type varchar(255) NOT NULL default '',
   res_job_value integer NOT NULL default '0',
   res_job_order integer NOT NULL default '0',
   res_job_index varchar(7) check (res_job_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
-  PRIMARY KEY  (res_job_group_id,res_job_resource_Type,res_job_order)
+  PRIMARY KEY  (res_job_group_id,res_job_resource_type,res_job_order)
 );
 CREATE INDEX resgroup ON job_resource_descriptions (res_job_group_id);
 CREATE INDEX log_res_desc ON job_resource_descriptions (res_job_index);
@@ -215,8 +215,8 @@ CREATE TABLE queues (
 
 CREATE TABLE resource_property_logs (
   resource_id integer NOT NULL default '0',
-  attribute varchar(50) NOT NULL default '',
-  value varchar(100) NOT NULL default '',
+  attribute varchar(255) NOT NULL default '',
+  value varchar(255) NOT NULL default '',
   date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
   date_stop varchar(19) default NULL
 );

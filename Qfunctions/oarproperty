@@ -20,18 +20,20 @@ sub check_property_name($);
 Getopt::Long::Configure("gnu_getopt");
 
 my ($Help,  $List_properties, $Quiet, $Varchar);
-my @Add_property ;
-my @Delete_property ;
+my @Add_property;
+my @Delete_property;
+my @Rename_property;
 
 GetOptions( "help|h"   => \$Help,
             "add|a=s"    => \@Add_property,
             "delete|d=s" => \@Delete_property,
+            "rename|r=s" => \@Rename_property,
             "list|l"   => \$List_properties,
             "quiet|q"  => \$Quiet,
             "varchar|c"  => \$Varchar
           );
 
-if ($Help || (($#Add_property < 0) and ($#Delete_property < 0)  and (! defined($List_properties)))) {
+if ($Help || (($#Add_property < 0) and ($#Delete_property < 0)  and ($#Rename_property < 0)  and (! defined($List_properties)))) {
     print_usage();
     exit(1);
 }
@@ -75,7 +77,52 @@ foreach my $a (@Add_property){
     }
 }
 
+foreach my $p (@Rename_property){
+    my ($old_prop,$new_prop);
+    if ($p !~ m/^\s*([a-z0-9_]+)\s*,\s*([a-z0-9_]+)\s*$/m){
+        print_usage();
+        exit(1);
+    }
+    $old_prop = $1;
+    $new_prop = $2;
+    
+    if (iolib::get_database_type() eq "Pg"){
+        $base->do(" ALTER TABLE resource_properties RENAME $old_prop TO $new_prop")
+            or die("DB error: " . $base->errstr."\n");
+    }else{
+        my $sth = $base->prepare("  SHOW FIELDS
+                                    FROM resource_properties
+                                 ");
+        $sth->execute() or die("DB error : ".$base->errstr."\n");
+        my $type;
+        my $field = "";
+        while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())){
+            $field = $ref[0];
+            $type = $ref[1];
+        }
+        $sth->finish();
+        die("Unknown field $old_prop\n") if ($field ne $old_prop);
+        $base->do(" ALTER TABLE resource_properties CHANGE $old_prop $new_prop $type");
+    }
 
+    $base->do(" UPDATE resource_property_logs
+                SET attribute = \'$new_prop\'
+                WHERE
+                    attribute = \'$old_prop\'")
+        or die("DB error: " . $base->errstr."\n");
+
+    $base->do(" UPDATE job_resource_descriptions
+                SET res_job_resource_type = \'$new_prop\'
+                WHERE
+                    res_job_resource_type = \'$old_prop\'")
+        or die("DB error: " . $base->errstr."\n");
+
+    if (! $Quiet) {
+        print("Rename property $old_prop into $new_prop\n");
+    }
+}
+
+iolib::disconnect($base);
 	
 exit(0);
 
@@ -91,8 +138,9 @@ Manage OAR resource properties
 Options:
  -l, --list                               list properties
  -a NAME, --add NAME                      add property
-    -v, --varchar                         sql new field of type VARCHAR(255) (default is integer)
+    -c, --varchar                         sql new field of type VARCHAR(255) (default is integer)
  -d NAME, --delete NAME                   delete property
+ -r "OLD_NAME,NEW_NAME", --remove ...     rename property OLD_NAME into NEW_NAME
  -q, --quiet                              quiet mode (no extra output)
  -h, --help                               show this help screen
 EOS
@@ -102,7 +150,7 @@ EOS
 # MySQL
 sub check_property_name($) {
     my $propertyname = shift;
-    if (! $propertyname =~ /^[a-z0-9_]$/) {
+    if (! $propertyname =~ /^[a-z0-9_]+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
     if ($propertyname =~ /^(resource_id|node|besteffort|desktop_computing|deploy|expiry_date)$/ ) {
