@@ -278,9 +278,11 @@ sub jobStageOut() {
 }
 
 #####
-# main fucntion
+# main function
 #####
 sub main() {
+    my @p = $cgi->param();
+    warn("-- args : @p --\n");
     my $reqtype = $cgi->param('REQTYPE') or "REQTYPE not found.\n";
     if ($reqtype eq 'PULL') {
         pull();

@@ -115,7 +115,7 @@ if (!defined($types->{deploy})){
         foreach my $b (@bad_tmp){
             push(@bad, $node_corresponding[$b]);
         }
-        print("@bad\n");
+        #print("@bad\n");
     }
     if (($#bad < 0) and (!defined($cpuset_nodes_array))){
         # CHECK nodes

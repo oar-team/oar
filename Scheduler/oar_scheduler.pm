@@ -69,6 +69,7 @@ sub init_scheduler($$$$){
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Running"));
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "toLaunch"));
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Launching"));
+    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Finishing"));
 
     my $max_resources = 50;
     #Init the gantt chart with all resources
