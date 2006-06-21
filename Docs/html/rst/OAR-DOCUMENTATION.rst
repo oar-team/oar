@@ -1,4 +1,37 @@
 
+
+===================
+ OAR Documentation 
+===================
+
+.. image:: ../oar_logo.png
+   :align: center
+
+:Author: Capit Nicolas
+:Address: Laboratoire Informatique et Distribution (ID)-IMAG
+          ENSIMAG - antenne de Montbonnot
+          ZIRST 51, avenue Jean Kuntzmann
+          38330 MONTBONNOT SAINT MARTIN
+:Contact: nicolas.capit@imag.fr
+:Authors: ID laboratory
+:organization: ID laboratory
+:status: This is a "work in progress"
+:license: GNU GENERAL PUBLIC LICENSE
+
+:Dedication: For users, administrators and developpers.
+
+:abstract:
+
+  OAR is a resource manager or (batch scheduler) for large clusters. In
+  functionnalities, it's near of PBS, LSF, CCS and Condor. It's suitable for
+  productive plateforms and research experiments.
+
+
+.. section-numbering::
+.. contents:: Table of Contents
+
+.. include:: ../../../INSTALL
+
 User guide
 ==========
 
@@ -14,26 +47,40 @@ This command prints jobs in execution mode on the terminal.
 
 Options
 ::
-            
-  -f    prints each job in full details
-  -a    prints more details and keeps table format
+
+  -f        : prints each job in full details
+  -j job_id : prints the specified job_id informations (even if it is finished)
+  -D        : formats outputs in Perl Dumper
+  -X        : formats outputs in XML
+  -Y        : formats outputs in YAML
                     
 Examples
 ::
             
   # oarstat
-  # oarstat -f
+  # oarstat -j 42 -f
                     
 *oarnodes*
 ~~~~~~~~~~
 
-This command prints informations about cluster nodes (state, which jobs on
-which nodes, node properties, ...)
-      
-Example
+This command prints informations about cluster resources (state, which jobs on
+which resources, resource properties, ...).
+
+Options
 ::
 
-  # oarnodes
+  -a : show all resources with their properties
+  -s : show only resource states
+  -l : show only resource list
+  -D        : formats outputs in Perl Dumper
+  -X        : formats outputs in XML
+  -Y        : formats outputs in YAML
+
+Examples
+::
+
+  # oarnodes 
+  # oarnodes -s
 
 *oarsub*
 ~~~~~~~~
@@ -41,17 +88,17 @@ Example
 The user can submit a job with this command. So, what is a job in our context?
                   
   A job is defined by needed resources and a script/program to run. So, the user
-  must specify how many nodes and what kind of resources needed by his
+  must specify how many resources and what kind of them are needed by his
   application. Thus, OAR system will give him or not what he wants and will
   control the execution. When a job is launched, OAR executes user program only
   on the first reservation node. So this program can access some environnement
   variables to know its environnement
   ::
                   
-    $OAR_NODEFILE    contains the name of a file which lists all reserved nodes
-                     for this job
-    $OAR_JOBID       contains the OAR job identificator
-    $OAR_NB_NODES    contains the number of reserved nodes
+    $OAR_NODEFILE                 contains the name of a file which lists all reserved nodes for this job
+    $OAR_JOBID                    contains the OAR job identificator
+    $OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists all resources and their properties
+    $OAR_NB_NODES                 contains the number of reserved nodes
 
 Options::
                   
@@ -67,7 +114,7 @@ Options::
   -c jobId : connect to a reservation in Running state
   -v : turn on verbose mode
 
-Exemples
+Examples
 ::
 
     # oarsub test.sh

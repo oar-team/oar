@@ -3,14 +3,296 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.3.9: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.4: http://docutils.sourceforge.net/" />
 <title>OAR Documentation</title>
-<link rel="stylesheet" href="default.css" type="text/css" />
+<style type="text/css">
+
+/*
+:Author: David Goodger
+:Contact: goodger@users.sourceforge.net
+:Date: $Date$
+:Revision: $Revision$
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin-left: 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left {
+  clear: left }
+
+img.align-right {
+  clear: right }
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font-family: serif ;
+  font-size: 100% }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em ;
+  background-color: #eeeeee }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+tt.docutils {
+  background-color: #eeeeee }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
 </head>
 <body>
 <div class="document" id="oar-documentation">
 <h1 class="title">OAR Documentation</h1>
-<div align="center" class="image align-center"><img align="center" alt="../oar_logo.png" src="../oar_logo.png" /></div>
+<div align="center" class="align-center"><img alt="../oar_logo.png" class="align-center" src="../oar_logo.png" /></div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -40,76 +322,86 @@ productive plateforms and research experiments.</td>
 </tr>
 </tbody>
 </table>
-<div class="contents topic" id="table-of-contents">
-<p class="topic-title first"><a name="table-of-contents">Table of Contents</a></p>
+<div class="contents topic">
+<p class="topic-title first"><a id="table-of-contents" name="table-of-contents">Table of Contents</a></p>
 <ul class="auto-toc simple">
 <li><a class="reference" href="#installing-the-oar-batch-system" id="id1" name="id1">1&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a><ul class="auto-toc">
 <li><a class="reference" href="#requirements" id="id2" name="id2">1.1&nbsp;&nbsp;&nbsp;Requirements</a></li>
-<li><a class="reference" href="#configuration-of-the-cluster" id="id3" name="id3">1.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a></li>
-<li><a class="reference" href="#visualization-tools-installation" id="id4" name="id4">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></li>
-<li><a class="reference" href="#starting" id="id5" name="id5">1.4&nbsp;&nbsp;&nbsp;Starting</a></li>
-<li><a class="reference" href="#further-information" id="id6" name="id6">1.5&nbsp;&nbsp;&nbsp;Further information</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#user-guide" id="id7" name="id7">2&nbsp;&nbsp;&nbsp;User guide</a><ul class="auto-toc">
-<li><a class="reference" href="#description-of-the-different-commands" id="id8" name="id8">2.1&nbsp;&nbsp;&nbsp;Description of the different commands</a><ul class="auto-toc">
-<li><a class="reference" href="#oarstat" id="id9" name="id9">2.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></li>
-<li><a class="reference" href="#oarnodes" id="id10" name="id10">2.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></li>
-<li><a class="reference" href="#oarsub" id="id11" name="id11">2.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></li>
-<li><a class="reference" href="#oardel" id="id12" name="id12">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></li>
-</ul>
-</li>
-<li><a class="reference" href="#visualisation-tools" id="id13" name="id13">2.2&nbsp;&nbsp;&nbsp;Visualisation tools</a><ul class="auto-toc">
-<li><a class="reference" href="#monika" id="id14" name="id14">2.2.1&nbsp;&nbsp;&nbsp;Monika</a></li>
-<li><a class="reference" href="#drawoargantt" id="id15" name="id15">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></li>
+<li><a class="reference" href="#configuration-of-the-cluster" id="id3" name="id3">1.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a><ul class="auto-toc">
+<li><a class="reference" href="#cpuset-installation" id="id4" name="id4">1.2.1&nbsp;&nbsp;&nbsp;CPUSET installation</a><ul class="auto-toc">
+<li><a class="reference" href="#what-are-oarsh-and-oarsh-shell-scripts" id="id5" name="id5">1.2.1.1&nbsp;&nbsp;&nbsp;What are &quot;oarsh&quot; and &quot;oarsh_shell&quot; scripts?</a></li>
+<li><a class="reference" href="#cpuset-definition" id="id6" name="id6">1.2.1.2&nbsp;&nbsp;&nbsp;CPUSET definition</a></li>
+<li><a class="reference" href="#oarsh" id="id7" name="id7">1.2.1.3&nbsp;&nbsp;&nbsp;OARSH</a></li>
+<li><a class="reference" href="#oarsh-shell" id="id8" name="id8">1.2.1.4&nbsp;&nbsp;&nbsp;OARSH_SHELL</a></li>
+<li><a class="reference" href="#notes" id="id9" name="id9">1.2.1.5&nbsp;&nbsp;&nbsp;NOTES</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference" href="#administrator-guide" id="id16" name="id16">3&nbsp;&nbsp;&nbsp;Administrator guide</a><ul class="auto-toc">
-<li><a class="reference" href="#administrator-commands" id="id17" name="id17">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a><ul class="auto-toc">
-<li><a class="reference" href="#oarnodesetting" id="id18" name="id18">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></li>
-<li><a class="reference" href="#oarremovenode" id="id19" name="id19">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></li>
-<li><a class="reference" href="#oaraccounting" id="id20" name="id20">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
-<li><a class="reference" href="#oarnotify" id="id21" name="id21">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
+<li><a class="reference" href="#visualization-tools-installation" id="id10" name="id10">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></li>
+<li><a class="reference" href="#starting" id="id11" name="id11">1.4&nbsp;&nbsp;&nbsp;Starting</a></li>
+<li><a class="reference" href="#further-information" id="id12" name="id12">1.5&nbsp;&nbsp;&nbsp;Further information</a></li>
 </ul>
 </li>
-<li><a class="reference" href="#database-scheme" id="id22" name="id22">3.2&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
-<li><a class="reference" href="#accounting" id="id23" name="id23">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
-<li><a class="reference" href="#admissionrules" id="id24" name="id24">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></li>
-<li><a class="reference" href="#event-log" id="id25" name="id25">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></li>
-<li><a class="reference" href="#files" id="id26" name="id26">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
-<li><a class="reference" href="#fragjobs" id="id27" name="id27">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></li>
-<li><a class="reference" href="#ganttjobsnodes" id="id28" name="id28">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></li>
-<li><a class="reference" href="#ganttjobsnode-visu" id="id29" name="id29">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></li>
-<li><a class="reference" href="#ganttjobsprediction" id="id30" name="id30">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></li>
-<li><a class="reference" href="#ganttjobsprediction-visu" id="id31" name="id31">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></li>
-<li><a class="reference" href="#jobs" id="id32" name="id32">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
-<li><a class="reference" href="#nodeproperties" id="id33" name="id33">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></li>
-<li><a class="reference" href="#nodestate-log" id="id34" name="id34">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></li>
-<li><a class="reference" href="#nodes" id="id35" name="id35">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></li>
-<li><a class="reference" href="#processjobs" id="id36" name="id36">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></li>
-<li><a class="reference" href="#processjobs-log" id="id37" name="id37">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></li>
-<li><a class="reference" href="#queue" id="id38" name="id38">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></li>
+<li><a class="reference" href="#user-guide" id="id13" name="id13">2&nbsp;&nbsp;&nbsp;User guide</a><ul class="auto-toc">
+<li><a class="reference" href="#description-of-the-different-commands" id="id14" name="id14">2.1&nbsp;&nbsp;&nbsp;Description of the different commands</a><ul class="auto-toc">
+<li><a class="reference" href="#oarstat" id="id15" name="id15">2.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></li>
+<li><a class="reference" href="#oarnodes" id="id16" name="id16">2.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></li>
+<li><a class="reference" href="#oarsub" id="id17" name="id17">2.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></li>
+<li><a class="reference" href="#oardel" id="id18" name="id18">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#visualisation-tools" id="id19" name="id19">2.2&nbsp;&nbsp;&nbsp;Visualisation tools</a><ul class="auto-toc">
+<li><a class="reference" href="#monika" id="id20" name="id20">2.2.1&nbsp;&nbsp;&nbsp;Monika</a></li>
+<li><a class="reference" href="#drawoargantt" id="id21" name="id21">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference" href="#configuration-file" id="id39" name="id39">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
-<li><a class="reference" href="#module-description" id="id40" name="id40">5&nbsp;&nbsp;&nbsp;Module description</a><ul class="auto-toc">
-<li><a class="reference" href="#almighty" id="id41" name="id41">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
-<li><a class="reference" href="#sarko" id="id42" name="id42">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
-<li><a class="reference" href="#judas" id="id43" name="id43">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
-<li><a class="reference" href="#leon" id="id44" name="id44">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
-<li><a class="reference" href="#nodechangestate" id="id45" name="id45">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
-<li><a class="reference" href="#scheduler" id="id46" name="id46">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
-<li><a class="reference" href="#runner" id="id47" name="id47">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
+<li><a class="reference" href="#administrator-guide" id="id22" name="id22">3&nbsp;&nbsp;&nbsp;Administrator guide</a><ul class="auto-toc">
+<li><a class="reference" href="#administrator-commands" id="id23" name="id23">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a><ul class="auto-toc">
+<li><a class="reference" href="#oarnodesetting" id="id24" name="id24">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></li>
+<li><a class="reference" href="#oarremovenode" id="id25" name="id25">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></li>
+<li><a class="reference" href="#oaraccounting" id="id26" name="id26">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
+<li><a class="reference" href="#oarnotify" id="id27" name="id27">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#database-scheme" id="id28" name="id28">3.2&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
+<li><a class="reference" href="#accounting" id="id29" name="id29">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
+<li><a class="reference" href="#admissionrules" id="id30" name="id30">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></li>
+<li><a class="reference" href="#event-log" id="id31" name="id31">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></li>
+<li><a class="reference" href="#files" id="id32" name="id32">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
+<li><a class="reference" href="#fragjobs" id="id33" name="id33">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></li>
+<li><a class="reference" href="#ganttjobsnodes" id="id34" name="id34">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></li>
+<li><a class="reference" href="#ganttjobsnode-visu" id="id35" name="id35">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></li>
+<li><a class="reference" href="#ganttjobsprediction" id="id36" name="id36">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></li>
+<li><a class="reference" href="#ganttjobsprediction-visu" id="id37" name="id37">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></li>
+<li><a class="reference" href="#jobs" id="id38" name="id38">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
+<li><a class="reference" href="#nodeproperties" id="id39" name="id39">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></li>
+<li><a class="reference" href="#nodestate-log" id="id40" name="id40">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></li>
+<li><a class="reference" href="#nodes" id="id41" name="id41">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></li>
+<li><a class="reference" href="#processjobs" id="id42" name="id42">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></li>
+<li><a class="reference" href="#processjobs-log" id="id43" name="id43">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></li>
+<li><a class="reference" href="#queue" id="id44" name="id44">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#configuration-file" id="id45" name="id45">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
+<li><a class="reference" href="#module-description" id="id46" name="id46">5&nbsp;&nbsp;&nbsp;Module description</a><ul class="auto-toc">
+<li><a class="reference" href="#almighty" id="id47" name="id47">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
+<li><a class="reference" href="#sarko" id="id48" name="id48">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
+<li><a class="reference" href="#judas" id="id49" name="id49">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
+<li><a class="reference" href="#leon" id="id50" name="id50">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
+<li><a class="reference" href="#nodechangestate" id="id51" name="id51">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
+<li><a class="reference" href="#scheduler" id="id52" name="id52">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
+<li><a class="reference" href="#runner" id="id53" name="id53">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
 </ul>
 </li>
 </ul>
 </div>
-<div class="section" id="installing-the-oar-batch-system">
-<h1><a class="toc-backref" href="#id1" name="installing-the-oar-batch-system">1&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a></h1>
+<div class="section">
+<h1><a class="toc-backref" href="#id1" id="installing-the-oar-batch-system" name="installing-the-oar-batch-system">1&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a></h1>
 <dl class="docutils">
 <dt>What do you need?</dt>
 <dd><ul class="first last simple">
@@ -119,8 +411,8 @@ productive plateforms and research experiments.</td>
 </ul>
 </dd>
 </dl>
-<div class="section" id="requirements">
-<h2><a class="toc-backref" href="#id2" name="requirements">1.1&nbsp;&nbsp;&nbsp;Requirements</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id2" id="requirements" name="requirements">1.1&nbsp;&nbsp;&nbsp;Requirements</a></h2>
 <p>There a three kinds of nodes, each requiring a specific software configuration.</p>
 <p>These are :</p>
 <blockquote>
@@ -142,6 +434,7 @@ installed :</p>
 <li>sudo</li>
 <li>Perl</li>
 <li>Perl-base</li>
+<li>openssh (server and client)</li>
 </ul>
 </blockquote>
 <p>On the OAR server and on the login nodes, the following packages must be
@@ -158,8 +451,8 @@ installed:</p>
 <p>From now on, we will suppose all the Perl/Mysql packages are
 correctly installed and configured and mysql database is started.</p>
 </div>
-<div class="section" id="configuration-of-the-cluster">
-<h2><a class="toc-backref" href="#id3" name="configuration-of-the-cluster">1.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id3" id="configuration-of-the-cluster" name="configuration-of-the-cluster">1.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a></h2>
 <p>The following steps have to be done, prior to installing OAR:</p>
 <blockquote>
 <ul>
@@ -198,6 +491,7 @@ privileges. To achieve that, OAR makes use of sudo. As a consequence,
 /etc/sudoers must be configured. Please use visudo to add the following
 lines:</p>
 <pre class="literal-block">
+Defaults&gt;oar    env_reset,env_keep = &quot;OARUSER OARDIR PWD PERL5LIB OARCONFFILE&quot;
 Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
 /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
 /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume
@@ -248,9 +542,133 @@ your installation (default is /usr/local/bin).</p>
 <p>Initialization of OAR database (MySQL) is achieved using oar_db_init.pl script provided
 with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).</p>
 <p>The same machine may host several or even all modules.</p>
+<p>Note about X11:
+The easiest and scalable way to use X11 application on cluster nodes is to open X11 ports and set the right DISPLAY environment variable by hand.</p>
+<p>Otherwise users can use X11 forwarding via ssh to access cluster frontal. After that you must configure ssh server on this frontal with</p>
+<blockquote>
+X11Forwarding yes
+X11UseLocalhost no</blockquote>
+<p>With this configuration, users can launch X11 applications after a 'oarsub -I' on the given node.</p>
+<div class="section">
+<h3><a class="toc-backref" href="#id4" id="cpuset-installation" name="cpuset-installation">1.2.1&nbsp;&nbsp;&nbsp;CPUSET installation</a></h3>
+<!-- OAR can use CPUSET features provided with the Linux kernel >= 2.6. This enables
+to restrict user processes only on reserved processors and clean correctly nodes
+after the job.
+To perform this installation you must read the documentation in Tools/oarsh/README. -->
+<div class="section">
+<h4><a class="toc-backref" href="#id5" id="what-are-oarsh-and-oarsh-shell-scripts" name="what-are-oarsh-and-oarsh-shell-scripts">1.2.1.1&nbsp;&nbsp;&nbsp;What are &quot;oarsh&quot; and &quot;oarsh_shell&quot; scripts?</a></h4>
+<p>&quot;oarsh&quot; and &quot;oarsh_shell&quot; are two scripts that can restrict user processes to
+stay in the same cpuset on all nodes.</p>
+<p>This feature is very usefull to restrict processor consumption on
+multiprocessors computers and to kill all processes of a same
+OAR job on several nodes.</p>
 </div>
-<div class="section" id="visualization-tools-installation">
-<h2><a class="toc-backref" href="#id4" name="visualization-tools-installation">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></h2>
+<div class="section">
+<h4><a class="toc-backref" href="#id6" id="cpuset-definition" name="cpuset-definition">1.2.1.2&nbsp;&nbsp;&nbsp;CPUSET definition</a></h4>
+<p>CPUSET is a module integrated in the Linux kernel since 2.6.x.
+In the kernel documentation, you can read:</p>
+<pre class="literal-block">
+Cpusets provide a mechanism for assigning a set of CPUs and Memory
+Nodes to a set of tasks.
+
+Cpusets constrain the CPU and Memory placement of tasks to only
+the resources within a tasks current cpuset.  They form a nested
+hierarchy visible in a virtual file system.  These are the essential
+hooks, beyond what is already present, required to manage dynamic
+job placement on large systems.
+
+Each task has a pointer to a cpuset.  Multiple tasks may reference
+the same cpuset.  Requests by a task, using the sched_setaffinity(2)
+system call to include CPUs in its CPU affinity mask, and using the
+mbind(2) and set_mempolicy(2) system calls to include Memory Nodes
+in its memory policy, are both filtered through that tasks cpuset,
+filtering out any CPUs or Memory Nodes not in that cpuset.  The
+scheduler will not schedule a task on a CPU that is not allowed in
+its cpus_allowed vector, and the kernel page allocator will not
+allocate a page on a node that is not allowed in the requesting tasks
+mems_allowed vector.
+
+If a cpuset is cpu or mem exclusive, no other cpuset, other than a direct
+ancestor or descendent, may share any of the same CPUs or Memory Nodes.
+A cpuset that is cpu exclusive has a sched domain associated with it.
+The sched domain consists of all cpus in the current cpuset that are not
+part of any exclusive child cpusets.
+This ensures that the scheduler load balacing code only balances
+against the cpus that are in the sched domain as defined above and not
+all of the cpus in the system. This removes any overhead due to
+load balancing code trying to pull tasks outside of the cpu exclusive
+cpuset only to be prevented by the tasks' cpus_allowed mask.
+
+A cpuset that is mem_exclusive restricts kernel allocations for
+page, buffer and other data commonly shared by the kernel across
+multiple users.  All cpusets, whether mem_exclusive or not, restrict
+allocations of memory for user space.  This enables configuring a
+system so that several independent jobs can share common kernel
+data, such as file system pages, while isolating each jobs user
+allocation in its own cpuset.  To do this, construct a large
+mem_exclusive cpuset to hold all the jobs, and construct child,
+non-mem_exclusive cpusets for each individual job.  Only a small
+amount of typical kernel memory, such as requests from interrupt
+handlers, is allowed to be taken outside even a mem_exclusive cpuset.
+
+User level code may create and destroy cpusets by name in the cpuset
+virtual file system, manage the attributes and permissions of these
+cpusets and which CPUs and Memory Nodes are assigned to each cpuset,
+specify and query to which cpuset a task is assigned, and list the
+task pids assigned to a cpuset.
+</pre>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id7" id="oarsh" name="oarsh">1.2.1.3&nbsp;&nbsp;&nbsp;OARSH</a></h4>
+<p>&quot;oarsh&quot; is a wrapper around the &quot;ssh&quot; command (tested with openSSH).
+Its goal is to propagate two environment variables:</p>
+<blockquote>
+<ul class="simple">
+<li>OAR_CPUSET : The name of the OAR job cpuset</li>
+<li>SUDO_USER : The name of the user who has launched oarsh command</li>
+</ul>
+</blockquote>
+<p>So &quot;oarsh&quot; must be run by oar and a simple user must run it via the
+&quot;sudowrapper&quot; script to become oar.
+In this way each cluster user who can execute &quot;oarsh&quot; via &quot;sudowrapper can
+connect himself on each cluster nodes (if oarsh is installed everywhere).</p>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id8" id="oarsh-shell" name="oarsh-shell">1.2.1.4&nbsp;&nbsp;&nbsp;OARSH_SHELL</a></h4>
+<p>&quot;oarsh_shell&quot; must be the shell of the oar user on each nodes where you want
+oarsh to worked.
+This script takes &quot;OAR_CPUSET&quot; and &quot;SUDO_USER&quot; environment variables and
+adds its PID in OAR_CPUSET cpuset. Then it searchs user shell and home and
+executes the right command (like ssh).</p>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id9" id="notes" name="notes">1.2.1.5&nbsp;&nbsp;&nbsp;NOTES</a></h4>
+<blockquote>
+<ul>
+<li><p class="first">On each nodes you must add the line:</p>
+<pre class="literal-block">
+AcceptEnv OAR_CPUSET SUDO_USER
+</pre>
+<p>In Debian the file is &quot;/etc/ssh/sshd_config&quot;</p>
+</li>
+<li><p class="first">You can use scp with oarsh. The syntax is:</p>
+<pre class="literal-block">
+scp -S /path/to/oarsh ...
+</pre>
+</li>
+<li><p class="first">You can restrict the use of oarsh with the sudo configuration:</p>
+<pre class="literal-block">
+%oarsh ALL=(oar) NOPASSWD: /path/to/oarsh
+</pre>
+<p>Here only users from oarsh group can execute oarsh</p>
+</li>
+</ul>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id10" id="visualization-tools-installation" name="visualization-tools-installation">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></h2>
 <p>There are two different tools. One, named Monika, displays the current cluster state
 with all active and waiting jobs. The other, named DrawOARGantt, diplays node occupation
 in a lapse of time.
@@ -293,8 +711,8 @@ These tools are CGI scripts and generate HTML pages.</p>
 </dd>
 </dl>
 </div>
-<div class="section" id="starting">
-<h2><a class="toc-backref" href="#id5" name="starting">1.4&nbsp;&nbsp;&nbsp;Starting</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id11" id="starting" name="starting">1.4&nbsp;&nbsp;&nbsp;Starting</a></h2>
 <p>First, you must start OAR daemon on the server (its name is &quot;Almighty&quot;).</p>
 <blockquote>
 <ul class="simple">
@@ -305,77 +723,90 @@ These tools are CGI scripts and generate HTML pages.</p>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="further-information">
-<h2><a class="toc-backref" href="#id6" name="further-information">1.5&nbsp;&nbsp;&nbsp;Further information</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id12" id="further-information" name="further-information">1.5&nbsp;&nbsp;&nbsp;Further information</a></h2>
 <p>For further information, please check <a class="reference" href="http://oar.imag.fr/">http://oar.imag.fr/</a>.</p>
 <!-- $Id: INSTALL,v 1.23 2005/09/27 13:59:34 capitn Exp $ -->
 </div>
 </div>
-<div class="section" id="user-guide">
-<h1><a class="toc-backref" href="#id7" name="user-guide">2&nbsp;&nbsp;&nbsp;User guide</a></h1>
-<div class="section" id="description-of-the-different-commands">
-<h2><a class="toc-backref" href="#id8" name="description-of-the-different-commands">2.1&nbsp;&nbsp;&nbsp;Description of the different commands</a></h2>
+<div class="section">
+<h1><a class="toc-backref" href="#id13" id="user-guide" name="user-guide">2&nbsp;&nbsp;&nbsp;User guide</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id14" id="description-of-the-different-commands" name="description-of-the-different-commands">2.1&nbsp;&nbsp;&nbsp;Description of the different commands</a></h2>
 <p>All user commands are installed on cluster login nodes. So you must connect to
 one of these computers first.</p>
-<div class="section" id="oarstat">
-<h3><a class="toc-backref" href="#id9" name="oarstat">2.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id15" id="oarstat" name="oarstat">2.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></h3>
 <p>This command prints jobs in execution mode on the terminal.</p>
 <p>Options</p>
 <pre class="literal-block">
--f    prints each job in full details
--a    prints more details and keeps table format
+-f        : prints each job in full details
+-j job_id : prints the specified job_id informations (even if it is finished)
+-D        : formats outputs in Perl Dumper
+-X        : formats outputs in XML
+-Y        : formats outputs in YAML
 </pre>
 <p>Examples</p>
 <pre class="literal-block">
 # oarstat
-# oarstat -f
+# oarstat -j 42 -f
 </pre>
 </div>
-<div class="section" id="oarnodes">
-<h3><a class="toc-backref" href="#id10" name="oarnodes">2.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></h3>
-<p>This command prints informations about cluster nodes (state, which jobs on
-which nodes, node properties, ...)</p>
-<p>Example</p>
+<div class="section">
+<h3><a class="toc-backref" href="#id16" id="oarnodes" name="oarnodes">2.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></h3>
+<p>This command prints informations about cluster resources (state, which jobs on
+which resources, resource properties, ...).</p>
+<p>Options</p>
+<pre class="literal-block">
+-a : show all resources with their properties
+-s : show only resource states
+-l : show only resource list
+-D        : formats outputs in Perl Dumper
+-X        : formats outputs in XML
+-Y        : formats outputs in YAML
+</pre>
+<p>Examples</p>
 <pre class="literal-block">
 # oarnodes
+# oarnodes -s
 </pre>
 </div>
-<div class="section" id="oarsub">
-<h3><a class="toc-backref" href="#id11" name="oarsub">2.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id17" id="oarsub" name="oarsub">2.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></h3>
 <p>The user can submit a job with this command. So, what is a job in our context?</p>
 <blockquote>
 <p>A job is defined by needed resources and a script/program to run. So, the user
-must specify how many nodes and what kind of resources needed by his
+must specify how many resources and what kind of them are needed by his
 application. Thus, OAR system will give him or not what he wants and will
 control the execution. When a job is launched, OAR executes user program only
 on the first reservation node. So this program can access some environnement
 variables to know its environnement</p>
 <pre class="literal-block">
-$OAR_NODEFILE    contains the name of a file which lists all reserved nodes
-                 for this job
-$OAR_JOBID       contains the OAR job identificator
-$OAR_NB_NODES    contains the number of reserved nodes
+$OAR_NODEFILE                 contains the name of a file which lists all reserved nodes for this job
+$OAR_JOBID                    contains the OAR job identificator
+$OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists all resources and their properties
+$OAR_NB_NODES                 contains the number of reserved nodes
 </pre>
 </blockquote>
 <p>Options:</p>
 <pre class="literal-block">
 -q &quot;queuename&quot; : specify the queue for this job
 -I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a script)
--l : defines resource list requested for this job; the different parameters are: 
+-l : defines resource list requested for this job; the different parameters are:
       nodes : request number of nodes
       weight : the weight that you want to reserve on each node
       walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|hour];
-                 after this elapsed time, the job will be killed 
+                 after this elapsed time, the job will be killed
 -p &quot;properties&quot; : specify with SQL syntax reservation properties
 -r &quot;2004-05-11 23:32:03&quot; : ask for a reservation job to begin at the date in argument
 -c jobId : connect to a reservation in Running state
 -v : turn on verbose mode
 </pre>
-<p>Exemples</p>
+<p>Examples</p>
 <pre class="literal-block">
 # oarsub test.sh
 </pre>
-<p>(the &quot;test.sh&quot; script will be run on 1 node of default weight in the default 
+<p>(the &quot;test.sh&quot; script will be run on 1 node of default weight in the default
 queue with a walltime of 1 hour)</p>
 <pre class="literal-block">
 # oarsub -l nodes=2,walltime=2:15:00 test.sh
@@ -391,8 +822,8 @@ queue with a walltime of  2:15:00)</p>
 </pre>
 <p>(gives a shell on a node)</p>
 </div>
-<div class="section" id="oardel">
-<h3><a class="toc-backref" href="#id12" name="oardel">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id18" id="oardel" name="oardel">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></h3>
 <p>The user can delete his jobs with this command.</p>
 <p>Exemples</p>
 <pre class="literal-block">
@@ -401,28 +832,28 @@ queue with a walltime of  2:15:00)</p>
 <p>(delete job 14)</p>
 </div>
 </div>
-<div class="section" id="visualisation-tools">
-<h2><a class="toc-backref" href="#id13" name="visualisation-tools">2.2&nbsp;&nbsp;&nbsp;Visualisation tools</a></h2>
-<div class="section" id="monika">
-<h3><a class="toc-backref" href="#id14" name="monika">2.2.1&nbsp;&nbsp;&nbsp;Monika</a></h3>
+<div class="section">
+<h2><a class="toc-backref" href="#id19" id="visualisation-tools" name="visualisation-tools">2.2&nbsp;&nbsp;&nbsp;Visualisation tools</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id20" id="monika" name="monika">2.2.1&nbsp;&nbsp;&nbsp;Monika</a></h3>
 <p>This is a web cgi normally installed on the cluster frontal. This tool executes
 <em>oarnodes</em> and <em>oarstat</em> then format data in a html page.</p>
 <p>Thus you can have a global view of cluster state and where your jobs are running.</p>
 </div>
-<div class="section" id="drawoargantt">
-<h3><a class="toc-backref" href="#id15" name="drawoargantt">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id21" id="drawoargantt" name="drawoargantt">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></h3>
 <p>This is also a web cgi. It creates a Gantt chart which shows job repartition on
 nodes in the time. It is very usefull to see cluster occupation in the past
 and to know when a job will be launched in the futur.</p>
 </div>
 </div>
 </div>
-<div class="section" id="administrator-guide">
-<h1><a class="toc-backref" href="#id16" name="administrator-guide">3&nbsp;&nbsp;&nbsp;Administrator guide</a></h1>
-<div class="section" id="administrator-commands">
-<h2><a class="toc-backref" href="#id17" name="administrator-commands">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a></h2>
-<div class="section" id="oarnodesetting">
-<h3><a class="toc-backref" href="#id18" name="oarnodesetting">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></h3>
+<div class="section">
+<h1><a class="toc-backref" href="#id22" id="administrator-guide" name="administrator-guide">3&nbsp;&nbsp;&nbsp;Administrator guide</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id23" id="administrator-commands" name="administrator-commands">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id24" id="oarnodesetting" name="oarnodesetting">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></h3>
 <p>This command permits to change the state or a property of a node. If it does
 not exist it is created.</p>
 <p>By default the node name used by <em>oarnodesetting</em> is the result of the command
@@ -452,28 +883,28 @@ on this node when you change its state into &quot;Absent&quot; or &quot;Dead&quo
 </ul>
 </blockquote>
 </div>
-<div class="section" id="oarremovenode">
-<h3><a class="toc-backref" href="#id19" name="oarremovenode">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id25" id="oarremovenode" name="oarremovenode">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></h3>
 <p>This command permits to remove a node from the database.</p>
 <p>The node must be in the state &quot;Dead&quot; (use <em>oarnodesetting</em> to do this) and then
 you can use this command to delete it.</p>
 </div>
-<div class="section" id="oaraccounting">
-<h3><a class="toc-backref" href="#id20" name="oaraccounting">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id26" id="oaraccounting" name="oaraccounting">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></h3>
 <p>This command permits to update the <em>accounting</em> table for jobs ended since the
 last launch.</p>
 </div>
-<div class="section" id="oarnotify">
-<h3><a class="toc-backref" href="#id21" name="oarnotify">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id27" id="oarnotify" name="oarnotify">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></h3>
 <p>This command sends commands to the &quot;Almighty&quot; module. It is dedicated to
 developpers.</p>
 <p>You can use the &quot;-v&quot; option to show the OAR version.</p>
 </div>
 </div>
-<div class="section" id="database-scheme">
-<h2><a class="toc-backref" href="#id22" name="database-scheme">3.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
-<div class="section" id="accounting">
-<h3><a class="toc-backref" href="#id23" name="accounting">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
+<div class="section">
+<h2><a class="toc-backref" href="#id28" id="database-scheme" name="database-scheme">3.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id29" id="accounting" name="accounting">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -551,8 +982,8 @@ UPDATE jobs SET accounted = &quot;NO&quot;;
 <p>You can change the amount of time for each window : edit the oar configuration
 file and change the value of the tag <em>ACCOUNTING_WINDOW</em>.</p>
 </div>
-<div class="section" id="admissionrules">
-<h3><a class="toc-backref" href="#id24" name="admissionrules">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id30" id="admissionrules" name="admissionrules">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -630,7 +1061,7 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
         AND besteffort = \\\\\\&quot;YES\\\\\\&quot;&quot;;
     }else{
         $jobproperties = &quot;besteffort = \\\\\\&quot;YES\\\\\\&quot;&quot;;
-    } 
+    }
 }');
 </pre>
 </li>
@@ -650,8 +1081,8 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
 </ul>
 </blockquote>
 </div>
-<div class="section" id="event-log">
-<h3><a class="toc-backref" href="#id25" name="event-log">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id31" id="event-log" name="event-log">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -740,8 +1171,8 @@ because a normal job wanted the nodes.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="files">
-<h3><a class="toc-backref" href="#id26" name="files">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id32" id="files" name="files">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -792,8 +1223,8 @@ because a normal job wanted the nodes.</li>
 </tbody>
 </table>
 </div>
-<div class="section" id="fragjobs">
-<h3><a class="toc-backref" href="#id27" name="fragjobs">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id33" id="fragjobs" name="fragjobs">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -847,8 +1278,8 @@ asked Leon to clean up the database.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="ganttjobsnodes">
-<h3><a class="toc-backref" href="#id28" name="ganttjobsnodes">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id34" id="ganttjobsnodes" name="ganttjobsnodes">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -884,8 +1315,8 @@ asked Leon to clean up the database.</li>
 </table>
 <p>This table specifies which node is attributed to which job.</p>
 </div>
-<div class="section" id="ganttjobsnode-visu">
-<h3><a class="toc-backref" href="#id29" name="ganttjobsnode-visu">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id35" id="ganttjobsnode-visu" name="ganttjobsnode-visu">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -922,8 +1353,8 @@ asked Leon to clean up the database.</li>
 <p>This table is the same as <em>ganttJobsNode</em> and is used by visualisation tools.
 It is made up to date in an atomic action (with a lock).</p>
 </div>
-<div class="section" id="ganttjobsprediction">
-<h3><a class="toc-backref" href="#id30" name="ganttjobsprediction">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id36" id="ganttjobsprediction" name="ganttjobsprediction">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -968,8 +1399,8 @@ taken by the schedulers for each waiting jobs.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="ganttjobsprediction-visu">
-<h3><a class="toc-backref" href="#id31" name="ganttjobsprediction-visu">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id37" id="ganttjobsprediction-visu" name="ganttjobsprediction-visu">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1006,8 +1437,8 @@ taken by the schedulers for each waiting jobs.</p>
 <p>This table is the same as <em>ganttJobsPrediction</em> and is used by visualisation
 tools. It is made up to date in an atomic action (with a lock).</p>
 </div>
-<div class="section" id="jobs">
-<h3><a class="toc-backref" href="#id32" name="jobs">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id38" id="jobs" name="jobs">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="23%" />
@@ -1160,8 +1591,8 @@ scheduler.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="nodeproperties">
-<h3><a class="toc-backref" href="#id33" name="nodeproperties">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id39" id="nodeproperties" name="nodeproperties">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1224,8 +1655,8 @@ ALTER TALE nodeProperties ADD memory INT DEFAULT 256;
 nodes.</p>
 <p>These properties can be updated with the <em>oarnodesetting</em> command (&quot;-p&quot; option).</p>
 </div>
-<div class="section" id="nodestate-log">
-<h3><a class="toc-backref" href="#id34" name="nodestate-log">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id40" id="nodestate-log" name="nodestate-log">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1277,8 +1708,8 @@ decision</td>
 </table>
 <p>This table keeps informations about state changes of nodes.</p>
 </div>
-<div class="section" id="nodes">
-<h3><a class="toc-backref" href="#id35" name="nodes">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id41" id="nodes" name="nodes">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="23%" />
@@ -1351,15 +1782,15 @@ a &quot;finaud&quot; module decision</td>
 computer can come back.</li>
 <li>&quot;Suspected&quot; : OAR system has detected a problem on this node and so has
 supectected it (you can look in the <em>event_log</em> table to know what has
-happened). This computer can come back (automatically if this is a 
+happened). This computer can come back (automatically if this is a
 &quot;finaud&quot; module decision).</li>
 <li>&quot;Dead&quot; : The oar administrator considers that the node will not come back
 and will be removed from the pool.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="processjobs">
-<h3><a class="toc-backref" href="#id36" name="processjobs">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id42" id="processjobs" name="processjobs">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1396,8 +1827,8 @@ and will be removed from the pool.</li>
 <p>This table keeps information for running jobs on which nodes they are
 scheduled.</p>
 </div>
-<div class="section" id="processjobs-log">
-<h3><a class="toc-backref" href="#id37" name="processjobs-log">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id43" id="processjobs-log" name="processjobs-log">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1434,8 +1865,8 @@ scheduled.</p>
 <p>It is a log table for terminated jobs. It keeps the information on which nodes
 was scheduled a job.</p>
 </div>
-<div class="section" id="queue">
-<h3><a class="toc-backref" href="#id38" name="queue">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></h3>
+<div class="section">
+<h3><a class="toc-backref" href="#id44" id="queue" name="queue">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1485,8 +1916,8 @@ Executables are launched one after one in the specified priority.</p>
 </div>
 </div>
 </div>
-<div class="section" id="configuration-file">
-<h1><a class="toc-backref" href="#id39" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
+<div class="section">
+<h1><a class="toc-backref" href="#id45" id="configuration-file" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
 <p>This is the meanings for each configuration tags that you can find in /etc/oar.conf:</p>
 <blockquote>
 <ul>
@@ -1544,7 +1975,7 @@ SENTINELLE_COMMAND=/usr/bin/sentinelle -cconnect=ssh,timeout=3000
 </li>
 <li><p class="first">OAR fping:</p>
 <pre class="literal-block">
-FPING_COMMAND=/usr/bin/fping -q 
+FPING_COMMAND=/usr/bin/fping -q
 </pre>
 </li>
 <li><p class="first">OAR nmap : it will test to connect on the ssh port (22):</p>
@@ -1613,11 +2044,11 @@ STAGEIN_CACHE_EXPIRY=144
 </ul>
 </blockquote>
 </div>
-<div class="section" id="module-description">
-<h1><a class="toc-backref" href="#id40" name="module-description">5&nbsp;&nbsp;&nbsp;Module description</a></h1>
+<div class="section">
+<h1><a class="toc-backref" href="#id46" id="module-description" name="module-description">5&nbsp;&nbsp;&nbsp;Module description</a></h1>
 <p>OAR can be decomposed into several modules which perform different tasks.</p>
-<div class="section" id="almighty">
-<h2><a class="toc-backref" href="#id41" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id47" id="almighty" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
 <p>This module is the OAR server. It decides what actions must be performed. It
 is divided into 2 processes:</p>
 <blockquote>
@@ -1629,8 +2060,8 @@ modules one after one.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="sarko">
-<h2><a class="toc-backref" href="#id42" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id48" id="sarko" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
 <p>This module is executed periodically by the Almighty (default is every
 30 seconds).</p>
 <p>The jobs of Sarko are :</p>
@@ -1644,13 +2075,13 @@ asks to change its state into &quot;Suspected&quot;.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="judas">
-<h2><a class="toc-backref" href="#id43" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id49" id="judas" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
 <p>This is the module dedicated to print and log every debugging, warning and
 error text.</p>
 </div>
-<div class="section" id="leon">
-<h2><a class="toc-backref" href="#id44" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id50" id="leon" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
 <p>This module is in charge of the frag of jobs. Other OAR modules or commands
 can ask to kill a job and this is Leon which perform that.</p>
 <p>There are 2 frag types :</p>
@@ -1663,19 +2094,19 @@ then Leon notifies this case and clean up the database for these jobs.</li>
 </ul>
 </blockquote>
 </div>
-<div class="section" id="nodechangestate">
-<h2><a class="toc-backref" href="#id45" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id51" id="nodechangestate" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
 <p>This module is in charge of changing node states and check if there are jobs
 on these.</p>
 </div>
-<div class="section" id="scheduler">
-<h2><a class="toc-backref" href="#id46" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id52" id="scheduler" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
 <p>This module checks for each reservation job it validity and the moment to
 launch it. And it launches all gantt scheduler in the order of the priority
 of the database.</p>
 </div>
-<div class="section" id="runner">
-<h2><a class="toc-backref" href="#id47" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
+<div class="section">
+<h2><a class="toc-backref" href="#id53" id="runner" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
 <p>This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.</p>
 </div>
@@ -1683,7 +2114,8 @@ with all modules.</p>
 </div>
 <div class="footer">
 <hr class="footer" />
-Generated on: 2005-11-09 09:55 UTC.
+<a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
+Generated on: 2006-06-21 14:05 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

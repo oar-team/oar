@@ -1,5 +1,5 @@
 What are "oarsh" and "oarsh_shell" scripts?
-===========================================
+...........................................
 
 "oarsh" and "oarsh_shell" are two scripts that can restrict user processes to
 stay in the same cpuset on all nodes.
@@ -8,8 +8,8 @@ This feature is very usefull to restrict processor consumption on
 multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
-CPUSET
-------
+CPUSET definition
+.................
 
 CPUSET is a module integrated in the Linux kernel since 2.6.x.
 In the kernel documentation, you can read::
@@ -65,7 +65,7 @@ In the kernel documentation, you can read::
 
 
 OARSH
------
+.....
 
 "oarsh" is a wrapper around the "ssh" command (tested with openSSH).
 Its goal is to propagate two environment variables:
@@ -80,7 +80,7 @@ connect himself on each cluster nodes (if oarsh is installed everywhere).
 
 
 OARSH_SHELL
------------
+...........
 
 "oarsh_shell" must be the shell of the oar user on each nodes where you want
 oarsh to worked.
@@ -90,7 +90,7 @@ executes the right command (like ssh).
 
 
 NOTES
------
+.....
 
     - On each nodes you must add the line::
 
