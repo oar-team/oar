@@ -104,20 +104,33 @@ Options::
                   
   -q "queuename" : specify the queue for this job
   -I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a script)
-  -l : defines resource list requested for this job; the different parameters are: 
+  -l "resource description" : defines resource list requested for this job; the different parameters are: 
         nodes : request number of nodes
         weight : the weight that you want to reserve on each node
         walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|hour];
                    after this elapsed time, the job will be killed 
   -p "properties" : specify with SQL syntax reservation properties
-  -r "2004-05-11 23:32:03" : ask for a reservation job to begin at the date in argument
-  -c jobId : connect to a reservation in Running state
+  -r "2007-05-11 23:32:03" : ask for a reservation job to begin at the date in argument
+  -C job_id : connect to a reservation in Running state
   -v : turn on verbose mode
+  -k "duration" : enable the job to be checkpointed
+  --signal "signal name" :
+  -t "type name" :
+  -d "directory path" : 
+  -n "job name" : 
+  -a job_id
+  --notify "method" :
+  --stdout "file name" :
+  --stderr "file name" :
+  --resubmit job_id : 
+  --force_cpuset_name "cpuset name" :
+  
+  
 
 Examples
 ::
 
-    # oarsub test.sh
+  # oarsub test.sh
 
 (the "test.sh" script will be run on 1 node of default weight in the default 
 queue with a walltime of 1 hour)
@@ -142,6 +155,11 @@ queue with a walltime of  2:15:00)
 ~~~~~~~~
 
 The user can delete his jobs with this command.
+
+Option
+::
+  
+  -c job_id : send checkpoint signal to the job
 
 Exemples
 ::

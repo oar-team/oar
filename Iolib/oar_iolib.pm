@@ -1386,17 +1386,23 @@ sub hold_job($$) {
 
     my $job = get_job($dbh, $idJob);
 
-    if ((defined($job)) && ((($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")) && ($job->{'state'} eq "Waiting"))) {
-        my $sth = $dbh->prepare("   UPDATE jobs
-                                    SET state = \'Hold\'
-                                    WHERE
-                                        job_id = $idJob
-                                ");
-        $sth->execute();
-        $sth->finish();
-        return 0;
-    } else {
-        return -1;
+    if (defined($job)){
+        if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
+            if ($job->{'state'} eq "Waiting"){
+                $dbh->do("  UPDATE jobs
+                            SET state = \'Hold\'
+                            WHERE
+                                job_id = $idJob
+                         ");
+                return 0;
+            }else{
+                return(-3);
+            }
+        }else{
+            return(-2);
+        }
+    }else{
+        return(-1);
     }
 }
 
@@ -1420,17 +1426,21 @@ sub resume_job($$) {
 
     my $job = get_job($dbh, $idJob);
 
-    if ((defined($job)) && ((($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root"))  && ($job->{'state'} eq "Hold"))) {
-        my $sth = $dbh->prepare("   UPDATE jobs
-                                    SET state = \'Waiting\'
-                                    WHERE
-                                        job_id = $idJob
-                                ");
-        $sth->execute();
-        $sth->finish();
-        return 0;
+    if (defined($job)){
+        if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
+            if ($job->{'state'} eq "Hold"){
+                $dbh->do("  UPDATE jobs
+                            SET state = \'Waiting\'
+                            WHERE
+                                job_id = $idJob
+                         ");
+                return(0);
+            }
+            return(-3);
+        }
+        return(-2);
     } else {
-        return -1;
+        return(-1);
     }
 }
 

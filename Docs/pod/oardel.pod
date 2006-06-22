@@ -1,14 +1,30 @@
 =head1 NAME
 
-oardel - delete job from OAR batch scheduler.
+oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [idjob]
+B<oardel> [ [-c job_id] | [job_id] ] [-h] [-v]
 
 =head1 DESCRIPTION
 
-This command is used to delete job(s) from OAR batch scheduler. Job is designed by its job's identifier.
+This command is used to delete or checkpoint job(s). Jobs are designed by their job's identifier.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-c, --checkpoint> job_id
+
+Send the checkpoint signal designed from the "--signal" oarsub command option (default is SIGUSR2) to the process launched by the job "job_id"
+
+=item B<-v, --version>
+
+Print OAR version number.
+
+=item B<-h, --help>
+
+Print help command message.
 
 =head1 SEE ALSO
 

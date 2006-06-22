@@ -4,33 +4,30 @@ oarsub - submit a job to OAR batch scheduler.
 
 =head1 SYNOPSIS
 
-B<oarsub> [B<-l> resource_list][B<-q> queuename][B<-p> property_query][B<-I>][B<-v>][B<-r> date][B<-c> job id][script|program][B<-s> stagein_directory][B<-m> stagein_md5sum]
+B<oarsub> [OPTIONS] [-C|-I|<SCRIPT>]
 
 =head1 DESCRIPTION
 
-This command is used to submit jobs a to OAR batch scheduler. Jobs can be a program or a script which contains description of this job.
+This command is used to submit a job to OAR batch scheduler. Jobs can be a program or a script which contains description of this job.
 
 
 =head1 OPTIONS
 
 =over
 
-=item B<-l, --resource> resource=value[,[resource=value]...]
+=item B<-l, --resource> /property1=number1/property2=number2/...,walltime=3:20:00
 
 Defines resource list requested for a job.
 
-Defined resources :
-  nodes : Request number of nodes (special value "all" is replaced by the number of free nodes corresponding to the weight and properties; special value "max" is replaced by the number of free,absent and suspected nodes corresponding to the weight and properties).
-  walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|mn]
-  weight : the weight that you want to reserve on each node
+You can get resource property names with the command oarnodes.
 
 =item B<-q, --queue> queuename
 
-Specifies the destination queue. If not defined the job is enqueued in default queue
+Specifies the destination queue.
 
 =item B<-p, --property> property
 
-Specify with SQL syntax reservation properties.
+Specify (with the SQL syntax) job properties.
 
 =item B<-I, --interactive>
 
@@ -41,13 +38,13 @@ Give you a shell on the first reserved node.
 
 Ask for a reservation job on the date in argument
 
-=item B<-c, --connect> jobId
+=item B<-C, --Connect> job_id
 
 Connect to a reservation in Running state
 
 =item B<-v, --verbose>
 
-verbose mode.
+Print OAR version number.
 
 =item B<-s, --stagein> directory|tgz
 
@@ -57,11 +54,65 @@ Set the stagein directory or archive.
 
 Set the stagein file md5sum.
 
+=item B<-k, --checkpoint> number_of_seconds
+
+Ask OAR to send the checkpoint signal to the first processus of the job "number_of_seconds" before the walltime (default signal is SIGUSR2).
+
+=item B<--signal> number
+
+specify the signal to use when checkpointing.
+
+=item B<-t, --type> type
+
+Specify a specific type (deploy, besteffort, cosystem, checkpoint).
+
+=item B<-d, --directory> path
+
+Specify the directory where to launch the command (default is current directory).
+
+=item B<-n, --name> string
+
+Specify an arbitrary name for the job.
+
+=item B<-a, --anterior> job_id
+
+Anterior job that must be terminated to start this new one.
+
+=item B<--notify> string
+
+specify a notification method(mail or program to launch); ex:
+    --notify "mail:name@domain.com"
+    --notify "exec:/path/to/script args"
+
+=item B<--stdout> string
+
+Specify the name of the standard output file.
+
+=item B<--stderr> string
+
+Specify the name of the error output file.
+
+=item B<--resubmit> job_id
+
+Resubmit the given job to a new one.
+
+=item B<--force_cpuset_name>
+
+Instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer).
+
+=item B<-v, --version>
+
+Print OAR version number.
+
+=item B<-h, --help>
+
+Print help message.
+
 =back
 
 =head1 SCRIPT
 
-Script can contain the description of the job. Lines with options must begin by the key B<#OAR>. There the same options as previous.
+Script can contain the description of the job. Lines with options must begin by the key B<#OAR>. There are the same options as previous.
 
 =head1 EXAMPLE
 
@@ -69,13 +120,13 @@ Job submission with arguments :
 
 =over
 
-=item oarsub -l nodes=4 -I
+=item oarsub -l /node=4 -I
 
-=item oarsub -q default -l walltime=50:30:00,nodes=10,weight=1 -p "switch = 'sw1'" /home/users/toto/prog
+=item oarsub -q default -l walltime=50:30:00,/node=10/cpu=3 -p "switch = 'sw1'" /home/users/toto/prog
 
-=item oarsub -r "2004-04-27 11:00:00" -l nodes=12,weight=2
+=item oarsub -r "2004-04-27 11:00:00" -l /node=12/cpu=2
 
-=item oarsub -c 154 -I
+=item oarsub -C 154
 
 =back
 
@@ -83,7 +134,7 @@ Script example:
 
 =over
 
-=item #OAR -l nodes=4
+=item #OAR -l /node=4
 
 =item #OAR -q long -l walltime=2:30
 

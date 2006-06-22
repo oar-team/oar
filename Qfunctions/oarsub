@@ -13,6 +13,7 @@ use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use File::Temp qw/ tempfile /;
 use oar_Tools;
+use oarversion;
 
 #For interactive
 my $remote_host;
@@ -172,7 +173,7 @@ sub connect_job($$$){
 #Print help message
 sub usage() {
     print <<EOS;
-Usage: oarsub [OPTIONS] [-I|<SCRIPT>]
+Usage: $0 [OPTIONS] [-I|-C|<SCRIPT>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --Interactive             request an interactive job
@@ -197,6 +198,7 @@ Options are:
      --resubmit                resubmit the given job to a new one
      --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
  -h, --help                    print this help message
+ -v, --version                 print OAR version number
 EOS
 }
 
@@ -232,7 +234,7 @@ $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
 
 Getopt::Long::Configure ("gnu_getopt");
-
+my $Version;
 GetOptions ("resource|l=s" => \@resource,
             "queue|q=s"   => \$Queue_name,
             "Interactive|I"  => \$Interactive,
@@ -252,8 +254,15 @@ GetOptions ("resource|l=s" => \@resource,
 	    "stdout=s" => \$Stdout_file,
 	    "stderr=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
-            "force_cpuset_name=s" => \$Cpuset_name
+            "force_cpuset_name=s" => \$Cpuset_name,
+            "version|v" => \$Version
            );
+
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
 
 if (defined($sos)){
     usage();

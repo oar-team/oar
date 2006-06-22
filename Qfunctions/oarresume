@@ -8,30 +8,65 @@ use DBI();
 use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
+use oarversion;
+use Getopt::Long;
 
 sub usage {
-    warn("usage: qresume [idJob]\n");
-    exit 1;
+    print <<EOS;
+Usage: $0 job_id | -h | -v
+Change job_id state into Waiting when it is in Hold one.
+  -h, --help    show this help screen
+  -v, --version print OAR version number
+EOS
+}
+
+my $Version;
+my $Help;
+
+GetOptions (
+    "version|v" => \$Version,
+    "help|h" => \$Help
+           );
+
+if (defined($Help)){
+    usage();
+    exit(0);
+}
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
 }
 
 init_conf($ENV{OARCONFFILE});
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
-usage if (@ARGV < 1);
+if (($#ARGV < 0) or ($ARGV[0] !~ m/^\d+$/m)){
+    usage();
+    exit(1);
+}
 
 my $idJob = $ARGV[0];
-print("idJob = $idJob\n");
+print("Job_id = $idJob\n");
 
 my $base = iolib::connect();
 my $err = iolib::resume_job($base,$idJob);
 iolib::disconnect($base);
 
 if ($err != 0) {
-    warn("Cannot resume $idJob error = $err\n");
-    exit 1;
+    print("/!\\ Cannot resume $idJob : ");
+    if ($err == -1){
+        print("this job does not exist.\n");
+    }elsif ($err == -2){
+        print("you are not the right user.\n");
+    }elsif ($err == -3){
+        print("the job is not in the Waiting state.\n");
+    }else{
+        print("unknown reason.\n");
+    }
+    exit(1);
 }
-
 #Signal Almigthy
 
 oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qresume");

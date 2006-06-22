@@ -231,7 +231,7 @@ sub comportement_appendice(){
 # initial stuff that has to be done
 sub init(){
     if(!(pipe (TATA, YOYO))){
-        oar_error("[Almighty] Can't open pipe !!!\n");
+        oar_error("[Almighty] Cannot open pipe !!!\n");
         exit(5);
     }
 
@@ -244,15 +244,15 @@ sub init(){
                                     Listen => $servermaxconnect);
     #or die "ARG.... Can't open server socket\n";
     if (!defined($server)){
-        warn("ARG.... Can't open server socket, an Almighty process must be already started\n");
-        oar_error("[Almighty] ARG.... Can't open server socket, an Almighty process must be already started\n");
+        warn("ARG.... Cannot open server socket, an Almighty process must be already started\n");
+        oar_error("[Almighty] ARG.... Cannot open server socket, an Almighty process must be already started\n");
         exit(4);
     }
 
     $appendice_pid = fork();
 
     if(!defined($appendice_pid)){
-        oar_error("[Almighty] Can t fork appendice\n");
+        oar_error("[Almighty] Cannot fork appendice\n");
         exit(6);
     }
     if (!$appendice_pid){

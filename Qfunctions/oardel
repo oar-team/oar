@@ -11,16 +11,22 @@ use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 use Getopt::Long;
+use oarversion;
 
 my $exitValue = 0;
 
 # Display command help
 sub usage {
-    warn("usage: oardel [ [-c idJob] | [idJob] ]\n");
-    exit 1;
+    print <<EOS;
+Usage: $0 [ [-c job_id] | [job_id] ] [-h] [-v]
+Delete or send checkpoint signal to jobs.
+Options:
+  -h, --help              show this help screen
+  -c, --checkpoint job_id send checkpoint signal to the job_id
+  -v, --version           print OAR version number
+EOS
+    exit(1);
 }
-
-usage if (@ARGV < 1);
 
 # Retrieve informations from OAR configuration file
 init_conf($ENV{OARCONFFILE});
@@ -34,11 +40,21 @@ $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 Getopt::Long::Configure("gnu_getopt");
 my @checkpoint;
 my $sos;
+my $Version;
 GetOptions ("checkpoint|c=s" => \@checkpoint,
-            "help|h" => \$sos
+            "help|h" => \$sos,
+            "version|v" => \$Version
            );
 
-usage if (defined($sos));
+if (defined($sos)){
+    usage();
+    exit(0);
+}
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
 
 my $base = iolib::connect();
 # oardel is used to checkpoint some jobs
@@ -92,6 +108,11 @@ if (@checkpoint){
         }
     }
 }else{
+    if ($#ARGV < 0){
+        usage();
+        iolib::disconnect($base);
+        exit(1);
+    }
     # oardel is used to delete some jobs
     my @jobRegistered;
     foreach my $idJob (@ARGV) {

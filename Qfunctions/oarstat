@@ -7,6 +7,7 @@ use warnings;
 use Data::Dumper;
 use oar_iolib;
 use Getopt::Long;
+use oarversion;
 
 #Try to load XML module
 my $XML_enabled = 1;
@@ -38,18 +39,20 @@ my $gantt_query;
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
+my $Version;
 GetOptions ("help|h" => \$sos,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
             "gantt|g=s"   => \$gantt_query,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
-            "DUMPER|D" => \$DUMPER_mode
+            "DUMPER|D" => \$DUMPER_mode,
+            "version|v" => \$Version
            );
 
 if ($sos){
     print <<EOS;
-Usage: $0 [[-h] | [-j job_id][-f] | [-g "date,date"]] [-X | -Y | -D]
+Usage: $0 [[-h] | [-j job_id][-f] | [-g "date,date"]] [-X | -Y | -D] [-v]
 Display job informations
 Options:
   -h, --help    show this help screen
@@ -59,7 +62,13 @@ Options:
   -D, --DUMPER  print result in DUMPER format
   -X, --XML     print result in XML format
   -Y, --YAML    print result in YAML format
+  -v, --version print OAR version number
 EOS
+    exit(0);
+}
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
     exit(0);
 }
 

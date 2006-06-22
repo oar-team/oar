@@ -4,34 +4,47 @@ oarstat - show job's informations.
 
 =head1 SYNOPSIS
 
-B<oarstat> [B<-a>] [B<-s>] [B<-f>] [B<-x>] [B<-j> idJob] [B<-h> "date_start,date_stop" [B<-d>]]
+B<oarstat> [[-h] | [-j job_id][-f] | [-g "date_start,date_stop"]] [-X | -Y | -D] [-v]
 
 =head1 DESCRIPTION
 
-This command is used to show information of job in OAR batch scheduler.
+This command is used to show informations of jobs in OAR batch scheduler.
 
 =head1 OPTIONS
 
 =over
 
-=item B<-a>
-print more informations
+=item B<-f, --full>
 
-=item B<-s>
-give some stats about state of nodes
+Very detailed display.
 
-=item B<-f>
-very detailed display
+=item B<-j, --job> job_id
 
-=item B<-x>
-detailed display
+Print informations from a specific job.
 
-=item B<-j> idJob;
-print detailed informations from a specific job
+=item B<-g, --gantt> "date_start,date_stop"
 
-=item B<-h> "date_start,date_stop"
-print history of jobs and state of nodes between two dates.
-(you can use B<-d> option to print a dumper format)
+Print history of jobs and state of resources between two dates.
+
+=item B<-D, --DUMPER>
+
+Print result in DUMPER format.
+
+=item B<-X, --XML>
+
+Print result in XML format.
+
+=item B<-Y, --YAML>
+
+Print result in YAML format.
+
+=item B<-v, --version>
+
+Print OAR version number.
+
+=item B<-h, --help>
+
+Print help message.
 
 =back
 

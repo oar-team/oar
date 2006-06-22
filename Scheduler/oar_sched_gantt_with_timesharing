@@ -1,4 +1,5 @@
-#!/usr/bin/perl  -d:DProf
+#!/usr/bin/perl
+#-d:DProf
 
 use strict;
 use DBI();

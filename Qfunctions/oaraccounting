@@ -6,6 +6,31 @@ use warnings;
 use Data::Dumper;
 use oar_iolib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Getopt::Long;
+use oarversion;
+
+Getopt::Long::Configure ("gnu_getopt");
+my $Version;
+my $Help;
+GetOptions (
+    "help|h" => \$Help,
+    "version|v" => \$Version
+           );
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n") ;
+    exit(0);
+}
+
+if (defined($Help)){
+     print <<EOS;
+Usage: $0 [-h] [-v]
+Feed accounting table to make usage statistics.
+Options:
+  -h, --help    show this help screen
+  -v, --version print OAR version number
+EOS
+    exit(0);
+}
 
 # Default window size
 my $windowSize = 86400;

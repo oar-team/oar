@@ -9,6 +9,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Sys::Hostname;
 use Getopt::Long;
 use oar_Tools;
+use oarversion;
 
 $| = 1;
 
@@ -112,6 +113,7 @@ Options:
  -n, --nowait                    do not wait for job end when the node
                                  switches to Absent or Dead
      --help                      display this help
+ -v, --version                   print OAR version number
 N.B.:
  - The states allowed are: Alive, Absent or Dead.
  - If not specified, the hostname will be retrieved via the 'hostname'
@@ -122,6 +124,7 @@ EOS
 }
 
 
+my $Version;
 # Options on arg command line
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
@@ -130,10 +133,16 @@ GetOptions ("state|s=s" => \$state,
             "property|p=s" => \@properties,
             "add|a" => \$new_resource,
             "help" => \$sos,
-            "resource|r=i" => \$resource
+            "resource|r=i" => \$resource,
+            "version|v" => \$Version
            );
 
 usage() if (defined($sos));
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
 
 defined(@properties) || defined($state) || defined($new_resource) or usage();
 if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){

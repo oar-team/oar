@@ -4,11 +4,11 @@ oarnodes - show occupation and state of compute nodes.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ B<-a> | B<-s> | B<-l> | B<-h> ] [list of nodes]
+B<oarnodes> [ -a | -s | -l | -h | -v ] [list of nodes] [-X | -Y | -D]
 
 =head1 DESCRIPTION
 
-This command is used to the state and occupation of compute nodes in OAR batch scheduler.
+This command is used to display the state and occupation of compute nodes in OAR batch scheduler.
 
 =head1 OPTION
 
@@ -16,24 +16,40 @@ This command is used to the state and occupation of compute nodes in OAR batch s
 
 =item B<-a, --all>
 
-Show all nodes with their properties
+Show all resources with their properties.
 
 =item B<-s, --state>
 
-Show only node states
+Show only resource states.
 
 =item B<-l, --list>
 
-Show only node list
+Show only node list.
+
+=item B<-D, --DUMPER>
+
+Print result in DUMPER format.
+
+=item B<-X, --XML>
+
+Print result in XML format.
+
+=item B<-Y, --YAML>
+
+Print result in YAML format.
+
+=item B<-v, --version>
+
+Print OAR version number.
 
 =item B<-h, --help>
 
-Show help usage
+Show help usage.
 
 
 =head1 SEE ALSO
 
-oarsub(1), oardel(1), oarstat(1), oarhold(1), oarresume(1)
+oarsub(1), oarde), oarstat(1), oarhold(1), oarresume(1)
 
 =head1 COPYRIGHTS
 

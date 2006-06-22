@@ -12,6 +12,7 @@ use warnings;
 use oar_iolib;
 use oar_conflib qw(init_conf get_conf is_conf);
 use Getopt::Long;
+use oarversion;
 
 # The functions are appended at the end of this file
 sub print_usage();
@@ -23,15 +24,21 @@ my ($Help,  $List_properties, $Quiet, $Varchar);
 my @Add_property;
 my @Delete_property;
 my @Rename_property;
-
+my $Version;
 GetOptions( "help|h"   => \$Help,
             "add|a=s"    => \@Add_property,
             "delete|d=s" => \@Delete_property,
             "rename|r=s" => \@Rename_property,
             "list|l"   => \$List_properties,
             "quiet|q"  => \$Quiet,
-            "varchar|c"  => \$Varchar
+            "varchar|c"  => \$Varchar,
+            "version|v" => \$Version
           );
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
 
 if ($Help || (($#Add_property < 0) and ($#Delete_property < 0)  and ($#Rename_property < 0)  and (! defined($List_properties)))) {
     print_usage();
