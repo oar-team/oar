@@ -76,23 +76,22 @@ my $base = iolib::connect_ro();
 
 my @jobs;
 
-if ((!defined($gantt_query)) and ($#job_ids < 0)){
-    push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
-    push(@jobs, iolib::get_jobs_in_state($base, "Running"));
-    push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
-    push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
-    push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
-    push(@jobs, iolib::get_jobs_in_state($base, "toAckReservation"));
-    push(@jobs, iolib::get_jobs_in_state($base, "Hold"));
-}elsif($#job_ids >= 0){
-    foreach my $j (@job_ids){
-        push(@jobs, iolib::get_job($base,$j));
-    }
-}
-
 if (!defined($gantt_query)){
-    foreach my $j (@jobs) {
-        print_job($base,$j);
+    if ($#job_ids < 0){
+        push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
+        push(@jobs, iolib::get_jobs_in_state($base, "Running"));
+        push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
+        push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
+        push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
+        push(@jobs, iolib::get_jobs_in_state($base, "toAckReservation"));
+        push(@jobs, iolib::get_jobs_in_state($base, "Hold"));
+    }elsif($#job_ids >= 0){
+        foreach my $j (@job_ids){
+            push(@jobs, iolib::get_job($base,$j));
+        }
+    }
+    foreach my $g (@jobs) {
+        print_job($base,$g);
     }
 }
 
@@ -239,5 +238,37 @@ EOS
             $Printed_jobs ++;
         }
     }
+}
+
+sub get_history($$$){
+    my ($base,$date_start,$date_stop) = @_;
+
+    my %hash_dumper_result;
+    my @nodes = iolib::list_resources($base);
+    my %job_gantt = iolib::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
+    $hash_dumper_result{jobs} = \%job_gantt;
+    #print finished or running jobs
+    my %jobs_history = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
+    foreach my $i (keys(%jobs_history)){
+        if (!defined($job_gantt{$i}) || $job_gantt{$i}->{queue_name} eq "besteffort"){
+            if (($jobs_history{$i}->{state} eq "Running") ||
+                ($jobs_history{$i}->{state} eq "toLaunch") ||
+                ($jobs_history{$i}->{state} eq "Launching")){
+                if ($jobs_history{$i}->{queueName} eq "besteffort"){
+                    $jobs_history{$i}->{stop_time} = iolib::get_gantt_visu_date($base);
+                }else{
+                    #This job must be already  printed by gantt
+                    next;
+                }
+            }
+            $hash_dumper_result{jobs}{$i} = $jobs_history{$i};
+        }
+    }
+
+    #print Down or Suspected resources
+    my %dead_resource_dates = iolib::get_resource_dead_range_date($base,$date_start,$date_stop);
+    $hash_dumper_result{dead_resources} = \%dead_resource_dates;
+
+    return(\%hash_dumper_result);
 }
 
