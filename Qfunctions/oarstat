@@ -30,6 +30,7 @@ $Data::Dumper::Deepcopy = 1;
 my $Printed_jobs = 0;
 
 sub print_job($$);
+sub get_history($$$);
 
 Getopt::Long::Configure ("gnu_getopt");
 my $sos;
@@ -93,6 +94,35 @@ if (!defined($gantt_query)){
     foreach my $g (@jobs) {
         print_job($base,$g);
     }
+}elsif ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
+    my $hist = get_history($base, "$1 $2", "$3 $4");
+    if (defined($DUMPER_mode)){
+        print(Dumper($hist));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+        print(XMLout($hist));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            return(5);
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(YAML::Dump($hist));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            return(6);
+        }
+    }else{
+        $Data::Dumper::Purity = 1;
+        $Data::Dumper::Terse = 1;
+        $Data::Dumper::Indent = 1;
+        $Data::Dumper::Deepcopy = 0;
+        print(Dumper($hist));
+    }
+}else{
+    print("/!\\ Bad syntax with '-g' option\n");
+    iolib::disconnect($base);
+    exit(1);
 }
 
 
@@ -245,8 +275,10 @@ sub get_history($$$){
 
     my %hash_dumper_result;
     my @nodes = iolib::list_resources($base);
+    $hash_dumper_result{resources} = \@nodes;
     my %job_gantt = iolib::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
     $hash_dumper_result{jobs} = \%job_gantt;
+    print(Dumper(%hash_dumper_result));
     #print finished or running jobs
     my %jobs_history = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
     foreach my $i (keys(%jobs_history)){
@@ -254,7 +286,7 @@ sub get_history($$$){
             if (($jobs_history{$i}->{state} eq "Running") ||
                 ($jobs_history{$i}->{state} eq "toLaunch") ||
                 ($jobs_history{$i}->{state} eq "Launching")){
-                if ($jobs_history{$i}->{queueName} eq "besteffort"){
+                if ($jobs_history{$i}->{queue_name} eq "besteffort"){
                     $jobs_history{$i}->{stop_time} = iolib::get_gantt_visu_date($base);
                 }else{
                     #This job must be already  printed by gantt

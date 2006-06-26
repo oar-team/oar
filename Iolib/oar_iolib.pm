@@ -1812,7 +1812,7 @@ sub get_jobs_range_dates($$$){
     $date_end = sql_to_local($date_end);
     my $req;
     if ($Db_type eq "Pg"){
-        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions_visu.start_time, 'YYYY-MM-DD HH24:MI:SS') + moldable_job_descriptions.moldable_walltime))
+        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,EXTRACT(EPOCH FROM (TO_TIMESTAMP(jobs.start_time, 'YYYY-MM-DD HH24:MI:SS') + moldable_job_descriptions.moldable_walltime))
                 FROM jobs, assigned_resources, moldable_job_descriptions, resources
                 WHERE
                     (   
@@ -1824,11 +1824,11 @@ sub get_jobs_range_dates($$$){
                     ) AND
                     EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.start_time, 'YYYY-MM-DD HH24:MI:SS')) < $date_end AND
                     jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-                    assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                    moldable_job_descriptions.moldable_job_id = jobs.assigned_moldable_job AND
                     resources.resource_id = assigned_resources.resource_id
                 ORDER BY jobs.job_id";
     }else{
-        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,UNIX_TIMESTAMP(DATE_ADD(gantt_jobs_predictions_visu.start_time, INTERVAL moldable_job_descriptions.moldable_walltime HOUR_SECOND))
+        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,UNIX_TIMESTAMP(DATE_ADD(jobs.start_time, INTERVAL moldable_job_descriptions.moldable_walltime HOUR_SECOND))
                 FROM jobs, assigned_resources, moldable_job_descriptions, resources
                 WHERE
                     (   
@@ -1840,7 +1840,7 @@ sub get_jobs_range_dates($$$){
                     ) AND
                     UNIX_TIMESTAMP(jobs.start_time) < $date_end AND
                     jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-                    assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                    moldable_job_descriptions.moldable_id = jobs.assigned_moldable_job AND
                     resources.resource_id = assigned_resources.resource_id
                 ORDER BY jobs.job_id";
     }
@@ -1848,6 +1848,7 @@ sub get_jobs_range_dates($$$){
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
+    my %listed_nodes;
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($results{$ref[0]})){
@@ -1869,7 +1870,10 @@ sub get_jobs_range_dates($$$){
                                  }
         }else{
             push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-            push(@{$results{$ref[0]}->{network_addresses}}, $ref[13]);
+            if (!defined($listed_nodes{$ref[13]})){
+                push(@{$results{$ref[0]}->{network_addresses}}, $ref[13]);
+                $listed_nodes{$ref[13]} = 1;
+            }
         }
     }
     $sth->finish();
@@ -1916,6 +1920,7 @@ sub get_jobs_gantt_scheduled($$$){
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
+    my %listed_nodes;
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($results{$ref[0]})){
@@ -1936,7 +1941,10 @@ sub get_jobs_gantt_scheduled($$$){
                                  }
         }else{
             push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-            push(@{$results{$ref[0]}->{network_addresses}}, $ref[13]);
+            if (!defined($listed_nodes{$ref[13]})){
+                push(@{$results{$ref[0]}->{network_addresses}}, $ref[13]);
+                $listed_nodes{$ref[13]} = 1;
+            }
         }
     }
     $sth->finish();
