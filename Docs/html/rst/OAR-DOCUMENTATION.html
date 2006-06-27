@@ -360,42 +360,43 @@ productive plateforms and research experiments.</td>
 </li>
 <li><a class="reference" href="#administrator-guide" id="id22" name="id22">3&nbsp;&nbsp;&nbsp;Administrator guide</a><ul class="auto-toc">
 <li><a class="reference" href="#administrator-commands" id="id23" name="id23">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a><ul class="auto-toc">
-<li><a class="reference" href="#oarnodesetting" id="id24" name="id24">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></li>
-<li><a class="reference" href="#oarremovenode" id="id25" name="id25">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></li>
-<li><a class="reference" href="#oaraccounting" id="id26" name="id26">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
-<li><a class="reference" href="#oarnotify" id="id27" name="id27">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
+<li><a class="reference" href="#oarproperty" id="id24" name="id24">3.1.1&nbsp;&nbsp;&nbsp;<em>oarproperty</em></a></li>
+<li><a class="reference" href="#oarnodesetting" id="id25" name="id25">3.1.2&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></li>
+<li><a class="reference" href="#oarremoveresource" id="id26" name="id26">3.1.3&nbsp;&nbsp;&nbsp;<em>oarremoveresource</em></a></li>
+<li><a class="reference" href="#oaraccounting" id="id27" name="id27">3.1.4&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
+<li><a class="reference" href="#oarnotify" id="id28" name="id28">3.1.5&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
 </ul>
 </li>
-<li><a class="reference" href="#database-scheme" id="id28" name="id28">3.2&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
-<li><a class="reference" href="#accounting" id="id29" name="id29">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
-<li><a class="reference" href="#admissionrules" id="id30" name="id30">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></li>
-<li><a class="reference" href="#event-log" id="id31" name="id31">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></li>
-<li><a class="reference" href="#files" id="id32" name="id32">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
-<li><a class="reference" href="#fragjobs" id="id33" name="id33">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></li>
-<li><a class="reference" href="#ganttjobsnodes" id="id34" name="id34">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></li>
-<li><a class="reference" href="#ganttjobsnode-visu" id="id35" name="id35">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></li>
-<li><a class="reference" href="#ganttjobsprediction" id="id36" name="id36">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></li>
-<li><a class="reference" href="#ganttjobsprediction-visu" id="id37" name="id37">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></li>
-<li><a class="reference" href="#jobs" id="id38" name="id38">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
-<li><a class="reference" href="#nodeproperties" id="id39" name="id39">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></li>
-<li><a class="reference" href="#nodestate-log" id="id40" name="id40">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></li>
-<li><a class="reference" href="#nodes" id="id41" name="id41">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></li>
-<li><a class="reference" href="#processjobs" id="id42" name="id42">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></li>
-<li><a class="reference" href="#processjobs-log" id="id43" name="id43">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></li>
-<li><a class="reference" href="#queue" id="id44" name="id44">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></li>
+<li><a class="reference" href="#database-scheme" id="id29" name="id29">3.2&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
+<li><a class="reference" href="#accounting" id="id30" name="id30">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
+<li><a class="reference" href="#admission-rules" id="id31" name="id31">3.2.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></li>
+<li><a class="reference" href="#event-logs" id="id32" name="id32">3.2.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></li>
+<li><a class="reference" href="#files" id="id33" name="id33">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
+<li><a class="reference" href="#frag-jobs" id="id34" name="id34">3.2.5&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></li>
+<li><a class="reference" href="#gantt-jobs-resources" id="id35" name="id35">3.2.6&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></li>
+<li><a class="reference" href="#gantt-jobs-resources-visu" id="id36" name="id36">3.2.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></li>
+<li><a class="reference" href="#gantt-jobs-predictions" id="id37" name="id37">3.2.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></li>
+<li><a class="reference" href="#gantt-jobs-predictions-visu" id="id38" name="id38">3.2.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></li>
+<li><a class="reference" href="#jobs" id="id39" name="id39">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
+<li><a class="reference" href="#nodeproperties" id="id40" name="id40">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></li>
+<li><a class="reference" href="#nodestate-log" id="id41" name="id41">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></li>
+<li><a class="reference" href="#nodes" id="id42" name="id42">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></li>
+<li><a class="reference" href="#processjobs" id="id43" name="id43">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></li>
+<li><a class="reference" href="#processjobs-log" id="id44" name="id44">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></li>
+<li><a class="reference" href="#queues" id="id45" name="id45">3.2.16&nbsp;&nbsp;&nbsp;<em>queues</em></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference" href="#configuration-file" id="id45" name="id45">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
-<li><a class="reference" href="#module-description" id="id46" name="id46">5&nbsp;&nbsp;&nbsp;Module description</a><ul class="auto-toc">
-<li><a class="reference" href="#almighty" id="id47" name="id47">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
-<li><a class="reference" href="#sarko" id="id48" name="id48">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
-<li><a class="reference" href="#judas" id="id49" name="id49">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
-<li><a class="reference" href="#leon" id="id50" name="id50">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
-<li><a class="reference" href="#nodechangestate" id="id51" name="id51">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
-<li><a class="reference" href="#scheduler" id="id52" name="id52">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
-<li><a class="reference" href="#runner" id="id53" name="id53">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
+<li><a class="reference" href="#configuration-file" id="id46" name="id46">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
+<li><a class="reference" href="#module-description" id="id47" name="id47">5&nbsp;&nbsp;&nbsp;Module description</a><ul class="auto-toc">
+<li><a class="reference" href="#almighty" id="id48" name="id48">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
+<li><a class="reference" href="#sarko" id="id49" name="id49">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
+<li><a class="reference" href="#judas" id="id50" name="id50">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
+<li><a class="reference" href="#leon" id="id51" name="id51">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
+<li><a class="reference" href="#nodechangestate" id="id52" name="id52">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
+<li><a class="reference" href="#scheduler" id="id53" name="id53">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
+<li><a class="reference" href="#runner" id="id54" name="id54">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
 </ul>
 </li>
 </ul>
@@ -742,6 +743,7 @@ one of these computers first.</p>
 <pre class="literal-block">
 -f        : prints each job in full details
 -j job_id : prints the specified job_id informations (even if it is finished)
+-g &quot;d1,d2&quot;: prints history of jobs and state of resources between two dates.
 -D        : formats outputs in Perl Dumper
 -X        : formats outputs in XML
 -Y        : formats outputs in YAML
@@ -758,12 +760,12 @@ one of these computers first.</p>
 which resources, resource properties, ...).</p>
 <p>Options</p>
 <pre class="literal-block">
--a : show all resources with their properties
--s : show only resource states
--l : show only resource list
--D        : formats outputs in Perl Dumper
--X        : formats outputs in XML
--Y        : formats outputs in YAML
+-a : shows all resources with their properties
+-s : shows only resource states
+-l : shows only resource list
+-D : formats outputs in Perl Dumper
+-X : formats outputs in XML
+-Y : formats outputs in YAML
 </pre>
 <p>Examples</p>
 <pre class="literal-block">
@@ -780,7 +782,7 @@ must specify how many resources and what kind of them are needed by his
 application. Thus, OAR system will give him or not what he wants and will
 control the execution. When a job is launched, OAR executes user program only
 on the first reservation node. So this program can access some environnement
-variables to know its environnement</p>
+variables to know its environnement:</p>
 <pre class="literal-block">
 $OAR_NODEFILE                 contains the name of a file which lists all reserved nodes for this job
 $OAR_JOBID                    contains the OAR job identificator
@@ -792,59 +794,75 @@ $OAR_NB_NODES                 contains the number of reserved nodes
 <pre class="literal-block">
 -q &quot;queuename&quot; : specify the queue for this job
 -I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a script)
--l &quot;resource description&quot; : defines resource list requested for this job; the different parameters are:
-      nodes : request number of nodes
-      weight : the weight that you want to reserve on each node
-      walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|hour];
-                 after this elapsed time, the job will be killed
--p &quot;properties&quot; : specify with SQL syntax reservation properties
--r &quot;2007-05-11 23:32:03&quot; : ask for a reservation job to begin at the date in argument
--C job_id : connect to a reservation in Running state
--v : turn on verbose mode
--k &quot;duration&quot; : enable the job to be checkpointed
---signal &quot;signal name&quot; :
--t &quot;type name&quot; :
--d &quot;directory path&quot; :
--n &quot;job name&quot; :
--a job_id
---notify &quot;method&quot; :
---stdout &quot;file name&quot; :
---stderr &quot;file name&quot; :
---resubmit job_id :
---force_cpuset_name &quot;cpuset name&quot; :
+-l &quot;resource description&quot; : defines resource list requested for this job;
+                            the different parameters are resource properties
+                            registered in OAR database; see examples below.
+                            (walltime : Request maximun time. Format is
+                            [hour:mn:sec|hour:mn|hour]; after this elapsed time,
+                            the job will be killed)
+-p &quot;properties&quot; : adds constraints for the job
+                  (format is a WHERE clause from the SQL syntax)
+-r &quot;2007-05-11 23:32:03&quot; : asks for a reservation job to begin at the date in argument
+-C job_id : connects to a reservation in Running state
+-k &quot;duration&quot; : asks OAR to send the checkpoint signal to the first processus
+                of the job &quot;number_of_seconds&quot; before the walltime
+--signal &quot;signal name&quot; : specify the signal to use when checkpointing
+-t &quot;type name&quot; : specify a specific type (deploy, besteffort, cosystem, checkpoint)
+-d &quot;directory path&quot; : specify the directory where to launch the command
+                      (default is current directory)
+-n &quot;job name&quot; :  specify an arbitrary name for the job
+-a job_id : anterior job that must be terminated to start this new one
+--notify &quot;method&quot; : specify a notification method(mail or program to launch); ex:
+                    --notify &quot;mail:name&#64;domain.com&quot;
+                    --notify &quot;exec:/path/to/script args&quot;
+--stdout &quot;file name&quot; : specify the name of the standard output file
+--stderr &quot;file name&quot; : specify the name of the error output file
+--resubmit job_id : resubmit the given job to a new one
+--force_cpuset_name &quot;cpuset name&quot; : Instead of using job_id for the cpuset name you
+                                    can specify one (WARNING: if several jobs have the
+                                    same cpuset name then processes of a job could be
+                                    killed when another finished on the same computer)
 </pre>
 <p>Examples</p>
 <pre class="literal-block">
-# oarsub test.sh
+# oarsub -l /node=4 test.sh
 </pre>
-<p>(the &quot;test.sh&quot; script will be run on 1 node of default weight in the default
-queue with a walltime of 1 hour)</p>
+<p>(the &quot;test.sh&quot; script will be run on 4 entire nodes in the default queue with
+the default walltime)</p>
 <pre class="literal-block">
-# oarsub -l nodes=2,walltime=2:15:00 test.sh
+# oarsub -q default -l walltime=50:30:00,/node=10/cpu=3,walltime=2:15:00 -p &quot;switch = 'sw1'&quot; /home/users/toto/prog
 </pre>
-<p>(the &quot;test.sh&quot; script will be run on 2 nodes of default weight in the default
-queue with a walltime of  2:15:00)</p>
+<p>(the &quot;/home/users/toto/prog&quot; script will be run on 10 nodes with 3 cpus (so a total of 30 cpus) in the default
+queue with a walltime of  2:15:00. Mooreover &quot;-p&quot; option restricts resources only on the switch 'sw1')</p>
 <pre class="literal-block">
-# oarsub -p &quot;hostname = 'host2' OR hostname = 'host3'&quot; test.sh
+# oarsub -r &quot;2004-04-27 11:00:00&quot; -l /node=12/cpu=2
 </pre>
-<p>(the &quot;test.sh&quot; script will be run on the node host2 or on the node host3)</p>
+<p>(a reservation will begin at &quot;2004-04-27 11:00:00&quot; on 12 nodes with 2 cpus on each one)</p>
+<pre class="literal-block">
+#  oarsub -C 42
+</pre>
+<p>(connects to the job 42 on the first node and set all OAR environment variables)</p>
 <pre class="literal-block">
 # oarsub -I
 </pre>
-<p>(gives a shell on a node)</p>
+<p>(gives a shell on a resource)</p>
 </div>
 <div class="section">
 <h3><a class="toc-backref" href="#id18" id="oardel" name="oardel">2.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></h3>
-<p>The user can delete his jobs with this command.</p>
+<p>This command is used to delete or checkpoint job(s). Jobs are designed by their job's identifier.</p>
 <p>Option</p>
 <pre class="literal-block">
--c job_id : send checkpoint signal to the job
+-c job_id : send checkpoint signal to the job (signal was definedwith &quot;--signal&quot; option in oarsub)
 </pre>
 <p>Exemples</p>
 <pre class="literal-block">
-# oardel 14
+# oardel 14 42
 </pre>
-<p>(delete job 14)</p>
+<p>(delete jobs 14 and 42)</p>
+<pre class="literal-block">
+# oardel -c 42
+</pre>
+<p>(send checkpoint signal to the job 42)</p>
 </div>
 </div>
 <div class="section">
@@ -868,58 +886,65 @@ and to know when a job will be launched in the futur.</p>
 <div class="section">
 <h2><a class="toc-backref" href="#id23" id="administrator-commands" name="administrator-commands">3.1&nbsp;&nbsp;&nbsp;Administrator commands</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id24" id="oarnodesetting" name="oarnodesetting">3.1.1&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></h3>
-<p>This command permits to change the state or a property of a node. If it does
-not exist it is created.</p>
+<h3><a class="toc-backref" href="#id24" id="oarproperty" name="oarproperty">3.1.1&nbsp;&nbsp;&nbsp;<em>oarproperty</em></a></h3>
+<p>This command manages OAR resource properties stored in the database.</p>
+<p>Options are:</p>
+<pre class="literal-block">
+-l : list properties
+-a NAME : add a property
+  -c : sql new field of type VARCHAR(255) (default is integer)
+-d NAME : delete a property
+-r &quot;OLD_NAME,NEW_NAME&quot; : rename property OLD_NAME into NEW_NAME
+</pre>
+<p>Examples:</p>
+<pre class="literal-block">
+# oarproperty -a cpu_freq
+# oarproperty -a type
+# oarproperty -r &quot;cpu_freq,freq&quot;
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id25" id="oarnodesetting" name="oarnodesetting">3.1.2&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></h3>
+<p>This command permits to change the state or a property of a node or of several
+resources resources.</p>
 <p>By default the node name used by <em>oarnodesetting</em> is the result of the command
 <em>hostname</em>.</p>
 <p>Options are:</p>
-<blockquote>
-<ul>
-<li><p class="first">-s : state to assign to the node:</p>
-<blockquote>
-<ul class="simple">
-<li>&quot;Alive&quot; : a job can be run on the node.</li>
-<li>&quot;Absent&quot; : administrator wants to remove the node from the pool for a moment.</li>
-<li>&quot;Dead&quot; : the node will not be used and will be deleted.</li>
-</ul>
-</blockquote>
-</li>
-<li><p class="first">-h : specify the node name.</p>
-</li>
-<li><p class="first">-w : if the node does not exist, it will be created in the database and its
-maxWeight will be the value of this option (default is 1).</p>
-</li>
-<li><p class="first">-p : change the value of a property of the node.</p>
-</li>
-<li><p class="first">-n : specify this option if you do not want to wait the end of jobs running
-on this node when you change its state into &quot;Absent&quot; or &quot;Dead&quot;.</p>
-</li>
-</ul>
-</blockquote>
+<pre class="literal-block">
+-a : add a new resource
+-s : state to assign to the node:
+   * &quot;Alive&quot; : a job can be run on the node.
+   * &quot;Absent&quot; : administrator wants to remove the node from the pool for a moment.
+   * &quot;Dead&quot; : the node will not be used and will be deleted.
+-h : specify the node name (override hostname).
+-r : specify the resource number
+-p : change the value of a property specified resources.
+-n : specify this option if you do not want to wait the end of jobs running
+     on this node when you change its state into &quot;Absent&quot; or &quot;Dead&quot;.
+</pre>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id25" id="oarremovenode" name="oarremovenode">3.1.2&nbsp;&nbsp;&nbsp;<em>oarremovenode</em></a></h3>
-<p>This command permits to remove a node from the database.</p>
+<h3><a class="toc-backref" href="#id26" id="oarremoveresource" name="oarremoveresource">3.1.3&nbsp;&nbsp;&nbsp;<em>oarremoveresource</em></a></h3>
+<p>This command permits to remove a resource from the database.</p>
 <p>The node must be in the state &quot;Dead&quot; (use <em>oarnodesetting</em> to do this) and then
 you can use this command to delete it.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id26" id="oaraccounting" name="oaraccounting">3.1.3&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></h3>
+<h3><a class="toc-backref" href="#id27" id="oaraccounting" name="oaraccounting">3.1.4&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></h3>
 <p>This command permits to update the <em>accounting</em> table for jobs ended since the
 last launch.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id27" id="oarnotify" name="oarnotify">3.1.4&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></h3>
+<h3><a class="toc-backref" href="#id28" id="oarnotify" name="oarnotify">3.1.5&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></h3>
 <p>This command sends commands to the &quot;Almighty&quot; module. It is dedicated to
 developpers.</p>
 <p>You can use the &quot;-v&quot; option to show the OAR version.</p>
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id28" id="database-scheme" name="database-scheme">3.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
+<h2><a class="toc-backref" href="#id29" id="database-scheme" name="database-scheme">3.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id29" id="accounting" name="accounting">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
+<h3><a class="toc-backref" href="#id30" id="accounting" name="accounting">3.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -941,7 +966,7 @@ developpers.</p>
 <td>DATETIME</td>
 <td>stop date of the accounting interval</td>
 </tr>
-<tr><td>user</td>
+<tr><td>accounting_user</td>
 <td>VARCHAR(20)</td>
 <td>user name</td>
 </tr>
@@ -966,9 +991,9 @@ used by the user.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">window_start, window_stop, user, queue_name, consumption_type</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">window_start, window_stop, accounting_user, queue_name, consumption_type</td>
 </tr>
-<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">window_start, window_stop, user, queue_name, consumption_type</td>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">window_start, window_stop, accounting_user, queue_name, consumption_type</td>
 </tr>
 </tbody>
 </table>
@@ -998,7 +1023,7 @@ UPDATE jobs SET accounted = &quot;NO&quot;;
 file and change the value of the tag <em>ACCOUNTING_WINDOW</em>.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id30" id="admissionrules" name="admissionrules">3.2.2&nbsp;&nbsp;&nbsp;<em>admissionRules</em></a></h3>
+<h3><a class="toc-backref" href="#id31" id="admission-rules" name="admission-rules">3.2.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1012,6 +1037,10 @@ file and change the value of the tag <em>ACCOUNTING_WINDOW</em>.</p>
 </tr>
 </thead>
 <tbody valign="top">
+<tr><td>id</td>
+<td>INT UNSIGNED</td>
+<td>id number</td>
+</tr>
 <tr><td>rule</td>
 <td>VARCHAR(255)</td>
 <td>rule written in Perl applied when a
@@ -1023,7 +1052,7 @@ job is going to be registered</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">id</td>
 </tr>
 <tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
 </tr>
@@ -1033,71 +1062,71 @@ job is going to be registered</td>
 submitted. Some examples are better than a long description :</p>
 <blockquote>
 <ul>
-<li><p class="first">Specify the default walltime</p>
-<pre class="literal-block">
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-('if (not defined($maxTime)) {
-    $maxTime = &quot;1:00:00&quot;;
-}');
-</pre>
-</li>
 <li><p class="first">Specify the default value for queue parameter</p>
 <pre class="literal-block">
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-('if (not defined($queueName)) {
-    $queueName=&quot;default&quot;;
-}');
-</pre>
-</li>
-<li><p class="first">Restrict the maximum of the walltime for intercative jobs</p>
-<pre class="literal-block">
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-('if ((defined($maxTime)) &amp;&amp;
-      ($jobType eq &quot;INTERACTIVE&quot;) &amp;&amp;
-      (sql_to_duration($maxTime) &gt; sql_to_duration(&quot;12:00:00&quot;))){
-      $maxTime = &quot;12:00:00&quot;;
-}');
+INSERT INTO admission_rules (rule) VALUES('
+  if (not defined($queue_name)) {
+      $queue_name=&quot;default&quot;;
+  }
+');
 </pre>
 </li>
 <li><p class="first">Avoid users except oar to go in the admin queue</p>
 <pre class="literal-block">
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-('if (($queueName eq &quot;admin&quot;) &amp;&amp; ($user ne &quot;oar&quot;)) {
-    $queueName=&quot;default&quot;;
-}');
+INSERT INTO admission_rules (rule) VALUES ('
+  if (($queue_name eq &quot;admin&quot;) &amp;&amp; ($user ne &quot;oar&quot;)) {
+    die(&quot;[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n&quot;);
+  }
+');
 </pre>
 </li>
-<li><p class="first">Force besteffort jobs to go on nodes with the besteffort property</p>
+<li><p class="first">Restrict the maximum of the walltime for intercative jobs</p>
 <pre class="literal-block">
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-('if ( &quot;$queueName&quot; eq &quot;besteffort&quot; ){
-    if ($jobproperties ne &quot;&quot;){
-        $jobproperties = &quot;($jobproperties)
-        AND besteffort = \\\\\\&quot;YES\\\\\\&quot;&quot;;
-    }else{
-        $jobproperties = &quot;besteffort = \\\\\\&quot;YES\\\\\\&quot;&quot;;
+INSERT INTO admission_rules (rule) VALUES ('
+  my $max_walltime = &quot;12:00:00&quot;;
+  if ($jobType eq &quot;INTERACTIVE&quot;){
+    foreach my $mold (&#64;{$ref_resource_list}){
+      if ((defined($mold-&gt;[1])) and (sql_to_duration($max_walltime) &lt; sql_to_duration($mold-&gt;[1]))){
+        print(&quot;[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n&quot;);
+        $mold-&gt;[1] = $max_walltime;
+      }
     }
-}');
+  }
+');
 </pre>
 </li>
-<li><p class="first">Force deploy jobs to go on nodes with the deploy property</p>
+<li><p class="first">Specify the default walltime</p>
 <pre class="literal-block">
-INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-('if ( &quot;$queueName&quot; eq &quot;deploy&quot; ){
-    if ($jobproperties ne &quot;&quot;){
-        $jobproperties = &quot;($jobproperties)
-        AND deploy = \\\\\\&quot;YES\\\\\\&quot;&quot;;
-    }else{
-        $jobproperties = &quot;deploy = \\\\\\&quot;YES\\\\\\&quot;&quot;;
+INSERT INTO admission_rules (rule) VALUES ('
+  my $default_wall = &quot;2:00:00&quot;;
+  foreach my $mold (&#64;{$ref_resource_list}){
+    if (!defined($mold-&gt;[1])){
+      print(&quot;[ADMISSION RULE] Set default walltime to $default_wall.\\n&quot;);
+      $mold-&gt;[1] = $default_wall;
     }
-}');
+  }
+');
+</pre>
+</li>
+<li><p class="first">How to perform actions if the user name is in a file</p>
+<pre class="literal-block">
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+  open(FILE, &quot;/tmp/users.txt&quot;);
+  while (($queue_name ne &quot;admin&quot;) and ($_ = &lt;FILE&gt;)){
+    if ($_ =~ m/^\\s*$user\\s*$/m){
+      print(&quot;[ADMISSION RULE] Change assigned queue into admin\\n&quot;);
+      $queue_name = &quot;admin&quot;;
+    }
+  }
+  close(FILE);
+');
 </pre>
 </li>
 </ul>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id31" id="event-log" name="event-log">3.2.3&nbsp;&nbsp;&nbsp;<em>event_log</em></a></h3>
+<h3><a class="toc-backref" href="#id32" id="event-logs" name="event-logs">3.2.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1111,11 +1140,15 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
 </tr>
 </thead>
 <tbody valign="top">
+<tr><td>event_id</td>
+<td>INT UNSIGNED</td>
+<td>event identifier</td>
+</tr>
 <tr><td>type</td>
 <td>VARCHAR(50)</td>
 <td>event type</td>
 </tr>
-<tr><td>idJob</td>
+<tr><td>job_id</td>
 <td>INT UNSIGNED</td>
 <td>job related of the event</td>
 </tr>
@@ -1127,7 +1160,7 @@ INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
 <td>VARCHAR(255)</td>
 <td>textual description of the event</td>
 </tr>
-<tr><td>toCheck</td>
+<tr><td>to_check</td>
 <td>ENUM('YES','NO')</td>
 <td>specify if the module <em>NodeChangeState</em>
 must check this event to Suspect or not
@@ -1139,55 +1172,125 @@ some nodes</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">event_id</td>
 </tr>
-<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">type, toCheck</td>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">type, to_check</td>
 </tr>
 </tbody>
 </table>
 <p>The different event types are:</p>
 <blockquote>
-<ul class="simple">
-<li>&quot;PING_CHECKER_NODE_SUSPECTED&quot; : the system detected via the module &quot;finaud&quot;
-that a node is not responding.</li>
-<li>&quot;PROLOGUE_ERROR&quot; : an error occured during the execution of the job
-prologue (exit code != 0).</li>
-<li>&quot;EPILOGUE_ERROR&quot; : an error occured during the execution of the job
-epilogue (exit code != 0).</li>
-<li>&quot;CAN_NOT_WRITE_NODE_FILE&quot; : the system was not able to write file which had
-to contain the node list on the first node (<em>/tmp/OAR_idJob</em>).</li>
-<li>&quot;CAN_NOT_WRITE_PID_FILE&quot; : the system was not able to write the file which had
+<ul>
+<li><p class="first">&quot;PING_CHECKER_NODE_SUSPECTED&quot; : the system detected via the module &quot;finaud&quot;
+that a node is not responding.</p>
+</li>
+<li><p class="first">&quot;PROLOGUE_ERROR&quot; : an error occured during the execution of the job
+prologue (exit code != 0).</p>
+</li>
+<li><p class="first">&quot;EPILOGUE_ERROR&quot; : an error occured during the execution of the job
+epilogue (exit code != 0).</p>
+</li>
+<li><dl class="first docutils">
+<dt>&quot;CANNOT_CREATE_TMP_DIRECTORY&quot; <span class="classifier-delimiter">:</span> <span class="classifier">OAR cannot create the directory where all</span></dt>
+<dd><p class="first last">information files will be stored.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">&quot;CAN_NOT_WRITE_NODE_FILE&quot; : the system was not able to write file which had
+to contain the node list on the first node (<em>/tmp/OAR_idJob</em>).</p>
+</li>
+<li><p class="first">&quot;CAN_NOT_WRITE_PID_FILE&quot; : the system was not able to write the file which had
 to contain the pid of oarexec process on the first node
-(<em>/tmp/pid_of_oarexec_for_jobId_idJob</em>).</li>
-<li>&quot;USER_SHELL&quot; : the system was not able to get informations about the user
-shell on the first node.</li>
-<li>&quot;EXIT_VALUE_OAREXEC&quot; : the oarexec process terminated with an unknown exit
-code.</li>
-<li>&quot;SEND_KILL_JOB&quot; : signal that OAR has transmitted a kill signal to the
-oarexec of the specified job.</li>
-<li>&quot;LEON_KILL_BIPBIP_TIMEOUT&quot; : Leon module has detected that somehing wrong
-occured during the kill of a job and so kill the local <em>bipbip</em> process.</li>
-<li>&quot;EXTERMINATE_JOB&quot; : Leon module has detected that something wrong occured
+(<em>/tmp/pid_of_oarexec_for_jobId_idJob</em>).</p>
+</li>
+<li><p class="first">&quot;USER_SHELL&quot; : the system was not able to get informations about the user
+shell on the first node.</p>
+</li>
+<li><p class="first">&quot;EXIT_VALUE_OAREXEC&quot; : the oarexec process terminated with an unknown exit
+code.</p>
+</li>
+<li><p class="first">&quot;SEND_KILL_JOB&quot; : signal that OAR has transmitted a kill signal to the
+oarexec of the specified job.</p>
+</li>
+<li><p class="first">&quot;LEON_KILL_BIPBIP_TIMEOUT&quot; : Leon module has detected that somehing wrong
+occured during the kill of a job and so kill the local <em>bipbip</em> process.</p>
+</li>
+<li><p class="first">&quot;EXTERMINATE_JOB&quot; : Leon module has detected that something wrong occured
 during the kill of a job and so clean the database and terminate the job
-artificially.</li>
-<li>&quot;WORKING_DIRECTORY&quot; : the directory from which the job was submitted does
-not exist on the node assigned by the system.</li>
-<li>&quot;OUTPUT_FILES&quot; : OAR cannot write the output files (stdout and stderr) in
-the working directory.</li>
-<li>&quot;CAN_NOT_NOTIFY_OARSUB&quot; : OAR cannot notify the oarsub process for an
-interactive job (maybe the user has killed this process).</li>
-<li>&quot;WALLTIME&quot; : the job has reached its walltime.</li>
-<li>&quot;SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION&quot; : this means that there is not
+artificially.</p>
+</li>
+<li><p class="first">&quot;WORKING_DIRECTORY&quot; : the directory from which the job was submitted does
+not exist on the node assigned by the system.</p>
+</li>
+<li><p class="first">&quot;OUTPUT_FILES&quot; : OAR cannot write the output files (stdout and stderr) in
+the working directory.</p>
+</li>
+<li><p class="first">&quot;CANNOT_NOTIFY_OARSUB&quot; : OAR cannot notify the oarsub process for an
+interactive job (maybe the user has killed this process).</p>
+</li>
+<li><p class="first">&quot;WALLTIME&quot; : the job has reached its walltime.</p>
+</li>
+<li><p class="first">&quot;SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION&quot; : this means that there is not
 enough nodes for the reservation and so the scheduler do the best and
 gives less nodes than the user wanted (this occures when nodes become
-Suspected or Absent).</li>
-<li>&quot;BESTEFFORT_KILL&quot; : the job is of the type <em>besteffort</em> and was killed
-because a normal job wanted the nodes.</li>
+Suspected or Absent).</p>
+</li>
+<li><p class="first">&quot;BESTEFFORT_KILL&quot; : the job is of the type <em>besteffort</em> and was killed
+because a normal job wanted the nodes.</p>
+</li>
+<li><p class="first">&quot;FRAG_JOB_REQUEST&quot; : someone wants to delete a job.</p>
+</li>
+<li><p class="first">&quot;CHECKPOINT&quot; : the checkpoint signal was send to the job.</p>
+</li>
+<li><p class="first">&quot;CHECKPOINT_ERROR&quot; : OAR cannot send the signal to the job.</p>
+</li>
+<li><p class="first">&quot;CHECKPOINT_SUCCESS&quot; : system has sent the signal correctly.</p>
+</li>
+<li><p class="first">&quot;SERVER_EPILOGUE_TIMEOUT&quot; : epilogue server script has timeouted.</p>
+</li>
+<li><p class="first">&quot;SERVER_EPILOGUE_EXIT_CODE_ERROR&quot; : epilogue server script did not return 0.</p>
+</li>
+<li><p class="first">&quot;SERVER_EPILOGUE_ERROR&quot; : cannot find epilogue server script file.</p>
+</li>
+<li><p class="first">&quot;SERVER_PROLOGUE_TIMEOUT&quot; : prologue server script has timeouted.</p>
+</li>
+<li><p class="first">&quot;SERVER_PROLOGUE_EXIT_CODE_ERROR&quot; : prologue server script did not return 0.</p>
+</li>
+<li><p class="first">&quot;SERVER_PROLOGUE_ERROR&quot; : cannot find prologue server script file.</p>
+</li>
+<li><p class="first">&quot;CPUSET_CLEAN_ERROR&quot; : OAR cannot clean correctly cpuset files for a job on the remote node.</p>
+</li>
+<li><p class="first">&quot;MAIL_NOTIFICATION_ERROR&quot; : a mail cannot be sent.</p>
+</li>
+<li><p class="first">&quot;USER_MAIL_NOTIFICATION&quot; : user mail notification cannot be performed.</p>
+</li>
+<li><p class="first">&quot;USER_EXEC_NOTIFICATION_ERROR&quot; : user script execution notification cannot be performed.</p>
+</li>
+<li><p class="first">&quot;BIPBIP_BAD_JOBID&quot; : error when retriving informations about a running job.</p>
+</li>
+<li><dl class="first docutils">
+<dt>&quot;BIPBIP_CHALLENGE&quot; <span class="classifier-delimiter">:</span> <span class="classifier">OAR is configured to detach jobs when they are launched</span></dt>
+<dd><p class="first last">on compute nodes and the job return a bad challenge number.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">&quot;RESUBMIT_JOB_AUTOMATICALLY&quot; : the job was automatically resubmitted.</p>
+</li>
+<li><p class="first">&quot;WALLTIME&quot; : the job reached its walltime.</p>
+</li>
+<li><p class="first">&quot;REDUCE_RESERVATION_WALLTIME&quot; : the reservation job was shrinked.</p>
+</li>
+<li><p class="first">&quot;SSH_TRANSFER_TIMEOUT&quot; : node OAR part script was too long to transfer.</p>
+</li>
+<li><p class="first">&quot;BAD_HASHTABLE_DUMP&quot; : OAR transfered a bad hashtable.</p>
+</li>
+<li><p class="first">&quot;LAUNCHING_OAREXEC_TIMEOUT&quot; : oarexec was too long to initialize itself.</p>
+</li>
 </ul>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id32" id="files" name="files">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
+<h3><a class="toc-backref" href="#id33" id="files" name="files">3.2.4&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1239,7 +1342,7 @@ because a normal job wanted the nodes.</li>
 </table>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id33" id="fragjobs" name="fragjobs">3.2.5&nbsp;&nbsp;&nbsp;<em>fragJobs</em></a></h3>
+<h3><a class="toc-backref" href="#id34" id="frag-jobs" name="frag-jobs">3.2.5&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1253,15 +1356,15 @@ because a normal job wanted the nodes.</li>
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>fragIdJob</td>
+<tr><td>frag_id_job</td>
 <td>INT UNSIGNED</td>
 <td>job id</td>
 </tr>
-<tr><td>fragDate</td>
+<tr><td>frag_date</td>
 <td>DATETIME</td>
 <td>kill job decision date</td>
 </tr>
-<tr><td>fragState</td>
+<tr><td>frag_state</td>
 <td>ENUM('LEON','TIMER_ARMED',
 'LEON_EXTERMINATE',
 'FRAGGED')
@@ -1274,9 +1377,9 @@ DEFAULT 'LEON'</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">fragIdJob</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">frag_id_job</td>
 </tr>
-<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">fragState</td>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">frag_state</td>
 </tr>
 </tbody>
 </table>
@@ -1294,7 +1397,7 @@ asked Leon to clean up the database.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id34" id="ganttjobsnodes" name="ganttjobsnodes">3.2.6&nbsp;&nbsp;&nbsp;<em>ganttJobsNodes</em></a></h3>
+<h3><a class="toc-backref" href="#id35" id="gantt-jobs-resources" name="gantt-jobs-resources">3.2.6&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1308,13 +1411,13 @@ asked Leon to clean up the database.</li>
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>idJob</td>
+<tr><td>moldable_job_id</td>
 <td>INT UNSIGNED</td>
-<td>job id</td>
+<td>moldable job id</td>
 </tr>
-<tr><td>hostname</td>
-<td>VARCHAR(100)</td>
-<td>node assigned to the job</td>
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource assigned to the job</td>
 </tr>
 </tbody>
 </table>
@@ -1322,16 +1425,16 @@ asked Leon to clean up the database.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob, hostname</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id, resource_id</td>
 </tr>
 <tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
 </tr>
 </tbody>
 </table>
-<p>This table specifies which node is attributed to which job.</p>
+<p>This table specifies which resources are attributed to which jobs.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id35" id="ganttjobsnode-visu" name="ganttjobsnode-visu">3.2.7&nbsp;&nbsp;&nbsp;<em>ganttJobsNode_visu</em></a></h3>
+<h3><a class="toc-backref" href="#id36" id="gantt-jobs-resources-visu" name="gantt-jobs-resources-visu">3.2.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1345,13 +1448,13 @@ asked Leon to clean up the database.</li>
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>idJob</td>
+<tr><td>moldable_job_id</td>
 <td>INT UNSIGNED</td>
-<td>job id</td>
+<td>moldable job id</td>
 </tr>
-<tr><td>hostname</td>
-<td>VARCHAR(100)</td>
-<td>node assigned to the job</td>
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource assigned to the job</td>
 </tr>
 </tbody>
 </table>
@@ -1359,17 +1462,17 @@ asked Leon to clean up the database.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob, hostname</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id, resource_id</td>
 </tr>
 <tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
 </tr>
 </tbody>
 </table>
-<p>This table is the same as <em>ganttJobsNode</em> and is used by visualisation tools.
+<p>This table is the same as <em>gantt_jobs_resources</em> and is used by visualisation tools.
 It is made up to date in an atomic action (with a lock).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id36" id="ganttjobsprediction" name="ganttjobsprediction">3.2.8&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction</em></a></h3>
+<h3><a class="toc-backref" href="#id37" id="gantt-jobs-predictions" name="gantt-jobs-predictions">3.2.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1383,11 +1486,11 @@ It is made up to date in an atomic action (with a lock).</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>idJob</td>
+<tr><td>moldable_job_id</td>
 <td>INT UNSIGNED</td>
 <td>job id</td>
 </tr>
-<tr><td>startTime</td>
+<tr><td>start_time</td>
 <td>DATETIME</td>
 <td>date when the job is scheduled to start</td>
 </tr>
@@ -1397,25 +1500,25 @@ It is made up to date in an atomic action (with a lock).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id</td>
 </tr>
 <tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
 </tr>
 </tbody>
 </table>
-<p>With this table and <em>ganttJobsNode</em> you can know exactly what are the decisions
+<p>With this table and <em>gantt_jobs_resources</em> you can know exactly what are the decisions
 taken by the schedulers for each waiting jobs.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">note:</th><td class="field-body">The special job id &quot;0&quot; is ued to store the scheduling reference date.</td>
+<tr class="field"><th class="field-name">note:</th><td class="field-body">The special job id &quot;0&quot; is used to store the scheduling reference date.</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id37" id="ganttjobsprediction-visu" name="ganttjobsprediction-visu">3.2.9&nbsp;&nbsp;&nbsp;<em>ganttJobsPrediction_visu</em></a></h3>
+<h3><a class="toc-backref" href="#id38" id="gantt-jobs-predictions-visu" name="gantt-jobs-predictions-visu">3.2.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1429,11 +1532,11 @@ taken by the schedulers for each waiting jobs.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>idJob</td>
+<tr><td>moldable_job_id</td>
 <td>INT UNSIGNED</td>
 <td>job id</td>
 </tr>
-<tr><td>startTime</td>
+<tr><td>start_time</td>
 <td>DATETIME</td>
 <td>date when the job is scheduled to start</td>
 </tr>
@@ -1443,17 +1546,17 @@ taken by the schedulers for each waiting jobs.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idJob</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_id</td>
 </tr>
 <tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
 </tr>
 </tbody>
 </table>
-<p>This table is the same as <em>ganttJobsPrediction</em> and is used by visualisation
+<p>This table is the same as <em>gantt_jobs_predictions</em> and is used by visualisation
 tools. It is made up to date in an atomic action (with a lock).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id38" id="jobs" name="jobs">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
+<h3><a class="toc-backref" href="#id39" id="jobs" name="jobs">3.2.10&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="23%" />
@@ -1607,7 +1710,7 @@ scheduler.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id39" id="nodeproperties" name="nodeproperties">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></h3>
+<h3><a class="toc-backref" href="#id40" id="nodeproperties" name="nodeproperties">3.2.11&nbsp;&nbsp;&nbsp;<em>nodeProperties</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1671,7 +1774,7 @@ nodes.</p>
 <p>These properties can be updated with the <em>oarnodesetting</em> command (&quot;-p&quot; option).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id40" id="nodestate-log" name="nodestate-log">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></h3>
+<h3><a class="toc-backref" href="#id41" id="nodestate-log" name="nodestate-log">3.2.12&nbsp;&nbsp;&nbsp;<em>nodeState_log</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1724,7 +1827,7 @@ decision</td>
 <p>This table keeps informations about state changes of nodes.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id41" id="nodes" name="nodes">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></h3>
+<h3><a class="toc-backref" href="#id42" id="nodes" name="nodes">3.2.13&nbsp;&nbsp;&nbsp;<em>nodes</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="23%" />
@@ -1805,7 +1908,7 @@ and will be removed from the pool.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id42" id="processjobs" name="processjobs">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></h3>
+<h3><a class="toc-backref" href="#id43" id="processjobs" name="processjobs">3.2.14&nbsp;&nbsp;&nbsp;<em>processJobs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1843,7 +1946,7 @@ and will be removed from the pool.</li>
 scheduled.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id43" id="processjobs-log" name="processjobs-log">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></h3>
+<h3><a class="toc-backref" href="#id44" id="processjobs-log" name="processjobs-log">3.2.15&nbsp;&nbsp;&nbsp;<em>processJobs_log</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1881,7 +1984,7 @@ scheduled.</p>
 was scheduled a job.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id44" id="queue" name="queue">3.2.16&nbsp;&nbsp;&nbsp;<em>queue</em></a></h3>
+<h3><a class="toc-backref" href="#id45" id="queues" name="queues">3.2.16&nbsp;&nbsp;&nbsp;<em>queues</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1895,7 +1998,7 @@ was scheduled a job.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>queueName</td>
+<tr><td>queue_name</td>
 <td>VARCHAR(100)</td>
 <td>queue name</td>
 </tr>
@@ -1903,7 +2006,7 @@ was scheduled a job.</p>
 <td>INT UNSIGNED</td>
 <td>the scheduling priority</td>
 </tr>
-<tr><td>schedulerPolicy</td>
+<tr><td>scheduler_policy</td>
 <td>VARCHAR(100)</td>
 <td>path of the associated scheduler</td>
 </tr>
@@ -1920,7 +2023,7 @@ queue</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">queueName</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">queue_name</td>
 </tr>
 <tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
 </tr>
@@ -1932,7 +2035,7 @@ Executables are launched one after one in the specified priority.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id45" id="configuration-file" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
+<h1><a class="toc-backref" href="#id46" id="configuration-file" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
 <p>This is the meanings for each configuration tags that you can find in /etc/oar.conf:</p>
 <blockquote>
 <ul>
@@ -2060,10 +2163,10 @@ STAGEIN_CACHE_EXPIRY=144
 </blockquote>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id46" id="module-description" name="module-description">5&nbsp;&nbsp;&nbsp;Module description</a></h1>
+<h1><a class="toc-backref" href="#id47" id="module-description" name="module-description">5&nbsp;&nbsp;&nbsp;Module description</a></h1>
 <p>OAR can be decomposed into several modules which perform different tasks.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id47" id="almighty" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
+<h2><a class="toc-backref" href="#id48" id="almighty" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
 <p>This module is the OAR server. It decides what actions must be performed. It
 is divided into 2 processes:</p>
 <blockquote>
@@ -2076,7 +2179,7 @@ modules one after one.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id48" id="sarko" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
+<h2><a class="toc-backref" href="#id49" id="sarko" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
 <p>This module is executed periodically by the Almighty (default is every
 30 seconds).</p>
 <p>The jobs of Sarko are :</p>
@@ -2091,12 +2194,12 @@ asks to change its state into &quot;Suspected&quot;.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id49" id="judas" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
+<h2><a class="toc-backref" href="#id50" id="judas" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
 <p>This is the module dedicated to print and log every debugging, warning and
 error text.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id50" id="leon" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
+<h2><a class="toc-backref" href="#id51" id="leon" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
 <p>This module is in charge of the frag of jobs. Other OAR modules or commands
 can ask to kill a job and this is Leon which perform that.</p>
 <p>There are 2 frag types :</p>
@@ -2110,18 +2213,18 @@ then Leon notifies this case and clean up the database for these jobs.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id51" id="nodechangestate" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
+<h2><a class="toc-backref" href="#id52" id="nodechangestate" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
 <p>This module is in charge of changing node states and check if there are jobs
 on these.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id52" id="scheduler" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
+<h2><a class="toc-backref" href="#id53" id="scheduler" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
 <p>This module checks for each reservation job it validity and the moment to
 launch it. And it launches all gantt scheduler in the order of the priority
 of the database.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id53" id="runner" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
+<h2><a class="toc-backref" href="#id54" id="runner" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
 <p>This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.</p>
 </div>
@@ -2130,7 +2233,7 @@ with all modules.</p>
 <div class="footer">
 <hr class="footer" />
 <a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
-Generated on: 2006-06-22 13:44 UTC.
+Generated on: 2006-06-27 14:41 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

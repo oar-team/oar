@@ -50,6 +50,7 @@ Options
 
   -f        : prints each job in full details
   -j job_id : prints the specified job_id informations (even if it is finished)
+  -g "d1,d2": prints history of jobs and state of resources between two dates.
   -D        : formats outputs in Perl Dumper
   -X        : formats outputs in XML
   -Y        : formats outputs in YAML
@@ -69,12 +70,12 @@ which resources, resource properties, ...).
 Options
 ::
 
-  -a : show all resources with their properties
-  -s : show only resource states
-  -l : show only resource list
-  -D        : formats outputs in Perl Dumper
-  -X        : formats outputs in XML
-  -Y        : formats outputs in YAML
+  -a : shows all resources with their properties
+  -s : shows only resource states
+  -l : shows only resource list
+  -D : formats outputs in Perl Dumper
+  -X : formats outputs in XML
+  -Y : formats outputs in YAML
 
 Examples
 ::
@@ -92,7 +93,7 @@ The user can submit a job with this command. So, what is a job in our context?
   application. Thus, OAR system will give him or not what he wants and will
   control the execution. When a job is launched, OAR executes user program only
   on the first reservation node. So this program can access some environnement
-  variables to know its environnement
+  variables to know its environnement:
   ::
                   
     $OAR_NODEFILE                 contains the name of a file which lists all reserved nodes for this job
@@ -104,69 +105,85 @@ Options::
                   
   -q "queuename" : specify the queue for this job
   -I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a script)
-  -l "resource description" : defines resource list requested for this job; the different parameters are: 
-        nodes : request number of nodes
-        weight : the weight that you want to reserve on each node
-        walltime : Request maximun time. Format is [hour:mn:sec|hour:mn|hour];
-                   after this elapsed time, the job will be killed 
-  -p "properties" : specify with SQL syntax reservation properties
-  -r "2007-05-11 23:32:03" : ask for a reservation job to begin at the date in argument
-  -C job_id : connect to a reservation in Running state
-  -v : turn on verbose mode
-  -k "duration" : enable the job to be checkpointed
-  --signal "signal name" :
-  -t "type name" :
-  -d "directory path" : 
-  -n "job name" : 
-  -a job_id
-  --notify "method" :
-  --stdout "file name" :
-  --stderr "file name" :
-  --resubmit job_id : 
-  --force_cpuset_name "cpuset name" :
-  
-  
+  -l "resource description" : defines resource list requested for this job;
+                              the different parameters are resource properties
+                              registered in OAR database; see examples below.
+                              (walltime : Request maximun time. Format is
+                              [hour:mn:sec|hour:mn|hour]; after this elapsed time,
+                              the job will be killed)
+  -p "properties" : adds constraints for the job
+                    (format is a WHERE clause from the SQL syntax)
+  -r "2007-05-11 23:32:03" : asks for a reservation job to begin at the date in argument
+  -C job_id : connects to a reservation in Running state
+  -k "duration" : asks OAR to send the checkpoint signal to the first processus
+                  of the job "number_of_seconds" before the walltime
+  --signal "signal name" : specify the signal to use when checkpointing
+  -t "type name" : specify a specific type (deploy, besteffort, cosystem, checkpoint)
+  -d "directory path" : specify the directory where to launch the command
+                        (default is current directory)
+  -n "job name" :  specify an arbitrary name for the job
+  -a job_id : anterior job that must be terminated to start this new one
+  --notify "method" : specify a notification method(mail or program to launch); ex:
+                      --notify "mail:name@domain.com"
+                      --notify "exec:/path/to/script args"
+  --stdout "file name" : specify the name of the standard output file
+  --stderr "file name" : specify the name of the error output file
+  --resubmit job_id : resubmit the given job to a new one
+  --force_cpuset_name "cpuset name" : Instead of using job_id for the cpuset name you
+                                      can specify one (WARNING: if several jobs have the
+                                      same cpuset name then processes of a job could be
+                                      killed when another finished on the same computer)
 
 Examples
 ::
 
-  # oarsub test.sh
+  # oarsub -l /node=4 test.sh
 
-(the "test.sh" script will be run on 1 node of default weight in the default 
-queue with a walltime of 1 hour)
+(the "test.sh" script will be run on 4 entire nodes in the default queue with
+the default walltime)
 ::
 
-  # oarsub -l nodes=2,walltime=2:15:00 test.sh
+  # oarsub -q default -l walltime=50:30:00,/node=10/cpu=3,walltime=2:15:00 -p "switch = 'sw1'" /home/users/toto/prog
     
-(the "test.sh" script will be run on 2 nodes of default weight in the default
-queue with a walltime of  2:15:00)
+(the "/home/users/toto/prog" script will be run on 10 nodes with 3 cpus (so a total of 30 cpus) in the default
+queue with a walltime of  2:15:00. Mooreover "-p" option restricts resources only on the switch 'sw1')
 ::
      
-  # oarsub -p "hostname = 'host2' OR hostname = 'host3'" test.sh
+  # oarsub -r "2004-04-27 11:00:00" -l /node=12/cpu=2
 
-(the "test.sh" script will be run on the node host2 or on the node host3)
+(a reservation will begin at "2004-04-27 11:00:00" on 12 nodes with 2 cpus on each one)
+::
+
+  #  oarsub -C 42
+
+(connects to the job 42 on the first node and set all OAR environment variables)
 ::
 
 # oarsub -I
 
-(gives a shell on a node)
+(gives a shell on a resource)
 
 *oardel*
 ~~~~~~~~
 
-The user can delete his jobs with this command.
+This command is used to delete or checkpoint job(s). Jobs are designed by their job's identifier.
 
 Option
 ::
   
-  -c job_id : send checkpoint signal to the job
+  -c job_id : send checkpoint signal to the job (signal was definedwith "--signal" option in oarsub)
 
 Exemples
 ::
-                         
-  # oardel 14
+
+  # oardel 14 42
     
-(delete job 14)
+(delete jobs 14 and 42)
+::
+
+  # oardel -c 42
+
+(send checkpoint signal to the job 42)
 
 Visualisation tools
 -------------------
@@ -191,34 +208,51 @@ Administrator guide
 Administrator commands
 ----------------------
 
+*oarproperty*
+~~~~~~~~~~~~~
+
+This command manages OAR resource properties stored in the database.
+
+Options are: ::
+
+  -l : list properties
+  -a NAME : add a property
+    -c : sql new field of type VARCHAR(255) (default is integer)
+  -d NAME : delete a property
+  -r "OLD_NAME,NEW_NAME" : rename property OLD_NAME into NEW_NAME
+
+Examples: ::
+
+  # oarproperty -a cpu_freq
+  # oarproperty -a type
+  # oarproperty -r "cpu_freq,freq"
+
 *oarnodesetting*
 ~~~~~~~~~~~~~~~~
 
-This command permits to change the state or a property of a node. If it does
-not exist it is created.
+This command permits to change the state or a property of a node or of several
+resources resources.
 
 By default the node name used by *oarnodesetting* is the result of the command
 *hostname*.
 
-Options are:
+Options are: ::
 
- - -s : state to assign to the node:
-
+ -a : add a new resource
+ -s : state to assign to the node:
     * "Alive" : a job can be run on the node.
     * "Absent" : administrator wants to remove the node from the pool for a moment.
-    * "Dead" : the node will not be used and will be deleted.
-    
- - -h : specify the node name.
- - -w : if the node does not exist, it will be created in the database and its
-   maxWeight will be the value of this option (default is 1).
- - -p : change the value of a property of the node.
- - -n : specify this option if you do not want to wait the end of jobs running
-   on this node when you change its state into "Absent" or "Dead".
+    * "Dead" : the node will not be used and will be deleted. 
+ -h : specify the node name (override hostname).
+ -r : specify the resource number
+ -p : change the value of a property specified resources.
+ -n : specify this option if you do not want to wait the end of jobs running
+      on this node when you change its state into "Absent" or "Dead".
 
-*oarremovenode*
-~~~~~~~~~~~~~~~
+*oarremoveresource*
+~~~~~~~~~~~~~~~~~~~
 
-This command permits to remove a node from the database.
+This command permits to remove a resource from the database.
 
 The node must be in the state "Dead" (use *oarnodesetting* to do this) and then
 you can use this command to delete it.
@@ -248,7 +282,7 @@ Fields            Types                 Descriptions
 ================  ====================  =======================================
 window_start      DATETIME              start date of the accounting interval
 window_stop       DATETIME              stop date of the accounting interval
-user              VARCHAR(20)           user name
+accounting_user   VARCHAR(20)           user name
 queue_name        VARCHAR(100)          queue name
 consumption_type  ENUM("ASKED","USED")  "ASKED" corresponds to the walltimes
                                         specified by the user. "USED"
@@ -257,8 +291,8 @@ consumption_type  ENUM("ASKED","USED")  "ASKED" corresponds to the walltimes
 consumption       INT UNSIGNED          number of seconds used
 ================  ====================  =======================================
 
-:Primary key: window_start, window_stop, user, queue_name, consumption_type
-:Index fields: window_start, window_stop, user, queue_name, consumption_type
+:Primary key: window_start, window_stop, accounting_user, queue_name, consumption_type
+:Index fields: window_start, window_stop, accounting_user, queue_name, consumption_type
 
 This table is a summary of the comsumption for each user on each queue. This
 increases the speed of queries about user consumptions and statistic
@@ -283,99 +317,101 @@ regenerate this table completely in this way :
 You can change the amount of time for each window : edit the oar configuration
 file and change the value of the tag *ACCOUNTING_WINDOW*.
 
-*admissionRules*
-~~~~~~~~~~~~~~~~
+*admission_rules*
+~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
+id                INT UNSIGNED          id number
 rule              VARCHAR(255)          rule written in Perl applied when a
                                         job is going to be registered
 ================  ====================  =======================================
 
-:Primary key: *None*
+:Primary key: id
 :Index fields: *None*
 
 You can use these rules to change some values of some properties when a job is
 submitted. Some examples are better than a long description :
 
- - Specify the default walltime
-   ::
-   
-      INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-      ('if (not defined($maxTime)) {
-          $maxTime = "1:00:00";
-      }');
-
  - Specify the default value for queue parameter
    ::
       
-      INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-      ('if (not defined($queueName)) {
-          $queueName="default";
-      }');
-
- - Restrict the maximum of the walltime for intercative jobs
-   ::
-      
-      INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-      ('if ((defined($maxTime)) &&
-            ($jobType eq "INTERACTIVE") &&
-            (sql_to_duration($maxTime) > sql_to_duration("12:00:00"))){
-            $maxTime = "12:00:00";
-      }');
+      INSERT INTO admission_rules (rule) VALUES('
+        if (not defined($queue_name)) {
+            $queue_name="default";
+        }
+      ');
 
  - Avoid users except oar to go in the admin queue
    ::
       
-      INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-      ('if (($queueName eq "admin") && ($user ne "oar")) {
-          $queueName="default";
-      }');
-      
- - Force besteffort jobs to go on nodes with the besteffort property
-   ::
-   
-      INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-      ('if ( "$queueName" eq "besteffort" ){
-          if ($jobproperties ne ""){
-              $jobproperties = "($jobproperties)
-              AND besteffort = \\\\\\"YES\\\\\\"";
-          }else{
-              $jobproperties = "besteffort = \\\\\\"YES\\\\\\"";
-          } 
-      }');
+      INSERT INTO admission_rules (rule) VALUES ('
+        if (($queue_name eq "admin") && ($user ne "oar")) {
+          die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n");
+        }
+      ');
 
- - Force deploy jobs to go on nodes with the deploy property
+ - Restrict the maximum of the walltime for intercative jobs
    ::
-   
-      INSERT IGNORE INTO `admissionRules` ( `rule` ) VALUES
-      ('if ( "$queueName" eq "deploy" ){
-          if ($jobproperties ne ""){
-              $jobproperties = "($jobproperties)
-              AND deploy = \\\\\\"YES\\\\\\"";
-          }else{
-              $jobproperties = "deploy = \\\\\\"YES\\\\\\"";
+ 
+      INSERT INTO admission_rules (rule) VALUES ('
+        my $max_walltime = "12:00:00";
+        if ($jobType eq "INTERACTIVE"){ 
+          foreach my $mold (@{$ref_resource_list}){
+            if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
+              print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
+              $mold->[1] = $max_walltime;
+            }
           }
-      }');
+        }
+      ');
 
-*event_log*
-~~~~~~~~~~~
+ - Specify the default walltime
+   ::
+   
+    INSERT INTO admission_rules (rule) VALUES ('
+      my $default_wall = "2:00:00";
+      foreach my $mold (@{$ref_resource_list}){
+        if (!defined($mold->[1])){
+          print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
+          $mold->[1] = $default_wall;
+        }
+      }
+    ');
+ 
+ - How to perform actions if the user name is in a file
+   ::
+  
+    INSERT IGNORE INTO admission_rules (rule) VALUES ('
+      open(FILE, "/tmp/users.txt");
+      while (($queue_name ne "admin") and ($_ = <FILE>)){
+        if ($_ =~ m/^\\s*$user\\s*$/m){
+          print("[ADMISSION RULE] Change assigned queue into admin\\n");
+          $queue_name = "admin";
+        }
+      }
+      close(FILE);
+    ');
+    
+*event_logs*
+~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
+event_id          INT UNSIGNED          event identifier
 type              VARCHAR(50)           event type
-idJob             INT UNSIGNED          job related of the event
+job_id            INT UNSIGNED          job related of the event
 date              DATETIME              event date
 description       VARCHAR(255)          textual description of the event
-toCheck           ENUM('YES','NO')      specify if the module *NodeChangeState*
+to_check          ENUM('YES','NO')      specify if the module *NodeChangeState*
                                         must check this event to Suspect or not
                                         some nodes
 ================  ====================  =======================================
 
-:Primary key: *None*
-:Index fields: type, toCheck
+:Primary key: event_id
+:Index fields: type, to_check
 
 The different event types are:
 
@@ -385,6 +421,8 @@ The different event types are:
    prologue (exit code != 0).
  - "EPILOGUE_ERROR" : an error occured during the execution of the job
    epilogue (exit code != 0).
+ - "CANNOT_CREATE_TMP_DIRECTORY" : OAR cannot create the directory where all
+                                   information files will be stored.
  - "CAN_NOT_WRITE_NODE_FILE" : the system was not able to write file which had
    to contain the node list on the first node (*/tmp/OAR_idJob*).
  - "CAN_NOT_WRITE_PID_FILE" : the system was not able to write the file which had
@@ -405,7 +443,7 @@ The different event types are:
    not exist on the node assigned by the system.
  - "OUTPUT_FILES" : OAR cannot write the output files (stdout and stderr) in
    the working directory.
- - "CAN_NOT_NOTIFY_OARSUB" : OAR cannot notify the oarsub process for an
+ - "CANNOT_NOTIFY_OARSUB" : OAR cannot notify the oarsub process for an
    interactive job (maybe the user has killed this process).
  - "WALLTIME" : the job has reached its walltime.
  - "SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION" : this means that there is not
@@ -414,6 +452,29 @@ The different event types are:
    Suspected or Absent).
  - "BESTEFFORT_KILL" : the job is of the type *besteffort* and was killed
    because a normal job wanted the nodes.
+ - "FRAG_JOB_REQUEST" : someone wants to delete a job.
+ - "CHECKPOINT" : the checkpoint signal was send to the job.
+ - "CHECKPOINT_ERROR" : OAR cannot send the signal to the job.
+ - "CHECKPOINT_SUCCESS" : system has sent the signal correctly.
+ - "SERVER_EPILOGUE_TIMEOUT" : epilogue server script has timeouted.
+ - "SERVER_EPILOGUE_EXIT_CODE_ERROR" : epilogue server script did not return 0.
+ - "SERVER_EPILOGUE_ERROR" : cannot find epilogue server script file.
+ - "SERVER_PROLOGUE_TIMEOUT" : prologue server script has timeouted.
+ - "SERVER_PROLOGUE_EXIT_CODE_ERROR" : prologue server script did not return 0.
+ - "SERVER_PROLOGUE_ERROR" : cannot find prologue server script file.
+ - "CPUSET_CLEAN_ERROR" : OAR cannot clean correctly cpuset files for a job on the remote node.
+ - "MAIL_NOTIFICATION_ERROR" : a mail cannot be sent.
+ - "USER_MAIL_NOTIFICATION" : user mail notification cannot be performed.
+ - "USER_EXEC_NOTIFICATION_ERROR" : user script execution notification cannot be performed.
+ - "BIPBIP_BAD_JOBID" : error when retriving informations about a running job.
+ - "BIPBIP_CHALLENGE" : OAR is configured to detach jobs when they are launched
+                        on compute nodes and the job return a bad challenge number.
+ - "RESUBMIT_JOB_AUTOMATICALLY" : the job was automatically resubmitted.
+ - "WALLTIME" : the job reached its walltime.
+ - "REDUCE_RESERVATION_WALLTIME" : the reservation job was shrinked.
+ - "SSH_TRANSFER_TIMEOUT" : node OAR part script was too long to transfer.
+ - "BAD_HASHTABLE_DUMP" : OAR transfered a bad hashtable.
+ - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
 
 *files*
 ~~~~~~~
@@ -432,22 +493,22 @@ size              INT UNSIGNED
 :Primary key: idFile
 :Index fields: md5sum
 
-*fragJobs*
-~~~~~~~~~~
+*frag_jobs*
+~~~~~~~~~~~
 
 ================  ==========================  =================================
 Fields            Types                       Descriptions
 ================  ==========================  =================================
-fragIdJob         INT UNSIGNED                job id
-fragDate          DATETIME                    kill job decision date 
-fragState         ENUM('LEON','TIMER_ARMED',  state to tell Leon what to do
+frag_id_job       INT UNSIGNED                job id
+frag_date         DATETIME                    kill job decision date 
+frag_state        ENUM('LEON','TIMER_ARMED',  state to tell Leon what to do
                   'LEON_EXTERMINATE',
                   'FRAGGED')
                   DEFAULT 'LEON'
 ================  ==========================  =================================
 
-:Primary key: fragIdJob
-:Index fields: fragState
+:Primary key: frag_id_job
+:Index fields: frag_state
 
 What mean the states:
 
@@ -459,69 +520,69 @@ What mean the states:
    asked Leon to clean up the database.
  - "FRAGGED" : job is fragged.
 
-*ganttJobsNodes*
-~~~~~~~~~~~~~~~~
+*gantt_jobs_resources*
+~~~~~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-idJob             INT UNSIGNED          job id
-hostname          VARCHAR(100)          node assigned to the job
+moldable_job_id   INT UNSIGNED          moldable job id
+resource_id       INT UNSIGNED          resource assigned to the job
 ================  ====================  =======================================
 
-:Primary key: idJob, hostname
+:Primary key: moldable_job_id, resource_id
 :Index fields: *None*
 
-This table specifies which node is attributed to which job.
+This table specifies which resources are attributed to which jobs.
 
-*ganttJobsNode_visu*
-~~~~~~~~~~~~~~~~~~~~
+*gantt_jobs_resources_visu*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-idJob             INT UNSIGNED          job id
-hostname          VARCHAR(100)          node assigned to the job
+moldable_job_id   INT UNSIGNED          moldable job id
+resource_id       INT UNSIGNED          resource assigned to the job
 ================  ====================  =======================================
 
-:Primary key: idJob, hostname
+:Primary key: moldable_job_id, resource_id
 :Index fields: *None*
 
-This table is the same as *ganttJobsNode* and is used by visualisation tools.
+This table is the same as *gantt_jobs_resources* and is used by visualisation tools.
 It is made up to date in an atomic action (with a lock).
 
-*ganttJobsPrediction*
-~~~~~~~~~~~~~~~~~~~~~
+*gantt_jobs_predictions*
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-idJob             INT UNSIGNED          job id
-startTime         DATETIME              date when the job is scheduled to start
+moldable_job_id   INT UNSIGNED          job id
+start_time        DATETIME              date when the job is scheduled to start
 ================  ====================  =======================================
 
-:Primary key: idJob
+:Primary key: moldable_job_id
 :Index fields: *None*
 
-With this table and *ganttJobsNode* you can know exactly what are the decisions
+With this table and *gantt_jobs_resources* you can know exactly what are the decisions
 taken by the schedulers for each waiting jobs.
 
-:note: The special job id "0" is ued to store the scheduling reference date.
+:note: The special job id "0" is used to store the scheduling reference date.
 
-*ganttJobsPrediction_visu*
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+*gantt_jobs_predictions_visu*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-idJob             INT UNSIGNED          job id
-startTime         DATETIME              date when the job is scheduled to start
+moldable_job_id   INT UNSIGNED          job id
+start_time        DATETIME              date when the job is scheduled to start
 ================  ====================  =======================================
 
-:Primary key: idJob
+:Primary key: job_id
 :Index fields: *None*
 
-This table is the same as *ganttJobsPrediction* and is used by visualisation
+This table is the same as *gantt_jobs_predictions* and is used by visualisation
 tools. It is made up to date in an atomic action (with a lock).
 
 *jobs*
@@ -719,21 +780,21 @@ hostname          VARCHAR(100)          node assigned to the job
 It is a log table for terminated jobs. It keeps the information on which nodes
 was scheduled a job.
 
-*queue*
-~~~~~~~
+*queues*
+~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-queueName         VARCHAR(100)          queue name
+queue_name        VARCHAR(100)          queue name
 priority          INT UNSIGNED          the scheduling priority
-schedulerPolicy   VARCHAR(100)          path of the associated scheduler
+scheduler_policy  VARCHAR(100)          path of the associated scheduler
 state             ENUM('Active',        permits to stop the scheduling for a
                   'notActive')          queue
                   DEFAULT 'Active'
 ================  ====================  =======================================
 
-:Primary key: queueName
+:Primary key: queue_name
 :Index fields: *None*
 
 This table contains the schedulers executed by the *oar_meta_scheduler* module.
