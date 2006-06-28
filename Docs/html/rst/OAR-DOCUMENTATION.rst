@@ -1,5 +1,3 @@
-
-
 ===================
  OAR Documentation 
 ===================
@@ -885,7 +883,11 @@ Configuration file
 
 This is the meanings for each configuration tags that you can find in /etc/oar.conf:
 
-  - DataBase hostname::
+  - Database type : you can use a MySQL or a PostgreSQL database (tags are "mysql" or "Pg")::
+      
+      DB_TYPE = mysql
+  
+  - Database hostname::
   
       DB_HOSTNAME=localhost
 
@@ -909,15 +911,19 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
       SERVER_PORT=6666
 
+  - When the user does not specify a -l option then oar use this::
+  
+      OARSUB_DEFAULT_RESOURCES = /resource_id=1
+  
   - Specify where we are connected in the deploy queue(the node to connect
     to when the job is in the deploy queue)::
       
       DEPLOY_HOSTNAME = 127.0.0.1
 
-  - Set DETACH_JOB to 1 if you do not want to keep a ssh connection between the
+  - Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh connection between the
     node and the server. Otherwise set this tag to 0::
       
-      DETACH_JOB=1
+      DETACH_JOB_FROM_SERVER=1
 
   - By default OAR uses the ping command to detect if nodes are down or not.
     To enhance this diagnostic you can specify one of these other methods (
@@ -935,10 +941,11 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
           NMAP_COMMAND=/usr/bin/nmap -p 22 -n -T5
 
-  - OAR nodes default weight(when the user does not specify a weight in the
-    oarsub invocation, then it is the used value)::
-      
-      NODE_DEFAULT_WEIGHT=1
+      * OAR generic : a specific script may be used instead of ping to check aliveness of nodes.
+        The script must return bad nodes on STDERR (1 line for a bad node and it must
+        have exactly the same name that OAR has given in argument of the command)::
+
+          GENERIC_COMMAND=/path/to/command arg1 arg2
 
   - OAR log level: 3(debug+warnings+errors), 2(warnings+errors), 1(errors)::
       
@@ -947,6 +954,10 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
   - OAR log file::
       
       LOG_FILE=/var/log/oar.log
+
+  - If you want to debug oarexec on nodes then affect 1 (only effective if DETACH_JOB_FROM_SERVER = 1)::
+
+      OAREXEC_DEBUG_MODE=0
 
   - OAR Allowed networks, Networks or hosts allowed to submit jobs to OAR and
     compute nodes may be specified here(0.0.0.0/0 means all IPs are allowed
@@ -973,6 +984,55 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
       G5K_LIMIT_WEEK_DAYS = 1 2 3 4 5
       G5K_LIMIT_DAY_HOURS = 7 22
+
+  - Set the timeout for the prologue and epilogue execution on computing nodes::
+
+      PROLOGUE_EPILOGUE_TIMEOUT = 60
+
+  - Files to execute before and after each job on the first computing node (default is ~oar/oar_prologue ans ~oar/oar_epilogue)::
+
+      PROLOGUE_EXEC_FILE = /path/to/prog
+      EPILOGUE_EXEC_FILE = /path/to/prog
+
+  - Set the timeout for the prologue and epilogue execution on the OAR server::
+
+      SERVER_PROLOGUE_EPILOGUE_TIMEOUT = 60
+
+  - Files to execute before and after each job on the OAR server::
+      
+      SERVER_PROLOGUE_EXEC_FILE = /path/to/prog
+      SERVER_EPILOGUE_EXEC_FILE = /path/to/prog
+
+  - Set the frequency for checking Alive and Suspected resources::
+      
+      FINAUD_FREQUENCY = 300
+
+  - Set time after which resources become Dead (default is 0 and it means never)::
+
+      DEAD_SWITCH_TIME = 600
+
+  - Maximum of seconds used by a scheduler::
+
+      SCHEDULER_TIMEOUT = 10
+
+  - Time to add between each jobs (time for administration tasks or time to let computers to reboot)::
+
+      SCHEDULER_JOB_SECURITY_TIME = 1
+
+  - Minimum time in seconds that can be considered like a hole where a job could be scheduled in::
+  
+      SCHEDULER_GANTT_HOLE_MINIMUM_TIME = 300
+
+  - Indicate the name of the database field that contains the cpu number of the node.
+    If this option is set then users must use `OARSH`_ instead of ssh to walk on each nodes that they have reserved via oarsub.
+    ::
+
+      CPUSET_RESOURCE_PROPERTY_DB_FIELD = cpuset
+
+  - Command to use to connect to other nodes (default is "ssh" in the PATH)
+    ::
+
+      OPENSSH_CMD = /usr/bin/ssh
 
   - These are configuration tags for OAR in the desktop-computing mode::
   
@@ -1065,4 +1125,26 @@ How does an interactive *oarsub* work?
    Interactive oarsub decomposition
 
 `interactive_oarsub_scheme.svg <interactive_oarsub_scheme.svg>`_
+
+CPUSET
+------
+
+Job launch
+----------
+
+Job deletion
+------------
+
+Checkpoint
+----------
+
+Scheduling
+----------
+
+User notification
+-----------------
+
+Accounting
+----------
+
 
