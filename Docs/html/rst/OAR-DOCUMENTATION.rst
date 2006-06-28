@@ -159,7 +159,7 @@ queue with a walltime of  2:15:00. Mooreover "-p" option restricts resources onl
 (connects to the job 42 on the first node and set all OAR environment variables)
 ::
 
-# oarsub -I
+  # oarsub -I
 
 (gives a shell on a resource)
 
@@ -184,6 +184,12 @@ Exemples
   # oardel -c 42
 
 (send checkpoint signal to the job 42)
+
+*oarhold*
+~~~~~~~~~
+
+*oarresume*
+~~~~~~~~~~~
 
 Visualisation tools
 -------------------
@@ -273,6 +279,18 @@ You can use the "-v" option to show the OAR version.
 
 Database scheme
 ---------------
+
+.. figure:: db_scheme.png
+   :align: center
+   :width: 750
+   :target: db_scheme.png
+   :alt: Database scheme
+
+   Database scheme
+   (red lines seem PRIMARY KEY,
+   blue lines seem INDEX)
+   
+`db_scheme.svg <db_scheme.svg>`_
 
 *accounting*
 ~~~~~~~~~~~~
@@ -424,10 +442,10 @@ The different event types are:
  - "CANNOT_CREATE_TMP_DIRECTORY" : OAR cannot create the directory where all
                                    information files will be stored.
  - "CAN_NOT_WRITE_NODE_FILE" : the system was not able to write file which had
-   to contain the node list on the first node (*/tmp/OAR_idJob*).
+   to contain the node list on the first node (*/tmp/OAR_job_id*).
  - "CAN_NOT_WRITE_PID_FILE" : the system was not able to write the file which had
    to contain the pid of oarexec process on the first node
-   (*/tmp/pid_of_oarexec_for_jobId_idJob*).
+   (*/tmp/pid_of_oarexec_for_job_id*).
  - "USER_SHELL" : the system was not able to get informations about the user
    shell on the first node.
  - "EXIT_VALUE_OAREXEC" : the oarexec process terminated with an unknown exit
@@ -443,7 +461,7 @@ The different event types are:
    not exist on the node assigned by the system.
  - "OUTPUT_FILES" : OAR cannot write the output files (stdout and stderr) in
    the working directory.
- - "CANNOT_NOTIFY_OARSUB" : OAR cannot notify the oarsub process for an
+ - "CANNOT_NOTIFY_OARSUB" : OAR cannot notify the `oarsub`_ process for an
    interactive job (maybe the user has killed this process).
  - "WALLTIME" : the job has reached its walltime.
  - "SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION" : this means that there is not
@@ -475,6 +493,20 @@ The different event types are:
  - "SSH_TRANSFER_TIMEOUT" : node OAR part script was too long to transfer.
  - "BAD_HASHTABLE_DUMP" : OAR transfered a bad hashtable.
  - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
+
+*event_log_hostnames*
+~~~~~~~~~~~~~~~~~~~~~
+
+================  ====================  =======================================
+Fields            Types                 Descriptions
+================  ====================  =======================================
+event_id          INT UNSIGNED          event identifier
+hostname          VARCHAR(255)          name of the node where the event
+                                        has occured
+================  ====================  =======================================
+
+:Primary key: event_id
+:Index fields: hostname
 
 *files*
 ~~~~~~~
@@ -588,63 +620,78 @@ tools. It is made up to date in an atomic action (with a lock).
 *jobs*
 ~~~~~~
 
-==================  ======================  =======================================
-Fields              Types                   Descriptions
-==================  ======================  =======================================
-idJob               INT UNSIGNED            job id
-jobType             ENUM('INTERACTIVE',     specify if the use want to launch a
-                    'PASSIVE') DEFAULT      program or get an interactive shell
-                    'PASSIVE'
-infoType            VARCHAR(255)            some informations about *oarsub*
-                                            command
-state               ENUM('Waiting','Hold',  job state
-                    'toLaunch','toError',
-                    'toAckReservation',
-                    'Launching','Running',
-                    'Terminated','Error')
-reservation         ENUM('None',            specify if the job is a reservation
-                    'toSchedule',           and the state of this one
-                    'Scheduled') DEFAULT
-                    'None'
-message             VARCHAR(255)            readable information message for the
-                                            user
-user                VARCHAR(20)             user name
-nbNodes             INT UNSIGNED            number of requested nodes
-weight              INT UNSIGNED            number of subdivision per node
-                                            requested
-command             TEXT                    program to run
-bpid                VARCHAR(255)            pid of the "bipbip" process
-queueName           VARCHAR(100)            queue name
-maxTime             TIME                    walltime
-properties          TEXT                    properties that assigned nodes must
-                                            match
-launchingDirectory  VARCHAR(255)            path of the directory where *oarsub*
-                                            command was launched
-submissionTime      DATETIME                date when the job was submitted
-startTime           DATETIME                date when the job was launched
-stopTime            DATETIME                date when the job was stopped
-idFile              INT
-accounted           ENUM("YES","NO")        specify if the job was considered by
-                    DEFAULT "NO"            the accounting mechanism or not
-==================  ======================  =======================================
+===================== ======================  =======================================
+Fields                Types                   Descriptions
+===================== ======================  =======================================
+job_id                INT UNSIGNED            job identifier
+job_name              VARCHAR(100)            name given by the user
+cpuset_name           VARCHAR(255)            name of the cpuset directory used for
+                                              this job on each nodes
+job_type              ENUM('INTERACTIVE',     specify if the user wants to launch a
+                      'PASSIVE') DEFAULT      program or get an interactive shell
+                      'PASSIVE'
+info_type              VARCHAR(255)           some informations about `oarsub`_
+                                              command
+state                 ENUM('Waiting','Hold',  job state
+                      'toLaunch','toError',
+                      'toAckReservation',
+                      'Launching','Running',
+                      'Finishing',
+                      'Terminated','Error')
+reservation           ENUM('None',            specify if the job is a reservation
+                      'toSchedule',           and the state of this one
+                      'Scheduled') DEFAULT
+                      'None'
+message               VARCHAR(255)            readable information message for the
+                                              user
+job_user              VARCHAR(20)             user name
+command               TEXT                    program to run
+queue_name            VARCHAR(100)            queue name
+properties            TEXT                    properties that assigned nodes must
+                                              match
+launching_directory   VARCHAR(255)            path of the directory where to launch
+                                              the user process
+submission_time       DATETIME                date when the job was submitted
+start_time            DATETIME                date when the job was launched
+stop_time             DATETIME                date when the job was stopped
+file_id               INT UNSIGNED
+accounted             ENUM("YES","NO")        specify if the job was considered by
+                      DEFAULT "NO"            the accounting mechanism or not
+notify                VARCHAR(255)            gives the way to notify the user about
+                                              the job (mail or script )
+assigned_moldable_job INT UNSIGNED            moldable job chosen by the scheduler
+checkpoint            INT UNSIGNED            number of seconds before the walltime
+                                              to send the checkpoint signal to the
+                                              job
+checkpoint_signal     INT UNSIGNED            signal to use when checkpointing the
+                                              job
+stdout_file           TEXT                    file name where to redirect program
+                                              STDOUT
+stderr_file           TEXT                    file name where to redirect program
+                                              STDERR
 
-:Primary key: idJob
-:Index fields: state, reservation, queueName, accounted
+resubmit_job_id       INT UNSIGNED            if a job is resubmitted then the new
+                                              one store the previous
+===================== ======================  =======================================
+
+:Primary key: job_id
+:Index fields: state, reservation, queue_name, accounted
 
 Explications about the "state" field:
 
  - "Waiting" : the job is waiting OAR sheduler decision.
- - "Hold" : user or administrator wants to hold the job (*oarhold* command).
+ - "Hold" : user or administrator wants to hold the job (`oarhold`_ command).
    So it will not be scheduled by the system.
  - "toLaunch" : the OAR scheduler has attributed some nodes to the job. So it
    will be launched.
  - "toError" : something wrong occured and the job is going into the error
    state.
  - "toAckReservation" : the OAR sheduler must say "YES" or "NO" to the waiting
-   *oarsub* command because it requested a reservation.
+   `oarsub`_ command because it requested a reservation.
  - "Launching" : OAR has launched the job and will execute the user command
    on the first node.
  - "Running" : the user command is executing on the first node.
+ - "Finishing" : the user command is terminated and OAR is doing work internally
  - "Terminated" : the job is terminated normally.
  - "Error" : a problem has occured.
 
@@ -655,130 +702,147 @@ Explications about the "reservation" field:
    scheduler.
  - "Scheduled" : the job is a reservation and is scheduled by OAR.
 
-*nodeProperties*
-~~~~~~~~~~~~~~~~
+*job_dependencies*
+~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-hostname          VARCHAR(100)          node name
-besteffort        ENUM('YES','NO')      specify if the node accepts or not
-                  DEFAULT 'YES'         besteffort jobs
-deploy            ENUM('YES','NO')      specify if the node accepts or not
-                  DEFAULT 'NO'          deployment jobs
-expiryDate        DATETIME              used in desktop computing mode to know
-                                        when a node is considered to be offline
-desktopComputing  ENUM('YES','NO')      specify if the node is a desktop
-                  DEFAULT 'NO'          computing node or not
+job_id            INT UNSIGNED          job identifier
+job_id_required   INT UNSIGNED          job needed to be completed before
+                                        launching job_id
 ================  ====================  =======================================
 
-:Primary key: hostname
-:Index fields: *None*
+:Primary key: job_id, job_id_required
+:Index fields: job_id, job_id_required
 
-This table permits to specify differents properties for each nodes. These can
-be used with the *oarsub* command ("-p" option).
+This table is feeded by `oarsub`_ command with the "-a" option.
 
-You can add your own properties, for exemple:
-::
+*resources*
+~~~~~~~~~~~
 
-  ALTER TALE nodeProperties ADD memory INT DEFAULT 256;
+====================  ====================  =======================================
+Fields                Types                 Descriptions
+====================  ====================  =======================================
+resource_id           INT UNSIGNED          resource identifier
+network_address       VARCHAR(100)          node name (used to connect via SSH)
+state                 ENUM('Alive','Dead',  resource state
+                      'Suspected',
+                      'Absent')
+next_state            ENUM('UnChanged',     state for the resource to switch
+                      'Alive','Dead',
+                      'Absent','Suspected'
+                      ) DEFAULT
+                      'UnChanged'
+finaud_decision       ENUM('YES','NO')      tell if the actual state results in a
+                      DEFAULT 'NO'          "finaud" module decision
+next_finaud_decision  ENUM('YES','NO')      tell if the next node state results in
+                      DEFAULT 'NO'          a "finaud" module decision
+====================  ====================  =======================================
 
-This adds a column "memory" where you can specify the amount of memory for each
-nodes.
+:Primary key: resource_id
+:Index fields: state, next_state
 
-These properties can be updated with the *oarnodesetting* command ("-p" option).
+State explications:
 
-*nodeState_log*
-~~~~~~~~~~~~~~~
+ - "Alive" : the resource is ready to accept a job.
+ - "Absent" : the oar administrator has decided to pull out the resource. This
+   computer can come back.
+ - "Suspected" : OAR system has detected a problem on this resource and so has
+   suspected it (you can look in the `event_logs`_ table to know what has
+   happened). This computer can come back (automatically if this is a 
+   "finaud" module decision).
+ - "Dead" : The oar administrator considers that the resource will not come back
+   and will be removed from the pool.
+
+*resource_state_logs*
+~~~~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-hostname          VARCHAR(100)          node name
-changeState       ENUM('Alive','Dead'   node state during the interval
+resource_id       INT UNSIGNED          resource identifier
+change_state      ENUM('Alive','Dead'   resource state during the interval
                   ,'Suspected',
                   'Absent')
-dateStart         DATETIME              start date of the interval
-dateStop          DATETIME              end date of the interval
-finaudDecision    ENUM('YES','NO')      specify if that was a "finaud" module
+date_start        DATETIME              start date of the interval
+date_stop         DATETIME              end date of the interval
+finaud_decision   ENUM('YES','NO')      specify if that was a "finaud" module
                   DEFAULT 'NO'          decision
 ================  ====================  =======================================
 
+:Primary key: resource_id
+:Index fields: change_state, finaud_decision
+
+This table keeps informations about state changes of resources.
+
+*resource_properties*
+~~~~~~~~~~~~~~~~~~~~~
+
+=================  ====================  =======================================
+Fields             Types                 Descriptions
+=================  ====================  =======================================
+resource_id        INT UNSIGNED          resource identifier
+node               VARCHAR(200)          node name
+besteffort         ENUM('YES','NO')      specify if the resource accepts or not
+                   DEFAULT 'YES'         besteffort jobs
+deploy             ENUM('YES','NO')      specify if the resource accepts or not
+                   DEFAULT 'NO'          deployment jobs
+expiry_date        DATETIME              used in desktop computing mode to know
+                                         when a resource is considered to be
+                                         offline
+desktop_computing  ENUM('YES','NO')      specify if the resource is a desktop
+                   DEFAULT 'NO'          computing resource or not
+cpuset             INT UNSIGNED          cpu number in the node
+cpu                INT UNSIGNED          cpu number in the cluster
+switch             VARCHAR(50)           switch name
+=================  ====================  =======================================
+
+:Primary key: resource_id
+:Index fields: *None*
+
+This table permits to specify different properties for each resources. These can
+be used with the `oarsub`_ command ("-p" and "-l" options).
+
+You can add your own properties with `oarproperty`_ command.
+
+These properties can be updated with the `oarnodesetting`_ command ("-p" option).
+
+*resource_property_logs*
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+=================  ====================  =======================================
+Fields             Types                 Descriptions
+=================  ====================  =======================================
+resource_id        INT UNSIGNED          resource identifier
+attribute          VARCHAR(255)          name of corresponding field in
+                                         resource_properties
+value              VARCHAR(255)          value of the field
+date_start         DATETIME              interval start date
+date_stop          DATETIME              interval stop date
+=================  ====================  =======================================
+
 :Primary key: *None*
-:Index fields: hostname, changeState, finaudDecision
+:Index fields: resource_id, attribute
 
-This table keeps informations about state changes of nodes.
+This table permits to keep a trace of every property changes (consequence of
+the `oarnodesetting`_ command with the "-p" option).
 
-*nodes*
-~~~~~~~
-
-==================  ====================  =======================================
-Fields              Types                 Descriptions
-==================  ====================  =======================================
-hostname            VARCHAR(100)          node name
-state               ENUM('Alive','Dead',  node state
-                    'Suspected',
-                    'Absent')
-maxWeight           INT UNSIGNED          maximum of the subdivision number
-                    DEFAULT 1
-weight              INT UNSIGNED          number of subdivision used
-nextState           ENUM('UnChanged',     state for the node to switch
-                    'Alive','Dead',
-                    'Absent','Suspected'
-                    ) DEFAULT
-                    'UnChanged'
-finaudDecision      ENUM('YES','NO')      tell if the actual state results in a
-                    DEFAULT 'NO'          "finaud" module decision
-nextFinaudDecision  ENUM('YES','NO')      tell if the next node state results in
-                    DEFAULT 'NO'          a "finaud" module decision
-==================  ====================  =======================================
-
-:Primary key: hostname
-:Index fields: state, nextState
-
-States explication:
-
- - "Alive" : the node is ready to accept a job.
- - "Absent" : the oar administrator has decided to pull out the node. This
-   computer can come back.
- - "Suspected" : OAR system has detected a problem on this node and so has
-   supectected it (you can look in the *event_log* table to know what has
-   happened). This computer can come back (automatically if this is a 
-   "finaud" module decision).
- - "Dead" : The oar administrator considers that the node will not come back
-   and will be removed from the pool.
-
-*processJobs*
-~~~~~~~~~~~~~
+*assigned_resources*
+~~~~~~~~~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-idJob             INT UNSIGNED          job id
-hostname          VARCHAR(100)          node assigned to the job
+moldable_job_id   INT UNSIGNED          job id
+resource_id       INT UNSIGNED          resource assigned to the job
 ================  ====================  =======================================
 
-:Primary key: idJob, hostname
-:Index fields: idJob
+:Primary key: moldable_job_id, resource_id
+:Index fields: moldable_job_id
 
-This table keeps information for running jobs on which nodes they are
+This table keeps information for jobs on which resources they were
 scheduled.
-
-*processJobs_log*
-~~~~~~~~~~~~~~~~~
-
-================  ====================  =======================================
-Fields            Types                 Descriptions
-================  ====================  =======================================
-idJob             INT UNSIGNED          job id
-hostname          VARCHAR(100)          node assigned to the job
-================  ====================  =======================================
-
-:Primary key: idJob, hostname
-:Index fields: idJob
-
-It is a log table for terminated jobs. It keeps the information on which nodes
-was scheduled a job.
 
 *queues*
 ~~~~~~~~
@@ -799,6 +863,22 @@ state             ENUM('Active',        permits to stop the scheduling for a
 
 This table contains the schedulers executed by the *oar_meta_scheduler* module.
 Executables are launched one after one in the specified priority.
+
+*challenges*
+~~~~~~~~~~~~
+
+================  ====================  =======================================
+Fields            Types                 Descriptions
+================  ====================  =======================================
+job_id            INT UNSIGNED          job identifier
+challenge         VARCHAR(255)          challenge string
+================  ====================  =======================================
+
+:Primary key: job_id
+:Index fields: *None*
+
+This table is used to share a secret between OAR server and oarexec process on
+computing nodes (avoid a job id to be stole by malicious man).
 
 Configuration file
 ==================
@@ -902,8 +982,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       STAGEIN_DIR=/var/lib/oar/stageins
       STAGEIN_CACHE_EXPIRY=144
 
-Module description
-==================
+Module descriptions
+===================
 
 OAR can be decomposed into several modules which perform different tasks.
 
@@ -969,3 +1049,20 @@ Runner
 
 This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.
+
+Mechanisms
+==========
+
+How does an interactive *oarsub* work?
+--------------------------------------
+
+.. figure:: interactive_oarsub_scheme.png
+   :width: 750
+   :alt: interactive oarsub decomposition
+   :target: interactive_oarsub_scheme.png
+   :align: center
+
+   Interactive oarsub decomposition
+
+`interactive_oarsub_scheme.svg <interactive_oarsub_scheme.svg>`_
+
