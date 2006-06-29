@@ -3,7 +3,9 @@
 ===================
 
 .. image:: ../oar_logo.png
+   :alt: OAR logo
    :align: center
+   :width: 8cm
 
 :Author: Capit Nicolas
 :Address: Laboratoire Informatique et Distribution (ID)-IMAG
@@ -279,8 +281,7 @@ Database scheme
 ---------------
 
 .. figure:: db_scheme.png
-   :align: center
-   :width: 18cm
+   :width: 17cm
    :target: db_scheme.png
    :alt: Database scheme
 
@@ -1206,10 +1207,9 @@ How does an interactive *oarsub* work?
 --------------------------------------
 
 .. figure:: interactive_oarsub_scheme.png
-   :width: 18cm
+   :width: 17cm
    :alt: interactive oarsub decomposition
    :target: interactive_oarsub_scheme.png
-   :align: center
 
    Interactive oarsub decomposition
 
