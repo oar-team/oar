@@ -280,7 +280,7 @@ Database scheme
 
 .. figure:: db_scheme.png
    :align: center
-   :width: 750
+   :width: 18cm
    :target: db_scheme.png
    :alt: Database scheme
 
@@ -438,7 +438,7 @@ The different event types are:
  - "EPILOGUE_ERROR" : an error occured during the execution of the job
    epilogue (exit code != 0).
  - "CANNOT_CREATE_TMP_DIRECTORY" : OAR cannot create the directory where all
-                                   information files will be stored.
+    information files will be stored.
  - "CAN_NOT_WRITE_NODE_FILE" : the system was not able to write file which had
    to contain the node list on the first node (*/tmp/OAR_job_id*).
  - "CAN_NOT_WRITE_PID_FILE" : the system was not able to write the file which had
@@ -484,7 +484,7 @@ The different event types are:
  - "USER_EXEC_NOTIFICATION_ERROR" : user script execution notification cannot be performed.
  - "BIPBIP_BAD_JOBID" : error when retriving informations about a running job.
  - "BIPBIP_CHALLENGE" : OAR is configured to detach jobs when they are launched
-                        on compute nodes and the job return a bad challenge number.
+   on compute nodes and the job return a bad challenge number.
  - "RESUBMIT_JOB_AUTOMATICALLY" : the job was automatically resubmitted.
  - "WALLTIME" : the job reached its walltime.
  - "REDUCE_RESERVATION_WALLTIME" : the reservation job was shrinked.
@@ -716,6 +716,95 @@ job_id_required   INT UNSIGNED          job needed to be completed before
 
 This table is feeded by `oarsub`_ command with the "-a" option.
 
+*moldable_job_descriptions*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+================  ====================  =======================================
+Fields            Types                 Descriptions
+================  ====================  =======================================
+moldable_id       INT UNSIGNED          job identifier
+moldable_job_id   INT UNSIGNED          corresponding job identifier
+moldable_wallime  VARCHAR(255)          instance duration
+================  ====================  =======================================
+
+:Primary key: moldable_id
+:Index fields: moldable_job_id
+
+A job can be described with several instances. Thus OAR scheduler can choose one
+of them. For example it can calculate which instance will finish the first.
+So this table stores all instances for all jobs.
+
+*job_resource_groups*
+~~~~~~~~~~~~~~~~~~~~~
+
+===================== ====================  =======================================
+Fields                Types                 Descriptions
+===================== ====================  =======================================
+res_group_id          INT UNSIGNED          group identifier
+res_group_moldable_id INT UNSIGNED          corresponding moldable job identifier
+res_group_property    TEXT                  SQL constraint properties
+===================== ====================  =======================================
+
+:Primary key: res_group_id
+:Index fields: res_group_moldable_id
+
+As you can specify job global properties with `oarsub`_ and the "-p" option, you
+can do the same thing for each resource groups that you define with the "-l" option.
+
+*job_resource_descriptions*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+===================== ====================  =======================================
+Fields                Types                 Descriptions
+===================== ====================  =======================================
+res_job_group_id      INT UNSIGNED          corresponding group identifier
+res_job_resource_type VARCHAR(255)          resource type (name of a field in
+                                            resources)
+res_job_value         INT                   wanted resource number
+res_job_order         INT UNSIGNED          order of the request
+===================== ====================  =======================================
+
+:Primary key: res_job_group_id, res_job_resource_type, res_job_order
+:Index fields: res_job_group_id
+
+This table store the hierarchical resource description given with `oarsub`_ and
+the "-l" option.
+
+*job_state_logs*
+~~~~~~~~~~~~~~~~
+
+================  ====================  =======================================
+Fields            Types                 Descriptions
+================  ====================  =======================================
+job_id            INT UNSIGNED          corresponding job identifier
+job_state         ENUM('Alive','Dead'   job state during the interval
+                  ,'Suspected',
+                  'Absent')
+date_start        DATETIME              start date of the interval
+date_stop         DATETIME              end date of the interval
+================  ====================  =======================================
+
+:Primary key: *None*
+:Index fields: job_id, job_state
+
+This table keeps informations about state changes of jobs.
+
+*job_types*
+~~~~~~~~~~~
+
+================  ====================  =======================================
+Fields            Types                 Descriptions
+================  ====================  =======================================
+job_id            INT UNSIGNED          corresponding job identifier
+type              VARCHAR(255)          job type like "deploy", "timesharing",
+                                        ...
+================  ====================  =======================================
+
+:Primary key: *None*
+:Index fields: job_id, type
+
+This table stores job types given with the `oarsub`_ command and "-t" options.
+
 *resources*
 ~~~~~~~~~~~
 
@@ -769,8 +858,8 @@ finaud_decision   ENUM('YES','NO')      specify if that was a "finaud" module
                   DEFAULT 'NO'          decision
 ================  ====================  =======================================
 
-:Primary key: resource_id
-:Index fields: change_state, finaud_decision
+:Primary key: *None*
+:Index fields: resource_id, change_state, finaud_decision
 
 This table keeps informations about state changes of resources.
 
@@ -1117,7 +1206,7 @@ How does an interactive *oarsub* work?
 --------------------------------------
 
 .. figure:: interactive_oarsub_scheme.png
-   :width: 750
+   :width: 18cm
    :alt: interactive oarsub decomposition
    :target: interactive_oarsub_scheme.png
    :align: center

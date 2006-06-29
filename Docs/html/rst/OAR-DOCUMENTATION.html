@@ -382,37 +382,42 @@ productive plateforms and research experiments.</td>
 <li><a class="reference" href="#gantt-jobs-predictions-visu" id="id42" name="id42">3.2.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></li>
 <li><a class="reference" href="#jobs" id="id43" name="id43">3.2.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
 <li><a class="reference" href="#job-dependencies" id="id44" name="id44">3.2.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></li>
-<li><a class="reference" href="#resources" id="id45" name="id45">3.2.13&nbsp;&nbsp;&nbsp;<em>resources</em></a></li>
-<li><a class="reference" href="#resource-state-logs" id="id46" name="id46">3.2.14&nbsp;&nbsp;&nbsp;<em>resource_state_logs</em></a></li>
-<li><a class="reference" href="#resource-properties" id="id47" name="id47">3.2.15&nbsp;&nbsp;&nbsp;<em>resource_properties</em></a></li>
-<li><a class="reference" href="#resource-property-logs" id="id48" name="id48">3.2.16&nbsp;&nbsp;&nbsp;<em>resource_property_logs</em></a></li>
-<li><a class="reference" href="#assigned-resources" id="id49" name="id49">3.2.17&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></li>
-<li><a class="reference" href="#queues" id="id50" name="id50">3.2.18&nbsp;&nbsp;&nbsp;<em>queues</em></a></li>
-<li><a class="reference" href="#challenges" id="id51" name="id51">3.2.19&nbsp;&nbsp;&nbsp;<em>challenges</em></a></li>
+<li><a class="reference" href="#moldable-job-descriptions" id="id45" name="id45">3.2.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></li>
+<li><a class="reference" href="#job-resource-groups" id="id46" name="id46">3.2.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></li>
+<li><a class="reference" href="#job-resource-descriptions" id="id47" name="id47">3.2.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></li>
+<li><a class="reference" href="#job-state-logs" id="id48" name="id48">3.2.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></li>
+<li><a class="reference" href="#job-types" id="id49" name="id49">3.2.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></li>
+<li><a class="reference" href="#resources" id="id50" name="id50">3.2.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></li>
+<li><a class="reference" href="#resource-state-logs" id="id51" name="id51">3.2.19&nbsp;&nbsp;&nbsp;<em>resource_state_logs</em></a></li>
+<li><a class="reference" href="#resource-properties" id="id52" name="id52">3.2.20&nbsp;&nbsp;&nbsp;<em>resource_properties</em></a></li>
+<li><a class="reference" href="#resource-property-logs" id="id53" name="id53">3.2.21&nbsp;&nbsp;&nbsp;<em>resource_property_logs</em></a></li>
+<li><a class="reference" href="#assigned-resources" id="id54" name="id54">3.2.22&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></li>
+<li><a class="reference" href="#queues" id="id55" name="id55">3.2.23&nbsp;&nbsp;&nbsp;<em>queues</em></a></li>
+<li><a class="reference" href="#challenges" id="id56" name="id56">3.2.24&nbsp;&nbsp;&nbsp;<em>challenges</em></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference" href="#configuration-file" id="id52" name="id52">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
-<li><a class="reference" href="#module-descriptions" id="id53" name="id53">5&nbsp;&nbsp;&nbsp;Module descriptions</a><ul class="auto-toc">
-<li><a class="reference" href="#almighty" id="id54" name="id54">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
-<li><a class="reference" href="#sarko" id="id55" name="id55">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
-<li><a class="reference" href="#judas" id="id56" name="id56">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
-<li><a class="reference" href="#leon" id="id57" name="id57">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
-<li><a class="reference" href="#nodechangestate" id="id58" name="id58">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
-<li><a class="reference" href="#scheduler" id="id59" name="id59">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
-<li><a class="reference" href="#runner" id="id60" name="id60">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
+<li><a class="reference" href="#configuration-file" id="id57" name="id57">4&nbsp;&nbsp;&nbsp;Configuration file</a></li>
+<li><a class="reference" href="#module-descriptions" id="id58" name="id58">5&nbsp;&nbsp;&nbsp;Module descriptions</a><ul class="auto-toc">
+<li><a class="reference" href="#almighty" id="id59" name="id59">5.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
+<li><a class="reference" href="#sarko" id="id60" name="id60">5.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
+<li><a class="reference" href="#judas" id="id61" name="id61">5.3&nbsp;&nbsp;&nbsp;Judas</a></li>
+<li><a class="reference" href="#leon" id="id62" name="id62">5.4&nbsp;&nbsp;&nbsp;Leon</a></li>
+<li><a class="reference" href="#nodechangestate" id="id63" name="id63">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
+<li><a class="reference" href="#scheduler" id="id64" name="id64">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></li>
+<li><a class="reference" href="#runner" id="id65" name="id65">5.7&nbsp;&nbsp;&nbsp;Runner</a></li>
 </ul>
 </li>
-<li><a class="reference" href="#mechanisms" id="id61" name="id61">6&nbsp;&nbsp;&nbsp;Mechanisms</a><ul class="auto-toc">
-<li><a class="reference" href="#how-does-an-interactive-oarsub-work" id="id62" name="id62">6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></li>
-<li><a class="reference" href="#cpuset" id="id63" name="id63">6.2&nbsp;&nbsp;&nbsp;CPUSET</a></li>
-<li><a class="reference" href="#job-launch" id="id64" name="id64">6.3&nbsp;&nbsp;&nbsp;Job launch</a></li>
-<li><a class="reference" href="#job-deletion" id="id65" name="id65">6.4&nbsp;&nbsp;&nbsp;Job deletion</a></li>
-<li><a class="reference" href="#checkpoint" id="id66" name="id66">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></li>
-<li><a class="reference" href="#scheduling" id="id67" name="id67">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></li>
-<li><a class="reference" href="#user-notification" id="id68" name="id68">6.7&nbsp;&nbsp;&nbsp;User notification</a></li>
-<li><a class="reference" href="#id1" id="id69" name="id69">6.8&nbsp;&nbsp;&nbsp;Accounting</a></li>
+<li><a class="reference" href="#mechanisms" id="id66" name="id66">6&nbsp;&nbsp;&nbsp;Mechanisms</a><ul class="auto-toc">
+<li><a class="reference" href="#how-does-an-interactive-oarsub-work" id="id67" name="id67">6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></li>
+<li><a class="reference" href="#cpuset" id="id68" name="id68">6.2&nbsp;&nbsp;&nbsp;CPUSET</a></li>
+<li><a class="reference" href="#job-launch" id="id69" name="id69">6.3&nbsp;&nbsp;&nbsp;Job launch</a></li>
+<li><a class="reference" href="#job-deletion" id="id70" name="id70">6.4&nbsp;&nbsp;&nbsp;Job deletion</a></li>
+<li><a class="reference" href="#checkpoint" id="id71" name="id71">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></li>
+<li><a class="reference" href="#scheduling" id="id72" name="id72">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></li>
+<li><a class="reference" href="#user-notification" id="id73" name="id73">6.7&nbsp;&nbsp;&nbsp;User notification</a></li>
+<li><a class="reference" href="#id1" id="id74" name="id74">6.8&nbsp;&nbsp;&nbsp;Accounting</a></li>
 </ul>
 </li>
 </ul>
@@ -966,7 +971,7 @@ developpers.</p>
 <div class="section">
 <h2><a class="toc-backref" href="#id32" id="database-scheme" name="database-scheme">3.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
 <div align="center" class="figure">
-<a class="reference image-reference" href="db_scheme.png"><img alt="Database scheme" src="db_scheme.png" style="width: 750px;" /></a>
+<a class="reference image-reference" href="db_scheme.png"><img alt="Database scheme" src="db_scheme.png" style="width: 18cm;" /></a>
 <p class="caption">Database scheme
 (red lines seem PRIMARY KEY,
 blue lines seem INDEX)</p>
@@ -1297,11 +1302,8 @@ because a normal job wanted the nodes.</p>
 </li>
 <li><p class="first">&quot;BIPBIP_BAD_JOBID&quot; : error when retriving informations about a running job.</p>
 </li>
-<li><dl class="first docutils">
-<dt>&quot;BIPBIP_CHALLENGE&quot; <span class="classifier-delimiter">:</span> <span class="classifier">OAR is configured to detach jobs when they are launched</span></dt>
-<dd><p class="first last">on compute nodes and the job return a bad challenge number.</p>
-</dd>
-</dl>
+<li><p class="first">&quot;BIPBIP_CHALLENGE&quot; : OAR is configured to detach jobs when they are launched
+on compute nodes and the job return a bad challenge number.</p>
 </li>
 <li><p class="first">&quot;RESUBMIT_JOB_AUTOMATICALLY&quot; : the job was automatically resubmitted.</p>
 </li>
@@ -1843,7 +1845,224 @@ launching job_id</td>
 <p>This table is feeded by <a class="reference" href="#oarsub">oarsub</a> command with the &quot;-a&quot; option.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id45" id="resources" name="resources">3.2.13&nbsp;&nbsp;&nbsp;<em>resources</em></a></h3>
+<h3><a class="toc-backref" href="#id45" id="moldable-job-descriptions" name="moldable-job-descriptions">3.2.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_id</td>
+<td>INT UNSIGNED</td>
+<td>job identifier</td>
+</tr>
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding job identifier</td>
+</tr>
+<tr><td>moldable_wallime</td>
+<td>VARCHAR(255)</td>
+<td>instance duration</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">moldable_job_id</td>
+</tr>
+</tbody>
+</table>
+<p>A job can be described with several instances. Thus OAR scheduler can choose one
+of them. For example it can calculate which instance will finish the first.
+So this table stores all instances for all jobs.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id46" id="job-resource-groups" name="job-resource-groups">3.2.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="25%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>res_group_id</td>
+<td>INT UNSIGNED</td>
+<td>group identifier</td>
+</tr>
+<tr><td>res_group_moldable_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding moldable job identifier</td>
+</tr>
+<tr><td>res_group_property</td>
+<td>TEXT</td>
+<td>SQL constraint properties</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">res_group_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">res_group_moldable_id</td>
+</tr>
+</tbody>
+</table>
+<p>As you can specify job global properties with <a class="reference" href="#oarsub">oarsub</a> and the &quot;-p&quot; option, you
+can do the same thing for each resource groups that you define with the &quot;-l&quot; option.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id47" id="job-resource-descriptions" name="job-resource-descriptions">3.2.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="25%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>res_job_group_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding group identifier</td>
+</tr>
+<tr><td>res_job_resource_type</td>
+<td>VARCHAR(255)</td>
+<td>resource type (name of a field in
+resources)</td>
+</tr>
+<tr><td>res_job_value</td>
+<td>INT</td>
+<td>wanted resource number</td>
+</tr>
+<tr><td>res_job_order</td>
+<td>INT UNSIGNED</td>
+<td>order of the request</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">res_job_group_id, res_job_resource_type, res_job_order</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">res_job_group_id</td>
+</tr>
+</tbody>
+</table>
+<p>This table store the hierarchical resource description given with <a class="reference" href="#oarsub">oarsub</a> and
+the &quot;-l&quot; option.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id48" id="job-state-logs" name="job-state-logs">3.2.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding job identifier</td>
+</tr>
+<tr><td>job_state</td>
+<td>ENUM('Alive','Dead'
+,'Suspected',
+'Absent')</td>
+<td>job state during the interval</td>
+</tr>
+<tr><td>date_start</td>
+<td>DATETIME</td>
+<td>start date of the interval</td>
+</tr>
+<tr><td>date_stop</td>
+<td>DATETIME</td>
+<td>end date of the interval</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">job_id, job_state</td>
+</tr>
+</tbody>
+</table>
+<p>This table keeps informations about state changes of jobs.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id49" id="job-types" name="job-types">3.2.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding job identifier</td>
+</tr>
+<tr><td>type</td>
+<td>VARCHAR(255)</td>
+<td>job type like &quot;deploy&quot;, &quot;timesharing&quot;,
+...</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">job_id, type</td>
+</tr>
+</tbody>
+</table>
+<p>This table stores job types given with the <a class="reference" href="#oarsub">oarsub</a> command and &quot;-t&quot; options.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id50" id="resources" name="resources">3.2.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="25%" />
@@ -1919,7 +2138,7 @@ and will be removed from the pool.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id46" id="resource-state-logs" name="resource-state-logs">3.2.14&nbsp;&nbsp;&nbsp;<em>resource_state_logs</em></a></h3>
+<h3><a class="toc-backref" href="#id51" id="resource-state-logs" name="resource-state-logs">3.2.19&nbsp;&nbsp;&nbsp;<em>resource_state_logs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1963,16 +2182,16 @@ decision</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">resource_id</td>
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
 </tr>
-<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">change_state, finaud_decision</td>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">resource_id, change_state, finaud_decision</td>
 </tr>
 </tbody>
 </table>
 <p>This table keeps informations about state changes of resources.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id47" id="resource-properties" name="resource-properties">3.2.15&nbsp;&nbsp;&nbsp;<em>resource_properties</em></a></h3>
+<h3><a class="toc-backref" href="#id52" id="resource-properties" name="resource-properties">3.2.20&nbsp;&nbsp;&nbsp;<em>resource_properties</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="22%" />
@@ -2048,7 +2267,7 @@ be used with the <a class="reference" href="#oarsub">oarsub</a> command (&quot;-
 <p>These properties can be updated with the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command (&quot;-p&quot; option).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id48" id="resource-property-logs" name="resource-property-logs">3.2.16&nbsp;&nbsp;&nbsp;<em>resource_property_logs</em></a></h3>
+<h3><a class="toc-backref" href="#id53" id="resource-property-logs" name="resource-property-logs">3.2.21&nbsp;&nbsp;&nbsp;<em>resource_property_logs</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="22%" />
@@ -2099,7 +2318,7 @@ resource_properties</td>
 the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command with the &quot;-p&quot; option).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id49" id="assigned-resources" name="assigned-resources">3.2.17&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></h3>
+<h3><a class="toc-backref" href="#id54" id="assigned-resources" name="assigned-resources">3.2.22&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2137,7 +2356,7 @@ the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command with 
 scheduled.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id50" id="queues" name="queues">3.2.18&nbsp;&nbsp;&nbsp;<em>queues</em></a></h3>
+<h3><a class="toc-backref" href="#id55" id="queues" name="queues">3.2.23&nbsp;&nbsp;&nbsp;<em>queues</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2186,7 +2405,7 @@ queue</td>
 Executables are launched one after one in the specified priority.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id51" id="challenges" name="challenges">3.2.19&nbsp;&nbsp;&nbsp;<em>challenges</em></a></h3>
+<h3><a class="toc-backref" href="#id56" id="challenges" name="challenges">3.2.24&nbsp;&nbsp;&nbsp;<em>challenges</em></a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2226,7 +2445,7 @@ computing nodes (avoid a job id to be stole by malicious man).</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id52" id="configuration-file" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
+<h1><a class="toc-backref" href="#id57" id="configuration-file" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
 <p>This is the meanings for each configuration tags that you can find in /etc/oar.conf:</p>
 <blockquote>
 <ul>
@@ -2428,10 +2647,10 @@ STAGEIN_CACHE_EXPIRY=144
 </blockquote>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id53" id="module-descriptions" name="module-descriptions">5&nbsp;&nbsp;&nbsp;Module descriptions</a></h1>
+<h1><a class="toc-backref" href="#id58" id="module-descriptions" name="module-descriptions">5&nbsp;&nbsp;&nbsp;Module descriptions</a></h1>
 <p>OAR can be decomposed into several modules which perform different tasks.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id54" id="almighty" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
+<h2><a class="toc-backref" href="#id59" id="almighty" name="almighty">5.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
 <p>This module is the OAR server. It decides what actions must be performed. It
 is divided into 2 processes:</p>
 <blockquote>
@@ -2444,7 +2663,7 @@ modules one after one.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id55" id="sarko" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
+<h2><a class="toc-backref" href="#id60" id="sarko" name="sarko">5.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
 <p>This module is executed periodically by the Almighty (default is every
 30 seconds).</p>
 <p>The jobs of Sarko are :</p>
@@ -2459,12 +2678,12 @@ asks to change its state into &quot;Suspected&quot;.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id56" id="judas" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
+<h2><a class="toc-backref" href="#id61" id="judas" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
 <p>This is the module dedicated to print and log every debugging, warning and
 error text.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id57" id="leon" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
+<h2><a class="toc-backref" href="#id62" id="leon" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
 <p>This module is in charge of the frag of jobs. Other OAR modules or commands
 can ask to kill a job and this is Leon which perform that.</p>
 <p>There are 2 frag types :</p>
@@ -2478,59 +2697,59 @@ then Leon notifies this case and clean up the database for these jobs.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id58" id="nodechangestate" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
+<h2><a class="toc-backref" href="#id63" id="nodechangestate" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
 <p>This module is in charge of changing node states and check if there are jobs
 on these.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id59" id="scheduler" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
+<h2><a class="toc-backref" href="#id64" id="scheduler" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
 <p>This module checks for each reservation job it validity and the moment to
 launch it. And it launches all gantt scheduler in the order of the priority
 of the database.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id60" id="runner" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
+<h2><a class="toc-backref" href="#id65" id="runner" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
 <p>This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id61" id="mechanisms" name="mechanisms">6&nbsp;&nbsp;&nbsp;Mechanisms</a></h1>
+<h1><a class="toc-backref" href="#id66" id="mechanisms" name="mechanisms">6&nbsp;&nbsp;&nbsp;Mechanisms</a></h1>
 <div class="section">
-<h2><a class="toc-backref" href="#id62" id="how-does-an-interactive-oarsub-work" name="how-does-an-interactive-oarsub-work">6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></h2>
+<h2><a class="toc-backref" href="#id67" id="how-does-an-interactive-oarsub-work" name="how-does-an-interactive-oarsub-work">6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></h2>
 <div align="center" class="figure">
-<a class="reference image-reference" href="interactive_oarsub_scheme.png"><img alt="interactive oarsub decomposition" src="interactive_oarsub_scheme.png" style="width: 750px;" /></a>
+<a class="reference image-reference" href="interactive_oarsub_scheme.png"><img alt="interactive oarsub decomposition" src="interactive_oarsub_scheme.png" style="width: 18cm;" /></a>
 <p class="caption">Interactive oarsub decomposition</p>
 </div>
 <p><a class="reference" href="interactive_oarsub_scheme.svg">interactive_oarsub_scheme.svg</a></p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id63" id="cpuset" name="cpuset">6.2&nbsp;&nbsp;&nbsp;CPUSET</a></h2>
+<h2><a class="toc-backref" href="#id68" id="cpuset" name="cpuset">6.2&nbsp;&nbsp;&nbsp;CPUSET</a></h2>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id64" id="job-launch" name="job-launch">6.3&nbsp;&nbsp;&nbsp;Job launch</a></h2>
+<h2><a class="toc-backref" href="#id69" id="job-launch" name="job-launch">6.3&nbsp;&nbsp;&nbsp;Job launch</a></h2>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id65" id="job-deletion" name="job-deletion">6.4&nbsp;&nbsp;&nbsp;Job deletion</a></h2>
+<h2><a class="toc-backref" href="#id70" id="job-deletion" name="job-deletion">6.4&nbsp;&nbsp;&nbsp;Job deletion</a></h2>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id66" id="checkpoint" name="checkpoint">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></h2>
+<h2><a class="toc-backref" href="#id71" id="checkpoint" name="checkpoint">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></h2>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id67" id="scheduling" name="scheduling">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></h2>
+<h2><a class="toc-backref" href="#id72" id="scheduling" name="scheduling">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></h2>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id68" id="user-notification" name="user-notification">6.7&nbsp;&nbsp;&nbsp;User notification</a></h2>
+<h2><a class="toc-backref" href="#id73" id="user-notification" name="user-notification">6.7&nbsp;&nbsp;&nbsp;User notification</a></h2>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id69" id="id1" name="id1">6.8&nbsp;&nbsp;&nbsp;Accounting</a></h2>
+<h2><a class="toc-backref" href="#id74" id="id1" name="id1">6.8&nbsp;&nbsp;&nbsp;Accounting</a></h2>
 </div>
 </div>
 </div>
 <div class="footer">
 <hr class="footer" />
 <a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
-Generated on: 2006-06-28 16:53 UTC.
+Generated on: 2006-06-29 10:26 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
