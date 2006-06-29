@@ -1,9 +1,8 @@
-=============
 OAR CHANGELOG
 =============
 
 version 2.0.0++ enhanced:
-=========================
+-------------------------
     - Now you can connect to your jobs (not only for reservations).
     - Add "cosystem" job type (execute and do nothing for these jobs).
     - New scheduler : "oar_sched_gantt_with_timesharing". You can specify jobs with the type "timesharing" that indicates that this scheduler can launch more than 1 job on a resource at a time. It is possible to restrict this feature with words "user and name". For example, '-t timesharing=user,name' indicates that only a job from the same user with the same name can be launched in the same time than it.
@@ -42,7 +41,7 @@ version 2.0.0++ enhanced:
     - It is possible to specify a read only database account and it will be used to evaluate SQL properties given by the user with the oarsub command (more scecure).
 
 version 1.6.1:
-==============
+--------------
     - initialise the "ganttJobsPrediction" table with a right reference date (1970-01-01 00:00:01)
     - oarsub has the "-k, --checkpoint" option. It specifies the number of seconds before job walltime to send a SIGUSR2 on it.
     - You can see the list of events for jobs with -f option in oarstat
@@ -72,7 +71,7 @@ version 1.6.1:
     - fix bugs about accounting
 
 version 1.6:
-============
+------------
     - debug reservation jobs (if the job has not the right number of requested nodes then it will wait for a delay. Once expired, the job will be launched on the nodes available).
     - add a cache for visualization of the gantt scheme (add two gantt table for the visu)
     - add an event log mechanism. It permits to know all decisions and events occuring in OAR with regards to jobs.
@@ -90,68 +89,68 @@ version 1.6:
     - change nodeState_log table scheme to increase rapidity
 
 version 1.5:
-============
+------------
     - internal development version
 
 version 1.4:
-============
+------------
     - add "DEPLOY_HOSTNAME" tag in oar.conf
       This variable specifies the node where OAR will be connected to submit a job in the deploy queue.
     - "besteffort" jobs are now killed by the oar_meta_sched. This feature simplifies the writing of new schedulers as they do nothave to care about "besteffort" jobs.
     - bug fix about job startTime and stopTime (no more overlapping)
 
 version 1.3:
-============
+------------
     - Merging of the desktop computing branch.
     - Add some changes for the kaDeploy mode (for a kaDeploy reservation, you are logged on the server instead of the first node).
     - Add a new module "finaud" : check every 5 minutes if nodes in state "Suspected" are still suspected and if the ones in state"Alive" are still alive.
 
 version 1.2:
-============
+------------
     - change ping checker default strategy - do 10 pings in root.
 
 version 1.1.2:
-==============
+--------------
     - bug fix on stopTime affectation in bipbip
 
 version 1.1.1:
-==============
+--------------
     - bug fix on oarexec waitpid
 
 version 1.1.0:
-==============
+--------------
     - bug fix (MySQL database deconnection)
     - oarexec can be detached from the server. So OAR is now more scalable and the server can be rebooted without risking losing the running jobs. To enable/disable this feature, look for the DETACH_JOB tag in the oar.conf file.
 
 version 1.0.0:
-==============
+--------------
     - 0.9.7 version released as the stable version
     - Fix CHANGELOG :-)
 
 version 0.9.7:
-==============
+--------------
     - Complete change of installation procedure (Makefile)
     - Debian packages are now available
     - Examples of prologue/epilogue that can clean SMP better are provided
     - Use of a sudo wrapper instead of setuid bit on perl scripts (now users must be in oar group)
 
 version 0.9.6:
-==============
+--------------
     - Socket connection between server and node is removed (this socket permitted to send kill notification to oarexec. Now you can kill oarexec directly)
     - User commands are launched by means of a wrapper. It executes sudo command and set variables for the perl library and OAR installation paths. You must configure sudo for oar group (there is no longer a suid bit in the new installation).
 
 version 0.9.5:
-==============
+--------------
     - Add reservation feature
     - Bug fix
     - Scheduling policy templating has been re-enabled for each of the queues.
 
 version 0.9.4:
-==============
+--------------
     - Gantt scheduling notion in scheduler architecture
 
 version 0.9.3:
-==============
+--------------
     - bug fix
     - change kill method of Leon
 

@@ -30,6 +30,8 @@
 .. section-numbering::
 .. contents:: Table of Contents
 
+-------------------------------------------------------------------------------
+
 .. include:: ../../../INSTALL
 
 User guide
@@ -166,7 +168,7 @@ queue with a walltime of  2:15:00. Mooreover "-p" option restricts resources onl
 *oardel*
 ~~~~~~~~
 
-This command is used to delete or checkpoint job(s). Jobs are designed by their job's identifier.
+This command is used to delete or checkpoint job(s). They are designed by their identifier.
 
 Option
 ::
@@ -197,7 +199,7 @@ Visualisation tools
 Monika
 ~~~~~~
 This is a web cgi normally installed on the cluster frontal. This tool executes
-*oarnodes* and *oarstat* then format data in a html page.
+`oarnodes`_ and `oarstat`_ then format data in a html page.
 
 Thus you can have a global view of cluster state and where your jobs are running.
 
@@ -239,7 +241,7 @@ Examples: ::
 This command permits to change the state or a property of a node or of several
 resources resources.
 
-By default the node name used by *oarnodesetting* is the result of the command
+By default the node name used by `oarnodesetting`_ is the result of the command
 *hostname*.
 
 Options are: ::
@@ -260,19 +262,19 @@ Options are: ::
 
 This command permits to remove a resource from the database.
 
-The node must be in the state "Dead" (use *oarnodesetting* to do this) and then
+The node must be in the state "Dead" (use `oarnodesetting`_ to do this) and then
 you can use this command to delete it.
 
 *oaraccounting*
 ~~~~~~~~~~~~~~~
 
-This command permits to update the *accounting* table for jobs ended since the
+This command permits to update the `accounting`_ table for jobs ended since the
 last launch.
 
 *oarnotify*
 ~~~~~~~~~~~
 
-This command sends commands to the "Almighty" module. It is dedicated to
+This command sends commands to the `Almighty`_ module. It is dedicated to
 developpers.
 
 You can use the "-v" option to show the OAR version.
@@ -315,7 +317,7 @@ This table is a summary of the comsumption for each user on each queue. This
 increases the speed of queries about user consumptions and statistic
 generation.
 
-Data are inserted through the command *oaraccounting* (when a job is treated
+Data are inserted through the command `oaraccounting`_ (when a job is treated
 the field *accounted* in table jobs is passed into "YES"). So it is possible to
 regenerate this table completely in this way :
  
@@ -329,7 +331,7 @@ regenerate this table completely in this way :
 
        UPDATE jobs SET accounted = "NO";
 
- - Run the *oaraccounting* command.
+ - Run the `oaraccounting`_ command.
 
 You can change the amount of time for each window : edit the oar configuration
 file and change the value of the tag *ACCOUNTING_WINDOW*.
@@ -579,7 +581,7 @@ resource_id       INT UNSIGNED          resource assigned to the job
 :Primary key: moldable_job_id, resource_id
 :Index fields: *None*
 
-This table is the same as *gantt_jobs_resources* and is used by visualisation tools.
+This table is the same as `gantt_jobs_resources`_ and is used by visualisation tools.
 It is made up to date in an atomic action (with a lock).
 
 *gantt_jobs_predictions*
@@ -595,7 +597,7 @@ start_time        DATETIME              date when the job is scheduled to start
 :Primary key: moldable_job_id
 :Index fields: *None*
 
-With this table and *gantt_jobs_resources* you can know exactly what are the decisions
+With this table and `gantt_jobs_resources`_ you can know exactly what are the decisions
 taken by the schedulers for each waiting jobs.
 
 :note: The special job id "0" is used to store the scheduling reference date.
@@ -613,7 +615,7 @@ start_time        DATETIME              date when the job is scheduled to start
 :Primary key: job_id
 :Index fields: *None*
 
-This table is the same as *gantt_jobs_predictions* and is used by visualisation
+This table is the same as `gantt_jobs_predictions`_ and is used by visualisation
 tools. It is made up to date in an atomic action (with a lock).
 
 *jobs*
@@ -929,7 +931,7 @@ resource_id       INT UNSIGNED          resource assigned to the job
 :Primary key: moldable_job_id, resource_id
 :Index fields: moldable_job_id
 
-This table keeps information for jobs on which resources they were
+This table keeps informations for jobs on which resources they were
 scheduled.
 
 *queues*
@@ -1233,7 +1235,8 @@ Scheduling
 User notification
 -----------------
 
-Accounting
-----------
+Accounting agregator
+--------------------
 
+.. include:: ../../../CHANGELOG
 

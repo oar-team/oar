@@ -370,7 +370,6 @@ sub parse_resource_descriptions($){
         my $end_loop = 0;
         while ($end_loop == 0){
             my $initial_resource = $r;
-            print("$r\n");
             my %tmp_result;
             if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/){
                 # $1 = property string
@@ -387,7 +386,6 @@ sub parse_resource_descriptions($){
                 # Remove first /
                 $resources_to_parse = $1;
             }
-            print("$resources_to_parse\n");
             my @slash_split = split('\/', $resources_to_parse);
             my @resources_list;
             foreach my $l (@slash_split){
@@ -421,14 +419,8 @@ sub parse_resource_descriptions($){
             }
             if ($r eq $initial_resource){
                 die("/!\\ Cannot recognize -- $r -- resource\n");
-            }else{
-                if (!defined($tmp_result{resources})){
-                    # if nothing specified, use default config file value
-                    $r = $Default_resources;
-                }else{ 
-                    push(@{$resource_groups[0]}, \%tmp_result);
-                }
             }
+            push(@{$resource_groups[0]}, \%tmp_result);
 
             if ($r =~ /^\s*$/){
                 $end_loop = 1;
