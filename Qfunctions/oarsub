@@ -370,39 +370,49 @@ sub parse_resource_descriptions($){
         my $end_loop = 0;
         while ($end_loop == 0){
             my $initial_resource = $r;
+            print("$r\n");
             my %tmp_result;
             if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/){
                 # $1 = property string
                 $tmp_result{property} = $2;
                 $r = $3;
             }
-            if ($r =~ /^\s*(\++|\,+|\s*)\s*\/([^\,\+]+)\s*(.*)$/){
+            
+            my $resources_to_parse;
+            if (($r =~ /^\s*(\++|\,+|\s*)\s*[\/]*([^\,\+]+)\s*(.*)$/) and ($2 !~ /^\s*walltime/)){
+                $resources_to_parse = $2;
                 $r = $3;
-                my @slash_split = split('\/', $2);
-                my @resources_list;
-                foreach my $l (@slash_split){
-                    if ($l =~ /(\w+)\s*=\s*(\d+)/){
-                        push(@resources_list, { resource => $1, value => $2 });
-                    }elsif ($l =~ /(\w+)\s*=\s*ALL/){
-                        push(@resources_list, { resource => $1, value => -1 });
-                    }elsif ($l =~ /(\w+)\s*=\s*BEST/){
-                        push(@resources_list, { resource => $1, value => -2 });
-                    }else{
-                        die("/!\\ Cannot recognize the resource description : $l\n");
-                    }
-                }
-                $tmp_result{resources} = \@resources_list;
+            }else{
+                $Default_resources =~ /^\s*[\/]*(.+)$/;
+                # Remove first /
+                $resources_to_parse = $1;
             }
+            print("$resources_to_parse\n");
+            my @slash_split = split('\/', $resources_to_parse);
+            my @resources_list;
+            foreach my $l (@slash_split){
+                if ($l =~ /(\w+)\s*=\s*(\d+)/){
+                    push(@resources_list, { resource => $1, value => $2 });
+                }elsif ($l =~ /(\w+)\s*=\s*ALL/){
+                    push(@resources_list, { resource => $1, value => -1 });
+                }elsif ($l =~ /(\w+)\s*=\s*BEST/){
+                    push(@resources_list, { resource => $1, value => -2 });
+                }else{
+                    die("/!\\ Cannot recognize the resource description : $l\n");
+                }
+            }
+            $tmp_result{resources} = \@resources_list;
+            
             if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*(\,.+|\s*)$/){
                 #walltime part
                 my ($w_h,$w_mn,$w_sec) = split(':',$1);
                 if (defined($w_h)){
                     if (not defined($w_mn)){
-                        $resource_groups[1] = $w_h.":00:00";
+                        $resource_groups[1] = "$w_h:00:00";
                     }elsif (not defined($w_sec)){
-                        $resource_groups[1] = $w_h.":00";
+                        $resource_groups[1] = "$w_h:$w_mn:00";
                     }else{
-                        $resource_groups[1] = $1;
+                        $resource_groups[1] = "$w_h:$w_mn:$w_sec";
                     }
                 }else{
                     die("/!\\ Cannot recognize walltime resource value\n");
