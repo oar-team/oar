@@ -27,6 +27,8 @@ if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){
     $minimum_hole_time = get_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME");
 }
 
+my $Order_part = get_conf("SCHEDULER_RESOURCE_ORDER");
+
 my $binpath;
 if (defined($ENV{OARDIR})){
     $binpath = $ENV{OARDIR}."/";
@@ -36,7 +38,7 @@ if (defined($ENV{OARDIR})){
 
 oar_debug("[MetaSched] Start of meta scheduler\n");
 
-oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead,$minimum_hole_time);
+oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead,$minimum_hole_time,$Order_part);
 
 my %initial_time = oar_scheduler::get_initial_time();
 my @queues = iolib::get_active_queues($base);
@@ -61,7 +63,7 @@ foreach my $i (@queues){
         if (oar_scheduler::treate_waiting_reservation_jobs($base,$name) != 0){
             $exit_code = 1;
         }
-        if (oar_scheduler::check_reservation_jobs($base,$base_ro,$name) != 0){
+        if (oar_scheduler::check_reservation_jobs($base,$base_ro,$name,$Order_part) != 0){
             $exit_code = 1;
         }
     }else{

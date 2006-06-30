@@ -43,7 +43,7 @@ sub set_running_date($$);
 sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
-sub get_possible_wanted_resources($$$$$);
+sub get_possible_wanted_resources($$$$$$);
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
@@ -647,13 +647,20 @@ sub set_finish_date($$) {
 
 # get_possible_wanted_resources
 # return a tree ref : a data structure with corresponding resources with what is asked
-sub get_possible_wanted_resources($$$$$){
+sub get_possible_wanted_resources($$$$$$){
     my $dbh = shift;
     my $possible_resources_vector = shift;
     my $impossible_resources_vector = shift;
     my $properties = shift;
     my $wanted_resources_ref = shift;
+    my $order_part = shift;
 
+    if (defined($order_part)){
+        $order_part = "ORDER BY $order_part";
+    }else{
+        $order_part = "";
+    }
+    
     my @wanted_resources = @{$wanted_resources_ref};
     if ($wanted_resources[$#wanted_resources]->{resource} ne "resource_id"){
         push(@wanted_resources, {
@@ -681,6 +688,7 @@ sub get_possible_wanted_resources($$$$$){
                              FROM resource_properties
                              WHERE
                                 $sql_where_string
+                             $order_part
                             ");
     if (!$sth->execute()){
         return(undef);
@@ -806,7 +814,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
                 }
             }
             #print(Dumper($r->{resources}));
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, $tmp_properties, $r->{resources});
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, $tmp_properties, $r->{resources}, undef);
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
                 warn("There are not enough resources for your request\n");

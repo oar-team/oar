@@ -33,11 +33,12 @@ sub get_initial_time(){
 
 #Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs;
 # arg1 --> database ref
-sub init_scheduler($$$$){
+sub init_scheduler($$$$$){
     my $dbh = shift;
     my $dbh_ro = shift;
     my $secure_time = shift;
     my $hole_time = shift;
+    my $order_part = shift;
 
     if ($secure_time > 1){
         $Security_time_overhead = $secure_time;
@@ -157,9 +158,9 @@ sub init_scheduler($$$$){
             }
             my $tmp_tree;
             # Try first with only alive nodes
-            $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
+            $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
             if (!defined($tmp_tree)){
-                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
+                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
             }
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
@@ -260,10 +261,11 @@ sub treate_waiting_reservation_jobs($$){
 # arg1 : database ref
 # arg2 : queue name
 # return 1 if there is at least a job to treate else 0
-sub check_reservation_jobs($$$){
+sub check_reservation_jobs($$$$){
     my $dbh = shift;
     my $dbh_ro = shift;
     my $queue_name = shift;
+    my $order_part = shift;
 
     oar_debug("[oar_scheduler] check_reservation_jobs : Check for new reservation in the $queue_name queue\n");
 
@@ -339,7 +341,7 @@ sub check_reservation_jobs($$$){
                 if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
                 }
-                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources});
+                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
                 push(@tree_list, $tmp_tree);
                 my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
                 foreach my $l (@leafs){

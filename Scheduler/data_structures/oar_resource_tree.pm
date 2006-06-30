@@ -37,6 +37,7 @@ sub get_tree_leafs($);
 sub delete_tree_nodes_with_not_enough_resources($);
 sub delete_unnecessary_subtrees($);
 
+###############################################################################
 
 # Create a tree
 # arg : number of needed children

@@ -1115,6 +1115,10 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
   
       SCHEDULER_GANTT_HOLE_MINIMUM_TIME = 300
 
+  - You can add an order preference on resource assigned by the system(SQL ORDER syntax)::
+
+      SCHEDULER_RESOURCE_ORDER = switch ASC, node DESC, resource_id ASC
+
   - Indicate the name of the database field that contains the cpu number of the node.
     If this option is set then users must use `OARSH`_ instead of ssh to walk on each nodes that they have reserved via oarsub.
     ::

@@ -39,6 +39,7 @@ version 2.0.0++ enhanced:
     - In oarsub you can specify stdout and stderr file names.
     - User can resubmit a job (option "--resubmit" in oarsub).
     - It is possible to specify a read only database account and it will be used to evaluate SQL properties given by the user with the oarsub command (more scecure).
+    - Add possibility to order assigned resources with their properties by the scheduler. So you can privilege some resources than others (SCHEDULER_RESOURCE_ORDER tag in oar.conf file)
 
 version 1.6.1:
 --------------

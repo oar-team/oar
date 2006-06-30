@@ -402,6 +402,7 @@ foreach my $mold (@{$ref_resource_list}){
 }
 ');
 
+
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');
