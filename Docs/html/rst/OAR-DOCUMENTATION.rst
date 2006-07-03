@@ -334,7 +334,7 @@ regenerate this table completely in this way :
  - Run the `oaraccounting`_ command.
 
 You can change the amount of time for each window : edit the oar configuration
-file and change the value of the tag *ACCOUNTING_WINDOW*.
+file and change the value of the tag ACCOUNTING_WINDOW_.
 
 *admission_rules*
 ~~~~~~~~~~~~~~~~~
@@ -543,7 +543,7 @@ frag_state        ENUM('LEON','TIMER_ARMED',  state to tell Leon what to do
 :Primary key: frag_id_job
 :Index fields: frag_state
 
-What mean the states:
+What do these states mean:
 
  - "LEON" : the Leon module must try to kill the job and change the state into
    "TIMER_ARMED".
@@ -970,6 +970,9 @@ challenge         VARCHAR(255)          challenge string
 This table is used to share a secret between OAR server and oarexec process on
 computing nodes (avoid a job id to be stole by malicious man).
 
+For security reasons, this table **must not be readable** for a database account
+given to users who want to access OAR internal informations(like statistics).
+
 Configuration file
 ==================
 
@@ -999,6 +1002,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
       SERVER_HOSTNAME=localhost
 
+.. _SERVER_PORT:
+
   - OAR server port::
       
       SERVER_PORT=6666
@@ -1011,6 +1016,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
     to when the job is in the deploy queue)::
       
       DEPLOY_HOSTNAME = 127.0.0.1
+
+.. _DETACH_JOB_FROM_SERVER:
 
   - Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh connection between the
     node and the server. Otherwise set this tag to 0::
@@ -1057,10 +1064,14 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
       ALLOWED_NETWORKS= 127.0.0.1/32 0.0.0.0/0
 
+.. _ACCOUNTING_WINDOW:
+
   - Set the granularity of the OAR accounting feature (in seconds). Default is
     1 day (86400s)::
       
       ACCOUNTING_WINDOW= 86400
+
+.. _MAIL:
 
   - OAR informations may be notified by email to the administror.
     Set accordingly to your configuration the next lines to activate
@@ -1099,6 +1110,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
       FINAUD_FREQUENCY = 300
 
+.. _DEAD_SWITCH_TIME:
+
   - Set time after which resources become Dead (default is 0 and it means never)::
 
       DEAD_SWITCH_TIME = 600
@@ -1124,6 +1137,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
     ::
 
       CPUSET_RESOURCE_PROPERTY_DB_FIELD = cpuset
+
+.. _OPENSSH_CMD:
 
   - Command to use to connect to other nodes (default is "ssh" in the PATH)
     ::
@@ -1167,38 +1182,45 @@ The jobs of Sarko are :
    them.
  - In "Desktop Computing" mode, it detects if a node date has expired and
    asks to change its state into "Suspected".
+ - Can change "Suspected" resources into "Dead" after DEAD_SWITCH_TIME_  seconds.
 
 Judas
 -----
 
 This is the module dedicated to print and log every debugging, warning and
-error text.
+error messages.
 
 Leon
 ----
 
-This module is in charge of the frag of jobs. Other OAR modules or commands
-can ask to kill a job and this is Leon which perform that.
+This module is in charge to delete the jobs. Other OAR modules or commands
+can ask to kill a job and this is Leon which performs that.
 
 There are 2 frag types :
 
- - *normal* : Leon tries to connect to on the first node of the job and tell it
+ - *normal* : Leon tries to connect to the first node of the job and tell it
    to kill itself.
  - *exterminate* : after a timeout if the *normal* method did not succeeded
-   then Leon notifies this case and clean up the database for these jobs.
+   then Leon notifies this case and clean up the database for these jobs. So
+   OAR don't know what occured on the node and Suspects it.
 
 NodeChangeState
 ---------------
 
-This module is in charge of changing node states and check if there are jobs
-on these.
+This module is in charge of changing resource states and checking if there are
+jobs on these.
+
+It also checks all pending events in the table event_logs_.
 
 Scheduler
 ---------
 
-This module checks for each reservation job it validity and the moment to
-launch it. And it launches all gantt scheduler in the order of the priority
-of the database.
+This module checks for each reservation jobs if it is valid and launches them
+at the right time.
+
+Scheduler_ launches all gantt scheduler in the order of the priority specified
+in the database and update all visualization tables
+(gantt_jobs_predictions_visu_ and gantt_jobs_resources_visu_).
 
 Runner
 ------
@@ -1206,8 +1228,14 @@ Runner
 This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.
 
+For each job, the Runner_ uses OPENSSH_CMD_ to connect to the first node of the
+reservation and propagate a Perl script which handles the execution of the user
+command. 
+
 Mechanisms
 ==========
+
+.. _INTERACTIVE:
 
 How does an interactive *oarsub* work?
 --------------------------------------
@@ -1221,23 +1249,79 @@ How does an interactive *oarsub* work?
 
 `interactive_oarsub_scheme.svg <interactive_oarsub_scheme.svg>`_
 
-CPUSET
-------
-
 Job launch
 ----------
 
+For PASSIVE jobs, the mechanism is similar to the INTERACTIVE_ one, except for the shell launched from the frontal node.
+
+The job is finished when the user command ends. Then oarexec return its exit value (what errors occured) on the Almighty_ via the SERVER_PORT_ if DETACH_JOB_FROM_SERVER_ was set to 1 otherwise it returns directly.
+
+
+CPUSET
+------
+
+If the "--force_cpuset_name" option of the oarsub_ command is not defined then
+OAR will use job identifier.  The CPUSET name effectly created on each nodes is
+composed as "user_cpusetname".
+
+So if a user specifies "--force_cpuset_name" option, he will not be able to
+disturb other users.
+
+OAR system steps:
+
+ 1. Before each job, the Runner_ initialize the CPUSET (see `CPUSET
+    definition`_) with OPENSSH_CMD_ and an efficient launching tool : `Taktuk
+    <https://gforge.inria.fr/projects/taktuk/>`_. If it is not installed then OAR
+    uses an internal launching tool less optimized.
+
+ 2. Afer each job, OAR deletes all processes stored in the associated CPUSET.
+    Thus all nodes are clean after a OAR job.
+ 
 Job deletion
 ------------
+
+Leon_ tries to connect to OAR Perl script running on the first job node (find
+it thanks to the file */tmp/oar/pid_of_oarexec_for_jobId_id*) and sends a
+"SIGTERM" signal. Then the script catch it and normally end the job (kill
+processes that it has launched).
+
+If this method didn't succeed then Leon_ will flush the OAR database for the
+job and nodes will be "Suspected" by NodeChangeState_.
 
 Checkpoint
 ----------
 
+The checkpoint is just a signal sent to the program specified with the oarsub_
+command.
+
+If the user uses "-k" option then Sarko_ will ask the OAR Perl script running
+on the first node to send the signal to the process (SIGUSR2 or the one
+specified with "--signal").
+
+You can also use oardel_ command to send the signal.
+
 Scheduling
 ----------
 
+
+
 User notification
 -----------------
+
+This section explains how the "--notify" oarsub_ option is handled by OAR:
+
+ - The user wants to receive an email:
+     
+     The syntax is "mail:name@domain.com". Mail_ section in the `Configuration
+     file`_ must be present otherwise the mail cannot be sent.
+ - The user wants to launch a script:
+
+     The syntax is "exec:/path/to/script args". OAR server will connect (using
+     OPENSSH_CMD_) on the node where the oarsub_ command was invoked and then
+     launches the script with in argument : *job_id*, *job_name*, *tag*,
+     *comments*.
+     
+     (*tag* is a value in : "START", "END", "ERROR")
 
 Accounting agregator
 --------------------

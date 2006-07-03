@@ -133,6 +133,9 @@ CPUSET installation
 
 Visualization tools installation
 --------------------------------
+
+**THIS SECTION IS OUTDATED**
+
 There are two different tools. One, named Monika, displays the current cluster state
 with all active and waiting jobs. The other, named DrawOARGantt, diplays node occupation
 in a lapse of time.

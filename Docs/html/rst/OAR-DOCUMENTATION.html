@@ -411,8 +411,8 @@ productive plateforms and research experiments.</td>
 </li>
 <li><a class="reference" href="#mechanisms" id="id65" name="id65">6&nbsp;&nbsp;&nbsp;Mechanisms</a><ul class="auto-toc">
 <li><a class="reference" href="#how-does-an-interactive-oarsub-work" id="id66" name="id66">6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></li>
-<li><a class="reference" href="#cpuset" id="id67" name="id67">6.2&nbsp;&nbsp;&nbsp;CPUSET</a></li>
-<li><a class="reference" href="#job-launch" id="id68" name="id68">6.3&nbsp;&nbsp;&nbsp;Job launch</a></li>
+<li><a class="reference" href="#job-launch" id="id67" name="id67">6.2&nbsp;&nbsp;&nbsp;Job launch</a></li>
+<li><a class="reference" href="#cpuset" id="id68" name="id68">6.3&nbsp;&nbsp;&nbsp;CPUSET</a></li>
 <li><a class="reference" href="#job-deletion" id="id69" name="id69">6.4&nbsp;&nbsp;&nbsp;Job deletion</a></li>
 <li><a class="reference" href="#checkpoint" id="id70" name="id70">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></li>
 <li><a class="reference" href="#scheduling" id="id71" name="id71">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></li>
@@ -711,6 +711,7 @@ scp -S /path/to/oarsh ...
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id10" id="visualization-tools-installation" name="visualization-tools-installation">1.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></h2>
+<p><strong>THIS SECTION IS OUTDATED</strong></p>
 <p>There are two different tools. One, named Monika, displays the current cluster state
 with all active and waiting jobs. The other, named DrawOARGantt, diplays node occupation
 in a lapse of time.
@@ -1074,7 +1075,7 @@ UPDATE jobs SET accounted = &quot;NO&quot;;
 </ul>
 </blockquote>
 <p>You can change the amount of time for each window : edit the oar configuration
-file and change the value of the tag <em>ACCOUNTING_WINDOW</em>.</p>
+file and change the value of the tag <a class="reference" href="#accounting-window">ACCOUNTING_WINDOW</a>.</p>
 </div>
 <div class="section">
 <h3><a class="toc-backref" href="#id33" id="admission-rules" name="admission-rules">3.2.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></h3>
@@ -1471,7 +1472,7 @@ DEFAULT 'LEON'</td>
 </tr>
 </tbody>
 </table>
-<p>What mean the states:</p>
+<p>What do these states mean:</p>
 <blockquote>
 <ul class="simple">
 <li>&quot;LEON&quot; : the Leon module must try to kill the job and change the state into
@@ -2461,6 +2462,8 @@ Executables are launched one after one in the specified priority.</p>
 </table>
 <p>This table is used to share a secret between OAR server and oarexec process on
 computing nodes (avoid a job id to be stole by malicious man).</p>
+<p>For security reasons, this table <strong>must not be readable</strong> for a database account
+given to users who want to access OAR internal informations(like statistics).</p>
 </div>
 </div>
 </div>
@@ -2499,6 +2502,10 @@ DB_BASE_PASSWD=oar
 SERVER_HOSTNAME=localhost
 </pre>
 </li>
+</ul>
+</blockquote>
+<blockquote id="server-port">
+<ul>
 <li><p class="first">OAR server port:</p>
 <pre class="literal-block">
 SERVER_PORT=6666
@@ -2515,6 +2522,10 @@ to when the job is in the deploy queue):</p>
 DEPLOY_HOSTNAME = 127.0.0.1
 </pre>
 </li>
+</ul>
+</blockquote>
+<blockquote id="detach-job-from-server">
+<ul>
 <li><p class="first">Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh connection between the
 node and the server. Otherwise set this tag to 0:</p>
 <pre class="literal-block">
@@ -2573,12 +2584,20 @@ and 127.0.0.1/32 means only IP 127.0.0.1 is allowed):</p>
 ALLOWED_NETWORKS= 127.0.0.1/32 0.0.0.0/0
 </pre>
 </li>
+</ul>
+</blockquote>
+<blockquote id="accounting-window">
+<ul>
 <li><p class="first">Set the granularity of the OAR accounting feature (in seconds). Default is
 1 day (86400s):</p>
 <pre class="literal-block">
 ACCOUNTING_WINDOW= 86400
 </pre>
 </li>
+</ul>
+</blockquote>
+<blockquote id="mail">
+<ul>
 <li><p class="first">OAR informations may be notified by email to the administror.
 Set accordingly to your configuration the next lines to activate
 the feature:</p>
@@ -2623,6 +2642,10 @@ SERVER_EPILOGUE_EXEC_FILE = /path/to/prog
 FINAUD_FREQUENCY = 300
 </pre>
 </li>
+</ul>
+</blockquote>
+<blockquote id="dead-switch-time">
+<ul>
 <li><p class="first">Set time after which resources become Dead (default is 0 and it means never):</p>
 <pre class="literal-block">
 DEAD_SWITCH_TIME = 600
@@ -2654,6 +2677,10 @@ If this option is set then users must use <a class="reference" href="#oarsh">OAR
 CPUSET_RESOURCE_PROPERTY_DB_FIELD = cpuset
 </pre>
 </li>
+</ul>
+</blockquote>
+<blockquote id="openssh-cmd">
+<ul>
 <li><p class="first">Command to use to connect to other nodes (default is &quot;ssh&quot; in the PATH)</p>
 <pre class="literal-block">
 OPENSSH_CMD = /usr/bin/ssh
@@ -2699,49 +2726,57 @@ modules one after one.</li>
 them.</li>
 <li>In &quot;Desktop Computing&quot; mode, it detects if a node date has expired and
 asks to change its state into &quot;Suspected&quot;.</li>
+<li>Can change &quot;Suspected&quot; resources into &quot;Dead&quot; after <a class="reference" href="#dead-switch-time">DEAD_SWITCH_TIME</a>  seconds.</li>
 </ul>
 </blockquote>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id60" id="judas" name="judas">5.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
 <p>This is the module dedicated to print and log every debugging, warning and
-error text.</p>
+error messages.</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id61" id="leon" name="leon">5.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
-<p>This module is in charge of the frag of jobs. Other OAR modules or commands
-can ask to kill a job and this is Leon which perform that.</p>
+<p>This module is in charge to delete the jobs. Other OAR modules or commands
+can ask to kill a job and this is Leon which performs that.</p>
 <p>There are 2 frag types :</p>
 <blockquote>
 <ul class="simple">
-<li><em>normal</em> : Leon tries to connect to on the first node of the job and tell it
+<li><em>normal</em> : Leon tries to connect to the first node of the job and tell it
 to kill itself.</li>
 <li><em>exterminate</em> : after a timeout if the <em>normal</em> method did not succeeded
-then Leon notifies this case and clean up the database for these jobs.</li>
+then Leon notifies this case and clean up the database for these jobs. So
+OAR don't know what occured on the node and Suspects it.</li>
 </ul>
 </blockquote>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id62" id="nodechangestate" name="nodechangestate">5.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
-<p>This module is in charge of changing node states and check if there are jobs
-on these.</p>
+<p>This module is in charge of changing resource states and checking if there are
+jobs on these.</p>
+<p>It also checks all pending events in the table <a class="reference" href="#event-logs">event_logs</a>.</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id63" id="scheduler" name="scheduler">5.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
-<p>This module checks for each reservation job it validity and the moment to
-launch it. And it launches all gantt scheduler in the order of the priority
-of the database.</p>
+<p>This module checks for each reservation jobs if it is valid and launches them
+at the right time.</p>
+<p><a class="reference" href="#scheduler">Scheduler</a> launches all gantt scheduler in the order of the priority specified
+in the database and update all visualization tables
+(<a class="reference" href="#gantt-jobs-predictions-visu">gantt_jobs_predictions_visu</a> and <a class="reference" href="#gantt-jobs-resources-visu">gantt_jobs_resources_visu</a>).</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id64" id="runner" name="runner">5.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
 <p>This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.</p>
+<p>For each job, the <a class="reference" href="#runner">Runner</a> uses <a class="reference" href="#openssh-cmd">OPENSSH_CMD</a> to connect to the first node of the
+reservation and propagate a Perl script which handles the execution of the user
+command.</p>
 </div>
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id65" id="mechanisms" name="mechanisms">6&nbsp;&nbsp;&nbsp;Mechanisms</a></h1>
 <div class="section">
-<h2><a class="toc-backref" href="#id66" id="how-does-an-interactive-oarsub-work" name="how-does-an-interactive-oarsub-work">6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></h2>
+<h2><a class="toc-backref" href="#id66" id="how-does-an-interactive-oarsub-work" name="how-does-an-interactive-oarsub-work"><span id="interactive"></span>6.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></h2>
 <div class="figure">
 <a class="reference image-reference" href="interactive_oarsub_scheme.png"><img alt="interactive oarsub decomposition" src="interactive_oarsub_scheme.png" style="width: 17cm;" /></a>
 <p class="caption">Interactive oarsub decomposition</p>
@@ -2749,22 +2784,71 @@ with all modules.</p>
 <p><a class="reference" href="interactive_oarsub_scheme.svg">interactive_oarsub_scheme.svg</a></p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id67" id="cpuset" name="cpuset">6.2&nbsp;&nbsp;&nbsp;CPUSET</a></h2>
+<h2><a class="toc-backref" href="#id67" id="job-launch" name="job-launch">6.2&nbsp;&nbsp;&nbsp;Job launch</a></h2>
+<p>For PASSIVE jobs, the mechanism is similar to the <a class="reference" href="#interactive">INTERACTIVE</a> one, except for the shell launched from the frontal node.</p>
+<p>The job is finished when the user command ends. Then oarexec return its exit value (what errors occured) on the <a class="reference" href="#almighty">Almighty</a> via the <a class="reference" href="#server-port">SERVER_PORT</a> if <a class="reference" href="#detach-job-from-server">DETACH_JOB_FROM_SERVER</a> was set to 1 otherwise it returns directly.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id68" id="job-launch" name="job-launch">6.3&nbsp;&nbsp;&nbsp;Job launch</a></h2>
+<h2><a class="toc-backref" href="#id68" id="cpuset" name="cpuset">6.3&nbsp;&nbsp;&nbsp;CPUSET</a></h2>
+<p>If the &quot;--force_cpuset_name&quot; option of the <a class="reference" href="#oarsub">oarsub</a> command is not defined then
+OAR will use job identifier.  The CPUSET name effectly created on each nodes is
+composed as &quot;user_cpusetname&quot;.</p>
+<p>So if a user specifies &quot;--force_cpuset_name&quot; option, he will not be able to
+disturb other users.</p>
+<p>OAR system steps:</p>
+<blockquote>
+<ol class="arabic simple">
+<li>Before each job, the <a class="reference" href="#runner">Runner</a> initialize the CPUSET (see <a class="reference" href="#cpuset-definition">CPUSET
+definition</a>) with <a class="reference" href="#openssh-cmd">OPENSSH_CMD</a> and an efficient launching tool : <a class="reference" href="https://gforge.inria.fr/projects/taktuk/">Taktuk</a>. If it is not installed then OAR
+uses an internal launching tool less optimized.</li>
+<li>Afer each job, OAR deletes all processes stored in the associated CPUSET.
+Thus all nodes are clean after a OAR job.</li>
+</ol>
+</blockquote>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id69" id="job-deletion" name="job-deletion">6.4&nbsp;&nbsp;&nbsp;Job deletion</a></h2>
+<p><a class="reference" href="#leon">Leon</a> tries to connect to OAR Perl script running on the first job node (find
+it thanks to the file <em>/tmp/oar/pid_of_oarexec_for_jobId_id</em>) and sends a
+&quot;SIGTERM&quot; signal. Then the script catch it and normally end the job (kill
+processes that it has launched).</p>
+<p>If this method didn't succeed then <a class="reference" href="#leon">Leon</a> will flush the OAR database for the
+job and nodes will be &quot;Suspected&quot; by <a class="reference" href="#nodechangestate">NodeChangeState</a>.</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id70" id="checkpoint" name="checkpoint">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></h2>
+<p>The checkpoint is just a signal sent to the program specified with the <a class="reference" href="#oarsub">oarsub</a>
+command.</p>
+<p>If the user uses &quot;-k&quot; option then <a class="reference" href="#sarko">Sarko</a> will ask the OAR Perl script running
+on the first node to send the signal to the process (SIGUSR2 or the one
+specified with &quot;--signal&quot;).</p>
+<p>You can also use <a class="reference" href="#oardel">oardel</a> command to send the signal.</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id71" id="scheduling" name="scheduling">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></h2>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id72" id="user-notification" name="user-notification">6.7&nbsp;&nbsp;&nbsp;User notification</a></h2>
+<p>This section explains how the &quot;--notify&quot; <a class="reference" href="#oarsub">oarsub</a> option is handled by OAR:</p>
+<blockquote>
+<ul>
+<li><p class="first">The user wants to receive an email:</p>
+<blockquote>
+<p>The syntax is &quot;mail:name&#64;domain.com&quot;. <a class="reference" href="#mail">Mail</a> section in the <a class="reference" href="#configuration-file">Configuration
+file</a> must be present otherwise the mail cannot be sent.</p>
+</blockquote>
+</li>
+<li><p class="first">The user wants to launch a script:</p>
+<blockquote>
+<p>The syntax is &quot;exec:/path/to/script args&quot;. OAR server will connect (using
+<a class="reference" href="#openssh-cmd">OPENSSH_CMD</a>) on the node where the <a class="reference" href="#oarsub">oarsub</a> command was invoked and then
+launches the script with in argument : <em>job_id</em>, <em>job_name</em>, <em>tag</em>,
+<em>comments</em>.</p>
+<p>(<em>tag</em> is a value in : &quot;START&quot;, &quot;END&quot;, &quot;ERROR&quot;)</p>
+</blockquote>
+</li>
+</ul>
+</blockquote>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id73" id="accounting-agregator" name="accounting-agregator">6.8&nbsp;&nbsp;&nbsp;Accounting agregator</a></h2>
@@ -3063,7 +3147,7 @@ This variable specifies the node where OAR will be connected to submit a job in 
 <div class="footer">
 <hr class="footer" />
 <a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
-Generated on: 2006-06-30 15:28 UTC.
+Generated on: 2006-07-03 13:20 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
