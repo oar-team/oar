@@ -3327,6 +3327,89 @@ sub gantt_flush_tables($){
 }
 
 
+sub update_scheduler_last_job_date($$){
+    my $dbh = shift;
+    my $date = shift;
+
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "UPDATE resource_properties
+                SET
+                    last_job_date = 0
+                FROM gantt_jobs_resources, gantt_jobs_predictions
+                WHERE
+                    resource_properties.last_job_date < $date AND
+                    gantt_jobs_resources.resource_id = resource_properties.resource_id AND
+                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id AND
+                    EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions.start_time, 'YYYY-MM-DD HH24:MI:SS'))) <= $date
+               ";
+    }else{
+        $req = "UPDATE resource_properties, gantt_jobs_resources, gantt_jobs_predictions
+                SET
+                    resource_properties.last_job_date = $date
+                WHERE
+                    resource_properties.last_job_date < $date AND
+                    gantt_jobs_resources.resource_id = resource_properties.resource_id AND
+                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id AND
+                    UNIX_TIMESTAMP(gantt_jobs_predictions.start_time) <= $date
+               ";
+    }
+    return($dbh->do($req));
+}
+
+sub search_idle_nodes($$){
+    my $dbh = shift;
+    my $date = shift;
+
+    my $req;
+    $req = "SELECT resources.network_address, MAX(resource_properties.last_job_date)
+            FROM resources, resource_properties
+            WHERE
+                remote_wake_up = \'YES\' AND
+                resources.resource_id = resource_properties.resource_id
+            GROUP BY resources.network_address";
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my %res ;
+    while (my @ref = $sth->fetchrow_array()) {
+        $res{$ref[0]} = $ref[1];
+    }
+    $sth->finish();
+
+    return(%res);
+}
+
+
+sub get_next_job_date_on_node($$){
+    my $dbh = shift;
+    my $hostname = shift;
+
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT MIN(EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions.start_time, 'YYYY-MM-DD HH24:MI:SS'))))
+                FROM resources, gantt_jobs_predictions, gantt_jobs_resources
+                WHERE
+                    resources.network_address = \'$hostname\' AND
+                    gantt_jobs_resources.resource_id = resources.resource_id AND
+                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
+               ";
+    }else{
+        $req = "SELECT MIN(UNIX_TIMESTAMP(gantt_jobs_predictions.start_time))
+                FROM resources, gantt_jobs_predictions, gantt_jobs_resources
+                WHERE
+                    resources.network_address = \'$hostname\' AND
+                    gantt_jobs_resources.resource_id = resources.resource_id AND
+                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
+               ";
+    }
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my @ref = $sth->fetchrow_array();
+    $sth->finish();
+
+    return($ref[0]);
+}
+
 
 #Get jobs to launch at a given date
 #args : base, date in sql format
@@ -3334,16 +3417,31 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $sth = $dbh->prepare("SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
-                             WHERE
-                                m.moldable_index = \'CURRENT\'
-                                AND g1.moldable_job_id= g2.moldable_job_id
-                                AND m.moldable_id = g1.moldable_job_id
-                                AND j.job_id = m.moldable_job_id
-                                AND g2.start_time <= \'$date\'
-                                AND j.state = \'Waiting\'
-                            ");
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+                WHERE
+                    m.moldable_index = \'CURRENT\'
+                    AND g1.moldable_job_id= g2.moldable_job_id
+                    AND m.moldable_id = g1.moldable_job_id
+                    AND j.job_id = m.moldable_job_id
+                    AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
+                    AND j.state = \'Waiting\'
+                ";
+    }else{
+        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+                WHERE
+                   m.moldable_index = \'CURRENT\'
+                   AND g1.moldable_job_id= g2.moldable_job_id
+                   AND m.moldable_id = g1.moldable_job_id
+                   AND j.job_id = m.moldable_job_id
+                   AND g2.start_time <= \'$date\'
+                   AND j.state = \'Waiting\'
+               ";
+    }
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
@@ -3352,7 +3450,7 @@ sub get_gantt_jobs_to_launch($$){
     }
     $sth->finish();
 
-    return %res;
+    return(%res);
 }
 
 
@@ -3363,17 +3461,33 @@ sub get_gantt_resources_for_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $sth = $dbh->prepare("SELECT g1.resource_id
-                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
-                             WHERE
-                                m.moldable_index = \'CURRENT\'
-                                AND g1.moldable_job_id = m.moldable_id
-                                AND m.moldable_job_id = j.job_id
-                                AND g1.moldable_job_id = g2.moldable_job_id
-                                AND g2.start_time <= \'$date\'
-                                AND j.state = \'Waiting\'
-                             GROUP BY g1.resource_id
-                            ");
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT g1.resource_id
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+                WHERE
+                   m.moldable_index = \'CURRENT\'
+                   AND g1.moldable_job_id = m.moldable_id
+                   AND m.moldable_job_id = j.job_id
+                   AND g1.moldable_job_id = g2.moldable_job_id
+                   AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
+                   AND j.state = \'Waiting\'
+                GROUP BY g1.resource_id
+               ";
+    }else{
+        $req = "SELECT g1.resource_id
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+                WHERE
+                   m.moldable_index = \'CURRENT\'
+                   AND g1.moldable_job_id = m.moldable_id
+                   AND m.moldable_job_id = j.job_id
+                   AND g1.moldable_job_id = g2.moldable_job_id
+                   AND g2.start_time <= \'$date\'
+                   AND j.state = \'Waiting\'
+                GROUP BY g1.resource_id
+               ";
+    }
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {

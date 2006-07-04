@@ -287,6 +287,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] End scheduling\n");
 }
 
+
 iolib::disconnect($base);
 iolib::disconnect($base_ro);
 

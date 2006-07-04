@@ -19,8 +19,8 @@ my $Reservation_waiting_timeout = 300;
 # global variables : initialized in init_scheduler function
 my %besteffort_resource_occupation;
 
-my $current_time_sql = 0;
-my $current_time_sec = "0000-00-00 00:00:00";
+my $current_time_sec = 0;
+my $current_time_sql = "0000-00-00 00:00:00";
 
 # Give initial time in second and sql formats in a hashtable.
 sub get_initial_time(){
@@ -452,6 +452,29 @@ sub update_gantt_visu_tables($){
     my $dbh = shift;
 
     iolib::update_gantt_visualization($dbh); 
+}
+
+# Look at nodes that are unused for a duration
+sub get_idle_nodes($$$){
+    my $dbh = shift;
+    my $idle_duration = shift;
+    my $sleep_duration = shift;
+
+    # Update last_job_date field for resources currently used
+    iolib::update_scheduler_last_job_date($dbh, $current_time_sec);
+
+    my %nodes = iolib::search_idle_nodes($dbh, $current_time_sec);
+    my $tmp_time = $current_time_sec - $idle_duration;
+    my @res;
+    foreach my $n (keys(%nodes)){
+        if ($nodes{$n} < $tmp_time){
+            # Search if the node has enough time to sleep
+            my $tmp = iolib::get_next_job_date_on_node($dbh,$n);
+            if (!defined($tmp) or ($tmp - $sleep_duration > $current_time_sec)){
+                push(@res, $n);
+            }
+        }
+    }
 }
 
 return(1);

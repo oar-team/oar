@@ -183,6 +183,8 @@ besteffort ENUM('YES','NO') DEFAULT 'YES' NOT NULL ,
 deploy ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 expiry_date DATETIME NOT NULL ,
 desktop_computing ENUM('YES','NO') DEFAULT 'NO' NOT NULL,
+last_job_date INT UNSIGNED DEFAULT 0,
+remote_wake_up ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 PRIMARY KEY (resource_id)
 );
 

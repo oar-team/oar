@@ -234,6 +234,8 @@ CREATE TABLE resource_properties (
   deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
   expiry_date varchar(19) NOT NULL default '0000-00-00 00:00:00',
   desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
+  last_job_date integer NOT NULL default '0',
+  remote_wake_up varchar(3) check (remote_wake_up in ('YES','NO')) NOT  NULL DEFAULT 'NO' ,
   PRIMARY KEY  (resource_id)
 );
 
