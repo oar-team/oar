@@ -82,12 +82,31 @@ if ($exit_code == 0){
 
 #Update visu gantt tables
 oar_scheduler::update_gantt_visu_tables($base);
+iolib::disconnect($base_ro);
 
-my @node_halt= oar_scheduler::get_idle_nodes($base,10,3600);
-oar_debug("[MetaSched] Some nodes can be halted : @node_halt\n");
+if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
+    my @node_halt= oar_scheduler::get_idle_nodes(
+            $base,
+            get_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME"),
+            get_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME")
+        );
+    if ($#node_halt >= 0){
+        oar_debug("[MetaSched] Some nodes can be halted : @node_halt\n");
+        oar_Tools::fork_no_wait(get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")." @node_halt", $base);
+    }
+}
+
+if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+    # Wake up right nodes
+    my @nodes = oar_scheduler::get_nodes_to_wake_up($base);
+
+    if ($#nodes >= 0){
+        oar_debug("[MetaSched] Some nodes must be started : @nodes\n");
+        oar_Tools::fork_no_wait(get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")." @nodes", $base);
+    }
+}
 
 iolib::disconnect($base);
-iolib::disconnect($base_ro);
 oar_debug("[MetaSched] End of meta scheduler\n");
 
 exit($exit_code);

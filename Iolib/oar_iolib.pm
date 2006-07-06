@@ -1116,6 +1116,9 @@ sub set_job_state($$$) {
                             assigned_resource_index = \'CURRENT\'
                             AND moldable_job_id = $job->{assigned_moldable_job}
                     ");
+
+            # Update last_job_date field for resources used
+            iolib::update_scheduler_last_job_date($dbh, sql_to_local($date),$job->{assigned_moldable_job});
         }
 
         my ($addr,$port) = split(/:/,$job->{info_type});
@@ -1627,7 +1630,7 @@ sub get_jobs_to_schedule($$){
         push(@res, $ref);
     }
     $sth->finish();
-    return @res;
+    return(@res);
 }
 
 
@@ -1793,6 +1796,31 @@ sub get_resources_in_state($$) {
         push(@res, $ref);
     }
     return @res;
+}
+
+
+# get_resources_that_can_be_waked_up
+# returns a list of resources
+# parameters : base, job duration
+# return value : list of resource ref
+sub get_resources_that_can_be_waked_up($$) {
+    my $dbh = shift;
+    my $duration = shift;
+    
+    my $date = sql_to_local(get_date($dbh));
+    my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
+                                FROM resources, resource_properties
+                                WHERE
+                                    state = \'Absent\' AND
+                                    resources.resource_id = resource_properties.resource_id AND
+                                    resource_properties.cm_availability > $date + 600
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(@res);
 }
 
 
@@ -3327,31 +3355,28 @@ sub gantt_flush_tables($){
 }
 
 
-sub update_scheduler_last_job_date($$){
+sub update_scheduler_last_job_date($$$){
     my $dbh = shift;
     my $date = shift;
+    my $moldable_id = shift;
 
     my $req;
     if ($Db_type eq "Pg"){
         $req = "UPDATE resource_properties
                 SET
-                    last_job_date = 0
-                FROM gantt_jobs_resources, gantt_jobs_predictions
+                    last_job_date = $date
+                FROM assigned_resources
                 WHERE
-                    resource_properties.last_job_date < $date AND
-                    gantt_jobs_resources.resource_id = resource_properties.resource_id AND
-                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id AND
-                    EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions.start_time, 'YYYY-MM-DD HH24:MI:SS'))) <= $date
+                    assigned_resources.moldable_job_id = $moldable_id AND
+                    assigned_resources.resource_id = resource_properties.resource_id
                ";
     }else{
-        $req = "UPDATE resource_properties, gantt_jobs_resources, gantt_jobs_predictions
+        $req = "UPDATE resource_properties, assigned_resources
                 SET
                     resource_properties.last_job_date = $date
                 WHERE
-                    resource_properties.last_job_date < $date AND
-                    gantt_jobs_resources.resource_id = resource_properties.resource_id AND
-                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id AND
-                    UNIX_TIMESTAMP(gantt_jobs_predictions.start_time) <= $date
+                    assigned_resources.moldable_job_id = $moldable_id AND
+                    assigned_resources.resource_id = resource_properties.resource_id
                ";
     }
     return($dbh->do($req));
@@ -3362,17 +3387,43 @@ sub search_idle_nodes($$){
     my $date = shift;
 
     my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT resources.network_address
+                FROM resources, gantt_jobs_resources, gantt_jobs_predictions
+                WHERE
+                    resources.resource_id = gantt_jobs_resources.resource_id AND
+                    EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions.start_time, 'YYYY-MM-DD HH24:MI:SS'))) <= $date
+                GROUP BY resources.network_address
+               ";
+    }else{
+        $req = "SELECT resources.network_address
+                FROM resources, gantt_jobs_resources, gantt_jobs_predictions
+                WHERE
+                    resources.resource_id = gantt_jobs_resources.resource_id AND
+                    UNIX_TIMESTAMP(gantt_jobs_predictions.start_time) <= $date
+                GROUP BY resources.network_address
+               ";
+    }
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my %nodes_occupied;
+    while (my @ref = $sth->fetchrow_array()) {
+        $nodes_occupied{$ref[0]} = 1;
+    }
+    $sth->finish();
+
     $req = "SELECT resources.network_address, MAX(resource_properties.last_job_date)
             FROM resources, resource_properties
             WHERE
-                remote_wake_up = \'YES\' AND
                 resources.resource_id = resource_properties.resource_id
             GROUP BY resources.network_address";
-    my $sth = $dbh->prepare($req);
+    $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        $res{$ref[0]} = $ref[1];
+        if (!defined($nodes_occupied{$ref[0]})){
+            $res{$ref[0]} = $ref[1];
+        }
     }
     $sth->finish();
 
@@ -3420,7 +3471,7 @@ sub get_gantt_jobs_to_launch($$){
     my $req;
     if ($Db_type eq "Pg"){
         $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
                 WHERE
                     m.moldable_index = \'CURRENT\'
                     AND g1.moldable_job_id= g2.moldable_job_id
@@ -3428,17 +3479,21 @@ sub get_gantt_jobs_to_launch($$){
                     AND j.job_id = m.moldable_job_id
                     AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
                     AND j.state = \'Waiting\'
+                    AND resources.resource_id = g1.resource_id
+                    AND resources.state = \'Alive\'
                 ";
     }else{
         $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
                 WHERE
-                   m.moldable_index = \'CURRENT\'
-                   AND g1.moldable_job_id= g2.moldable_job_id
-                   AND m.moldable_id = g1.moldable_job_id
-                   AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= \'$date\'
-                   AND j.state = \'Waiting\'
+                    m.moldable_index = \'CURRENT\'
+                    AND g1.moldable_job_id= g2.moldable_job_id
+                    AND m.moldable_id = g1.moldable_job_id
+                    AND j.job_id = m.moldable_job_id
+                    AND g2.start_time <= \'$date\'
+                    AND j.state = \'Waiting\'
+                    AND resources.resource_id = g1.resource_id
+                    AND resources.state = \'Alive\'
                ";
     }
     my $sth = $dbh->prepare($req);
@@ -3453,6 +3508,53 @@ sub get_gantt_jobs_to_launch($$){
     return(%res);
 }
 
+
+#Get hostname that we must wake up to launch jobs
+#args : base, date in sql format
+sub get_gantt_hostname_to_wake_up($$){
+    my $dbh = shift;
+    my $date = shift;
+
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT resources.network_address
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+                WHERE
+                    m.moldable_index = \'CURRENT\'
+                    AND g1.moldable_job_id= g2.moldable_job_id
+                    AND m.moldable_id = g1.moldable_job_id
+                    AND j.job_id = m.moldable_job_id
+                    AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
+                    AND j.state = \'Waiting\'
+                    AND resources.resource_id = g1.resource_id
+                    AND resources.state = \'Alive\'
+                GROUP BY resources.network_address
+                ";
+    }else{
+        $req = "SELECT resources.network_address
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+                WHERE
+                    m.moldable_index = \'CURRENT\'
+                    AND g1.moldable_job_id= g2.moldable_job_id
+                    AND m.moldable_id = g1.moldable_job_id
+                    AND j.job_id = m.moldable_job_id
+                    AND g2.start_time <= \'$date\'
+                    AND j.state = \'Waiting\'
+                    AND resources.resource_id = g1.resource_id
+                    AND resources.state = \'Absent\'
+                GROUP BY resources.network_address
+               ";
+    }
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my @res ;
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@res, $ref[0]);
+    }
+    $sth->finish();
+
+    return(@res);
+}
 
 
 #Get informations about resources for jobs to launch at a given date
@@ -4107,7 +4209,7 @@ sub check_end_of_job($$$$$$$$$){
     my $server_epilogue_script = shift;
 
     #lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    lock_table($base,["jobs","job_state_logs"]);
+    lock_table($base,["jobs","job_state_logs","resource_properties","assigned_resources"]);
     my $refJob = get_job($base,$Jid);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
         oar_Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
@@ -4361,7 +4463,7 @@ sub job_finishing_sequence($$$$$$$$){
     }
 
     if (defined($state_to_switch)){
-        lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+        lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_properties"]);
         oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Set job $job_id into state $state_to_switch\n");
         set_job_state($dbh,$job_id,$state_to_switch);
         unlock_table($dbh);

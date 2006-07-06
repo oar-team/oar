@@ -136,12 +136,12 @@ sub init_scheduler($$$$$){
                                         			iolib::sql_to_duration($moldable->[1]) + $Security_time_overhead,
                                        			    );
         foreach my $r (@tmp_resource_list){
-        	if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
-			if ($r->{state} eq "Alive"){
-                    		vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
-                	}
-                	vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-            	}
+            if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
+                if ($r->{state} eq "Alive"){
+                    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
+                }
+                vec($available_resources_vector, $r->{resource_id}, 1) = 1;
+            }
         }
         
         my $job_properties = "TRUE";
@@ -446,6 +446,7 @@ sub check_jobs_to_launch($){
     return($return_code);
 }
 
+
 #Update gantt visualization tables with new scheduling
 #arg : database ref
 sub update_gantt_visu_tables($){
@@ -460,9 +461,6 @@ sub get_idle_nodes($$$){
     my $idle_duration = shift;
     my $sleep_duration = shift;
 
-    # Update last_job_date field for resources currently used
-    iolib::update_scheduler_last_job_date($dbh, $current_time_sec);
-
     my %nodes = iolib::search_idle_nodes($dbh, $current_time_sec);
     my $tmp_time = $current_time_sec - $idle_duration;
     my @res;
@@ -475,6 +473,15 @@ sub get_idle_nodes($$$){
             }
         }
     }
+    return(@res);
+}
+
+# Get nodes where the scheduler wants to schedule jobs but which is in the
+# Absent state
+sub get_nodes_to_wake_up($){
+    my $dbh = shift;
+    
+    return(iolib::get_gantt_hostname_to_wake_up($dbh, $current_time_sql));
 }
 
 return(1);

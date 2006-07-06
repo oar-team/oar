@@ -883,6 +883,9 @@ expiry_date        DATETIME              used in desktop computing mode to know
                                          offline
 desktop_computing  ENUM('YES','NO')      specify if the resource is a desktop
                    DEFAULT 'NO'          computing resource or not
+last_job_date      INT UNSIGNED          unix time of the end of the last job
+cm_availability    INT UNSIGNED          unix time when the resource will not be
+                                         available anymore
 cpuset             INT UNSIGNED          cpu number in the node
 cpu                INT UNSIGNED          cpu number in the cluster
 switch             VARCHAR(50)           switch name
@@ -1137,6 +1140,30 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
     ::
 
       CPUSET_RESOURCE_PROPERTY_DB_FIELD = cpuset
+
+  - If you want to manage nodes to be started and stoped. OAR gives you this API:
+
+    * When OAR scheduler wants some nodes to wake up then it launches this command
+      with the node list in arguments(the scheduler looks at the *cm_availability*
+      field in resource_properties_ table to know if the node will be started for
+      enough time)::
+
+        SCHEDULER_NODE_MANAGER_WAKE_UP_CMD = /path/to/the/command with your args
+
+    * When OAR considers that some nodes can be shut down, it launches this command with
+      the node list in arguments::
+
+        SCHEDULER_NODE_MANAGER_SLEEP_CMD = /path/to/the/command args
+
+      + Parameters for the scheduler to decide when a node is idle(number of seconds since
+        the last job was terminated on the nodes)::
+        
+          SCHEDULER_NODE_MANAGER_IDLE_TIME = 600
+
+      + Parameters for the scheduler to decide if a node will have enough time to sleep(
+        number of seconds before the next job)::
+
+          SCHEDULER_NODE_MANAGER_SLEEP_TIME = 600
 
 .. _OPENSSH_CMD:
 

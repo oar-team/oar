@@ -197,7 +197,15 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }else{
             $duration = iolib::sql_to_duration($moldable->[1]) + $security_time_overhead;
         }
-    
+
+        # CM part
+        my $alive_resources_vector_store = $alive_resources_vector;
+        foreach my $r (iolib::get_resources_that_can_be_waked_up($base,$duration)){
+            print(Dumper($r));
+            vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
+        }
+        # CM part
+        
         my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
@@ -233,6 +241,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                                     duration => $duration,
                                     moldable_id => $moldable->[2]
                                 });
+        # CM part
+        $alive_resources_vector = $alive_resources_vector_store ;
+        # CM part
     }
 
     # Choose moldable job which will finish the first
