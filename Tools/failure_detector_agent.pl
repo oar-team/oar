@@ -19,6 +19,9 @@ my $Timeout = 10;
 # Time between each check campaign
 my $Check_interval = 10;
 
+# Number of // connections accepted
+my $Socket_max_connections = 10;
+
 ###############################################################################
 # Initialization part
 ###############################################################################
@@ -42,34 +45,15 @@ Usage: $0 [-h|[[-p][-t]] "cmd1 args" "cmd2 args" "cmd3"...
   -h, --help            display this help message
   -p, --port            specify the socket port to use (default is 8888)
   -c, --check_interval  specify the amount of time between each check
+                        (default is 10 s)
   -t, --timeout         specify the maximum time given to each command
-                        (default is 10) this time is also used to wait between
-                        each checking campaign 
+                        (default is 10 s) this time is also used to wait
+                        between each checking campaign 
 EOS
     exit(0);
 }
 
-# Init the pipe to talk with the socket manager process
-if(!(pipe (TATA, YOYO))){
-    warn("[SYSTEM-ERROR] Cannot open pipe !!!\n");
-    exit(1);
-}
-
-autoflush TATA 1;
-autoflush YOYO 1;
-
-# Create the socket manager process
-my $pid = fork();
-if (!defined($pid)){
-    warn("[SYSTEM-ERROR] Cannot fork a process.\n");
-    exit(2);
-}elsif ($pid == 0){
-    #CHILD
-    launch_child($Socket_port);
-    exit(0);
-}
-
-close(TATA);
+my $Socket_process_pid = 0;
 
 # pid of a user command currently launched
 my $cmd_pid = 0;
@@ -77,9 +61,7 @@ my $cmd_pid = 0;
 # This command terminates on a signal INT or TERM
 sub sig_handler(){
     kill('SIGKILL', $cmd_pid) if ($cmd_pid > 0);
-    print(YOYO "EXIT\n");
-    close(YOYO);
-    wait();
+    close_socket();
     print("Exit normally\n");
     exit(0);
 }
@@ -89,17 +71,12 @@ $SIG{TERM} = \&sig_handler;
 
 ###############################################################################
 # Test part
-#
-# You have 3 possible actions:
-#     - OPEN : open the socket
-#     - CLOSE : close the scoket
-#     - EXIT : close the socket and exit from child processus
 ###############################################################################
 
 # Permit to display directly if the socket could not be opened (when user test
 # it interactively)
-send_socket_cmd("OPEN");
-send_socket_cmd("CLOSE");
+open_socket($Socket_port, $Socket_max_connections);
+close_socket();
 
 while (1){
     # specify if we must exit from the loop immediately
@@ -116,7 +93,7 @@ while (1){
         if (!defined($cmd_pid)){
             warn("[SYSTEM-ERROR] Cannot fork a process to launch the command : $cmd. So we close the socket.\n");
             $end_test_cmds = 1;
-            send_socket_cmd("CLOSE");
+            close_socket();
         }elsif ($cmd_pid == 0){
             #CHILD
             exec($cmd);
@@ -125,19 +102,20 @@ while (1){
             my $initial_time = time;
             my $result_wait = 0;
             while (($result_wait != $cmd_pid) and (time - $initial_time <= $Timeout)){
-                if (($result_wait = waitpid($cmd_pid, WNOHANG)) > 0){
+                # Also avoid zombies
+                if (($result_wait = waitpid(-1, WNOHANG)) > 0){
                     $exit_status = $?;
                 }
-                select(undef,undef,undef,0.25);
+                select(undef,undef,undef,0.5);
             }
             if ($result_wait != $cmd_pid){
                 print("[".strftime("%F %T", localtime)."] [ERROR] Timeout ($Timeout s) of the command '$cmd' SO we close the socket.\n");
                 kill('SIGKILL', $cmd_pid);
-                send_socket_cmd("CLOSE");
+                close_socket();
                 $end_test_cmds = 1;
             }elsif($exit_status != 0){
                 print("[".strftime("%F %T", localtime)."] [ERROR] The command '$cmd' has returned an exit code != 0 ($exit_status) SO we close the socket.\n");
-                send_socket_cmd("CLOSE");
+                close_socket();
                 $end_test_cmds = 1;
             }
         }
@@ -149,7 +127,7 @@ while (1){
 
     if ($end_test_cmds == 0){
         print("[".strftime("%F %T", localtime)."] [SUCCESS] Tests are a success so we open the socket.\n");
-        send_socket_cmd("OPEN");
+        open_socket($Socket_port, $Socket_max_connections);
     }
 
     print("[".strftime("%F %T", localtime)."] We are waiting $Check_interval s before the next check.\n");
@@ -159,16 +137,29 @@ while (1){
 ###############################################################################
 # Internal functions
 ###############################################################################
-sub send_socket_cmd($){
-    my $str = shift;
-    if (! print(YOYO "$str\n")){
-        warn("[SYSTEM-ERROR] The socket manager process seems to be died. It is not normal so I am exiting");
-        kill('SIGKILL', $cmd_pid) if ($cmd_pid > 0);
-        exit(4);
+
+
+sub open_socket($$){
+    my $server_port = shift;
+    my $server_max_connect = shift;
+
+    if ($Socket_process_pid == 0){
+        $Socket_process_pid = manage_socket($server_port, $server_max_connect) ;
+    }else{
+        warn("[INFO] Socket already opened.\n");
     }
 }
 
-sub open_socket($$){
+sub close_socket(){
+    if ($Socket_process_pid != 0){
+        kill('SIGINT', $Socket_process_pid);
+        #waitpid($Socket_process_pid,0);
+        $Socket_process_pid = 0;
+    }else{
+        warn("[INFO] Socket already closed.\n");
+    }
+}
+sub manage_socket($$){
     my $server_port = shift;
     my $server_max_connect = shift;
     
@@ -196,55 +187,6 @@ sub open_socket($$){
         exit(0);
     }
     
-    return($server,$pid);
+    return($pid);
 }
 
-# This is the socket manager
-sub launch_child($){
-    my $port = shift;
-
-    $SIG{USR1}  = 'IGNORE';
-    $SIG{INT}  = 'IGNORE';
-    $SIG{TERM}  = 'IGNORE';
-
-    close(YOYO);
-
-    my $socket;
-    my $pid;
-    
-    my $end_loop = 0;
-    while($end_loop == 0){
-        my $cmd = <TATA>;
-        chop($cmd);
-        
-        #print("[CMD] $cmd\n");
-        if ($cmd eq "EXIT"){
-            if (defined($socket)){
-                kill('SIGINT', $pid);
-                $socket->close();
-            }
-            $end_loop = 1;
-        }elsif ($cmd eq "CLOSE"){
-            if (defined($socket)){
-                kill('SIGINT', $pid);
-                waitpid($pid,0);
-                $socket->close();
-                $socket = undef;
-            }
-        }elsif ($cmd eq "OPEN"){
-            if (!defined($socket)){
-                ($socket,$pid) = open_socket($port, 10) ;
-            }else{
-                warn("[INFO] Socket already opened.\n");
-            }
-        }else{
-            warn("[WARNING] Unknown tag : $cmd; so exiting\n");
-            if (defined($socket)){
-                kill('SIGINT', $pid);   
-                $socket->close();
-            }
-            $end_loop = 1;
-        }
-    }
-    close(TATA);
-}
