@@ -19,6 +19,41 @@ iolib::lock_table($base,["resources","assigned_resources","jobs","job_state_logs
 my @events_to_check = iolib::get_to_check_events($base);
 foreach my $i (@events_to_check){
     oar_debug("[NodeChangeState] Check event for the job $i->{job_id} with type $i->{type}\n");
+    
+    #########################################
+    # Check if we must change the job state #
+    #########################################
+    if (
+        ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
+        ($i->{type} eq "CPUSET_ERROR") ||
+        ($i->{type} eq "PROLOGUE_ERROR") ||
+        ($i->{type} eq "CANNOT_WRITE_NODE_FILE") ||
+        ($i->{type} eq "CANNOT_WRITE_PID_FILE") ||
+        ($i->{type} eq "USER_SHELL") ||
+        ($i->{type} eq "EXTERMINATE_JOB") ||
+        ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
+        ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
+        ($i->{type} eq "RESERVATION_NO_NODE") ||
+        ($i->{type} eq "EXIT_VALUE_OAREXEC")
+       ){
+        if (($i->{reservation} eq "None") or ($i->{type} eq "RESERVATION_NO_NODE")){
+            iolib::set_job_state($base,$i->{job_id},"Error");
+        }
+    }
+    
+    if (
+        ($i->{type} eq "CPUSET_CLEAN_ERROR") ||
+        ($i->{type} eq "EPILOGUE_ERROR")
+       ){
+        # At this point the job was executed normally
+        # The state is changed here to avoid to schedule other jobs
+        # on nodes that will be Suspected
+        iolib::set_job_state($base,$i->{job_id},"Terminated");
+    }
+    
+    #######################################
+    # Check if we must suspect some nodes #
+    #######################################
     if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
         ($i->{type} eq "CPUSET_ERROR") ||
         ($i->{type} eq "CPUSET_CLEAN_ERROR") ||
@@ -32,8 +67,6 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
-        iolib::set_job_state($base,$i->{job_id},"Error");
-        
         my @hosts;
         my $finaud_tag;
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
@@ -66,15 +99,48 @@ foreach my $i (@events_to_check){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j BUT we cannot Suspect this node because all resources are busy\n");
             }
         }
-    }elsif (($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
-            ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
-            ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||
-            ($i->{type} eq "SERVER_EPILOGUE_TIMEOUT") ||
-            ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR") ||
-            ($i->{type} eq "SERVER_EPILOGUE_ERROR")){
+    }
+    
+    ########################################
+    # Check if we must stop the scheduling #
+    ########################################
+    if (
+        ($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
+        ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
+        ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||
+        ($i->{type} eq "SERVER_EPILOGUE_TIMEOUT") ||
+        ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR") ||
+        ($i->{type} eq "SERVER_EPILOGUE_ERROR")
+       ){
+        oar_warn("[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -Q\n");
         iolib::stop_all_queues($base);
         iolib::set_job_state($base,$i->{job_id},"Error");
     }
+
+    #####################################
+    # Check if we must resubmit the job #
+    #####################################
+    if (
+        ($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
+        ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
+        ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||
+        ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
+        ($i->{type} eq "CPUSET_ERROR") ||
+        ($i->{type} eq "PROLOGUE_ERROR") ||
+        ($i->{type} eq "CANNOT_WRITE_NODE_FILE") ||
+        ($i->{type} eq "CANNOT_WRITE_PID_FILE") ||
+        ($i->{type} eq "USER_SHELL") ||
+        ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
+        ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT")
+       ){
+        my $job = iolib::get_job($base,$i->{job_id});
+        if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (iolib::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
+            my $new_job_id = iolib::resubmit_job($base,$i->{job_id});
+            oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because the event was $i->{type} and the job is neither a reservation nor an interactive job.\n");
+            iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"An ERROR occured and we cannot launch this job so we resubmit it (new id = $new_job_id).");
+        }
+    }
+    
     iolib::check_event($base, $i->{type}, $i->{job_id});
 }
 

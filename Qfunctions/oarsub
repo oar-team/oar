@@ -197,7 +197,6 @@ Options are:
      --stderr                  specify the name of the error output file
      --resubmit                resubmit the given job to a new one
      --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
-     --idempotent              specify that the job can be resubmitted automaticaly if OAR detects that there was an system error
  -h, --help                    print this help message
  -v, --version                 print OAR version number
 EOS

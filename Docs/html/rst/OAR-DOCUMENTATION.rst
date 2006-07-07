@@ -494,6 +494,7 @@ The different event types are:
  - "SSH_TRANSFER_TIMEOUT" : node OAR part script was too long to transfer.
  - "BAD_HASHTABLE_DUMP" : OAR transfered a bad hashtable.
  - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
+ - "RESERVATION_NO_NODE" : All nodes were detected as bad for the reservation job.
 
 *event_log_hostnames*
 ~~~~~~~~~~~~~~~~~~~~~

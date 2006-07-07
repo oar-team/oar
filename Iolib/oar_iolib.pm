@@ -286,14 +286,20 @@ sub get_job_cpuset_name($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT cpuset_name
+    my $sth = $dbh->prepare("   SELECT cpuset_name, job_user
                                 FROM jobs
                                 WHERE
                                     job_id = $job_id
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
-    return($res[0]);
+    my $cpuset;
+    if ($res[0] eq ""){
+        $cpuset = $res[1]."_".$job_id;
+    }else{
+        $cpuset = $res[1]."_".$res[0];
+    }
+    return($cpuset);
 }
 
 
@@ -867,17 +873,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
 
     # Form cpuset name
     if (defined($cpuset)){
-        $cpuset = $user."_".$cpuset;
-    }else{
-        $cpuset = $user."_".$job_id;
+        $dbh->do("  UPDATE jobs
+                    SET
+                        cpuset_name = \'$cpuset\'
+                    WHERE
+                        state = \'Hold\'
+                        AND job_id = $job_id
+        ");
     }
-    $dbh->do("UPDATE jobs
-              SET
-                  cpuset_name = \'$cpuset\'
-              WHERE
-                  state = \'Hold\'
-                  AND job_id = $job_id
-    ");
     
     foreach my $moldable_resource (@{$ref_resource_list}){
         #lock_table($dbh,["moldable_job_descriptions"]);
@@ -1154,8 +1157,8 @@ sub resubmit_job($$){
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\')
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,cpuset_name)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',\'$job->{cpuset_name}\')
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
@@ -1235,12 +1238,6 @@ sub resubmit_job($$){
                         job_id = $job_id
             ");
 
-    #$dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
-    #                SELECT $new_job_id, job_id_required
-    #                FROM job_dependencies
-    #                WHERE
-    #                    job_id = $job_id
-    #         ");
     $dbh->do("  UPDATE job_dependencies
                 SET job_id_required = $new_job_id
                 WHERE
@@ -1264,6 +1261,26 @@ sub resubmit_job($$){
 
     return($new_job_id);
 
+}
+
+
+# is_job_already_resubmitted
+# Check if the job was already resubmitted
+# args : db ref, job id
+sub is_job_already_resubmitted($$){
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT COUNT(*)
+                                FROM jobs
+                                WHERE
+                                    resubmit_job_id = $job_id
+                            ");
+    $sth->execute();
+    my @ref = $sth->fetchrow_array();
+    $sth->finish();
+   
+    return($ref[0]);
 }
 
 # set_job_resa_state
@@ -3111,6 +3128,59 @@ sub stop_all_queues($){
              ");
 }
 
+# start_all_queues
+sub start_all_queues($){
+    my $dbh = shift;
+    
+    $dbh->do("  UPDATE queues
+                SET state = \'Active\'
+             ");
+}
+
+
+# stop_a_queue
+sub stop_a_queue($$){
+    my $dbh = shift;
+    my $queue = shift;
+    
+    $dbh->do("  UPDATE queues
+                SET state = \'notActive\'
+                WHERE
+                    queue_name = \'$queue\'
+             ");
+}
+
+# start_a_queue
+sub start_a_queue($$){
+    my $dbh = shift;
+    my $queue = shift;
+    
+    $dbh->do("  UPDATE queues
+                SET state = \'Active\'
+                WHERE
+                    queue_name = \'$queue\'
+             ");
+}
+
+# delete a queue
+sub delete_a_queue($$){
+    my $dbh = shift;
+    my $queue = shift;
+    
+    $dbh->do("DELETE FROM queues WHERE queue_name = \'$queue\'");
+}
+
+# create a queue
+sub create_a_queue($$$$){
+    my $dbh = shift;
+    my $queue = shift;
+    my $policy = shift;
+    my $priority = shift;
+    
+    $dbh->do("  INSERT INTO queues (queue_name,priority,scheduler_policy)
+                VALUES (\'$queue\',$priority,\'$policy\')");
+}
+
 
 # GANTT MANAGEMENT
 
@@ -4296,9 +4366,33 @@ sub check_end_of_job($$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 40){
-    	# launching oarexec timeout
+    	    # launching oarexec timeout
             my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"LAUNCHING_OAREXEC_TIMEOUT",$strWARN);
+        }elsif ($error == 40){
+            #oarexec received a SIGUSR2 signal
+            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
+            oar_Judas::oar_debug("$strWARN\n");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
+            my $types = iolib::get_current_job_types($base,$Jid);
+            if (defined($types->{idempotent})){
+                my $new_job_id = iolib::resubmit_job($base,$Jid);
+                oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+                iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+            }
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+        }elsif ($error == 41){
+            #oarexec received a SIGUSR2 signal
+            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
+            oar_Judas::oar_debug("$strWARN\n");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            my $types = iolib::get_current_job_types($base,$Jid);
+            if (defined($types->{idempotent})){
+                my $new_job_id = iolib::resubmit_job($base,$Jid);
+                oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+                iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+            }
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EXIT_VALUE_OAREXEC",$strWARN);

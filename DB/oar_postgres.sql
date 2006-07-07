@@ -383,6 +383,17 @@ foreach my $mold (@{$ref_resource_list}){
 }
 ');
 
+-- Check if types given by the user are right
+INSERT INTO admission_rules (rule) VALUES ('
+my @types = ("deploy","desktop_computing","besteffort","idempotent","timesharing");
+foreach my $t (@{$type_list}){
+    if ((!grep(/^$t$/, @{$type_list})) or ($t !~ /^timesharing/)){
+        die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
+    }
+}
+');
+
+
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10','oar_sched_gantt');
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt');

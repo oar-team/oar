@@ -15,8 +15,10 @@
 #     - 20 : cannot create STDOUT and STDERR files
 #     - 22 : cannot go into the launching directory of the job and epilogue was in error
 #     - 30 : timeout of the bipbip hashtable send
-#     - 33 : oarexec was stopped normally via USR1 signal but there were an epilogue error
+#     - 33 : oarexec was stopped normally via USR1 signal but there was an epilogue error
 #     - 34 : all worked normally and this is the result of an USR1 signal
+#     - 40 : all worked normally and the user process received the checkpoint signal
+#     - 41 : oarexec has sent the checkpoint signal but there were an epilogue error
 #
 # The exit code is sent to the Almighty via its TCP socket
 #
@@ -390,6 +392,7 @@ vec($rin_pipe,fileno(pipe_child_read),1) = 1;
 $rin = $rin_sig | $rin_pipe;
 my $rin_tmp;
 my $Stop_signal = 0;
+my $Checkpoint_signal = 0;
 my $stop_loop = 0;
 # wait end of the child process or KILL notification
 while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
@@ -427,6 +430,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                 print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
                 send_kill_signal_to_myself();
             }
+            $Checkpoint_signal = 1;
         }
     }else{
         $line_read =~ m/(\d+) (\d+)/m;
@@ -470,6 +474,8 @@ if (defined($Job->{epilogue})){
             quit_oarexec(4,$Job);
         }elsif($Stop_signal == 1){
             quit_oarexec(33,$Job);
+        }elsif($Checkpoint_signal == 1){
+            quit_oarexec(41,$Job);
         }else{
             quit_oarexec(2+$Oarexec_exit_code,$Job);
         }
@@ -481,6 +487,8 @@ if ($kill_myself == 1){
     quit_oarexec(3,$Job);
 }elsif($Stop_signal == 1){
     quit_oarexec(34,$Job);
+}elsif($Checkpoint_signal == 1){
+    quit_oarexec(40,$Job);
 }else{
     quit_oarexec(0+$Oarexec_exit_code,$Job);
 }
