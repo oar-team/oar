@@ -8,25 +8,116 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Getopt::Long;
 use oarversion;
 use oar_Tools;
+use oar_iolib;
 
 init_conf($ENV{OARCONFFILE});
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
+Getopt::Long::Configure("gnu_getopt");
 my $Version;
-GetOptions ("version|v" => \$Version);
+my @Enable_queue;
+my @Disable_queue;
+my @Add_queue;
+my @Remove_queue;
+my $Enable_all;
+my $Disable_all;
+my $List_queues;
+my $sos;
+GetOptions ("version|v" => \$Version,
+            "enable_queue|e=s" => \@Enable_queue,
+            "disable_queue|d=s" => \@Disable_queue,
+            "Enable_all_queues|E" => \$Enable_all,
+            "Disable_all_queues|D" => \$Disable_all,
+            "add_queue=s" => \@Add_queue,
+            "remove_queue=s" => \@Remove_queue,
+            "list_queues|l" => \$List_queues,
+            "help|h" => \$sos
+           );
+# Display command help
+sub usage {
+    print <<EOS;
+Usage: $0 [-h] [-v] [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue] [-l] [tag_to_Almighty]
+Send a tag to Almighty and manage queues
+Options:
+  -e, --enable_queue        active an existing queue
+  -d, --disable_queue       inactive an existing queue
+  -E, --Enable_all_queues   active all queues
+  -D, --Disable_all_queues  inactive all queues
+      --add_queue           add a new queue; syntax is name,priority,scheduler
+                            (ex: "name,3,"oar_sched_gantt_with_timesharing"
+      --remove_queue        remove an existing queue
+  -l, --list_queues         list all queues and there status
+  -h, --help                show this help screen
+  -v, --version             print OAR version number
+EOS
+    exit(1);
+}
+
+if (defined($sos)){
+    usage();
+    exit(0);
+}
 
 if (defined($Version)){
     print("OAR version : ".oarversion::get_version()."\n");
     exit(0);
 }
 
+my $base = iolib::connect();
+
+foreach my $q (@Add_queue){
+    my ($queue,$priority,$scheduler) = split(',',$q);
+    if (defined($queue)){
+        $priority = 0 if (!defined($priority));
+        $scheduler = "oar_sched_gantt_with_timesharing" if (!defined($scheduler));
+        print("Add queue $queue with the priority $priority and the scheduler $scheduler.\n");
+        iolib::create_a_queue($base,$queue,$scheduler,$priority);
+    }
+}
+
+foreach my $q (@Remove_queue){
+    print("Remove queue $q.\n");
+    iolib::delete_a_queue($base,$q);
+}
+
+foreach my $q (@Enable_queue){
+    print("Enable queue $q.\n");
+    iolib::start_a_queue($base,$q);
+}
+
+foreach my $q (@Disable_queue){
+    print("Disable queue $q.\n");
+    iolib::stop_a_queue($base,$q);
+}
+
+if (defined($Enable_all)){
+    iolib::start_all_queues($base);
+    print("Enable all queues.\n");
+}
+
+if (defined($Disable_all)){
+    iolib::stop_all_queues($base);
+    print("Disable all queues.\n");
+}
+
+if (defined($List_queues)){
+    my %queues = iolib::get_all_queue_informations($base);
+    foreach my $q (keys(%queues)){
+        print("$q\n");
+        print("\tpriority = $queues{$q}->{priority}\n");
+        print("\tscheduler = $queues{$q}->{scheduler_policy}\n");
+        print("\tstate = $queues{$q}->{state}\n");
+    }
+}
+
+iolib::disconnect($base);
 
 my $tag = "Term";
 if (defined($ARGV[0])){
     $tag = $ARGV[0];
 }
-print("tag = $tag\n");
+#print("tag = $tag\n");
 
 oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$tag");
 
