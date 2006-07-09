@@ -98,43 +98,50 @@ The user can submit a job with this command. So, what is a job in our context?
   variables to know its environnement:
   ::
                   
-    $OAR_NODEFILE                 contains the name of a file which lists all reserved nodes for this job
+    $OAR_NODEFILE                 contains the name of a file which lists
+                                  all reserved nodes for this job
     $OAR_JOBID                    contains the OAR job identificator
-    $OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists all resources and their properties
+    $OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists
+                                  all resources and their properties
     $OAR_NB_NODES                 contains the number of reserved nodes
 
 Options::
                   
   -q "queuename" : specify the queue for this job
-  -I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a script)
+  -I : turn on INTERACTIVE mode (OAR gives you a shell instead of executing a
+       script)
   -l "resource description" : defines resource list requested for this job;
                               the different parameters are resource properties
                               registered in OAR database; see examples below.
                               (walltime : Request maximun time. Format is
-                              [hour:mn:sec|hour:mn|hour]; after this elapsed time,
-                              the job will be killed)
+                              [hour:mn:sec|hour:mn|hour]; after this elapsed
+                              time, the job will be killed)
   -p "properties" : adds constraints for the job
                     (format is a WHERE clause from the SQL syntax)
-  -r "2007-05-11 23:32:03" : asks for a reservation job to begin at the date in argument
+  -r "2007-05-11 23:32:03" : asks for a reservation job to begin at the
+                             date in argument
   -C job_id : connects to a reservation in Running state
   -k "duration" : asks OAR to send the checkpoint signal to the first processus
                   of the job "number_of_seconds" before the walltime
   --signal "signal name" : specify the signal to use when checkpointing
-  -t "type name" : specify a specific type (deploy, besteffort, cosystem, checkpoint)
+  -t "type name" : specify a specific type (deploy, besteffort, cosystem,
+                   checkpoint)
   -d "directory path" : specify the directory where to launch the command
                         (default is current directory)
   -n "job name" :  specify an arbitrary name for the job
   -a job_id : anterior job that must be terminated to start this new one
-  --notify "method" : specify a notification method(mail or program to launch); ex:
+  --notify "method" : specify a notification method(mail or command); ex:
                       --notify "mail:name@domain.com"
                       --notify "exec:/path/to/script args"
   --stdout "file name" : specify the name of the standard output file
   --stderr "file name" : specify the name of the error output file
   --resubmit job_id : resubmit the given job to a new one
-  --force_cpuset_name "cpuset name" : Instead of using job_id for the cpuset name you
-                                      can specify one (WARNING: if several jobs have the
-                                      same cpuset name then processes of a job could be
-                                      killed when another finished on the same computer)
+  --force_cpuset_name "cpuset name" : Instead of using job_id for the cpuset
+                                      name you can specify one (WARNING: if
+                                      several jobs have the same cpuset name
+                                      then processes of a job could be killed
+                                      when another finished on the same
+                                      computer)
 
 Examples
 ::
@@ -145,20 +152,24 @@ Examples
 the default walltime)
 ::
 
-  # oarsub -q default -l walltime=50:30:00,/node=10/cpu=3,walltime=2:15:00 -p "switch = 'sw1'" /home/users/toto/prog
+  # oarsub -q default -l walltime=50:30:00,/node=10/cpu=3,walltime=2:15:00 \
+    -p "switch = 'sw1'" /home/users/toto/prog
     
-(the "/home/users/toto/prog" script will be run on 10 nodes with 3 cpus (so a total of 30 cpus) in the default
-queue with a walltime of  2:15:00. Mooreover "-p" option restricts resources only on the switch 'sw1')
+(the "/home/users/toto/prog" script will be run on 10 nodes with 3 cpus (so a
+total of 30 cpus) in the default queue with a walltime of  2:15:00.
+Moreover "-p" option restricts resources only on the switch 'sw1')
 ::
      
   # oarsub -r "2004-04-27 11:00:00" -l /node=12/cpu=2
 
-(a reservation will begin at "2004-04-27 11:00:00" on 12 nodes with 2 cpus on each one)
+(a reservation will begin at "2004-04-27 11:00:00" on 12 nodes with 2 cpus
+on each one)
 ::
 
   #  oarsub -C 42
 
-(connects to the job 42 on the first node and set all OAR environment variables)
+(connects to the job 42 on the first node and set all OAR environment
+variables)
 ::
 
   # oarsub -I
@@ -168,12 +179,14 @@ queue with a walltime of  2:15:00. Mooreover "-p" option restricts resources onl
 *oardel*
 ~~~~~~~~
 
-This command is used to delete or checkpoint job(s). They are designed by their identifier.
+This command is used to delete or checkpoint job(s). They are designed by
+their identifier.
 
 Option
 ::
   
-  -c job_id : send checkpoint signal to the job (signal was definedwith "--signal" option in oarsub)
+  -c job_id : send checkpoint signal to the job (signal was
+              definedwith "--signal" option in oarsub)
 
 Exemples
 ::
@@ -201,7 +214,8 @@ Monika
 This is a web cgi normally installed on the cluster frontal. This tool executes
 `oarnodes`_ and `oarstat`_ then format data in a html page.
 
-Thus you can have a global view of cluster state and where your jobs are running.
+Thus you can have a global view of cluster state and where your jobs are
+running.
 
 DrawOARGantt
 ~~~~~~~~~~~~
@@ -249,7 +263,8 @@ Options are: ::
  -a : add a new resource
  -s : state to assign to the node:
     * "Alive" : a job can be run on the node.
-    * "Absent" : administrator wants to remove the node from the pool for a moment.
+    * "Absent" : administrator wants to remove the node from the pool for a
+      moment.
     * "Dead" : the node will not be used and will be deleted. 
  -h : specify the node name (override hostname).
  -r : specify the resource number
@@ -310,8 +325,10 @@ consumption_type  ENUM("ASKED","USED")  "ASKED" corresponds to the walltimes
 consumption       INT UNSIGNED          number of seconds used
 ================  ====================  =======================================
 
-:Primary key: window_start, window_stop, accounting_user, queue_name, consumption_type
-:Index fields: window_start, window_stop, accounting_user, queue_name, consumption_type
+:Primary key: window_start, window_stop, accounting_user, queue_name,
+              consumption_type
+:Index fields: window_start, window_stop, accounting_user, queue_name,
+               consumption_type
 
 This table is a summary of the comsumption for each user on each queue. This
 increases the speed of queries about user consumptions and statistic
@@ -441,11 +458,11 @@ The different event types are:
  - "EPILOGUE_ERROR" : an error occured during the execution of the job
    epilogue (exit code != 0).
  - "CANNOT_CREATE_TMP_DIRECTORY" : OAR cannot create the directory where all
-    information files will be stored.
+   information files will be stored.
  - "CAN_NOT_WRITE_NODE_FILE" : the system was not able to write file which had
    to contain the node list on the first node (*/tmp/OAR_job_id*).
- - "CAN_NOT_WRITE_PID_FILE" : the system was not able to write the file which had
-   to contain the pid of oarexec process on the first node
+ - "CAN_NOT_WRITE_PID_FILE" : the system was not able to write the file which
+   had to contain the pid of oarexec process on the first node
    (*/tmp/pid_of_oarexec_for_job_id*).
  - "USER_SHELL" : the system was not able to get informations about the user
    shell on the first node.
@@ -481,10 +498,12 @@ The different event types are:
  - "SERVER_PROLOGUE_TIMEOUT" : prologue server script has timeouted.
  - "SERVER_PROLOGUE_EXIT_CODE_ERROR" : prologue server script did not return 0.
  - "SERVER_PROLOGUE_ERROR" : cannot find prologue server script file.
- - "CPUSET_CLEAN_ERROR" : OAR cannot clean correctly cpuset files for a job on the remote node.
+ - "CPUSET_CLEAN_ERROR" : OAR cannot clean correctly cpuset files for a job
+   on the remote node.
  - "MAIL_NOTIFICATION_ERROR" : a mail cannot be sent.
  - "USER_MAIL_NOTIFICATION" : user mail notification cannot be performed.
- - "USER_EXEC_NOTIFICATION_ERROR" : user script execution notification cannot be performed.
+ - "USER_EXEC_NOTIFICATION_ERROR" : user script execution notification cannot
+   be performed.
  - "BIPBIP_BAD_JOBID" : error when retriving informations about a running job.
  - "BIPBIP_CHALLENGE" : OAR is configured to detach jobs when they are launched
    on compute nodes and the job return a bad challenge number.
@@ -494,7 +513,8 @@ The different event types are:
  - "SSH_TRANSFER_TIMEOUT" : node OAR part script was too long to transfer.
  - "BAD_HASHTABLE_DUMP" : OAR transfered a bad hashtable.
  - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
- - "RESERVATION_NO_NODE" : All nodes were detected as bad for the reservation job.
+ - "RESERVATION_NO_NODE" : All nodes were detected as bad for the reservation
+   job.
 
 *event_log_hostnames*
 ~~~~~~~~~~~~~~~~~~~~~
@@ -582,8 +602,8 @@ resource_id       INT UNSIGNED          resource assigned to the job
 :Primary key: moldable_job_id, resource_id
 :Index fields: *None*
 
-This table is the same as `gantt_jobs_resources`_ and is used by visualisation tools.
-It is made up to date in an atomic action (with a lock).
+This table is the same as `gantt_jobs_resources`_ and is used by visualisation
+tools. It is made up to date in an atomic action (with a lock).
 
 *gantt_jobs_predictions*
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -598,8 +618,8 @@ start_time        DATETIME              date when the job is scheduled to start
 :Primary key: moldable_job_id
 :Index fields: *None*
 
-With this table and `gantt_jobs_resources`_ you can know exactly what are the decisions
-taken by the schedulers for each waiting jobs.
+With this table and `gantt_jobs_resources`_ you can know exactly what are the
+decisions taken by the schedulers for each waiting jobs.
 
 :note: The special job id "0" is used to store the scheduling reference date.
 
@@ -752,8 +772,9 @@ res_group_property    TEXT                  SQL constraint properties
 :Primary key: res_group_id
 :Index fields: res_group_moldable_id
 
-As you can specify job global properties with `oarsub`_ and the "-p" option, you
-can do the same thing for each resource groups that you define with the "-l" option.
+As you can specify job global properties with `oarsub`_ and the "-p" option,
+you can do the same thing for each resource groups that you define with
+the "-l" option.
 
 *job_resource_descriptions*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -974,15 +995,17 @@ challenge         VARCHAR(255)          challenge string
 This table is used to share a secret between OAR server and oarexec process on
 computing nodes (avoid a job id to be stole by malicious man).
 
-For security reasons, this table **must not be readable** for a database account
-given to users who want to access OAR internal informations(like statistics).
+For security reasons, this table **must not be readable** for a database
+account given to users who want to access OAR internal informations(like statistics).
 
 Configuration file
 ==================
 
-This is the meanings for each configuration tags that you can find in /etc/oar.conf:
+This is the meanings for each configuration tags that you can find in
+/etc/oar.conf:
 
-  - Database type : you can use a MySQL or a PostgreSQL database (tags are "mysql" or "Pg")::
+  - Database type : you can use a MySQL or a PostgreSQL database (tags are
+    "mysql" or "Pg")::
       
       DB_TYPE = mysql
   
@@ -1023,8 +1046,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
 
 .. _DETACH_JOB_FROM_SERVER:
 
-  - Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh connection between the
-    node and the server. Otherwise set this tag to 0::
+  - Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh
+    connection between the node and the server. Otherwise set this tag to 0::
       
       DETACH_JOB_FROM_SERVER=1
 
@@ -1044,9 +1067,10 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
           NMAP_COMMAND=/usr/bin/nmap -p 22 -n -T5
 
-      * OAR generic : a specific script may be used instead of ping to check aliveness of nodes.
-        The script must return bad nodes on STDERR (1 line for a bad node and it must
-        have exactly the same name that OAR has given in argument of the command)::
+      * OAR generic : a specific script may be used instead of ping to check
+        aliveness of nodes. The script must return bad nodes on STDERR (1 line
+        for a bad node and it must have exactly the same name that OAR has
+        given in argument of the command)::
 
           GENERIC_COMMAND=/path/to/command arg1 arg2
 
@@ -1058,7 +1082,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       
       LOG_FILE=/var/log/oar.log
 
-  - If you want to debug oarexec on nodes then affect 1 (only effective if DETACH_JOB_FROM_SERVER = 1)::
+  - If you want to debug oarexec on nodes then affect 1 (only effective if
+    DETACH_JOB_FROM_SERVER = 1)::
 
       OAREXEC_DEBUG_MODE=0
 
@@ -1092,11 +1117,13 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
       G5K_LIMIT_WEEK_DAYS = 1 2 3 4 5
       G5K_LIMIT_DAY_HOURS = 7 22
 
-  - Set the timeout for the prologue and epilogue execution on computing nodes::
+  - Set the timeout for the prologue and epilogue execution on computing
+    nodes::
 
       PROLOGUE_EPILOGUE_TIMEOUT = 60
 
-  - Files to execute before and after each job on the first computing node (default is ~oar/oar_prologue ans ~oar/oar_epilogue)::
+  - Files to execute before and after each job on the first computing node
+    (default is ~oar/oar_prologue ans ~oar/oar_epilogue)::
 
       PROLOGUE_EXEC_FILE = /path/to/prog
       EPILOGUE_EXEC_FILE = /path/to/prog
@@ -1116,7 +1143,8 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
 
 .. _DEAD_SWITCH_TIME:
 
-  - Set time after which resources become Dead (default is 0 and it means never)::
+  - Set time after which resources become Dead (default is 0 and it means
+    never)::
 
       DEAD_SWITCH_TIME = 600
 
@@ -1124,45 +1152,50 @@ This is the meanings for each configuration tags that you can find in /etc/oar.c
 
       SCHEDULER_TIMEOUT = 10
 
-  - Time to add between each jobs (time for administration tasks or time to let computers to reboot)::
+  - Time to add between each jobs (time for administration tasks or time to
+    let computers to reboot)::
 
       SCHEDULER_JOB_SECURITY_TIME = 1
 
-  - Minimum time in seconds that can be considered like a hole where a job could be scheduled in::
+  - Minimum time in seconds that can be considered like a hole where a job
+    could be scheduled in::
   
       SCHEDULER_GANTT_HOLE_MINIMUM_TIME = 300
 
-  - You can add an order preference on resource assigned by the system(SQL ORDER syntax)::
+  - You can add an order preference on resource assigned by the system(SQL
+    ORDER syntax)::
 
       SCHEDULER_RESOURCE_ORDER = switch ASC, node DESC, resource_id ASC
 
-  - Indicate the name of the database field that contains the cpu number of the node.
-    If this option is set then users must use `OARSH`_ instead of ssh to walk on each nodes that they have reserved via oarsub.
+  - Indicate the name of the database field that contains the cpu number of
+    the node. If this option is set then users must use `OARSH`_ instead of
+    ssh to walk on each nodes that they have reserved via oarsub.
     ::
 
       CPUSET_RESOURCE_PROPERTY_DB_FIELD = cpuset
 
-  - If you want to manage nodes to be started and stoped. OAR gives you this API:
+  - If you want to manage nodes to be started and stoped. OAR gives you this
+    API:
 
-    * When OAR scheduler wants some nodes to wake up then it launches this command
-      with the node list in arguments(the scheduler looks at the *cm_availability*
-      field in resource_properties_ table to know if the node will be started for
-      enough time)::
+    * When OAR scheduler wants some nodes to wake up then it launches this
+      command with the node list in arguments(the scheduler looks at the
+      *cm_availability* field in resource_properties_ table to know if the
+      node will be started for enough time)::
 
         SCHEDULER_NODE_MANAGER_WAKE_UP_CMD = /path/to/the/command with your args
 
-    * When OAR considers that some nodes can be shut down, it launches this command with
-      the node list in arguments::
+    * When OAR considers that some nodes can be shut down, it launches this
+      command with the node list in arguments::
 
         SCHEDULER_NODE_MANAGER_SLEEP_CMD = /path/to/the/command args
 
-      + Parameters for the scheduler to decide when a node is idle(number of seconds since
-        the last job was terminated on the nodes)::
+      + Parameters for the scheduler to decide when a node is idle(number of
+        seconds since the last job was terminated on the nodes)::
         
           SCHEDULER_NODE_MANAGER_IDLE_TIME = 600
 
-      + Parameters for the scheduler to decide if a node will have enough time to sleep(
-        number of seconds before the next job)::
+      + Parameters for the scheduler to decide if a node will have enough time
+        to sleep(number of seconds before the next job)::
 
           SCHEDULER_NODE_MANAGER_SLEEP_TIME = 600
 
@@ -1210,7 +1243,7 @@ The jobs of Sarko are :
    them.
  - In "Desktop Computing" mode, it detects if a node date has expired and
    asks to change its state into "Suspected".
- - Can change "Suspected" resources into "Dead" after DEAD_SWITCH_TIME_  seconds.
+ - Can change "Suspected" resources into "Dead" after DEAD_SWITCH_TIME_ seconds.
 
 Judas
 -----
@@ -1280,17 +1313,20 @@ How does an interactive *oarsub* work?
 Job launch
 ----------
 
-For PASSIVE jobs, the mechanism is similar to the INTERACTIVE_ one, except for the shell launched from the frontal node.
+For PASSIVE jobs, the mechanism is similar to the INTERACTIVE_ one, except for
+the shell launched from the frontal node.
 
-The job is finished when the user command ends. Then oarexec return its exit value (what errors occured) on the Almighty_ via the SERVER_PORT_ if DETACH_JOB_FROM_SERVER_ was set to 1 otherwise it returns directly.
+The job is finished when the user command ends. Then oarexec return its exit
+value (what errors occured) on the Almighty_ via the SERVER_PORT_ if
+DETACH_JOB_FROM_SERVER_ was set to 1 otherwise it returns directly.
 
 
 CPUSET
 ------
 
 If the "--force_cpuset_name" option of the oarsub_ command is not defined then
-OAR will use job identifier.  The CPUSET name effectly created on each nodes is
-composed as "user_cpusetname".
+OAR will use job identifier. The CPUSET name is effectively created on each
+nodes is composed as "user_cpusetname".
 
 So if a user specifies "--force_cpuset_name" option, he will not be able to
 disturb other users.
@@ -1304,7 +1340,10 @@ OAR system steps:
 
  2. Afer each job, OAR deletes all processes stored in the associated CPUSET.
     Thus all nodes are clean after a OAR job.
- 
+
+If you don't want to use this feature, you can, but nothing will waranty that
+every user processes will be killed after the end of a job.
+
 Job deletion
 ------------
 
@@ -1331,7 +1370,19 @@ You can also use oardel_ command to send the signal.
 Scheduling
 ----------
 
-
+General steps used to schedule a job:
+  
+  1. All previous scheduled jobs are stored in a Gantt data strucuture.
+  
+  2. All resources that match property constraints of the job("-p" option and
+     indication in the "{...}" from the "-l" option of the oarsub_) are stored in
+     a tree datat structure according to the hierarchy given with the "-l" option.
+  
+  3. Then this tree is given to the Gantt library to find the first hole where
+     the job can be launched.
+  
+  4. The scheduler stores its decision into the database in the
+     gantt_jobs_predictions_ and gantt_jobs_resources_ tables.
 
 User notification
 -----------------
@@ -1353,6 +1404,15 @@ This section explains how the "--notify" oarsub_ option is handled by OAR:
 
 Accounting agregator
 --------------------
+
+In the `Configuration file`_ you can set the ACCOUNTING_WINDOW_ parameter. Thus
+the command oaraccounting_ will split the time with this amount and feed the
+table accounting_.
+
+So this is very easily and faster to get usage statistics of the cluster. We
+can see that like a "datawarehousing" information extraction method.
+
+.. include:: ../../../FAQ
 
 .. include:: ../../../CHANGELOG
 

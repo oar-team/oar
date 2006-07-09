@@ -173,8 +173,8 @@ First, you must start OAR daemon on the server (its name is "Almighty").
     - if you have installed OAR from Debian packages, use the script
       "/etc/init.d/oar-server" to start the daemon.
 
-Further information
--------------------
+Further informations
+--------------------
 For further information, please check http://oar.imag.fr/.
 
 .. $Id: INSTALL,v 1.23 2005/09/27 13:59:34 capitn Exp $
