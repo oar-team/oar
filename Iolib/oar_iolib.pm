@@ -157,6 +157,9 @@ sub get_database_type(){
     return($Db_type);
 }
 
+# Duration to add to all jobs when matching the cm_availability resource property field
+my $Cm_security_duration = 600;
+
 # CONNECTION
 
 # connect_db
@@ -1825,13 +1828,38 @@ sub get_resources_that_can_be_waked_up($$) {
     my $dbh = shift;
     my $duration = shift;
     
-    my $date = sql_to_local(get_date($dbh));
+    my $date = sql_to_local(get_date($dbh)) + $duration + $Cm_security_duration;
     my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
                                 FROM resources, resource_properties
                                 WHERE
                                     state = \'Absent\' AND
                                     resources.resource_id = resource_properties.resource_id AND
-                                    resource_properties.cm_availability > $date + 600
+                                    resource_properties.cm_availability > $date
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(@res);
+}
+
+
+# get_resources_that_will_be_out
+# returns a list of resources
+# parameters : base, job duration
+# return value : list of resource ref
+sub get_resources_that_will_be_out($$) {
+    my $dbh = shift;
+    my $duration = shift;
+    
+    my $date = sql_to_local(get_date($dbh)) + $duration + $Cm_security_duration;
+    my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
+                                FROM resources, resource_properties
+                                WHERE
+                                    state = \'Alive\' AND
+                                    resources.resource_id = resource_properties.resource_id AND
+                                    resource_properties.cm_availability < $date
                             ");
     $sth->execute();
     my @res = ();
