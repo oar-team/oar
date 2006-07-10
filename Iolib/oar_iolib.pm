@@ -457,7 +457,8 @@ sub get_job_host_log($$) {
     my $sth = $dbh->prepare("   SELECT resources.network_address, resources.resource_id
                                 FROM assigned_resources, resources
                                 WHERE
-                                    assigned_resources.moldable_job_id = $moldablejobid
+                                    assigned_resources.moldable_job_id = $moldablejobid AND
+                                    resources.resource_id = assigned_resources.resource_id
                                 ORDER BY resources.resource_id ASC
                             ");
     $sth->execute();

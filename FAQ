@@ -7,7 +7,7 @@ User
 How can I submit a moldable job?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You just have to use sevaral "-l" oarsub_ option(one for each moldable
+You just have to use several "-l" oarsub_ option(one for each moldable
 description). By default the OAR scheduler will launch the moldable job which
 will end first.
 
@@ -56,7 +56,8 @@ Example:
 
 The "timesharing" oarsub_ job type option is of the form:
 
-  - *timesharing=\*,\** : This is the default form if nothing is specified else
+  - *timesharing=\*,\** : This is the default behavior if nothing but
+    timesharing is specified.
     *timesharing*. It indicates that the job can be shared with all users and
     every job names.
   
@@ -72,7 +73,7 @@ The "timesharing" oarsub_ job type option is of the form:
 How can a checkpointable job be resubmitted automatically?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You have to specify that your job is *idempotent*. So, after a successfull
+You have to specify that your job is *idempotent*. So, after a successful
 checkpoint, if the job is resubmitted then all will go right and there will have
 no problem (like file creation, deletion, ...).
 
@@ -88,7 +89,7 @@ well it will be resubmitted.
 How to submit a non disturbing job for other users?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use the *besteffort* job type. Thus your job will be launch only
+You can use the *besteffort* job type. Thus your job will be launched only
 if there is a hole and will be deleted if another job wants its resources.
 
 Example:

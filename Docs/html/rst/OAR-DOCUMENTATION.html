@@ -417,7 +417,7 @@ productive plateforms and research experiments.</td>
 <li><a class="reference" href="#checkpoint" id="id70" name="id70">6.5&nbsp;&nbsp;&nbsp;Checkpoint</a></li>
 <li><a class="reference" href="#scheduling" id="id71" name="id71">6.6&nbsp;&nbsp;&nbsp;Scheduling</a></li>
 <li><a class="reference" href="#user-notification" id="id72" name="id72">6.7&nbsp;&nbsp;&nbsp;User notification</a></li>
-<li><a class="reference" href="#accounting-agregator" id="id73" name="id73">6.8&nbsp;&nbsp;&nbsp;Accounting agregator</a></li>
+<li><a class="reference" href="#accounting-aggregator" id="id73" name="id73">6.8&nbsp;&nbsp;&nbsp;Accounting aggregator</a></li>
 </ul>
 </li>
 <li><a class="reference" href="#faq" id="id74" name="id74">7&nbsp;&nbsp;&nbsp;FAQ</a><ul class="auto-toc">
@@ -829,6 +829,7 @@ which resources, resource properties, ...).</p>
 <p>Options</p>
 <pre class="literal-block">
 -a : shows all resources with their properties
+-r : show only properties of a resource
 -s : shows only resource states
 -l : shows only resource list
 -D : formats outputs in Perl Dumper
@@ -964,7 +965,7 @@ running.</p>
 <div class="section">
 <h3><a class="toc-backref" href="#id23" id="drawoargantt" name="drawoargantt">2.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></h3>
 <p>This is also a web cgi. It creates a Gantt chart which shows job repartition on
-nodes in the time. It is very usefull to see cluster occupation in the past
+nodes in the time. It is very useful to see cluster occupation in the past
 and to know when a job will be launched in the futur.</p>
 </div>
 </div>
@@ -1158,7 +1159,10 @@ job is going to be registered</td>
 </tbody>
 </table>
 <p>You can use these rules to change some values of some properties when a job is
-submitted. Some examples are better than a long description :</p>
+submitted. So each admission rule is executed in the order of the id field and
+it can set several variables. If one of them exits then the others will not
+be evaluated and <a class="reference" href="#oarsub">oarsub</a> returns an error.</p>
+<p>Some examples are better than a long description :</p>
 <blockquote>
 <ul>
 <li><p class="first">Specify the default value for queue parameter</p>
@@ -1321,7 +1325,7 @@ Suspected or Absent).</li>
 <li>&quot;BESTEFFORT_KILL&quot; : the job is of the type <em>besteffort</em> and was killed
 because a normal job wanted the nodes.</li>
 <li>&quot;FRAG_JOB_REQUEST&quot; : someone wants to delete a job.</li>
-<li>&quot;CHECKPOINT&quot; : the checkpoint signal was send to the job.</li>
+<li>&quot;CHECKPOINT&quot; : the checkpoint signal was sent to the job.</li>
 <li>&quot;CHECKPOINT_ERROR&quot; : OAR cannot send the signal to the job.</li>
 <li>&quot;CHECKPOINT_SUCCESS&quot; : system has sent the signal correctly.</li>
 <li>&quot;SERVER_EPILOGUE_TIMEOUT&quot; : epilogue server script has timeouted.</li>
@@ -1567,7 +1571,7 @@ asked Leon to clean up the database.</li>
 </tbody>
 </table>
 <p>This table is the same as <a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a> and is used by visualisation
-tools. It is made up to date in an atomic action (with a lock).</p>
+tools. It is updated atomically (a lock is used).</p>
 </div>
 <div class="section">
 <h3><a class="toc-backref" href="#id40" id="gantt-jobs-predictions" name="gantt-jobs-predictions">3.2.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></h3>
@@ -1821,8 +1825,8 @@ state.</li>
 <li>&quot;Launching&quot; : OAR has launched the job and will execute the user command
 on the first node.</li>
 <li>&quot;Running&quot; : the user command is executing on the first node.</li>
-<li>&quot;Finishing&quot; : the user command is terminated and OAR is doing work internally</li>
-<li>&quot;Terminated&quot; : the job is terminated normally.</li>
+<li>&quot;Finishing&quot; : the user command has terminated and OAR is doing work internally</li>
+<li>&quot;Terminated&quot; : the job has terminated normally.</li>
 <li>&quot;Error&quot; : a problem has occured.</li>
 </ul>
 </blockquote>
@@ -1914,7 +1918,7 @@ launching job_id</td>
 </tbody>
 </table>
 <p>A job can be described with several instances. Thus OAR scheduler can choose one
-of them. For example it can calculate which instance will finish the first.
+of them. For example it can calculate which instance will finish first.
 So this table stores all instances for all jobs.</p>
 </div>
 <div class="section">
@@ -2480,7 +2484,7 @@ Executables are launched one after one in the specified priority.</p>
 </tbody>
 </table>
 <p>This table is used to share a secret between OAR server and oarexec process on
-computing nodes (avoid a job id to be stole by malicious man).</p>
+computing nodes (avoid a job id being stolen/forged by malicious user).</p>
 <p>For security reasons, this table <strong>must not be readable</strong> for a database
 account given to users who want to access OAR internal informations(like statistics).</p>
 </div>
@@ -2488,8 +2492,7 @@ account given to users who want to access OAR internal informations(like statist
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id56" id="configuration-file" name="configuration-file">4&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
-<p>This is the meanings for each configuration tags that you can find in
-/etc/oar.conf:</p>
+<p>Each configuration tag found in /etc/oar.conf is now described:</p>
 <blockquote>
 <ul>
 <li><p class="first">Database type : you can use a MySQL or a PostgreSQL database (tags are
@@ -2770,9 +2773,9 @@ STAGEIN_CACHE_EXPIRY=144
 is divided into 2 processes:</p>
 <blockquote>
 <ul class="simple">
-<li>One listen to a TCP/IP socket. It waits informations or commands from OAR
+<li>One listens to a TCP/IP socket. It waits informations or commands from OAR
 user program or from the other modules.</li>
-<li>Another one treates each commands thanks to an automaton and launch right
+<li>Another one deals with commands thanks to an automaton and launch right
 modules one after one.</li>
 </ul>
 </blockquote>
@@ -2805,11 +2808,12 @@ can ask to kill a job and this is Leon which performs that.</p>
 <p>There are 2 frag types :</p>
 <blockquote>
 <ul class="simple">
-<li><em>normal</em> : Leon tries to connect to the first node of the job and tell it
-to kill itself.</li>
-<li><em>exterminate</em> : after a timeout if the <em>normal</em> method did not succeeded
+<li><em>normal</em> : Leon tries to connect to the first node allocated for the job and
+terminates the job.
+oarexec to end itself.</li>
+<li><em>exterminate</em> : after a timeout if the <em>normal</em> method did not succeed
 then Leon notifies this case and clean up the database for these jobs. So
-OAR don't know what occured on the node and Suspects it.</li>
+OAR doesn't know what occured on the node and Suspects it.</li>
 </ul>
 </blockquote>
 </div>
@@ -2933,7 +2937,7 @@ launches the script with in argument : <em>job_id</em>, <em>job_name</em>, <em>t
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id73" id="accounting-agregator" name="accounting-agregator">6.8&nbsp;&nbsp;&nbsp;Accounting agregator</a></h2>
+<h2><a class="toc-backref" href="#id73" id="accounting-aggregator" name="accounting-aggregator">6.8&nbsp;&nbsp;&nbsp;Accounting aggregator</a></h2>
 <p>In the <a class="reference" href="#configuration-file">Configuration file</a> you can set the <a class="reference" href="#accounting-window">ACCOUNTING_WINDOW</a> parameter. Thus
 the command <a class="reference" href="#oaraccounting">oaraccounting</a> will split the time with this amount and feed the
 table <a class="reference" href="#accounting">accounting</a>.</p>
@@ -2947,7 +2951,7 @@ can see that like a &quot;datawarehousing&quot; information extraction method.</
 <h2><a class="toc-backref" href="#id75" id="user" name="user">7.1&nbsp;&nbsp;&nbsp;User</a></h2>
 <div class="section">
 <h3><a class="toc-backref" href="#id76" id="how-can-i-submit-a-moldable-job" name="how-can-i-submit-a-moldable-job">7.1.1&nbsp;&nbsp;&nbsp;How can I submit a moldable job?</a></h3>
-<p>You just have to use sevaral &quot;-l&quot; <a class="reference" href="#oarsub">oarsub</a> option(one for each moldable
+<p>You just have to use several &quot;-l&quot; <a class="reference" href="#oarsub">oarsub</a> option(one for each moldable
 description). By default the OAR scheduler will launch the moldable job which
 will end first.</p>
 <p>So you can see some free resources but the scheduler can decide to start your
@@ -2992,7 +2996,8 @@ oarsub -I -l /node=2,walltime=0:50:00 -p 'switch = &quot;nom_du_switch_schedule&
 <p>The &quot;timesharing&quot; <a class="reference" href="#oarsub">oarsub</a> job type option is of the form:</p>
 <blockquote>
 <ul class="simple">
-<li><em>timesharing=*,*</em> : This is the default form if nothing is specified else
+<li><em>timesharing=*,*</em> : This is the default behavior if nothing but
+timesharing is specified.
 <em>timesharing</em>. It indicates that the job can be shared with all users and
 every job names.</li>
 <li><em>timesharing=user,*</em> : This indicates that the job can be shared only with
@@ -3006,7 +3011,7 @@ the same user and one with the same job name.</li>
 </div>
 <div class="section">
 <h3><a class="toc-backref" href="#id79" id="how-can-a-checkpointable-job-be-resubmitted-automatically" name="how-can-a-checkpointable-job-be-resubmitted-automatically">7.1.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted automatically?</a></h3>
-<p>You have to specify that your job is <em>idempotent</em>. So, after a successfull
+<p>You have to specify that your job is <em>idempotent</em>. So, after a successful
 checkpoint, if the job is resubmitted then all will go right and there will have
 no problem (like file creation, deletion, ...).</p>
 <p>Example:</p>
@@ -3019,7 +3024,7 @@ well it will be resubmitted.</p>
 </div>
 <div class="section">
 <h3><a class="toc-backref" href="#id80" id="how-to-submit-a-non-disturbing-job-for-other-users" name="how-to-submit-a-non-disturbing-job-for-other-users">7.1.5&nbsp;&nbsp;&nbsp;How to submit a non disturbing job for other users?</a></h3>
-<p>You can use the <em>besteffort</em> job type. Thus your job will be launch only
+<p>You can use the <em>besteffort</em> job type. Thus your job will be launched only
 if there is a hole and will be deleted if another job wants its resources.</p>
 <p>Example:</p>
 <pre class="literal-block">
@@ -3329,7 +3334,7 @@ This variable specifies the node where OAR will be connected to submit a job in 
 <div class="footer">
 <hr class="footer" />
 <a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
-Generated on: 2006-07-10 11:07 UTC.
+Generated on: 2006-07-10 16:24 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

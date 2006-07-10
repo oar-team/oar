@@ -129,12 +129,12 @@
 .\" ========================================================================
 .\"
 .IX Title "oarnodes 1"
-.TH oarnodes 1 "2006-06-22" "" "OAR commands"
+.TH oarnodes 1 "2006-07-10" "" "OAR commands"
 .SH "NAME"
 oarnodes \- show occupation and state of compute nodes.
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-\&\fBoarnodes\fR [ \-a | \-s | \-l | \-h | \-v ] [list of nodes] [\-X | \-Y | \-D]
+\&\fBoarnodes\fR [ \-a | \-s | \-r numbers | \-l | \-h | \-v ] [list of nodes] [\-X | \-Y | \-D]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
 This command is used to display the state and occupation of compute nodes in \s-1OAR\s0 batch scheduler.
@@ -143,6 +143,9 @@ This command is used to display the state and occupation of compute nodes in \s-
 .IP "\fB\-a, \-\-all\fR" 4
 .IX Item "-a, --all"
 Show all resources with their properties.
+.IP "\fB\-r, \-\-resource\fR" 4
+.IX Item "-r, --resource"
+Show only a resource with their properties.
 .IP "\fB\-s, \-\-state\fR" 4
 .IX Item "-s, --state"
 Show only resource states.

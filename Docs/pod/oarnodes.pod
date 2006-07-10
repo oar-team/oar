@@ -4,7 +4,7 @@ oarnodes - show occupation and state of compute nodes.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ -a | -s | -l | -h | -v ] [list of nodes] [-X | -Y | -D]
+B<oarnodes> [ -a | -s | -r numbers | -l | -h | -v ] [list of nodes] [-X | -Y | -D]
 
 =head1 DESCRIPTION
 
@@ -17,6 +17,10 @@ This command is used to display the state and occupation of compute nodes in OAR
 =item B<-a, --all>
 
 Show all resources with their properties.
+
+=item B<-r, --resource>
+
+Show only a resource with their properties.
 
 =item B<-s, --state>
 

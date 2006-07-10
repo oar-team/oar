@@ -36,7 +36,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "RESERVATION_NO_NODE") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
-        if (($i->{reservation} eq "None") or ($i->{type} eq "RESERVATION_NO_NODE")){
+        my $job = iolib::get_job($base,$i->{job_id});
+        if (($job->{reservation} eq "None") or ($job->{type} eq "RESERVATION_NO_NODE")){
             iolib::set_job_state($base,$i->{job_id},"Error");
         }
     }

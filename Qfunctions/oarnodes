@@ -65,10 +65,11 @@ GetOptions ("state|s" => \$stateMode,
 
 if ($usage){
     print <<EOS;
-Usage: $0 [[ -a | -s | -l | -h | -v ] [list of nodes] [-X | -Y | -D] | --backward_compatible]
+Usage: $0 [[ -a | -r number | -s | -l | -h | -v ] [list of nodes] [-X | -Y | -D] | --backward_compatible]
 Display node informations
 Options:
  -a, --all          show all nodes with their properties
+ -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
  -D, --DUMPER       print result in DUMPER format
@@ -160,7 +161,6 @@ if($ARGV[0]){
     @nodes = iolib::list_nodes($base);
 }
 
-
 if (defined($stateMode)){
     # Display the state of each resources
     my %data_to_display;
@@ -244,6 +244,7 @@ if (defined($stateMode)){
                     $tmp_hash2{jobs} = \@jobs;
                 }
             }
+            $tmp_hash2{network_address} = $r->{network_address};
             my %properties = iolib::get_resource_properties($base,$r->{resource_id});
             $tmp_hash2{properties} = \%properties;
             $tmp_hash1{$r->{resource_id}} = \%tmp_hash2;
@@ -265,6 +266,41 @@ if (defined($stateMode)){
         }else{
             warn("[ERROR] Cannot load YAML module.\n");
             $exitstatus = 6;
+        }
+    }elsif($Old){
+        foreach my $aa (sort(keys(%data_to_display))){
+            print("$aa\n");
+            my @res = keys(%{$data_to_display{$aa}});
+            my $nb = $#res + 1;
+            print("     pcpus = $nb\n");
+            my $nb_jobs = 0;
+            my $state;
+            my $properties;
+            my $hostname;
+            foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
+                foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$res[0]}}))){
+                    if ($cc eq "properties"){
+                        my $str = "properties = ";
+                        foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$res[0]}->{$cc}}))){
+                            $str .= "$prop=$data_to_display{$aa}->{$res[0]}->{$cc}->{$prop},"
+                        }
+                        chop($str);
+                        $properties = $str;
+                    }elsif ($cc eq "jobs"){
+                        $nb_jobs += $#{@{$data_to_display{$aa}->{$res[0]}->{$cc}}} + 1;
+                    }elsif ($cc eq "network_address"){
+                        $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
+                    }elsif ($cc eq "state"){
+                        $state = $data_to_display{$aa}->{$res[0]}->{$cc};
+                    }
+                }
+            }
+            print("     weight = $nb_jobs\n");
+            print("     hostname = $hostname\n");
+            $state = "free" if ($state eq "Alive");
+            print("     state = $state\n");
+            print("     $properties\n");
+            print("\n");
         }
     }else{
         foreach my $aa (sort(keys(%data_to_display))){
@@ -288,9 +324,9 @@ if (defined($stateMode)){
                 print("\n");
             }
         }
-
     }
 }
 iolib::disconnect($base);
 
 exit($exitstatus);
+

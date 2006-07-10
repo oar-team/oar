@@ -74,6 +74,7 @@ Options
 ::
 
   -a : shows all resources with their properties
+  -r : show only properties of a resource
   -s : shows only resource states
   -l : shows only resource list
   -D : formats outputs in Perl Dumper
@@ -223,7 +224,7 @@ DrawOARGantt
 ~~~~~~~~~~~~
 
 This is also a web cgi. It creates a Gantt chart which shows job repartition on
-nodes in the time. It is very usefull to see cluster occupation in the past
+nodes in the time. It is very useful to see cluster occupation in the past
 and to know when a job will be launched in the futur.
 
 
@@ -371,7 +372,11 @@ rule              VARCHAR(255)          rule written in Perl applied when a
 :Index fields: *None*
 
 You can use these rules to change some values of some properties when a job is
-submitted. Some examples are better than a long description :
+submitted. So each admission rule is executed in the order of the id field and
+it can set several variables. If one of them exits then the others will not
+be evaluated and oarsub_ returns an error.
+
+Some examples are better than a long description :
 
  - Specify the default value for queue parameter
    ::
@@ -495,7 +500,7 @@ The different event types are:
  - "BESTEFFORT_KILL" : the job is of the type *besteffort* and was killed
    because a normal job wanted the nodes.
  - "FRAG_JOB_REQUEST" : someone wants to delete a job.
- - "CHECKPOINT" : the checkpoint signal was send to the job.
+ - "CHECKPOINT" : the checkpoint signal was sent to the job.
  - "CHECKPOINT_ERROR" : OAR cannot send the signal to the job.
  - "CHECKPOINT_SUCCESS" : system has sent the signal correctly.
  - "SERVER_EPILOGUE_TIMEOUT" : epilogue server script has timeouted.
@@ -609,7 +614,7 @@ resource_id       INT UNSIGNED          resource assigned to the job
 :Index fields: *None*
 
 This table is the same as `gantt_jobs_resources`_ and is used by visualisation
-tools. It is made up to date in an atomic action (with a lock).
+tools. It is updated atomically (a lock is used).
 
 *gantt_jobs_predictions*
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -719,8 +724,8 @@ Explications about the "state" field:
  - "Launching" : OAR has launched the job and will execute the user command
    on the first node.
  - "Running" : the user command is executing on the first node.
- - "Finishing" : the user command is terminated and OAR is doing work internally
- - "Terminated" : the job is terminated normally.
+ - "Finishing" : the user command has terminated and OAR is doing work internally
+ - "Terminated" : the job has terminated normally.
  - "Error" : a problem has occured.
 
 Explications about the "reservation" field:
@@ -761,7 +766,7 @@ moldable_wallime  VARCHAR(255)          instance duration
 :Index fields: moldable_job_id
 
 A job can be described with several instances. Thus OAR scheduler can choose one
-of them. For example it can calculate which instance will finish the first.
+of them. For example it can calculate which instance will finish first.
 So this table stores all instances for all jobs.
 
 *job_resource_groups*
@@ -999,7 +1004,7 @@ challenge         VARCHAR(255)          challenge string
 :Index fields: *None*
 
 This table is used to share a secret between OAR server and oarexec process on
-computing nodes (avoid a job id to be stole by malicious man).
+computing nodes (avoid a job id being stolen/forged by malicious user).
 
 For security reasons, this table **must not be readable** for a database
 account given to users who want to access OAR internal informations(like statistics).
@@ -1007,8 +1012,7 @@ account given to users who want to access OAR internal informations(like statist
 Configuration file
 ==================
 
-This is the meanings for each configuration tags that you can find in
-/etc/oar.conf:
+Each configuration tag found in /etc/oar.conf is now described:
 
   - Database type : you can use a MySQL or a PostgreSQL database (tags are
     "mysql" or "Pg")::
@@ -1231,9 +1235,9 @@ Almighty
 This module is the OAR server. It decides what actions must be performed. It
 is divided into 2 processes:
 
- - One listen to a TCP/IP socket. It waits informations or commands from OAR
+ - One listens to a TCP/IP socket. It waits informations or commands from OAR
    user program or from the other modules.
- - Another one treates each commands thanks to an automaton and launch right
+ - Another one deals with commands thanks to an automaton and launch right
    modules one after one.
 
 Sarko
@@ -1265,11 +1269,12 @@ can ask to kill a job and this is Leon which performs that.
 
 There are 2 frag types :
 
- - *normal* : Leon tries to connect to the first node of the job and tell it
-   to kill itself.
- - *exterminate* : after a timeout if the *normal* method did not succeeded
+ - *normal* : Leon tries to connect to the first node allocated for the job and
+   terminates the job.
+   oarexec to end itself.
+ - *exterminate* : after a timeout if the *normal* method did not succeed
    then Leon notifies this case and clean up the database for these jobs. So
-   OAR don't know what occured on the node and Suspects it.
+   OAR doesn't know what occured on the node and Suspects it.
 
 NodeChangeState
 ---------------
@@ -1410,8 +1415,8 @@ This section explains how the "--notify" oarsub_ option is handled by OAR:
      
      (*tag* is a value in : "START", "END", "ERROR")
 
-Accounting agregator
---------------------
+Accounting aggregator
+---------------------
 
 In the `Configuration file`_ you can set the ACCOUNTING_WINDOW_ parameter. Thus
 the command oaraccounting_ will split the time with this amount and feed the
