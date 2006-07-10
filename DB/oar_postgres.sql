@@ -387,7 +387,11 @@ foreach my $mold (@{$ref_resource_list}){
 INSERT INTO admission_rules (rule) VALUES ('
 my @types = ("deploy","desktop_computing","besteffort","idempotent","timesharing");
 foreach my $t (@{$type_list}){
-    if ((!grep(/^$t$/, @{$type_list})) or ($t !~ /^timesharing/)){
+    my $i = 0;
+    while ($types[$i] ne $t){
+        $i++;
+    }
+    if (($i > $#types) and ($t !~ /^timesharing/)){
         die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
     }
 }

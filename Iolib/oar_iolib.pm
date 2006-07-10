@@ -2591,7 +2591,7 @@ sub set_node_expiryDate($$$) {
     $dbh->do("  UPDATE resource_properties
                 SET expiry_date = \'$expiryDate\'
                 WHERE
-                    hostname =\'$hostname\'
+                    node =\'$hostname\'
              ");
 }
 
@@ -2905,7 +2905,7 @@ sub is_node_desktop_computing($$){
                             ");
     $sth->execute();
     my @ref;
-    my $result = "NO";
+    my $result;
     while (@ref = $sth->fetchrow_array()){
         $result = $ref[0];
         if ($result ne "YES"){

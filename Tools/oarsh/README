@@ -75,7 +75,7 @@ Its goal is to propagate two environment variables:
 
 So "oarsh" must be run by oar and a simple user must run it via the
 "sudowrapper" script to become oar.
-In this way each cluster user who can execute "oarsh" via "sudowrapper can
+In this way each cluster user who can execute "oarsh" via "sudowrapper" can
 connect himself on each cluster nodes (if oarsh is installed everywhere).
 
 
@@ -92,7 +92,7 @@ executes the right command (like ssh).
 NOTES
 .....
 
-    - On each nodes you must add the line::
+    - On each nodes you must add in the SSH server configuration file::
 
         AcceptEnv OAR_CPUSET SUDO_USER
 

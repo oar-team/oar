@@ -140,8 +140,8 @@ sub pull() {
             if ($allow_create_node) {
                 message "Trying to add $hostname to OAR database...\n";
                 my $resource = iolib::add_resource($base, $hostname, "Alive");
-                iolib::set_node_property($base,$resource,"desktop_computing","YES");
-                iolib::set_node_nextState($base,$resource,"Alive");
+                iolib::set_resource_property($base,$resource,"desktop_computing","YES");
+                iolib::set_resource_nextState($base,$resource,"Alive");
                 iolib::set_node_expiryDate($base,$hostname, iolib::local_to_sql(iolib::sql_to_local(iolib::get_date($base)) + $expiry));
                 $do_notify=1;
             } else {
@@ -184,13 +184,13 @@ sub pull() {
         } elsif ($dbJobs->{$jobid}->{'state'} eq "Launching" or $dbJobs->{$jobid}->{'state'} eq "Running" ) {
             unless (grep $jobid, keys %$agentJobs) {
                 message("[oar-cgi $jobid] Job $jobid terminated\n");
-                lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+                iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
                 iolib::set_finish_date($base,$jobid);
                 my $strWARN = "[oar-cgi $jobid] Job was killed";
                 message("$strWARN\n");
                 iolib::set_job_state($base,$jobid,"Error");
                 iolib::set_job_message($base,$jobid,"$strWARN");
-                unlock_table($base);
+                iolib::unlock_table($base);
             }
         } 
     }
@@ -200,7 +200,7 @@ sub pull() {
             # TODO: As soon as BibBip becomes a library, replace this copy of BipBip code by a function call.
             #	my $base = iolib::connect() or die "cgi-job-end: cannot connect to the data base\n";
             message("Job $jobid terminated\n");
-            lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+            iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_properties"]);
             my $refJob = iolib::get_job($base,$jobid);
             if ($refJob->{'state'} eq "Running"){
                 iolib::set_finish_date($base,$jobid);
@@ -218,7 +218,7 @@ sub pull() {
             } else {
                 message("Job $jobid was previously killed or Terminated but I did not know that!!\n");
             }
-            unlock_table($base);
+            iolib::unlock_table($base);
         }	
     }
     iolib::disconnect($base);
@@ -274,15 +274,13 @@ sub jobStageOut() {
     my $filename = $stageout_dir.$jobid.".tgz";
     copy($out,$filename) or message "Job $jobid stageout retrieval failed $!\n";
     httpwrite("Job $jobid stageout.","text/plain");
-    system "oarres $jobid $filename < /dev/null >& /dev/null &";
+    system "$ENV{OARDIR}/oarres $jobid $filename < /dev/null >& /dev/null &";
 }
 
 #####
 # main function
 #####
 sub main() {
-    my @p = $cgi->param();
-    warn("-- args : @p --\n");
     my $reqtype = $cgi->param('REQTYPE') or "REQTYPE not found.\n";
     if ($reqtype eq 'PULL') {
         pull();

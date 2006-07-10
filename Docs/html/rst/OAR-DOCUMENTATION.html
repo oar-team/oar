@@ -423,14 +423,14 @@ productive plateforms and research experiments.</td>
 <li><a class="reference" href="#faq" id="id74" name="id74">7&nbsp;&nbsp;&nbsp;FAQ</a><ul class="auto-toc">
 <li><a class="reference" href="#user" id="id75" name="id75">7.1&nbsp;&nbsp;&nbsp;User</a><ul class="auto-toc">
 <li><a class="reference" href="#how-can-i-submit-a-moldable-job" id="id76" name="id76">7.1.1&nbsp;&nbsp;&nbsp;How can I submit a moldable job?</a></li>
-<li><a class="reference" href="#how-can-i-submit-a-job-with-a-non-uniform-descrition" id="id77" name="id77">7.1.2&nbsp;&nbsp;&nbsp;How can I submit a job with a non uniform descrition?</a></li>
+<li><a class="reference" href="#how-can-i-submit-a-job-with-a-non-uniform-description" id="id77" name="id77">7.1.2&nbsp;&nbsp;&nbsp;How can I submit a job with a non uniform description?</a></li>
 <li><a class="reference" href="#can-i-perform-a-fix-scheduled-reservation-and-then-launch-several-jobs-in-it" id="id78" name="id78">7.1.3&nbsp;&nbsp;&nbsp;Can I perform a fix scheduled reservation and then launch several jobs in it?</a></li>
-<li><a class="reference" href="#how-can-a-checkpointable-job-be-resubmitted-auomatically" id="id79" name="id79">7.1.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted auomatically?</a></li>
+<li><a class="reference" href="#how-can-a-checkpointable-job-be-resubmitted-automatically" id="id79" name="id79">7.1.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted automatically?</a></li>
 <li><a class="reference" href="#how-to-submit-a-non-disturbing-job-for-other-users" id="id80" name="id80">7.1.5&nbsp;&nbsp;&nbsp;How to submit a non disturbing job for other users?</a></li>
 </ul>
 </li>
 <li><a class="reference" href="#administrator" id="id81" name="id81">7.2&nbsp;&nbsp;&nbsp;Administrator</a><ul class="auto-toc">
-<li><a class="reference" href="#how-can-i-add-a-new-scheduling-queue" id="id82" name="id82">7.2.1&nbsp;&nbsp;&nbsp;How can I add a new scheduling queue?</a></li>
+<li><a class="reference" href="#how-can-i-manage-scheduling-queues" id="id82" name="id82">7.2.1&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></li>
 </ul>
 </li>
 </ul>
@@ -548,12 +548,23 @@ privileges. To achieve that, OAR makes use of sudo. As a consequence,
 /etc/sudoers must be configured. Please use visudo to add the following
 lines:</p>
 <pre class="literal-block">
-Defaults&gt;oar    env_reset,env_keep = &quot;OARUSER OARDIR PWD PERL5LIB OARCONFFILE&quot;
+Defaults&gt;oar    env_reset,env_keep = &quot;OARLIB OARUSER OARDIR PWD
+PERL5LIB DISPLAY OARCONFFILE&quot;
+
 Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
 /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
 /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume
 %oar ALL=(oar) NOPASSWD: OARCMD
+
 oar ALL=(ALL) NOPASSWD:ALL
+
+Defaults:www-data   env_keep += &quot;SCRIPT_NAME SERVER_NAME
+SERVER_ADMIN HTTP_CONNECTION REQUEST_METHOD CONTENT_LENGTH
+SCRIPT_FILENAME SERVER_SOFTWARE HTTP_TE QUERY_STRING REMOTE_PORT
+HTTP_USER_AGENT SERVER_PORT SERVER_SIGNATURE REMOTE_ADDR
+CONTENT_TYPE SERVER_PROTOCOL PATH REQUEST_URI GATEWAY_INTERFACE
+SERVER_ADDR DOCUMENT_ROOT HTTP_HOST&quot;
+
 www-data ALL=(oar) NOPASSWD: /usr/lib/oar/oar-cgi
 </pre>
 </li>
@@ -687,7 +698,7 @@ Its goal is to propagate two environment variables:</p>
 </blockquote>
 <p>So &quot;oarsh&quot; must be run by oar and a simple user must run it via the
 &quot;sudowrapper&quot; script to become oar.
-In this way each cluster user who can execute &quot;oarsh&quot; via &quot;sudowrapper can
+In this way each cluster user who can execute &quot;oarsh&quot; via &quot;sudowrapper&quot; can
 connect himself on each cluster nodes (if oarsh is installed everywhere).</p>
 </div>
 <div class="section">
@@ -702,7 +713,7 @@ executes the right command (like ssh).</p>
 <h4><a class="toc-backref" href="#id9" id="notes" name="notes">1.2.1.5&nbsp;&nbsp;&nbsp;NOTES</a></h4>
 <blockquote>
 <ul>
-<li><p class="first">On each nodes you must add the line:</p>
+<li><p class="first">On each nodes you must add in the SSH server configuration file:</p>
 <pre class="literal-block">
 AcceptEnv OAR_CPUSET SUDO_USER
 </pre>
@@ -1060,7 +1071,8 @@ blue lines seem INDEX)</p>
 <td>queue name</td>
 </tr>
 <tr><td>consumption_type</td>
-<td>ENUM(&quot;ASKED&quot;,&quot;USED&quot;)</td>
+<td>ENUM(&quot;ASKED&quot;,
+&quot;USED&quot;)</td>
 <td>&quot;ASKED&quot; corresponds to the walltimes
 specified by the user. &quot;USED&quot;
 corresponds to the effective time
@@ -1173,7 +1185,10 @@ INSERT INTO admission_rules (rule) VALUES ('
   my $max_walltime = &quot;12:00:00&quot;;
   if ($jobType eq &quot;INTERACTIVE&quot;){
     foreach my $mold (&#64;{$ref_resource_list}){
-      if ((defined($mold-&gt;[1])) and (sql_to_duration($max_walltime) &lt; sql_to_duration($mold-&gt;[1]))){
+      if (
+        (defined($mold-&gt;[1])) and
+        (sql_to_duration($max_walltime) &lt; sql_to_duration($mold-&gt;[1]))
+      ){
         print(&quot;[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n&quot;);
         $mold-&gt;[1] = $max_walltime;
       }
@@ -1248,7 +1263,7 @@ INSERT IGNORE INTO admission_rules (rule) VALUES ('
 <td>textual description of the event</td>
 </tr>
 <tr><td>to_check</td>
-<td>ENUM('YES','NO')</td>
+<td>ENUM('YES', 'NO')</td>
 <td>specify if the module <em>NodeChangeState</em>
 must check this event to Suspect or not
 some nodes</td>
@@ -1448,8 +1463,8 @@ has occured</td>
 <td>kill job decision date</td>
 </tr>
 <tr><td>frag_state</td>
-<td>ENUM('LEON','TIMER_ARMED',
-'LEON_EXTERMINATE',
+<td>ENUM('LEON', 'TIMER_ARMED'
+, 'LEON_EXTERMINATE',
 'FRAGGED')
 DEFAULT 'LEON'</td>
 <td>state to tell Leon what to do</td>
@@ -1680,11 +1695,11 @@ command</td>
 </tr>
 <tr><td>state</td>
 <td>ENUM('Waiting','Hold',
-'toLaunch','toError',
+'toLaunch', 'toError',
 'toAckReservation',
-'Launching','Running',
-'Finishing',
-'Terminated','Error')</td>
+'Launching', 'Running'
+, 'Finishing',
+'Terminated', 'Error')</td>
 <td>job state</td>
 </tr>
 <tr><td>reservation</td>
@@ -1739,7 +1754,7 @@ the user process</td>
 <td>&nbsp;</td>
 </tr>
 <tr><td>accounted</td>
-<td>ENUM(&quot;YES&quot;,&quot;NO&quot;)
+<td>ENUM(&quot;YES&quot;, &quot;NO&quot;)
 DEFAULT &quot;NO&quot;</td>
 <td>specify if the job was considered by
 the accounting mechanism or not</td>
@@ -2012,8 +2027,8 @@ the &quot;-l&quot; option.</p>
 <td>corresponding job identifier</td>
 </tr>
 <tr><td>job_state</td>
-<td>ENUM('Alive','Dead'
-,'Suspected',
+<td>ENUM('Alive', 'Dead'
+, 'Suspected',
 'Absent')</td>
 <td>job state during the interval</td>
 </tr>
@@ -2101,27 +2116,27 @@ the &quot;-l&quot; option.</p>
 <td>node name (used to connect via SSH)</td>
 </tr>
 <tr><td>state</td>
-<td>ENUM('Alive','Dead',
-'Suspected',
+<td>ENUM('Alive', 'Dead'
+, 'Suspected',
 'Absent')</td>
 <td>resource state</td>
 </tr>
 <tr><td>next_state</td>
 <td>ENUM('UnChanged',
-'Alive','Dead',
-'Absent','Suspected'
-) DEFAULT
+'Alive', 'Dead',
+'Absent',
+'Suspected') DEFAULT
 'UnChanged'</td>
 <td>state for the resource to switch</td>
 </tr>
 <tr><td>finaud_decision</td>
-<td>ENUM('YES','NO')
+<td>ENUM('YES', 'NO')
 DEFAULT 'NO'</td>
 <td>tell if the actual state results in a
 &quot;finaud&quot; module decision</td>
 </tr>
 <tr><td>next_finaud_decision</td>
-<td>ENUM('YES','NO')
+<td>ENUM('YES', 'NO')
 DEFAULT 'NO'</td>
 <td>tell if the next node state results in
 a &quot;finaud&quot; module decision</td>
@@ -2173,8 +2188,8 @@ and will be removed from the pool.</li>
 <td>resource identifier</td>
 </tr>
 <tr><td>change_state</td>
-<td>ENUM('Alive','Dead'
-,'Suspected',
+<td>ENUM('Alive', 'Dead'
+, 'Suspected',
 'Absent')</td>
 <td>resource state during the interval</td>
 </tr>
@@ -2187,7 +2202,7 @@ and will be removed from the pool.</li>
 <td>end date of the interval</td>
 </tr>
 <tr><td>finaud_decision</td>
-<td>ENUM('YES','NO')
+<td>ENUM('YES', 'NO')
 DEFAULT 'NO'</td>
 <td>specify if that was a &quot;finaud&quot; module
 decision</td>
@@ -2230,13 +2245,13 @@ decision</td>
 <td>node name</td>
 </tr>
 <tr><td>besteffort</td>
-<td>ENUM('YES','NO')
+<td>ENUM('YES', 'NO')
 DEFAULT 'YES'</td>
 <td>specify if the resource accepts or not
 besteffort jobs</td>
 </tr>
 <tr><td>deploy</td>
-<td>ENUM('YES','NO')
+<td>ENUM('YES', 'NO')
 DEFAULT 'NO'</td>
 <td>specify if the resource accepts or not
 deployment jobs</td>
@@ -2248,7 +2263,7 @@ when a resource is considered to be
 offline</td>
 </tr>
 <tr><td>desktop_computing</td>
-<td>ENUM('YES','NO')
+<td>ENUM('YES', 'NO')
 DEFAULT 'NO'</td>
 <td>specify if the resource is a desktop
 computing resource or not</td>
@@ -2892,6 +2907,7 @@ the job can be launched.</li>
 <a class="reference" href="#gantt-jobs-predictions">gantt_jobs_predictions</a> and <a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a> tables.</li>
 </ol>
 </blockquote>
+<p>See <a class="reference" href="#user">User</a> section from the <a class="reference" href="#faq">FAQ</a> for more examples and features.</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id72" id="user-notification" name="user-notification">6.7&nbsp;&nbsp;&nbsp;User notification</a></h2>
@@ -2939,12 +2955,12 @@ job later because they will have more free resources and the job walltime will
 be smaller.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id77" id="how-can-i-submit-a-job-with-a-non-uniform-descrition" name="how-can-i-submit-a-job-with-a-non-uniform-descrition">7.1.2&nbsp;&nbsp;&nbsp;How can I submit a job with a non uniform descrition?</a></h3>
+<h3><a class="toc-backref" href="#id77" id="how-can-i-submit-a-job-with-a-non-uniform-description" name="how-can-i-submit-a-job-with-a-non-uniform-description">7.1.2&nbsp;&nbsp;&nbsp;How can I submit a job with a non uniform description?</a></h3>
 <p>Example:</p>
 <pre class="literal-block">
 oarsub -I -l /switch=1+/node=1
 </pre>
-<p>This example asks OAR to reserve all resources from a switch AND a node on
+<p>This example asks OAR to reserve all resources from a switch <strong>and</strong> a node on
 another switch.</p>
 <p>You can see the &quot;+&quot; syntax as a sub-reservation directive.</p>
 </div>
@@ -2989,9 +3005,9 @@ the same user and one with the same job name.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id79" id="how-can-a-checkpointable-job-be-resubmitted-auomatically" name="how-can-a-checkpointable-job-be-resubmitted-auomatically">7.1.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted auomatically?</a></h3>
-<p>You have to specify that your job is idempotent. So, after a successfull
-checkpoint, if the job is resubmitted then all will go right there will have
+<h3><a class="toc-backref" href="#id79" id="how-can-a-checkpointable-job-be-resubmitted-automatically" name="how-can-a-checkpointable-job-be-resubmitted-automatically">7.1.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted automatically?</a></h3>
+<p>You have to specify that your job is <em>idempotent</em>. So, after a successfull
+checkpoint, if the job is resubmitted then all will go right and there will have
 no problem (like file creation, deletion, ...).</p>
 <p>Example:</p>
 <pre class="literal-block">
@@ -3014,7 +3030,10 @@ oarsub -t besteffort /path/to/prog
 <div class="section">
 <h2><a class="toc-backref" href="#id81" id="administrator" name="administrator">7.2&nbsp;&nbsp;&nbsp;Administrator</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id82" id="how-can-i-add-a-new-scheduling-queue" name="how-can-i-add-a-new-scheduling-queue">7.2.1&nbsp;&nbsp;&nbsp;How can I add a new scheduling queue?</a></h3>
+<h3><a class="toc-backref" href="#id82" id="how-can-i-manage-scheduling-queues" name="how-can-i-manage-scheduling-queues">7.2.1&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></h3>
+<pre class="literal-block">
+oarnotify
+</pre>
 </div>
 </div>
 </div>
@@ -3304,14 +3323,13 @@ This variable specifies the node where OAR will be connected to submit a job in 
 <li>change kill method of Leon</li>
 </ul>
 </blockquote>
-<!-- $Id: CHANGELOG,v 1.41 2005/10/03 14:36:36 capitn Exp $ -->
 </div>
 </div>
 </div>
 <div class="footer">
 <hr class="footer" />
 <a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
-Generated on: 2006-07-09 13:37 UTC.
+Generated on: 2006-07-10 11:07 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

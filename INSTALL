@@ -77,12 +77,23 @@ The following steps have to be done, prior to installing OAR:
       /etc/sudoers must be configured. Please use visudo to add the following
       lines::
 
-            Defaults>oar    env_reset,env_keep = "OARUSER OARDIR PWD PERL5LIB OARCONFFILE"
+            Defaults>oar    env_reset,env_keep = "OARLIB OARUSER OARDIR PWD
+            PERL5LIB DISPLAY OARCONFFILE"
+            
             Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
             /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
             /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume
             %oar ALL=(oar) NOPASSWD: OARCMD
+            
             oar ALL=(ALL) NOPASSWD:ALL
+            
+            Defaults:www-data   env_keep += "SCRIPT_NAME SERVER_NAME
+            SERVER_ADMIN HTTP_CONNECTION REQUEST_METHOD CONTENT_LENGTH
+            SCRIPT_FILENAME SERVER_SOFTWARE HTTP_TE QUERY_STRING REMOTE_PORT
+            HTTP_USER_AGENT SERVER_PORT SERVER_SIGNATURE REMOTE_ADDR
+            CONTENT_TYPE SERVER_PROTOCOL PATH REQUEST_URI GATEWAY_INTERFACE
+            SERVER_ADDR DOCUMENT_ROOT HTTP_HOST"
+            
             www-data ALL=(oar) NOPASSWD: /usr/lib/oar/oar-cgi
 
 There are a three different flavors of installation :

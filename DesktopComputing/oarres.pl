@@ -13,7 +13,7 @@ my $stageoutfile = shift or die "Job stageout filename is missing.\n";
 
 my $base = iolib::connect();
 my $job = iolib::get_job($base,$jobid) or die "Failed to get job information\n";
-((defined $job->{'user'}) and (defined $job->{'launchingDirectory'})) or die "Some of the job information are missing\n";
+((defined $job->{'job_user'}) and (defined $job->{'launching_directory'})) or die "Some of the job information are missing\n";
 #system "sudo -u ".$job->{'user'}." tar xvfz $stageoutfile -C ".$job->{'launchingDirectory'}." && rm -v $stageoutfile" and die "Stageout delivery failed: $!\n";
-system "sudo -u ".$job->{'user'}." tar xfz $stageoutfile -C ".$job->{'launchingDirectory'}.">& /dev/null && rm $stageoutfile" and die "Stageout delivery failed: $!\n";
+system "sudo -u ".$job->{'job_user'}." tar xfz $stageoutfile -C ".$job->{'launching_directory'}.">& /dev/null && rm $stageoutfile" and die "Stageout delivery failed: $!\n";
 iolib::disconnect($base);

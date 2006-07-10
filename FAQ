@@ -15,15 +15,15 @@ So you can see some free resources but the scheduler can decide to start your
 job later because they will have more free resources and the job walltime will
 be smaller.
 
-How can I submit a job with a non uniform descrition?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How can I submit a job with a non uniform description?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Example:
 ::
     
     oarsub -I -l /switch=1+/node=1
 
-This example asks OAR to reserve all resources from a switch AND a node on
+This example asks OAR to reserve all resources from a switch **and** a node on
 another switch.
 
 You can see the "+" syntax as a sub-reservation directive.
@@ -69,11 +69,11 @@ The "timesharing" oarsub_ job type option is of the form:
   - *timesharing=user,job_name* : This indicates that the job can be shared only with
     the same user and one with the same job name.
 
-How can a checkpointable job be resubmitted auomatically?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How can a checkpointable job be resubmitted automatically?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You have to specify that your job is idempotent. So, after a successfull
-checkpoint, if the job is resubmitted then all will go right there will have
+You have to specify that your job is *idempotent*. So, after a successfull
+checkpoint, if the job is resubmitted then all will go right and there will have
 no problem (like file creation, deletion, ...).
 
 Example:
@@ -99,6 +99,11 @@ Example:
 Administrator
 -------------
 
-How can I add a new scheduling queue?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How can I manage scheduling queues?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    oarnotify
+
 

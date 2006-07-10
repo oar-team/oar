@@ -45,6 +45,7 @@ one of these computers first.
 
 *oarstat*
 ~~~~~~~~~
+
 This command prints jobs in execution mode on the terminal.
 
 Options
@@ -211,6 +212,7 @@ Visualisation tools
 
 Monika
 ~~~~~~
+
 This is a web cgi normally installed on the cluster frontal. This tool executes
 `oarnodes`_ and `oarstat`_ then format data in a html page.
 
@@ -219,6 +221,7 @@ running.
 
 DrawOARGantt
 ~~~~~~~~~~~~
+
 This is also a web cgi. It creates a Gantt chart which shows job repartition on
 nodes in the time. It is very usefull to see cluster occupation in the past
 and to know when a job will be launched in the futur.
@@ -318,8 +321,8 @@ window_start      DATETIME              start date of the accounting interval
 window_stop       DATETIME              stop date of the accounting interval
 accounting_user   VARCHAR(20)           user name
 queue_name        VARCHAR(100)          queue name
-consumption_type  ENUM("ASKED","USED")  "ASKED" corresponds to the walltimes
-                                        specified by the user. "USED"
+consumption_type  ENUM("ASKED",         "ASKED" corresponds to the walltimes
+                  "USED")               specified by the user. "USED"
                                         corresponds to the effective time
                                         used by the user.
 consumption       INT UNSIGNED          number of seconds used
@@ -395,7 +398,10 @@ submitted. Some examples are better than a long description :
         my $max_walltime = "12:00:00";
         if ($jobType eq "INTERACTIVE"){ 
           foreach my $mold (@{$ref_resource_list}){
-            if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
+            if (
+              (defined($mold->[1])) and
+              (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))
+            ){
               print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
               $mold->[1] = $max_walltime;
             }
@@ -441,7 +447,7 @@ type              VARCHAR(50)           event type
 job_id            INT UNSIGNED          job related of the event
 date              DATETIME              event date
 description       VARCHAR(255)          textual description of the event
-to_check          ENUM('YES','NO')      specify if the module *NodeChangeState*
+to_check          ENUM('YES', 'NO')     specify if the module *NodeChangeState*
                                         must check this event to Suspect or not
                                         some nodes
 ================  ====================  =======================================
@@ -555,8 +561,8 @@ Fields            Types                       Descriptions
 ================  ==========================  =================================
 frag_id_job       INT UNSIGNED                job id
 frag_date         DATETIME                    kill job decision date 
-frag_state        ENUM('LEON','TIMER_ARMED',  state to tell Leon what to do
-                  'LEON_EXTERMINATE',
+frag_state        ENUM('LEON', 'TIMER_ARMED'  state to tell Leon what to do
+                  , 'LEON_EXTERMINATE',
                   'FRAGGED')
                   DEFAULT 'LEON'
 ================  ==========================  =================================
@@ -655,11 +661,11 @@ job_type              ENUM('INTERACTIVE',     specify if the user wants to launc
 info_type              VARCHAR(255)           some informations about `oarsub`_
                                               command
 state                 ENUM('Waiting','Hold',  job state
-                      'toLaunch','toError',
+                      'toLaunch', 'toError',
                       'toAckReservation',
-                      'Launching','Running',
-                      'Finishing',
-                      'Terminated','Error')
+                      'Launching', 'Running'
+                      , 'Finishing',
+                      'Terminated', 'Error')
 reservation           ENUM('None',            specify if the job is a reservation
                       'toSchedule',           and the state of this one
                       'Scheduled') DEFAULT
@@ -677,7 +683,7 @@ submission_time       DATETIME                date when the job was submitted
 start_time            DATETIME                date when the job was launched
 stop_time             DATETIME                date when the job was stopped
 file_id               INT UNSIGNED
-accounted             ENUM("YES","NO")        specify if the job was considered by
+accounted             ENUM("YES", "NO")       specify if the job was considered by
                       DEFAULT "NO"            the accounting mechanism or not
 notify                VARCHAR(255)            gives the way to notify the user about
                                               the job (mail or script )
@@ -802,8 +808,8 @@ the "-l" option.
 Fields            Types                 Descriptions
 ================  ====================  =======================================
 job_id            INT UNSIGNED          corresponding job identifier
-job_state         ENUM('Alive','Dead'   job state during the interval
-                  ,'Suspected',
+job_state         ENUM('Alive', 'Dead'  job state during the interval
+                  , 'Suspected',
                   'Absent')
 date_start        DATETIME              start date of the interval
 date_stop         DATETIME              end date of the interval
@@ -838,17 +844,17 @@ Fields                Types                 Descriptions
 ====================  ====================  =======================================
 resource_id           INT UNSIGNED          resource identifier
 network_address       VARCHAR(100)          node name (used to connect via SSH)
-state                 ENUM('Alive','Dead',  resource state
-                      'Suspected',
+state                 ENUM('Alive', 'Dead'  resource state
+                      , 'Suspected',
                       'Absent')
 next_state            ENUM('UnChanged',     state for the resource to switch
-                      'Alive','Dead',
-                      'Absent','Suspected'
-                      ) DEFAULT
+                      'Alive', 'Dead',
+                      'Absent',
+                      'Suspected') DEFAULT
                       'UnChanged'
-finaud_decision       ENUM('YES','NO')      tell if the actual state results in a
+finaud_decision       ENUM('YES', 'NO')     tell if the actual state results in a
                       DEFAULT 'NO'          "finaud" module decision
-next_finaud_decision  ENUM('YES','NO')      tell if the next node state results in
+next_finaud_decision  ENUM('YES', 'NO')     tell if the next node state results in
                       DEFAULT 'NO'          a "finaud" module decision
 ====================  ====================  =======================================
 
@@ -874,12 +880,12 @@ State explications:
 Fields            Types                 Descriptions
 ================  ====================  =======================================
 resource_id       INT UNSIGNED          resource identifier
-change_state      ENUM('Alive','Dead'   resource state during the interval
-                  ,'Suspected',
+change_state      ENUM('Alive', 'Dead'  resource state during the interval
+                  , 'Suspected',
                   'Absent')
 date_start        DATETIME              start date of the interval
 date_stop         DATETIME              end date of the interval
-finaud_decision   ENUM('YES','NO')      specify if that was a "finaud" module
+finaud_decision   ENUM('YES', 'NO')     specify if that was a "finaud" module
                   DEFAULT 'NO'          decision
 ================  ====================  =======================================
 
@@ -896,14 +902,14 @@ Fields             Types                 Descriptions
 =================  ====================  =======================================
 resource_id        INT UNSIGNED          resource identifier
 node               VARCHAR(200)          node name
-besteffort         ENUM('YES','NO')      specify if the resource accepts or not
+besteffort         ENUM('YES', 'NO')     specify if the resource accepts or not
                    DEFAULT 'YES'         besteffort jobs
-deploy             ENUM('YES','NO')      specify if the resource accepts or not
+deploy             ENUM('YES', 'NO')     specify if the resource accepts or not
                    DEFAULT 'NO'          deployment jobs
 expiry_date        DATETIME              used in desktop computing mode to know
                                          when a resource is considered to be
                                          offline
-desktop_computing  ENUM('YES','NO')      specify if the resource is a desktop
+desktop_computing  ENUM('YES', 'NO')     specify if the resource is a desktop
                    DEFAULT 'NO'          computing resource or not
 last_job_date      INT UNSIGNED          unix time of the end of the last job
 cm_availability    INT UNSIGNED          unix time when the resource will not be
@@ -1383,6 +1389,8 @@ General steps used to schedule a job:
   
   4. The scheduler stores its decision into the database in the
      gantt_jobs_predictions_ and gantt_jobs_resources_ tables.
+
+See User_ section from the FAQ_ for more examples and features.
 
 User notification
 -----------------
