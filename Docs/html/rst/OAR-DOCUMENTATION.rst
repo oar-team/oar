@@ -1162,6 +1162,12 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       SCHEDULER_TIMEOUT = 10
 
+  - Time to wait when a reservation has not got all resources that it has
+    reserved (some resources could have become Suspected or Absent since the
+    job submission) before to launch the job in the remaining resources::
+
+      RESERVATION_WAITING_RESOURCES_TIMEOUT = 300
+  
   - Time to add between each jobs (time for administration tasks or time to
     let computers to reboot)::
 

@@ -283,6 +283,15 @@ if (grep(/^besteffort$/, @{$type_list})){
     print("[ADMISSION RULE] Added automatically besteffort resource constraint\\n");
 }
 ');
+
+-- Force besteffort jobs to go in the besteffort queue
+INSERT INTO admission_rules (rule) VALUES ('
+if (grep(/^besteffort$/, @{$type_list})){
+    $queue_name = "besteffort";
+    print("[ADMISSION RULE] Redirect automatically in the besteffort queue\\n");
+}
+');
+
 -- Force deploy jobs to go on nodes with the deploy property
 INSERT INTO admission_rules (rule) VALUES ('
 if (grep(/^deploy$/, @{$type_list})){

@@ -33,13 +33,16 @@ sub get_initial_time(){
 
 #Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs;
 # arg1 --> database ref
-sub init_scheduler($$$$$){
+sub init_scheduler($$$$$$){
     my $dbh = shift;
     my $dbh_ro = shift;
     my $secure_time = shift;
     my $hole_time = shift;
     my $order_part = shift;
+    my $resa_admin_waiting_timeout = shift;
 
+    $Reservation_waiting_timeout = $resa_admin_waiting_timeout if (defined($resa_admin_waiting_timeout));
+    
     if ($secure_time > 1){
         $Security_time_overhead = $secure_time;
     }

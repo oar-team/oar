@@ -38,7 +38,7 @@ if (defined($ENV{OARDIR})){
 
 oar_debug("[MetaSched] Start of meta scheduler\n");
 
-oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead,$minimum_hole_time,$Order_part);
+oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead,$minimum_hole_time,$Order_part,get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT"));
 
 my %initial_time = oar_scheduler::get_initial_time();
 my @queues = iolib::get_active_queues($base);

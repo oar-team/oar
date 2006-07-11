@@ -277,17 +277,27 @@ if (defined($stateMode)){
             my $state;
             my $properties;
             my $hostname;
+            my $job_str = '';
+            my %weight_index;
             foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
-                foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$res[0]}}))){
+                foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
                     if ($cc eq "properties"){
                         my $str = "properties = ";
-                        foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$res[0]}->{$cc}}))){
-                            $str .= "$prop=$data_to_display{$aa}->{$res[0]}->{$cc}->{$prop},"
+                        foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
+                            $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},"
                         }
                         chop($str);
                         $properties = $str;
                     }elsif ($cc eq "jobs"){
-                        $nb_jobs += $#{@{$data_to_display{$aa}->{$res[0]}->{$cc}}} + 1;
+                        $nb_jobs += $#{@{$data_to_display{$aa}->{$bb}->{$cc}}} + 1;
+                        foreach my $j (@{$data_to_display{$aa}->{$bb}->{$cc}}){
+                            if (!defined($weight_index{$aa})){
+                                $weight_index{$aa} = 0;
+                            }else{
+                                $weight_index{$aa}++;
+                            }
+                            $job_str .= "$weight_index{$aa}/$j.oarserver,"
+                        }
                     }elsif ($cc eq "network_address"){
                         $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
                     }elsif ($cc eq "state"){
@@ -295,6 +305,8 @@ if (defined($stateMode)){
                     }
                 }
             }
+            chop($job_str) if (defined($job_str));
+            print("     jobs = $job_str\n");
             print("     weight = $nb_jobs\n");
             print("     hostname = $hostname\n");
             $state = "free" if ($state eq "Alive");
