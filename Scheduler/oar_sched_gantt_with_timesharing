@@ -134,6 +134,11 @@ foreach my $r (iolib::get_resources_in_state($base,"Alive")){
     vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
 }
 
+my @Dead_resources;
+foreach my $r (iolib::get_resources_in_state($base,"Dead")){
+    push(@Dead_resources, $r->{resource_id});
+}
+
 my @jobs = iolib::get_jobs_to_schedule($base,$queue);
 my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
@@ -223,7 +228,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){

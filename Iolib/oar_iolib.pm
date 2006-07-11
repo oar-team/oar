@@ -43,7 +43,7 @@ sub set_running_date($$);
 sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
-sub get_possible_wanted_resources($$$$$$);
+sub get_possible_wanted_resources($$$$$$$);
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
@@ -657,13 +657,21 @@ sub set_finish_date($$) {
 
 # get_possible_wanted_resources
 # return a tree ref : a data structure with corresponding resources with what is asked
-sub get_possible_wanted_resources($$$$$$){
+sub get_possible_wanted_resources($$$$$$$){
     my $dbh = shift;
     my $possible_resources_vector = shift;
     my $impossible_resources_vector = shift;
+    my $resources_to_ignore_array = shift;
     my $properties = shift;
     my $wanted_resources_ref = shift;
     my $order_part = shift;
+
+    my $sql_in_string = "TRUE";
+    if (defined($resources_to_ignore_array) and ($#{@{$resources_to_ignore_array}} >= 0)){
+        $sql_in_string = "resource_id NOT IN (";
+        $sql_in_string .= join(",",@{$resources_to_ignore_array});
+        $sql_in_string .= ")";
+    }
 
     if (defined($order_part)){
         $order_part = "ORDER BY $order_part";
@@ -694,10 +702,12 @@ sub get_possible_wanted_resources($$$$$$){
     chop($resource_string);
 
     #print("$sql_where_string\n");
+    #print("$sql_in_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resource_properties
                              WHERE
-                                $sql_where_string
+                                $sql_where_string AND
+                                $sql_in_string
                              $order_part
                             ");
     if (!$sth->execute()){
@@ -807,6 +817,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
     }
 
     # Test if properties and resources are coherent
+    my @dead_resources;
+    foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
+        push(@dead_resources, $r->{resource_id});
+    }
     my $wanted_resources;
     foreach my $moldable_resource (@{$ref_resource_list}){
         if (!defined($moldable_resource->[1])){
@@ -824,7 +838,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
                 }
             }
             #print(Dumper($r->{resources}));
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, $tmp_properties, $r->{resources}, undef);
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
                 warn("There are not enough resources for your request\n");
@@ -3514,7 +3528,9 @@ sub search_idle_nodes($$){
     $req = "SELECT resources.network_address, MAX(resource_properties.last_job_date)
             FROM resources, resource_properties
             WHERE
-                resources.resource_id = resource_properties.resource_id
+                resources.resource_id = resource_properties.resource_id AND
+                (   resources.state = \'Alive\' OR
+                    resources.state = \'Suspected\' )
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();

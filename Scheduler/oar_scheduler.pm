@@ -146,6 +146,11 @@ sub init_scheduler($$$$$$){
                 vec($available_resources_vector, $r->{resource_id}, 1) = 1;
             }
         }
+
+        my @dead_resources;
+        foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
+            push(@dead_resources, $r->{resource_id});
+        }
         
         my $job_properties = "TRUE";
         if ((defined($job->{properties})) and ($job->{properties} ne "")){
@@ -161,9 +166,9 @@ sub init_scheduler($$$$$$){
             }
             my $tmp_tree;
             # Try first with only alive nodes
-            $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+            $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
             if (!defined($tmp_tree)){
-                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
             }
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
@@ -330,6 +335,10 @@ sub check_reservation_jobs($$$$){
             foreach my $r (@tmp_resource_list){
                 vec($available_resources_vector, $r->{resource_id}, 1) = 1;
             }
+            my @dead_resources;
+            foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
+                push(@dead_resources, $r->{resource_id});
+            }
             my $job_properties = "TRUE";
             #print(Dumper($job));
             if ((defined($job->{properties})) and ($job->{properties} ne "")){
@@ -344,7 +353,7 @@ sub check_reservation_jobs($$$$){
                 if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
                 }
-                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
                 push(@tree_list, $tmp_tree);
                 my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
                 foreach my $l (@leafs){
