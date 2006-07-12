@@ -175,8 +175,9 @@ INDEX finaud (finaud_decision)
 #DROP TABLE IF EXISTS resource_properties;
 CREATE TABLE IF NOT EXISTS resource_properties (
 resource_id INT UNSIGNED NOT NULL ,
-switch  VARCHAR( 50 ) NOT NULL DEFAULT "0" ,
+state INT NOT NULL DEFAULT 0 ,
 node VARCHAR( 200 ) NOT NULL DEFAULT "default" ,
+switch  VARCHAR( 50 ) NOT NULL DEFAULT "0" ,
 cpu INT UNSIGNED NOT NULL DEFAULT 0 ,
 cpuset INT UNSIGNED NOT NULL DEFAULT 0 ,
 besteffort ENUM('YES','NO') DEFAULT 'YES' NOT NULL ,

@@ -128,7 +128,7 @@ sub init_scheduler($$$$$$){
         # For reservation we take the first moldable job
         my $moldable = $job_descriptions->[0];
         my $available_resources_vector = '';
-        my $alive_resources_vector = '';
+        #my $alive_resources_vector = '';
         my @tmp_resource_list;
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
@@ -140,9 +140,9 @@ sub init_scheduler($$$$$$){
                                        			    );
         foreach my $r (@tmp_resource_list){
             if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
-                if ($r->{state} eq "Alive"){
-                    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
-                }
+                #if ($r->{state} eq "Alive"){
+                #    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
+                #}
                 vec($available_resources_vector, $r->{resource_id}, 1) = 1;
             }
         }
@@ -165,11 +165,16 @@ sub init_scheduler($$$$$$){
                 $tmp_properties = $m->{property};
             }
             my $tmp_tree;
-            # Try first with only alive nodes
-            $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
-            if (!defined($tmp_tree)){
-                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+            ## Try first with only alive nodes
+            #$tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$alive_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+            #if (!defined($tmp_tree)){
+            if (!defined($order_part) or ($order_part eq "")){
+                $order_part = "state ASC";
+            }else{
+                $order_part = "state ASC,".$order_part;
             }
+                $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$order_part);
+            #}
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){

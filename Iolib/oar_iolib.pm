@@ -151,6 +151,13 @@ sub release_lock($$);
 
 # END OF PROTOTYPES
 
+my %State_to_num = (
+    "Alive" => 1,
+    "Absent" => 2,
+    "Suspected" => 3,
+    "Dead" => 4
+);
+
 my $Db_type = "mysql";
 
 sub get_database_type(){
@@ -706,7 +713,7 @@ sub get_possible_wanted_resources($$$$$$$){
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resource_properties
                              WHERE
-                                $sql_where_string AND
+                                ($sql_where_string) AND
                                 $sql_in_string
                              $order_part
                             ");
@@ -2203,8 +2210,8 @@ sub add_resource($$$) {
              ");
     my $id = get_last_insert_id($dbh,"resources_resource_id_seq");
     #unlock_table($dbh);
-    $dbh->do("  INSERT INTO resource_properties (resource_id,node)
-                VALUES ($id,\'$name\')
+    $dbh->do("  INSERT INTO resource_properties (resource_id,node,state)
+                VALUES ($id,\'$name\',$State_to_num{$state})
              ");
     my $date = get_date($dbh);
     $dbh->do("  INSERT INTO resource_state_logs (resource_id,change_state,date_start)
@@ -2514,6 +2521,12 @@ sub set_node_state($$$$) {
                     network_address = \'$hostname\'
              ");
 
+    $dbh->do("  UPDATE resource_properties
+                SET state = $State_to_num{$state}
+                WHERE
+                    node = \'$hostname\'
+             ");
+
     my $date = get_date($dbh);
     if ($Db_type eq "Pg"){
         $dbh->do("  UPDATE resource_state_logs
@@ -2570,6 +2583,12 @@ sub set_resource_state($$$$) {
 
     $dbh->do("  UPDATE resources
                 SET state = \'$state\', finaud_decision = \'$finaud\'
+                WHERE
+                    resource_id = $resource_id
+             ");
+
+    $dbh->do("  UPDATE resource_properties
+                SET state = $State_to_num{$state}
                 WHERE
                     resource_id = $resource_id
              ");

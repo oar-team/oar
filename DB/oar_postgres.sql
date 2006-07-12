@@ -226,8 +226,9 @@ CREATE INDEX attribute ON resource_property_logs (attribute);
 
 CREATE TABLE resource_properties (
   resource_id integer NOT NULL default '0',
-  switch varchar(50) NOT NULL default '0',
   node varchar(200) NOT NULL default 'default',
+  state integer NOT NULL default '0',
+  switch varchar(50) NOT NULL default '0',
   cpu integer NOT NULL default '0',
   cpuset integer NOT NULL default '0',
   besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',

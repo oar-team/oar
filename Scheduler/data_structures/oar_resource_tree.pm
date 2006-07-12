@@ -328,30 +328,26 @@ sub delete_tree_nodes_with_not_enough_resources($){
             or ((get_needed_children_number($current_node) == -2)                # BEST
                 and (get_current_children_number($current_node) <= 0))
         ){
+            # we want to delete the root
+            return(undef) if ($tree_ref == $current_node);
             # Delete sub tree that does not fit with wanted resources 
-            my $current_node = delete_subtree($current_node);
-            if (!defined(get_current_resource_value($current_node))){
-                # No matching records (we want to delete the root)
-                $tree_ref = undef;
-                return($tree_ref);
-            }
+            $current_node = delete_subtree($current_node);
+        }
+        if (defined(get_initial_child($current_node))){
+            # Go to child
+            $current_node = get_initial_child($current_node);
+            #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
         }else{
-            if (defined(get_initial_child($current_node))){
-                # Go to child
-                $current_node = get_initial_child($current_node);
-                #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
-            }else{
-                # Treate leaf
-                while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
-                    # Step up
-                    $current_node = get_father($current_node);
-                    #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
-                }
-                if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
-                    # Treate brother
-                    $current_node = get_next_brother($current_node);
-                    #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
-                }
+            # Treate leaf
+            while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+                # Step up
+                $current_node = get_father($current_node);
+                #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
+            }
+            if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
+                # Treate brother
+                $current_node = get_next_brother($current_node);
+                #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
             }
         }
     }while(defined($current_node));
