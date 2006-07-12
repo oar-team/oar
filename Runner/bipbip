@@ -127,11 +127,11 @@ if (!defined($types->{deploy})){
         iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
         iolib::set_job_message($base,$Job_id,"One or several nodes are not responding correctly");
         oar_error("[bipbip $Job_id] /!\\ Some nodes are inaccessible ($event_type): @bad\n");
+        my $exit_bipbip = 1;
         if ($job->{job_type} eq "INTERACTIVE"){
             my ($addr,$port) = split(/:/,$job->{info_type});
             oar_Tools::notify_tcp_socket($addr,$port,"INVALID RESOURCES : some resources did not respond");
         }else{
-            my $exit_bipbip = 1;
             # Verify if the job is a reservation
             if ($job->{reservation} ne "None"){
                 # Look at if there is at least one alive node for the reservation
@@ -156,8 +156,10 @@ if (!defined($types->{deploy})){
         iolib::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id : @bad",\@bad);
         oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         iolib::unlock_table($base);
-        iolib::disconnect($base);
-        exit(2) if ($exit_bipbip == 1);
+        if ($exit_bipbip == 1){
+            iolib::disconnect($base);
+            exit(2);
+        }
     }else{
         oar_debug("[bipbip $Job_id] No bad node\n");
     }

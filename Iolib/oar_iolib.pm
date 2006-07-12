@@ -4154,10 +4154,14 @@ sub add_new_event_with_host($$$$$){
     my $event_id = get_last_insert_id($dbh,"event_logs_event_id_seq");
     #unlock_table($dbh);
 
+    my %tmp;
     foreach my $n (@{$hostnames}){
-        $dbh->do("  INSERT INTO event_log_hostnames (event_id,hostname)
-                    VALUES ($event_id,\'$n\')
-                 ");
+        if (!defined($tmp{$n})){
+            $dbh->do("  INSERT INTO event_log_hostnames (event_id,hostname)
+                        VALUES ($event_id,\'$n\')
+                     ");
+            $tmp{$n} = 1;
+        }
     }
 }
 

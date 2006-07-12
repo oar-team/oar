@@ -268,9 +268,7 @@ sub nmap_hosts(@){
     my @bad_hosts;
     foreach my $i (@hosts){
         my $ip = get_host_ip($i);
-        if ($ip == 0){
-            push(@bad_hosts, $i);
-        }else{
+        if ($ip != 0){
             if (!defined($ip2name{$ip})){
                 $nmap_cmd .= " $ip";
             }
@@ -278,6 +276,7 @@ sub nmap_hosts(@){
         }
     }
 
+print("@bad_hosts\n");
     my %good_hosts;
     oar_debug("[PingChecker] $nmap_cmd\n");
     $ENV{IFS}="";
@@ -318,7 +317,7 @@ sub nmap_hosts(@){
         }
         return(@bad_hosts);
     }
-}   
+}
 
 
 # use a command which takes the list of nodes in arguments and write on STDERR
