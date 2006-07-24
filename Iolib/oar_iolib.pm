@@ -1202,7 +1202,7 @@ sub resubmit_job($$){
                   AND job_id = $new_job_id
     ");
 
-    my $sth = $dbh->prepare("   SELECT moldable_id
+    my $sth = $dbh->prepare("   SELECT moldable_id,moldable_walltime
                                 FROM moldable_job_descriptions
                                 WHERE
                                     moldable_job_id = $job_id
@@ -1210,21 +1210,20 @@ sub resubmit_job($$){
     $sth->execute();
     my @moldable_ids = ();
     while (my @ref = $sth->fetchrow_array()) {
-        push(@moldable_ids, $ref[0]);
+        push(@moldable_ids, [$ref[0], $ref[1]]);
     }
+    $sth->finish();
 
-    foreach my $moldable_resource (@moldable_ids){
+    foreach my $m (@moldable_ids){
+        my $moldable_resource = $m->[0];
         #lock_table($dbh,["moldable_job_descriptions"]);
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
-                        SELECT $new_job_id, moldable_walltime
-                        FROM moldable_job_descriptions
-                        WHERE
-                            moldable_id = $moldable_resource
+                    VALUES ($new_job_id,\'$m->[1]\')
                  ");
         my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
         #unlock_table($dbh);
     
-        $sth = $dbh->prepare("  SELECT res_group_id 
+        $sth = $dbh->prepare("  SELECT res_group_id,res_group_property 
                                 FROM job_resource_groups
                                 WHERE
                                     res_group_moldable_id = $moldable_resource
@@ -1232,36 +1231,56 @@ sub resubmit_job($$){
         $sth->execute();
         my @groups = ();
         while (my @ref = $sth->fetchrow_array()) {
-            push(@groups, $ref[0]);
+            push(@groups, [$ref[0],$ref[1]]);
         }
+        $sth->finish();
 
-        foreach my $r (@groups){
+        foreach my $res (@groups){
+            my $r = $res->[0];
             #lock_table($dbh,["job_resource_groups"]);
             $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
-                            SELECT $moldable_id, res_group_property
-                            FROM job_resource_groups
-                            WHERE
-                                res_group_id = $r
+                        VALUES ($moldable_id,\'$res->[1]\')
                      ");
             my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
             #unlock_table($dbh);
 
-            
-            $dbh->do("  INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order)
-                            SELECT $res_group_id, res_job_resource_type,res_job_value,res_job_order
-                            FROM job_resource_descriptions
-                            WHERE
-                                res_job_group_id = $r
-                     ");
+            $sth = $dbh->prepare("  SELECT res_job_group_id,res_job_resource_type,res_job_value,res_job_order
+                                    FROM job_resource_descriptions
+                                    WHERE
+                                        res_job_group_id = $r
+                                ");
+            $sth->execute();
+            my @groups_desc = ();
+            while (my @ref = $sth->fetchrow_array()) {
+                push(@groups_desc, [$ref[0],$ref[1],$ref[2],$ref[3]]);
+            }
+            $sth->finish();
+
+            foreach my $d (@groups_desc){
+                $dbh->do("  INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order)
+                            VALUES ($res_group_id,\'$d->[1]\',$d->[2],$d->[3])
+                         ");
+            }
         }
     }
 
-    $dbh->do("  INSERT INTO job_types (job_id,type)
-                    SELECT $new_job_id, type
-                    FROM job_types
-                    WHERE
-                        job_id = $job_id
-            ");
+    $sth = $dbh->prepare("  SELECT type
+                            FROM job_types
+                            WHERE
+                                job_id = $job_id
+                                ");
+    $sth->execute();
+    my @types = ();
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@types, $ref[0]);
+    }
+    $sth->finish();
+
+    foreach my $t (@types){
+        $dbh->do("  INSERT INTO job_types (job_id,type)
+                    VALUES($new_job_id, \'$t\')
+                 ");
+    }
 
     $dbh->do("  UPDATE job_dependencies
                 SET job_id_required = $new_job_id
