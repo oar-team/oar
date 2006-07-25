@@ -97,6 +97,16 @@ Example:
 
     oarsub -t besteffort /path/to/prog
 
+How can I get the exit code of my program in a PASSIVE job?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You have to manage this feature in your script.
+For example you can add this line just after the call of your program::
+
+    echo "Exit code = $?"
+
+Then you will be able to see the exit code in the STDOUT file of your OAR job.
+
 Administrator
 -------------
 

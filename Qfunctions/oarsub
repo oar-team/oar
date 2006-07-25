@@ -40,6 +40,8 @@ my $sos;
 my $Checkpoint=0;
 my $notify;
 my $job_name;
+my $job_env;
+my $job_hold;
 my $Directory = $ENV{PWD};
 my @Type;
 my @Anterior_job;
@@ -143,7 +145,8 @@ sub connect_job($$$){
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
         #my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$cpuset_name,$res_file);
+        #my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$cpuset_name,$res_file);
+        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$cpuset_name,$res_file,$job->{job_name}, $job->{job_env});
         my $cmd = "$openssh_cmd -x -t $host_to_connect_via_ssh \"sh -c \\\"echo \\\\\\\$PPID 2> /dev/null 1> /dev/cpuset/$cpuset_name/tasks; echo \\\\\\\$PPID >> $oarsub_pids && TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
         #my $cmd = "cat $oarexecuser_script | $openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
         #my $cmd = "$openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
@@ -189,6 +192,7 @@ Options are:
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -d, --directory               specify the directory where to launch the command (default is current directory)
  -n, --name                    specify an arbitrary name for the job
+ -e, --env                     environment variables to set on the running proccess in the form "A=b C=d"
  -a, --anterior                anterior job that must be terminated to start this new one
      --notify                  specify a notification method(mail or program to launch); ex: 
                                    --notify "mail:name\@domain.com"
@@ -197,6 +201,7 @@ Options are:
      --stderr                  specify the name of the error output file
      --resubmit                resubmit the given job to a new one
      --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
+     --hold                    set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state)
  -h, --help                    print this help message
  -v, --version                 print OAR version number
 EOS
@@ -249,6 +254,8 @@ GetOptions ("resource|l=s" => \@resource,
             "type|t=s" => \@Type,
             "directory|d=s" => \$Directory,
             "name|n=s" => \$job_name,
+            "env|e=s" => \$job_env,
+            "hold" => \$job_hold,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
 	    "stdout=s" => \$Stdout_file,
@@ -468,7 +475,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -479,7 +486,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my @resource_list = parse_resource_descriptions(\@resource);
     
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name, \@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold);
 }
 print("JOB_ID = $Job_id \n");
 

@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "oarsub 1"
-.TH oarsub 1 "2006-06-22" "" "OAR commands"
+.TH oarsub 1 "2006-07-25" "" "OAR commands"
 .SH "NAME"
 oarsub \- submit a job to OAR batch scheduler.
 .SH "SYNOPSIS"
@@ -185,6 +185,9 @@ Specify the directory where to launch the command (default is current directory)
 .IP "\fB\-n, \-\-name\fR string" 4
 .IX Item "-n, --name string"
 Specify an arbitrary name for the job.
+.IP "\fB\-e, \-\-env\fR string" 4
+.IX Item "-e, --env string"
+Environment variables to set on the running proccess in the form \*(L"A=b C=d\*(R".
 .IP "\fB\-a, \-\-anterior\fR job_id" 4
 .IX Item "-a, --anterior job_id"
 Anterior job that must be terminated to start this new one.
@@ -205,6 +208,9 @@ Resubmit the given job to a new one.
 .IP "\fB\-\-force_cpuset_name\fR" 4
 .IX Item "--force_cpuset_name"
 Instead of using job_id for the cpuset name you can specify one (\s-1WARNING:\s0 if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer).
+.IP "\fB\-\-hold\fR" 4
+.IX Item "--hold"
+Set the job state into Hold instead of Waiting; so it is not scheduled (you must run \*(L"oarresume\*(R" to turn it into the Waiting state).
 .IP "\fB\-v, \-\-version\fR" 4
 .IX Item "-v, --version"
 Print \s-1OAR\s0 version number.

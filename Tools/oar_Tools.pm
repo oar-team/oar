@@ -306,7 +306,7 @@ sub launch_command($){
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarexec($$$$$$$$@){
+sub get_oarexecuser_script_for_oarexec($$$$$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
@@ -315,7 +315,14 @@ sub get_oarexecuser_script_for_oarexec($$$$$$$$@){
         $stdout_file,
         $stderr_file,
         $resource_file,
+        $job_name,
+        $job_env,
         @cmd) = @_;
+
+    my $exp_env = "";
+    if ($job_env !~ /^\s*$/){
+        $exp_env .= "export $job_env";
+    }
 
     my $script = '
 if [ "a$TERM" == "a" ] || [ "$TERM" == "unknown" ]
@@ -323,6 +330,7 @@ then
     export TERM=xterm
 fi
 
+'.$exp_env.'
 export OAR_FILE_NODES='.$node_file.'
 export OAR_JOBID='.$job_id.'
 export OAR_USER='.$user.'
@@ -335,6 +343,7 @@ export OAR_NODE_FILE=$OAR_FILE_NODES
 export OAR_RESOURCE_FILE=$OAR_FILE_NODES
 export OAR_WORKING_DIRECTORY=$OAR_WORKDIR
 export OAR_JOB_ID=$OAR_JOBID
+export OAR_JOBNAME='.$job_name.'
 
 if ( cd $OAR_WORKING_DIRECTORY &> /dev/null )
 then
@@ -363,7 +372,7 @@ exit 0
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
@@ -371,13 +380,22 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$){
         $launching_directory,
         $display,
         $cpuset_name,
-        $resource_file) = @_;
+        $resource_file,
+        $job_name,
+        $job_env) = @_;
+
+    my $exp_env = "";
+    if ($job_env !~ /^\s*$/){
+        $exp_env .= "export $job_env";
+    }
 
     my $script = '
 if [ \"a$TERM\" == \"a\" ] || [ \"$TERM\" == \"unknown\" ]
 then
     export TERM=xterm
 fi
+
+'.$exp_env.'
 
 export OAR_FILE_NODES='.$node_file.'
 export OAR_JOBID='.$job_id.'
@@ -393,6 +411,7 @@ export OAR_NODE_FILE=\$OAR_FILE_NODES
 export OAR_RESOURCE_FILE=\$OAR_FILE_NODES
 export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
 export OAR_JOB_ID=\$OAR_JOBID
+export OAR_JOBNAME='.$job_name.'
 
 if ( cd \$OAR_WORKING_DIRECTORY &> /dev/null )
 then

@@ -44,7 +44,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -772,8 +772,8 @@ sub get_possible_wanted_resources($$$$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold) = @_;
 
     my $default_walltime = "1:00:00";
     my $startTimeJob = "0000-00-00 00:00:00";
@@ -865,11 +865,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
     $job_name = $dbh->quote($job_name);
     $notify = $dbh->quote($notify);
     $command = $dbh->quote($command);
+    $job_env = $dbh->quote($job_env);
     $jobproperties = $dbh->quote($jobproperties);
     $launching_directory = $dbh->quote($launching_directory);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\')
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\',$job_env)
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -953,15 +954,21 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$) {
               VALUES ($job_id,\'$random_number\')
              ");
 
-    $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
-              VALUES ($job_id,\'Waiting\',\'$date\')
-             ");
+    if (!defined($job_hold)) {
+        $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
+                  VALUES ($job_id,\'Waiting\',\'$date\')
+                 ");
     
-    $dbh->do("  UPDATE jobs
-                SET state = \'Waiting\'
-                WHERE
-                    job_id = $job_id
-             ");
+        $dbh->do("  UPDATE jobs
+                    SET state = \'Waiting\'
+                    WHERE
+                        job_id = $job_id
+                 ");
+    }else{
+        $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
+                  VALUES ($job_id,\'Hold\',\'$date\')
+                 ");
+    }
     #$dbh->do("UNLOCK TABLES");
 
     return($job_id);

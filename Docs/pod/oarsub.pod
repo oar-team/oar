@@ -74,6 +74,10 @@ Specify the directory where to launch the command (default is current directory)
 
 Specify an arbitrary name for the job.
 
+=item B<-e, --env> string
+
+Environment variables to set on the running proccess in the form "A=b C=d".
+
 =item B<-a, --anterior> job_id
 
 Anterior job that must be terminated to start this new one.
@@ -99,6 +103,10 @@ Resubmit the given job to a new one.
 =item B<--force_cpuset_name>
 
 Instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer).
+
+=item B<--hold>
+
+Set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state).
 
 =item B<-v, --version>
 
