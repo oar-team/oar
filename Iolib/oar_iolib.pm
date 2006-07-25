@@ -1184,13 +1184,14 @@ sub resubmit_job($$){
     my $jobproperties = $dbh->quote($job->{properties});
     my $launching_directory = $dbh->quote($job->{launching_directory});
     my $file_id = $dbh->quote($job->{file_id});
+    my $jenv = $dbh->quote($job->{job_env});
     my $date = get_date($dbh);
     my $start_time = "0000-00-00 00:00:00";
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,cpuset_name)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',\'$job->{cpuset_name}\')
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,cpuset_name,job_env)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',\'$job->{cpuset_name}\',$jenv)
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
@@ -1230,7 +1231,7 @@ sub resubmit_job($$){
         my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
         #unlock_table($dbh);
     
-        $sth = $dbh->prepare("  SELECT res_group_id,res_group_property 
+        $sth = $dbh->prepare("  SELECT res_group_id,res_group_property
                                 FROM job_resource_groups
                                 WHERE
                                     res_group_moldable_id = $moldable_resource

@@ -162,6 +162,7 @@ INDEX attribute (attribute)
 
 #DROP TABLE IF EXISTS resource_state_logs;
 CREATE TABLE IF NOT EXISTS resource_state_logs (
+resource_state_log_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 resource_id INT UNSIGNED NOT NULL ,
 change_state ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
 date_start DATETIME NOT NULL,
@@ -169,7 +170,8 @@ date_stop DATETIME ,
 finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 INDEX resource_id (resource_id),
 INDEX state (change_state),
-INDEX finaud (finaud_decision)
+INDEX finaud (finaud_decision),
+PRIMARY KEY (resource_state_log_id)
 );
 
 

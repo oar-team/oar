@@ -243,11 +243,13 @@ CREATE TABLE resource_properties (
 
 
 CREATE TABLE resource_state_logs (
+  resource_state_log_id bigserial,
   resource_id integer NOT NULL default '0',
   change_state varchar(9) check (change_state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
   date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
   date_stop varchar(19) default NULL,
-  finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO'
+  finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
+  PRIMARY KEY (resource_state_log_id)
 );
 CREATE INDEX resource_id ON resource_state_logs (resource_id);
 CREATE INDEX state_log ON resource_state_logs (change_state);
@@ -261,7 +263,7 @@ CREATE TABLE resources (
   next_state varchar(9) check (next_state in ('UnChanged','Alive','Dead','Absent','Suspected')) NOT NULL default 'UnChanged',
   finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
   next_finaud_decision varchar(3) check (next_finaud_decision in ('YES','NO')) NOT NULL default 'NO',
-  PRIMARY KEY  (resource_id)
+  PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);
 CREATE INDEX resource_next_state ON resources (next_state);
