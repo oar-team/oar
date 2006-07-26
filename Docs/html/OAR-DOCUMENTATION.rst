@@ -2,7 +2,7 @@
  OAR Documentation 
 ===================
 
-.. image:: ../oar_logo.png
+.. image:: oar_logo.png
    :alt: OAR logo
    :align: center
    :width: 8cm
@@ -32,7 +32,7 @@
 
 -------------------------------------------------------------------------------
 
-.. include:: ../../../INSTALL
+.. include:: ../../INSTALL
 
 User guide
 ==========
@@ -1538,7 +1538,7 @@ project with `Kadeploy <http://ka-tools.imag.fr/>`_ tools.
 When you submit a job you have to use "-t deploy" option of oarsub_ to
 specify that this is a deploy job.
 
-.. include:: ../../../FAQ
+.. include:: ../../FAQ
 
-.. include:: ../../../CHANGELOG
+.. include:: ../../CHANGELOG
 
