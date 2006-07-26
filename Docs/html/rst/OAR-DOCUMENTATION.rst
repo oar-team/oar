@@ -1049,6 +1049,8 @@ Each configuration tag found in /etc/oar.conf is now described:
   
       OARSUB_DEFAULT_RESOURCES = /resource_id=1
   
+.. _DEPLOY_HOSTNAME:
+
   - Specify where we are connected in the deploy queue(the node to connect
     to when the job is in the deploy queue)::
       
@@ -1197,6 +1199,8 @@ Each configuration tag found in /etc/oar.conf is now described:
   - If you want to manage nodes to be started and stoped. OAR gives you this
     API:
 
+.. _SCHEDULER_NODE_MANAGER_WAKE_UP_CMD:
+
     * When OAR scheduler wants some nodes to wake up then it launches this
       command with the node list in arguments(the scheduler looks at the
       *cm_availability* field in resource_properties_ table to know if the
@@ -1204,15 +1208,21 @@ Each configuration tag found in /etc/oar.conf is now described:
 
         SCHEDULER_NODE_MANAGER_WAKE_UP_CMD = /path/to/the/command with your args
 
+.. _SCHEDULER_NODE_MANAGER_SLEEP_CMD:
+
     * When OAR considers that some nodes can be shut down, it launches this
       command with the node list in arguments::
 
         SCHEDULER_NODE_MANAGER_SLEEP_CMD = /path/to/the/command args
 
+.. _SCHEDULER_NODE_MANAGER_IDLE_TIME:
+
       + Parameters for the scheduler to decide when a node is idle(number of
         seconds since the last job was terminated on the nodes)::
         
           SCHEDULER_NODE_MANAGER_IDLE_TIME = 600
+
+.. _SCHEDULER_NODE_MANAGER_SLEEP_TIME:
 
       + Parameters for the scheduler to decide if a node will have enough time
         to sleep(number of seconds before the next job)::
@@ -1434,6 +1444,99 @@ table accounting_.
 
 So this is very easily and faster to get usage statistics of the cluster. We
 can see that like a "datawarehousing" information extraction method.
+
+Dynamic nodes coupling features
+-------------------------------
+
+We are working with the `Icatis <http://www.icatis.com/>`_ company on clusters
+composed by intranet computers. These nodes can be switch in computing mode
+only at specific times. So we have implemented a functionality that can
+request to power on some hardware if they can be in the cluster.
+
+We are using the field *cm_availability* from the table resource_properties_
+to know when a node will be inaccessible in the cluster mode (easily setable
+with oarnodesetting_ command). So when the OAR scheduler wants some potential
+available computers to launch the jobs then it executes the command
+SCHEDULER_NODE_MANAGER_WAKE_UP_CMD_.
+
+Moreover if a node didn't execute a job for SCHEDULER_NODE_MANAGER_IDLE_TIME_
+seconds and no job is scheduled on it before SCHEDULER_NODE_MANAGER_SLEEP_TIME_
+seconds then OAR will launch the command SCHEDULER_NODE_MANAGER_SLEEP_CMD_.
+
+Timesharing
+-----------
+
+It is possible to share the slot time of a job with other ones.
+To perform this feature you have to specify the type *timesharing* when you use
+oarsub_.
+
+You have 4 different ways to share your slot:
+  1. *timesharing=\*,\** : This is the default behavior if nothing but
+     timesharing is specified.
+     It indicates that the job can be shared with all users and every job
+     names.
+  
+  2. *timesharing=user,\** : This indicates that the job can be shared only
+     with the same user and every job names.
+
+  3. *timesharing=\*,job_name\** : This indicates that the job can be shared
+     with all users but only one with the same name.
+
+  4. *timesharing=user,job_name* : This indicates that the job can be shared
+     only with the same user and one with the same job name.
+
+See User_ section from the FAQ_ for more examples and features.
+
+Besteffort jobs
+---------------
+
+Besteffort jobs are scheduled in the besteffort queue. Their particularity is
+that they are deleted if another not besteffort job want resources where they
+are running.
+
+For example you can use this feature to maximize the use of your cluster with
+multiparametric jobs. This what it is done by the
+`CIGRI <http://cigri.ujf-grenoble.fr>`_ project.
+
+When you submit a job you have to use "-t besteffort" option of oarsub_ to
+specify that this is a besteffort job.
+
+Note : a besteffort job cannot be a reservation.
+
+Cosystem jobs
+-------------
+
+This feature enables to reserve some resources without launching any
+program on corresponding nodes. Thus nothing is done by OAR when a
+job is starting (no prologue, no epilogue on the server nor on the nodes).
+
+This is usefull with an other launching system that will declare its time
+slot in OAR. So yo can have two different batch scheduler.
+
+When you submit a job you have to use "-t cosystem" option of oarsub_ to
+specify that this is a besteffort job.
+
+These jobs are stopped by the oardel_ command or when they reach their
+walltime.
+
+Deploy jobs
+-----------
+
+This feature is usefull when you want to enable the users to reinstall their
+reserved nodes. So the OAR jobs will not log on the first computer of the
+reservation but on the DEPLOY_HOSTNAME_.
+
+So prologue and epilogue scripts are executed on DEPLOY_HOSTNAME_ and if the
+user wants to launch a script it is also executed on DEPLOY_HOSTNAME_.
+
+OAR does nothing on computing nodes because they normally will be rebooted to
+install a new system image.
+
+This feature is strongly used in the `Grid5000 <https://www.grid5000.fr/>`_
+project with `Kadeploy <http://ka-tools.imag.fr/>`_ tools.
+
+When you submit a job you have to use "-t deploy" option of oarsub_ to
+specify that this is a deploy job.
 
 .. include:: ../../../FAQ
 
