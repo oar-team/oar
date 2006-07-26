@@ -21,10 +21,10 @@ How can I submit a job with a non uniform description?
 Example:
 ::
     
-    oarsub -I -l /switch=1+/node=1
+    oarsub -I -l '{switch = "sw1" or switch = "sw5"}/switch=1+/node=1'
 
-This example asks OAR to reserve all resources from a switch **and** a node on
-another switch.
+This example asks OAR to reserve all resources from the switch sw1 or the
+switch sw2 **and** a node on another switch.
 
 You can see the "+" syntax as a sub-reservation directive.
 
@@ -54,21 +54,7 @@ Example:
 
      So this job will be scheduled on nodes assigned from the previous reservation.
 
-The "timesharing" oarsub_ job type option is of the form:
-
-  - *timesharing=\*,\** : This is the default behavior if nothing but
-    timesharing is specified.
-    *timesharing*. It indicates that the job can be shared with all users and
-    every job names.
-  
-  - *timesharing=user,\** : This indicates that the job can be shared only with
-    the same user and every job names.
-
-  - *timesharing=\*,job_name\** : This indicates that the job can be shared
-    with all users but only one with the same name.
-
-  - *timesharing=user,job_name* : This indicates that the job can be shared only with
-    the same user and one with the same job name.
+The "timesharing" oarsub_ command possibilities are enumerated in Timesharing_.
 
 How can a checkpointable job be resubmitted automatically?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,4 +103,15 @@ How can I manage scheduling queues?
 
     oarnotify
 
+How can I write my own scheduler?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. include:: Scheduler/README
+
+What is the syntax of this documentation?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We are using the RST format from the Docutils project. This syntax is easily
+readable and can be converted into HTML, LaTex or XML.
+
+You can find basic informations on http://docutils.sourceforge.net/docs/user/rst/quickref.html
 

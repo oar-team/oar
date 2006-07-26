@@ -276,7 +276,6 @@ sub nmap_hosts(@){
         }
     }
 
-print("@bad_hosts\n");
     my %good_hosts;
     oar_debug("[PingChecker] $nmap_cmd\n");
     $ENV{IFS}="";
