@@ -145,10 +145,34 @@ sub print_job($$){
     my @job_events;
     my %data_to_display;
 
+    my $resources_string = "";
     if (defined($full_view) or defined($Old)){
         @date_tmp = iolib::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
         @job_events = iolib::get_job_events($dbh,$job_info->{job_id});
    
+        #Get the job resource description to print -l option
+        my $job_descriptions = iolib::get_resources_data_structure_current_job($dbh,$job_info->{job_id});
+        foreach my $moldable (@{$job_descriptions}){
+            my $tmp_str = "";
+            foreach my $group (@{$moldable->[0]}){
+                if ($tmp_str ne ""){
+                    # add a new group
+                    $tmp_str .= "+";
+                }else{
+                    # first group
+                    $tmp_str .= "-l '";
+                }
+                if ((defined($group->{property})) and ($group->{property} ne "")){
+                    $tmp_str .= "{$group->{property}}";
+                }
+                foreach my $resource (@{$group->{resources}}){
+                        $tmp_str .= "/$resource->{resource}=$resource->{value}";
+                    }
+            }
+            $tmp_str .= ",walltime=$moldable->[1]' ";
+            $resources_string .= $tmp_str;
+        }
+        
         if ($job_info->{assigned_moldable_job} ne ""){
             @nodes = iolib::get_job_resources($dbh,$job_info->{assigned_moldable_job});
             $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
@@ -172,7 +196,8 @@ sub print_job($$){
             message => $job_info->{message},
             scheduledStart => $date_tmp[0],
             resubmit_job_id => $job_info->{resubmit_job_id},
-            events => \@job_events
+            events => \@job_events,
+            wanted_resources => $resources_string
         );
     }else{
         %data_to_display = (
@@ -230,6 +255,7 @@ sub print_job($$){
             print("    Job_Owner = $job_info->{job_user}\n");
             print("    job_state = $hashestat{$job_info->{state}}\n");
             print("    comment = $job_info->{message}\n");
+            print("    wanted_resources = $resources_string\n");
             print("    queue = $job_info->{queue_name}\n");
             $job_info->{command} = '' if (!defined($job_info->{command}));
             print("    command = $job_info->{command}\n");
@@ -254,6 +280,7 @@ sub print_job($$){
             print("    name = $job_info->{job_name}\n");
             print("    owner = $job_info->{job_user}\n");
             print("    state = $job_info->{state}\n");
+            print("    wanted_resources = $resources_string\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
             print("    queue = $job_info->{queue_name}\n");
             $job_info->{command} = '' if (!defined($job_info->{command}));

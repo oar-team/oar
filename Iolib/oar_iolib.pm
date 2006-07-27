@@ -3033,37 +3033,50 @@ sub get_node_stats($){
 # arg : database ref, job id
 # return a data structure (an array of moldable jobs):
 # example for the first moldable job of the list:
-# $result->[0] = [
-#                   [
-#                       {
-#                           property  => SQL property
-#                           resources => [
-#                                           {
-#                                               resource => resource name
-#                                               value    => number of this wanted resource
-#                                           }
-#                                       ]
-#                       }
-#                   ],
-#                   walltime,
-#                   moldable_job_id
-#                ]
+# $result = [
+#               [
+#                   {
+#                       property  => SQL property
+#                       resources => [
+#                                       {
+#                                           resource => resource name
+#                                           value    => number of this wanted resource
+#                                       }
+#                                    ]
+#                   }
+#               ],
+#               walltime,
+#               moldable_job_id
+#           ]
 sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
     my $job_id = shift;
 
+#    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
+#                                FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+#                                WHERE
+#                                    moldable_job_descriptions.moldable_index = \'CURRENT\'
+#                                    AND job_resource_groups.res_group_index = \'CURRENT\'
+#                                    AND job_resource_descriptions.res_job_index = \'CURRENT\'
+#                                    AND jobs.job_id = $job_id
+#                                    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+#                                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+#                                    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+#                                ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
+#                            ");
+
     my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
                                 FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
                                 WHERE
-                                    moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                    AND job_resource_groups.res_group_index = \'CURRENT\'
-                                    AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                                    AND jobs.job_id = $job_id
+                                    jobs.job_id = $job_id
                                     AND jobs.job_id = moldable_job_descriptions.moldable_job_id
                                     AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
                                     AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
                                 ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
                             ");
+ 
+
+
     $sth->execute();
     my $result;
     my $group_index = -1;

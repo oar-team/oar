@@ -7,16 +7,19 @@
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="841.88977pt"
    height="595.27557pt"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.43"
-   sodipodi:docbase="/home/capitn/oar/trunk/Docs"
-   sodipodi:docname="schema_interactive_oarsub.svg"
-   version="1.0">
+   inkscape:version="0.44"
+   sodipodi:docbase="/home/capitn/svn/oar/trunk/Docs/html"
+   sodipodi:docname="interactive_oarsub_scheme.svg"
+   version="1.0"
+   inkscape:export-filename="/home/capitn/svn/oar/trunk/Docs/html/interactive_oarsub_scheme.png"
+   inkscape:export-xdpi="280"
+   inkscape:export-ydpi="280">
   <defs
      id="defs4">
     <marker
@@ -286,14 +289,18 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="805.66486"
-     inkscape:cy="510.75075"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="762.91202"
+     inkscape:cy="340.89026"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:grid-bbox="true"
-     inkscape:grid-points="true" />
+     inkscape:grid-points="true"
+     inkscape:window-width="1082"
+     inkscape:window-height="989"
+     inkscape:window-x="26"
+     inkscape:window-y="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -537,9 +544,9 @@
        sodipodi:nodetypes="cc" />
     <path
        style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:miter;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow2Mstart)"
-       d="M 951,244.09448 C 951,244.09448 1024.0267,370.53237 1031,473.5818 C 1040,606.5818 1034,671.09448 998,674.59448 C 961.75319,678.11848 291,605.09448 291,605.09448"
+       d="M 917.1878,668.53356 C 291.0119,605.3875 291,605.09448 291,605.09448"
        id="path9376"
-       sodipodi:nodetypes="cszc" />
+       sodipodi:nodetypes="cc" />
     <path
        style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:miter;marker-end:url(#Arrow2Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="M 524,256.09448 L 287.52793,276.64015"
