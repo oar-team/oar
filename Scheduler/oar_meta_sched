@@ -59,6 +59,7 @@ foreach my $i (@queues){
             $exit_code = 1;
         }elsif($sched_exit_code != 0){
             oar_error("[MetaSched] Scheduler $binpath/$policy on queue $name at time $initial_time{sec} returns a bad value : $sched_exit_code. So this queue will be disabled (look at 'oarnotify' if you want to change queue settings).\n");
+            iolib::stop_a_queue($base,$name);
             #$exit_code = 3;
         }
         if (oar_scheduler::treate_waiting_reservation_jobs($base,$name) != 0){

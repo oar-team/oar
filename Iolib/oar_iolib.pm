@@ -823,6 +823,13 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$) {
         return(-2);
     }
 
+    #Test if the queue exists
+    my %all_queues = get_all_queue_informations($dbh);
+    if (!defined($all_queues{$queue_name})){
+        warn("ERROR : The queue $queue_name does not exist\n");
+        return(-8);
+    }
+
     # Test if properties and resources are coherent
     my @dead_resources;
     foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
