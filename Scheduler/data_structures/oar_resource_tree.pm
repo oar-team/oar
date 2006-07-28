@@ -352,7 +352,11 @@ sub delete_tree_nodes_with_not_enough_resources($){
         }
     }while(defined($current_node));
 
-    return($tree_ref);
+    if (!defined(get_initial_child($tree_ref))){
+        return(undef);
+    }else{
+        return($tree_ref);
+    }
 }
 
 

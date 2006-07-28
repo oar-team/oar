@@ -61,6 +61,7 @@ foreach my $r (iolib::list_resources($base)){
     vec($vec,$r->{resource_id},1) = 1;
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
+
 my $gantt = Gantt_2::new($max_resources, $minimum_hole_time);
 Gantt_2::add_new_resources($gantt, $vec);
 
@@ -235,6 +236,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
+        #print("###\n".Gantt_2::pretty_print($gantt_to_use)."\n");
         my @hole = Gantt_2::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
         
 #        print("[GANTT] 10 ".gettimeofday."\n");

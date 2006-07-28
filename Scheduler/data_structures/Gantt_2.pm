@@ -253,6 +253,7 @@ sub find_first_hole($$$$){
             @result_tree_list = ();
             $end_loop = 1;
         }else{
+            #print("Treate hole $current_hole_index, $h : $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
             $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
             #Check all trees
             my $tree_clone;

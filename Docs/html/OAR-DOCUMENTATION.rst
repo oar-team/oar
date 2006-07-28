@@ -27,6 +27,8 @@
   productive plateforms and research experiments.
 
 
+**BE CAREFULL : THIS DOCUMENTION IS FOR THE NEXT OAR VERSION (2.0)**
+
 .. section-numbering::
 .. contents:: Table of Contents
 
