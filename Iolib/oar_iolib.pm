@@ -4353,20 +4353,16 @@ sub lock_table($$){
     my $dbh = shift;
     my $tables= shift;
 
-    my $str = "LOCK TABLE ";
-    foreach my $t (@{$tables}){
-        if ($Db_type eq "Pg"){
-            $str .= "$t,";
-        }else{
-            $str .= "$t WRITE,";
-        }
-    }
-    chop($str);
     if ($Db_type eq "Pg"){
         $dbh->begin_work();
+    }else{
+        my $str = "LOCK TABLE ";
+        foreach my $t (@{$tables}){
+            $str .= "$t WRITE,";
+        }
+        chop($str);
+        $dbh->do($str);
     }
-
-    $dbh->do($str);
 }
 
 

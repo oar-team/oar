@@ -166,8 +166,14 @@ sub print_job($$){
                     $tmp_str .= "{$group->{property}}";
                 }
                 foreach my $resource (@{$group->{resources}}){
-                        $tmp_str .= "/$resource->{resource}=$resource->{value}";
+                    my $tmp_val = $resource->{value};
+                    if ($tmp_val == -1){
+                        $tmp_val = "ALL";
+                    }elsif ($tmp_val == -2){
+                        $tmp_val = "BEST";
                     }
+                    $tmp_str .= "/$resource->{resource}=$tmp_val";
+                }
             }
             $tmp_str .= ",walltime=$moldable->[1]' ";
             $resources_string .= $tmp_str;
