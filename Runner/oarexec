@@ -105,7 +105,7 @@ sub clean_all(){
                     print("[oarexec $Job_id] kill oarsub connections @pid_list\n");
                     system("sudo kill -9 @pid_list > /dev/null 2>&1") if ($#pid_list >= 0);
                 }else{
-                    print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that it is not OAR oarsub processes\n");
+                    print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that there is no OAR oarsub processes\n");
                 }
             }
         }

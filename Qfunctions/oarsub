@@ -158,6 +158,11 @@ sub connect_job($$$){
         system($cmd);
         if ($stop_oarexec > 0){
             oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0, undef, $openssh_cmd);
+            if ($stop_oarexec == 1){
+                warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
+            }else{
+                warn("[ERROR] An unknown error occured : $stop_oarexec\n");
+            }
         }
         print("Disconnected from OAR job $job_id\n");
     }else{
