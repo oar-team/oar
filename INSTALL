@@ -174,6 +174,24 @@ You can install these in this way:
         - The package "perl-AppConfig" is required.
         - Read INSTALL file in the monika repository.
 
+Debian packages
+---------------
+
+OAR is also released under Debian packages (or Ubuntu). You can find them at
+http://oar.imag.fr/download.html.
+
+If you want to add it as a new source in your /etc/apt/sources.list then add
+the line::
+
+    deb http://oar.imag.fr/download ./
+
+The installation will ask you if you want to initialize the nodes. It will copy
+the oar SSH key on each specified nodes. You can skeep this step by you will
+have to do this manually.
+
+After installing packages, you have to edit the `configuration file`_ on the
+server, submition nodes and computing nodes to fite your needs.
+
 Starting
 --------
 
@@ -188,4 +206,3 @@ Further informations
 --------------------
 For further information, please check http://oar.imag.fr/.
 
-.. $Id: INSTALL,v 1.23 2005/09/27 13:59:34 capitn Exp $

@@ -27,12 +27,15 @@
   productive plateforms and research experiments.
 
 
-**BE CAREFULL : THIS DOCUMENTION IS FOR THE NEXT OAR VERSION (2.0)**
+**BE CAREFULL : THIS DOCUMENTATION IS FOR THE NEXT OAR VERSION (2.0)**
 
 .. section-numbering::
 .. contents:: Table of Contents
 
 -------------------------------------------------------------------------------
+
+OAR capabilities
+================
 
 .. include:: ../../INSTALL
 
@@ -543,6 +546,9 @@ hostname          VARCHAR(255)          name of the node where the event
 :Primary key: event_id
 :Index fields: hostname
 
+This table stores hostnames related to events like
+"PING_CHECKER_NODE_SUSPECTED".
+
 *files*
 ~~~~~~~
 
@@ -936,6 +942,16 @@ You can add your own properties with `oarproperty`_ command.
 
 These properties can be updated with the `oarnodesetting`_ command ("-p" option).
 
+Several properties are added by default:
+
+ - switch : you have to register the name of the switch where the node is
+   plugged.
+ - cpu : this is a unique name given to each cpus. This enables OAR scheduler
+   to distinguish all cpus.
+ - cpuset : this is the name of the cpu on the node. The Linux kernel sets this
+   to an integer beginning at 0. This field is linked to the configuration tag
+   CPUSET_RESOURCE_PROPERTY_DB_FIELD_.
+
 *resource_property_logs*
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1128,13 +1144,6 @@ Each configuration tag found in /etc/oar.conf is now described:
       MAIL_RECIPIENT = user@domain.com
       MAIL_SENDER = oar@domain.com
 
-  - Limitation configuration for the oar_sched_gant_g5k scheduler
-    (0:Sunday, 1:Monday, 2:Tuesday, 3:Wednesday, 4:Thursday, 5:Friday,
-    6:Saturday)::
-      
-      G5K_LIMIT_WEEK_DAYS = 1 2 3 4 5
-      G5K_LIMIT_DAY_HOURS = 7 22
-
   - Set the timeout for the prologue and epilogue execution on computing
     nodes::
 
@@ -1166,6 +1175,8 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       DEAD_SWITCH_TIME = 600
 
+.. _SCHEDULER_TIMEOUT:
+
   - Maximum of seconds used by a scheduler::
 
       SCHEDULER_TIMEOUT = 10
@@ -1176,20 +1187,28 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       RESERVATION_WAITING_RESOURCES_TIMEOUT = 300
   
+.. _SCHEDULER_JOB_SECURITY_TIME:
+
   - Time to add between each jobs (time for administration tasks or time to
     let computers to reboot)::
 
       SCHEDULER_JOB_SECURITY_TIME = 1
+
+.. _SCHEDULER_GANTT_HOLE_MINIMUM_TIME:
 
   - Minimum time in seconds that can be considered like a hole where a job
     could be scheduled in::
   
       SCHEDULER_GANTT_HOLE_MINIMUM_TIME = 300
 
+.. _SCHEDULER_RESOURCE_ORDER:
+
   - You can add an order preference on resource assigned by the system(SQL
     ORDER syntax)::
 
       SCHEDULER_RESOURCE_ORDER = switch ASC, node DESC, resource_id ASC
+
+.. _CPUSET_RESOURCE_PROPERTY_DB_FIELD:
 
   - Indicate the name of the database field that contains the cpu number of
     the node. If this option is set then users must use `OARSH`_ instead of
@@ -1316,6 +1335,19 @@ Scheduler_ launches all gantt scheduler in the order of the priority specified
 in the database and update all visualization tables
 (gantt_jobs_predictions_visu_ and gantt_jobs_resources_visu_).
 
+oar_sched_gantt_with_timesharing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the default OAR scheduler. It implements all functionalities like
+timesharing_, moldable jobs, `besteffort jobs`_, ...
+
+By default, this scheduler is used by all default queues.
+
+We have implemented the FIFO with backfilling algorithm. Some parameters
+can be changed in the `configuration file`_ (see SCHEDULER_TIMEOUT_,
+SCHEDULER_JOB_SECURITY_TIME_, SCHEDULER_GANTT_HOLE_MINIMUM_TIME_,
+SCHEDULER_RESOURCE_ORDER_).
+
 Runner
 ------
 
@@ -1359,7 +1391,7 @@ CPUSET
 
 If the "--force_cpuset_name" option of the oarsub_ command is not defined then
 OAR will use job identifier. The CPUSET name is effectively created on each
-nodes is composed as "user_cpusetname".
+nodes and is composed as "user_cpusetname".
 
 So if a user specifies "--force_cpuset_name" option, he will not be able to
 disturb other users.
@@ -1539,6 +1571,25 @@ project with `Kadeploy <http://ka-tools.imag.fr/>`_ tools.
 
 When you submit a job you have to use "-t deploy" option of oarsub_ to
 specify that this is a deploy job.
+
+Desktop computing
+-----------------
+
+If you cannot contact the computers via SSH you can install the "desktop
+computing" OAR mode.
+This kind of installation is based on two programs:
+ 
+ - oar-cgi : this is a web CGI used by the nodes to communicate with
+   the OAR server.
+ - oar-agent.pl : This program asks periodically the server web CGI to know what it
+   has to do.
+
+This method replaces the SSH command. Computers which want to register them into
+OAR just has to be able to contact OAR HTTP server.
+
+In this situation we don't have a NFS file system to share the same repertories
+over all nodes so we have to use a stagein/stageout solution. In this case you
+can use the oarsub_ option "stagein" to migrate your data.
 
 .. include:: ../../FAQ
 

@@ -110,7 +110,7 @@ How can I write my own scheduler?
 What is the syntax of this documentation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We are using the RST format from the Docutils project. This syntax is easily
+We are using the RST format from the `Docutils <http://docutils.sourceforge.net/>`_ project. This syntax is easily
 readable and can be converted into HTML, LaTex or XML.
 
 You can find basic informations on http://docutils.sourceforge.net/docs/user/rst/quickref.html
