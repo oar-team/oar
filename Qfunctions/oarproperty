@@ -160,7 +160,7 @@ sub check_property_name($) {
     if (! $propertyname =~ /^[a-z0-9_]+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
-    if ($propertyname =~ /^(resource_id|node|state|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime)$/ ) {
+    if ($propertyname =~ /^(resource_id|node|state|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes)$/ ) {
         die("Error: '$propertyname' is a OAR system property and may not be altered");
     }
 }

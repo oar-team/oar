@@ -185,7 +185,7 @@ Usage: $0 [OPTIONS] [-I|-C|<SCRIPT>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --Interactive             request an interactive job
- -l, --resource=<LIST>         set the resource list( ex: nodes=4/cpu=1,walltime=2:00:00 )
+ -l, --resource=<LIST>         set the resource list( ex: node=4/cpu=1,walltime=2:00:00 )
  -q, --queue=<QUEUE>           set the the queue to submit the job to
  -p, --property=<LIST>         set the property list
  -r, --reservation=<DATE>      request a reservation
@@ -402,7 +402,9 @@ sub parse_resource_descriptions($){
             my @resources_list;
             foreach my $l (@slash_split){
                 if ($l =~ /(\w+)\s*=\s*(\d+)/){
-                    push(@resources_list, { resource => $1, value => $2 });
+                    my $tmp = $1;
+                    $tmp = "node" if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => $2 });
                 }elsif ($l =~ /(\w+)\s*=\s*ALL/){
                     push(@resources_list, { resource => $1, value => -1 });
                 }elsif ($l =~ /(\w+)\s*=\s*BEST/){
