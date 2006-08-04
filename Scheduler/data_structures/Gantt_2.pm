@@ -267,7 +267,9 @@ sub find_first_hole($$$$){
                         oar_resource_tree::delete_subtree($l);
                     }
                 }
+                #print(Dumper($tree_clone));
                 $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+                #print(Dumper($tree_clone));
                 $result_tree_list[$i] = $tree_clone;
                 $i ++;
             }while(defined($tree_clone) && ($i <= $#$tree_description_list));

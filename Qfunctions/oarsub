@@ -406,9 +406,13 @@ sub parse_resource_descriptions($){
                     $tmp = "node" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => $2 });
                 }elsif ($l =~ /(\w+)\s*=\s*ALL/){
-                    push(@resources_list, { resource => $1, value => -1 });
+                    my $tmp = $1;
+                    $tmp = "node" if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => -1 });
                 }elsif ($l =~ /(\w+)\s*=\s*BEST/){
-                    push(@resources_list, { resource => $1, value => -2 });
+                    my $tmp = $1;
+                    $tmp = "node" if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => -2 });
                 }else{
                     die("/!\\ Cannot recognize the resource description : $l\n");
                 }
