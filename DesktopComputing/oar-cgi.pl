@@ -109,7 +109,7 @@ sub pull() {
     $do_notify=undef;
     if ($quit) {
         if (defined $is_desktop_computing and $is_desktop_computing eq 'YES') {
-            iolib::lock_table($base,["resources","resource_properties"]);
+            iolib::lock_table($base,["resources"]);
             iolib::set_node_nextState($base,$hostname,"Absent");
             iolib::set_node_expiryDate($base,$hostname,iolib::get_date($base));
             iolib::unlock_table($base);
@@ -124,7 +124,7 @@ sub pull() {
     } else {
         if (defined $is_desktop_computing) {
             if ($is_desktop_computing eq 'YES') {
-                iolib::lock_table($base,["resources","resource_properties"]);
+                iolib::lock_table($base,["resources"]);
                 iolib::set_node_nextState($base,$hostname,"Alive");
                 iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
                 iolib::unlock_table($base);
@@ -184,7 +184,7 @@ sub pull() {
         } elsif ($dbJobs->{$jobid}->{'state'} eq "Launching" or $dbJobs->{$jobid}->{'state'} eq "Running" ) {
             unless (grep $jobid, keys %$agentJobs) {
                 message("[oar-cgi $jobid] Job $jobid terminated\n");
-                iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+                iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
                 iolib::set_finish_date($base,$jobid);
                 my $strWARN = "[oar-cgi $jobid] Job was killed";
                 message("$strWARN\n");
@@ -200,7 +200,7 @@ sub pull() {
             # TODO: As soon as BibBip becomes a library, replace this copy of BipBip code by a function call.
             #	my $base = iolib::connect() or die "cgi-job-end: cannot connect to the data base\n";
             message("Job $jobid terminated\n");
-            iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_properties"]);
+            iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
             my $refJob = iolib::get_job($base,$jobid);
             if ($refJob->{'state'} eq "Running"){
                 iolib::set_finish_date($base,$jobid);

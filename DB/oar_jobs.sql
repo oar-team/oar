@@ -143,43 +143,7 @@ state ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
 next_state ENUM('UnChanged','Alive','Dead','Absent','Suspected') DEFAULT 'UnChanged'  NOT NULL ,
 finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 next_finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
-INDEX state (state),
-INDEX next_state (next_state),
-PRIMARY KEY (resource_id)
-);
-
-#DROP TABLE IF EXISTS resource_property_logs;
-CREATE TABLE IF NOT EXISTS resource_property_logs (
-resource_id INT UNSIGNED NOT NULL ,
-attribute VARCHAR( 255 ) NOT NULL ,
-value VARCHAR( 255 ) NOT NULL ,
-date_start INT UNSIGNED NOT NULL,
-date_stop INT UNSIGNED DEFAULT 0 ,
-INDEX resource (resource_id),
-INDEX attribute (attribute)
-);
-
-
-#DROP TABLE IF EXISTS resource_state_logs;
-CREATE TABLE IF NOT EXISTS resource_state_logs (
-resource_state_log_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-resource_id INT UNSIGNED NOT NULL ,
-change_state ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
-date_start INT UNSIGNED NOT NULL,
-date_stop INT UNSIGNED DEFAULT 0 ,
-finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
-INDEX resource_id (resource_id),
-INDEX state (change_state),
-INDEX finaud (finaud_decision),
-PRIMARY KEY (resource_state_log_id)
-);
-
-
-#DROP TABLE IF EXISTS resource_properties;
-CREATE TABLE IF NOT EXISTS resource_properties (
-resource_id INT UNSIGNED NOT NULL ,
-state INT NOT NULL DEFAULT 0 ,
-node VARCHAR( 200 ) NOT NULL DEFAULT "default" ,
+state_num INT NOT NULL DEFAULT 0 ,
 switch  VARCHAR( 50 ) NOT NULL DEFAULT "0" ,
 cpu INT UNSIGNED NOT NULL DEFAULT 0 ,
 cpuset INT UNSIGNED NOT NULL DEFAULT 0 ,
@@ -189,8 +153,26 @@ expiry_date INT UNSIGNED NOT NULL ,
 desktop_computing ENUM('YES','NO') DEFAULT 'NO' NOT NULL,
 last_job_date INT UNSIGNED DEFAULT 0,
 cm_availability INT UNSIGNED DEFAULT 0 NOT NULL ,
+INDEX state (state),
+INDEX next_state (next_state),
 PRIMARY KEY (resource_id)
 );
+
+#DROP TABLE IF EXISTS resource_logs;
+CREATE TABLE IF NOT EXISTS resource_logs (
+resource_log_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+resource_id INT UNSIGNED NOT NULL ,
+attribute VARCHAR( 255 ) NOT NULL ,
+value VARCHAR( 255 ) NOT NULL ,
+date_start INT UNSIGNED NOT NULL,
+date_stop INT UNSIGNED DEFAULT 0 ,
+finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
+INDEX resource (resource_id),
+INDEX attribute (attribute),
+INDEX finaud (finaud_decision),
+PRIMARY KEY (resource_log_id)
+);
+
 
 #DROP TABLE IF EXISTS queues;
 CREATE TABLE IF NOT EXISTS queues (

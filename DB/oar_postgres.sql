@@ -214,46 +214,20 @@ CREATE TABLE queues (
 );
 
 
-CREATE TABLE resource_property_logs (
+CREATE TABLE resource_logs (
+  resource_log_id bigserial,
   resource_id integer NOT NULL default '0',
   attribute varchar(255) NOT NULL default '',
   value varchar(255) NOT NULL default '',
   date_start integer NOT NULL default '0',
-  date_stop integer NOT NULL default '0'
-);
-CREATE INDEX resource ON resource_property_logs (resource_id);
-CREATE INDEX attribute ON resource_property_logs (attribute);
-
-
-CREATE TABLE resource_properties (
-  resource_id integer NOT NULL default '0',
-  node varchar(200) NOT NULL default 'default',
-  state integer NOT NULL default '0',
-  switch varchar(50) NOT NULL default '0',
-  cpu integer NOT NULL default '0',
-  cpuset integer NOT NULL default '0',
-  besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
-  deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
-  expiry_date integer NOT NULL default '0',
-  desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
-  last_job_date integer NOT NULL default '0',
-  cm_availability integer NOT NULL default '0' ,
-  PRIMARY KEY  (resource_id)
-);
-
-
-CREATE TABLE resource_state_logs (
-  resource_state_log_id bigserial,
-  resource_id integer NOT NULL default '0',
-  change_state varchar(9) check (change_state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
-  date_start integer NOT NULL default '0',
   date_stop integer NOT NULL default '0',
   finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
-  PRIMARY KEY (resource_state_log_id)
+  PRIMARY KEY (resource_log_id)
 );
-CREATE INDEX resource_id ON resource_state_logs (resource_id);
-CREATE INDEX state_log ON resource_state_logs (change_state);
-CREATE INDEX finaud ON resource_state_logs (finaud_decision);
+CREATE INDEX resource ON resource_logs (resource_id);
+CREATE INDEX attribute ON resource_logs (attribute);
+CREATE INDEX resource_id ON resource_logs (resource_id);
+CREATE INDEX finaud ON resource_logs (finaud_decision);
 
 
 CREATE TABLE resources (
@@ -263,6 +237,15 @@ CREATE TABLE resources (
   next_state varchar(9) check (next_state in ('UnChanged','Alive','Dead','Absent','Suspected')) NOT NULL default 'UnChanged',
   finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
   next_finaud_decision varchar(3) check (next_finaud_decision in ('YES','NO')) NOT NULL default 'NO',
+  state_num integer NOT NULL default '0',
+  switch varchar(50) NOT NULL default '0',
+  cpu integer NOT NULL default '0',
+  cpuset integer NOT NULL default '0',
+  besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
+  deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
+  expiry_date integer NOT NULL default '0',
+  desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
+  last_job_date integer NOT NULL default '0',
   PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);

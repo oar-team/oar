@@ -367,12 +367,12 @@ sub is_job_desktop_computing($$){
     my $jobid = shift;
 
     my $sth = $dbh->prepare("   SELECT COUNT(desktop_computing)
-                                FROM assigned_resources, resource_properties, jobs
+                                FROM assigned_resources, resources, jobs
                                 WHERE
                                     jobs.job_id = $jobid AND
                                     assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                                    assigned_resources.resource_id = resource_properties.resource_id AND
-                                    resource_properties.desktop_computing = \'YES\'
+                                    assigned_resources.resource_id = resources.resource_id AND
+                                    resources.desktop_computing = \'YES\'
                             ");
     $sth->execute();
     my ($count) = $sth->fetchrow_array();
@@ -710,7 +710,7 @@ sub get_possible_wanted_resources($$$$$$$){
     #print("$sql_where_string\n");
     #print("$sql_in_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
-                             FROM resource_properties
+                             FROM resources
                              WHERE
                                 ($sql_where_string) AND
                                 $sql_in_string
@@ -1887,11 +1887,10 @@ sub get_resources_that_can_be_waked_up($$) {
     
     my $date = get_date($dbh) + $duration + $Cm_security_duration;
     my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
-                                FROM resources, resource_properties
+                                FROM resources
                                 WHERE
                                     state = \'Absent\' AND
-                                    resources.resource_id = resource_properties.resource_id AND
-                                    resource_properties.cm_availability > $date
+                                    resources.cm_availability > $date
                             ");
     $sth->execute();
     my @res = ();
@@ -1912,11 +1911,10 @@ sub get_resources_that_will_be_out($$) {
     
     my $date = get_date($dbh) + $duration + $Cm_security_duration;
     my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
-                                FROM resources, resource_properties
+                                FROM resources
                                 WHERE
                                     state = \'Alive\' AND
-                                    resources.resource_id = resource_properties.resource_id AND
-                                    resource_properties.cm_availability < $date
+                                    resources.cm_availability < $date
                             ");
     $sth->execute();
     my @res = ();
@@ -2068,11 +2066,11 @@ sub get_desktop_computing_host_jobs($$) {
     my $hostname = shift;
 
     my $sth = $dbh->prepare("   SELECT jobs.job_id, jobs.state, jobs.command, jobs.launching_directory
-                                FROM jobs, assigned_resources, resource_properties
+                                FROM jobs, assigned_resources, resources
                                 WHERE	
-	                            resource_properties.node = \'$hostname\' AND 
-                                    resource_properties.desktop_computing = \'YES\' AND
-                                    resource_properties.resource_id = assigned_resources.resource_id AND
+	                            resources.node = \'$hostname\' AND 
+                                    resources.desktop_computing = \'YES\' AND
+                                    resources.resource_id = assigned_resources.resource_id AND
                                     jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
                                     assigned_resources.assigned_resource_index = \'CURRENT\'
                             ");
@@ -2207,17 +2205,14 @@ sub add_resource($$$) {
     my $state = shift;
 
     #lock_table($dbh,["resources"]);
-    $dbh->do("  INSERT INTO resources (network_address,state)
-                VALUES (\'$name\',\'$state\')
+    $dbh->do("  INSERT INTO resources (network_address,state,state_num)
+                VALUES (\'$name\',\'$state\',$State_to_num{$state})
              ");
     my $id = get_last_insert_id($dbh,"resources_resource_id_seq");
     #unlock_table($dbh);
-    $dbh->do("  INSERT INTO resource_properties (resource_id,node,state)
-                VALUES ($id,\'$name\',$State_to_num{$state})
-             ");
     my $date = get_date($dbh);
-    $dbh->do("  INSERT INTO resource_state_logs (resource_id,change_state,date_start)
-                VALUES ($id,\'$state\',\'$date\')
+    $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
+                VALUES ($id,\'state\',\'$state\',\'$date\')
              ");
 
     return($id);
@@ -2425,12 +2420,12 @@ sub get_current_assigned_job_resource_properties($$){
     my $dbh = shift;
     my $mold_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT resource_properties.*
-                                FROM assigned_resources, resource_properties
+    my $sth = $dbh->prepare("   SELECT resources.*
+                                FROM assigned_resources, resources
                                 WHERE
                                     assigned_resource_index = \'CURRENT\'
                                     AND assigned_resources.moldable_job_id = $mold_id
-                                    AND resource_properties.resource_id = assigned_resources.resource_id
+                                    AND resources.resource_id = assigned_resources.resource_id
                             ");
     $sth->execute();
     my @result;
@@ -2518,39 +2513,35 @@ sub set_node_state($$$$) {
     my $finaud = shift;
 
     $dbh->do("  UPDATE resources
-                SET state = \'$state\', finaud_decision = \'$finaud\'
+                SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
                 WHERE
                     network_address = \'$hostname\'
              ");
 
-    $dbh->do("  UPDATE resource_properties
-                SET state = $State_to_num{$state}
-                WHERE
-                    node = \'$hostname\'
-             ");
-
     my $date = get_date($dbh);
     if ($Db_type eq "Pg"){
-        $dbh->do("  UPDATE resource_state_logs
+        $dbh->do("  UPDATE resource_logs
                     SET date_stop = \'$date\'
                     FROM resources
                     WHERE
-                        resource_state_logs.date_stop = 0
+                        resource_logs.date_stop = 0
+                        AND resource_logs.attribute = \'state\'
                         AND resources.network_address = \'$hostname\'
-                        AND resource_state_logs.resource_id = resources.resource_id
+                        AND resource_logs.resource_id = resources.resource_id
                  ");
     }else{
-        $dbh->do("  UPDATE resource_state_logs, resources
-                    SET resource_state_logs.date_stop = \'$date\'
+        $dbh->do("  UPDATE resource_logs, resources
+                    SET resource_logs.date_stop = \'$date\'
                     WHERE
-                        resource_state_logs.date_stop = 0
+                        resource_logs.date_stop = 0
+                        AND resource_logs.attribute = \'state\'
                         AND resources.network_address = \'$hostname\'
-                        AND resource_state_logs.resource_id = resources.resource_id
+                        AND resource_logs.resource_id = resources.resource_id
                  ");
     }
 
-    $dbh->do("INSERT INTO resource_state_logs (resource_id,change_state,date_start,finaud_decision)
-                SELECT resources.resource_id,\'$state\',\'$date\',\'$finaud\'
+    $dbh->do("INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
+                SELECT resources.resource_id,\'state\',\'$state\',\'$date\',\'$finaud\'
                 FROM resources
                 WHERE
                     resources.network_address = \'$hostname\'
@@ -2584,26 +2575,21 @@ sub set_resource_state($$$$) {
     my $finaud = shift;
 
     $dbh->do("  UPDATE resources
-                SET state = \'$state\', finaud_decision = \'$finaud\'
-                WHERE
-                    resource_id = $resource_id
-             ");
-
-    $dbh->do("  UPDATE resource_properties
-                SET state = $State_to_num{$state}
+                SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
                 WHERE
                     resource_id = $resource_id
              ");
 
     my $date = get_date($dbh);
-    $dbh->do("  UPDATE resource_state_logs
+    $dbh->do("  UPDATE resource_logs
                 SET date_stop = \'$date\'
                 WHERE
                     date_stop = 0
+                    AND attribute = \'state\'
                     AND resource_id = $resource_id
              ");
-    $dbh->do("INSERT INTO resource_state_logs (resource_id,change_state,date_start,finaud_decision)
-              VALUES ($resource_id, \'$state\',\'$date\',\'$finaud\')
+    $dbh->do("INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
+              VALUES ($resource_id, \'state\', \'$state\',\'$date\',\'$finaud\')
              ");
 }
 
@@ -2652,10 +2638,10 @@ sub set_node_expiryDate($$$) {
     my $expiryDate = shift;
 
     # FIX ME: check first that the expiryDate is actually in the future, return error else
-    $dbh->do("  UPDATE resource_properties
+    $dbh->do("  UPDATE resources
                 SET expiry_date = \'$expiryDate\'
                 WHERE
-                    node =\'$hostname\'
+                    network_address =\'$hostname\'
              ");
 }
 
@@ -2673,56 +2659,39 @@ sub set_node_property($$$$){
     # Test if we must change the property
     my $nbRowsAffected;
     eval{
-        if ($Db_type eq "Pg"){
-            $nbRowsAffected = $dbh->do("UPDATE resource_properties
-                                        SET $property = \'$value\'
-                                        FROM resources
-                                        WHERE 
-                                            resources.network_address = \'$hostname\'
-                                            AND resources.resource_id = resource_properties.resource_id
-                                        ");
-        }else{
-            $nbRowsAffected = $dbh->do("UPDATE resources, resource_properties
-                                        SET resource_properties.$property = \'$value\'
-                                        WHERE 
-                                            resources.network_address =\'$hostname\'
-                                            AND resources.resource_id = resource_properties.resource_id
-                                        ");
-        }
+        $nbRowsAffected = $dbh->do("UPDATE resources
+                                    SET $property = \'$value\'
+                                    WHERE 
+                                        resources.network_address = \'$hostname\'
+                                   ");
     };
     if ($nbRowsAffected < 1){
         return(1);
     }else{
-        if ($property eq "node"){
-            $dbh->do("  UPDATE resources
-                        SET network_address = \'$value\'
-                        WHERE 
-                            network_address = \'$hostname\'
-                     ");
-        }
-
         #Update LOG table
         my $date = get_date($dbh);
         if ($Db_type eq "Pg"){
-            $dbh->do("  UPDATE resource_property_logs
+            $dbh->do("  UPDATE resource_logs
                         SET date_stop = \'$date\'
                         FROM resources
                         WHERE
-                            resource_property_logs.date_stop = 0
+                            resource_logs.date_stop = 0
                             AND resources.network_address = \'$hostname\'
-                            AND resource_property_logs.attribute = \'$property\'
+                            AND resource_logs.attribute = \'$property\'
+                            AND resources.resource_id = resource_logs.resource_id
                      ");
         }else{
-            $dbh->do("  UPDATE resources, resource_property_logs
-                        SET resource_property_logs.date_stop = \'$date\'
+            $dbh->do("  UPDATE resources, resource_logs
+                        SET resource_logs.date_stop = \'$date\'
                         WHERE
-                            resource_property_logs.date_stop = 0
+                            resource_logs.date_stop = 0
                             AND resources.network_address = \'$hostname\'
-                            AND resource_property_logs.attribute = \'$property\'
+                            AND resource_logs.attribute = \'$property\'
+                            AND resources.resource_id = resource_logs.resource_id
                      ");
         }
 
-        $dbh->do("  INSERT INTO resource_property_logs (resource_id,attribute,value,date_start)
+        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
                         SELECT resources.resource_id, \'$property\', \'$value\', \'$date\'
                         FROM resources
                         WHERE
@@ -2746,7 +2715,7 @@ sub set_resource_property($$$$){
     # Test if we must change the property
     my $nbRowsAffected;
     eval{
-        $nbRowsAffected = $dbh->do("UPDATE resource_properties
+        $nbRowsAffected = $dbh->do("UPDATE resources
                                     SET $property = \'$value\'
                                     WHERE 
                                         resource_id = \'$resource\'
@@ -2755,24 +2724,16 @@ sub set_resource_property($$$$){
     if ($nbRowsAffected < 1){
         return(1);
     }else{
-        if ($property eq "node"){
-            $dbh->do("  UPDATE resources
-                        SET network_address = \'$value\'
-                        WHERE 
-                            resource_id = \'$resource\'
-                     ");
-        }
-
         #Update LOG table
         my $date = get_date($dbh);
-        $dbh->do("  UPDATE resource_property_logs
+        $dbh->do("  UPDATE resource_logs
                     SET date_stop = \'$date\'
                     WHERE
                         date_stop = 0
                         AND resource_id = \'$resource\'
                         AND attribute = \'$property\'
                  ");
-        $dbh->do("  INSERT INTO resource_property_logs (resource_id,attribute,value,date_start)
+        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
                     VALUES ($resource, \'$property\', \'$value\', \'$date\')
                  ");
         return(0);
@@ -2787,7 +2748,7 @@ sub get_resource_properties($$){
     my $resource = shift;
 
     my $sth = $dbh->prepare("   SELECT *
-                                FROM resource_properties
+                                FROM resources
                                 WHERE
                                     resource_id = $resource");
     $sth->execute();
@@ -2828,12 +2789,12 @@ sub list_resource_properties_fields($){
         $req = "SELECT pg_attribute.attname AS field
                 FROM pg_class, pg_attribute
                 WHERE
-                    pg_class.relname = \'resource_properties\'
+                    pg_class.relname = \'resources\'
                     and pg_attribute.attnum > 0
                     and pg_attribute.attrelid = pg_class.oid
                ";
     }else{
-        $req = "SHOW COLUMNS FROM resource_properties";
+        $req = "SHOW COLUMNS FROM resources";
     }
 
     my $sth = $dbh->prepare($req);
@@ -2858,12 +2819,13 @@ sub get_resource_dead_range_date($$$){
 
     # get dead nodes between two dates
     my $req = "SELECT resource_id, date_start, date_stop, change_state
-               FROM resource_state_logs
+               FROM resource_logs
                WHERE
+                   attribute = \'state\' AND
                    (
-                       change_state = \'Absent\' OR
-                       change_state = \'Dead\' OR
-                       change_state = \'Suspected\'
+                       value = \'Absent\' OR
+                       value = \'Dead\' OR
+                       value = \'Suspected\'
                    ) AND
                    date_start <= $date_end AND
                    (
@@ -2900,13 +2862,12 @@ sub get_expired_resources($){
 
     my $date = get_date($dbh);
     my $req = "SELECT resources.resource_id
-               FROM resources, resource_properties
+               FROM resources
                WHERE
-                   resources.resource_id = resource_properties.resource_id AND
                    resources.state = \'Alive\' AND
-                   resource_properties.expiry_date > 0 AND
-                   resource_properties.desktop_computing = \'YES\' AND
-                   resource_properties.expiry_date < $date
+                   resources.expiry_date > 0 AND
+                   resources.desktop_computing = \'YES\' AND
+                   resources.expiry_date < $date
               ";
     
     my $sth = $dbh->prepare($req);
@@ -2930,9 +2891,9 @@ sub is_node_desktop_computing($$){
     my $hostname = shift;
     
     my $sth = $dbh->prepare("   SELECT desktop_computing
-                                FROM resource_properties
+                                FROM resources
                                 WHERE
-                                    node = \'$hostname\'
+                                    network_address = \'$hostname\'
                             ");
     $sth->execute();
     my @ref;
@@ -3037,8 +2998,9 @@ sub get_absent_suspected_resources_for_a_timeout($$){
 
     my $date = get_date($dbh);
     my $req = "SELECT resource_id
-                FROM resource_state_logs
+                FROM resource_logs
                 WHERE
+                    attribute = \'state\'
                     date_stop = 0
                     AND date_start + $timeout < $date
               ";
@@ -3067,11 +3029,10 @@ sub get_cpuset_values_per_node($$$){
     }
     chop($constraint);
     
-    my $sth = $dbh->prepare("   SELECT resources.network_address, resource_properties.$cpuset_field
-                                FROM resource_properties, resources
+    my $sth = $dbh->prepare("   SELECT resources.network_address, resources.$cpuset_field
+                                FROM resources
                                 WHERE
-                                    resources.network_address IN ($constraint) AND
-                                    resource_properties.resource_id = resources.resource_id
+                                    resources.network_address IN ($constraint)
                             ");
     $sth->execute();
 
@@ -3444,21 +3405,21 @@ sub update_scheduler_last_job_date($$$){
 
     my $req;
     if ($Db_type eq "Pg"){
-        $req = "UPDATE resource_properties
+        $req = "UPDATE resources
                 SET
                     last_job_date = $date
                 FROM assigned_resources
                 WHERE
                     assigned_resources.moldable_job_id = $moldable_id AND
-                    assigned_resources.resource_id = resource_properties.resource_id
+                    assigned_resources.resource_id = resources.resource_id
                ";
     }else{
-        $req = "UPDATE resource_properties, assigned_resources
+        $req = "UPDATE resources, assigned_resources
                 SET
-                    resource_properties.last_job_date = $date
+                    resources.last_job_date = $date
                 WHERE
                     assigned_resources.moldable_job_id = $moldable_id AND
-                    assigned_resources.resource_id = resource_properties.resource_id
+                    assigned_resources.resource_id = resources.resource_id
                ";
     }
     return($dbh->do($req));
@@ -3484,12 +3445,11 @@ sub search_idle_nodes($$){
     }
     $sth->finish();
 
-    $req = "SELECT resources.network_address, MAX(resource_properties.last_job_date)
-            FROM resources, resource_properties
+    $req = "SELECT resources.network_address, MAX(resources.last_job_date)
+            FROM resources
             WHERE
-                resources.resource_id = resource_properties.resource_id AND
-                (   resources.state = \'Alive\' OR
-                    resources.state = \'Suspected\' )
+                resources.state = \'Alive\' OR
+                resources.state = \'Suspected\'
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();
@@ -4212,7 +4172,7 @@ sub check_end_of_job($$$$$$$$$){
     my $server_epilogue_script = shift;
 
     #lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    lock_table($base,["jobs","job_state_logs","resource_properties","assigned_resources"]);
+    lock_table($base,["jobs","job_state_logs","assigned_resources"]);
     my $refJob = get_job($base,$Jid);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
         oar_Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
@@ -4475,7 +4435,7 @@ sub job_finishing_sequence($$$$$$$$){
     }
 
     if (defined($state_to_switch)){
-        lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_properties"]);
+        lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
         oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Set job $job_id into state $state_to_switch\n");
         set_job_state($dbh,$job_id,$state_to_switch);
         unlock_table($dbh);

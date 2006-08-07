@@ -403,15 +403,15 @@ sub parse_resource_descriptions($){
             foreach my $l (@slash_split){
                 if ($l =~ /(\w+)\s*=\s*(\d+)/){
                     my $tmp = $1;
-                    $tmp = "node" if ($tmp eq "nodes");
+                    $tmp = "network_address" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => $2 });
                 }elsif ($l =~ /(\w+)\s*=\s*ALL/){
                     my $tmp = $1;
-                    $tmp = "node" if ($tmp eq "nodes");
+                    $tmp = "network_address" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -1 });
                 }elsif ($l =~ /(\w+)\s*=\s*BEST/){
                     my $tmp = $1;
-                    $tmp = "node" if ($tmp eq "nodes");
+                    $tmp = "network_address" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -2 });
                 }else{
                     die("/!\\ Cannot recognize the resource description : $l\n");
@@ -430,9 +430,7 @@ sub parse_resource_descriptions($){
                     }else{
                         $resource_groups[1] = "$w_h:$w_mn:$w_sec";
                     }
-                    print("$resource_groups[1]\n");
                     $resource_groups[1] = iolib::sql_to_duration("$resource_groups[1]");
-                    print("$resource_groups[1]\n");
                 }else{
                     die("/!\\ Cannot recognize walltime resource value\n");
                 }

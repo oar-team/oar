@@ -124,7 +124,7 @@ if (!defined($types->{deploy})){
         @bad = ping_checker::test_hosts(@hosts);
     }
     if ($#bad >= 0){
-        iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","resource_state_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
+        iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
         iolib::set_job_message($base,$Job_id,"One or several nodes are not responding correctly");
         oar_error("[bipbip $Job_id] /!\\ Some nodes are inaccessible ($event_type): @bad\n");
         my $exit_bipbip = 1;

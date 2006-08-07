@@ -21,7 +21,7 @@ print "Resource to remove : $Resource\n";
 my $exit_code = 0;
 
 my $base = iolib::connect();
-iolib::lock_table($base,["resources","resource_properties","resource_property_logs","assigned_resources","jobs","frag_jobs","event_logs","event_log_hostnames","resource_state_logs"]);
+iolib::lock_table($base,["resources","resource_logs","assigned_resources","jobs","frag_jobs","event_logs","event_log_hostnames"]);
 
 my $resource_ref = iolib::get_resource_info($base,$Resource);
 if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
@@ -45,8 +45,7 @@ if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
         $base->do("DELETE from assigned_resources WHERE moldable_job_id = $i->[1]");
     }
     $base->do("DELETE from assigned_resources     WHERE resource_id = $Resource");
-    $base->do("DELETE from resource_properties    WHERE resource_id = $Resource");
-    $base->do("DELETE from resource_property_logs WHERE resource_id = $Resource");
+    $base->do("DELETE from resource_logs          WHERE resource_id = $Resource");
     $base->do("DELETE from resources              WHERE resource_id = $Resource");
     print("Resource $Resource removed.\n");
 }else{
