@@ -34,7 +34,7 @@ sub set_hostname_properties($$$){
 
     foreach my $p (@{$arrayProp}){
         if ($p =~ m/(.+)\s*=\s*(.+)/m){
-            if (($1 eq "state") or ($1 eq "resource_id")){
+            if (oar_Tools::check_resource_property($1) == 1){
                 print("Cannot update property $1 because it is a system field.\n");
                 next;
             }
@@ -59,7 +59,7 @@ sub set_resource_properties($$$){
 
     foreach my $p (@{$arrayProp}){
         if ($p =~ m/(.+)\s*=\s*(.+)/m){
-            if (($1 eq "state") or ($1 eq "resource_id")){
+            if (oar_Tools::check_resource_property($1) == 1){
                 print("Cannot update property $1 because it is a system field.\n");
                 next;
             }

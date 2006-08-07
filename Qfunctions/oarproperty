@@ -13,6 +13,7 @@ use oar_iolib;
 use oar_conflib qw(init_conf get_conf is_conf);
 use Getopt::Long;
 use oarversion;
+use oar_Tools;
 
 # The functions are appended at the end of this file
 sub print_usage();
@@ -160,8 +161,9 @@ sub check_property_name($) {
     if (! $propertyname =~ /^[a-z0-9_]+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
-    if ($propertyname =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes)$/ ) {
-        die("Error: '$propertyname' is a OAR system property and may not be altered");
+    if (oar_Tools::check_resource_property($propertyname) == 1){
+        warn("Error: '$propertyname' is a OAR system property and may not be altered\n");
+        exit(1);
     }
 }
 #############################################################################
