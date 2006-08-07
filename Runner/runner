@@ -70,7 +70,7 @@ foreach my $j (iolib::get_jobs_in_state($base,"toAckReservation")){
         iolib::set_job_state($base,$j->{job_id} , "Waiting");
         # Test if we must notify Almighty to Launch scheduler for the reservation
         if ($Exit_code == 0){
-            if (iolib::sql_to_local($j->{start_time}) - 1 <= iolib::sql_to_local(iolib::get_date($base))){
+            if ($j->{start_time} - 1 <= iolib::get_date($base)){
                 $Exit_code = 2;
             }
         }

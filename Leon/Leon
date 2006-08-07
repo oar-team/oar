@@ -123,7 +123,7 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
     #}
 
     iolib::set_job_state($base,$j->{job_id},"Finishing");
-    if ($j->{start_time} eq "0000-00-00 00:00:00"){
+    if ($j->{start_time} == 0){
         iolib::set_running_date($base,$j->{job_id});
     }
     iolib::set_finish_date($base,$j->{job_id});

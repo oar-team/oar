@@ -1,6 +1,6 @@
 CREATE TABLE accounting (
-  window_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  window_stop varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  window_start integer NOT NULL ,
+  window_stop integer NOT NULL DEFAULT '0',
   accounting_user varchar(20) NOT NULL default '',
   queue_name varchar(100) NOT NULL default '',
   consumption_type varchar(5) check (consumption_type in ('ASKED','USED')) NOT NULL default 'ASKED',
@@ -48,7 +48,7 @@ CREATE TABLE event_logs (
   event_id bigserial,
   type varchar(50) NOT NULL default '',
   job_id integer NOT NULL default '0',
-  date varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  date integer NOT NULL default '0',
   description varchar(255) NOT NULL default '',
   to_check varchar(3) check (to_check in ('YES','NO')) NOT NULL default 'YES',
   PRIMARY KEY  (event_id)
@@ -71,7 +71,7 @@ CREATE INDEX md5sum ON files (md5sum);
 
 CREATE TABLE frag_jobs (
   frag_id_job integer  NOT NULL default '0',
-  frag_date varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  frag_date integer NOT NULL default '0',
   frag_state varchar(16) check (frag_state in ('LEON','TIMER_ARMED','LEON_EXTERMINATE','FRAGGED')) NOT NULL default 'LEON',
   PRIMARY KEY  (frag_id_job)
 );
@@ -80,14 +80,14 @@ CREATE INDEX frag_state ON frag_jobs (frag_state);
 
 CREATE TABLE gantt_jobs_predictions (
   moldable_job_id integer NOT NULL default '0',
-  start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  start_time integer NOT NULL default '0',
   PRIMARY KEY  (moldable_job_id)
 );
 
 
 CREATE TABLE gantt_jobs_predictions_visu (
   moldable_job_id integer NOT NULL default '0',
-  start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  start_time integer NOT NULL default '0',
   PRIMARY KEY  (moldable_job_id)
 );
 
@@ -142,8 +142,8 @@ CREATE INDEX log_res_desc ON job_resource_descriptions (res_job_index);
 CREATE TABLE job_state_logs (
   job_id integer NOT NULL default '0',
   job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
-  date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  date_stop varchar(19) default NULL 
+  date_start integer NOT NULL default '0',
+  date_stop integer NOT NULL default '0'
 );
 CREATE INDEX id_job_log ON job_state_logs (job_id);
 CREATE INDEX state_job_log ON job_state_logs (job_state);
@@ -174,9 +174,9 @@ CREATE TABLE jobs (
   queue_name varchar(100) NOT NULL default '',
   properties text,
   launching_directory text NOT NULL ,
-  submission_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  start_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  stop_time varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  submission_time integer NOT NULL default '0',
+  start_time integer NOT NULL default '0',
+  stop_time integer NOT NULL default '0',
   file_id integer default NULL,
   accounted varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
   notify varchar(255) default NULL,
@@ -197,7 +197,7 @@ CREATE INDEX accounted ON jobs (accounted);
 CREATE TABLE moldable_job_descriptions (
   moldable_id bigserial,
   moldable_job_id integer NOT NULL default '0',
-  moldable_walltime varchar(255) NOT NULL default '',
+  moldable_walltime integer NOT NULL default '0',
   moldable_index varchar(7) check (moldable_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
   PRIMARY KEY  (moldable_id)
 );
@@ -218,8 +218,8 @@ CREATE TABLE resource_property_logs (
   resource_id integer NOT NULL default '0',
   attribute varchar(255) NOT NULL default '',
   value varchar(255) NOT NULL default '',
-  date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  date_stop varchar(19) default NULL
+  date_start integer NOT NULL default '0',
+  date_stop integer NOT NULL default '0'
 );
 CREATE INDEX resource ON resource_property_logs (resource_id);
 CREATE INDEX attribute ON resource_property_logs (attribute);
@@ -234,7 +234,7 @@ CREATE TABLE resource_properties (
   cpuset integer NOT NULL default '0',
   besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
   deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
-  expiry_date varchar(19) NOT NULL default '0000-00-00 00:00:00',
+  expiry_date integer NOT NULL default '0',
   desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
   last_job_date integer NOT NULL default '0',
   cm_availability integer NOT NULL default '0' ,
@@ -246,8 +246,8 @@ CREATE TABLE resource_state_logs (
   resource_state_log_id bigserial,
   resource_id integer NOT NULL default '0',
   change_state varchar(9) check (change_state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
-  date_start varchar(19) NOT NULL default '0000-00-00 00:00:00',
-  date_stop varchar(19) default NULL,
+  date_start integer NOT NULL default '0',
+  date_stop integer NOT NULL default '0',
   finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
   PRIMARY KEY (resource_state_log_id)
 );
@@ -374,10 +374,10 @@ if ($reservationField eq "toSchedule") {
 
 -- Limit walltime for interactive jobs
 INSERT INTO admission_rules (rule) VALUES ('
-my $max_walltime = "12:00:00";
+my $max_walltime = iolib::sql_to_duration("12:00:00");
 if ($jobType eq "INTERACTIVE"){ 
     foreach my $mold (@{$ref_resource_list}){
-        if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
+        if ((defined($mold->[1])) and ($max_walltime < $mold->[1])){
             print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
             $mold->[1] = $max_walltime;
         }
@@ -387,7 +387,7 @@ if ($jobType eq "INTERACTIVE"){
 
 -- specify the default walltime if it is not specified
 INSERT INTO admission_rules (rule) VALUES ('
-my $default_wall = "2:00:00";
+my $default_wall = iolib::sql_to_duration("2:00:00");
 foreach my $mold (@{$ref_resource_list}){
     if (!defined($mold->[1])){
         print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
@@ -415,5 +415,5 @@ INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('admin','10'
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
 INSERT INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt_with_timesharing');
 
-INSERT INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
+INSERT INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','0');
 

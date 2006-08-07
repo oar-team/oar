@@ -36,9 +36,9 @@ command TEXT ,
 queue_name VARCHAR( 100 ) NOT NULL ,
 properties TEXT ,
 launching_directory TEXT NOT NULL ,
-submission_time DATETIME NOT NULL ,
-start_time DATETIME NOT NULL ,
-stop_time DATETIME NOT NULL ,
+submission_time INT UNSIGNED NOT NULL ,
+start_time INT UNSIGNED NOT NULL ,
+stop_time INT UNSIGNED NOT NULL ,
 file_id INT UNSIGNED,
 accounted ENUM("YES","NO") NOT NULL DEFAULT "NO" ,
 notify VARCHAR( 255 ) DEFAULT NULL ,
@@ -76,7 +76,7 @@ PRIMARY KEY (job_id)
 CREATE TABLE IF NOT EXISTS moldable_job_descriptions (
 moldable_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 moldable_job_id INT UNSIGNED NOT NULL ,
-moldable_walltime VARCHAR(255) NOT NULL ,
+moldable_walltime INT UNSIGNED NOT NULL ,
 moldable_index ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
 INDEX job (moldable_job_id) ,
 INDEX log (moldable_index) ,
@@ -110,8 +110,8 @@ PRIMARY KEY (res_job_group_id,res_job_resource_type,res_job_order)
 CREATE TABLE IF NOT EXISTS job_state_logs (
 job_id INT UNSIGNED NOT NULL ,
 job_state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Finishing','Running','Terminated','Error')  NOT NULL ,
-date_start DATETIME NOT NULL,
-date_stop DATETIME DEFAULT NULL,
+date_start INT UNSIGNED NOT NULL,
+date_stop INT UNSIGNED DEFAULT 0,
 INDEX id (job_id),
 INDEX state (job_state)
 );
@@ -119,7 +119,7 @@ INDEX state (job_state)
 #DROP TABLE IF EXISTS frag_jobs;
 CREATE TABLE IF NOT EXISTS frag_jobs (
 frag_id_job INT UNSIGNED NOT NULL ,
-frag_date DATETIME NOT NULL ,
+frag_date INT UNSIGNED NOT NULL ,
 frag_state ENUM('LEON','TIMER_ARMED','LEON_EXTERMINATE','FRAGGED') DEFAULT 'LEON' NOT NULL ,
 INDEX frag_state (frag_state),
 PRIMARY KEY (frag_id_job)
@@ -153,8 +153,8 @@ CREATE TABLE IF NOT EXISTS resource_property_logs (
 resource_id INT UNSIGNED NOT NULL ,
 attribute VARCHAR( 255 ) NOT NULL ,
 value VARCHAR( 255 ) NOT NULL ,
-date_start DATETIME NOT NULL,
-date_stop DATETIME ,
+date_start INT UNSIGNED NOT NULL,
+date_stop INT UNSIGNED DEFAULT 0 ,
 INDEX resource (resource_id),
 INDEX attribute (attribute)
 );
@@ -165,8 +165,8 @@ CREATE TABLE IF NOT EXISTS resource_state_logs (
 resource_state_log_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 resource_id INT UNSIGNED NOT NULL ,
 change_state ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
-date_start DATETIME NOT NULL,
-date_stop DATETIME ,
+date_start INT UNSIGNED NOT NULL,
+date_stop INT UNSIGNED DEFAULT 0 ,
 finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 INDEX resource_id (resource_id),
 INDEX state (change_state),
@@ -185,7 +185,7 @@ cpu INT UNSIGNED NOT NULL DEFAULT 0 ,
 cpuset INT UNSIGNED NOT NULL DEFAULT 0 ,
 besteffort ENUM('YES','NO') DEFAULT 'YES' NOT NULL ,
 deploy ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
-expiry_date DATETIME NOT NULL ,
+expiry_date INT UNSIGNED NOT NULL ,
 desktop_computing ENUM('YES','NO') DEFAULT 'NO' NOT NULL,
 last_job_date INT UNSIGNED DEFAULT 0,
 cm_availability INT UNSIGNED DEFAULT 0 NOT NULL ,
@@ -211,14 +211,14 @@ PRIMARY KEY (id)
 #DROP TABLE IF EXISTS gantt_jobs_predictions;
 CREATE TABLE IF NOT EXISTS gantt_jobs_predictions (
 moldable_job_id INT UNSIGNED NOT NULL ,
-start_time DATETIME NOT NULL ,
+start_time INT UNSIGNED NOT NULL ,
 PRIMARY KEY (moldable_job_id)
 );
 
 #DROP TABLE IF EXISTS gantt_jobs_predictions_visu;
 CREATE TABLE IF NOT EXISTS gantt_jobs_predictions_visu (
 moldable_job_id INT UNSIGNED NOT NULL ,
-start_time DATETIME NOT NULL ,
+start_time INT UNSIGNED NOT NULL ,
 PRIMARY KEY (moldable_job_id)
 );
 
@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS event_logs (
 event_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 type VARCHAR(50) NOT NULL,
 job_id INT UNSIGNED NOT NULL ,
-date DATETIME NOT NULL ,
+date INT UNSIGNED NOT NULL ,
 description VARCHAR(255) NOT NULL,
 to_check ENUM('YES','NO') NOT NULL DEFAULT 'YES',
 INDEX event_type (type),
@@ -271,8 +271,8 @@ PRIMARY KEY (event_id, hostname)
 
 #DROP TABLE IF EXISTS accounting;
 CREATE TABLE IF NOT EXISTS accounting (
-window_start DATETIME NOT NULL ,
-window_stop DATETIME NOT NULL ,
+window_start INT UNSIGNED NOT NULL ,
+window_stop INT UNSIGNED NOT NULL ,
 accounting_user VARCHAR( 20 ) NOT NULL ,
 queue_name VARCHAR( 100 ) NOT NULL ,
 consumption_type ENUM("ASKED","USED") NOT NULL ,
@@ -393,10 +393,10 @@ if ($reservationField eq "toSchedule") {
 
 # Limit walltime for interactive jobs
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my $max_walltime = "12:00:00";
+my $max_walltime = iolib::sql_to_duration("12:00:00");
 if ($jobType eq "INTERACTIVE"){ 
     foreach my $mold (@{$ref_resource_list}){
-        if ((defined($mold->[1])) and (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))){
+        if ((defined($mold->[1])) and ($max_walltime < $mold->[1])){
             print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
             $mold->[1] = $max_walltime;
         }
@@ -406,7 +406,7 @@ if ($jobType eq "INTERACTIVE"){
 
 # specify the default walltime if it is not specified
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my $default_wall = "2:00:00";
+my $default_wall = iolib::sql_to_duration("2:00:00");
 foreach my $mold (@{$ref_resource_list}){
     if (!defined($mold->[1])){
         print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
@@ -435,5 +435,5 @@ INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('admi
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('default','2','oar_sched_gantt_with_timesharing');
 INSERT IGNORE INTO queues (queue_name, priority, scheduler_policy) VALUES ('besteffort','0','oar_sched_gantt_with_timesharing');
 
-INSERT IGNORE INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','1970-01-01 01:00:01');
+INSERT IGNORE INTO gantt_jobs_predictions (moldable_job_id , start_time) VALUES ('0','0');
 

@@ -175,7 +175,7 @@ sub print_job($$){
                     $tmp_str .= "/$resource->{resource}=$tmp_val";
                 }
             }
-            $tmp_str .= ",walltime=$moldable->[1]' ";
+            $tmp_str .= ",walltime=".iolib::duration_to_sql($moldable->[1])."' ";
             $resources_string .= $tmp_str;
         }
         
@@ -269,12 +269,20 @@ sub print_job($$){
             print("    jobType = $job_info->{job_type}\n");
             print("    properties = $job_info->{properties}\n");
             print("    reservation = $job_info->{reservation}\n");
-            $mold->{moldable_walltime} = '' if (!defined($mold->{moldable_walltime}));
+            if (!defined($mold->{moldable_walltime})){
+                $mold->{moldable_walltime} = '';
+            }else{
+                $mold->{moldable_walltime} = iolib::duration_to_sql($mold->{moldable_walltime});
+            }
             print("    walltime = $mold->{moldable_walltime}\n");
-            print("    submissionTime = $job_info->{submission_time}\n");
-            print("    startTime = $job_info->{start_time}\n");
-            print("    stopTime = $job_info->{stop_time}\n");
-            $date_tmp[0] = "no prediction" if (!defined($date_tmp[0]));
+            print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
+            print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n");
+            print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n");
+            if (!defined($date_tmp[0])){
+                $date_tmp[0] = "no prediction";
+            }else{
+                $date_tmp[0] = iolib::local_to_sql($date_tmp[0]);
+            }
             print("    scheduledStart = $date_tmp[0]\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
             print("    nbNodes = 0\n");
@@ -295,18 +303,26 @@ sub print_job($$){
             print("    jobType = $job_info->{job_type}\n");
             print("    properties = $job_info->{properties}\n");
             print("    reservation = $job_info->{reservation}\n");
-            $mold->{moldable_walltime} = '' if (!defined($mold->{moldable_walltime}));
+            if (!defined($mold->{moldable_walltime})){
+                $mold->{moldable_walltime} = '';
+            }else{
+                $mold->{moldable_walltime} = iolib::duration_to_sql($mold->{moldable_walltime});
+            }
             print("    walltime = $mold->{moldable_walltime}\n");
-            print("    submissionTime = $job_info->{submission_time}\n");
-            print("    startTime = $job_info->{start_time}\n");
-            print("    stopTime = $job_info->{stop_time}\n");
+            print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
+            print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n");
+            print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n");
             print("    message = $job_info->{message}\n");
-            $date_tmp[0] = "no prediction" if (!defined($date_tmp[0]));
+            if (!defined($date_tmp[0])){
+                $date_tmp[0] = "no prediction";
+            }else{
+                $date_tmp[0] = iolib::local_to_sql($date_tmp[0]);
+            }
             print("    scheduledStart = $date_tmp[0]\n");
             print("    resubmit_job_id = $job_info->{resubmit_job_id}\n");
             print("    events = ");
             foreach my $e (@job_events){
-                print("[$e->{date}] $e->{type}:$e->{description}");
+                print("[".iolib::local_to_sql($e->{date})."] $e->{type}:$e->{description}");
                 print(" , ");
             }
             print("\n\n");
@@ -323,7 +339,7 @@ EOS
               $job_info->{'job_id'},
               $job_info->{'command'},
               $job_info->{'job_user'},
-              $job_info->{'submission_time'},
+              iolib::local_to_sql($job_info->{'submission_time'}),
               $hashestat{$job_info->{'state'}},
               $job_info->{'queue_name'}
             );
@@ -335,6 +351,9 @@ EOS
 sub get_history($$$){
     my ($base,$date_start,$date_stop) = @_;
 
+    $date_start = iolib::sql_to_local($date_start);
+    $date_stop = iolib::sql_to_local($date_stop);
+    
     my %hash_dumper_result;
     my @nodes = iolib::list_resources($base);
     $hash_dumper_result{resources} = \@nodes;

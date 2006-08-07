@@ -40,7 +40,6 @@ oar_debug("[sarko] Hello, identity control !!!\n");
 
 my $guilty_found=0;
 my $current = iolib::get_date($base);
-$current = iolib::sql_to_local($current);
 oar_debug("[sarko] Current time : $current\n");
 
 # Look at leon timers
@@ -51,9 +50,8 @@ foreach my $j (iolib::get_timered_job($base)){
         iolib::job_fragged($base,$j->{job_id});
         oar_debug("[sarko] I set to FRAGGED the job $j->{job_id}\n");
     }else{
-        my $frag_date_sql = iolib::get_frag_date($base,$j->{job_id});
-        my $frag_date = iolib::sql_to_local($frag_date_sql);
-        oar_debug("[sarko] frag date : $frag_date , $frag_date_sql\n");
+        my $frag_date = iolib::get_frag_date($base,$j->{job_id});
+        oar_debug("[sarko] frag date : $frag_date , $frag_date\n");
         if (($current > $frag_date+$Leon_soft_walltime) && ($current <= $frag_date+$Leon_walltime)){
             oar_debug("[sarko] Leon will RE-FRAG bipbip of job $j->{job_id}\n");
             iolib::job_refrag($base,$j->{job_id});
@@ -71,17 +69,15 @@ foreach my $j (iolib::get_timered_job($base)){
 
 # Look at job walltimes
 foreach my $job (iolib::get_jobs_in_state($base, "Running")){
-    my ($date, $start, $max);
+    my ($start, $max);
 
     # Get starting time
-    $date = $job->{start_time};
+    $start = $job->{start_time};
     #print "Job [$job{idJob}] startTime $date\n";
-    $start = iolib::sql_to_local($date);
 
     # Get maxtime
     my $mold_job = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
-    $date = $mold_job->{moldable_walltime};
-    $max = iolib::sql_to_duration($date);
+    $max = $mold_job->{moldable_walltime};
 
     oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current\n");
     if ($current > $start+$max){

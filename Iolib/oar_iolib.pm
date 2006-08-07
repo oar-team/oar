@@ -96,7 +96,6 @@ sub set_resource_property($$$$);
 sub get_resource_dead_range_date($$$);
 sub get_expired_resources($);
 sub is_node_desktop_computing($$);
-sub get_node_stats($);
 sub get_resources_data_structure_current_job($$);
 
 # QUEUES MANAGEMENT
@@ -599,7 +598,7 @@ sub set_running_date($$) {
     my $runningDate;
     my $date = get_date($dbh);
     my $minDate = get_gantt_date($dbh);
-    if (sql_to_local($date) < sql_to_local($minDate)){
+    if ($date < $minDate){
         $runningDate = $minDate;
     }else{
         $runningDate = $date;
@@ -647,7 +646,7 @@ sub set_finish_date($$) {
     my $date = get_date($dbh);
     my $jobInfo = get_job($dbh,$idJob);
     my $minDate = $jobInfo->{'start_time'};
-    if (sql_to_local($date) < sql_to_local($minDate)){
+    if ($date < $minDate){
         $finishDate = $minDate;
     }else{
         $finishDate = $date;
@@ -775,16 +774,13 @@ sub get_possible_wanted_resources($$$$$$$){
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$) {
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold) = @_;
 
-    my $default_walltime = "1:00:00";
-    my $startTimeJob = "0000-00-00 00:00:00";
+    my $default_walltime = "3600";
+    my $startTimeJob = "0";
     my $reservationField = "None";
     #Test if this job is a reservation
-    if ($startTimeReservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
+    if ($startTimeReservation > 0){
         $reservationField = "toSchedule";
-        $startTimeJob = "$1 $2";
-    }elsif($startTimeReservation ne "0"){
-        warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2004-03-25 17:32:12\"\n");
-        return(-3);
+        $startTimeJob = $startTimeReservation;
     }
 
     my $rules;
@@ -796,11 +792,11 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$) {
         return(-6);
     }
     
-    # Verify job name
-    if ($job_name !~ m/^\w*$/m){
-        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
-        return(-7);
-    }
+#    # Verify job name
+#    if ($job_name !~ m/^\w*$/m){
+#        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
+#        return(-7);
+#    }
 
     # Verify the content of user command
     if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
@@ -1077,7 +1073,7 @@ sub set_job_state($$$) {
                 SET
                     date_stop = \'$date\'
                 WHERE
-                    date_stop IS NULL
+                    date_stop = 0
                     AND job_id = $job_id
              ");
     $dbh->do("  INSERT INTO job_state_logs (job_id,job_state,date_start)
@@ -1151,6 +1147,13 @@ sub set_job_state($$$) {
                  ");
 
         my $job = get_job($dbh,$job_id);
+        if ($job->{stop_time} < $job->{start_time}){
+            $dbh->do("  UPDATE jobs
+                        SET stop_time = start_time
+                        WHERE
+                            job_id = $job_id
+                     ");
+        }
         if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
             $dbh->do("  UPDATE assigned_resources
                         SET assigned_resource_index = \'LOG\'
@@ -1160,7 +1163,7 @@ sub set_job_state($$$) {
                     ");
 
             # Update last_job_date field for resources used
-            iolib::update_scheduler_last_job_date($dbh, sql_to_local($date),$job->{assigned_moldable_job});
+            iolib::update_scheduler_last_job_date($dbh, $date,$job->{assigned_moldable_job});
         }
 
         my ($addr,$port) = split(/:/,$job->{info_type});
@@ -1193,7 +1196,7 @@ sub resubmit_job($$){
     my $file_id = $dbh->quote($job->{file_id});
     my $jenv = $dbh->quote($job->{job_env});
     my $date = get_date($dbh);
-    my $start_time = "0000-00-00 00:00:00";
+    my $start_time = 0;
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
@@ -1789,7 +1792,6 @@ sub get_waiting_toSchedule_reservation_jobs_specific_queue($$){
 sub set_moldable_job_max_time($$$){
     my ($dbh, $mol, $walltime) = @_;
 
-    $walltime = duration_to_sql($walltime);
     $dbh->do("  UPDATE moldable_job_descriptions
                 SET moldable_walltime = \'$walltime\'
                 WHERE
@@ -1883,7 +1885,7 @@ sub get_resources_that_can_be_waked_up($$) {
     my $dbh = shift;
     my $duration = shift;
     
-    my $date = sql_to_local(get_date($dbh)) + $duration + $Cm_security_duration;
+    my $date = get_date($dbh) + $duration + $Cm_security_duration;
     my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
                                 FROM resources, resource_properties
                                 WHERE
@@ -1908,7 +1910,7 @@ sub get_resources_that_will_be_out($$) {
     my $dbh = shift;
     my $duration = shift;
     
-    my $date = sql_to_local(get_date($dbh)) + $duration + $Cm_security_duration;
+    my $date = get_date($dbh) + $duration + $Cm_security_duration;
     my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
                                 FROM resources, resource_properties
                                 WHERE
@@ -1933,6 +1935,7 @@ sub add_resource_job_pair($$$) {
     my $dbh = shift;
     my $moldable = shift;
     my $resource = shift;
+
     $dbh->do("INSERT INTO assigned_resources (moldable_job_id,resource_id,assigned_resource_index)
               VALUES ($moldable,$resource,\'CURRENT\')");
 }
@@ -1945,42 +1948,22 @@ sub get_jobs_range_dates($$$){
     my $date_start = shift;
     my $date_end = shift;
 
-    $date_start = sql_to_local($date_start);
-    $date_end = sql_to_local($date_end);
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,EXTRACT(EPOCH FROM (TO_TIMESTAMP(jobs.start_time, 'YYYY-MM-DD HH24:MI:SS') + moldable_job_descriptions.moldable_walltime))
-                FROM jobs, assigned_resources, moldable_job_descriptions, resources
-                WHERE
-                    (   
-                        EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.stop_time, 'YYYY-MM-DD HH24:MI:SS')) >= $date_start OR
-                        (   
-                            jobs.stop_time = \'0000-00-00 00:00:00\' AND
-                            jobs.state = \'Running\'
-                        )
-                    ) AND
-                    EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.start_time, 'YYYY-MM-DD HH24:MI:SS')) < $date_end AND
-                    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-                    moldable_job_descriptions.moldable_job_id = jobs.assigned_moldable_job AND
-                    resources.resource_id = assigned_resources.resource_id
-                ORDER BY jobs.job_id";
-    }else{
-        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,UNIX_TIMESTAMP(DATE_ADD(jobs.start_time, INTERVAL moldable_job_descriptions.moldable_walltime HOUR_SECOND))
-                FROM jobs, assigned_resources, moldable_job_descriptions, resources
-                WHERE
-                    (   
-                        UNIX_TIMESTAMP(jobs.stop_time) >= $date_start OR
-                        (   
-                            jobs.stop_time = \'0000-00-00 00:00:00\' AND
-                            jobs.state = \'Running\'
-                        )
-                    ) AND
-                    UNIX_TIMESTAMP(jobs.start_time) < $date_end AND
-                    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-                    moldable_job_descriptions.moldable_id = jobs.assigned_moldable_job AND
-                    resources.resource_id = assigned_resources.resource_id
-                ORDER BY jobs.job_id";
-    }
+    my $req = 
+        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
+         FROM jobs, assigned_resources, moldable_job_descriptions, resources
+         WHERE
+             (   
+                 jobs.stop_time >= $date_start OR
+                 (   
+                     jobs.stop_time = \'0\' AND
+                     jobs.state = \'Running\'
+                 )
+             ) AND
+             jobs.start_time < $date_end AND
+             jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+             moldable_job_descriptions.moldable_job_id = jobs.assigned_moldable_job AND
+             resources.resource_id = assigned_resources.resource_id
+         ORDER BY jobs.job_id";
  
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -2027,33 +2010,18 @@ sub get_jobs_gantt_scheduled($$$){
     my $date_start = shift;
     my $date_end = shift;
 
-    $date_start = sql_to_local($date_start);
-    $date_end = sql_to_local($date_end);
+    my $req =
+        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
+         FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         WHERE
+             gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+             gantt_jobs_predictions_visu.moldable_job_id = jobs.assigned_moldable_job AND
+             jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+             gantt_jobs_predictions_visu.start_time < $date_end AND
+             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
+         ORDER BY jobs.job_id";
     
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions_visu.start_time, 'YYYY-MM-DD HH24:MI:SS') + moldable_job_descriptions.moldable_walltime)),gantt_jobs_resources_visu.resource_id, resources.network_address
-                FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
-                WHERE
-                    gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-                    gantt_jobs_predictions_visu.moldable_job_id = jobs.assigned_moldable_job AND
-                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-                    EXTRACT(EPOCH FROM TO_TIMESTAMP(gantt_jobs_predictions_visu.start_time, 'YYYY-MM-DD HH24:MI:SS')) < $date_end AND
-                    resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-                    EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions_visu.start_time, 'YYYY-MM-DD HH24:MI:SS') + moldable_job_descriptions.moldable_walltime)) >= $date_start
-                ORDER BY jobs.job_id";
-    }else{
-        $req = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,UNIX_TIMESTAMP((DATE_ADD(gantt_jobs_predictions_visu.start_time, INTERVAL moldable_job_descriptions.moldable_walltime HOUR_SECOND))),gantt_jobs_resources_visu.resource_id, resources.network_address
-                FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
-                WHERE
-                    gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-                    gantt_jobs_predictions_visu.moldable_job_id = jobs.assigned_moldable_job AND
-                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-                    UNIX_TIMESTAMP(gantt_jobs_predictions_visu.start_time) < $date_end AND
-                    resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-                    UNIX_TIMESTAMP((DATE_ADD(gantt_jobs_predictions_visu.start_time, INTERVAL moldable_job_descriptions.moldable_walltime HOUR_SECOND))) >= $date_start
-                ORDER BY jobs.job_id";
-    }
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
@@ -2072,7 +2040,7 @@ sub get_jobs_gantt_scheduled($$$){
                                   'launching_directory' => $ref[8],
                                   'submission_time' => $ref[9],
                                   'start_time' => $ref[10],
-                                  'stop_time' => local_to_sql($ref[11]),
+                                  'stop_time' => $ref[11],
                                   'resources' => [ $ref[12] ],
                                   'network_addresses' => [ $ref[13] ]
                                  }
@@ -2153,7 +2121,7 @@ sub set_stagein($$$$$$) {
     my $compression = shift;
     my $size = shift;
     my $idFile;
-    $dbh->do("LOCK TABLE files WRITE");
+    lock_table($dbh, ["files"]);
     $dbh->do("INSERT INTO files (md5sum,location,method,compression,size)
               VALUES (\"$md5sum\",\"$location\",\"$method\",\"$compression\",$size)");
     my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
@@ -2161,7 +2129,7 @@ sub set_stagein($$$$$$) {
     my $ref = $sth->fetchrow_hashref();
     ($idFile) = values(%$ref);
     $sth->finish();
-    $dbh->do("UNLOCK TABLE");
+    unlock_table($dbh);
     return $idFile;
 }
 
@@ -2188,18 +2156,18 @@ sub is_stagein_deprecated($$$) {
     my $dbh = shift;
     my $md5sum = shift;
     my $expiry_delay = shift;
-    
-    my $sth = $dbh->prepare("   SELECT jobs.start_time + INTERVAL $expiry_delay MINUTE) > NOW()
+   
+    my $date = get_date($dbh);
+    my $sth = $dbh->prepare("   SELECT jobs.start_time
                                 FROM jobs, files
                                 WHERE
                                     jobs.file_id = files.file_id AND
                                     files.md5sum = \'$md5sum\'
                             ");
     $sth->execute();
-    my $now = sql_to_local(get_date($dbh));
     my $result = 1;
     while (my @res = $sth->fetchrow_array()){
-        if ((sql_to_local($res[0]) + $expiry_delay) > $now){
+        if (($res[0] + $expiry_delay) > $date){
             $result = 0;
             return(0);
         }
@@ -2567,7 +2535,7 @@ sub set_node_state($$$$) {
                     SET date_stop = \'$date\'
                     FROM resources
                     WHERE
-                        resource_state_logs.date_stop IS NULL
+                        resource_state_logs.date_stop = 0
                         AND resources.network_address = \'$hostname\'
                         AND resource_state_logs.resource_id = resources.resource_id
                  ");
@@ -2575,7 +2543,7 @@ sub set_node_state($$$$) {
         $dbh->do("  UPDATE resource_state_logs, resources
                     SET resource_state_logs.date_stop = \'$date\'
                     WHERE
-                        resource_state_logs.date_stop IS NULL
+                        resource_state_logs.date_stop = 0
                         AND resources.network_address = \'$hostname\'
                         AND resource_state_logs.resource_id = resources.resource_id
                  ");
@@ -2631,7 +2599,7 @@ sub set_resource_state($$$$) {
     $dbh->do("  UPDATE resource_state_logs
                 SET date_stop = \'$date\'
                 WHERE
-                    date_stop IS NULL
+                    date_stop = 0
                     AND resource_id = $resource_id
              ");
     $dbh->do("INSERT INTO resource_state_logs (resource_id,change_state,date_start,finaud_decision)
@@ -2740,7 +2708,7 @@ sub set_node_property($$$$){
                         SET date_stop = \'$date\'
                         FROM resources
                         WHERE
-                            resource_property_logs.date_stop IS NULL
+                            resource_property_logs.date_stop = 0
                             AND resources.network_address = \'$hostname\'
                             AND resource_property_logs.attribute = \'$property\'
                      ");
@@ -2748,7 +2716,7 @@ sub set_node_property($$$$){
             $dbh->do("  UPDATE resources, resource_property_logs
                         SET resource_property_logs.date_stop = \'$date\'
                         WHERE
-                            resource_property_logs.date_stop IS NULL
+                            resource_property_logs.date_stop = 0
                             AND resources.network_address = \'$hostname\'
                             AND resource_property_logs.attribute = \'$property\'
                      ");
@@ -2800,7 +2768,7 @@ sub set_resource_property($$$$){
         $dbh->do("  UPDATE resource_property_logs
                     SET date_stop = \'$date\'
                     WHERE
-                        date_stop IS NULL
+                        date_stop = 0
                         AND resource_id = \'$resource\'
                         AND attribute = \'$property\'
                  ");
@@ -2888,42 +2856,21 @@ sub get_resource_dead_range_date($$$){
     my $date_start = shift;
     my $date_end = shift;
 
-    $date_start = sql_to_local($date_start);
-    $date_end = sql_to_local($date_end);
-
-    my $req;
-    if ($Db_type eq "Pg"){
-        # get dead nodes between two dates
-        $req = "SELECT resource_id, date_start, date_stop, change_state
-                FROM resource_state_logs
-                WHERE
-                    (
-                        change_state = \'Absent\' OR
-                        change_state = \'Dead\' OR
-                        change_state = \'Suspected\'
-                    ) AND
-                    EXTRACT(EPOCH FROM TO_TIMESTAMP(date_start, 'YYYY-MM-DD HH24:MI:SS')) <= $date_end AND
-                    (
-                        date_stop IS NULL OR
-                        EXTRACT(EPOCH FROM TO_TIMESTAMP(date_stop, 'YYYY-MM-DD HH24:MI:SS')) >= $date_start
-                    )
-                ";
-    }else{
-        $req = "SELECT resource_id, date_start, date_stop, change_state
-                FROM resource_state_logs
-                WHERE
-                    (
-                        change_state = \'Absent\' OR
-                        change_state = \'Dead\' OR
-                        change_state = \'Suspected\'
-                    ) AND
-                    UNIX_TIMESTAMP(date_start) <= $date_end AND
-                    (
-                        date_stop IS NULL OR
-                        UNIX_TIMESTAMP(date_stop) >= $date_start
-                    )
-                ";
-    }
+    # get dead nodes between two dates
+    my $req = "SELECT resource_id, date_start, date_stop, change_state
+               FROM resource_state_logs
+               WHERE
+                   (
+                       change_state = \'Absent\' OR
+                       change_state = \'Dead\' OR
+                       change_state = \'Suspected\'
+                   ) AND
+                   date_start <= $date_end AND
+                   (
+                       date_stop = 0 OR
+                       date_stop >= $date_start
+                   )
+              ";
 
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -2932,7 +2879,7 @@ sub get_resource_dead_range_date($$$){
     while (my @ref = $sth->fetchrow_array()) {
         my $interval_stopDate = $ref[2];
         if (!defined($interval_stopDate)){
-            $interval_stopDate = local_to_sql($date_end);
+            $interval_stopDate = $date_end;
         }
         push(@{$results{$ref[0]}}, [$ref[1],$interval_stopDate,$ref[3]]);
     }
@@ -2951,29 +2898,17 @@ sub get_expired_resources($){
     my $dbh = shift;
     # get expired nodes
 
-    my $date = sql_to_local(get_date($dbh));
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT resources.resource_id
-                FROM resources, resource_properties
-                WHERE
-                    resources.resource_id = resource_properties.resource_id AND
-                    resources.state = \'Alive\' AND
-                    resource_properties.expiry_date != \'0000-00-00 00:00:00\' AND
-                    resource_properties.desktop_computing = \'YES\' AND
-                    EXTRACT(EPOCH FROM TO_TIMESTAMP(resource_properties.expiry_date, 'YYYY-MM-DD HH24:MI:SS')) < $date
-               ";
-    }else{
-        $req = "SELECT resources.resource_id
-                FROM resources, resource_properties
-                WHERE
-                    resources.resource_id = resource_properties.resource_id AND
-                    resources.state = \'Alive\' AND
-                    resource_properties.expiry_date != \'0000-00-00 00:00:00\' AND
-                    resource_properties.desktop_computing = \'YES\' AND
-                    UNIX_TIMESTAMP(resource_properties.expiry_date) < $date
-               ";
-    }
+    my $date = get_date($dbh);
+    my $req = "SELECT resources.resource_id
+               FROM resources, resource_properties
+               WHERE
+                   resources.resource_id = resource_properties.resource_id AND
+                   resources.state = \'Alive\' AND
+                   resource_properties.expiry_date > 0 AND
+                   resource_properties.desktop_computing = \'YES\' AND
+                   resource_properties.expiry_date < $date
+              ";
+    
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my @results;
@@ -3009,30 +2944,6 @@ sub is_node_desktop_computing($$){
         }
     }
     return($result);
-}
-
-
-#Give some stats on nodes
-#parameters : base
-sub get_node_stats($){
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("SELECT count(*) FROM nodes WHERE state = \"Suspected\"");
-    $sth->execute();
-    my ($suspects) = $sth->fetchrow_array();
-    $sth->finish();
-
-    $sth = $dbh->prepare("SELECT count(*) FROM nodes WHERE state = \"Alive\" AND weight = 0");
-    $sth->execute();
-    my ($alives) = $sth->fetchrow_array();
-    $sth->finish();
-
-    $sth = $dbh->prepare("SELECT count(*) FROM nodes WHERE state = \"Dead\"");
-    $sth->execute();
-    my ($deads) = $sth->fetchrow_array();
-    $sth->finish();
-
-    return ($alives,$suspects,$deads);
 }
 
 
@@ -3124,21 +3035,13 @@ sub get_absent_suspected_resources_for_a_timeout($$){
     my $dbh = shift;
     my $timeout = shift;
 
-    my $date = sql_to_local(get_date($dbh));
-    my $req; 
-    if ($Db_type eq "Pg"){
-        $req = "SELECT resource_id
+    my $date = get_date($dbh);
+    my $req = "SELECT resource_id
                 FROM resource_state_logs
                 WHERE
-                    date_stop IS NULL
-                    AND EXTRACT(EPOCH FROM TO_TIMESTAMP(date_start,'YYYY-MM-DD HH24:MI:SS')) + $timeout < $date";
-    }else{
-        $req = "SELECT resource_id
-                FROM resource_state_logs
-                WHERE
-                    date_stop IS NULL
-                    AND UNIX_TIMESTAMP(date_start) + $timeout < $date";
-    }
+                    date_stop = 0
+                    AND date_start + $timeout < $date
+              ";
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
@@ -3565,24 +3468,14 @@ sub search_idle_nodes($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT resources.network_address
-                FROM resources, gantt_jobs_resources, gantt_jobs_predictions
-                WHERE
-                    resources.resource_id = gantt_jobs_resources.resource_id AND
-                    EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions.start_time, 'YYYY-MM-DD HH24:MI:SS'))) <= $date
-                GROUP BY resources.network_address
-               ";
-    }else{
-        $req = "SELECT resources.network_address
-                FROM resources, gantt_jobs_resources, gantt_jobs_predictions
-                WHERE
-                    resources.resource_id = gantt_jobs_resources.resource_id AND
-                    UNIX_TIMESTAMP(gantt_jobs_predictions.start_time) <= $date
-                GROUP BY resources.network_address
-               ";
-    }
+    my $req = "SELECT resources.network_address
+               FROM resources, gantt_jobs_resources, gantt_jobs_predictions
+               WHERE
+                   resources.resource_id = gantt_jobs_resources.resource_id AND
+                   gantt_jobs_predictions.start_time <= $date
+               GROUP BY resources.network_address
+              ";
+              
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %nodes_occupied;
@@ -3616,24 +3509,14 @@ sub get_next_job_date_on_node($$){
     my $dbh = shift;
     my $hostname = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT MIN(EXTRACT(EPOCH FROM (TO_TIMESTAMP(gantt_jobs_predictions.start_time, 'YYYY-MM-DD HH24:MI:SS'))))
-                FROM resources, gantt_jobs_predictions, gantt_jobs_resources
-                WHERE
-                    resources.network_address = \'$hostname\' AND
-                    gantt_jobs_resources.resource_id = resources.resource_id AND
-                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
-               ";
-    }else{
-        $req = "SELECT MIN(UNIX_TIMESTAMP(gantt_jobs_predictions.start_time))
-                FROM resources, gantt_jobs_predictions, gantt_jobs_resources
-                WHERE
-                    resources.network_address = \'$hostname\' AND
-                    gantt_jobs_resources.resource_id = resources.resource_id AND
-                    gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
-               ";
-    }
+    my $req = "SELECT MIN(gantt_jobs_predictions.start_time)
+               FROM resources, gantt_jobs_predictions, gantt_jobs_resources
+               WHERE
+                   resources.network_address = \'$hostname\' AND
+                   gantt_jobs_resources.resource_id = resources.resource_id AND
+                   gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
+              ";
+
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my @ref = $sth->fetchrow_array();
@@ -3649,34 +3532,19 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    m.moldable_index = \'CURRENT\'
-                    AND g1.moldable_job_id= g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-                ";
-    }else{
-        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    m.moldable_index = \'CURRENT\'
-                    AND g1.moldable_job_id= g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND g2.start_time <= \'$date\'
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-               ";
-    }
+    my $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+               FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+               WHERE
+                   m.moldable_index = \'CURRENT\'
+                   AND g1.moldable_job_id= g2.moldable_job_id
+                   AND m.moldable_id = g1.moldable_job_id
+                   AND j.job_id = m.moldable_job_id
+                   AND g2.start_time <= $date
+                   AND j.state = \'Waiting\'
+                   AND resources.resource_id = g1.resource_id
+                   AND resources.state = \'Alive\'
+              ";
+
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
@@ -3696,36 +3564,20 @@ sub get_gantt_hostname_to_wake_up($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT resources.network_address
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    m.moldable_index = \'CURRENT\'
-                    AND g1.moldable_job_id= g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-                GROUP BY resources.network_address
-                ";
-    }else{
-        $req = "SELECT resources.network_address
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    m.moldable_index = \'CURRENT\'
-                    AND g1.moldable_job_id= g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND g2.start_time <= \'$date\'
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Absent\'
-                GROUP BY resources.network_address
-               ";
-    }
+    my $req = "SELECT resources.network_address
+               FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+               WHERE
+                   m.moldable_index = \'CURRENT\'
+                   AND g1.moldable_job_id= g2.moldable_job_id
+                   AND m.moldable_id = g1.moldable_job_id
+                   AND j.job_id = m.moldable_job_id
+                   AND g2.start_time <= $date
+                   AND j.state = \'Waiting\'
+                   AND resources.resource_id = g1.resource_id
+                   AND resources.state = \'Alive\'
+               GROUP BY resources.network_address
+              ";
+    
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my @res ;
@@ -3744,32 +3596,18 @@ sub get_gantt_resources_for_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT g1.resource_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
-                WHERE
-                   m.moldable_index = \'CURRENT\'
-                   AND g1.moldable_job_id = m.moldable_id
-                   AND m.moldable_job_id = j.job_id
-                   AND g1.moldable_job_id = g2.moldable_job_id
-                   AND TO_TIMESTAMP(g2.start_time, 'YYYY-MM-DD HH24:MI:SS') <= TO_TIMESTAMP(\'$date\', 'YYYY-MM-DD HH24:MI:SS')
-                   AND j.state = \'Waiting\'
-                GROUP BY g1.resource_id
-               ";
-    }else{
-        $req = "SELECT g1.resource_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
-                WHERE
-                   m.moldable_index = \'CURRENT\'
-                   AND g1.moldable_job_id = m.moldable_id
-                   AND m.moldable_job_id = j.job_id
-                   AND g1.moldable_job_id = g2.moldable_job_id
-                   AND g2.start_time <= \'$date\'
-                   AND j.state = \'Waiting\'
-                GROUP BY g1.resource_id
-               ";
-    }
+    my $req = "SELECT g1.resource_id
+               FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
+               WHERE
+                  m.moldable_index = \'CURRENT\'
+                  AND g1.moldable_job_id = m.moldable_id
+                  AND m.moldable_job_id = j.job_id
+                  AND g1.moldable_job_id = g2.moldable_job_id
+                  AND g2.start_time <= $date
+                  AND j.state = \'Waiting\'
+               GROUP BY g1.resource_id
+              ";
+    
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
@@ -4022,16 +3860,16 @@ sub get_date($) {
 
     my $req;
     if ($Db_type eq "Pg"){
-        $req = "select to_char(current_timestamp,'YYYY-MM-DD HH24:MI:SS')";
+        $req = "select EXTRACT(EPOCH FROM current_timestamp)";
     }else{
-        $req = "SELECT DATE_FORMAT(NOW(),'%Y-%m-%d %H:%i:%s')";
+        $req = "SELECT UNIX_TIMESTAMP()";
     }
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my @ref = $sth->fetchrow_array();
     $sth->finish();
 
-    return($ref[0]);
+    return(int($ref[0]));
 }
 
 
@@ -4043,42 +3881,26 @@ sub check_accounting_update($$){
     my $dbh = shift;
     my $windowSize = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
+    my $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
 
-                FROM jobs, moldable_job_descriptions, assigned_resources
-                WHERE 
-                    jobs.accounted = \'NO\' AND
-                    (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
-                    EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.start_time,'YYYY-MM-DD HH24:MI:SS')) AND
-                    EXTRACT(EPOCH FROM TO_TIMESTAMP(jobs.start_time,'YYYY-MM-DD HH24:MI:SS')) > EXTRACT(EPOCH FROM TO_TIMESTAMP(\'0000-00-00 00:00:00\','YYYY-MM-DD HH24:MI:SS')) AND
-                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-                    assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-                GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name
-               "; 
+               FROM jobs, moldable_job_descriptions, assigned_resources
+               WHERE 
+                   jobs.accounted = \'NO\' AND
+                   (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
+                   jobs.stop_time >= jobs.start_time AND
+                   jobs.start_time > 0 AND
+                   jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+                   assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+               GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name
+              "; 
 
-    }else{
-        $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
-                FROM jobs, moldable_job_descriptions, assigned_resources
-                WHERE
-                    jobs.accounted = \'NO\' AND
-                    (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
-                    UNIX_TIMESTAMP(jobs.stop_time) >= UNIX_TIMESTAMP(jobs.start_time) AND
-                    UNIX_TIMESTAMP(jobs.start_time) > UNIX_TIMESTAMP(\'0000-00-00 00:00:00\') AND
-                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-                    assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-                GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name
-               ";
-    }
-    
     my $sth = $dbh->prepare("$req");
     $sth->execute();
 
     while (my @ref = $sth->fetchrow_array()) {
-        my $start = sql_to_local($ref[0]);
-        my $stop = sql_to_local($ref[1]);
-        my $theoricalStopTime = sql_to_duration($ref[2]) + $start;
+        my $start = $ref[0];
+        my $stop = $ref[1];
+        my $theoricalStopTime = $ref[2] + $start;
         print("[ACCOUNTING] Treate job $ref[3]\n");
         update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[5],"USED",$ref[6]);
         update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[5],"ASKED",$ref[6]);
@@ -4117,7 +3939,7 @@ sub update_accounting($$$$$$$$){
             $conso = $windowStop - $start + 1;
         }
         $conso = $conso * $nb_resources;
-        add_accounting_row($dbh,local_to_sql($windowStart),local_to_sql($windowStop),$user,$queue,$type,$conso);
+        add_accounting_row($dbh,$windowStart,$windowStop,$user,$queue,$type,$conso);
         $windowStart = $windowStop + 1;
         $start = $windowStart;
         $windowStop += $windowSize;
@@ -4615,32 +4437,17 @@ sub job_finishing_sequence($$$$$$$$){
             if ($#bad_tmp >= 0){
                 # Verify if the errors are not from another job with the same cpuset_name
                 my $job = get_job($dbh, $job_id);
-                my $req;
-                if ($Db_type eq "Pg"){
-                    $req = "
+                my $req = "
                             SELECT resources.network_address
                             FROM jobs, assigned_resources, resources
                             WHERE
                                 jobs.job_user = \'$job->{job_user}\' AND
                                 jobs.cpuset_name = \'$job->{cpuset_name}\' AND
-                                EXTRACT(EPOCH FROM TO_TIMESTAMP(stop_time,'YYYY-MM-DD HH24:MI:SS')) >= EXTRACT(EPOCH FROM TO_TIMESTAMP(\'$job->{start_time}\','YYYY-MM-DD HH24:MI:SS')) AND
+                                stop_time >= $job->{start_time} AND
                                 assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
                                 assigned_resources.resource_id = resources.resource_id AND
                                 jobs.job_id != $job_id
-                            "
-                }else{
-                    $req = "
-                            SELECT resources.network_address
-                            FROM jobs, assigned_resources, resources
-                            WHERE
-                                jobs.job_user = \'$job->{job_user}\' AND
-                                jobs.cpuset_name = \'$job->{cpuset_name}\' AND
-                                UNIX_TIMESTAMP(stop_time) >= UNIX_TIMESTAMP(\'$job->{start_time}\') AND
-                                assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                                assigned_resources.resource_id = resources.resource_id AND
-                                jobs.job_id != $job_id
-                            "
-                }
+                            ";
  
                 my $sth = $dbh->prepare("$req");
                 $sth->execute();

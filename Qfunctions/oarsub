@@ -156,13 +156,13 @@ sub connect_job($$$){
         $< = $>;
         print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
         system($cmd);
+        if ($? == 1){
+            warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
+        }elsif($? != 0){
+            warn("[ERROR] An unknown error occured : $?\n");
+        }
         if ($stop_oarexec > 0){
             oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0, undef, $openssh_cmd);
-            if ($stop_oarexec == 1){
-                warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
-            }else{
-                warn("[ERROR] An unknown error occured : $stop_oarexec\n");
-            }
         }
         print("Disconnected from OAR job $job_id\n");
     }else{
@@ -330,7 +330,7 @@ if (defined $stagein) {
         system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
         print "Stagein archive = $filename\n";
         print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
-				$stagein = $filename;
+        $stagein = $filename;
         $md5sum = undef;
     }
     ( -r $stagein ) or die "Stagein file not found: $stagein\n";
@@ -430,6 +430,9 @@ sub parse_resource_descriptions($){
                     }else{
                         $resource_groups[1] = "$w_h:$w_mn:$w_sec";
                     }
+                    print("$resource_groups[1]\n");
+                    $resource_groups[1] = iolib::sql_to_duration("$resource_groups[1]");
+                    print("$resource_groups[1]\n");
                 }else{
                     die("/!\\ Cannot recognize walltime resource value\n");
                 }
@@ -483,6 +486,15 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my $server_port;
     if ($Reservation ne "0"){
+        #Test if this job is a reservation and the syntax is right
+        if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
+            $Reservation = iolib::sql_to_local("$1 $2");
+            print("$Reservation\n");
+        }else{
+            warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
+            iolib::disconnect($base);
+            exit(-3);
+        }
         ($Server, $server_port) = init_tcp_server();
     }
 
@@ -492,11 +504,24 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
     }
     $Cmd_executor = "Qsub -I";
+
+    my @resource_list = parse_resource_descriptions(\@resource);
+ 
+    if ($Reservation ne "0"){
+        #Test if this job is a reservation and the syntax is right
+        if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
+            $Reservation = iolib::sql_to_local("$1 $2");
+            print("$Reservation\n");
+        }else{
+            warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
+            iolib::disconnect($base);
+            exit(-3);
+        }
+    }
+    
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    my @resource_list = parse_resource_descriptions(\@resource);
-    
     $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold);
 }
 print("JOB_ID = $Job_id \n");

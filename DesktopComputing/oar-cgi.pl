@@ -126,7 +126,7 @@ sub pull() {
             if ($is_desktop_computing eq 'YES') {
                 iolib::lock_table($base,["resources","resource_properties"]);
                 iolib::set_node_nextState($base,$hostname,"Alive");
-                iolib::set_node_expiryDate($base,$hostname, iolib::local_to_sql(iolib::sql_to_local(iolib::get_date($base)) + $expiry));
+                iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
                 iolib::unlock_table($base);
                 $do_notify=1;
 	    } else {
@@ -142,7 +142,7 @@ sub pull() {
                 my $resource = iolib::add_resource($base, $hostname, "Alive");
                 iolib::set_resource_property($base,$resource,"desktop_computing","YES");
                 iolib::set_resource_nextState($base,$resource,"Alive");
-                iolib::set_node_expiryDate($base,$hostname, iolib::local_to_sql(iolib::sql_to_local(iolib::get_date($base)) + $expiry));
+                iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
                 $do_notify=1;
             } else {
                 iolib::disconnect($base);
