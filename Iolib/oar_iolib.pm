@@ -2215,6 +2215,15 @@ sub add_resource($$$) {
                 VALUES ($id,\'state\',\'$state\',\'$date\')
              ");
 
+    # Init cpu field with the id
+    eval{
+        $dbh->do("  UPDATE resources
+                    SET cpu = $id
+                    WHERE
+                        resource_id = $id
+                 ");
+    };
+
     return($id);
 }
 

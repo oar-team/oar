@@ -317,14 +317,17 @@ Database scheme
    
 `db_scheme.svg <db_scheme.svg>`_
 
+Note : all dates and duration are stored in an integer manner (number of
+seconds since the EPOCH).
+
 *accounting*
 ~~~~~~~~~~~~
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
-window_start      DATETIME              start date of the accounting interval
-window_stop       DATETIME              stop date of the accounting interval
+window_start      INT UNSIGNED          start date of the accounting interval
+window_stop       INT UNSIGNED          stop date of the accounting interval
 accounting_user   VARCHAR(20)           user name
 queue_name        VARCHAR(100)          queue name
 consumption_type  ENUM("ASKED",         "ASKED" corresponds to the walltimes
@@ -405,12 +408,12 @@ Some examples are better than a long description :
    ::
  
       INSERT INTO admission_rules (rule) VALUES ('
-        my $max_walltime = "12:00:00";
+        my $max_walltime = iolib::sql_to_duration("12:00:00");
         if ($jobType eq "INTERACTIVE"){ 
           foreach my $mold (@{$ref_resource_list}){
             if (
               (defined($mold->[1])) and
-              (sql_to_duration($max_walltime) < sql_to_duration($mold->[1]))
+              ($max_walltime < $mold->[1])
             ){
               print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
               $mold->[1] = $max_walltime;
@@ -423,7 +426,7 @@ Some examples are better than a long description :
    ::
    
     INSERT INTO admission_rules (rule) VALUES ('
-      my $default_wall = "2:00:00";
+      my $default_wall = iolib::sql_to_duration("2:00:00");
       foreach my $mold (@{$ref_resource_list}){
         if (!defined($mold->[1])){
           print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
@@ -455,7 +458,7 @@ Fields            Types                 Descriptions
 event_id          INT UNSIGNED          event identifier
 type              VARCHAR(50)           event type
 job_id            INT UNSIGNED          job related of the event
-date              DATETIME              event date
+date              INT UNSIGNED          event date
 description       VARCHAR(255)          textual description of the event
 to_check          ENUM('YES', 'NO')     specify if the module *NodeChangeState*
                                         must check this event to Suspect or not
@@ -573,7 +576,7 @@ size              INT UNSIGNED
 Fields            Types                       Descriptions
 ================  ==========================  =================================
 frag_id_job       INT UNSIGNED                job id
-frag_date         DATETIME                    kill job decision date 
+frag_date         INT UNSIGNED                kill job decision date 
 frag_state        ENUM('LEON', 'TIMER_ARMED'  state to tell Leon what to do
                   , 'LEON_EXTERMINATE',
                   'FRAGGED')
@@ -631,7 +634,7 @@ tools. It is updated atomically (a lock is used).
 Fields            Types                 Descriptions
 ================  ====================  =======================================
 moldable_job_id   INT UNSIGNED          job id
-start_time        DATETIME              date when the job is scheduled to start
+start_time        INT UNSIGNED          date when the job is scheduled to start
 ================  ====================  =======================================
 
 :Primary key: moldable_job_id
@@ -649,7 +652,7 @@ decisions taken by the schedulers for each waiting jobs.
 Fields            Types                 Descriptions
 ================  ====================  =======================================
 moldable_job_id   INT UNSIGNED          job id
-start_time        DATETIME              date when the job is scheduled to start
+start_time        INT UNSIGNED          date when the job is scheduled to start
 ================  ====================  =======================================
 
 :Primary key: job_id
@@ -692,9 +695,9 @@ properties            TEXT                    properties that assigned nodes mus
                                               match
 launching_directory   VARCHAR(255)            path of the directory where to launch
                                               the user process
-submission_time       DATETIME                date when the job was submitted
-start_time            DATETIME                date when the job was launched
-stop_time             DATETIME                date when the job was stopped
+submission_time       INT UNSIGNED            date when the job was submitted
+start_time            INT UNSIGNED            date when the job was launched
+stop_time             INT UNSIGNED            date when the job was stopped
 file_id               INT UNSIGNED
 accounted             ENUM("YES", "NO")       specify if the job was considered by
                       DEFAULT "NO"            the accounting mechanism or not
@@ -762,13 +765,13 @@ This table is feeded by `oarsub`_ command with the "-a" option.
 *moldable_job_descriptions*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-================  ====================  =======================================
-Fields            Types                 Descriptions
-================  ====================  =======================================
-moldable_id       INT UNSIGNED          job identifier
-moldable_job_id   INT UNSIGNED          corresponding job identifier
-moldable_wallime  VARCHAR(255)          instance duration
-================  ====================  =======================================
+=================  ====================  =======================================
+Fields             Types                 Descriptions
+=================  ====================  =======================================
+moldable_id        INT UNSIGNED          job identifier
+moldable_job_id    INT UNSIGNED          corresponding job identifier
+moldable_walltime  INT UNSIGNED          instance duration
+=================  ====================  =======================================
 
 :Primary key: moldable_id
 :Index fields: moldable_job_id
@@ -821,11 +824,16 @@ the "-l" option.
 Fields            Types                 Descriptions
 ================  ====================  =======================================
 job_id            INT UNSIGNED          corresponding job identifier
-job_state         ENUM('Alive', 'Dead'  job state during the interval
-                  , 'Suspected',
-                  'Absent')
-date_start        DATETIME              start date of the interval
-date_stop         DATETIME              end date of the interval
+job_state         ENUM('Waiting',       job state during the interval
+                  'Hold', 'toLaunch',
+                  'toError',
+                  'toAckReservation',
+                  'Launching',
+                  'Finishing',
+                  'Terminated',
+                  'Error')
+date_start        INT UNSIGNED          start date of the interval
+date_stop         INT UNSIGNED          end date of the interval
 ================  ====================  =======================================
 
 :Primary key: *None*
@@ -869,6 +877,23 @@ finaud_decision       ENUM('YES', 'NO')     tell if the actual state results in 
                       DEFAULT 'NO'          "finaud" module decision
 next_finaud_decision  ENUM('YES', 'NO')     tell if the next node state results in
                       DEFAULT 'NO'          a "finaud" module decision
+state_num             INT                   corresponding state number (usefull
+                                            with the SQL "ORDER" query)
+switch                VARCHAR(50)           name of the switch
+cpu                   INT UNSIGNED          global cluster cpu number
+cpuset                INT UNSIGNED          field used with the
+                                            CPUSET_RESOURCE_PROPERTY_DB_FIELD_
+besteffort            ENUM('YES','NO')      accept or not besteffort jobs
+deploy                ENUM('YES','NO')      specify if the resource is dployable
+expiry_date           INT UNSIGNED          field used for the desktop computing
+                                            feature
+desktop_computing     ENUM('YES','NO')      tell if it is a desktop computing
+                                            resource (with an agent)
+last_job_date         INT UNSIGNED          store the date when the resource
+                                            was used for the last time
+cm_availability       INT UNSIGNED          used with compute mode features to
+                                            know if an Absent resource can be
+                                            switch on
 ====================  ====================  =======================================
 
 :Primary key: resource_id
@@ -885,55 +910,6 @@ State explications:
    "finaud" module decision).
  - "Dead" : The oar administrator considers that the resource will not come back
    and will be removed from the pool.
-
-*resource_state_logs*
-~~~~~~~~~~~~~~~~~~~~~
-
-================  ====================  =======================================
-Fields            Types                 Descriptions
-================  ====================  =======================================
-resource_id       INT UNSIGNED          resource identifier
-change_state      ENUM('Alive', 'Dead'  resource state during the interval
-                  , 'Suspected',
-                  'Absent')
-date_start        DATETIME              start date of the interval
-date_stop         DATETIME              end date of the interval
-finaud_decision   ENUM('YES', 'NO')     specify if that was a "finaud" module
-                  DEFAULT 'NO'          decision
-================  ====================  =======================================
-
-:Primary key: *None*
-:Index fields: resource_id, change_state, finaud_decision
-
-This table keeps informations about state changes of resources.
-
-*resource_properties*
-~~~~~~~~~~~~~~~~~~~~~
-
-=================  ====================  =======================================
-Fields             Types                 Descriptions
-=================  ====================  =======================================
-resource_id        INT UNSIGNED          resource identifier
-node               VARCHAR(200)          node name
-besteffort         ENUM('YES', 'NO')     specify if the resource accepts or not
-                   DEFAULT 'YES'         besteffort jobs
-deploy             ENUM('YES', 'NO')     specify if the resource accepts or not
-                   DEFAULT 'NO'          deployment jobs
-expiry_date        DATETIME              used in desktop computing mode to know
-                                         when a resource is considered to be
-                                         offline
-desktop_computing  ENUM('YES', 'NO')     specify if the resource is a desktop
-                   DEFAULT 'NO'          computing resource or not
-last_job_date      INT UNSIGNED          unix time of the end of the last job
-cm_availability    INT UNSIGNED          unix time when the resource will not be
-                                         available anymore
-cpuset             INT UNSIGNED          cpu number in the node
-cpu                INT UNSIGNED          cpu number in the cluster
-switch             VARCHAR(50)           switch name
-=================  ====================  =======================================
-
-:Primary key: resource_id
-:Index fields: *None*
 
 This table permits to specify different properties for each resources. These can
 be used with the `oarsub`_ command ("-p" and "-l" options).
@@ -952,18 +928,21 @@ Several properties are added by default:
    to an integer beginning at 0. This field is linked to the configuration tag
    CPUSET_RESOURCE_PROPERTY_DB_FIELD_.
 
-*resource_property_logs*
+*resource_logs*
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 =================  ====================  =======================================
 Fields             Types                 Descriptions
 =================  ====================  =======================================
+resource_log_id    INT UNSIGNED          unique id
 resource_id        INT UNSIGNED          resource identifier
 attribute          VARCHAR(255)          name of corresponding field in
-                                         resource_properties
+                                         resources
 value              VARCHAR(255)          value of the field
-date_start         DATETIME              interval start date
-date_stop          DATETIME              interval stop date
+date_start         INT UNSIGNED          interval start date
+date_stop          INT UNSIGNED          interval stop date
+finaud_decision    ENUM('YES','NO')      store if this is a system change or a
+                                         human one
 =================  ====================  =======================================
 
 :Primary key: *None*
@@ -1224,7 +1203,7 @@ Each configuration tag found in /etc/oar.conf is now described:
 
     * When OAR scheduler wants some nodes to wake up then it launches this
       command with the node list in arguments(the scheduler looks at the
-      *cm_availability* field in resource_properties_ table to know if the
+      *cm_availability* field in resources_ table to know if the
       node will be started for enough time)::
 
         SCHEDULER_NODE_MANAGER_WAKE_UP_CMD = /path/to/the/command with your args
@@ -1487,7 +1466,7 @@ composed by intranet computers. These nodes can be switch in computing mode
 only at specific times. So we have implemented a functionality that can
 request to power on some hardware if they can be in the cluster.
 
-We are using the field *cm_availability* from the table resource_properties_
+We are using the field *cm_availability* from the table resources_
 to know when a node will be inaccessible in the cluster mode (easily setable
 with oarnodesetting_ command). So when the OAR scheduler wants some potential
 available computers to launch the jobs then it executes the command
