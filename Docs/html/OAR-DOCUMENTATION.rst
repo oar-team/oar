@@ -1068,9 +1068,9 @@ Each configuration tag found in /etc/oar.conf is now described:
       
           SENTINELLE_COMMAND=/usr/bin/sentinelle -cconnect=ssh,timeout=3000
 
-        If you use sentinelle.pl or sentinelle.rb then you must use this tag::
+        If you use sentinelle.pl then you must use this tag::
 
-          SENTINELLE_SCRIPT_COMMAND=/usr/bin/sentinelle.pl -t 5 -w 20
+          SENTINELLE_SCRIPT_COMMAND=/var/lib/oar/sentinelle.pl -t 5 -w 20
 
       * OAR fping::
       

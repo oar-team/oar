@@ -153,6 +153,7 @@ expiry_date INT UNSIGNED NOT NULL ,
 desktop_computing ENUM('YES','NO') DEFAULT 'NO' NOT NULL,
 last_job_date INT UNSIGNED DEFAULT 0,
 cm_availability INT UNSIGNED DEFAULT 0 NOT NULL ,
+mem INT UNSIGNED DEFAULT 0 NOT NULL,
 INDEX state (state),
 INDEX next_state (next_state),
 PRIMARY KEY (resource_id)

@@ -163,7 +163,7 @@ sub sentinelle_script_hosts(@){
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_script_sentinelle);
         open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
-        while(<READER>){
+        while(<ERROR>){
             chomp($_);
             if ($_ =~ m/^([\w\.]+)\s:\sBAD\s.*$/m){
                 if ($check_test_nodes{$1} == 1){
@@ -173,9 +173,9 @@ sub sentinelle_script_hosts(@){
             }
         }
 	wait();
-        close(ERROR);
         close(WRITER);
         close(READER);
+        close(ERROR);
         alarm(0);
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");

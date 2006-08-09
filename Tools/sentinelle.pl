@@ -27,7 +27,7 @@ unless (eval "use Time::HiRes qw(gettimeofday tv_interval);1"){
 
 # Print help message
 sub usage(){
-    print <<EOU;
+    print STDERR <<EOU;
 Usage sentinelle.pl -h | [-m node] [-f node_file] [-c connector] [-w window_size] [-t timeout] [-p program] [-v]
     -h display this help message
     -m specify the node to contact (use several -m options for several nodes)
@@ -116,7 +116,7 @@ sub register_wait_results($$){
     if ($pid > 0){
         if (defined($running_processes{$pid})){
             $processDuration{$running_processes{$pid}}->{"end"} = [gettimeofday()] if ($useTime == 1);
-            print("[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
+            print(STDERR "[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
             $finished_processes{$running_processes{$pid}} = [$exit_value,$signal_num,$dumped_core];
             delete($running_processes{$pid});
             $nb_running_processes--;
@@ -132,7 +132,7 @@ my $pid;
 while (($index <= $#nodes) or ($#timeout >= 0)){
     # Check if window is full or not
     while((($nb_running_processes) < $window_size) and ($index <= $#nodes)){
-        print("[VERBOSE] fork process for the node $nodes[$index]\n") if ($verbose);
+        print(STDERR "[VERBOSE] fork process for the node $nodes[$index]\n") if ($verbose);
         $processDuration{$index}->{"start"} = [gettimeofday()] if ($useTime == 1);
         
         $pid = fork();
@@ -143,11 +143,11 @@ while (($index <= $#nodes) or ($#timeout >= 0)){
             if ($pid == 0){
                 #In the child
 	    	my $cmd = "$connector $nodes[$index] $command";
-                print("[VERBOSE] Execute command : $cmd\n") if ($verbose);
+                print(STDERR "[VERBOSE] Execute command : $cmd\n") if ($verbose);
                 exec($cmd);
             }
         }else{
-            warn("/!\\ fork system call failed for node $nodes[$index].\n");
+            print(STDERR "/!\\ fork system call failed for node $nodes[$index].\n");
         }
         $index++;
     }
@@ -179,25 +179,25 @@ foreach my $i (keys(%finished_processes)){
     }else{
         $exit_code = 1;
     }
-    print("$nodes[$i] : $verdict ($finished_processes{$i}->[0],$finished_processes{$i}->[1],$finished_processes{$i}->[2]) ");
+    print(STDERR "$nodes[$i] : $verdict ($finished_processes{$i}->[0],$finished_processes{$i}->[1],$finished_processes{$i}->[2]) ");
 
     if ($useTime == 1){
         my $duration = tv_interval($processDuration{$i}->{"start"}, $processDuration{$i}->{"end"});
-        printf("%.3f s",$duration);
+        printf(STDERR "%.3f s",$duration);
     }
 
-    print("\n");
+    print(STDERR "\n");
 }
 
 foreach my $i (keys(%running_processes)){
-    print("$nodes[$running_processes{$i}] : BAD (-1,-1,-1) -1 s process disappeared\n");
+    print(STDERR "$nodes[$running_processes{$i}] : BAD (-1,-1,-1) -1 s process disappeared\n");
     $exit_code = 1;
 }
 
 # Print global duration
 if ($useTime == 1){
     $timeEnd = [gettimeofday()];
-    printf("Total duration : %.3f s (%d nodes)\n", tv_interval($timeStart, $timeEnd), $nbNodes);
+    printf(STDERR "Total duration : %.3f s (%d nodes)\n", tv_interval($timeStart, $timeEnd), $nbNodes);
 }
 
 

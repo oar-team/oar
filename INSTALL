@@ -202,6 +202,24 @@ First, you must start OAR daemon on the server (its name is "Almighty").
     - if you have installed OAR from Debian packages, use the script
       "/etc/init.d/oar-server" to start the daemon.
 
+Then you have to insert new resources in the database via the command
+oarnodesetting_.
+If you want to have an idea how does it work then launch
+$PREFIX/oar/detect_new_resources.sh. It will print right commands execute with
+an appropriate value for the memory and the cpuset properties.
+
+If you want to initialize your whole cluster in 1 command you can use this one
+(tune it to fite your cluster). You must be oar to run this command because
+oarnodesetting_ will called and the sentinelle.pl will log onto all nodes
+stored in "node_list.txt" file without password:
+::
+
+    export PREFIX=/var/lib
+    $PREFIX/oar/sentinelle.pl -f node_list.txt \
+    -p "$PREFIX/oar/detect_new_resources.sh" | sh
+
+Then you can launch the oarnodes_ command and see all new resources inserted.
+
 Further informations
 --------------------
 For further information, please check http://oar.imag.fr/.

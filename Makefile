@@ -76,6 +76,8 @@ common:
 	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
+	install -m 0755 Tools/sentinelle.pl $(OARDIR)
+	install -m 0755 Tools/detect_new_resources.sh $(OARDIR)
 
 server:
 	install -d -m 0755 $(OARDIR)

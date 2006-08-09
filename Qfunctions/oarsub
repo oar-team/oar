@@ -156,9 +156,10 @@ sub connect_job($$$){
         $< = $>;
         print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
         system($cmd);
-        if ($? == 1){
+        my $exit_value = $? >> 8;
+        if ($exit_value == 1){
             warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
-        }elsif($? != 0){
+        }elsif($exit_value != 0){
             warn("[ERROR] An unknown error occured : $?\n");
         }
         if ($stop_oarexec > 0){
