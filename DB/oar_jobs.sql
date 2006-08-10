@@ -171,6 +171,7 @@ finaud_decision ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 INDEX resource (resource_id),
 INDEX attribute (attribute),
 INDEX finaud (finaud_decision),
+INDEX val (value),
 PRIMARY KEY (resource_log_id)
 );
 

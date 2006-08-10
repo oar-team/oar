@@ -228,6 +228,7 @@ CREATE INDEX resource ON resource_logs (resource_id);
 CREATE INDEX attribute ON resource_logs (attribute);
 CREATE INDEX resource_id ON resource_logs (resource_id);
 CREATE INDEX finaud ON resource_logs (finaud_decision);
+CREATE INDEX val ON resource_logs (value);
 
 
 CREATE TABLE resources (

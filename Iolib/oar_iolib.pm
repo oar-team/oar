@@ -2827,7 +2827,7 @@ sub get_resource_dead_range_date($$$){
     my $date_end = shift;
 
     # get dead nodes between two dates
-    my $req = "SELECT resource_id, date_start, date_stop, change_state
+    my $req = "SELECT resource_id, date_start, date_stop, value
                FROM resource_logs
                WHERE
                    attribute = \'state\' AND
