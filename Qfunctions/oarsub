@@ -299,7 +299,7 @@ if (defined($Resubmit)){
     }else{
         print("ERROR\n");
         if ($err == -1){
-            warn("/!\\ An interactive job cannot be resubmitted\n");
+            warn("/!\\ An interactive job or a reservation cannot be resubmitted\n");
         }elsif ($err == -2){
             warn("/!\\ The job must be in Error or Terminated state\n");
         }elsif ($err == -3){

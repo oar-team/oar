@@ -98,10 +98,7 @@ Administrator
 
 How can I manage scheduling queues?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    oarnotify
+see oarnotify_.
 
 How can I write my own scheduler?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
