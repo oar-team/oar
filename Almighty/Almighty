@@ -249,6 +249,7 @@ sub init(){
         exit(4);
     }
 
+    $SIG{PIPE}  = 'IGNORE';
     $appendice_pid = fork();
 
     if(!defined($appendice_pid)){

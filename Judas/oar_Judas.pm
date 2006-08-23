@@ -119,6 +119,7 @@ sub send_mail($$$$$){
         return();
     }
 
+    $SIG{PIPE} = 'IGNORE';
     my $pid=fork;
     if ($pid == 0){
         undef($base);
@@ -173,6 +174,7 @@ sub notify_user($$$$$$$$){
         send_mail($base,$1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
     }elsif($method =~ m/\s*exec:(.+)$/m){
         my $cmd = "$Openssh_cmd -x -T $host sudo -H -u $user '$1 $job_id $job_name $tag \"$comments\"' > /dev/null 2>&1";
+        $SIG{PIPE} = 'IGNORE';
         my $pid = fork();
         if ($pid == 0){
             undef($base);

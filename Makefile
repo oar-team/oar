@@ -16,8 +16,8 @@ DOCDIR=$(PREFIX)/doc/oar
 WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
 
-BINLINKPATH=../oar
-SBINLINKPATH=../oar
+BINLINKPATH=$(OARDIR)
+SBINLINKPATH=$(OARDIR)
 
 all: usage
 install: usage

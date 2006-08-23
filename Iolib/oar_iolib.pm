@@ -4333,6 +4333,7 @@ sub job_finishing_sequence($$$$$$$$){
             }
             eval{
                 undef($dbh);
+                $SIG{PIPE} = 'IGNORE';
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeout);
                 $pid = fork();

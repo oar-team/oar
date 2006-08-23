@@ -185,6 +185,7 @@ sub signal_oarexec($$$$$$){
 
     my $file = get_oar_pid_file_name($job_id);
     my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
+    $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();
     if($pid == 0){
         #CHILD
@@ -192,6 +193,7 @@ sub signal_oarexec($$$$$$){
         my $exit_code;
         my $ssh_pid;
         eval{
+            $SIG{PIPE}  = 'IGNORE';
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm(get_ssh_timeout());
             $ssh_pid = fork();
@@ -274,6 +276,7 @@ sub fork_no_wait($$){
 
     $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
     my $pid;
+    $SIG{PIPE}  = 'IGNORE';
     $pid = fork();
     if(defined($pid)){
         if($pid == 0){
@@ -455,6 +458,7 @@ sub sentinelle($$$){
     while (($index <= $#$nodes) or ($#timeout >= 0)){
         # Check if window is full or not
         while((($nb_running_processes) < $window) and ($index <= $#$nodes)){
+            $SIG{PIPE}  = 'IGNORE';
             $pid = fork();
             if (defined($pid)){
                 $running_processes{$pid} = $index;

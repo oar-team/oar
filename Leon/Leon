@@ -137,7 +137,8 @@ foreach my $j (iolib::get_to_exterminate_jobs($base)){
         iolib::set_finish_date($base,$j->{job_id});
         next;
     }
- 
+
+    $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();
     if ($pid == 0){
         #CHILD

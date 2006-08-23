@@ -184,6 +184,7 @@ if (defined($Server_prologue)){
         }
         eval{
             undef($base);
+            $SIG{PIPE}  = 'IGNORE';
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm($timeout);
             $pid = fork();
