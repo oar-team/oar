@@ -1,5 +1,13 @@
+oar (2.0.0-beta1) unstable; urgency=low
+
+  [ capitn ]
+  * new release 
+
+ -- capitn <capitn@localhost.localdomain>  Wed, 23 Aug 2006 15:55:37 +0200
+
 oar (1.6.1) unstable; urgency=low
 
+  [ Nicolas Capit ]
   * epilogue errors treatment enhancement
   * add -s option to oarnodes command --> show only state of nodes
   * add -l option to oarnodes command --> show only the node list
@@ -10,7 +18,7 @@ oar (1.6.1) unstable; urgency=low
   * change oaremovenode command to oarremovenode
   * enhance job error management and decisions to suspect nodes
 
- -- Nicolas Capit <capitn@imag.fr>  Mon, 18 Jul 2005 14:06:08 +0200
+ -- capitn <capitn@localhost.localdomain>  Wed, 23 Aug 2006 15:55:37 +0200
 
 oar (1.6) unstable; urgency=low
 

@@ -57,6 +57,7 @@ dbinit:
 	install -m 0755 DB/oar_db_init.pl $(OARDIR)/oar_db_init
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oar_db_init
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
+	install -m 0644 DB/oar_postgres.sql $(OARDIR)
 
 common:
 	install -d -m 0755 $(OARDIR)
@@ -134,7 +135,6 @@ user:
 	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
-	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 
 node:
 	install -d -m 0755 $(OARDIR)
@@ -159,9 +159,10 @@ doc:
 	install -m 0644 Docs/Almighty.fig $(DOCDIR)
 	install -m 0644 Docs/Almighty.ps $(DOCDIR)
 	install -d -m 0755 $(DOCDIR)/html
-	install -m 0644 Docs/html/index.html $(DOCDIR)/html
+	install -m 0644 Docs/html/OAR-DOCUMENTATION.html $(DOCDIR)/html
 	install -m 0644 Docs/html/oar_logo.png $(DOCDIR)/html
-	install -m 0644 Docs/html/HOWTO-OAR.html $(DOCDIR)/html
+	install -m 0644 Docs/html/db_scheme.png $(DOCDIR)/html
+	install -m 0644 Docs/html/interactive_oarsub_scheme.png $(DOCDIR)/html
 
 draw-gantt:
 	install -d -m 0755 $(OARDIR)

@@ -35,6 +35,9 @@ use strict;
 use Sys::Hostname;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 
+
+$SIG{PIPE}  = 'IGNORE';
+
 my $Job_id = shift;
 
 $| = 1;
@@ -151,7 +154,6 @@ sub kill_children($){
 
 sub send_kill_signal_to_myself(){
     my $father = $$;
-    $SIG{PIPE}  = 'IGNORE';
     my $pid=fork;
     if($pid==0){
         sleep(5);
@@ -329,7 +331,6 @@ if ($Job->{detach_oarexec} == 1){
     #Detach process from bipbip SSH
     print("[oarexec $Job_id] I am detaching the oarexec process\n");
 
-    $SIG{PIPE}  = 'IGNORE';
     if(fork() != 0){
         print(oar_Tools::get_bipbip_oarexec_rendez_vous());
         # Exit from main oarexec
@@ -362,7 +363,6 @@ sigprocmask(SIG_UNBLOCK, $Blockset);
 my $pid = $$;
 if ($Job->{mode} eq "PASSIVE"){
     #print("[oarexec $Job_id] Launch the command : $cmd\n");
-    $SIG{PIPE}  = 'IGNORE';
     $pid = fork;
     if($pid == 0){
         #CHILD

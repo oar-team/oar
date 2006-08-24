@@ -249,7 +249,7 @@ sub init(){
         exit(4);
     }
 
-    $SIG{PIPE}  = 'IGNORE';
+    $SIG{PIPE}  = 'IGNORE'; #Must be catch otherwise the appendice can finish abnormally
     $appendice_pid = fork();
 
     if(!defined($appendice_pid)){
