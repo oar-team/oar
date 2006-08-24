@@ -372,7 +372,7 @@ sub time_update(){
         $lastvillains = $lastvillains+$villainstimeout;
         add_command("Villains");
     }
-    if ($current>=($lastchecknodes+$checknodestimeout)){
+    if (($current>=($lastchecknodes+$checknodestimeout)) and ($checknodestimeout > 0)){
         oar_debug("[Almighty] Node check timeout\n");
         $lastchecknodes = $lastchecknodes+$checknodestimeout;
         add_command("Finaud");

@@ -1966,7 +1966,6 @@ sub get_jobs_range_dates($$$){
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
-    my %listed_nodes;
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($results{$ref[0]})){
@@ -1983,15 +1982,10 @@ sub get_jobs_range_dates($$$){
                                   'start_time' => $ref[10],
                                   'stop_time' => $ref[11],
                                   'resources' => [ $ref[12] ],
-                                  'network_addresses' => [ $ref[13] ],
                                   'limit_stop_time' => $ref[14]
                                  }
         }else{
             push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-            if (!defined($listed_nodes{$ref[13]})){
-                push(@{$results{$ref[0]}->{network_addresses}}, $ref[13]);
-                $listed_nodes{$ref[13]} = 1;
-            }
         }
     }
     $sth->finish();
@@ -2023,7 +2017,6 @@ sub get_jobs_gantt_scheduled($$$){
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
-    my %listed_nodes;
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($results{$ref[0]})){
@@ -2040,14 +2033,9 @@ sub get_jobs_gantt_scheduled($$$){
                                   'start_time' => $ref[10],
                                   'stop_time' => $ref[11],
                                   'resources' => [ $ref[12] ],
-                                  'network_addresses' => [ $ref[13] ]
                                  }
         }else{
             push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-            if (!defined($listed_nodes{$ref[13]})){
-                push(@{$results{$ref[0]}->{network_addresses}}, $ref[13]);
-                $listed_nodes{$ref[13]} = 1;
-            }
         }
     }
     $sth->finish();
