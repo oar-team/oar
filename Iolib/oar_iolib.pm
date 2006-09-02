@@ -20,6 +20,12 @@ use strict;
 use oar_resource_tree;
 use oar_Tools;
 
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
 # PROTOTYPES
 
 # CONNECTION
@@ -4383,15 +4389,32 @@ sub job_finishing_sequence($$$$$$$$){
             my $clean_script = oar_Tools::get_cpuset_clean_script($cpuset_name);
             my $openssh_cmd = get_conf("OPENSSH_CMD");
             $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+
+            my $Cpuset_file = get_conf("CPUSET_FILE");
+            $Cpuset_file = "cpuset_manager.pl" if (!defined($Cpuset_file));
+            $Cpuset_file = "$ENV{OARDIR}/$Cpuset_file";
+
+            my $cpuset_string;
+            open(FILE, $Cpuset_file) or die("Cannot open $Cpuset_file\n");
+            while(<FILE>){
+                $cpuset_string .= $_;
+            }
+            close(FILE);
+            $cpuset_string .= "__END__\n";
+            my $cpuset_hash = {
+                                name => "$cpuset_name"
+                              };
+            $cpuset_string .= Dumper($cpuset_hash);
+            
             my @node_commands;
             my @node_corresponding;
             foreach my $h (iolib::get_job_current_hostnames($dbh,$job_id)){
-                my $cmd = "$openssh_cmd -x -T $h '$clean_script'";
+                my $cmd = "$openssh_cmd -x -T $h sudo perl - clean";
                 push(@node_commands, $cmd);
                 push(@node_corresponding, $h);
             }
             oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes : @node_commands\n");
-            my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+            my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
             if ($#bad_tmp >= 0){
                 # Verify if the errors are not from another job with the same cpuset_name
                 my $job = get_job($dbh, $job_id);

@@ -39,7 +39,7 @@ sub get_default_prologue_epilogue_timeout();
 sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_bipbip_oarexec_rendez_vous();
-sub sentinelle($$$);
+sub sentinelle($$$$);
 sub get_cpuset_script($$);
 sub get_cpuset_clean_script($);
 sub check_resource_property($);
@@ -440,10 +440,11 @@ sub get_bipbip_oarexec_rendez_vous(){
 # Execute comands with a specified timeout and a maximum number in the same time : window.
 # Aavoid to overload the computer.
 # args : window size, timeout, command to execute
-sub sentinelle($$$){
+sub sentinelle($$$$){
     my $window = shift;
     my $timeout = shift;
     my $nodes = shift;
+    my $input_string = shift;
 
     my @bad_nodes;
     my $index = 0;
@@ -466,7 +467,22 @@ sub sentinelle($$$){
                 push(@timeout, [$pid,time()+$timeout]);
                 if ($pid == 0){
                     #In the child
-                    exec($nodes->[$index]);
+                    if (defined($input_string)){
+                        my $cmd_pid = open(HANDLE, "| $nodes->[$index]");
+                        $SIG{USR2} = sub {kill(9,$cmd_pid)};
+                        print(HANDLE $input_string);
+                        close(HANDLE);
+                        my $exit_value = $? >> 8;
+                        my $signal_num  = $? & 127;
+                        my $dumped_core = $? & 128;
+                        if (($exit_value != 0) or ($signal_num != 0) or ($dumped_core != 0)){
+                            exit(1);
+                        }else{
+                            exit(0);
+                        }
+                    }else{
+                        exec($nodes->[$index]);
+                    }
                 }
             }else{
                 push(@bad_nodes, $index);
@@ -496,7 +512,11 @@ sub sentinelle($$$){
             }else{
                 if ($timeout[$t]->[1] <= time()){
                     # DRING, timeout !!!
-                    kill(9,$timeout[$t]->[0]);
+                    if (defined($input_string)){
+                        kill(12,$timeout[$t]->[0]);
+                    }else{
+                        kill(9,$timeout[$t]->[0]);
+                    }
                 }
             }
             $t++;

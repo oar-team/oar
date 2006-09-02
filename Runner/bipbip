@@ -9,6 +9,12 @@ use oar_Tools;
 use Data::Dumper;
 use IPC::Open2;
 
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
 my $Job_id= shift;
 my $Oarexec_reattach_exit_value = shift;
 my $Oarexec_challenge = shift;
@@ -44,6 +50,9 @@ my $Server_prologue = get_conf("SERVER_PROLOGUE_EXEC_FILE");
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
 my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+my $Cpuset_file = get_conf("CPUSET_FILE");
+$Cpuset_file = "cpuset_manager.pl" if (!defined($Cpuset_file));
+$Cpuset_file = "$ENV{OARDIR}/$Cpuset_file";
 
 
 my $base;
@@ -102,20 +111,54 @@ if (!defined($types->{deploy})){
     $cpuset_nodes_array = iolib::get_cpuset_values_per_node($base,$Cpuset_field,\@hosts) if (defined($Cpuset_field));
     if (defined($cpuset_nodes_array)){
         # Prepare commands to run on each node
+        my $cpuset_string;
+        open(FILE, $Cpuset_file) or die("Cannot open $Cpuset_file\n");
+        while(<FILE>){
+            $cpuset_string .= $_;
+        }
+        close(FILE);
+        $cpuset_string .= "__END__\n";
         my @node_commands;
         my @node_corresponding;
+        my $cpuset_hash = {
+                            name => "$Cpuset_name",
+                            nodes => $cpuset_nodes_array
+                          };
+        $cpuset_string .= Dumper($cpuset_hash);
         foreach my $n (keys(%{$cpuset_nodes_array})){
-            my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
-            my $cmd = "$Openssh_cmd -x -T $n \"sudo sh -c \'$tmp\'\"";
+            #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
+            my $cmd = "$Openssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - init";
             push(@node_commands, $cmd);
             push(@node_corresponding, $n);
         }
         $event_type = "CPUSET_ERROR";
-        my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands);
+        my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
         foreach my $b (@bad_tmp){
             push(@bad, $node_corresponding[$b]);
         }
         #print("@bad\n");
+        # Clean already configured cpuset
+        if ($#bad >= 0){
+            @node_commands = ();
+            @node_corresponding = ();
+            foreach my $n (keys(%{$cpuset_nodes_array})){
+                my $skip = 0;
+                my $i = 0;
+                while (($i <= $#bad) and ($skip == 0)){
+                    $skip = 1 if ($bad[$i] eq $n);
+                    $i++;
+                }
+                if ($skip == 0){
+                    my $cmd = "$Openssh_cmd -x -T $n sudo perl - clean";
+                    push(@node_commands, $cmd);
+                    push(@node_corresponding, $n);
+                }
+            }
+            @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
+            foreach my $b (@bad_tmp){
+                push(@bad, $node_corresponding[$b]);
+            }
+        }
     }
     if (($#bad < 0) and (!defined($cpuset_nodes_array))){
         # CHECK nodes
@@ -273,12 +316,6 @@ my %data_to_transfer = (
         detach_oarexec      => $Detach_oarexec,
         cpuset_name         => $Cpuset_name
     );
-
-# suitable Data::Dumper configuration for serialization
-$Data::Dumper::Purity = 1;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Indent = 0;
-$Data::Dumper::Deepcopy = 1;
 
 my $error = 40;
 eval {
