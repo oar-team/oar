@@ -19,6 +19,7 @@ use oarversion;
 my $remote_host;
 my $remote_port;
 my $Deploy_hostname;
+my $Cpuset_field;
 my $Host = hostname ;
 
 my $base;
@@ -132,7 +133,11 @@ sub connect_job($$$){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
         #deploy part
-        $ENV{OAR_CPUSET} = iolib::get_job_cpuset_name($dbh,$job_id);
+        if (defined($Cpuset_field)){
+            $ENV{OAR_CPUSET} = iolib::get_job_cpuset_name($dbh,$job_id);
+        }else{
+            $ENV{OAR_CPUSET} = "";
+        }
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
@@ -150,7 +155,7 @@ sub connect_job($$$){
         my $cmd = "$openssh_cmd -oSendEnv=OAR_CPUSET -x -t $host_to_connect_via_ssh \"sh -c \\\"echo \\\\\\\$PPID >> $oarsub_pids && TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
         #my $cmd = "cat $oarexecuser_script | $openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
         #my $cmd = "$openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
-        print("oarsub launchs command : $cmd\n");
+        #print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
         $< = $>;
@@ -226,12 +231,12 @@ $Default_resources = get_conf("OARSUB_DEFAULT_RESOURCES");
 if (!defined($Default_resources)){
     $Default_resources = "/resource_id=1";
 }
-    
 
 $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
 if (!defined($Deploy_hostname)){
     $Deploy_hostname = $remote_host;
 }
+$Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
 my $binpath;
 if (defined($ENV{OARDIR})){
