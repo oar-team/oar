@@ -376,14 +376,13 @@ exit 0
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
         $shell,
         $launching_directory,
         $display,
-        $cpuset_name,
         $resource_file,
         $job_name,
         $job_env) = @_;
@@ -406,7 +405,6 @@ export OAR_JOBID='.$job_id.'
 export OAR_USER='.$user.'
 export OAR_WORKDIR='.$launching_directory.'
 export DISPLAY='.$display.'
-export OAR_CPUSET='.$cpuset_name.'
 export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.'
 
 export OAR_NODEFILE=\$OAR_FILE_NODES
@@ -525,56 +523,6 @@ sub sentinelle($$$$){
     }
     
     return(@bad_nodes);
-}
-
-sub get_cpuset_script($$){
-    my $cpus = shift;
-    my $cpuset_name = shift;
-
-    my $cpus_str = '';
-    foreach my $c (@{$cpus}){
-        $cpus_str .= "$c,";
-    }
-    chop($cpus_str);
-
-    my $script = '
-mount -t cpuset | grep \" /dev/cpuset \" > /dev/null 2>&1
-if [ \$? != 0 ]
-then
-    mkdir -p /dev/cpuset && mount -t cpuset none /dev/cpuset
-    RES=$?
-    [ \$RES != 0 ] && exit \$RES
-fi
-
-mkdir -p /dev/cpuset/'.$cpuset_name.' &&\
-  /bin/echo 0 | cat > /dev/cpuset/'.$cpuset_name.'/notify_on_release &&\
-  /bin/echo 0 | cat > /dev/cpuset/'.$cpuset_name.'/cpu_exclusive &&\
-  cat /dev/cpuset/mems > /dev/cpuset/'.$cpuset_name.'/mems &&\
-  /bin/echo '.$cpus_str.' | cat > /dev/cpuset/'.$cpuset_name.'/cpus &&\
-  chown oar /dev/cpuset/'.$cpuset_name.'/tasks
-
-exit \$?
-';
-
-    return($script);
-}
-
-sub get_cpuset_clean_script($){
-    my $cpuset_name = shift;
-
-    my $script = '
-PROCESSES=$(cat /dev/cpuset/'.$cpuset_name.'/tasks)
-while [ "$PROCESSES" != "" ]
-do
-    sudo kill -9 $PROCESSES
-    PROCESSES=$(cat /dev/cpuset/'.$cpuset_name.'/tasks)
-done
-
-sudo rmdir /dev/cpuset/'.$cpuset_name.'
-exit $?
-';
-
-    return($script);
 }
 
 

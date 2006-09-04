@@ -107,6 +107,9 @@ oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job-
 if (!defined($types->{deploy})){
     my $event_type;
     my @bad;
+    ###############
+    # CPUSET PART #
+    ###############
     my $cpuset_nodes_array;
     $cpuset_nodes_array = iolib::get_cpuset_values_per_node($base,$Cpuset_field,\@hosts) if (defined($Cpuset_field));
     if (defined($cpuset_nodes_array)){
@@ -125,17 +128,18 @@ if (!defined($types->{deploy})){
                             nodes => $cpuset_nodes_array
                           };
         $cpuset_string .= Dumper($cpuset_hash);
+        
         foreach my $n (keys(%{$cpuset_nodes_array})){
             #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
             my $cmd = "$Openssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - init";
             push(@node_commands, $cmd);
             push(@node_corresponding, $n);
         }
-        $event_type = "CPUSET_ERROR";
         my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
         foreach my $b (@bad_tmp){
             push(@bad, $node_corresponding[$b]);
         }
+        $event_type = "CPUSET_ERROR";
         #print("@bad\n");
         # Clean already configured cpuset
         if ($#bad >= 0){
@@ -160,6 +164,9 @@ if (!defined($types->{deploy})){
             }
         }
     }
+    #####################
+    # CPUSET PART, END #
+    #####################
     if (($#bad < 0) and (!defined($cpuset_nodes_array))){
         # CHECK nodes
         oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
@@ -313,8 +320,7 @@ my %data_to_transfer = (
         pro_epi_timeout	    => $pro_epi_timeout,
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
-        detach_oarexec      => $Detach_oarexec,
-        cpuset_name         => $Cpuset_name
+        detach_oarexec      => $Detach_oarexec
     );
 
 my $error = 40;
@@ -322,7 +328,8 @@ eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     #open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-    my $pid = open2(\*READ, \*WRITE, "$Openssh_cmd -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
+    $ENV{OAR_CPUSET} = $Cpuset_name;
+    my $pid = open2(\*READ, \*WRITE, "$Openssh_cmd -oSendEnv=OAR_CPUSET -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
     foreach my $f (@oarexec_files){
         open(FILE, $f) or die("Cannot open $f\n");
         while(<FILE>){

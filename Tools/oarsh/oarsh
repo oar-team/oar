@@ -5,15 +5,21 @@
 # User to become is in $SUDO_USER
 # $OAR_CPUSET contains the cpuset name
 
-CPUSETFILE=/proc/self/cpuset
 
-if [ ! -r $CPUSETFILE ]
-then
-    echo "[OARSH] Cannot find cpuset file : $CPUSETFILE" 1>&2
-    exit 1
-fi
+# Get the name of the current cpuset
+function get_current_cpuset() {
+    CPUSETFILE=/proc/self/cpuset
 
-export OAR_CPUSET=$(< $CPUSETFILE)
+    if [ ! -r $CPUSETFILE ]
+    then
+        echo "[OARSH] Cannot find cpuset file : $CPUSETFILE" 1>&2
+        exit 1
+    fi
+    echo $(< $CPUSETFILE)
+}
+
+
+export OAR_CPUSET=$(get_current_cpuset)
 
 if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then

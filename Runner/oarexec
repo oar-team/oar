@@ -372,12 +372,6 @@ if ($Job->{mode} eq "PASSIVE"){
         $SIG{QUIT} = 'DEFAULT';
         $SIG{USR1} = 'DEFAULT';
         $SIG{USR2} = 'DEFAULT';
-        if ((defined($Job->{cpuset_name})) and ($Job->{cpuset_name} ne "")){
-            if (open(CPUSET,">/dev/cpuset/$Job->{cpuset_name}/tasks")){
-                print(CPUSET "$$\n");
-                close(CPUSET);
-            }
-        }
         print("[oarexec $Job_id] child exec: $cmd\n");
         exec($cmd);
     }

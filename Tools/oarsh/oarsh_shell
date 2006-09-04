@@ -4,26 +4,41 @@
 # It adds its own process in the cpuset OAR_CPUSET and launches
 # the shell or the script of the user SUDO_USER.
 
+
 DEFAULT_SHELL=/bin/bash
 
-if [ "$SUDO_USER" == "" ]
-then
-    # It must be oar
-    export SHELL=$DEFAULT_SHELL
-    exec $DEFAULT_SHELL "$@"
-else
-    # CPUSET assignation
+# $1 = Name of the cpuset
+# $2 = PID to add
+# Add $2 into the cpuset $1
+function add_process_to_cpuset() {
+    ######################
+    # CPUSET assignation #
+    ###########################################################################
     CPUSET_MOUNT_POINT=$(mount -t cpuset | cut -d " " -f 3 | head -1)
-    CPUSETFILE="$CPUSET_MOUNT_POINT/$OAR_CPUSET/tasks"
+    CPUSETFILE="$CPUSET_MOUNT_POINT/$1/tasks"
     
     if ( ! $(sudo test -w $CPUSETFILE) )
     then
         echo "[OARSH] Cannot find cpuset file : $CPUSETFILE" 1>&2
         exit 1
     fi
-    MY_PID=$$
+    MY_PID=$2
     sudo sh -c "echo $MY_PID > $CPUSETFILE"
-            
+    ###########################################################################
+}
+
+
+if [ "$SUDO_USER" == "" ]
+then
+    # It must be oar
+    if [ "$OAR_CPUSET" != "" ]
+    then
+        add_process_to_cpuset $OAR_CPUSET $$ || exit
+    fi
+    export SHELL=$DEFAULT_SHELL
+    exec $DEFAULT_SHELL "$@"
+else
+    add_process_to_cpuset $OAR_CPUSET $$ || exit
     if [ "$1" == "" ]
     then
         # Simulate initial login
@@ -43,3 +58,5 @@ else
         fi
     fi
 fi
+
+

@@ -4382,11 +4382,13 @@ sub job_finishing_sequence($$$$$$$$){
     
     my $types = iolib::get_current_job_types($dbh,$job_id);
     if (!defined($types->{deploy})){
+        ###############
+        # CPUSET PART #
+        ###############
         # Clean all CPUSETs if needed
         my $cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
         if (defined($cpuset_field)){
             my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
-            my $clean_script = oar_Tools::get_cpuset_clean_script($cpuset_name);
             my $openssh_cmd = get_conf("OPENSSH_CMD");
             $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
 
@@ -4453,6 +4455,9 @@ sub job_finishing_sequence($$$$$$$$){
                 }
             }
         }
+        ####################
+        # CPUSET PART, END #
+        ####################
     }
 
     if (defined($state_to_switch)){
