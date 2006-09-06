@@ -3021,31 +3021,25 @@ sub get_absent_suspected_resources_for_a_timeout($$){
 }
 
 
-sub get_cpuset_values_per_node($$$){
+# get_cpuset_values_for_a_moldable_job
+# get cpuset values for each nodes of a MJob
+sub get_cpuset_values_for_a_moldable_job($$$){
     my $dbh = shift;
     my $cpuset_field = shift;
-    my $host_list = shift;
+    my $mjob_id = shift;
 
-    my $constraint = "";
-    foreach my $h (@{$host_list}){
-        $constraint .= "\'$h\',";
-    }
-    chop($constraint);
-    
     my $sth = $dbh->prepare("   SELECT resources.network_address, resources.$cpuset_field
-                                FROM resources
+                                FROM resources, assigned_resources
                                 WHERE
-                                    resources.network_address IN ($constraint)
+                                    assigned_resources.moldable_job_id = $mjob_id AND
+                                    assigned_resources.resource_id = resources.resource_id
+                                GROUP BY resources.network_address, resources.$cpuset_field
                             ");
     $sth->execute();
 
     my $results;
-    my $tmp_hash = {};
     while (my @ref = $sth->fetchrow_array()) {
-        if ((!defined($tmp_hash->{$ref[0]})) and (!defined($tmp_hash->{$ref[0]}->{$ref[1]}))){
-            push(@{$results->{$ref[0]}}, $ref[1]);
-        }
-        $tmp_hash->{$ref[0]}->{$ref[1]} = 1;
+        push(@{$results->{$ref[0]}}, $ref[1]);
     }
 
     return($results);
@@ -4391,35 +4385,19 @@ sub job_finishing_sequence($$$$$$$$){
             my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
             my $openssh_cmd = get_conf("OPENSSH_CMD");
             $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
-
-            my $Cpuset_file = get_conf("CPUSET_FILE");
-            $Cpuset_file = "cpuset_manager.pl" if (!defined($Cpuset_file));
-            $Cpuset_file = "$ENV{OARDIR}/$Cpuset_file";
-
-            my $cpuset_string;
-            open(FILE, $Cpuset_file) or die("Cannot open $Cpuset_file\n");
-            while(<FILE>){
-                $cpuset_string .= $_;
-            }
-            close(FILE);
-            $cpuset_string .= "__END__\n";
-            my $cpuset_hash = {
-                                name => "$cpuset_name"
-                              };
-            $cpuset_string .= Dumper($cpuset_hash);
+            my $cpuset_file = get_conf("CPUSET_FILE");
             
-            my @node_commands;
-            my @node_corresponding;
-            foreach my $h (iolib::get_job_current_hostnames($dbh,$job_id)){
-                my $cmd = "$openssh_cmd -x -T $h sudo perl - clean";
-                push(@node_commands, $cmd);
-                push(@node_corresponding, $h);
-            }
-            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes : @node_commands\n");
-            my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
-            if ($#bad_tmp >= 0){
+            my $job = get_job($dbh, $job_id);
+            my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
+            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
+            my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,$cpuset_file,"clean",$openssh_cmd);
+            if ($tag == 0){
+                my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
+                oar_Judas::oar_error($str);
+                add_new_event($dbh, "CPUSET_MANAGER_FILE", $job_id, $str);
+            }elsif ($#bad_tmp >= 0){
                 # Verify if the errors are not from another job with the same cpuset_name
-                my $job = get_job($dbh, $job_id);
+                # So the cpuset was already deleted --> not an error
                 my $req = "
                             SELECT resources.network_address
                             FROM jobs, assigned_resources, resources
@@ -4442,8 +4420,8 @@ sub job_finishing_sequence($$$$$$$$){
 
                 my @bad;
                 foreach my $b (@bad_tmp){
-                    if (!defined($potential_same_cpuset{$node_corresponding[$b]})){
-                        push(@bad, $node_corresponding[$b]);
+                    if (!defined($potential_same_cpuset{$b})){
+                        push(@bad, $b);
                     }
                 }
                 if ($#bad >= 0){
@@ -4467,6 +4445,7 @@ sub job_finishing_sequence($$$$$$$$){
         unlock_table($dbh);
     }
 }
+
 
 # END OF THE MODULE
 return 1;

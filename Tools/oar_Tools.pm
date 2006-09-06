@@ -4,6 +4,7 @@ package oar_Tools;
 use IO::Socket::INET;
 use strict;
 use POSIX ":sys_wait_h";
+use Data::Dumper;
 
 # Constants
 my $Default_leon_soft_walltime = 20;
@@ -18,6 +19,7 @@ my $Oarsub_file_name_prefix = "oarsub_connections_";
 my $Default_prologue_epilogue_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
+my $Default_cpuset_file_manager = "cpuset_manager.pl";
 
 # Prototypes
 sub get_all_process_children();
@@ -536,6 +538,56 @@ sub check_resource_property($){
     }else{
         return(0);
     }
+}
+
+
+# Manage cpuset
+# args : cpuset name, hashtable with network_address -> [ array of cpu numbers ], name of the file containing the perl script, action to perform (init or clean), SSH command to use
+sub manage_cpuset($$$$$){
+    my $cpuset_name = shift;
+    my $host_cpus_hash = shift;
+    my $manage_file = shift;
+    my $action = shift;
+    my $ssh_cmd = shift;
+    
+    my @bad;
+    $manage_file = $Default_cpuset_file_manager if (!defined($manage_file));;
+    $manage_file = "$ENV{OARDIR}/$manage_file" if ($manage_file !~ /^\//);
+    $ssh_cmd = $Default_openssh_cmd if (!defined($ssh_cmd));
+    # Prepare commands to run on each node
+    my $cpuset_string;
+    open(FILE, $manage_file) or return(0,undef);
+    while(<FILE>){
+        $cpuset_string .= $_;
+    }
+    close(FILE);
+    $cpuset_string .= "__END__\n";
+    my $cpuset_hash = {
+                        name => $cpuset_name,
+                        nodes => $host_cpus_hash
+                      };
+    # suitable Data::Dumper configuration for serialization
+    $Data::Dumper::Purity = 1;
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Indent = 0;
+    $Data::Dumper::Deepcopy = 1;
+
+    $cpuset_string .= Dumper($cpuset_hash);
+    
+    my @node_commands;
+    my @node_corresponding;
+    foreach my $n (keys(%{$host_cpus_hash})){
+        #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
+        my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - $action";
+        push(@node_commands, $cmd);
+        push(@node_corresponding, $n);
+    }
+    my @bad_tmp = sentinelle(10,get_ssh_timeout(), \@node_commands, $cpuset_string);
+    foreach my $b (@bad_tmp){
+        push(@bad, $node_corresponding[$b]);
+    }
+
+    return(1,@bad);
 }
 
 1;

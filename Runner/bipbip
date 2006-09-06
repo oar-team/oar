@@ -51,8 +51,6 @@ my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
 my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 my $Cpuset_file = get_conf("CPUSET_FILE");
-$Cpuset_file = "cpuset_manager.pl" if (!defined($Cpuset_file));
-$Cpuset_file = "$ENV{OARDIR}/$Cpuset_file";
 
 
 my $base;
@@ -110,64 +108,32 @@ if (!defined($types->{deploy})){
     ###############
     # CPUSET PART #
     ###############
-    my $cpuset_nodes_array;
-    $cpuset_nodes_array = iolib::get_cpuset_values_per_node($base,$Cpuset_field,\@hosts) if (defined($Cpuset_field));
-    if (defined($cpuset_nodes_array)){
-        # Prepare commands to run on each node
-        my $cpuset_string;
-        open(FILE, $Cpuset_file) or die("Cannot open $Cpuset_file\n");
-        while(<FILE>){
-            $cpuset_string .= $_;
-        }
-        close(FILE);
-        $cpuset_string .= "__END__\n";
-        my @node_commands;
-        my @node_corresponding;
-        my $cpuset_hash = {
-                            name => "$Cpuset_name",
-                            nodes => $cpuset_nodes_array
-                          };
-        $cpuset_string .= Dumper($cpuset_hash);
-        
-        foreach my $n (keys(%{$cpuset_nodes_array})){
-            #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
-            my $cmd = "$Openssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - init";
-            push(@node_commands, $cmd);
-            push(@node_corresponding, $n);
-        }
-        my @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
-        foreach my $b (@bad_tmp){
-            push(@bad, $node_corresponding[$b]);
-        }
-        $event_type = "CPUSET_ERROR";
-        #print("@bad\n");
-        # Clean already configured cpuset
-        if ($#bad >= 0){
-            @node_commands = ();
-            @node_corresponding = ();
-            foreach my $n (keys(%{$cpuset_nodes_array})){
-                my $skip = 0;
-                my $i = 0;
-                while (($i <= $#bad) and ($skip == 0)){
-                    $skip = 1 if ($bad[$i] eq $n);
-                    $i++;
+    my $cpuset_nodes;
+    $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
+    if (defined($cpuset_nodes)){
+        my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,$Cpuset_file,"init",$Openssh_cmd);
+        if ($tag == 0){
+            my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$Job_id] Bad cpuset file : $Cpuset_file\n";
+            oar_Judas::oar_error($str);
+            iolib::add_new_event($base, "CPUSET_MANAGER_FILE", $Job_id, $str);
+        }else{
+            push (@bad, @bad_tmp);
+            $event_type = "CPUSET_ERROR";
+            #print("@bad\n");
+            # Clean already configured cpuset
+            if ($#bad >= 0){
+                # remove non initialized nodes
+                foreach my $b (@bad){
+                    delete($cpuset_nodes->{$b});
                 }
-                if ($skip == 0){
-                    my $cmd = "$Openssh_cmd -x -T $n sudo perl - clean";
-                    push(@node_commands, $cmd);
-                    push(@node_corresponding, $n);
-                }
-            }
-            @bad_tmp = oar_Tools::sentinelle(10,oar_Tools::get_ssh_timeout(), \@node_commands, $cpuset_string);
-            foreach my $b (@bad_tmp){
-                push(@bad, $node_corresponding[$b]);
+                push (@bad, oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,$Cpuset_file,"clean",$Openssh_cmd));
             }
         }
     }
     #####################
     # CPUSET PART, END #
     #####################
-    if (($#bad < 0) and (!defined($cpuset_nodes_array))){
+    if (($#bad < 0) and (!defined($cpuset_nodes))){
         # CHECK nodes
         oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
         $event_type = "PING_CHECKER_NODE_SUSPECTED";
