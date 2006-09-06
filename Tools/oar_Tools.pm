@@ -574,6 +574,7 @@ sub manage_cpuset($$$$$){
 
     $cpuset_string .= Dumper($cpuset_hash);
     
+    # Dispatch via sentinelle
     my @node_commands;
     my @node_corresponding;
     foreach my $n (keys(%{$host_cpus_hash})){
@@ -586,6 +587,8 @@ sub manage_cpuset($$$$$){
     foreach my $b (@bad_tmp){
         push(@bad, $node_corresponding[$b]);
     }
+
+    # Dispatch via taktuk
 
     return(1,@bad);
 }

@@ -24,21 +24,20 @@ if( $@ ){
 }
 # Get the data structure only for this node
 my $Cpuset_name = $Cpuset->{name};
-my @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}} if ($ARGV[0] eq "init");
+my @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
 if (!defined($Cpuset_name)){
     print("[cpuset_manager] Bad SSH hashtable transfered\n");
     exit(2);
 }
 
+# From now, "Cpuset" is of the form: 
+# $Cpuset = {
+#               name => "cpuset name",
+#               cpus => [array with all cpus of this cpuset]
+#           }
 
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
-
-    # From now, "Cpuset" is of the form: 
-    # $Cpuset = {
-    #               name => "cpuset name",
-    #               cpus => [array with all cpus of this cpuset]
-    #           }
 
     #print("[cpuset_manager] name = $Cpuset_name ; cpus = @Cpuset_cpus\n");
     if (system('mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
@@ -58,11 +57,6 @@ if ($ARGV[0] eq "init"){
     }
 }elsif ($ARGV[0] eq "clean"){
     # Clean cpuset on this node
-
-    # From now, "Cpuset" is of the form: 
-    # $Cpuset = {
-    #               name => "cpuset name",
-    #           }
 
     system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_name.'/tasks)
             while [ "$PROCESSES" != "" ]
