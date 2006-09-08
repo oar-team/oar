@@ -601,7 +601,7 @@ sub manage_cpuset($$$$$$$){
             $m_option .= " -m $n";
         }
        
-        my $cmd = "$taktuk_cmd ".'-o status=\'STATUS $host $line\n\''."$m_option 'broadcast exec sudo perl - $action' 'broadcast file_input -'";
+        my $cmd = "$taktuk_cmd -c $ssh_cmd".'-o status=\'STATUS $host $line\n\''."$m_option 'broadcast exec sudo perl - $action' 'broadcast file_input -'";
         my $pid = open2(\*READ, \*WRITE, $cmd);
         eval{
             $SIG{ALRM} = sub { die "alarm\n" };

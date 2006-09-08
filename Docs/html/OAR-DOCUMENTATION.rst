@@ -1208,6 +1208,26 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       CPUSET_RESOURCE_PROPERTY_DB_FIELD = cpuset
 
+.. _CPUSET_FILE:
+
+  - Name of the perl script that manages cpuset. You have to install your
+    script in $OARDIR and give only the name of the file without the
+    entire path.
+    (default is cpuset_manager.pl which handles the linux kernel cpuset)
+    ::
+    
+      CPUSET_FILE = cpuset_manager.pl
+
+.. _CPUSET_TAKTUK_CMD:
+
+  - If you have installed taktuk and want to use it to manage cpusets
+    then give the full command path (with your options except "-m" and "-o"
+    and "-c").
+    You don t also have to give any taktuk command.
+    ::
+
+      CPUSET_TAKTUK_CMD = /usr/bin/taktuk -s 
+
   - If you want to manage nodes to be started and stoped. OAR gives you this
     API:
 
@@ -1390,15 +1410,34 @@ disturb other users.
 OAR system steps:
 
  1. Before each job, the Runner_ initialize the CPUSET (see `CPUSET
-    definition`_) with OPENSSH_CMD_ and an efficient launching tool : `Taktuk
-    <https://gforge.inria.fr/projects/taktuk/>`_. If it is not installed then OAR
-    uses an internal launching tool less optimized.
+    definition`_) with OPENSSH_CMD_ and an efficient launching tool :
+    `Taktuk <https://gforge.inria.fr/projects/taktuk/>`_. If it is not
+    installed and configured (CPUSET_TAKTUK_CMD_) then OAR uses an internal
+    launching tool less optimized.
 
  2. Afer each job, OAR deletes all processes stored in the associated CPUSET.
     Thus all nodes are clean after a OAR job.
 
 If you don't want to use this feature, you can, but nothing will waranty that
 every user processes will be killed after the end of a job.
+
+If you want you can implement your own cpuset management. This is done by
+editing 3 files (see also `CPUSET installation`_):
+
+ - cpuset_manager.pl : this script creates the cpuset on each nodes
+   and also delete it at the end of the job. For more informations, you have to
+   look at this script (there are several comments).
+
+ - oarsh : (OARSH_) this script is used to replace the standard "ssh"
+   command. It gets the cpuset name where it is running and transfer this
+   information via "ssh" and the "SendEnv" option. In this file, you have
+   to change the "get_current_cpuset" function.
+
+ - oarsh_shell : (OARSH_SHELL_) this script is the shell of the oar user on
+   each nodes. It gets environment variables and look at if there is a cpuset
+   name. So if there is one it assigns the current process and its father to
+   this cpusetname. So all further user processes will remind in the cpuset.
+   In this file you just have to change the "add_process_to_cpuset" function.
 
 Job deletion
 ------------
