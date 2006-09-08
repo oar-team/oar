@@ -25,6 +25,6 @@ if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
     echo "[OARSH] You are not in a OAR specific cpuset ($OAR_CPUSET) : go away!" 1>&2
     exit 2
-else 
-    exec ssh -oSendEnv=OAR_CPUSET -oSendEnv=SUDO_USER "$@"
+else
+    exec ssh -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 fi

@@ -4390,7 +4390,8 @@ sub job_finishing_sequence($$$$$$$$){
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
-            my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,$cpuset_file,"clean",$openssh_cmd);
+            my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+            my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
             if ($tag == 0){
                 my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
                 oar_Judas::oar_error($str);

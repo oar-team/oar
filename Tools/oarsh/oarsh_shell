@@ -30,7 +30,6 @@ function add_process_to_cpuset() {
     ###########################################################################
 }
 
-
 if [ "$SUDO_USER" == "" ]
 then
     # It must be oar
@@ -61,5 +60,4 @@ else
         fi
     fi
 fi
-
 

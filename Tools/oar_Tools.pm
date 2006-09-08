@@ -4,6 +4,7 @@ package oar_Tools;
 use IO::Socket::INET;
 use strict;
 use POSIX ":sys_wait_h";
+use IPC::Open2;
 use Data::Dumper;
 
 # Constants
@@ -41,7 +42,7 @@ sub get_default_prologue_epilogue_timeout();
 sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_bipbip_oarexec_rendez_vous();
-sub sentinelle($$$$);
+sub sentinelle($$$$$);
 sub get_cpuset_script($$);
 sub get_cpuset_clean_script($);
 sub check_resource_property($);
@@ -440,11 +441,12 @@ sub get_bipbip_oarexec_rendez_vous(){
 # Execute comands with a specified timeout and a maximum number in the same time : window.
 # Aavoid to overload the computer.
 # args : window size, timeout, command to execute
-sub sentinelle($$$$){
+sub sentinelle($$$$$){
     my $window = shift;
     my $timeout = shift;
     my $nodes = shift;
     my $input_string = shift;
+    my $base = shift;
 
     my @bad_nodes;
     my $index = 0;
@@ -467,6 +469,7 @@ sub sentinelle($$$$){
                 push(@timeout, [$pid,time()+$timeout]);
                 if ($pid == 0){
                     #In the child
+                    undef($base);
                     if (defined($input_string)){
                         my $cmd_pid = open(HANDLE, "| $nodes->[$index]");
                         $SIG{USR2} = sub {kill(9,$cmd_pid)};
@@ -543,12 +546,14 @@ sub check_resource_property($){
 
 # Manage cpuset
 # args : cpuset name, hashtable with network_address -> [ array of cpu numbers ], name of the file containing the perl script, action to perform (init or clean), SSH command to use
-sub manage_cpuset($$$$$){
+sub manage_cpuset($$$$$$$){
     my $cpuset_name = shift;
     my $host_cpus_hash = shift;
     my $manage_file = shift;
     my $action = shift;
     my $ssh_cmd = shift;
+    my $taktuk_cmd = shift;
+    my $base = shift;
     
     my @bad;
     $manage_file = $Default_cpuset_file_manager if (!defined($manage_file));;
@@ -574,21 +579,50 @@ sub manage_cpuset($$$$$){
 
     $cpuset_string .= Dumper($cpuset_hash);
     
-    # Dispatch via sentinelle
-    my @node_commands;
-    my @node_corresponding;
-    foreach my $n (keys(%{$host_cpus_hash})){
-        #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
-        my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - $action";
-        push(@node_commands, $cmd);
-        push(@node_corresponding, $n);
+    if (!defined($taktuk_cmd)){
+        # Dispatch via sentinelle
+        my @node_commands;
+        my @node_corresponding;
+        foreach my $n (keys(%{$host_cpus_hash})){
+            #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
+            my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - $action";
+            push(@node_commands, $cmd);
+            push(@node_corresponding, $n);
+        }
+        my @bad_tmp = sentinelle(10,get_ssh_timeout(), \@node_commands, $cpuset_string,$base);
+        foreach my $b (@bad_tmp){
+            push(@bad, $node_corresponding[$b]);
+        }
+    }else{
+        # Dispatch via taktuk
+        my %tmp_node_hash = %{$host_cpus_hash};
+        my $m_option;
+        foreach my $n (keys(%tmp_node_hash)){
+            $m_option .= " -m $n";
+        }
+       
+        my $cmd = "$taktuk_cmd ".'-o status=\'STATUS $host $line\n\''."$m_option 'broadcast exec sudo perl - $action' 'broadcast file_input -'";
+        my $pid = open2(\*READ, \*WRITE, $cmd);
+        eval{
+            $SIG{ALRM} = sub { die "alarm\n" };
+            alarm(oar_Tools::get_ssh_timeout());     
+            # Send data structure to all nodes
+            print(WRITE $cpuset_string);
+            close(WRITE);
+            # Check good nodes from the stdout taktuk
+            while(<READ>){
+                if ($_ =~ /^STATUS ([\w\.-\d]+) (\d+)$/){
+                    if ($2 == 0){
+                        delete($tmp_node_hash{$1}) if (defined($tmp_node_hash{$1}));
+                    }
+                }else{
+                    print("[TAKTUK OUTPUT] $_");
+                }
+            }
+            alarm(0);
+        };
+        @bad = keys(%tmp_node_hash);
     }
-    my @bad_tmp = sentinelle(10,get_ssh_timeout(), \@node_commands, $cpuset_string);
-    foreach my $b (@bad_tmp){
-        push(@bad, $node_corresponding[$b]);
-    }
-
-    # Dispatch via taktuk
 
     return(1,@bad);
 }
