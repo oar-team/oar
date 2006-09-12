@@ -1,0 +1,660 @@
+#!/usr/bin/ruby -w
+
+#
+# drawgantt.cgi displays gantt chart for oar resource management system 
+#
+# author: auguste@imag.fr
+#
+# requirements:
+# ruby1.8 (or greater)
+# libdbi-ruby
+# libdbd-mysql-ruby or libdbd-pg-ruby
+# libgd-ruby1.8
+# libyaml-ruby
+# 
+
+
+require 'dbi'
+require 'cgi'
+require 'time'
+require 'optparse'
+require 'yaml'
+require 'pp'
+require 'GD'
+
+MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+RANGE_ORDER = ['1/6 day','1/2 day','1 day','3 days','week','month']
+RANGE_SEC = {'1/6 day'=>14400,'1/2 day'=>43200,'1 day'=>86400,'3 days'=>259200,
+		'week'=>604800,'month'=>2678400,'year'=>31622400}
+RANGE_STEP = {'1/6 day'=>3600,'1/2 day'=>10800,'1 day'=>43200,'3 days'=>86400,
+		'week'=>345600,'month'=>604800}
+
+$verbose = false 
+configfile = 'drawgantt.conf'
+
+puts "### Reading configuration file..." if $verbose
+$conf = YAML::load(IO::read(configfile))
+
+
+def base_connect
+  db_type = $conf['DB_TYPE']
+	if db_type == "mysql"
+		db_type == "Mysql"
+	end
+	return DBI.connect("dbi:#{db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
+										 "#{$conf['DB_BASE_LOGIN_RO']}","#{$conf['DB_BASE_PASSWD_RO']}")
+end
+
+# list_resources
+# gets the list of all resources 
+# parameters : dbh
+# return value : list of resources
+# side effects : /
+def list_resources(dbh)
+	q = "SELECT * FROM resources"
+	res = dbh.execute(q)
+	resources = {}
+	res.each do |r|
+		resources[r[0]] = r.clone  
+	end 
+	res.finish
+	return resources
+end
+
+# get all jobs in a range of date in the gantt
+# args : dbh, start range, end range
+def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
+	q =		"SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
+         FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         WHERE
+             gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+             gantt_jobs_predictions_visu.moldable_job_id = jobs.assigned_moldable_job AND
+             jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+             gantt_jobs_predictions_visu.start_time < #{date_end} AND
+             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= #{date_begin}
+         ORDER BY jobs.job_id";
+	res = dbh.execute(q)
+	
+	results = {}
+	res.each do |r|
+		if (results[r[0]] == nil) 
+			results[r[0]] = {
+      	                 'job_type' => r[1],
+        	               'state' => r[2],
+          	             'user' => r[3],
+            	           'command' => r[4],
+              	         'queue_name' => r[5],
+                	       'walltime' => r[6],
+                  	     'properties' => r[7],
+                    	   'launching_directory' => r[8],
+              	         'submission_time' => r[9],
+                	       'start_time' => r[10],
+                  	     'stop_time' => r[11],
+                    	   'resources' => [ r[12] ],
+                    	   'network_addresses' => [ r[13] ]
+                      	}
+		else
+			results[r[0]]['resources'].push(r[12]) #add resources at already existing job
+		end
+	end 
+	res.finish
+	return results
+end
+
+# get all jobs in a range of date
+# args : dbh, start range, end range
+def get_jobs_range_dates(dbh,date_begin,date_end)
+	q = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
+         FROM jobs, assigned_resources, moldable_job_descriptions, resources
+         WHERE
+             (   
+                 jobs.stop_time >= #{date_begin} OR
+                 (   
+                     jobs.stop_time = '0' AND
+                     jobs.state = 'Running'
+                 )
+             ) AND
+             jobs.start_time < #{date_end} AND
+             jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+             moldable_job_descriptions.moldable_job_id = jobs.assigned_moldable_job AND
+             resources.resource_id = assigned_resources.resource_id
+         ORDER BY jobs.job_id"
+
+	res = dbh.execute(q)
+	
+	results = {}
+	res.each do |r|
+		if (results[r[0]] == nil) 
+				results[r[0]] = {
+                         'job_type' => r[1],
+                         'state' => r[2],
+                         'user' => r[3],
+                         'command' => r[4],
+                         'queue_name' => r[5],
+                         'walltime' => r[6],
+                         'properties' => r[7],
+                         'launching_directory' => r[8],
+                         'submission_time' => r[9],
+                         'start_time' => r[10],
+                         'stop_time' => r[11],
+                         'resources' => [ r[12] ],
+                         'limit_stop_time' => r[14]
+                         }
+		else
+			results[r[0]]['resources'].push(r[12]) #add resources at already existing job
+		end
+	end 
+	res.finish
+	return results
+end
+
+
+# Return date of the gantt for visu
+def get_gantt_visu_date(dbh)
+	q= "SELECT start_time FROM gantt_jobs_predictions_visu 
+			WHERE moldable_job_id = 0"
+	res = dbh.execute(q)
+	r = res.fetch_array
+	
+	return r[0]
+end
+
+#get the range when nodes are dead between two dates
+# arg : dbh, start date, end date
+def get_resource_dead_range_date(dbh,date_begin,date_end)
+	q = "SELECT resource_id, date_start, date_stop, value
+               FROM resource_logs
+               WHERE
+                   attribute = 'state' AND
+                   (
+                       value = 'Absent' OR
+                       value = 'Dead' OR
+                       value = 'Suspected'
+                   ) AND
+                   date_start <= #{date_end} AND
+                   (
+                       date_stop = 0 OR
+                       date_stop >= #{date_begin}
+                   )"
+	res = dbh.execute(q)
+	
+	results = {}
+	res.each do |r|
+		interval_stopDate = r[2]
+		if (interval_stopDate == nil)
+      interval_stopDate = date_end;
+    end
+		results[r[0]]=[]	if (results[r[0]]==nil)
+  	results[r[0]].push([r[1],interval_stopDate,r[3]])
+	end
+	res.finish
+	return results
+end
+
+#
+# Methods adapted from oarstat and iolib
+#
+def get_history(dbh,date_start,date_stop)
+	resources = list_resources(dbh)
+	job_gantt =  get_jobs_gantt_scheduled(dbh,date_start,date_stop)
+	#print finished or running jobs
+	jobs = job_gantt
+	jobs_history =  get_jobs_range_dates(dbh,date_start,date_stop)
+	jobs_history.each do |job_id,job|
+		if ((job_gantt[job_id] == nil) || (job_gantt[job_id]['queue_name'] == "besteffort"))
+    	if ((jobs_history[job_id]['state'] == "Running") ||
+					(jobs_history[job_id]['state'] == "toLaunch") ||
+					(jobs_history[job_id]['state'] == "Launching"))
+				if (jobs_history[job_id]['queue_name'] == "besteffort")
+        	jobs_history[job_id]['qstop_time'] = get_gantt_visu_date(dbh);
+        else
+          #This job must be already  printed by gantt
+          next
+        end
+      end
+      jobs[job_id] = jobs_history[job_id];
+		end
+	end
+
+	#print Down or Suspected resources
+	dead_resources = get_resource_dead_range_date(dbh,date_start,date_stop)
+	return resources,jobs,dead_resources
+end
+
+######################################################################################
+
+$title = $conf['title']
+$sizex = $conf['sizex']
+#$sizey = $conf['sizey']
+$offsetgridy = $conf['offsetgridy']
+$offsetgridx = $conf['offsetgridx']
+$tics_node = $conf['tics_node']
+$points_per_cpu = $conf['points_per_cpu']
+$xratio = $conf['xratio']
+$nb_cont_res = $conf['nb_cont_res']
+
+def draw_string(img,x,y,label)
+	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
+end
+
+def draw_grid(img,resource_labels,origin,origin_label,range)
+
+	if (range == 'month')
+		(0..31).each do |i|
+			day = Time.at(origin).strftime("%e")
+			origin = origin + RANGE_SEC['1 day']
+			x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 31.0)
+			draw_string(img, x ,$offsetgridy / 2, day)
+			img.line(x,$offsetgridy ,x, $sizey - $offsetgridy , $gridcolor)
+		end
+	elsif (range == 'week')
+		(0..14).each do |i|
+			x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 14.0)
+	    if ((i & 1) == 1)
+				draw_string(img, x ,$offsetgridy / 2, "12h")
+	    else
+				draw_string(img, x ,$offsetgridy / 2, origin_label)
+				origin_label = DAYS[ (DAYS.index(origin_label) + 1) % 7]
+	    end
+				img.line(x,$offsetgridy ,x, $sizey - $offsetgridy , $gridcolor)
+		end
+	elsif (range == '3 days')
+		(0..6).each do |i|
+			x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 6.0)
+	    if ((i & 1) == 1)
+				draw_string(img,x ,$offsetgridy / 2, "12h")
+	    else
+				draw_string(img, x ,$offsetgridy / 2, origin_label)
+				origin_label = DAYS[ (DAYS.index(origin_label) + 1) % 7]
+	    end
+				img.line(x,$offsetgridy ,x, $sizey - $offsetgridy , $gridcolor)
+		end
+	elsif (range == '1 day')
+		(0..24).each do |i|
+	    x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 24.0)
+	    hour = (i + origin_label.to_i) % 24
+	    draw_string(img, x ,$offsetgridy / 2, "#{hour.to_s}h")
+			img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor)
+		end	
+	elsif (range == '1/2 day')
+		(0..12).each do |i|
+	    hour = (i + origin_label.to_i) % 24
+	    x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 12.0)
+	    draw_string(img, x ,$offsetgridy / 2, "#{hour.to_s}h")
+	    img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor)
+		end
+	elsif (range == '1/6 day')
+		(0..8).each do |i|
+	    hour = (i/2 + origin_label.to_i) % 24
+	    if ((i % 2) == 1)
+				min = "30"
+			else
+				min = "00"
+			end
+	    x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 8.0)
+	    draw_string(img, x, $offsetgridy / 2, "#{hour}:#{min}")
+	    img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor);   
+		end
+	else
+		puts "Range doesn't exit"
+		exit 1
+	end
+	deltay = ($sizey-(2*$offsetgridy))/resource_labels.length.to_f 
+
+	i=0
+	resource_labels.each do |label|
+		if ((i % $conf['tics_node'].to_i)==0) 
+			y = $offsetgridy + i * deltay
+			draw_string(img, $offsetgridx / 2, y + (deltay / 2), label)
+			img.line($offsetgridx - 1 , y, $sizex - $offsetgridx, y, $gridcolor)
+		end
+		i = i + 1
+	end
+  img.line($offsetgridx - 1, $sizey - $offsetgridy, $sizex - $offsetgridx, $sizey - $offsetgridy, $gridcolor)
+end
+
+def draw_nowline(img,origin,range,color)
+	now_x =  $offsetgridx + (Time.now.to_i-origin) * (($sizex - 2 * $offsetgridx) / RANGE_SEC[range].to_f)
+	if ((now_x > $offsetgridx ) && (now_x < ($sizex - $offsetgridx - 1)))
+		img.line(now_x,(3*$offsetgridy/4) ,now_x, $sizey - (3*$offsetgridy)/4 , color);
+		img.line(now_x+1,(3*$offsetgridy)/4 ,now_x+1, $sizey - (3*$offsetgridy)/4 , color);
+	end
+	return now_x
+end
+
+def build_image(origin, year, month, wday, day, hour, range)
+
+	dbh = base_connect
+	#resources, jobs, dead_resources = get_history(dbh,1155041223,1155047311)
+	resources, jobs, dead_resources = get_history(dbh,origin,origin+RANGE_SEC[range])
+	dbh.disconnect
+
+	p jobs if $verbose
+
+	$sizey =  resources.length * $points_per_cpu + 2 * $offsetgridy ;
+
+	img = GD::Image.new($sizex ,$sizey )
+
+	# allocate some colors
+
+	$background =  img.colorAllocate($conf['background'])
+	$gridcolor =  img.colorAllocate($conf['gridcolor'])
+
+	white = img.colorAllocate(255,255,255)
+	black = img.colorAllocate(0,0,0)       
+	red = img.colorAllocate(255,0,0)      
+	blue = img.colorAllocate(0,0,255)
+
+	color=[]
+	color[0] = white
+	(1..155).each {|i| color[i] = img.colorAllocate((i%9) * 25, i ,(50 * i) % 255 )} 
+
+	# make the background transparent and interlaced
+	#img.transparent(white)
+	img.interlace = true
+
+	#sort resources
+
+#	p resources
+
+	map_info = []
+
+	#
+	# sort resources
+	#
+	
+	#sorted_resources = resources.keys.sort_by{|word| word=~/(\d+)/ ; puts "#{word}" ; $1.to_i} ###FALSE###
+	#sorted_resources = resources.keys.sort_by{|word| word.to_i}
+	#sorted_resources = resources.keys.sort_by{|word| word=~/([^.]+)/;  puts $1}
+
+	network_label={}
+	#extract desired label
+	resources.each do |res_id,res_desc|
+		res_desc[1]=~/([^.]+)/
+		label = $1
+#		puts label
+		if network_label[label] == nil  
+			network_label[label] = [res_id]
+		else 
+			network_label[label] << res_id
+		end
+	end
+	
+	#puts "network_label"
+	#p network_label
+
+	# sort extrated labels
+	sorted_label =  network_label.keys.sort
+
+  #puts "sorted_label"
+	#p sorted_label
+
+	# sort by cpu
+	sorted_resources = []
+	sorted_label.each do |label|
+		sorted_resources = sorted_resources + network_label[label].sort {|a,b| a.to_i <=> b.to_i}
+	end
+
+ 	#puts "sorted_resources"
+	#p sorted_resources
+
+	resource_labels = []
+	sorted_resources.each do|i|
+		resources[i][1] =~ /#{$conf['regexdisplay_first']}/
+		first_label = $1
+		resource_labels << "#{first_label}_#{resources[i][8]}"
+	end
+#	p resource_labels
+
+	deltay = ($sizey-(2*$offsetgridy))/sorted_resources.length.to_f 
+	
+	origin_label = ""
+	if ( (range == '3 days') || (range == 'week'))
+		origin_label = wday 
+	elsif ( (range == '1/2 day') || (range == '1/6 day') || (range == '1 day'))
+		origin_label = hour
+	else #month
+		origin_label = day
+	end
+
+	draw_grid(img,resource_labels,origin,origin_label,range)
+
+	scale = ($sizex - 2 * $offsetgridx)  / (RANGE_SEC[range].to_f) ;
+
+
+	yop = ""
+
+	jobs.each do |job_id,j|
+
+ 		start_x = (j['start_time'].to_i  - origin) * scale;
+    if (start_x < 1) 
+			start_x = 1
+		end
+
+		stop_x = (j['stop_time'].to_i  - origin) * scale;
+	 	if (stop_x > ($sizex - 2 * $offsetgridx - 1))
+			stop_x = $sizex - (2*$offsetgridx) - 1
+    end
+    
+    start_x = start_x+ $offsetgridx
+    stop_x = stop_x + $offsetgridx
+
+		#	p j
+
+		ares_index = []
+		j['resources'].each do |r|
+			r_index = sorted_resources.index(r)
+			ares_index << r_index
+			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), color[(job_id.to_i % 154) + 1])
+#			yop = "*#{start_x} #{$offsetgridy + deltay * r_index} #{stop_x} #{$offsetgridy + deltay * (r_index+1)}*"
+		end
+
+		#display job_id
+		if (ares_index.length > $nb_cont_res && (stop_x - start_x)  > $sizex / $xratio)
+			sorted_index = ares_index.sort
+			i_low = 0
+			i_high = 0
+			sorted_index.each do |r|
+				if (r > i_high + 1 )
+					if (i_high -i_low) > $nb_cont_res
+						draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low)/2,job_id.to_s)
+						map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
+					end
+					i_low = r
+					i_high = r
+				else
+					i_high = i_high + 1
+				end
+			end
+
+			if (i_high -i_low) > $nb_cont_res
+				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low)/2,job_id.to_s)	
+				map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
+			end
+		end 
+	end
+
+	dead_resources.each do |resource,dead_period|
+		dead_period.each do |a|
+
+			start_time,stop_time,value = a
+
+			start_x = (start_time.to_i - origin) * scale;
+    	if (start_x < 1) 
+				start_x = 1
+			end
+
+			stop_x = (stop_time.to_i - origin) * scale;
+	 		if (stop_x > ($sizex - 2 * $offsetgridx - 1))
+				stop_x = $sizex - (2*$offsetgridx) - 1
+    	end
+
+	    start_x = start_x+ $offsetgridx
+  	  stop_x = stop_x + $offsetgridx
+
+			r_index = sorted_resources.index(resource)
+			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), red)
+
+		end
+	end
+	
+	#draw_nowline
+	yop = draw_nowline(img,origin,range,red)
+
+	f_img = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", 'w')
+	img.png(f_img)
+	f_img.close
+
+#	f_map = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.map", 'w')
+	map = ""
+	map << '<map name="ganttmap">'
+	map_info.each do |info|
+		j = jobs[info[4]]
+		map << '<area shape="rect" coords="' + 
+					 "#{info[0]},#{info[1]},#{info[2]},#{info[3]}" + 
+					 '" href="monika.cgi?job='+ "#{info[4]}" + '" ' +
+					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
+					 "JobId: #{info[4]}" +
+					 "<br>User: #{j['user']}" + 
+					 "<br>Type: #{j['job_type']}" +
+					 "<br>State: #{j['state']}" +
+					 "<br>Command: #{j['command']}" +
+					 "<br>Queue: #{j['queue_name']}" + 
+					 "<br>Nb resources: #{j['resources'].length}" +
+					 "<br>Submission: #{Time.at(j['submission_time'].to_i).strftime("%a %b %e %H:%M %Y")}" +
+					 "<br>Start: #{Time.at(j['start_time'].to_i).strftime("%a %b %e %H:%M %Y")}" +
+					 "<br>End: #{Time.at(j['stop_time'].to_i).strftime("%a %b %e %H:%M %Y")}" +
+					 '\')" >'
+	end
+	
+	map << '</map>'
+
+	return map 
+end
+
+##################################
+
+def cgi_html
+
+	popup_hour = ["00:00","01:00","02:00","03:00","04:00","05:00","06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"]
+	popup_day = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"]
+	popup_month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct', 'Nov','Dec']
+	popup_year = []
+	popup_range = RANGE_ORDER
+
+	cgi = CGI.new("html3") # add HTML generation methods
+
+	now = Time.now
+
+	range = $conf['default_range']
+	month, day, hour, year = now.strftime("%b %e %H:00 %Y").split(" ")
+	popup_year = [(year.to_i-1).to_s, year, (year.to_i+1).to_s ]
+
+	origin = 0
+
+	if (cgi.params['day'].length>0)
+		hour = cgi.params['hour'].to_s
+		day	= cgi.params['day'].to_s
+		month = cgi.params['month'].to_s
+		year = cgi.params['year'].to_s
+		range = cgi.params['range'].to_s
+		origin =  Time.local(year,month,day,hour).to_i
+	else
+		range = $conf['default_range']
+		origin = now.to_i-RANGE_SEC[range]/2
+	end	
+
+	#
+	# zoom +-, left,rigth, default ?
+	#
+	if (cgi.params['plus.x'].length>0)
+		if (range != RANGE_ORDER.first)
+			next_range = RANGE_ORDER[RANGE_ORDER.index(range) - 1]
+			origin = origin + (RANGE_SEC[range] - RANGE_SEC[next_range]) / 2
+			range = next_range  
+		end
+	end
+
+	if (cgi.params['minus.x'].length>0)
+		if (range != RANGE_ORDER.last)
+			next_range = RANGE_ORDER[RANGE_ORDER.index(range) + 1]
+			origin = origin + (RANGE_SEC[range] - RANGE_SEC[next_range]) / 2
+			range = next_range  
+		end
+	end
+
+	if (cgi.params['left.x'].length>0)
+		origin = origin - RANGE_STEP[range]
+	end
+
+	if (cgi.params['right.x'].length>0)
+		origin = origin + RANGE_STEP[range]
+	end
+
+	if (cgi.params['action'].to_s == 'Default')
+		range = $conf['default_range']
+		origin = now.to_i-RANGE_SEC[range]/2
+	end
+
+ 	origin = origin - origin % 3600
+	wday, month, day, hour, year = Time.at(origin).strftime("%a %b %e %H:00 %Y").split(" ")
+	
+	#
+	#set displaying params
+	#
+	popup_year[popup_year.index(year)]= [year,true]
+	popup_month[popup_month.index(month)]= [month,true]
+	popup_day[popup_day.index(day)]= [day,true]
+	popup_hour[popup_hour.index(hour)]= [hour,true]
+	popup_range[popup_range.index(range)]= [range,true]
+
+	#build image file
+	map = build_image(origin, year, month, wday, day, hour, range)
+
+	cgi.out {
+		cgi.html {
+			cgi.head { "\n"+cgi.title{$conf['title']} } +
+			cgi.body { "\n"+
+				cgi.form("get"){
+#					"**#{cgi.params}**\n" +
+					cgi.h2 { $title } + "\n"+
+					# Javascript stuff thanks to NCSA TITAN cluster's page    
+					CGI.escapeElement('<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>') + "\n" +
+					CGI.escapeElement('<script src="/'+"#{$conf['directory']}"+
+														'/js/overlib.js" language="JavaScript">') + "\n" +
+					CGI.escapeElement("<em> Origin </em>") +
+					cgi.popup_menu("NAME" => "year", "VALUES" => popup_year) +
+					cgi.popup_menu("NAME" => "month", "VALUES" => popup_month) +
+					cgi.popup_menu("NAME" => "day", "VALUES" => popup_day) +
+					cgi.popup_menu("NAME" => "hour", "VALUES" => popup_hour) +	
+					CGI.escapeElement("<em> Range </em>") +
+					cgi.popup_menu("NAME" => "range", "VALUES" => popup_range) +
+					cgi.submit("Draw","action") +
+					cgi.submit("Default","action") +
+					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-left.png", "left", "left") +
+					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-right.png", "right", "right") +
+					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-minus.png", "minus", "minus") +
+					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-plus.png", "plus", "plus") +
+					cgi.br + "\n" +
+					CGI.escapeElement(map) + "\n" +
+					CGI.escapeElement('<div style="text-align: center">') +
+#					cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
+
+					
+					cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png",
+									"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
+					CGI.escapeElement('</div>'); 
+				}
+			}
+		}
+	}
+end 
+
+####################################################################################
+
+cgi_html
+
+#p list_resources(base_connect)
+
