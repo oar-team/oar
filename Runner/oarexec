@@ -199,7 +199,7 @@ if (! open(FILE,">$Node_file")){
 #Feed the node file
 my @tmp_res;
 foreach my $r (@{$Job->{resources}}){
-    push(@tmp_res, $r->{network_address}); 
+    push(@tmp_res, $r->{network_address}) if ($r->{network_address} ne ""); 
 }
 foreach my $f (sort(@tmp_res)){
     print(FILE "$f\n") or exit(5);
@@ -213,7 +213,7 @@ if (! open(FILE,">$Res_file")){
     exit(5);
 }
 #Feed the resource file
-foreach my $r (@{$Job->{resource_properties}}){
+foreach my $r (@{$Job->{resources}}){
     my $line = "";
     foreach my $p (keys(%{$r})){
         $line .= " $p = '$r->{$p}' ,"

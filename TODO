@@ -15,21 +15,6 @@ Documentation
 
    http://oar.imag.fr/docs/manual.html
 
------
-Forge
------
-  Il a été décidé d'utiliser la "forge" de l'INRIA pour héberger le projet
-  ( http://gforge.inria.fr/projects/oar/ ).
-  Techniquement nous allons passer sous le gestionnaire de versions
-  *subversion*.
-
---------
-Site web
---------
-   Refonte et mise à jour. Elle est déjà en ligne à l'adresse habituelle:
-
-     http://oar.imag.fr/ 
-
 --------------
 Scheduling G5K
 --------------
@@ -45,112 +30,6 @@ Scheduling G5K
 
   Question soulevée : Que doit-on faire des jobs demandant 3 jours de walltime,
   qui vont commencer la nuit et continuer le jour?
-
---------
-Epilogue
---------
-  Epilogue : robustesse
-  2 solutions:
-  
-   - brutale : on enlève les prologue/epilogue du oarexec et on crée un module
-     côté serveur qui les gere. Du coup ca va rajouter de la latence et de la
-     complexité dans l'enchainement des états des jobs.
-   - souple : on détecte lorsque quelque chose se passe mal (c'est ce qui est
-     déjà fait) et on avise.
-  
-  Dans les 2 cas on a un problème : il se peut que l on détecte un problème
-  lors de l épilogue par exemple. Dans ce cas on se dit qu il faut le relancer,
-  ca semble logique... Or si les scripts ne sont pas "idempotants" cela peut
-  poser de très gros problèmes --> Pas simple!!!
-
-  Pourquoi ne pas faire un prologue/epilogue qui se loggerait sur tous les
-  noeuds du job? (détection des pannes plus fine).
-
-CPUSET
-------
-  Il faut regarder pour utiliser la technique des *cpuset* (qui est présente
-  dans les sources du noyau linux depuis les versions 2.6). Dans ce cas il faut
-  surcharger le connecteur *ssh* utilisé pour déployer les applications pour
-  qu'il oblige les processus à se mettre dans le bon *cpuset*.
-  Avec cette technique il sera possible de nettoyer correctement les noeuds et
-  de rendre plus robuste les épilogues.
-
-  De plus, il faut regarder comment sont gérés les systèmes équivalents au
-  *cpuset* sur solaris, AIX et iris.
-  Comment PBS gère le cpuset (et plus largement le confinement des
-  applications).
-
-  A noter: un prototype de wrapper existe et a l'air de fonctionner
-  correctement. Son nom est *oarsh*. Donc il serait possible d'obliger les
-  utilisateurs à utiliser ce wrapper pour les confiner dans le cpuset de leur
-  job.
-
----------
-GridPrems
----------
-  DrawGantt et Monika Gridprems aware (new DrawGantt et Monika ?)
-  Implémentation d'un historique des propriétés des noeuds pour savoir quand un
-  noeud était en mode *GridPrems* par exemple.
-
--------------------------
-suspend/resume/checkpoint
--------------------------
-  Demander aux personnes du *checkpointing* s'il faut envoyer un signal a tous
-  les processus ou seulement a celui de tête??????
-
-  Faire une table de log des états des jobs --> connaissance de plusieurs
-  cycles pour les jobs + historique...
-
-------------------------------
-Scheduling : nouvelle approche
-------------------------------
-  **ATTENTION** : Changement complet du système de scheduling.
-  
-  Dans la version actuelle de OAR, le scheduler attribue des noeuds (d'un
-  certain poids) à des jobs.
-  L'idée est de considérer des ressources à la place des noeuds. Celles-ci
-  possèdent des propriétés (telles que: switch, type de cpu, numéro de CPU,
-  numéro de CORE de CPU, quantité de mémoire, ...)
-  Donc le scheduler doit assigner des ressources qui correspondront à la
-  requête de l'utilisateur à son job.
-
-  Ainsi il serait possible de réaliser des requêtes du type:
-
-    oarsub switch="2" noeud=10 cpu=1 -p "memory > 256"
-  
-  Dans cet exemple, nous voulons utiliser 1 CPU sur 10 noeuds différents
-  appartenant au switch "s2". De plus les ressources devront posséder une
-  mémoire de plus de 256Mo.
-
-  Au niveau de la base de données, nous aurions un schéma du style:
-
-  ========== ======== === ==== ====== ====== ========== ====== ===
-  resourceId hostname CPU CORE switch memory besteffort deploy ...
-  ========== ======== === ==== ====== ====== ========== ====== ===
-
-Tâches malléables
------------------
-  Nous allons également supporter les tâches malléables (jobs pouvant se lancer
-  sur un nombre de ressources non spécifés en dur à la soumission). Donc le
-  scheduler pourra décider lui-même le nombre de ressources à attribuer et du
-  walltime correspondant (le scheduler change le walltime a la volé en fonction
-  du nombre de ressources qu il attribut a la tâche).
-  Pour se faire l'utilisateur devra fournir au système une matrice de coût
-  dont la première colonne sera par exemple le nombre de ressources et la
-  seconde le temps correspondant à l'exécution de la tâche.
-
----------------------
-Dépendance entre jobs
----------------------
-
-  1. Problème de syntaxe de la ligne de commande du oarsub.
-  2. Problème de schéma de la base : une nouvelle table stockant les dependances.
-   
-    ===== ===============
-    idJob idJobDependancy
-    ===== ===============
-
-  3. Problème de scheduling.
 
 ----------
 Simulateur
@@ -179,12 +58,6 @@ Sécurité
   - NFS, une image déployée sur un noeud peut tout monter ou restreindre le
     NFS pour certaines IP (prologue/epilogue executés côté serveur)?
   - VLAN?
-
-------------------------
-Notification utilisateur
-------------------------
-    Ajouter une option -m a oarsub pour specifier une adresse mail pour
-    notifier les utilisateurs.
 
 ------------------------------------
 Comparaison avec les autres systèmes
@@ -227,10 +100,6 @@ Stagein/stageout des fichiers de données
 Tests de non regression
 -----------------------
 
-------------------------------------------
-Faire les *man* des commandes qui manquent
-------------------------------------------
-
 ----
 BUGS
 ----
@@ -239,37 +108,14 @@ screen et sans detachement du oarexec pour que ca marche. Certainement un
 probleme de SSH avec le -t (essayer plusieurs -t ???). Probleme de tty???
 Probleme de sudo???
 
-----
-DUKE
-----
-Julien veut que lorsu il y a ambiguite sur la commande a lancer, demander
-a l utilisateur de la valider (eviter les jobs avec un script s appelant
-walltime=2).
-Il faut aussi une option -y pour eviter ce check...
-
------------
-CO-SYSTEMES
------------
-Faire un type de job cosystem qui pourrait etre schedule sur les memes resources
-que les autres jobs cosystem. Mettre dans la conf les cosytem pour pouvoir les
-notifier de nouveaux jobs ou autre...
-
----------------------------------------------------------------------------
-Rajouter dans oarsub la possibilite de specifier le repertoire de lancement
----------------------------------------------------------------------------
-
-----------------------------------------------------------------------------------------------------------------------
-Faire passer a oarexec le niveau de debug voulu et d autres parametres --> plus besoin du fichier de conf pour oarexec
-----------------------------------------------------------------------------------------------------------------------
-
-resubmit_job
-kill oarsub -I script on node when exit
-Attention : oarsub enregistre son pid dans un fichier et ensuite oarexec le regarde pour savoir ce qu il y a a tuer...
---> il se peut que oarsub plus la et oarexec tue de mauvais PIDs :-(
 scheduling besteffort (ne pas tuer un besteffort pour lancer un autre besteffort)
 co-system
 
-Proposer une methode de check qui consiste a tout checker et laisser une socket ouverte si tout va bien...
---> nmap ensuite qui check ça...
+
+Suspend/Resume
+
+Licences --> Done
+
+projets/accounting --> Done
 
 

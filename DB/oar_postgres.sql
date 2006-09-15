@@ -1,13 +1,15 @@
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
   window_stop integer NOT NULL DEFAULT '0',
-  accounting_user varchar(20) NOT NULL default '',
+  accounting_user varchar(255) NOT NULL default '',
+  accounting_project varchar(255) NOT NULL default '',
   queue_name varchar(100) NOT NULL default '',
   consumption_type varchar(5) check (consumption_type in ('ASKED','USED')) NOT NULL default 'ASKED',
   consumption integer NOT NULL default '0',
-  PRIMARY KEY  (window_start,window_stop,accounting_user,queue_name,consumption_type)
+  PRIMARY KEY  (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type)
 );
 CREATE INDEX accounting_user ON accounting (accounting_user);
+CREATE INDEX accounting_project ON accounting (accounting_project);
 CREATE INDEX accounting_queue ON accounting (queue_name);
 CREATE INDEX accounting_type ON accounting (consumption_type);
 
@@ -169,7 +171,8 @@ CREATE TABLE jobs (
   state varchar(16) check (state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
   reservation varchar(10) check (reservation in ('None','toSchedule','Scheduled')) NOT NULL default 'None',
   message varchar(255) NOT NULL default '',
-  job_user varchar(50) NOT NULL default '',
+  job_user varchar(255) NOT NULL default '',
+  project varchar(255) NOT NULL default '',
   command text,
   queue_name varchar(100) NOT NULL default '',
   properties text,

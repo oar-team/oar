@@ -31,7 +31,8 @@ info_type VARCHAR( 255 ) ,
 state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')  NOT NULL ,
 reservation ENUM('None','toSchedule','Scheduled') DEFAULT 'None'  NOT NULL ,
 message VARCHAR( 255 ) NOT NULL ,
-job_user VARCHAR( 50 ) NOT NULL ,
+job_user VARCHAR( 255 ) NOT NULL ,
+project VARCHAR( 255 ) NOT NULL ,
 command TEXT ,
 queue_name VARCHAR( 100 ) NOT NULL ,
 properties TEXT ,
@@ -257,14 +258,16 @@ PRIMARY KEY (event_id, hostname)
 CREATE TABLE IF NOT EXISTS accounting (
 window_start INT UNSIGNED NOT NULL ,
 window_stop INT UNSIGNED NOT NULL ,
-accounting_user VARCHAR( 20 ) NOT NULL ,
+accounting_user VARCHAR( 255 ) NOT NULL ,
+accounting_project VARCHAR( 255 ) NOT NULL ,
 queue_name VARCHAR( 100 ) NOT NULL ,
 consumption_type ENUM("ASKED","USED") NOT NULL ,
 consumption INT UNSIGNED NOT NULL ,
 INDEX accounting_user (accounting_user),
+INDEX accounting_project (accounting_project),
 INDEX accounting_queue (queue_name),
 INDEX accounting_type (consumption_type),
-PRIMARY KEY (window_start,window_stop,accounting_user,queue_name,consumption_type)
+PRIMARY KEY (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type)
 );
 
 #DROP TABLE IF EXISTS job_dependencies;

@@ -51,6 +51,7 @@ my $Stdout_file;
 my $Stderr_file;
 my $Resubmit;
 my $Cpuset_name;
+my $Project = "default";
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -202,6 +203,7 @@ Options are:
      --signal                  specify the signal to use when checkpointing (defuault is 12 --> SIGUSR2)
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -d, --directory               specify the directory where to launch the command (default is current directory)
+     --project                 specify the name a name of a project corresponding to this job
  -n, --name                    specify an arbitrary name for the job
  -e, --env                     environment variables to set on the running proccess in the form "A=b C=d"
  -a, --anterior                anterior job that must be terminated to start this new one
@@ -265,6 +267,7 @@ GetOptions ("resource|l=s" => \@resource,
             "type|t=s" => \@Type,
             "directory|d=s" => \$Directory,
             "name|n=s" => \$job_name,
+            "project=s" => \$Project,
             "env|e=s" => \$job_env,
             "hold" => \$job_hold,
             "anterior|a=i" => \@Anterior_job,
@@ -502,7 +505,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -526,7 +529,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project);
 }
 print("JOB_ID = $Job_id \n");
 

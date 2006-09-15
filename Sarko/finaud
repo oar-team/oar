@@ -27,7 +27,7 @@ my %Node_list;
 
 foreach my $i (@Resource_list){
     #Do not check occupied resources
-    if (!vec($Occupied_resources_vector, $i->{resource_id}, 1)){
+    if ((!vec($Occupied_resources_vector, $i->{resource_id}, 1)) and ($i ne "")){
         push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
     }
 }

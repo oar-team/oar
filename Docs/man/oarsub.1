@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "oarsub 1"
-.TH oarsub 1 "2006-07-25" "" "OAR commands"
+.TH oarsub 1 "2006-09-15" "" "OAR commands"
 .SH "NAME"
 oarsub \- submit a job to OAR batch scheduler.
 .SH "SYNOPSIS"
@@ -185,6 +185,9 @@ Specify the directory where to launch the command (default is current directory)
 .IP "\fB\-n, \-\-name\fR string" 4
 .IX Item "-n, --name string"
 Specify an arbitrary name for the job.
+.IP "\fB\-\-project\fR string" 4
+.IX Item "--project string"
+Specify the name of the project corresponding to the job.
 .IP "\fB\-e, \-\-env\fR string" 4
 .IX Item "-e, --env string"
 Environment variables to set on the running proccess in the form \*(L"A=b C=d\*(R".

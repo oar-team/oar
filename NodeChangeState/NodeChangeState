@@ -75,7 +75,7 @@ foreach my $i (@events_to_check){
             ($i->{type} eq "CPUSET_ERROR") ||
             ($i->{type} eq "CPUSET_CLEAN_ERROR")){
             @hosts = iolib::get_hostname_event($base,$i->{event_id});
-            $finaud_tag = "YES";
+            $finaud_tag = "YES" if ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED");
         }else{
             my $job = iolib::get_job($base,$i->{job_id});
             @hosts = iolib::get_job_host_log($base,$job->{assigned_moldable_job});
@@ -87,7 +87,7 @@ foreach my $i (@events_to_check){
 
         my %already_treated_host;
         foreach my $j (@hosts){
-            next if (defined($already_treated_host{$j}));
+            next if ((defined($already_treated_host{$j}) or ($j eq "")));
             $already_treated_host{$j} = 1;
             my @free_resources = iolib::get_current_free_resources_of_node($base, $j);
             if ($#free_resources >= 0){

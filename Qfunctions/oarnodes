@@ -269,10 +269,8 @@ if (defined($stateMode)){
         }
     }elsif($Old){
         foreach my $aa (sort(keys(%data_to_display))){
-            print("$aa\n");
             my @res = keys(%{$data_to_display{$aa}});
             my $nb = $#res + 1;
-            print("     pcpus = $nb\n");
             my $nb_jobs = 0;
             my $state;
             my $properties;
@@ -305,6 +303,9 @@ if (defined($stateMode)){
                     }
                 }
             }
+            next if ($hostname eq "");
+            print("$aa\n");
+            print("     pcpus = $nb\n");
             chop($job_str) if (defined($job_str));
             print("     jobs = $job_str\n");
             print("     weight = $nb_jobs\n");

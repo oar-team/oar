@@ -203,7 +203,8 @@ sub print_job($$){
             scheduledStart => $date_tmp[0],
             resubmit_job_id => $job_info->{resubmit_job_id},
             events => \@job_events,
-            wanted_resources => $resources_string
+            wanted_resources => $resources_string,
+            project => $job_info->{project}
         );
     }else{
         %data_to_display = (
@@ -221,6 +222,7 @@ sub print_job($$){
             startTime => $job_info->{start_time},
             message => $job_info->{message},
             resubmit_job_id => $job_info->{resubmit_job_id},
+            project => $job_info->{project}
         );
     }
  
@@ -292,6 +294,7 @@ sub print_job($$){
             print("Job_Id: $job_info->{job_id}\n");
             $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
             print("    name = $job_info->{job_name}\n");
+            print("    project = $job_info->{project}\n");
             print("    owner = $job_info->{job_user}\n");
             print("    state = $job_info->{state}\n");
             print("    wanted_resources = $resources_string\n");

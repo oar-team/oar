@@ -50,7 +50,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -147,7 +147,7 @@ sub get_job_events($$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
-sub update_accounting($$$$$$$$);
+sub update_accounting($$$$$$$$$);
 
 # LOCK FUNCTIONS:
 
@@ -402,6 +402,7 @@ sub get_job_current_hostnames($$) {
                                 AND assigned_resources.resource_id = resources.resource_id
                                 AND moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id
                                 AND moldable_job_descriptions.moldable_job_id = $jobid
+                                AND resources.network_address != \'\'
                              GROUP BY resources.network_address
                              ORDER BY resources.network_address ASC");
     $sth->execute();
@@ -473,7 +474,8 @@ sub get_job_host_log($$) {
                                 FROM assigned_resources, resources
                                 WHERE
                                     assigned_resources.moldable_job_id = $moldablejobid AND
-                                    resources.resource_id = assigned_resources.resource_id
+                                    resources.resource_id = assigned_resources.resource_id AND
+                                    resources.network_address != \'\'
                                 ORDER BY resources.resource_id ASC
                             ");
     $sth->execute();
@@ -777,8 +779,8 @@ sub get_possible_wanted_resources($$$$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold,$project) = @_;
 
     my $default_walltime = "3600";
     my $startTimeJob = "0";
@@ -878,8 +880,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$) {
     $jobproperties = $dbh->quote($jobproperties);
     $launching_directory = $dbh->quote($launching_directory);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\',$job_env)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\',$job_env,\'$project\')
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -2416,31 +2418,6 @@ sub get_current_assigned_job_resources($$){
 }
 
 
-# get_current_assigned_job_resource_properties
-# returns the current resource properties ref for a job
-# parameters : base, moldable id
-sub get_current_assigned_job_resource_properties($$){
-    my $dbh = shift;
-    my $mold_id = shift;
-
-    my $sth = $dbh->prepare("   SELECT resources.*
-                                FROM assigned_resources, resources
-                                WHERE
-                                    assigned_resource_index = \'CURRENT\'
-                                    AND assigned_resources.moldable_job_id = $mold_id
-                                    AND resources.resource_id = assigned_resources.resource_id
-                            ");
-    $sth->execute();
-    my @result;
-    while (my $ref = $sth->fetchrow_hashref()){
-        push(@result, $ref);
-    }
-    $sth->finish();
-
-    return(@result);
-}
-
-
 # get_current_free_resources_of_node
 # return an array of free resources for the specified network_address
 sub get_current_free_resources_of_node($$){
@@ -2608,7 +2585,8 @@ sub set_node_nextState($$$) {
 
     my $result = $dbh->do(" UPDATE resources
                             SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
-                            WHERE network_address = \'$hostname\'
+                            WHERE
+                                network_address = \'$hostname\'
                           ");
     return($result);
 }
@@ -3032,7 +3010,8 @@ sub get_cpuset_values_for_a_moldable_job($$$){
                                 FROM resources, assigned_resources
                                 WHERE
                                     assigned_resources.moldable_job_id = $mjob_id AND
-                                    assigned_resources.resource_id = resources.resource_id
+                                    assigned_resources.resource_id = resources.resource_id AND
+                                    resources.network_address != \'\'
                                 GROUP BY resources.network_address, resources.$cpuset_field
                             ");
     $sth->execute();
@@ -3430,7 +3409,8 @@ sub search_idle_nodes($$){
                FROM resources, gantt_jobs_resources, gantt_jobs_predictions
                WHERE
                    resources.resource_id = gantt_jobs_resources.resource_id AND
-                   gantt_jobs_predictions.start_time <= $date
+                   gantt_jobs_predictions.start_time <= $date AND
+                   resources.network_address != \'\'
                GROUP BY resources.network_address
               ";
               
@@ -3445,8 +3425,9 @@ sub search_idle_nodes($$){
     $req = "SELECT resources.network_address, MAX(resources.last_job_date)
             FROM resources
             WHERE
-                resources.state = \'Alive\' OR
-                resources.state = \'Suspected\'
+                (resources.state = \'Alive\' OR
+                resources.state = \'Suspected\') AND
+                resources.network_address != \'\'
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();
@@ -3532,6 +3513,7 @@ sub get_gantt_hostname_to_wake_up($$){
                    AND j.state = \'Waiting\'
                    AND resources.resource_id = g1.resource_id
                    AND resources.state = \'Alive\'
+                   AND resources.network_address != \'\'
                GROUP BY resources.network_address
               ";
     
@@ -3838,7 +3820,7 @@ sub check_accounting_update($$){
     my $dbh = shift;
     my $windowSize = shift;
 
-    my $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id)
+    my $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id), jobs.project
 
                FROM jobs, moldable_job_descriptions, assigned_resources
                WHERE 
@@ -3848,7 +3830,7 @@ sub check_accounting_update($$){
                    jobs.start_time > 0 AND
                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
                    assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-               GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name
+               GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.project, jobs.job_user, jobs.queue_name
               "; 
 
     my $sth = $dbh->prepare("$req");
@@ -3859,8 +3841,8 @@ sub check_accounting_update($$){
         my $stop = $ref[1];
         my $theoricalStopTime = $ref[2] + $start;
         print("[ACCOUNTING] Treate job $ref[3]\n");
-        update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[5],"USED",$ref[6]);
-        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[5],"ASKED",$ref[6]);
+        update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
+        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
         $dbh->do("  UPDATE jobs
                     SET accounted = \'YES\'
                     WHERE
@@ -3871,12 +3853,13 @@ sub check_accounting_update($$){
 
 # insert accounting data in table accounting
 # params : base, start date in second, stop date in second, window size, user, queue, type(ASKED or USED)
-sub update_accounting($$$$$$$$){
+sub update_accounting($$$$$$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
     my $windowSize = shift;
     my $user = shift;
+    my $project = shift;
     my $queue = shift;
     my $type = shift;
     my $nb_resources = shift;
@@ -3896,7 +3879,7 @@ sub update_accounting($$$$$$$$){
             $conso = $windowStop - $start + 1;
         }
         $conso = $conso * $nb_resources;
-        add_accounting_row($dbh,$windowStart,$windowStop,$user,$queue,$type,$conso);
+        add_accounting_row($dbh,$windowStart,$windowStop,$user,$project,$queue,$type,$conso);
         $windowStart = $windowStop + 1;
         $start = $windowStart;
         $windowStop += $windowSize;
@@ -3904,11 +3887,12 @@ sub update_accounting($$$$$$$$){
 }
 
 # start and stop in SQL syntax
-sub add_accounting_row($$$$$$$){
+sub add_accounting_row($$$$$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
     my $user = shift;
+    my $project = shift;
     my $queue = shift;
     my $type = shift;
     my $conso = shift;
@@ -3918,6 +3902,7 @@ sub add_accounting_row($$$$$$$){
                                 FROM accounting
                                 WHERE
                                     accounting_user = \'$user\' AND
+                                    accounting_project = \'$project\' AND
                                     consumption_type = \'$type\' AND
                                     queue_name = \'$queue\' AND
                                     window_start = \'$start\' AND
@@ -3928,11 +3913,12 @@ sub add_accounting_row($$$$$$$){
     if (defined($ref[0])){
         # Update the existing window
         $conso += $ref[0];
-        print("[ACCOUNTING] Update the existing window $start --> $stop , user $user, queue $queue, type $type with conso = $conso s\n");
+        print("[ACCOUNTING] Update the existing window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
         $dbh->do("  UPDATE accounting
                     SET consumption = $conso
                     WHERE
                         accounting_user = \'$user\' AND
+                        accounting_project = \'$project\' AND
                         consumption_type = \'$type\' AND
                         queue_name = \'$queue\' AND
                         window_start = \'$start\' AND
@@ -3940,9 +3926,9 @@ sub add_accounting_row($$$$$$$){
                 ");
     }else{
         # Create the window
-        print("[ACCOUNTING] Create new window $start --> $stop , user $user, queue $queue, type $type with conso = $conso s\n");
-        $dbh->do("  INSERT INTO accounting (accounting_user,consumption_type,queue_name,window_start,window_stop,consumption)
-                    VALUES (\'$user\',\'$type\',\'$queue\',\'$start\',\'$stop\',$conso)
+        print("[ACCOUNTING] Create new window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
+        $dbh->do("  INSERT INTO accounting (accounting_user,consumption_type,queue_name,window_start,window_stop,consumption,accounting_project)
+                    VALUES (\'$user\',\'$type\',\'$queue\',\'$start\',\'$stop\',$conso,\'$project\')
                  ");
     }
 }
@@ -4408,7 +4394,8 @@ sub job_finishing_sequence($$$$$$$$){
                                 stop_time >= $job->{start_time} AND
                                 assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
                                 assigned_resources.resource_id = resources.resource_id AND
-                                jobs.job_id != $job_id
+                                jobs.job_id != $job_id AND
+                                resources.network_address != \'\'
                             ";
  
                 my $sth = $dbh->prepare("$req");

@@ -74,6 +74,10 @@ Specify the directory where to launch the command (default is current directory)
 
 Specify an arbitrary name for the job.
 
+=item B<--project> string
+
+Specify the name of the project corresponding to the job.
+
 =item B<-e, --env> string
 
 Environment variables to set on the running proccess in the form "A=b C=d".
