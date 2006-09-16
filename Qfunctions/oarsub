@@ -203,7 +203,7 @@ Options are:
      --signal                  specify the signal to use when checkpointing (defuault is 12 --> SIGUSR2)
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
  -d, --directory               specify the directory where to launch the command (default is current directory)
-     --project                 specify the name a name of a project corresponding to this job
+     --project                 specify the name of the project corresponding to this job
  -n, --name                    specify an arbitrary name for the job
  -e, --env                     environment variables to set on the running proccess in the form "A=b C=d"
  -a, --anterior                anterior job that must be terminated to start this new one

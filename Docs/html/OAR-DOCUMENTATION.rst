@@ -1150,6 +1150,8 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       SERVER_PROLOGUE_EPILOGUE_TIMEOUT = 60
 
+.. _SERVER_SCRIPT_EXEC_FILE:
+
   - Files to execute before and after each job on the OAR server::
       
       SERVER_PROLOGUE_EXEC_FILE = /path/to/prog

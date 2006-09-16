@@ -100,6 +100,46 @@ How can I manage scheduling queues?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 see oarnotify_.
 
+How can I handle licence tokens?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OAR does not manage resources with an empty "network_address". So you can
+define resources that are not linked with a real node.
+
+So the steps to configure OAR with the possibility to reserve licences (or
+whatever you want that are other notions):
+
+ 1. Add a new field in the table resources_ to specify the licence name.
+    ::
+
+        oarproperty -a licence -c
+
+ 2. Add your licence name resources with oarnodesetting_.
+    ::
+
+        oarnodesetting -a -h "" -p type=mathlab -p licence=l1
+        oarnodesetting -a -h "" -p type=mathlab -p licence=l2
+        oarnodesetting -a -h "" -p type=fluent -p licence=l1
+        ...
+
+ 3. Now you have to write an admission rule to force oarsub_ "-l" option on
+    resources of the type "default" (node resources) if there is no other
+    specifications. 
+    ::
+
+        ADD ADMISSION RULE HERE
+
+After this configuration, users can perform submitions like
+::
+
+    oarsub -I -l "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+
+So users ask OAR to give them some other resource types but nothing block
+their program to take more licences than they asked.
+You can resolve this problem with the SERVER_SCRIPT_EXEC_FILE_ configuration.
+In these files you have to bind OAR allocated resources to the licence servers
+to restrict user consumptions to what they asked. This is very dependant of
+the licence management.
+
 How can I write my own scheduler?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: Scheduler/README
@@ -107,8 +147,10 @@ How can I write my own scheduler?
 What is the syntax of this documentation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We are using the RST format from the `Docutils <http://docutils.sourceforge.net/>`_ project. This syntax is easily
-readable and can be converted into HTML, LaTex or XML.
+We are using the RST format from the `Docutils
+<http://docutils.sourceforge.net/>`_ project. This syntax is easily readable
+and can be converted into HTML, LaTex or XML.
 
-You can find basic informations on http://docutils.sourceforge.net/docs/user/rst/quickref.html
+You can find basic informations on
+http://docutils.sourceforge.net/docs/user/rst/quickref.html
 

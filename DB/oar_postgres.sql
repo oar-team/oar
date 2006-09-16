@@ -236,6 +236,7 @@ CREATE INDEX val ON resource_logs (value);
 
 CREATE TABLE resources (
   resource_id bigserial,
+  type varchar(100) NOT NULL default 'default',
   network_address varchar(100) NOT NULL default '',
   state varchar(9) check (state in ('Alive','Dead','Suspected','Absent')) NOT NULL default 'Alive',
   next_state varchar(9) check (next_state in ('UnChanged','Alive','Dead','Absent','Suspected')) NOT NULL default 'UnChanged',

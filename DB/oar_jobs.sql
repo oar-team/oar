@@ -139,6 +139,7 @@ PRIMARY KEY (moldable_job_id,resource_id)
 #DROP TABLE IF EXISTS resources;
 CREATE TABLE IF NOT EXISTS resources (
 resource_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+type VARCHAR( 100 ) NOT NULL DEFAULT "default" ,
 network_address VARCHAR( 100 ) NOT NULL ,
 state ENUM('Alive','Dead','Suspected','Absent')  NOT NULL ,
 next_state ENUM('UnChanged','Alive','Dead','Absent','Suspected') DEFAULT 'UnChanged'  NOT NULL ,
