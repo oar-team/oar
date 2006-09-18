@@ -368,7 +368,10 @@ if ! ( > $OAR_STDOUT ) &> /dev/null || ! ( > $OAR_STDERR ) &> /dev/null
 then
     exit 2
 fi
+echo titi toto
 ('."@cmd".' > $OAR_STDOUT) >& $OAR_STDERR
+
+echo EXIT_CODE $?
 
 exit 0
 ';

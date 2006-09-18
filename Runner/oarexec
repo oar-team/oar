@@ -55,6 +55,7 @@ my $Res_file;
 my $Pid_file;
 my $Kill_myself = 0;
 my $Oarexec_exit_code = 0;
+my $Exit_script_code = 0;
 
 #Notify Almighty.
 #arg1 --> exit value
@@ -68,7 +69,7 @@ sub quit_oarexec($$){
         my $wait_time = 30;
     
         while (1){
-            if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$job_data->{challenge}"))){
+            if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$Exit_script_code"."_$job_data->{challenge}"))){
                 print("[oarexec $Job_id] I notified Almighty with my exit value $exit_value;so I am exiting\n");
                 exit($exit_value);
             }else{
@@ -361,7 +362,13 @@ close(FILEPID);
 sigprocmask(SIG_UNBLOCK, $Blockset);
 
 my $pid = $$;
+my $rin_script = '';
 if ($Job->{mode} eq "PASSIVE"){
+    # For parsing script outputs
+    pipe(pipe_script_read,pipe_script_write);
+    autoflush pipe_script_write 1;
+    autoflush pipe_script_read 1;
+    vec($rin_script,fileno(pipe_script_read),1) = 1;
     #print("[oarexec $Job_id] Launch the command : $cmd\n");
     $pid = fork;
     if($pid == 0){
@@ -373,9 +380,15 @@ if ($Job->{mode} eq "PASSIVE"){
         $SIG{USR1} = 'DEFAULT';
         $SIG{USR2} = 'DEFAULT';
         print("[oarexec $Job_id] child exec: $cmd\n");
+        close(pipe_script_read);
+        close(STDOUT);
+        # Redirect script output into the pipe
+        open(STDOUT, ">&", pipe_script_write);
         exec($cmd);
     }
+    close(pipe_script_write);
 }
+
 print("[oarexec $Job_id] child pid = $pid\n");
 
 my $kill_myself = 0;
@@ -387,7 +400,7 @@ my $rin_sig = '';
 my $rin_pipe = '';
 vec($rin_sig,fileno(pipe_kill_read),1) = 1;
 vec($rin_pipe,fileno(pipe_child_read),1) = 1;
-$rin = $rin_sig | $rin_pipe;
+$rin = $rin_sig | $rin_pipe | $rin_script;
 my $rin_tmp;
 my $Stop_signal = 0;
 my $Checkpoint_signal = 0;
@@ -396,10 +409,30 @@ my $stop_loop = 0;
 while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
     print("[oarexec $Job_id] wait end of child process or kill notification\n");
     select($rin_tmp = $rin, undef, undef, undef);
-    print("[oarexec $Job_id] A CHLD or kill signal arrived\n");
-    ($res_read,$line_read) = read_socket_line(\*pipe_child_read,1);
-    print("[oarexec $Job_id] PIPE reads : $res_read,$line_read\n");
-    if ($line_read <= 0){
+    
+    if (vec($rin_tmp, fileno(pipe_script_read), 1)){
+        ($res_read,$line_read) = read_socket_line(\*pipe_script_read,1);
+        if (($res_read == 1) and ($line_read eq "")){
+            # Script is finished
+            close(pipe_script_read);
+        }else{
+            print("[oarexec $Job_id] pipe script writes : $res_read,$line_read\n");
+            if ($line_read =~ /^EXIT_CODE\s(\d+)$/){
+                $Exit_script_code = $1;
+                print("OAREXEC_SCRIPT_EXIT_VALUE $Exit_script_code\n");
+            }
+        }
+    }elsif (vec($rin_tmp, fileno(pipe_child_read), 1)){
+        ($res_read,$line_read) = read_socket_line(\*pipe_child_read,1);
+        print("[oarexec $Job_id] PIPE reads : $res_read,$line_read\n");
+        if ($line_read =~ m/(\d+) (\d+)/m){
+            if ($1 == $pid){
+                print("[oarexec $Job_id] Reset CHLD signal handler\n");
+                $line_read = $pid;
+                $Oarexec_exit_code = $2 * 10;
+            }
+        }
+    }elsif (vec($rin_tmp, fileno(pipe_kill_read), 1)){
         ($res_read,$line_read) = read_socket_line(\*pipe_kill_read,1);
         print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
         if ($line_read eq "KILL"){
@@ -430,14 +463,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }
             $Checkpoint_signal = 1;
         }
-    }else{
-        $line_read =~ m/(\d+) (\d+)/m;
-        if ($1 == $pid){
-            print("[oarexec $Job_id] Reset CHLD signal handler\n");
-            $line_read = $pid;
-            $Oarexec_exit_code = $2 * 10;
-        }
-    }
+    }    
 }
 
 $SIG{CHLD} = 'DEFAULT';
@@ -446,6 +472,7 @@ $SIG{INT}  = 'IGNORE';
 $SIG{QUIT} = 'IGNORE';
 $SIG{USR1} = 'DEFAULT';
 $SIG{USR2} = 'DEFAULT';
+close(pipe_script_read) if ($rin_script ne '');
 close(pipe_child_write);
 close(pipe_child_read);
 close(pipe_kill_write);

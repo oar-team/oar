@@ -174,6 +174,7 @@ CREATE TABLE jobs (
   job_user varchar(255) NOT NULL default '',
   project varchar(255) NOT NULL default '',
   command text,
+  exit_code integer NOT NULL default '0',
   queue_name varchar(100) NOT NULL default '',
   properties text,
   launching_directory text NOT NULL ,

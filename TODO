@@ -114,8 +114,9 @@ co-system
 
 Suspend/Resume
 
-Licences --> Done
+Licences : mettre dans WHERE type = 'default'
 
 projets/accounting --> Done
 
+code de retour de l appli user (oarexec) --> Done
 

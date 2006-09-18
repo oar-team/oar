@@ -669,6 +669,21 @@ sub set_finish_date($$) {
 }
 
 
+# set_job_exit_code
+# parameters : base, jobid, exit code
+sub set_job_exit_code($$$) {
+    my $dbh = shift;
+    my $idJob = shift;
+    my $exit_code = shift;
+    
+    $dbh->do("  UPDATE jobs
+                SET exit_code = $exit_code
+                WHERE
+                    job_id = $idJob
+             ");
+}
+
+
 # get_possible_wanted_resources
 # return a tree ref : a data structure with corresponding resources with what is asked
 sub get_possible_wanted_resources($$$$$$$){
@@ -4143,9 +4158,10 @@ sub unlock_table($){
 
 
 # check_end_job($$$){
-sub check_end_of_job($$$$$$$$$){
+sub check_end_of_job($$$$$$$$$$){
     my $base = shift;
     my $Jid = shift;
+    my $exit_script_value = shift;
     my $error = shift;
     my $hosts = shift;
     my $remote_host = shift;
@@ -4161,6 +4177,7 @@ sub check_end_of_job($$$$$$$$$){
         oar_Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
         set_job_state($base,$Jid,"Finishing");
+        set_job_exit_code($base,$Jid,$exit_script_value);
         unlock_table($base);
         if($error == 0){
             oar_Judas::oar_debug("[bipbip $Jid] User Launch completed OK\n");

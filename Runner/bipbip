@@ -17,6 +17,7 @@ $Data::Dumper::Deepcopy = 1;
 
 my $Job_id= shift;
 my $Oarexec_reattach_exit_value = shift;
+my $Oarexec_reattach_script_exit_value = shift;
 my $Oarexec_challenge = shift;
 
 #get server conf
@@ -81,9 +82,9 @@ if (defined($types->{deploy})){
 
 #check if we must treate the end of a oarexec
 if (defined($Oarexec_reattach_exit_value)){
-    if ($Oarexec_reattach_exit_value =~ m/\d+/m){
+    if (($Oarexec_reattach_exit_value =~ m/\d+/m) and ($Oarexec_reattach_script_exit_value =~ m/\d+/m)){
         if ($Oarexec_challenge eq $job_challenge){
-            iolib::check_end_of_job($base, $Job_id, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
+            iolib::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
             iolib::disconnect($base);
             exit(0);
         }else{
@@ -291,6 +292,7 @@ my %data_to_transfer = (
     );
 
 my $error = 40;
+my $exit_script_value = 0;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
@@ -341,6 +343,11 @@ eval {
             }
             iolib::disconnect($base) if ($Detach_oarexec == 0);
         }
+
+        # Get user script exit code
+        if ($_ =~ /^OAREXEC_SCRIPT_EXIT_VALUE\s(\d+)$/){
+            $exit_script_value = $1;
+        }
     }
     close(READ);
 
@@ -354,7 +361,7 @@ if (($Detach_oarexec == 1) and ($error == 0)){
     exit(0);
 }else{
     $base = iolib::connect() if ($Detach_oarexec == 0);
-    iolib::check_end_of_job($base,$Job_id,$error,\@hosts,$Remote_host,$Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
+    iolib::check_end_of_job($base,$Job_id,$exit_script_value, $error,\@hosts,$Remote_host,$Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
 }
 
 iolib::disconnect($base);
