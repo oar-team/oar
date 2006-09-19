@@ -320,7 +320,7 @@ if (grep(/^deploy$/, @{$type_list})){
                 $i++;
             }
             splice(@{$r->{resources}}, $i, $#{@{$r->{resources}}} - $i + 1, {
-                                                                                resource => "node",
+                                                                                resource => "network_address",
                                                                                 value    => 1,
                                                                             });
             
@@ -406,10 +406,10 @@ foreach my $mold (@{$ref_resource_list}){
 
 # Check if types given by the user are right
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my @types = ("deploy","desktop_computing","besteffort","idempotent","timesharing");
+my @types = ("deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing");
 foreach my $t (@{$type_list}){
     my $i = 0;
-    while ($types[$i] ne $t){
+    while (($types[$i] ne $t) and ($i <= $#types)){
         $i++;
     }
     if (($i > $#types) and ($t !~ /^timesharing/)){

@@ -19,6 +19,7 @@ use oarversion;
 my $remote_host;
 my $remote_port;
 my $Deploy_hostname;
+my $Cosystem_hostname;
 my $Cpuset_field;
 my $Host = hostname ;
 
@@ -128,13 +129,15 @@ sub connect_job($$$){
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
         my @hosts = iolib::get_job_current_hostnames($dbh,$job_id);
         my $host_to_connect_via_ssh = $hosts[0];
-        #deploy part
+        #deploy, cosystem and no host part
         my $types = iolib::get_current_job_types($dbh,$job_id);
-        if (defined($types->{deploy})){
+        if ((defined($types->{cosystem})) or ($#hosts < 0)){
+            $host_to_connect_via_ssh = $Cosystem_hostname;
+        }elsif (defined($types->{deploy})){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
-        #deploy part
-        if (defined($Cpuset_field)){
+        #deploy, cosystem and no host part
+        if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
             $ENV{OAR_CPUSET} = iolib::get_job_cpuset_name($dbh,$job_id);
         }else{
             $ENV{OAR_CPUSET} = "";
@@ -238,6 +241,12 @@ $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
 if (!defined($Deploy_hostname)){
     $Deploy_hostname = $remote_host;
 }
+
+$Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
+if (!defined($Cosystem_hostname)){
+    $Cosystem_hostname = $remote_host;
+}
+
 $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
 my $binpath;

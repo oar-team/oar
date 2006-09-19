@@ -403,6 +403,7 @@ sub get_job_current_hostnames($$) {
                                 AND moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id
                                 AND moldable_job_descriptions.moldable_job_id = $jobid
                                 AND resources.network_address != \'\'
+                                AND resources.type = \'default\'
                              GROUP BY resources.network_address
                              ORDER BY resources.network_address ASC");
     $sth->execute();
@@ -475,7 +476,8 @@ sub get_job_host_log($$) {
                                 WHERE
                                     assigned_resources.moldable_job_id = $moldablejobid AND
                                     resources.resource_id = assigned_resources.resource_id AND
-                                    resources.network_address != \'\'
+                                    resources.network_address != \'\' AND
+                                    resources.type = \'default\'
                                 ORDER BY resources.resource_id ASC
                             ");
     $sth->execute();
@@ -3026,7 +3028,8 @@ sub get_cpuset_values_for_a_moldable_job($$$){
                                 WHERE
                                     assigned_resources.moldable_job_id = $mjob_id AND
                                     assigned_resources.resource_id = resources.resource_id AND
-                                    resources.network_address != \'\'
+                                    resources.network_address != \'\' AND
+                                    resources.type = \'default\'
                                 GROUP BY resources.network_address, resources.$cpuset_field
                             ");
     $sth->execute();
@@ -3425,7 +3428,8 @@ sub search_idle_nodes($$){
                WHERE
                    resources.resource_id = gantt_jobs_resources.resource_id AND
                    gantt_jobs_predictions.start_time <= $date AND
-                   resources.network_address != \'\'
+                   resources.network_address != \'\' AND
+                   resources.type = \'default\'
                GROUP BY resources.network_address
               ";
               
@@ -3442,7 +3446,8 @@ sub search_idle_nodes($$){
             WHERE
                 (resources.state = \'Alive\' OR
                 resources.state = \'Suspected\') AND
-                resources.network_address != \'\'
+                resources.network_address != \'\' AND
+                resources.type = \'default\'
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();
@@ -3529,6 +3534,7 @@ sub get_gantt_hostname_to_wake_up($$){
                    AND resources.resource_id = g1.resource_id
                    AND resources.state = \'Alive\'
                    AND resources.network_address != \'\'
+                   AND resources.type = \'default\'
                GROUP BY resources.network_address
               ";
     
@@ -4378,7 +4384,7 @@ sub job_finishing_sequence($$$$$$$$){
     }
     
     my $types = iolib::get_current_job_types($dbh,$job_id);
-    if (!defined($types->{deploy})){
+    if ((!defined($types->{deploy})) and (!defined($types->{cosystem}))){
         ###############
         # CPUSET PART #
         ###############
@@ -4392,49 +4398,52 @@ sub job_finishing_sequence($$$$$$$$){
             
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
-            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
-            my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
-            my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
-            if ($tag == 0){
-                my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
-                oar_Judas::oar_error($str);
-                add_new_event($dbh, "CPUSET_MANAGER_FILE", $job_id, $str);
-            }elsif ($#bad_tmp >= 0){
-                # Verify if the errors are not from another job with the same cpuset_name
-                # So the cpuset was already deleted --> not an error
-                my $req = "
-                            SELECT resources.network_address
-                            FROM jobs, assigned_resources, resources
-                            WHERE
-                                jobs.job_user = \'$job->{job_user}\' AND
-                                jobs.cpuset_name = \'$job->{cpuset_name}\' AND
-                                stop_time >= $job->{start_time} AND
-                                assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                                assigned_resources.resource_id = resources.resource_id AND
-                                jobs.job_id != $job_id AND
-                                resources.network_address != \'\'
-                            ";
+            if (defined($cpuset_nodes)){
+                oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
+                my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
+                if ($tag == 0){
+                    my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
+                    oar_Judas::oar_error($str);
+                    add_new_event($dbh, "CPUSET_MANAGER_FILE", $job_id, $str);
+                }elsif ($#bad_tmp >= 0){
+                    # Verify if the errors are not from another job with the same cpuset_name
+                    # So the cpuset was already deleted --> not an error
+                    my $req = "
+                                SELECT resources.network_address
+                                FROM jobs, assigned_resources, resources
+                                WHERE
+                                    jobs.job_user = \'$job->{job_user}\' AND
+                                    jobs.cpuset_name = \'$job->{cpuset_name}\' AND
+                                    stop_time >= $job->{start_time} AND
+                                    assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
+                                    assigned_resources.resource_id = resources.resource_id AND
+                                    jobs.job_id != $job_id AND
+                                    resources.network_address != \'\' AND
+                                    resources.type = \'type\'
+                              ";
  
-                my $sth = $dbh->prepare("$req");
-                $sth->execute();
-                my %potential_same_cpuset;
-                while (my @ref = $sth->fetchrow_array()) {
-                    $potential_same_cpuset{$ref[0]} = 1; 
-                }
-                $sth->finish();
-
-                my @bad;
-                foreach my $b (@bad_tmp){
-                    if (!defined($potential_same_cpuset{$b})){
-                        push(@bad, $b);
+                   my $sth = $dbh->prepare("$req");
+                    $sth->execute();
+                    my %potential_same_cpuset;
+                    while (my @ref = $sth->fetchrow_array()) {
+                        $potential_same_cpuset{$ref[0]} = 1; 
                     }
-                }
-                if ($#bad >= 0){
-                    oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
-                    iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
-                    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
-                }else{
-                    oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
+                    $sth->finish();
+
+                    my @bad;
+                    foreach my $b (@bad_tmp){
+                        if (!defined($potential_same_cpuset{$b})){
+                            push(@bad, $b);
+                        }
+                    }
+                    if ($#bad >= 0){
+                        oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
+                        iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
+                        oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+                    }else{
+                        oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
+                    }
                 }
             }
         }

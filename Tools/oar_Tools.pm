@@ -46,6 +46,7 @@ sub sentinelle($$$$$);
 sub get_cpuset_script($$);
 sub get_cpuset_clean_script($);
 sub check_resource_property($);
+sub check_resource_system_property($);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -534,12 +535,25 @@ sub sentinelle($$$$$){
 }
 
 
-# Check if a property can be manipulated by a user
+# Check if a property can be deleted or created by a user
 # return 0 if all is good otherwise return 1
 sub check_resource_property($){
     my $prop = shift;
 
     if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type)$/ ) {
+        return(1);
+    }else{
+        return(0);
+    }
+}
+
+
+# Check if a property can be manipulated by a user
+# return 0 if all is good otherwise return 1
+sub check_resource_system_property($){
+    my $prop = shift;
+
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date)$/ ) {
         return(1);
     }else{
         return(0);

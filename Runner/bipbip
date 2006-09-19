@@ -37,6 +37,10 @@ my $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
 if (!defined($Deploy_hostname)){
     $Deploy_hostname = $Remote_host;
 }
+my $Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
+if (!defined($Cosystem_hostname)){
+    $Cosystem_hostname = $Remote_host;
+}
 my $Debug_mode = get_conf("OAREXEC_DEBUG_MODE");
 if (!defined($Debug_mode)){
     $Debug_mode = 0;
@@ -65,20 +69,22 @@ my $job_challenge = iolib::get_job_challenge($base,$Job_id);
 
 my @hosts = iolib::get_job_current_hostnames($base,$Job_id);
 
-if($#hosts < 0){
-    oar_error("[bipbip $Job_id] A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???\n");
-    iolib::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested on NO HOSTS. This job must be already killed (exterminated) and come back from hell ???");
+if (!(($job->{state} eq "Launching") or (($job->{state} eq "Running")))){
+    oar_error("[bipbip $Job_id] A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???\n");
+    iolib::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???");
     iolib::disconnect($base);
     exit 1;
 }
 
 my $host_to_connect_via_ssh = $hosts[0];
-#deploy part
+#deploy, cosystem and no host part
 my $types = iolib::get_current_job_types($base,$Job_id);
-if (defined($types->{deploy})){
+if ((defined($types->{cosystem})) or ($#hosts < 0)){
+    $host_to_connect_via_ssh = $Cosystem_hostname;
+}elsif (defined($types->{deploy})){
     $host_to_connect_via_ssh = $Deploy_hostname;
 }
-#deploy part
+#deploy, cosystem and no host part
 
 #check if we must treate the end of a oarexec
 if (defined($Oarexec_reattach_exit_value)){
@@ -103,7 +109,7 @@ if (defined($Oarexec_reattach_exit_value)){
 # ELSE we must launch oarexec on the first node
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
-if (!defined($types->{deploy})){
+if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;
     ###############
@@ -296,8 +302,7 @@ my $exit_script_value = 0;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
-    #open(OAREXEC, "| ssh -x $host_to_connect_via_ssh oarexec $Job_id");
-    if (defined($Cpuset_field)){
+    if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
         $ENV{OAR_CPUSET} = $Cpuset_name;
     }else{
         $ENV{OAR_CPUSET} = "";
@@ -311,7 +316,6 @@ eval {
         close(FILE);
     }
     # End of oarexec script transfer
-    #print(WRITE "\n\cd\n");
     print(WRITE "\n__END__\n");
 
     # Send data structure for oarexec
@@ -355,7 +359,6 @@ eval {
     $error = $? >> 8;
     alarm(0);
 };
-#print("$@\n");
 if (($Detach_oarexec == 1) and ($error == 0)){
     oar_debug("[bipbip $Job_id] Exit from bipbip normally\n");
     exit(0);

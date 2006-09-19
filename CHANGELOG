@@ -4,6 +4,8 @@ OAR CHANGELOG
 version 2.0.0++ enhanced:
 -------------------------
 
+    - Now, with the ability to declare any type of resources like licences, VLAN, IP range, computing resources must have the type *default* and a network_address not null.
+    - Possibility to declare associated resources like licences, IP ranges, ... and to reserve them like others.
     - Now you can connect to your jobs (not only for reservations).
     - Add "cosystem" job type (execute and do nothing for these jobs).
     - New scheduler : "oar_sched_gantt_with_timesharing". You can specify jobs with the type "timesharing" that indicates that this scheduler can launch more than 1 job on a resource at a time. It is possible to restrict this feature with words "user and name". For example, '-t timesharing=user,name' indicates that only a job from the same user with the same name can be launched in the same time than it.
