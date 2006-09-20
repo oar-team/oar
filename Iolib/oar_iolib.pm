@@ -4275,9 +4275,14 @@ sub check_end_of_job($$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             my $types = iolib::get_current_job_types($base,$Jid);
             if (defined($types->{idempotent})){
-                my $new_job_id = iolib::resubmit_job($base,$Jid);
-                oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-                iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+                if ($exit_script_value == 0){
+                    my $new_job_id = iolib::resubmit_job($base,$Jid);
+                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+                }else{
+                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY_CANCELLED",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value.");
+                }
             }
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 41){
@@ -4287,9 +4292,14 @@ sub check_end_of_job($$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
             my $types = iolib::get_current_job_types($base,$Jid);
             if (defined($types->{idempotent})){
-                my $new_job_id = iolib::resubmit_job($base,$Jid);
-                oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-                iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+                if ($exit_script_value == 0){
+                    my $new_job_id = iolib::resubmit_job($base,$Jid);
+                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+                }else{
+                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY_CANCELLED",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value.");
+                }
             }
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{

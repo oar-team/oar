@@ -101,8 +101,8 @@ The user can submit a job with this command. So, what is a job in our context?
   must specify how many resources and what kind of them are needed by his
   application. Thus, OAR system will give him or not what he wants and will
   control the execution. When a job is launched, OAR executes user program only
-  on the first reservation node. So this program can access some environnement
-  variables to know its environnement:
+  on the first reservation node. So this program can access some environment
+  variables to know its environment:
   ::
                   
     $OAR_NODEFILE                 contains the name of a file which lists
@@ -195,7 +195,7 @@ Option
   -c job_id : send checkpoint signal to the job (signal was
               definedwith "--signal" option in oarsub)
 
-Exemples
+Examples
 ::
 
   # oardel 14 42
@@ -230,7 +230,7 @@ DrawOARGantt
 
 This is also a web cgi. It creates a Gantt chart which shows job repartition on
 nodes in the time. It is very useful to see cluster occupation in the past
-and to know when a job will be launched in the futur.
+and to know when a job will be launched in the future.
 
 
 Administrator guide
@@ -354,7 +354,7 @@ consumption       INT UNSIGNED          number of seconds used
 :Index fields: window_start, window_stop, accounting_user, queue_name,
                consumption_type
 
-This table is a summary of the comsumption for each user on each queue. This
+This table is a summary of the consumption for each user on each queue. This
 increases the speed of queries about user consumptions and statistic
 generation.
 
@@ -416,7 +416,7 @@ Some examples are better than a long description :
         }
       ');
 
- - Restrict the maximum of the walltime for intercative jobs
+ - Restrict the maximum of the walltime for interactive jobs
    ::
  
       INSERT INTO admission_rules (rule) VALUES ('
@@ -484,9 +484,9 @@ The different event types are:
 
  - "PING_CHECKER_NODE_SUSPECTED" : the system detected via the module "finaud"
    that a node is not responding.
- - "PROLOGUE_ERROR" : an error occured during the execution of the job
+ - "PROLOGUE_ERROR" : an error occurred during the execution of the job
    prologue (exit code != 0).
- - "EPILOGUE_ERROR" : an error occured during the execution of the job
+ - "EPILOGUE_ERROR" : an error occurred during the execution of the job
    epilogue (exit code != 0).
  - "CANNOT_CREATE_TMP_DIRECTORY" : OAR cannot create the directory where all
    information files will be stored.
@@ -501,9 +501,9 @@ The different event types are:
    code.
  - "SEND_KILL_JOB" : signal that OAR has transmitted a kill signal to the
    oarexec of the specified job.
- - "LEON_KILL_BIPBIP_TIMEOUT" : Leon module has detected that somehing wrong
-   occured during the kill of a job and so kill the local *bipbip* process.
- - "EXTERMINATE_JOB" : Leon module has detected that something wrong occured
+ - "LEON_KILL_BIPBIP_TIMEOUT" : Leon module has detected that something wrong
+   occurred during the kill of a job and so kill the local *bipbip* process.
+ - "EXTERMINATE_JOB" : Leon module has detected that something wrong occurred
    during the kill of a job and so clean the database and terminate the job
    artificially.
  - "WORKING_DIRECTORY" : the directory from which the job was submitted does
@@ -515,7 +515,7 @@ The different event types are:
  - "WALLTIME" : the job has reached its walltime.
  - "SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION" : this means that there is not
    enough nodes for the reservation and so the scheduler do the best and
-   gives less nodes than the user wanted (this occures when nodes become
+   gives less nodes than the user wanted (this occurres when nodes become
    Suspected or Absent).
  - "BESTEFFORT_KILL" : the job is of the type *besteffort* and was killed
    because a normal job wanted the nodes.
@@ -523,10 +523,10 @@ The different event types are:
  - "CHECKPOINT" : the checkpoint signal was sent to the job.
  - "CHECKPOINT_ERROR" : OAR cannot send the signal to the job.
  - "CHECKPOINT_SUCCESS" : system has sent the signal correctly.
- - "SERVER_EPILOGUE_TIMEOUT" : epilogue server script has timeouted.
+ - "SERVER_EPILOGUE_TIMEOUT" : epilogue server script has time outed.
  - "SERVER_EPILOGUE_EXIT_CODE_ERROR" : epilogue server script did not return 0.
  - "SERVER_EPILOGUE_ERROR" : cannot find epilogue server script file.
- - "SERVER_PROLOGUE_TIMEOUT" : prologue server script has timeouted.
+ - "SERVER_PROLOGUE_TIMEOUT" : prologue server script has time outed.
  - "SERVER_PROLOGUE_EXIT_CODE_ERROR" : prologue server script did not return 0.
  - "SERVER_PROLOGUE_ERROR" : cannot find prologue server script file.
  - "CPUSET_CLEAN_ERROR" : OAR cannot clean correctly cpuset files for a job
@@ -535,12 +535,12 @@ The different event types are:
  - "USER_MAIL_NOTIFICATION" : user mail notification cannot be performed.
  - "USER_EXEC_NOTIFICATION_ERROR" : user script execution notification cannot
    be performed.
- - "BIPBIP_BAD_JOBID" : error when retriving informations about a running job.
+ - "BIPBIP_BAD_JOBID" : error when retrieving informations about a running job.
  - "BIPBIP_CHALLENGE" : OAR is configured to detach jobs when they are launched
    on compute nodes and the job return a bad challenge number.
  - "RESUBMIT_JOB_AUTOMATICALLY" : the job was automatically resubmitted.
  - "WALLTIME" : the job reached its walltime.
- - "REDUCE_RESERVATION_WALLTIME" : the reservation job was shrinked.
+ - "REDUCE_RESERVATION_WALLTIME" : the reservation job was shrunk.
  - "SSH_TRANSFER_TIMEOUT" : node OAR part script was too long to transfer.
  - "BAD_HASHTABLE_DUMP" : OAR transfered a bad hashtable.
  - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
@@ -604,7 +604,7 @@ What do these states mean:
    "TIMER_ARMED".
  - "TIMER_ARMED" : the Sarko module must wait a response from the job during
    a timeout (default is 60s)
- - "LEON_EXTERMINATE" : the Sarko module has decided that the job timeouted and
+ - "LEON_EXTERMINATE" : the Sarko module has decided that the job time outed and
    asked Leon to clean up the database.
  - "FRAGGED" : job is fragged.
 
@@ -735,21 +735,21 @@ resubmit_job_id       INT UNSIGNED            if a job is resubmitted then the n
 
 Explications about the "state" field:
 
- - "Waiting" : the job is waiting OAR sheduler decision.
+ - "Waiting" : the job is waiting OAR scheduler decision.
  - "Hold" : user or administrator wants to hold the job (`oarhold`_ command).
    So it will not be scheduled by the system.
  - "toLaunch" : the OAR scheduler has attributed some nodes to the job. So it
    will be launched.
- - "toError" : something wrong occured and the job is going into the error
+ - "toError" : something wrong occurred and the job is going into the error
    state.
- - "toAckReservation" : the OAR sheduler must say "YES" or "NO" to the waiting
+ - "toAckReservation" : the OAR scheduler must say "YES" or "NO" to the waiting
    `oarsub`_ command because it requested a reservation.
  - "Launching" : OAR has launched the job and will execute the user command
    on the first node.
  - "Running" : the user command is executing on the first node.
  - "Finishing" : the user command has terminated and OAR is doing work internally
  - "Terminated" : the job has terminated normally.
- - "Error" : a problem has occured.
+ - "Error" : a problem has occurred.
 
 Explications about the "reservation" field:
 
@@ -889,14 +889,14 @@ finaud_decision       ENUM('YES', 'NO')     tell if the actual state results in 
                       DEFAULT 'NO'          "finaud" module decision
 next_finaud_decision  ENUM('YES', 'NO')     tell if the next node state results in
                       DEFAULT 'NO'          a "finaud" module decision
-state_num             INT                   corresponding state number (usefull
+state_num             INT                   corresponding state number (useful
                                             with the SQL "ORDER" query)
 switch                VARCHAR(50)           name of the switch
 cpu                   INT UNSIGNED          global cluster cpu number
 cpuset                INT UNSIGNED          field used with the
                                             CPUSET_RESOURCE_PROPERTY_DB_FIELD_
 besteffort            ENUM('YES','NO')      accept or not besteffort jobs
-deploy                ENUM('YES','NO')      specify if the resource is dployable
+deploy                ENUM('YES','NO')      specify if the resource is deployable
 expiry_date           INT UNSIGNED          field used for the desktop computing
                                             feature
 desktop_computing     ENUM('YES','NO')      tell if it is a desktop computing
@@ -1417,10 +1417,10 @@ OAR system steps:
     installed and configured (CPUSET_TAKTUK_CMD_) then OAR uses an internal
     launching tool less optimized.
 
- 2. Afer each job, OAR deletes all processes stored in the associated CPUSET.
+ 2. After each job, OAR deletes all processes stored in the associated CPUSET.
     Thus all nodes are clean after a OAR job.
 
-If you don't want to use this feature, you can, but nothing will waranty that
+If you don't want to use this feature, you can, but nothing will warranty that
 every user processes will be killed after the end of a job.
 
 If you want you can implement your own cpuset management. This is done by
@@ -1452,6 +1452,10 @@ processes that it has launched).
 If this method didn't succeed then Leon_ will flush the OAR database for the
 job and nodes will be "Suspected" by NodeChangeState_.
 
+If your job is check pointed and is of the type *idempotent* (oarsub_ "-t"
+option) and its exit code is equal to 0 then another job is automatically
+created and scheduled with same behaviours. 
+
 Checkpoint
 ----------
 
@@ -1469,11 +1473,11 @@ Scheduling
 
 General steps used to schedule a job:
   
-  1. All previous scheduled jobs are stored in a Gantt data strucuture.
+  1. All previous scheduled jobs are stored in a Gantt data structure.
   
   2. All resources that match property constraints of the job("-p" option and
      indication in the "{...}" from the "-l" option of the oarsub_) are stored in
-     a tree datat structure according to the hierarchy given with the "-l" option.
+     a tree data structure according to the hierarchy given with the "-l" option.
   
   3. Then this tree is given to the Gantt library to find the first hole where
      the job can be launched.
@@ -1509,18 +1513,18 @@ the command oaraccounting_ will split the time with this amount and feed the
 table accounting_.
 
 So this is very easily and faster to get usage statistics of the cluster. We
-can see that like a "datawarehousing" information extraction method.
+can see that like a "data warehousing" information extraction method.
 
 Dynamic nodes coupling features
 -------------------------------
 
 We are working with the `Icatis <http://www.icatis.com/>`_ company on clusters
-composed by intranet computers. These nodes can be switch in computing mode
+composed by Intranet computers. These nodes can be switch in computing mode
 only at specific times. So we have implemented a functionality that can
 request to power on some hardware if they can be in the cluster.
 
 We are using the field *cm_availability* from the table resources_
-to know when a node will be inaccessible in the cluster mode (easily setable
+to know when a node will be inaccessible in the cluster mode (easily settable
 with oarnodesetting_ command). So when the OAR scheduler wants some potential
 available computers to launch the jobs then it executes the command
 SCHEDULER_NODE_MANAGER_WAKE_UP_CMD_.
@@ -1537,6 +1541,7 @@ To perform this feature you have to specify the type *timesharing* when you use
 oarsub_.
 
 You have 4 different ways to share your slot:
+
   1. *timesharing=\*,\** : This is the default behavior if nothing but
      timesharing is specified.
      It indicates that the job can be shared with all users and every job
@@ -1576,7 +1581,7 @@ This feature enables to reserve some resources without launching any
 program on corresponding nodes. Thus nothing is done by OAR when a
 job is starting (no prologue, no epilogue on the server nor on the nodes).
 
-This is usefull with an other launching system that will declare its time
+This is useful with an other launching system that will declare its time
 slot in OAR. So yo can have two different batch scheduler.
 
 When you submit a job you have to use "-t cosystem" option of oarsub_ to
@@ -1588,7 +1593,7 @@ walltime.
 Deploy jobs
 -----------
 
-This feature is usefull when you want to enable the users to reinstall their
+This feature is useful when you want to enable the users to reinstall their
 reserved nodes. So the OAR jobs will not log on the first computer of the
 reservation but on the DEPLOY_HOSTNAME_.
 
