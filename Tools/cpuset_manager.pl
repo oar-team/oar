@@ -33,8 +33,11 @@ if (!defined($Cpuset_name)){
 # From now, "Cpuset" is of the form: 
 # $Cpuset = {
 #               name => "cpuset name",
-#               cpus => [array with all cpus of this cpuset]
+#               nodes => [array with all cpus of this cpuset]
 #           }
+#
+# $Cpuset_name is the name of the cpuset
+# @Cpuset_cpus is the list of cpus for this host
 
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node

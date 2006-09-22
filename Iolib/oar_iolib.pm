@@ -4411,7 +4411,7 @@ sub job_finishing_sequence($$$$$$$$){
             if (defined($cpuset_nodes)){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
-                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
+                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,undef,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
                     oar_Judas::oar_error($str);

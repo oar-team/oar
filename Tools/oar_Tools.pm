@@ -563,9 +563,10 @@ sub check_resource_system_property($){
 
 # Manage cpuset
 # args : cpuset name, hashtable with network_address -> [ array of cpu numbers ], name of the file containing the perl script, action to perform (init or clean), SSH command to use
-sub manage_cpuset($$$$$$$){
+sub manage_cpuset($$$$$$$$){
     my $cpuset_name = shift;
     my $host_cpus_hash = shift;
+    my $resource_detail_hash = shift;
     my $manage_file = shift;
     my $action = shift;
     my $ssh_cmd = shift;
@@ -586,7 +587,8 @@ sub manage_cpuset($$$$$$$){
     $cpuset_string .= "__END__\n";
     my $cpuset_hash = {
                         name => $cpuset_name,
-                        nodes => $host_cpus_hash
+                        nodes => $host_cpus_hash,
+                        resources => $resource_detail_hash
                       };
     # suitable Data::Dumper configuration for serialization
     $Data::Dumper::Purity = 1;

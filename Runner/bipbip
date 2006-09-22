@@ -119,7 +119,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
     if (defined($cpuset_nodes)){
         my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
-        my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
+        my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,undef,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
             my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$Job_id] Bad cpuset file : $Cpuset_file\n";
             oar_Judas::oar_error($str);
@@ -135,7 +135,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                 foreach my $b (@bad){
                     delete($cpuset_nodes->{$b});
                 }
-                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
+                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,undef,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
                 push(@bad, @bad_tmp);
             }
         }
@@ -282,6 +282,7 @@ my %data_to_transfer = (
         user                => $job->{job_user},
         types               => $types,
         name                => $job->{job_name},
+        project             => $job->{project},
         reservation         => $job->{reservation},
         walltime            => $moldable->{moldable_walltime},
         command             => $job->{command},

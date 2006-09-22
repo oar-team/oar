@@ -183,7 +183,7 @@ sub connect_job($$$){
             warn("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
         }
         iolib::disconnect($dbh);
-        return(1);
+        return(20);
     }
     return(0);
 }
@@ -310,7 +310,7 @@ if (defined($Resubmit)){
         $Job_id = $err;
         if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qsub"))){
             warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
-            exit(1);
+            exit(3);
         }
         exit(0);
     }else{
@@ -324,19 +324,19 @@ if (defined($Resubmit)){
         }else{
             warn("/!\\ Unknown error\n");
         }
-        exit(1);
+        exit(4);
     }
 }
 
 if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($connect_job))){
     usage();
-    exit(1);
+    exit(5);
 }
 
 if (($Interactive == 1) and ($Reservation ne "0")){
     warn("/!\\ A reservation cannot be interactive.\n");
     usage();
-    exit(1);
+    exit(6);
 }
 
 # stagein machinery
@@ -509,7 +509,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
             iolib::disconnect($base);
-            exit(-3);
+            exit(7);
         }
         ($Server, $server_port) = init_tcp_server();
     }
@@ -531,7 +531,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
             iolib::disconnect($base);
-            exit(-3);
+            exit(7);
         }
     }
     
@@ -547,14 +547,14 @@ iolib::disconnect($base);
 
 if ($Job_id < 0){
     warn("Error in oarsub, verify your syntax or call administrator\n");
-    exit(2);
+    exit(8);
 }
 
 #Signal Almigthy
 if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$Cmd_executor"))){
     #qdel(1);
     warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
-    exit(1);
+    exit(9);
 }
 
 my $answer;
@@ -568,6 +568,7 @@ if ($Reservation ne "0"){
         print("Reservation valid --> OK\n");
     }else{
         print("Reservation not valid --> KO ($answer)\n");
+        exit(10);
     }
 }elsif ($Interactive==1) {
     #Interactive mode
@@ -576,10 +577,11 @@ if ($Reservation ne "0"){
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD JOB"){
-        connect_job($Job_id,1,$Openssh_cmd);
+        exit(connect_job($Job_id,1,$Openssh_cmd));
     }else{
         warn("Sorry but the system returned : $answer\n");
+        exit(11);
     }
 }
 
-exit 0;
+exit(0);
