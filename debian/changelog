@@ -1,9 +1,23 @@
+oar (2.0.0-beta3) unstable; urgency=low
+
+  [ capitn ]
+  * bug fix in oar.conf : replace "node ASC" by network_address
+
+ -- Capit Nicolas <capitn@false>  Fri,  6 Oct 2006 11:04:00 +0200
+
+oar (2.0.0-beta2) unstable; urgency=low
+
+  [ capitn ]
+  * bug fix in sudoers
+
+ -- Capit Nicolas <capitn@false>  Fri,  6 Oct 2006 11:04:00 +0200
+
 oar (2.0.0-beta1) unstable; urgency=low
 
   [ capitn ]
-  * new release 
+  * new release
 
- -- capitn <capitn@localhost.localdomain>  Wed, 23 Aug 2006 15:55:37 +0200
+ -- Capit Nicolas <capitn@false>  Thu,  5 Oct 2006 11:18:31 +0200
 
 oar (1.6.1) unstable; urgency=low
 

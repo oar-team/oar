@@ -2,7 +2,7 @@
 package oarversion;
 require Exporter;
 
-my $OARVersion = "2.0.0-beta2";
+my $OARVersion = "2.0.0-beta3";
 
 sub get_version(){
     return $OARVersion;

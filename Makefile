@@ -169,10 +169,10 @@ draw-gantt:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(CGIDIR)
 	install -d -m 0755 $(WWWDIR)
-	install -m 0755 DrawGantt/DrawOARGantt.pl $(CGIDIR)
+	install -m 0755 DrawGantt/drawgantt.cgi $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	@if [ -e $(OARCONFDIR)/DrawGantt.conf ]; then echo "Warning: $(OARCONFDIR)/DrawGantt.conf already exists, not overwriting it." ; else install -m 0644 DrawGantt/DrawGantt.conf $(OARCONFDIR) ; fi
-	install -m 0644 ConfLib/oar_conflib.pm $(CGIDIR)
+	@if [ -e $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0644 DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
+#	install -m 0644 ConfLib/oar_conflib.pm $(CGIDIR)
 	install -d -m 0755 $(WWWDIR)/DrawGantt/Icons
 	install -d -m 0755 $(WWWDIR)/DrawGantt/js
 	install -m 0644 DrawGantt/Icons/*.png $(WWWDIR)/DrawGantt/Icons
