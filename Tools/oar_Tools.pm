@@ -314,7 +314,7 @@ sub launch_command($){
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarexec($$$$$$$$$$@){
+sub get_oarexecuser_script_for_oarexec($$$$$$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
@@ -324,6 +324,7 @@ sub get_oarexecuser_script_for_oarexec($$$$$$$$$$@){
         $stderr_file,
         $resource_file,
         $job_name,
+        $job_project,
         $job_env,
         @cmd) = @_;
 
@@ -351,7 +352,8 @@ export OAR_NODE_FILE=$OAR_FILE_NODES
 export OAR_RESOURCE_FILE=$OAR_FILE_NODES
 export OAR_WORKING_DIRECTORY=$OAR_WORKDIR
 export OAR_JOB_ID=$OAR_JOBID
-export OAR_JOBNAME='.$job_name.'
+export OAR_JOB_NAME='.$job_name.'
+export OAR_PROJECT_NAME='.$job_project.'
 
 if ( cd $OAR_WORKING_DIRECTORY &> /dev/null )
 then
@@ -383,7 +385,7 @@ exit 0
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
@@ -392,6 +394,7 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$){
         $display,
         $resource_file,
         $job_name,
+        $job_project,
         $job_env) = @_;
 
     my $exp_env = "";
@@ -420,7 +423,8 @@ export OAR_NODE_FILE=\$OAR_FILE_NODES
 export OAR_RESOURCE_FILE=\$OAR_FILE_NODES
 export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
 export OAR_JOB_ID=\$OAR_JOBID
-export OAR_JOBNAME='.$job_name.'
+export OAR_JOB_NAME='.$job_name.'
+export OAR_PROJECT_NAME='.$job_project.'
 
 if ( cd \$OAR_WORKING_DIRECTORY &> /dev/null )
 then

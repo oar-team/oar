@@ -155,7 +155,7 @@ sub connect_job($$$){
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
         #my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
         #my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$cpuset_name,$res_file);
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$res_file,$job->{job_name}, $job->{job_env});
+        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$res_file,$job->{job_name},$job->{project}, $job->{job_env});
         my $cmd = "$openssh_cmd -oSendEnv=OAR_CPUSET -x -t $host_to_connect_via_ssh \"sh -c \\\"echo \\\\\\\$PPID >> $oarsub_pids && TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
         #my $cmd = "cat $oarexecuser_script | $openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
         #my $cmd = "$openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
@@ -281,8 +281,8 @@ GetOptions ("resource|l=s" => \@resource,
             "hold" => \$job_hold,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
-	    "stdout=s" => \$Stdout_file,
-	    "stderr=s" => \$Stderr_file,
+            "stdout=s" => \$Stdout_file,
+            "stderr=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
             "force_cpuset_name=s" => \$Cpuset_name,
             "version|v" => \$Version
