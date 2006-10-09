@@ -141,7 +141,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         }
     }
     #####################
-    # CPUSET PART, END #
+    # CPUSET PART, END  #
     #####################
     if (($#bad < 0) and (!defined($cpuset_nodes))){
         # CHECK nodes

@@ -608,7 +608,7 @@ sub manage_cpuset($$$$$$$$){
         my @node_corresponding;
         foreach my $n (keys(%{$host_cpus_hash})){
             #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
-            my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n sudo perl - $action";
+            my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n perl - $action";
             push(@node_commands, $cmd);
             push(@node_corresponding, $n);
         }
@@ -624,7 +624,7 @@ sub manage_cpuset($$$$$$$$){
             $m_option .= " -m $n";
         }
        
-        my $cmd = "$taktuk_cmd -c $ssh_cmd ".'-o status=\'STATUS $host $line\n\''."$m_option 'broadcast exec sudo perl - $action' 'broadcast file_input -'";
+        my $cmd = "$taktuk_cmd -c $ssh_cmd ".'-o status=\'STATUS $host $line\n\''."$m_option 'broadcast exec perl - $action' 'broadcast file_input -'";
         #print("$cmd\n");
         my $pid = open2(\*READ, \*WRITE, $cmd);
         eval{

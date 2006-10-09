@@ -4,7 +4,6 @@
 # It adds its own process in the cpuset OAR_CPUSET and launches
 # the shell or the script of the user SUDO_USER.
 
-
 DEFAULT_SHELL=/bin/bash
 
 # $1 = Name of the cpuset
@@ -35,12 +34,18 @@ then
     # It must be oar
     if [ "$OAR_CPUSET" != "" ]
     then
-        add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit
+        add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
     fi
     export SHELL=$DEFAULT_SHELL
     exec $DEFAULT_SHELL "$@"
 else
-    add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit
+    if [ "$OAR_CPUSET" == "" ]
+    then
+        echo "[OARSH] OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET SUDO_USER' on all computing nodes?" 1>&2
+        exit 3
+        
+    fi
+    add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
     if [ "$1" == "" ]
     then
         # Simulate initial login
@@ -52,7 +57,7 @@ else
         if [ "$SHELL" == "" ]
         then
             echo "[OARSH_SHELL] ERROR: No shell found for user $SUDO_USER." 1>&2
-            exit 1
+            exit 4
         else
             export HOME=$(echo $PASSWD_LINE | cut -d : -f 6)
             cd $HOME

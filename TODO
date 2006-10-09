@@ -120,3 +120,5 @@ projets/accounting --> Done
 
 code de retour de l appli user (oarexec) --> Done
 
+Dans oar.conf mettre les variables d environnements que l on souhaite garder lors du oarsub -C.
+

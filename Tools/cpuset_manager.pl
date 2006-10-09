@@ -43,18 +43,18 @@ if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
 
     #print("[cpuset_manager] name = $Cpuset_name ; cpus = @Cpuset_cpus\n");
-    if (system('mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
-        if (system('mkdir -p /dev/cpuset && mount -t cpuset none /dev/cpuset')){
+    if (system('sudo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
+        if (system('sudo mkdir -p /dev/cpuset && sudo mount -t cpuset none /dev/cpuset')){
             exit(4);
         }
     }
  
-    if (system( 'mkdir -p /dev/cpuset/'.$Cpuset_name.' && '.
+    if (system( 'sudo mkdir -p /dev/cpuset/'.$Cpuset_name.' && '.
+                'sudo chown -R oar /dev/cpuset/'.$Cpuset_name.' && '.
                 '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_name.'/notify_on_release && '.
                 '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_name.'/cpu_exclusive && '.
                 'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_name.'/mems && '.
-                '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_name.'/cpus && '.
-                'chown oar /dev/cpuset/'.$Cpuset_name.'/tasks'
+                '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_name.'/cpus'
               )){
         exit(5);
     }
@@ -64,12 +64,12 @@ if ($ARGV[0] eq "init"){
     system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_name.'/tasks)
             while [ "$PROCESSES" != "" ]
             do
-                kill -9 $PROCESSES
+                sudo kill -9 $PROCESSES
                 PROCESSES=$(cat /dev/cpuset/'.$Cpuset_name.'/tasks)
             done'
           );
 
-    if (system('rmdir /dev/cpuset/'.$Cpuset_name)){
+    if (system('sudo rmdir /dev/cpuset/'.$Cpuset_name)){
         exit(6);
     }
 }else{
