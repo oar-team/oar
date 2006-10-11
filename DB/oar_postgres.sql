@@ -168,7 +168,7 @@ CREATE TABLE jobs (
   cpuset_name varchar(255),
   job_type varchar(11) check (job_type in ('INTERACTIVE','PASSIVE')) NOT NULL default 'PASSIVE',
   info_type varchar(255) default NULL,
-  state varchar(16) check (state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
+  state varchar(16) check (state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Suspended','Resuming','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
   reservation varchar(10) check (reservation in ('None','toSchedule','Scheduled')) NOT NULL default 'None',
   message varchar(255) NOT NULL default '',
   job_user varchar(255) NOT NULL default '',
@@ -190,6 +190,7 @@ CREATE TABLE jobs (
   stdout_file text ,
   stderr_file text ,
   resubmit_job_id integer NOT NULL default '0',
+  suspended varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
   PRIMARY KEY  (job_id)
 );
 CREATE INDEX state ON jobs (state);
@@ -244,6 +245,7 @@ CREATE TABLE resources (
   finaud_decision varchar(3) check (finaud_decision in ('YES','NO')) NOT NULL default 'NO',
   next_finaud_decision varchar(3) check (next_finaud_decision in ('YES','NO')) NOT NULL default 'NO',
   state_num integer NOT NULL default '0',
+  suspended_jobs varchar(3) check (suspended_jobs in ('YES','NO')) NOT NULL default 'NO',
   switch varchar(50) NOT NULL default '0',
   cpu integer NOT NULL default '0',
   cpuset integer NOT NULL default '0',

@@ -56,7 +56,8 @@ my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
 my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 my $Cpuset_file = get_conf("CPUSET_FILE");
-
+$Cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($Cpuset_file));
+$Cpuset_file = "$ENV{OARDIR}/$Cpuset_file" if ($Cpuset_file !~ /^\//);
 
 my $base;
 
@@ -117,9 +118,14 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     ###############
     my $cpuset_nodes;
     $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
+    my $cpuset_data_hash;
+    $cpuset_data_hash = {
+        name => $Cpuset_name,
+        nodes => $cpuset_nodes
+    };
     if (defined($cpuset_nodes)){
         my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
-        my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,undef,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
+        my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
             my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$Job_id] Bad cpuset file : $Cpuset_file\n";
             oar_Judas::oar_error($str);
@@ -135,7 +141,11 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                 foreach my $b (@bad){
                     delete($cpuset_nodes->{$b});
                 }
-                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($Cpuset_name,$cpuset_nodes,undef,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
+                $cpuset_data_hash = {
+                    name => $Cpuset_name,
+                    nodes => $cpuset_nodes
+                };
+                my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
                 push(@bad, @bad_tmp);
             }
         }
@@ -278,6 +288,7 @@ my %data_to_transfer = (
         stdout_file         => $job->{stdout_file},
         stderr_file         => $job->{stderr_file},
         launching_directory => $job->{launching_directory},
+        job_env             => $job->{job_env},
         resources           => \@resources,
         user                => $job->{job_user},
         types               => $types,
@@ -304,6 +315,7 @@ eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
+        # for oarsh_shell connection
         $ENV{OAR_CPUSET} = $Cpuset_name;
     }else{
         $ENV{OAR_CPUSET} = "";

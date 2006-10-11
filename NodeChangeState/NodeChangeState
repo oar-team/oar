@@ -141,7 +141,27 @@ foreach my $i (@events_to_check){
             iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"An ERROR occured and we cannot launch this job so we resubmit it (new id = $new_job_id).");
         }
     }
-    
+
+    ####################################
+    # Check Suspend/Resume job feature #
+    ####################################
+    if (
+        ($i->{type} eq "HOLD_WAITING_JOB") ||
+        ($i->{type} eq "HOLD_RUNNING_JOB") ||
+        ($i->{type} eq "RESUME_JOB")
+       ){
+        my $job = iolib::get_job($base,$i->{job_id});
+        if ((($i->{type} eq "HOLD_WAITING_JOB") or ($i->{type} eq "HOLD_RUNNING_JOB")) and (($job->{state} eq "Waiting"))){
+            iolib::set_job_state($base,$i->{job_id},"Hold");
+        }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
+            # Launch suspend command on all nodes
+
+            iolib::set_job_state($base,$i->{job_id},"Suspended");
+        }elsif (($i->{type} eq "RESUME_JOB") and ($job->{state} eq "Suspended")){
+            iolib::set_job_state($base,$i->{job_id},"Resuming");
+        }
+    }
+   
     iolib::check_event($base, $i->{type}, $i->{job_id});
 }
 

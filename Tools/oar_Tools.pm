@@ -43,8 +43,6 @@ sub get_default_server_prologue_epilogue_timeout();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_bipbip_oarexec_rendez_vous();
 sub sentinelle($$$$$);
-sub get_cpuset_script($$);
-sub get_cpuset_clean_script($);
 sub check_resource_property($);
 sub check_resource_system_property($);
 
@@ -82,6 +80,11 @@ sub get_default_leon_walltime(){
 # Get default value for OPENSSH_CMD tag
 sub get_default_openssh_cmd(){
     return($Default_openssh_cmd);
+}
+
+# Get default value for CPUSET_FILE tag
+sub get_default_cpuset_file(){
+    return($Default_cpuset_file_manager);
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names
@@ -399,6 +402,7 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
 
     my $exp_env = "";
     if ($job_env !~ /^\s*$/){
+        $job_env =~ s/\"/\\"/g;
         $exp_env .= "export $job_env";
     }
 
@@ -544,7 +548,7 @@ sub sentinelle($$$$$){
 sub check_resource_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type)$/ ) {
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type|suspended_jobs)$/ ) {
         return(1);
     }else{
         return(0);
@@ -557,7 +561,7 @@ sub check_resource_property($){
 sub check_resource_system_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date)$/ ) {
+    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs)$/ ) {
         return(1);
     }else{
         return(0);
@@ -565,12 +569,11 @@ sub check_resource_system_property($){
 }
 
 
-# Manage cpuset
-# args : cpuset name, hashtable with network_address -> [ array of cpu numbers ], name of the file containing the perl script, action to perform (init or clean), SSH command to use
-sub manage_cpuset($$$$$$$$){
-    my $cpuset_name = shift;
-    my $host_cpus_hash = shift;
-    my $resource_detail_hash = shift;
+# Manage commands on several nodes like cpuset or suspend job
+# args : array of host to connect to, hashtable to transfer, name of the file containing the perl script, action to perform (start or stop), SSH command to use, taktuk cmd or undef, database ref
+sub manage_remote_commands($$$$$$$){
+    my $connect_hosts = shift;
+    my $data_hash = shift;
     my $manage_file = shift;
     my $action = shift;
     my $ssh_cmd = shift;
@@ -578,49 +581,45 @@ sub manage_cpuset($$$$$$$$){
     my $base = shift;
     
     my @bad;
-    $manage_file = $Default_cpuset_file_manager if (!defined($manage_file));;
-    $manage_file = "$ENV{OARDIR}/$manage_file" if ($manage_file !~ /^\//);
+    #$manage_file = $Default_cpuset_file_manager if (!defined($manage_file));;
+    #$manage_file = "$ENV{OARDIR}/$manage_file" if ($manage_file !~ /^\//);
     $ssh_cmd = $Default_openssh_cmd if (!defined($ssh_cmd));
     # Prepare commands to run on each node
-    my $cpuset_string;
+    my $string_to_transfer;
     open(FILE, $manage_file) or return(0,undef);
     while(<FILE>){
-        $cpuset_string .= $_;
+        $string_to_transfer .= $_;
     }
     close(FILE);
-    $cpuset_string .= "__END__\n";
-    my $cpuset_hash = {
-                        name => $cpuset_name,
-                        nodes => $host_cpus_hash,
-                        resources => $resource_detail_hash
-                      };
+    $string_to_transfer .= "__END__\n";
     # suitable Data::Dumper configuration for serialization
     $Data::Dumper::Purity = 1;
     $Data::Dumper::Terse = 1;
     $Data::Dumper::Indent = 0;
     $Data::Dumper::Deepcopy = 1;
 
-    $cpuset_string .= Dumper($cpuset_hash);
+    $string_to_transfer .= Dumper($data_hash);
     
     if (!defined($taktuk_cmd)){
         # Dispatch via sentinelle
         my @node_commands;
         my @node_corresponding;
-        foreach my $n (keys(%{$host_cpus_hash})){
+        foreach my $n (@{$connect_hosts}){
             #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
             my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n perl - $action";
             push(@node_commands, $cmd);
             push(@node_corresponding, $n);
         }
-        my @bad_tmp = sentinelle(10,get_ssh_timeout(), \@node_commands, $cpuset_string,$base);
+        my @bad_tmp = sentinelle(10,get_ssh_timeout(), \@node_commands, $string_to_transfer,$base);
         foreach my $b (@bad_tmp){
             push(@bad, $node_corresponding[$b]);
         }
     }else{
         # Dispatch via taktuk
-        my %tmp_node_hash = %{$host_cpus_hash};
+        my %tmp_node_hash;
         my $m_option;
-        foreach my $n (keys(%tmp_node_hash)){
+        foreach my $n (@{$connect_hosts}){
+            $tmp_node_hash{$n} = 1;
             $m_option .= " -m $n";
         }
        
@@ -631,7 +630,7 @@ sub manage_cpuset($$$$$$$$){
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm(oar_Tools::get_ssh_timeout());     
             # Send data structure to all nodes
-            print(WRITE $cpuset_string);
+            print(WRITE $string_to_transfer);
             close(WRITE);
             # Check good nodes from the stdout taktuk
             while(<READ>){

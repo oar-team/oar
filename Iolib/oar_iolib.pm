@@ -59,7 +59,7 @@ sub set_job_message($$$);
 sub set_job_autoCheckpointed($$);
 sub frag_job($$);
 sub ask_checkpoint_job($$);
-sub hold_job($$);
+sub hold_job($$$);
 sub resume_job($$);
 sub job_fragged($$);
 sub job_arm_leon_timer($$);
@@ -825,10 +825,15 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
 
     # Verify the content of user command
     if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
-        warn("ERROR : The command to launch contains bad characters\n");
+        warn("ERROR : The command to launch contains bad characters -- $command\n");
         return(-4);
     }
     
+    # Verify the content of env variables
+    if ( "$job_env" !~ m/^[\w\=\s\/\.\-\"]*$/m ){
+        warn("ERROR : The specified environnement variables contains bad characters -- $job_env\n");
+        return(-9);
+    }
     #Retrieve Micheline's rules from the table
     my $sth = $dbh->prepare("SELECT rule FROM admission_rules ORDER BY id");
     $sth->execute();
@@ -1492,23 +1497,25 @@ sub ask_checkpoint_job($$){
 # return value : 0 on success, -1 on error (if the user calling this method
 #                is not the user running the job)
 # side effects : changes the field state of the job to 'Hold' in the table Jobs
-sub hold_job($$) {
+sub hold_job($$$) {
     my $dbh = shift;
     my $idJob = shift;
+    my $waiting_and_running = shift;
 
     #my $lusr= getpwuid($<);
     my $lusr = getpwuid($ENV{SUDO_UID});
 
     my $job = get_job($dbh, $idJob);
-
+    
+    my $event_type = "HOLD_WAITING_JOB";
+    $event_type = "HOLD_RUNNING_JOB" if (defined($waiting_and_running));
     if (defined($job)){
         if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if ($job->{'state'} eq "Waiting"){
-                $dbh->do("  UPDATE jobs
-                            SET state = \'Hold\'
-                            WHERE
-                                job_id = $idJob
-                         ");
+                add_new_event($dbh, $event_type, $idJob, "User $lusr launched oarhold on the job $idJob");
+                return 0;
+            }elsif((defined($waiting_and_running)) and (($job->{state} eq "toLaunch") or ($job->{state} eq "Launching") or ($job->{state} eq "Running"))){
+                add_new_event($dbh, $event_type, $idJob, "User $lusr launched oarhold on the job $idJob");
                 return 0;
             }else{
                 return(-3);
@@ -1544,11 +1551,7 @@ sub resume_job($$) {
     if (defined($job)){
         if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if ($job->{'state'} eq "Hold"){
-                $dbh->do("  UPDATE jobs
-                            SET state = \'Waiting\'
-                            WHERE
-                                job_id = $idJob
-                         ");
+                add_new_event($dbh, "RESUME_JOB", $idJob, "User $lusr launched oarresume on the job $idJob");
                 return(0);
             }
             return(-3);
@@ -1558,7 +1561,6 @@ sub resume_job($$) {
         return(-1);
     }
 }
-
 
 
 # job_fragged
@@ -4405,13 +4407,19 @@ sub job_finishing_sequence($$$$$$$$){
             my $openssh_cmd = get_conf("OPENSSH_CMD");
             $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
             my $cpuset_file = get_conf("CPUSET_FILE");
+            $cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($cpuset_file));
+            $cpuset_file = "$ENV{OARDIR}/$cpuset_file" if ($cpuset_file !~ /^\//);
             
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             if (defined($cpuset_nodes)){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
-                my ($tag,@bad_tmp) = oar_Tools::manage_cpuset($cpuset_name,$cpuset_nodes,undef,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
+                my $cpuset_data_hash = {
+                    name => $cpuset_name,
+                    nodes => $cpuset_nodes
+                };
+                my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
                     oar_Judas::oar_error($str);
