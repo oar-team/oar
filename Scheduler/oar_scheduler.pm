@@ -6,6 +6,10 @@ use warnings;
 use oar_iolib;
 use Gantt_2;
 use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_conflib qw(init_conf get_conf is_conf);
+
+
+init_conf($ENV{OARCONFFILE});
 
 #minimum of seconds between each jobs
 my $Security_time_overhead = 1;
@@ -74,6 +78,8 @@ sub init_scheduler($$$$$$){
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "toLaunch"));
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Launching"));
     push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Finishing"));
+    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Suspended"));
+    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Resuming"));
 
     my $max_resources = 50;
     #Init the gantt chart with all resources
@@ -88,7 +94,7 @@ sub init_scheduler($$$$$$){
     foreach my $i (@initial_jobs){
         my $mold = iolib::get_current_moldable_job($dbh,$i->{assigned_moldable_job});
         # The list of resources on which the job is running
-        my @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job});
+        my @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job},undef);
 
         my $date ;
         if ($i->{start_time} == 0) {
@@ -103,13 +109,24 @@ sub init_scheduler($$$$$$){
 
         # Treate besteffort jobs like nothing!
         if ($i->{queue_name} ne "besteffort"){
+            my $job_duration = $mold->{moldable_walltime};
+            if ($i->{state} eq "Suspended"){
+                # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+                my @suspended_types = split(" ",get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE"));
+                @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job},\@suspended_types);
+            }
+            if ($i->{suspended} eq "YES"){
+                # This job was suspended so we must recalculate the walltime
+                $job_duration += iolib::get_job_suspended_sum_duration($dbh,$i->{job_id},$current_time_sec);
+            }
+
             my $vec = '';
             foreach my $r (@resource_list){
                 vec($vec, $r, 1) = 1;
             }
             Gantt_2::set_occupation(  $gantt,
                                       $date,
-                                      $mold->{moldable_walltime} + $Security_time_overhead,
+                                      $job_duration + $Security_time_overhead,
                                       $vec
                                    );
         }else{
@@ -134,10 +151,10 @@ sub init_scheduler($$$$$$){
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));	
-	my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
-                                     				$job->{start_time},
-                                        			$moldable->[1] + $Security_time_overhead,
-                                       			    );
+	    my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
+                                     				            $job->{start_time},
+                                        			            $moldable->[1] + $Security_time_overhead,
+                                       			            );
         foreach my $r (@tmp_resource_list){
             if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
                 #if ($r->{state} eq "Alive"){
@@ -302,13 +319,26 @@ sub check_reservation_jobs($$$$){
         my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($dbh);
         foreach my $i (keys(%already_scheduled_jobs)){
             if (($already_scheduled_jobs{$i}->[2] ne "besteffort") or ($queue_name eq "besteffort")){
+                my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
+                my $job_duration = $already_scheduled_jobs{$i}->[1];
+                if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
+                    # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+                    my @suspended_types = split(" ",get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE"));
+                    @resource_list = iolib::get_job_current_resources($dbh, $already_scheduled_jobs{$i}->[7],\@suspended_types);
+                    next if ($#resource_list < 0);
+                }
+                if ($already_scheduled_jobs{$i}->[8] eq "YES"){
+                    # This job was suspended so we must recalculate the walltime
+                    $job_duration += iolib::get_job_suspended_sum_duration($dbh,$i,$current_time_sec);
+                }
+
                 my $vec = '';
-                foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
+                foreach my $r (@resource_list){
                     vec($vec, $r, 1) = 1;
                 }
                 Gantt_2::set_occupation(  $gantt,
                                           $already_scheduled_jobs{$i}->[0],
-                                          $already_scheduled_jobs{$i}->[1] + $Security_time_overhead,
+                                          $job_duration + $Security_time_overhead,
                                           $vec
                                        );
             }

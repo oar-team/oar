@@ -38,7 +38,7 @@ sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
-sub get_job_current_resources($$);
+sub get_job_current_resources($$$);
 sub get_job_host_log($$);
 sub get_to_kill_jobs($);
 sub is_tokill_job($$);
@@ -420,22 +420,34 @@ sub get_job_current_hostnames($$) {
 # parameters : base, jobid
 # return value : list of resources
 # side effects : /
-sub get_job_current_resources($$) {
+sub get_job_current_resources($$$) {
     my $dbh = shift;
     my $jobid= shift;
+    my $not_type_list = shift;
 
-    my $sth = $dbh->prepare("SELECT resource_id as resource
-                             FROM assigned_resources
-                             WHERE 
-                                assigned_resource_index = \'CURRENT\'
-                                AND moldable_job_id = $jobid
-                             ORDER BY resource_id ASC");
+    my $tmp_str;
+    if (!defined($not_type_list)){
+        $tmp_str = "FROM assigned_resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resource_index.moldable_job_id = $jobid";
+    }else{    
+        $tmp_str = "FROM assigned_resources,resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resource_index.moldable_job_id = $jobid AND
+                        resources.resource_id = assigned_resources.resource_id AND
+                        resources.type NOT IN (".join(",",@{$not_type_list}).")";
+    }
+    my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
+                                $tmp_str
+                             ORDER BY assigned_resources.resource_id ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref->{resource});
     }
-    return @res;
+    return(@res);
 }
 
 
@@ -1110,97 +1122,105 @@ sub set_job_state($$$) {
                 VALUES ($job_id,\'$state\',\'$date\')
              ");
 
-    if (($state eq "Terminated") or ($state eq "Error")){
-        $dbh->do("  DELETE FROM challenges
-                    WHERE job_id = $job_id
-                 ");
-        
-        if ($Db_type eq "Pg"){
-            $dbh->do("  UPDATE moldable_job_descriptions
-                        SET
-                            moldable_index = \'LOG\'
-                        WHERE
-                            moldable_job_descriptions.moldable_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_job_id = $job_id
-                     ");
-
-            $dbh->do("  UPDATE job_resource_descriptions
-                        SET
-                            res_job_index = \'LOG\'
-                        FROM moldable_job_descriptions, job_resource_groups
-                        WHERE
-                            job_resource_groups.res_group_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_index = \'LOG\'
-                            AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_job_id = $job_id
-                            AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                            AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                 ");
-            
-            $dbh->do("  UPDATE job_resource_groups
-                        SET
-                            res_group_index = \'LOG\'
-                        FROM moldable_job_descriptions
-                        WHERE
-                            job_resource_groups.res_group_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_index = \'LOG\'
-                            AND moldable_job_descriptions.moldable_job_id = $job_id
-                            AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                 ");
-        }else{
-            $dbh->do("  UPDATE moldable_job_descriptions, job_resource_groups, job_resource_descriptions
-                        SET job_resource_groups.res_group_index = \'LOG\',
-                            job_resource_descriptions.res_job_index = \'LOG\',
-                            moldable_job_descriptions.moldable_index = \'LOG\'
-                        WHERE
-                            moldable_job_descriptions.moldable_index = \'CURRENT\'
-                            AND job_resource_groups.res_group_index = \'CURRENT\'
-                            AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                            AND moldable_job_descriptions.moldable_job_id = $job_id
-                            AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                            AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                    ");
-        }
-
-        $dbh->do("  UPDATE job_types
-                    SET types_index = \'LOG\'
-                    WHERE
-                        job_types.types_index = \'CURRENT\'
-                        AND job_types.job_id = $job_id
-                 ");
-        
-        $dbh->do("  UPDATE job_dependencies
-                    SET job_dependency_index = \'LOG\'
-                    WHERE
-                        job_dependencies.job_dependency_index = \'CURRENT\'
-                        AND job_dependencies.job_id = $job_id
-                 ");
-
+    if (($state eq "Terminated") or ($state eq "Error") or ($state eq "Running") or ($state eq "Suspended") or ($state eq "Resuming")){
         my $job = get_job($dbh,$job_id);
-        if ($job->{stop_time} < $job->{start_time}){
-            $dbh->do("  UPDATE jobs
-                        SET stop_time = start_time
-                        WHERE
-                            job_id = $job_id
-                     ");
-        }
-        if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
-            $dbh->do("  UPDATE assigned_resources
-                        SET assigned_resource_index = \'LOG\'
-                        WHERE
-                            assigned_resource_index = \'CURRENT\'
-                            AND moldable_job_id = $job->{assigned_moldable_job}
-                    ");
-
-            # Update last_job_date field for resources used
-            iolib::update_scheduler_last_job_date($dbh, $date,$job->{assigned_moldable_job});
-        }
-
         my ($addr,$port) = split(/:/,$job->{info_type});
-        if ($state eq "Terminated"){
-            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
-        }else{
-            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally.");
+        if ($state eq "Suspended"){
+            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"SUSPENDED","Job is suspended.");
+        }elsif ($state eq "Resuming"){
+            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RESUMING","Job is resuming.");
+        }elsif ($state eq "Running"){
+            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
+        }elsif (($state eq "Terminated") or ($state eq "Error")){
+            $dbh->do("  DELETE FROM challenges
+                        WHERE job_id = $job_id
+                     ");
+            
+            if ($Db_type eq "Pg"){
+                $dbh->do("  UPDATE moldable_job_descriptions
+                            SET
+                                moldable_index = \'LOG\'
+                            WHERE
+                                moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                AND moldable_job_descriptions.moldable_job_id = $job_id
+                         ");
+    
+                $dbh->do("  UPDATE job_resource_descriptions
+                            SET
+                                res_job_index = \'LOG\'
+                            FROM moldable_job_descriptions, job_resource_groups
+                            WHERE
+                                job_resource_groups.res_group_index = \'CURRENT\'
+                                AND moldable_job_descriptions.moldable_index = \'LOG\'
+                                AND job_resource_descriptions.res_job_index = \'CURRENT\'
+                                AND moldable_job_descriptions.moldable_job_id = $job_id
+                                AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                                AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+                     ");
+                
+                $dbh->do("  UPDATE job_resource_groups
+                            SET
+                                res_group_index = \'LOG\'
+                            FROM moldable_job_descriptions
+                            WHERE
+                                job_resource_groups.res_group_index = \'CURRENT\'
+                                AND moldable_job_descriptions.moldable_index = \'LOG\'
+                                AND moldable_job_descriptions.moldable_job_id = $job_id
+                                AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                     ");
+            }else{
+                $dbh->do("  UPDATE moldable_job_descriptions, job_resource_groups, job_resource_descriptions
+                            SET job_resource_groups.res_group_index = \'LOG\',
+                                job_resource_descriptions.res_job_index = \'LOG\',
+                                moldable_job_descriptions.moldable_index = \'LOG\'
+                            WHERE
+                                moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                AND job_resource_groups.res_group_index = \'CURRENT\'
+                                AND job_resource_descriptions.res_job_index = \'CURRENT\'
+                                AND moldable_job_descriptions.moldable_job_id = $job_id
+                                AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                                AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+                        ");
+            }
+    
+            $dbh->do("  UPDATE job_types
+                        SET types_index = \'LOG\'
+                        WHERE
+                            job_types.types_index = \'CURRENT\'
+                            AND job_types.job_id = $job_id
+                     ");
+            
+            $dbh->do("  UPDATE job_dependencies
+                        SET job_dependency_index = \'LOG\'
+                        WHERE
+                            job_dependencies.job_dependency_index = \'CURRENT\'
+                            AND job_dependencies.job_id = $job_id
+                     ");
+    
+            if ($job->{stop_time} < $job->{start_time}){
+                $dbh->do("  UPDATE jobs
+                            SET stop_time = start_time
+                            WHERE
+                                job_id = $job_id
+                         ");
+            }
+            if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
+                $dbh->do("  UPDATE assigned_resources
+                            SET assigned_resource_index = \'LOG\'
+                            WHERE
+                                assigned_resource_index = \'CURRENT\'
+                                AND moldable_job_id = $job->{assigned_moldable_job}
+                        ");
+    
+                # Update last_job_date field for resources used
+                iolib::update_scheduler_last_job_date($dbh, $date,$job->{assigned_moldable_job});
+            }
+    
+            if ($state eq "Terminated"){
+                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
+            }else{
+                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally.");
+            }
         }
     }
 }
@@ -1560,6 +1580,120 @@ sub resume_job($$) {
     } else {
         return(-1);
     }
+}
+
+
+sub get_job_suspended_sum_duration($$$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $current_time = shift;
+
+    my $sth = $dbh->prepare("   SELECT date_start, date_stop
+                                FROM job_state_logs
+                                WHERE
+                                    job_id = $job_id AND
+                                    job_state = \'Suspended\'
+                            ");
+    $sth->execute();
+    my $sum = 0;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $tmp_sum = 0;
+        if ($ref->{date_stop} == 0){
+            $tmp_sum = $current_time - $ref->{date_start};
+        }else{
+            $tmp_sum += $ref->{date_stop} - $ref->{date_start};
+        }
+        $sum += $tmp_sum if ($tmp_sum > 0);
+    }
+    $sth->finish();
+
+    return($sum);
+}
+
+
+sub is_a_job_on_resuming_job_resources($$){
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT a2.moldable_job_id as mjobid
+                                FROM jobs,assigned_resources a1,assigned_resources a2
+                                WHERE
+                                    a1.assigned_resource_index = \'CURRENT\' AND
+                                    a2.assigned_resource_index = \'CURRENT\' AND
+                                    jobs.job_id = $job_id AND
+                                    a1.moldable_job_id = jobs.assigned_moldable_job AND
+                                    a2.resource_id = a1.resource_id
+                                LIMIT 1
+
+                            ");
+    $sth->execute();
+    my $res = 0;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $res = 1;
+    }
+    $sth->finish();
+
+    return($res);
+}
+
+
+sub get_current_resources_with_suspended_job($){
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT resource_id
+                                FROM assigned_resources, jobs
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                                    jobs.state = \'Suspended\' AND
+                                    jobs.assigned_moldable_job = assigned_resources.moldable_job_id
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource_id});
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+# suspend_job_action
+# perform all action when a job is suspended
+# parameters : base, jobid, moldable jobid
+sub suspend_job_action($$$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    my $moldable_job_id = shift;
+
+    set_job_state($dbh,$job_id,"Suspended");
+    $dbh->do("  UPDATE jobs
+                SET suspended = \'YES\'
+                WHERE
+                    job_id = $job_id
+             ");
+    my @r = get_current_resources_with_suspended_job($dbh);
+    $dbh->do("  UPDATE resources
+                SET suspended_jobs = \'YES\'
+                WHERE
+                   resource_id IN (".join(",",@r).")
+             ");
+}
+
+
+# resume_job_action
+# perform all action when a job is suspended
+# parameters : base, jobid
+sub resume_job_action($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+
+    set_job_state($dbh,$job_id,"Running");
+    my @r = get_current_resources_with_suspended_job($dbh);
+    $dbh->do("  UPDATE resources
+                SET suspended_jobs = \'NO\'
+                WHERE
+                   resource_id NOT IN (".join(",",@r).")
+             ");
 }
 
 
@@ -3158,7 +3292,7 @@ sub create_a_queue($$$$){
 #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name
+    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
                              FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
                                 m.moldable_index = \'CURRENT\'
@@ -3177,12 +3311,14 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[4] = $ref[5];
             $res{$ref[0]}->[5] = $ref[6];
             $res{$ref[0]}->[6] = $ref[7];
+            $res{$ref[0]}->[7] = $ref[8];
+            $res{$ref[0]}->[8] = $ref[9];
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
     }
     $sth->finish();
 
-    return %res;
+    return(%res);
 }
 
 

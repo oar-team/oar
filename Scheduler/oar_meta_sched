@@ -36,6 +36,8 @@ if (defined($ENV{OARDIR})){
     die("[MetaSched] OARDIR env variable must be defined\n");
 }
 
+my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+
 oar_debug("[MetaSched] Start of meta scheduler\n");
 
 oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead,$minimum_hole_time,$Order_part,get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT"));
@@ -105,6 +107,53 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
     if ($#nodes >= 0){
         oar_debug("[MetaSched] Some nodes must be started : @nodes\n");
         oar_Tools::fork_no_wait(get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")." @nodes", $base);
+    }
+}
+
+# Search jobs to resume
+foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
+    if (iolib::is_a_job_on_resuming_job_resources($base,$j) == 0){
+        # We can resume the job
+        oar_debug("[MetaSched] We can resume the job $j\n");
+        ###############
+        # RESUME PART #
+        ###############
+        my @bad;
+        if (defined($Cpuset_field)){
+            my $cpuset_name = iolib::get_job_cpuset_name($base, $j->{job_id}) if (defined($Cpuset_field));
+            my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$j->{assigned_moldable_job});
+            my $cpuset_data_hash;
+            my $suspend_data_hash = {
+                name => $cpuset_name,
+            };
+            if (defined($cpuset_nodes)){
+                my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+                my $openssh_cmd = get_conf("OPENSSH_CMD");
+                $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+                my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
+                $suspend_file = oar_Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
+                $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
+                my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"resume",$openssh_cmd,$taktuk_cmd,$base);
+                if ($tag == 0){
+                    my $str = "[NodeChangeState] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file : $suspend_file\n";
+                    oar_Judas::oar_error($str);
+                    iolib::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
+                }else{
+                    push (@bad, @bad_tmp);
+                    #print("@bad\n");
+                    if (($#bad < 0)){
+                        iolib::resume_job_action($base,$j->{job_id});
+                    }else{
+                        my $str = "[NodeChangeState] [SUSPEND_RESUME] [$j->{job_id}] Error on several nodes : @bad\n";
+                        oar_Judas::oar_error($str);
+                        iolib::add_new_event_with_host($base,"RESUME_ERROR",$j->{job_id},$str,\@bad);
+                    }
+                }
+            }
+        }
+        #####################
+        # RESUME PART, END  #
+        #####################
     }
 }
 

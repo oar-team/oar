@@ -111,6 +111,7 @@ server:
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
 	install -m 0644 Tools/cpuset_manager.pl $(OARDIR)
+	install -m 0644 Tools/suspend_resume_manager.pl $(OARDIR)
 
 user:
 	install -d -m 0755 $(OARDIR)

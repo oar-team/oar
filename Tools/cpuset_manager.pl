@@ -1,4 +1,4 @@
-# This script is executed as root
+# This script is executed as oar
 
 # ARGV[0] can have two different values:
 #     - "init"  : then this script must create the right cpuset and assign

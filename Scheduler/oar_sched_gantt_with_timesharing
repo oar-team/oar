@@ -100,8 +100,21 @@ foreach my $i (keys(%already_scheduled_jobs)){
                 oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt for ($user, $name)\n");
             }
         }
+        my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
+        my $job_duration = $already_scheduled_jobs{$i}->[1];
+        if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
+            # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+            my @suspended_types = split(" ",get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE"));
+            @resource_list = iolib::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@suspended_types);
+            next if ($#resource_list < 0);
+        }
+        if ($already_scheduled_jobs{$i}->[8] eq "YES"){
+            # This job was suspended so we must recalculate the walltime
+            $job_duration += iolib::get_job_suspended_sum_duration($base,$i,$current_time);
+        }
+
         my $vec = '';
-        foreach my $r (@{$already_scheduled_jobs{$i}->[3]}){
+        foreach my $r (@resource_list){
             vec($vec,$r,1) = 1;
         }
         #Fill all other gantts
@@ -110,7 +123,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
                 if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
                     Gantt_2::set_occupation($timesharing_gantts->{$u}->{$n},
                                             $already_scheduled_jobs{$i}->[0],
-                                            $already_scheduled_jobs{$i}->[1] + $security_time_overhead,
+                                            $job_duration + $security_time_overhead,
                                             $vec
                                          );
                 }
@@ -118,7 +131,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
         }
         Gantt_2::set_occupation(  $gantt,
                                   $already_scheduled_jobs{$i}->[0],
-                                  $already_scheduled_jobs{$i}->[1] + $security_time_overhead,
+                                  $job_duration + $security_time_overhead,
                                   $vec
                              );
     }

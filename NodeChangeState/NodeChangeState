@@ -7,12 +7,16 @@ use oar_iolib;
 use Data::Dumper;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use IO::Socket::INET;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use strict;
+
+
+init_conf($ENV{OARCONFFILE});
+my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
 my $Exit_code = 0;
 
 my $base = iolib::connect();
-
 iolib::lock_table($base,["resources","assigned_resources","jobs","job_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions","challenges","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_logs"]);
 
 # Check event logs
@@ -156,7 +160,45 @@ foreach my $i (@events_to_check){
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
             # Launch suspend command on all nodes
 
-            iolib::set_job_state($base,$i->{job_id},"Suspended");
+            ################
+            # SUSPEND PART #
+            ################
+            my @bad;
+            if (defined($Cpuset_field)){
+                my $cpuset_name = iolib::get_job_cpuset_name($base, $i->{job_id}) if (defined($Cpuset_field));
+                my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$i->{assigned_moldable_job});
+                my $cpuset_data_hash;
+                my $suspend_data_hash = {
+                    name => $cpuset_name,
+                };
+                if (defined($cpuset_nodes)){
+                    my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+                    my $openssh_cmd = get_conf("OPENSSH_CMD");
+                    $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+                    my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
+                    $suspend_file = oar_Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
+                    $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
+                    my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"suspend",$openssh_cmd,$taktuk_cmd,$base);
+                    if ($tag == 0){
+                        my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Bad suspend/resume file : $suspend_file\n";
+                        oar_Judas::oar_error($str);
+                        iolib::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $i->{job_id}, $str);
+                    }else{
+                        push (@bad, @bad_tmp);
+                        #print("@bad\n");
+                        if (($#bad < 0)){
+                            iolib::suspend_job_action($base,$i->{job_id},$i->{assigned_moldable_job});
+                        }else{
+                            my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Error on several nodes : @bad\n";
+                            oar_Judas::oar_error($str);
+                            iolib::add_new_event_with_host($base,"SUSPEND_ERROR",$i->{job_id},$str,\@bad);
+                        }
+                    }
+                }
+            }
+            ######################
+            # SUSPEND PART, END  #
+            ######################
         }elsif (($i->{type} eq "RESUME_JOB") and ($job->{state} eq "Suspended")){
             iolib::set_job_state($base,$i->{job_id},"Resuming");
         }

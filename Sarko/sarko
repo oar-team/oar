@@ -78,6 +78,10 @@ foreach my $job (iolib::get_jobs_in_state($base, "Running")){
     # Get maxtime
     my $mold_job = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
     $max = $mold_job->{moldable_walltime};
+    if ($job->{suspended} eq "YES"){
+        # This job was suspended so we must recalculate the walltime
+        $max += iolib::get_job_suspended_sum_duration($base,$job->{job_id},$current);
+    }
 
     oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current\n");
     if ($current > $start+$max){

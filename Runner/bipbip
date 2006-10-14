@@ -345,8 +345,6 @@ eval {
                 alarm(0);
             }
             iolib::set_job_state($base,$Job_id,"Running");
-            my ($addr,$port) = split(/:/,$job->{info_type});
-            oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"START","Job is launched and all resources are initialised correctly.");
             # Notify interactive oarsub
             if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
                 oar_debug("[bipbip $Job_id] Interactive request ;Answer to the client Qsub -I\n");
