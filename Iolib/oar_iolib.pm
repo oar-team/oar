@@ -1583,6 +1583,8 @@ sub resume_job($$) {
 }
 
 
+# get the amount of time in the suspended state of a job
+# args : base, job id, time in seconds
 sub get_job_suspended_sum_duration($$$){
     my $dbh = shift;
     my $job_id = shift;
@@ -1611,32 +1613,36 @@ sub get_job_suspended_sum_duration($$$){
 }
 
 
-sub is_a_job_on_resuming_job_resources($$){
+# Return the list of jobs running on resources allocated to another given job
+# args : base, resume job id
+sub get_jobs_on_resuming_job_resources($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT DISTINCT(jobs.job_id) as jobid
-                                FROM jobs,assigned_resources a1,assigned_resources a2
+    my $sth = $dbh->prepare("   SELECT DISTINCT(j2.job_id) as jobid
+                                FROM jobs j1,jobs j2,assigned_resources a1,assigned_resources a2
                                 WHERE
                                     a1.assigned_resource_index = \'CURRENT\' AND
                                     a2.assigned_resource_index = \'CURRENT\' AND
-                                    jobs.job_id = $job_id AND
-                                    a1.moldable_job_id = jobs.assigned_moldable_job AND
-                                    a2.resource_id = a1.resource_id
-                                LIMIT 1
-
+                                    j1.job_id = $job_id AND
+                                    a1.moldable_job_id = j1.assigned_moldable_job AND
+                                    a2.resource_id = a1.resource_id AND
+                                    a2.moldable_job_id = j2.assigned_moldable_job AND
+                                    j2.job_id != $job_id
                             ");
     $sth->execute();
-    my $res = 0;
+    my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        $res = 1 if ($ref->{jobid} != $job_id);
+        push(@res,$ref->{jobid});
     }
     $sth->finish();
 
-    return($res);
+    return(@res);
 }
 
 
+# Return the list of resources where there are Suspended jobs
+# args: base
 sub get_current_resources_with_suspended_job($){
     my $dbh = shift;
 
@@ -2208,6 +2214,39 @@ sub get_jobs_gantt_scheduled($$$){
     $sth->finish();
 
     return %results;
+}
+
+
+# get scheduling informations about Interactive jobs in Waiting state
+# args : base
+sub get_gantt_waiting_interactive_prediction_date($){
+    my $dbh = shift;
+
+    my $req =
+        "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time
+         FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
+         WHERE
+             jobs.state = \'Waiting\' AND
+             moldable_job_descriptions.moldable_index = \'CURRENT\' AND
+             moldable_job_descriptions.moldable_job_id = jobs.job_id AND
+             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id
+        ";
+    
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my @results;
+    while (my @ref = $sth->fetchrow_array()) {
+        my $tmp = {
+                    'job_id' => $ref[0],
+                    'info_type' => $ref[1],
+                    'start_time' => $ref[2]
+                  };
+        push(@results, $tmp);
+    }
+    $sth->finish();
+
+    return(@results);
 }
 
 

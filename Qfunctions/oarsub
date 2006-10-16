@@ -15,6 +15,9 @@ use File::Temp qw/ tempfile /;
 use oar_Tools;
 use oarversion;
 
+select(STDOUT);
+$| = 1;
+
 #For interactive
 my $remote_host;
 my $remote_port;
@@ -575,12 +578,19 @@ if ($Reservation ne "0"){
     print("Interactive mode : waiting...\n");
     my $client = $Server->accept();
     $answer = <$client>;
+    chop($answer);
+    my $erase_str = "";
     while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
-        print("$answer\n");
+        for (my $c = 0; $c < length($erase_str); $c++){
+            print(chr(8));
+        }
+        print($answer);
+        $erase_str = $answer;
         $client = $Server->accept();
         $answer = <$client>;
         chop($answer);
     }
+    print("\n");
     if ($answer eq "GOOD JOB"){
         exit(connect_job($Job_id,1,$Openssh_cmd));
     }else{

@@ -113,7 +113,9 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
 
 # Search jobs to resume
 foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
-    if (iolib::is_a_job_on_resuming_job_resources($base,$j->{job_id}) == 0){
+    my @other_jobs = iolib::get_jobs_on_resuming_job_resources($base,$j->{job_id});
+    # TODO : look for timesharing other jobs. What do we do?????
+    if ($#other_jobs < 0){
         # We can resume the job
         oar_debug("[MetaSched] We can resume the job $j\n");
         ###############
@@ -162,7 +164,10 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
 }
 
 # Notify oarsub -I when they will be launched
-# TODO
+foreach my $j (iolib::get_gantt_waiting_interactive_prediction_date($base)){
+    my ($addr,$port) = split(/:/,$j->{info_type});
+    oar_Tools::notify_tcp_socket($addr,$port,"Start prediction : ".iolib::local_to_sql($j->{start_time}));
+}
 
 iolib::disconnect($base);
 oar_debug("[MetaSched] End of meta scheduler\n");
