@@ -10,6 +10,13 @@ use oar_conflib qw(init_conf get_conf is_conf);
 
 
 init_conf($ENV{OARCONFFILE});
+my @Sched_available_suspended_resource_type;
+my $sched_available_suspended_resource_type_tmp = get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE");
+if (!defined($sched_available_suspended_resource_type_tmp)){
+    push(@Sched_available_suspended_resource_type, "default");
+}else{
+    @Sched_available_suspended_resource_type = split(" ",$sched_available_suspended_resource_type_tmp);
+}
 
 #minimum of seconds between each jobs
 my $Security_time_overhead = 1;
@@ -57,7 +64,7 @@ sub init_scheduler($$$$$$){
 
     # Take care of the currently (or nearly) running jobs
     # Lock to prevent bipbip update in same time
-    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions","resources"]);
+    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions","resources","job_state_logs"]);
    
     #calculate now date with no overlap with other jobs
     my $previous_ref_time_sec = iolib::get_gantt_date($dbh);
@@ -112,8 +119,7 @@ sub init_scheduler($$$$$$){
             my $job_duration = $mold->{moldable_walltime};
             if ($i->{state} eq "Suspended"){
                 # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-                my @suspended_types = split(" ",get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE"));
-                @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job},\@suspended_types);
+                @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job},\@Sched_available_suspended_resource_type);
             }
             if ($i->{suspended} eq "YES"){
                 # This job was suspended so we must recalculate the walltime
@@ -323,8 +329,7 @@ sub check_reservation_jobs($$$$){
                 my $job_duration = $already_scheduled_jobs{$i}->[1];
                 if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
                     # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-                    my @suspended_types = split(" ",get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE"));
-                    @resource_list = iolib::get_job_current_resources($dbh, $already_scheduled_jobs{$i}->[7],\@suspended_types);
+                    @resource_list = iolib::get_job_current_resources($dbh, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
                     next if ($#resource_list < 0);
                 }
                 if ($already_scheduled_jobs{$i}->[8] eq "YES"){

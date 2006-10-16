@@ -575,7 +575,12 @@ if ($Reservation ne "0"){
     print("Interactive mode : waiting...\n");
     my $client = $Server->accept();
     $answer = <$client>;
-    chop($answer);
+    while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
+        print("$answer\n");
+        $client = $Server->accept();
+        $answer = <$client>;
+        chop($answer);
+    }
     if ($answer eq "GOOD JOB"){
         exit(connect_job($Job_id,1,$Openssh_cmd));
     }else{

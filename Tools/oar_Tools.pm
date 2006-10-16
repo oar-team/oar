@@ -21,6 +21,7 @@ my $Default_prologue_epilogue_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
 my $Default_cpuset_file_manager = "cpuset_manager.pl";
+my $Default_suspend_resume_file_manager = "suspend_resume_manager.pl";
 
 # Prototypes
 sub get_all_process_children();
@@ -85,6 +86,11 @@ sub get_default_openssh_cmd(){
 # Get default value for CPUSET_FILE tag
 sub get_default_cpuset_file(){
     return($Default_cpuset_file_manager);
+}
+
+# Get default value for SUSPEND_RESUME_FILE tag
+sub get_default_suspend_resume_file(){
+    return($Default_suspend_resume_file_manager);
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names
@@ -191,7 +197,8 @@ sub signal_oarexec($$$$$$){
     my $ssh_cmd = shift;
 
     my $file = get_oar_pid_file_name($job_id);
-    my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
+    #my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
+    my $cmd = "$ssh_cmd -x -T $host \"test -e $file && PROC=\\\$(cat $file) && kill -s CONT \\\$PROC && kill -s $signal \\\$PROC\"";
     $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();
     if($pid == 0){

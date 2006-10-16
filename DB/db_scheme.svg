@@ -406,16 +406,6 @@
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient2074"
-       id="linearGradient2057"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.389038,0,0,0.258652,-18.9975,-5.351695)"
-       x1="143.78571"
-       y1="244.50504"
-       x2="247.64285"
-       y2="244.50504" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient2074"
        id="linearGradient1858"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(1.633884,0,0,0.258652,64.5112,7.723805)"
@@ -493,6 +483,16 @@
        y1="244.50504"
        x2="247.64285"
        y2="244.50504" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2074"
+       id="linearGradient2402"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.389038,0,0,0.258652,-18.9975,-5.351695)"
+       x1="143.78571"
+       y1="244.50504"
+       x2="247.64285"
+       y2="244.50504" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -501,18 +501,18 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.92365555"
-     inkscape:cx="915.70259"
-     inkscape:cy="225.5722"
+     inkscape:zoom="1.3062462"
+     inkscape:cx="663.33364"
+     inkscape:cy="253.94978"
      inkscape:document-units="px"
-     inkscape:current-layer="g2681"
+     inkscape:current-layer="layer1"
      showguides="true"
      inkscape:guide-bbox="true"
      fill="#ff0000"
-     inkscape:window-width="1072"
-     inkscape:window-height="916"
-     inkscape:window-x="24"
-     inkscape:window-y="30"
+     inkscape:window-width="1398"
+     inkscape:window-height="1031"
+     inkscape:window-x="0"
+     inkscape:window-y="17"
      showborder="true"
      showgrid="true" />
   <metadata
@@ -627,13 +627,12 @@
          id="g2477"
          transform="translate(-52.05757,71.96193)">
         <rect
-           y="755.02228"
-           x="21.271877"
-           height="187.86874"
-           width="138.88484"
+           y="626.53412"
+           x="25.641102"
+           height="201.48224"
+           width="138.7184"
            id="rect2399"
-           style="fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:black;stroke-width:4.75875425;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
-           transform="translate(4.286,-128.5714)" />
+           style="fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:black;stroke-width:4.92520142;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611" />
         <rect
            y="732.23291"
            x="22.917175"
@@ -684,28 +683,32 @@
              y="843.07648"
              x="31.428572"
              sodipodi:role="line">next_finaud_decision</tspan><tspan
-             id="tspan2444"
              y="858.07648"
+             x="31.428572"
+             sodipodi:role="line"
+             id="tspan2404">suspended_jobs</tspan><tspan
+             id="tspan2444"
+             y="873.07648"
              x="31.428572"
              sodipodi:role="line">switch</tspan><tspan
              id="tspan2446"
-             y="873.07648"
+             y="888.07648"
              x="31.428572"
              sodipodi:role="line">cpu</tspan><tspan
              id="tspan2448"
-             y="888.07648"
+             y="903.07648"
              x="31.428572"
              sodipodi:role="line">besteffort</tspan><tspan
              id="tspan2450"
-             y="903.07648"
+             y="918.07648"
              x="31.428572"
              sodipodi:role="line">deploy</tspan><tspan
              id="tspan2452"
-             y="918.07648"
+             y="933.07648"
              x="31.428572"
              sodipodi:role="line">expiry_date</tspan><tspan
              id="tspan2454"
-             y="933.07648"
+             y="948.07648"
              x="31.428572"
              sodipodi:role="line">desktop_computing</tspan></text>
         <path
@@ -1559,18 +1562,18 @@
        id="path3956"
        sodipodi:nodetypes="cccc" />
     <path
-       style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 208.0625,488.57527 L 317.24308,488.57527 L 317.24308,458.23208"
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1.875;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       d="M 208.0625,510.22836 L 317.24308,510.22836 L 317.24308,483.88517"
        id="path3958"
        sodipodi:nodetypes="ccc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 341.03204,460.56313 L 340.61362,687.15698 L 395.07265,687.15698"
+       d="M 341.03204,480.05091 L 340.61362,687.15698 L 395.07265,687.15698"
        id="path3964"
        sodipodi:nodetypes="ccc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 622.83555,606.21207 L 380.0625,605.85313 L 378.8391,460.00481"
+       d="M 622.83555,606.21207 L 380.0625,605.85313 L 379.92176,479.19455"
        id="path3966"
        sodipodi:nodetypes="ccc" />
     <path
@@ -1585,12 +1588,12 @@
        sodipodi:nodetypes="ccccccc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 870.27788,326.499 L 719.84925,326.9 L 720.77019,346.341"
+       d="M 870.27788,326.499 L 719.84925,326.9 L 718.77019,346.341"
        id="path4027"
        sodipodi:nodetypes="ccc" />
     <path
        style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:1.8750000;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000"
-       d="M 734.0565,537.51898 L 734.1406,733.07249 L 144.9375,732.54999 L 144.42987,682.72841"
+       d="M 734.0565,551.51898 L 734.1406,733.07249 L 144.9375,732.54999 L 144.42987,682.72841"
        id="path4029"
        sodipodi:nodetypes="cccc" />
     <text
@@ -1687,22 +1690,22 @@
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
        x="343.01453"
-       y="472.84253"
+       y="497.55783"
        id="text4067"><tspan
          sodipodi:role="line"
          id="tspan4069"
          x="343.01453"
-         y="472.84253">N</tspan></text>
+         y="497.55783">N</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-       x="381.67007"
-       y="472.84253"
+       x="385.73798"
+       y="496.66092"
        id="text4071"><tspan
          sodipodi:role="line"
          id="tspan4073"
-         x="381.67007"
-         y="472.84253">N</tspan></text>
+         x="385.73798"
+         y="496.66092">N</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
@@ -1836,13 +1839,13 @@
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-       x="304.83951"
-       y="471.55875"
+       x="302.67419"
+       y="496.90823"
        id="text4155"><tspan
          sodipodi:role="line"
          id="tspan4157"
-         x="304.83951"
-         y="471.55875">1</tspan></text>
+         x="302.67419"
+         y="496.90823">1</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12.000000px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
@@ -2378,179 +2381,187 @@
          id="tspan2367"
          x="136.82227"
          y="385.84253">N</tspan></text>
-    <g
-       id="g1840"
-       transform="translate(-1.292579e-6,-1.531101)">
-      <rect
-         style="fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:black;stroke-width:8.0019207;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
-         id="rect2227"
-         width="170.82605"
-         height="431.87418"
-         x="262.19061"
-         y="29.258293" />
-      <g
-         id="g2842"
-         transform="matrix(1,0,0,0.917875,229.3599,-37.39557)">
-        <rect
-           y="47.728825"
-           x="37.135128"
-           height="20.322676"
-           width="40.015331"
-           id="rect2229"
-           style="opacity:1;fill:url(#linearGradient2057);fill-opacity:1;fill-rule:evenodd;stroke:black;stroke-width:0.31721529;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611" />
-        <text
-           id="text2249"
-           y="61.2295"
-           x="45.418449"
-           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-           xml:space="preserve"><tspan
-             y="61.2295"
-             x="45.418449"
-             id="tspan2251"
-             sodipodi:role="line">jobs</tspan></text>
-      </g>
-      <text
-         xml:space="preserve"
-         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-         x="271.42416"
-         y="49.598389"
-         id="text2255"><tspan
-           sodipodi:role="line"
-           id="tspan2257"
-           x="271.42416"
-           y="49.598389">job_id</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="64.598389"
-           id="tspan2259">job_name</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="79.598389"
-           id="tspan2565">job_env</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="94.598389"
-           id="tspan2567">cpuset_name</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="109.59839"
-           id="tspan2261">job_type</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="124.59839"
-           id="tspan2263">info_type</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="139.59839"
-           id="tspan2265">state</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="154.59839"
-           id="tspan2267">reservation</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="169.59839"
-           id="tspan2269">message</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="184.59839"
-           id="tspan2271">job_user</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="199.59839"
-           id="tspan2355">project</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="214.59839"
-           id="tspan2273">command</tspan><tspan
-           id="tspan1813"
-           sodipodi:role="line"
-           x="271.42416"
-           y="229.59839">bpid</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="244.59839"
-           id="tspan2275">queue_name</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="259.59839"
-           id="tspan2277">properties</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="274.59839"
-           id="tspan2279">launching_directory</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="289.59839"
-           id="tspan2281">submission_time</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="304.59839"
-           id="tspan2283">start_time</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="319.59839"
-           id="tspan2285">stop_time</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="334.59839"
-           id="tspan2287">file_id</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="349.59839"
-           id="tspan2289">accounted</tspan><tspan
-           id="tspan1757"
-           sodipodi:role="line"
-           x="271.42416"
-           y="364.59839">checkpoint</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="379.59839"
-           id="tspan1828">checkpoint_signal</tspan><tspan
-           id="tspan1829"
-           sodipodi:role="line"
-           x="271.42416"
-           y="394.59839">notify</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="409.59839"
-           id="tspan1768">assigned_moldable_job</tspan><tspan
-           id="tspan1831"
-           sodipodi:role="line"
-           x="271.42416"
-           y="424.59839">stdout_file</tspan><tspan
-           id="tspan1801"
-           sodipodi:role="line"
-           x="271.42416"
-           y="439.59839">stderr_file</tspan><tspan
-           sodipodi:role="line"
-           x="271.42416"
-           y="454.59839"
-           id="tspan2573">resubmit_job_id</tspan></text>
-      <path
-         style="fill:red;fill-opacity:1;fill-rule:evenodd;stroke:red;stroke-width:1.11530912px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         d="M 271.62196,51.675602 L 306.80517,51.675602"
-         id="path2301" />
-      <path
-         id="path3106"
-         d="M 270.97137,141.25074 L 303.45721,141.25074"
-         style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.04060626px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-      <path
-         id="path3114"
-         d="M 271.7673,156.37549 L 339.2501,156.37549"
-         style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.49980891px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-      <path
-         id="path3118"
-         d="M 271.83726,232.49617 L 350.16274,232.49617"
-         style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.6158123px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-      <path
-         id="path3124"
-         d="M 271.74928,336.99922 L 336.25071,336.99922"
-         style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.46630406px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    </g>
     <path
        style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:red;stroke-width:2.04640555px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 852.81216,561.66717 L 962.79973,561.66717"
        id="path2402" />
+    <g
+       id="g1840"
+       transform="translate(-1.292579e-6,-19.5311)">
+      <g
+         id="g2360"
+         transform="translate(0,18)">
+        <rect
+           y="29.359938"
+           x="262.29227"
+           height="454.63745"
+           width="170.62276"
+           id="rect2227"
+           style="fill:#00001f;fill-opacity:0.07569718;fill-rule:evenodd;stroke:black;stroke-width:8.20520973;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611" />
+        <g
+           transform="matrix(1,0,0,0.917875,229.3599,-37.39557)"
+           id="g2842">
+          <rect
+             style="opacity:1;fill:url(#linearGradient2402);fill-opacity:1;fill-rule:evenodd;stroke:black;stroke-width:0.31721529;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.63346611"
+             id="rect2229"
+             width="40.015331"
+             height="20.322676"
+             x="37.135128"
+             y="47.728825" />
+          <text
+             xml:space="preserve"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+             x="45.418449"
+             y="61.2295"
+             id="text2249"><tspan
+               sodipodi:role="line"
+               id="tspan2251"
+               x="45.418449"
+               y="61.2295">jobs</tspan></text>
+        </g>
+        <text
+           id="text2255"
+           y="49.598389"
+           x="271.42416"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+           xml:space="preserve"><tspan
+             y="49.598389"
+             x="271.42416"
+             id="tspan2257"
+             sodipodi:role="line">job_id</tspan><tspan
+             id="tspan2259"
+             y="64.598389"
+             x="271.42416"
+             sodipodi:role="line">job_name</tspan><tspan
+             id="tspan2565"
+             y="79.598389"
+             x="271.42416"
+             sodipodi:role="line">job_env</tspan><tspan
+             id="tspan2567"
+             y="94.598389"
+             x="271.42416"
+             sodipodi:role="line">cpuset_name</tspan><tspan
+             id="tspan2261"
+             y="109.59839"
+             x="271.42416"
+             sodipodi:role="line">job_type</tspan><tspan
+             id="tspan2263"
+             y="124.59839"
+             x="271.42416"
+             sodipodi:role="line">info_type</tspan><tspan
+             id="tspan2265"
+             y="139.59839"
+             x="271.42416"
+             sodipodi:role="line">state</tspan><tspan
+             id="tspan2267"
+             y="154.59839"
+             x="271.42416"
+             sodipodi:role="line">reservation</tspan><tspan
+             id="tspan2269"
+             y="169.59839"
+             x="271.42416"
+             sodipodi:role="line">message</tspan><tspan
+             id="tspan2271"
+             y="184.59839"
+             x="271.42416"
+             sodipodi:role="line">job_user</tspan><tspan
+             id="tspan2355"
+             y="199.59839"
+             x="271.42416"
+             sodipodi:role="line">project</tspan><tspan
+             id="tspan2273"
+             y="214.59839"
+             x="271.42416"
+             sodipodi:role="line">command</tspan><tspan
+             y="229.59839"
+             x="271.42416"
+             sodipodi:role="line"
+             id="tspan1813">bpid</tspan><tspan
+             id="tspan2275"
+             y="244.59839"
+             x="271.42416"
+             sodipodi:role="line">queue_name</tspan><tspan
+             id="tspan2277"
+             y="259.59839"
+             x="271.42416"
+             sodipodi:role="line">properties</tspan><tspan
+             id="tspan2279"
+             y="274.59839"
+             x="271.42416"
+             sodipodi:role="line">launching_directory</tspan><tspan
+             id="tspan2281"
+             y="289.59839"
+             x="271.42416"
+             sodipodi:role="line">submission_time</tspan><tspan
+             id="tspan2283"
+             y="304.59839"
+             x="271.42416"
+             sodipodi:role="line">start_time</tspan><tspan
+             id="tspan2285"
+             y="319.59839"
+             x="271.42416"
+             sodipodi:role="line">stop_time</tspan><tspan
+             id="tspan2287"
+             y="334.59839"
+             x="271.42416"
+             sodipodi:role="line">file_id</tspan><tspan
+             id="tspan2289"
+             y="349.59839"
+             x="271.42416"
+             sodipodi:role="line">accounted</tspan><tspan
+             y="364.59839"
+             x="271.42416"
+             sodipodi:role="line"
+             id="tspan1757">checkpoint</tspan><tspan
+             id="tspan1828"
+             y="379.59839"
+             x="271.42416"
+             sodipodi:role="line">checkpoint_signal</tspan><tspan
+             y="394.59839"
+             x="271.42416"
+             sodipodi:role="line"
+             id="tspan1829">notify</tspan><tspan
+             id="tspan1768"
+             y="409.59839"
+             x="271.42416"
+             sodipodi:role="line">assigned_moldable_job</tspan><tspan
+             y="424.59839"
+             x="271.42416"
+             sodipodi:role="line"
+             id="tspan1831">stdout_file</tspan><tspan
+             y="439.59839"
+             x="271.42416"
+             sodipodi:role="line"
+             id="tspan1801">stderr_file</tspan><tspan
+             id="tspan2573"
+             y="454.59839"
+             x="271.42416"
+             sodipodi:role="line">resubmit_job_id</tspan><tspan
+             id="tspan2358"
+             y="469.59839"
+             x="271.42416"
+             sodipodi:role="line">suspended</tspan></text>
+        <path
+           id="path2301"
+           d="M 271.62196,51.675602 L 306.80517,51.675602"
+           style="fill:red;fill-opacity:1;fill-rule:evenodd;stroke:red;stroke-width:1.11530912px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+        <path
+           style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.04060626px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="M 270.97137,141.25074 L 303.45721,141.25074"
+           id="path3106" />
+        <path
+           style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.49980891px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="M 271.7673,156.37549 L 339.2501,156.37549"
+           id="path3114" />
+        <path
+           style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.6158123px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="M 271.83726,232.49617 L 350.16274,232.49617"
+           id="path3118" />
+        <path
+           style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:blue;stroke-width:1.46630406px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="M 271.74928,336.99922 L 336.25071,336.99922"
+           id="path3124" />
+      </g>
+    </g>
   </g>
 </svg>

@@ -8,7 +8,7 @@ B<oarresume> job_id
 
 =head1 DESCRIPTION
 
-This command is used to resume a job in OAR batch scheduler. Job is designed by its job's identifier.
+Ask OAR to change job_id state into Waiting when it is in Hold one or in Running if it is Suspended.
 
 =head1 OPTIONS
 

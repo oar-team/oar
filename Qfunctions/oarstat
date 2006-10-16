@@ -83,6 +83,8 @@ my @jobs;
 if (!defined($gantt_query)){
     if ($#job_ids < 0){
         push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
+        push(@jobs, iolib::get_jobs_in_state($base, "Resuming"));
+        push(@jobs, iolib::get_jobs_in_state($base, "Suspended"));
         push(@jobs, iolib::get_jobs_in_state($base, "Running"));
         push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
         push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
@@ -237,6 +239,8 @@ sub print_job($$){
                 'Error' => 'E',
                 'toError' => 'E',
                 'Finishing' => 'F',
+                'Suspended' => 'S',
+                'Resuming' => 'S',
                 'toAckReservation' => 'W'
     );
     
@@ -371,6 +375,8 @@ sub get_history($$$){
         if (!defined($job_gantt{$i}) || $job_gantt{$i}->{queue_name} eq "besteffort"){
             if (($jobs_history{$i}->{state} eq "Running") ||
                 ($jobs_history{$i}->{state} eq "toLaunch") ||
+                ($jobs_history{$i}->{state} eq "Suspended") ||
+                ($jobs_history{$i}->{state} eq "Resuming") ||
                 ($jobs_history{$i}->{state} eq "Launching")){
                 if ($jobs_history{$i}->{queue_name} eq "besteffort"){
                     $jobs_history{$i}->{stop_time} = iolib::get_gantt_visu_date($base);

@@ -8,11 +8,15 @@ B<oarhold> job_id
 
 =head1 DESCRIPTION
 
-This command is used to hold a job in OAR batch scheduler. Job is designed by its job's identifier.
+Ask OAR to not schedule job_id until oarresume command will be executed.
 
 =head1 OPTIONS
 
 =over
+
+=item B<-vr, --running>
+
+Manage not only Waiting jobs but also Running one (can suspend the job)
 
 =item B<-v, --version>
 

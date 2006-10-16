@@ -27,7 +27,7 @@
   productive plateforms and research experiments.
 
 
-**BE CAREFULL : THIS DOCUMENTATION IS FOR THE NEXT OAR VERSION (2.0)**
+**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR 2.0**
 
 .. section-numbering::
 .. contents:: Table of Contents
@@ -728,6 +728,10 @@ stderr_file           TEXT                    file name where to redirect progra
 
 resubmit_job_id       INT UNSIGNED            if a job is resubmitted then the new
                                               one store the previous
+project               VARCHAR(255)            arbitrary name given by the user or an
+                                              admission rule
+suspended             ENUM("YES","NO")        specify if the job was suspended
+                                              (oarhold_)
 ===================== ======================  =======================================
 
 :Primary key: job_id
@@ -891,6 +895,8 @@ next_finaud_decision  ENUM('YES', 'NO')     tell if the next node state results 
                       DEFAULT 'NO'          a "finaud" module decision
 state_num             INT                   corresponding state number (useful
                                             with the SQL "ORDER" query)
+suspended_jobs        ENUM('YES','NO')      specify if there is at least one
+                                            suspended job on the resource
 switch                VARCHAR(50)           name of the switch
 cpu                   INT UNSIGNED          global cluster cpu number
 cpuset                INT UNSIGNED          field used with the

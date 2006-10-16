@@ -197,6 +197,7 @@ CREATE INDEX state ON jobs (state);
 CREATE INDEX reservation ON jobs (reservation);
 CREATE INDEX queue_name ON jobs (queue_name);
 CREATE INDEX accounted ON jobs (accounted);
+CREATE INDEX suspended ON jobs (suspended);
 
 
 CREATE TABLE moldable_job_descriptions (
@@ -259,6 +260,7 @@ CREATE TABLE resources (
 );
 CREATE INDEX resource_state ON resources (state);
 CREATE INDEX resource_next_state ON resources (next_state);
+CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);
 
 
 

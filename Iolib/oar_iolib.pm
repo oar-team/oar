@@ -430,14 +430,14 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resource_index.moldable_job_id = $jobid";
+                        assigned_resources.moldable_job_id = $jobid";
     }else{    
         $tmp_str = "FROM assigned_resources,resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resource_index.moldable_job_id = $jobid AND
+                        assigned_resources.moldable_job_id = $jobid AND
                         resources.resource_id = assigned_resources.resource_id AND
-                        resources.type NOT IN (".join(",",@{$not_type_list}).")";
+                        resources.type NOT IN (".join(",","\'@{$not_type_list}\'").")";
     }
     my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
                                 $tmp_str
@@ -1570,7 +1570,7 @@ sub resume_job($$) {
 
     if (defined($job)){
         if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
-            if ($job->{'state'} eq "Hold"){
+            if (($job->{'state'} eq "Hold") or ($job->{'state'} eq "Suspended")){
                 add_new_event($dbh, "RESUME_JOB", $idJob, "User $lusr launched oarresume on the job $idJob");
                 return(0);
             }
@@ -1615,7 +1615,7 @@ sub is_a_job_on_resuming_job_resources($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT a2.moldable_job_id as mjobid
+    my $sth = $dbh->prepare("   SELECT DISTINCT(jobs.job_id) as jobid
                                 FROM jobs,assigned_resources a1,assigned_resources a2
                                 WHERE
                                     a1.assigned_resource_index = \'CURRENT\' AND
@@ -1629,7 +1629,7 @@ sub is_a_job_on_resuming_job_resources($$){
     $sth->execute();
     my $res = 0;
     while (my $ref = $sth->fetchrow_hashref()) {
-        $res = 1;
+        $res = 1 if ($ref->{jobid} != $job_id);
     }
     $sth->finish();
 
@@ -1689,11 +1689,17 @@ sub resume_job_action($$) {
 
     set_job_state($dbh,$job_id,"Running");
     my @r = get_current_resources_with_suspended_job($dbh);
-    $dbh->do("  UPDATE resources
-                SET suspended_jobs = \'NO\'
-                WHERE
-                   resource_id NOT IN (".join(",",@r).")
-             ");
+    if ($#r >= 0){
+        $dbh->do("  UPDATE resources
+                    SET suspended_jobs = \'NO\'
+                    WHERE
+                       resource_id NOT IN (".join(",",@r).")
+                 ");
+    }else{
+        $dbh->do("  UPDATE resources
+                    SET suspended_jobs = \'NO\'
+                 ");
+    }
 }
 
 
@@ -4317,7 +4323,7 @@ sub check_end_of_job($$$$$$$$$$){
     #lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
     lock_table($base,["jobs","job_state_logs","assigned_resources"]);
     my $refJob = get_job($base,$Jid);
-    if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching")){
+    if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching") or ($refJob->{'state'} eq "Suspended") or ($refJob->{'state'} eq "Resuming")){
         oar_Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
         set_job_state($base,$Jid,"Finishing");

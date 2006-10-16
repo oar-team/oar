@@ -156,7 +156,7 @@ foreach my $i (@events_to_check){
        ){
         my $job = iolib::get_job($base,$i->{job_id});
         if ((($i->{type} eq "HOLD_WAITING_JOB") or ($i->{type} eq "HOLD_RUNNING_JOB")) and (($job->{state} eq "Waiting"))){
-            iolib::set_job_state($base,$i->{job_id},"Hold");
+            iolib::set_job_state($base,$job->{job_id},"Hold");
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
             # Launch suspend command on all nodes
 
@@ -166,7 +166,7 @@ foreach my $i (@events_to_check){
             my @bad;
             if (defined($Cpuset_field)){
                 my $cpuset_name = iolib::get_job_cpuset_name($base, $i->{job_id}) if (defined($Cpuset_field));
-                my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$i->{assigned_moldable_job});
+                my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
                 my $cpuset_data_hash;
                 my $suspend_data_hash = {
                     name => $cpuset_name,
@@ -187,11 +187,14 @@ foreach my $i (@events_to_check){
                         push (@bad, @bad_tmp);
                         #print("@bad\n");
                         if (($#bad < 0)){
-                            iolib::suspend_job_action($base,$i->{job_id},$i->{assigned_moldable_job});
+                            iolib::suspend_job_action($base,$i->{job_id},$job->{assigned_moldable_job});
                         }else{
                             my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Error on several nodes : @bad\n";
                             oar_Judas::oar_error($str);
                             iolib::add_new_event_with_host($base,"SUSPEND_ERROR",$i->{job_id},$str,\@bad);
+                            iolib::frag_job($base,$i->{job_id});
+                            # A Leon must be run
+                            $Exit_code = 2;
                         }
                     }
                 }
@@ -211,7 +214,7 @@ foreach my $i (@events_to_check){
 # Treate nextState field
 my %resources_to_change = iolib::get_resources_change_state($base);
 
-#A Term command must be added in the Almighty
+# A Term command must be added in the Almighty
 oar_debug("[NodeChangeState] number of resources to change state = ".keys(%resources_to_change)."\n");
 if (keys(%resources_to_change) > 0){
     $Exit_code = 1;

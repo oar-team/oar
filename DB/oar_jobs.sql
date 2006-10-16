@@ -55,6 +55,7 @@ INDEX state (state),
 INDEX reservation (reservation),
 INDEX queue_name (queue_name),
 INDEX accounted (accounted),
+INDEX suspended (suspended),
 PRIMARY KEY (job_id)
 );
 
@@ -161,6 +162,7 @@ cm_availability INT UNSIGNED DEFAULT 0 NOT NULL ,
 mem INT UNSIGNED DEFAULT 0 NOT NULL,
 INDEX state (state),
 INDEX next_state (next_state),
+INDEX suspended_jobs (suspended_jobs),
 PRIMARY KEY (resource_id)
 );
 

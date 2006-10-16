@@ -88,6 +88,7 @@ if ($exit_code == 0){
 oar_scheduler::update_gantt_visu_tables($base);
 iolib::disconnect($base_ro);
 
+# Manage dynamic node feature
 if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
     my @node_halt= oar_scheduler::get_idle_nodes(
             $base,
@@ -112,7 +113,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
 
 # Search jobs to resume
 foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
-    if (iolib::is_a_job_on_resuming_job_resources($base,$j) == 0){
+    if (iolib::is_a_job_on_resuming_job_resources($base,$j->{job_id}) == 0){
         # We can resume the job
         oar_debug("[MetaSched] We can resume the job $j\n");
         ###############
@@ -147,6 +148,9 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
                         my $str = "[NodeChangeState] [SUSPEND_RESUME] [$j->{job_id}] Error on several nodes : @bad\n";
                         oar_Judas::oar_error($str);
                         iolib::add_new_event_with_host($base,"RESUME_ERROR",$j->{job_id},$str,\@bad);
+                        iolib::frag_job($base,$j->{job_id});
+                        # A Leon must be run
+                        $exit_code = 2;
                     }
                 }
             }
@@ -156,6 +160,9 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
         #####################
     }
 }
+
+# Notify oarsub -I when they will be launched
+# TODO
 
 iolib::disconnect($base);
 oar_debug("[MetaSched] End of meta scheduler\n");

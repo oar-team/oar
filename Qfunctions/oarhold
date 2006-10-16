@@ -14,7 +14,8 @@ use oarversion;
 sub usage {
     print <<EOS;
 Usage: $0 job_id | -h | -v
-Do not schedule job_id until oarresume command will be executed
+Ask OAR to not schedule job_id until oarresume command will be executed.
+  -r, --running manage not only Waiting jobs but also Running one (can suspend the job)
   -h, --help    show this help screen
   -v, --version print OAR version number
 EOS
@@ -42,6 +43,8 @@ init_conf($ENV{OARCONFFILE});
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
+my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+
 if (@ARGV < 1){
     usage();
     exit(1);
@@ -51,6 +54,20 @@ my $idJob = $ARGV[0];
 print("Job_id = $idJob\n");
 
 my $base = iolib::connect();
+if (defined($Suspend_running)){
+    my $types = iolib::get_current_job_types($base,$idJob);
+    if (!defined($Cpuset_field)){
+        print("CPUSET tag is not configured in the oar.conf.\n");
+        exit(2);
+    }elsif (defined($types->{cosystem})){
+        print("This job is of the cosystem type. We cannot suspend this kind of jobs.\n");
+        exit(3);
+    }elsif (defined($types->{deploy})){
+        print("This job is of the deploy type. We cannot suspend this kind of jobs.\n");
+        exit(4);
+    }
+}
+
 my $err = iolib::hold_job($base,$idJob,$Suspend_running);
 iolib::disconnect($base);
 
@@ -69,7 +86,7 @@ if ($err != 0) {
 }
 
 #Signal Almigthy
-
+oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState") if (defined($Suspend_running));
 oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qhold");
 
 exit(0);
