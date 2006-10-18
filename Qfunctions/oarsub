@@ -580,15 +580,20 @@ if ($Reservation ne "0"){
     $answer = <$client>;
     chop($answer);
     my $erase_str = "";
+    my @symb = ('-','\\','|','/','-','\\','|','/');
+    my $i = 0;
     while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
         for (my $c = 0; $c < length($erase_str); $c++){
-            print(chr(8));
+            print("\b");
         }
+        print("\r");
+        $answer = $symb[($i % $#symb)]." ".$answer;
         print($answer);
         $erase_str = $answer;
         $client = $Server->accept();
         $answer = <$client>;
         chop($answer);
+        $i++;
     }
     print("\n");
     if ($answer eq "GOOD JOB"){

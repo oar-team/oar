@@ -19,6 +19,7 @@ use oar_Judas qw(oar_debug oar_warn oar_error);
 use strict;
 use oar_resource_tree;
 use oar_Tools;
+use POSIX qw(strftime);
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity = 1;
@@ -3897,9 +3898,10 @@ sub sql_to_local($) {
 # side effects : /
 sub local_to_sql($) {
     my $local=shift;
-    my ($year,$mon,$mday,$hour,$min,$sec)=local_to_ymdhms($local);
+    #my ($year,$mon,$mday,$hour,$min,$sec)=local_to_ymdhms($local);
     #return ymdhms_to_sql($year,$mon,$mday,$hour,$min,$sec);
-    return $year."-".$mon."-".$mday." $hour:$min:$sec";
+    #return $year."-".$mon."-".$mday." $hour:$min:$sec";
+    return(strftime("%F %T",localtime($local)));
 }
 
 
