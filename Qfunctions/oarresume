@@ -68,7 +68,6 @@ if ($err != 0) {
     exit(1);
 }
 #Signal Almigthy
-
 oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qresume");
 

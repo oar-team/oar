@@ -18,6 +18,7 @@ my $Default_oarexec_directory = "/tmp/oar_runtime/";
 my $Oarexec_pid_file_name = "pid_of_oarexec_for_jobId_";
 my $Oarsub_file_name_prefix = "oarsub_connections_";
 my $Default_prologue_epilogue_timeout = 60;
+my $Default_suspend_resume_script_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
 my $Default_cpuset_file_manager = "cpuset_manager.pl";
@@ -41,6 +42,7 @@ sub fork_no_wait($$);
 sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
 sub get_default_server_prologue_epilogue_timeout();
+sub get_default_suspend_resume_file();
 sub get_bipbip_ssh_hashtable_send_timeout();
 sub get_bipbip_oarexec_rendez_vous();
 sub sentinelle($$$$$);
@@ -55,6 +57,11 @@ sub get_default_prologue_epilogue_timeout(){
 # Get default value for SERVER_PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_server_prologue_epilogue_timeout(){
     return($Default_server_prologue_epilogue_Timeout);
+}
+
+# Get default value for SUSPEND_RESUME_SCRIPT_TIMEOUT
+sub get_default_suspend_resume_script_timeout(){
+    return($Default_suspend_resume_script_timeout);
 }
 
 # Get value for ssh hashtable timeout

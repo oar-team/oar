@@ -33,6 +33,7 @@ reservation ENUM('None','toSchedule','Scheduled') DEFAULT 'None'  NOT NULL ,
 message VARCHAR( 255 ) NOT NULL ,
 job_user VARCHAR( 255 ) NOT NULL ,
 project VARCHAR( 255 ) NOT NULL ,
+job_group VARCHAR( 255 ) NOT NULL ,
 command TEXT ,
 exit_code INT NOT NULL DEFAULT '0' ,
 queue_name VARCHAR( 100 ) NOT NULL ,
@@ -309,6 +310,12 @@ if (grep(/^besteffort$/, @{$type_list})){
     print("[ADMISSION RULE] Redirect automatically in the besteffort queue\\n");
 }
 ');
+# Verify if besteffort jobs are not reservations
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
+    die("[ADMISSION RULE] Error : a besteffort typed job cannot be a reservation.\\n");
+}
+');
 # Force deploy jobs to go on nodes with the deploy property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if (grep(/^deploy$/, @{$type_list})){
@@ -421,6 +428,24 @@ foreach my $t (@{$type_list}){
     }
 }
 ');
+# If resource types are not specified, then we force them to default
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+foreach my $mold (@{$ref_resource_list}){
+    foreach my $r (@{$mold->[0]}){
+        my $prop = $r->{property};
+        if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
+            if (!defined($prop)){
+                $r->{property} = "type = \\\'default\\\'";
+            }else{
+                $r->{property} = "($r->{property}) AND type = \\\'default\\\'";
+            }
+        }
+    }
+}
+print("[ADMISSION RULE] Modify resource description with type constraints\\n");
+}
+');
+
 
 
 

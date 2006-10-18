@@ -173,6 +173,7 @@ CREATE TABLE jobs (
   message varchar(255) NOT NULL default '',
   job_user varchar(255) NOT NULL default '',
   project varchar(255) NOT NULL default '',
+  job_group varchar(255) NOT NULL default '',
   command text,
   exit_code integer NOT NULL default '0',
   queue_name varchar(100) NOT NULL default '',
@@ -290,6 +291,13 @@ if (grep(/^besteffort$/, @{$type_list})){
 }
 ');
 
+-- Verify if besteffort jobs are not reservations
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
+    die("[ADMISSION RULE] Error : a besteffort typed job cannot be a reservation.\\n");
+}
+');
+
 -- Force deploy jobs to go on nodes with the deploy property
 INSERT INTO admission_rules (rule) VALUES ('
 if (grep(/^deploy$/, @{$type_list})){
@@ -401,6 +409,24 @@ foreach my $t (@{$type_list}){
     if (($i > $#types) and ($t !~ /^timesharing/)){
         die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
     }
+}
+');
+
+-- If resource types are not specified, then we force them to default
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+foreach my $mold (@{$ref_resource_list}){
+    foreach my $r (@{$mold->[0]}){
+        my $prop = $r->{property};
+        if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
+            if (!defined($prop)){
+                $r->{property} = "type = \\\'default\\\'";
+            }else{
+                $r->{property} = "($r->{property}) AND type = \\\'default\\\'";
+            }
+        }
+    }
+}
+print("[ADMISSION RULE] Modify resource description with type constraints\\n");
 }
 ');
 
