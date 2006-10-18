@@ -2051,6 +2051,29 @@ sub get_resources_in_state($$) {
 }
 
 
+# get_default_type_resources_in_state
+# returns the list of resources in the state specified and with the default type
+# parameters : base, state
+# return value : list of resource ref
+sub get_default_type_resources_in_state($$) {
+    my $dbh = shift;
+    my $state = shift;
+    
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    state = \'$state\' AND
+                                    type = \'default\'
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return @res;
+}
+
+
 # get_resources_that_can_be_waked_up
 # returns a list of resources
 # parameters : base, job duration

@@ -283,8 +283,8 @@ sub print_job($$){
             }
             print("    walltime = $mold->{moldable_walltime}\n");
             print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
-            print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n");
-            print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n");
+            print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
+            print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
             if (!defined($date_tmp[0])){
                 $date_tmp[0] = "no prediction";
             }else{
@@ -319,8 +319,8 @@ sub print_job($$){
             }
             print("    walltime = $mold->{moldable_walltime}\n");
             print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
-            print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n");
-            print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n");
+            print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
+            print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
             print("    message = $job_info->{message}\n");
             if (!defined($date_tmp[0])){
                 $date_tmp[0] = "no prediction";

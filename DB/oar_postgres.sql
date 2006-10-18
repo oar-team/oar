@@ -427,7 +427,6 @@ foreach my $mold (@{$ref_resource_list}){
     }
 }
 print("[ADMISSION RULE] Modify resource description with type constraints\\n");
-}
 ');
 
 

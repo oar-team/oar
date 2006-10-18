@@ -20,8 +20,8 @@ for my $r (iolib::get_current_assigned_resources($base)){
 }
 
 my @Resource_list;
-push(@Resource_list, iolib::get_resources_in_state($base,"Alive"));
-push(@Resource_list, iolib::get_resources_in_state($base,"Suspected"));
+push(@Resource_list, iolib::get_default_type_resources_in_state($base,"Alive"));
+push(@Resource_list, iolib::get_default_type_resources_in_state($base,"Suspected"));
 
 my %Node_list;
 
