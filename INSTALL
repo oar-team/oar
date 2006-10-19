@@ -118,8 +118,12 @@ The installation is straightforward:
       your installation (default is /usr/local/bin).
 
 
-Initialization of OAR database (MySQL) is achieved using oar_db_init.pl script provided
+Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init script provided
 with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).
+
+If you want to use a postgres SQL server then there is currently no automatic installation script.
+You have to add a new user which can connect on a new oar database. Then you can import the database scheme
+stored in oar_postgres.sql.
 
 The same machine may host several or even all modules.
 

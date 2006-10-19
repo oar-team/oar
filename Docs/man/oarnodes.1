@@ -129,12 +129,12 @@
 .\" ========================================================================
 .\"
 .IX Title "oarnodes 1"
-.TH oarnodes 1 "2006-07-10" "" "OAR commands"
+.TH oarnodes 1 "2006-10-19" "" "OAR commands"
 .SH "NAME"
 oarnodes \- show occupation and state of compute nodes.
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-\&\fBoarnodes\fR [ \-a | \-s | \-r numbers | \-l | \-h | \-v ] [list of nodes] [\-X | \-Y | \-D]
+\&\fBoarnodes\fR [ \-a | \-s | \-r numbers | \-\-sql sql_properties | \-l | \-h | \-v ] [list of nodes] [\-X | \-Y | \-D]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
 This command is used to display the state and occupation of compute nodes in \s-1OAR\s0 batch scheduler.
@@ -152,6 +152,9 @@ Show only resource states.
 .IP "\fB\-l, \-\-list\fR" 4
 .IX Item "-l, --list"
 Show only node list.
+.IP "\fB\-\-sql\fR" 4
+.IX Item "--sql"
+Display resources which matches this sql where clause (ex: \*(L"state = 'Suspected'\*(R")
 .IP "\fB\-D, \-\-DUMPER\fR" 4
 .IX Item "-D, --DUMPER"
 Print result in \s-1DUMPER\s0 format.

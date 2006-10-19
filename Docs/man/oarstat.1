@@ -129,12 +129,12 @@
 .\" ========================================================================
 .\"
 .IX Title "oarstat 1"
-.TH oarstat 1 "2006-06-22" "" "OAR commands"
+.TH oarstat 1 "2006-10-19" "" "OAR commands"
 .SH "NAME"
 oarstat \- show job's informations.
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-\&\fBoarstat\fR [[\-h] | [\-j job_id][\-f] | [\-g \*(L"date_start,date_stop\*(R"]] [\-X | \-Y | \-D] [\-v]
+\&\fBoarstat\fR [[\-h] | [\-j job_id | \-\-sql sql_properties][\-f] | [\-g \*(L"date_start,date_stop\*(R"]] [\-X | \-Y | \-D] [\-v]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
 This command is used to show informations of jobs in \s-1OAR\s0 batch scheduler.
@@ -150,6 +150,9 @@ Print informations from a specific job.
 .el .IP "\fB\-g, \-\-gantt\fR ``date_start,date_stop''" 4
 .IX Item "-g, --gantt date_start,date_stop"
 Print history of jobs and state of resources between two dates.
+.IP "\fB\-\-sql\fR" 4
+.IX Item "--sql"
+Restricts display with the \s-1SQL\s0 where clause on the table jobs (ex: \*(L"project = 'p1'\*(R")
 .IP "\fB\-D, \-\-DUMPER\fR" 4
 .IX Item "-D, --DUMPER"
 Print result in \s-1DUMPER\s0 format.

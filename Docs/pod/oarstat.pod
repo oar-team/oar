@@ -4,7 +4,7 @@ oarstat - show job's informations.
 
 =head1 SYNOPSIS
 
-B<oarstat> [[-h] | [-j job_id][-f] | [-g "date_start,date_stop"]] [-X | -Y | -D] [-v]
+B<oarstat> [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date_start,date_stop"]] [-X | -Y | -D] [-v]
 
 =head1 DESCRIPTION
 
@@ -25,6 +25,10 @@ Print informations from a specific job.
 =item B<-g, --gantt> "date_start,date_stop"
 
 Print history of jobs and state of resources between two dates.
+
+=item B<--sql>
+
+Restricts display with the SQL where clause on the table jobs (ex: "project = 'p1'")
 
 =item B<-D, --DUMPER>
 

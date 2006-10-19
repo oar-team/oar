@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "oarsub 1"
-.TH oarsub 1 "2006-09-15" "" "OAR commands"
+.TH oarsub 1 "2006-10-19" "" "OAR commands"
 .SH "NAME"
 oarsub \- submit a job to OAR batch scheduler.
 .SH "SYNOPSIS"
@@ -214,6 +214,15 @@ Instead of using job_id for the cpuset name you can specify one (\s-1WARNING:\s0
 .IP "\fB\-\-hold\fR" 4
 .IX Item "--hold"
 Set the job state into Hold instead of Waiting; so it is not scheduled (you must run \*(L"oarresume\*(R" to turn it into the Waiting state).
+.IP "\fB\-D, \-\-DUMPER\fR" 4
+.IX Item "-D, --DUMPER"
+Print result in \s-1DUMPER\s0 format.
+.IP "<\-X, \-\-XML>" 4
+.IX Item "<-X, --XML>"
+Print result in \s-1XML\s0 format.
+.IP "<\-Y, \-\-YAML>" 4
+.IX Item "<-Y, --YAML>"
+Print result in \s-1YAML\s0 format.
 .IP "\fB\-v, \-\-version\fR" 4
 .IX Item "-v, --version"
 Print \s-1OAR\s0 version number.

@@ -4,7 +4,7 @@ oarnodes - show occupation and state of compute nodes.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ -a | -s | -r numbers | -l | -h | -v ] [list of nodes] [-X | -Y | -D]
+B<oarnodes> [ -a | -s | -r numbers | --sql sql_properties | -l | -h | -v ] [list of nodes] [-X | -Y | -D]
 
 =head1 DESCRIPTION
 
@@ -27,8 +27,12 @@ Show only a resource with their properties.
 Show only resource states.
 
 =item B<-l, --list>
-
+     
 Show only node list.
+
+=item B<--sql>
+
+Display resources which matches this sql where clause (ex: "state = 'Suspected'")
 
 =item B<-D, --DUMPER>
 

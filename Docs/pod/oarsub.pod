@@ -112,6 +112,18 @@ Instead of using job_id for the cpuset name you can specify one (WARNING: if sev
 
 Set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state).
 
+=item B<-D, --DUMPER>
+
+Print result in DUMPER format.
+
+=item <-X, --XML>
+
+Print result in XML format.
+
+=item <-Y, --YAML>
+
+Print result in YAML format.
+
 =item B<-v, --version>
 
 Print OAR version number.
