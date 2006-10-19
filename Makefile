@@ -54,8 +54,8 @@ desktop-computing-cgi:
 dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -m 0755 DB/oar_db_init.pl $(OARDIR)/oar_db_init
-	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oar_db_init
+	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
+	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
 

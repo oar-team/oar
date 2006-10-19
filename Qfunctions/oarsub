@@ -18,6 +18,25 @@ use oarversion;
 select(STDOUT);
 $| = 1;
 
+#Try to load XML module
+my $XML_enabled = 1;
+unless (eval "use XML::Simple qw(XMLout);1"){
+    $XML_enabled = 0;
+}
+
+#Try to load YAML module
+my $YAML_enabled = 1;
+unless (eval "use YAML;1"){
+    $YAML_enabled = 0;
+}
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
+
 #For interactive
 my $remote_host;
 my $remote_port;
@@ -56,6 +75,10 @@ my $Stderr_file;
 my $Resubmit;
 my $Cpuset_name;
 my $Project = "default";
+my $XML_mode;
+my $YAML_mode;
+my $DUMPER_mode;
+
 
 #to catch ^C signal
 $SIG{'INT'} = 'qdel';
@@ -215,12 +238,15 @@ Options are:
  -a, --anterior                anterior job that must be terminated to start this new one
      --notify                  specify a notification method(mail or program to launch); ex: 
                                    --notify "mail:name\@domain.com"
-				   --notify "exec:/path/to/script args"
+				                   --notify "exec:/path/to/script args"
      --stdout                  specify the name of the standard output file
      --stderr                  specify the name of the error output file
      --resubmit                resubmit the given job to a new one
      --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
      --hold                    set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state)
+ -D, --DUMPER                  print result in DUMPER format
+ -X, --XML                     print result in XML format
+ -Y, --YAML                    print result in YAML format
  -h, --help                    print this help message
  -v, --version                 print OAR version number
 EOS
@@ -288,6 +314,9 @@ GetOptions ("resource|l=s" => \@resource,
             "stderr=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
             "force_cpuset_name=s" => \$Cpuset_name,
+            "XML|X" => \$XML_mode,
+            "YAML|Y" => \$YAML_mode,
+            "DUMPER|D" => \$DUMPER_mode,
             "version|v" => \$Version
            );
 
@@ -544,6 +573,27 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project);
 }
 print("JOB_ID = $Job_id \n");
+
+if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
+    print("\n##########\n");
+    my $tmp = { job_id => $Job_id };
+    if (defined($DUMPER_mode)){
+        print(Dumper($tmp));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+            print(XMLout($tmp));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(YAML::Dump($tmp));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+        }
+    }
+    print("\n##########\n\n");
+}
 
 iolib::disconnect($base_ro);
 iolib::disconnect($base);

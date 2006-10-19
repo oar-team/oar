@@ -342,9 +342,9 @@ sub get_job_challenge($$){
 
 
 # get_jobs_in_state
-# returns the list of ids of jobs in the specified state
+# returns the jobs in the specified state
 # parameters : base, job state
-# return value : flatened list of (idJob, jobType, infoType) triples
+# return value : flatened list of hashref jobs
 # side effects : /
 sub get_jobs_in_state($$) {
     my $dbh = shift;
@@ -354,6 +354,29 @@ sub get_jobs_in_state($$) {
                                 FROM jobs
                                 WHERE
                                     state = $state
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(@res);
+}
+
+
+# get_jobs_with_given_properties
+# returns the jobs with specified properties
+# parameters : base, job state, where SQL constraints
+# return value : flatened list of hashref jobs
+# side effects : /
+sub get_jobs_with_given_properties($$) {
+    my $dbh = shift;
+    my $where = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    $where
                             ");
     $sth->execute();
     my @res = ();
@@ -2513,7 +2536,7 @@ sub list_nodes($) {
         push(@res, $ref->{'network_address'});
     }
     $sth->finish();
-    return @res;
+    return(@res);
 }
 
 
@@ -2944,22 +2967,46 @@ sub set_resource_property($$$$){
 }
 
 
-# return all properties for a specific resource
-# parameters : base, resource
-sub get_resource_properties($$){
+# get_resources_with_given_sql
+# gets the resource list with the given sql properties
+# parameters : base, $sql where clause
+# return value : list of resource id
+# side effects : /
+sub get_resources_with_given_sql($$) {
     my $dbh = shift;
-    my $resource = shift;
+    my $where = shift;
 
-    my $sth = $dbh->prepare("   SELECT *
+    my $sth = $dbh->prepare("   SELECT resource_id
                                 FROM resources
                                 WHERE
-                                    resource_id = $resource");
+                                    $where
+                            ");
     $sth->execute();
-    my %results = %{$sth->fetchrow_hashref()};
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource_id});
+    }
     $sth->finish();
-
-    return(%results);
+    return(@res);
 }
+
+
+## return all properties for a specific resource
+## parameters : base, resource
+#sub get_resource_properties($$){
+#    my $dbh = shift;
+#    my $resource = shift;
+#
+#    my $sth = $dbh->prepare("   SELECT *
+#                                FROM resources
+#                                WHERE
+#                                    resource_id = $resource");
+#    $sth->execute();
+#    my %results = %{$sth->fetchrow_hashref()};
+#    $sth->finish();
+#
+#    return(%results);
+#}
 
 # get resource names that will change their state
 # parameters : base

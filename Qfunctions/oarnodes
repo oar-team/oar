@@ -46,6 +46,7 @@ my $usage;
 my $listall;
 my $listallwithinfo;
 my @resources;
+my $sql_property;
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
@@ -56,6 +57,7 @@ GetOptions ("state|s" => \$stateMode,
             "list|l"  => \$listall,
             "all|a"   => \$listallwithinfo,
             "resource|r=i" => \@resources,
+            "sql=s" => \$sql_property,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
@@ -72,6 +74,7 @@ Options:
  -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
+     --sql          display resources which matches this sql where clause
  -D, --DUMPER       print result in DUMPER format
  -X, --XML          print result in XML format
  -Y, --YAML         print result in YAML format
@@ -90,7 +93,10 @@ if (defined($Version)){
 my $exitstatus = 0;
 my $base = iolib::connect_ro();
 
-if ($#resources >= 0){
+if (($#resources >= 0) or (defined($sql_property))){
+    if ($#resources < 0){
+        push(@resources, iolib::get_resources_with_given_sql($base,$sql_property));
+    }
     my %data_to_display;
     foreach my $r (@resources) {
         my $resource_info = iolib::get_resource_info($base,$r);
@@ -101,13 +107,12 @@ if ($#resources >= 0){
         }
         my %tmp_hash;
         $tmp_hash{state} = $resource_info->{state};
+        $tmp_hash{properties} = $resource_info;
         if ($resource_info->{state} eq "Alive") {    
             my @jobs = iolib::get_resource_job($base,$resource_info->{resource_id});
             if ($#jobs >= 0){
                 $tmp_hash{jobs} = \@jobs;
             }
-            my %properties = iolib::get_resource_properties($base,$resource_info->{resource_id});
-            $tmp_hash{properties} = \%properties;
         }
         $data_to_display{$r} = \%tmp_hash;
     }
@@ -245,8 +250,8 @@ if (defined($stateMode)){
                 }
             }
             $tmp_hash2{network_address} = $r->{network_address};
-            my %properties = iolib::get_resource_properties($base,$r->{resource_id});
-            $tmp_hash2{properties} = \%properties;
+            my $properties = iolib::get_resource_info($base,$r->{resource_id});
+            $tmp_hash2{properties} = $properties;
             $tmp_hash1{$r->{resource_id}} = \%tmp_hash2;
         }
         $data_to_display{$node} = \%tmp_hash1;

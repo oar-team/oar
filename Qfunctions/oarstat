@@ -37,6 +37,7 @@ my $sos;
 my @job_ids;
 my $full_view;
 my $gantt_query;
+my $sql_property;
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
@@ -46,6 +47,7 @@ GetOptions ("help|h" => \$sos,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
             "gantt|g=s"   => \$gantt_query,
+            "sql=s"   => \$sql_property,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
@@ -62,6 +64,7 @@ Options:
   -j, --job         show informations only for the specified job
   -f, --full        show full informations
   -g, --gantt       show job informations between two dates like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
+      --sql         restricts display with the SQL where clause on the table jobs (ex: 
   -D, --DUMPER      print result in DUMPER format
   -X, --XML         print result in XML format
   -Y, --YAML        print result in YAML format
@@ -82,15 +85,19 @@ my @jobs;
 
 if (!defined($gantt_query)){
     if ($#job_ids < 0){
-        push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
-        push(@jobs, iolib::get_jobs_in_state($base, "Resuming"));
-        push(@jobs, iolib::get_jobs_in_state($base, "Suspended"));
-        push(@jobs, iolib::get_jobs_in_state($base, "Running"));
-        push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
-        push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
-        push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
-        push(@jobs, iolib::get_jobs_in_state($base, "toAckReservation"));
-        push(@jobs, iolib::get_jobs_in_state($base, "Hold"));
+        if (defined($sql_property)){
+            push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
+        }else{
+            push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Resuming"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Suspended"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Running"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
+            push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
+            push(@jobs, iolib::get_jobs_in_state($base, "toAckReservation"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Hold"));
+        }
     }elsif($#job_ids >= 0){
         foreach my $j (@job_ids){
             push(@jobs, iolib::get_job($base,$j));
