@@ -859,11 +859,11 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
 #        return(-7);
 #    }
 
-    # Verify the content of user command
-    if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
-        warn("ERROR : The command to launch contains bad characters -- $command\n");
-        return(-4);
-    }
+#    # Verify the content of user command
+#    if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
+#        warn("ERROR : The command to launch contains bad characters -- $command\n");
+#        return(-4);
+#    }
     
     # Verify the content of env variables
     if ( "$job_env" !~ m/^[\w\=\s\/\.\-\"]*$/m ){

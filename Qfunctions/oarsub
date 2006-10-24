@@ -52,6 +52,7 @@ my $Interactive = 0;
 my $Reservation = "0";
 my $Default_resources;
 my $connect_job ;
+my $Scan_script;
 my @resource;
 my $Queue_name;
 my $Job_sql_properties = "";
@@ -120,7 +121,8 @@ sub scan_script($){
     my $file = shift;
 
     my %result;
-
+    
+    ($file) = split(" ",$file);
     my $lusr= getpwuid($ENV{SUDO_UID});
     open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return(%result);
 
@@ -221,13 +223,12 @@ Usage: $0 [OPTIONS] [-I|-C|<SCRIPT>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --Interactive             request an interactive job
+ -C, --Connect=<JOB_ID>        connect to a running job
  -l, --resource=<LIST>         set the resource list( ex: node=4/cpu=1,walltime=2:00:00 )
+ -S, --Scanscript              in batch mode, asks oarsub to scan the given script for OAR directives (#OAR -l ...)
  -q, --queue=<QUEUE>           set the the queue to submit the job to
  -p, --property=<LIST>         set the property list
  -r, --reservation=<DATE>      request a reservation
- -C, --Connect=<JOB_ID>        connect to a running job
- -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
-     --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -k, --checkpoint              enable the job to be checkpointed
      --signal                  specify the signal to use when checkpointing (defuault is 12 --> SIGUSR2)
  -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
@@ -244,6 +245,8 @@ Options are:
      --resubmit                resubmit the given job to a new one
      --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
      --hold                    set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state)
+ -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
+     --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -D, --DUMPER                  print result in DUMPER format
  -X, --XML                     print result in XML format
  -Y, --YAML                    print result in YAML format
@@ -504,20 +507,22 @@ my $base_ro = iolib::connect_ro();
 
 if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
-    my %scan_result = scan_script($exec) if ($exec ne "");
-    #print("$Queue_name \n");
-    if (defined($scan_result{queue}) && !defined($Queue_name)){
-        $Queue_name = $scan_result{queue}
-    }elsif(defined($scan_result{queue}) && defined($Queue_name)){
-        warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.");
-    }
-    if (defined($scan_result{property}) && !defined($Job_sql_properties)){
-        $Job_sql_properties = $scan_result{property}
-    }elsif(defined($scan_result{property}) && defined($Job_sql_properties)){
-        warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
-    }
-    if (defined($scan_result{resources})){
-        push(@resource, @{$scan_result{resource}});
+    if (defined($Scan_script)){
+        my %scan_result = scan_script($exec) if ($exec ne "");
+        #print("$Queue_name \n");
+        if (defined($scan_result{queue}) && !defined($Queue_name)){
+            $Queue_name = $scan_result{queue}
+        }elsif(defined($scan_result{queue}) && defined($Queue_name)){
+            warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.");
+        }
+        if (defined($scan_result{property}) && !defined($Job_sql_properties)){
+            $Job_sql_properties = $scan_result{property}
+        }elsif(defined($scan_result{property}) && defined($Job_sql_properties)){
+            warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
+        }
+        if (defined($scan_result{resources})){
+            push(@resource, @{$scan_result{resource}});
+        }
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
@@ -634,8 +639,10 @@ if ($Reservation ne "0"){
     my $i = 0;
     while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
         for (my $c = 0; $c < length($erase_str); $c++){
+            # move the cursor backward and erase the character
             print("\b");
         }
+        # move to the beginning of the line
         print("\r");
         $answer = $symb[($i % $#symb)]." ".$answer;
         print($answer);

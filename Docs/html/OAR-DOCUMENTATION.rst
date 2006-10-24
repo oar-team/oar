@@ -56,18 +56,20 @@ This command prints jobs in execution mode on the terminal.
 Options
 ::
 
-  -f        : prints each job in full details
-  -j job_id : prints the specified job_id informations (even if it is finished)
-  -g "d1,d2": prints history of jobs and state of resources between two dates.
-  -D        : formats outputs in Perl Dumper
-  -X        : formats outputs in XML
-  -Y        : formats outputs in YAML
+  -f                    : prints each job in full details
+  -j job_id             : prints the specified job_id informations (even if it is finished)
+  --sql "sql where"     : Restricts display with the SQL where clause on the table jobs
+  -g "d1,d2"            : prints history of jobs and state of resources between two dates.
+  -D                    : formats outputs in Perl Dumper
+  -X                    : formats outputs in XML
+  -Y                    : formats outputs in YAML
                     
 Examples
 ::
             
   # oarstat
   # oarstat -j 42 -f
+  # oarstat --sql "project = 'p1'"
                     
 *oarnodes*
 ~~~~~~~~~~
@@ -78,19 +80,21 @@ which resources, resource properties, ...).
 Options
 ::
 
-  -a : shows all resources with their properties
-  -r : show only properties of a resource
-  -s : shows only resource states
-  -l : shows only resource list
-  -D : formats outputs in Perl Dumper
-  -X : formats outputs in XML
-  -Y : formats outputs in YAML
+  -a                : shows all resources with their properties
+  -r                : show only properties of a resource
+  -s                : shows only resource states
+  -l                : shows only resource list
+  --sql "sql where" : Display resources which matches this sql where clause
+  -D                : formats outputs in Perl Dumper
+  -X                : formats outputs in XML
+  -Y                : formats outputs in YAML
 
 Examples
 ::
 
   # oarnodes 
   # oarnodes -s
+  # oarnodes --sql "state = 'Suspected'"
 
 *oarsub*
 ~~~~~~~~
@@ -107,10 +111,14 @@ The user can submit a job with this command. So, what is a job in our context?
                   
     $OAR_NODEFILE                 contains the name of a file which lists
                                   all reserved nodes for this job
-    $OAR_JOBID                    contains the OAR job identificator
+    $OAR_JOB_ID                   contains the OAR job identificator
     $OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists
                                   all resources and their properties
-    $OAR_NB_NODES                 contains the number of reserved nodes
+    $OAR_JOB_NAME                 name of the job given by the "-n" option
+    $OAR_RESOURCE_PROPERTIES_FILE contains the detailed resources used by the
+                                  job
+    $OAR_PROJECT_NAME             job project name
+
 
 Options::
                   
@@ -125,6 +133,8 @@ Options::
                               time, the job will be killed)
   -p "properties" : adds constraints for the job
                     (format is a WHERE clause from the SQL syntax)
+  -S, --Scanscript : in batch mode, asks oarsub to scan the given script for
+                     OAR directives (#OAR -l ...)
   -r "2007-05-11 23:32:03" : asks for a reservation job to begin at the
                              date in argument
   -C job_id : connects to a reservation in Running state
@@ -137,6 +147,7 @@ Options::
                         (default is current directory)
   -n "job name" :  specify an arbitrary name for the job
   -a job_id : anterior job that must be terminated to start this new one
+  --project : Specify the name of the project corresponding to the job.
   --notify "method" : specify a notification method(mail or command); ex:
                       --notify "mail:name@domain.com"
                       --notify "exec:/path/to/script args"
@@ -149,6 +160,45 @@ Options::
                                       then processes of a job could be killed
                                       when another finished on the same
                                       computer)
+  --hold : Set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state).
+  -D : Print result in DUMPER format.
+  -Y : Print result in XML format.
+  -X : Print result in YAML format.
+
+Wanted resources have to be described in a hierarchical manner (this is the
+"-l" syntax option).
+
+Moreover it is possible to give a property that they must match.
+
+So the long and complete syntax is of the form::
+
+    "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
+
+where:
+ - *sql1* : WHERE sql clause on the table resources_ that filters resource
+   names used in the hierarchical description
+ - *prop1* : first type of resources
+ - *prop2* : second type of resources
+ - *+* : add another resource hierarchy to the previous one
+ - *sql2* : WHERE sql clause to apply on the second hierarchy request
+ - ...
+
+So we want to reserve 3 resources with the same value of the type *prop2* and
+with the same property *prop1* and these resources must fit *sql1*. To that
+possible resources we want to add 2 others which fit *sql2* and the hierarchy
+*/prop3=2/prop4=1/prop5=1*.
+
+
+.. figure:: hierarchical_resources.png
+   :width: 17cm
+   :target: hierarchical_resources.png
+   :alt: Hierarchical resource example
+
+   Example of a resource hierarchy and 2 different oarsub commands
+
+`hierarchical_resources.svg <hierarchical_resources.svg>`_
+
+
 
 Examples
 ::

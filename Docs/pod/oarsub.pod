@@ -46,6 +46,10 @@ Connect to a reservation in Running state
 
 Print OAR version number.
 
+=item B<-S, --Scan_script>
+ 
+In batch mode, asks oarsub to scan the given script for OAR directives (#OAR -l ...)
+
 =item B<-s, --stagein> directory|tgz
 
 Set the stagein directory or archive.
