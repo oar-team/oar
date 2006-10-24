@@ -317,6 +317,7 @@ GetOptions ("resource|l=s" => \@resource,
             "stderr=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
             "force_cpuset_name=s" => \$Cpuset_name,
+            "Scanscript|S" => \$Scan_script,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
@@ -521,7 +522,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
         }
         if (defined($scan_result{resources})){
-            push(@resource, @{$scan_result{resource}});
+            push(@resource, @{$scan_result{resources}});
         }
     }
 
