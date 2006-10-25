@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "oarsub 1"
-.TH oarsub 1 "2006-10-19" "" "OAR commands"
+.TH oarsub 1 "2006-10-25" "" "OAR commands"
 .SH "NAME"
 oarsub \- submit a job to OAR batch scheduler.
 .SH "SYNOPSIS"
@@ -164,6 +164,9 @@ Connect to a reservation in Running state
 .IP "\fB\-v, \-\-verbose\fR" 4
 .IX Item "-v, --verbose"
 Print \s-1OAR\s0 version number.
+.IP "\fB\-S, \-\-Scan_script\fR" 4
+.IX Item "-S, --Scan_script"
+In batch mode, asks oarsub to scan the given script for \s-1OAR\s0 directives (#OAR \-l ...)
 .IP "\fB\-s, \-\-stagein\fR directory|tgz" 4
 .IX Item "-s, --stagein directory|tgz"
 Set the stagein directory or archive.
@@ -259,8 +262,8 @@ Script example:
 .PD
 .PP
 Submit the script :
-.IP "oarsub /home/users/toto/script" 4
-.IX Item "oarsub /home/users/toto/script"
+.IP "oarsub \-S /home/users/toto/script" 4
+.IX Item "oarsub -S /home/users/toto/script"
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
 \&\fIoardel\fR\|(1), \fIoarstat\fR\|(1), \fIoarnodes\fR\|(1), \fIoarhold\fR\|(1), \fIoarresume\fR\|(1)

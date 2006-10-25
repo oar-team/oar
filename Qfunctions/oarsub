@@ -123,24 +123,29 @@ sub scan_script($){
     my %result;
     
     ($file) = split(" ",$file);
-    my $lusr= getpwuid($ENV{SUDO_UID});
-    open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return(%result);
-
-    if (<FILE> =~ /^#/){
-        while (<FILE>) {
-            if ( /^#OAR\s+/ ){
-                my $line = $_;
-                if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
-                    push(@{$result{resources}}, $2);
-                }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {
-                    $result{queue} = $2;
-                }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*"(.+)"\s*$/m) {
-                    $result{property} = $2;
+    #my $lusr= getpwuid($ENV{SUDO_UID});
+    #open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return(%result);
+    
+    if (open(FILE, $file)){
+        if (<FILE> =~ /^#/){
+            while (<FILE>) {
+                if ( /^#OAR\s+/ ){
+                    my $line = $_;
+                    if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
+                        push(@{$result{resources}}, $2);
+                    }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {
+                        $result{queue} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*"(.+)"\s*$/m) {
+                        $result{property} = $2;
+                    }
                 }
             }
         }
+        close(FILE);
+    }else{
+        warn("[ERROR] Cannot open the file $file. Check if it is readable by everybody (744).\n");
+        exit(12);
     }
-    close(FILE);
 
     return(%result);
 }
