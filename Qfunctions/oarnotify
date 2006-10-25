@@ -37,7 +37,8 @@ GetOptions ("version|v" => \$Version,
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-h] [-v] [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue] [-l] [tag_to_Almighty]
+Usage: $0 [-h] [-v] [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue]
+[-l] [tag_to_Almighty]
 Send a tag to Almighty and manage queues
 Options:
   -e, --enable_queue        active an existing queue

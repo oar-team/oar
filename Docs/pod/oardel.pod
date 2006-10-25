@@ -4,19 +4,23 @@ oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [ [-c job_id] | [job_id] ] [-h] [-v]
+B<oardel> [-c][job_ids][-h][-v]
 
 =head1 DESCRIPTION
 
-This command is used to delete or checkpoint job(s). Jobs are designed by their job's identifier.
+This command is used to delete or checkpoint job(s). Jobs are designed by their number.
 
 =head1 OPTIONS
 
 =over
 
-=item B<-c, --checkpoint> job_id
+=item B<-c, --checkpoint>
 
-Send the checkpoint signal designed from the "--signal" oarsub command option (default is SIGUSR2) to the process launched by the job "job_id"
+Send the checkpoint signal designed from the "--signal" oarsub command option (default is SIGUSR2) to the process launched by the job "job_id".
+
+=item B<--sql>
+
+Delete/checkpoint jobs which respond to the SQL where clause on the table jobs (ex: "project = 'p1'").
 
 =item B<-v, --version>
 

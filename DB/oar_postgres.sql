@@ -262,6 +262,7 @@ CREATE TABLE resources (
 CREATE INDEX resource_state ON resources (state);
 CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);
+CREATE INDEX resource_type ON resources (type);
 
 
 
@@ -292,7 +293,7 @@ if (grep(/^besteffort$/, @{$type_list})){
 ');
 
 -- Verify if besteffort jobs are not reservations
-INSERT IGNORE INTO admission_rules (rule) VALUES ('
+INSERT INTO admission_rules (rule) VALUES ('
 if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
     die("[ADMISSION RULE] Error : a besteffort typed job cannot be a reservation.\\n");
 }
@@ -413,7 +414,7 @@ foreach my $t (@{$type_list}){
 ');
 
 -- If resource types are not specified, then we force them to default
-INSERT IGNORE INTO admission_rules (rule) VALUES ('
+INSERT INTO admission_rules (rule) VALUES ('
 foreach my $mold (@{$ref_resource_list}){
     foreach my $r (@{$mold->[0]}){
         my $prop = $r->{property};

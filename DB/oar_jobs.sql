@@ -164,6 +164,7 @@ mem INT UNSIGNED DEFAULT 0 NOT NULL,
 INDEX state (state),
 INDEX next_state (next_state),
 INDEX suspended_jobs (suspended_jobs),
+INDEX type (type),
 PRIMARY KEY (resource_id)
 );
 

@@ -13,6 +13,8 @@ use oarversion;
 
 $| = 1;
 
+my $exit_code = 0;
+
 my $hostname ;
 my $base;
 my $state ;
@@ -20,7 +22,8 @@ my $nowaitMode;
 my @properties;
 my $new_resource;
 my $sos;
-my $resource;
+my @resource;
+my $Sql_property;
 
 # Get OAR configuration
 init_conf($ENV{OARCONFFILE});
@@ -108,7 +111,8 @@ sub wait_end_of_running_jobs($$){
 # print explainations for the user and exit
 sub usage {
     print <<EOS;
-Usage: $0 [-h hostname | [-r resource_number | -a]] [-a] [-p "property=value"] [-s state]
+Usage: $0 [-h hostname | [[-r resource_number][--sql "sql syntax"] | -a]]
+[-a] [-p "property=value"] [-s state]
 Change the state and properties of a node in OAR.
 You can also create a new resource.
 Options:
@@ -116,6 +120,9 @@ Options:
  -s, --state=STATE               set the new state of the node
  -h, --hostname=HOSTNAME         set the node hostname
  -r, --resource                  set the resource
+     --sql                       get resource identifiers which respond to the
+                                 SQL where clause on the table jobs
+                                 (ex: "type = 'default'")
  -p, --property="PROPERTY=VALUE" set the property of the node to the given
                                  value
  -n, --nowait                    do not wait for job end when the node
@@ -128,7 +135,7 @@ N.B.:
    utility.
  - You cannot specify "-a" and "-r" together.
 EOS
-    exit 1;
+    exit(1);
 }
 
 
@@ -141,7 +148,8 @@ GetOptions ("state|s=s" => \$state,
             "property|p=s" => \@properties,
             "add|a" => \$new_resource,
             "help" => \$sos,
-            "resource|r=i" => \$resource,
+            "sql=s"   => \$Sql_property,
+            "resource|r=i" => \@resource,
             "version|v" => \$Version
            );
 
@@ -158,42 +166,52 @@ if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state 
     usage();
 }
 
+if (defined($Sql_property)){
+    my $db = iolib::connect_ro();
+    foreach my $r (iolib::get_resources_with_given_sql($db,$Sql_property)){
+        push(@resource, $r);
+    }
+    iolib::disconnect($db);
+}
+
 if (defined($new_resource)){
-    if (defined($resource)){
-        warn("/!\\ You cannot use -r|--resource and -a|--add options together\n");
+    if (($#resource >= 0) or (defined($Sql_property))){
+        warn("/!\\ You cannot use -r|--resource and (-a|--add or --sql) options together\n");
         usage();
     }
 }
 
-defined $hostname or $hostname = hostname();
-print "$hostname\n";
-my $base = iolib::connect() or die "cannot connect to the data base\n";
+defined($hostname) or $hostname = hostname();
+#print("$hostname\n");
+my $base = iolib::connect() or die("Cannot connect to the database\n");
 
 if (defined($new_resource)){
     # Create a new resource
     print("new resource\n");
     print("$hostname added in the database\n");
     $state = "Alive" if (!defined($state));
-    $resource = iolib::add_resource($base, $hostname, $state);
+    push(@resource,iolib::add_resource($base, $hostname, $state));
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 }else{
-    if (defined($resource)){
+    if (($#resource >= 0) or (defined($Sql_property))){
         if (defined($state)){
-            #$base->do("LOCK TABLE resources WRITE");
-            iolib::set_resource_nextState($base,$resource,$state);
-            #$base->do("UNLOCK TABLES");
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-            print("$resource --> $state\n");
-            if (($state eq 'Dead') || ($state eq 'Absent')){
-                if ($nowaitMode){
+            foreach my $r (@resource){
+                #$base->do("LOCK TABLE resources WRITE");
+                iolib::set_resource_nextState($base,$r,$state);
+                #$base->do("UNLOCK TABLES");
+                oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+                print("$r --> $state\n");
+                if (($state eq 'Dead') || ($state eq 'Absent')){
+                    if ($nowaitMode){
+                        print("Done\n");
+                    }else{
+                        print("Check jobs to delete on resource $r :\n");
+                        my @jobs = iolib::get_resource_job($base,$r);
+                        wait_end_of_running_jobs($base,\@jobs);
+                    }
+                }elsif ($state eq 'Alive'){
                     print("Done\n");
-                }else{
-                    print("Check jobs to delete on resource $resource :\n");
-                    my @jobs = iolib::get_resource_job($base,$resource);
-                    wait_end_of_running_jobs($base,\@jobs);
                 }
-            }elsif ($state eq 'Alive'){
-                print("Done\n");
             }
         }
     }else{
@@ -221,25 +239,28 @@ if (defined($new_resource)){
 
 # Update properties
 if (defined(@properties)){
-    if (defined($resource)){
-        if (!defined(iolib::get_resource_info($base,$resource))){
-            die("/!\\ The resource $resource does not exist in OAR database.\n");
-        }else{
-            set_resource_properties($base,$resource,\@properties);
-            iolib::disconnect($base);
-            exit(0);
+    if (($#resource >= 0) or (defined($Sql_property))){
+        foreach my $r (@resource){
+            if (!defined(iolib::get_resource_info($base,$r))){
+                warn("/!\\ The resource $r does not exist in OAR database.\n");
+                $exit_code = 1;
+            }else{
+                set_resource_properties($base,$r,\@properties);
+            }
         }
     }else{
         if (iolib::is_node_exists($base,$hostname) == 0){
-            die("/!\\ The node $hostname does not exist in OAR database. First you must add it with -a|--add option.\n");
+            warn("/!\\ The node $hostname does not exist in OAR database. First you must add it with -a|--add option.\n");
+            $exit_code = 2;
         }else{
             set_hostname_properties($base,$hostname,\@properties);
-            iolib::disconnect($base);
-            exit(0);
+            $exit_code = 0;
         }
     }
 }
 
 
 iolib::disconnect($base);
+
+exit($exit_code);
 

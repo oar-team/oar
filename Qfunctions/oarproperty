@@ -144,13 +144,14 @@ sub print_usage() {
 Usage: $0 [ -l | [ -a [ -v ] | -d ] ] [ -q ] [ -h ]
 Manage OAR resource properties
 Options:
- -l, --list                               list properties
- -a NAME, --add NAME                      add property
-    -c, --varchar                         sql new field of type VARCHAR(255) (default is integer)
- -d NAME, --delete NAME                   delete property
- -r "OLD_NAME,NEW_NAME", --remove ...     rename property OLD_NAME into NEW_NAME
- -q, --quiet                              quiet mode (no extra output)
- -h, --help                               show this help screen
+ -l, --list                             list properties
+ -a NAME, --add NAME                    add property
+    -c, --varchar                       sql new field of type VARCHAR(255)
+                                        (default is integer)
+ -d NAME, --delete NAME                 delete property
+ -r "OLD_NAME,NEW_NAME", --remove ...   rename property OLD_NAME into NEW_NAME
+ -q, --quiet                            quiet mode (no extra output)
+ -h, --help                             show this help screen
 EOS
 }
 

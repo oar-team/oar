@@ -129,17 +129,20 @@
 .\" ========================================================================
 .\"
 .IX Title "oarresume 1"
-.TH oarresume 1 "2006-10-16" "" "OAR commands"
+.TH oarresume 1 "2006-10-25" "" "OAR commands"
 .SH "NAME"
 oarresume \- resume a job in OAR batch scheduler.
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-\&\fBoarresume\fR job_id
+\&\fBoarresume\fR [job_ids][\-\-sql \*(L"sql syntax\*(R"][\-v][\-h]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
-Ask \s-1OAR\s0 to change job_id state into Waiting when it is in Hold one or in Running if it is Suspended.
+Ask \s-1OAR\s0 to change job_ids states into Waiting when it is Hold or in Running if it is Suspended.
 .SH "OPTIONS"
 .IX Header "OPTIONS"
+.IP "\fB\-\-sql\fR" 4
+.IX Item "--sql"
+Hold jobs which repond to the \s-1SQL\s0 where clause on the table jobs (ex: \*(L"project = 'p1'\*(R")
 .IP "\fB\-v, \-\-version\fR" 4
 .IX Item "-v, --version"
 Print \s-1OAR\s0 version number.

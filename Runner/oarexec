@@ -37,9 +37,9 @@ use POSIX qw(:signal_h :errno_h :sys_wait_h);
 
 
 $SIG{PIPE} = 'IGNORE';
+$SIG{HUP} = 'IGNORE';
 # To deblock sshd father when oardel in suspended state
 $SIG{CONT} = sub{
-    print("TOTOTOTOOT : ".getppid."\n");
     kill('CONT',getppid());
 };
 

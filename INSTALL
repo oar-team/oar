@@ -122,15 +122,26 @@ Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init scrip
 with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).
 
 If you want to use a postgres SQL server then there is currently no automatic installation script.
-You have to add a new user which can connect on a new oar database. Then you can import the database scheme
-stored in oar_postgres.sql.
+You have to add a new user which can connect on a new oar database(use the commands *createdb* and *createuser*).
+After that, you have to authorize network connections on the postgresql server in the *postgresql.conf* (uncomment
+*tcpip_socket = true*).
+Moreover a line like
+::
+    
+    host    oar         oar            X.X.X.X/Y    md5
 
-The same machine may host several or even all modules.
+to enable oar user to connect to the database.
+
+Then you can import the database scheme stored in *oar_postgres.sql* (use the SQL command "\\i").
+
+For more informations about postgresql, go to http://www.postgresql.org/.
+
+Note: The same machine may host several or even all modules.
 
 Note about X11:
 The easiest and scalable way to use X11 application on cluster nodes is to open X11 ports and set the right DISPLAY environment variable by hand.
-
 Otherwise users can use X11 forwarding via ssh to access cluster frontal. After that you must configure ssh server on this frontal with
+::
 
     X11Forwarding yes
     X11UseLocalhost no

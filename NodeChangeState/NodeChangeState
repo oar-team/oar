@@ -159,6 +159,10 @@ foreach my $i (@events_to_check){
         my $job = iolib::get_job($base,$i->{job_id});
         if ((($i->{type} eq "HOLD_WAITING_JOB") or ($i->{type} eq "HOLD_RUNNING_JOB")) and (($job->{state} eq "Waiting"))){
             iolib::set_job_state($base,$job->{job_id},"Hold");
+            if ($job->{job_type} eq "INTERACTIVE"){
+                my ($addr,$port) = split(/:/,$job->{info_type});
+                oar_Tools::notify_tcp_socket($addr,$port,"Start prediction: undefined (Hold)");
+            }
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
             # Launch suspend command on all nodes
 
@@ -227,6 +231,9 @@ foreach my $i (@events_to_check){
             ######################
         }elsif (($i->{type} eq "RESUME_JOB") and ($job->{state} eq "Suspended")){
             iolib::set_job_state($base,$i->{job_id},"Resuming");
+            oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");
+        }elsif (($i->{type} eq "RESUME_JOB") and ($job->{state} eq "Hold")){
+            iolib::set_job_state($base,$job->{job_id},"Waiting");
             oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");
         }
     }

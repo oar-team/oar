@@ -18,11 +18,14 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [ [-c job_id] | [job_id] ] [-h] [-v]
+Usage: $0 [-c][job_ids][-h][-v]
 Delete or send checkpoint signal to jobs.
 Options:
   -h, --help              show this help screen
-  -c, --checkpoint job_id send checkpoint signal to the job_id
+  -c, --checkpoint        send checkpoint signal to the job_id
+      --sql               delete/checkpoint jobs which respond to the SQL
+                          where clause on the table jobs
+                          (ex: "project = 'p1'")
   -v, --version           print OAR version number
 EOS
     exit(1);
@@ -38,11 +41,13 @@ $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
-my @checkpoint;
+my $Checkpoint;
 my $sos;
 my $Version;
-GetOptions ("checkpoint|c=s" => \@checkpoint,
+my $Sql_property;
+GetOptions ("checkpoint|c" => \$Checkpoint,
             "help|h" => \$sos,
+            "sql=s"   => \$Sql_property,
             "version|v" => \$Version
            );
 
@@ -56,10 +61,32 @@ if (defined($Version)){
     exit(0);
 }
 
+if (($#ARGV < 0) and (!defined($Sql_property))){
+    usage();
+    exit(1);
+}
+
+my @job_ids;
+foreach my $j (@ARGV) {
+    if ($j =~ m/^\d+$/m){
+        push(@job_ids,$j);
+    }else{
+        $exitValue = 4;
+        warn("[ERROR] \"$j\" is not a valid OAR job identifier.\n");
+    }
+}
+if (defined($Sql_property)){
+    my $db = iolib::connect_ro();
+    foreach my $j (iolib::get_jobs_with_given_properties($db,$Sql_property)){
+        push(@job_ids, $j->{job_id});
+    }
+    iolib::disconnect($db);
+}
+
 my $base = iolib::connect();
 # oardel is used to checkpoint some jobs
-if (@checkpoint){
-    foreach my $idJob (@checkpoint){
+if (defined($Checkpoint)){
+    foreach my $idJob (@job_ids){
         print("Checkpointing the job $idJob ...");
         # Try to insert checkpoint informations in the database
         my $err = iolib::ask_checkpoint_job($base,$idJob); 
@@ -108,20 +135,9 @@ if (@checkpoint){
         }
     }
 }else{
-    if ($#ARGV < 0){
-        usage();
-        iolib::disconnect($base);
-        exit(1);
-    }
     # oardel is used to delete some jobs
     my @jobRegistered;
-    foreach my $idJob (@ARGV) {
-        if ($idJob !~ m/^\s*\d+\s*$/m){
-            $exitValue = 4;
-            warn("\"$idJob\" is not a valid OAR job identifier. It must be a number.\n");
-            next;
-        }
-
+    foreach my $idJob (@job_ids) {
         print("Deleting the job = $idJob ...");
         # Try to insert delete informations in the database
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);

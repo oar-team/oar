@@ -67,14 +67,16 @@ GetOptions ("state|s" => \$stateMode,
 
 if ($usage){
     print <<EOS;
-Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -v ] [list of nodes] [-X | -Y | -D] | --backward_compatible]
+Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -v ]
+[list of nodes] [-X | -Y | -D] | --backward_compatible]
 Display node informations
 Options:
  -a, --all          show all nodes with their properties
  -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
-     --sql          display resources which matches this sql where clause (ex: "state = 'Suspected'")
+     --sql          display resources which matches this sql where clause
+                    (ex: "state = 'Suspected'")
  -D, --DUMPER       print result in DUMPER format
  -X, --XML          print result in XML format
  -Y, --YAML         print result in YAML format
@@ -94,9 +96,9 @@ my $exitstatus = 0;
 my $base = iolib::connect_ro();
 
 if (($#resources >= 0) or (defined($sql_property))){
-    if ($#resources < 0){
+    #if ($#resources < 0){
         push(@resources, iolib::get_resources_with_given_sql($base,$sql_property));
-    }
+    #}
     my %data_to_display;
     foreach my $r (@resources) {
         my $resource_info = iolib::get_resource_info($base,$r);

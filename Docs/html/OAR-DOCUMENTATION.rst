@@ -242,6 +242,8 @@ their identifier.
 Option
 ::
   
+  --sql     : delete/checkpoint jobs which respond to the SQL where clause
+              on the table jobs (ex: "project = 'p1'")
   -c job_id : send checkpoint signal to the job (signal was
               definedwith "--signal" option in oarsub)
 
@@ -260,8 +262,32 @@ Examples
 *oarhold*
 ~~~~~~~~~
 
+This command is used to remove a job from the scheduling queue if it is in
+the "Waiting" state.
+
+Moreover if its state is "Running" oarhold_ can suspend the execution and
+enable other jobs to use its resources. In that way, a **SIGINT** signal
+is sent to every processes.
+
+Options
+::
+
+  --sql : hold jobs which respond to the SQL where clause on the table
+          jobs (ex: "project = 'p1'")
+  -r    : Manage not only Waiting jobs but also Running one
+          (can suspend the job)
+
+
 *oarresume*
 ~~~~~~~~~~~
+
+This command resumes jobs in the states *Hold* or *Suspended*
+
+Option
+::
+
+  --sql : resume jobs which respond to the SQL where clause on the table
+          jobs (ex: "project = 'p1'")
 
 Visualisation tools
 -------------------
@@ -319,17 +345,20 @@ By default the node name used by `oarnodesetting`_ is the result of the command
 
 Options are: ::
 
- -a : add a new resource
- -s : state to assign to the node:
-    * "Alive" : a job can be run on the node.
-    * "Absent" : administrator wants to remove the node from the pool for a
-      moment.
-    * "Dead" : the node will not be used and will be deleted. 
- -h : specify the node name (override hostname).
- -r : specify the resource number
- -p : change the value of a property specified resources.
- -n : specify this option if you do not want to wait the end of jobs running
-      on this node when you change its state into "Absent" or "Dead".
+ -a    : add a new resource
+ -s    : state to assign to the node:
+         * "Alive" : a job can be run on the node.
+         * "Absent" : administrator wants to remove the node from the pool
+            for a moment.
+         * "Dead" : the node will not be used and will be deleted. 
+ -h    : specify the node name (override hostname).
+ -r    : specify the resource number
+ --sql : get resource identifiers which respond to the
+         SQL where clause on the table jobs
+         (ex: "type = 'default'")
+ -p    : change the value of a property specified resources.
+ -n    : specify this option if you do not want to wait the end of jobs running
+         on this node when you change its state into "Absent" or "Dead".
 
 *oarremoveresource*
 ~~~~~~~~~~~~~~~~~~~
@@ -385,24 +414,25 @@ seconds since the EPOCH).
 *accounting*
 ~~~~~~~~~~~~
 
-================  ====================  =======================================
-Fields            Types                 Descriptions
-================  ====================  =======================================
-window_start      INT UNSIGNED          start date of the accounting interval
-window_stop       INT UNSIGNED          stop date of the accounting interval
-accounting_user   VARCHAR(20)           user name
-queue_name        VARCHAR(100)          queue name
-consumption_type  ENUM("ASKED",         "ASKED" corresponds to the walltimes
-                  "USED")               specified by the user. "USED"
-                                        corresponds to the effective time
-                                        used by the user.
-consumption       INT UNSIGNED          number of seconds used
-================  ====================  =======================================
+==================  ====================  =======================================
+Fields              Types                 Descriptions
+==================  ====================  =======================================
+window_start        INT UNSIGNED          start date of the accounting interval
+window_stop         INT UNSIGNED          stop date of the accounting interval
+accounting_user     VARCHAR(20)           user name
+accounting_project  VARCHAR(255)          name of the related project
+queue_name          VARCHAR(100)          queue name
+consumption_type    ENUM("ASKED",         "ASKED" corresponds to the walltimes
+                    "USED")               specified by the user. "USED"
+                                          corresponds to the effective time
+                                          used by the user.
+consumption         INT UNSIGNED          number of seconds used
+==================  ====================  =======================================
 
 :Primary key: window_start, window_stop, accounting_user, queue_name,
-              consumption_type
+              accounting_project, consumption_type
 :Index fields: window_start, window_stop, accounting_user, queue_name,
-               consumption_type
+               accounting_project, consumption_type
 
 This table is a summary of the consumption for each user on each queue. This
 increases the speed of queries about user consumptions and statistic
@@ -782,10 +812,14 @@ project               VARCHAR(255)            arbitrary name given by the user o
                                               admission rule
 suspended             ENUM("YES","NO")        specify if the job was suspended
                                               (oarhold_)
+job_env               TEXT                    environment variables to set for the
+                                              job
+exit_code             INT DEFAULT 0           exit code for passive jobs
+job_group             VARCHAR(255)            not used
 ===================== ======================  =======================================
 
 :Primary key: job_id
-:Index fields: state, reservation, queue_name, accounted
+:Index fields: state, reservation, queue_name, accounted, suspended
 
 Explications about the "state" field:
 
@@ -930,6 +964,8 @@ This table stores job types given with the `oarsub`_ command and "-t" options.
 Fields                Types                 Descriptions
 ====================  ====================  =======================================
 resource_id           INT UNSIGNED          resource identifier
+type                  VARCHAR(100)          resource type (used for licence
+                      DEFAULT "default"     resources for example)
 network_address       VARCHAR(100)          node name (used to connect via SSH)
 state                 ENUM('Alive', 'Dead'  resource state
                       , 'Suspected',
@@ -965,7 +1001,7 @@ cm_availability       INT UNSIGNED          used with compute mode features to
 ====================  ====================  =======================================
 
 :Primary key: resource_id
-:Index fields: state, next_state
+:Index fields: state, next_state, type, suspended_jobs
 
 State explications:
 

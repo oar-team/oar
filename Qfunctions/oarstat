@@ -57,19 +57,22 @@ GetOptions ("help|h" => \$sos,
 
 if ($sos){
     print <<EOS;
-Usage: $0 [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date,date"]] [-X | -Y | -D] [-v]
+Usage: $0 [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date,date"]]
+[-X | -Y | -D] [-v]
 Display job informations
 Options:
-  -h, --help        show this help screen
-  -j, --job         show informations only for the specified job
-  -f, --full        show full informations
-  -g, --gantt       show job informations between two dates like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
-      --sql         restricts display with the SQL where clause on the table jobs (ex: "project = 'p1'")
-  -D, --DUMPER      print result in DUMPER format
-  -X, --XML         print result in XML format
-  -Y, --YAML        print result in YAML format
+  -h, --help                show this help screen
+  -j, --job                 show informations only for the specified job
+  -f, --full                show full informations
+  -g, --gantt               show job informations between two dates
+                            like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
+      --sql                 restricts display with the SQL where clause on the
+                            table jobs (ex: "project = 'p1'")
+  -D, --DUMPER              print result in DUMPER format
+  -X, --XML                 print result in XML format
+  -Y, --YAML                print result in YAML format
       --backward_compatible print informations of the form of 1.* OAR version
-  -v, --version     print OAR version number
+  -v, --version             print OAR version number
 EOS
     exit(0);
 }

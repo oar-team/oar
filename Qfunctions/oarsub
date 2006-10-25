@@ -5,6 +5,7 @@
 use strict;
 use IO::Socket::INET;
 use DBI();
+use POSIX qw(strftime);
 use Data::Dumper;
 use Sys::Hostname;
 use Getopt::Long;
@@ -229,27 +230,42 @@ Submit a job the OAR batch scheduler
 Options are:
  -I, --Interactive             request an interactive job
  -C, --Connect=<JOB_ID>        connect to a running job
- -l, --resource=<LIST>         set the resource list( ex: node=4/cpu=1,walltime=2:00:00 )
- -S, --Scanscript              in batch mode, asks oarsub to scan the given script for OAR directives (#OAR -l ...)
+ -l, --resource=<LIST>         set the resource list
+                               (ex: node=4/cpu=1,walltime=2:00:00)
+ -S, --Scanscript              in batch mode, asks oarsub to scan the given
+                               script for OAR directives (#OAR -l ...)
  -q, --queue=<QUEUE>           set the the queue to submit the job to
  -p, --property=<LIST>         set the property list
  -r, --reservation=<DATE>      request a reservation
  -k, --checkpoint              enable the job to be checkpointed
-     --signal                  specify the signal to use when checkpointing (defuault is 12 --> SIGUSR2)
- -t, --type                    specify a specific type (deploy, besteffort, cosystem, checkpoint)
- -d, --directory               specify the directory where to launch the command (default is current directory)
-     --project                 specify the name of the project corresponding to this job
+     --signal                  specify the signal to use when checkpointing
+                               (defuault is 12 --> SIGUSR2)
+ -t, --type                    specify a specific type (deploy, besteffort,
+                               cosystem, checkpoint,timesharing)
+ -d, --directory               specify the directory where to launch the
+                               command (default is current directory)
+     --project                 specify the name of the project corresponding
+                               to this job
  -n, --name                    specify an arbitrary name for the job
- -e, --env                     environment variables to set on the running proccess in the form "A=b C=d"
- -a, --anterior                anterior job that must be terminated to start this new one
-     --notify                  specify a notification method(mail or program to launch); ex: 
+ -e, --env                     environment variables to set on the running
+                               proccess in the form "A=b C=d"
+ -a, --anterior                anterior job that must be terminated to start
+                               this new one
+     --notify                  specify a notification method
+                               (mail or program to launch); ex: 
                                    --notify "mail:name\@domain.com"
 				                   --notify "exec:/path/to/script args"
      --stdout                  specify the name of the standard output file
      --stderr                  specify the name of the error output file
      --resubmit                resubmit the given job to a new one
-     --force_cpuset_name       instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer)
-     --hold                    set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state)
+     --force_cpuset_name       instead of using job_id for the cpuset name
+                               you can specify one (WARNING: if several jobs
+                               have the same cpuset name then processes of a
+                               job could be killed when another finished
+                               on the same computer)
+     --hold                    set the job state into Hold instead of Waiting;
+                               so it is not scheduled (you must run
+                               "oarresume" to turn it into the Waiting state)
  -s, --stagein=<DIR|TGZ>       set the stagein directory or archive
      --stagein-md5sum=<MD5SUM> set the stagein file md5sum
  -D, --DUMPER                  print result in DUMPER format
@@ -637,27 +653,16 @@ if ($Reservation ne "0"){
 }elsif ($Interactive==1) {
     #Interactive mode
     print("Interactive mode : waiting...\n");
-    my $client = $Server->accept();
-    $answer = <$client>;
-    chop($answer);
-    my $erase_str = "";
-    my @symb = ('-','\\','|','/','-','\\','|','/');
-    my $i = 0;
-    while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
-        for (my $c = 0; $c < length($erase_str); $c++){
-            # move the cursor backward and erase the character
-            print("\b");
-        }
-        # move to the beginning of the line
-        print("\r");
-        $answer = $symb[($i % $#symb)]." ".$answer;
-        print($answer);
-        $erase_str = $answer;
-        $client = $Server->accept();
+    my $prev_str = "";
+    do{
+        my $client = $Server->accept();
         $answer = <$client>;
         chop($answer);
-        $i++;
-    }
+        if (($answer ne $prev_str) and ($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
+            print("[".strftime("%F %T",localtime)."] $answer\n");
+            $prev_str = $answer;
+        }
+    }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED"));
     print("\n");
     if ($answer eq "GOOD JOB"){
         exit(connect_job($Job_id,1,$Openssh_cmd));

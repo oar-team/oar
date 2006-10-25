@@ -129,20 +129,23 @@
 .\" ========================================================================
 .\"
 .IX Title "oardel 1"
-.TH oardel 1 "2006-06-22" "" "OAR commands"
+.TH oardel 1 "2006-10-25" "" "OAR commands"
 .SH "NAME"
 oardel \- delete or checkpoint job(s).
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-\&\fBoardel\fR [ [\-c job_id] | [job_id] ] [\-h] [\-v]
+\&\fBoardel\fR [\-c][job_ids][\-h][\-v]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
-This command is used to delete or checkpoint job(s). Jobs are designed by their job's identifier.
+This command is used to delete or checkpoint job(s). Jobs are designed by their number.
 .SH "OPTIONS"
 .IX Header "OPTIONS"
-.IP "\fB\-c, \-\-checkpoint\fR job_id" 4
-.IX Item "-c, --checkpoint job_id"
-Send the checkpoint signal designed from the \*(L"\-\-signal\*(R" oarsub command option (default is \s-1SIGUSR2\s0) to the process launched by the job \*(L"job_id\*(R"
+.IP "\fB\-c, \-\-checkpoint\fR" 4
+.IX Item "-c, --checkpoint"
+Send the checkpoint signal designed from the \*(L"\-\-signal\*(R" oarsub command option (default is \s-1SIGUSR2\s0) to the process launched by the job \*(L"job_id\*(R".
+.IP "\fB\-\-sql\fR" 4
+.IX Item "--sql"
+Delete/checkpoint jobs which respond to the \s-1SQL\s0 where clause on the table jobs (ex: \*(L"project = 'p1'\*(R").
 .IP "\fB\-v, \-\-version\fR" 4
 .IX Item "-v, --version"
 Print \s-1OAR\s0 version number.

@@ -13,8 +13,11 @@ use Getopt::Long;
 
 sub usage {
     print <<EOS;
-Usage: $0 job_id | -h | -v
-Ask OAR to change job_id state into Waiting when it is in Hold one or in Running if it is Suspended.
+Usage: $0 [job_ids][--sql "sql syntax"][-v][-h] 
+Ask OAR to change job_ids states into Waiting when it is Hold or in Running
+if it is Suspended.
+      --sql     resume jobs which respond to the SQL where clause on the table
+                jobs (ex: "project = 'p1'")
   -h, --help    show this help screen
   -v, --version print OAR version number
 EOS
@@ -22,9 +25,11 @@ EOS
 
 my $Version;
 my $Help;
+my $Sql_property;
 
 GetOptions (
     "version|v" => \$Version,
+    "sql=s"   => \$Sql_property,
     "help|h" => \$Help
            );
 
@@ -38,37 +43,56 @@ if (defined($Version)){
     exit(0);
 }
 
-init_conf($ENV{OARCONFFILE});
-my $remote_host = get_conf("SERVER_HOSTNAME");
-my $remote_port = get_conf("SERVER_PORT");
-
-if (($#ARGV < 0) or ($ARGV[0] !~ m/^\d+$/m)){
+if (($#ARGV < 0) and (!defined($Sql_property))){
     usage();
     exit(1);
 }
 
-my $idJob = $ARGV[0];
-print("Job_id = $idJob\n");
+init_conf($ENV{OARCONFFILE});
+my $remote_host = get_conf("SERVER_HOSTNAME");
+my $remote_port = get_conf("SERVER_PORT");
+
+my @job_ids;
+my $exit_code = 0;
+foreach my $j (@ARGV){
+    if ($j =~ /^\d+$/){
+        push(@job_ids, $j);
+    }else{
+        warn("[ERROR] \"$j\" is not a valid job identifier\n");
+        $exit_code = 2;
+    }
+}
+
+if (defined($Sql_property)){
+    my $db = iolib::connect_ro();
+    foreach my $j (iolib::get_jobs_with_given_properties($db,$Sql_property)){
+        push(@job_ids, $j->{job_id});
+    }
+    iolib::disconnect($db);
+}
 
 my $base = iolib::connect();
-my $err = iolib::resume_job($base,$idJob);
-iolib::disconnect($base);
 
-if ($err != 0) {
-    print("/!\\ Cannot resume $idJob : ");
-    if ($err == -1){
-        print("this job does not exist.\n");
-    }elsif ($err == -2){
-        print("you are not the right user.\n");
-    }elsif ($err == -3){
-        print("the job is not in the Hold or Suspended state.\n");
+foreach my $j (@job_ids){
+    my $err = iolib::resume_job($base,$j);
+    if ($err != 0) {
+        my $str = "/!\\ Cannot resume $j :";
+        if ($err == -1){
+            warn("$str this job does not exist.\n");
+        }elsif ($err == -2){
+            warn("$str you are not the right user.\n");
+        }elsif ($err == -3){
+            warn("$str the job is not in the Hold or Suspended state.\n");
+        }else{
+            warn("$str unknown reason.\n");
+        }
+        $exit_code = 1;
     }else{
-        print("unknown reason.\n");
+        print("[$j] Resume request was sent to the OAR server.\n");
     }
-    exit(1);
 }
+iolib::disconnect($base);
 #Signal Almigthy
 oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qresume");
 
-exit 0;
+exit($exit_code);
