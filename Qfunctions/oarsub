@@ -658,16 +658,15 @@ if ($Reservation ne "0"){
         my $client = $Server->accept();
         $answer = <$client>;
         chop($answer);
-        if (($answer ne $prev_str) and ($answer ne "GOOD JOB") and ($answer ne "BAD JOB")){
+        if (($answer ne $prev_str) and ($answer ne "GOOD JOB")){
             print("[".strftime("%F %T",localtime)."] $answer\n");
             $prev_str = $answer;
         }
-    }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED"));
+    }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^INVALID RESOURCES/));
     print("\n");
     if ($answer eq "GOOD JOB"){
         exit(connect_job($Job_id,1,$Openssh_cmd));
     }else{
-        warn("Sorry but the system returned : $answer\n");
         exit(11);
     }
 }

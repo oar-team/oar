@@ -264,8 +264,9 @@ if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
 #    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
     #my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{command});
-    my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{job_env},$Job->{command});
-    @cmd = ("sudo","-H","-u","$Job->{user}","sh","-c",$str);
+    my $str = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{job_env},$Job->{command});
+    #print($str."\n");
+    @cmd = ("sudo","-H","-u","$Job->{user}","perl","-e",$str);
     #$cmd = "sudo -H -u $Job->{user} sh -s $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} -1 \'$Job->{command}\'";
 }
 

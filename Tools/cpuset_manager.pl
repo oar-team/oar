@@ -49,11 +49,14 @@ if ($ARGV[0] eq "init"){
         }
     }
  
+#'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_name.'/mems && '.
+
+# Be careful with the physical_package_id. Is it corresponding to the memory banc?
     if (system( 'sudo mkdir -p /dev/cpuset/'.$Cpuset_name.' && '.
                 'sudo chown -R oar /dev/cpuset/'.$Cpuset_name.' && '.
                 '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_name.'/notify_on_release && '.
                 '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_name.'/cpu_exclusive && '.
-                'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_name.'/mems && '.
+                'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_name.'/mems; done && '.
                 '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_name.'/cpus'
               )){
         exit(5);

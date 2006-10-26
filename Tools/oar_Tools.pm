@@ -328,10 +328,9 @@ sub launch_command($){
 }
 
 
-
-# Create the shell script used to execute right command for the user
-# The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarexec($$$$$$$$$$$@){
+# Create the perl script used to execute right command for the user
+# The resulting script can be launched with : echo  script | perl -
+sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
@@ -345,56 +344,53 @@ sub get_oarexecuser_script_for_oarexec($$$$$$$$$$$@){
         $job_env,
         @cmd) = @_;
 
-    my $exp_env = "";
     if ($job_env !~ /^\s*$/){
-        $exp_env .= "export $job_env";
+        unshift(@cmd,"export $job_env;");
     }
 
     my $script = '
-if [ "a$TERM" == "a" ] || [ "$TERM" == "unknown" ]
-then
-    export TERM=xterm
-fi
+if ((!defined($ENV{TERM})) or ($ENV{TERM} eq "") or ($ENV{TERM} eq "unknown")){
+    $ENV{TERM} = "xterm";
+}
 
-'.$exp_env.'
-export OAR_FILE_NODES='.$node_file.'
-export OAR_JOBID='.$job_id.'
-export OAR_USER='.$user.'
-export OAR_WORKDIR='.$launching_directory.'
-export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.'
+$ENV{OAR_STDOUT} = "'.$stdout_file.'";
+$ENV{OAR_STDERR} = "'.$stderr_file.'";
+$ENV{OAR_FILE_NODES} = "'.$node_file.'";
+$ENV{OAR_JOBID} = '.$job_id.';
+$ENV{OAR_USER} = "'.$user.'";
+$ENV{OAR_WORKDIR} = "'.$launching_directory.'";
+$ENV{OAR_RESOURCE_PROPERTIES_FILE} = "'.$resource_file.'";
+$ENV{OAR_JOB_NAME} = "'.$job_name.'";
+$ENV{OAR_PROJECT_NAME} = "'.$job_project.'";
 
-export OAR_NODEFILE=$OAR_FILE_NODES
-export OAR_O_WORKDIR=$OAR_WORKDIR
-export OAR_NODE_FILE=$OAR_FILE_NODES
-export OAR_RESOURCE_FILE=$OAR_FILE_NODES
-export OAR_WORKING_DIRECTORY=$OAR_WORKDIR
-export OAR_JOB_ID=$OAR_JOBID
-export OAR_JOB_NAME='.$job_name.'
-export OAR_PROJECT_NAME='.$job_project.'
+$ENV{OAR_NODEFILE} = $ENV{OAR_FILE_NODES};
+$ENV{OAR_O_WORKDIR} = $ENV{OAR_WORKDIR};
+$ENV{OAR_NODE_FILE} = $ENV{OAR_FILE_NODES};
+$ENV{OAR_RESOURCE_FILE} = $ENV{OAR_FILE_NODES};
+$ENV{OAR_WORKING_DIRECTORY} = $ENV{OAR_WORKDIR};
+$ENV{OAR_JOB_ID} = $ENV{OAR_JOBID};
 
-if ( cd $OAR_WORKING_DIRECTORY &> /dev/null )
-then
-    cd $OAR_WORKING_DIRECTORY
-else
-    #Can not go into working directory
-    exit 1
-fi
+# Test if we can go into the launching directory
+if (!chdir($ENV{OAR_WORKING_DIRECTORY})){
+    exit(1)
+}
 
-export OAR_STDOUT='.$stdout_file.'
-export OAR_STDERR='.$stderr_file.'
-    
+#Store old FD
+open(OLDSTDOUT, ">& STDOUT");
+open(OLDSTDERR, ">& STDERR");
+
 #Test if we can write into stdout and stderr files
-if ! ( > $OAR_STDOUT ) &> /dev/null || ! ( > $OAR_STDERR ) &> /dev/null
-then
-    exit 2
-fi
+if ((!open(STDOUT, ">$ENV{OAR_STDOUT}")) or (!open(STDERR, ">$ENV{OAR_STDERR}"))){
+    exit(2);
+}
 
-#('."@cmd".' > $OAR_STDOUT) >& $OAR_STDERR
-('."@cmd".') 1> $OAR_STDOUT 2> $OAR_STDERR
+system("sh","-c",\''."@cmd".'\');
 
-echo EXIT_CODE $?
+print(OLDSTDOUT "EXIT_CODE $?");
+close(STDOUT);
+close(STDERR);
 
-exit 0
+exit(0);
 ';
 
     return($script);

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # $Id: oar_prologue,v 1.6 2004/08/24 16:10:34 neyron Exp $
 
 # prologue arguments
@@ -9,6 +9,9 @@
 # argv[4] is the job script name if exists
 
 exit
+
+# Redirect stdout and stderr in a file
+exec &> /tmp/oar_prologue.log
 
 #Exemple for mono processor cluster
 DIFFUSE_SCRIPT=~oar/oar_diffuse_script
