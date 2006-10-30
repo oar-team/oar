@@ -141,7 +141,11 @@ if (($#resources >= 0) or (defined($sql_property))){
                 if ($b eq "properties"){
                     my $str = "properties : ";
                     foreach my $prop (sort(keys(%{$data_to_display{$a}->{$b}}))){
-                        $str .= "$prop=$data_to_display{$a}->{$b}->{$prop},"
+                        if (defined($data_to_display{$a}->{$b}->{$prop})){
+                            $str .= "$prop=$data_to_display{$a}->{$b}->{$prop},";
+                        }else{
+                            $str .= "$prop=,";
+                        }
                     }
                     chop($str);
                     print("        $str\n");
@@ -289,7 +293,11 @@ if (defined($stateMode)){
                     if ($cc eq "properties"){
                         my $str = "properties = ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
-                            $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},"
+                            if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
+                                $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                            }else{
+                                $str .= "$prop=,";
+                            }
                         }
                         chop($str);
                         $properties = $str;
@@ -331,7 +339,11 @@ if (defined($stateMode)){
                     if ($cc eq "properties"){
                         my $str = "properties : ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
-                            $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},"
+                            if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
+                                $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                            }else{
+                                $str .= "$prop=,";
+                            }
                         }
                         chop($str);
                         print("        $str\n");

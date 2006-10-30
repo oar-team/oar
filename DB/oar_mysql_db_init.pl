@@ -94,10 +94,10 @@ if (! $query->fetchrow_hashref()){
 }
 
 # Grant user
-$query = $dbh->prepare("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP ON ".$dbName.".* TO ".$dbUserName."\@localhost") or die $dbh->errstr;
+$query = $dbh->prepare("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON ".$dbName.".* TO ".$dbUserName."\@localhost") or die $dbh->errstr;
 $query->execute();
 
-$query = $dbh->prepare("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP ON ".$dbName.".* TO ".$dbUserName."@\"%\"") or die $dbh->errstr;
+$query = $dbh->prepare("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON ".$dbName.".* TO ".$dbUserName."@\"%\"") or die $dbh->errstr;
 $query->execute();
 
 $query = $dbh->prepare("FLUSH PRIVILEGES") or die $dbh->errstr;

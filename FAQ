@@ -144,6 +144,14 @@ How can I write my own scheduler?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: Scheduler/README
 
+Does OAR handle summer and winter hours?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+No.
+
+If you change the server time when OAR is executing jobs then their stop date
+will be wrong. So users haveto be warned about this feature and database logs
+are not exact for these jobs.
+
 What is the syntax of this documentation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

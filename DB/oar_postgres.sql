@@ -143,7 +143,7 @@ CREATE INDEX log_res_desc ON job_resource_descriptions (res_job_index);
 
 CREATE TABLE job_state_logs (
   job_id integer NOT NULL default '0',
-  job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
+  job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Suspended','Resuming','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
   date_start integer NOT NULL default '0',
   date_stop integer NOT NULL default '0'
 );

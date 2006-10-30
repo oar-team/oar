@@ -75,7 +75,7 @@ foreach my $a (@Add_property){
     if ($Varchar){
         $req = "ALTER TABLE resources ADD COLUMN $a VARCHAR(255)";
     }else{
-        $req = "ALTER TABLE resources ADD COLUMN $a INT DEFAULT 0";
+        $req = "ALTER TABLE resources ADD COLUMN $a INT";
     }
     $base->do($req)
         or die("DB error: " . $base->errstr."\n");

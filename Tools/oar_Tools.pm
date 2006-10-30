@@ -575,7 +575,7 @@ sub sentinelle($$$$$){
 sub check_resource_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type|suspended_jobs)$/ ) {
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type|suspended_jobs)$/){
         return(1);
     }else{
         return(0);
@@ -661,7 +661,7 @@ sub manage_remote_commands($$$$$$$){
             close(WRITE);
             # Check good nodes from the stdout taktuk
             while(<READ>){
-                if ($_ =~ /^STATUS ([\w\.-\d]+) (\d+)$/){
+                if ($_ =~ /^STATUS ([\w\.\-\d]+) (\d+)$/){
                     if ($2 == 0){
                         delete($tmp_node_hash{$1}) if (defined($tmp_node_hash{$1}));
                     }

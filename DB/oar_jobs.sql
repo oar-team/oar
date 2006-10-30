@@ -114,7 +114,7 @@ PRIMARY KEY (res_job_group_id,res_job_resource_type,res_job_order)
 #DROP TABLE IF EXISTS job_state_logs;
 CREATE TABLE IF NOT EXISTS job_state_logs (
 job_id INT UNSIGNED NOT NULL ,
-job_state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Finishing','Running','Terminated','Error')  NOT NULL ,
+job_state ENUM('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Finishing','Running','Suspended','Resuming','Terminated','Error')  NOT NULL ,
 date_start INT UNSIGNED NOT NULL,
 date_stop INT UNSIGNED DEFAULT 0,
 INDEX id (job_id),
