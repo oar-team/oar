@@ -260,14 +260,13 @@ if (!defined($shell)){
 }
 
 my @cmd;
+my $stdin_script_to_send;
 if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
-#    $cmd = "sudo -H -u $Job->{user} sh -c \"$Bin_Path/oarexecuser.sh $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} '$Job->{command}'\"";
-    #my $str = oar_Tools::get_oarexecuser_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{command});
-    my $str = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{job_env},$Job->{command});
+    my $str;
+    ($str, $stdin_script_to_send) = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{job_env},$Job->{command});
     #print($str."\n");
     @cmd = ("sudo","-H","-u","$Job->{user}","perl","-e",$str);
-    #$cmd = "sudo -H -u $Job->{user} sh -s $Node_file $Job_id $Job->{user} $shell $Job->{launching_directory} P $Job->{stdout_file} $Job->{stderr_file} -1 \'$Job->{command}\'";
 }
 
 #resolve terminal type problems
@@ -375,6 +374,10 @@ if ($Job->{mode} eq "PASSIVE"){
     autoflush pipe_script_write 1;
     autoflush pipe_script_read 1;
     vec($rin_script,fileno(pipe_script_read),1) = 1;
+    # To send command line
+    pipe(pipe_stdin_read,pipe_stdin_write);
+    autoflush pipe_stdin_write 1;
+    autoflush pipe_stdin_read 1;
     #print("[oarexec $Job_id] Launch the command : $cmd\n");
     $pid = fork;
     if($pid == 0){
@@ -389,10 +392,21 @@ if ($Job->{mode} eq "PASSIVE"){
         close(pipe_script_read);
         close(STDOUT);
         # Redirect script output into the pipe
-        open(STDOUT, ">&", pipe_script_write);
+        open(STDOUT, ">& pipe_script_write");
+        
+        # Use the child STDIN to send the user command
+        close(pipe_stdin_write);
+        close(STDIN);
+        open(STDIN, "<& pipe_stdin_read");
+
         exec(@cmd);
     }
     close(pipe_script_write);
+    close(pipe_stdin_read);
+    # Send user command without any interpretation security isssue!!!
+    # This is the most secure manner that I find
+    print(pipe_stdin_write $stdin_script_to_send."\n");
+    open(pipe_stdin_write,"<& /dev/null");
 }
 
 print("[oarexec $Job_id] child pid = $pid\n");
@@ -421,6 +435,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
         if (($res_read == 1) and ($line_read eq "")){
             # Script is finished
             close(pipe_script_read);
+            close(pipe_stdin_write);
         }else{
             print("[oarexec $Job_id] pipe script writes : $res_read,$line_read\n");
             if ($line_read =~ /^EXIT_CODE\s(\d+)$/){

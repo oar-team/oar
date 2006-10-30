@@ -329,7 +329,7 @@ sub launch_command($){
 
 
 # Create the perl script used to execute right command for the user
-# The resulting script can be launched with : echo  script | perl -
+# The resulting script can be launched with : perl -e 'script'
 sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$@){
     my ($node_file,
         $job_id,
@@ -345,8 +345,15 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$@){
         @cmd) = @_;
 
     if ($job_env !~ /^\s*$/){
-        unshift(@cmd,"export $job_env;");
+        $cmd[0] = "export $job_env;".$cmd[0];
     }
+    # suitable Data::Dumper configuration for serialization
+    $Data::Dumper::Purity = 1;
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Indent = 0;
+    $Data::Dumper::Deepcopy = 1;
+
+    my $cmd_serial = Dumper(\@cmd);
 
     my $script = '
 if ((!defined($ENV{TERM})) or ($ENV{TERM} eq "") or ($ENV{TERM} eq "unknown")){
@@ -384,7 +391,16 @@ if ((!open(STDOUT, ">$ENV{OAR_STDOUT}")) or (!open(STDERR, ">$ENV{OAR_STDERR}"))
     exit(2);
 }
 
-system("sh","-c",\''."@cmd".'\');
+# Get user command by the STDIN (for SECURITY)
+my $cmd_exec = eval(<STDIN>);
+my $pid = fork;
+if($pid == 0){
+    # To be sure that user do not try to do something nasty
+    close(OLDSTDERR);
+    close(OLDSTDOUT);
+    exec(@{$cmd_exec});
+}
+waitpid($pid,0);
 
 print(OLDSTDOUT "EXIT_CODE $?");
 close(STDOUT);
@@ -393,7 +409,7 @@ close(STDERR);
 exit(0);
 ';
 
-    return($script);
+    return($script,$cmd_serial);
 }
 
 

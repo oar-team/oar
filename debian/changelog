@@ -1,3 +1,12 @@
+oar (2.0.0-beta5) unstable; urgency=low
+
+  * add cpuset banch management
+  * bugfix
+  * code enhancement (batch command line)
+  * add --sql argument to several user commands (more flexible)
+
+ -- Capit Nicolas <capitn@localdomain>  Mon, 30 Oct 2006 11:25:09 +0100
+
 oar (2.0.0-beta4) unstable; urgency=low
 
   [ capitn ]

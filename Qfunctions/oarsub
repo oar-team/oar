@@ -187,12 +187,8 @@ sub connect_job($$$){
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
-        #my $cmd = "ssh -t $host_to_connect_via_ssh \"sh -c \\\"TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY \\\" && sudo su - $lusr -c \\\"oarexecuser.sh $node_file $job_id $lusr $shell $job->{launching_directory} I\\\"\"";
-        #my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$cpuset_name,$res_file);
         my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$res_file,$job->{job_name},$job->{project}, $job->{job_env});
         my $cmd = "$openssh_cmd -oSendEnv=OAR_CPUSET -x -t $host_to_connect_via_ssh \"sh -c \\\"echo \\\\\\\$PPID >> $oarsub_pids && TTY=\\\\\\\$(tty) && test -e \\\\\\\$TTY && sudo chown $lusr:oar \\\\\\\$TTY && sudo chmod 660 \\\\\\\$TTY\\\" && sudo -H -u $lusr sh -c \'$str\'\"";
-        #my $cmd = "cat $oarexecuser_script | $openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
-        #my $cmd = "$openssh_cmd -x -t $host_to_connect_via_ssh \'sh -s $node_file $job_id $lusr $shell $job->{launching_directory} I /dev/null /dev/null $oarsub_pids false\'";
         #print("oarsub launchs command : $cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
@@ -239,7 +235,7 @@ Options are:
  -r, --reservation=<DATE>      request a reservation
  -k, --checkpoint              enable the job to be checkpointed
      --signal                  specify the signal to use when checkpointing
-                               (defuault is 12 --> SIGUSR2)
+                               (default is 12 --> SIGUSR2)
  -t, --type                    specify a specific type (deploy, besteffort,
                                cosystem, checkpoint,timesharing)
  -d, --directory               specify the directory where to launch the
@@ -254,7 +250,7 @@ Options are:
      --notify                  specify a notification method
                                (mail or program to launch); ex: 
                                    --notify "mail:name\@domain.com"
-				                   --notify "exec:/path/to/script args"
+                                   --notify "exec:/path/to/script args"
      --stdout                  specify the name of the standard output file
      --stderr                  specify the name of the error output file
      --resubmit                resubmit the given job to a new one

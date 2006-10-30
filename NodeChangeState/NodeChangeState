@@ -55,7 +55,7 @@ foreach my $i (@events_to_check){
         # At this point the job was executed normally
         # The state is changed here to avoid to schedule other jobs
         # on nodes that will be Suspected
-        iolib::set_job_state($base,$i->{job_id},"Terminated");
+        iolib::set_job_state($base,$i->{job_id},"Error");
     }
     
     #######################################
@@ -75,7 +75,7 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         my @hosts;
-        my $finaud_tag;
+        my $finaud_tag = "NO";
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
         if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
             ($i->{type} eq "CPUSET_ERROR") ||
@@ -85,7 +85,6 @@ foreach my $i (@events_to_check){
         }else{
             my $job = iolib::get_job($base,$i->{job_id});
             @hosts = iolib::get_job_host_log($base,$job->{assigned_moldable_job});
-            $finaud_tag = "NO";
             if (($i->{type} ne "EXTERMINATE_JOB")){
                 @hosts = ($hosts[0]);
             }
@@ -177,7 +176,7 @@ foreach my $i (@events_to_check){
                     name => $cpuset_name,
                 };
                 if (defined($cpuset_nodes)){
-                    my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+                    my $taktuk_cmd = get_conf("TAKTUK_CMD");
                     my $openssh_cmd = get_conf("OPENSSH_CMD");
                     $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
                     my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
@@ -236,6 +235,17 @@ foreach my $i (@events_to_check){
             iolib::set_job_state($base,$job->{job_id},"Waiting");
             oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");
         }
+    }
+    
+    ####################################
+    # Check if we must notify the user #
+    ####################################
+    if (
+        ($i->{type} eq "FRAG_JOB_REQUEST")
+       ){
+            my $job = iolib::get_job($base,$i->{job_id});
+            my ($addr,$port) = split(/:/,$job->{info_type});
+            oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"INFO","Your job was asked to be deleted\n$i->{description}");
     }
    
     iolib::check_event($base, $i->{type}, $i->{job_id});

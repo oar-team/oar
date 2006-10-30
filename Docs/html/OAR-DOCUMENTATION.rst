@@ -1312,7 +1312,7 @@ Each configuration tag found in /etc/oar.conf is now described:
     
       CPUSET_FILE = cpuset_manager.pl
 
-.. _CPUSET_TAKTUK_CMD:
+.. _TAKTUK_CMD:
 
   - If you have installed taktuk and want to use it to manage cpusets
     then give the full command path (with your options except "-m" and "-o"
@@ -1320,7 +1320,7 @@ Each configuration tag found in /etc/oar.conf is now described:
     You don t also have to give any taktuk command.
     ::
 
-      CPUSET_TAKTUK_CMD = /usr/bin/taktuk -s 
+      TAKTUK_CMD = /usr/bin/taktuk -s 
 
   - If you want to manage nodes to be started and stoped. OAR gives you this
     API:
@@ -1506,7 +1506,7 @@ OAR system steps:
  1. Before each job, the Runner_ initialize the CPUSET (see `CPUSET
     definition`_) with OPENSSH_CMD_ and an efficient launching tool :
     `Taktuk <https://gforge.inria.fr/projects/taktuk/>`_. If it is not
-    installed and configured (CPUSET_TAKTUK_CMD_) then OAR uses an internal
+    installed and configured (TAKTUK_CMD_) then OAR uses an internal
     launching tool less optimized.
 
  2. After each job, OAR deletes all processes stored in the associated CPUSET.

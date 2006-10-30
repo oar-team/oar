@@ -156,7 +156,7 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
                 name => $cpuset_name,
             };
             if (defined($cpuset_nodes)){
-                my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+                my $taktuk_cmd = get_conf("TAKTUK_CMD");
                 my $openssh_cmd = get_conf("OPENSSH_CMD");
                 $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
                 my $suspend_file = get_conf("SUSPEND_RESUME_FILE");

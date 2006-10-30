@@ -1243,7 +1243,7 @@ sub set_job_state($$$) {
             if ($state eq "Terminated"){
                 oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
             }else{
-                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally.");
+                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally or an OAR error occured.");
             }
         }
     }
@@ -4275,7 +4275,7 @@ sub check_event($$$){
 # args: database ref
 sub get_to_check_events($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT type, job_id, event_id
+    my $sth = $dbh->prepare("   SELECT type, job_id, event_id, description
                                 FROM event_logs
                                 WHERE
                                     to_check = \'YES\'
@@ -4632,7 +4632,6 @@ sub job_finishing_sequence($$$$$$$$){
                 oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
             }
         }else{
-            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] 2\n");
             undef($state_to_switch);
             my $str = "[JOB FINISHING SEQUENCE] Try to execute $epilogue_script but I cannot find it or it is not executable";
             oar_Judas::oar_warn("$str\n");
@@ -4667,7 +4666,7 @@ sub job_finishing_sequence($$$$$$$$){
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             if (defined($cpuset_nodes)){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
-                my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+                my $taktuk_cmd = get_conf("TAKTUK_CMD");
                 my $cpuset_data_hash = {
                     name => $cpuset_name,
                     nodes => $cpuset_nodes
@@ -4709,6 +4708,7 @@ sub job_finishing_sequence($$$$$$$$){
                         }
                     }
                     if ($#bad >= 0){
+                        undef($state_to_switch);
                         oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
                         iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
                         oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");

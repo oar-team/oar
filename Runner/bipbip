@@ -124,7 +124,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         nodes => $cpuset_nodes
     };
     if (defined($cpuset_nodes)){
-        my $taktuk_cmd = get_conf("CPUSET_TAKTUK_CMD");
+        my $taktuk_cmd = get_conf("TAKTUK_CMD");
         my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
             my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$Job_id] Bad cpuset file : $Cpuset_file\n";
