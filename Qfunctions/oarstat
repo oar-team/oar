@@ -92,9 +92,9 @@ if (!defined($gantt_query)){
             push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
         }else{
             push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
+            push(@jobs, iolib::get_jobs_in_state($base, "Running"));
             push(@jobs, iolib::get_jobs_in_state($base, "Resuming"));
             push(@jobs, iolib::get_jobs_in_state($base, "Suspended"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Running"));
             push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
             push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
             push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
@@ -156,6 +156,7 @@ sub print_job($$){
     my @date_tmp;
     my @job_events;
     my %data_to_display;
+    my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
 
     my $resources_string = "";
     if (defined($full_view) or defined($Old)){
@@ -195,7 +196,10 @@ sub print_job($$){
             @nodes = iolib::get_job_resources($dbh,$job_info->{assigned_moldable_job});
             $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
         }
-    
+        
+        #Get job types
+        
+
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             name => $job_info->{job_name},
@@ -217,7 +221,8 @@ sub print_job($$){
             resubmit_job_id => $job_info->{resubmit_job_id},
             events => \@job_events,
             wanted_resources => $resources_string,
-            project => $job_info->{project}
+            project => $job_info->{project},
+            types => \@job_types
         );
     }else{
         %data_to_display = (
@@ -235,7 +240,8 @@ sub print_job($$){
             startTime => $job_info->{start_time},
             message => $job_info->{message},
             resubmit_job_id => $job_info->{resubmit_job_id},
-            project => $job_info->{project}
+            project => $job_info->{project},
+            types => \@job_types
         );
     }
  
@@ -313,6 +319,7 @@ sub print_job($$){
             print("    owner = $job_info->{job_user}\n");
             print("    state = $job_info->{state}\n");
             print("    wanted_resources = $resources_string\n");
+            print("    types = ".join(" ",@job_types)."\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
             print("    queue = $job_info->{queue_name}\n");
             $job_info->{command} = '' if (!defined($job_info->{command}));

@@ -1937,6 +1937,28 @@ sub get_current_job_types($$){
 }
 
 
+# get_job_types
+# return the list of types for the given job ID
+sub get_job_types($$){
+    my $dbh = shift;
+    my $jobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT type
+                                FROM job_types
+                                WHERE
+                                    job_id = $jobId
+                            ");
+    $sth->execute();
+    my @res;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res,$ref->{type});
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
 # get_current_job_dependencies
 # return an array table with all dependencies for the given job ID
 sub get_current_job_dependencies($$){

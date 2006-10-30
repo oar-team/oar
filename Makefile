@@ -172,12 +172,12 @@ draw-gantt:
 	install -d -m 0755 $(WWWDIR)
 	install -m 0755 DrawGantt/drawgantt.cgi $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	@if [ -e $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0644 DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
+	@if [ -e $(CGIDIR)/drawgantt.conf ]; then echo "Warning: $(CGIDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0600 DrawGantt/drawgantt.conf $(CGIDIR) ; fi
 #	install -m 0644 ConfLib/oar_conflib.pm $(CGIDIR)
-	install -d -m 0755 $(WWWDIR)/DrawGantt/Icons
-	install -d -m 0755 $(WWWDIR)/DrawGantt/js
-	install -m 0644 DrawGantt/Icons/*.png $(WWWDIR)/DrawGantt/Icons
-	install -m 0644 DrawGantt/js/*.js $(WWWDIR)/DrawGantt/js
+	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
+	install -d -m 0755 $(WWWDIR)/drawgantt/js
+	install -m 0644 DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
+	install -m 0644 DrawGantt/js/*.js $(WWWDIR)/drawgantt/js
 
 debian-packages:
 	dpkg-buildpackage -rfakeroot $(DPKGOPTS)

@@ -270,7 +270,7 @@ CREATE INDEX resource_type ON resources (type);
 -- Specify the default value for queue parameter
 INSERT INTO admission_rules (rule) VALUES ('if (not defined($queue_name)) {$queue_name="default";}');
 -- Avoid users except oar to go in the admin queue
-INSERT INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n");}');
+INSERT INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {die("[ADMISSION RULE] Only the user oar can submit jobs in the admin queue\\n");}');
 
 -- Force besteffort jobs to go on nodes with the besteffort property
 INSERT INTO admission_rules (rule) VALUES ('

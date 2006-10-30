@@ -1,3 +1,9 @@
+oar (2.0.0-beta6) unstable; urgency=low
+
+  * debug drawgantt packaging
+
+ -- Capit Nicolas <capitn@localdomain>  Mon, 30 Oct 2006 19:13:42 +0100
+
 oar (2.0.0-beta5) unstable; urgency=low
 
   * add cpuset banch management

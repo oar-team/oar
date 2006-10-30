@@ -292,7 +292,7 @@ PRIMARY KEY (job_id,job_id_required)
 # Specify the default value for queue parameter
 INSERT IGNORE INTO admission_rules (rule) VALUES ('if (not defined($queue_name)) {$queue_name="default";}');
 # Avoid users except oar to go in the admin queue
-INSERT IGNORE INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n");}');
+INSERT IGNORE INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {die("[ADMISSION RULE] Only the user oar can submit jobs in the admin queue\\n");}');
 # Force besteffort jobs to go on nodes with the besteffort property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if (grep(/^besteffort$/, @{$type_list})){

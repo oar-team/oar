@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
-#				rm -rf /var/www/DrawGantt/cache || true
+#				rm -rf /var/www/drawgantt/cache || true
         ;;
     failed-upgrade)
         ;;
