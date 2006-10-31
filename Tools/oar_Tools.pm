@@ -575,7 +575,7 @@ sub sentinelle($$$$$){
 sub check_resource_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type|suspended_jobs)$/){
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type|suspended_jobs|cpu)$/){
         return(1);
     }else{
         return(0);
@@ -608,8 +608,6 @@ sub manage_remote_commands($$$$$$$){
     my $base = shift;
     
     my @bad;
-    #$manage_file = $Default_cpuset_file_manager if (!defined($manage_file));;
-    #$manage_file = "$ENV{OARDIR}/$manage_file" if ($manage_file !~ /^\//);
     $ssh_cmd = $Default_openssh_cmd if (!defined($ssh_cmd));
     # Prepare commands to run on each node
     my $string_to_transfer;
@@ -632,7 +630,6 @@ sub manage_remote_commands($$$$$$$){
         my @node_commands;
         my @node_corresponding;
         foreach my $n (@{$connect_hosts}){
-            #my $tmp = oar_Tools::get_cpuset_script($cpuset_nodes_array->{$n}, $Cpuset_name);
             my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n perl - $action";
             push(@node_commands, $cmd);
             push(@node_corresponding, $n);
@@ -650,7 +647,7 @@ sub manage_remote_commands($$$$$$$){
             $m_option .= " -m $n";
         }
        
-        my $cmd = "$taktuk_cmd -c $ssh_cmd ".'-o status=\'STATUS $host $line\n\''."$m_option 'broadcast exec perl - $action' 'broadcast file_input -'";
+        my $cmd = "$taktuk_cmd -c $ssh_cmd ".'-o status=\'"STATUS $host $line\n"\''."$m_option broadcast exec '[perl - $action]', broadcast file_input '[-]'";
         #print("$cmd\n");
         my $pid = open2(\*READ, \*WRITE, $cmd);
         eval{

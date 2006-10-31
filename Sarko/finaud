@@ -20,15 +20,19 @@ for my $r (iolib::get_current_assigned_resources($base)){
 }
 
 my @Resource_list;
-push(@Resource_list, iolib::get_default_type_resources_in_state($base,"Alive"));
-push(@Resource_list, iolib::get_default_type_resources_in_state($base,"Suspected"));
+my @resource_list_tmp;
+push(@resource_list_tmp, iolib::get_default_type_resources_in_state($base,"Alive"));
+push(@resource_list_tmp, iolib::get_default_type_resources_in_state($base,"Suspected"));
 
 my %Node_list;
-
-foreach my $i (@Resource_list){
+foreach my $i (@resource_list_tmp){
     #Do not check occupied resources
     if ((!vec($Occupied_resources_vector, $i->{resource_id}, 1)) and ($i ne "")){
-        push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
+        # Do not check Suspected resources not changed be me (finaud)
+        if (($i->{state} ne "Suspected") or ($i->{finaud_decision} eq "YES")){
+            push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
+            push(@Resource_list,$i);
+        }
     }
 }
 
@@ -49,8 +53,7 @@ foreach my $i (@Resource_list){
         iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
         $return_value = 1;
         oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Suspected\n");
-    }elsif (!defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq
-    "Suspected")){
+    }elsif (!defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq "Suspected")){
         iolib::set_resource_nextState($base,$i->{resource_id},"Alive");
         iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
         $return_value = 1;

@@ -160,29 +160,21 @@ CPUSET installation
 Visualization tools installation
 --------------------------------
 
-**THIS SECTION IS OUTDATED**
-
 There are two different tools. One, named Monika, displays the current cluster state
-with all active and waiting jobs. The other, named DrawOARGantt, diplays node occupation
+with all active and waiting jobs. The other, named drawgantt, diplays node occupation
 in a lapse of time.
 These tools are CGI scripts and generate HTML pages.
 
 You can install these in this way:
-    DrawOARGantt:
+    drawgantt:
     
-        - Make sure you installed "perl-GD" and "perl-GD-Text-Util" packages.
-        - Copy "DrawOARGantt.pl" and "DrawGantt.conf" in the CGI folder of your web server
+        - Make sure you installed "ruby", "libdbd-mysql-ruby" or "libdbd-pg-ruby" and "libgd-ruby1.8" packages.
+        - Copy "drawgantt.cgi" and "drawgantt.conf" in the CGI folder of your web server
           (ex: /usr/lib/cgi-bin/ for Debian).
         - Copy all icons and javascript files in a folder that web server can find them
           (ex: /var/www/oar/Icons and /var/www/oar/Icons).
-        - Make sure that these files can be read by web server user.
-        - Edit "DrawGantt.conf" and change tags:
-        
-            * "oarstatCmd" --> path of oarstat command (ex: oarstat).
-            * "path_cache_directory" --> directory where images will be stored (ex: /var/www/oar/tmp/).
-            * "web_cache_directory" --> this path corresponds of "path_cache_directory" in the web server repository (ex: /oar/tmp/).
-            * "web_icons_directory" --> web server path where CGI can find icon files (ex: /oar/Icons/).
-            * "web_path_js_directory" --> web server path where CGI can find the javascript file (ex: /oar/js/).
+        - Make sure that these files can be read by the web server user.
+        - Edit "drawgantt.conf" and change tags to fit your configuration.
 
     Monika:
     
