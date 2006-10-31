@@ -36,6 +36,56 @@
 
 OAR capabilities
 ================
+Oar is an opensource batch scheduler which provides a simple and flexible
+exploitation of a cluster.
+
+It manages resources of clusters as a traditional batch scheduler
+(as PBS / Torque / LSF / SGE).
+ 
+Its design is based on high level tools: 
+  - relational database engine MySQL,
+  - scripting language Perl,  
+  - confinement system mechanism cpuset,
+  - scalable exploiting tool Taktuk.
+
+It is flexible enough to be suitable for production clusters and research
+experiments.
+It currently manages over than 5000 nodes and has executed more than 5 million
+jobs.
+
+OAR advantages:
+  - No specific daemon on nodes.
+  - Upgrades are made on the servers, nothing to do on computing nodes.
+  - CPUSET (2.6 linux kernel) integration which restricts the jobs on
+    assigned resources (also useful to clean completely a job, even
+    parallel jobs).
+  - All administration tasks are performed with the taktuk command (a large
+    scale remote execution deployment): http://taktuk.gforge.inria.fr/.
+  - Hierarchical resource requests (handle heterogeneous clusters).
+  - Gantt scheduling (so you can visualize the internal scheduler decisions).
+  - Full or partial time-sharing.
+  - Checkpoint/resubmit.
+  - Licences servers management support.
+  - Best effort jobs : if another job wants the same resources then it is
+    deleted automatically (useful to execute programs like *SETI@home*).
+  - Environment deployment support (Kadeploy):
+    http://kadeploy.imag.fr/.
+
+Other more *common* features:
+  - Batch and Interactive jobs.
+  - Admission rules.
+  - Walltime.
+  - Multi-schedulers support.
+  - Multi-queues with priority.
+  - Backfilling.
+  - First-Fit Scheduler.
+  - Reservation.
+  - Support of moldable tasks.
+  - Check compute nodes.
+  - Epilogue/Prologue scripts.
+  - Support of dynamic nodes.
+  - Logging/Accounting.
+  - Suspend/resume jobs.
 
 .. include:: ../../INSTALL
 
@@ -1157,6 +1207,10 @@ Each configuration tag found in /etc/oar.conf is now described:
       
       DEPLOY_HOSTNAME = 127.0.0.1
 
+  - Specify where we are connected with a job of the cosystem type::
+
+      COSYSTEM_HOSTNAME = 127.0.0.1
+
 .. _DETACH_JOB_FROM_SERVER:
 
   - Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh
@@ -1221,7 +1275,7 @@ Each configuration tag found in /etc/oar.conf is now described:
 
   - OAR informations may be notified by email to the administror.
     Set accordingly to your configuration the next lines to activate
-    the feature::
+    this feature::
       
       MAIL_SMTP_SERVER = smtp.serveur.com
       MAIL_RECIPIENT = user@domain.com
@@ -1291,7 +1345,30 @@ Each configuration tag found in /etc/oar.conf is now described:
   - You can add an order preference on resource assigned by the system(SQL
     ORDER syntax)::
 
-      SCHEDULER_RESOURCE_ORDER = switch ASC, node DESC, resource_id ASC
+      SCHEDULER_RESOURCE_ORDER = switch ASC, network_address DESC, resource_id ASC
+
+  - This says to the scheduler to treate resources of these types, where there is
+    a suspended job, like free ones. So some other jobs can be scheduled on these
+    resources. (list resource types separate with spaces; Default value is
+    nothing so no other job can be scheduled on suspended job resources)::
+    
+      SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE = default licence vlan
+
+  - Name of the perl script that manages suspend/resume. You have to install your
+    script in $OARDIR and give only the name of the file without the entire path.
+    (default is suspend_resume_manager.pl)::
+
+      SUSPEND_RESUME_FILE = suspend_resume_manager.pl
+
+  - Files to execute just after a job was suspended and just before a job was
+    resumed::
+    
+      JUST_AFTER_SUSPEND_EXEC_FILE = /path/to/prog
+      JUST_BEFORE_RESUME_EXEC_FILE = /path/to/prog
+
+  - Timeout for the two previous scripts::
+ 
+      SUSPEND_RESUME_SCRIPT_TIMEOUT = 60
 
 .. _CPUSET_RESOURCE_PROPERTY_DB_FIELD:
 
@@ -1505,7 +1582,7 @@ OAR system steps:
 
  1. Before each job, the Runner_ initialize the CPUSET (see `CPUSET
     definition`_) with OPENSSH_CMD_ and an efficient launching tool :
-    `Taktuk <https://gforge.inria.fr/projects/taktuk/>`_. If it is not
+    `Taktuk <http://taktuk.gforge.inria.fr/>`_. If it is not
     installed and configured (TAKTUK_CMD_) then OAR uses an internal
     launching tool less optimized.
 
