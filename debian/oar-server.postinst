@@ -76,7 +76,7 @@ setup_conf() {
 }
 
 setup_db() {
-	if [ ! -x /usr/sbin/oar_db_init ]; then
+	if [ ! -x /usr/sbin/oar_mysql_db_init ]; then
 		echo "Error: cannot execute OAR database initialization script"
 		exit 1
 	fi
@@ -86,7 +86,7 @@ setup_db() {
 		DB_ADMIN_LOGIN=$RET
 		db_get oar/db/adminpasswd
 		DB_ADMIN_PASSWD=$RET
-		/usr/sbin/oar_db_init <<EOF || DB_INIT_FAILED="true"
+		/usr/sbin/oar_mysql_db_init <<EOF || DB_INIT_FAILED="true"
 $DB_ADMIN_LOGIN
 $DB_ADMIN_PASSWD
 EOF

@@ -44,7 +44,7 @@ Type: note
 Description: Failed to initialize OAR database
  OAR database initialization failed.
  You may try to initialize it by hand once packages installation is finished.
- Use oar_db_init script located in /usr/sbin directory to achieve that.
+ Use oar_mysql_db_init script located in /usr/sbin directory to achieve that.
 
 Template: oar/db/mysqlskipnetworking
 Type: note

@@ -7,29 +7,37 @@ Standards-Version: 3.6.0
 
 Package: oar-common
 Architecture: all
-Depends: ${perl:Depends}, sudo, adduser, libdbi-perl, libdbd-mysql-perl
+Depends: perl, sudo, adduser, adduser
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  This package installs the common part or the OAR batch scheduler
 
+
+Package: oar-libs
+Architecture: all
+Depends: oar-common, perl, sudo, adduser, libdbi-perl, libdbd-mysql-perl, adduser
+Suggests: oar-server, oar-user, oar-node, oar-doc
+Description: OAR batch scheduler libs package
+ This package installs the common part or the OAR batch scheduler
+
 Package: oar-server
 Architecture: all
-Depends: oar-common (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, ssh | ssh-client
-Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, rsh-client, rsh-server, taktuk2
+Depends: oar-libs (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, openssh-client
+Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server
 Description: OAR batch scheduler server package
  This package installs the server part or the OAR batch scheduler
 
-#Package: oar-node
-#Architecture: all
-#Depends: oar-common (= ${Source-Version}), ${perl:Depends}
-#Suggests: oar-doc, rsh-client, rsh-server, ssh, taktuk
-#Description: OAR batch scheduler node package
-# This package installs the execution node part or the OAR batch scheduler
+Package: oar-node
+Architecture: all
+Depends: oar-common, perl, openssh-client, openssh-server, adduser
+Suggests: oar-doc
+Description: OAR batch scheduler node package
+ This package installs the execution node part or the OAR batch scheduler
 
 Package: oar-user
 Architecture: all
-Depends: oar-common (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, adduser
-Suggests: oar-doc, rsh-client, rsh-server, ssh, taktuk
+Depends: oar-libs (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}
+Suggests: oar-doc, openssh-client
 Description: OAR batch scheduler user package
  This package install the submition and query part or the OAR batch scheduler
 
@@ -49,7 +57,7 @@ Description: OAR desktop computing agent
 
 Package: oar-desktop-computing-cgi
 Architecture: all
-Depends: oar-common (= ${Source-Version}), ${perl:Depends}, apache | httpd-cgi, libcgi-perl, adduser
+Depends: oar-libs (= ${Source-Version}), ${perl:Depends}, apache | httpd-cgi, libcgi-perl, adduser
 Suggests: oar-doc
 Description: OAR desktop computing HTTP proxy CGI
  This package install the OAR batch scheduler desktop computing HTTP proxy CGI
