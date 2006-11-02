@@ -1360,6 +1360,9 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       SUSPEND_RESUME_FILE = suspend_resume_manager.pl
 
+.. _JUST_AFTER_SUSPEND_EXEC_FILE:
+.. _JUST_BEFORE_RESUME_EXEC_FILE:
+
   - Files to execute just after a job was suspended and just before a job was
     resumed::
     
@@ -1609,6 +1612,25 @@ editing 3 files (see also `CPUSET installation`_):
    name. So if there is one it assigns the current process and its father to
    this cpusetname. So all further user processes will remind in the cpuset.
    In this file you just have to change the "add_process_to_cpuset" function.
+
+Suspend/resume
+--------------
+
+Jobs can be suspended with the command oarhold_ (send a "SIGSTOP" on every
+processes on every nodes) to allow other jobs to be executed.
+
+"Suspended" jobs can be resumed with the command oarresume_ (send a "SIGSTOP"
+on every suspended processes on every nodes). They will
+pass into "Running" when assigned resources will be free.
+
+IMPORTANT: This feature is available only if CPUSET_ is configured.
+
+You can specify 2 scripts if you have to perform any actions just after
+(JUST_AFTER_SUSPEND_EXEC_FILE_) suspend and just before resume
+(JUST_BEFORE_RESUME_EXEC_FILE_).
+
+Moreover you can perform other actions (than send signals to processes)
+if you want: just edit the "suspend_resume_manager.pl" file.
 
 Job deletion
 ------------

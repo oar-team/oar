@@ -1,8 +1,7 @@
 These are choices implemented for the compatibility between MySQL and PostrgreSQL:
 ==================================================================================
 
-* All field and table names must be lowercase
-* MySQL AUTO_INCREMENT is replaced by PostgreSQL constraint sequence field (all
-  inserts with such field are locked because we do not know if this action is
-* atomic in PostgresSQL).  PostgreSQL does not implement UPDATE method on
-  several tables (so we musti make specific queries for each databases).
+* All field and table names must be lowercase.
+* MySQL AUTO_INCREMENT is replaced by PostgreSQL constraint sequence field.
+* PostgreSQL does not implement UPDATE method on
+  several tables (so we must make specific queries for each databases).
