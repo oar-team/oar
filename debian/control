@@ -19,12 +19,12 @@ Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, r
 Description: OAR batch scheduler server package
  This package installs the server part or the OAR batch scheduler
 
-Package: oar-node
-Architecture: all
-Depends: oar-common (= ${Source-Version}), ${perl:Depends}
-Suggests: oar-doc, rsh-client, rsh-server, ssh, taktuk
-Description: OAR batch scheduler node package
- This package installs the execution node part or the OAR batch scheduler
+#Package: oar-node
+#Architecture: all
+#Depends: oar-common (= ${Source-Version}), ${perl:Depends}
+#Suggests: oar-doc, rsh-client, rsh-server, ssh, taktuk
+#Description: OAR batch scheduler node package
+# This package installs the execution node part or the OAR batch scheduler
 
 Package: oar-user
 Architecture: all

@@ -1,3 +1,9 @@
+oar (2.0.0-beta7) unstable; urgency=low
+
+  * 
+
+ -- Capit Nicolas <capitn@localdomain>  Tue, 31 Oct 2006 16:38:36 +0100
+
 oar (2.0.0-beta6) unstable; urgency=low
 
   * debug drawgantt packaging
