@@ -59,19 +59,19 @@ dbinit:
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
 
+sudowrapper:
+	install -d -m 0755 $(OARDIR)
+	install -d -m 0755 $(BINDIR)
+	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
+	
 common:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
-#	install -o $(OARUSER) -g $(OARGROUP) -m 700 Leon/oarkill $(OARDIR)
-#	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarkill
-#	install -m 0755 Runner/bipbip $(OARDIR)
-#	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodesetting
 	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
@@ -98,7 +98,6 @@ server:
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnotify
 	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
-#	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarremoveresource
 	install -m 0755 Qfunctions/oaraccounting $(OARDIR)
@@ -128,8 +127,6 @@ user:
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarhold
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarresume
-#	install -m 0755 DesktopComputing/oarfetch.sh $(OARDIR)/oarfetch
-#	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarfetch
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 Docs/man/oardel.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarnodes.1 $(MANDIR)/man1
@@ -141,9 +138,9 @@ user:
 node:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
-#	install -m 0755 Runner/oarexec $(OARDIR)
-#	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarexec
-#	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Runner/oarexecuser.sh $(OARDIR)
+	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
+	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsh
+	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARHOMEDIR)
@@ -185,18 +182,18 @@ debian-packages:
 rpm-packages:
 	rpm/rpmbuilder.sh
 
-server-install: sanity-check configuration common server dbinit
+server-install: sanity-check configuration sudowrapper common server dbinit
 
-user-install: sanity-check configuration common user
+user-install: sanity-check configuration sudowrapper common user
 
-node-install: sanity-check configuration common node
+node-install: sanity-check configuration sudowrapper node
 
-cpuset-install: sanity-check configuration common cpuset
+cpuset-install: sanity-check configuration sudowrapper common cpuset
 
 doc-install: doc
 
-draw-gantt-install: user-install draw-gantt
+draw-gantt-install: draw-gantt
 
-desktop-computing-cgi-install: sanity-check configuration common desktop-computing-cgi
+desktop-computing-cgi-install: sanity-check configuration sudowrapper common desktop-computing-cgi
 
 desktop-computing-agent-install: desktop-computing-agent

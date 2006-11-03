@@ -65,6 +65,19 @@ install-indep:
 	$(MAKE) doc-install \
 		PREFIX=$(CURDIR)/debian/oar-doc/usr \
 		DOCDIR=$(CURDIR)/debian/oar-doc/usr/share/doc/oar-doc
+	mkdir -p $(CURDIR)/debian/oar-common/var/lib/oar
+	$(MAKE) sanity-check sudowrapper configuration \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-common/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-common/etc \
+		PREFIX=$(CURDIR)/debian/oar-common/usr \
+		MANDIR=$(CURDIR)/debian/oar-common/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-common/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-common/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		SBINLINKPATH=../lib/oar
+	perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/sudowrapper.sh
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
 	$(MAKE) sanity-check common configuration \
 		OARUSER=oar \
@@ -77,7 +90,6 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-libs/usr/sbin \
 		BINLINKPATH=../lib/oar \
 		SBINLINKPATH=../lib/oar
-	perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-libs/usr/lib/oar/sudowrapper.sh
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
 		OARUSER=oar \

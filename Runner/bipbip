@@ -190,8 +190,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         }
         #iolib::set_job_state($base,$Job_id,"Error");
         iolib::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id : @bad",\@bad);
-        oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         iolib::unlock_table($base);
+        oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         if ($exit_bipbip == 1){
             iolib::disconnect($base);
             exit(2);

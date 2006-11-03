@@ -82,7 +82,7 @@ The following steps have to be done, prior to installing OAR:
             
             Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
             /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
-            /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume
+            /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume, /usr/lib/oar/oarsh
             %oar ALL=(oar) NOPASSWD: OARCMD
             
             oar ALL=(ALL) NOPASSWD:ALL
