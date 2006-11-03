@@ -4623,6 +4623,8 @@ sub job_finishing_sequence($$$$$$$$){
                 $pid = fork();
                 if ($pid == 0){
                     exec($cmd);
+                    warn("[ERROR] Cannot find $cmd\n");
+                    exit(-1);
                 }
                 my $wait_res = 0;
                 # Avaoid to be disrupted by a signal

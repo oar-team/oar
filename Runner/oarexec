@@ -400,6 +400,8 @@ if ($Job->{mode} eq "PASSIVE"){
         open(STDIN, "<& pipe_stdin_read");
 
         exec(@cmd);
+        warn("[ERROR] Cannot find @cmd\n");
+        exit(-1);
     }
     close(pipe_script_write);
     close(pipe_stdin_read);

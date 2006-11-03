@@ -220,6 +220,8 @@ sub signal_oarexec($$$$$$){
             $ssh_pid = fork();
             if ($ssh_pid == 0){
                 exec($cmd);
+                warn("[ERROR] Cannot find $cmd\n");
+                exit(-1);
             }
             my $wait_res = 0;
             # Avaoid to be disrupted by a signal
@@ -307,6 +309,8 @@ sub fork_no_wait($$){
             $SIG{INT}  = 'IGNORE';
             $SIG{TERM} = 'IGNORE';
             exec($cmd);
+            warn("[ERROR] Cannot find $cmd\n");
+            exit(-1);
         }
     }
     return($pid);
@@ -399,6 +403,9 @@ if($pid == 0){
     close(OLDSTDERR);
     close(OLDSTDOUT);
     exec(@{$cmd_exec});
+    # if exec do not find the command
+    warn("[OAR] Cannot find @{$cmd_exec}\n");
+    exit(-1);
 }
 waitpid($pid,0);
 
@@ -524,6 +531,8 @@ sub sentinelle($$$$$){
                         }
                     }else{
                         exec($nodes->[$index]);
+                        warn("[ERROR] Cannot find $nodes->[$index]\n");
+                        exit(-1);
                     }
                 }
             }else{

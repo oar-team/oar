@@ -97,6 +97,8 @@ while (1){
         }elsif ($cmd_pid == 0){
             #CHILD
             exec($cmd);
+            warn("[ERROR] Cannot find $cmd\n");
+            exit(-1);
         }else{
             # Wait the end of the user command or the timeout
             my $initial_time = time;
