@@ -12,7 +12,15 @@
 # libgd-ruby1.8
 # libyaml-ruby
 # 
-
+#
+# TODO:
+# 	- better sorting labels
+# 	- multiple type resource support
+# 	- display state node information for status different of alive
+# 	- cache ?
+# 	- resource aggregation
+# 	- sparkline chart for workload information ?
+#	
 
 require 'dbi'
 require 'cgi'
@@ -30,7 +38,10 @@ RANGE_SEC = {'1/6 day'=>14400,'1/2 day'=>43200,'1 day'=>86400,'3 days'=>259200,
 RANGE_STEP = {'1/6 day'=>3600,'1/2 day'=>10800,'1 day'=>43200,'3 days'=>86400,
 		'week'=>345600,'month'=>604800}
 
-$verbose = false 
+$verbose = false
+
+$val = "" # variable for debug purpose
+ 
 configfile = 'drawgantt.conf'
 
 puts "### Reading configuration file..." if $verbose
@@ -220,6 +231,7 @@ def get_history(dbh,date_start,date_stop)
 
 	#print Down or Suspected resources
 	dead_resources = get_resource_dead_range_date(dbh,date_start,date_stop)
+	#p dead_resources
 	return resources,jobs,dead_resources
 end
 
@@ -234,6 +246,7 @@ $tics_node = $conf['tics_node']
 $points_per_cpu = $conf['points_per_cpu']
 $xratio = $conf['xratio']
 $nb_cont_res = $conf['nb_cont_res']
+$resource_properties_field = $conf['resource_properties_field'].clone.split(',')
 
 def draw_string(img,x,y,label)
 	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
@@ -372,8 +385,8 @@ def build_image(origin, year, month, wday, day, hour, range)
 	network_label={}
 	#extract desired label
 	resources.each do |res_id,res_desc|
-		res_desc[1]=~/([^.]+)/
-		label = $1
+
+		label = res_desc[$resource_properties_field.first.to_i]
 #		puts label
 		if network_label[label] == nil  
 			network_label[label] = [res_id]
@@ -382,16 +395,15 @@ def build_image(origin, year, month, wday, day, hour, range)
 		end
 	end
 	
-	#puts "network_label"
-	#p network_label
-
-	# sort extrated labels
+	# sort extracted labels
+	
+	# need better sort
 	sorted_label =  network_label.keys.sort
 
   #puts "sorted_label"
 	#p sorted_label
 
-	# sort by cpu
+	# sort by group of resource 
 	sorted_resources = []
 	sorted_label.each do |label|
 		sorted_resources = sorted_resources + network_label[label].sort {|a,b| a.to_i <=> b.to_i}
@@ -401,12 +413,13 @@ def build_image(origin, year, month, wday, day, hour, range)
 	#p sorted_resources
 
 	resource_labels = []
-	sorted_resources.each do|i|
-		resources[i][1] =~ /#{$conf['regexdisplay_first']}/
+	sorted_resources.each do |i|
+		resources[i][$resource_properties_field.first.to_i] =~ /#{$conf['regexdisplay_first']}/
 		first_label = $1
-		resource_labels << "#{first_label}_#{resources[i][8]}"
+		second_label = resources[i][$resource_properties_field.last.to_i]
+		resource_labels << "#{first_label}_#{second_label}"
 	end
-#	p resource_labels
+	#p resource_labels
 
 	deltay = ($sizey-(2*$offsetgridy))/sorted_resources.length.to_f 
 	
@@ -454,8 +467,10 @@ def build_image(origin, year, month, wday, day, hour, range)
 		#display job_id
 		if (ares_index.length > $nb_cont_res && (stop_x - start_x)  > $sizex / $xratio)
 			sorted_index = ares_index.sort
-			i_low = 0
-			i_high = 0
+
+			i_low =  sorted_index.first
+			i_high =  sorted_index.first
+
 			sorted_index.each do |r|
 				if (r > i_high + 1 )
 					if (i_high -i_low) > $nb_cont_res
@@ -469,8 +484,8 @@ def build_image(origin, year, month, wday, day, hour, range)
 				end
 			end
 
-			if (i_high -i_low) > $nb_cont_res
-				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low)/2,job_id.to_s)	
+			if (i_high -i_low) >= $nb_cont_res
+				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low)/2.0,job_id.to_s)	
 				map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
 			end
 		end 
@@ -487,7 +502,7 @@ def build_image(origin, year, month, wday, day, hour, range)
 			end
 
 			stop_x = (stop_time.to_i - origin) * scale;
-	 		if (stop_x > ($sizex - 2 * $offsetgridx - 1))
+	 		if ( (stop_x > ($sizex - 2 * $offsetgridx - 1)) || (stop_x < 0) )
 				stop_x = $sizex - (2*$offsetgridx) - 1
     	end
 
@@ -617,6 +632,7 @@ def cgi_html
 		cgi.html {
 			cgi.head { "\n"+cgi.title{$conf['title']} } +
 			cgi.body { "\n"+
+#				"##### #{$val} #####" +
 				cgi.form("get"){
 #					"**#{cgi.params}**\n" +
 					cgi.h2 { $title } + "\n"+
@@ -641,7 +657,6 @@ def cgi_html
 					CGI.escapeElement(map) + "\n" +
 					CGI.escapeElement('<div style="text-align: center">') +
 #					cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
-
 					
 					cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png",
 									"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
