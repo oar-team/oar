@@ -110,6 +110,11 @@ if (defined($Oarexec_reattach_exit_value)){
 # ELSE we must launch oarexec on the first node
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
+if ($job->{job_type} eq "INTERACTIVE"){
+    my ($addr,$port) = split(/:/,$job->{info_type});
+    oar_Tools::notify_tcp_socket($addr,$port,"Starting...");
+}
+
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;

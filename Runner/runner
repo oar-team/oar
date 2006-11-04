@@ -93,7 +93,6 @@ foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
     }
     
     iolib::set_job_state($base,$jobid,"Launching");
-    my $types = iolib::get_current_job_types($base,$jobid);
     oar_debug("[Runner] Launching job : $batch $jobid\n");
     oar_Tools::fork_no_wait("$batch $jobid",$base);
 }
