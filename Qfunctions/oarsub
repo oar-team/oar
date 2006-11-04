@@ -83,7 +83,8 @@ my $DUMPER_mode;
 
 
 #to catch ^C signal
-$SIG{'INT'} = 'qdel';
+$SIG{INT} = 'qdel';
+$SIG{HUP} = 'qdel';
 
 # to address ^C in interactive submission
 sub qdel($) {
@@ -433,6 +434,8 @@ if (defined $stagein) {
 
 # Connect to a reservation
 if (defined($connect_job)){
+    # Do not kill the job if the user close the window
+    $SIG{HUP} = 'DEFAULT';
     exit(connect_job($connect_job,0,$Openssh_cmd));
 }
 # End connection to a reservation
