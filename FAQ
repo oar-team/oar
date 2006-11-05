@@ -43,7 +43,7 @@ Example:
         oarsub -r "2006-09-12 8:00:00" -l /switch=1 -t 'timesharing=user,*'
 
      This command asks all resources from one switch at the given date for the
-     default walltime. It alsa specifies that this job can be shared with
+     default walltime. It also specifies that this job can be shared with
      himself and without a constraint on the job name.
 
   2. Once your reservation has begun then you can launch:
@@ -86,6 +86,37 @@ Example:
 Administrator
 -------------
 
+How to manage start/stop of the nodes?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You have to add a script in /etc/init.d which switches resources of the node
+into the "Alive" or "Absent" state.
+So when this script is called at boot time, it will change the state into
+"Alive". And when it is called at halt time, it will change into "Absent".
+
+There two ways to perform this action:
+
+ 1. Install OAR "oar-libs" part on all nodes. Thus you will be able to launch
+    the command oarnodesetting_ (be careful to right configure "oar.conf" with
+    database login and password AND to allow network connections on this
+    database).
+    So you can execute::
+
+        oarnodesetting -s Alive -h node_hostname
+            or
+        oarnodesetting -s Absent -h node_hostname
+
+ 2. You do not want to install anything else on each node. So you have to
+    enable oar user to connect to the server via ssh (for security you
+    can use another SSH key with restrictions on the command that oar can
+    launch with this one). Thus you will have in you init script
+    something like::
+
+        sudo -u oar ssh oar-server "oarnodesetting -s Alive -h node_hostname"
+            or
+        sudo -u oar ssh oar-server "oarnodesetting -s Absent -h node_hostname"
+
+    In this case, further OAR software upgrade will be more painless.
+
 How can I manage scheduling queues?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 see oarnotify_.
@@ -116,9 +147,23 @@ whatever you want that are other notions):
     specifications. 
     ::
 
-        ADD ADMISSION RULE HERE
+        INSERT INTO admission_rules (rule) VALUES ('
+        foreach my $mold (@{$ref_resource_list}){
+            foreach my $r (@{$mold->[0]}){
+                my $prop = $r->{property};
+                if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
+                    if (!defined($prop)){
+                        $r->{property} = "type = \\\'default\\\'";
+                    }else{
+                        $r->{property} = "($r->{property}) AND type = \\\'default\\\'";
+                    }
+                }
+            }
+        }
+        print("[ADMISSION RULE] Modify resource description with type constraints\\n");
+        ');
 
-After this configuration, users can perform submitions like
+After this configuration, users can perform submissions like
 ::
 
     oarsub -I -l "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
@@ -139,7 +184,7 @@ Does OAR handle summer and winter hours?
 No.
 
 If you change the server time when OAR is executing jobs then their stop date
-will be wrong. So users haveto be warned about this feature and database logs
+will be wrong. So users have to be warned about this feature and database logs
 are not exact for these jobs.
 
 What is the syntax of this documentation?

@@ -78,7 +78,6 @@ common:
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
-	install -m 0755 Tools/detect_new_resources.sh $(OARDIR)
 
 server:
 	install -d -m 0755 $(OARDIR)
@@ -141,6 +140,7 @@ node:
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsh
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
+	install -m 0755 Tools/detect_new_resources.sh $(OARDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARHOMEDIR)
