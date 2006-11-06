@@ -14,6 +14,7 @@
 # 
 #
 # TODO:
+# 	- handle multiple queries at the same time!!
 # 	- better sorting labels
 # 	- multiple type resource support
 # 	- display state node information for status different of alive
@@ -434,19 +435,19 @@ def build_image(origin, year, month, wday, day, hour, range)
 
 	draw_grid(img,resource_labels,origin,origin_label,range)
 
-	scale = ($sizex - 2 * $offsetgridx)  / (RANGE_SEC[range].to_f) ;
+	scale = ($sizex - 2 * $offsetgridx).to_f  / (RANGE_SEC[range].to_f) ;
 
 
 	yop = ""
 
 	jobs.each do |job_id,j|
 
- 		start_x = (j['start_time'].to_i  - origin) * scale;
+ 		start_x = ((j['start_time'].to_i  - origin).to_f * scale.to_f).to_i;
     if (start_x < 1) 
 			start_x = 1
 		end
 
-		stop_x = (j['stop_time'].to_i  - origin) * scale;
+		stop_x = ((j['stop_time'].to_i  - origin).to_f * scale.to_f).to_i;
 	 	if (stop_x > ($sizex - 2 * $offsetgridx - 1))
 			stop_x = $sizex - (2*$offsetgridx) - 1
     end
@@ -496,12 +497,12 @@ def build_image(origin, year, month, wday, day, hour, range)
 
 			start_time,stop_time,value = a
 
-			start_x = (start_time.to_i - origin) * scale;
+			start_x = ((start_time.to_i - origin).to_f * scale.to_f).to_i;
     	if (start_x < 1) 
 				start_x = 1
 			end
 
-			stop_x = (stop_time.to_i - origin) * scale;
+			stop_x = ((stop_time.to_i - origin).to_f * scale.to_f).to_i;
 	 		if ( (stop_x > ($sizex - 2 * $offsetgridx - 1)) || (stop_x < 0) )
 				stop_x = $sizex - (2*$offsetgridx) - 1
     	end
