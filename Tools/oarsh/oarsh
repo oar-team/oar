@@ -5,26 +5,49 @@
 # User to become is in $SUDO_USER
 # $OAR_CPUSET contains the cpuset name
 
+# if "oarstat" command is not in the PATH then change into the full
+# install command path
+OARSTAT_CMD="oarstat"
 
-# Get the name of the current cpuset
+# Get the name of the current cpuset #
 function get_current_cpuset() {
     CPUSETFILE=/proc/self/cpuset
 
-    if [ ! -r $CPUSETFILE ]
+    if [ -r $CPUSETFILE ]
     then
-        echo "[OARSH] Cannot find cpuset file : $CPUSETFILE" 1>&2
-        exit 1
+        echo $(< $CPUSETFILE)
     fi
-    echo $(< $CPUSETFILE)
 }
+######################################
 
+export OAR_CPUSET
 
-export OAR_CPUSET=$(get_current_cpuset)
-
+OAR_CPUSET=$(get_current_cpuset)
 if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
-    echo "[OARSH] You are not in a OAR specific cpuset ($OAR_CPUSET) : go away!" 1>&2
-    exit 2
-else
-    exec ssh -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+    if [ $OARSH_JOB_ID -gt 0 ]
+    then
+        OAR_CPUSET=$($OARSTAT_CMD -fj $OARSH_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
+        if [ "$OAR_CPUSET" == "" ] 
+        then
+            echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
+            echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID does not exist." 1>&2
+            exit 1
+        else
+            echo $OAR_CPUSET | grep $SUDO_USER"_" &> /dev/null
+            if [ $? -ne 0 ]
+            then
+                echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
+                echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID is not yours." 1>&2
+                exit 2
+            fi
+        fi
+    else
+        echo "[OARSH] Cannot get the OAR job cpuset name" 1>&2
+        echo "[OARSH] AND there is no OARSH_JOB_ID environment variable defined." 1>&2
+        exit 3
+    fi
 fi
+
+exec ssh -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+

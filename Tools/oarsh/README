@@ -102,6 +102,24 @@ NOTES
 
         scp -S /path/to/oarsh ...
     
+    - If you want to use oarsh on the user frontale, you can. You have to
+      define the environment OARSH_JOB_ID and then launch oarsh on a node used
+      by your OAR job. This feature works only where the oarstat_ command is
+      configured::
+
+        OARSH_JOB_ID=42 oarsh node12
+
+      or::
+
+        export OARSH_JOB_ID=42
+        oarsh node12
+
+      This command gives you a shell on the "node12" from the OAR job 42.
+
+      You can also copy files with a syntax like::
+
+        OARSH_JOB_ID=42 scp -S /path/to/oarsh ...
+
     - You can restrict the use of oarsh with the sudo configuration::
 
         %oarsh ALL=(oar) NOPASSWD: /path/to/oarsh

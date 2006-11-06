@@ -78,7 +78,7 @@ The following steps have to be done, prior to installing OAR:
       lines::
 
             Defaults>oar    env_reset,env_keep = "OARLIB OARUSER OARDIR PWD
-            PERL5LIB DISPLAY OARCONFFILE"
+            PERL5LIB DISPLAY OARCONFFILE OARSH_JOB_ID"
             
             Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
             /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\

@@ -157,6 +157,7 @@ sub print_job($$){
     my @job_events;
     my %data_to_display;
     my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
+    my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id});
 
     my $resources_string = "";
     if (defined($full_view) or defined($Old)){
@@ -197,9 +198,6 @@ sub print_job($$){
             $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
         }
         
-        #Get job types
-        
-
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             name => $job_info->{job_name},
@@ -222,6 +220,7 @@ sub print_job($$){
             events => \@job_events,
             wanted_resources => $resources_string,
             project => $job_info->{project},
+            cpuset_name => $cpuset_name,
             types => \@job_types
         );
     }else{
@@ -241,6 +240,7 @@ sub print_job($$){
             message => $job_info->{message},
             resubmit_job_id => $job_info->{resubmit_job_id},
             project => $job_info->{project},
+            cpuset_name => $cpuset_name,
             types => \@job_types
         );
     }
@@ -341,6 +341,7 @@ sub print_job($$){
             print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
             print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
             print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
+            print("    cpuset_name = $cpuset_name\n");
             print("    message = $job_info->{message}\n");
             if (!defined($date_tmp[0])){
                 $date_tmp[0] = "no prediction";
