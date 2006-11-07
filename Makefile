@@ -54,8 +54,6 @@ desktop-computing-cgi:
 	install -d -m 0755 $(CGIDIR)
 	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oar-cgi
 	install -m 0755 Tools/sudowrapper.sh $(CGIDIR)/oar-cgi
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
 
 dbinit:
 	install -d -m 0755 $(OARDIR)
@@ -217,5 +215,6 @@ doc-install: doc
 draw-gantt-install: draw-gantt
 
 desktop-computing-cgi-install: sanity-check configuration sudowrapper common desktop-computing-cgi
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
 
 desktop-computing-agent-install: desktop-computing-agent

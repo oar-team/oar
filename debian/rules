@@ -164,8 +164,6 @@ install-indep:
 		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
 		BINLINKPATH=../lib/oar \
 		SBINLINKPATH=../lib/oar
-	perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/oar/configurator_wrapper.sh
-	perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin/oar-cgi
 
 	dh_install -i
 
