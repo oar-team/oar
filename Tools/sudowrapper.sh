@@ -1,13 +1,6 @@
 #!/bin/sh
-# $Id: sudowrapper.sh,v 1.11 2005/10/24 13:03:30 capitn Exp $
 
 OARDIR=
 OARUSER=
 
-PERL5LIB=$OARDIR
-export PERL5LIB
-export OARDIR
-export OARUSER
-export OARCONFFILE=/etc/oar.conf
-
-exec sudo -u $OARUSER $OARDIR/`basename $0` "$@"
+exec sudo -u $OARUSER $OARDIR/cmds/`basename $0` "$@"

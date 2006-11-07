@@ -5,9 +5,8 @@
 # User to become is in $SUDO_USER
 # $OAR_CPUSET contains the cpuset name
 
-# if "oarstat" command is not in the PATH then change into the full
-# install command path
-OARSTAT_CMD="oarstat"
+# This variable must be set to enable the use of oarsh from a frontale node
+OARSTAT_CMD=
 
 # Get the name of the current cpuset #
 function get_current_cpuset() {
@@ -22,30 +21,41 @@ function get_current_cpuset() {
 
 export OAR_CPUSET
 
-OAR_CPUSET=$(get_current_cpuset)
+[ -n "$OARSTAT_CMD" ] || OAR_CPUSET=$(get_current_cpuset)
 if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
-    if [ $OARSH_JOB_ID -gt 0 ]
+    if [ -n "$OARSTAT_CMD" ]
     then
-        OAR_CPUSET=$($OARSTAT_CMD -fj $OARSH_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
-        if [ "$OAR_CPUSET" == "" ] 
+        if [ $OARSH_JOB_ID -gt 0 ] 2>/dev/null
         then
-            echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-            echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID does not exist." 1>&2
-            exit 1
-        else
-            echo $OAR_CPUSET | grep $SUDO_USER"_" &> /dev/null
-            if [ $? -ne 0 ]
+            OAR_CPUSET=$($OARSTAT_CMD -fj $OARSH_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
+            if [ "$OAR_CPUSET" == "" ] 
             then
                 echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-                echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID is not yours." 1>&2
-                exit 2
+                echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID does not exist." 1>&2
+                exit 1
+            else
+                echo $OAR_CPUSET | grep $SUDO_USER"_" &> /dev/null
+                if [ $? -ne 0 ]
+                then
+                    echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
+                    echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID is not yours." 1>&2
+                    exit 2
+                fi
             fi
+        else
+            echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
+            echo "[OARSH] AND there is not a valid OARSH_JOB_ID environment variable defined." 1>&2
+            echo "[OARSH] With BASH you can use a syntax like (if your job is the 42):" 1>&2
+            echo "[OARSH]     OARSH_JOB_ID=42 oarsh node_name ..." 1>&2
+            echo "[OARSH]   or" 1>&2
+            echo "[OARSH]     export OARSH_JOB_ID=42" 1>&2
+            echo "[OARSH]     oarsh node_name ..." 1>&2
+            exit 3
         fi
     else
         echo "[OARSH] Cannot get the OAR job cpuset name" 1>&2
-        echo "[OARSH] AND there is no OARSH_JOB_ID environment variable defined." 1>&2
-        exit 3
+        exit 4
     fi
 fi
 

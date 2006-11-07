@@ -8,6 +8,10 @@ use Data::Dumper;
 use oar_iolib;
 use Getopt::Long;
 use oarversion;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+
+init_conf($ENV{OARCONFFILE});
+my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
 #Try to load XML module
 my $XML_enabled = 1;
@@ -157,7 +161,8 @@ sub print_job($$){
     my @job_events;
     my %data_to_display;
     my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
-    my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id});
+    my $cpuset_name = "";
+    $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
 
     my $resources_string = "";
     if (defined($full_view) or defined($Old)){
