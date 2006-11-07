@@ -43,6 +43,7 @@ desktop-computing-agent:
 desktop-computing-cgi:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
+	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
 	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarcache
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarcache
@@ -59,6 +60,7 @@ desktop-computing-cgi:
 dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
+	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
 	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
@@ -81,6 +83,7 @@ common:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
+	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
@@ -96,6 +99,7 @@ server:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
+	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Almighty/Almighty $(OARDIR)
 	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/Almighty
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/Almighty
@@ -132,6 +136,7 @@ server:
 user:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
+	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
 	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodes
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodes
@@ -163,7 +168,6 @@ node:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
-	@chsh -s $(OARDIR)/oarsh_shell oar
 	install -m 0755 Tools/detect_new_resources.sh $(OARDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR)
 	install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR)
@@ -206,6 +210,7 @@ server-install: sanity-check configuration sudowrapper common server dbinit
 user-install: sanity-check configuration sudowrapper common user
 
 node-install: sanity-check configuration sudowrapper node
+	@chsh -s $(OARDIR)/oarsh_shell oar
 
 doc-install: doc
 
