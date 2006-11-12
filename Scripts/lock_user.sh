@@ -38,7 +38,7 @@ unlock_file () {
     SPECIFICLOCKFILE=$LOCKFILE"_"$2
     RETURNCODE=0
     LOCKFILEID=`cat $SPECIFICLOCKFILE`
-    if [ $LOCKFILEID == $1  ]
+    if [ "x$LOCKFILEID" == "x$1"  ]
     then
         echo "[LOCK] I release the lock"
         rm -f $SPECIFICLOCKFILE

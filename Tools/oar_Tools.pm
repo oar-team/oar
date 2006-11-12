@@ -441,7 +441,7 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
     }
 
     my $script = '
-if [ \"a$TERM\" == \"a\" ] || [ \"$TERM\" == \"unknown\" ]
+if [ \"a$TERM\" == \"a\" ] || [ \"x$TERM\" == \"xunknown\" ]
 then
     export TERM=xterm
 fi

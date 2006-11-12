@@ -12,7 +12,7 @@
 # $10 --> command to launch with arguments
 
 
-if [ "a$TERM" == "a" ] || [ "$TERM" == "unknown" ]
+if [ "a$TERM" == "a" ] || [ "x$TERM" == "xunknown" ]
 then
     export TERM=xterm
 fi
@@ -39,7 +39,7 @@ else
     exit 1
 fi
 
-if [ "$6" == "I" ]
+if [ "x$6" == "xI" ]
 then
     # Change TTY owner to the right user
     /bin/echo $$ | cat >> $9 && TTY=$(tty) && test -e $TTY && sudo chown $3:oar $TTY && sudo chmod 660 $TTY || exit 3
