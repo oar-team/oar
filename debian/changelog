@@ -2,8 +2,10 @@ oar (2.0.0-beta10) unstable; urgency=low
 
   * security bug fix
   * add oarsh on the frontal
+  * add patch for netbsd shell compliance
+  * add "| ssh" in dependancies of debian packages (to be Sarge compliant)
 
- -- Capit Nicolas <capitn@localdomain>  Tue,  7 Nov 2006 14:24:55 +0100
+ -- Capit Nicolas <capitn@localdomain>  Sun, 12 Nov 2006 05:16:38 +0100
 
 oar (2.0.0-beta7) unstable; urgency=low
 
