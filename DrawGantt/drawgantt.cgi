@@ -14,11 +14,8 @@
 # 
 #
 # TODO:
-# 	- handle multiple queries at the same time!!
-# 	- better sorting labels
 # 	- multiple type resource support
 # 	- display state node information for status different of alive
-# 	- cache ?
 # 	- resource aggregation
 # 	- sparkline chart for workload information ?
 #	
@@ -205,6 +202,34 @@ def get_resource_dead_range_date(dbh,date_begin,date_end)
 	return results
 end
 
+
+
+# list property fields of the resource_properties table
+# args : db ref
+def list_resource_properties_fields(dbh)
+	db_type = $conf['DB_TYPE']
+ 	if (db_type == "Pg")
+		q = "SELECT pg_attribute.attname AS field
+         FROM pg_class, pg_attribute
+         WHERE
+         	pg_class.relname = \'resources\'
+          and pg_attribute.attnum > 0
+          and pg_attribute.attrelid = pg_class.oid"
+	else
+		q = "SHOW COLUMNS FROM resources"
+	end	
+
+	res = dbh.execute(q)
+	results = []
+	res.each do |r|
+		results << r.first
+	end
+  return(results)
+end
+    
+
+
+
 #
 # Methods adapted from oarstat and iolib
 #
@@ -247,7 +272,6 @@ $tics_node = $conf['tics_node']
 $points_per_cpu = $conf['points_per_cpu']
 $xratio = $conf['xratio']
 $nb_cont_res = $conf['nb_cont_res']
-$resource_properties_field = $conf['resource_properties_field'].clone.split(',')
 
 def draw_string(img,x,y,label)
 	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
@@ -335,10 +359,10 @@ def draw_nowline(img,origin,range,color)
 		img.line(now_x,(3*$offsetgridy/4) ,now_x, $sizey - (3*$offsetgridy)/4 , color);
 		img.line(now_x+1,(3*$offsetgridy)/4 ,now_x+1, $sizey - (3*$offsetgridy)/4 , color);
 	end
-	return now_x
+	return 
 end
 
-def build_image(origin, year, month, wday, day, hour, range)
+def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 	dbh = base_connect
 	#resources, jobs, dead_resources = get_history(dbh,1155041223,1155047311)
@@ -376,49 +400,89 @@ def build_image(origin, year, month, wday, day, hour, range)
 	map_info = []
 
 	#
-	# sort resources
+	# resources sorting and labelling
 	#
-	
-	#sorted_resources = resources.keys.sort_by{|word| word=~/(\d+)/ ; puts "#{word}" ; $1.to_i} ###FALSE###
-	#sorted_resources = resources.keys.sort_by{|word| word.to_i}
-	#sorted_resources = resources.keys.sort_by{|word| word=~/([^.]+)/;  puts $1}
 
-	network_label={}
-	#extract desired label
+	# get conf values
+	
+	first_field_property = $conf["first_field_property"]
+	first_displaying_regex = Regexp.new($conf["first_displaying_regex"])
+	first_sorting_order = $conf["first_sorting_type"]
+	first_sorting_regex = Regexp.new($conf["first_sorting_regex"])
+	separator = $conf["separator"]
+	second_field_property = $conf["second_field_property"]
+	second_displaying_regex =  Regexp.new($conf["second_displaying_regex"])
+	second_sorting_order = $conf["second_sorting_type"]
+	second_sorting_regex = Regexp.new($conf["second_sorting_regex"])
+
+	resource_properties_fields = list_resource_properties_fields(base_connect)
+  first_field_index = resource_properties_fields.index(first_field_property)
+	second_field_index = resource_properties_fields.index(second_field_property)
+
+	# group resources by first label
+	first_label_groups={}
 	resources.each do |res_id,res_desc|
 
-		label = res_desc[$resource_properties_field.first.to_i]
+		label = res_desc[first_field_index]
 #		puts label
-		if network_label[label] == nil  
-			network_label[label] = [res_id]
-		else 
-			network_label[label] << res_id
+		if first_label_groups[label] == nil  
+			first_label_groups[label] = Hash.new()
+			key = resources[res_id][second_field_index].to_s
+			first_label_groups[label][key]  = res_id
+		else
+		 	key = resources[res_id][second_field_index].to_s
+			first_label_groups[label][key]  = res_id
 		end
 	end
 	
-	# sort extracted labels
-	
-	# need better sort
-	sorted_label =  network_label.keys.sort
+	#sort first label
+	sorted_first_label = []
+	if (first_sorting_order == "string")
+		sorted_first_label =  first_label_groups.keys.sort_by{|label| label =~ first_displaying_regex; $1.to_s} 
+	else #numerical sorting
+		sorted_first_label =  first_label_groups.keys.sort_by{|label| label=~ first_displaying_regex; $1.to_i} 
+	end
 
   #puts "sorted_label"
 	#p sorted_label
 
-	# sort by group of resource 
+	#sorting each group by second label
 	sorted_resources = []
-	sorted_label.each do |label|
-		sorted_resources = sorted_resources + network_label[label].sort {|a,b| a.to_i <=> b.to_i}
+	sorted_first_label.each do |first_label|
+
+		second_label_sorted = []
+		if (first_sorting_order == "string")
+			second_label_sorted = first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_s}
+		else #numerical sorting
+			second_label_sorted	= first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_i}
+		end
+
+		second_label_sorted.each do |label|
+			sorted_resources <<	first_label_groups[first_label][label]
+		end
+ 
 	end
 
  	#puts "sorted_resources"
 	#p sorted_resources
 
+	# resources labelling
+
 	resource_labels = []
-	sorted_resources.each do |i|
-		resources[i][$resource_properties_field.first.to_i] =~ /#{$conf['regexdisplay_first']}/
-		first_label = $1
-		second_label = resources[i][$resource_properties_field.last.to_i]
-		resource_labels << "#{first_label}_#{second_label}"
+	sorted_resources.each do |r|
+		resources[r][first_field_index] =~ first_displaying_regex
+		displayed_label = $1
+
+		if (separator != nil)
+			 displayed_label = displayed_label + separator 
+		end
+
+		if (second_field_index != nil)
+			resources[r][second_field_index].to_s =~ second_displaying_regex
+			displayed_label = displayed_label + $1
+		end
+		
+		resource_labels << displayed_label
 	end
 	#p resource_labels
 
@@ -437,9 +501,6 @@ def build_image(origin, year, month, wday, day, hour, range)
 
 	scale = ($sizex - 2 * $offsetgridx).to_f  / (RANGE_SEC[range].to_f) ;
 
-
-	yop = ""
-
 	jobs.each do |job_id,j|
 
  		start_x = ((j['start_time'].to_i  - origin).to_f * scale.to_f).to_i;
@@ -454,8 +515,6 @@ def build_image(origin, year, month, wday, day, hour, range)
     
     start_x = start_x+ $offsetgridx
     stop_x = stop_x + $offsetgridx
-
-		#	p j
 
 		ares_index = []
 		j['resources'].each do |r|
@@ -517,18 +576,17 @@ def build_image(origin, year, month, wday, day, hour, range)
 	end
 	
 	#draw_nowline
-	yop = draw_nowline(img,origin,range,red)
+	draw_nowline(img,origin,range,red)
 
-	f_img = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", 'w')
+	f_img = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}", 'w')
 	img.png(f_img)
 	f_img.close
 
-#	f_map = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.map", 'w')
-	map = ""
-	map << '<map name="ganttmap">'
+	f_map = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}", 'w')
+	f_map.puts  '<map name="ganttmap">'
 	map_info.each do |info|
 		j = jobs[info[4]]
-		map << '<area shape="rect" coords="' + 
+		f_map.puts '<area shape="rect" coords="' + 
 					 "#{info[0]},#{info[1]},#{info[2]},#{info[3]}" + 
 					 '" href="monika.cgi?job='+ "#{info[4]}" + '" ' +
 					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
@@ -545,9 +603,10 @@ def build_image(origin, year, month, wday, day, hour, range)
 					 '\')" >'
 	end
 	
-	map << '</map>'
+	f_map.puts '</map>'
+	f_map.close
 
-	return map 
+	return 
 end
 
 ##################################
@@ -626,8 +685,55 @@ def cgi_html
 	popup_hour[popup_hour.index(hour)]= [hour,true]
 	popup_range[popup_range.index(range)]= [range,true]
 
+
+
+	#
+	#image and map files naming
+	#
+	file_range = range
+	file_range = '1_day' if (range =='1 day') 
+	file_range = '1_2_day' if (range =='1/2 day') 
+	file_range = '1_6_day' if (range == '1/6 day') 
+
+	file_img =  'gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_map =  'map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+
+	#test if it's on old file ?
+	if (origin + RANGE_SEC[range] > now.to_i)
+   	file_img = file_img + '_' + now.to_i.to_s + '.png';
+    file_map = file_map + '_' + now.to_i.to_s + '.map';
+	else
+    file_img = file_img + '.png';
+    file_map = file_map + '.map';
+	end
+
+	#
+	#cache flushing according to nb_file_cache_limit
+	#
+	path_file = "#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/"
+	file_list = Dir.glob("#{path_file}*.{png,map}")
+	#puts file_list.length 
+	if (file_list.length > $conf['nb_file_cache_limit'])
+			file_time = {}
+			file_list.each do |file|
+				file_time[file] = File.atime(file).to_i  
+			end
+			file_time_sorted = file_time.sort{|a,b| a[1]<=>b[1]}
+			#puts file_time_sorted.length/2
+			file_time_sorted[0..file_time_sorted.length/2].each {|f| File.delete(f.first)}
+	end
+	
 	#build image file
-	map = build_image(origin, year, month, wday, day, hour, range)
+	build_image(origin, year, month, wday, day, hour, range, file_img, file_map) if !File.exist?(file_img)
+	
+	map = ""
+	path_file_map = "#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
+
+	File.open(path_file_map) do |file|
+		while line = file.gets
+			map << line
+		end
+	end
 
 	cgi.out {
 		cgi.html {
@@ -659,7 +765,7 @@ def cgi_html
 					CGI.escapeElement('<div style="text-align: center">') +
 #					cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
 					
-					cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png",
+					cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}",
 									"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
 					CGI.escapeElement('</div>'); 
 				}
@@ -671,6 +777,8 @@ end
 ####################################################################################
 
 cgi_html
+
+#p list_resource_properties_fields(base_connect)
 
 #p list_resources(base_connect)
 
