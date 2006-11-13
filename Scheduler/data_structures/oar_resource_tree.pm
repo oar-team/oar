@@ -318,6 +318,7 @@ sub delete_subtree($){
 sub delete_tree_nodes_with_not_enough_resources($){
     my $tree_ref = shift;
 
+    #print("START delete_tree_nodes_with_not_enough_resources\n");
     # Search if there are enough values for each resource
     # Tremaux algorithm (Deep first)
     my $current_node = $tree_ref;
@@ -331,6 +332,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
             # we want to delete the root
             return(undef) if ($tree_ref == $current_node);
             # Delete sub tree that does not fit with wanted resources 
+            #print("DELETE ".get_current_resource_value($current_node)."\n");
             $current_node = delete_subtree($current_node);
         }
         if (defined(get_initial_child($current_node))){
@@ -341,6 +343,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
             # Treate leaf
             while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
                 # Step up
+                #print("TOTO ".get_current_children_number($current_node)."\n");
                 #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
                     or ((get_needed_children_number($current_node) == -1)                # ALL
@@ -350,7 +353,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
                 ){
                     # we want to delete the root
                     return(undef) if ($tree_ref == $current_node);
-                    #print("DELETE ".get_current_resource_value($current_node)."\n");
+                    #print("DELETE 1".get_current_resource_value($current_node)."\n");
                     # Delete sub tree that does not fit with wanted resources 
                     $current_node = delete_subtree($current_node);
                 }else{
@@ -359,7 +362,18 @@ sub delete_tree_nodes_with_not_enough_resources($){
             }
             if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
                 # Treate brother
-                $current_node = get_next_brother($current_node);
+                my $brother_node = get_next_brother($current_node);
+                if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
+                    or ((get_needed_children_number($current_node) == -1)                # ALL
+                        and (get_max_available_children($current_node) > get_current_children_number($current_node)))
+                    or ((get_needed_children_number($current_node) == -2)                # BEST
+                        and (get_current_children_number($current_node) <= 0))
+                ){
+                    #print("DELETE 2".get_current_resource_value($current_node)."\n");
+                    # Delete sub tree that does not fit with wanted resources 
+                    delete_subtree($current_node);
+                }
+                $current_node = $brother_node;
                 #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
             }
         }

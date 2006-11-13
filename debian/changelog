@@ -1,3 +1,10 @@
+oar (2.0.0-beta11) unstable; urgency=low
+
+  * add cpuset script comment for virtualization feature
+  * debug draw-gantt
+
+ -- Capit Nicolas <capitn@localdomain>  Mon, 13 Nov 2006 17:40:44 +0100
+
 oar (2.0.0-beta10) unstable; urgency=low
 
   * security bug fix

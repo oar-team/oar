@@ -75,7 +75,7 @@ if ($ARGV[0] eq "init"){
     if (system('sudo rmdir /dev/cpuset/'.$Cpuset_name)){
         # Uncomment this line if you want to use several network_address properties
         # which are the same physical computer (linux kernel)
-        #exit(0);
+        exit(0);
         exit(6);
     }
 }else{

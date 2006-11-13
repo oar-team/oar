@@ -92,7 +92,7 @@ sub qdel($) {
     
     if (defined($Job_id)) {
         if ($Al_dead eq "INT" ) {
-            warn("\n\nCaught Interrupt (^C),");
+            print(STDERR "\n\nCaught Interrupt (^C),");
         }
         warn("Deleting the job $Job_id ...\n");
         my $base = iolib::connect();
