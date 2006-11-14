@@ -2249,8 +2249,8 @@ sub get_jobs_gantt_scheduled($$$){
          FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
          WHERE
              gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-             gantt_jobs_predictions_visu.moldable_job_id = jobs.assigned_moldable_job AND
-             jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+             jobs.job_id = moldable_job_descriptions.moldable_job_id AND
              gantt_jobs_predictions_visu.start_time < $date_end AND
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
              gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
