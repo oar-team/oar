@@ -334,7 +334,7 @@ sub launch_command($){
 
 # Create the perl script used to execute right command for the user
 # The resulting script can be launched with : perl -e 'script'
-sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$@){
+sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
@@ -345,6 +345,8 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$@){
         $resource_file,
         $job_name,
         $job_project,
+        $job_walltime,
+        $job_walltime_sec,
         $job_env,
         @cmd) = @_;
 
@@ -373,6 +375,8 @@ $ENV{OAR_WORKDIR} = "'.$launching_directory.'";
 $ENV{OAR_RESOURCE_PROPERTIES_FILE} = "'.$resource_file.'";
 $ENV{OAR_JOB_NAME} = "'.$job_name.'";
 $ENV{OAR_PROJECT_NAME} = "'.$job_project.'";
+$ENV{OAR_JOB_WALLTIME} = "'.$job_walltime.'";
+$ENV{OAR_JOB_WALLTIME_SECONDS} = '.$job_walltime_sec.';
 
 $ENV{OAR_NODEFILE} = $ENV{OAR_FILE_NODES};
 $ENV{OAR_O_WORKDIR} = $ENV{OAR_WORKDIR};
@@ -422,7 +426,7 @@ exit(0);
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : sh -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
@@ -432,6 +436,8 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$){
         $resource_file,
         $job_name,
         $job_project,
+        $job_walltime,
+        $job_walltime_sec,
         $job_env) = @_;
 
     my $exp_env = "";
@@ -463,6 +469,8 @@ export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
 export OAR_JOB_ID=\$OAR_JOBID
 export OAR_JOB_NAME='.$job_name.'
 export OAR_PROJECT_NAME='.$job_project.'
+export OAR_JOB_WALLTIME='.$job_walltime.'
+export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.'
 
 if ( cd \$OAR_WORKING_DIRECTORY &> /dev/null )
 then

@@ -2,8 +2,9 @@ oar (2.0.0-beta11) unstable; urgency=low
 
   * add cpuset script comment for virtualization feature
   * debug draw-gantt
+  * add OAR_JOB_WALLTIME and OAR_JOB_WALLTIME_SECONDS environment variables
 
- -- Capit Nicolas <capitn@localdomain>  Mon, 13 Nov 2006 17:40:44 +0100
+ -- Capit Nicolas <capitn@localdomain>  Tue, 14 Nov 2006 05:30:33 +0100
 
 oar (2.0.0-beta10) unstable; urgency=low
 
