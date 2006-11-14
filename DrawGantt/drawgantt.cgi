@@ -471,7 +471,9 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	resource_labels = []
 	sorted_resources.each do |r|
 		resources[r][first_field_index] =~ first_displaying_regex
-		displayed_label = $1
+
+		displayed_label = $1					
+		displayed_label = "" if ($1==nil)
 
 		if (separator != nil)
 			 displayed_label = displayed_label + separator 
