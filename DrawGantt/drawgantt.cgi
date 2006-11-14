@@ -74,23 +74,24 @@ end
 # get all jobs in a range of date in the gantt
 # args : dbh, start range, end range
 def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
-	q =		"SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
+
+	q = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
          FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
          WHERE
              gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-             gantt_jobs_predictions_visu.moldable_job_id = jobs.assigned_moldable_job AND
-             jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+             jobs.job_id = moldable_job_descriptions.moldable_job_id AND
              gantt_jobs_predictions_visu.start_time < #{date_end} AND
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
              gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= #{date_begin}
-         ORDER BY jobs.job_id";
+         ORDER BY jobs.job_id"
 	res = dbh.execute(q)
 	
 	results = {}
 	res.each do |r|
-		if (results[r[0]] == nil) 
+		if (results[r[0]] == nil)
 			results[r[0]] = {
-      	                 'job_type' => r[1],
+     	                 'job_type' => r[1],
         	               'state' => r[2],
           	             'user' => r[3],
             	           'command' => r[4],
@@ -236,6 +237,7 @@ end
 def get_history(dbh,date_start,date_stop)
 	resources = list_resources(dbh)
 	job_gantt =  get_jobs_gantt_scheduled(dbh,date_start,date_stop)
+
 	#print finished or running jobs
 	jobs = job_gantt
 	jobs_history =  get_jobs_range_dates(dbh,date_start,date_stop)
