@@ -14,11 +14,13 @@
 # 
 #
 # TODO:
-# 	- multiple type resource support
+#		- debug postgresql case
+#		- wizard for auto configuration ?
 # 	- display state node information for status different of alive
 # 	- resource aggregation
-# 	- sparkline chart for workload information ?
-#	
+# 	- sparkline chart for workload information sumarize?
+#		- job/user highlighting (by apply some picture manipulation from general picture ?)
+#
 
 require 'dbi'
 require 'cgi'
@@ -203,8 +205,6 @@ def get_resource_dead_range_date(dbh,date_begin,date_end)
 	return results
 end
 
-
-
 # list property fields of the resource_properties table
 # args : db ref
 def list_resource_properties_fields(dbh)
@@ -227,9 +227,6 @@ def list_resource_properties_fields(dbh)
 	end
   return(results)
 end
-    
-
-
 
 #
 # Methods adapted from oarstat and iolib
@@ -269,7 +266,10 @@ $title = $conf['title']
 $sizex = $conf['sizex']
 #$sizey = $conf['sizey']
 $offsetgridy = $conf['offsetgridy']
-$offsetgridx = $conf['offsetgridx']
+$left_offsetgridx = $conf['left_offsetgridx']
+$right_offsetgridx = $conf['right_offsetgridx']
+$sum_offsetgridx = $left_offsetgridx + $right_offsetgridx
+
 $tics_node = $conf['tics_node']
 $points_per_cpu = $conf['points_per_cpu']
 $xratio = $conf['xratio']
@@ -285,13 +285,13 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 		(0..31).each do |i|
 			day = Time.at(origin).strftime("%e")
 			origin = origin + RANGE_SEC['1 day']
-			x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 31.0)
+			x = $left_offsetgridx + i * (($sizex - $sum_offsetgridx) / 31.0)
 			draw_string(img, x ,$offsetgridy / 2, day)
 			img.line(x,$offsetgridy ,x, $sizey - $offsetgridy , $gridcolor)
 		end
 	elsif (range == 'week')
 		(0..14).each do |i|
-			x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 14.0)
+			x = $left_offsetgridx + i * (($sizex - $sum_offsetgridx) / 14.0)
 	    if ((i & 1) == 1)
 				draw_string(img, x ,$offsetgridy / 2, "12h")
 	    else
@@ -302,7 +302,7 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 		end
 	elsif (range == '3 days')
 		(0..6).each do |i|
-			x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 6.0)
+			x = $left_offsetgridx + i * (($sizex - $sum_offsetgridx) / 6.0)
 	    if ((i & 1) == 1)
 				draw_string(img,x ,$offsetgridy / 2, "12h")
 	    else
@@ -313,7 +313,7 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 		end
 	elsif (range == '1 day')
 		(0..24).each do |i|
-	    x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 24.0)
+	    x = $left_offsetgridx + i * (($sizex - $sum_offsetgridx) / 24.0)
 	    hour = (i + origin_label.to_i) % 24
 	    draw_string(img, x ,$offsetgridy / 2, "#{hour.to_s}h")
 			img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor)
@@ -321,7 +321,7 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 	elsif (range == '1/2 day')
 		(0..12).each do |i|
 	    hour = (i + origin_label.to_i) % 24
-	    x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 12.0)
+	    x = $left_offsetgridx + i * (($sizex - $sum_offsetgridx) / 12.0)
 	    draw_string(img, x ,$offsetgridy / 2, "#{hour.to_s}h")
 	    img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor)
 		end
@@ -333,7 +333,7 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 			else
 				min = "00"
 			end
-	    x = $offsetgridx + i * (($sizex - 2 * $offsetgridx) / 8.0)
+	    x = $left_offsetgridx + i * (($sizex - $sum_offsetgridx) / 8.0)
 	    draw_string(img, x, $offsetgridy / 2, "#{hour}:#{min}")
 	    img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor);   
 		end
@@ -347,17 +347,17 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 	resource_labels.each do |label|
 		if ((i % $conf['tics_node'].to_i)==0) 
 			y = $offsetgridy + i * deltay
-			draw_string(img, $offsetgridx / 2, y + (deltay / 2), label)
-			img.line($offsetgridx - 1 , y, $sizex - $offsetgridx, y, $gridcolor)
+			draw_string(img, $left_offsetgridx / 2, y + (deltay / 2), label)
+			img.line($left_offsetgridx - 1 , y, $sizex - $right_offsetgridx, y, $gridcolor)
 		end
 		i = i + 1
 	end
-  img.line($offsetgridx - 1, $sizey - $offsetgridy, $sizex - $offsetgridx, $sizey - $offsetgridy, $gridcolor)
+  img.line($left_offsetgridx - 1, $sizey - $offsetgridy, $sizex - $left_offsetgridx, $sizey - $offsetgridy, $gridcolor)
 end
 
 def draw_nowline(img,origin,range,color)
-	now_x =  $offsetgridx + (Time.now.to_i-origin) * (($sizex - 2 * $offsetgridx) / RANGE_SEC[range].to_f)
-	if ((now_x > $offsetgridx ) && (now_x < ($sizex - $offsetgridx - 1)))
+	now_x =  $left_offsetgridx + (Time.now.to_i-origin) * (($sizex - $sum_offsetgridx) / RANGE_SEC[range].to_f)
+	if ((now_x > $left_offsetgridx ) && (now_x < ($sizex - $right_offsetgridx - 1)))
 		img.line(now_x,(3*$offsetgridy/4) ,now_x, $sizey - (3*$offsetgridy)/4 , color);
 		img.line(now_x+1,(3*$offsetgridy)/4 ,now_x+1, $sizey - (3*$offsetgridy)/4 , color);
 	end
@@ -396,97 +396,111 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	img.interlace = true
 
 	#sort resources
-
-#	p resources
-
-	map_info = []
+	typed_resources = {}
+	resources.each do |r_id,r|
+		typed_resources[r[1]]= Hash.new() if (typed_resources[r[1]]==nil)
+		typed_resources[r[1]][r_id] = r
+	end
+#		p typed_resources
 
 	#
 	# resources sorting and labelling
 	#
 
-	# get conf values
-	
-	first_field_property = $conf["first_field_property"]
-	first_displaying_regex = Regexp.new($conf["first_displaying_regex"])
-	first_sorting_order = $conf["first_sorting_type"]
-	first_sorting_regex = Regexp.new($conf["first_sorting_regex"])
-	separator = $conf["separator"]
-	second_field_property = $conf["second_field_property"]
-	second_displaying_regex =  Regexp.new($conf["second_displaying_regex"])
-	second_sorting_order = $conf["second_sorting_type"]
-	second_sorting_regex = Regexp.new($conf["second_sorting_regex"])
-
-	resource_properties_fields = list_resource_properties_fields(base_connect)
-  first_field_index = resource_properties_fields.index(first_field_property)
-	second_field_index = resource_properties_fields.index(second_field_property)
-
-	# group resources by first label
-	first_label_groups={}
-	resources.each do |res_id,res_desc|
-
-		label = res_desc[first_field_index]
-#		puts label
-		if first_label_groups[label] == nil  
-			first_label_groups[label] = Hash.new()
-			key = resources[res_id][second_field_index].to_s
-			first_label_groups[label][key]  = res_id
-		else
-		 	key = resources[res_id][second_field_index].to_s
-			first_label_groups[label][key]  = res_id
-		end
-	end
-	
-	#sort first label
-	sorted_first_label = []
-	if (first_sorting_order == "string")
-		sorted_first_label =  first_label_groups.keys.sort_by{|label| label =~ first_displaying_regex; $1.to_s} 
-	else #numerical sorting
-		sorted_first_label =  first_label_groups.keys.sort_by{|label| label=~ first_displaying_regex; $1.to_i} 
-	end
-
-  #puts "sorted_label"
-	#p sorted_label
-
-	#sorting each group by second label
 	sorted_resources = []
-	sorted_first_label.each do |first_label|
+	resource_labels = []
 
-		second_label_sorted = []
+	# get conf values for sorting and labelling
+	sort_label_conf = $conf["sort_label_conf"]
+
+	# get ressource propertie field from db
+	resource_properties_fields = list_resource_properties_fields(base_connect)
+
+	sort_label_conf.each do |sort_label_cf|
+		
+		type =  sort_label_cf["type"]
+		type = "default" if type == nil
+		first_field_property = sort_label_cf["first_field_property"]
+		first_displaying_regex = Regexp.new(sort_label_cf["first_displaying_regex"])
+		first_sorting_order = sort_label_cf["first_sorting_type"]
+		first_sorting_regex = Regexp.new(sort_label_cf["first_sorting_regex"])
+		separator = sort_label_cf["separator"]
+		second_field_property = sort_label_cf["second_field_property"]
+		second_displaying_regex =  Regexp.new(sort_label_cf["second_displaying_regex"])
+		second_sorting_order = sort_label_cf["second_sorting_type"]
+		second_sorting_regex = Regexp.new(sort_label_cf["second_sorting_regex"])
+
+  	first_field_index = resource_properties_fields.index(first_field_property)
+		second_field_index = resource_properties_fields.index(second_field_property)
+
+		# group resources by first label
+		first_label_groups={}
+		typed_resources[type].each do |res_id,res_desc|
+
+			label = res_desc[first_field_index]
+			#puts label
+			if first_label_groups[label] == nil  
+				first_label_groups[label] = Hash.new()
+				key = resources[res_id][second_field_index].to_s
+				first_label_groups[label][key]  = res_id
+			else
+		 		key = resources[res_id][second_field_index].to_s
+				first_label_groups[label][key]  = res_id
+			end
+		end
+	
+		#sort first label
+		sorted_first_label = []
 		if (first_sorting_order == "string")
-			second_label_sorted = first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_s}
+			sorted_first_label =  first_label_groups.keys.sort_by{|label| label =~ first_displaying_regex; $1.to_s} 
 		else #numerical sorting
-			second_label_sorted	= first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_i}
+			sorted_first_label =  first_label_groups.keys.sort_by{|label| label=~ first_displaying_regex; $1.to_i} 
 		end
 
-		second_label_sorted.each do |label|
-			sorted_resources <<	first_label_groups[first_label][label]
-		end
- 
-	end
+		#p sorted_first_label
+  	#puts "sorted_label"
+		#p sorted_label
 
+		sorted_typed_resources = []
+
+		#sorting each group by second label
+		sorted_first_label.each do |first_label|
+
+			second_label_sorted = []
+			if (first_sorting_order == "string")
+				second_label_sorted = first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_s}
+			else #numerical sorting
+				second_label_sorted	= first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_i}
+			end
+
+			second_label_sorted.each do |label|
+				sorted_typed_resources <<	first_label_groups[first_label][label]
+			end
+		end
+
+		sorted_resources = sorted_resources + sorted_typed_resources 
  	#puts "sorted_resources"
 	#p sorted_resources
 
-	# resources labelling
+		# resources labelling
 
-	resource_labels = []
-	sorted_resources.each do |r|
-		resources[r][first_field_index] =~ first_displaying_regex
+		sorted_typed_resources.each do |r|
+			resources[r][first_field_index] =~ first_displaying_regex
 
-		displayed_label = $1					
-		displayed_label = "" if ($1==nil)
+			displayed_label = $1					
+			displayed_label = "" if ($1==nil)
 
-		if (separator != nil)
-			 displayed_label = displayed_label + separator 
-		end
+			if (separator != nil)
+				 displayed_label = displayed_label + separator 
+			end
 
-		if (second_field_index != nil)
-			resources[r][second_field_index].to_s =~ second_displaying_regex
-			displayed_label = displayed_label + $1
-		end
+			if (second_field_index != nil)
+				resources[r][second_field_index].to_s =~ second_displaying_regex
+				displayed_label = displayed_label + $1
+			end
 		
-		resource_labels << displayed_label
+			resource_labels << displayed_label
+		end
 	end
 	#p resource_labels
 
@@ -503,22 +517,20 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 	draw_grid(img,resource_labels,origin,origin_label,range)
 
-	scale = ($sizex - 2 * $offsetgridx).to_f  / (RANGE_SEC[range].to_f) ;
+	scale = ($sizex - $sum_offsetgridx).to_f  / (RANGE_SEC[range].to_f) ;
 
+	
+	map_info = [] 
 	jobs.each do |job_id,j|
 
  		start_x = ((j['start_time'].to_i  - origin).to_f * scale.to_f).to_i;
-    if (start_x < 1) 
-			start_x = 1
-		end
+    start_x = 1 if (start_x < 1) 
 
 		stop_x = ((j['stop_time'].to_i  - origin).to_f * scale.to_f).to_i;
-	 	if (stop_x > ($sizex - 2 * $offsetgridx - 1))
-			stop_x = $sizex - (2*$offsetgridx) - 1
-    end
+	 	stop_x = $sizex - $sum_offsetgridx - 1 if (stop_x > ($sizex - $sum_offsetgridx - 1))
     
-    start_x = start_x+ $offsetgridx
-    stop_x = stop_x + $offsetgridx
+    start_x = start_x + $left_offsetgridx
+    stop_x = stop_x + $left_offsetgridx
 
 		ares_index = []
 		j['resources'].each do |r|
@@ -536,20 +548,22 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			i_high =  sorted_index.first
 
 			sorted_index.each do |r|
-				if (r > i_high + 1 )
-					if (i_high -i_low) > $nb_cont_res
-						draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low)/2,job_id.to_s)
-						map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
+				if (r != i_high) 
+					if (r > i_high + 1 )
+						if (i_high -i_low) >= $nb_cont_res
+							draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2-5,job_id.to_s)
+							map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
+						end
+						i_low = r
+						i_high = r
+					else
+						i_high = i_high + 1
 					end
-					i_low = r
-					i_high = r
-				else
-					i_high = i_high + 1
 				end
 			end
 
 			if (i_high -i_low) >= $nb_cont_res
-				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low)/2.0,job_id.to_s)	
+				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2.0-5,job_id.to_s)	
 				map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
 			end
 		end 
@@ -561,17 +575,13 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			start_time,stop_time,value = a
 
 			start_x = ((start_time.to_i - origin).to_f * scale.to_f).to_i;
-    	if (start_x < 1) 
-				start_x = 1
-			end
-
+    	start_x = 1	if (start_x < 1) 
+			
 			stop_x = ((stop_time.to_i - origin).to_f * scale.to_f).to_i;
-	 		if ( (stop_x > ($sizex - 2 * $offsetgridx - 1)) || (stop_x < 0) )
-				stop_x = $sizex - (2*$offsetgridx) - 1
-    	end
+			stop_x = $sizex - $sum_offsetgridx - 1 if ( (stop_x > ($sizex - $sum_offsetgridx - 1)) || (stop_x < 0) )
 
-	    start_x = start_x+ $offsetgridx
-  	  stop_x = stop_x + $offsetgridx
+	    start_x = start_x + $left_offsetgridx
+  	  stop_x = stop_x + $left_offsetgridx
 
 			r_index = sorted_resources.index(resource)
 			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), red)
@@ -741,12 +751,13 @@ def cgi_html
 
 	cgi.out {
 		cgi.html {
-			cgi.head { "\n"+cgi.title{$conf['title']} } +
+			cgi.head { "\n"+cgi.title{$title} } +			
 			cgi.body { "\n"+
 #				"##### #{$val} #####" +
 				cgi.form("get"){
 #					"**#{cgi.params}**\n" +
-					cgi.h2 { $title } + "\n"+
+#					$title +
+					cgi.h3 { $title } + "\n"+
 					# Javascript stuff thanks to NCSA TITAN cluster's page    
 					CGI.escapeElement('<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>') + "\n" +
 					CGI.escapeElement('<script src="/'+"#{$conf['directory']}"+
