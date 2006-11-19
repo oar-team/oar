@@ -552,7 +552,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 					if (r > i_high + 1 )
 						if (i_high -i_low) >= $nb_cont_res
 							draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2-5,job_id.to_s)
-							map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
+							map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*(i_high+1),job_id]	
 						end
 						i_low = r
 						i_high = r
@@ -564,7 +564,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 			if (i_high -i_low) >= $nb_cont_res
 				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2.0-5,job_id.to_s)	
-				map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*i_high,job_id]	
+				map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*(i_high+1),job_id]	
 			end
 		end 
 	end
@@ -699,8 +699,6 @@ def cgi_html
 	popup_hour[popup_hour.index(hour)]= [hour,true]
 	popup_range[popup_range.index(range)]= [range,true]
 
-
-
 	#
 	#image and map files naming
 	#
@@ -726,19 +724,20 @@ def cgi_html
 	#
 	path_file = "#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/"
 	file_list = Dir.glob("#{path_file}*.{png,map}")
+
 	#puts file_list.length 
-	if (file_list.length > $conf['nb_file_cache_limit'])
-			file_time = {}
-			file_list.each do |file|
-				file_time[file] = File.atime(file).to_i  
-			end
-			file_time_sorted = file_time.sort{|a,b| a[1]<=>b[1]}
-			#puts file_time_sorted.length/2
-			file_time_sorted[0..file_time_sorted.length/2].each {|f| File.delete(f.first)}
+	if (file_list.length > $conf['nb_file_cache_limit']) 
+		file_time = {}
+		file_list.each do |file|
+			file_time[file] = File.atime(file).to_i  
+		end
+		file_time_sorted = file_time.sort{|a,b| a[1]<=>b[1]}
+		#puts file_time_sorted.length/2
+		file_time_sorted[0..file_time_sorted.length/2].each {|f| File.delete(f.first)}
 	end
-	
+
 	#build image file
-	build_image(origin, year, month, wday, day, hour, range, file_img, file_map) if !File.exist?(file_img)
+	build_image(origin, year, month, wday, day, hour, range, file_img, file_map) if !File.exist?(path_file+file_img)
 	
 	map = ""
 	path_file_map = "#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
@@ -779,7 +778,6 @@ def cgi_html
 					CGI.escapeElement(map) + "\n" +
 					CGI.escapeElement('<div style="text-align: center">') +
 #					cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
-					
 					cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}",
 									"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
 					CGI.escapeElement('</div>'); 
@@ -794,6 +792,5 @@ end
 cgi_html
 
 #p list_resource_properties_fields(base_connect)
-
 #p list_resources(base_connect)
 
