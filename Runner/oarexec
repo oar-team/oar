@@ -264,7 +264,7 @@ my $stdin_script_to_send;
 if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
     my $str;
-    ($str, $stdin_script_to_send) = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{command});
+    ($str, $stdin_script_to_send) = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{job_env},$Job->{command});
     #print($str."\n");
     @cmd = ("sudo","-H","-u","$Job->{user}","perl","-e",$str);
 }
@@ -406,6 +406,7 @@ if ($Job->{mode} eq "PASSIVE"){
     close(pipe_script_write);
     close(pipe_stdin_read);
     # Send user command without any interpretation security isssue!!!
+    print("[oarexec $Job_id] ########### $stdin_script_to_send\n");
     # This is the most secure manner that I find
     print(pipe_stdin_write $stdin_script_to_send."\n");
     open(pipe_stdin_write,"<& /dev/null");
