@@ -175,6 +175,51 @@ In these files you have to bind OAR allocated resources to the licence servers
 to restrict user consumptions to what they asked. This is very dependant of
 the licence management.
 
+How can I handle multiple clusters with one OAR?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These are the steps to follow:
+
+ 1. create a resource property to identify the corresponding cluster (like "cluster")::
+
+        oarproperty -a cluster
+
+    (you can see this new property when you use oarnodes_)
+
+ 2. with oarnodesetting_ you have to fill this field for all resources; for example::
+ 
+        oarnodesetting -h node42.cluster1.com -p cluster=1
+        oarnodesetting -h node43.cluster1.com -p cluster=1
+        oarnodesetting -h node2.cluster2.com -p cluster=2
+        ...
+
+ 3. create 2 new queues with oarnotify_::
+
+        oarnotify  --add_queue "cluster1,5"
+        oarnotify  --add_queue "cluster2,5"
+
+ 4. Then you have to restrict properties for each queue. So an admission rule performs this job (this is a SQL syntax to use in a database interpreter)::
+
+        INSERT IGNORE INTO admission_rules (rule) VALUES ('
+        my $cluster_constraint = 0;
+        if ($queue_name eq "cluster1"){
+            $cluster_constraint = 1;
+        }elsif ($queue_name eq "cluster2"){
+            $cluster_constraint = 2;
+        }else{
+            die("[ADMISSION RULE] Error : you must use the queue cluster1 or the queue cluster2.\\n");
+        }
+        if ($jobproperties ne ""){
+            $jobproperties = "($jobproperties) AND cluster = $cluster_constraint";
+        }else{
+            $jobproperties = "cluster = $cluster_constraint";
+        }
+        print("[ADMISSION RULE] Added automatically cluster resource constraint\\n");
+        ');
+
+So when you will use oarsub_ to submit on the queue "cluster2" only resources
+with the property "cluster=2" is used. This is the same when you will use the
+"cluster1" queue.
+
 How can I write my own scheduler?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: Scheduler/README
