@@ -4120,14 +4120,16 @@ sub check_accounting_update($$){
 
     my $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id), jobs.project
 
-               FROM jobs, moldable_job_descriptions, assigned_resources
+               FROM jobs, moldable_job_descriptions, assigned_resources, resources
                WHERE 
                    jobs.accounted = \'NO\' AND
                    (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
                    jobs.stop_time >= jobs.start_time AND
                    jobs.start_time > 0 AND
                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-                   assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                   assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id AND
+                   assigned_resources.resource_id = resources.resource_id AND
+                   resources.type = 'default'
                GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.project, jobs.job_user, jobs.queue_name
               "; 
 
