@@ -34,6 +34,8 @@ CREATE INDEX log ON assigned_resources (assigned_resource_index);
 CREATE TABLE challenges (
   job_id integer NOT NULL default '0',
   challenge varchar(255) NOT NULL default '',
+  ssh_private_key text default NULL ,
+  ssh_public_key text default NULL ,
   PRIMARY KEY  (job_id)
 );
 
@@ -154,9 +156,11 @@ CREATE INDEX state_job_log ON job_state_logs (job_state);
 
 
 CREATE TABLE job_types (
+  job_type_id bigserial,
   job_id integer NOT NULL default '0',
   type varchar(255) NOT NULL default '',
-  types_index varchar(7) check (types_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT'
+  types_index varchar(7) check (types_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
+  PRIMARY KEY (job_type_id)
 );
 CREATE INDEX log_types ON job_types (types_index);
 CREATE INDEX type ON job_types (type);

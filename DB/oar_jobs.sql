@@ -62,18 +62,22 @@ PRIMARY KEY (job_id)
 
 #DROP TABLE IF EXISTS job_types;
 CREATE TABLE IF NOT EXISTS job_types (
+job_type_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 job_id INT UNSIGNED NOT NULL ,
 type VARCHAR(255) NOT NULL ,
 types_index ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
 INDEX log (types_index),
 INDEX type (type),
-INDEX id_types (job_id)
+INDEX id_types (job_id),
+PRIMARY KEY (job_type_id)
 );
 
 #DROP TABLE IF EXISTS challenges;
 CREATE TABLE IF NOT EXISTS challenges (
 job_id INT UNSIGNED NOT NULL ,
 challenge VARCHAR(255) NOT NULL ,
+ssh_private_key TEXT DEFAULT NULL ,
+ssh_public_key TEXT DEFAULT NULL ,
 PRIMARY KEY (job_id)
 );
 

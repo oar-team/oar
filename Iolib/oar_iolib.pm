@@ -1156,9 +1156,9 @@ sub set_job_state($$$) {
         }elsif ($state eq "Running"){
             oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
         }elsif (($state eq "Terminated") or ($state eq "Error")){
-            $dbh->do("  DELETE FROM challenges
-                        WHERE job_id = $job_id
-                     ");
+            #$dbh->do("  DELETE FROM challenges
+            #            WHERE job_id = $job_id
+            #         ");
             
             if ($Db_type eq "Pg"){
                 $dbh->do("  UPDATE moldable_job_descriptions
@@ -1380,9 +1380,15 @@ sub resubmit_job($$){
                     job_id_required = $job_id
              ");
 
-    my $random_number = int(rand(1000000000000));
-    $dbh->do("INSERT INTO challenges (job_id,challenge)
-              VALUES ($new_job_id,\'$random_number\')
+    #my $random_number = int(rand(1000000000000));
+    #$dbh->do("INSERT INTO challenges (job_id,challenge)
+    #          VALUES ($new_job_id,\'$random_number\')
+    #         ");
+    $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
+              SELECT $new_job_id, challenge, ssh_private_key, ssh_public_key
+              FROM challenges
+              WHERE
+                job_id = $job_id
              ");
     
     $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)

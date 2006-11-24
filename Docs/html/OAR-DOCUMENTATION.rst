@@ -970,23 +970,24 @@ the "-l" option.
 *job_state_logs*
 ~~~~~~~~~~~~~~~~
 
-================  ====================  =======================================
-Fields            Types                 Descriptions
-================  ====================  =======================================
-job_id            INT UNSIGNED          corresponding job identifier
-job_state         ENUM('Waiting',       job state during the interval
-                  'Hold', 'toLaunch',
-                  'toError',
-                  'toAckReservation',
-                  'Launching',
-                  'Finishing',
-                  'Terminated',
-                  'Error')
-date_start        INT UNSIGNED          start date of the interval
-date_stop         INT UNSIGNED          end date of the interval
-================  ====================  =======================================
+=================  ====================  =======================================
+Fields             Types                 Descriptions
+=================  ====================  =======================================
+job_state_log_id   INT UNSIGNED          identifier
+job_id             INT UNSIGNED          corresponding job identifier
+job_state          ENUM('Waiting',       job state during the interval
+                   'Hold', 'toLaunch',
+                   'toError',
+                   'toAckReservation',
+                   'Launching',
+                   'Finishing',
+                   'Terminated',
+                   'Error')
+date_start         INT UNSIGNED          start date of the interval
+date_stop          INT UNSIGNED          end date of the interval
+=================  ====================  =======================================
 
-:Primary key: *None*
+:Primary key: job_state_log_id
 :Index fields: job_id, job_state
 
 This table keeps informations about state changes of jobs.
@@ -997,12 +998,15 @@ This table keeps informations about state changes of jobs.
 ================  ====================  =======================================
 Fields            Types                 Descriptions
 ================  ====================  =======================================
+job_type_id       INT UNSIGNED          identifier
 job_id            INT UNSIGNED          corresponding job identifier
 type              VARCHAR(255)          job type like "deploy", "timesharing",
                                         ...
+type_index        ENUM('CURRENT',       index field
+                  'LOG')
 ================  ====================  =======================================
 
-:Primary key: *None*
+:Primary key: job_type_id
 :Index fields: job_id, type
 
 This table stores job types given with the `oarsub`_ command and "-t" options.
@@ -1149,6 +1153,11 @@ Fields            Types                 Descriptions
 ================  ====================  =======================================
 job_id            INT UNSIGNED          job identifier
 challenge         VARCHAR(255)          challenge string
+ssh_private_key   TEXT DEFAULT NULL     ssh private key given by the user
+                                        (in grid usage it enables to connect
+                                        onto all nodes of the job of all
+                                        clusers with oarsh_)
+ssh_public_key    TEXT DEFAULT NULL     ssh public key
 ================  ====================  =======================================
 
 :Primary key: job_id
