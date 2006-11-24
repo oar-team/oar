@@ -370,6 +370,7 @@ $ENV{OAR_STDOUT} = "'.$stdout_file.'";
 $ENV{OAR_STDERR} = "'.$stderr_file.'";
 $ENV{OAR_FILE_NODES} = "'.$node_file.'";
 $ENV{OAR_JOBID} = '.$job_id.';
+$ENV{OARSH_JOB_ID} = '.$job_id.';
 $ENV{OAR_USER} = "'.$user.'";
 $ENV{OAR_WORKDIR} = "'.$launching_directory.'";
 $ENV{OAR_RESOURCE_PROPERTIES_FILE} = "'.$resource_file.'";
@@ -456,6 +457,7 @@ fi
 
 export OAR_FILE_NODES='.$node_file.'
 export OAR_JOBID='.$job_id.'
+export OARSH_JOB_ID='.$job_id.'
 export OAR_USER='.$user.'
 export OAR_WORKDIR='.$launching_directory.'
 export DISPLAY='.$display.'
