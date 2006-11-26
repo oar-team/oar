@@ -8,6 +8,8 @@
 
 # TAKTUK_HOSTNAME envirionment variable must be defined and must be a name
 # that we will be able to find in the transfered hashtable.
+use Fcntl ':flock';
+use Data::Dumper;
 
 my $Cpuset;
 my $Data_structure_transfer_timeout = 30;
@@ -15,7 +17,11 @@ my $Data_structure_transfer_timeout = 30;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($Data_structure_transfer_timeout);
-    $Cpuset = eval( <STDIN> );
+    my $tmp = "";
+    while (<STDIN>){
+        $tmp .= $_;
+    }
+    $Cpuset = eval($tmp);
     alarm(0);
 };
 if( $@ ){
@@ -61,7 +67,75 @@ if ($ARGV[0] eq "init"){
               )){
         exit(5);
     }
+
+    # Copy ssh key files
+    if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
+        # First, create the tmp oar directory
+        if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
+            print("[cpuset_manager] Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
+            exit(13);
+        }
+        # private key
+        if (open(PRIV, ">".$Cpuset->{ssh_keys}->{private}->{file_name})){
+            chmod(0600,$Cpuset->{ssh_keys}->{private}->{file_name});
+            if (!print(PRIV $Cpuset->{ssh_keys}->{private}->{key})){
+                warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{private}->{file_name} \n");
+                unlink($Cpuset->{ssh_keys}->{private}->{file_name});
+                exit(8);
+            }
+            close(PRIV);
+        }else{
+            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{private}->{file_name} \n");
+            exit(7);
+        }
+
+        # public key
+        if (open(PUB,"+<",$Cpuset->{ssh_keys}->{public}->{file_name})){
+            flock(PUB,LOCK_EX);
+            my $out = "\n".$Cpuset->{ssh_keys}->{public}->{key}."\n";
+            while (<PUB>){
+                $out .= $_;
+            }
+            if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
+                warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+                exit(9);
+            }
+            flock(PUB,LOCK_UN);
+            close(PUB);
+        }else{
+            unlink($Cpuset->{ssh_keys}->{private}->{file_name});
+            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+            exit(10);
+        }
+    }
 }elsif ($ARGV[0] eq "clean"){
+    # delete ssh key files
+    if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
+        # private key
+        unlink($Cpuset->{ssh_keys}->{private}->{file_name});
+
+        # public key
+        if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){
+            flock(PUB,LOCK_EX);
+            #Change file on the fly
+            my $out = "";
+            while (<PUB>){
+                if (($_ ne "\n") and ($_ ne $Cpuset->{ssh_keys}->{public}->{key})){
+                    $out .= $_;
+                }
+            }
+            if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
+                warn("[cpuset_manager] Error changing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+                exit(12);
+            }
+            flock(PUB,LOCK_UN);
+            close(PUB);
+        }else{
+            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+            exit(11);
+        }
+    }
+
     # Clean cpuset on this node
 
     system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_name.'/tasks)

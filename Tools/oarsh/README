@@ -95,14 +95,23 @@ NOTES
     - On each nodes you must add in the SSH server configuration file::
 
         AcceptEnv OAR_CPUSET SUDO_USER
+        PermitUserEnvironment yes
+        UseLogin no
+        AllowUsers oar
 
-      In Debian the file is "/etc/ssh/sshd_config"
-    
-    - You can use scp with oarsh. The syntax is::
+      In Debian the file is "/etc/ssh/sshd_config".
+
+      *AllowUsers* restricts the users which can connect directly on the
+      nodes. With cpuset enabled, only the user oar is needed but other logins
+      can be added with this syntax(it is safer)::
+      
+        AllowUsers oar admin1 admin2 ...
+        
+    - the command "scp" can be used with oarsh. The syntax is::
 
         scp -S /path/to/oarsh ...
     
-    - If you want to use oarsh on the user frontale, you can. You have to
+    - If you want to use oarsh from the user frontale, you can. You have to
       define the environment OARSH_JOB_ID and then launch oarsh on a node used
       by your OAR job. This feature works only where the oarstat_ command is
       configured::

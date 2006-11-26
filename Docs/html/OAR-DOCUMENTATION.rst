@@ -210,6 +210,13 @@ Options::
                                       then processes of a job could be killed
                                       when another finished on the same
                                       computer)
+  --ssh_private_key  |   specify the private and public ssh key
+                     |-  to use to connect on each nodes assigned by OAR.
+  --ssh_public_key   |   This option is usefull in a grid usage to
+                         establish oarsh connections between each
+                         nodes of each clusters.
+                         Be carefull to use only ssh keys without
+                         passphrase.
   --hold : Set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state).
   -D : Print result in DUMPER format.
   -Y : Print result in XML format.
@@ -1621,6 +1628,19 @@ editing 3 files (see also `CPUSET installation`_):
    name. So if there is one it assigns the current process and its father to
    this cpusetname. So all further user processes will remind in the cpuset.
    In this file you just have to change the "add_process_to_cpuset" function.
+
+SSH connection key definition
+-----------------------------
+
+This function is performed by oarsub_ with the --ssh_private_key and
+--ssh_public_key options.
+
+It enables the user to define a ssh key pair to connect on their nodes.
+So oarsh_ can be used on nodes of different clusters to connect
+each others if the same ssh keys are used with each oarsub_.
+
+So a grid reservation ("-r" option of oarsub_ on each OAR batch scheduler of
+each wanted clusters) can be done with this functionality. 
 
 Suspend/resume
 --------------

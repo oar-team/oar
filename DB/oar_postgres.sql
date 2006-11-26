@@ -34,8 +34,8 @@ CREATE INDEX log ON assigned_resources (assigned_resource_index);
 CREATE TABLE challenges (
   job_id integer NOT NULL default '0',
   challenge varchar(255) NOT NULL default '',
-  ssh_private_key text default NULL ,
-  ssh_public_key text default NULL ,
+  ssh_private_key text NOT NULL default '' ,
+  ssh_public_key text NOT NULL default '' ,
   PRIMARY KEY  (job_id)
 );
 
@@ -149,7 +149,7 @@ CREATE TABLE job_state_logs (
   job_state varchar(16) check (job_state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Suspended','Resuming','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
   date_start integer NOT NULL default '0',
   date_stop integer NOT NULL default '0',
-  PRIMARY KEY (job_state_logs)
+  PRIMARY KEY (job_state_log_id)
 );
 CREATE INDEX id_job_log ON job_state_logs (job_id);
 CREATE INDEX state_job_log ON job_state_logs (job_state);

@@ -59,5 +59,16 @@ then
     fi
 fi
 
+# Test if a specific ssh connection key is used
+SSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
+if [ -r $SSH_KEY_FILE ]
+then
+    exec ssh -i $SSH_KEY_FILE "$@"
+    echo "[OARSH] Exec wih the key failed"
+    exit 5
+fi
+
 exec ssh -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+echo "[OARSH] Exec with environments failed"
+exit 6
 

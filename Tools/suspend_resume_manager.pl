@@ -12,7 +12,11 @@ my $Data_structure_transfer_timeout = 30;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($Data_structure_transfer_timeout);
-    $Hash = eval( <STDIN> );
+    my $tmp = "";
+    while (<STDIN>){
+        $tmp .= $_;
+    }
+    $Hash = eval($tmp);
     alarm(0);
 };
 if( $@ ){

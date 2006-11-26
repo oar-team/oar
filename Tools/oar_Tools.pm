@@ -23,6 +23,7 @@ my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
 my $Default_cpuset_file_manager = "cpuset_manager.pl";
 my $Default_suspend_resume_file_manager = "suspend_resume_manager.pl";
+my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 
 # Prototypes
 sub get_all_process_children();
@@ -48,6 +49,9 @@ sub get_bipbip_oarexec_rendez_vous();
 sub sentinelle($$$$$);
 sub check_resource_property($);
 sub check_resource_system_property($);
+sub get_private_ssh_key_file_name($);
+sub format_ssh_pub_key($$$);
+sub get_default_oar_ssh_authorized_keys_file();
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -98,6 +102,27 @@ sub get_default_cpuset_file(){
 # Get default value for SUSPEND_RESUME_FILE tag
 sub get_default_suspend_resume_file(){
     return($Default_suspend_resume_file_manager);
+}
+
+# Get then file name where are stored all oar ssh public keys
+sub get_default_oar_ssh_authorized_keys_file(){
+    return($Default_oar_ssh_authorized_keys_file);
+}
+
+# Get the name of the file of the private ssh key for the given cpuset name
+sub get_private_ssh_key_file_name($){
+    my $cpuset_name = shift;
+
+    return($Default_oarexec_directory.$cpuset_name.".sshkey");
+}
+
+# Add right environment variables to the given public key
+sub format_ssh_pub_key($$$){
+    my $key = shift;
+    my $cpuset = shift;
+    my $user = shift;
+
+    return('environment="OAR_CPUSET='.$cpuset.'",environment="SUDO_USER='.$user.'" '.$key."\n");
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names
@@ -401,7 +426,11 @@ if ((!open(STDOUT, ">$ENV{OAR_STDOUT}")) or (!open(STDERR, ">$ENV{OAR_STDERR}"))
 }
 
 # Get user command by the STDIN (for SECURITY)
-my $cmd_exec = eval(<STDIN>);
+my $tmp = "";
+while (<STDIN>){
+    $tmp .= $_;
+}
+my $cmd_exec = eval($tmp);
 my $pid = fork;
 if($pid == 0){
     # To be sure that user do not try to do something nasty
@@ -643,7 +672,7 @@ sub manage_remote_commands($$$$$$$){
     $Data::Dumper::Deepcopy = 1;
 
     $string_to_transfer .= Dumper($data_hash);
-    
+
     if (!defined($taktuk_cmd)){
         # Dispatch via sentinelle
         my @node_commands;

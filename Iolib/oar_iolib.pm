@@ -51,7 +51,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -328,7 +328,7 @@ sub get_job_challenge($$){
     my $dbh = shift;
     my $job_id = shift;
     
-    my $sth = $dbh->prepare("SELECT challenge
+    my $sth = $dbh->prepare("SELECT challenge,ssh_private_key,ssh_public_key
                              FROM challenges
                              WHERE
                                 job_id = $job_id
@@ -337,9 +337,35 @@ sub get_job_challenge($$){
     my $ref = $sth->fetchrow_hashref();
     $sth->finish();
 
-    return($$ref{challenge});
+    return($ref->{challenge},$ref->{ssh_private_key},$ref->{ssh_public_key});
 }
 
+# get_count_same_ssh_keys_current_jobs
+# return the number of current jobs with the same ssh keys
+sub get_count_same_ssh_keys_current_jobs($$$$){
+    my $dbh = shift;
+    my $user = shift;
+    my $ssh_private_key = shift;
+    my $ssh_public_key = shift;
+
+    $ssh_private_key = $dbh->quote($ssh_private_key);
+    $ssh_public_key = $dbh->quote($ssh_public_key);
+    lock_table($dbh,["challenges","jobs"]);
+    my $sth = $dbh->prepare("   SELECT COUNT(challenges.job_id)
+                                FROM challenges, jobs
+                                WHERE
+                                    jobs.job_user = \'$user\' AND
+                                    jobs.state NOT IN (\'Terminated\',\'Error\',\'Finishing\') AND
+                                    challenges.job_id = jobs.job_id AND
+                                    challenges.ssh_private_key = $ssh_private_key AND
+                                    challenges.ssh_public_key = $ssh_public_key
+                            ");
+    $sth->execute();
+    my @ref = $sth->fetchrow_array();
+    $sth->finish();
+    unlock_table($dbh);
+    return($ref[0]);
+}
 
 # get_jobs_in_state
 # returns the jobs in the specified state
@@ -832,8 +858,8 @@ sub get_possible_wanted_resources($$$$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold,$project) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold,$project,$ssh_priv_key,$ssh_pub_key) = @_;
 
     my $default_walltime = "3600";
     my $startTimeJob = "0";
@@ -853,6 +879,15 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
         return(-6);
     }
     
+    # Verify the content of the ssh keys
+    if (($ssh_pub_key ne "") or ($ssh_priv_key ne "")){
+        # Check if the keys are used by other jobs
+        if (get_count_same_ssh_keys_current_jobs($dbh_ro,$user,$ssh_priv_key,$ssh_pub_key) > 0){
+            warn("/!\\ Another job is using the same ssh keys\n");
+            return(-10);
+        }
+    }
+
 #    # Verify job name
 #    if ($job_name !~ m/^\w*$/m){
 #        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
@@ -1018,14 +1053,16 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
                  ");
     }
 
+    $ssh_priv_key = $dbh->quote($ssh_priv_key);
+    $ssh_pub_key = $dbh->quote($ssh_pub_key);
     my $random_number = int(rand(1000000000000));
-    $dbh->do("INSERT INTO challenges (job_id,challenge)
-              VALUES ($job_id,\'$random_number\')
+    $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
+              VALUES ($job_id,\'$random_number\',$ssh_priv_key,$ssh_pub_key)
              ");
 
     if (!defined($job_hold)) {
         $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
-                  VALUES ($job_id,\'Waiting\',\'$date\')
+                  VALUES ($job_id,\'Waiting\',$date)
                  ");
     
         $dbh->do("  UPDATE jobs
@@ -1035,7 +1072,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$) {
                  ");
     }else{
         $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
-                  VALUES ($job_id,\'Hold\',\'$date\')
+                  VALUES ($job_id,\'Hold\',$date)
                  ");
     }
     #$dbh->do("UNLOCK TABLES");
@@ -1264,6 +1301,15 @@ sub resubmit_job($$){
     return(-2) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
     return(-3) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
+    # Verify the content of the ssh keys
+    my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
+    if (($ssh_public_key ne "") or ($ssh_private_key ne "")){
+        # Check if the keys are used by other jobs
+        if (get_count_same_ssh_keys_current_jobs($dbh,$job->{job_user},$ssh_private_key,$ssh_public_key) > 0){
+            return(-4);
+        }
+    }
+
     my $command = $dbh->quote($job->{command});
     my $jobproperties = $dbh->quote($job->{properties});
     my $launching_directory = $dbh->quote($job->{launching_directory});
@@ -1330,8 +1376,9 @@ sub resubmit_job($$){
         foreach my $res (@groups){
             my $r = $res->[0];
             #lock_table($dbh,["job_resource_groups"]);
+            my $prop = $dbh->quote($res->[1]);
             $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
-                        VALUES ($moldable_id,\'$res->[1]\')
+                        VALUES ($moldable_id,$prop)
                      ");
             my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
             #unlock_table($dbh);
@@ -1369,8 +1416,9 @@ sub resubmit_job($$){
     $sth->finish();
 
     foreach my $t (@types){
+        $t = $dbh->quote($t);
         $dbh->do("  INSERT INTO job_types (job_id,type)
-                    VALUES($new_job_id, \'$t\')
+                    VALUES($new_job_id, $t)
                  ");
     }
 
@@ -1392,7 +1440,7 @@ sub resubmit_job($$){
              ");
     
     $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
-              VALUES ($new_job_id,\'Waiting\',\'$date\')
+              VALUES ($new_job_id,\'Waiting\',$date)
              ");
     
     $dbh->do("  UPDATE jobs
@@ -1402,7 +1450,6 @@ sub resubmit_job($$){
              ");
 
     return($new_job_id);
-
 }
 
 
@@ -4699,9 +4746,22 @@ sub job_finishing_sequence($$$$$$$$){
             if (defined($cpuset_nodes)){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
+                my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
+                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_name,$job->{job_user});
                 my $cpuset_data_hash = {
                     name => $cpuset_name,
-                    nodes => $cpuset_nodes
+                    nodes => $cpuset_nodes,
+                    ssh_keys => {
+                                    public => {
+                                                file_name => oar_Tools::get_default_oar_ssh_authorized_keys_file(),
+                                                key => $ssh_public_key
+                                              },
+                                    private => {
+                                                file_name => oar_Tools::get_private_ssh_key_file_name($cpuset_name),
+                                                key => $ssh_private_key
+                                               }
+                                },
+                    oar_tmp_directory => oar_Tools::get_default_oarexec_directory()
                 };
                 my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){

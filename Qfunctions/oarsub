@@ -80,6 +80,8 @@ my $Project = "default";
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
+my $Ssh_private_key = "";
+my $Ssh_public_key = "";
 
 
 #to catch ^C signal
@@ -261,6 +263,13 @@ Options are:
                                have the same cpuset name then processes of a
                                job could be killed when another finished
                                on the same computer)
+     --ssh_private_key |       specify the private and public ssh key
+                       |-      to use to connect on each nodes assigned by OAR.
+     --ssh_public_key  |       This option is usefull in a grid usage to 
+                               establish oarsh connections between each
+                               nodes of each clusters.
+                               Be carefull to use only ssh keys without
+                               passphrase.
      --hold                    set the job state into Hold instead of Waiting;
                                so it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
@@ -340,6 +349,8 @@ GetOptions ("resource|l=s" => \@resource,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
+            "ssh_private_key=s" => \$Ssh_private_key,
+            "ssh_public_key=s" => \$Ssh_public_key,
             "version|v" => \$Version
            );
 
@@ -352,6 +363,23 @@ if (defined($Version)){
 if (defined($sos)){
     usage();
     exit(0);
+}
+
+# Check ssh keys
+if (($Ssh_private_key ne "") or ($Ssh_public_key ne "")){
+    if (!(
+        ($Ssh_public_key eq "") or
+        ($Ssh_private_key eq "")
+       )){
+        if ($Ssh_public_key !~ /^(ssh-rsa|ssh-dss)\s/){
+            warn("Bad ssh public key format. The key must begin with 'ssh-rsa' or 'ssh-dss'\n");
+            exit(14);
+        }
+        $Ssh_public_key =~ s/\n//g;
+    }else{
+        warn("You must specify both keys : --ssh_private_key and --ssh_public_key\n");
+        exit(15);
+    }
 }
 
 $base = iolib::connect();
@@ -376,6 +404,8 @@ if (defined($Resubmit)){
             warn("/!\\ The job must be in Error or Terminated state\n");
         }elsif ($err == -3){
             warn("/!\\ You are not the right user\n");
+        }elsif ($err == -4){
+            warn("/!\\ Another active job is using the same ssh keys\n");
         }else{
             warn("/!\\ Unknown error\n");
         }
@@ -573,7 +603,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$Ssh_private_key,$Ssh_public_key);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -597,7 +627,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$Ssh_private_key,$Ssh_public_key);
 }
 print("JOB_ID = $Job_id \n");
 
