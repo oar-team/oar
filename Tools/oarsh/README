@@ -89,8 +89,8 @@ adds its PID in OAR_CPUSET cpuset. Then it searchs user shell and home and
 executes the right command (like ssh).
 
 
-NOTES
-.....
+Important notes
+...............
 
     - On each nodes you must add in the SSH server configuration file::
 
@@ -106,7 +106,20 @@ NOTES
       can be added with this syntax(it is safer)::
       
         AllowUsers oar admin1 admin2 ...
-        
+    
+    - The default oar ssh public key in the authorized_keys file must be tagged
+      for the security. So this prefix must be set in front of the public key::
+
+        environment="OAR_KEY=1"
+
+      So if the oar public key is::
+
+        ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr7NLozrRUENDHPX1GNdy34m6YoZ3+Q27i+ob3qClFLW4QpcyzPqgYV3Fvk6/o8guahYbREH9akvtWPAXonJqQR6+Ig2/LPk0hlH6A+SpnOLR0m7x/f6Lh+uIxM0L8BHJsU4lBge7+ZWnsPNel1oQOuZa902ARCiJ0nfjapXC/V+zWNWdNwe+g9vT8uQ==
+
+      then it must be switch into::
+
+        environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr7NLozrRUENDHPX1GNdy34m6YoZ3+Q27i+ob3qClFLW4QpcyzPqgYV3Fvk6/o8guahYbREH9akvtWPAXonJqQR6+Ig2/LPk0hlH6A+SpnOLR0m7x/f6Lh+uIxM0L8BHJsU4lBge7+ZWnsPNel1oQOuZa902ARCiJ0nfjapXC/V+zWNWdNwe+g9vT8uQ==
+    
     - the command "scp" can be used with oarsh. The syntax is::
 
         scp -S /path/to/oarsh ...

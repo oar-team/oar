@@ -31,6 +31,12 @@ function add_process_to_cpuset() {
 
 if [ "$SUDO_USER" == "" ]
 then
+    if [ "$SSH_CLIENT" != ""  ] && [ "$OAR_KEY" != "1" ]
+    then
+        echo "[OARSH] The OAR_KEY environment variable is not defined and this seems to be a oar user connection." 1>&2
+        echo "[OARSH] See 'Important notes' part of the 'CPUSET installation' section of the OAR documentation." 1>&2
+        exit 5
+    fi
     # It must be oar
     if [ "$OAR_CPUSET" != "" ]
     then

@@ -196,6 +196,11 @@ The installation will ask you if you want to initialize the nodes. It will copy
 the oar SSH key on each specified nodes. You can skeep this step by you will
 have to do this manually.
 
+**IMPORTANT** : if you want to use the cpuset features then you have to install
+the oar-node package on computing nodes otherwise this is not mandatory.
+But if this is performed then the configuration of `Important notes`_ 
+must be set on these nodes.
+
 After installing packages, you have to edit the `configuration file`_ on the
 server, submition nodes and computing nodes to fite your needs.
 
