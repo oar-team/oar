@@ -371,13 +371,17 @@ if (($Ssh_private_key ne "") or ($Ssh_public_key ne "")){
         ($Ssh_public_key eq "") or
         ($Ssh_private_key eq "")
        )){
+        if (defined($Cpuset_name)){
+            warn("You are not able to specify a cpuset name and a ssh key pair.\n");
+            exit(14);
+        }
         if ($Ssh_public_key !~ /^(ssh-rsa|ssh-dss)\s/){
-            warn("Bad ssh public key format. The key must begin with 'ssh-rsa' or 'ssh-dss'\n");
+            warn("Bad ssh public key format. The key must begin with 'ssh-rsa' or 'ssh-dss'.\n");
             exit(14);
         }
         $Ssh_public_key =~ s/\n//g;
     }else{
-        warn("You must specify both keys : --ssh_private_key and --ssh_public_key\n");
+        warn("You must specify both keys : --ssh_private_key and --ssh_public_key.\n");
         exit(15);
     }
 }

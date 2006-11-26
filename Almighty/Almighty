@@ -364,17 +364,20 @@ sub time_update(){
     # check timeout for scheduler
     if ($current>=($lastscheduler+$schedulertimeout)){
         oar_debug("[Almighty] Scheduling timeout\n");
-        $lastscheduler = $lastscheduler+$schedulertimeout;
+        #$lastscheduler = $lastscheduler+$schedulertimeout;
+        $lastscheduler = $current + $schedulertimeout;
         add_command("Scheduling");
     }
     if ($current>=($lastvillains+$villainstimeout)){
         oar_debug("[Almighty] Villains check timeout\n");
-        $lastvillains = $lastvillains+$villainstimeout;
+        #$lastvillains = $lastvillains+$villainstimeout;
+        $lastvillains = $current + $villainstimeout;
         add_command("Villains");
     }
     if (($current>=($lastchecknodes+$checknodestimeout)) and ($checknodestimeout > 0)){
         oar_debug("[Almighty] Node check timeout\n");
-        $lastchecknodes = $lastchecknodes+$checknodestimeout;
+        #$lastchecknodes = $lastchecknodes+$checknodestimeout;
+        $lastchecknodes = $current + $checknodestimeout;
         add_command("Finaud");
     }
 }

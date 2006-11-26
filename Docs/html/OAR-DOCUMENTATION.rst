@@ -1642,6 +1642,12 @@ each others if the same ssh keys are used with each oarsub_.
 So a grid reservation ("-r" option of oarsub_ on each OAR batch scheduler of
 each wanted clusters) can be done with this functionality. 
 
+Example::
+
+    ssh-keygen -f oar_key
+    oarsub --ssh_private_key "$(cat oar_key)" --ssh_public_key "$(cat oar_key.pub)" ./script.sh
+    
+
 Suspend/resume
 --------------
 

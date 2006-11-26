@@ -350,7 +350,6 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
 
     $ssh_private_key = $dbh->quote($ssh_private_key);
     $ssh_public_key = $dbh->quote($ssh_public_key);
-    lock_table($dbh,["challenges","jobs"]);
     my $sth = $dbh->prepare("   SELECT COUNT(challenges.job_id)
                                 FROM challenges, jobs
                                 WHERE
@@ -363,7 +362,6 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
     $sth->execute();
     my @ref = $sth->fetchrow_array();
     $sth->finish();
-    unlock_table($dbh);
     return($ref[0]);
 }
 
@@ -591,6 +589,7 @@ sub get_to_kill_jobs($) {
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref);
     }
+    $sth->finish();
     return(@res);
 }
 
@@ -614,6 +613,7 @@ sub get_timered_job($) {
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref);
     }
+    $sth->finish();
     return(@res);
 }
 
@@ -636,6 +636,7 @@ sub get_to_exterminate_jobs($) {
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref);
     }
+    $sth->finish();
     return(@res);
 }
 
@@ -879,15 +880,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
         return(-6);
     }
     
-    # Verify the content of the ssh keys
-    if (($ssh_pub_key ne "") or ($ssh_priv_key ne "")){
-        # Check if the keys are used by other jobs
-        if (get_count_same_ssh_keys_current_jobs($dbh_ro,$user,$ssh_priv_key,$ssh_pub_key) > 0){
-            warn("/!\\ Another job is using the same ssh keys\n");
-            return(-10);
-        }
-    }
-
 #    # Verify job name
 #    if ($job_name !~ m/^\w*$/m){
 #        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
@@ -963,6 +955,16 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
         }
     }
 
+    lock_table($dbh,["challenges","jobs"]);
+    # Verify the content of the ssh keys
+    if (($ssh_pub_key ne "") or ($ssh_priv_key ne "")){
+        # Check if the keys are used by other jobs
+        if (get_count_same_ssh_keys_current_jobs($dbh,$user,$ssh_priv_key,$ssh_pub_key) > 0){
+            warn("/!\\ Another job is using the same ssh keys\n");
+            return(-10);
+        }
+    }
+
     #Insert job
     my $date = get_date($dbh);
     #lock_table($dbh,["jobs"]);
@@ -979,6 +981,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
+    
+    $ssh_priv_key = $dbh->quote($ssh_priv_key);
+    $ssh_pub_key = $dbh->quote($ssh_pub_key);
+    my $random_number = int(rand(1000000000000));
+    $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
+              VALUES ($job_id,\'$random_number\',$ssh_priv_key,$ssh_pub_key)
+             ");
+    unlock_table($dbh);
 
     if (!defined($stdout) or ($stdout eq "")){
         $stdout = "OAR";
@@ -1052,13 +1062,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
                     VALUES ($job_id,$a)
                  ");
     }
-
-    $ssh_priv_key = $dbh->quote($ssh_priv_key);
-    $ssh_pub_key = $dbh->quote($ssh_pub_key);
-    my $random_number = int(rand(1000000000000));
-    $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
-              VALUES ($job_id,\'$random_number\',$ssh_priv_key,$ssh_pub_key)
-             ");
 
     if (!defined($job_hold)) {
         $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
@@ -1301,6 +1304,7 @@ sub resubmit_job($$){
     return(-2) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
     return(-3) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
+    lock_table($dbh,["challenges","jobs"]);
     # Verify the content of the ssh keys
     my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
     if (($ssh_public_key ne "") or ($ssh_private_key ne "")){
@@ -1325,7 +1329,34 @@ sub resubmit_job($$){
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
+
+    my $random_number = int(rand(1000000000000));
+    #$dbh->do("INSERT INTO challenges (job_id,challenge)
+    #          VALUES ($new_job_id,\'$random_number\')
+    #         ");
     
+    my $pub_key = "";
+    my $priv_key = "";
+    my $sth = $dbh->prepare("   SELECT ssh_private_key, ssh_public_key
+                                FROM challenges
+                                WHERE
+                                    job_id = $job_id
+                            ");
+    $sth->execute();
+    my $ref_keys = $sth->fetchrow_hashref();
+    $sth->finish();
+    if (defined($ref_keys)){
+        $priv_key = $ref_keys->{ssh_private_key};
+        $pub_key = $ref_keys->{ssh_public_key};
+    }
+    $priv_key = $dbh->quote($priv_key);
+    $pub_key = $dbh->quote($pub_key);
+   
+    $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
+              VALUES ($new_job_id,\'$random_number\',$priv_key,$pub_key)
+             ");
+    unlock_table($dbh);
+
     $job->{stdout_file} =~ m/^(.+)\.$job_id\.stdout$/m;
     my $stdout_file = $dbh->quote("$1.$new_job_id.stdout");
     $job->{stderr_file} =~ m/^(.+)\.$job_id\.stderr$/m;
@@ -1427,18 +1458,7 @@ sub resubmit_job($$){
                 WHERE
                     job_id_required = $job_id
              ");
-
-    #my $random_number = int(rand(1000000000000));
-    #$dbh->do("INSERT INTO challenges (job_id,challenge)
-    #          VALUES ($new_job_id,\'$random_number\')
-    #         ");
-    $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
-              SELECT $new_job_id, challenge, ssh_private_key, ssh_public_key
-              FROM challenges
-              WHERE
-                job_id = $job_id
-             ");
-    
+   
     $dbh->do("INSERT INTO job_state_logs (job_id,job_state,date_start)
               VALUES ($new_job_id,\'Waiting\',$date)
              ");
