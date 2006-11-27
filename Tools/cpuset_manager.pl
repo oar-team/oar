@@ -94,6 +94,17 @@ if ($ARGV[0] eq "init"){
             flock(PUB,LOCK_EX);
             my $out = "\n".$Cpuset->{ssh_keys}->{public}->{key}."\n";
             while (<PUB>){
+                if ($_ =~ /environment=\"OAR_KEY=1\"/){
+                    # We are reading a OAR key
+                    $_ =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
+                    my $oar_key = $2;
+                    $Cpuset->{ssh_keys}->{public}->{key} =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
+                    my $curr_key = $2;
+                    if ($curr_key eq $oar_key){
+                        warn("[cpuset_manager] ERROR: the user has specified the same ssh key than used by the user oar.\n");
+                        exit(13);
+                    }
+                }
                 $out .= $_;
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){

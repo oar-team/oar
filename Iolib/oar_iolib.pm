@@ -353,11 +353,11 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
     my $sth = $dbh->prepare("   SELECT COUNT(challenges.job_id)
                                 FROM challenges, jobs
                                 WHERE
-                                    jobs.job_user = \'$user\' AND
                                     jobs.state NOT IN (\'Terminated\',\'Error\',\'Finishing\') AND
                                     challenges.job_id = jobs.job_id AND
                                     challenges.ssh_private_key = $ssh_private_key AND
-                                    challenges.ssh_public_key = $ssh_public_key
+                                    challenges.ssh_public_key = $ssh_public_key AND
+                                    challenges.ssh_private_key != \'\'
                             ");
     $sth->execute();
     my @ref = $sth->fetchrow_array();
