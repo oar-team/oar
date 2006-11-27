@@ -76,6 +76,7 @@ install-indep:
 		BINDIR=$(CURDIR)/debian/oar-common/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/configurator_wrapper.sh
 	perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/sudowrapper.sh
@@ -90,6 +91,7 @@ install-indep:
 		BINDIR=$(CURDIR)/debian/oar-libs/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-libs/usr/sbin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
@@ -102,6 +104,7 @@ install-indep:
 		BINDIR=$(CURDIR)/debian/oar-server/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-server/usr/sbin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
 	$(MAKE) sanity-check node \
@@ -114,6 +117,7 @@ install-indep:
 		BINDIR=$(CURDIR)/debian/oar-node/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-node/usr/sbin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
 	$(MAKE) sanity-check user \
@@ -126,6 +130,7 @@ install-indep:
 		BINDIR=$(CURDIR)/debian/oar-user/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-user/usr/sbin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	$(MAKE) draw-gantt \
 		OARUSER=oar \
@@ -139,6 +144,7 @@ install-indep:
 		WWWDIR=$(CURDIR)/debian/oar-draw-gantt/var/www \
 		CGIDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/cgi-bin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	$(MAKE) desktop-computing-agent \
 		OARUSER=oar \
@@ -150,6 +156,7 @@ install-indep:
 		BINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 	$(MAKE) desktop-computing-cgi \
 		OARUSER=oar \
@@ -163,6 +170,7 @@ install-indep:
 		WWWDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/www \
 		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
 		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
 		SBINLINKPATH=../lib/oar
 
 	dh_install -i

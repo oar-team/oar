@@ -15,7 +15,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-libs
 Architecture: all
-Depends: oar-common, perl, sudo, adduser, libdbi-perl, libdbd-mysql-perl, adduser
+Depends: oar-common, perl, sudo, adduser, libdbi-perl, libdbd-mysql-perl|libdbd-pg-perl, adduser
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler libs package
  This package installs the common part or the OAR batch scheduler

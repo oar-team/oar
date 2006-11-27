@@ -19,6 +19,7 @@ CONFIG_CMDS=$(OARDIR)/cmds
 
 BINLINKPATH=$(OARDIR)
 SBINLINKPATH=$(OARDIR)
+CMDSLINKPATH=$(OARDIR)
 
 all: usage
 install: usage
@@ -45,14 +46,14 @@ desktop-computing-cgi:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarcache
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarcache
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarcache
 	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarres
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarres
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarres
 	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi
 	install -d -m 0755 $(CGIDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oar-cgi
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar-cgi
 	install -m 0755 Tools/sudowrapper.sh $(CGIDIR)/oar-cgi
 
 dbinit:
@@ -60,7 +61,7 @@ dbinit:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
@@ -74,7 +75,7 @@ sudowrapper:
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsh
 	
 common:
@@ -86,8 +87,9 @@ common:
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodesetting
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodesetting
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodesetting
+	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
@@ -99,7 +101,7 @@ server:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Almighty/Almighty $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/Almighty
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/Almighty
 	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/Almighty
 	install -m 0755 Leon/Leon	$(OARDIR)
 	install -m 0755 Runner/runner $(OARDIR)
@@ -111,19 +113,18 @@ server:
 	install -m 0755 Scheduler/oar_meta_sched $(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnotify
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnotify
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnotify
 	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarremoveresource
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarremoveresource
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarremoveresource
 	install -m 0755 Qfunctions/oaraccounting $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oaraccounting
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oaraccounting
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarproperty
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarproperty
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
-	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
@@ -136,23 +137,23 @@ user:
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodes
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodes
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodes
 	install -m 0755 Qfunctions/oardel $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oardel
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oardel
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oardel
 	install -m 0755 Qfunctions/oarstat $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarstat
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarstat
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarstat
 	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=$(CONFIG_CMDS)/oarstat#" $(OARDIR)/oarsh
 	install -m 0755 Qfunctions/oarsub $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsub
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsub
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsub
 	install -m 0755 Qfunctions/oarhold $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarhold
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarhold
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarhold
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
-	ln -s -f $(OARDIR)/configurator_wrapper.sh $(CONFIG_CMDS)/oarresume
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarresume
 	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarresume
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 Docs/man/oardel.1 $(MANDIR)/man1

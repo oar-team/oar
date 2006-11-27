@@ -125,16 +125,46 @@ If you want to use a postgres SQL server then there is currently no automatic in
 You have to add a new user which can connect on a new oar database(use the commands *createdb* and *createuser*).
 After that, you have to authorize network connections on the postgresql server in the *postgresql.conf* (uncomment
 *tcpip_socket = true*).
-Moreover a line like
-::
-    
-    host    oar         oar            X.X.X.X/Y    md5
-
-to enable oar user to connect to the database.
-
 Then you can import the database scheme stored in *oar_postgres.sql* (use the SQL command "\\i").
 
+Here is an example to perform all the potgres database install(there is certainly other ways to do that)::
+
+    createuser -P
+        Enter name of role to add: oar
+        Enter password for new role:
+        Enter it again: 
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) n
+        Shall the new role be allowed to create more new roles? (y/n) n
+        CREATE ROLE
+    
+    createuser -P
+        Enter name of role to add: oar_ro
+        Enter password for new role:
+        Enter it again: 
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) n
+        Shall the new
+    
+    sudo su - postgres
+    
+    createdb oar
+    psql oar
+        \i /usr/lib/oar/oar_postgres.sql
+        GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources TO oar;
+        GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources TO oar_ro;
+        
+        sudo vi /etc/postgresql/8.1/main/pg_hba.conf
+            host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
+            host    oar         oar               127.0.0.1          255.255.255.255    md5
+
+    sudo /etc/init.d/postgresql-8.1 reload
+    # You can test it with
+    psql oar oar_ro -h127.0.0.1
+
+
 For more informations about postgresql, go to http://www.postgresql.org/.
+
 
 Note: The same machine may host several or even all modules.
 
