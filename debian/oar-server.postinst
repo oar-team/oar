@@ -31,7 +31,8 @@ setup_oar_ssh() {
 	else
 		mkdir -p /var/lib/oar/.ssh 
 		ssh-keygen -t dsa -q -f /var/lib/oar/.ssh/id_dsa -N '' || true
-		cp /var/lib/oar/.ssh/id_dsa.pub /var/lib/oar/.ssh/authorized_keys || true
+		echo 'environment="OAR_KEY=1" ' > /var/lib/oar/.ssh/authorized_keys || true
+        cat /var/lib/oar/.ssh/id_dsa.pub >> /var/lib/oar/.ssh/authorized_keys || true
 	fi
 	cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
