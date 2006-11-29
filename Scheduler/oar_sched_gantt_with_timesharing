@@ -21,6 +21,8 @@ if (is_conf("SCHEDULER_TIMEOUT")){
 # Constant duration time of a besteffort job
 my $besteffort_duration = 5*60;
 
+my $max_waiting_jobs_to_schedule = 1000;
+
 # $security_time_overhead is the security time (second) used to be sure there
 # are no problem with overlaping jobs
 my $security_time_overhead = 1;
@@ -160,7 +162,7 @@ foreach my $r (iolib::get_resources_in_state($base,"Dead")){
     push(@Dead_resources, $r->{resource_id});
 }
 
-my @jobs = iolib::get_jobs_to_schedule($base,$queue);
+my @jobs = iolib::get_jobs_to_schedule($base,$queue,$max_waiting_jobs_to_schedule);
 my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];

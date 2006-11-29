@@ -77,7 +77,7 @@ sub set_stagein($$$$$$);
 sub get_job_stagein($$);
 sub is_stagein_deprecated($$$);
 sub del_stagein($$);
-sub get_jobs_to_schedule($$);
+sub get_jobs_to_schedule($$$);
 sub get_current_job_types($$);
 sub set_moldable_job_max_time($$$);
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
@@ -1961,9 +1961,10 @@ sub is_waiting_job_specific_queue_present($$){
 
 # get_jobs_to_schedule
 # args : base ref, queue name
-sub get_jobs_to_schedule($$){
+sub get_jobs_to_schedule($$$){
     my $dbh = shift;
     my $queue = shift;
+    my $limit = shift;
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs
@@ -1972,6 +1973,7 @@ sub get_jobs_to_schedule($$){
                                     AND reservation = \'None\'
                                     AND queue_name = \'$queue\'
                                 ORDER BY job_id
+                                LIMIT $limit
                             ");
     $sth->execute();
     my @res = ();
@@ -4304,6 +4306,59 @@ sub add_accounting_row($$$$$$$$){
                     VALUES (\'$user\',\'$type\',\'$queue\',\'$start\',\'$stop\',$conso,\'$project\')
                  ");
     }
+}
+
+
+sub get_sum_accounting_window($$$$){
+    my $dbh = shift;
+    my $queue = shift;
+    my $start_window = shift;
+    my $stop_window = shift;
+    
+    my $sth = $dbh->prepare("   SELECT consumption_type, SUM(consumption)
+                                FROM accounting
+                                WHERE
+                                    queue_name = \'$queue\' AND
+                                    window_start >= $start_window AND
+                                    window_start < $stop_window
+                                GROUP BY consumption_type
+                            ");
+    $sth->execute();
+
+    my $results;
+    while (my @r = $sth->fetchrow_array()) {
+        $results->{$r[0]} = $r[1];
+    }
+    $sth->finish();
+
+    return($results);
+}
+
+
+sub get_sum_accounting_for_param($$$$$){
+    my $dbh = shift;
+    my $queue = shift;
+    my $param_name = shift;
+    my $start_window = shift;
+    my $stop_window = shift;
+    
+    my $sth = $dbh->prepare("   SELECT $param_name,consumption_type, SUM(consumption)
+                                FROM accounting
+                                WHERE
+                                    queue_name = \'$queue\' AND
+                                    window_start >= $start_window AND
+                                    window_start < $stop_window
+                                GROUP BY $param_name,consumption_type
+                            ");
+    $sth->execute();
+
+    my $results;
+    while (my @r = $sth->fetchrow_array()) {
+        $results->{$r[0]}->{$r[1]} = $r[2];
+    }
+    $sth->finish();
+
+    return($results);
 }
 
 

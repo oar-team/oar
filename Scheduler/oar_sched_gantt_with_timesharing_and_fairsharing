@@ -11,6 +11,25 @@ use Gantt_2;
 use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
 
+###############################################################################
+# Fairsharing parameters #
+##########################
+my $Karma_max_number_of_jobs_treated = 1000;
+my $Karma_window_size = 3600 * 30;
+# specify the target percentages for project names (default is 0)
+my $Karma_project_targets = {
+    first => 75,
+    default => 25
+};
+
+# specify the target percentages for users (default is 0)
+my $Karma_user_targets = {
+    oar => 100
+};
+my $Karma_coeff_project_consumption = 3;
+my $Karma_coeff_user_consumption = 2;
+my $Karma_coeff_user_asked_consumption = 1;
+###############################################################################
 my $initial_time = time();
 my $timeout = 10;
 init_conf($ENV{OARCONFFILE});
@@ -50,7 +69,7 @@ if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
     $queue = $ARGV[0];
     $current_time = $ARGV[1];
 }else{
-    oar_error("[oar_sched_gantt_with_timesharing] no queue specified on command line\n");
+    oar_error("[oar_sched_gantt_with_timesharing_and_fairsharing] no queue specified on command line\n");
     exit(1);
 }
 
@@ -58,7 +77,7 @@ if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
 my $base = iolib::connect();
 my $base_ro = iolib::connect_ro();
 
-oar_debug("[oar_sched_gantt_with_timesharing] Begining of Gantt scheduler on queue $queue at time $current_time\n");
+oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Begining of Gantt scheduler on queue $queue at time $current_time\n");
 
 my $timesharing_gantts;
 # Create the Gantt Diagrams
@@ -105,7 +124,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
             ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
             if (!defined($timesharing_gantts->{$user}->{$name})){
                 $timesharing_gantts->{$user}->{$name} = dclone($gantt);
-                oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt for ($user, $name)\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt for ($user, $name)\n");
             }
         }
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
@@ -144,7 +163,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
     }
 }
 
-oar_debug("[oar_sched_gantt_with_timesharing] End gantt initialization\n");
+oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End gantt initialization\n");
 
 # End of the initialisation
 # Begining of the real scheduling
@@ -160,13 +179,39 @@ foreach my $r (iolib::get_resources_in_state($base,"Dead")){
     push(@Dead_resources, $r->{resource_id});
 }
 
-my @jobs = iolib::get_jobs_to_schedule($base,$queue);
+my @jobs = iolib::get_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated);
+###############################################################################
+# Sort jobs depending on their previous usage
+# Karma sort algorithm
+my $Karma_sum_time = iolib::get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
+$Karma_sum_time->{ASKED} = 1 if (!defined($Karma_sum_time->{ASKED}));
+$Karma_sum_time->{USED} = 1 if (!defined($Karma_sum_time->{USED}));
+
+my $Karma_projects = iolib::get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
+my $Karma_users = iolib::get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
+
+sub karma($){
+    my $j = shift;
+
+    my $note = 0;
+    $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
+    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{project}} / 100));
+    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{project}} / 100));
+
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Note : $note\n");
+
+    return($note);
+}
+
+###############################################################################
+
+@jobs = sort({&karma($a) <=> karma($b)} @jobs);
 my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];
     $job_index ++;
     
-    oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] Start scheduling\n");
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Start scheduling\n");
     
     my $scheduler_init_date = $current_time;
     # Search for dependencies
@@ -185,7 +230,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }else{
                 my $message = "Cannot determine scheduling time due to dependency with the job $d";
                 iolib::set_job_message($base,$j->{job_id},$message);
-                oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
                 $skip_job = 1;
                 next;
             }
@@ -199,10 +244,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         my ($user, $name) = parse_timesharing($types->{timesharing}, $j->{job_user}, $j->{job_name});
         if (!defined($timesharing_gantts->{$user}->{$name})){
             $timesharing_gantts->{$user}->{$name} = dclone($gantt);
-            oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt in phase II for ($user, $name)\n");
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt in phase II for ($user, $name)\n");
         }
         $gantt_to_use = $timesharing_gantts->{$user}->{$name};
-        oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for ($user,$name)\n");
+        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Use gantt for ($user,$name)\n");
     }
     #print("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_2::pretty_print($gantt_to_use)."\n");
 
@@ -328,10 +373,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }else{
         my $message = "Cannot find enough resources which fite for the job $j->{job_id}";
         iolib::set_job_message($base,$j->{job_id},$message);
-        oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
+        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
     }
 #        print("[GANTT] 18 ".gettimeofday."\n");
-    oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] End scheduling\n");
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] End scheduling\n");
 }
 
 
@@ -339,9 +384,9 @@ iolib::disconnect($base);
 iolib::disconnect($base_ro);
 
 if ($job_index <= $#jobs){
-    oar_debug("[oar_sched_gantt_with_timesharing] I am not able to schedule all waiting jobs in the specified time : $timeout s\n");
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_fairsharing] I am not able to schedule all waiting jobs in the specified time : $timeout s\n");
 }
 
-oar_debug("[oar_sched_gantt_with_timesharing] End of scheduler for queue $queue\n");
+oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End of scheduler for queue $queue\n");
 
 #print(Gantt_2::pretty_print($gantt)."\n");
