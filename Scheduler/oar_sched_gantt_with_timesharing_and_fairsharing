@@ -14,18 +14,21 @@ use Time::HiRes qw(gettimeofday);
 ###############################################################################
 # Fairsharing parameters #
 ##########################
+# Avoid problems if there are too many waiting jobs
 my $Karma_max_number_of_jobs_treated = 1000;
+# number of seconds to consider for the timesharing
 my $Karma_window_size = 3600 * 30;
-# specify the target percentages for project names (default is 0)
+# specify the target percentages for project names (0 if not specified)
 my $Karma_project_targets = {
     first => 75,
     default => 25
 };
 
-# specify the target percentages for users (default is 0)
+# specify the target percentages for users (0 if not specified)
 my $Karma_user_targets = {
     oar => 100
 };
+# weight given to each criteria
 my $Karma_coeff_project_consumption = 3;
 my $Karma_coeff_user_consumption = 2;
 my $Karma_coeff_user_asked_consumption = 1;
@@ -198,14 +201,12 @@ sub karma($){
     $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{project}} / 100));
     $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{project}} / 100));
 
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Note : $note\n");
-
     return($note);
 }
 
 ###############################################################################
 
-@jobs = sort({&karma($a) <=> karma($b)} @jobs);
+@jobs = sort({karma($a) <=> karma($b)} @jobs);
 my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];

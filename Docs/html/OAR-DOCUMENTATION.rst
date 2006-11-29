@@ -1549,6 +1549,41 @@ can be changed in the `configuration file`_ (see SCHEDULER_TIMEOUT_,
 SCHEDULER_JOB_SECURITY_TIME_, SCHEDULER_GANTT_HOLE_MINIMUM_TIME_,
 SCHEDULER_RESOURCE_ORDER_).
 
+oar_sched_gantt_with_timesharing_and_fairsharing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This scheduler is the same than oar_sched_gantt_with_timesharing_ but it looks
+at the consumption past and try to order waiting jobs with fairsharing in mind.
+
+Some parameters can be changed directly in the file::
+
+    ###############################################################################
+    # Fairsharing parameters #
+    ##########################
+    # Avoid problems if there are too many waiting jobs
+    my $Karma_max_number_of_jobs_treated = 1000;
+    # number of seconds to consider for the timesharing
+    my $Karma_window_size = 3600 * 30;
+    # specify the target percentages for project names (0 if not specified)
+    my $Karma_project_targets = {
+        first => 75,
+        default => 25
+    };
+
+    # specify the target percentages for users (0 if not specified)
+    my $Karma_user_targets = {
+        oar => 100
+    };
+    # weight given to each criteria
+    my $Karma_coeff_project_consumption = 3;
+    my $Karma_coeff_user_consumption = 2;
+    my $Karma_coeff_user_asked_consumption = 1;
+    ###############################################################################
+
+This scheduler takes its historical data in the accounting_ table. To fill this,
+the command oaraccounting_ have to be run periodically (in a cron job for
+example). Otherwise the scheduler cannot be aware of new user consumptions.
+
 Runner
 ------
 
