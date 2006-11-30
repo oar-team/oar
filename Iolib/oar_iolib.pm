@@ -2367,7 +2367,7 @@ sub get_gantt_waiting_interactive_prediction_date($){
     my $dbh = shift;
 
     my $req =
-        "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time
+        "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time, jobs.message
          FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
          WHERE
              jobs.state = \'Waiting\' AND
@@ -2384,7 +2384,8 @@ sub get_gantt_waiting_interactive_prediction_date($){
         my $tmp = {
                     'job_id' => $ref[0],
                     'info_type' => $ref[1],
-                    'start_time' => $ref[2]
+                    'start_time' => $ref[2],
+                    'message' => $ref[3],
                   };
         push(@results, $tmp);
     }
