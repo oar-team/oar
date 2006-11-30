@@ -1833,7 +1833,11 @@ multiparametric jobs. This what it is done by the
 When you submit a job you have to use "-t besteffort" option of oarsub_ to
 specify that this is a besteffort job.
 
-Note : a besteffort job cannot be a reservation.
+Important : a besteffort job cannot be a reservation.
+
+If your job is of the type *besteffort* and *idempotent* (oarsub_ "-t"
+option) and killed by the OAR scheduler then another job is automatically
+created and scheduled with same behaviours.
 
 Cosystem jobs
 -------------

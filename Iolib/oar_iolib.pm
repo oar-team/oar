@@ -4489,6 +4489,27 @@ sub get_job_events($$){
     return(@results);
 }
 
+
+sub is_an_event_exists($$$){
+    my $dbh =shift;
+    my $jobId = shift;
+    my $event = shift;
+
+    my $sth = $dbh->prepare("   SELECT COUNT(*)
+                                FROM event_logs
+                                WHERE
+                                    job_id = $jobId AND
+                                    type = \'$event\'
+                                LIMIT 1
+                            ");
+    $sth->execute();
+    my @r = $sth->fetchrow_array();
+    $sth->finish();
+
+    return($r[0]);
+}
+
+
 # LOCK FUNCTIONS:
 
 # get_lock
@@ -4607,15 +4628,32 @@ sub check_end_of_job($$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
-            my $strWARN = "[bipbip $Jid] oarexec of the job $Jid was killed by Leon";
+            my $strWARN = "[bipbip $Jid] the job $Jid was killed by Leon";
             oar_Judas::oar_debug("$strWARN\n");
+            my $types = iolib::get_current_job_types($base,$Jid);
+            print("$types->{besteffort} $types->{idempotent}\n");
+            if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
+                if (iolib::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
+                    my $new_job_id = iolib::resubmit_job($base,$Jid);
+                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
+                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id).\n");
+                }
+            }
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
         }elsif ($error == 4){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
-            my $strWARN = "[bipbip $Jid] The job $Jid was killing by Leon and oarexec epilogue was in error";
+            my $strWARN = "[bipbip $Jid] The job $Jid was killed by Leon and oarexec epilogue was in error";
+            my $types = iolib::get_current_job_types($base,$Jid);
+            if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
+                if (iolib::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
+                    my $new_job_id = iolib::resubmit_job($base,$Jid);
+                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
+                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id).\n");
+                }
+            }
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
         }elsif ($error == 5){
-            #Oarexec is not able write in the node file
+            #Oarexec is not able to write in the node file
             my $strWARN = "[bipbip $Jid] oarexec cannot create the node file";
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_WRITE_NODE_FILE",$strWARN);
         }elsif ($error == 6){
@@ -4680,7 +4718,6 @@ sub check_end_of_job($$$$$$$$$$){
             #oarexec received a SIGUSR2 signal
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
             oar_Judas::oar_debug("$strWARN\n");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             my $types = iolib::get_current_job_types($base,$Jid);
             if (defined($types->{idempotent})){
                 if ($exit_script_value == 0){
@@ -4692,12 +4729,12 @@ sub check_end_of_job($$$$$$$$$$){
                     iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY_CANCELLED",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value.");
                 }
             }
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 41){
             #oarexec received a SIGUSR2 signal
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             oar_Judas::oar_debug("$strWARN\n");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
             my $types = iolib::get_current_job_types($base,$Jid);
             if (defined($types->{idempotent})){
                 if ($exit_script_value == 0){
@@ -4709,6 +4746,7 @@ sub check_end_of_job($$$$$$$$$$){
                     iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY_CANCELLED",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value.");
                 }
             }
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
@@ -4897,6 +4935,8 @@ sub job_finishing_sequence($$$$$$$$){
         set_job_state($dbh,$job_id,$state_to_switch);
         unlock_table($dbh);
     }
+
+    # Look at if this is a besteffort job of the type idempotent
 }
 
 

@@ -80,6 +80,7 @@ foreach my $i (@queues){
 if ($exit_code == 0){
     if (oar_scheduler::check_jobs_to_kill($base) == 1){
         # We must kill besteffort jobs
+        oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         $exit_code = 2;
     }elsif (oar_scheduler::check_jobs_to_launch($base) == 1){
         $exit_code = 1;
