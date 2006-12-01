@@ -192,6 +192,7 @@ if (defined($new_resource)){
     $state = "Alive" if (!defined($state));
     push(@resource,iolib::add_resource($base, $hostname, $state));
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
 }else{
     if (($#resource >= 0) or (defined($Sql_property))){
         if (defined($state)){

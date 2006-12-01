@@ -4,8 +4,9 @@ oar (2.0.0-beta11) unstable; urgency=low
   * debug draw-gantt
   * add OAR_JOB_WALLTIME and OAR_JOB_WALLTIME_SECONDS environment variables
   * debug gantt sql query in oarstat
+  * add a scheduler with a simple fairsharing algorithm
 
- -- Capit Nicolas <capitn@localdomain>  Wed, 15 Nov 2006 00:14:08 +0100
+ -- Capit Nicolas <capitn@localdomain>  Fri,  1 Dec 2006 16:23:41 +0100
 
 oar (2.0.0-beta10) unstable; urgency=low
 
