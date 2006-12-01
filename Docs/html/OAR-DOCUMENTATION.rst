@@ -29,6 +29,8 @@
 
 **BE CAREFULL : THIS DOCUMENTATION IS FOR OAR 2.0**
 
+PDF version : `<OAR-DOCUMENTATION.pdf>`_
+
 .. section-numbering::
 .. contents:: Table of Contents
 
