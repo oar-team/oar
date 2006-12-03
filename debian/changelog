@@ -1,3 +1,9 @@
+oar (2.0.0-beta12) unstable; urgency=low
+
+  * fix security bug in oarsh
+
+ -- Capit Nicolas <capitn@localdomain>  Sun,  3 Dec 2006 20:08:29 +0100
+
 oar (2.0.0-beta11) unstable; urgency=low
 
   * add cpuset script comment for virtualization feature
