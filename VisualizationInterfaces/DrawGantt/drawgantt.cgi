@@ -352,7 +352,7 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 		end
 		i = i + 1
 	end
-  img.line($left_offsetgridx - 1, $sizey - $offsetgridy, $sizex - $left_offsetgridx, $sizey - $offsetgridy, $gridcolor)
+  img.line($left_offsetgridx - 1, $sizey - $offsetgridy, $sizex - $right_offsetgridx, $sizey - $offsetgridy, $gridcolor)
 end
 
 def draw_nowline(img,origin,range,color)
