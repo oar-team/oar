@@ -435,20 +435,20 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 		# group resources by first label
 		first_label_groups={}
-		typed_resources[type].each do |res_id,res_desc|
-
-			label = res_desc[first_field_index]
-			#puts label
-			if first_label_groups[label] == nil  
-				first_label_groups[label] = Hash.new()
-				key = resources[res_id][second_field_index].to_s
-				first_label_groups[label][key]  = res_id
-			else
-		 		key = resources[res_id][second_field_index].to_s
-				first_label_groups[label][key]  = res_id
+		if typed_resources[type] != nil
+			typed_resources[type].each do |res_id,res_desc|
+				label = res_desc[first_field_index]
+				#puts label
+				if first_label_groups[label] == nil  
+					first_label_groups[label] = Hash.new()
+					key = resources[res_id][second_field_index].to_s
+					first_label_groups[label][key]  = res_id
+				else
+		 			key = resources[res_id][second_field_index].to_s
+					first_label_groups[label][key]  = res_id
+				end
 			end
 		end
-	
 		#sort first label
 		sorted_first_label = []
 		if (first_sorting_order == "string")
