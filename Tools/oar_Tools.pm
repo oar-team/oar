@@ -230,7 +230,15 @@ sub signal_oarexec($$$$$$){
 
     my $file = get_oar_pid_file_name($job_id);
     #my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
-    my $cmd = "$ssh_cmd -x -T $host \"test -e $file && PROC=\\\$(cat $file) && kill -s CONT \\\$PROC && kill -s $signal \\\$PROC\"";
+    #my $cmd = "$ssh_cmd -x -T $host bash -c \"test -e $file && PROC=\\\$(cat $file) && kill -s CONT \\\$PROC && kill -s $signal \\\$PROC\"";
+    my @cmd;
+    my $c = 0;
+    $cmd[$c] = $ssh_cmd;$c++;
+    $cmd[$c] = "-x";$c++;
+    $cmd[$c] = "-T";$c++;
+    $cmd[$c] = $host;$c++;
+    $cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+    
     $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();
     if($pid == 0){
@@ -244,8 +252,8 @@ sub signal_oarexec($$$$$$){
             alarm(get_ssh_timeout());
             $ssh_pid = fork();
             if ($ssh_pid == 0){
-                exec($cmd);
-                warn("[ERROR] Cannot find $cmd\n");
+                exec({$cmd[0]} @cmd);
+                warn("[ERROR] Cannot find @cmd\n");
                 exit(-1);
             }
             my $wait_res = 0;
@@ -455,7 +463,7 @@ exit(0);
 
 
 # Create the shell script used to execute right command for the user
-# The resulting script can be launched with : sh -c 'script'
+# The resulting script can be launched with : bash -c 'script'
 sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
     my ($node_file,
         $job_id,
@@ -472,46 +480,45 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
 
     my $exp_env = "";
     if ($job_env !~ /^\s*$/){
-        $job_env =~ s/\"/\\"/g;
-        $exp_env .= "export $job_env";
+        #$job_env =~ s/\"/\\"/g;
+        $exp_env .= "export $job_env ;";
     }
 
     my $script = '
-if [ \"a$TERM\" == \"a\" ] || [ \"x$TERM\" == \"xunknown\" ]
+if [ "a$TERM" == "a" ] || [ "x$TERM" == "xunknown" ];
 then
-    export TERM=xterm
-fi
+    export TERM=xterm;
+fi;
 
 '.$exp_env.'
 
-export OAR_FILE_NODES='.$node_file.'
-export OAR_JOBID='.$job_id.'
-export OARSH_JOB_ID='.$job_id.'
-export OAR_USER='.$user.'
-export OAR_WORKDIR='.$launching_directory.'
-export DISPLAY='.$display.'
-export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.'
+export OAR_FILE_NODES='.$node_file.';
+export OAR_JOBID='.$job_id.';
+export OARSH_JOB_ID='.$job_id.';
+export OAR_USER='.$user.';
+export OAR_WORKDIR='.$launching_directory.';
+export DISPLAY='.$display.';
+export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.';
 
-export OAR_NODEFILE=\$OAR_FILE_NODES
-export OAR_O_WORKDIR=\$OAR_WORKDIR
-export OAR_NODE_FILE=\$OAR_FILE_NODES
-export OAR_RESOURCE_FILE=\$OAR_FILE_NODES
-export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
-export OAR_JOB_ID=\$OAR_JOBID
-export OAR_JOB_NAME='.$job_name.'
-export OAR_PROJECT_NAME='.$job_project.'
-export OAR_JOB_WALLTIME='.$job_walltime.'
-export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.'
+export OAR_NODEFILE=$OAR_FILE_NODES;
+export OAR_O_WORKDIR=$OAR_WORKDIR;
+export OAR_NODE_FILE=$OAR_FILE_NODES;
+export OAR_RESOURCE_FILE=$OAR_FILE_NODES;
+export OAR_WORKING_DIRECTORY=$OAR_WORKDIR;
+export OAR_JOB_ID=$OAR_JOBID;
+export OAR_JOB_NAME='.$job_name.';
+export OAR_PROJECT_NAME='.$job_project.';
+export OAR_JOB_WALLTIME='.$job_walltime.';
+export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.';
 
-if ( cd \$OAR_WORKING_DIRECTORY &> /dev/null )
+if ( cd $OAR_WORKING_DIRECTORY &> /dev/null );
 then
-    cd \$OAR_WORKING_DIRECTORY
+    cd $OAR_WORKING_DIRECTORY;
 else
-    #Cannot go into working directory
-    exit 1
-fi
+    exit 2;
+fi;
 
-'.$shell.'
+'.$shell.';
 
 exit 0
 ';

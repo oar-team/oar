@@ -149,7 +149,7 @@ Options:
     -c, --varchar                       sql new field of type VARCHAR(255)
                                         (default is integer)
  -d NAME, --delete NAME                 delete property
- -r "OLD_NAME,NEW_NAME", --remove ...   rename property OLD_NAME into NEW_NAME
+ -r "OLD_NAME,NEW_NAME", --rename ...   rename property OLD_NAME into NEW_NAME
  -q, --quiet                            quiet mode (no extra output)
  -h, --help                             show this help screen
 EOS

@@ -1371,11 +1371,11 @@ sub resubmit_job($$){
                   AND job_id = $new_job_id
     ");
 
-    my $sth = $dbh->prepare("   SELECT moldable_id,moldable_walltime
-                                FROM moldable_job_descriptions
-                                WHERE
-                                    moldable_job_id = $job_id
-                            ");
+    $sth = $dbh->prepare("   SELECT moldable_id,moldable_walltime
+                             FROM moldable_job_descriptions
+                             WHERE
+                                 moldable_job_id = $job_id
+                         ");
     $sth->execute();
     my @moldable_ids = ();
     while (my @ref = $sth->fetchrow_array()) {
@@ -4631,7 +4631,6 @@ sub check_end_of_job($$$$$$$$$$){
             my $strWARN = "[bipbip $Jid] the job $Jid was killed by Leon";
             oar_Judas::oar_debug("$strWARN\n");
             my $types = iolib::get_current_job_types($base,$Jid);
-            print("$types->{besteffort} $types->{idempotent}\n");
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
                 if (iolib::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);

@@ -333,13 +333,15 @@ my $exit_script_value = 0;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
+    my $ssh_option = "";
     if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
         # for oarsh_shell connection
         $ENV{OAR_CPUSET} = $Cpuset_name;
+        $ssh_option = "-oSendEnv=OAR_CPUSET";
     }else{
         $ENV{OAR_CPUSET} = "";
     }
-    my $pid = open2(\*READ, \*WRITE, "$Openssh_cmd -oSendEnv=OAR_CPUSET -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
+    my $pid = open2(\*READ, \*WRITE, "$Openssh_cmd $ssh_option -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
     foreach my $f (@oarexec_files){
         open(FILE, $f) or die("Cannot open $f\n");
         while(<FILE>){

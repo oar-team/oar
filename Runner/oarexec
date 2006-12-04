@@ -112,7 +112,7 @@ sub clean_all(){
                 if ($cmd_name =~ m/$file/m){
                     # remove ppid
                     print("[oarexec $Job_id] kill oarsub connections @pid_list\n");
-                    system("sudo kill -9 @pid_list > /dev/null 2>&1") if ($#pid_list >= 0);
+                    system({"bash"} "bash","-c","sudo kill -9 @pid_list > /dev/null 2>&1") if ($#pid_list >= 0);
                 }else{
                     print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that there is no OAR oarsub processes\n");
                 }
@@ -155,7 +155,7 @@ sub kill_children($){
     my $child_pid = shift;
 
     my ($children, $cmd_name) = oar_Tools::get_one_process_children($child_pid);
-    system("sudo kill -9 @{$children} 2>&1 > /dev/null");
+    system({"bash"} "bash","-c","sudo kill -9 @{$children} 2>&1 > /dev/null");
 }
 
 sub send_kill_signal_to_myself(){
@@ -283,7 +283,7 @@ if (($terminal ne "") and ($terminal ne "unknown")){
 
 #oar own the tty
 #so we must change owner for the user
-system("sh -c 'TTY=`tty` && test -e \$TTY && sudo chown $Job->{user}:oar \$TTY && sudo chmod 660 \$TTY '");
+system({"bash"} "bash","-c","TTY=\$(tty) && test -e \$TTY && sudo chown $Job->{user}:oar \$TTY && sudo chmod 660 \$TTY");
 
 # pipe for notify the end of a child process
 pipe(pipe_child_read,pipe_child_write);
