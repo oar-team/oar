@@ -61,7 +61,7 @@ foreach my $j (iolib::get_jobs_in_state($base,"toError")){
 foreach my $j (iolib::get_jobs_in_state($base,"toAckReservation")){
     oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
     if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
-        oar_warn("[Runner] Frag job $j->{job_id}), I cannot notify oarsub for the reservation\n");
+        oar_warn("[Runner] Frag job $j->{job_id}, I cannot notify oarsub for the reservation\n");
         iolib::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
         iolib::frag_job($base,$j->{job_id});

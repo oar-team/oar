@@ -43,7 +43,7 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         my $job = iolib::get_job($base,$i->{job_id});
-        if (($job->{reservation} eq "None") or ($job->{type} eq "RESERVATION_NO_NODE")){
+        if (($job->{reservation} eq "None") or ($job->{type} eq "RESERVATION_NO_NODE") or ($job->{assigned_moldable_job} == 0)){
             iolib::set_job_state($base,$i->{job_id},"Error");
         }
     }

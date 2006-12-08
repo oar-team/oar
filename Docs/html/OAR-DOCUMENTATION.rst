@@ -167,8 +167,6 @@ The user can submit a job with this command. So, what is a job in our context?
     $OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists
                                   all resources and their properties
     $OAR_JOB_NAME                 name of the job given by the "-n" option
-    $OAR_RESOURCE_PROPERTIES_FILE contains the detailed resources used by the
-                                  job
     $OAR_PROJECT_NAME             job project name
 
 

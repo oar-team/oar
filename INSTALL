@@ -211,6 +211,9 @@ You can install these in this way:
     
         - The package "perl-AppConfig" is required.
         - Read INSTALL file in the monika repository.
+        - replace the "oarstat" and "oarnodes" commands in the configuration
+          file by "oarstat --backward_compatible" and
+          "oarnodes --backward_compatible"
 
 Debian packages
 ---------------

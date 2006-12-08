@@ -99,6 +99,7 @@ sub init_scheduler($$$$$$){
     Gantt_2::add_new_resources($gantt, $vec);
     
     foreach my $i (@initial_jobs){
+        next if ($i->{assigned_moldable_job} == 0);
         my $mold = iolib::get_current_moldable_job($dbh,$i->{assigned_moldable_job});
         # The list of resources on which the job is running
         my @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job},undef);

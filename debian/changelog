@@ -1,3 +1,9 @@
+oar (2.0.0-beta13) unstable; urgency=low
+
+  * add a check in oar_scheduler.pm to avoid problems
+
+ -- Capit Nicolas <capitn@localdomain>  Fri,  8 Dec 2006 13:03:22 +0100
+
 oar (2.0.0-beta12) unstable; urgency=low
 
   * fix security bug in oarsh
