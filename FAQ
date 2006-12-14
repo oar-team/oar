@@ -220,6 +220,19 @@ So when you will use oarsub_ to submit on the queue "cluster2" only resources
 with the property "cluster=2" is used. This is the same when you will use the
 "cluster1" queue.
 
+A job remains in the "Finishing" state, what can I do?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you have waited more than a couple of minutes (3mn for example) then
+something wrong occurred (frontal has crashed, out of memory, ...).
+
+So you are able to turn manually a job into the "Error" state by typing in
+the OAR install directory (example with a bash shell)::
+
+    export OARCONFFILE=/etc/oar.conf
+    perl -e 'use oar_iolib; $db = iolib::connect(); iolib::set_job_state($db,42,"Error")'
+
+(Replace 42 by your job identifier)
+
 How can I write my own scheduler?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: Scheduler/README
