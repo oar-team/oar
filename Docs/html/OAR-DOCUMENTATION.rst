@@ -1303,7 +1303,7 @@ Each configuration tag found in /etc/oar.conf is now described:
       PROLOGUE_EPILOGUE_TIMEOUT = 60
 
   - Files to execute before and after each job on the first computing node
-    (default is ~oar/oar_prologue ans ~oar/oar_epilogue)::
+    (by default nothing is executed)::
 
       PROLOGUE_EXEC_FILE = /path/to/prog
       EPILOGUE_EXEC_FILE = /path/to/prog
@@ -1314,7 +1314,8 @@ Each configuration tag found in /etc/oar.conf is now described:
 
 .. _SERVER_SCRIPT_EXEC_FILE:
 
-  - Files to execute before and after each job on the OAR server::
+  - Files to execute before and after each job on the OAR server
+    (by default nothing is executed)::
       
       SERVER_PROLOGUE_EXEC_FILE = /path/to/prog
       SERVER_EPILOGUE_EXEC_FILE = /path/to/prog
