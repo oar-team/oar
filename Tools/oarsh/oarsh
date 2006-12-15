@@ -5,8 +5,12 @@
 # User to become is in $SUDO_USER
 # $OAR_CPUSET contains the cpuset name
 
+###############################################################################
 # This variable must be set to enable the use of oarsh from a frontale node
 OARSTAT_CMD=
+###############################################################################
+
+SSH_CMD=/usr/bin/ssh
 
 # Get the name of the current cpuset #
 function get_current_cpuset() {
@@ -63,12 +67,12 @@ fi
 SSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
 if [ -r $SSH_KEY_FILE ]
 then
-    exec /usr/bin/ssh -oProxyCommand=none -oPermitLocalCommand=no -i $SSH_KEY_FILE "$@"
+    exec $SSH_CMD -oProxyCommand=none -oPermitLocalCommand=no -i $SSH_KEY_FILE "$@"
     echo "[OARSH] Exec wih the key failed"
     exit 5
 fi
 
-exec /usr/bin/ssh -oProxyCommand=none -oPermitLocalCommand=no -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+exec $SSH_CMD -oProxyCommand=none -oPermitLocalCommand=no -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 echo "[OARSH] Exec with environments failed"
 exit 6
 

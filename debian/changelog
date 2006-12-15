@@ -1,8 +1,9 @@
 oar (2.0.0-2) unstable; urgency=low
 
   * add full path to ssh in oarsh
+  * replace sudowrapper link by real files
 
- -- Capit Nicolas <capitn@localdomain>  Fri, 15 Dec 2006 20:07:34 +0100
+ -- Capit Nicolas <capitn@localdomain>  Fri, 15 Dec 2006 22:42:04 +0100
 
 oar (2.0.0-1) unstable; urgency=low
 

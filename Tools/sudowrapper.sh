@@ -2,5 +2,6 @@
 
 OARDIR=
 OARUSER=
+OARCMD=
 
-exec sudo -u $OARUSER $OARDIR/cmds/`basename $0` "$@"
+exec sudo -u $OARUSER $OARDIR/cmds/$OARCMD "$@"

@@ -45,26 +45,33 @@ desktop-computing-cgi:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
+	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarcache
-	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarcache
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarcache#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarcache
 	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarres
-	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarres
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarres#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarres
 	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi
 	install -d -m 0755 $(CGIDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar-cgi
 	install -m 0755 Tools/sudowrapper.sh $(CGIDIR)/oar-cgi
+	rm $(OARDIR)/sudowrapper.sh
 
 dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
+	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
-	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oar_mysql_db_init#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
+	rm $(OARDIR)/sudowrapper.sh
 
 sudowrapper:
 	install -d -m 0755 $(OARDIR)
@@ -76,33 +83,40 @@ sudowrapper:
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsh
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarsh#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarsh
+	rm $(OARDIR)/sudowrapper.sh
 	
 common:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
+	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
 	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodesetting
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodesetting
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnodesetting#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarnodesetting
 	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
+	rm $(OARDIR)/sudowrapper.sh
 
 server:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
+	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
 	install -m 0755 Almighty/Almighty $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/Almighty
-	ln -s -f $(SBINLINKPATH)/sudowrapper.sh $(SBINDIR)/Almighty
+	perl -i -pe "s#^OARCMD=.*#OARCMD=Almighty#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/Almighty
 	install -m 0755 Leon/Leon	$(OARDIR)
 	install -m 0755 Runner/runner $(OARDIR)
 	install -m 0755 Sarko/sarko $(OARDIR)
@@ -115,47 +129,59 @@ server:
 	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnotify
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnotify
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnotify#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarnotify
 	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarremoveresource
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(SBINDIR)/oarremoveresource
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarremoveresource#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarremoveresource
 	install -m 0755 Qfunctions/oaraccounting $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oaraccounting
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oaraccounting
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oaraccounting#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarproperty
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarproperty
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarproperty#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarproperty
 	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
 	install -m 0644 Tools/cpuset_manager.pl $(OARDIR)
 	install -m 0644 Tools/suspend_resume_manager.pl $(OARDIR)
+	rm $(OARDIR)/sudowrapper.sh
 
 user:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
+	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodes
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarnodes
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnodes#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarnodes
 	install -m 0755 Qfunctions/oardel $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oardel
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oardel
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oardel#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oardel
 	install -m 0755 Qfunctions/oarstat $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarstat
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarstat
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarstat#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarstat
 	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=$(CONFIG_CMDS)/oarstat#" $(OARDIR)/oarsh
 	install -m 0755 Qfunctions/oarsub $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsub
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarsub
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarsub#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarsub
 	install -m 0755 Qfunctions/oarhold $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarhold
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarhold
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarhold#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarhold
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarresume
-	ln -s -f $(BINLINKPATH)/sudowrapper.sh $(BINDIR)/oarresume
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarresume#" $(OARDIR)/sudowrapper.sh 
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarresume
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 Docs/man/oardel.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarnodes.1 $(MANDIR)/man1
@@ -163,6 +189,7 @@ user:
 	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
+	rm $(OARDIR)/sudowrapper.sh
 
 node:
 	install -d -m 0755 $(OARDIR)
