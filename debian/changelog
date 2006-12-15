@@ -1,8 +1,9 @@
-oar (2.0.0-rc2) unstable; urgency=low
+oar (2.0.0-1) unstable; urgency=low
 
   * bug fix
+  * versioning
 
- -- Capit Nicolas <capitn@localdomain>  Fri, 15 Dec 2006 10:45:22 +0100
+ -- Capit Nicolas <capitn@localdomain>  Fri, 15 Dec 2006 17:33:06 +0100
 
 oar (2.0.0-rc1) unstable; urgency=low
 
