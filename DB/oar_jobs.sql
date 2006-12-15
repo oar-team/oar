@@ -5,17 +5,17 @@
 #CONNECT mysql;
 #INSERT INTO user (Host,User,Password) VALUES('localhost','oar',PASSWORD('oar'));
 
-#INSERT INTO user (Host,User,Password) VALUES('%.imag.fr','oar',PASSWORD('oar'));
+#INSERT INTO user (Host,User,Password) VALUES('%','oar',PASSWORD('oar'));
 #INSERT INTO db  (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv) VALUES
 #				('localhost','oar','oar','Y','Y','Y','Y','Y','Y');
 #INSERT INTO db  (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv) VALUES
-#				('%.imag.fr','oar','oar','Y','Y','Y','Y','Y','Y');
+#				('%','oar','oar','Y','Y','Y','Y','Y','Y');
 #FLUSH PRIVILEGES;
 
 #GRANT ALL ON oar.* TO oar@localhost;
-#GRANT ALL ON oar.* TO oar@localhost;
-#GRANT SELECT ON oar.* TO oarreader@"%.imag.fr";
-#GRANT SELECT ON oar.* TO oarreader@"%.imag.fr";
+#GRANT ALL ON oar.* TO oar@"%";
+#GRANT SELECT ON oar.* TO oarreader@localhost;
+#GRANT SELECT ON oar.* TO oarreader@"%";
 #FLUSH PRIVILEGES;
 
 #CONNECT oar;
