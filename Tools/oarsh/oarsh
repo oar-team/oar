@@ -63,12 +63,12 @@ fi
 SSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
 if [ -r $SSH_KEY_FILE ]
 then
-    exec ssh -oProxyCommand=none -oPermitLocalCommand=no -i $SSH_KEY_FILE "$@"
+    exec /usr/bin/ssh -oProxyCommand=none -oPermitLocalCommand=no -i $SSH_KEY_FILE "$@"
     echo "[OARSH] Exec wih the key failed"
     exit 5
 fi
 
-exec ssh -oProxyCommand=none -oPermitLocalCommand=no -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+exec /usr/bin/ssh -oProxyCommand=none -oPermitLocalCommand=no -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 echo "[OARSH] Exec with environments failed"
 exit 6
 
