@@ -16,6 +16,7 @@ DOCDIR=$(PREFIX)/doc/oar
 WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
 CONFIG_CMDS=$(OARDIR)/cmds
+DEB_INSTALL=$(OARDIR)
 
 BINLINKPATH=$(OARDIR)
 SBINLINKPATH=$(OARDIR)
@@ -46,6 +47,7 @@ desktop-computing-cgi:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarcache
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarcache#" $(OARDIR)/sudowrapper.sh 
@@ -65,6 +67,7 @@ dbinit:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oar_mysql_db_init#" $(OARDIR)/sudowrapper.sh 
@@ -79,8 +82,8 @@ sudowrapper:
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
 	install -m 0755 Tools/configurator_wrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarsh#" $(OARDIR)/sudowrapper.sh 
@@ -93,6 +96,7 @@ common:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
@@ -113,6 +117,7 @@ server:
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Almighty/Almighty $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/Almighty
 	perl -i -pe "s#^OARCMD=.*#OARCMD=Almighty#" $(OARDIR)/sudowrapper.sh 
@@ -148,8 +153,8 @@ server:
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
-	install -m 0644 Tools/cpuset_manager.pl $(OARDIR)
-	install -m 0644 Tools/suspend_resume_manager.pl $(OARDIR)
+	@if [ -f $(OARDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARDIR); fi
+	@if [ -f $(OARDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARDIR); fi
 	rm $(OARDIR)/sudowrapper.sh
 
 user:
@@ -157,6 +162,7 @@ user:
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodes
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnodes#" $(OARDIR)/sudowrapper.sh 
@@ -244,6 +250,6 @@ doc-install: doc
 draw-gantt-install: draw-gantt
 
 desktop-computing-cgi-install: sanity-check configuration sudowrapper common desktop-computing-cgi
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
 
 desktop-computing-agent-install: desktop-computing-agent

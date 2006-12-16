@@ -36,9 +36,10 @@ setup_oar_ssh() {
 	fi
 	cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
-	ForwardX11 no 
-	StrictHostKeyChecking no
-        AddressFamily inet
+    ForwardX11 no 
+    StrictHostKeyChecking no
+    PasswordAuthentication no
+    AddressFamily inet
 EOF
 	chown oar:oar /var/lib/oar/.ssh -R || true
 }
