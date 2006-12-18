@@ -4,6 +4,15 @@ FAQ
 User
 ----
 
+My .profile or .bashrc usally sourced are not sourced when passive job is submitted.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The behaviour of OAR is the same as ssh. So a login shell sources bash script but
+not for a non interactive command.
+The solution is to use this line as the interpreter of the script::
+
+    #!/bin/bash --login
+
 How can I submit a moldable job?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

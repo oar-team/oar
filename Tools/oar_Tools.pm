@@ -444,7 +444,7 @@ if($pid == 0){
     # To be sure that user do not try to do something nasty
     close(OLDSTDERR);
     close(OLDSTDOUT);
-    exec(@{$cmd_exec});
+    exec({"'.$shell.'"} "'.$shell.'","-c",@{$cmd_exec});
     # if exec do not find the command
     warn("[OAR] Cannot find @{$cmd_exec}\n");
     exit(-1);
