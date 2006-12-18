@@ -259,7 +259,7 @@ Options are:
                                to this job
  -n, --name                    specify an arbitrary name for the job
  -e, --env                     environment variables to set on the running
-                               proccess in the form "A=b C=d"
+                               proccess in the form "A=b C=d" (not implemented)
  -a, --anterior                anterior job that must be terminated to start
                                this new one
      --notify                  specify a notification method

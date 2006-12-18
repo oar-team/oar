@@ -29,12 +29,12 @@ set -e
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	sudo -u oar ssh $OARSERVER "oarnodesetting -s Alive -h $OAR_NODE_NAME"
+	sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Alive -h $OAR_NODE_NAME"
     echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-	sudo -u oar ssh $OARSERVER "oarnodesetting -s Absent -h $OAR_NODE_NAME"
+	sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Absent -h $OAR_NODE_NAME"
 	echo "$NAME."
 	;;
   reload|force-reload|restart)

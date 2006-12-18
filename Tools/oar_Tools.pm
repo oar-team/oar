@@ -383,9 +383,9 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$@){
         $job_env,
         @cmd) = @_;
 
-    if ((defined($job_env)) and ($job_env !~ /^\s*$/)){
-        $cmd[0] = "export $job_env;".$cmd[0];
-    }
+#    if ((defined($job_env)) and ($job_env !~ /^\s*$/)){
+#        $cmd[0] = "export $job_env;".$cmd[0];
+#    }
     # suitable Data::Dumper configuration for serialization
     $Data::Dumper::Purity = 1;
     $Data::Dumper::Terse = 1;
