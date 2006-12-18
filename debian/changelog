@@ -1,3 +1,9 @@
+oar (2.0.0-3) unstable; urgency=low
+
+  * 
+
+ -- Capit Nicolas <capitn@localdomain>  Sat, 16 Dec 2006 15:02:50 +0100
+
 oar (2.0.0-2) unstable; urgency=low
 
   * add full path to ssh in oarsh

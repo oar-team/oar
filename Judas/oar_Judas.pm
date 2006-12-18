@@ -126,7 +126,8 @@ sub send_mail($$$$$){
         $SIG{USR1} = 'IGNORE';
         $SIG{INT}  = 'IGNORE';
         $SIG{TERM} = 'IGNORE';
-        my $smtp = Net::SMTP->new(  Host    => $smtp_server ,
+        my $smtp = Net::SMTP->new(  $smtp_server,
+#                                    Host    => $smtp_server ,
                                     Timeout => 120 ,
                                     Hello   => hostname(),
                                     Debug   => 0
