@@ -1,8 +1,8 @@
-oar (2.0.0-3) unstable; urgency=low
+oar (2.0.1-1) unstable; urgency=low
 
-  * 
+  * Fix oarsh tty problem (tty owner was oar)
 
- -- Capit Nicolas <capitn@localdomain>  Sat, 16 Dec 2006 15:02:50 +0100
+ -- Capit Nicolas <capitn@localdomain>  Tue, 19 Dec 2006 19:50:13 +0100
 
 oar (2.0.0-2) unstable; urgency=low
 

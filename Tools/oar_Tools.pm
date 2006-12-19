@@ -419,6 +419,8 @@ $ENV{OAR_RESOURCE_FILE} = $ENV{OAR_FILE_NODES};
 $ENV{OAR_WORKING_DIRECTORY} = $ENV{OAR_WORKDIR};
 $ENV{OAR_JOB_ID} = $ENV{OAR_JOBID};
 
+$ENV{SUDO_COMMAND}="OAR";
+
 # Test if we can go into the launching directory
 if (!chdir($ENV{OAR_WORKING_DIRECTORY})){
     exit(1)
@@ -510,6 +512,8 @@ export OAR_JOB_NAME='.$job_name.';
 export OAR_PROJECT_NAME='.$job_project.';
 export OAR_JOB_WALLTIME='.$job_walltime.';
 export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.';
+
+export SUDO_COMMAND=OAR;
 
 if ( cd $OAR_WORKING_DIRECTORY &> /dev/null );
 then

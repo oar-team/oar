@@ -52,6 +52,8 @@ else
         
     fi
     add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
+    #Change tty owner
+    TTY=$(tty) && test -e $TTY && sudo chown $SUDO_USER:oar $TTY && sudo chmod 660 $TTY
     if [ "$1" == "" ]
     then
         # Simulate initial login
