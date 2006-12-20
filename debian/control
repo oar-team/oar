@@ -23,7 +23,7 @@ Description: OAR batch scheduler libs package
 Package: oar-server
 Architecture: all
 Depends: oar-libs (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, openssh-client | ssh
-Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh
+Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh, libxml-simple-perl, libyaml-perl
 Description: OAR batch scheduler server package
  This package installs the server part or the OAR batch scheduler
 
@@ -37,7 +37,7 @@ Description: OAR batch scheduler node package
 Package: oar-user
 Architecture: all
 Depends: oar-libs (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}
-Suggests: oar-doc, openssh-client | ssh
+Suggests: oar-doc, openssh-client | ssh, libxml-simple-perl, libyaml-perl
 Description: OAR batch scheduler user package
  This package install the submition and query part or the OAR batch scheduler
 

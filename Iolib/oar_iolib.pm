@@ -1357,10 +1357,20 @@ sub resubmit_job($$){
              ");
     unlock_table($dbh);
 
-    $job->{stdout_file} =~ m/^(.+)\.$job_id\.stdout$/m;
-    my $stdout_file = $dbh->quote("$1.$new_job_id.stdout");
-    $job->{stderr_file} =~ m/^(.+)\.$job_id\.stderr$/m;
-    my $stderr_file = $dbh->quote("$1.$new_job_id.stderr");
+    my $stdout_file;
+    if ($job->{stdout_file} eq "OAR.$job_id.stdout"){
+        $stdout_file = "OAR.$new_job_id.stdout";
+    }else{
+        $stdout_file = $job->{stdout_file};
+    }
+    $stdout_file = $dbh->quote($stdout_file);
+    my $stderr_file;
+    if ($job->{stderr_file} eq "OAR.$job_id.stderr"){
+        $stderr_file = "OAR.$new_job_id.stderr";
+    }else{
+        $stderr_file = $job->{stderr_file};
+    }
+    $stderr_file = $dbh->quote($stderr_file);
 
     $dbh->do("UPDATE jobs
               SET
