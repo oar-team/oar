@@ -452,9 +452,9 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		#sort first label
 		sorted_first_label = []
 		if (first_sorting_order == "string")
-			sorted_first_label =  first_label_groups.keys.sort_by{|label| label =~ first_displaying_regex; $1.to_s} 
+			sorted_first_label =  first_label_groups.keys.sort_by{|label| label =~ first_sorting_regex; $1.to_s} 
 		else #numerical sorting
-			sorted_first_label =  first_label_groups.keys.sort_by{|label| label=~ first_displaying_regex; $1.to_i} 
+			sorted_first_label =  first_label_groups.keys.sort_by{|label| label=~ first_sorting_regex; $1.to_i} 
 		end
 
 		#p sorted_first_label
