@@ -431,7 +431,7 @@ open(OLDSTDOUT, ">& STDOUT");
 open(OLDSTDERR, ">& STDERR");
 
 #Test if we can write into stdout and stderr files
-if ((!open(STDOUT, ">$ENV{OAR_STDOUT}")) or (!open(STDERR, ">$ENV{OAR_STDERR}"))){
+if ((!open(STDOUT, ">>$ENV{OAR_STDOUT}")) or (!open(STDERR, ">>$ENV{OAR_STDERR}"))){
     exit(2);
 }
 
