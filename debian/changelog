@@ -1,8 +1,13 @@
 oar (2.0.1-1) unstable; urgency=low
 
   * Fix oarsh tty problem (tty owner was oar)
+  * append output in stdout and stderr files instead of overwriting existing files
+  * fix a drawgantt bug
+  * packaging fix
+  * bug fix in resubmit function (stdout and stderr files)
+  * bug fix (exec with another shell than sh)
 
- -- Capit Nicolas <capitn@localdomain>  Tue, 19 Dec 2006 19:50:13 +0100
+ -- Capit Nicolas <capitn@localdomain>  Mon, 25 Dec 2006 23:37:21 +0100
 
 oar (2.0.0-2) unstable; urgency=low
 
