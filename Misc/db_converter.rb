@@ -43,7 +43,7 @@ $nb_core = 1  #number of core by cpu
 $cpu = 1  #initial index for cpu field
 $core = 1 #initial index for core field
 
-$empty = true #if true flush modified oar.v2 tables before convertion    
+$empty = false #if true flush modified oar.v2 tables before convertion    
 							# MUST BE SET TO false (use for devlopment/testing)
 
 #####################################################
