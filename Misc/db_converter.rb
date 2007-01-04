@@ -39,11 +39,11 @@ $login_2 = 'root'
 $passwd_2 = ''
 
 $nb_cpu = 2   #number of cpu by node
-$nb_core = 2  #number of core by cpu
+$nb_core = 1  #number of core by cpu
 $cpu = 1  #initial index for cpu field
 $core = 1 #initial index for core field
 
-$empty = false #if true flush modified oar.v2 tables before convertion    
+$empty = true #if true flush modified oar.v2 tables before convertion    
 							# MUST BE SET TO false (use for devlopment/testing)
 
 #####################################################
@@ -218,8 +218,6 @@ end
 
 def insert_resources2(dbh,resources)
 
-	dbh.do("TRUNCATE TABLE `resources`") if $empty
-
 	puts "Insert resources"
 	r_id = 1
 	resources_conv = {}
@@ -246,7 +244,6 @@ VALUES ('#{r_id}', '#{res['hostname']}', '#{$cpu}','#{$core}','#{i}')")
 end
 
 def insert_resource_logs2(dbh,resources_log1,res_conv)
-	dbh.do("TRUNCATE TABLE `resource_logs`") if $empty
 
 	puts "Insert resources log"
 
@@ -269,13 +266,6 @@ end
 
 
 def insert_job2(dbh,job,res_conv, assigned_resources)
-
-	dbh.do("TRUNCATE TABLE `moldable_job_descriptions`") if $empty
-	dbh.do("TRUNCATE TABLE `job_resource_descriptions`") if $empty
-	dbh.do("TRUNCATE TABLE `job_resource_groups`") if $empty
-	dbh.do("TRUNCATE TABLE `jobs`") if $empty	
-	dbh.do("TRUNCATE TABLE `job_types`") if $empty
-	dbh.do("TRUNCATE TABLE `assigned_resources`") if $empty
 
 	begin
 			dbh.do("INSERT INTO `moldable_job_descriptions` ( `moldable_id` , `moldable_job_id` , `moldable_walltime` , `moldable_index` ) VALUES ( '#{job['idJob']}', '#{job['idJob']}', '#{hmstos(job['maxTime'])}', 'LOG')")
@@ -347,7 +337,7 @@ end
 
 
 def convert_job_state_logs(dbh1,dbh2)
-	dbh2.do("TRUNCATE TABLE `job_state_logs`") if $empty
+
 	puts "Convert job state logs"
 	sth = dbh1.execute("SELECT * FROM jobState_log")
   sth.each do |row|
@@ -365,7 +355,7 @@ VALUES ('#{row['jobId']}','#{row['jobState']}','#{to_unix_time(row['dateStart'])
 end
 
 def convert_frag_jobs(dbh1,dbh2)
-	dbh2.do("TRUNCATE TABLE `frag_jobs`") if $empty
+
 	puts "Convert frag jobs"
 	sth = dbh1.execute("SELECT * FROM fragJobs")
   sth.each do |row|
@@ -381,7 +371,6 @@ def convert_frag_jobs(dbh1,dbh2)
 end
 
 def convert_event_logs(dbh1,dbh2)
-	dbh2.do("TRUNCATE TABLE `event_logs`") if $empty
 	puts "Convert event_logs"
 	sth = dbh1.execute("SELECT * FROM event_log")
   sth.each do |row|
@@ -398,7 +387,6 @@ row['idEvent'], row['type'], row['idJob'], to_unix_time(row['date']), row['descr
 end
 
 def convert_event_log_hostnames(dbh1,dbh2)
-	dbh2.do("TRUNCATE TABLE `event_log_hostnames`") if $empty
 	puts "Convert event log hostnames"
 	sth = dbh1.execute("SELECT * FROM event_log_hosts")
   sth.each do |row|
@@ -412,7 +400,27 @@ def convert_event_log_hostnames(dbh1,dbh2)
   sth.finish
 end
 
+def empty_db(dbh,name)
 
+	puts "\nEMPTY some tables of #{name} database (oar v2.0) !!"	
+	puts
+		
+	sleep 5
+
+	dbh.do("TRUNCATE TABLE `resources`") 
+	dbh.do("TRUNCATE TABLE `resource_logs`") 
+	dbh.do("TRUNCATE TABLE `moldable_job_descriptions`") 
+	dbh.do("TRUNCATE TABLE `job_resource_descriptions`") 
+	dbh.do("TRUNCATE TABLE `job_resource_groups`") 
+	dbh.do("TRUNCATE TABLE `jobs`") 	
+	dbh.do("TRUNCATE TABLE `job_types`") 
+	dbh.do("TRUNCATE TABLE `assigned_resources`") 
+	dbh.do("TRUNCATE TABLE `job_state_logs`") 
+	dbh.do("TRUNCATE TABLE `frag_jobs`") 
+	dbh.do("TRUNCATE TABLE `event_logs`") 
+	dbh.do("TRUNCATE TABLE `event_log_hostnames`") 
+
+end
 
 #############################################
 
@@ -422,6 +430,8 @@ puts
 
 dbh1 = base_connect("#{$oar_db_1}:#{$host_1}",$login_1,$passwd_1)
 dbh2 = base_connect("#{$oar_db_2}:#{$host_2}",$login_2,$passwd_2)
+
+empty_db(dbh2,$oar_db_2) if $empty
 
 # Get resources
 resources = list_resources1(dbh1)
