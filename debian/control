@@ -7,7 +7,7 @@ Standards-Version: 3.6.0
 
 Package: oar-common
 Architecture: all
-Depends: perl, sudo, adduser, adduser
+Depends: perl, sudo, adduser
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  This package installs the common part or the OAR batch scheduler
