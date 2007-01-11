@@ -1,3 +1,10 @@
+Template: oar/db/dbtype
+Type: select
+Choices: Mysql, Postgresql
+Description: OAR Database backend
+ Database OAR will use to store all data concerning
+ node, scheduling,...
+
 Template: oar/node/dosetup
 Type: boolean
 Default: false
@@ -52,10 +59,17 @@ Description: MySQL network access configuration
  Warning: you may need to customize your MySQL server configuration in order to allow network access from remote host. 
  This may be done by removing (commenting) the skip-networking sentence in /etc/mysql/my.conf file.
 
+Template: oar/db/postgreswarning
+Type: text
+Description: Postgresql configuration note
+ Warning: this debian package does not perform postgresql database configuration.
+ You should follow the instruction from /usr/share/docs/oar-server/README.Debian
+ in order to create Posgressql users, databases and table suitable for OAR.
+
 Template: oar/db/hostname
 Type: string
 Default: localhost
-Description: OAR MySQL server hostname
+Description: OAR database server hostname
  Please enter OAR database server hostname
 
 Template: oar/db/adminlogin
@@ -72,19 +86,19 @@ Description: OAR MySQL admin passwd
 Template: oar/db/basename
 Type: string
 Default: oar
-Description: OAR MySQL database name
+Description: OAR database name
  Please enter OAR database name
 
 Template: oar/db/baselogin
 Type: string
 Default: oar
-Description: OAR MySQL base login
+Description: OAR databese login
  Please enter OAR database base login
 
 Template: oar/db/basepasswd
 Type: password
-Description: OAR MySQL user passwd
- Please enter OAR database base passwd
+Description: OAR database user passwd
+ Please enter OAR database passwd
 
 Template: oar/server/hostname
 Type: string

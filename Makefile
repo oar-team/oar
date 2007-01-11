@@ -209,7 +209,10 @@ node:
 	@if [ -f $(OARHOMEDIR)/oar_prologue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/lock_user.sh ]; then echo "Warning: $(OARHOMEDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARHOMEDIR) ; fi
 
-doc:
+build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
+	(cd Docs/html && $(MAKE) )
+
+doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)
 	install -m 0644 Docs/Almighty.fig $(DOCDIR)
 	install -m 0644 Docs/Almighty.ps $(DOCDIR)

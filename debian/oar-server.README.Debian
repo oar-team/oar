@@ -1,0 +1,166 @@
+Configuring the OAR batch system
+================================
+
+
+Database configuration:
+-----------------------
+
+Mysql
+~~~~~
+
+Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init script provided
+with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).
+
+
+PostgreSQL
+~~~~~~~~~~
+
+If you want to use a postgres SQL server then there is currently no automatic installation script.
+You have to add a new user which can connect on a new oar database(use the commands *createdb* and *createuser*).
+After that, you have to authorize network connections on the postgresql server in the *postgresql.conf* (uncomment
+*tcpip_socket = true*).
+Then you can import the database scheme stored in *oar_postgres.sql* (use the SQL command "\\i").
+
+Here is an example to perform all the potgres database install(there is certainly other ways to do that)::
+
+    sudo su - postgres
+
+    createuser -P
+        Enter name of role to add: oar
+        Enter password for new role:
+        Enter it again: 
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) n
+        Shall the new role be allowed to create more new roles? (y/n) n
+        CREATE ROLE
+    
+    createuser -P
+        Enter name of role to add: oar_ro
+        Enter password for new role:
+        Enter it again: 
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) n
+        Shall the new
+    
+    createdb oar
+    psql oar
+        GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar;
+        GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar_ro;
+        \q
+    sudo vi /etc/postgresql/8.1/main/pg_hba.conf
+        host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
+        host    oar         oar               127.0.0.1          255.255.255.255    md5
+    sudo /etc/init.d/postgresql-8.1 reload
+    psql -Uoar -h127.0.0.1 oar
+        \i /usr/lib/oar/oar_postgres.sql
+        \q
+    # You can test it with
+    psql oar oar_ro -h127.0.0.1
+
+
+For more informations about postgresql, go to http://www.postgresql.org/.
+
+
+Using X11
+---------
+The easiest and scalable way to use X11 application on cluster nodes is to open X11 ports and set the right DISPLAY environment variable by hand.
+Otherwise users can use X11 forwarding via ssh to access cluster frontal. After that you must configure ssh server on this frontal with
+::
+
+    X11Forwarding yes
+    X11UseLocalhost no
+
+With this configuration, users can launch X11 applications after a 'oarsub -I' on the given node.
+
+CPUSET installation
+~~~~~~~~~~~~~~~~~~~
+
+..  OAR can use CPUSET features provided with the Linux kernel >= 2.6. This enables
+    to restrict user processes only on reserved processors and clean correctly nodes
+    after the job.
+    To perform this installation you must read the documentation in Tools/oarsh/README.
+
+.. include:: Tools/oarsh/README
+
+Visualization tools installation
+--------------------------------
+
+There are two different tools. One, named Monika, displays the current cluster state
+with all active and waiting jobs. The other, named drawgantt, diplays node occupation
+in a lapse of time.
+These tools are CGI scripts and generate HTML pages.
+
+You can install these in this way:
+    drawgantt:
+    
+        - Make sure you installed "ruby", "libdbd-mysql-ruby" or "libdbd-pg-ruby" and "libgd-ruby1.8" packages.
+        - Copy "drawgantt.cgi" and "drawgantt.conf" in the CGI folder of your web server
+          (ex: /usr/lib/cgi-bin/ for Debian).
+        - Copy all icons and javascript files in a folder that web server can find them
+          (ex: /var/www/oar/Icons and /var/www/oar/Icons).
+        - Make sure that these files can be read by the web server user.
+        - Edit "drawgantt.conf" and change tags to fit your configuration.
+
+    Monika:
+    
+        - The package "perl-AppConfig" is required.
+        - Read INSTALL file in the monika repository.
+        - replace the "oarstat" and "oarnodes" commands in the configuration
+          file by "oarstat --backward_compatible" and
+          "oarnodes --backward_compatible"
+
+Debian packages
+---------------
+
+OAR is also released under Debian packages (or Ubuntu). You can find them at
+http://oar.imag.fr/download.html.
+
+If you want to add it as a new source in your /etc/apt/sources.list then add
+the line::
+
+    deb http://oar.imag.fr/download ./
+
+The installation will ask you if you want to initialize the nodes. It will copy
+the oar SSH key on each specified nodes. You can skeep this step by you will
+have to do this manually.
+
+**IMPORTANT** : if you want to use the cpuset features then you have to install
+the oar-node package on computing nodes otherwise this is not mandatory.
+But if this is performed then the configuration of `Important notes`_ 
+must be set on these nodes.
+
+After installing packages, you have to edit the `configuration file`_ on the
+server, submition nodes and computing nodes to fite your needs.
+
+Starting
+--------
+
+First, you must start OAR daemon on the server (its name is "Almighty").
+
+    - if you have installed OAR from sources, become oar user and launch command
+      "Almighty" (it stands in $PREFIX/sbin).
+    - if you have installed OAR from Debian packages, use the script
+      "/etc/init.d/oar-server" to start the daemon.
+
+Then you have to insert new resources in the database via the command
+oarnodesetting_.
+If you want to have an idea how does it work then launch
+$PREFIX/oar/detect_new_resources.sh. It will print right commands execute with
+an appropriate value for the memory and the cpuset properties.
+
+If you want to initialize your whole cluster in 1 command you can use this one
+(tune it to fite your cluster). You must be oar to run this command because
+oarnodesetting_ will called and the sentinelle.pl will log onto all nodes
+stored in "node_list.txt" file without password:
+::
+
+    export PREFIX=/var/lib
+    $PREFIX/oar/sentinelle.pl -f node_list.txt \
+    -p "$PREFIX/oar/detect_new_resources.sh" | sh
+
+Then you can launch the oarnodes_ command and see all new resources inserted.
+
+Further informations
+--------------------
+For further information, please check http://oar.imag.fr/.
+

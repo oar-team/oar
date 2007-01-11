@@ -23,7 +23,7 @@ Description: OAR batch scheduler libs package
 Package: oar-server
 Architecture: all
 Depends: oar-libs (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}, openssh-client | ssh
-Suggests: mysql-client, mysql-server, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh, libxml-simple-perl, libyaml-perl
+Suggests: mysql-client | postgresql-client, mysql-server | postgresql, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh, libxml-simple-perl, libyaml-perl
 Description: OAR batch scheduler server package
  This package installs the server part or the OAR batch scheduler
 
@@ -64,5 +64,6 @@ Description: OAR desktop computing HTTP proxy CGI
 
 Package: oar-doc
 Architecture: all
+Build-Depends: python-docutils
 Description: OAR batch scheduler documentation package
  This package install some documentation for OAR batch scheduler
