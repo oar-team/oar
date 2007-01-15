@@ -106,6 +106,8 @@ Important notes
       can be added with this syntax(it is safer)::
       
         AllowUsers oar admin1 admin2 ...
+
+      After that you have to restart the SSH server.
     
     - The default oar ssh public key in the authorized_keys file must be tagged
       for the security. So this prefix must be set in front of the public key::
