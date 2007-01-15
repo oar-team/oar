@@ -45,7 +45,7 @@ It manages resources of clusters as a traditional batch scheduler
 (as PBS / Torque / LSF / SGE).
  
 Its design is based on high level tools: 
-  - relational database engine MySQL,
+  - relational database engine MySQL or PostgreSQL,
   - scripting language Perl,  
   - confinement system mechanism cpuset,
   - scalable exploiting tool Taktuk.
@@ -57,6 +57,8 @@ jobs.
 
 OAR advantages:
   - No specific daemon on nodes.
+  - No dependence on specific computing libraries like MPI. We support all
+    sort of parallel user applications.
   - Upgrades are made on the servers, nothing to do on computing nodes.
   - CPUSET (2.6 linux kernel) integration which restricts the jobs on
     assigned resources (also useful to clean completely a job, even
