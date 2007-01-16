@@ -1,9 +1,14 @@
+oar (2.0.2-0) unstable; urgency=low
+
+  * add warnings and exit code to oarnodesetting when there is a bad node name
+    or resource number
+
+ -- Capit Nicolas <capitn@localdomain>  Tue, 16 Jan 2007 17:53:22 +0100
+
 oar (2.0.1-2) unstable; urgency=low
 
   * bug fix in packaging
   * packaging postgresql support
-  * add warnings and exit code to oarnodesetting when there is a bad node name
-    or resource number
 
  -- Capit Nicolas <capitn@imag.fr>  Tue, 16 Jan 2007 17:36:30 +0100
 
