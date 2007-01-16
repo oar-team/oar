@@ -2,8 +2,10 @@ oar (2.0.1-2) unstable; urgency=low
 
   * bug fix in packaging
   * packaging postgresql support
+  * add warnings and exit code to oarnodesetting when there is a bad node name
+    or resource number
 
- -- Capit Nicolas <capitn@imag.fr>  Fri, 12 Jan 2007 20:45:21 +0100
+ -- Capit Nicolas <capitn@imag.fr>  Tue, 16 Jan 2007 17:36:30 +0100
 
 oar (2.0.1-1) unstable; urgency=low
 
@@ -106,14 +108,14 @@ oar (2.0.0-beta2) unstable; urgency=low
   [ capitn ]
   * bug fix in sudoers
 
- -- Capit Nicolas <capitn@false>  Fri,  6 Oct 2006 11:04:00 +0200
+ -- Capit Nicolas <capitn@imag.fr>  Fri,  6 Oct 2006 11:04:00 +0200
 
 oar (2.0.0-beta1) unstable; urgency=low
 
   [ capitn ]
   * new release
 
- -- Capit Nicolas <capitn@false>  Thu,  5 Oct 2006 11:18:31 +0200
+ -- Capit Nicolas <capitn@imag.fr>  Thu,  5 Oct 2006 11:18:31 +0200
 
 oar (1.6.1) unstable; urgency=low
 
