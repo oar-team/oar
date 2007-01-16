@@ -43,8 +43,10 @@ $nb_core = 1  #number of core by cpu
 $cpu = 1  #initial index for cpu field
 $core = 1 #initial index for core field
 
+$scale_weight = 1 #mandatory if maxweight (in oar 1.6) is not equal to nb_core * nb_cpu 
+
 $empty = false #if true flush modified oar.v2 tables before convertion    
-							# MUST BE SET TO false (use for devlopment/testing)
+#$empty = true	 # MUST BE SET TO false (for development/testing purpose)
 
 #####################################################
 #
@@ -275,7 +277,8 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 	end
 
 	begin
-		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order` , `res_job_index` ) VALUES ('#{job['idJob']}', 'resource_id', '', '#{job['Nodes'].to_i*job['weight'].to_i}', 'LOG')")
+		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order` , `res_job_index` ) VALUES ('#{job['idJob']}', 'resource_id', '', '#{job['nbNodes'].to_i*$scale_weight*job['weight'].to_i}', 'LOG')")
+
 	rescue
 		puts "Failed to insert job resource descriptions: " + $!
 		exit
@@ -322,7 +325,7 @@ job['idJob'], 'converted' , job['jobType'], job['infoType'], job['state'], job['
 	#insert assigned resources
 	
 	assigned_resources.each do |node|
-		job['weight'].to_i.times do |i|
+		($scale_weight*job['weight'].to_i).times do |i|
 			begin
 				dbh.do("INSERT INTO `assigned_resources` ( `moldable_job_id` , `resource_id` , `assigned_resource_index` )
 VALUES ('#{job['idJob']}', '#{res_conv[node].to_i+i}', 'LOG')")
@@ -332,7 +335,6 @@ VALUES ('#{job['idJob']}', '#{res_conv[node].to_i+i}', 'LOG')")
 			end
 		end
 	end
-
 end
 
 
