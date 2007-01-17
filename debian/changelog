@@ -1,9 +1,10 @@
-oar (2.0.2-0) unstable; urgency=low
+oar (2.0.2-1) unstable; urgency=low
 
   * add warnings and exit code to oarnodesetting when there is a bad node name
     or resource number
+  * change package version
 
- -- Capit Nicolas <capitn@localdomain>  Tue, 16 Jan 2007 17:53:22 +0100
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 17 Jan 2007 13:08:52 +0100
 
 oar (2.0.1-2) unstable; urgency=low
 
