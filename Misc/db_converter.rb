@@ -38,10 +38,14 @@ $host_2 = 'localhost'
 $login_2 = 'root'
 $passwd_2 = ''
 
+$cluster = "" #cluster propertie (cluster field in resource table) 
+
 $nb_cpu = 2   #number of cpu by node
 $nb_core = 1  #number of core by cpu
 $cpu = 1  #initial index for cpu field
 $core = 1 #initial index for core field
+
+$job_id_offset = 0 #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one
 
 $scale_weight = 1 #mandatory if maxweight (in oar 1.6) is not equal to nb_core * nb_cpu 
 
@@ -209,12 +213,17 @@ def get_resources_log1(dbh)
 end
 
 
-def add_core_column2(dbh2)
-	puts "Add core column to resource table on oar2 db"
+def add_core_cluster_fields2(dbh2)
+	puts "Add core and cluster fields to resource table on oar2 db"
 	begin
 		dbh2.do("ALTER TABLE `resources` ADD `core` INT UNSIGNED NOT NULL DEFAULT '0' AFTER `cpu`")
 	rescue
-		puts "Core column exits ? :" + $!
+		puts "Core field exits in resource table ? :" + $!
+	end
+	begin
+		dbh2.do("ALTER TABLE `resources` ADD `cluster` VARCHAR(50) AFTER `suspended_jobs`")
+	rescue
+		puts "Cluster field exits field in resource table ? :" + $!
 	end
 end
 
@@ -229,8 +238,8 @@ def insert_resources2(dbh,resources)
 		$nb_cpu.times do |cp|
 			$nb_core.times do |co|
 				begin
-					dbh.do("INSERT INTO `resources` ( `resource_id` , `network_address` , `cpu` , `core` , `cpuset`) 
-VALUES ('#{r_id}', '#{res['hostname']}', '#{$cpu}','#{$core}','#{i}')")
+					dbh.do("INSERT INTO `resources` ( `resource_id` , `network_address` , `cluster`, `cpu` , `core` , `cpuset`) 
+VALUES ('#{r_id}', '#{res['hostname']}', '#{$cluster}', '#{$cpu}','#{$core}','#{i}')")
 				rescue
 					puts "Unable to INSERT resource: " + $!
 					exit
@@ -294,6 +303,9 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 	message = ""
 	start_time = 0
 	stop_time = 0
+
+	job_id2 = job['idJob'].to_i + $job_id_offset
+
 	begin
 		message =  job['message'] if job['message'].class != NilClass
 		start_time = to_unix_time(job['startTime']) if job['startTime'].class != NilClass
@@ -301,7 +313,7 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 
 		dbh.do("INSERT INTO `jobs` ( `job_id` , `job_name`, `job_type` , `info_type` , `state` , `reservation` , `message` , `job_user` , `command`, `queue_name` , `properties` , `launching_directory` , `submission_time` , `start_time` , `stop_time` , `file_id` , `accounted` , `assigned_moldable_job` , `checkpoint`) 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-job['idJob'], 'converted' , job['jobType'], job['infoType'], job['state'], job['reservation'], message, job['user'], job['command'], job['queueName'], job['properties'], job['launchingDirectory'], to_unix_time(job['submissionTime']), start_time, stop_time, job['idFile'], job['accounted'], job['idJob'], job['checkpoint'] )
+job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reservation'], message, job['user'], job['command'], job['queueName'], job['properties'], job['launchingDirectory'], to_unix_time(job['submissionTime']), start_time, stop_time, job['idFile'], job['accounted'], job['idJob'], job['checkpoint'] )
 
 	rescue
 		puts "Failed to insert job: " + $!
@@ -311,7 +323,7 @@ job['idJob'], 'converted' , job['jobType'], job['infoType'], job['state'], job['
 	if (job['queueName'] == "deploy" || job['queueName'] == "besteffort") 
 		begin
 			dbh.do("INSERT INTO `job_types` ( `job_id` , `type` , `types_index` )
-	VALUES ('#{job['idJob']}', '#{job['queueName']}', 'LOG')")
+	VALUES ('#{job_id2}', '#{job['queueName']}', 'LOG')")
 		rescue
 			puts "Failed to insert job types: " + $!
 			exit
@@ -328,7 +340,7 @@ job['idJob'], 'converted' , job['jobType'], job['infoType'], job['state'], job['
 		($scale_weight*job['weight'].to_i).times do |i|
 			begin
 				dbh.do("INSERT INTO `assigned_resources` ( `moldable_job_id` , `resource_id` , `assigned_resource_index` )
-VALUES ('#{job['idJob']}', '#{res_conv[node].to_i+i}', 'LOG')")
+VALUES ('#{job_id2}', '#{res_conv[node].to_i+i}', 'LOG')")
 			rescue
 				puts "Failed to insert assigned resources: " + $!
 				exit
@@ -343,11 +355,14 @@ def convert_job_state_logs(dbh1,dbh2)
 	puts "Convert job state logs"
 	sth = dbh1.execute("SELECT * FROM jobState_log")
   sth.each do |row|
+
+	job_id2 = row['jobId'].to_i + $job_id_offset
+
 	date_stop = "0"	
 		begin	
 			date_stop = to_unix_time(row['dateStop']) if row['dateStop'].class != NilClass 
 			dbh2.do(" INSERT INTO `job_state_logs` (`job_id` , `job_state` , `date_start` , `date_stop` )
-VALUES ('#{row['jobId']}','#{row['jobState']}','#{to_unix_time(row['dateStart'])}','#{date_stop}')")
+VALUES ('#{job_id2}','#{row['jobState']}','#{to_unix_time(row['dateStart'])}','#{date_stop}')")
 		rescue
 			puts "Unable to INSERT job state logs: " + $!
 			exit
@@ -361,9 +376,11 @@ def convert_frag_jobs(dbh1,dbh2)
 	puts "Convert frag jobs"
 	sth = dbh1.execute("SELECT * FROM fragJobs")
   sth.each do |row|
+		job_id2 = row['fragIdJob'].to_i + $job_id_offset
+
 		begin
 			dbh2.do("INSERT INTO `frag_jobs` ( `frag_id_job` , `frag_date` , `frag_state` )
-			VALUES ('#{row['fragIdJob']}','#{to_unix_time(row['fragDate'])}','#{row['fragState']}')")
+			VALUES ('#{job_id2}','#{to_unix_time(row['fragDate'])}','#{row['fragState']}')")
 		rescue
 			puts "Unable to INSERT frag jobs: " + $!
 			exit
@@ -376,10 +393,11 @@ def convert_event_logs(dbh1,dbh2)
 	puts "Convert event_logs"
 	sth = dbh1.execute("SELECT * FROM event_log")
   sth.each do |row|
+		job_id2 = row['idJob'].to_i + $job_id_offset
 		begin
 			dbh2.do("INSERT INTO `event_logs` ( `event_id` , `type` , `job_id` , `date` , `description` , `to_check` )
 VALUES (?, ?, ?, ?, ?, ?)",
-row['idEvent'], row['type'], row['idJob'], to_unix_time(row['date']), row['description'], row['toCheck'] )
+row['idEvent'], row['type'], job_id2, to_unix_time(row['date']), row['description'], row['toCheck'] )
 		rescue
 			puts "Unable to INSERT event logs: " + $!
 			exit
@@ -406,6 +424,7 @@ def empty_db(dbh,name)
 
 	puts "\nEMPTY some tables of #{name} database (oar v2.0) !!"	
 	puts
+	puts "resources, resource_logs, moldable_job_descriptions, job_resource_descriptions, job_resource_groups, jobs, job_types, assigned_resources, job_state_logs, frag_jobs, event_logs, event_log_hostnames"
 		
 	sleep 5
 
@@ -441,8 +460,8 @@ resources = list_resources1(dbh1)
 #	puts "node information: hostname: #{res['hostname']} maxWeight: #{res['maxWeight']}"
 #end
 
-# Add core column
-add_core_column2(dbh2)
+# Add core and cluster fields
+add_core_cluster_fields2(dbh2)
 
 # Insert resources
 res_conv2 = insert_resources2(dbh2,resources)
