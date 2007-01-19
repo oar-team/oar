@@ -28,7 +28,7 @@
 #
 #####################################################
 
-$oar_db_1 = 'oar-v1-6'
+$oar_db_1 = 'oar-ita-1-6'
 $host_1 = 'localhost'
 $login_1 = 'root'
 $passwd_1 = ''
@@ -44,6 +44,7 @@ $nb_cpu = 2   #number of cpu by node
 $nb_core = 1  #number of core by cpu
 $cpu = 1  #initial index for cpu field
 $core = 1 #initial index for core field
+$res_id = 1 #intial index for resource_id
 
 $job_id_offset = 0 #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one
 
@@ -134,7 +135,6 @@ def hmstos(hms)
 end
 
 def base_connect(dbname_host,login,passwd)
-#$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}
 	return DBI.connect("dbi:Mysql:#{dbname_host}", login,passwd)
 end
 
@@ -230,7 +230,7 @@ end
 def insert_resources2(dbh,resources)
 
 	puts "Insert resources"
-	r_id = 1
+	r_id = $res_id
 	resources_conv = {}
 	resources.each do |res|
 		resources_conv[res['hostname']] = r_id
