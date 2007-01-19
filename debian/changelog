@@ -3,8 +3,10 @@ oar (2.0.2-1) unstable; urgency=low
   * add warnings and exit code to oarnodesetting when there is a bad node name
     or resource number
   * change package version
+  * change default behaviour for the cpuset_manager.pl
+  * enable a user to use the same key for several jobs
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 17 Jan 2007 13:08:52 +0100
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Fri, 19 Jan 2007 16:21:01 +0100
 
 oar (2.0.1-2) unstable; urgency=low
 

@@ -355,6 +355,7 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
                                 WHERE
                                     jobs.state NOT IN (\'Terminated\',\'Error\',\'Finishing\') AND
                                     challenges.job_id = jobs.job_id AND
+                                    jobs.job_user != '$user' AND
                                     challenges.ssh_private_key = $ssh_private_key AND
                                     challenges.ssh_public_key = $ssh_public_key AND
                                     challenges.ssh_private_key != \'\'
