@@ -156,6 +156,7 @@ sub print_job($$){
     return if (!defined($job_info));
     
     my @nodes;
+    my @node_hostnames;
     my $mold;
     my @date_tmp;
     my @job_events;
@@ -200,6 +201,7 @@ sub print_job($$){
         
         if ($job_info->{assigned_moldable_job} ne ""){
             @nodes = iolib::get_job_resources($dbh,$job_info->{assigned_moldable_job});
+            @node_hostnames = iolib::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
             $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
         }
         
@@ -209,6 +211,7 @@ sub print_job($$){
             owner => $job_info->{job_user},
             state => $job_info->{state},
             assigned_resources => \@nodes,
+            assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
             exit_code => $job_info->{exit_code},
@@ -313,6 +316,7 @@ sub print_job($$){
             }
             print("    scheduledStart = $date_tmp[0]\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
+            print("    assigned_hostnames = ".join("+",@node_hostnames)."\n");
             print("    nbNodes = 0\n");
             print("    weight = 0\n");
             print("\n");
@@ -326,6 +330,7 @@ sub print_job($$){
             print("    wanted_resources = $resources_string\n");
             print("    types = ".join(" ",@job_types)."\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
+            print("    assigned_hostnames = ".join("+",@node_hostnames)."\n");
             print("    queue = $job_info->{queue_name}\n");
             $job_info->{command} = '' if (!defined($job_info->{command}));
             print("    command = $job_info->{command}\n");

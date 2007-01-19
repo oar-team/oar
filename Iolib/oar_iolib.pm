@@ -523,6 +523,30 @@ sub get_job_resources($$) {
 }
 
 
+# get_job_network_address
+# returns the list of network_address associated to the job passed in parameter
+# parameters : base, jobid
+# return value : list of resources
+# side effects : /
+sub get_job_network_address($$) {
+    my $dbh = shift;
+    my $jobid= shift;
+
+    my $sth = $dbh->prepare("SELECT DISTINCT(resources.network_address) as hostname
+                             FROM assigned_resources, resources
+                             WHERE 
+                                assigned_resources.moldable_job_id = $jobid AND
+                                resources.resource_id = assigned_resources.resource_id
+                             ORDER BY resources.network_address ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{hostname});
+    }
+    return(@res);
+}
+
+
 # get_job_host_log
 # returns the list of hosts associated to the moldable job passed in parameter
 # parameters : base, moldablejobid
