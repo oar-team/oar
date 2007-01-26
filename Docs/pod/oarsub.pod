@@ -148,11 +148,11 @@ Job submission with arguments :
 
 =over
 
-=item oarsub -l /node=4 -I
+=item oarsub -l /nodes=4 -I
 
-=item oarsub -q default -l walltime=50:30:00,/node=10/cpu=3 -p "switch = 'sw1'" /home/users/toto/prog
+=item oarsub -q default -l walltime=50:30:00,/nodes=10/cpu=3 -p "switch = 'sw1'" /home/users/toto/prog
 
-=item oarsub -r "2004-04-27 11:00:00" -l /node=12/cpu=2
+=item oarsub -r "2004-04-27 11:00:00" -l /nodes=12/cpu=2
 
 =item oarsub -C 154
 
@@ -162,7 +162,7 @@ Script example:
 
 =over
 
-=item #OAR -l /node=4
+=item #OAR -l /nodes=4
 
 =item #OAR -q long -l walltime=2:30
 
