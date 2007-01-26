@@ -238,22 +238,22 @@ Script can contain the description of the job. Lines with options must begin by 
 .SH "EXAMPLE"
 .IX Header "EXAMPLE"
 Job submission with arguments :
-.IP "oarsub \-l /node=4 \-I" 4
-.IX Item "oarsub -l /node=4 -I"
+.IP "oarsub \-l /nodes=4 \-I" 4
+.IX Item "oarsub -l /nodes=4 -I"
 .PD 0
-.ie n .IP "oarsub \-q default \-l walltime=50:30:00,/node=10/cpu=3 \-p ""switch = 'sw1'"" /home/users/toto/prog" 4
-.el .IP "oarsub \-q default \-l walltime=50:30:00,/node=10/cpu=3 \-p ``switch = 'sw1''' /home/users/toto/prog" 4
-.IX Item "oarsub -q default -l walltime=50:30:00,/node=10/cpu=3 -p switch = 'sw1' /home/users/toto/prog"
-.ie n .IP "oarsub \-r ""2004\-04\-27 11:00:00"" \-l /node=12/cpu=2" 4
-.el .IP "oarsub \-r ``2004\-04\-27 11:00:00'' \-l /node=12/cpu=2" 4
-.IX Item "oarsub -r 2004-04-27 11:00:00 -l /node=12/cpu=2"
+.ie n .IP "oarsub \-q default \-l walltime=50:30:00,/nodes=10/cpu=3 \-p ""switch = 'sw1'"" /home/users/toto/prog" 4
+.el .IP "oarsub \-q default \-l walltime=50:30:00,/nodes=10/cpu=3 \-p ``switch = 'sw1''' /home/users/toto/prog" 4
+.IX Item "oarsub -q default -l walltime=50:30:00,/nodes=10/cpu=3 -p switch = 'sw1' /home/users/toto/prog"
+.ie n .IP "oarsub \-r ""2004\-04\-27 11:00:00"" \-l /nodes=12/cpu=2" 4
+.el .IP "oarsub \-r ``2004\-04\-27 11:00:00'' \-l /nodes=12/cpu=2" 4
+.IX Item "oarsub -r 2004-04-27 11:00:00 -l /nodes=12/cpu=2"
 .IP "oarsub \-C 154" 4
 .IX Item "oarsub -C 154"
 .PD
 .PP
 Script example:
-.IP "#OAR \-l /node=4" 4
-.IX Item "#OAR -l /node=4"
+.IP "#OAR \-l /nodes=4" 4
+.IX Item "#OAR -l /nodes=4"
 .PD 0
 .IP "#OAR \-q long \-l walltime=2:30" 4
 .IX Item "#OAR -q long -l walltime=2:30"
