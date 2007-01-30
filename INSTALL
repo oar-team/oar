@@ -149,17 +149,22 @@ Here is an example to perform all the potgres database install(there is certainl
         Shall the new
     
     createdb oar
+
+    sudo vi /etc/postgresql/8.1/main/pg_hba.conf
+        host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
+        host    oar         oar               127.0.0.1          255.255.255.255    md5
+
+    sudo /etc/init.d/postgresql-8.1 reload
+    
+    psql -Uoar -h127.0.0.1 oar
+        \i /usr/lib/oar/oar_postgres.sql
+        \q
+    
     psql oar
         GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar;
         GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar_ro;
         \q
-    sudo vi /etc/postgresql/8.1/main/pg_hba.conf
-        host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
-        host    oar         oar               127.0.0.1          255.255.255.255    md5
-    sudo /etc/init.d/postgresql-8.1 reload
-    psql -Uoar -h127.0.0.1 oar
-        \i /usr/lib/oar/oar_postgres.sql
-        \q
+    
     # You can test it with
     psql oar oar_ro -h127.0.0.1
 
