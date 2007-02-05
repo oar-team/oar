@@ -1225,6 +1225,8 @@ Each configuration tag found in /etc/oar.conf is now described:
       
       DEPLOY_HOSTNAME = 127.0.0.1
 
+.. _COSYSTEM_HOSTNAME:
+
   - Specify where we are connected with a job of the cosystem type::
 
       COSYSTEM_HOSTNAME = 127.0.0.1
@@ -1847,7 +1849,8 @@ Cosystem jobs
 
 This feature enables to reserve some resources without launching any
 program on corresponding nodes. Thus nothing is done by OAR when a
-job is starting (no prologue, no epilogue on the server nor on the nodes).
+job is starting (no prologue, no epilogue on the nodes) except the execution
+of the prologue and epilogue on the server (SERVER_SCRIPT_EXEC_FILE_).
 
 This is useful with an other launching system that will declare its time
 slot in OAR. So yo can have two different batch scheduler.
@@ -1857,6 +1860,8 @@ specify that this is a besteffort job.
 
 These jobs are stopped by the oardel_ command or when they reach their
 walltime.
+They also use the node COSYSTEM_HOSTNAME_ to launch the specified program
+or shell.
 
 Deploy jobs
 -----------
