@@ -86,6 +86,17 @@ Example:
 Administrator
 -------------
 
+What means the error "Bad configuration option: PermitLocalCommand" when I am using oarsh?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For security reasons, on the latest OpenSSH releases you are able to execute
+a local command when you are connecting to the remote host and we must
+deactivate this option because the oarsh_ wrapper executes the *ssh* command
+into the user oar.
+
+So if you encounter this error message it means that your OpenSSH does
+not know this option and you have to remove it from every oarsh shell script.
+
 How to manage start/stop of the nodes?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You have to add a script in /etc/init.d which switches resources of the node

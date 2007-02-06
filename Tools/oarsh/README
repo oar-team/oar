@@ -92,7 +92,8 @@ executes the right command (like ssh).
 Important notes
 ...............
 
-    - On each nodes you must add in the SSH server configuration file::
+    - On each nodes you must add in the SSH server configuration file (you
+      have to install an openssh server with a version >= **3.9**)::
 
         AcceptEnv OAR_CPUSET SUDO_USER
         PermitUserEnvironment yes
