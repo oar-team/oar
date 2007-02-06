@@ -1848,18 +1848,18 @@ Cosystem jobs
 -------------
 
 This feature enables to reserve some resources without launching any
-program on corresponding nodes. Thus nothing is done by OAR when a
-job is starting (no prologue, no epilogue on the nodes) except the execution
-of the prologue and epilogue on the server (SERVER_SCRIPT_EXEC_FILE_).
+program on corresponding nodes. Thus nothing is done by OAR on computing nodes
+when a job is starting except on the COSYSTEM_HOSTNAME_ defined in the
+configuration file.
 
 This is useful with an other launching system that will declare its time
 slot in OAR. So yo can have two different batch scheduler.
 
 When you submit a job you have to use "-t cosystem" option of oarsub_ to
-specify that this is a besteffort job.
+specify that this is a cosystem job.
 
 These jobs are stopped by the oardel_ command or when they reach their
-walltime.
+walltime or their command has finished.
 They also use the node COSYSTEM_HOSTNAME_ to launch the specified program
 or shell.
 
