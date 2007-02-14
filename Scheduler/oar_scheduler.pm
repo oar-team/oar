@@ -105,6 +105,7 @@ sub init_scheduler($$$$$$){
         my @resource_list = iolib::get_job_current_resources($dbh, $i->{assigned_moldable_job},undef);
 
         my $date ;
+        print("$i->{job_id} : moldable_job=,$i->{assigned_moldable_job} moldable_walltime=$mold->{moldable_walltime}\n");
         if ($i->{start_time} == 0) {
             $date = $current_time_sec;
         }elsif ($i->{start_time} + $mold->{moldable_walltime} < $current_time_sec){

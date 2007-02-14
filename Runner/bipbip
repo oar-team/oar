@@ -235,12 +235,12 @@ if (defined($Server_prologue)){
             $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
         }
         eval{
-            undef($base);
             $SIG{PIPE}  = 'IGNORE';
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm($timeout);
             $pid = fork();
             if ($pid == 0){
+                undef($base);
                 exec($cmd);
                 warn("[ERROR] Cannot find $cmd\n");
                 exit(-1);
@@ -261,21 +261,21 @@ if (defined($Server_prologue)){
                     my ($children,$cmd_name) = oar_Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
-                my $str = "[bipbip $Jid] Server prologue timeouted (cmd : $cmd)";
+                my $str = "[bipbip $Job_id] Server prologue timeouted (cmd : $cmd)";
                 oar_error("$str\n");
-                iolib::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Jid,"$str");
+                iolib::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
                 oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
             }
         }elsif ($exit_value != 0){
-            my $str = "[bipbip $Jid] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
+            my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
             oar_error("$str\n");
-            iolib::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Jid,"$str");
+            iolib::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Job_id,"$str");
             oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         }
     }else{
-        my $str = "[bipbip $Jid] Try to execute $Server_prologue but I cannot find it or it is not executable";
+        my $str = "[bipbip $Job_id] Try to execute $Server_prologue but I cannot find it or it is not executable";
         oar_warn("$str\n");
-        iolib::add_new_event($base,"SERVER_PROLOGUE_ERROR",$Jid,$str);
+        iolib::add_new_event($base,"SERVER_PROLOGUE_ERROR",$Job_id,$str);
         oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
     }
 }

@@ -4819,12 +4819,12 @@ sub job_finishing_sequence($$$$$$$$){
                 $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
             }
             eval{
-                undef($dbh);
                 $SIG{PIPE} = 'IGNORE';
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeout);
                 $pid = fork();
                 if ($pid == 0){
+                    undef($dbh);
                     exec($cmd);
                     warn("[ERROR] Cannot find $cmd\n");
                     exit(-1);
