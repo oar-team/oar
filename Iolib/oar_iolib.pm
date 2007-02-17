@@ -157,6 +157,9 @@ sub release_lock($$);
 
 # END OF PROTOTYPES
 
+my $Remote_host;
+my $Remote_port;
+
 my %State_to_num = (
     "Alive" => 1,
     "Absent" => 2,
@@ -229,6 +232,9 @@ sub connect() {
     my $user = get_conf("DB_BASE_LOGIN");
     my $pwd = get_conf("DB_BASE_PASSWD");
     $Db_type = get_conf("DB_TYPE");
+
+    $Remote_host = get_conf("SERVER_HOSTNAME");
+    $Remote_port = get_conf("SERVER_PORT");
 
     return(connect_db($host,$name,$user,$pwd));
 }
@@ -1225,67 +1231,6 @@ sub set_job_state($$$) {
             #            WHERE job_id = $job_id
             #         ");
             
-            if ($Db_type eq "Pg"){
-                $dbh->do("  UPDATE moldable_job_descriptions
-                            SET
-                                moldable_index = \'LOG\'
-                            WHERE
-                                moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                AND moldable_job_descriptions.moldable_job_id = $job_id
-                         ");
-    
-                $dbh->do("  UPDATE job_resource_descriptions
-                            SET
-                                res_job_index = \'LOG\'
-                            FROM moldable_job_descriptions, job_resource_groups
-                            WHERE
-                                job_resource_groups.res_group_index = \'CURRENT\'
-                                AND moldable_job_descriptions.moldable_index = \'LOG\'
-                                AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                                AND moldable_job_descriptions.moldable_job_id = $job_id
-                                AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                                AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                     ");
-                
-                $dbh->do("  UPDATE job_resource_groups
-                            SET
-                                res_group_index = \'LOG\'
-                            FROM moldable_job_descriptions
-                            WHERE
-                                job_resource_groups.res_group_index = \'CURRENT\'
-                                AND moldable_job_descriptions.moldable_index = \'LOG\'
-                                AND moldable_job_descriptions.moldable_job_id = $job_id
-                                AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                     ");
-            }else{
-                $dbh->do("  UPDATE moldable_job_descriptions, job_resource_groups, job_resource_descriptions
-                            SET job_resource_groups.res_group_index = \'LOG\',
-                                job_resource_descriptions.res_job_index = \'LOG\',
-                                moldable_job_descriptions.moldable_index = \'LOG\'
-                            WHERE
-                                moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                AND job_resource_groups.res_group_index = \'CURRENT\'
-                                AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                                AND moldable_job_descriptions.moldable_job_id = $job_id
-                                AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                                AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                        ");
-            }
-    
-            $dbh->do("  UPDATE job_types
-                        SET types_index = \'LOG\'
-                        WHERE
-                            job_types.types_index = \'CURRENT\'
-                            AND job_types.job_id = $job_id
-                     ");
-            
-            $dbh->do("  UPDATE job_dependencies
-                        SET job_dependency_index = \'LOG\'
-                        WHERE
-                            job_dependencies.job_dependency_index = \'CURRENT\'
-                            AND job_dependencies.job_id = $job_id
-                     ");
-    
             if ($job->{stop_time} < $job->{start_time}){
                 $dbh->do("  UPDATE jobs
                             SET stop_time = start_time
@@ -1294,13 +1239,6 @@ sub set_job_state($$$) {
                          ");
             }
             if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
-                $dbh->do("  UPDATE assigned_resources
-                            SET assigned_resource_index = \'LOG\'
-                            WHERE
-                                assigned_resource_index = \'CURRENT\'
-                                AND moldable_job_id = $job->{assigned_moldable_job}
-                        ");
-    
                 # Update last_job_date field for resources used
                 iolib::update_scheduler_last_job_date($dbh, $date,$job->{assigned_moldable_job});
             }
@@ -1311,8 +1249,97 @@ sub set_job_state($$$) {
                 oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally or an OAR error occured.");
             }
         }
+        if (($state eq "Terminated") or ($state eq "Error")){ 
+            add_new_event($dbh,"LOG_JOB",$job->{job_id},"The job $job->{job_id} is finished so we can make some optimizations in the database");
+            # $dbh is valid so these 2 variables must be defined
+            oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+        }
     }
 }
+
+
+# log_job
+# sets the index fields to LOG on several tables
+# this will speed up futur queries
+# parameters : base, jobid
+# return value : /
+sub log_job($$){
+    my $dbh = shift;
+    my $job_id = shift;
+    
+    my $job = get_job($dbh,$job_id);
+        
+    if ($Db_type eq "Pg"){
+        $dbh->do("  UPDATE moldable_job_descriptions
+                    SET
+                        moldable_index = \'LOG\'
+                    WHERE
+                        moldable_job_descriptions.moldable_index = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_job_id = $job_id
+                 ");
+
+        $dbh->do("  UPDATE job_resource_descriptions
+                    SET
+                        res_job_index = \'LOG\'
+                    FROM moldable_job_descriptions, job_resource_groups
+                    WHERE
+                        job_resource_groups.res_group_index = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_index = \'LOG\'
+                        AND job_resource_descriptions.res_job_index = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_job_id = $job_id
+                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+             ");
+        
+        $dbh->do("  UPDATE job_resource_groups
+                    SET
+                        res_group_index = \'LOG\'
+                    FROM moldable_job_descriptions
+                    WHERE
+                        job_resource_groups.res_group_index = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_index = \'LOG\'
+                        AND moldable_job_descriptions.moldable_job_id = $job_id
+                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+             ");
+    }else{
+        $dbh->do("  UPDATE moldable_job_descriptions, job_resource_groups, job_resource_descriptions
+                    SET job_resource_groups.res_group_index = \'LOG\',
+                        job_resource_descriptions.res_job_index = \'LOG\',
+                        moldable_job_descriptions.moldable_index = \'LOG\'
+                    WHERE
+                        moldable_job_descriptions.moldable_index = \'CURRENT\'
+                        AND job_resource_groups.res_group_index = \'CURRENT\'
+                        AND job_resource_descriptions.res_job_index = \'CURRENT\'
+                        AND moldable_job_descriptions.moldable_job_id = $job_id
+                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+                ");
+    }
+
+    $dbh->do("  UPDATE job_types
+                SET types_index = \'LOG\'
+                WHERE
+                    job_types.types_index = \'CURRENT\'
+                    AND job_types.job_id = $job_id
+             ");
+    
+    $dbh->do("  UPDATE job_dependencies
+                SET job_dependency_index = \'LOG\'
+                WHERE
+                    job_dependencies.job_dependency_index = \'CURRENT\'
+                    AND job_dependencies.job_id = $job_id
+             ");
+
+    if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
+        $dbh->do("  UPDATE assigned_resources
+                    SET assigned_resource_index = \'LOG\'
+                    WHERE
+                        assigned_resource_index = \'CURRENT\'
+                        AND moldable_job_id = $job->{assigned_moldable_job}
+                ");
+    }
+}
+
 
 
 # Resubmit a job and give the new job_id

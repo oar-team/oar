@@ -251,6 +251,15 @@ foreach my $i (@events_to_check){
             my ($addr,$port) = split(/:/,$job->{info_type});
             oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"INFO","Your job was asked to be deleted\n$i->{description}");
     }
+     
+    ####################################
+    # Archive data of finished jobs    #
+    ####################################
+    if (
+        ($i->{type} eq "LOG_JOB")
+       ){
+            iolib::log_job($base,$i->{job_id});
+    }
    
     iolib::check_event($base, $i->{type}, $i->{job_id});
 }
