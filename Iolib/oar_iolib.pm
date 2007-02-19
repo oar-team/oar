@@ -37,6 +37,7 @@ sub disconnect($);
 # JOBS MANAGEMENT
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
+sub get_jobs_in_state_for_user($$$);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
@@ -149,6 +150,7 @@ sub get_job_events($$);
 # ACCOUNTING
 sub check_accounting_update($$);
 sub update_accounting($$$$$$$$$);
+sub get_accounting_summary($$$$);
 
 # LOCK FUNCTIONS:
 
@@ -394,6 +396,33 @@ sub get_jobs_in_state($$) {
     return(@res);
 }
 
+# get_jobs_in_state_for_user
+# returns the jobs in the specified state for the optionaly specified user
+# parameters : base, job state, user
+# return value : flatened list of hashref jobs
+# side effects : /
+sub get_jobs_in_state_for_user($$$) {
+    my $dbh = shift;
+    my $state = $dbh->quote(shift);
+    my $user = shift;
+    my $user_query="";
+
+    if ("$user" ne "" ) {
+      $user_query="and job_user =" . $dbh->quote($user);
+    }
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state = $state $user_query
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(@res);
+}
 
 # get_jobs_with_given_properties
 # returns the jobs with specified properties
@@ -4418,6 +4447,42 @@ sub get_sum_accounting_for_param($$$$$){
     my $results;
     while (my @r = $sth->fetchrow_array()) {
         $results->{$r[0]}->{$r[1]} = $r[2];
+    }
+    $sth->finish();
+
+    return($results);
+}
+
+sub get_accounting_summary($$$$){
+    my $dbh = shift;
+    my $start = shift;
+    my $stop = shift;
+    my $user = shift;
+    my $user_query="";
+    if ("$user" ne "") {
+        $user_query="AND accounting_user = ". $dbh->quote($user);
+    }
+
+    my $sth = $dbh->prepare("   SELECT accounting_user as user,
+                                       consumption_type,
+                                       sum(consumption) as seconds,
+                                       floor(sum(consumption)/3600) as hours,
+                                       min(FROM_UNIXTIME(window_start)) as first_window_start,
+                                       max(FROM_UNIXTIME(window_stop)) as last_window_stop
+                                FROM accounting
+                                WHERE
+                                    window_stop > UNIX_TIMESTAMP('$start') AND
+                                    window_start < UNIX_TIMESTAMP('$stop')
+                                    $user_query
+                                GROUP BY user,consumption_type
+                            ");
+    $sth->execute();
+
+    my $results;
+    while (my @r = $sth->fetchrow_array()) {
+        $results->{$r[0]}->{$r[1]} = $r[2];
+        $results->{$r[0]}->{begin} = $r[4];
+        $results->{$r[0]}->{end} = $r[5];
     }
     $sth->finish();
 

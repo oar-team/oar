@@ -35,12 +35,15 @@ my $Printed_jobs = 0;
 
 sub print_job($$);
 sub get_history($$$);
+sub duration($);
 
 Getopt::Long::Configure ("gnu_getopt");
 my $sos;
 my @job_ids;
 my $full_view;
+my $user;
 my $gantt_query;
+my $accounting_query;
 my $sql_property;
 my $XML_mode;
 my $YAML_mode;
@@ -50,7 +53,9 @@ my $Old;
 GetOptions ("help|h" => \$sos,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
+            "user|u=s" => \$user,
             "gantt|g=s"   => \$gantt_query,
+            "accounting=s"   => \$accounting_query,
             "sql=s"   => \$sql_property,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
@@ -61,15 +66,18 @@ GetOptions ("help|h" => \$sos,
 
 if ($sos){
     print <<EOS;
-Usage: $0 [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date,date"]]
-[-X | -Y | -D] [-v]
+Usage: $0 [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date,date"] [--accounting "date,date"]]
+[-X | -Y | -D] [-v] [-u user]
 Display job informations
 Options:
   -h, --help                show this help screen
   -j, --job                 show informations only for the specified job
   -f, --full                show full informations
+  -u, --user                show informations for this user only
   -g, --gantt               show job informations between two dates
                             like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
+      --accounting          show accounting informations between two dates
+                            like "2006-03-30, 2006-04-30"
       --sql                 restricts display with the SQL where clause on the
                             table jobs (ex: "project = 'p1'")
   -D, --DUMPER              print result in DUMPER format
@@ -90,60 +98,106 @@ my $base = iolib::connect_ro();
 
 my @jobs;
 
-if (!defined($gantt_query)){
-    if ($#job_ids < 0){
-        if (defined($sql_property)){
-            push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
-        }else{
-            push(@jobs, iolib::get_jobs_in_state($base, "Finishing"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Running"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Resuming"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Suspended"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Launching"));
-            push(@jobs, iolib::get_jobs_in_state($base, "toLaunch"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Waiting"));
-            push(@jobs, iolib::get_jobs_in_state($base, "toAckReservation"));
-            push(@jobs, iolib::get_jobs_in_state($base, "Hold"));
+# JOBS STATS OUTPUT
+if (!defined($accounting_query)){
+    if (!defined($gantt_query)){
+        if ($#job_ids < 0){
+            if (defined($sql_property)){
+                push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
+            }else{
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Finishing", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Running", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Resuming", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Suspended", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Launching", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "toLaunch", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Waiting", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "toAckReservation", $user));
+                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Hold", $user));
+            }
+        }elsif($#job_ids >= 0){
+            foreach my $j (@job_ids){
+                push(@jobs, iolib::get_job($base,$j));
+            }
         }
-    }elsif($#job_ids >= 0){
-        foreach my $j (@job_ids){
-            push(@jobs, iolib::get_job($base,$j));
+        foreach my $g (@jobs) {
+            print_job($base,$g);
         }
-    }
-    foreach my $g (@jobs) {
-        print_job($base,$g);
-    }
-}elsif ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
-    my $hist = get_history($base, "$1 $2", "$3 $4");
-    if (defined($DUMPER_mode)){
-        print(Dumper($hist));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-        print(XMLout($hist));
+    }elsif ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
+        my $hist = get_history($base, "$1 $2", "$3 $4");
+        if (defined($DUMPER_mode)){
+            print(Dumper($hist));
+        }elsif(defined($XML_mode)){
+            if ($XML_enabled == 1){
+            print(XMLout($hist));
+            }else{
+                warn("[ERROR] Cannot load XML module.\n");
+                return(5);
+            }
+        }elsif(defined($YAML_mode)){
+            if ($YAML_enabled == 1){
+                print(YAML::Dump($hist));
+            }else{
+                warn("[ERROR] Cannot load YAML module.\n");
+                return(6);
+            }
         }else{
-            warn("[ERROR] Cannot load XML module.\n");
-            return(5);
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump($hist));
-        }else{
-            warn("[ERROR] Cannot load YAML module.\n");
-            return(6);
+            $Data::Dumper::Purity = 1;
+            $Data::Dumper::Terse = 1;
+            $Data::Dumper::Indent = 1;
+            $Data::Dumper::Deepcopy = 0;
+            print(Dumper($hist));
         }
     }else{
-        $Data::Dumper::Purity = 1;
-        $Data::Dumper::Terse = 1;
-        $Data::Dumper::Indent = 1;
-        $Data::Dumper::Deepcopy = 0;
-        print(Dumper($hist));
+        print("/!\\ Bad syntax with '-g' option\n");
+        iolib::disconnect($base);
+        exit(1);
     }
+
+# ACCOUNTING OUTPUT
+}elsif ($accounting_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*/m){
+    my $login;
+    my $Consumptions=iolib::get_accounting_summary($base,$1,$2,$user);
+
+    if (defined($user)) {
+        my $asked;
+        my $used;
+        if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
+        else { $asked=0; }
+        if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
+        else { $used=0; }
+        if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
+        if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
+        print "Usage summary for user '$user' from $1 to $2:\n";
+        print "-------------------------------------------------------------\n";
+        printf ("%-35s %s\n","Start of the first window:",$Consumptions->{$user}->{begin});
+        printf ("%-35s %s\n","End of the last window:",$Consumptions->{$user}->{end});
+        printf ("%-35s %s ( %s)\n","Asked consumption:",$asked,duration($asked));
+        printf ("%-35s %s ( %s)\n","Used consumption:",$used,duration($used));
+
+    }else{
+        print <<EOS;
+User       Fisrt window starts  Last window ends     Asked (seconds)  Used seconds)
+---------- -------------------- -------------------- ---------------- ----------------
+EOS
+        foreach $login (keys %{$Consumptions}) {
+            if (!defined($Consumptions->{$login}->{ASKED})) {$Consumptions->{$login}->{ASKED}=0;}
+            if (!defined($Consumptions->{$login}->{USED})) {$Consumptions->{$login}->{USED}=0;}
+            printf("%-10.10s %-19s  %-19s  %16s %16s\n",
+                   $login,
+                   $Consumptions->{$login}->{begin},
+                   $Consumptions->{$login}->{end},
+                   $Consumptions->{$login}->{ASKED},
+                   $Consumptions->{$login}->{USED}
+            );
+        }
+    }
+    
 }else{
-    print("/!\\ Bad syntax with '-g' option\n");
+    print("/!\\ Bad syntax with '--accounting' option\n");
     iolib::disconnect($base);
     exit(1);
-}
-
+}   
 
 iolib::disconnect($base);
 
@@ -428,3 +482,30 @@ sub get_history($$$){
     return(\%hash_dumper_result);
 }
 
+sub duration($){
+# Converts a number of seconds in a human readable duration (years,days,hours,mins,secs)
+    my $time=shift;
+    my $seconds;
+    my $minutes;
+    my $hours;
+    my $days;
+    my $years;
+    my $duration="";
+    $years=int($time/31536000);
+    if ($years==1) { $duration .="1 year ";}
+    elsif ($years) { $duration .="$years years ";};
+    $days=int($time/86400)%365;
+    if ($days==1) { $duration .="1 day ";}
+    elsif ($days) { $duration .="$days days ";};
+    $hours=int($time/3600)%24;
+    if ($hours==1) { $duration .="1 hour ";}
+    elsif ($hours) { $duration .="$hours hours ";};
+    $minutes=int($time/60)%60;
+    if ($minutes==1) { $duration .="1 minute ";}
+    elsif ($minutes) { $duration .="$minutes minutes ";};
+    $seconds=$time%60;
+    if ($seconds==1) { $duration .="1 second ";}
+    elsif ($seconds) { $duration .="$seconds seconds ";};
+    if ($duration eq "") {$duration="0 seconds ";};
+    return $duration;
+}
