@@ -157,7 +157,7 @@ if (!defined($accounting_query)){
 # ACCOUNTING OUTPUT
 }elsif ($accounting_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*/m){
     my $login;
-    my $Consumptions=iolib::get_accounting_summary($base,$1,$2,$user);
+    my $Consumptions=iolib::get_accounting_summary($base,iolib::sql_to_local($1),iolib::sql_to_local($2),$user);
 
     if (defined($user)) {
         my $asked;

@@ -4467,14 +4467,14 @@ sub get_accounting_summary($$$$){
                                        consumption_type,
                                        sum(consumption) as seconds,
                                        floor(sum(consumption)/3600) as hours,
-                                       min(FROM_UNIXTIME(window_start)) as first_window_start,
-                                       max(FROM_UNIXTIME(window_stop)) as last_window_stop
+                                       min(window_start) as first_window_start,
+                                       max(window_stop) as last_window_stop
                                 FROM accounting
                                 WHERE
-                                    window_stop > UNIX_TIMESTAMP('$start') AND
-                                    window_start < UNIX_TIMESTAMP('$stop')
+                                    window_stop > $start AND
+                                    window_start < $stop
                                     $user_query
-                                GROUP BY user,consumption_type
+                                GROUP BY accounting_user,consumption_type
                             ");
     $sth->execute();
 
