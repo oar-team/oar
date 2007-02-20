@@ -4,10 +4,14 @@ oar (2.0.2-1) unstable; urgency=low
     or resource number
   * change package version
   * change default behaviour for the cpuset_manager.pl
-  * enable a user to use the same key for several jobs
+  * enable a user to use the same key for several jobs (at his own risk!)
   * add node hostnames in oarstat -f
+  * add --accounting and -u options in oarstat
+  * bug fix on index fields in the database (syncro): bug 2020
+  * bug fix about server pro/epilogue: bug 2022
+  * change the default output of oarstat. Now it is usable: bug 1875
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Fri, 19 Jan 2007 21:38:43 +0100
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Tue, 20 Feb 2007 12:55:55 -0600
 
 oar (2.0.1-2) unstable; urgency=low
 
