@@ -4543,7 +4543,7 @@ sub get_last_project_karma($$$$) {
                                 FROM jobs
                                 WHERE
                                       job_user = $user AND
-                                      message like \"Karma = %\" AND
+                                      message like \'Karma = %\' AND
                                       project = $project AND
                                       start_time < $date
                                 ORDER BY start_time desc
