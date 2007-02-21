@@ -151,6 +151,8 @@ sub get_job_events($$);
 sub check_accounting_update($$);
 sub update_accounting($$$$$$$$$);
 sub get_accounting_summary($$$$);
+sub get_accounting_summary_byproject($$$$);
+sub get_last_project_karma($$$$);
 
 # LOCK FUNCTIONS:
 
@@ -4453,6 +4455,9 @@ sub get_sum_accounting_for_param($$$$$){
     return($results);
 }
 
+
+# Get an array of consumptions by users 
+# params: base, start date, ending date, optional user
 sub get_accounting_summary($$$$){
     my $dbh = shift;
     my $start = shift;
@@ -4488,6 +4493,66 @@ sub get_accounting_summary($$$$){
     $sth->finish();
 
     return($results);
+}
+
+
+# Get an array of consumptions by project for a given user
+# params: base, start date, ending date, user
+sub get_accounting_summary_byproject($$$$){
+    my $dbh = shift;
+    my $start = shift;
+    my $stop = shift;
+    my $user = shift;
+    my $user_query="";
+    if ("$user" ne "") {
+        $user_query="AND accounting_user = ". $dbh->quote($user);
+    }
+
+    my $sth = $dbh->prepare("   SELECT accounting_user as user,
+                                       consumption_type,
+                                       sum(consumption) as seconds,
+                                       accounting_project as project
+                                FROM accounting
+                                WHERE
+                                    window_stop > $start AND
+                                    window_start < $stop
+                                    $user_query
+                                GROUP BY accounting_user,project,consumption_type
+                                ORDER BY project,consumption_type,seconds
+                            ");
+    $sth->execute();
+
+    my $results;
+    while (my @r = $sth->fetchrow_array()) {
+        $results->{$r[3]}->{$r[1]}->{$r[0]} = $r[2];
+    }
+    $sth->finish();
+
+    return($results);
+}
+
+# Get the last project Karma of user at a given date
+# params: base,user,project,date
+sub get_last_project_karma($$$$) {
+    my $dbh = shift;
+    my $user = $dbh->quote(shift);
+    my $project = $dbh->quote(shift);
+    my $date = shift;
+
+    my $sth = $dbh->prepare("   SELECT message,project,start_time
+                                FROM jobs
+                                WHERE
+                                      job_user = $user AND
+                                      message like \"Karma = %\" AND
+                                      project = $project AND
+                                      start_time < $date
+                                ORDER BY start_time desc
+                                LIMIT 1
+                          ");
+
+    $sth->execute();
+
+    return($sth->fetchrow_array());
 }
 
 
