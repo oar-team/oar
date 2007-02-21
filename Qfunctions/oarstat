@@ -170,8 +170,8 @@ if (!defined($accounting_query)){
         if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
         print "Usage summary for user '$user' from $1 to $2:\n";
         print "-------------------------------------------------------------\n";
-        printf ("%-35s %s\n","Start of the first window:",$Consumptions->{$user}->{begin});
-        printf ("%-35s %s\n","End of the last window:",$Consumptions->{$user}->{end});
+        printf ("%-35s %s\n","Start of the first window:",iolib::local_to_sql($Consumptions->{$user}->{begin}));
+        printf ("%-35s %s\n","End of the last window:",iolib::local_to_sql($Consumptions->{$user}->{end}));
         printf ("%-35s %s ( %s)\n","Asked consumption:",$asked,duration($asked));
         printf ("%-35s %s ( %s)\n","Used consumption:",$used,duration($used));
 
@@ -185,8 +185,8 @@ EOS
             if (!defined($Consumptions->{$login}->{USED})) {$Consumptions->{$login}->{USED}=0;}
             printf("%-10.10s %-19s  %-19s  %16s %16s\n",
                    $login,
-                   $Consumptions->{$login}->{begin},
-                   $Consumptions->{$login}->{end},
+                   iolib::local_to_sql($Consumptions->{$login}->{begin}),
+                   iolib::local_to_sql($Consumptions->{$login}->{end}),
                    $Consumptions->{$login}->{ASKED},
                    $Consumptions->{$login}->{USED}
             );

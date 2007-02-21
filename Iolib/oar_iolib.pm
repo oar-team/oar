@@ -4475,6 +4475,7 @@ sub get_accounting_summary($$$$){
                                     window_start < $stop
                                     $user_query
                                 GROUP BY accounting_user,consumption_type
+                                ORDER BY seconds
                             ");
     $sth->execute();
 
