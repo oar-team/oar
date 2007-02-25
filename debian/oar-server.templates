@@ -92,7 +92,7 @@ Description: OAR database name
 Template: oar/db/baselogin
 Type: string
 Default: oar
-Description: OAR databese login
+Description: OAR database login
  Please enter OAR database base login
 
 Template: oar/db/basepasswd

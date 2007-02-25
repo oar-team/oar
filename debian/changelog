@@ -10,8 +10,11 @@ oar (2.0.2-1) unstable; urgency=low
   * bug fix on index fields in the database (syncro): bug 2020
   * bug fix about server pro/epilogue: bug 2022
   * change the default output of oarstat. Now it is usable: bug 1875
+  * remove keys in authorized_keys of oar (on the nodes) that do not
+    correspond to an active cpuset (clean after a reboot)
+  * reread oar.conf after each database connection tries
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Tue, 20 Feb 2007 12:55:55 -0600
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Sat, 24 Feb 2007 15:00:11 -0600
 
 oar (2.0.1-2) unstable; urgency=low
 

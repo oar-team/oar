@@ -104,8 +104,15 @@ if ($ARGV[0] eq "init"){
                         warn("[cpuset_manager] ERROR: the user has specified the same ssh key than used by the user oar.\n");
                         exit(13);
                     }
+                    $out .= $_;
+                }elsif ($_ =~ /environment=\"OAR_CPUSET=(\w+)\"/){
+                    # Remove from authorized keys outdated keys (typically after a reboot)
+                    if (-d "/dev/cpuset/$1"){
+                        $out .= $_;
+                    }
+                }else{
+                    $out .= $_;
                 }
-                $out .= $_;
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
                 warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");

@@ -12,7 +12,7 @@ package iolib;
 require Exporter;
 
 use DBI;
-use oar_conflib qw(init_conf get_conf is_conf);
+use oar_conflib qw(init_conf get_conf is_conf reset_conf);
 use Data::Dumper;
 use Time::Local;
 use oar_Judas qw(oar_debug oar_warn oar_error);
@@ -182,6 +182,8 @@ my $Cm_security_duration = 600;
 
 # CONNECTION
 
+my $Timeout_db_connection = 0;
+my $Max_db_connection_timeout = 10;
 # connect_db
 # Connects to database and returns the base identifier
 # return value : base
@@ -202,23 +204,18 @@ sub connect_db($$$$) {
         $Db_type = "mysql";
     }
 
-    my $max_timeout = 10;
-    my $timeout = 0;
-    my $dbh = undef;
-    while (!defined($dbh)){
-        $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
-        
-        if (!defined($dbh)){
-            oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
-            if ($timeout < $max_timeout){
-                $timeout += 2;
-            }
-            oar_Judas::oar_warn("[IOlib] I will retry to connect to the database in $timeout s\n");
-            sleep($timeout);
+    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
+    
+    if (!defined($dbh)){
+        oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
+        if ($Timeout_db_connection < $Max_db_connection_timeout){
+            $Timeout_db_connection += 2;
         }
+        oar_Judas::oar_warn("[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
+        sleep($Timeout_db_connection);
     }
     
-    return $dbh;
+    return($dbh);
 }
 
 
@@ -229,18 +226,23 @@ sub connect_db($$$$) {
 # side effects : opens a connection to the base specified in ConfLib
 sub connect() {
     # Connect to the database.
-    init_conf($ENV{OARCONFFILE});
+    my $dbh = undef;
+    while (!defined($dbh)){
+        reset_conf();
+        init_conf($ENV{OARCONFFILE});
 
-    my $host = get_conf("DB_HOSTNAME");
-    my $name = get_conf("DB_BASE_NAME");
-    my $user = get_conf("DB_BASE_LOGIN");
-    my $pwd = get_conf("DB_BASE_PASSWD");
-    $Db_type = get_conf("DB_TYPE");
+        my $host = get_conf("DB_HOSTNAME");
+        my $name = get_conf("DB_BASE_NAME");
+        my $user = get_conf("DB_BASE_LOGIN");
+        my $pwd = get_conf("DB_BASE_PASSWD");
+        $Db_type = get_conf("DB_TYPE");
 
-    $Remote_host = get_conf("SERVER_HOSTNAME");
-    $Remote_port = get_conf("SERVER_PORT");
+        $Remote_host = get_conf("SERVER_HOSTNAME");
+        $Remote_port = get_conf("SERVER_PORT");
 
-    return(connect_db($host,$name,$user,$pwd));
+        $dbh = connect_db($host,$name,$user,$pwd);
+    }
+    return($dbh);
 }
 
 
@@ -251,17 +253,25 @@ sub connect() {
 # side effects : opens a connection to the base specified in ConfLib
 sub connect_ro() {
     # Connect to the database.
-    init_conf($ENV{OARCONFFILE});
+    my $dbh = undef;
+    while (!defined($dbh)){
+        reset_conf();
+        init_conf($ENV{OARCONFFILE});
 
-    my $host = get_conf("DB_HOSTNAME");
-    my $name = get_conf("DB_BASE_NAME");
-    my $user = get_conf("DB_BASE_LOGIN_RO");
-    $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
-    my $pwd = get_conf("DB_BASE_PASSWD_RO");
-    $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
-    $Db_type = get_conf("DB_TYPE");
+        my $host = get_conf("DB_HOSTNAME");
+        my $name = get_conf("DB_BASE_NAME");
+        my $user = get_conf("DB_BASE_LOGIN_RO");
+        $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
+        my $pwd = get_conf("DB_BASE_PASSWD_RO");
+        $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
+        $Db_type = get_conf("DB_TYPE");
+        
+        $Remote_host = get_conf("SERVER_HOSTNAME");
+        $Remote_port = get_conf("SERVER_PORT");
 
-    return(connect_db($host,$name,$user,$pwd));
+        $dbh = connect_db($host,$name,$user,$pwd);
+    }
+    return($dbh);
 }
 
 
