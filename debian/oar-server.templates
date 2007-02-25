@@ -1,6 +1,7 @@
 Template: oar/db/dbtype
 Type: select
 Choices: Mysql, Postgresql
+Default: Mysql
 Description: OAR Database backend
  Database OAR will use to store all data concerning
  node, scheduling,...
