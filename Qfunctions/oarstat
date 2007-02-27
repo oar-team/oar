@@ -387,8 +387,8 @@ sub print_job($$){
             print("    scheduledStart = $date_tmp[0]\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
             print("    assigned_hostnames = ".join("+",@node_hostnames)."\n");
-            print("    nbNodes = 0\n");
-            print("    weight = 0\n");
+            print("    nbNodes = ". ($#node_hostnames +1) ."\n");
+            print("    weight = ". ($#nodes + 1) ."\n");
             print("\n");
         }elsif (defined($full_view)){
             print("Job_Id: $job_info->{job_id}\n");
