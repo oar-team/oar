@@ -341,6 +341,7 @@ if (defined($stateMode)){
             print("     weight = $nb_jobs\n");
             print("     hostname = $hostname\n");
             $state = "free" if ($state eq "Alive");
+            $state = "job" if ($nb == $nb_jobs);
             print("     state = $state\n");
             print("     $properties\n");
             print("\n");
