@@ -4,4 +4,4 @@ OARDIR=
 OARUSER=
 OARCMD=
 
-exec sudo -u $OARUSER $OARDIR/cmds/$OARCMD "$@"
+exec sudo -H -u $OARUSER $OARDIR/cmds/$OARCMD "$@"

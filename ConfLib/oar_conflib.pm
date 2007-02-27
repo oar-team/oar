@@ -69,11 +69,12 @@ sub init_conf ($){
   open CONF, $file or die "Open configuration file";
   %params = ();
   foreach my $line (<CONF>) {
-      if ($line =~ $regex) {
-          my ($key,$val) = ($1,$2);
-        $val =~ s/\s*$//;
-        $params{$key}=$val;
-        }
+    if ($line =~ $regex) {
+      my ($key,$val) = ($1,$2);
+      $val =~ /^([\"\']?)(.+)\1\s*$/;
+      $val = $2 if ($2 ne "");
+      $params{$key}=$val;
+    }
   }
   close CONF;
   return 1;

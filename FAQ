@@ -95,9 +95,9 @@ deactivate this option because the oarsh_ wrapper executes the *ssh* command
 into the user oar.
 
 So if you encounter this error message it means that your OpenSSH does
-not know this option and you have to remove it from every oarsh shell script.
-There is a variable named "SSH_DEFAULT_OPTIONS" in the beginning of this
-script. So you have just to remove the not yet implemented option.
+not know this option and you have to remove it from the oar.conf.
+There is a variable named OARSH_OPENSSH_DEFAULT_OPTIONS_ in oar.conf used by oarsh.
+So you have just to remove the not yet implemented option.
 
 How to manage start/stop of the nodes?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

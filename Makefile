@@ -84,7 +84,7 @@ sudowrapper:
 	install -m 0755 Tools/configurator_wrapper.sh $(OARDIR)
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
-	@if [ -f $(OARDIR)/oarsh ]; then echo "Warning: $(OARDIR)/oarsh already exists, not overwriting it." ; else install -m 0755 Tools/oarsh/oarsh $(OARDIR); fi
+	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarsh#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarsh

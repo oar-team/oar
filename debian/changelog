@@ -14,11 +14,14 @@ oar (2.0.2-1) unstable; urgency=low
     correspond to an active cpuset (clean after a reboot)
   * reread oar.conf after each database connection tries
   * debug mysql initialization script in debian package
-  * add a variable in oarsh for the default options od ssh to use
-    (mor usefull to change if the ssh version installed does not
+  * add a variable in oarsh for the default options of ssh to use
+    (more useful to change if the ssh version installed does not
     handle one of these options)
+  * read oar.conf in oarsh (so admin can more easily change options in this
+    script)
+  * add support for X11 forwarding via oarsh
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Mon, 26 Feb 2007 19:58:52 -0600
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Tue, 27 Feb 2007 17:31:51 -0600
 
 oar (2.0.1-2) unstable; urgency=low
 

@@ -466,13 +466,12 @@ exit(0);
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : bash -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
         $shell,
         $launching_directory,
-        $display,
         $resource_file,
         $job_name,
         $job_project,
@@ -499,7 +498,6 @@ export OAR_JOBID='.$job_id.';
 export OARSH_JOB_ID='.$job_id.';
 export OAR_USER='.$user.';
 export OAR_WORKDIR='.$launching_directory.';
-export DISPLAY='.$display.';
 export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.';
 
 export OAR_NODEFILE=$OAR_FILE_NODES;

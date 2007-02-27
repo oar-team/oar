@@ -6,16 +6,26 @@
 # $OAR_CPUSET contains the cpuset name
 
 ###############################################################################
-# This variable must be set to enable the use of oarsh from a frontale node
-OARSTAT_CMD=
+# Default variable definitions.
+# If you want to change them then make it in the configuration file (oar.conf)
+#
+#echo "OAR configuration file : $OARCONFFILE"
+
+OARSH_OARSTAT_CMD=
+OPENSSH_CMD=/usr/bin/ssh
+OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 ###############################################################################
 
-SSH_CMD=/usr/bin/ssh
+source $OARCONFFILE || exit 7
 
-# The following variable adds options to ssh. If one option is not hamdled
-# by your ssh version just remove BUT be carefull because these options are
-# there for security reasons
-SSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+# Add security option for X11 forwarding
+XAUTH_LOCATION=$(which xauth)
+if [ -x "$XAUTH_LOCATION" ]
+then
+    OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=$XAUTH_LOCATION"
+else
+    OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=/bin/true"
+fi
 
 # Get the name of the current cpuset #
 function get_current_cpuset() {
@@ -28,16 +38,16 @@ function get_current_cpuset() {
 }
 ######################################
 
-export OAR_CPUSET
+export OAR_CPUSET=""
 
-[ -n "$OARSTAT_CMD" ] || OAR_CPUSET=$(get_current_cpuset)
+[ -n "$OARSH_OARSTAT_CMD" ] || OAR_CPUSET=$(get_current_cpuset)
 if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
-    if [ -n "$OARSTAT_CMD" ]
+    if [ -n "$OARSH_OARSTAT_CMD" ]
     then
         if [ $OARSH_JOB_ID -gt 0 ] 2>/dev/null
         then
-            OAR_CPUSET=$($OARSTAT_CMD -fj $OARSH_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
+            OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OARSH_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
             if [ "$OAR_CPUSET" == "" ] 
             then
                 echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
@@ -69,15 +79,25 @@ then
 fi
 
 # Test if a specific ssh connection key is used
-SSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
-if [ -r $SSH_KEY_FILE ]
+OPENSSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
+if [ -r $OPENSSH_KEY_FILE ]
 then
-    exec $SSH_CMD $SSH_DEFAULT_OPTIONS -i $SSH_KEY_FILE "$@"
+    exec $OPENSSH_CMD $OPENSSH_DEFAULT_OPTIONS -i $OPENSSH_KEY_FILE "$@"
     echo "[OARSH] Exec wih the key failed"
     exit 5
 fi
 
-exec $SSH_CMD $SSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+#Manage display
+if [ -n "$DISPLAY" ]
+then
+    if [ -x "$XAUTH_LOCATION" ]
+    then
+        unset XAUTHORITY
+        $XAUTH_LOCATION -H -u $SUDO_USER xauth extract - ${DISPLAY} | $XAUTH_LOCATION merge -
+    fi
+fi
+
+exec $OPENSSH_CMD $OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 echo "[OARSH] Exec with environments failed"
 exit 6
 

@@ -183,15 +183,13 @@ sub connect_job($$$){
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
-        my $display = "";
-        if ($ENV{DISPLAY} ne ""){
-            my ($host_part,$num_part) = split(':',$ENV{DISPLAY});
-            $display = hostname().":$num_part";
-        }
+        #if ($ENV{DISPLAY} ne ""){
+        #    my ($host_part,$num_part) = split(':',$ENV{DISPLAY});
+        #}
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$display,$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env});
+        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env});
         my @cmd;
         my $i = 0;
         $cmd[$i] = $openssh_cmd;$i++;
