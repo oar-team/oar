@@ -832,7 +832,7 @@ sub get_possible_wanted_resources($$$$$$$){
     my $wanted_resources_ref = shift;
     my $order_part = shift;
 
-    my $sql_in_string = "TRUE";
+    my $sql_in_string = "\'1\'";
     if (defined($resources_to_ignore_array) and ($#{@{$resources_to_ignore_array}} >= 0)){
         $sql_in_string = "resource_id NOT IN (";
         $sql_in_string .= join(",",@{$resources_to_ignore_array});
@@ -854,7 +854,7 @@ sub get_possible_wanted_resources($$$$$$$){
     }
     
     #print(Dumper(@wanted_resources));
-    my $sql_where_string = "TRUE";
+    my $sql_where_string = "\'1\'";
     
     if ((defined($properties)) and ($properties ne "")){
         $sql_where_string .= " AND ( $properties )";
@@ -2882,7 +2882,7 @@ sub get_current_free_resources_of_node($$){
         chop($where_str);
         $where_str .= ")";
     }else{
-        $where_str = "TRUE";
+        $where_str = "\'1\'";
     }
     
     my $sth = $dbh->prepare("   SELECT resource_id

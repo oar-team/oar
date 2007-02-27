@@ -253,7 +253,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     #print("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_2::pretty_print($gantt_to_use)."\n");
 
-    my $job_properties = "TRUE";
+    my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
         $job_properties = $j->{properties};
     }
@@ -292,7 +292,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
-            my $tmp_properties = "TRUE";
+            my $tmp_properties = "\'1\'";
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }

@@ -176,7 +176,7 @@ sub init_scheduler($$$$$$){
             push(@dead_resources, $r->{resource_id});
         }
         
-        my $job_properties = "TRUE";
+        my $job_properties = "\'1\'";
         if ((defined($job->{properties})) and ($job->{properties} ne "")){
             $job_properties = $job->{properties};
         }
@@ -184,7 +184,7 @@ sub init_scheduler($$$$$$){
         my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
-            my $tmp_properties = "TRUE";
+            my $tmp_properties = "\'1\'";
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
@@ -380,7 +380,7 @@ sub check_reservation_jobs($$$$){
             foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
                 push(@dead_resources, $r->{resource_id});
             }
-            my $job_properties = "TRUE";
+            my $job_properties = "\'1\'";
             #print(Dumper($job));
             if ((defined($job->{properties})) and ($job->{properties} ne "")){
                 $job_properties = $job->{properties};
@@ -389,7 +389,7 @@ sub check_reservation_jobs($$$$){
             my $resource_id_used_list_vector = '';
             my @tree_list;
             foreach my $m (@{$moldable->[0]}){
-                my $tmp_properties = "TRUE";
+                my $tmp_properties = "\'1\'";
                 #print(Dumper($m));
                 if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
