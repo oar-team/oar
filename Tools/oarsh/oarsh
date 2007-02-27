@@ -12,6 +12,11 @@ OARSTAT_CMD=
 
 SSH_CMD=/usr/bin/ssh
 
+# The following variable adds options to ssh. If one option is not hamdled
+# by your ssh version just remove BUT be carefull because these options are
+# there for security reasons
+SSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+
 # Get the name of the current cpuset #
 function get_current_cpuset() {
     CPUSETFILE=/proc/self/cpuset
@@ -67,12 +72,12 @@ fi
 SSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
 if [ -r $SSH_KEY_FILE ]
 then
-    exec $SSH_CMD -oProxyCommand=none -oPermitLocalCommand=no -i $SSH_KEY_FILE "$@"
+    exec $SSH_CMD $SSH_DEFAULT_OPTIONS -i $SSH_KEY_FILE "$@"
     echo "[OARSH] Exec wih the key failed"
     exit 5
 fi
 
-exec $SSH_CMD -oProxyCommand=none -oPermitLocalCommand=no -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+exec $SSH_CMD $SSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 echo "[OARSH] Exec with environments failed"
 exit 6
 
