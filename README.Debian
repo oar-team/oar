@@ -2,8 +2,12 @@ To create OAR Debian packages, run make debian-package in OAR repository (here).
 The existence of oar user and oar group is required to build the packages.
 
 Rq:
-- to change Debian changelog, use debchange (or dch)
+- to change Debian changelog, use debchange (or dch or dch -i)
 - built packages are located in this directory parent directory
-- you may need a key to get ride of error messages (not mandatory)
+- you may need a key to get ride of error messages (not mandatory):
+> export DPKGOPTS=-kpierre.neyron@imag.fr
+> make debian-packages
+> ...
 
-$Id: README.Debian,v 1.4 2004/08/24 16:10:33 neyron Exp $
+
+$Id$
