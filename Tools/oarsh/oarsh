@@ -93,7 +93,7 @@ then
     if [ -x "$XAUTH_LOCATION" ]
     then
         unset XAUTHORITY
-        $XAUTH_LOCATION -H -u $SUDO_USER xauth extract - ${DISPLAY} | $XAUTH_LOCATION merge -
+        sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY} | $XAUTH_LOCATION merge -
     fi
 fi
 
