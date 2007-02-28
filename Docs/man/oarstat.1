@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "oarstat 1"
-.TH oarstat 1 "2007-01-26" "" "OAR commands"
+.TH oarstat 1 "2007-02-28" "" "OAR commands"
 .SH "NAME"
 oarstat \- show job's informations.
 .SH "SYNOPSIS"
@@ -146,10 +146,20 @@ Very detailed display.
 .IP "\fB\-j, \-\-job\fR job_id" 4
 .IX Item "-j, --job job_id"
 Print informations from a specific job.
+.IP "\fB\-u, \-\-user\fR [login]" 4
+.IX Item "-u, --user [login]"
+Print informations for the current user or the one given.
+ If used with \-\-accounting, print a more detailed accounting report for the user.
 .ie n .IP "\fB\-g, \-\-gantt\fR ""date_start,date_stop""" 4
 .el .IP "\fB\-g, \-\-gantt\fR ``date_start,date_stop''" 4
 .IX Item "-g, --gantt date_start,date_stop"
-Print history of jobs and state of resources between two dates.
+Print history of jobs and state of resources between two dates like \*(L"2006\-03\-30 13:49:27, 2006\-04\-30 13:49:27\*(R"
+.ie n .IP "\fB\-\-accounting\fR ""date_start,date_stop""" 4
+.el .IP "\fB\-\-accounting\fR ``date_start,date_stop''" 4
+.IX Item "--accounting date_start,date_stop"
+Shows accounting informations between two dates like \*(L"2006\-03\-30, 2006\-04\-30\*(R".
+ If \-\-user is also used, more details are shown for this particular user.
+ Warning: the accounting table must be up to date. The update must be done at superuser level with the oaraccounting command. 
 .IP "\fB\-\-sql\fR" 4
 .IX Item "--sql"
 Restricts display with the \s-1SQL\s0 where clause on the table jobs (ex: \*(L"project = 'p1'\*(R")

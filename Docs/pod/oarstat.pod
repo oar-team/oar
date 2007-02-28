@@ -22,9 +22,20 @@ Very detailed display.
 
 Print informations from a specific job.
 
+=item B<-u, --user> [login]
+
+Print informations for the current user or the one given.
+ If used with --accounting, print a more detailed accounting report for the user.
+
 =item B<-g, --gantt> "date_start,date_stop"
 
-Print history of jobs and state of resources between two dates.
+Print history of jobs and state of resources between two dates like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
+
+=item B<--accounting> "date_start,date_stop"
+
+Shows accounting informations between two dates like "2006-03-30, 2006-04-30".
+ If --user is also used, more details are shown for this particular user.
+ Warning: the accounting table must be up to date. The update must be done at superuser level with the oaraccounting command. 
 
 =item B<--sql>
 
