@@ -52,13 +52,14 @@ else
         
     fi
     add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
+    
     #Manage display
     if [ -n "$DISPLAY" ]
     then
         XAUTH_LOCATION=$(which xauth)
         if [ -x "$XAUTH_LOCATION" ]
         then
-            $XAUTH_LOCATION extract - ${DISPLAY#localhost} | sudo -H -u $SUDO_USER $XAUTH_LOCATION merge -
+            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | sudo -H -u $SUDO_USER $XAUTH_LOCATION merge -
         fi
     fi
     #Change tty owner

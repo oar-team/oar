@@ -20,8 +20,10 @@ oar (2.0.2-1) unstable; urgency=low
   * read oar.conf in oarsh (so admin can more easily change options in this
     script)
   * add support for X11 forwarding via oarsh
+  * add support for X11 forwarding in oarsub -I and -C
+  * change variable for oarsh: OARSH_JOB_ID --> OAR_JOB_ID
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Tue, 27 Feb 2007 17:31:51 -0600
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 28 Feb 2007 21:23:58 -0600
 
 oar (2.0.1-2) unstable; urgency=low
 

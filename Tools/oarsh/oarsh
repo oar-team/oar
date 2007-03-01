@@ -45,30 +45,30 @@ if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
     if [ -n "$OARSH_OARSTAT_CMD" ]
     then
-        if [ $OARSH_JOB_ID -gt 0 ] 2>/dev/null
+        if [ $OAR_JOB_ID -gt 0 ] 2>/dev/null
         then
-            OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OARSH_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
+            OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
             if [ "$OAR_CPUSET" == "" ] 
             then
                 echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-                echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID does not exist." 1>&2
+                echo "[OARSH] So you are not on a computing node and the job $OAR_JOB_ID does not exist." 1>&2
                 exit 1
             else
                 echo $OAR_CPUSET | grep $SUDO_USER"_" &> /dev/null
                 if [ $? -ne 0 ]
                 then
                     echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-                    echo "[OARSH] So you are not on a computing node and the job $OARSH_JOB_ID is not yours." 1>&2
+                    echo "[OARSH] So you are not on a computing node and the job $OAR_JOB_ID is not yours." 1>&2
                     exit 2
                 fi
             fi
         else
             echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-            echo "[OARSH] AND there is not a valid OARSH_JOB_ID environment variable defined." 1>&2
+            echo "[OARSH] AND there is not a valid OAR_JOB_ID environment variable defined." 1>&2
             echo "[OARSH] With BASH you can use a syntax like (if your job is the 42):" 1>&2
-            echo "[OARSH]     OARSH_JOB_ID=42 oarsh node_name ..." 1>&2
+            echo "[OARSH]     OAR_JOB_ID=42 oarsh node_name ..." 1>&2
             echo "[OARSH]   or" 1>&2
-            echo "[OARSH]     export OARSH_JOB_ID=42" 1>&2
+            echo "[OARSH]     export OAR_JOB_ID=42" 1>&2
             echo "[OARSH]     oarsh node_name ..." 1>&2
             exit 3
         fi
@@ -93,7 +93,7 @@ then
     if [ -x "$XAUTH_LOCATION" ]
     then
         unset XAUTHORITY
-        sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY} | $XAUTH_LOCATION merge -
+        sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY#localhost} | $XAUTH_LOCATION -q merge -
     fi
 fi
 

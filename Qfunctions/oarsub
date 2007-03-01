@@ -183,9 +183,11 @@ sub connect_job($$$){
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
-        #if ($ENV{DISPLAY} ne ""){
-        #    my ($host_part,$num_part) = split(':',$ENV{DISPLAY});
-        #}
+        if ($ENV{DISPLAY} ne ""){
+            print("Trying to initialize X11 forwarding...\n");
+            system({"bash"} "bash","-c",'which xauth > /dev/null && unset XAUTHORITY ; sudo -H -u $SUDO_USER xauth extract - ${DISPLAY#localhost} | xauth -q merge -');
+            $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority";
+        }
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
@@ -197,11 +199,20 @@ sub connect_job($$$){
             $cmd[$i] = "-oSendEnv=OAR_CPUSET";
             $i++;
         }
-        $cmd[$i] = "-x";$i++;
+        if ($ENV{DISPLAY} ne ""){
+            $cmd[$i] = "-X";
+        }else{
+            $cmd[$i] = "-x";
+        }
+        $i++;
         $cmd[$i] = "-t";$i++;
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;
-        $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash -c '$str'";$i++;
+        if ($ENV{DISPLAY} ne ""){
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && (which xauth > /dev/null && xauth -q extract - \${DISPLAY#localhost} | sudo -H -u $lusr xauth merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash -c '$str'";$i++;
+        }else{
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash -c '$str'";$i++;
+        }
         #print("oarsub launchs command : @cmd\n");
         #essential : you become oar instead of the user
         #UID=EUID
@@ -238,7 +249,7 @@ Usage: $0 [OPTIONS] [-I|-C|<SCRIPT>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --Interactive             request an interactive job
- -C, --Connect=<JOB_ID>        connect to a running job
+ -C, --Connect=<OAR_JOB_ID>    connect to a running job
  -l, --resource=<LIST>         set the resource list
                                (ex: node=4/cpu=1,walltime=2:00:00)
  -S, --Scanscript              in batch mode, asks oarsub to scan the given
@@ -402,7 +413,7 @@ if (defined($Resubmit)){
     my $err = iolib::resubmit_job($base,$Resubmit);
     if ($err > 0){
         print("DONE\n");
-        print("JOB_ID = $err\n");
+        print("OAR_JOB_ID = $err\n");
         $Job_id = $err;
         if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qsub"))){
             warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
@@ -642,7 +653,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$Ssh_private_key,$Ssh_public_key);
 }
-print("JOB_ID = $Job_id \n");
+print("OAR_JOB_ID = $Job_id \n");
 
 if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
     print("\n##########\n");

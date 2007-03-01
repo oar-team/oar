@@ -53,7 +53,8 @@ sysopen (SUDOERSTMP, "$sudoerstmp", O_RDWR|O_CREAT, 0440) or die "sysopen $sudoe
 print SUDOERSTMP grep (!/$oar_tag/, <SUDOERS>);
 print SUDOERSTMP <<EOF;
 ##BEGIN$oar_tag
-Defaults>oar env_reset, env_keep += "PWD DISPLAY OARSH_JOB_ID" $oar_tag
+Defaults>oar env_reset, env_keep += "PWD DISPLAY OAR_JOB_ID" $oar_tag
+Defaults:oar env_reset, env_keep += "DISPLAY" $oar_tag
 Cmnd_Alias OARCMD = /usr/lib/oar/cmds/oarnodes, /usr/lib/oar/cmds/oarstat, /usr/lib/oar/cmds/oarsub, /usr/lib/oar/cmds/oardel, /usr/lib/oar/cmds/oarhold, /usr/lib/oar/cmds/oarnotify, /usr/lib/oar/cmds/oarresume, /usr/lib/oar/cmds/oar-cgi, /usr/lib/oar/cmds/oarfetch, /usr/lib/oar/cmds/oarsh $oar_tag
 ALL ALL=(oar) NOPASSWD: OARCMD $oar_tag
 oar ALL=(ALL) NOPASSWD: ALL $oar_tag

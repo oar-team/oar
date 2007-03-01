@@ -77,8 +77,8 @@ The following steps have to be done, prior to installing OAR:
       /etc/sudoers must be configured. Please use visudo to add the following
       lines::
 
-            Defaults>oar    env_reset,env_keep = "OARLIB OARUSER OARDIR PWD
-            PERL5LIB DISPLAY OARCONFFILE OARSH_JOB_ID"
+            Defaults>oar    env_reset,env_keep += "PWD DISPLAY OAR_JOB_ID"
+            Defaults:oar env_reset,env_keep += "DISPLAY"
             
             Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
             /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
