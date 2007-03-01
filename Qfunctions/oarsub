@@ -412,9 +412,9 @@ if (defined($Resubmit)){
     print("Resubmitting job $Resubmit ...");
     my $err = iolib::resubmit_job($base,$Resubmit);
     if ($err > 0){
-        print("DONE\n");
-        print("OAR_JOB_ID = $err\n");
         $Job_id = $err;
+        print("DONE\n");
+        print("OAR_JOB_ID=$Job_id\n");
         if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qsub"))){
             warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
             exit(3);
@@ -653,7 +653,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$Ssh_private_key,$Ssh_public_key);
 }
-print("OAR_JOB_ID = $Job_id \n");
+print("OAR_JOB_ID=$Job_id \n");
 
 if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
     print("\n##########\n");
