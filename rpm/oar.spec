@@ -1,3 +1,4 @@
+# $Id$
 %define version 1.6
 %define release 1
 	

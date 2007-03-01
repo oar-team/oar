@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Id$
 #script executed on the first reserved node
 # Exit codes are:
 #     - 0 : everything worked normally

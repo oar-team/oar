@@ -1,5 +1,5 @@
 #!/usr/bin/perl -I../Iolib -I../ConfLib -w
-# $Id: test_gant.pl,v 1.11 2004/08/24 15:56:56 neyron Exp $
+# $Id$
 
 
 use strict;

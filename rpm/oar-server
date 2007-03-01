@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: oar-server,v 1.2 2004/08/24 16:10:34 neyron Exp $
+# $Id$
 
 `dirname $0`/Almighty &
 jobs -p  >! /var/run/`basename $0`.pid

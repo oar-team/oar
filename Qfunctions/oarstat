@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oarstat,v 1.27 2005/06/01 16:20:42 capitn Exp $
+# $Id$
 # print active job properties
 
 use strict;

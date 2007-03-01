@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: oar_prologue_local,v 1.10 2005/05/27 15:03:47 capitn Exp $
+# $Id$
 
 # prologue_local arguments
 # Script is run under uid of oar who is sudo

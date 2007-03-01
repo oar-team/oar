@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: initd_oar.sh,v 1.2 2004/08/24 16:10:34 neyron Exp $
+# $Id$
 # script for mandrake
 # Source function library.
 . /etc/rc.d/init.d/functions

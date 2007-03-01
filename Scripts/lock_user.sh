@@ -1,3 +1,4 @@
+# $Id$
 #It is a lock on idJob per user name
 LOCKFILE=/tmp/.OARlockfile
 MAXBLOCKTIME=120

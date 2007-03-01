@@ -1,5 +1,5 @@
 <?php
-
+// $Id$
 function dbconnect() {
     if (!@function_exists('mysql_connect')) {
         @dl('mysql.so');

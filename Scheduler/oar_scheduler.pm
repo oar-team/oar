@@ -1,3 +1,4 @@
+# $Id$
 package oar_scheduler;
 
 use Data::Dumper;

@@ -1,4 +1,5 @@
 #!/bin/sh
+# $Id$
 # Detect resources on the node and print corresponding OAR commands
 
 CPUS=$(cat /proc/cpuinfo  | grep ^processor | awk '{print $3}')

@@ -1,5 +1,5 @@
 #!/usr/bin/make
-# $Id: Makefile,v 1.35 2005/07/28 12:45:19 capitn Exp $
+# $Id$
 SHELL=/bin/sh
 
 OARHOMEDIR=/var/lib/oar

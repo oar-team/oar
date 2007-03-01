@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Id$
 #Almighty module : launch job bipbips
 
 use strict;

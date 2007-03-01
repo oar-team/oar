@@ -1,5 +1,5 @@
 # This script is executed as oar
-
+# $Id$
 # ARGV[0] can have two different values:
 #     - "suspend"  :    then this script must perform right commands to suspend
 #                       all processes of the corresponding cpuset

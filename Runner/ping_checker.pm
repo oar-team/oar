@@ -1,4 +1,4 @@
-# $Id: ping_checker.pm,v 1.17 2005/09/16 13:53:37 capitn Exp $
+# $Id$
 package ping_checker;
 require Exporter;
 

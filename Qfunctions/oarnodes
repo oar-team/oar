@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oarnodes,v 1.13 2005/07/20 09:29:20 capitn Exp $
+# $Id$
 # print OAR node properties
 #
 # EXAMPLES:

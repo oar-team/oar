@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: oar-server.init.d,v 1.3 2005/06/08 14:11:34 capitn Exp $
+# $Id$
 #
 # oarserver:       Starts the oarserver Daemon
 #

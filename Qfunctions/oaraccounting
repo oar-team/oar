@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oaraccounting,v 1.2 2005/04/13 16:40:27 capitn Exp $
+# $Id$
 
 use strict;
 use warnings;

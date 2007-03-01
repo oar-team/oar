@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#
+# $Id$
 # sentinelle, version in Perl
 #
 # Description : execute a commande on several nodes with a connector like ssh or

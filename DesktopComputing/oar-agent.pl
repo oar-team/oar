@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oar-agent.pl,v 1.2 2004/12/15 10:24:25 neyron Exp $
+# $Id$
 # OAR agent for Desktop Computing
 #####
 # use packages

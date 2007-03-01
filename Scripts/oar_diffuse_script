@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: oar_diffuse_script,v 1.7 2005/05/27 15:03:47 capitn Exp $
+# $Id$
 
 # diffuse command on each nodes
 # Script is run under uid of oar who is sudo

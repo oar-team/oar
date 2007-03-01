@@ -1,4 +1,4 @@
-# $Id: oarversion.pm,v 1.9 2005/06/01 16:20:42 capitn Exp $
+# $Id$
 package oarversion;
 require Exporter;
 

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: Almighty,v 1.35 2005/06/02 15:55:48 capitn Exp $
+# $Id$
 
 use strict;
 use Data::Dumper;

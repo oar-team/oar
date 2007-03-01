@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: make_oarman.sh,v 1.3 2004/08/24 16:10:34 neyron Exp $
+# $Id$
 #
 # Generate man pages from Pod files to ../Docs/man directory.
 # Argument : release version oar-x.y

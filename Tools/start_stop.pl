@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: start_stop.pl,v 1.6 2004/08/24 15:56:56 neyron Exp $
+# $Id$
 
 use strict;
 use warnings;

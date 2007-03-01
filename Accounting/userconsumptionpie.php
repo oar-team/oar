@@ -1,4 +1,5 @@
 <?php
+// $Id$
 include("dbfunctions.inc");
 require_once("/usr/share/jpgraph/jpgraph.php");
 require_once("/usr/share/jpgraph/jpgraph_pie.php");

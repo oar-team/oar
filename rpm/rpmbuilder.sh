@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: rpmbuilder.sh,v 1.5 2004/12/15 10:06:22 neyron Exp $
+# $Id$
 
 [ -n "$RPM_HOME" ] || RPM_HOME=/usr/src/RPM
 

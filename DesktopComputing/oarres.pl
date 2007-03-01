@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oarres.pl,v 1.2 2004/12/15 10:24:26 neyron Exp $
+# $Id$
 #
 #	job stageout delivery
 

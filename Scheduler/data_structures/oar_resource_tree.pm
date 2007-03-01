@@ -1,3 +1,4 @@
+# $Id$
 package oar_resource_tree;
 
 use warnings;

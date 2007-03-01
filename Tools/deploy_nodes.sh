@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: deploy_nodes.sh,v 1.7 2004/08/24 16:10:34 neyron Exp $
+# $Id$
 
 usage() {
 	echo "Usage: `basename $0` [-e <method>] <node file>"

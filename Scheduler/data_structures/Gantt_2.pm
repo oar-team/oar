@@ -1,3 +1,4 @@
+# $Id$
 package Gantt_2;
 require Exporter;
 use oar_resource_tree;

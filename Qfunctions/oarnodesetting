@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Id$
 # change node state dynamically
 
 use strict;

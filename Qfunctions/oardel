@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oardel,v 1.13 2005/06/01 16:20:42 capitn Exp $
+# $Id$
 # delete a job
 
 use strict;

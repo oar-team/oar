@@ -13,7 +13,7 @@
  * See the GNU Library General Public License version 2 for more details
  *)
 
-(*i $Id: period.mli,v 1.1 2005/03/23 16:20:08 eyraudl Exp $ i*)
+(*i $Id$ i*)
 
 (** A period represents the time passed between two events (a date, a time...).
   Only an interface defining arithmetic operations on periods is defined here.

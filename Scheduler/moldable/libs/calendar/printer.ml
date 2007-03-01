@@ -13,7 +13,7 @@
  * See the GNU Library General Public License version 2 for more details
  *)
 
-(*i $Id: printer.ml,v 1.1 2005/03/23 16:20:08 eyraudl Exp $ i*)
+(*i $Id$ i*)
 
 module type S = sig
   type t

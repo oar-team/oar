@@ -1,4 +1,5 @@
 # This script is executed as oar
+# $Id$
 
 # ARGV[0] can have two different values:
 #     - "init"  : then this script must create the right cpuset and assign

@@ -1,6 +1,5 @@
 #!/usr/bin/ruby -w
-
-#
+# $Id$
 # drawgantt.cgi displays gantt chart for oar resource management system 
 #
 # author: auguste@imag.fr

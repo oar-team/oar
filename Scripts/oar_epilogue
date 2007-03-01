@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: oar_epilogue,v 1.7 2004/08/24 16:10:34 neyron Exp $
+# $Id$
 
 # prologue arguments
 # Script is run under uid of oar who is sudo

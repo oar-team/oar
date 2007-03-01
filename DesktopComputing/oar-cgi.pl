@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oar-cgi.pl,v 1.3 2005/04/04 13:11:55 capitn Exp $
+# $Id$
 
 use strict;
 use Data::Dumper;

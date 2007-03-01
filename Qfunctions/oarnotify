@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Id$
 # notify Almighty
 
 use strict;

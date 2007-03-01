@@ -1,5 +1,7 @@
 #!/usr/bin/perl
+# $Id$
 # kill all children of a pid
+
 use strict;
 use Data::Dumper;
 use Getopt::Long;

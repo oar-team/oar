@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Id$
 
 use IO::Socket::INET;
 use Getopt::Long;

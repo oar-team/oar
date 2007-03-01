@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: oar-cgi,v 1.2 2004/12/15 10:24:26 neyron Exp $
+# $Id$
 
 OARDIR=/usr/local/oar
 OARUSER=oar

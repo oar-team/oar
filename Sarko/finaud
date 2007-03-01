@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: finaud,v 1.4 2005/05/04 13:03:36 capitn Exp $
+# $Id$
 # This program aims to change node state automatically when they are inaccesible or they become alive
 
 use oar_iolib;

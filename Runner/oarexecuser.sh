@@ -1,4 +1,5 @@
 #!/bin/sh
+# $Id$
 # launch user shell with OAR variables
 # $1 --> file name where to find reservation node names
 # $2 --> ID job
