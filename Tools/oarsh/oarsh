@@ -92,8 +92,11 @@ if [ -n "$DISPLAY" ]
 then
     if [ -x "$XAUTH_LOCATION" ]
     then
-        unset XAUTHORITY
-        sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY#localhost} | $XAUTH_LOCATION -q merge -
+	for f in $HOME/.Xauthority.*; do
+		[ -e /proc/${f#$HOME/.Xauthority.} ] || rm $f
+	done
+        export XAUTHORITY=$HOME/.Xauthority.$$
+        sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY#localhost} | $XAUTH_LOCATION merge - 2> /dev/null
     fi
 fi
 
