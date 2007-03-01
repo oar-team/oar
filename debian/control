@@ -2,7 +2,7 @@ Source: oar
 Section: contrib/misc
 Priority: optional
 Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
-Build-Depends: debhelper (>= 4.0.0)
+Build-Depends: debhelper (>= 4.0.0), python-docutils, perl
 Standards-Version: 3.6.0
 
 Package: oar-common
@@ -64,6 +64,5 @@ Description: OAR desktop computing HTTP proxy CGI
 
 Package: oar-doc
 Architecture: all
-Build-Depends: python-docutils
 Description: OAR batch scheduler documentation package
  This package install some documentation for OAR batch scheduler
