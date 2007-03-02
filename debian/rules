@@ -1,0 +1,237 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+configure: configure-stamp
+
+configure-stamp:
+	dh_testdir
+	# Add here commands to configure the package.
+	touch configure-stamp
+
+
+#Architecture 
+build: build-arch build-indep
+
+build-arch: build-arch-stamp
+build-arch-stamp: configure-stamp 
+	# Add here commands to compile the arch part of the package.
+	# Nothing to do has OAR written in perl and then interpreted
+	touch build-arch-stamp
+
+build-indep: build-indep-stamp
+build-indep-stamp: configure-stamp 
+	# Add here commands to compile the indep part of the package.
+	# Nothing to do here
+	touch build-indep-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	# rm -f build-arch-stamp build-indep-stamp #CONFIGURE-STAMP#
+	# Add here commands to clean up after the build process.
+	rm -f build-arch-stamp build-indep-stamp configure-stamp
+	dh_clean 
+
+install: install-indep install-arch
+install-indep:
+	dh_testdir
+	dh_testroot
+	dh_clean -k -i 
+	dh_installdirs -i
+	# Add here commands to install the indep part of the package into
+	# debian/<package>-doc.
+	$(MAKE) doc-install \
+		PREFIX=$(CURDIR)/debian/oar-doc/usr \
+		DOCDIR=$(CURDIR)/debian/oar-doc/usr/share/doc/oar-doc
+	mkdir -p $(CURDIR)/debian/oar-common/var/lib/oar
+	$(MAKE) sanity-check sudowrapper configuration \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-common/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-common/etc \
+		PREFIX=$(CURDIR)/debian/oar-common/usr \
+		MANDIR=$(CURDIR)/debian/oar-common/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-common/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-common/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=/usr/lib/oar/cmds/oarstat#" $(CURDIR)/debian/oar-common/usr/lib/oar/oarsh
+	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/configurator_wrapper.sh
+	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/sudowrapper.sh
+	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
+	$(MAKE) sanity-check common \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-libs/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc \
+		PREFIX=$(CURDIR)/debian/oar-libs/usr \
+		MANDIR=$(CURDIR)/debian/oar-libs/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-libs/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-libs/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-libs/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
+	$(MAKE) sanity-check server dbinit\
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-server/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-server/etc \
+		PREFIX=$(CURDIR)/debian/oar-server/usr \
+		MANDIR=$(CURDIR)/debian/oar-server/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-server/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-server/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-server/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
+	$(MAKE) sanity-check node \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-node/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-node/etc \
+		PREFIX=$(CURDIR)/debian/oar-node/usr \
+		MANDIR=$(CURDIR)/debian/oar-node/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-node/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-node/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-node/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
+	$(MAKE) sanity-check user \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-user/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-user/etc \
+		PREFIX=$(CURDIR)/debian/oar-user/usr \
+		MANDIR=$(CURDIR)/debian/oar-user/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-user/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-user/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-user/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	$(MAKE) draw-gantt \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-draw-gantt/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-draw-gantt/etc \
+		PREFIX=$(CURDIR)/debian/oar-draw-gantt/usr \
+		MANDIR=$(CURDIR)/debian/oar-draw-gantt/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-draw-gantt/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-draw-gantt/usr/sbin \
+		WWWDIR=$(CURDIR)/debian/oar-draw-gantt/var/www \
+		CGIDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/cgi-bin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	$(MAKE) desktop-computing-agent \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-agent/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc \
+		PREFIX=$(CURDIR)/debian/oar-desktop-computing-agent/usr \
+		MANDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+	$(MAKE) desktop-computing-cgi \
+		OARUSER=oar \
+		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/lib/oar \
+		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc \
+		PREFIX=$(CURDIR)/debian/oar-desktop-computing-cgi/usr \
+		MANDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/sbin \
+		WWWDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/www \
+		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
+		BINLINKPATH=../lib/oar \
+		CMDSLINKPATH=.. \
+		DEB_INSTALL=/usr/lib/oar \
+		SBINLINKPATH=../lib/oar
+
+	dh_install -i
+
+install-arch:
+	dh_testdir
+	dh_testroot
+	dh_clean -k -s 
+	dh_installdirs -s
+	# Add here commands to install the arch part of the package into 
+	# debian/tmp.
+	dh_install -s
+# Must not depend on anything. This is to be called by
+# binary-arch/binary-indep
+# in another 'make' thread.
+binary-common:
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs 
+	dh_installdocs
+	dh_installexamples
+#	dh_installmenu
+	dh_installdebconf	
+	dh_installlogrotate	
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+	dh_installinit --no-start -- start 90 2 3 4 5 . stop 90 0 1 6 .
+	dh_installcron
+#	dh_installinfo
+	dh_installman
+	dh_link
+	dh_strip
+	dh_compress 
+	dh_fixperms
+	dh_perl
+#	dh_python
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Build architecture independant packages using the common target.
+binary-indep: build-indep install-indep
+	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
+
+# Build architecture dependant packages using the common target.
+binary-arch: build-arch install-arch
+	$(MAKE) -f debian/rules DH_OPTIONS=-a binary-common
+
+#binary: binary-arch binary-indep
+binary: binary-indep
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch configure
