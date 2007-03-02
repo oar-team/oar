@@ -19,7 +19,8 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 source $OARCONFFILE || exit 7
 
 # Add security option for X11 forwarding
-XAUTH_LOCATION=$(which xauth)
+#XAUTH_LOCATION=$(which xauth)
+XAUTH_LOCATION="/usr/bin/X11/xauth"
 if [ -x "$XAUTH_LOCATION" ]
 then
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=$XAUTH_LOCATION"

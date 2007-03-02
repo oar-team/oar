@@ -188,7 +188,7 @@ sub connect_job($$$){
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
             $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority.$$";
-            system({"bash"} "bash","-c",'which xauth > /dev/null && sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; xauth extract - ${DISPLAY#localhost}" | xauth -q merge -');
+            system({"bash"} "bash","-c",'[ -x "/usr/bin/X11/xauth" ] && sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; xauth extract - ${DISPLAY#localhost}" | xauth -q merge -');
         }
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
