@@ -92,11 +92,15 @@ if [ -n "$DISPLAY" ]
 then
     if [ -x "$XAUTH_LOCATION" ]
     then
-	for f in $HOME/.Xauthority.*; do
-		[ -e /proc/${f#$HOME/.Xauthority.} ] || rm $f
-	done
+				# first, get rid of remaining unused .Xautority.{pid} files...
+        for f in $HOME/.Xauthority.*; do
+		        [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
+        done
+				# set the .Xautority.{pid} file as the xauthority file.
         export XAUTHORITY=$HOME/.Xauthority.$$
+				# retrieve the X cookie from the user to user oar.
         sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY#localhost} | $XAUTH_LOCATION merge - 2> /dev/null
+        # ssh below will push that cookie within the connection.
     fi
 fi
 
