@@ -82,7 +82,7 @@ fi
 OPENSSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
 if [ -r $OPENSSH_KEY_FILE ]
 then
-    exec $OPENSSH_CMD $OPENSSH_DEFAULT_OPTIONS -i $OPENSSH_KEY_FILE "$@"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $OPENSSH_KEY_FILE "$@"
     echo "[OARSH] Exec wih the key failed"
     exit 5
 fi
@@ -99,12 +99,12 @@ then
         # set the .Xautority.{pid} file as the xauthority file.
         export XAUTHORITY=$HOME/.Xauthority.$$
         # retrieve the X cookie from the user to user oar.
-        sudo -H -u $SUDO_USER $XAUTH_LOCATION extract - ${DISPLAY#localhost} | $XAUTH_LOCATION merge - 2> /dev/null
+        sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY#localhost}" | $XAUTH_LOCATION merge - 
         # ssh below will push that cookie within the connection.
     fi
 fi
 
-exec $OPENSSH_CMD $OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 echo "[OARSH] Exec with environments failed"
 exit 6
 
