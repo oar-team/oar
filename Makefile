@@ -4,7 +4,12 @@ SHELL=/bin/sh
 
 OARHOMEDIR=/var/lib/oar
 OARCONFDIR=/etc/
+# OARUSER and OAROWNER should be the same value execpt for special needs 
+# (Debian packaging) 
+# OARUSER is the variable expanded in the sudoers file  
 OARUSER=oar
+# OAROWNER is the variable expanded to set the ownership of the files
+OAROWNER=oar
 OARGROUP=oar
 
 PREFIX=/usr/local
@@ -27,16 +32,16 @@ install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
 	@echo "Where MODULES := { server-install | user-install | node-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | debian-packages | rpm-packages }"
-	@echo "      OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | OARGROUP | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
+	@echo "      OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | OAROWNER | OARGROUP | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
 	@[ "`id root`" = "`id`" ] || echo "Warning: root-privileges are required to install some files !"
-	@id $(OARUSER) > /dev/null || ( echo "Error: User $(OARUSER) does not exist!" ; exit -1 )
+	@id $(OAROWNER) > /dev/null || ( echo "Error: User $(OAROWNER) does not exist!" ; exit -1 )
 	@[ -d $(OARHOMEDIR) ] || ( echo "Error: OAR home directory $(OARHOMEDIR) does not exist!" ; exit -1 )
 
 configuration:
 	install -d -m 0755 $(OARCONFDIR)
-	@if [ -f $(OARCONFDIR)/oar.conf ]; then echo "Warning: $(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 -o $(OARUSER) -g root Tools/oar.conf $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar.conf ]; then echo "Warning: $(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 -o $(OAROWNER) -g root Tools/oar.conf $(OARCONFDIR) ; fi
 
 desktop-computing-agent:
 	install -d -m 0755 $(BINDIR)
@@ -202,12 +207,12 @@ node:
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	@if [ -f $(OARDIR)/detect_new_resources.sh ]; then echo "Warning: $(OARDIR)/detect_new_resources.sh already exists, not overwriting it." ; else install -m 0755 Tools/detect_new_resources.sh $(OARDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_prologue ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_epilogue ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_diffuse_script ]; then echo "Warning: $(OARHOMEDIR)/oar_diffuse_script already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_epilogue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_prologue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/lock_user.sh ]; then echo "Warning: $(OARHOMEDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OARUSER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARHOMEDIR) ; fi
+	@if [ -f $(OARHOMEDIR)/oar_prologue ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR) ; fi
+	@if [ -f $(OARHOMEDIR)/oar_epilogue ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR) ; fi
+	@if [ -f $(OARHOMEDIR)/oar_diffuse_script ]; then echo "Warning: $(OARHOMEDIR)/oar_diffuse_script already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARHOMEDIR) ; fi
+	@if [ -f $(OARHOMEDIR)/oar_epilogue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARHOMEDIR) ; fi
+	@if [ -f $(OARHOMEDIR)/oar_prologue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR) ; fi
+	@if [ -f $(OARHOMEDIR)/lock_user.sh ]; then echo "Warning: $(OARHOMEDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARHOMEDIR) ; fi
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )
