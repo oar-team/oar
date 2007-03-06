@@ -314,18 +314,23 @@ sub job_key_management() {
     }
     my $lusr= getpwuid($ENV{SUDO_UID});
     if ($job_key_file ne ""){
-        unless ((-e $job_key_file) or (-e $job_key_file.".pub")) {
+        # Test files with user privileges
+        system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ ! -r "'.$job_key_file.'" ] && [ ! -r "'.$job_key_file.'.pub" ]\'');
+        #unless ((-e $job_key_file) or (-e $job_key_file.".pub")) {
+        if ($? == 0){
             print "Job key files do not exist, assuming they must be generated...\n";
             # ssh-keygen: no passphrase, smallest key (512 bits), ssh2 rsa faster than dsa.
-            if (system({"bash"} "bash","-c",'sudo -u "'.$lusr.'" ssh-keygen -b 512 -C "Job key created by OAR" -N "" -t rsa -f "'.$job_key_file.'"')) {
+            if (system({"bash"} "bash","-c",'sudo -u "'.$lusr.'" ssh-keygen -b 1024 -C "Job key created by OAR" -N "" -t rsa -f "'.$job_key_file.'"')) {
                 warn ("Error: Job key generation failed ($?).");
                 exit(14);
             }
         }
-        unless ((-e $job_key_file) and (-e $job_key_file.".pub")) {
+        system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -r "'.$job_key_file.'" ] && [ -r "'.$job_key_file.'.pub" ]\'');
+        #unless ((-e $job_key_file) and (-e $job_key_file.".pub")) {
+        if ($? != 0){
             warn ("Error: public or private key file does not exist.");
             exit(14);
-    		}
+        }
 				# read the private key: sudo -u user needed to be able to read the file (perm 600, owner = user not oar)
         # safer way to do a `cmd`, see perl cookbook 
     		my $pid;
@@ -529,7 +534,7 @@ GetOptions ("resource|l=s" => \@resource,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
-						"job_key_file|i=s" => \$job_key_file,
+            "job_key_file|i=s" => \$job_key_file,
             "job_priv_key=s" => \$job_priv_key,
             "job_pub_key=s" => \$job_pub_key,
             "version|v" => \$Version
