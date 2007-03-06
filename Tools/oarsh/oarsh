@@ -79,6 +79,23 @@ then
     fi
 fi
 
+#Manage display
+if [ -n "$DISPLAY" ]
+then
+    if [ -x "$XAUTH_LOCATION" ]
+    then
+        # first, get rid of remaining unused .Xautority.{pid} files if any...
+        for f in $HOME/.Xauthority.*; do
+            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
+        done
+        # set the .Xautority.{pid} file as the xauthority file.
+        export XAUTHORITY=$HOME/.Xauthority.$$
+        # retrieve the X cookie from the user to user oar.
+        sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY#localhost}" | $XAUTH_LOCATION merge - 2> /dev/null
+        # ssh below will push that cookie within the connection.
+    fi
+fi
+
 # Test if a specific ssh connection key is used
 OPENSSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
 if [ -r $OPENSSH_KEY_FILE ]
@@ -86,23 +103,6 @@ then
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $OPENSSH_KEY_FILE "$@"
     echo "[OARSH] Exec wih the key failed"
     exit 5
-fi
-
-#Manage display
-if [ -n "$DISPLAY" ]
-then
-    if [ -x "$XAUTH_LOCATION" ]
-    then
-        # first, get rid of remaining unused .Xautority.{pid} files...
-        for f in $HOME/.Xauthority.*; do
-            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
-        done
-        # set the .Xautority.{pid} file as the xauthority file.
-        export XAUTHORITY=$HOME/.Xauthority.$$
-        # retrieve the X cookie from the user to user oar.
-        sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY#localhost}" | $XAUTH_LOCATION merge - 
-        # ssh below will push that cookie within the connection.
-    fi
 fi
 
 exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
