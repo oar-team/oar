@@ -304,6 +304,165 @@ Options are:
 EOS
 }
 
+# manage the job key if any:
+# test job key files or inline keys existance.
+# generate job keys if file specified but not existing
+sub job_key_management() {
+    if (($job_key_file ne "") and (($job_priv_key ne "") or ($job_pub_key ne ""))) {
+        warn("Error: You must use either --job_key_file or the couple --job_priv_key and --job_pub_key, but not both");
+        exit(15);
+    }
+    my $lusr= getpwuid($ENV{SUDO_UID});
+    if ($job_key_file ne ""){
+        unless ((-e $job_key_file) or (-e $job_key_file.".pub")) {
+            print "Job key files do not exist, assuming they must be generated...\n";
+            # ssh-keygen: no passphrase, smallest key (512 bits), ssh2 rsa faster than dsa.
+            if (system({"bash"} "bash","-c",'sudo -u "'.$lusr.'" ssh-keygen -b 512 -C "Job key created by OAR" -N "" -t rsa -f "'.$job_key_file.'"')) {
+                warn ("Error: Job key generation failed ($?).");
+                exit(14);
+            }
+        }
+        unless ((-e $job_key_file) and (-e $job_key_file.".pub")) {
+            warn ("Error: public or private key file does not exist.");
+            exit(14);
+    		}
+				# read the private key: sudo -u user needed to be able to read the file (perm 600, owner = user not oar)
+        # safer way to do a `cmd`, see perl cookbook 
+    		my $pid;
+    		die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
+    		if ($pid == 0) {
+            unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$job_key_file.'"')) {
+                warn ("Error: Cannot exec bash shell");
+          	    exit(14);
+    	      }
+        } else {
+            my @tmp_key;
+            while (<SAFE_CHILD>) {
+                push @tmp_key, $_;
+            }
+            $job_priv_key = join "",@tmp_key;
+            close SAFE_CHILD;                 # $? contains status
+    				if ($? != 0) {
+                warn ("Error: Cannot read your private job key: $job_key_file");
+                exit(14);
+            } 
+        }
+    
+        # public key's perm should be 644, no sudo -u user needed.
+        unless (open (FH, "< $job_key_file.pub")) {
+          warn ("Error: Cannot read your public job key: $job_key_file.pub");
+          exit(14);
+    		}
+        $job_pub_key=<FH>;
+        close FH;
+    }
+    
+    # last checks
+    if (($job_priv_key ne "") or ($job_pub_key ne "")){
+        if ($job_pub_key eq "") {
+            warn("Error: missing job public key (private key found).\n");
+            exit(15);
+        } 
+        if ($job_priv_key eq "") {
+            warn("Error: missing job private key (public key found).\n");
+            exit(15);
+        } 
+        if (defined($Cpuset_name)){
+            warn("Error: it is not allowed to specify both a cpuset name and a job key.\n");
+            exit(14);
+        }
+        if ($job_pub_key !~ /^(ssh-rsa|ssh-dss)\s/){
+            warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss'.\n");
+            exit(14);
+        }
+        $job_pub_key =~ s/\n//g;
+    }
+}
+
+# Parse -l options and return an array of hashtables with resources for a moldable job
+sub parse_resource_descriptions($){
+    my $resource_ref = shift;
+    
+    my @resource= @{$resource_ref};
+    if ($#resource < 0){
+        push(@resource,$Default_resources);
+    }
+    #print "--@resource--\n";
+
+    my @result;
+    foreach my $r (@resource){
+        my @resource_groups;
+        my $end_loop = 0;
+        while ($end_loop == 0){
+            my $initial_resource = $r;
+            my %tmp_result;
+            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/){
+                # $1 = property string
+                $tmp_result{property} = $2;
+                $r = $3;
+            }
+            
+            my $resources_to_parse;
+            if (($r =~ /^\s*(\++|\,+|\s*)\s*[\/]*([^\,\+]+)\s*(.*)$/) and ($2 !~ /^\s*walltime/)){
+                $resources_to_parse = $2;
+                $r = $3;
+            }else{
+                $Default_resources =~ /^\s*[\/]*(.+)$/;
+                # Remove first /
+                $resources_to_parse = $1;
+            }
+            my @slash_split = split('\/', $resources_to_parse);
+            my @resources_list;
+            foreach my $l (@slash_split){
+                if ($l =~ /(\w+)\s*=\s*(\d+)/){
+                    my $tmp = $1;
+                    $tmp = "network_address" if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => $2 });
+                }elsif ($l =~ /(\w+)\s*=\s*ALL/){
+                    my $tmp = $1;
+                    $tmp = "network_address" if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => -1 });
+                }elsif ($l =~ /(\w+)\s*=\s*BEST/){
+                    my $tmp = $1;
+                    $tmp = "network_address" if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => -2 });
+                }else{
+                    die("/!\\ Cannot recognize the resource description : $l\n");
+                }
+            }
+            $tmp_result{resources} = \@resources_list;
+            
+            if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*(\,.+|\s*)$/){
+                #walltime part
+                my ($w_h,$w_mn,$w_sec) = split(':',$1);
+                if (defined($w_h)){
+                    if (not defined($w_mn)){
+                        $resource_groups[1] = "$w_h:00:00";
+                    }elsif (not defined($w_sec)){
+                        $resource_groups[1] = "$w_h:$w_mn:00";
+                    }else{
+                        $resource_groups[1] = "$w_h:$w_mn:$w_sec";
+                    }
+                    $resource_groups[1] = iolib::sql_to_duration("$resource_groups[1]");
+                }else{
+                    die("/!\\ Cannot recognize walltime resource value\n");
+                }
+                $r = $2;
+            }
+            if ($r eq $initial_resource){
+                die("/!\\ Cannot recognize -- $r -- resource\n");
+            }
+            push(@{$resource_groups[0]}, \%tmp_result);
+
+            if ($r =~ /^\s*$/){
+                $end_loop = 1;
+            }
+        }
+        push(@result, \@resource_groups);
+    }
+    return(@result);
+}
+
 #
 # Main
 #
@@ -385,72 +544,6 @@ if (defined($Version)){
 if (defined($sos)){
     usage();
     exit(0);
-}
-
-# Check ssh keys
-if (($job_key_file ne "") and (($job_priv_key ne "") or ($job_pub_key ne ""))) {
-    warn("Error: You must use either --job_key_file or the couple --job_priv_key and --job_pub_key, but not both");
-    exit(15);
-}
-my $lusr= getpwuid($ENV{SUDO_UID});
-if ($job_key_file ne ""){
-    unless ((-e $job_key_file) or (-e $job_key_file.".pub")) {
-        print "Job key files do not exist, assuming they must be generated...\n";
-        if (system({"bash"} "bash","-c",'sudo -u "'.$lusr.'" ssh-keygen -C "Job key created by OAR" -N "" -t rsa -f "'.$job_key_file.'"')) {
-            warn ("Error: Job key generation failed ($?).");
-            exit(14);
-        }
-    }
-    unless ((-e $job_key_file) and (-e $job_key_file.".pub")) {
-        warn ("Error: public or private key file does not exist.");
-        exit(14);
-		}
-		my $pid;
-		die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
-		if ($pid == 0) {
-        unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$job_key_file.'"')) {
-            warn ("Error: Cannot exec bash shell");
-      	    exit(14);
-	      }
-    } else {
-        my @tmp_key;
-        while (<SAFE_CHILD>) {
-            push @tmp_key, $_;
-        }
-        $job_priv_key = join "",@tmp_key;
-        close SAFE_CHILD;                 # $? contains status
-				if ($? != 0) {
-            warn ("Error: Cannot read your private job key: $job_key_file");
-            exit(14);
-        } 
-    }
-
-    unless (open (FH, "< $job_key_file.pub")) {
-      warn ("Error: Cannot read your public job key: $job_key_file.pub");
-      exit(14);
-		}
-    $job_pub_key=<FH>;
-    close FH;
-}
-
-if (($job_priv_key ne "") or ($job_pub_key ne "")){
-    if ($job_pub_key eq "") {
-        warn("Error: missing job public key (private key found).\n");
-        exit(15);
-    } 
-    if ($job_priv_key eq "") {
-        warn("Error: missing job private key (public key found).\n");
-        exit(15);
-    } 
-    if (defined($Cpuset_name)){
-        warn("Error: it is not allowed to specify both a cpuset name and a job key.\n");
-        exit(14);
-    }
-    if ($job_pub_key !~ /^(ssh-rsa|ssh-dss)\s/){
-        warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss'.\n");
-        exit(14);
-    }
-    $job_pub_key =~ s/\n//g;
 }
 
 $base = iolib::connect();
@@ -542,89 +635,7 @@ if (defined($connect_job)){
 }
 # End connection to a reservation
 
-# Parse -l options and return an array of hashtables with resources for a moldable job
-sub parse_resource_descriptions($){
-    my $resource_ref = shift;
-    
-    my @resource= @{$resource_ref};
-    if ($#resource < 0){
-        push(@resource,$Default_resources);
-    }
-    #print "--@resource--\n";
-
-    my @result;
-    foreach my $r (@resource){
-        my @resource_groups;
-        my $end_loop = 0;
-        while ($end_loop == 0){
-            my $initial_resource = $r;
-            my %tmp_result;
-            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/){
-                # $1 = property string
-                $tmp_result{property} = $2;
-                $r = $3;
-            }
-            
-            my $resources_to_parse;
-            if (($r =~ /^\s*(\++|\,+|\s*)\s*[\/]*([^\,\+]+)\s*(.*)$/) and ($2 !~ /^\s*walltime/)){
-                $resources_to_parse = $2;
-                $r = $3;
-            }else{
-                $Default_resources =~ /^\s*[\/]*(.+)$/;
-                # Remove first /
-                $resources_to_parse = $1;
-            }
-            my @slash_split = split('\/', $resources_to_parse);
-            my @resources_list;
-            foreach my $l (@slash_split){
-                if ($l =~ /(\w+)\s*=\s*(\d+)/){
-                    my $tmp = $1;
-                    $tmp = "network_address" if ($tmp eq "nodes");
-                    push(@resources_list, { resource => $tmp, value => $2 });
-                }elsif ($l =~ /(\w+)\s*=\s*ALL/){
-                    my $tmp = $1;
-                    $tmp = "network_address" if ($tmp eq "nodes");
-                    push(@resources_list, { resource => $tmp, value => -1 });
-                }elsif ($l =~ /(\w+)\s*=\s*BEST/){
-                    my $tmp = $1;
-                    $tmp = "network_address" if ($tmp eq "nodes");
-                    push(@resources_list, { resource => $tmp, value => -2 });
-                }else{
-                    die("/!\\ Cannot recognize the resource description : $l\n");
-                }
-            }
-            $tmp_result{resources} = \@resources_list;
-            
-            if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*(\,.+|\s*)$/){
-                #walltime part
-                my ($w_h,$w_mn,$w_sec) = split(':',$1);
-                if (defined($w_h)){
-                    if (not defined($w_mn)){
-                        $resource_groups[1] = "$w_h:00:00";
-                    }elsif (not defined($w_sec)){
-                        $resource_groups[1] = "$w_h:$w_mn:00";
-                    }else{
-                        $resource_groups[1] = "$w_h:$w_mn:$w_sec";
-                    }
-                    $resource_groups[1] = iolib::sql_to_duration("$resource_groups[1]");
-                }else{
-                    die("/!\\ Cannot recognize walltime resource value\n");
-                }
-                $r = $2;
-            }
-            if ($r eq $initial_resource){
-                die("/!\\ Cannot recognize -- $r -- resource\n");
-            }
-            push(@{$resource_groups[0]}, \%tmp_result);
-
-            if ($r =~ /^\s*$/){
-                $end_loop = 1;
-            }
-        }
-        push(@result, \@resource_groups);
-    }
-    return(@result);
-}
+job_key_management();
 
 my $base_ro = iolib::connect_ro();
 
