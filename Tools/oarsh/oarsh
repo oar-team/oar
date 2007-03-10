@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # $Id$
 # In sshd_config you must have this line :
 #     AcceptEnv OAR_CPUSET SUDO_USER
@@ -18,8 +18,9 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 
 source $OARCONFFILE || exit 7
 
+export OAR_CPUSET=""
+
 # Add security option for X11 forwarding
-#XAUTH_LOCATION=$(which xauth)
 XAUTH_LOCATION="/usr/bin/X11/xauth"
 if [ -x "$XAUTH_LOCATION" ]
 then
@@ -37,9 +38,37 @@ function get_current_cpuset() {
         echo $(< $CPUSETFILE)
     fi
 }
-######################################
 
-export OAR_CPUSET=""
+# Manage display
+function manage_display() {
+    if [ -n "$DISPLAY" ]
+    then
+        if [ -x "$XAUTH_LOCATION" ]
+        then
+            # first, get rid of remaining unused .Xautority.{pid} files if any...
+            for f in $HOME/.Xauthority.*; do
+                [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
+            done
+            # set the .Xautority.{pid} file as the xauthority file.
+            export XAUTHORITY=$HOME/.Xauthority.$$
+            # retrieve the X cookie from the user to user oar.
+            sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY#localhost}" | $XAUTH_LOCATION merge - 2> /dev/null
+            # ssh will push that cookie in the connection.
+        fi
+    fi
+}
+
+###############################################################################
+# Main
+
+manage_display
+
+if echo " $@" | grep -qe "[[:space:]]-i[[:space:]]\?['\"]\?[[:alnum:]]\+";
+then
+    exec sudo -H -u $SUDO_USER $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -l $USER "$@"
+    echo "[OARSH] Exec wih the key failed"
+    exit 8
+fi
 
 [ -n "$OARSH_OARSTAT_CMD" ] || OAR_CPUSET=$(get_current_cpuset)
 if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
@@ -79,22 +108,6 @@ then
     fi
 fi
 
-#Manage display
-if [ -n "$DISPLAY" ]
-then
-    if [ -x "$XAUTH_LOCATION" ]
-    then
-        # first, get rid of remaining unused .Xautority.{pid} files if any...
-        for f in $HOME/.Xauthority.*; do
-            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
-        done
-        # set the .Xautority.{pid} file as the xauthority file.
-        export XAUTHORITY=$HOME/.Xauthority.$$
-        # retrieve the X cookie from the user to user oar.
-        sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY#localhost}" | $XAUTH_LOCATION merge - 2> /dev/null
-        # ssh below will push that cookie within the connection.
-    fi
-fi
 
 # Test if a specific ssh connection key is used
 OPENSSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
