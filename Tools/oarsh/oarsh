@@ -63,7 +63,7 @@ function manage_display() {
 
 manage_display
 
-if echo " $@" | grep -qe "[[:space:]]-i[[:space:]]\?['\"]\?[[:alnum:]]\+";
+if echo " $@" | grep -qe "[[:space:]]-i.";
 then
     exec sudo -H -u $SUDO_USER $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -l $USER "$@"
     echo "[OARSH] Exec wih the key failed"
