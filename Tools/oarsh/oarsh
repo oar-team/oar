@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # $Id$
 # In sshd_config you must have this line :
 #     AcceptEnv OAR_CPUSET SUDO_USER
