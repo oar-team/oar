@@ -519,7 +519,7 @@ else
     exit 2;
 fi;
 
-'.$shell.';
+'.$shell.' -l;
 
 exit 0
 ';
