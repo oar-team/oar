@@ -63,18 +63,26 @@ function manage_display() {
 
 manage_display
 
-if echo " $@" | grep -qe "[[:space:]]-i.";
+# connection using a user provided job key file 
+if [ -n "$OAR_JOB_KEY_FILE" ] 
 then
-    exec sudo -H -u $SUDO_USER $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -l $USER "$@"
-    echo "[OARSH] Exec wih the key failed"
+    if [ -r $OAR_JOB_KEY_FILE ]
+    then
+        exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"
+    else
+        exec sudo -H -u $SUDO_USER $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" -l $USER "$@"
+    fi
+    echo "[OARSH] Failed to connect using your job key: $OAR_JOB_KEY_FILE"
     exit 8
 fi
 
+# manage cpuset
 [ -n "$OARSH_OARSTAT_CMD" ] || OAR_CPUSET=$(get_current_cpuset)
 if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
     if [ -n "$OARSH_OARSTAT_CMD" ]
     then
+        # dirty check to insure that OAR_JOB_ID is an interger
         if [ $OAR_JOB_ID -gt 0 ] 2>/dev/null
         then
             OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
@@ -108,16 +116,16 @@ then
     fi
 fi
 
-
-# Test if a specific ssh connection key is used
-OPENSSH_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
-if [ -r $OPENSSH_KEY_FILE ]
+# connection using the job key file stored by oar on nodes upon submission 
+OAR_JOB_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
+if [ -r $OAR_JOB_KEY_FILE ]
 then
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $OPENSSH_KEY_FILE "$@"
-    echo "[OARSH] Exec wih the key failed"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"
+    echo "[OARSH] Failed to connect using the job key"
     exit 5
-fi
+fi 
 
+# connection using cpuset
 exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
 echo "[OARSH] Exec with environments failed"
 exit 6
