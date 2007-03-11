@@ -510,6 +510,8 @@ export OAR_PROJECT_NAME='.$job_project.';
 export OAR_JOB_WALLTIME='.$job_walltime.';
 export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.';
 
+export SHELL='.$shell.';
+
 export SUDO_COMMAND=OAR;
 
 if ( cd $OAR_WORKING_DIRECTORY &> /dev/null );
