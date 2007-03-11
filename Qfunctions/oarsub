@@ -260,7 +260,7 @@ Options are:
  -q, --queue=<QUEUE>           Set the the queue to submit the job to
  -p, --property=<LIST>         Set the property list
  -r, --reservation=<DATE>      Request a reservation
- -k, --checkpoint              Enable the job to be checkpointed
+     --checkpoint              Enable the job to be checkpointed
      --signal=<SIG>            Specify the signal to use when checkpointing
                                (default is 12 --> SIGUSR2)
  -t, --type                    Specify a specific type (deploy, besteffort,
@@ -285,7 +285,7 @@ Options are:
                                id (WARNING: if several jobs have the same
                                cpuset name then processes of a job could be
                                killed when another finish on the same computer)
- -i, --job-key-file=<FILE>     Use a job key. Parameter is the pathname to the
+ -k, --job-key-file=<FILE>     Use a job key. Parameter is the pathname to the
                                secret key, public key is guessed (.pub is 
                                appended). If key does not exist, ask if you
                                want to create one or cancel the submission.
@@ -526,7 +526,7 @@ GetOptions ("resource|l=s" => \@resource,
             "Connect|C=i" => \$connect_job,
             "stagein|s=s" => \$stagein,
             "stagein-md5sum=s" => \$md5sum,
-            "checkpoint|k=i" => \$Checkpoint,
+            "checkpoint=i" => \$Checkpoint,
             "help|h" => \$sos,
             "notify=s" => \$notify,
             "type|t=s" => \@Type,
@@ -545,7 +545,7 @@ GetOptions ("resource|l=s" => \@resource,
             "XML|X" => \$XML_mode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
-            "job-key-file|i=s" => \$job_key_file,
+            "job-key-file|k=s" => \$job_key_file,
             "job-priv-key=s" => \$job_priv_key,
             "job-pub-key=s" => \$job_pub_key,
             "version|v" => \$Version
