@@ -287,8 +287,8 @@ Options are:
                                killed when another finish on the same computer)
  -k, --job-key-file=<FILE>     Use a job key. Parameter is the pathname to the
                                secret key, public key is guessed (.pub is 
-                               appended). If key does not exist, ask if you
-                               want to create one or cancel the submission.
+                               appended). If file does not already exist, 
+                               generate it first.
      --job-priv-key=<TXT>      Use a job key. Raw private key provided inline
      --job-pub-key=<TXT>       Use a job key. Raw public key provided inline
      --hold                    Set the job state into Hold instead of Waiting,
