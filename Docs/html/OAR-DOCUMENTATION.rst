@@ -180,7 +180,7 @@ Options::
   -l "resource description" : defines resource list requested for this job;
                               the different parameters are resource properties
                               registered in OAR database; see examples below.
-                              (walltime : Request maximun time. Format is
+                              (walltime : Request maximum time. Format is
                               [hour:mn:sec|hour:mn|hour]; after this elapsed
                               time, the job will be killed)
   -p "properties" : adds constraints for the job
