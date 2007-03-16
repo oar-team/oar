@@ -302,12 +302,15 @@ if (defined($stateMode)){
             my $properties;
             my $hostname;
             my $job_str = '';
-            my %weight_index;
+            #my %weight_index;
             foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
+                my $cpuset;
+                my @jobs;
                 foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
                     if ($cc eq "properties"){
                         my $str = "properties = ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
+                            if ($prop eq "cpuset") { $cpuset=$data_to_display{$aa}->{$bb}->{$cc}->{$prop};}
                             if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
                                 $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
                             }else{
@@ -318,13 +321,16 @@ if (defined($stateMode)){
                         $properties = $str;
                     }elsif ($cc eq "jobs"){
                         $nb_jobs += $#{@{$data_to_display{$aa}->{$bb}->{$cc}}} + 1;
+                        my $c=0;
                         foreach my $j (@{$data_to_display{$aa}->{$bb}->{$cc}}){
-                            if (!defined($weight_index{$aa})){
-                                $weight_index{$aa} = 0;
-                            }else{
-                                $weight_index{$aa}++;
-                            }
-                            $job_str .= "$weight_index{$aa}/$j.oarserver,"
+                            #if (!defined($weight_index{$aa})){
+                            #    $weight_index{$aa} = 0;
+                            #}else{
+                            #    $weight_index{$aa}++;
+                            #}
+                            #$job_str .= "$weight_index{$aa}/$j.oarserver,";
+                            $jobs[$c]="$j.oarserver";
+                            $c++; 
                         }
                     }elsif ($cc eq "network_address"){
                         $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
@@ -332,7 +338,18 @@ if (defined($stateMode)){
                         $state = $data_to_display{$aa}->{$res[0]}->{$cc};
                     }
                 }
+                # Construct the jobs string
+                my $c=0;
+                foreach my $j (@jobs) {
+                    if ($cpuset ne "") {
+                        $job_str .= "$cpuset/$j,";
+                    }else{
+                        $job_str .= "$c/$j,";
+                    }
+                    $c++;
+                }
             }
+            
             next if ($hostname eq "");
             print("$aa\n");
             print("     pcpus = $nb\n");
