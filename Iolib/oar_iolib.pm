@@ -2244,6 +2244,8 @@ sub get_node_job($$) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND jobs.state != \'Terminated\'
+                                    AND jobs.state != \'Error\'
                             ");
     $sth->execute();
     my @res = ();
