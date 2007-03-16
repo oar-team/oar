@@ -52,6 +52,7 @@ my $YAML_mode;
 my $DUMPER_mode;
 my $Version;
 my $Old;
+my $smp;
 GetOptions ("state|s" => \$stateMode,
             "help|h"  => \$usage,
             "list|l"  => \$listall,
@@ -62,13 +63,14 @@ GetOptions ("state|s" => \$stateMode,
             "YAML|Y" => \$YAML_mode,
             "DUMPER|D" => \$DUMPER_mode,
             "backward_compatible" => \$Old,
+            "smp" => \$smp,
             "version|v" => \$Version
            );
 
 if ($usage){
     print <<EOS;
 Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -v ]
-[list of nodes] [-X | -Y | -D] | --backward_compatible]
+[list of nodes] [-X | -Y | -D] | --backward_compatible [--smp]]
 Display node informations
 Options:
  -a, --all          show all nodes with their properties
@@ -81,6 +83,8 @@ Options:
  -X, --XML          print result in XML format
  -Y, --YAML         print result in YAML format
      --backward_compatible print informations of the form of 1.* OAR version
+     --smp          backward_compatible suboption: prints one node per resource
+                    (usefull for big smp systems) 
  -h, --help         show this help screen
  -v, --version      print OAR version number
 EOS
@@ -335,33 +339,54 @@ if (defined($stateMode)){
                     }elsif ($cc eq "network_address"){
                         $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
                     }elsif ($cc eq "state"){
-                        $state = $data_to_display{$aa}->{$res[0]}->{$cc};
+                        if ($smp) {
+                            $state = $data_to_display{$aa}->{$bb}->{$cc};
+                        }else{
+                            $state = $data_to_display{$aa}->{$res[0]}->{$cc};
+                        }
                     }
                 }
                 # Construct the jobs string
                 my $c=0;
                 foreach my $j (@jobs) {
-                    if ($cpuset ne "") {
+                    if ($cpuset ne "" && !$smp) {
                         $job_str .= "$cpuset/$j,";
                     }else{
                         $job_str .= "$c/$j,";
                     }
                     $c++;
                 }
+                
+                if ($smp) {
+                    next if ($hostname eq "");
+                    printf("%s[%03d]\n",$hostname,$bb);
+                    print("     pcpus = 1\n");
+                    chop($job_str) if (defined($job_str));
+                    print("     jobs = $job_str\n");
+                    print("     weight = $nb_jobs\n");
+                    print("     hostname = $hostname\n");
+                    $state = "free" if ($state eq "Alive");
+                    $state = "job" if ($job_str ne '');
+                    print("     state = $state\n");
+                    print("     $properties\n");
+                    print("\n");
+                    $job_str = "";
+                }
             }
-            
-            next if ($hostname eq "");
-            print("$aa\n");
-            print("     pcpus = $nb\n");
-            chop($job_str) if (defined($job_str));
-            print("     jobs = $job_str\n");
-            print("     weight = $nb_jobs\n");
-            print("     hostname = $hostname\n");
-            $state = "free" if ($state eq "Alive");
-            $state = "job" if ($nb == $nb_jobs);
-            print("     state = $state\n");
-            print("     $properties\n");
-            print("\n");
+            if (!$smp) { 
+                next if ($hostname eq "");
+                print("$aa\n");
+                print("     pcpus = $nb\n");
+                chop($job_str) if (defined($job_str));
+                print("     jobs = $job_str\n");
+                print("     weight = $nb_jobs\n");
+                print("     hostname = $hostname\n");
+                $state = "free" if ($state eq "Alive");
+                $state = "job" if ($nb == $nb_jobs);
+                print("     state = $state\n");
+                print("     $properties\n");
+                print("\n");
+            }
         }
     }else{
         foreach my $aa (sort(keys(%data_to_display))){
