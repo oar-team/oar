@@ -27,6 +27,7 @@ if ( $state eq "start" ){
     # get Almighty pid
     if (open(FILE,"< $pidFile")){
         my $pid = <FILE>;
+        chomp($pid);
         close(FILE);
         if ((defined($pid)) && ($pid =~ m/^\d+$/m)){
             print("kill -s USR1 $pid\n");
