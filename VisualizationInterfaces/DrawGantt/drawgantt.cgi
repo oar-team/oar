@@ -37,7 +37,7 @@ RANGE_SEC = {'1/6 day'=>14400,'1/2 day'=>43200,'1 day'=>86400,'3 days'=>259200,
 RANGE_STEP = {'1/6 day'=>3600,'1/2 day'=>10800,'1 day'=>43200,'3 days'=>86400,
 		'week'=>345600,'month'=>604800}
 
-$verbose = false
+#$verbose = false
 
 $val = "" # variable for debug purpose
  
@@ -46,7 +46,22 @@ configfile = 'drawgantt.conf'
 puts "### Reading configuration file..." if $verbose
 $conf = YAML::load(IO::read(configfile))
 
+##########################################################################
+# usefull method
+#
+def String.natural_order(regex=Regexp.new('(.*)'),nocase=false)
+	proc do |str|
+    i = true
+		str =~ regex
+		str = $1
+    str = str.upcase if nocase
+    str.gsub(/\s+/, '').split(/(\d+)/).map {|x| (i = !i) ? x.to_i : x}
+  end
+end
 
+##########################################################################
+# database operations
+#
 def base_connect
   db_type = $conf['DB_TYPE']
 	if db_type == "mysql"
@@ -421,12 +436,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		type = "default" if type == nil
 		first_field_property = sort_label_cf["first_field_property"]
 		first_displaying_regex = Regexp.new(sort_label_cf["first_displaying_regex"])
-		first_sorting_order = sort_label_cf["first_sorting_type"]
+		first_sorting_order = sort_label_cf["first_sorting_order"]
 		first_sorting_regex = Regexp.new(sort_label_cf["first_sorting_regex"])
 		separator = sort_label_cf["separator"]
 		second_field_property = sort_label_cf["second_field_property"]
 		second_displaying_regex =  Regexp.new(sort_label_cf["second_displaying_regex"])
-		second_sorting_order = sort_label_cf["second_sorting_type"]
+		second_sorting_order = sort_label_cf["second_sorting_order"]
 		second_sorting_regex = Regexp.new(sort_label_cf["second_sorting_regex"])
 
   	first_field_index = resource_properties_fields.index(first_field_property)
@@ -452,8 +467,10 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		sorted_first_label = []
 		if (first_sorting_order == "string")
 			sorted_first_label =  first_label_groups.keys.sort_by{|label| label =~ first_sorting_regex; $1.to_s} 
-		else #numerical sorting
+		elsif (first_sorting_order == "numerical") #numerical sorting order
 			sorted_first_label =  first_label_groups.keys.sort_by{|label| label=~ first_sorting_regex; $1.to_i} 
+		else #natural sorting order
+				sorted_first_label =  first_label_groups.keys.sort_by(&String.natural_order(first_sorting_regex))
 		end
 
 		#p sorted_first_label
@@ -466,10 +483,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		sorted_first_label.each do |first_label|
 
 			second_label_sorted = []
-			if (first_sorting_order == "string")
+			if (second_sorting_order == "string")
 				second_label_sorted = first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_s}
-			else #numerical sorting
+			elsif (second_sorting_order == "numerical") #numerical sorting order
 				second_label_sorted	= first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_i}
+			else #natural sorting order
+				second_label_sorted	= first_label_groups[first_label].keys.sort_by(&String.natural_order(second_displaying_regex))
 			end
 
 			second_label_sorted.each do |label|
