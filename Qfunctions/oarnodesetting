@@ -16,7 +16,7 @@ $| = 1;
 
 my $exit_code = 0;
 
-my $hostname ;
+my @hostnames;
 my $base;
 my $state ;
 my $nowaitMode;
@@ -151,7 +151,7 @@ my $Version;
 # Options on arg command line
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
-            "hostname|h=s"   => \$hostname,
+            "hostname|h=s"   => \@hostnames,
             "nowait|n" => \$nowaitMode,
             "property|p=s" => \@properties,
             "add|a" => \$new_resource,
@@ -193,16 +193,18 @@ if (defined($new_resource)){
     }
 }
 
-defined($hostname) or $hostname = hostname();
+defined($hostnames[0]) or $hostnames[0] = hostname();
 #print("$hostname\n");
 my $base = iolib::connect() or die("Cannot connect to the database\n");
 
 if (defined($new_resource)){
-    # Create a new resource
-    print("new resource\n");
-    print("$hostname added in the database\n");
+    # Create a new resources
     $state = "Alive" if (!defined($state));
-    push(@resource,iolib::add_resource($base, $hostname, $state));
+    foreach my $h (@hostnames){
+        print("new resource\n");
+        print("$h added in the database\n");
+        push(@resource,iolib::add_resource($base, $h, $state));
+    }
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
 }else{
@@ -234,25 +236,27 @@ if (defined($new_resource)){
     }else{
         # update all resources with netwokAdress = $hostname
         if (defined($state)){
-            #$base->do("LOCK TABLE resources WRITE");
-            if (iolib::set_node_nextState($base,$hostname,$state) > 0){
-            #$base->do("UNLOCK TABLES");
-                oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-                print("$hostname --> $state\n");
-                if (($state eq 'Dead') || ($state eq 'Absent')){
-                    if ($nowaitMode){
+            foreach my $h (@hostnames){
+                #$base->do("LOCK TABLE resources WRITE");
+                if (iolib::set_node_nextState($base,$h,$state) > 0){
+                #$base->do("UNLOCK TABLES");
+                    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+                    print("$h --> $state\n");
+                    if (($state eq 'Dead') || ($state eq 'Absent')){
+                        if ($nowaitMode){
+                            print("Done\n");
+                        }else{
+                            print("Check jobs to delete on node $h :\n");
+                            my @jobs = iolib::get_node_job($base,$h);
+                            wait_end_of_running_jobs($base,\@jobs);
+                        }
+                    }elsif ($state eq 'Alive'){
                         print("Done\n");
-                    }else{
-                        print("Check jobs to delete on node $hostname :\n");
-                        my @jobs = iolib::get_node_job($base,$hostname);
-                        wait_end_of_running_jobs($base,\@jobs);
                     }
-                }elsif ($state eq 'Alive'){
-                    print("Done\n");
+                }else{
+                    warn("/!\\ The node $h does not exist in OAR database.\n");
+                    $exit_code = 4;
                 }
-            }else{
-                warn("/!\\ The node $hostname does not exist in OAR database.\n");
-                $exit_code = 4;
             }
         }
     }
@@ -270,11 +274,13 @@ if (defined(@properties)){
             }
         }
     }else{
-        if (iolib::is_node_exists($base,$hostname) == 0){
-            warn("/!\\ The node $hostname does not exist in OAR database. First you must add it with -a|--add option.\n");
-            $exit_code = 2;
-        }else{
-            set_hostname_properties($base,$hostname,\@properties);
+        foreach my $h (@hostnames){
+            if (iolib::is_node_exists($base,$h) == 0){
+                warn("/!\\ The node $h does not exist in OAR database. First you must add it with -a|--add option.\n");
+                $exit_code = 2;
+            }else{
+                set_hostname_properties($base,$h,\@properties);
+            }
         }
     }
 }
