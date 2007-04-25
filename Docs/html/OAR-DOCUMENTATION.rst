@@ -1253,6 +1253,11 @@ Each configuration tag found in /etc/oar.conf is now described:
       
       DETACH_JOB_FROM_SERVER=1
 
+  - Specify the database field to use to fill the file on the first node of
+    the job in $OAR_NODE_FILE (default is 'network_address')::
+
+      NODE_FILE_DB_FIELD="network_address"
+
   - By default OAR uses the ping command to detect if nodes are down or not.
     To enhance this diagnostic you can specify one of these other methods (
     give the complete command path):

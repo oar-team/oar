@@ -27,6 +27,9 @@ init_conf($ENV{OARCONFFILE});
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 
+my $Node_file_db_field = get_conf("NODE_FILE_DB_FIELD");
+$Node_file_db_field = oar_Tools::get_default_node_file_db_field() if (!defined($Node_file_db_field));
+
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
@@ -310,6 +313,7 @@ my %data_to_transfer = (
         launching_directory => $job->{launching_directory},
         job_env             => $job->{job_env},
         resources           => \@resources,
+        node_file_db_fiels  => $Node_file_db_field,
         user                => $job->{job_user},
         types               => $types,
         name                => $job->{job_name},
