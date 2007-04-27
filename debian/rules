@@ -68,6 +68,7 @@ install-indep:
 	mkdir -p $(CURDIR)/debian/oar-common/var/lib/oar
 	$(MAKE) sanity-check sudowrapper configuration \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-common/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-common/etc \
 		PREFIX=$(CURDIR)/debian/oar-common/usr \
@@ -85,6 +86,7 @@ install-indep:
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
 	$(MAKE) sanity-check common \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-libs/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc \
 		PREFIX=$(CURDIR)/debian/oar-libs/usr \
@@ -99,6 +101,7 @@ install-indep:
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-server/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-server/etc \
 		PREFIX=$(CURDIR)/debian/oar-server/usr \
@@ -113,6 +116,7 @@ install-indep:
 	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
 	$(MAKE) sanity-check node \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-node/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-node/etc \
 		PREFIX=$(CURDIR)/debian/oar-node/usr \
@@ -127,6 +131,7 @@ install-indep:
 	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
 	$(MAKE) sanity-check user \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-user/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-user/etc \
 		PREFIX=$(CURDIR)/debian/oar-user/usr \
@@ -140,6 +145,7 @@ install-indep:
 		SBINLINKPATH=../lib/oar
 	$(MAKE) draw-gantt \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-draw-gantt/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-draw-gantt/etc \
 		PREFIX=$(CURDIR)/debian/oar-draw-gantt/usr \
@@ -155,6 +161,7 @@ install-indep:
 		SBINLINKPATH=../lib/oar
 	$(MAKE) desktop-computing-agent \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-agent/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc \
 		PREFIX=$(CURDIR)/debian/oar-desktop-computing-agent/usr \
@@ -168,6 +175,7 @@ install-indep:
 		SBINLINKPATH=../lib/oar
 	$(MAKE) desktop-computing-cgi \
 		OARUSER=oar \
+		OAROWNER=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc \
 		PREFIX=$(CURDIR)/debian/oar-desktop-computing-cgi/usr \
