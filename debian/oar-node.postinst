@@ -22,7 +22,16 @@ set -e
 . /usr/share/debconf/confmodule
 db_version 2.0
 
+# set OAR Shell
 chsh -s /usr/lib/oar/oarsh_shell oar
+
+# we can fix the ownership of these files, as oar user is now created
+chown oar.oar /var/lib/oar/oar_prologue
+chown oar.oar /var/lib/oar/oar_epilogue
+chown oar.oar /var/lib/oar/oar_diffuse_script
+chown oar.oar /var/lib/oar/oar_epilogue_local
+chown oar.oar /var/lib/oar/oar_prologue_local
+chown oar.oar /var/lib/oar/lock_user.sh
 
 cat << EOF
 
