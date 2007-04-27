@@ -9,7 +9,7 @@ OARCONFDIR=/etc/
 # OARUSER is the variable expanded in the sudoers file  
 OARUSER=oar
 # OAROWNER is the variable expanded to set the ownership of the files
-OAROWNER=oar
+OAROWNER=$(OARUSER)
 OARGROUP=oar
 
 PREFIX=/usr/local
