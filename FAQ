@@ -66,7 +66,7 @@ no problem (like file creation, deletion, ...).
 Example:
 ::
     
-    oarsub -k 600 --signal 2 -t idempotent /path/to/prog
+    oarsub --checkpoint 600 --signal 2 -t idempotent /path/to/prog
 
 So this job will send a signal *SIGINT* (see *man kill* to know signal
 numbers) 10 minutes before the walltime ends. Then if everything goes
