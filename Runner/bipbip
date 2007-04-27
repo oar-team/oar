@@ -334,7 +334,7 @@ my %data_to_transfer = (
         detach_oarexec      => $Detach_oarexec
     );
 
-my $error = 40;
+my $error = 50;
 my $exit_script_value = 0;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };

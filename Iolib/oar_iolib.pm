@@ -4916,7 +4916,7 @@ sub check_end_of_job($$$$$$$$$$){
             #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
-        }elsif ($error == 40){
+        }elsif ($error == 50){
     	    # launching oarexec timeout
             my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"LAUNCHING_OAREXEC_TIMEOUT",$strWARN);
