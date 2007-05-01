@@ -1,6 +1,32 @@
 OAR CHANGELOG
 =============
 
+version 2.0.2:
+--------------
+
+  - add warnings and exit code to oarnodesetting when there is a bad node name
+    or resource number
+  - change package version
+  - change default behaviour for the cpuset_manager.pl (more portable)
+  - enable a user to use the same ssh key for several jobs (at his own risk!)
+  - add node hostnames in oarstat -f
+  - add --accounting and -u options in oarstat
+  - bug fix on index fields in the database (syncro): bug 2020
+  - bug fix about server pro/epilogue: bug 2022
+  - change the default output of oarstat. Now it is usable: bug 1875
+  - remove keys in authorized_keys of oar (on the nodes) that do not
+    correspond to an active cpuset (clean after a reboot)
+  - reread oar.conf after each database connection tries
+  - add support for X11 forwarding in oarsub -I and -C
+  - debug mysql initialization script in debian package
+  - add a variable in oarsh for the default options of ssh to use
+    (more useful to change if the ssh version installed does not
+    handle one of these options)
+  - read oar.conf in oarsh (so admin can more easily change options in this
+    script)
+  - add support for X11 forwarding via oarsh
+  - change variable for oarsh: OARSH_JOB_ID --> OAR_JOB_ID
+
 version 2.0.0++ enhanced:
 -------------------------
 

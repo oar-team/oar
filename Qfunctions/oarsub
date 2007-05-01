@@ -286,7 +286,7 @@ Options are:
                                this new one
      --notify=<TXT>            Specify a notification method
                                (mail or command to execute). Ex: 
-                                   --notify "mail:name@domain.com"
+                                   --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
      --stdout=<FILE>           Specify the name of the standard output file
      --stderr=<FILE>           Specify the name of the error output file
