@@ -239,9 +239,13 @@ sub signal_oarexec($$$$$$){
     my $file = get_oar_pid_file_name($job_id);
     #my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
     #my $cmd = "$ssh_cmd -x -T $host bash -c \"test -e $file && PROC=\\\$(cat $file) && kill -s CONT \\\$PROC && kill -s $signal \\\$PROC\"";
+    my ($cmd_name,@cmd_opts) = split(" ",$ssh_cmd);
     my @cmd;
     my $c = 0;
-    $cmd[$c] = $ssh_cmd;$c++;
+    $cmd[$c] = $cmd_name;$c++;
+    foreach my $p (@cmd_opts){
+        $cmd[$c] = $p;$c++;
+    }
     $cmd[$c] = "-x";$c++;
     $cmd[$c] = "-T";$c++;
     $cmd[$c] = $host;$c++;
@@ -260,7 +264,7 @@ sub signal_oarexec($$$$$$){
             alarm(get_ssh_timeout());
             $ssh_pid = fork();
             if ($ssh_pid == 0){
-                exec({$cmd[0]} @cmd);
+                exec({$cmd_name} @cmd);
                 warn("[ERROR] Cannot find @cmd\n");
                 exit(-1);
             }
@@ -712,7 +716,7 @@ sub manage_remote_commands($$$$$$$){
             $m_option .= " -m $n";
         }
        
-        my $cmd = "$taktuk_cmd -c $ssh_cmd ".'-o status=\'"STATUS $host $line\n"\''."$m_option broadcast exec '[perl - $action]', broadcast file_input '[-]'";
+        my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''."$m_option broadcast exec [ perl - $action ], broadcast file_input [ - ], broadcast close";
         #print("$cmd\n");
         my $pid = open2(\*READ, \*WRITE, $cmd);
         eval{
