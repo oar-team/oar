@@ -198,13 +198,13 @@ user: man
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarresume
 	rm $(OARDIR)/sudowrapper.sh
 	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 Docs/man/oardel.1 $(MANDIR)/man1
-	install -m 0644 Docs/man/oarnodes.1 $(MANDIR)/man1
-	install -m 0644 Docs/man/oarresume.1 $(MANDIR)/man1
-	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
-	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
-	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
-	install -m 0644 Docs/man/oarsh.1 $(MANDIR)/man1
+	install -m 0644 man/1/oardel.1 $(MANDIR)/man1
+	install -m 0644 man/1/oarnodes.1 $(MANDIR)/man1
+	install -m 0644 man/1/oarresume.1 $(MANDIR)/man1
+	install -m 0644 man/1/oarstat.1 $(MANDIR)/man1
+	install -m 0644 man/1/oarsub.1 $(MANDIR)/man1
+	install -m 0644 man/1/oarhold.1 $(MANDIR)/man1
+	install -m 0644 man/1/oarsh.1 $(MANDIR)/man1
 	ln -sf oarsh.1 $(MANDIR)/oarcp.1
 
 node:
