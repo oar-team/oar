@@ -1,3 +1,9 @@
+oar (2.0.3-1) unstable; urgency=low
+
+  * init 2.0.3
+
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 02 May 2007 16:56:10 -0500
+
 oar (2.0.2-1) unstable; urgency=low
 
   * add warnings and exit code to oarnodesetting when there is a bad node name
@@ -23,7 +29,7 @@ oar (2.0.2-1) unstable; urgency=low
   * add support for X11 forwarding via oarsh
   * change variable for oarsh: OARSH_JOB_ID --> OAR_JOB_ID
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 28 Feb 2007 21:23:58 -0600
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 02 May 2007 16:56:03 -0500
 
 oar (2.0.1-2) unstable; urgency=low
 
