@@ -197,7 +197,7 @@ Options::
                                the first processus of the job 
      --signal=<SIG>            Specify the signal to use when checkpointing
                                (default is 12 --> SIGUSR2)
- -t, --type                    Specify a specific type (deploy, besteffort,
+ -t, --type=<TYPE>             Specify a specific type (deploy, besteffort,
                                cosystem, checkpoint,timesharing)
  -d, --directory=<DIR>         Specify the directory where to launch the
                                command (default is current directory)
