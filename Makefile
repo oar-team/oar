@@ -97,6 +97,7 @@ sudowrapper:
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	install -m 0755 Tools/oarsh/oarcp $(BINDIR)
+	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(BINDIR)/oarcp
 	
 common:
 	install -d -m 0755 $(OARDIR)
