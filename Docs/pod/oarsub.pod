@@ -1,140 +1,195 @@
 =head1 NAME
 
-oarsub - submit a job to OAR batch scheduler.
+oarsub - OAR batch scheduler job submission command.
 
 =head1 SYNOPSIS
 
-B<oarsub> [OPTIONS] [-C|-I|<SCRIPT>]
+B<oarsub> [OPTIONS] <job executable>
+
+B<oarsub> [OPTIONS] -I
+
+B<oarsub> [OPTIONS] -C <JOB ID>
 
 =head1 DESCRIPTION
 
-This command is used to submit a job to OAR batch scheduler. Jobs can be a program or a script which contains description of this job.
+One uses B<oarsub> to submit a job to the B<OAR batch scheduler> managing the resources of a B<HPC Cluster>.
+A job is defined by the description of a set of resources needed to execute a task and a script or executable to run.
+A job may also be run interactively, and one may also use oarsub to connect to a previously submitted job.
 
+The scheduler is in charge of providing a set of resources matching the oarsub command request. Once scheduled and then launched, a job consists of one process executed on the first node of the resources it was attibuted, with a set of environment variables that define the resources which are at the job disposal. That means that the job's executable is responsible for connecting those resources and dispatching the tasks.
 
 =head1 OPTIONS
 
 =over
 
-=item B<-l, --resource> /property1=number1/property2=number2/...,walltime=3:20:00
+=item B<-I, --Interactive>
 
-Defines resource list requested for a job.
+Request an interactive job. Open a login shell on the first node of the reservation instead of running a script.
 
-You can get resource property names with the command oarnodes.
+=item B<-C, --Connect> <OAR JOB ID>
 
-=item B<-q, --queue> queuename
+Connect to a running job.
 
-Specifies the destination queue.
+=item B<-l, --resource> <LIST>
 
-=item B<-p, --property> property
+Set the requested resources for the job. The different parameters are resource properties registered in OAR database, and `walltime' which specifies the duration before the job must be automatically terminated if still running. 
+Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: node=4/cpu=1,walltime=2:00:00
 
-Specify (with the SQL syntax) job properties.
+=item B<-S, --Scanscript>
 
-=item B<-I, --interactive>
+Batch mode only: ask oarsub to scan the given script for OAR directives (#OAR -l ...)
 
-Interactive mode.
-Give you a shell on the first reserved node.
+=item B<-q, --queue> <QUEUE>
 
-=item B<-r, --reservation> date
+Set the the queue to submit the job to.
 
-Ask for a reservation job on the date in argument
+=item B<-p, --property> "<LIST>"
 
-=item B<-C, --Connect> job_id
+Add a list of constraints to properties for the job.
+The format of a contraint is the one of a WHERE clause using the SQL syntax.
 
-Connect to a reservation in Running state
+=item B<-r, --reservation>  <DATE>
 
-=item B<-v, --verbose>
+Request that the job starts at a specified time. A job creation using this option is called a I<reservation> and instead of a I<submission>. 
 
-Print OAR version number.
+=item B<--checkpoint> <DELAY>
 
-=item B<-S, --Scan_script>
- 
-In batch mode, asks oarsub to scan the given script for OAR directives (#OAR -l ...)
+Enable the checkpointing mechanism for the job.
+A signal will be sent DELAY seconds before the walltime to the first processus of the job (on the first node of the resources).
 
-=item B<-s, --stagein> directory|tgz
+=item B<--signal> <SIG>
 
-Set the stagein directory or archive.
+Specify the signal to use when checkpointing. Default is I<SIGUSR2>.
 
-=item B<-m, --stagein-md5sum> md5sum
+=item B<-t, --type> <TYPE>
 
-Set the stagein file md5sum.
+Specify a specific type (I<deploy>, I<besteffort>, I<cosystem>, I<checkpoint>, I<timesharing>)
 
-=item B<-k, --checkpoint> number_of_seconds
+=item B<-d, --directory> <DIR>
 
-Ask OAR to send the checkpoint signal to the first processus of the job "number_of_seconds" before the walltime (default signal is SIGUSR2).
+Specify the directory where to launch the command (default is current directory)
 
-=item B<--signal> number
+=item B<--project> <TXT>
 
-specify the signal to use when checkpointing.
+Specify a name of a project the job belongs to.
 
-=item B<-t, --type> type
-
-Specify a specific type (deploy, besteffort, cosystem, checkpoint).
-
-=item B<-d, --directory> path
-
-Specify the directory where to launch the command (default is current directory).
-
-=item B<-n, --name> string
+=item B<-n, --name> <TXT>
 
 Specify an arbitrary name for the job.
 
-=item B<--project> string
+=item B<e, --env> <TXT>
 
-Specify the name of the project corresponding to the job.
+Environment variables to set on the running proccess in the form "A=b C=d" (not implemented)
 
-=item B<-e, --env> string
+=item B<-a, --anterior> <OAR JOB ID>
 
-Environment variables to set on the running proccess in the form "A=b C=d".
+Previously submitted job that this new job execution must depend on. The new job will only start upon the end the previous one.
 
-=item B<-a, --anterior> job_id
+=item B<--notify> <TXT>
 
-Anterior job that must be terminated to start this new one.
+Specify a notification method (mail or command to execute).
+Ex: 
+ --notify "mail:name@domain.com"
+ --notify "exec:/path/to/script args"
 
-=item B<--notify> string
-
-specify a notification method(mail or program to launch); ex:
-    --notify "mail:name@domain.com"
-    --notify "exec:/path/to/script args"
-
-=item B<--stdout> string
+=item B<--stdout> <FILE>
 
 Specify the name of the standard output file.
 
-=item B<--stderr> string
+=item B<--stderr> <FILE>
 
 Specify the name of the error output file.
 
-=item B<--resubmit> job_id
+=item B<--resubmit> <OAR JOB ID>
 
-Resubmit the given job to a new one.
+Resubmit the given job as a new one.
 
-=item B<--force_cpuset_name>
+=item B<--force-cpuset-name> <TXT>
 
-Instead of using job_id for the cpuset name you can specify one (WARNING: if several jobs have the same cpuset name then processes of a job could be killed when another finished on the same computer).
+Specify a cpuset name to use instead of the job id.
+I<WARNING:> if several jobs have the same cpuset name then processes of a job could be killed when another one finishes on the same computer)
+
+=item B<-k, --job-key-file> <FILE>
+
+Use a job key. Parameter is the pathname to the secret key, public key is guessed (.pub is appended). If file does not already exist, generate it first.
+
+=item B<--job-priv-key> <TXT>
+
+Use a job key. Raw private key provided inline.
+
+=item B<--job-pub-key> <TXT>
+
+Use a job key. Raw public key provided inline.
 
 =item B<--hold>
 
-Set the job state into Hold instead of Waiting; so it is not scheduled (you must run "oarresume" to turn it into the Waiting state).
+Set the job state into Hold instead of Waiting, so that it is not scheduled (you must run I<oarresume> to turn it into the Waiting state).
+
+=item B<-s, --stagein> <DIR|TGZ>
+
+Set the stagein directory or archive (Desktop Computing mode).
+
+=item B<--stagein-md5sum> <MD5SUM>
+
+Set the stagein file md5sum (Desktop Computing mode).
 
 =item B<-D, --DUMPER>
 
-Print result in DUMPER format.
+Print result in Perl Data::Dumper format
 
-=item <-X, --XML>
+=item B<-X, --XML>
 
-Print result in XML format.
+Print result in XML format
 
-=item <-Y, --YAML>
+=item B<-Y, --YAML>
 
-Print result in YAML format.
-
-=item B<-v, --version>
-
-Print OAR version number.
+Print result in YAML format
 
 =item B<-h, --help>
 
-Print help message.
+Print this help message
+
+=item B<-v, --version>
+
+Print the version of OAR.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+=item B<OAR_FILE_NODES> aka B<OAR_NODE_FILE> aka B<OAR_NODEFILE>
+
+Pathname to the file containing the list of the nodes that are allocated to the job. 
+
+=item B<OAR_JOB_NAME>
+
+Name of the job as given using the B<-n> option.
+
+=item B<OAR_JOB_ID> aka B<OAR_JOBID>
+
+Id of the job. Each job get a unique job identifier. This identifier can be use to retrieve information about the job using B<oarstat>, or to connect to a running job using B<oarsub -C> or B<oarsh> for instance.
+  
+=item B<OAR_JOB_WALLTIME> resp. B<OAR_JOB_WALLTIME_SECONDS>
+
+Walltime of the job in the hh:mm:ss format resp. in seconds.
+
+=item B<OAR_RESOURCE_PROPERTIES_FILE>
+
+Pathname to the file containing the list of all resources attributes for the job, and their value
+
+=item B<OAR_PROJECT_NAME>
+
+Name of the project the job is part of, as given using the B<--project> option.
+
+=item B<OAR_STDOUT> and B<OAR_STDERR>
+
+Pathname to the files storing the standart output and error of the job's executable when not running in interactive mode.
+
+=item B<OAR_WORKING_DIRECTORY> aka B<OAR_WORKDIR> aka B<OAR_O_WORKDIR>
+
+Working directory for the job. The job executable will be executed in this directory on the first node allocated to the job.
 
 =back
 
@@ -142,7 +197,7 @@ Print help message.
 
 Script can contain the description of the job. Lines with options must begin by the key B<#OAR>. There are the same options as previous.
 
-=head1 EXAMPLE
+=head1 EXAMPLES
 
 Job submission with arguments :
 
@@ -180,7 +235,7 @@ Submit the script :
 
 =head1 SEE ALSO
 
-oardel(1), oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
+oarsh(1), oardel(1), oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
 
 =head1 COPYRIGHTS
 
