@@ -1,3 +1,10 @@
+== Howto build a Debian package for OAR ? ==
+
+Debian package build tree is now set apart from OAR sources directories.
+To build a OAR Debian package, please go to the SVN base directory and use the build-tarball.sh script you should find there. 
+
+~~ information below is deprecated (2007-05-02) ~~
+
 To create OAR Debian packages, run make debian-package in OAR repository (here).
 The existence of oar user and oar group is required to build the packages.
 
