@@ -256,7 +256,7 @@ server-install: sanity-check configuration sudowrapper common server dbinit
 user-install: sanity-check configuration sudowrapper common user
 
 node-install: sanity-check configuration sudowrapper node
-	@chsh -s $(OARDIR)/oarsh_shell oar
+	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
 doc-install: doc
 
