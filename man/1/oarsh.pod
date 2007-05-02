@@ -1,0 +1,56 @@
+=head1 NAME
+
+oarsh - remote shell connector for OAR batch scheduler.
+
+=head1 SYNOPSIS
+
+B<oarsh> <NODENAME>
+
+=head1 DESCRIPTION
+
+Connect a node from the submission frontal of any node.
+
+=head1 OPTIONS
+
+=over
+
+B<oarsh> uses I<OpenSSH> client (the I<ssh> command) underneath to perform the connection. Thus any OpenSSH option can be used. Beware however that some I<OpenSSH> options may conflict with B<oarsh> mechanism, such as specifiing a username using I<-l john> or I<doe@>.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+B<OAR_JOB_ID>
+
+From the cluster's frontal or any node, specify the Id of the job B<oarsh> must connect to.
+
+B<OAR_JOB_KEY_FILE>
+
+Specify a job key to use in case of one was used for the job submission.
+This connection method is mandatory when connecting to one node of a job from a host that does not belong the nodes managed by the same OAR server as the one the job was submitted to.
+
+=back
+
+=head1 EXAMPLES
+
+=over
+
+Connecting to a node (node23) of our job (Id: 4242) from the cluster's frontal:
+
+> OAR_JOB_ID=4242 oarsh node23
+
+Connecting to a node (node23) of our job (Id 4242) that was submitted using a job key (~/my_key) for instance a command such as: oarsub -k <pathname> 
+
+> OAR_JOB_KEY_FILE=~/my_key oarsh node23
+
+=back
+
+=head1 SEE ALSO
+
+oarsub(1), oardel(1) oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2003 Laboratoire Id-Imag (http://www-id.imag.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

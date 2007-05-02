@@ -27,6 +27,8 @@ BINLINKPATH=$(OARDIR)
 SBINLINKPATH=$(OARDIR)
 CMDSLINKPATH=$(OARDIR)
 
+.PHONY: man
+
 all: usage
 install: usage
 usage:
@@ -38,6 +40,9 @@ sanity-check:
 	@[ "`id root`" = "`id`" ] || echo "Warning: root-privileges are required to install some files !"
 	@id $(OAROWNER) > /dev/null || ( echo "Error: User $(OAROWNER) does not exist!" ; exit -1 )
 	@[ -d $(OARHOMEDIR) ] || ( echo "Error: OAR home directory $(OARHOMEDIR) does not exist!" ; exit -1 )
+
+man:
+	@cd man/1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
 
 configuration:
 	install -d -m 0755 $(OARCONFDIR)
@@ -162,7 +167,7 @@ server:
 	@if [ -f $(OARDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARDIR); fi
 	rm $(OARDIR)/sudowrapper.sh
 
-user:
+user: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
@@ -193,6 +198,7 @@ user:
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarresume
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarresume#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarresume
+	rm $(OARDIR)/sudowrapper.sh
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 Docs/man/oardel.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarnodes.1 $(MANDIR)/man1
@@ -200,7 +206,6 @@ user:
 	install -m 0644 Docs/man/oarstat.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarsub.1 $(MANDIR)/man1
 	install -m 0644 Docs/man/oarhold.1 $(MANDIR)/man1
-	rm $(OARDIR)/sudowrapper.sh
 
 node:
 	install -d -m 0755 $(OARDIR)
