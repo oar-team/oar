@@ -135,19 +135,19 @@ Set the stagein file md5sum (Desktop Computing mode).
 
 =item B<-D, --DUMPER>
 
-Print result in Perl Data::Dumper format
+Print result in Perl Data::Dumper format.
 
 =item B<-X, --XML>
 
-Print result in XML format
+Print result in XML format.
 
 =item B<-Y, --YAML>
 
-Print result in YAML format
+Print result in YAML format.
 
 =item B<-h, --help>
 
-Print this help message
+Print this help message.
 
 =item B<-v, --version>
 

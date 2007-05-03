@@ -42,7 +42,7 @@ sanity-check:
 	@[ -d $(OARHOMEDIR) ] || ( echo "Error: OAR home directory $(OARHOMEDIR) does not exist!" ; exit -1 )
 
 man:
-	@cd man/1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
+	@cd man/man1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
 
 configuration:
 	install -d -m 0755 $(OARCONFDIR)
@@ -199,16 +199,16 @@ user: man
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarresume
 	rm $(OARDIR)/sudowrapper.sh
 	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/1/oardel.1 $(MANDIR)/man1
-	install -m 0644 man/1/oarnodes.1 $(MANDIR)/man1
-	install -m 0644 man/1/oarresume.1 $(MANDIR)/man1
-	install -m 0644 man/1/oarstat.1 $(MANDIR)/man1
-	install -m 0644 man/1/oarsub.1 $(MANDIR)/man1
-	install -m 0644 man/1/oarhold.1 $(MANDIR)/man1
-	install -m 0644 man/1/oarsh.1 $(MANDIR)/man1
-	ln -sf oarsh.1 $(MANDIR)/oarcp.1
+	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarresume.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarstat.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarsub.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarhold.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1
+	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
 
-node:
+node: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
@@ -219,6 +219,9 @@ node:
 	@if [ -f $(OARHOMEDIR)/oar_epilogue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/oar_prologue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/lock_user.sh ]; then echo "Warning: $(OARHOMEDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARHOMEDIR) ; fi
+	install -d -m 0755 $(MANDIR)/man1
+	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1
+	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )
