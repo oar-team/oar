@@ -1,8 +1,8 @@
 OAR CHANGELOG
 =============
 
-version 2.0.3:
---------------
+upstream developpement version:
+-------------------------------
 
   - add "oarcp" command to help the users to copy files using oarsh.
 
