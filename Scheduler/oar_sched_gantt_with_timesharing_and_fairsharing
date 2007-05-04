@@ -30,7 +30,7 @@ my $Karma_user_targets = {
     oar => 100
 };
 # weight given to each criteria
-my $Karma_coeff_project_consumption = 3;
+my $Karma_coeff_project_consumption = 0;
 my $Karma_coeff_user_consumption = 2;
 my $Karma_coeff_user_asked_consumption = 1;
 ###############################################################################
