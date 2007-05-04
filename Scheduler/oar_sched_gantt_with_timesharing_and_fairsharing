@@ -17,7 +17,7 @@ use Time::HiRes qw(gettimeofday);
 ##########################
 # Avoid problems if there are too many waiting jobs
 my $Karma_max_number_of_jobs_treated = 1000;
-# number of seconds to consider for the timesharing
+# number of seconds to consider for the fairsharing
 my $Karma_window_size = 3600 * 30;
 # specify the target percentages for project names (0 if not specified)
 my $Karma_project_targets = {
