@@ -216,9 +216,9 @@ sub connect_job($$$){
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && (which xauth > /dev/null && xauth -q extract - \${DISPLAY#localhost} | sudo -H -u $lusr xauth merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && (which xauth > /dev/null && xauth -q extract - \${DISPLAY#localhost} | sudo -H -u $lusr xauth merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
         }else{
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
         }
         #print("oarsub launchs command : @cmd\n");
         #essential : you become oar instead of the user
