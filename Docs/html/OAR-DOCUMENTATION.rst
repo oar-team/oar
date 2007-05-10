@@ -17,7 +17,6 @@
 :Organization: ID laboratory
 :Status: This is a "work in progress"
 :Copyright: licenced under the GNU GENERAL PUBLIC LICENSE
-:Version: $LastChangedDate$
 
 :Dedication: For users, administrators and developpers.
 
