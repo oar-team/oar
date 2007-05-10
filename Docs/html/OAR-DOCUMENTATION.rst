@@ -14,13 +14,14 @@
           38330 MONTBONNOT SAINT MARTIN
 :Contact: nicolas.capit@imag.fr
 :Authors: ID laboratory
-:organization: ID laboratory
-:status: This is a "work in progress"
-:license: GNU GENERAL PUBLIC LICENSE
+:Organization: ID laboratory
+:Status: This is a "work in progress"
+:Copyright: licenced under the GNU GENERAL PUBLIC LICENSE
+:Version: Revision $Rev$ ($LastChangeDatei$)
 
 :Dedication: For users, administrators and developpers.
 
-:abstract:
+:Abstract:
 
   OAR is a resource manager or (batch scheduler) for large clusters. In
   functionnalities, it's near of PBS, LSF, CCS and Condor. It's suitable for
