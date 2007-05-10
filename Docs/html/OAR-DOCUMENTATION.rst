@@ -17,7 +17,7 @@
 :Organization: ID laboratory
 :Status: This is a "work in progress"
 :Copyright: licenced under the GNU GENERAL PUBLIC LICENSE
-:Version: Revision $Rev$ ($LastChangeDatei$)
+:Version: $LastChangeDate$
 
 :Dedication: For users, administrators and developpers.
 
@@ -1939,3 +1939,4 @@ can use the oarsub_ option "stagein" to migrate your data.
 
 .. include:: ../../CHANGELOG
 
+$Id$
