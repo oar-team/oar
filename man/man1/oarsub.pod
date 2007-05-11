@@ -57,9 +57,9 @@ Request that the job starts at a specified time. A job creation using this optio
 Enable the checkpointing mechanism for the job.
 A signal will be sent DELAY seconds before the walltime to the first processus of the job (on the first node of the resources).
 
-=item B<--signal> <SIG>
+=item B<--signal> <#SIG>
 
-Specify the signal to use when checkpointing. Default is I<SIGUSR2>.
+Specify the signal to use when checkpointing. Use signal numbers (see kill -l), default is I<12> (SIGUSR2).
 
 =item B<-t, --type> <TYPE>
 

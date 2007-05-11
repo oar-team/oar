@@ -276,8 +276,8 @@ Options are:
      --checkpoint=<DELAY>      Enable the checkpointing for the job. A signal 
                                is sent DELAY seconds before the walltime on
                                the first processus of the job 
-     --signal=<SIG>            Specify the signal to use when checkpointing
-                               (default is SIGUSR2)
+     --signal=<#SIG>           Specify the signal to use when checkpointing
+                               Use signal numbers, default is 12 (SIGUSR2)
  -t, --type=<TYPE>             Specify a specific type (deploy, besteffort,
                                cosystem, checkpoint, timesharing)
  -d, --directory=<DIR>         Specify the directory where to launch the
