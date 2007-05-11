@@ -204,7 +204,7 @@ sub connect_db($$$$) {
         $Db_type = "mysql";
     }
 
-    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1});
+    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => 0});
     
     if (!defined($dbh)){
         oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
@@ -1016,7 +1016,13 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
             my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
-                warn("There are not enough resources for your request\n");
+                if ($DBI::errstr ne ""){
+                    my $tmp_err = $DBI::errstr;
+                    chop($tmp_err);
+                    warn("Bad resource request ($tmp_err)\n");
+                }else{
+                    warn("There are not enough resources for your request\n");
+                }
                 return(-5);
             }else{
                 my @leafs = oar_resource_tree::get_tree_leafs($tree);

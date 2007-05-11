@@ -115,7 +115,7 @@ sub init_tcp_server(){
     my $server = IO::Socket::INET->new( Type => SOCK_STREAM,
                                         Reuse => 1,
                                         Listen => 1
-                                      ) or die("/!\\ Cannot initialize a TCP socket server.");
+                                      ) or die("/!\\ Cannot initialize a TCP socket server.\n");
     my $server_port = $server->sockport();
 
     return($server,$server_port);
@@ -769,7 +769,7 @@ iolib::disconnect($base_ro);
 iolib::disconnect($base);
 
 if ($Job_id < 0){
-    warn("Error in oarsub, verify your syntax or call administrator\n");
+    warn("Oarsub failed: please verify your request syntax or ask for support to your admin.\n");
     exit(8);
 }
 
