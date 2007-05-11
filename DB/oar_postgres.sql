@@ -309,9 +309,9 @@ if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
 INSERT INTO admission_rules (rule) VALUES ('
 if (grep(/^deploy$/, @{$type_list})){
     if ($jobproperties ne ""){
-        $jobproperties = "($jobproperties) AND deploy = \\\'YES\\\'";
+        $jobproperties = "($jobproperties) AND deploy = \\\'YES\\\' AND suspended_jobs = \\\'NO\\\'";
     }else{
-        $jobproperties = "deploy = \\\'YES\\\'";
+        $jobproperties = "deploy = \\\'YES\\\' AND suspended_jobs = \\\'NO\\\'";
     }
     foreach my $mold (@{$ref_resource_list}){
         foreach my $r (@{$mold->[0]}){

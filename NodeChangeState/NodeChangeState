@@ -228,6 +228,7 @@ foreach my $i (@events_to_check){
                         }
                     }
                 }
+                oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
             }
             ######################
             # SUSPEND PART, END  #

@@ -1794,7 +1794,8 @@ sub get_job_suspended_sum_duration($$$){
                                 FROM job_state_logs
                                 WHERE
                                     job_id = $job_id AND
-                                    job_state = \'Suspended\'
+                                    (job_state = \'Suspended\' OR
+                                     job_state = \'Resuming\')
                             ");
     $sth->execute();
     my $sum = 0;
