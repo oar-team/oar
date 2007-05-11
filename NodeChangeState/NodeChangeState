@@ -45,6 +45,7 @@ foreach my $i (@events_to_check){
         my $job = iolib::get_job($base,$i->{job_id});
         if (($job->{reservation} eq "None") or ($job->{type} eq "RESERVATION_NO_NODE") or ($job->{assigned_moldable_job} == 0)){
             iolib::set_job_state($base,$i->{job_id},"Error");
+            iolib::log_job($base,$i->{job_id});
         }
     }
     
@@ -56,6 +57,7 @@ foreach my $i (@events_to_check){
         # The state is changed here to avoid to schedule other jobs
         # on nodes that will be Suspected
         iolib::set_job_state($base,$i->{job_id},"Error");
+        iolib::log_job($base,$i->{job_id});
     }
     
     #######################################
@@ -125,6 +127,7 @@ foreach my $i (@events_to_check){
         oar_warn("[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
         iolib::stop_all_queues($base);
         iolib::set_job_state($base,$i->{job_id},"Error");
+        iolib::log_job($base,$i->{job_id});
     }
 
     #####################################

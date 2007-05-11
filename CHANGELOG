@@ -5,6 +5,8 @@ upstream development version:
 -------------------------------
 
   - add "oarcp" command to help the users to copy files using oarsh.
+  - add sudo configuration to deal with bash. Now oarsub and oarsh have the same behaviour as ssh
+    (the bash configuration files are loaded correctly)
 
 version 2.0.2:
 --------------
