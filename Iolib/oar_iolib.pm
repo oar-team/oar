@@ -187,11 +187,17 @@ my $Max_db_connection_timeout = 10;
 # connect_db
 # Connects to database and returns the base identifier
 # return value : base
-sub connect_db($$$$) {
+sub connect_db($$$$$) {
     my $host = shift;
     my $name = shift;
     my $user = shift;
     my $pwd = shift;
+    my $debug_level = shift;
+
+    my $printerror = 0;
+    if (defined($debug_level) and ($debug_level >= 3)){
+        $printerror = 1;
+    }
 
     my $type;
     if ($Db_type eq "Pg"){
@@ -204,7 +210,7 @@ sub connect_db($$$$) {
         $Db_type = "mysql";
     }
 
-    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => 0});
+    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
     
     if (!defined($dbh)){
         oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
@@ -236,11 +242,13 @@ sub connect() {
         my $user = get_conf("DB_BASE_LOGIN");
         my $pwd = get_conf("DB_BASE_PASSWD");
         $Db_type = get_conf("DB_TYPE");
+        
+        my $log_level = get_conf("LOG_LEVEL");
 
         $Remote_host = get_conf("SERVER_HOSTNAME");
         $Remote_port = get_conf("SERVER_PORT");
 
-        $dbh = connect_db($host,$name,$user,$pwd);
+        $dbh = connect_db($host,$name,$user,$pwd,$log_level);
     }
     return($dbh);
 }
@@ -266,10 +274,12 @@ sub connect_ro() {
         $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
         $Db_type = get_conf("DB_TYPE");
         
+        my $log_level = get_conf("LOG_LEVEL");
+        
         $Remote_host = get_conf("SERVER_HOSTNAME");
         $Remote_port = get_conf("SERVER_PORT");
 
-        $dbh = connect_db($host,$name,$user,$pwd);
+        $dbh = connect_db($host,$name,$user,$pwd,$log_level);
     }
     return($dbh);
 }
