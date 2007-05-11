@@ -1731,7 +1731,7 @@ sub hold_job($$$) {
     $event_type = "HOLD_RUNNING_JOB" if (defined($waiting_and_running));
     if (defined($job)){
         if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
-            if ($job->{'state'} eq "Waiting"){
+            if (($job->{'state'} eq "Waiting") or ($job->{'state'} eq "Resuming")){
                 add_new_event($dbh, $event_type, $idJob, "User $lusr launched oarhold on the job $idJob");
                 return 0;
             }elsif((defined($waiting_and_running)) and (($job->{state} eq "toLaunch") or ($job->{state} eq "Launching") or ($job->{state} eq "Running"))){

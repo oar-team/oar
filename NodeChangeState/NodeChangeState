@@ -166,6 +166,9 @@ foreach my $i (@events_to_check){
                 my ($addr,$port) = split(/:/,$job->{info_type});
                 oar_Tools::notify_tcp_socket($addr,$port,"Start prediction: undefined (Hold)");
             }
+        }elsif ((($i->{type} eq "HOLD_WAITING_JOB") or ($i->{type} eq "HOLD_RUNNING_JOB")) and (($job->{state} eq "Resuming"))){
+            iolib::set_job_state($base,$job->{job_id},"Suspended");
+            oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
             # Launch suspend command on all nodes
 
