@@ -1746,7 +1746,9 @@ sub hold_job($$$) {
     my $event_type = "HOLD_WAITING_JOB";
     $event_type = "HOLD_RUNNING_JOB" if (defined($waiting_and_running));
     if (defined($job)){
-        if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
+        if (defined($waiting_and_running) and ($lusr ne "oar") and ($lusr ne "root")){
+            return(-4);
+        }elsif (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if (($job->{'state'} eq "Waiting") or ($job->{'state'} eq "Resuming")){
                 add_new_event($dbh, $event_type, $idJob, "User $lusr launched oarhold on the job $idJob");
                 return 0;
@@ -1785,7 +1787,9 @@ sub resume_job($$) {
     my $job = get_job($dbh, $idJob);
 
     if (defined($job)){
-        if (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
+        if (($job->{'state'} eq "Suspended") and ($lusr ne "oar") and ($lusr ne "root")){
+            return(-4);
+        }elsif (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if (($job->{'state'} eq "Hold") or ($job->{'state'} eq "Suspended")){
                 add_new_event($dbh, "RESUME_JOB", $idJob, "User $lusr launched oarresume on the job $idJob");
                 return(0);
@@ -1845,7 +1849,7 @@ sub get_jobs_on_resuming_job_resources($$){
                                     a1.moldable_job_id = j1.assigned_moldable_job AND
                                     a2.resource_id = a1.resource_id AND
                                     a2.moldable_job_id = j2.assigned_moldable_job AND
-                                    j2.job_id != $job_id
+                                    j2.state NOT IN (\'Suspended\',\'Resuming\')
                             ");
     $sth->execute();
     my @res;

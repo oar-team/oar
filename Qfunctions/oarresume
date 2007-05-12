@@ -84,6 +84,8 @@ foreach my $j (@job_ids){
             warn("$str you are not the right user.\n");
         }elsif ($err == -3){
             warn("$str the job is not in the Hold or Suspended state.\n");
+        }elsif ($err == -4){
+            warn("$str only oar or root user can resume Suspended jobs.\n");
         }else{
             warn("$str unknown reason.\n");
         }
