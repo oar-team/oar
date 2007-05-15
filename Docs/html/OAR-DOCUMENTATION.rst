@@ -697,6 +697,8 @@ The different event types are:
  - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
  - "RESERVATION_NO_NODE" : All nodes were detected as bad for the reservation
    job.
+ - "LOG_JOB" : When a job is completely finished then tell OAR to optimize the
+   database content.
 
 *event_log_hostnames*
 ~~~~~~~~~~~~~~~~~~~~~
@@ -843,6 +845,8 @@ state                 ENUM('Waiting','Hold',  job state
                       'toLaunch', 'toError',
                       'toAckReservation',
                       'Launching', 'Running'
+                      'Suspended',
+                      'Resuming',
                       , 'Finishing',
                       'Terminated', 'Error')
 reservation           ENUM('None',            specify if the job is a reservation
@@ -851,12 +855,12 @@ reservation           ENUM('None',            specify if the job is a reservatio
                       'None'
 message               VARCHAR(255)            readable information message for the
                                               user
-job_user              VARCHAR(20)             user name
+job_user              VARCHAR(255)             user name
 command               TEXT                    program to run
 queue_name            VARCHAR(100)            queue name
 properties            TEXT                    properties that assigned nodes must
                                               match
-launching_directory   VARCHAR(255)            path of the directory where to launch
+launching_directory   TEXT                    path of the directory where to launch
                                               the user process
 submission_time       INT UNSIGNED            date when the job was submitted
 start_time            INT UNSIGNED            date when the job was launched
@@ -906,6 +910,10 @@ Explications about the "state" field:
  - "Launching" : OAR has launched the job and will execute the user command
    on the first node.
  - "Running" : the user command is executing on the first node.
+ - "Suspended" : the job was in Running state and there was a request
+   (`oarhold`_ with "-r" option) to suspend this job. In this state other jobs
+   can be scheduled on the same resources (these resources has the
+   "suspended_jobs" field to "YES").
  - "Finishing" : the user command has terminated and OAR is doing work internally
  - "Terminated" : the job has terminated normally.
  - "Error" : a problem has occurred.

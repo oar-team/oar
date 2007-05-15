@@ -2399,7 +2399,9 @@ sub get_jobs_range_dates($$$){
                  jobs.stop_time >= $date_start OR
                  (   
                      jobs.stop_time = \'0\' AND
-                     jobs.state = \'Running\'
+                     (jobs.state = \'Running\' OR
+                      jobs.state = \'Suspended\' OR
+                      jobs.state = \'Resuming\')
                  )
              ) AND
              jobs.start_time < $date_end AND
