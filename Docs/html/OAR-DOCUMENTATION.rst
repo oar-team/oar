@@ -1265,7 +1265,8 @@ Each configuration tag found in /etc/oar.conf is now described:
       DETACH_JOB_FROM_SERVER=1
 
   - Specify the database field to use to fill the file on the first node of
-    the job in $OAR_NODE_FILE (default is 'network_address')::
+    the job in $OAR_NODE_FILE (default is 'network_address'). Only resources
+    with type=default are displayed in this file::
 
       NODE_FILE_DB_FIELD="network_address"
 

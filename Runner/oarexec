@@ -210,7 +210,7 @@ if (! open(FILE,">$Node_file")){
 #Feed the node file
 my @tmp_res;
 foreach my $r (@{$Job->{resources}}){
-    push(@tmp_res, $r->{$Job->{node_file_db_fiels}}) if ($r->{$Job->{node_file_db_fiels}} ne ""); 
+    push(@tmp_res, $r->{$Job->{node_file_db_fields}}) if (($r->{$Job->{node_file_db_fields}} ne "") and ($r->{type} eq "default")); 
 }
 foreach my $f (sort(@tmp_res)){
     print(FILE "$f\n") or exit(5);
