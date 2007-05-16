@@ -258,6 +258,8 @@ def get_history(dbh,date_start,date_stop)
 		if ((job_gantt[job_id] == nil) || (job_gantt[job_id]['queue_name'] == "besteffort"))
     	if ((jobs_history[job_id]['state'] == "Running") ||
 					(jobs_history[job_id]['state'] == "toLaunch") ||
+					(jobs_history[job_id]['state'] == "Suspended") ||
+					(jobs_history[job_id]['state'] == "Resuming") ||
 					(jobs_history[job_id]['state'] == "Launching"))
 				if (jobs_history[job_id]['queue_name'] == "besteffort")
         	jobs_history[job_id]['qstop_time'] = get_gantt_visu_date(dbh);
