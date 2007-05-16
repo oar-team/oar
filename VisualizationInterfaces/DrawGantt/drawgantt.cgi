@@ -139,12 +139,14 @@ def get_jobs_range_dates(dbh,date_begin,date_end)
                  jobs.stop_time >= #{date_begin} OR
                  (   
                      jobs.stop_time = '0' AND
-                     jobs.state = 'Running'
+                     (jobs.state = 'Running' OR
+                      jobs.state = 'Suspended' OR
+                      jobs.state = 'Resuming')
                  )
              ) AND
              jobs.start_time < #{date_end} AND
              jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-             moldable_job_descriptions.moldable_job_id = jobs.assigned_moldable_job AND
+             moldable_job_descriptions.moldable_job_id = jobs.job_id AND
              resources.resource_id = assigned_resources.resource_id
          ORDER BY jobs.job_id"
 
