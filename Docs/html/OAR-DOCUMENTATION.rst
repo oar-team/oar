@@ -947,7 +947,7 @@ This table is feeded by `oarsub`_ command with the "-a" option.
 =================  ====================  =======================================
 Fields             Types                 Descriptions
 =================  ====================  =======================================
-moldable_id        INT UNSIGNED          job identifier
+moldable_id        INT UNSIGNED          moldable job identifier
 moldable_job_id    INT UNSIGNED          corresponding job identifier
 moldable_walltime  INT UNSIGNED          instance duration
 =================  ====================  =======================================
@@ -1010,6 +1010,9 @@ job_state          ENUM('Waiting',       job state during the interval
                    'toAckReservation',
                    'Launching',
                    'Finishing',
+                   'Running',
+                   'Suspended',
+                   'Resuming',
                    'Terminated',
                    'Error')
 date_start         INT UNSIGNED          start date of the interval
@@ -1608,7 +1611,7 @@ Some parameters can be changed directly in the file::
     ##########################
     # Avoid problems if there are too many waiting jobs
     my $Karma_max_number_of_jobs_treated = 1000;
-    # number of seconds to consider for the timesharing
+    # number of seconds to consider for the fairsharing
     my $Karma_window_size = 3600 * 30;
     # specify the target percentages for project names (0 if not specified)
     my $Karma_project_targets = {
