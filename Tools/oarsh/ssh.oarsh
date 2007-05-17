@@ -15,4 +15,4 @@
 REGEX='s/^\([^[:space:]]\+[[:space:]]\+\)-l[[:space:]]\+[^[:space:]]\+[[:space:]]/\1/'
 
 ARGS=$(echo "$@" | sed "$REGEX")
-exec oarsh "$ARGS"
+exec oarsh $ARGS
