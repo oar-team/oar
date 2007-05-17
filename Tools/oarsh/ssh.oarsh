@@ -5,8 +5,8 @@
 # Basically, it is needed because oarsh conficts with ssh -l option.
 # This conflict occurs for instance when using Mpich 1 with oarsh. 
 #
-# To use Mpich 1 with oarsh, one can make a symlink to this file named ssh and
-# stored somewhere in one's execution PATH.
+# To use Mpich 1 with oarsh, one can make a symlink or a copy of this file 
+# named ssh and stored somewhere in one's execution PATH.
 # Ex: ln -s /usr/lib/oar/ssh.oarsh ~/bin/ssh
 ###############################################################################
 
