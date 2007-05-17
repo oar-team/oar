@@ -2893,19 +2893,16 @@ sub get_current_assigned_job_resources($$){
 
 # get_specific_resource_states
 # returns a hashtable with each given resources and their states
-# parameters : base, resource_id
+# parameters : base, resource type
 sub get_specific_resource_states($$){
     my $dbh = shift;
-    my $resources = shift;
+    my $type = shift;
 
     my %result;
-    if (!defined($resources) or ($#{@{$resources}} < 0)){
-        return(\%result);
-    }
     my $sth = $dbh->prepare("   SELECT resource_id, state
                                 FROM resources
                                 WHERE
-                                    resource_id IN (".join(",",@{$resources}).")
+                                    type = \'$type\'
                             ");
     $sth->execute();
     while (my @ref = $sth->fetchrow_array()){
@@ -3529,6 +3526,12 @@ sub get_cpuset_values_for_a_moldable_job($$$){
     my $cpuset_field = shift;
     my $mjob_id = shift;
 
+    my $sql_where_string = "\'0\'";
+    my $resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
+    if (defined($resources_to_always_add_type) and ($resources_to_always_add_type ne "")){
+        $sql_where_string = "resources.type = \'$resources_to_always_add_type\'";
+    }
+    
     my $sth = $dbh->prepare("   SELECT resources.network_address, resources.$cpuset_field
                                 FROM resources, assigned_resources
                                 WHERE
@@ -3536,7 +3539,7 @@ sub get_cpuset_values_for_a_moldable_job($$$){
                                     assigned_resources.resource_id = resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     (resources.type = \'default\' OR
-                                     resources.type = \'frontale\')
+                                     $sql_where_string)
                                 GROUP BY resources.network_address, resources.$cpuset_field
                             ");
     $sth->execute();

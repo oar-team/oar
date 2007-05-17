@@ -1400,14 +1400,14 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       SCHEDULER_RESOURCE_ORDER="switch ASC, network_address DESC, resource_id ASC"
 
-.. _SCHEDULER_RESOURCES_ALWAYS_ASSIGNED:
+.. _SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE:
 
-  - You can specify resources (resource_id) that will be always assigned for
-    each job (for exemple: enable all jobs to be able to log on the cluster
+  - You can specify resources from a resource type that will be always assigned for
+    each job (for example: enable all jobs to be able to log on the cluster
     frontales).
     For more information, see the FAQ_::
 
-      SCHEDULER_RESOURCES_ALWAYS_ASSIGNED="42 54 12 34"
+      SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE="42 54 12 34"
 
   - This says to the scheduler to treate resources of these types, where there is
     a suspended job, like free ones. So some other jobs can be scheduled on these
