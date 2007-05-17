@@ -86,7 +86,7 @@ dbinit:
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
 	rm $(OARDIR)/sudowrapper.sh
 
-sudowrapper:
+sudowrapper: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
@@ -99,6 +99,8 @@ sudowrapper:
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	install -m 0755 Tools/oarsh/oarcp $(BINDIR)
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(BINDIR)/oarcp
+	install -d -m 0755 $(MANDIR)/man1
+	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
 	
 common:
 	install -d -m 0755 $(OARDIR)
@@ -206,8 +208,6 @@ user: man
 	install -m 0644 man/man1/oarstat.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarsub.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarhold.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1
-	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
 
 node: man
 	install -d -m 0755 $(OARDIR)
@@ -220,9 +220,6 @@ node: man
 	@if [ -f $(OARHOMEDIR)/oar_epilogue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/oar_prologue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/lock_user.sh ]; then echo "Warning: $(OARHOMEDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARHOMEDIR) ; fi
-	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1
-	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )

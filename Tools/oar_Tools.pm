@@ -735,6 +735,7 @@ sub manage_remote_commands($$$$$$$){
                     print("[TAKTUK OUTPUT] $_");
                 }
             }
+            close(READ);
             alarm(0);
         };
         @bad = keys(%tmp_node_hash);
