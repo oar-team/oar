@@ -3535,7 +3535,8 @@ sub get_cpuset_values_for_a_moldable_job($$$){
                                     assigned_resources.moldable_job_id = $mjob_id AND
                                     assigned_resources.resource_id = resources.resource_id AND
                                     resources.network_address != \'\' AND
-                                    resources.type = \'default\'
+                                    (resources.type = \'default\' OR
+                                     resources.type = \'frontale\')
                                 GROUP BY resources.network_address, resources.$cpuset_field
                             ");
     $sth->execute();
