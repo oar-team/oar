@@ -2891,6 +2891,32 @@ sub get_current_assigned_job_resources($$){
 }
 
 
+# get_specific_resource_states
+# returns a hashtable with each given resources and their states
+# parameters : base, resource_id
+sub get_specific_resource_states($$){
+    my $dbh = shift;
+    my $resources = shift;
+
+    my %result;
+    if (!defined($resources) or ($#{@{$resources}} < 0)){
+        return(\%result);
+    }
+    my $sth = $dbh->prepare("   SELECT resource_id, state
+                                FROM resources
+                                WHERE
+                                    resource_id IN (".join(",",@{$resources}).")
+                            ");
+    $sth->execute();
+    while (my @ref = $sth->fetchrow_array()){
+        push(@{$result{$ref[1]}}, $ref[0]);
+    }
+    $sth->finish();
+
+    return(\%result);
+}
+
+
 # get_current_free_resources_of_node
 # return an array of free resources for the specified network_address
 sub get_current_free_resources_of_node($$){

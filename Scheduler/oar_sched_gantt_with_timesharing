@@ -46,6 +46,9 @@ if (!defined($sched_available_suspended_resource_type_tmp)){
     @Sched_available_suspended_resource_type = split(" ",$sched_available_suspended_resource_type_tmp);
 }
 
+# Look at resources that we must add for each job
+my @Resources_to_always_add = split(" ",get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED"));
+
 my $current_time ;
 
 my $queue;
@@ -62,6 +65,21 @@ my $base = iolib::connect();
 my $base_ro = iolib::connect_ro();
 
 oar_debug("[oar_sched_gantt_with_timesharing] Begining of Gantt scheduler on queue $queue at time $current_time\n");
+
+# First check states of resources that we must add for each job
+my $tmp_result_state_resources = iolib::get_specific_resource_states($base,\@Resources_to_always_add);
+if ($#{@{$tmp_result_state_resources->{"Suspected"}}} >= 0){
+    oar_warn("[oar_sched_gantt_with_timesharing] There are resources that are specified in oar.conf (SCHEDULER_RESOURCES_ALWAYS_ASSIGNED) which are Suspected. So I cannot schedule any job now.\n");
+    exit(1);
+}else{
+    if (defined($tmp_result_state_resources->{"Alive"})){
+        @Resources_to_always_add = @{$tmp_result_state_resources->{"Alive"}};
+        oar_debug("[oar_sched_gantt_with_timesharing] Assign these resources for each jobs: @Resources_to_always_add\n");
+    }else{
+        @Resources_to_always_add = ();
+    }
+}
+
 
 my $timesharing_gantts;
 # Create the Gantt Diagrams
@@ -327,6 +345,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         
         #update database
+        push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
     }else{
         my $message = "Cannot find enough resources which fite for the job $j->{job_id}";

@@ -233,6 +233,31 @@ So when you will use oarsub_ to submit on the queue "cluster2" only resources
 with the property "cluster=2" is used. This is the same when you will use the
 "cluster1" queue.
 
+How to enable jobs to connect to the frontales from the nodes using oarsh?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+First you have to register the frontales into the database using
+oarnodesetting_ without the "default" type and assigned the desired cpus into
+the cpuset field, for example::
+
+    oarnodesetting -a -h frontal1 -p type=frontale -p cpuset=0
+    oarnodesetting -a -h frontal1 -p type=frontale -p cpuset=1
+    oarnodesetting -a -h frontal2 -p type=frontale -p cpuset=0
+    ...
+
+Thus you will be able to see resources identifier of these resources with
+oarnodes_; try to type::
+
+    oarnodes --sql "type='frontale'"
+    
+Then put these "resource_id" into the *oar.conf* file on the OAR server into
+the tag SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_ separated with spaces.
+
+Notes:
+ - if one of these resources become "Suspected" then the scheduling will
+   stop.
+ - you can disable this feature with oarnodesetting_ and put these resources
+   into the "Absent" state.
+
 A job remains in the "Finishing" state, what can I do?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you have waited more than a couple of minutes (3mn for example) then
