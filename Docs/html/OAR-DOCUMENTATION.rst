@@ -1274,28 +1274,28 @@ Each configuration tag found in /etc/oar.conf is now described:
     To enhance this diagnostic you can specify one of these other methods (
     give the complete command path):
 
-      * OAR sentinelle::
+      * OAR taktuk::
       
-          SENTINELLE_COMMAND="/usr/bin/sentinelle -cconnect=ssh,timeout=3000"
+          PINGCHECKER_TAKTUK_ARG_COMMAND="-t 3 broadcast exec [ true ]"
 
         If you use sentinelle.pl then you must use this tag::
 
-          SENTINELLE_SCRIPT_COMMAND="/var/lib/oar/sentinelle.pl -t 5 -w 20"
+          PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/var/lib/oar/sentinelle.pl -t 5 -w 20"
 
       * OAR fping::
       
-          FPING_COMMAND="/usr/bin/fping -q"
+          PINGCHECKER_FPING_COMMAND="/usr/bin/fping -q"
 
       * OAR nmap : it will test to connect on the ssh port (22)::
       
-          NMAP_COMMAND="/usr/bin/nmap -p 22 -n -T5"
+          PINGCHECKER_NMAP_COMMAND="/usr/bin/nmap -p 22 -n -T5"
 
       * OAR generic : a specific script may be used instead of ping to check
         aliveness of nodes. The script must return bad nodes on STDERR (1 line
         for a bad node and it must have exactly the same name that OAR has
         given in argument of the command)::
 
-          GENERIC_COMMAND="/path/to/command arg1 arg2"
+          PINGCHECKER_GENERIC_COMMAND="/path/to/command arg1 arg2"
 
   - OAR log level: 3(debug+warnings+errors), 2(warnings+errors), 1(errors)::
       
