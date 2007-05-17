@@ -235,7 +235,10 @@ with the property "cluster=2" is used. This is the same when you will use the
 
 How to enable jobs to connect to the frontales from the nodes using oarsh?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-First you have to register the frontales into the database using
+First you have to install the node part of OAR on the wanted nodes.
+
+
+After that you have to register the frontales into the database using
 oarnodesetting_ with the "frontale" (for example) type and assigned the desired
 cpus into the cpuset field; for example::
 

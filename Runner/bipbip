@@ -174,7 +174,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     #####################
     # CPUSET PART, END  #
     #####################
-    if (($#bad < 0) and (!defined($cpuset_nodes))){
+    #if (($#bad < 0) and (!defined($cpuset_nodes))){
+    if ($#bad < 0){
         # CHECK nodes
         oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
         $event_type = "PING_CHECKER_NODE_SUSPECTED";
