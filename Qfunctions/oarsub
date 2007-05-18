@@ -742,7 +742,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_priv_key,$job_pub_key);
 }
-print("OAR_JOB_ID=$Job_id \n");
+print("OAR_JOB_ID=$Job_id\n");
 
 if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
     print("\n##########\n");
