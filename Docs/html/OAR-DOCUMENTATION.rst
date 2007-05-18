@@ -1230,6 +1230,19 @@ Each configuration tag found in /etc/oar.conf is now described:
       
       DB_BASE_PASSWD=oar
 
+.. _DB_BASE_LOGIN_RO:
+
+  - DataBase read only user name::
+      
+      DB_BASE_LOGIN_RO=oar_ro
+
+.. _DB_BASE_PASSWD_RO:
+
+  - DataBase read only user password::
+      
+      DB_BASE_PASSWD_RO=oar_ro
+
+
   - OAR server hostname::
       
       SERVER_HOSTNAME=localhost

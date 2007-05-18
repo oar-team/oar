@@ -171,6 +171,7 @@ Here is an example to perform all the potgres database install(there is certainl
 
 For more informations about postgresql, go to http://www.postgresql.org/.
 
+**Security issue**: For security reasons it is hardly **recommended** to configure a read only account for the OAR database (like the above example). Thus you will be able to add this data in DB_BASE_LOGIN_RO_ and DB_BASE_PASSWD_RO_ in *oar.conf*. 
 
 Note: The same machine may host several or even all modules.
 
