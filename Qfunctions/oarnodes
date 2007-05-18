@@ -316,7 +316,7 @@ if (defined($stateMode)){
                         my $str = "properties = ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
                             if ($prop eq "cpuset") { $cpuset=$data_to_display{$aa}->{$bb}->{$cc}->{$prop};}
-                            $pass = 1 if (($prop eq "type") and ($data_to_display{$aa}->{$bb}->{$cc}->{$prop} eq "frontale"));
+                            $pass = 1 if (($prop eq "type") and ($data_to_display{$aa}->{$bb}->{$cc}->{$prop} eq "frontal"));
                             if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
                                 $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
                             }else{

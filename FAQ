@@ -239,20 +239,20 @@ First you have to install the node part of OAR on the wanted nodes.
 
 
 After that you have to register the frontales into the database using
-oarnodesetting_ with the "frontale" (for example) type and assigned the desired
+oarnodesetting_ with the "frontal" (for example) type and assigned the desired
 cpus into the cpuset field; for example::
 
-    oarnodesetting -a -h frontal1 -p type=frontale -p cpuset=0
-    oarnodesetting -a -h frontal1 -p type=frontale -p cpuset=1
-    oarnodesetting -a -h frontal2 -p type=frontale -p cpuset=0
+    oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=0
+    oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=1
+    oarnodesetting -a -h frontal2 -p type=frontal -p cpuset=0
     ...
 
 Thus you will be able to see resources identifier of these resources with
 oarnodes_; try to type::
 
-    oarnodes --sql "type='frontale'"
+    oarnodes --sql "type='frontal'"
     
-Then put this type name (here "frontale") into the *oar.conf* file on the OAR
+Then put this type name (here "frontal") into the *oar.conf* file on the OAR
 server into the tag SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE_.
 
 Notes:
