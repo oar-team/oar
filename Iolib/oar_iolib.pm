@@ -593,7 +593,8 @@ sub get_job_network_address($$) {
                              FROM assigned_resources, resources
                              WHERE 
                                 assigned_resources.moldable_job_id = $jobid AND
-                                resources.resource_id = assigned_resources.resource_id
+                                resources.resource_id = assigned_resources.resource_id AND
+                                resources.type = \'default\'
                              ORDER BY resources.network_address ASC");
     $sth->execute();
     my @res = ();

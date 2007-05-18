@@ -19,6 +19,10 @@ if (!defined($sched_available_suspended_resource_type_tmp)){
     @Sched_available_suspended_resource_type = split(" ",$sched_available_suspended_resource_type_tmp);
 }
 
+# Look at resources that we must add for each job
+my $Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
+my @Resources_to_always_add = ();
+
 #minimum of seconds between each jobs
 my $Security_time_overhead = 1;
 
@@ -52,6 +56,15 @@ sub init_scheduler($$$$$$){
     my $hole_time = shift;
     my $order_part = shift;
     my $resa_admin_waiting_timeout = shift;
+
+    # First get resources that we must add for each reservation jobs
+    if (defined($Resources_to_always_add_type)){
+        my $tmp_result_state_resources = iolib::get_specific_resource_states($dbh,$Resources_to_always_add_type);
+        if (defined($tmp_result_state_resources->{"Alive"})){
+            @Resources_to_always_add = @{$tmp_result_state_resources->{"Alive"}};
+            oar_debug("[oar_scheduler] Resources that we must add for each reservations: @Resources_to_always_add\n");
+        }
+    }
 
     $Reservation_waiting_timeout = $resa_admin_waiting_timeout if (defined($resa_admin_waiting_timeout));
     
@@ -229,6 +242,7 @@ sub init_scheduler($$$$$$){
                                       $vec
                                  );
             # Update database
+            push(@resources, @Resources_to_always_add);
             iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
         }
     }
@@ -428,6 +442,7 @@ sub check_reservation_jobs($$$$){
                                           $vec
                                        );
                 # Update database
+                push(@resources, @Resources_to_always_add);
                 iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
                 iolib::set_job_state($dbh, $job->{job_id}, "toAckReservation");
             }else{           
