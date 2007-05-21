@@ -111,7 +111,9 @@ main(int ac, char **av)
 		} else
 			host = *av;
 		if (ac > 1) {
-			optind = optreset = 1;
+			/* removing optreset which is not GNU getopt but BSD getopt. */
+			/* optind = optreset = 1; */
+			optind = 1;
 			goto again;
 		}
 		ac--, av++;
