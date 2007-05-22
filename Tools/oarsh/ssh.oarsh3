@@ -50,9 +50,9 @@ parse_opts() {
 dump() {
 	echo $SSHGETOPTS_OPTCOUNT
 	for ((i=0;i<$SSHGETOPTS_OPTCOUNT;i++)); do
-		echo "SSHGETOPTS_OPT[$i]"=${SSHGETOPTS_OPT[$i]}
+		echo "SSHGETOPTS_OPT[$i]="${SSHGETOPTS_OPT[$i]}
 	done
-	echo "SSHGETOPTS_OPTCOUNT"=$SSHGETOPTS_OPTCOUNT
+	echo "SSHGETOPTS_OPTCOUNT="$SSHGETOPTS_OPTCOUNT
 	echo "SSHGETOPTS_HOST="$SSHGETOPTS_HOST
 	echo "SSHGETOPTS_USER="$SSHGETOPTS_USER
 	echo "SSHGETOPTS_COMMAND="$SSHGETOPTS_COMMAND
@@ -109,7 +109,9 @@ parse_opts $@
 shift $((OPTIND-1))
 SSHGETOPTS_COMMAND="$@"
 
+# check if SSH or OARSH must be called depending on the host
 if check_host; then
+	# Remove the -l option
 	fix_opts
 	# Run OARSH with neither the -l option nor any username@ 
 	exec $OARSH_CMD $OPTS $SSHGETOPTS_HOST "$SSHGETOPTS_COMMAND"
