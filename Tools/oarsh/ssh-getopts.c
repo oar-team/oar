@@ -5,28 +5,14 @@
 /*
  * $Id$
  * This is a program to parse the option passed to openssh ssh command.
- * This is a barely stipped version of file ssh.c from source tree of openssh.
+ * This is a barely stripped version of file ssh.c from source tree of openssh.
  */
-
-/*
- * Name of the host we are connecting to.  This is the name given on the
- * command line, or the HostName specified for the user-supplied name in a
- * configuration file.
- */
-char *host;
 
 static void
-usage(void)
+error(int errno)
 {
-	fprintf(stderr,
-"usage: ssh [-1246AaCfgkMNnqsTtVvXxY] [-b bind_address] [-c cipher_spec]\n"
-"           [-D [bind_address:]port] [-e escape_char] [-F configfile]\n"
-"           [-i identity_file] [-L [bind_address:]port:host:hostport]\n"
-"           [-l login_name] [-m mac_spec] [-O ctl_cmd] [-o option] [-p port]\n"
-"           [-R [bind_address:]port:host:hostport] [-S ctl_path]\n"
-"           [-w local_tun[:remote_tun]] [user@]hostname [command]\n"
-	);
-	exit(255);
+	printf("SSHGETOPTS_ERROR=%i\n",errno);
+	exit(errno);
 }
 
 /*
@@ -35,6 +21,8 @@ usage(void)
 int
 main(int ac, char **av)
 {
+	char *host;
+	char *user;
 	int i, opt;
 	char *p, *cp;
 	extern int optind;
@@ -42,6 +30,7 @@ main(int ac, char **av)
 
 	/* Parse command-line arguments. */
 	host = NULL;
+	user = NULL;
 
 	i=0;
  again:
@@ -71,7 +60,7 @@ main(int ac, char **av)
 		case 'T':
 		case 'N':
 		case 'C':
-			printf("OPT[%i]=-%c\n", i++, opt);
+			printf("SSHGETOPTS_OPT[%i]=\"-%c\"\n", i++, opt);
 			break;
 		case 'O':
 		case 'i':
@@ -89,10 +78,10 @@ main(int ac, char **av)
 		case 'S':
 		case 'b':
 		case 'F':
-			printf("OPT[%i]=-%c %s\n", i++, opt, optarg);
+			printf("SSHGETOPTS_OPT[%i]=\"-%c %s\"\n", i++, opt, optarg);
 			break;
 		default:
-			usage();
+			error(255);
 		}
 	}
 
@@ -104,9 +93,9 @@ main(int ac, char **av)
 			p = strdup(*av);
 			cp = strrchr(p, '@');
 			if (cp == NULL || cp == p)
-				usage();
+				error(255);
 			*cp = '\0';
-			printf("USER=%s\n", p);
+			user = p;
 			host = ++cp;
 		} else
 			host = *av;
@@ -121,11 +110,15 @@ main(int ac, char **av)
 
 	/* Check that we got a host name. */
 	if (!host)
-		usage();
+		error(255);
 
-	printf("HOST=%s\n", host);
-
-	printf("COMMAND=");
+	printf("SSHGETOPTS_OPTLAST=%i\n", i-1);
+	if (user)
+		printf("SSHGETOPTS_USER=\"%s\"\n", p);
+	else
+		printf("SSHGETOPTS_USER=\"\"\n");
+	printf("SSHGETOPTS_HOST=\"%s\"\n", host);
+	printf("SSHGETOPTS_COMMAND=\"");
 	/* Is a command specified ? */
 	if (ac) {
 		for (i = 0; i < ac; i++) {
@@ -134,7 +127,8 @@ main(int ac, char **av)
 			printf("%s",av[i]);
 		}
 	}
-	printf("\n");
+	printf("\"\n");
+	printf("SSHGETOPTS_ERROR=0\n");
 
 	return 0;
 }
