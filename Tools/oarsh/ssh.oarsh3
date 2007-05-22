@@ -22,7 +22,6 @@ OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
 # Pathnames to commands
 OARSH_CMD=/usr/bin/oarsh
 SSH_CMD=/usr/bin/ssh
-SSHGETOPTS_CMD=/usr/lib/oar/ssh-getopts
 
 # unset bash glob expension 
 set -f
@@ -46,7 +45,7 @@ parse_opts() {
 	done
 }
 
-# Dump parsed information
+# Debug function: dump parsed information
 dump() {
 	echo $SSHGETOPTS_OPTCOUNT
 	for ((i=0;i<$SSHGETOPTS_OPTCOUNT;i++)); do
