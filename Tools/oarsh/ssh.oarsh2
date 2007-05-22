@@ -1,19 +1,19 @@
 #!/bin/bash
 # $Id$
 ###############################################################################
-# This script is a example of wrapper that can be used to masquerade the oarsh 
+# This script is an example of wrapper that can be used to masquerade the oarsh 
 # command as the ssh command for tools that do not allow to change the 
 # connector using an option, an environment variable or a configuration.
-# The Basic usage is to make a symlink or a copy of this file named "ssh" and
+# The basic usage is to make a symlink or a copy of this file named "ssh" and
 # stored somewhere in your execution PATH.
 # Ex: ln -s /usr/lib/oar/ssh.oarsh ~/bin/ssh
 #
 # Mechanism:
-# First it allows to define hosts to connect using OARSH or using the real SSH.
-# REGEX lists of hostnames can be set in the ~/.oarsh-hosts-include and 
-# ~/.oarsh-hosts-exclude files to specify that.
-# Then, it allows to avoid OARSH confict with ssh -l option, which occurs for
-# instance when using Mpich 1 if not build using the rshnol option. 
+# First it allows to define which hosts to connect using OARSH or using the 
+# real SSH. REGEX lists of hostnames can be set in the ~/.oarsh-hosts-include
+# and ~/.oarsh-hosts-exclude files to specify that.
+# Then, it allows to avoid OARSH confict with SSH "-l" option, which occurs for
+# instance when using Mpich 1 if not built using the "-rshnol" option. 
 ###############################################################################
 
 # OARSH and SSH hosts REGEXs
