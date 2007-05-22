@@ -22,17 +22,16 @@ OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
 # Pathname to commands
 OARSH_CMD=/usr/bin/oarsh
 SSH_CMD=/usr/bin/ssh
-SSHGETOPTS_CMD=ssh-getopts
+SSHGETOPTS_CMD=./ssh-getopts
 
 # Check whether SSH or OARSH must be run depending on the hostname.
 # First check if host is in the include list, if yes run OARSH.
 # Else check if host is in the exclude list, if yes run SSH.
 # Else run OARSH.
 check_host() {
-	set -f
 	if [ -n "$SSHGETOPTS_ERROR" -a $SSHGETOPTS_ERROR -eq 0 -a -n "$SSHGETOPTS_HOST" ]; then
 		if [ -r $OARSH_HOSTS_INCLUDE_FILE ]; then
-			for h in "$(< $OARSH_HOSTS_INCLUDE_FILE)"; do
+			for h in $(< $OARSH_HOSTS_INCLUDE_FILE); do
 				if [[ $SSHGETOPTS_HOST =~ $h ]]; then
 					return 0
 				fi
@@ -59,6 +58,8 @@ fix_opts() {
 	done
 }
 
+# Main program
+set -f
 # Parse SSH args
 eval $($SSHGETOPTS_CMD "$@" 2> /dev/null)
 if check_host; then
