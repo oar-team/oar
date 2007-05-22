@@ -1,6 +1,8 @@
 #!/bin/bash
 # $Id$
 OARSHCMD=/usr/bin/oarsh
+SCPCMD=/usr/bin/scp
 
 unset DISPLAY
-exec scp -S $OARSHCMD $@
+exec $SCPCMD -S $OARSHCMD "$@"
+
