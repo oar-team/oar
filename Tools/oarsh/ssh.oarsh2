@@ -19,10 +19,13 @@
 # OARSH and SSH hosts REGEXs
 OARSH_HOSTS_INCLUDE_FILE=~/.oarsh-hosts-include
 OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
-# Pathname to commands
+# Pathnames to commands
 OARSH_CMD=/usr/bin/oarsh
 SSH_CMD=/usr/bin/ssh
-SSHGETOPTS_CMD=./ssh-getopts
+SSHGETOPTS_CMD=/usr/lib/oar/ssh-getopts
+
+# unset bash glob expension 
+set -f
 
 # Check whether SSH or OARSH must be run depending on the hostname.
 # First check if host is in the include list, if yes run OARSH.
@@ -39,7 +42,6 @@ check_host() {
 		fi
 		if [ -r $OARSH_HOSTS_EXCLUDE_FILE ]; then
 			for h in $(< $OARSH_HOSTS_EXCLUDE_FILE); do
-				echo $h
 				if [[ $SSHGETOPTS_HOST =~ $h ]]; then
 					return 1
 				fi
@@ -59,13 +61,13 @@ fix_opts() {
 }
 
 # Main program
-set -f
+
 # Parse SSH args
 eval $($SSHGETOPTS_CMD "$@" 2> /dev/null)
 if check_host; then
 	fix_opts
 	# Run OARSH with neither the -l option nor any username@ 
-	exec $OARSH_CMD"$OPTS" "$SSHGETOPTS_HOST" "$SSHGETOPTS_COMMAND"
+	exec $OARSH_CMD $OPTS $SSHGETOPTS_HOST "$SSHGETOPTS_COMMAND"
 else
 	exec $SSH_CMD "$@"
 fi
