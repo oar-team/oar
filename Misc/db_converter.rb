@@ -19,8 +19,7 @@
 # requirements:
 # 	ruby1.8 (or greater)
 # 	libdbi-ruby
-# 	libdbd-mysql-ruby or libdbd-pg-ruby
-# 	libyaml-ruby
+# 	libdbd-mysql-ruby
 
 #####################################################
 #
@@ -48,7 +47,8 @@ $res_id = 1 #intial index for resource_id
 
 $job_id_offset = 0 #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one
 
-$scale_weight = 1 #mandatory if maxweight (in oar 1.6) is not equal to nb_core * nb_cpu 
+$scale_weight = 1 #mandatory if maxweight (in oar 1.6) is not equal to nb_core * nb_cpu
+									#$scale_weight = (nb_core * nb_cpu) / maxweight
 
 $empty = false #if true flush modified oar.v2 tables before convertion    
 #$empty = true	 # MUST BE SET TO false (for development/testing purpose)
@@ -278,15 +278,17 @@ end
 
 def insert_job2(dbh,job,res_conv, assigned_resources)
 
+	job_id2 = job['idJob'].to_i + $job_id_offset
+
 	begin
-			dbh.do("INSERT INTO `moldable_job_descriptions` ( `moldable_id` , `moldable_job_id` , `moldable_walltime` , `moldable_index` ) VALUES ( '#{job['idJob']}', '#{job['idJob']}', '#{hmstos(job['maxTime'])}', 'LOG')")
+			dbh.do("INSERT INTO `moldable_job_descriptions` ( `moldable_id` , `moldable_job_id` , `moldable_walltime` , `moldable_index` ) VALUES ( '#{job_id2}', '#{job_id2}', '#{hmstos(job['maxTime'])}', 'LOG')")
 	rescue
 		puts "Failed to insert moldable job descriptions: " + $!
 		exit
 	end
 
 	begin
-		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order` , `res_job_index` ) VALUES ('#{job['idJob']}', 'resource_id', '', '#{job['nbNodes'].to_i*$scale_weight*job['weight'].to_i}', 'LOG')")
+		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order` , `res_job_index` ) VALUES ('#{job_id2}', 'resource_id', '', '#{job['nbNodes'].to_i*$scale_weight*job['weight'].to_i}', 'LOG')")
 
 	rescue
 		puts "Failed to insert job resource descriptions: " + $!
@@ -294,7 +296,7 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 	end
 
 	begin
-		dbh.do("INSERT INTO `job_resource_groups` ( `res_group_id` , `res_group_moldable_id` , `res_group_property` , `res_group_index` ) VALUES (?, ?, ?, ?)", job['idJob'], job['idJob'] , "type = 'default" ,'LOG')
+		dbh.do("INSERT INTO `job_resource_groups` ( `res_group_id` , `res_group_moldable_id` , `res_group_property` , `res_group_index` ) VALUES (?, ?, ?, ?)", job_id2, job_id2 , "type = 'default" ,'LOG')
 	rescue
 		puts "Failed to insert job resource groups: " + $!
 		exit
@@ -303,8 +305,6 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 	message = ""
 	start_time = 0
 	stop_time = 0
-
-	job_id2 = job['idJob'].to_i + $job_id_offset
 
 	begin
 		message =  job['message'] if job['message'].class != NilClass
