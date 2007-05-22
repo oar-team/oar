@@ -37,7 +37,7 @@ RANGE_SEC = {'1/6 day'=>14400,'1/2 day'=>43200,'1 day'=>86400,'3 days'=>259200,
 RANGE_STEP = {'1/6 day'=>3600,'1/2 day'=>10800,'1 day'=>43200,'3 days'=>86400,
 		'week'=>345600,'month'=>604800}
 
-#$verbose = false
+$verbose = false
 
 $val = "" # variable for debug purpose
  
@@ -293,8 +293,70 @@ $points_per_cpu = $conf['points_per_cpu']
 $xratio = $conf['xratio']
 $nb_cont_res = $conf['nb_cont_res']
 
+$prop_hierarchy = $conf['prop_hierarchy']
+
+$x_per_prop = 10
+
+$map_prop_hierarchy = [] 
+$sorted_resources = []
+
+
 def draw_string(img,x,y,label)
 	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
+end
+
+
+def draw_resource_hierarchy(img)
+	deltay = ($sizey-(2*$offsetgridy))/$sorted_resources.length.to_f
+	
+	x0 = $x_per_prop * $prop_hierarchy.length + 2
+
+	x1 = -x0 + $left_offsetgridx
+	x2 = x1 + $x_per_prop * $prop_hierarchy.length
+	y = $sizey - $offsetgridy
+
+	img.filledRectangle(x1,$offsetgridy, x2, y, $orange)
+
+	img.line(x1, y, x2, y,  $gridcolor)
+
+	(0..$prop_hierarchy.length ).each do |i|
+		x =  -x0 + $left_offsetgridx + $x_per_prop * i
+		img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor)
+	end
+
+	$prop_hierarchy.each_with_index do |prop,p_index|
+
+		prev_r_index = -1
+
+		$sorted_resources.each_with_index do |resource, r_index|
+			label = $resources[resource][$resource_properties_fields.index(prop)]
+			if (r_index+1 < $sorted_resources.length)
+				next_label = $resources[$sorted_resources[r_index+1]][$resource_properties_fields.index(prop)]
+			else 
+				next_label = nil
+			end				
+
+			if (label != next_label) 
+				x1 = -x0 + $left_offsetgridx + $x_per_prop * p_index
+				y1 = $offsetgridy + deltay * (prev_r_index +1 )
+				x2 = x1 + $x_per_prop
+				y2 = $offsetgridy + deltay * (r_index + 1)
+
+ 				img.line(x1, y1, x2, y1, $gridcolor);   
+#				img.filledRectangle(x1, y1, x2, y2, $color_gray[( ( (3 * r_index) % 15) + 16 * p_index) % 31 ])
+
+				str_resource = ""
+				0.upto(p_index-1) {|i| str_resource << ($resources[resource][$resource_properties_fields.index($prop_hierarchy[i])]).to_s+"/" } 
+				str_resource << label.to_s
+
+				$map_prop_hierarchy << [x1, y1, x2, y2, str_resource]
+				
+				prev_r_index = r_index
+			end
+
+		end
+	end
+
 end
 
 def draw_grid(img,resource_labels,origin,origin_label,range)
@@ -365,12 +427,16 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 	resource_labels.each do |label|
 		if ((i % $conf['tics_node'].to_i)==0) 
 			y = $offsetgridy + i * deltay
-			draw_string(img, $left_offsetgridx / 2, y + (deltay / 2), label)
+			draw_string(img, $left_offsetgridx / 2, y , label)
 			img.line($left_offsetgridx - 1 , y, $sizex - $right_offsetgridx, y, $gridcolor)
 		end
 		i = i + 1
 	end
   img.line($left_offsetgridx - 1, $sizey - $offsetgridy, $sizex - $right_offsetgridx, $sizey - $offsetgridy, $gridcolor)
+
+
+  draw_resource_hierarchy(img)
+
 end
 
 def draw_nowline(img,origin,range,color)
@@ -386,12 +452,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 	dbh = base_connect
 	#resources, jobs, dead_resources = get_history(dbh,1155041223,1155047311)
-	resources, jobs, dead_resources = get_history(dbh,origin,origin+RANGE_SEC[range])
+	$resources, jobs, dead_resources = get_history(dbh,origin,origin+RANGE_SEC[range])
 	dbh.disconnect
 
 	p jobs if $verbose
 
-	$sizey =  resources.length * $points_per_cpu + 2 * $offsetgridy ;
+	$sizey =  $resources.length * $points_per_cpu + 2 * $offsetgridy ;
 
 	img = GD::Image.new($sizex ,$sizey )
 
@@ -404,10 +470,11 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	black = img.colorAllocate(0,0,0)       
 	red = img.colorAllocate(255,0,0)      
 	blue = img.colorAllocate(0,0,255)
+	$orange = img.colorAllocate(0xFF,0x99,0x33)
 
-	color=[]
-	color[0] = white
-	(1..155).each {|i| color[i] = img.colorAllocate((i%9) * 25, i ,(50 * i) % 255 )} 
+	$color=[]
+	$color[0] = white
+	(1..155).each {|i| $color[i] = img.colorAllocate((i%9) * 25, i ,(50 * i) % 255 )} 
 
 	# make the background transparent and interlaced
 	#img.transparent(white)
@@ -415,7 +482,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 	#sort resources
 	typed_resources = {}
-	resources.each do |r_id,r|
+	$resources.each do |r_id,r|
 		typed_resources[r[1]]= Hash.new() if (typed_resources[r[1]]==nil)
 		typed_resources[r[1]][r_id] = r
 	end
@@ -425,14 +492,13 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	# resources sorting and labelling
 	#
 
-	sorted_resources = []
 	resource_labels = []
 
 	# get conf values for sorting and labelling
 	sort_label_conf = $conf["sort_label_conf"]
 
 	# get ressource propertie field from db
-	resource_properties_fields = list_resource_properties_fields(base_connect)
+	$resource_properties_fields = list_resource_properties_fields(base_connect)
 
 	sort_label_conf.each do |sort_label_cf|
 		
@@ -448,8 +514,8 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		second_sorting_order = sort_label_cf["second_sorting_order"]
 		second_sorting_regex = Regexp.new(sort_label_cf["second_sorting_regex"])
 
-  	first_field_index = resource_properties_fields.index(first_field_property)
-		second_field_index = resource_properties_fields.index(second_field_property)
+  	first_field_index = $resource_properties_fields.index(first_field_property)
+		second_field_index = $resource_properties_fields.index(second_field_property)
 
 		# group resources by first label
 		first_label_groups={}
@@ -459,10 +525,10 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 				#puts label
 				if first_label_groups[label] == nil  
 					first_label_groups[label] = Hash.new()
-					key = resources[res_id][second_field_index].to_s
+					key = $resources[res_id][second_field_index].to_s
 					first_label_groups[label][key]  = res_id
 				else
-		 			key = resources[res_id][second_field_index].to_s
+		 			key = $resources[res_id][second_field_index].to_s
 					first_label_groups[label][key]  = res_id
 				end
 			end
@@ -488,11 +554,11 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 			second_label_sorted = []
 			if (second_sorting_order == "string")
-				second_label_sorted = first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_s}
+				second_label_sorted = first_label_groups[first_label].keys.sort_by {|label| label =~ second_sorting_regex; $1.to_s}
 			elsif (second_sorting_order == "numerical") #numerical sorting order
-				second_label_sorted	= first_label_groups[first_label].keys.sort_by {|label| label =~ second_displaying_regex; $1.to_i}
+				second_label_sorted	= first_label_groups[first_label].keys.sort_by {|label| label =~ second_sorting_regex; $1.to_i}
 			else #natural sorting order
-				second_label_sorted	= first_label_groups[first_label].keys.sort_by(&String.natural_order(second_displaying_regex))
+				second_label_sorted	= first_label_groups[first_label].keys.sort_by(&String.natural_order(second_sorting_regex))
 			end
 
 			second_label_sorted.each do |label|
@@ -500,14 +566,14 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			end
 		end
 
-		sorted_resources = sorted_resources + sorted_typed_resources 
+		$sorted_resources = $sorted_resources + sorted_typed_resources 
  	#puts "sorted_resources"
-	#p sorted_resources
+	#p $sorted_resources
 
 		# resources labelling
 
 		sorted_typed_resources.each do |r|
-			resources[r][first_field_index] =~ first_displaying_regex
+			$resources[r][first_field_index] =~ first_displaying_regex
 
 			displayed_label = $1					
 			displayed_label = "" if ($1==nil)
@@ -517,7 +583,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			end
 
 			if (second_field_index != nil)
-				resources[r][second_field_index].to_s =~ second_displaying_regex
+				$resources[r][second_field_index].to_s =~ second_displaying_regex
 				displayed_label = displayed_label + $1
 			end
 		
@@ -526,7 +592,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	end
 	#p resource_labels
 
-	deltay = ($sizey-(2*$offsetgridy))/sorted_resources.length.to_f 
+	deltay = ($sizey-(2*$offsetgridy))/$sorted_resources.length.to_f 
 	
 	origin_label = ""
 	if ( (range == '3 days') || (range == 'week'))
@@ -556,9 +622,9 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 		ares_index = []
 		j['resources'].each do |r|
-			r_index = sorted_resources.index(r)
+			r_index = $sorted_resources.index(r)
 			ares_index << r_index
-			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), color[(job_id.to_i % 154) + 1])
+			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), $color[(job_id.to_i % 154) + 1])
 #			yop = "*#{start_x} #{$offsetgridy + deltay * r_index} #{stop_x} #{$offsetgridy + deltay * (r_index+1)}*"
 		end
 
@@ -605,7 +671,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	    start_x = start_x + $left_offsetgridx
   	  stop_x = stop_x + $left_offsetgridx
 
-			r_index = sorted_resources.index(resource)
+			r_index = $sorted_resources.index(resource)
 			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), red)
 
 		end
@@ -638,7 +704,15 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 					 "<br>End: #{Time.at(j['stop_time'].to_i).strftime("%a %b %e %H:%M %Y")}" +
 					 '\')" >'
 	end
-	
+
+	$map_prop_hierarchy.each do |info|
+		f_map.puts '<area shape="rect" coords="' + 
+					 "#{info[0]},#{info[1]},#{info[2]},#{info[3]}" + 
+					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
+					 "#{info[4]}" +
+					 '\')" >'
+	end
+
 	f_map.puts '</map>'
 	f_map.close
 
