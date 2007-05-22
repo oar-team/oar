@@ -1,0 +1,70 @@
+#!/bin/bash
+# $Id$
+###############################################################################
+# This script is a example of wrapper that can be used to masquerade the oarsh 
+# command as the ssh command for tools that do not allow to change the 
+# connector using an option, an environment variable or a configuration.
+# The Basic usage is to make a symlink or a copy of this file named "ssh" and
+# stored somewhere in your execution PATH.
+# Ex: ln -s /usr/lib/oar/ssh.oarsh ~/bin/ssh
+#
+# Mechanism:
+# First it allows to define hosts to connect using OARSH or using the real SSH.
+# REGEX lists of hostnames can be set in the ~/.oarsh-hosts-include and 
+# ~/.oarsh-hosts-exclude files to specify that.
+# Then, it allows to avoid OARSH confict with ssh -l option, which occurs for
+# instance when using Mpich 1 if not build using the rshnol option. 
+###############################################################################
+
+# OARSH and SSH hosts REGEXs
+OARSH_HOSTS_INCLUDE_FILE=~/.oarsh-hosts-include
+OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
+# Pathname to commands
+OARSH_CMD=/usr/bin/oarsh
+SSH_CMD=/usr/bin/ssh
+SSHGETOPTS_CMD=ssh-getopts
+
+# Check whether SSH or OARSH must be run depending on the hostname.
+# First check if host is in the include list, if yes run OARSH.
+# Else check if host is in the exclude list, if yes run SSH.
+# Else run OARSH.
+check_host() {
+	set -f
+	if [ -n "$SSHGETOPTS_ERROR" -a $SSHGETOPTS_ERROR -eq 0 -a -n "$SSHGETOPTS_HOST" ]; then
+		if [ -r $OARSH_HOSTS_INCLUDE_FILE ]; then
+			for h in "$(< $OARSH_HOSTS_INCLUDE_FILE)"; do
+				if [[ $SSHGETOPTS_HOST =~ $h ]]; then
+					return 0
+				fi
+			done
+		fi
+		if [ -r $OARSH_HOSTS_EXCLUDE_FILE ]; then
+			for h in $(< $OARSH_HOSTS_EXCLUDE_FILE); do
+				echo $h
+				if [[ $SSHGETOPTS_HOST =~ $h ]]; then
+					return 1
+				fi
+			done
+		fi
+		return 0
+	fi
+	return 1
+}
+
+# Remove the -l ssh option for calls of OARSH.
+fix_opts() {
+	OPTS=
+	for i in `seq 0 $SSHGETOPTS_OPTLAST`; do
+		[[ ${SSHGETOPTS_OPT[$i]} =~ "^-l" ]] || OPTS="$OPTS ${SSHGETOPTS_OPT[$i]}"
+	done
+}
+
+# Parse SSH args
+eval $($SSHGETOPTS_CMD "$@" 2> /dev/null)
+if check_host; then
+	fix_opts
+	# Run OARSH with neither the -l option nor any username@ 
+	exec $OARSH_CMD"$OPTS" "$SSHGETOPTS_HOST" "$SSHGETOPTS_COMMAND"
+else
+	exec $SSH_CMD "$@"
+fi
