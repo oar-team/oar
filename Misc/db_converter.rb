@@ -37,18 +37,21 @@ $host_2 = 'localhost'
 $login_2 = 'root'
 $passwd_2 = ''
 
+
 $cluster = "" #cluster propertie (cluster field in resource table) 
 
 $nb_cpu = 2   #number of cpu by node
 $nb_core = 1  #number of core by cpu
-$cpu = 1  #initial index for cpu field
-$core = 1 #initial index for core field
-$res_id = 1 #intial index for resource_id
 
-$job_id_offset = 0 #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one
+##############################################################################################
 
-$scale_weight = 1 #mandatory if maxweight (in oar 1.6) is not equal to nb_core * nb_cpu
-									#$scale_weight = (nb_core * nb_cpu) / maxweight
+$scaling_weight_factor = nil #$scaling_weight_factor equal to (nb_core * nb_cpu) / maxweight
+
+$res_id = nil #intial index for resource_id
+$cpu = nil  #initial index for cpu field
+$core = nil #initial index for core field
+
+$job_id_offset = nil #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one 
 
 $empty = false #if true flush modified oar.v2 tables before convertion    
 #$empty = true	 # MUST BE SET TO false (for development/testing purpose)
@@ -144,6 +147,14 @@ def list_resources1(dbh)
 	return dbh.select_all(q)
 end
 
+def determine_scaling_weight_factor(dbh)
+	if ($scaling_weight_factor.nil?)
+		q = "SELECT MAX(maxWeight) FROM `nodes`"
+		$scaling_weight_factor = ($nb_core * $nb_cpu) / dbh.select_all(q).first.first.to_i
+	end
+	puts "scaling_weight_factor = #{$scaling_weight_factor}"
+end
+
 def get_all_job_id1(dbh)
 	q = "SELECT idJob FROM jobs"
 	res = dbh.execute(q)
@@ -230,12 +241,31 @@ end
 def insert_resources2(dbh,resources)
 
 	puts "Insert resources"
+
+	if ($res_id.nil?)
+		q = "SELECT MAX(resource_id) FROM `resources`"
+		max_resource_id= dbh.select_all(q).first.first.to_i
+
+		if (max_resource_id == 0)
+			$res_id = 1
+			$core = 1
+			$cpu = 1
+		  
+		else
+			q = "SELECT `cpu`, `core`  FROM `resources` WHERE resource_id=#{max_resource_id}"
+			cpu, core = dbh.select_all(q).first
+			$res_id = max_resource_id + 1
+			$core = core + 1
+			$cpu = cpu + 1
+		end
+	end
+
 	r_id = $res_id
 	resources_conv = {}
 	resources.each do |res|
 		resources_conv[res['hostname']] = r_id
 		i = 0
-		$nb_cpu.times do |cp|
+		$nb_cpu.times do |cp| 
 			$nb_core.times do |co|
 				begin
 					dbh.do("INSERT INTO `resources` ( `resource_id` , `network_address` , `cluster`, `cpu` , `core` , `cpuset`) 
@@ -275,6 +305,13 @@ VALUES ('#{res_conv[node].to_i+i}','state','#{res_log['changeState']}', '#{to_un
 	end
 end
 
+def determine_job_id_offset(dbh)
+	if ($job_id_offset.nil?)
+		q = "SELECT MAX(job_id) FROM `jobs`"
+		$job_id_offset = dbh.select_all(q).first.first.to_i
+	end
+	puts "job_id_offset = #{$job_id_offset}"
+end
 
 def insert_job2(dbh,job,res_conv, assigned_resources)
 
@@ -288,7 +325,7 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 	end
 
 	begin
-		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order` , `res_job_index` ) VALUES ('#{job_id2}', 'resource_id', '', '#{job['nbNodes'].to_i*$scale_weight*job['weight'].to_i}', 'LOG')")
+		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order` , `res_job_index` ) VALUES ('#{job_id2}', 'resource_id', '', '#{job['nbNodes'].to_i*$scaling_weight_factor*job['weight'].to_i}', 'LOG')")
 
 	rescue
 		puts "Failed to insert job resource descriptions: " + $!
@@ -337,7 +374,7 @@ job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reser
 	#insert assigned resources
 	
 	assigned_resources.each do |node|
-		($scale_weight*job['weight'].to_i).times do |i|
+		($scaling_weight_factor*job['weight'].to_i).times do |i|
 			begin
 				dbh.do("INSERT INTO `assigned_resources` ( `moldable_job_id` , `resource_id` , `assigned_resource_index` )
 VALUES ('#{job_id2}', '#{res_conv[node].to_i+i}', 'LOG')")
@@ -460,12 +497,16 @@ resources = list_resources1(dbh1)
 #	puts "node information: hostname: #{res['hostname']} maxWeight: #{res['maxWeight']}"
 #end
 
+determine_scaling_weight_factor(dbh1)
+
 # Add core and cluster fields
 add_core_cluster_fields2(dbh2)
 
 # Insert resources
 res_conv2 = insert_resources2(dbh2,resources)
 #insert_resource_logs2(dbh2,get_resources_log1(dbh1),res_conv2)
+
+determine_job_id_offset(dbh2)
 
 #get_all_job_id1
 all_job_id1 = get_all_job_id1(dbh1)
