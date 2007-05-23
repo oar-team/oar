@@ -19,8 +19,7 @@
 # OARSH and SSH hosts REGEXs
 OARSH_HOSTS_INCLUDE_FILE=~/.oarsh-hosts-include
 OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
-# Pathnames to commands
-OARSH_CMD=/usr/bin/oarsh
+OARSH_CMD=oarsh
 SSH_CMD=/usr/bin/ssh
 
 # unset bash glob expension 
