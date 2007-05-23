@@ -48,14 +48,15 @@ parse_opts() {
 # Parse the SSH command args
 # Syntax is `ssh [opts] [user@]<host> [opts] [command]'
 parse_args() {
+	unset SSHARGS_OPT
 	SSHARGS_ERROR=0
 	SSHARGS_OPTCOUNT=0
 	parse_opts $@
 	shift $((OPTIND-1))
-	SSHARGS_HOST="${1/*@/}"
+	SSHARGS_HOST="${1/#*@/}"
 	[ -n "$SSHARGS_HOST" ] || SSHARGS_ERROR=255
-	SSHARGS_USER="${1/$SSHARGS_HOST/}"
-	SSHARGS_USER="${SSHARGS_USER/@/}"
+	SSHARGS_USER="${1/%$SSHARGS_HOST/}"
+	SSHARGS_USER="${SSHARGS_USER/%@/}"
 	shift 1
 	parse_opts $@
 	shift $((OPTIND-1))
@@ -110,7 +111,7 @@ fix_opts() {
 
 # Main program
 
-# parse_args (the $@ var of the main program stays unchanged)
+# Parse args (the $@ var of the main program stays unchanged)
 parse_args $@
 # check if SSH or OARSH must be called depending on the host
 if check_host; then
