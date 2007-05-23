@@ -26,36 +26,53 @@ SSH_CMD=/usr/bin/ssh
 # unset bash glob expension 
 set -f
 
-# Parse SSH options (must be called twice, see below)
+# Parse SSH options (must be called twice, see below parse_args)
 # Be carefull: watch openssh ssh.c source file for new options...
 parse_opts() {
 	OPTIND=
 	while getopts "1246ab:c:e:fgi:kl:m:no:p:qstvxACD:F:I:L:MNO:PR:S:TVw:XY" OPT; do
 		case $OPT in
 			1 | 2 | 4 | 6 | n | f | x | X | Y | g | P | a | A | k | t | v | V | q | M | s | T | N | C )
-				SSHGETOPTS_OPT[$((SSHGETOPTS_OPTCOUNT++))]="-$OPT"
+				SSHARGS_OPT[$((SSHARGS_OPTCOUNT++))]="-$OPT"
 				;;
 			O | i | I | w | e | c | m | p | l | L | R | D | o | S | b | F )
-				SSHGETOPTS_OPT[$((SSHGETOPTS_OPTCOUNT++))]="-$OPT $OPTARG"
+				SSHARGS_OPT[$((SSHARGS_OPTCOUNT++))]="-$OPT $OPTARG"
 				;;
 			* ) 
-				SSHGETOPTS_ERROR=255
+				SSHARGS_ERROR=255
 				;;
 		esac
 	done
 }
 
+# Parse the SSH command args
+# Syntax is `ssh [opts] [user@]<host> [opts] [command]'
+parse_args() {
+	SSHARGS_ERROR=0
+	SSHARGS_OPTCOUNT=0
+	parse_opts $@
+	shift $((OPTIND-1))
+	SSHARGS_HOST="${1/*@/}"
+	[ -n "$SSHARGS_HOST" ] || SSHARGS_ERROR=255
+	SSHARGS_USER="${1/$SSHARGS_HOST/}"
+	SSHARGS_USER="${SSHARGS_USER/@/}"
+	shift 1
+	parse_opts $@
+	shift $((OPTIND-1))
+	SSHARGS_COMMAND="$@"
+}
+
 # Debug function: dump parsed information
 dump() {
-	echo $SSHGETOPTS_OPTCOUNT
-	for ((i=0;i<$SSHGETOPTS_OPTCOUNT;i++)); do
-		echo "SSHGETOPTS_OPT[$i]="${SSHGETOPTS_OPT[$i]}
+	echo $SSHARGS_OPTCOUNT
+	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
+		echo "SSHARGS_OPT[$i]="${SSHARGS_OPT[$i]}
 	done
-	echo "SSHGETOPTS_OPTCOUNT="$SSHGETOPTS_OPTCOUNT
-	echo "SSHGETOPTS_HOST="$SSHGETOPTS_HOST
-	echo "SSHGETOPTS_USER="$SSHGETOPTS_USER
-	echo "SSHGETOPTS_COMMAND="$SSHGETOPTS_COMMAND
-	echo "SSHGETOPTS_ERROR="$SSHGETOPTS_ERROR
+	echo "SSHARGS_OPTCOUNT="$SSHARGS_OPTCOUNT
+	echo "SSHARGS_HOST="$SSHARGS_HOST
+	echo "SSHARGS_USER="$SSHARGS_USER
+	echo "SSHARGS_COMMAND="$SSHARGS_COMMAND
+	echo "SSHARGS_ERROR="$SSHARGS_ERROR
 }
 
 # Check whether SSH or OARSH must be run depending on the hostname.
@@ -63,17 +80,17 @@ dump() {
 # Else check if host is in the exclude list, if yes run SSH.
 # Else run OARSH.
 check_host() {
-	if [ -n "$SSHGETOPTS_ERROR" -a $SSHGETOPTS_ERROR -eq 0 -a -n "$SSHGETOPTS_HOST" ]; then
+	if [ -n "$SSHARGS_ERROR" -a $SSHARGS_ERROR -eq 0 -a -n "$SSHARGS_HOST" ]; then
 		if [ -r $OARSH_HOSTS_INCLUDE_FILE ]; then
 			for h in $(< $OARSH_HOSTS_INCLUDE_FILE); do
-				if [[ $SSHGETOPTS_HOST =~ $h ]]; then
+				if [[ $SSHARGS_HOST =~ $h ]]; then
 					return 0
 				fi
 			done
 		fi
 		if [ -r $OARSH_HOSTS_EXCLUDE_FILE ]; then
 			for h in $(< $OARSH_HOSTS_EXCLUDE_FILE); do
-				if [[ $SSHGETOPTS_HOST =~ $h ]]; then
+				if [[ $SSHARGS_HOST =~ $h ]]; then
 					return 1
 				fi
 			done
@@ -86,34 +103,21 @@ check_host() {
 # Remove the -l ssh option for calls of OARSH.
 fix_opts() {
 	OPTS=
-	for ((i=0;i<$SSHGETOPTS_OPTCOUNT;i++)); do
-		[[ ${SSHGETOPTS_OPT[$i]} =~ "^-l" ]] || OPTS="$OPTS ${SSHGETOPTS_OPT[$i]}"
+	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
+		[[ ${SSHARGS_OPT[$i]} =~ "^-l" ]] || OPTS="$OPTS ${SSHARGS_OPT[$i]}"
 	done
 }
 
 # Main program
 
-# Parse ARGS (syntax is `ssh [opts] [user@]<host> [opts] [command]')
-ARGS="$@"
-SSHGETOPTS_ERROR=0
-SSHGETOPTS_OPTCOUNT=0
-parse_opts $@
-shift $((OPTIND-1))
-SSHGETOPTS_HOST="${1/*@/}"
-[ -n "$SSHGETOPTS_HOST" ] || SSHGETOPTS_ERROR=255
-SSHGETOPTS_USER="${1/$SSHGETOPTS_HOST/}"
-SSHGETOPTS_USER="${SSHGETOPTS_USER/@/}"
-shift 1
-parse_opts $@
-shift $((OPTIND-1))
-SSHGETOPTS_COMMAND="$@"
-
+# parse_args (the $@ var of the main program stays unchanged)
+parse_args $@
 # check if SSH or OARSH must be called depending on the host
 if check_host; then
 	# Remove the -l option
 	fix_opts
 	# Run OARSH with neither the -l option nor any username@ 
-	exec $OARSH_CMD $OPTS $SSHGETOPTS_HOST "$SSHGETOPTS_COMMAND"
+	exec $OARSH_CMD $OPTS $SSHARGS_HOST "$SSHARGS_COMMAND"
 else
-	exec $SSH_CMD "$ARGS"
+	exec $SSH_CMD "$@"
 fi
