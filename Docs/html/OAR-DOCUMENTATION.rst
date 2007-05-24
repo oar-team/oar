@@ -1277,6 +1277,12 @@ Each configuration tag found in /etc/oar.conf is now described:
       
       DETACH_JOB_FROM_SERVER=1
 
+  - Set the directory where OAR will store its temporary files on each nodes
+    of the cluster. This value MUST be the same in all oar.conf on
+    all nodes::
+
+      OAR_RUNTIME_DIRECTORY="/tmp/oar_runtime"
+
   - Specify the database field to use to fill the file on the first node of
     the job in $OAR_NODE_FILE (default is 'network_address'). Only resources
     with type=default are displayed in this file::
