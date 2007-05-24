@@ -56,6 +56,10 @@ if (!defined($Detach_oarexec)){
     $Detach_oarexec = 0;
 }
 
+if (is_conf("OAR_TMP_DIRECTORY")){
+    oar_Tools::set_default_oarexec_directory(get_conf("OAR_TMP_DIRECTORY"));
+}
+
 my $Server_prologue = get_conf("SERVER_PROLOGUE_EXEC_FILE");
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
@@ -332,6 +336,7 @@ my %data_to_transfer = (
         pro_epi_timeout	    => $pro_epi_timeout,
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
+        tmp_directory       => oar_Tools::get_default_oarexec_directory,
         detach_oarexec      => $Detach_oarexec
     );
 

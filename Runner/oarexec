@@ -53,7 +53,7 @@ my $Blockset = POSIX::SigSet->new(SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIGUSR2, SI
 sigprocmask(SIG_BLOCK, $Blockset, $sigset);
 
 my $Bin_Path = $ENV{OARDIR}."/";
-my $Tmp_file_prefix = oar_Tools::get_default_oarexec_directory();
+my $Tmp_file_prefix;
 
 my $Debug_mode;
 my $Node_file;
@@ -194,6 +194,8 @@ my $host = hostname();
 
 print("[oarexec $Job_id] job id : $Job_id user : $Job->{user}; launchingDirectory : $Job->{launching_directory}\n");
 
+oar_Tools::set_default_oarexec_directory($Job->{tmp_directory});
+$Tmp_file_prefix = oar_Tools::get_default_oarexec_directory();
 # Test if OAR directory exists and is owned by oar or if we can create it
 if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_prefix)))){
     print("[oarexec $Job_id] Directory $Tmp_file_prefix does not exist and I cannot create it\n");

@@ -33,6 +33,7 @@ sub get_one_process_children($);
 sub notify_tcp_socket($$$);
 sub signal_oarexec($$$$$$);
 sub get_default_oarexec_directory();
+sub set_default_oarexec_directory($);
 sub get_default_openssh_cmd();
 sub get_oar_pid_file_name($);
 sub get_oarsub_connections_file_name($);
@@ -121,7 +122,7 @@ sub get_default_node_file_db_field(){
 sub get_private_ssh_key_file_name($){
     my $cpuset_name = shift;
 
-    return($Default_oarexec_directory.$cpuset_name.".sshkey");
+    return($Default_oarexec_directory.'/'.$cpuset_name.".sshkey");
 }
 
 # Add right environment variables to the given public key
@@ -206,6 +207,9 @@ sub get_default_oarexec_directory(){
     return($Default_oarexec_directory);
 }
 
+sub set_default_oarexec_directory($){
+    $Default_oarexec_directory = shift;
+}
 
 # Get the name of the file which contains the pid of oarexec
 # arg : job id

@@ -205,33 +205,32 @@ These are the steps to follow:
         oarnodesetting -h node2.cluster2.com -p cluster=2
         ...
 
- 3. create 2 new queues with oarnotify_::
-
-        oarnotify  --add_queue "cluster1,5"
-        oarnotify  --add_queue "cluster2,5"
-
- 4. Then you have to restrict properties for each queue. So an admission rule performs this job (this is a SQL syntax to use in a database interpreter)::
+ 3. Then you have to restrict properties for new job type.
+    So an admission rule performs this job (this is a SQL syntax to use in a database interpreter)::
 
         INSERT IGNORE INTO admission_rules (rule) VALUES ('
-        my $cluster_constraint = 0;
-        if ($queue_name eq "cluster1"){
-            $cluster_constraint = 1;
-        }elsif ($queue_name eq "cluster2"){
-            $cluster_constraint = 2;
-        }else{
-            die("[ADMISSION RULE] Error : you must use the queue cluster1 or the queue cluster2.\\n");
+            my $cluster_constraint = 0;
+            if (grep(/^cluster1$/, @{$type_list})){
+                $cluster_constraint = 1;
+            }elsif (grep(/^cluster2$/, @{$type_list})){    
+                $cluster_constraint = 2;
+            }
+        if ($cluster_constraint > 0){
+            if ($jobproperties ne ""){
+                $jobproperties = "($jobproperties) AND cluster = $cluster_constraint";
+            }else{
+                $jobproperties = "cluster = $cluster_constraint";
+            }
+            print("[ADMISSION RULE] Added automatically cluster resource constraint\\n");
         }
-        if ($jobproperties ne ""){
-            $jobproperties = "($jobproperties) AND cluster = $cluster_constraint";
-        }else{
-            $jobproperties = "cluster = $cluster_constraint";
-        }
-        print("[ADMISSION RULE] Added automatically cluster resource constraint\\n");
         ');
 
-So when you will use oarsub_ to submit on the queue "cluster2" only resources
+ 4. Edit the admission rule which checks the right job types and add
+    "cluster1" and "cluster2" in.
+
+So when you will use oarsub_ to submit a "cluster2" job type only resources
 with the property "cluster=2" is used. This is the same when you will use the
-"cluster1" queue.
+"cluster1" type.
 
 How to enable jobs to connect to the frontales from the nodes using oarsh?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

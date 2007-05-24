@@ -29,6 +29,11 @@ else
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=/bin/true"
 fi
 
+if [ -z "$OAR_TMP_DIRECTORY" ]
+then
+    OAR_TMP_DIRECTORY="/tmp/oar_runtime"
+fi
+
 # Get the name of the current cpuset #
 function get_current_cpuset() {
     CPUSETFILE=/proc/self/cpuset
@@ -82,7 +87,7 @@ if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
 then
     if [ -n "$OARSH_OARSTAT_CMD" ]
     then
-        # dirty check to insure that OAR_JOB_ID is an interger
+        # dirty check to insure that OAR_JOB_ID is an integer
         if [ $OAR_JOB_ID -gt 0 ] 2>/dev/null
         then
             OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
@@ -117,7 +122,7 @@ then
 fi
 
 # connection using the job key file stored by oar on nodes upon submission 
-OAR_JOB_KEY_FILE="/tmp/oar_runtime/$OAR_CPUSET.sshkey"
+OAR_JOB_KEY_FILE="$OAR_TMP_DIRECTORY/$OAR_CPUSET.sshkey"
 if [ -r $OAR_JOB_KEY_FILE ]
 then
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"
