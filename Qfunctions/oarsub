@@ -520,8 +520,8 @@ if (!defined($Cosystem_hostname)){
 
 $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
-if (is_conf("OAR_TMP_DIRECTORY")){
-    oar_Tools::set_default_oarexec_directory(get_conf("OAR_TMP_DIRECTORY"));
+if (is_conf("OAR_RUNTIME_DIRECTORY")){
+    oar_Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
 }
 
 my $binpath;

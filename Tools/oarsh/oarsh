@@ -29,9 +29,9 @@ else
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=/bin/true"
 fi
 
-if [ -z "$OAR_TMP_DIRECTORY" ]
+if [ -z "$OAR_RUNTIME_DIRECTORY" ]
 then
-    OAR_TMP_DIRECTORY="/tmp/oar_runtime"
+    OAR_RUNTIME_DIRECTORY="/tmp/oar_runtime"
 fi
 
 # Get the name of the current cpuset #
@@ -122,7 +122,7 @@ then
 fi
 
 # connection using the job key file stored by oar on nodes upon submission 
-OAR_JOB_KEY_FILE="$OAR_TMP_DIRECTORY/$OAR_CPUSET.sshkey"
+OAR_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OAR_CPUSET.sshkey"
 if [ -r $OAR_JOB_KEY_FILE ]
 then
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"
