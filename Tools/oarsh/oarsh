@@ -97,7 +97,7 @@ then
                 echo "[OARSH] So you are not on a computing node and the job $OAR_JOB_ID does not exist." 1>&2
                 exit 1
             else
-                echo $OAR_CPUSET | grep $SUDO_USER"_" &> /dev/null
+                echo $OAR_CPUSET | grep "^"$SUDO_USER"_" &> /dev/null
                 if [ $? -ne 0 ]
                 then
                     echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
