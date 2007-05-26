@@ -27,21 +27,42 @@
 #
 #####################################################
 
+#base source oar-1.6 
+#$oar_db_1 = 'oar-1-6-grillon-grelon'
 $oar_db_1 = 'oar-ita-1-6'
 $host_1 = 'localhost'
 $login_1 = 'root'
 $passwd_1 = ''
 
-$oar_db_2 = 'oar2test'
+#base source oar-2
+$oar_db_2 = 'oar-2-nancy'
 $host_2 = 'localhost'
 $login_2 = 'root'
 $passwd_2 = ''
 
 
-$cluster = "" #cluster propertie (cluster field in resource table) 
+###
+### NANCY
+###
+#$cluster = ['grillon','grelon'] #cluster propertie (cluster field in resource table) 
+#$cluster_size =[46,120]
 
-$nb_cpu = 2   #number of cpu by node
-$nb_core = 1  #number of core by cpu
+#$nb_cpu = [2,2]   #number of cpu by node
+#$nb_core = [1,2]  #number of core by cpu
+
+###
+### Grenoble/Icluster2
+###
+
+$cluster = ['icluster2'] 
+$cluster_size = nil
+
+$nb_cpu = [2]   #number of cpu by node
+$nb_core = [1]
+
+###
+### Others: ...
+###
 
 ##############################################################################################
 
@@ -55,6 +76,8 @@ $job_id_offset = nil #job_id_offset is add to oar_1.6's job_id to give oar_2's j
 
 $empty = false #if true flush modified oar.v2 tables before convertion    
 #$empty = true	 # MUST BE SET TO false (for development/testing purpose)
+
+$resource_cluster = {}
 
 #####################################################
 #
@@ -149,10 +172,14 @@ end
 
 def determine_scaling_weight_factor(dbh)
 	if ($scaling_weight_factor.nil?)
+		$scaling_weight_factor = []
 		q = "SELECT MAX(maxWeight) FROM `nodes`"
-		$scaling_weight_factor = ($nb_core * $nb_cpu) / dbh.select_all(q).first.first.to_i
+		max_w = dbh.select_all(q).first.first.to_i
+		$nb_core.length.times do |i|
+			$scaling_weight_factor[i] = ($nb_core[i] * $nb_cpu[i]) / max_w
+			puts "Cluster: #{$cluster[i]} scaling_weight_factor:#{$scaling_weight_factor[i]}  = cpu: #{$nb_cpu[i]} * core:#{$nb_core[i]}  maxWeight: #{max_w} "
+		end
 	end
-	puts "scaling_weight_factor = #{$scaling_weight_factor}"
 end
 
 def get_all_job_id1(dbh)
@@ -260,26 +287,41 @@ def insert_resources2(dbh,resources)
 		end
 	end
 
+	if ($cluster_size.nil?)
+	 $cluster_size=[resources.length]
+	end
+
 	r_id = $res_id
 	resources_conv = {}
-	resources.each do |res|
-		resources_conv[res['hostname']] = r_id
-		i = 0
-		$nb_cpu.times do |cp| 
-			$nb_core.times do |co|
-				begin
-					dbh.do("INSERT INTO `resources` ( `resource_id` , `network_address` , `cluster`, `cpu` , `core` , `cpuset`) 
-VALUES ('#{r_id}', '#{res['hostname']}', '#{$cluster}', '#{$cpu}','#{$core}','#{i}')")
-				rescue
-					puts "Unable to INSERT resource: " + $!
-					exit
+
+	resource_index_begin =0	
+
+	$cluster.each_with_index do |cluster,index_cluster|
+	
+		resources[resource_index_begin..(resource_index_begin + $cluster_size[index_cluster]-1) ].each do |res|
+
+			resources_conv[res['hostname']] = []
+			$resource_cluster[res['hostname']] = index_cluster 
+			i = 0
+			$nb_cpu[index_cluster].times do |cp| 
+				$nb_core[index_cluster].times do |co|
+					begin
+						dbh.do("INSERT INTO `resources` ( `resource_id` , `network_address` , `cluster`, `cpu` , `core` , `cpuset`) 
+VALUES ('#{r_id}', '#{res['hostname']}', '#{cluster}', '#{$cpu}','#{$core}','#{i}')")
+					rescue
+						puts "Unable to INSERT resource: " + $!
+						exit
+					end
+					resources_conv[res['hostname']] << r_id
+					$core += 1
+					i += 1
+					r_id += 1
 				end
-				$core += 1
-				i += 1
-				r_id += 1
+				$cpu += 1
 			end
-			$cpu += 1
 		end
+	resource_index_begin = resource_index_begin + 	 $cluster_size[index_cluster]
+
 	end
 	return resources_conv
 end
@@ -291,12 +333,12 @@ def insert_resource_logs2(dbh,resources_log1,res_conv)
 	resources_log1.each do |res_log|
 
 		node = res_log['hostname']
-		($nb_cpu*$nb_core).times do |i|
+		node.each do |res_id|
 			date_stop = "0"	
 			begin
 				date_stop = to_unix_time(res_log['dateStop']) if res_log['dateStop'].class != NilClass 
 				dbh.do("INSERT INTO `resource_logs` (`resource_id` , `attribute` , `value` , `date_start` , `date_stop` , `finaud_decision` )
-VALUES ('#{res_conv[node].to_i+i}','state','#{res_log['changeState']}', '#{to_unix_time(res_log['dateStart'])}', '#{date_stop}','#{res_log['finaudDecision']}')")
+VALUES ('#{res_id}','state','#{res_log['changeState']}', '#{to_unix_time(res_log['dateStart'])}', '#{date_stop}','#{res_log['finaudDecision']}')")
 			rescue
 				puts "Failed to insert resource logs: " + $!
 				exit
@@ -321,14 +363,6 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 			dbh.do("INSERT INTO `moldable_job_descriptions` ( `moldable_id` , `moldable_job_id` , `moldable_walltime` , `moldable_index` ) VALUES ( '#{job_id2}', '#{job_id2}', '#{hmstos(job['maxTime'])}', 'LOG')")
 	rescue
 		puts "Failed to insert moldable job descriptions: " + $!
-		exit
-	end
-
-	begin
-		dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order`, `res_job_index` ) VALUES ('#{job_id2}', 'core', '#{job['nbNodes'].to_i*$scaling_weight_factor*job['weight'].to_i}','0', 'LOG')")
-
-	rescue
-		puts "Failed to insert job resource descriptions: " + $!
 		exit
 	end
 
@@ -370,22 +404,37 @@ job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reser
 
 # job_state_logs
 
-
 	#insert assigned resources
-	
+	nb_res = 0	
 	assigned_resources.each do |node|
-		($scaling_weight_factor*job['weight'].to_i).times do |i|
-			begin
-				dbh.do("INSERT INTO `assigned_resources` ( `moldable_job_id` , `resource_id` , `assigned_resource_index` )
-VALUES ('#{job_id2}', '#{res_conv[node].to_i+i}', 'LOG')")
-			rescue
-				puts "Failed to insert assigned resources: " + $!
-				exit
+		
+		if ($resource_cluster[node].nil?)
+			puts "WARNING: node: #{node} is unkwon"
+		else
+
+	#	puts $scaling_weight_factor[$resource_cluster[node]],"node",node,$resource_cluster[node],"yop",job['weight']
+
+			($scaling_weight_factor[$resource_cluster[node]]*job['weight'].to_i).times do |i|
+				begin
+					dbh.do("INSERT INTO `assigned_resources` ( `moldable_job_id` , `resource_id` , `assigned_resource_index` ) VALUES ('#{job_id2}', '#{res_conv[node][i]}', 'LOG')")
+					nb_res = nb_res + 1	
+#puts "job_id: #{job_id2} res_id:#{res_conv[node][i]}  i:#{i}"
+
+				rescue
+					puts "Failed to insert assigned resources: " + $!
+					exit
+				end
 			end
 		end
 	end
-end
 
+  begin
+	dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order`, `res_job_index`) VALUES ('#{job_id2}', 'core', '#{nb_res}', '0', 'LOG')")
+	rescue
+		puts "Failed to insert job resource descriptions: " + $!
+		exit
+	end
+end
 
 def convert_job_state_logs(dbh1,dbh2)
 
@@ -450,8 +499,7 @@ def convert_event_log_hostnames(dbh1,dbh2)
 		begin
 			dbh2.do("INSERT INTO `event_log_hostnames` ( `event_id` , `hostname` ) VALUES ('#{row['idEvent']}','#{row['hostname']}')")
 		rescue
-			puts "Unable to INSERT  event log hostnames: " + $!
-			exit
+			puts "WARNING:Unable to INSERT  event log hostnames: " + $!
 		end
   end
   sth.finish
@@ -493,9 +541,6 @@ empty_db(dbh2,$oar_db_2) if $empty
 
 # Get resources
 resources = list_resources1(dbh1)
-#resources.each do |res|
-#	puts "node information: hostname: #{res['hostname']} maxWeight: #{res['maxWeight']}"
-#end
 
 determine_scaling_weight_factor(dbh1)
 
