@@ -27,25 +27,35 @@
 #
 #####################################################
 
-$oar_db_1 = 'oar-ita-1-6'
+$oar_db_1 = 'oar-1-6-grillon-grelon'
 $host_1 = 'localhost'
 $login_1 = 'root'
 $passwd_1 = ''
 
-$oar_db_2 = 'oar2test'
+$oar_db_2 = 'oar-2-nancy'
 $host_2 = 'localhost'
 $login_2 = 'root'
 $passwd_2 = ''
 
 
-$cluster = ['iclusters1','icluster2'] #cluster propertie (cluster field in resource table) 
-$cluster_size =[50,53]
-
+###
+### NANCY
+###
+$cluster = ['grillon','grelon'] #cluster propertie (cluster field in resource table) 
+$cluster_size =[46,120]
 
 $nb_cpu = [2,2]   #number of cpu by node
 $nb_core = [1,2]  #number of core by cpu
 
-$scaling_weight_factor = [2,4] #$scaling_weight_factor equal to (nb_core * nb_cpu) / maxweight
+$scaling_weight_factor = [1,2] #$scaling_weight_factor equal to (nb_core * nb_cpu) / maxweight
+
+###
+###
+###
+
+###
+###
+###
 
 $resource_cluster = {}
 
@@ -59,8 +69,8 @@ $core = nil #initial index for core field
 
 $job_id_offset = nil #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one 
 
-#$empty = false #if true flush modified oar.v2 tables before convertion    
-$empty = true	 # MUST BE SET TO false (for development/testing purpose)
+$empty = false #if true flush modified oar.v2 tables before convertion    
+#$empty = true	 # MUST BE SET TO false (for development/testing purpose)
 
 #####################################################
 #
@@ -386,7 +396,9 @@ job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reser
 		if ($resource_cluster[node].nil?)
 			puts "WARNING: node: #{node} is unkwon"
 		else
-#		puts $scaling_weight_factor,"node",node,$resource_cluster[node],"yop",job['weight']
+
+	#	puts $scaling_weight_factor[$resource_cluster[node]],"node",node,$resource_cluster[node],"yop",job['weight']
+
 			($scaling_weight_factor[$resource_cluster[node]]*job['weight'].to_i).times do |i|
 				begin
 					dbh.do("INSERT INTO `assigned_resources` ( `moldable_job_id` , `resource_id` , `assigned_resource_index` ) VALUES ('#{job_id2}', '#{res_conv[node][i]}', 'LOG')")
@@ -475,8 +487,7 @@ def convert_event_log_hostnames(dbh1,dbh2)
 		begin
 			dbh2.do("INSERT INTO `event_log_hostnames` ( `event_id` , `hostname` ) VALUES ('#{row['idEvent']}','#{row['hostname']}')")
 		rescue
-			puts "Unable to INSERT  event log hostnames: " + $!
-			exit
+			puts "WARNING:Unable to INSERT  event log hostnames: " + $!
 		end
   end
   sth.finish
