@@ -184,6 +184,7 @@ sub connect_job($$$){
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
+        $ENV{DISPLAY} = "" if (! -x "/usr/bin/X11/xauth");
         if ($ENV{DISPLAY} ne ""){
             print("Initialize X11 forwarding...\n");
             # first, get rid of remaining unused .Xautority.{pid} files...
