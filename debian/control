@@ -30,14 +30,14 @@ Description: OAR batch scheduler server package
 Package: oar-node
 Architecture: all
 Depends: oar-common, perl, openssh-client | ssh, openssh-server | ssh, adduser
-Suggests: oar-doc
+Suggests: oar-doc, xbase-clients
 Description: OAR batch scheduler node package
  This package installs the execution node part or the OAR batch scheduler
 
 Package: oar-user
 Architecture: all
 Depends: oar-libs (= ${Source-Version}), ${misc:Depends}, ${perl:Depends}
-Suggests: oar-doc, openssh-client | ssh, libxml-simple-perl, libyaml-perl
+Suggests: oar-doc, openssh-client | ssh, xbase-clients, libxml-simple-perl, libyaml-perl
 Description: OAR batch scheduler user package
  This package install the submition and query part or the OAR batch scheduler
 
