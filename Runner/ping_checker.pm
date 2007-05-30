@@ -96,12 +96,7 @@ sub taktuk_hosts(@){
 
     my %check_test_nodes;
 
-    $taktuk_cmd .= ' -o status=\'"STATUS $host $line\n"\' ';
-    foreach my $i (@hosts){
-        $taktuk_cmd .= " -m $i";
-        $check_test_nodes{$i} = 1;
-    }
-    $taktuk_cmd .= " ".get_conf("PINGCHECKER_TAKTUK_ARG_COMMAND");
+    $taktuk_cmd .= ' -f - -o status=\'"STATUS $host $line\n"\' '.get_conf("PINGCHECKER_TAKTUK_ARG_COMMAND");
 
     my @bad_hosts;
     oar_debug("[PingChecker] $taktuk_cmd\n");
@@ -111,6 +106,11 @@ sub taktuk_hosts(@){
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_sentinelle);
         open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
+        foreach my $i (@hosts){
+            print(WRITER "$i\n");
+            $check_test_nodes{$i} = 1;
+        }
+        close(WRITER);
         while(<READER>){
             if ($_ =~ /^STATUS ([\w\.\-\d]+) (\d+)$/){
                 if ($2 == 0){
@@ -121,7 +121,6 @@ sub taktuk_hosts(@){
             }
         }
         close(ERROR);
-        close(WRITER);
         close(READER);
         alarm(0);
     };
@@ -153,10 +152,7 @@ sub sentinelle_script_hosts(@){
     }
 
     my %check_test_nodes;
-    foreach my $i (@hosts){
-        $sentinelle_cmd .= " -m $i";
-        $check_test_nodes{$i} = 1;
-    }
+    $sentinelle_cmd .= " -f - ";
 
     my @bad_hosts;
     oar_debug("[PingChecker] $sentinelle_cmd \n");
@@ -166,6 +162,11 @@ sub sentinelle_script_hosts(@){
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_script_sentinelle);
         open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
+        foreach my $i (@hosts){
+            print(WRITER "$i\n");
+            $check_test_nodes{$i} = 1;
+        }
+        close(WRITER);
         while(<ERROR>){
             chomp($_);
             if ($_ =~ m/^([\w\.]+)\s:\sBAD\s.*$/m){
@@ -176,7 +177,6 @@ sub sentinelle_script_hosts(@){
             }
         }
 	wait();
-        close(WRITER);
         close(READER);
         close(ERROR);
         alarm(0);

@@ -51,6 +51,7 @@ my $timeout = 30;
 my $verbose;
 my $sos;
 my @files;
+my @file_from_fd;
 
 # Get command line informations
 Getopt::Long::Configure ("gnu_getopt");
@@ -61,6 +62,7 @@ GetOptions ("machine|m=s" => \@nodes,
             "window|w=i" => \$window_size,
             "verbose|v" => \$verbose,
             "file|f=s" => \@files,
+            "file_fd=i" => \@file_from_fd,
             "help|h" => \$sos
            );
 
@@ -82,6 +84,16 @@ foreach my $fileName (@files){
     }
 }
 
+foreach my $fd (@file_from_fd){
+    open(FILE, "<&",$fd) or die("/!\\ Can not open file descriptor $fd.\n");
+    while (<FILE>){
+        # Remove commentaries
+        $_ =~ s/#.*$//s;
+        if ($_ =~ m/^\s*(\S+)\s*$/m){
+            push(@nodes, $1);
+        }
+    }
+}
 
 # Check if there is at least one node to connect to
 if ($#nodes < 0){
