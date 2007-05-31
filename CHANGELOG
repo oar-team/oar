@@ -10,6 +10,7 @@ upstream development version:
   - bug fix in drawgantt (loose jobs after submission of a moldable one)
   - add SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE into oar.conf. Thus admin can add some resources for each jobs (like frontale node)
   - add possibility to use taktuk to check the aliveness of the nodes
+  - %jobid% is now replaced in stdout and stderr file names by the effective job id
 
 version 2.0.2:
 --------------

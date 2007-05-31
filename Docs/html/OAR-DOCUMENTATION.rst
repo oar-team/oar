@@ -212,7 +212,11 @@ Options::
                                    --notify "mail:name@domain.com"
                                    --notify "exec:/path/to/script args"
      --stdout=<FILE>           Specify the name of the standard output file
+                               (you can use %jobid% and it will be replaced by
+                               the job id)
      --stderr=<FILE>           Specify the name of the error output file
+                               (you can use %jobid% and it will be replaced by
+                               the job id)
      --resubmit<OAR JOB ID>    Resubmit the given job as a new one
      --force-cpuset-name=<TXT> Specify a cpuset name to use instead of the job
                                id (WARNING: if several jobs have the same
@@ -278,6 +282,17 @@ Examples
 
 (the "test.sh" script will be run on 4 entire nodes in the default queue with
 the default walltime)
+::
+
+  # oarsub --stdout='test12.%jobid%.stdout' --stderr='test12.%jobid%.stderr' -l /nodes=4 test.sh
+    ...
+    OAR_JOB_ID=702
+    ...
+
+(same example than above but here the standard output of "test.sh" will be
+written in the file "test12.702.stdout" and the standard error in
+"test12.702.stderr")
+
 ::
 
   # oarsub -q default -l walltime=50:30:00,/node=10/cpu=3,walltime=2:15:00 \

@@ -1082,13 +1082,17 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
     if (!defined($stdout) or ($stdout eq "")){
         $stdout = "OAR";
         $stdout .= ".$job_name" if ($job_name ne "NULL");
-        $stdout .= ".$job_id.stdout";
+        $stdout .= '.%jobid%.stdout';
     }
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR";
         $stderr .= ".$job_name" if ($job_name ne "NULL");
-        $stderr .= ".$job_id.stderr";
+        $stderr .= '.%jobid%.stderr';
     }
+    # Replace %jobid% by the job id
+    $stdout =~ s/%jobid%/$job_id/g;
+    $stderr =~ s/%jobid%/$job_id/g;
+
     $stdout = $dbh->quote($stdout);
     $stderr = $dbh->quote($stderr);
     $dbh->do("UPDATE jobs

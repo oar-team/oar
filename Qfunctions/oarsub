@@ -294,7 +294,11 @@ Options are:
                                    --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
      --stdout=<FILE>           Specify the name of the standard output file
+                               (you can use %jobid% and it will be replaced by
+                               the job id)
      --stderr=<FILE>           Specify the name of the error output file
+                               (you can use %jobid% and it will be replaced by
+                               the job id)
      --resubmit<OAR JOB ID>    Resubmit the given job as a new one
      --force-cpuset-name=<TXT> Specify a cpuset name to use instead of the job
                                id (WARNING: if several jobs have the same

@@ -95,10 +95,12 @@ Ex:
 =item B<--stdout> <FILE>
 
 Specify the name of the standard output file.
+(you can use %jobid% and it will be replaced by the job id)
 
 =item B<--stderr> <FILE>
 
 Specify the name of the error output file.
+(you can use %jobid% and it will be replaced by the job id)
 
 =item B<--resubmit> <OAR JOB ID>
 
