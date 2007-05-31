@@ -340,8 +340,7 @@ def insert_resource_logs2(dbh,resources_log1,res_conv)
 				dbh.do("INSERT INTO `resource_logs` (`resource_id` , `attribute` , `value` , `date_start` , `date_stop` , `finaud_decision` )
 VALUES ('#{res_id}','state','#{res_log['changeState']}', '#{to_unix_time(res_log['dateStart'])}', '#{date_stop}','#{res_log['finaudDecision']}')")
 			rescue
-				puts "Failed to insert resource logs: " + $!
-				exit
+				puts "WARNING: Failed to insert resource logs: " + $!
 			end
 		end
 	end
@@ -421,8 +420,7 @@ job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reser
 #puts "job_id: #{job_id2} res_id:#{res_conv[node][i]}  i:#{i}"
 
 				rescue
-					puts "Failed to insert assigned resources: " + $!
-					exit
+					puts "WARNINIG:Failed to insert assigned resources: " + $!
 				end
 			end
 		end
@@ -431,8 +429,7 @@ job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reser
   begin
 	dbh.do("INSERT INTO `job_resource_descriptions` ( `res_job_group_id` , `res_job_resource_type` , `res_job_value` , `res_job_order`, `res_job_index`) VALUES ('#{job_id2}', 'core', '#{nb_res}', '0', 'LOG')")
 	rescue
-		puts "Failed to insert job resource descriptions: " + $!
-		exit
+		puts "WARNING:Failed to insert job resource descriptions: " + $!
 	end
 end
 
@@ -450,8 +447,7 @@ def convert_job_state_logs(dbh1,dbh2)
 			dbh2.do(" INSERT INTO `job_state_logs` (`job_id` , `job_state` , `date_start` , `date_stop` )
 VALUES ('#{job_id2}','#{row['jobState']}','#{to_unix_time(row['dateStart'])}','#{date_stop}')")
 		rescue
-			puts "Unable to INSERT job state logs: " + $!
-			exit
+			puts "WARNING:Unable to INSERT job state logs: " + $!
 		end
   end
   sth.finish
@@ -468,8 +464,7 @@ def convert_frag_jobs(dbh1,dbh2)
 			dbh2.do("INSERT INTO `frag_jobs` ( `frag_id_job` , `frag_date` , `frag_state` )
 			VALUES ('#{job_id2}','#{to_unix_time(row['fragDate'])}','#{row['fragState']}')")
 		rescue
-			puts "Unable to INSERT frag jobs: " + $!
-			exit
+			puts "WARNING:Unable to INSERT frag jobs: " + $!
 		end
   end
   sth.finish
@@ -485,8 +480,7 @@ def convert_event_logs(dbh1,dbh2)
 VALUES (?, ?, ?, ?, ?, ?)",
 row['idEvent'], row['type'], job_id2, to_unix_time(row['date']), row['description'], row['toCheck'] )
 		rescue
-			puts "Unable to INSERT event logs: " + $!
-			exit
+			puts "WARNING: Unable to INSERT event logs: " + $!
 		end
   end
   sth.finish
@@ -499,7 +493,7 @@ def convert_event_log_hostnames(dbh1,dbh2)
 		begin
 			dbh2.do("INSERT INTO `event_log_hostnames` ( `event_id` , `hostname` ) VALUES ('#{row['idEvent']}','#{row['hostname']}')")
 		rescue
-			puts "WARNING:Unable to INSERT  event log hostnames: " + $!
+			puts "WARNING: Unable to INSERT  event log hostnames: " + $!
 		end
   end
   sth.finish
