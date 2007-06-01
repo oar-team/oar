@@ -40,11 +40,6 @@ RANGE_STEP = {'1/6 day'=>3600,'1/2 day'=>10800,'1 day'=>43200,'3 days'=>86400,
 $verbose = false
 
 $val = "" # variable for debug purpose
- 
-configfile = 'drawgantt.conf'
-
-puts "### Reading configuration file..." if $verbose
-$conf = YAML::load(IO::read(configfile))
 
 ##########################################################################
 # usefull method
@@ -278,29 +273,6 @@ def get_history(dbh,date_start,date_stop)
 	return resources,jobs,dead_resources
 end
 
-######################################################################################
-
-$title = $conf['title']
-$sizex = $conf['sizex']
-#$sizey = $conf['sizey']
-$offsetgridy = $conf['offsetgridy']
-$left_offsetgridx = $conf['left_offsetgridx']
-$right_offsetgridx = $conf['right_offsetgridx']
-$sum_offsetgridx = $left_offsetgridx + $right_offsetgridx
-
-$tics_node = $conf['tics_node']
-$points_per_cpu = $conf['points_per_cpu']
-$xratio = $conf['xratio']
-$nb_cont_res = $conf['nb_cont_res']
-
-$prop_hierarchy = $conf['prop_hierarchy']
-
-$x_per_prop = 10
-
-$map_prop_hierarchy = [] 
-$sorted_resources = []
-
-
 def draw_string(img,x,y,label)
 	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
 end
@@ -342,9 +314,12 @@ def draw_resource_hierarchy(img)
 				x2 = x1 + $x_per_prop
 				y2 = $offsetgridy + deltay * (r_index + 1)
 
- 				img.line(x1, y1, x2, y1, $gridcolor);   
+				if p_index == 0
+						img.line(x1, y1, $sizey - $offsetgridy , y1, $blue);  
+				else
+ 					img.line(x1, y1, x2, y1, $gridcolor);   
 #				img.filledRectangle(x1, y1, x2, y2, $color_gray[( ( (3 * r_index) % 15) + 16 * p_index) % 31 ])
-
+				end
 				str_resource = ""
 				0.upto(p_index-1) {|i| str_resource << ($resources[resource][$resource_properties_fields.index($prop_hierarchy[i])]).to_s+"/" } 
 				str_resource << label.to_s
@@ -434,9 +409,6 @@ def draw_grid(img,resource_labels,origin,origin_label,range)
 	end
   img.line($left_offsetgridx - 1, $sizey - $offsetgridy, $sizex - $right_offsetgridx, $sizey - $offsetgridy, $gridcolor)
 
-
-  draw_resource_hierarchy(img)
-
 end
 
 def draw_nowline(img,origin,range,color)
@@ -466,14 +438,14 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	$background =  img.colorAllocate($conf['background'])
 	$gridcolor =  img.colorAllocate($conf['gridcolor'])
 
-	white = img.colorAllocate(255,255,255)
-	black = img.colorAllocate(0,0,0)       
-	red = img.colorAllocate(255,0,0)      
-	blue = img.colorAllocate(0,0,255)
+	$white = img.colorAllocate(255,255,255)
+	$black = img.colorAllocate(0,0,0)       
+	$red = img.colorAllocate(255,0,0)      
+	$blue = img.colorAllocate(0,0,255)
 	$orange = img.colorAllocate(0xFF,0x99,0x33)
 
 	$color=[]
-	$color[0] = white
+	$color[0] = $white
 	(1..155).each {|i| $color[i] = img.colorAllocate((i%9) * 25, i ,(50 * i) % 255 )} 
 
 	# make the background transparent and interlaced
@@ -605,6 +577,9 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 	draw_grid(img,resource_labels,origin,origin_label,range)
 
+  draw_resource_hierarchy(img)
+
+
 	scale = ($sizex - $sum_offsetgridx).to_f  / (RANGE_SEC[range].to_f) ;
 
 	
@@ -623,11 +598,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		ares_index = []
 		j['resources'].each do |r|
 			r_index = $sorted_resources.index(r)
-			ares_index << r_index
-			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), $color[(job_id.to_i % 154) + 1])
+			if !(r_index.nil?)
+				ares_index << r_index
+				img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), $color[(job_id.to_i % 154) + 1])
 #			yop = "*#{start_x} #{$offsetgridy + deltay * r_index} #{stop_x} #{$offsetgridy + deltay * (r_index+1)}*"
+			end
 		end
-
 		#display job_id
 		if (ares_index.length > $nb_cont_res && (stop_x - start_x)  > $sizex / $xratio)
 			sorted_index = ares_index.sort
@@ -672,13 +648,15 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
   	  stop_x = stop_x + $left_offsetgridx
 
 			r_index = $sorted_resources.index(resource)
-			img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), red)
-
+			
+			if !r_index.nil?
+				img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), $red)
+			end
 		end
 	end
 	
 	#draw_nowline
-	draw_nowline(img,origin,range,red)
+	draw_nowline(img,origin,range,$red)
 
 	f_img = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}", 'w')
 	img.png(f_img)
@@ -721,7 +699,7 @@ end
 
 ##################################
 
-def cgi_html
+def cgi_html(cgi)
 
 	popup_hour = ["00:00","01:00","02:00","03:00","04:00","05:00","06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"]
 	popup_day = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"]
@@ -729,7 +707,7 @@ def cgi_html
 	popup_year = []
 	popup_range = RANGE_ORDER
 
-	cgi = CGI.new("html3") # add HTML generation methods
+#	cgi = CGI.new("html3") # add HTML generation methods
 
 	now = Time.now
 
@@ -803,8 +781,8 @@ def cgi_html
 	file_range = '1_2_day' if (range =='1/2 day') 
 	file_range = '1_6_day' if (range == '1/6 day') 
 
-	file_img =  'gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
-	file_map =  'map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_img =  $platform + '_gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_map =  $platform + '_map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
 
 	#test if it's on old file ?
 	if (origin + RANGE_SEC[range] > now.to_i)
@@ -844,48 +822,84 @@ def cgi_html
 		end
 	end
 
-	cgi.out {
-		cgi.html {
-			cgi.head { "\n"+cgi.title{$title} } +			
-			cgi.body { "\n"+
-#				"##### #{$val} #####" +
-				cgi.form("get"){
-#					"**#{cgi.params}**\n" +
-#					$title +
-					cgi.h3 { $title } + "\n"+
-					# Javascript stuff thanks to NCSA TITAN cluster's page    
-					CGI.escapeElement('<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>') + "\n" +
-					CGI.escapeElement('<script src="/'+"#{$conf['directory']}"+
-														'/js/overlib.js" language="JavaScript">') + "\n" +
-					CGI.escapeElement("<em> Origin </em>") +
-					cgi.popup_menu("NAME" => "year", "VALUES" => popup_year) +
-					cgi.popup_menu("NAME" => "month", "VALUES" => popup_month) +
-					cgi.popup_menu("NAME" => "day", "VALUES" => popup_day) +
-					cgi.popup_menu("NAME" => "hour", "VALUES" => popup_hour) +	
-					CGI.escapeElement("<em> Range </em>") +
-					cgi.popup_menu("NAME" => "range", "VALUES" => popup_range) +
-					cgi.submit("Draw","action") +
-					cgi.submit("Default","action") +
-					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-left.png", "left", "left") +
-					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-right.png", "right", "right") +
-					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-minus.png", "minus", "minus") +
-					cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-plus.png", "plus", "plus") +
-					cgi.br + "\n" +
-					CGI.escapeElement(map) + "\n" +
-					CGI.escapeElement('<div style="text-align: center">') +
-#					cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
-					cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}",
-									"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
-					CGI.escapeElement('</div>'); 
+	if (cgi.params['mode'].length>0)
+		puts "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}"
+		puts "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
+	else
+	  cgi.out {
+		  cgi.html {
+			  cgi.head { "\n"+cgi.title{$title} } +			
+			  cgi.body { "\n"+
+#				  "##### #{$val} #####" +
+				  cgi.form("get"){
+#					  "**#{cgi.params}**\n" +
+#					  $title +
+					  cgi.h3 { $title } + "\n"+
+					  # Javascript stuff thanks to NCSA TITAN cluster's page    
+					  CGI.escapeElement('<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>') + "\n" +
+					  CGI.escapeElement('<script src="/'+"#{$conf['directory']}"+
+						  								'/js/overlib.js" language="JavaScript">') + "\n" +
+					  CGI.escapeElement("<em> Origin </em>") +
+					  cgi.popup_menu("NAME" => "year", "VALUES" => popup_year) +
+					  cgi.popup_menu("NAME" => "month", "VALUES" => popup_month) +
+					  cgi.popup_menu("NAME" => "day", "VALUES" => popup_day) +
+						cgi.popup_menu("NAME" => "hour", "VALUES" => popup_hour) +	
+						CGI.escapeElement("<em> Range </em>") +
+						cgi.popup_menu("NAME" => "range", "VALUES" => popup_range) +
+						cgi.submit("Draw","action") +
+						cgi.submit("Default","action") +
+						cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-left.png", "left", "left") +
+						cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-right.png", "right", "right") +
+						cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-minus.png", "minus", "minus") +
+						cgi.image_button("/#{$conf['directory']}/#{$conf['web_icons_directory']}/gorilla-plus.png", "plus", "plus") +
+						cgi.br + "\n" +
+						CGI.escapeElement(map) + "\n" +
+						CGI.escapeElement('<div style="text-align: center">') +
+#						cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
+						cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}",
+										"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
+						CGI.escapeElement('</div>'); 
+					}
 				}
 			}
 		}
-	}
-end 
+	end 
+end
+#################################################################################################################
+### main
+#################################################################################################################
 
-####################################################################################
+cgi = CGI.new("html3") # add HTML generation methods
 
-cgi_html
+configfile = 'drawgantt.conf'
+configfile = cgi.params['configfile'].to_s if (cgi.params['configfile'].length>0)
+$platform = ""
+$platform = cgi.params['platform'].to_s if (cgi.params['platform'].length>0)
+
+puts "### Reading configuration file..." if $verbose
+$conf = YAML::load(IO::read(configfile))
+
+$title = $conf['title']
+$sizex = $conf['sizex']
+#$sizey = $conf['sizey']
+$offsetgridy = $conf['offsetgridy']
+$left_offsetgridx = $conf['left_offsetgridx']
+$right_offsetgridx = $conf['right_offsetgridx']
+$sum_offsetgridx = $left_offsetgridx + $right_offsetgridx
+
+$tics_node = $conf['tics_node']
+$points_per_cpu = $conf['points_per_cpu']
+$xratio = $conf['xratio']
+$nb_cont_res = $conf['nb_cont_res']
+
+$prop_hierarchy = $conf['prop_hierarchy']
+
+$x_per_prop = 10
+
+$map_prop_hierarchy = [] 
+$sorted_resources = []
+
+cgi_html(cgi)
 
 #p list_resource_properties_fields(base_connect)
 #p list_resources(base_connect)
