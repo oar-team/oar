@@ -33,7 +33,7 @@ Connect to a running job.
 =item B<-l, --resource> <LIST>
 
 Set the requested resources for the job. The different parameters are resource properties registered in OAR database, and `walltime' which specifies the duration before the job must be automatically terminated if still running. 
-Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: node=4/cpu=1,walltime=2:00:00
+Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: nodes=4/cpu=1,walltime=2:00:00
 
 =item B<-S, --Scanscript>
 

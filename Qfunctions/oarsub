@@ -266,7 +266,7 @@ Options are:
                                specifies the duration before the job must be 
                                automatically terminated if still running.
                                Walltime format is [hour:mn:sec|hour:mn|hour].
-                               Ex: node=4/cpu=1,walltime=2:00:00
+                               Ex: nodes=4/cpu=1,walltime=2:00:00
  -S, --Scanscript              Batch mode only: asks oarsub to scan the given
                                script for OAR directives (#OAR -l ...)
  -q, --queue=<QUEUE>           Set the the queue to submit the job to
