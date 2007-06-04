@@ -92,6 +92,10 @@ oar_scheduler::update_gantt_visu_tables($base);
 iolib::disconnect($base_ro);
 
 # Manage dynamic node feature
+my $timeout_cmd = 10;
+if (is_conf("SCHEDULER_TIMEOUT")){
+    $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
+}
 if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
     my @node_halt= oar_scheduler::get_idle_nodes(
             $base,
@@ -100,7 +104,10 @@ if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANA
         );
     if ($#node_halt >= 0){
         oar_debug("[MetaSched] Some nodes can be halted : @node_halt\n");
-        oar_Tools::fork_no_wait(get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")." @node_halt", $base);
+        my $cmd = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD");
+        if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, @node_halt))){
+            oar_error("[MetaSched] Try to launch the command $cmd to stop some nodes but the command timeouted($timeout_cmd s).\n");
+        }
     }
 }
 
@@ -110,7 +117,10 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
 
     if ($#nodes >= 0){
         oar_debug("[MetaSched] Some nodes must be started : @nodes\n");
-        oar_Tools::fork_no_wait(get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")." @nodes", $base);
+        my $cmd = get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD");
+        if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, @nodes))){
+            oar_error("[MetaSched] Try to launch the command $cmd to wake up some nodes but the command timeouted($timeout_cmd s).\n");
+        }
     }
 }
 

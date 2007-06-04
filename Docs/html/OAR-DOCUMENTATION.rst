@@ -1504,16 +1504,16 @@ Each configuration tag found in /etc/oar.conf is now described:
 .. _SCHEDULER_NODE_MANAGER_WAKE_UP_CMD:
 
     * When OAR scheduler wants some nodes to wake up then it launches this
-      command with the node list in arguments(the scheduler looks at the
-      *cm_availability* field in resources_ table to know if the
-      node will be started for enough time)::
+      command and puts on its STDIN the list of nodes to wake up (one hostname
+      by line).The scheduler looks at *cm_availability* field in the resources_
+      table to know if the node will be started for enough time::
 
         SCHEDULER_NODE_MANAGER_WAKE_UP_CMD="/path/to/the/command with your args"
 
 .. _SCHEDULER_NODE_MANAGER_SLEEP_CMD:
 
     * When OAR considers that some nodes can be shut down, it launches this
-      command with the node list in arguments::
+      command and puts the node list on its STDIN(one hostname by line)::
 
         SCHEDULER_NODE_MANAGER_SLEEP_CMD="/path/to/the/command args"
 

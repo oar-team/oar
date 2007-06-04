@@ -11,6 +11,7 @@ upstream development version:
   - add SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE into oar.conf. Thus admin can add some resources for each jobs (like frontale node)
   - add possibility to use taktuk to check the aliveness of the nodes
   - %jobid% is now replaced in stdout and stderr file names by the effective job id
+  - change interface to shu down or wake up nodes automatically (now the node list is read on STDIN)
 
 version 2.0.2:
 --------------

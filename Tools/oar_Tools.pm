@@ -366,6 +366,37 @@ sub fork_no_wait($$){
 }
 
 
+# exec a command and feed its STDIN
+# arg : command, data to send, DB ref (to close it in the child)
+sub fork_and_feed_stdin($$@){
+    my $cmd = shift;
+    my $timeout = shift;
+    my @feed = shift;
+
+    my $ret;
+    my $pid;
+    eval{
+        $SIG{ALRM} = sub { die "alarm\n" };
+        alarm($timeout);
+        $pid = open(CMDTOFEED, "| $cmd");
+        foreach my $s (@feed){
+            print(CMDTOFEED "$s\n");
+        }
+        $ret = close(CMDTOFEED);
+        alarm(0);
+    };
+    if ($@){
+        if ($@ eq "alarm\n"){
+            if (defined($pid)){
+                my ($children,$cmd_name) = get_one_process_children($pid);
+                kill(9,@{$children});
+            }
+        }
+    }
+    return($ret);
+}
+
+
 # exec a command, wait its end and return exit codes
 # arg : command
 sub launch_command($){
