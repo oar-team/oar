@@ -117,7 +117,7 @@ sub taktuk_hosts(@){
                     delete($check_test_nodes{$1}) if (defined($check_test_nodes{$1}));
                 }
             }else{
-                print("[PingChecker][TAKTUK OUTPUT] $_");
+                oar_debug("[PingChecker][TAKTUK OUTPUT] $_");
             }
         }
         close(ERROR);
