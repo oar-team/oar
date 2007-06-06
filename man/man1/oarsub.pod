@@ -113,7 +113,7 @@ I<WARNING:> if several jobs have the same cpuset name then processes of a job co
 
 =item B<-k, --job-key-file> <FILE>
 
-Use a job key. Parameter is the pathname to the secret key, public key is guessed (.pub is appended). If file does not already exist, generate it first.
+Use a job key. Parameter is the pathname to the secret key, public key is guessed (.pub is appended). If file does not already exist, generate it first (you can use %jobid% in the name and it will be replaced by the job id).
 
 =item B<--job-priv-key> <TXT>
 

@@ -1272,6 +1272,12 @@ Each configuration tag found in /etc/oar.conf is now described:
   
       OARSUB_DEFAULT_RESOURCES="/resource_id=1"
   
+  - This option is equivalent to always use oarsub with the option:
+    "-k OAR.%jobid%.key". So a job key will be generated and put in the
+    current directory of the user::
+
+      OAR_OARSUB_FORCE_SSH_KEY_JOB="OAR.%jobid%.key"
+
 .. _DEPLOY_HOSTNAME:
 
   - Specify where we are connected in the deploy queue(the node to connect

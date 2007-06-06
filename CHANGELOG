@@ -12,6 +12,8 @@ upstream development version:
   - add possibility to use taktuk to check the aliveness of the nodes
   - %jobid% is now replaced in stdout and stderr file names by the effective job id
   - change interface to shu down or wake up nodes automatically (now the node list is read on STDIN)
+  - add OAR_OARSUB_FORCE_SSH_KEY_JOB in oar.conf. It says to create a job ssh key by default for each job.
+  - %jobid% is now replaced in the ssh job key name (oarsub -k ...).
 
 version 2.0.2:
 --------------
