@@ -338,12 +338,19 @@ sub job_key_management() {
     }
     my $lusr= getpwuid($ENV{SUDO_UID});
     if ((defined($job_key_file)) and ($job_key_file ne "")){
-        # Test files with user privileges
-        # generate key if neither pub or priv key file exists.
-        system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -e "'.$job_key_file.'" -o -e "'.$job_key_file.'.pub" ]\'');
-        if ($? != 0){
+        my $tmp_name_key = oar_Tools::get_default_oarexec_directory()."/oarsub_tmp_ssh.$$.key";
+        if ($job_key_file =~ m/%jobid%/m){
+            $Generated_ssh_key_by_oarsub = $tmp_name_key;
+        }else{
+            # Test files with user privileges
+            # generate key if neither pub or priv key file exists.
+            system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -e "'.$job_key_file.'" -o -e "'.$job_key_file.'.pub" ]\'');
+            if ($? != 0){
+                $Generated_ssh_key_by_oarsub = $tmp_name_key;
+            }
+        }
+        if (defined($Generated_ssh_key_by_oarsub)){
             print("Job key files do not exist, assuming they must be generated...\n");
-            $Generated_ssh_key_by_oarsub = oar_Tools::get_default_oarexec_directory()."/oarsub_tmp_ssh.$$.key";
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
             if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "Job key created by OAR" -N "" -t rsa -f "'.$Generated_ssh_key_by_oarsub.'" > /dev/null')) {
                 warn ("Error: Job key generation failed ($?).\n");
