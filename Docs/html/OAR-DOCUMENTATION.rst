@@ -1310,6 +1310,12 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       NODE_FILE_DB_FIELD="network_address"
 
+  - Specify the database field that will be considered to fill the node file
+    used by the user on the first node of the job. for each different value
+    of this field then OAR will put 1 line in the node file(by default "cpu")::
+
+      NODE_FILE_DB_FIELD_DISTINCT_VALUES="core"
+
   - By default OAR uses the ping command to detect if nodes are down or not.
     To enhance this diagnostic you can specify one of these other methods (
     give the complete command path):
