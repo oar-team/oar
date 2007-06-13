@@ -26,6 +26,7 @@ my $Default_cpuset_file_manager = "cpuset_manager.pl";
 my $Default_suspend_resume_file_manager = "suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
+my $Default_node_file_db_field_distinct_values = "cpu";
 
 # Prototypes
 sub get_all_process_children();
@@ -56,6 +57,7 @@ sub get_private_ssh_key_file_name($);
 sub format_ssh_pub_key($$$);
 sub get_default_oar_ssh_authorized_keys_file();
 sub get_default_node_file_db_field();
+sub get_default_node_file_db_field_distinct_values();
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -116,6 +118,11 @@ sub get_default_oar_ssh_authorized_keys_file(){
 # Get the name of the DB field to use to fill the OAR_NODE_FILE
 sub get_default_node_file_db_field(){
     return($Default_node_file_db_field);
+}
+
+# Get the name of the DB field to use to fill the OAR_NODE_FILE
+sub get_default_node_file_db_field_distinct_values(){
+    return($Default_node_file_db_field_distinct_values);
 }
 
 # Get the name of the file of the private ssh key for the given cpuset name

@@ -445,8 +445,8 @@ sub job_key_management() {
             warn("Error: it is not allowed to specify both a cpuset name and a job key.\n");
             exit(14);
         }
-        if ($job_pub_key !~ /^(ssh-rsa|ssh-dss)\s/){
-            warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss'.\n");
+        if ($job_pub_key !~ /^(ssh-rsa|ssh-dss)\s.+\n*$/){
+            warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss' and is only 1 line.\n");
             exit(14);
         }
         $job_pub_key =~ s/\n//g;

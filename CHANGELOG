@@ -14,6 +14,7 @@ upstream development version:
   - change interface to shu down or wake up nodes automatically (now the node list is read on STDIN)
   - add OAR_OARSUB_FORCE_SSH_KEY_JOB in oar.conf. It says to create a job ssh key by default for each job.
   - %jobid% is now replaced in the ssh job key name (oarsub -k ...).
+  - add NODE_FILE_DB_FIELD_DISTINCT_VALUES in oar.conf that enables the admin to configure the generated containt of the OAR_NODE_FILE
 
 version 2.0.2:
 --------------
