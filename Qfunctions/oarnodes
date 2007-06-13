@@ -305,6 +305,7 @@ if (defined($stateMode)){
         foreach my $aa (sort(keys(%data_to_display))){
             my @res = keys(%{$data_to_display{$aa}});
             my %tmp_already_there;
+            my %tmp_already_there2;
             my $nb = 0;
             my $nb_jobs = 0;
             my $state;
@@ -337,7 +338,7 @@ if (defined($stateMode)){
                         chop($str);
                         $properties = $str;
                     }elsif ($cc eq "jobs"){
-                        $nb_jobs += $#{@{$data_to_display{$aa}->{$bb}->{$cc}}} + 1;
+                        #$nb_jobs += $#{@{$data_to_display{$aa}->{$bb}->{$cc}}} + 1;
                         my $c=0;
                         foreach my $j (@{$data_to_display{$aa}->{$bb}->{$cc}}){
                             #if (!defined($weight_index{$aa})){
@@ -346,8 +347,12 @@ if (defined($stateMode)){
                             #    $weight_index{$aa}++;
                             #}
                             #$job_str .= "$weight_index{$aa}/$j.oarserver,";
-                            $jobs[$c]="$j.oarserver";
-                            $c++; 
+                            if (!defined($tmp_already_there{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}})){
+                                $tmp_already_there{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}} = 1;
+                                $jobs[$c]="$j.oarserver";
+                                $c++; 
+                                $nb_jobs++;
+                            }
                         }
                     }elsif ($cc eq "network_address"){
                         $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
