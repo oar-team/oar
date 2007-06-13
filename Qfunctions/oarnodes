@@ -17,6 +17,8 @@
 
 use strict;
 use warnings;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_Tools;
 use Data::Dumper;
 use oar_iolib;
 use Getopt::Long;
@@ -298,9 +300,12 @@ if (defined($stateMode)){
             $exitstatus = 6;
         }
     }elsif($Old){
+        my $Node_file_db_field_distinct_values = get_conf("NODE_FILE_DB_FIELD_DISTINCT_VALUES");
+        $Node_file_db_field_distinct_values = oar_Tools::get_default_node_file_db_field_distinct_values() if (!defined($Node_file_db_field_distinct_values));
         foreach my $aa (sort(keys(%data_to_display))){
             my @res = keys(%{$data_to_display{$aa}});
-            my $nb = $#res + 1;
+            my %tmp_already_there;
+            my $nb = 0;
             my $nb_jobs = 0;
             my $state;
             my $properties;
@@ -316,6 +321,12 @@ if (defined($stateMode)){
                         my $str = "properties = ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
                             if ($prop eq "cpuset") { $cpuset=$data_to_display{$aa}->{$bb}->{$cc}->{$prop};}
+                            if ($prop eq $Node_file_db_field_distinct_values) {
+                                if (!defined($tmp_already_there{$data_to_display{$aa}->{$bb}->{$cc}->{$prop}})){
+                                    $nb++;
+                                    $tmp_already_there{$data_to_display{$aa}->{$bb}->{$cc}->{$prop}} = 1;
+                                }
+                            }
                             $pass = 1 if (($prop eq "type") and ($data_to_display{$aa}->{$bb}->{$cc}->{$prop} eq "frontal"));
                             if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
                                 $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
