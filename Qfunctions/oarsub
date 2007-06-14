@@ -83,6 +83,8 @@ my $DUMPER_mode;
 my $job_key_file;
 my $job_priv_key = "";
 my $job_pub_key = "";
+my $imported_job_key_file = "";
+my $gen_job_key_file = "";
 my $Default_ssh_key_name = "OAR.%jobid%.key";
 my $Generated_ssh_key_by_oarsub;
 
@@ -307,22 +309,26 @@ Options are:
                                cpuset name then processes of a job could be
                                killed when another one finishes on the same
                                computer)
- -k, --job-key-file=<FILE>     Use a job key. Parameter is the pathname to the
-                               secret key, public key is guessed (.pub is 
-                               appended). If file does not already exist, 
-                               generate it first.
-                               (you can use %jobid% and it will be replaced by
-                               the job id)
-     --job-priv-key=<TXT>      Use a job key. Raw private key provided inline
-     --job-pub-key=<TXT>       Use a job key. Raw public key provided inline
+ -k, --use-job-key             Use a job key. If nothing else is specified
+                               then it generates a ssh key.
+ -i, --import-job-key-from-file=<TXT>
+                               Use this file for the private ssh key and the
+                               .pub for the public one
+     --gen-job-key-file=<TXT>  Tell oarsub to generate the ssh key
+                               automatically(the %jobid% pattern is replaced
+                               by the job identifier)
+     --import-job-key-inline-priv=<TXT>
+                               Use a job key. Raw private key provided inline
+     --import-job-key-inline-pub=<TXT>
+                               Use a job key. Raw public key provided inline
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
  -s, --stagein=<DIR|TGZ>       Set the stagein directory or archive
      --stagein-md5sum=<MD5SUM> Set the stagein file md5sum
- -D, --DUMPER                  Print result in DUMPER format
- -X, --XML                     Print result in XML format
- -Y, --YAML                    Print result in YAML format
+ -D, --dumper                  Print result in DUMPER format
+ -X, --xml                     Print result in XML format
+ -Y, --yaml                    Print result in YAML format
  -h, --help                    Print this help message
  -v, --version                 Print OAR version number
 EOS
@@ -332,36 +338,21 @@ EOS
 # test job key files or inline keys existance.
 # generate job keys if file specified but not existing
 sub job_key_management() {
-    if (((defined($job_key_file)) and ($job_key_file ne "")) and (($job_priv_key ne "") or ($job_pub_key ne ""))) {
-        warn("Error: You must use either --job_key_file or the couple --job_priv_key and --job_pub_key, but not both\n");
+    if ((!defined($job_key_file)) and (($job_priv_key ne "") or ($job_pub_key ne "") or ($imported_job_key_file ne "") or ($gen_job_key_file ne ""))){
+        warn("Error: You want to use ssh job key options so you must specify the -k option.\n");
         exit(15);
-    }
-    my $lusr= getpwuid($ENV{SUDO_UID});
-    if ((defined($job_key_file)) and ($job_key_file ne "")){
-        my $tmp_name_key = oar_Tools::get_default_oarexec_directory()."/oarsub_tmp_ssh.$$.key";
-        if ($job_key_file =~ m/%jobid%/m){
-            $Generated_ssh_key_by_oarsub = $tmp_name_key;
-        }else{
+    }elsif (defined($job_key_file)){
+        if (($job_priv_key ne "") or ($job_pub_key ne "")){
+            if (($job_priv_key eq "") or ($job_pub_key eq "")){
+                warn("Error: You want to use ssh job key inline options so you must define --import-job-key-inline-priv and --import-job-key-inline-pub option values.\n");
+                exit(15);
+            }
+        }elsif ($imported_job_key_file ne ""){
+            my $lusr= getpwuid($ENV{SUDO_UID});
             # Test files with user privileges
-            # generate key if neither pub or priv key file exists.
-            system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -e "'.$job_key_file.'" -o -e "'.$job_key_file.'.pub" ]\'');
+            system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -r "'.$imported_job_key_file.'" -a -r "'.$imported_job_key_file.'.pub" ]\'');
             if ($? != 0){
-                $Generated_ssh_key_by_oarsub = $tmp_name_key;
-            }
-        }
-        if (defined($Generated_ssh_key_by_oarsub)){
-            print("Job key files do not exist, assuming they must be generated...\n");
-            # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
-            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "Job key created by OAR" -N "" -t rsa -f "'.$Generated_ssh_key_by_oarsub.'" > /dev/null')) {
-                warn ("Error: Job key generation failed ($?).\n");
-                exit(14);
-            }
-        }
-        if (!defined($Generated_ssh_key_by_oarsub)){
-            #unless ((-e $job_key_file) and (-e $job_key_file.".pub")) {
-            system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -r "'.$job_key_file.'" -a -r "'.$job_key_file.'.pub" ]\'');
-            if ($? != 0){
-                warn ("Error: one or both of the job key's public and private parts cannot be read.\nCheck files: $job_key_file and $job_key_file.pub.\n");
+                warn ("Error: one or both of the job key's public and private parts cannot be read.\nCheck files: $imported_job_key_file and $imported_job_key_file.pub.\n");
                 exit(14);
             }
             # read private and public key files: sudo -u user needed in order to be able to read the file for sure
@@ -369,42 +360,53 @@ sub job_key_management() {
             my $pid;
             die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
             if ($pid == 0) {
-                unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$job_key_file.'"')) {
+                unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$imported_job_key_file.'"')) {
                     warn ("Error: Cannot exec bash shell");
-          	        exit(14);
+                    exit(14);
                 }
-            } else {
+            }else{
                 my @tmp_key;
                 while (<SAFE_CHILD>) {
                     push @tmp_key, $_;
                 }
                 $job_priv_key = join "",@tmp_key;
-                close SAFE_CHILD;                 # $? contains status
+                close(SAFE_CHILD);                 # $? contains status
                 if ($? != 0) {
-                    warn ("Error: Cannot read the private part of your job key: $job_key_file.\n");
+                    warn ("Error: Cannot read the private part of your job key: $imported_job_key_file.\n");
                     exit(14);
                 }
             }
-    
+        
             die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
             if ($pid == 0) {
-                unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$job_key_file.'.pub"')) {
+                unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$imported_job_key_file.'.pub"')) {
                     warn ("Error: Cannot exec bash shell");
-          	        exit(14);
-        	    }
-            } else {
+       	            exit(14);
+      	        }
+            }else{
                 my @tmp_key;
                 while (<SAFE_CHILD>) {
                     push @tmp_key, $_;
                 }
                 $job_pub_key = join "",@tmp_key;
-                close SAFE_CHILD;                 # $? contains status
+                close(SAFE_CHILD);                 # $? contains status
                 if ($? != 0) {
-                    warn ("Error: Cannot read the public part of your job key: $job_key_file.pub.\n");
+                    warn ("Error: Cannot read the public part of your job key: $imported_job_key_file.pub.\n");
                     exit(14);
                 } 
             }
         }else{
+            # we must generate the ssh key
+            if ($gen_job_key_file eq ""){
+                $gen_job_key_file = $Default_ssh_key_name;
+            }
+            $Generated_ssh_key_by_oarsub = oar_Tools::get_default_oarexec_directory()."/oarsub_tmp_ssh.$$.key";
+            print("Generating job ssh key files...\n");
+            # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
+            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "Job key created by OAR" -N "" -t rsa -f "'.$Generated_ssh_key_by_oarsub.'" > /dev/null')) {
+                warn ("Error: Job key generation failed ($?).\n");
+                exit(14);
+            }
             # The key was automatically generated and oar own it
             if (!(-r $Generated_ssh_key_by_oarsub and -r $Generated_ssh_key_by_oarsub.".pub")){
                 warn ("Error: one or both of the job key's public and private parts cannot be read.\nCheck files: $Generated_ssh_key_by_oarsub and $Generated_ssh_key_by_oarsub.pub.\n");
@@ -603,16 +605,20 @@ GetOptions ("resource|l=s" => \@resource,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
             "stdout=s" => \$Stdout_file,
+            "stdout-file=s" => \$Stdout_file,
             "stderr=s" => \$Stderr_file,
+            "stderr-file=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
             "force-cpuset-name=s" => \$Cpuset_name,
             "Scanscript|S" => \$Scan_script,
-            "XML|X" => \$XML_mode,
-            "YAML|Y" => \$YAML_mode,
-            "DUMPER|D" => \$DUMPER_mode,
-            "job-key-file|k:s" => \$job_key_file,
-            "job-priv-key=s" => \$job_priv_key,
-            "job-pub-key=s" => \$job_pub_key,
+            "xml|X" => \$XML_mode,
+            "yaml|Y" => \$YAML_mode,
+            "dumper|D" => \$DUMPER_mode,
+            "use-job-key|k" => \$job_key_file,
+            "import-job-key-inline-priv=s" => \$job_priv_key,
+            "import-job-key-inline-pub=s" => \$job_pub_key,
+            "import-job-key-from-file|i=s" => \$imported_job_key_file,
+            "gen-job-key-file=s" => \$gen_job_key_file,
             "version|v" => \$Version
            );
 
@@ -627,11 +633,10 @@ if (defined($sos)){
     exit(0);
 }
 
-# Check if we want to generate a job key or not by default
-if ((defined($job_key_file) and ($job_key_file eq ''))){
-    $job_key_file = $Default_ssh_key_name;
-}elsif ((!defined($job_key_file)) and (!defined($Cpuset_name)) and ($job_priv_key eq "") and ($job_pub_key eq "") and (is_conf("OAR_OARSUB_FORCE_SSH_KEY_JOB"))){
-    $job_key_file = get_conf("OAR_OARSUB_FORCE_SSH_KEY_JOB");
+# Check the default name of the key if we have to generate it
+if (is_conf("OAR_OARSUB_FORCE_SSH_KEY_JOB")){
+    $Default_ssh_key_name = get_conf("OAR_OARSUB_FORCE_SSH_KEY_JOB");
+    $job_key_file = 1;
 }
 
 $base = iolib::connect();
@@ -831,18 +836,16 @@ if ($Job_id < 0){
 }
 
 if (defined($Generated_ssh_key_by_oarsub)){
-    if ((defined($job_key_file)) and ($job_key_file ne "")){
-        # we must copy the keys in the directory specified with the right name
-        $job_key_file =~ s/%jobid%/$Job_id/g;
-        my $lusr= getpwuid($ENV{SUDO_UID});
-        system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'cat > '.$job_key_file.'\' < '.$Generated_ssh_key_by_oarsub);
-        system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'cat > '.$job_key_file.'.pub\' < '.$Generated_ssh_key_by_oarsub.'.pub');
-        system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'chmod 644 '.$job_key_file.'.pub; chmod 600 '.$job_key_file.'\'');
-    }
+    # we must copy the keys in the directory specified with the right name
+    $gen_job_key_file =~ s/%jobid%/$Job_id/g;
+    my $lusr= getpwuid($ENV{SUDO_UID});
+    system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'cat > '.$gen_job_key_file.'\' < '.$Generated_ssh_key_by_oarsub);
+    system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'cat > '.$gen_job_key_file.'.pub\' < '.$Generated_ssh_key_by_oarsub.'.pub');
+    system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'chmod 644 '.$gen_job_key_file.'.pub; chmod 600 '.$gen_job_key_file.'\'');
     unlink($Generated_ssh_key_by_oarsub,$Generated_ssh_key_by_oarsub.".pub");
-}
-if ((defined($job_key_file)) and ($job_key_file ne "")){
-    print("OAR_JOB_KEY_FILE=$job_key_file\n");
+    print("OAR_JOB_KEY_FILE=$gen_job_key_file\n");
+}elsif ($imported_job_key_file ne ""){
+    print("OAR_JOB_KEY_FILE=$imported_job_key_file\n");
 }
 
 #Signal Almigthy

@@ -223,20 +223,26 @@ Options::
                                cpuset name then processes of a job could be
                                killed when another one finishes on the same
                                computer)
- -k, --job-key-file=<FILE>     Use a job key. Parameter is the pathname to the
-                               secret key, public key is guessed (.pub is 
-                               appended). If file does not already exist, 
-                               generate it first.
-     --job-priv-key=<TXT>      Use a job key. Raw private key provided inline
-     --job-pub-key=<TXT>       Use a job key. Raw public key provided inline
+ -k, --use-job-key             Use a job key. If nothing else is specified
+                               then it generates a ssh key.
+ -i, --import-job-key-from-file=<TXT>
+                               Use this file for the private ssh key and the
+                               .pub for the public one
+     --gen-job-key-file=<TXT>  Tell oarsub to generate the ssh key
+                               automatically(the %jobid% pattern is replaced
+                               by the job identifier)
+     --import-job-key-inline-priv=<TXT>
+                               Use a job key. Raw private key provided inline
+     --import-job-key-inline-pub=<TXT>
+                               Use a job key. Raw public key provided inline
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
  -s, --stagein=<DIR|TGZ>       Set the stagein directory or archive
      --stagein-md5sum=<MD5SUM> Set the stagein file md5sum
- -D, --DUMPER                  Print result in DUMPER format
- -X, --XML                     Print result in XML format
- -Y, --YAML                    Print result in YAML format
+ -D, --dumper                  Print result in DUMPER format
+ -X, --xml                     Print result in XML format
+ -Y, --yaml                    Print result in YAML format
  -h, --help                    Print this help message
  -v, --version                 Print OAR version number
 

@@ -111,17 +111,22 @@ Resubmit the given job as a new one.
 Specify a cpuset name to use instead of the job id.
 I<WARNING:> if several jobs have the same cpuset name then processes of a job could be killed when another one finishes on the same computer)
 
-=item B<-k, --job-key-file> <FILE>
+=item B<-k, --use-job-key>
 
-Use a job key. Parameter is the pathname to the secret key, public key is guessed (.pub is appended). If file does not already exist, generate it first (you can use %jobid% in the name and it will be replaced by the job id).
+Use a job key. If nothing else is specified then it generates a ssh key.
 
-=item B<--job-priv-key> <TXT>
+=item B<-i, --import-job-key-from-file>
 
-Use a job key. Raw private key provided inline.
+Use this file for the private ssh key and the .pub for the public one.
 
-=item B<--job-pub-key> <TXT>
+=item B<--gen-job-key-file>
 
-Use a job key. Raw public key provided inline.
+Tell oarsub to generate the ssh key automatically(the %jobid% pattern is replaced by the job identifier)
+
+
+=item B<--import-job-key-inline-priv> and B<--import-job-key-inline-pub>
+
+Use a job key. Raw private and public key provided inline.
 
 =item B<--hold>
 
@@ -135,15 +140,15 @@ Set the stagein directory or archive (Desktop Computing mode).
 
 Set the stagein file md5sum (Desktop Computing mode).
 
-=item B<-D, --DUMPER>
+=item B<-D, --dumper>
 
 Print result in Perl Data::Dumper format.
 
-=item B<-X, --XML>
+=item B<-X, --xml>
 
 Print result in XML format.
 
-=item B<-Y, --YAML>
+=item B<-Y, --yaml>
 
 Print result in YAML format.
 

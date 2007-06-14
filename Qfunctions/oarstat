@@ -57,9 +57,9 @@ GetOptions ("help|h" => \$sos,
             "gantt|g=s"   => \$gantt_query,
             "accounting=s"   => \$accounting_query,
             "sql=s"   => \$sql_property,
-            "XML|X" => \$XML_mode,
-            "YAML|Y" => \$YAML_mode,
-            "DUMPER|D" => \$DUMPER_mode,
+            "xml|X" => \$XML_mode,
+            "yaml|Y" => \$YAML_mode,
+            "dumper|D" => \$DUMPER_mode,
             "backward_compatible" => \$Old,
             "version|v" => \$Version
            );
@@ -80,9 +80,9 @@ Options:
                             like "2006-03-30, 2006-04-30"
       --sql                 restricts display with the SQL where clause on the
                             table jobs (ex: "project = 'p1'")
-  -D, --DUMPER              print result in DUMPER format
-  -X, --XML                 print result in XML format
-  -Y, --YAML                print result in YAML format
+  -D, --dumper              print result in DUMPER format
+  -X, --xml                 print result in XML format
+  -Y, --yaml                print result in YAML format
       --backward_compatible print informations of the form of 1.* OAR version
   -v, --version             print OAR version number
 EOS
