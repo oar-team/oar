@@ -84,7 +84,7 @@ my $use_job_key;
 my $job_key_priv = "";
 my $job_key_pub = "";
 my $import_job_key_file = "";
-my $job_key_file = "OAR.%jobid%.key";
+my $job_key_file = "OAR.%jobid%.jobkey";
 my $gen_job_key_file = oar_Tools::get_default_oarexec_directory()."/.OAR.jobkey.oarsub_$$";
 
 #to catch ^C signal
@@ -340,9 +340,10 @@ EOS
 # generate a job key if no import.
 # function must exit with $job_key_priv and $job_key_pub set if $use_job_key is set.
 sub job_key_management() {
-		if (defined ($use_job_key) and !($job_key_priv ne "") and !($job_key_priv ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE}))
+		if (defined ($use_job_key) and !($job_key_priv ne "") and !($job_key_priv ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
         $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
-    if ((!defined($use_job_key)) and (($job_key_priv ne "") or ($job_key_pub ne "") or ($import_job_key_file ne "") or ($job_key_file ne ""))){
+    }
+    if ((!defined($use_job_key)) and (($job_key_priv ne "") or ($job_key_pub ne "") or ($import_job_key_file ne ""))){
         warn("Error: You must use the --use-job-key (or -k switch) prior to use other job key related options.\n");
         exit(15);
     }
@@ -351,8 +352,8 @@ sub job_key_management() {
             warn("Error: Cannot set a cpuset name when using a job key.\n");
             exit(15);
         }
-        if ((!($job_key_priv ne "") or ($job_key_pub ne "")) and (!($job_key_pub ne "") or ($job_key_priv ne ""))){
-            warn("Error: In order to import the job-key inline, you must give both the public and private parts using both of the related command line options.\n");
+        if ((!($job_key_priv ne "") and ($job_key_pub ne "")) or (!($job_key_pub ne "") and ($job_key_priv ne ""))){
+            warn("Error: To import the job-key inline, you must give both the public and private parts using both of the dedicated command line options.\n");
             exit(15);
         }
         if ((($job_key_priv ne "") or ($job_key_pub ne "")) and ($import_job_key_file ne "")){
@@ -412,7 +413,7 @@ sub job_key_management() {
             # we must generate the ssh key
             print("Generating public/private job key pair...\n");
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
-            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "Job key created by OAR" -N "" -t rsa -f "'.$gen_job_key_file.'" > /dev/null')) {
+            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "OAR job key %job id%" -N "" -t rsa -f "'.$gen_job_key_file.'" > /dev/null')) {
                 warn ("Error: Job key generation failed ($?).\n");
                 exit(14);
             }
@@ -452,11 +453,11 @@ sub job_key_management() {
             warn("Error: missing job private key (public key found).\n");
             exit(15);
         } 
-        if ($job_key_priv !~ /^(ssh-rsa|ssh-dss)\s.+\n*$/){
+        if ($job_key_pub !~ /^(ssh-rsa|ssh-dss)\s.+\n*$/){
             warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss' and is only 1 line.\n");
             exit(14);
         }
-        $job_pub_key =~ s/\n//g;
+        $job_key_pub =~ s/\n//g;
     }
 }
 
@@ -622,7 +623,7 @@ GetOptions ("resource|l=s" => \@resource,
             "use-job-key|k" => \$use_job_key,
             "import-job-key-inline-priv=s" => \$job_key_priv,
             "import-job-key-inline-pub=s" => \$job_key_pub,
-            "import-job-key-from-file|i=s" => \$imported_job_key_file,
+            "import-job-key-from-file|i=s" => \$import_job_key_file,
             "job-key-file=s" => \$job_key_file,
             "version|v" => \$Version
            );
@@ -640,8 +641,9 @@ if (defined($sos)){
 
 # Check the default name of the key if we have to generate it
 if (is_conf("OARSUB_FORCE_JOB_KEY")){
-    if (lc(get_conf("OARSUB_FORCE_JOB_KEY")) eq "yes")
+    if (lc(get_conf("OARSUB_FORCE_JOB_KEY")) eq "yes"){
         $use_job_key = 1;
+    }
 }
 
 $base = iolib::connect();
@@ -783,7 +785,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_priv_key,$job_pub_key);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_key_priv,$job_key_pub);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -807,7 +809,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_priv_key,$job_pub_key);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_key_priv,$job_key_pub);
 }
 print("OAR_JOB_ID=$Job_id\n");
 
@@ -848,10 +850,11 @@ if (defined($use_job_key)){
     system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'cat > '.$job_key_file.'.pub\' < '.$gen_job_key_file.'.pub');
     system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'chmod 644 '.$job_key_file.'.pub; chmod 600 '.$job_key_file.'\'');
     unlink($gen_job_key_file,$gen_job_key_file.".pub");
-    if ($import_job_key_file ne "")
+    if ($import_job_key_file ne ""){
         print("OAR_JOB_KEY_FILE=$import_job_key_file\n");
-    else
+    } else {
         print("OAR_JOB_KEY_FILE=$job_key_file\n");
+    }
 }
 
 #Signal Almigthy
