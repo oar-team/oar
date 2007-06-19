@@ -173,73 +173,76 @@ The user can submit a job with this command. So, what is a job in our context?
 
 
 Options::
-                  
- -I, --Interactive             Request an interactive job. Open a login shell
+
+ -I, --interactive             Request an interactive job. Open a login shell
                                on the first node of the reservation instead of
                                running a script.
- -C, --Connect=<OAR JOB ID>    Connect to a running job
- -l, --resource=<LIST>         Set the requested resources for the job.
+ -C, --connect=<job id>        Connect to a running job
+ -l, --resource=<list>         Set the requested resources for the job.
                                The different parameters are resource properties
                                registered in OAR database, and `walltime' which
                                specifies the duration before the job must be 
                                automatically terminated if still running.
                                Walltime format is [hour:mn:sec|hour:mn|hour].
-                               Ex: node=4/cpu=1,walltime=2:00:00
- -S, --Scanscript              Batch mode only: asks oarsub to scan the given
+                               Ex: nodes=4/cpu=1,walltime=2:00:00
+ -S, --scanscript              Batch mode only: asks oarsub to scan the given
                                script for OAR directives (#OAR -l ...)
- -q, --queue=<QUEUE>           Set the the queue to submit the job to
- -p, --property="<LIST>"       Add constraints to properties for the job.
+ -q, --queue=<queue>           Set the the queue to submit the job to
+ -p, --property="<list>"       Add constraints to properties for the job.
                                (format is a WHERE clause from the SQL syntax)
- -r, --reservation=<DATE>      Request a job start time reservation, 
+ -r, --reservation=<date>      Request a job start time reservation, 
                                instead of a submission. 
-     --checkpoint=<DELAY>      Enable the checkpointing for the job. A signal 
+     --checkpoint=<delay>      Enable the checkpointing for the job. A signal 
                                is sent DELAY seconds before the walltime on
                                the first processus of the job 
-     --signal=<SIG>            Specify the signal to use when checkpointing
-                               (default is 12 --> SIGUSR2)
- -t, --type=<TYPE>             Specify a specific type (deploy, besteffort,
-                               cosystem, checkpoint,timesharing)
- -d, --directory=<DIR>         Specify the directory where to launch the
+     --signal=<#sig>           Specify the signal to use when checkpointing
+                               Use signal numbers, default is 12 (SIGUSR2)
+ -t, --type=<type>             Specify a specific type (deploy, besteffort,
+                               cosystem, checkpoint, timesharing)
+ -d, --directory=<dir>         Specify the directory where to launch the
                                command (default is current directory)
-     --project=<TXT>           Specify a name of a project the job belongs to
- -n, --name=<TXT>              Specify an arbitrary name for the job
- -e, --env=<TXT>               Environment variables to set on the running
+     --project=<txt>           Specify a name of a project the job belongs to
+ -n, --name=<txt>              Specify an arbitrary name for the job
+ -e, --env=<txt>               Environment variables to set on the running
                                proccess in the form "A=b C=d" (not implemented)
- -a, --anterior=<OAR JOB ID>   Anterior job that must be terminated to start
+ -a, --anterior=<job id>       Anterior job that must be terminated to start
                                this new one
-     --notify=<TXT>            Specify a notification method
+     --notify=<txt>            Specify a notification method
                                (mail or command to execute). Ex: 
-                                   --notify "mail:name@domain.com"
+                                   --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
-     --stdout=<FILE>           Specify the name of the standard output file
-                               (you can use %jobid% and it will be replaced by
-                               the job id)
-     --stderr=<FILE>           Specify the name of the error output file
-                               (you can use %jobid% and it will be replaced by
-                               the job id)
-     --resubmit<OAR JOB ID>    Resubmit the given job as a new one
-     --force-cpuset-name=<TXT> Specify a cpuset name to use instead of the job
+     --resubmit=<job id>       Resubmit the given job as a new one
+     --force-cpuset-name=<txt> Specify a cpuset name to use instead of the job
                                id (WARNING: if several jobs have the same
                                cpuset name then processes of a job could be
                                killed when another one finishes on the same
                                computer)
- -k, --use-job-key             Use a job key. If nothing else is specified
-                               then it generates a ssh key.
- -i, --import-job-key-from-file=<TXT>
-                               Use this file for the private ssh key and the
-                               .pub for the public one
-     --gen-job-key-file=<TXT>  Tell oarsub to generate the ssh key
-                               automatically(the %jobid% pattern is replaced
-                               by the job identifier)
-     --import-job-key-inline-priv=<TXT>
-                               Use a job key. Raw private key provided inline
-     --import-job-key-inline-pub=<TXT>
-                               Use a job key. Raw public key provided inline
+ -k, --use-job-key             Activate the job-key mechanism. A job-key will
+                               be generated allowing to connect the job from
+                               outside the set of resources managed by OAR.
+ -i, --import-job-key-from-file=<file>
+                               Import the job-key to use from existing files
+                               (public and private key files) instead of
+                               generating a new one
+     --import-job-key-inline-priv=<txt>
+     --import-job-key-inline-pub=<txt>
+                               Import the job-key to use passing both the
+                               public and the private parts in the command
+                               line instead of generating a new one
+     --job-key-file=<file>     Specify the prefix of the files that will store
+                               the job-key for the job.
+                               (the %jobid% pattern is automatically replaced)
+     --stdout-file=<file>      Specify the file that will store the standart
+                               output stream of the job.
+                               (the %jobid% pattern is automatically replaced)
+     --stderr-file=<file>      Specify the file that will store the standart
+                               error stream of the job.
+                               (the %jobid% pattern is automatically replaced)
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
- -s, --stagein=<DIR|TGZ>       Set the stagein directory or archive
-     --stagein-md5sum=<MD5SUM> Set the stagein file md5sum
+ -s, --stagein=<dir|tgz>       Set the stagein directory or archive
+     --stagein-md5sum=<md5sum> Set the stagein file md5sum
  -D, --dumper                  Print result in DUMPER format
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format

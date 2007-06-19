@@ -129,7 +129,7 @@ sub get_default_node_file_db_field_distinct_values(){
 sub get_private_ssh_key_file_name($){
     my $cpuset_name = shift;
 
-    return($Default_oarexec_directory.'/'.$cpuset_name.".sshkey");
+    return($Default_oarexec_directory.'/'.$cpuset_name.".jobkey");
 }
 
 # Add right environment variables to the given public key

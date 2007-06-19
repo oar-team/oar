@@ -122,7 +122,7 @@ then
 fi
 
 # connection using the job key file stored by oar on nodes upon submission 
-OAR_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OAR_CPUSET.sshkey"
+OAR_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OAR_CPUSET.jobkey"
 if [ -r $OAR_JOB_KEY_FILE ]
 then
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"

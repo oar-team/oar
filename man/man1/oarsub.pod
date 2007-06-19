@@ -22,11 +22,11 @@ The scheduler is in charge of providing a set of resources matching the oarsub c
 
 =over
 
-=item B<-I, --Interactive>
+=item B<-I, --interactive>
 
 Request an interactive job. Open a login shell on the first node of the reservation instead of running a script.
 
-=item B<-C, --Connect> <OAR JOB ID>
+=item B<-C, --connect> <JOB ID>
 
 Connect to a running job.
 
@@ -35,7 +35,7 @@ Connect to a running job.
 Set the requested resources for the job. The different parameters are resource properties registered in OAR database, and `walltime' which specifies the duration before the job must be automatically terminated if still running. 
 Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: nodes=4/cpu=1,walltime=2:00:00
 
-=item B<-S, --Scanscript>
+=item B<-S, --scanscript>
 
 Batch mode only: ask oarsub to scan the given script for OAR directives (#OAR -l ...)
 
@@ -83,7 +83,7 @@ Environment variables to set on the running proccess in the form "A=b C=d" (not 
 
 =item B<-a, --anterior> <OAR JOB ID>
 
-Previously submitted job that this new job execution must depend on. The new job will only start upon the end the previous one.
+Previously submitted job that this new job execution must depend on. The new job will only start upon the end of the previous one.
 
 =item B<--notify> <TXT>
 
@@ -92,16 +92,6 @@ Ex:
  --notify "mail:name@domain.com"
  --notify "exec:/path/to/script args"
 
-=item B<--stdout> <FILE>
-
-Specify the name of the standard output file.
-(you can use %jobid% and it will be replaced by the job id)
-
-=item B<--stderr> <FILE>
-
-Specify the name of the error output file.
-(you can use %jobid% and it will be replaced by the job id)
-
 =item B<--resubmit> <OAR JOB ID>
 
 Resubmit the given job as a new one.
@@ -109,24 +99,27 @@ Resubmit the given job as a new one.
 =item B<--force-cpuset-name> <TXT>
 
 Specify a cpuset name to use instead of the job id.
-I<WARNING:> if several jobs have the same cpuset name then processes of a job could be killed when another one finishes on the same computer)
+I<WARNING:> if several jobs have the same cpuset name then processes of a job could be killed when another one finishes on the same computer.
 
 =item B<-k, --use-job-key>
 
-Use a job key. If nothing else is specified then it generates a ssh key.
+Activate the job-key mechanism. A job-key will be generated allowing to connect the job from outside the set of resources managed by OAR.
 
 =item B<-i, --import-job-key-from-file>
 
-Use this file for the private ssh key and the .pub for the public one.
+Import the job-key to use from existing files (public and private key files) instead of generating a new one.
 
-=item B<--gen-job-key-file>
+=item B<--import-job-key-inline-pub> and B<--import-job-key-inline-priv>
 
-Tell oarsub to generate the ssh key automatically(the %jobid% pattern is replaced by the job identifier)
+Import the job-key to use passing both the public and the private parts in the command line instead of generating a new one.
 
+=item B<--job-key-file>
 
-=item B<--import-job-key-inline-priv> and B<--import-job-key-inline-pub>
+Specify the prefix of the files that will store the job-key for the job. The %jobid% pattern is automatically replaced.
 
-Use a job key. Raw private and public key provided inline.
+=item B<--stdout-file> <FILE> B<--stderr-file>
+
+Specify the files that will store the standart output stream and standart error of the job. The %jobid% pattern is automatically replaced.
 
 =item B<--hold>
 
