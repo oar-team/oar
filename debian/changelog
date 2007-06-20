@@ -1,3 +1,9 @@
+oar (2.0.2+svn588-1) unstable; urgency=low
+
+  * Updated to SVN revision 588.
+
+ -- Pierre Neyron <neyron@tupinamba.imag.fr>  Wed, 20 Jun 2007 17:09:06 +0200
+
 oar (2.0.2-1) unstable; urgency=low
 
   * add warnings and exit code to oarnodesetting when there is a bad node name
