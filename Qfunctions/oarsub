@@ -85,7 +85,7 @@ my $job_key_priv = "";
 my $job_key_pub = "";
 my $import_job_key_file = "";
 my $job_key_file = "OAR.%jobid%.jobkey";
-my $gen_job_key_file = oar_Tools::get_default_oarexec_directory()."/.OAR.jobkey.oarsub_$$";
+my $gen_job_key_file = "";
 
 #to catch ^C signal
 $SIG{INT} = 'qdel';
@@ -345,7 +345,7 @@ sub job_key_management() {
         $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
     }
     if ((!defined($use_job_key)) and (($job_key_priv ne "") or ($job_key_pub ne "") or ($import_job_key_file ne ""))){
-        warn("Error: You must use the --use-job-key (or -k switch) prior to use other job key related options.\n");
+        warn("Error: You must use the -k or --use-job-key option prior to use other job key related options.\n");
         exit(15);
     }
     if (defined($use_job_key)){
@@ -412,9 +412,10 @@ sub job_key_management() {
         }
         if (($job_key_priv eq "") and ($job_key_pub eq "")) {
             # we must generate the ssh key
+            $gen_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
             print("Generating public/private job key pair...\n");
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
-            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "OAR job key" -N "" -t rsa -f "'.$gen_job_key_file.'" > /dev/null')) {
+            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "OAR job key - '.strftime("generated at %F %T.",localtime()).'" -N "" -t rsa -f "'.$gen_job_key_file.'" > /dev/null')) {
                 warn ("Error: Job key generation failed ($?).\n");
                 exit(14);
             }
@@ -884,7 +885,11 @@ if (defined($use_job_key)){
         }
     }
     # print the job key filename
-    print("OAR_JOB_KEY_FILE=$job_key_file\n");
+    if ($job_key_file =~ /^i\//) {
+	    print("OAR_JOB_KEY_FILE=".$job_key_file."\n");
+    } else {
+	    print("OAR_JOB_KEY_FILE=".$ENV{PWD}."/".$job_key_file."\n");
+    }
 }
 
 #Signal Almigthy
