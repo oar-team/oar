@@ -414,7 +414,7 @@ sub job_key_management() {
         if (($job_key_priv eq "") and ($job_key_pub eq "")) {
             # we must generate the ssh key
             $gen_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
-            print("Generating public/private job key pair...\n");
+            print("Generating a new public/private job key pair...\n");
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
             if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "OAR job key - '.strftime("generated at %F %T.",localtime()).'" -N "" -t rsa -f "'.$gen_job_key_file.'" > /dev/null')) {
                 warn ("Error: Job key generation failed ($?).\n");
