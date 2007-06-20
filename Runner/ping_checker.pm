@@ -96,7 +96,7 @@ sub taktuk_hosts(@){
 
     my %check_test_nodes;
 
-    $taktuk_cmd .= ' -f - -o status=\'"STATUS $host $line\n"\' '.get_conf("PINGCHECKER_TAKTUK_ARG_COMMAND");
+    $taktuk_cmd .= ' -o status=\'"STATUS $host $line\n"\' -f - '.get_conf("PINGCHECKER_TAKTUK_ARG_COMMAND");
 
     my @bad_hosts;
     oar_debug("[PingChecker] $taktuk_cmd\n");
