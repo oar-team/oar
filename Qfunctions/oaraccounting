@@ -16,7 +16,7 @@ my $Delete_windows_before;
 my $Reinitialize;
 GetOptions (
     "reinitialize" => \$Reinitialize,
-    "delete_before=i" => \$Delete_windows_before,
+    "delete-before=i" => \$Delete_windows_before,
     "help|h" => \$Help,
     "version|v" => \$Version
            );
@@ -32,7 +32,7 @@ Feed accounting table to make usage statistics.
 Options:
       --reinitialize
                 delete everything and recheck every jobs and feed the table
-      --delete_before=<number_of_seconds>
+      --delete-before=<number_of_seconds>
                 delete every records number_of_seconds ago
   -h, --help    show this help screen
   -v, --version print OAR version number

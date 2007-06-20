@@ -16,6 +16,7 @@ upstream development version:
   - %jobid% is now replaced in the ssh job key name (oarsub -k ...).
   - add NODE_FILE_DB_FIELD_DISTINCT_VALUES in oar.conf that enables the admin to configure the generated containt of the OAR_NODE_FILE
   - change ssh job key oarsub options behaviour
+  - add options "--reinitialize" and "--delete-before" to the oaraccounting command
 
 version 2.0.2:
 --------------
