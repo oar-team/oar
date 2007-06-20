@@ -115,7 +115,7 @@ my $appendice_pid;
 sub launch_command($){
         my $command = shift;
         oar_debug("[Almighty] Launching command : [$command]\n");
-        $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
+        #$ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
 ####### THE LINE BELOW SHOULD NOT BE COMMENTED IN NORMAL USE #####
         $SIG{CHLD} = 'DEFAULT';
         #system $command;

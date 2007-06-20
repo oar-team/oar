@@ -353,7 +353,7 @@ sub fork_no_wait($$){
     my $cmd = shift;
     my $base = shift;
 
-    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
+#    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
     my $pid;
     $SIG{PIPE}  = 'IGNORE';
     $pid = fork();
@@ -409,7 +409,7 @@ sub fork_and_feed_stdin($$$){
 sub launch_command($){
     my $command = shift;
 
-    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin:$ENV{OARDIR}";
+#    $ENV{PATH}="/bin:/usr/bin:/usr/local/bin:$ENV{OARDIR}";
     system($command);
     my $exit_value  = $? >> 8;
     my $signal_num  = $? & 127;
