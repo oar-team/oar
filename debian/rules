@@ -83,6 +83,7 @@ install-indep:
 		SBINLINKPATH=../lib/oar
 	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=/usr/lib/oar/cmds/oarstat#" $(CURDIR)/debian/oar-common/usr/lib/oar/oarsh
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=/usr/bin/oarsh#" $(CURDIR)/debian/oar-common/usr/bin/oarcp
+	perl -i -pe "s%^#?OAR_RUNTIME_DIRECTORY=.*$%OAR_RUNTIME_DIRECTORY="/var/lib/oar"%" $(CURDIR)/debian/oar-common/etc/oar.conf
 	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/configurator_wrapper.sh
 	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/sudowrapper.sh
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar

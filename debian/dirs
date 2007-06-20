@@ -1,4 +1,5 @@
 usr/bin
 usr/sbin
 var/lib
+var/run
 etc/

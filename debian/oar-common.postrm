@@ -45,7 +45,8 @@ case "$1" in
 		remove_sudoers || true
 		deluser --quiet oar > /dev/null 2>&1 || true
 		delgroup --quiet oar > /dev/null 2>&1 || true
-		rm -rf /var/log/oar.log || true
+		rm -f /var/log/oar.log* || true
+		rm -rf /var/run/oar
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2
