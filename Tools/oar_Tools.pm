@@ -574,7 +574,7 @@ else
     exit 2;
 fi;
 
-'.$shell.' -l;
+exec -l '.$shell.';
 
 exit 0
 ';
