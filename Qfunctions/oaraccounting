@@ -12,7 +12,11 @@ use oarversion;
 Getopt::Long::Configure ("gnu_getopt");
 my $Version;
 my $Help;
+my $Delete_windows_before;
+my $Reinitialize;
 GetOptions (
+    "reinitialize" => \$Reinitialize,
+    "delete_before=i" => \$Delete_windows_before,
     "help|h" => \$Help,
     "version|v" => \$Version
            );
@@ -23,9 +27,13 @@ if (defined($Version)){
 
 if (defined($Help)){
      print <<EOS;
-Usage: $0 [-h] [-v]
+Usage: $0 [-h] [-v] [--reinitialize | --delete_before]
 Feed accounting table to make usage statistics.
 Options:
+      --reinitialize
+                delete everything and recheck every jobs and feed the table
+      --delete_before=<number_of_seconds>
+                delete every records number_of_seconds ago
   -h, --help    show this help screen
   -v, --version print OAR version number
 EOS
@@ -43,7 +51,16 @@ my $base = iolib::connect();
 
 my $lockName = "ACCOUNTING";
 iolib::get_lock($base,$lockName,3600);
-iolib::check_accounting_update($base,$windowSize);
+if (defined($Reinitialize)){
+    print("Deleting all records from the acounting table...\n");
+    iolib::delete_all_from_accounting($base);
+}elsif (defined($Delete_windows_before)){
+    print("Deleting records older than $Delete_windows_before seconds ago...\n");
+    $Delete_windows_before = iolib::get_date($base) - $Delete_windows_before;
+    iolib::delete_accounting_windows_before($base,$Delete_windows_before);
+}else{
+    iolib::check_accounting_update($base,$windowSize);
+}
 iolib::release_lock($base,$lockName);
 
 iolib::disconnect($base);

@@ -4603,6 +4603,22 @@ sub get_accounting_summary_byproject($$$$){
     return($results);
 }
 
+# Empty the table accounting and update the jobs table
+sub delete_all_from_accounting($){
+    my $dbh = shift;
+
+    $dbh->do("DELETE FROM accounting");
+    $dbh->do("UPDATE jobs SET accounted = 'NO'");
+}
+
+# Remove windows from accounting
+sub delete_accounting_windows_before($$){
+    my $dbh = shift;
+    my $duration = shift;
+
+    $dbh->do("DELETE FROM accounting WHERE window_stop <= $duration");
+}
+
 # Get the last project Karma of user at a given date
 # params: base,user,project,date
 sub get_last_project_karma($$$$) {

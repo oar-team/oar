@@ -469,6 +469,18 @@ you can use this command to delete it.
 This command permits to update the `accounting`_ table for jobs ended since the
 last launch.
 
+Option "--reinitialize" removes everything in the `accounting`_ table and
+switches the "accounted" field of the table `jobs`_ into "NO". So when you will
+launch the oaraccounting_ command again, it will take the whole jobs.
+
+Option "--delete_before" removes records from the `accounting`_ table that are
+older than the amount of time specified. So if the table becomes too big you
+can shrink old data; for example::
+
+    oaraccounting --delete_before 2678400
+
+(Remove everything older than 31 days)
+
 *oarnotify*
 ~~~~~~~~~~~
 
