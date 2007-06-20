@@ -574,7 +574,7 @@ else
     exit 2;
 fi;
 
-exec -l '.$shell.';
+exec -a -${SHELL##*/} $SHELL;
 
 exit 0
 ';
