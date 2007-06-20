@@ -350,7 +350,7 @@ sub job_key_management() {
     }
     if (defined($use_job_key)){
         if (defined($Cpuset_name)){
-            warn("Error: Cannot set a cpuset name when using a job key.\n");
+            warn("Error: You cannot set a cpuset name when using a job key.\n");
             exit(15);
         }
         if ((!($job_key_priv ne "") and ($job_key_pub ne "")) or (!($job_key_pub ne "") and ($job_key_priv ne ""))){
@@ -362,11 +362,12 @@ sub job_key_management() {
             exit(15);
         }
         if ($import_job_key_file ne ""){
+            print("Importing public/private job key pair from files: $import_job_key_file and $import_job_key_file.pub\n");
             my $lusr= getpwuid($ENV{SUDO_UID});
             # Test files with user privileges
             system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -r "'.$import_job_key_file.'" -a -r "'.$import_job_key_file.'.pub" ]\'');
             if ($? != 0){
-                warn ("Error: Cannot read one or both of the files to import the job-key: $import_job_key_file and $import_job_key_file.pub.\n");
+                warn ("Error: Cannot read one or both of the files to import the job-key from: $import_job_key_file and $import_job_key_file.pub.\n");
                 exit(14);
             }
             # read private and public key files: sudo -u user needed in order to be able to read the file for sure
