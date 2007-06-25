@@ -269,6 +269,7 @@ CREATE INDEX resource_state ON resources (state);
 CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);
 CREATE INDEX resource_type ON resources (type);
+CREATE INDEX resource_network_address ON resources (network_address);
 
 
 

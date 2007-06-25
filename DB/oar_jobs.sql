@@ -171,6 +171,7 @@ INDEX state (state),
 INDEX next_state (next_state),
 INDEX suspended_jobs (suspended_jobs),
 INDEX type (type),
+INDEX network_address (network_address),
 PRIMARY KEY (resource_id)
 );
 
