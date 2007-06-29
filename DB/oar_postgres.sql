@@ -201,6 +201,7 @@ CREATE TABLE jobs (
   PRIMARY KEY  (job_id)
 );
 CREATE INDEX state ON jobs (state);
+CREATE INDEX state_id ON jobs (state,job_id);
 CREATE INDEX reservation ON jobs (reservation);
 CREATE INDEX queue_name ON jobs (queue_name);
 CREATE INDEX accounted ON jobs (accounted);
