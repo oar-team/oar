@@ -886,7 +886,7 @@ if (defined($use_job_key)){
         }
     }
     # print the job key filename
-    if ($job_key_file =~ /^i\//) {
+    if ($job_key_file =~ /^\//) {
 	    print("OAR_JOB_KEY_FILE=".$job_key_file."\n");
     } else {
 	    print("OAR_JOB_KEY_FILE=".$ENV{PWD}."/".$job_key_file."\n");
