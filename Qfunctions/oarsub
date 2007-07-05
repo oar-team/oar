@@ -84,6 +84,7 @@ my $use_job_key;
 my $job_key_priv = "";
 my $job_key_pub = "";
 my $import_job_key_file = "";
+my $import_job_key_inline = "";
 my $export_job_key_file = "";
 my $gen_job_key_file = "";
 
@@ -304,18 +305,14 @@ Options are:
                                computer)
  -k, --use-job-key             Activate the job-key mechanism. 
  -i, --import-job-key-from-file=<file>
-                               Import the job-key to use from existing files
-                               (public and private key files) instead of
+                               Import the job-key to use from a files instead
+                               of generating a new one.
+     --import-job-key-inline=<txt>
+                               Import the job-key to use inline instead of 
                                generating a new one.
-     --import-job-key-inline-priv=<txt>
-     --import-job-key-inline-pub=<txt>
-                               Import the job-key to use passing both the
-                               public and the private parts in the command
-                               line instead of generating a new one.
  -K  --export-job-key-to-file=<file>
-                               Export the the job key used for the job in the
-                               specified file. Warning: File is overwritten if
-                               it already exists.
+                               Export the the job key to a file. Warning: the
+                               file will be overwritten if it already exists.
                                (the %jobid% pattern is automatically replaced)
  -O  --stdout=<file>           Specify the file that will store the standart
                                output stream of the job.
@@ -341,10 +338,10 @@ EOS
 # generate a job key if no import.
 # function must exit with $job_key_priv and $job_key_pub set if $use_job_key is set.
 sub job_key_management() {
-		if (defined ($use_job_key) and !($job_key_priv ne "") and !($job_key_priv ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
+		if (defined ($use_job_key) and !($import_job_key_inline ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
         $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
     }
-    if ((!defined($use_job_key)) and (($job_key_priv ne "") or ($job_key_pub ne "") or ($import_job_key_file ne ""))){
+    if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne ""))){
         warn("Error: You must use the -k or --use-job-key option prior to use other job key related options.\n");
         exit(15);
     }
@@ -353,98 +350,75 @@ sub job_key_management() {
             warn("Error: You cannot set a cpuset name when using a job key.\n");
             exit(15);
         }
-        if ((!($job_key_priv ne "") and ($job_key_pub ne "")) or (!($job_key_pub ne "") and ($job_key_priv ne ""))){
-            warn("Error: To import the job-key inline, you must give both the public and private parts using both of the dedicated command line options.\n");
+        if (($import_job_key_inline ne "") and ($import_job_key_file ne "")){
+            warn("Error: You cannot import a job key both inline and from a file at the same time.\n");
             exit(15);
         }
-        if ((($job_key_priv ne "") or ($job_key_pub ne "")) and ($import_job_key_file ne "")){
-            warn("Error: You cannot use both the inline and file import method at the same time for the job-key.\n");
-            exit(15);
-        }
-        if ($import_job_key_file ne ""){
-            print("Importing public/private job key pair from files: $import_job_key_file and $import_job_key_file.pub\n");
-            my $lusr= getpwuid($ENV{SUDO_UID});
-            # Test files with user privileges
-            system({"bash"} "bash","-c",'sudo -u '.$lusr.' bash -c \'[ -r "'.$import_job_key_file.'" -a -r "'.$import_job_key_file.'.pub" ]\'');
+        my $tmp_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
+        if (($import_job_key_inline ne "") or ($import_job_key_file ne "")){
+            # job key is imported
+            if ($import_job_key_inline ne "") {
+                # inline import
+                print ("Import job key inline.\n");
+                unless (open(F,"> $tmp_job_key_file")) {
+                    warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
+                    exit(14);
+                }
+                print F $import_job_key_inline;
+                close(F);
+            } else {
+                # file import
+                print ("Import job key from file: $import_job_key_file\n");
+                my $lusr= getpwuid($ENV{SUDO_UID});
+                system({"bash"} "bash","-c","umask 066 && sudo -u ".$lusr." bash -c 'cat $import_job_key_file' 2> /dev/null > $tmp_job_key_file");
+                if ($? != 0){
+                    warn ("Error: Cannot read the files to import the job-key from: $import_job_key_file\n");
+                    if (-e $tmp_job_key_file) { 
+                        unlink($tmp_job_key_file);
+                    }
+                    exit(14);
+                }
+            }
+            # extract the public key from the private one
+            system({"bash"} "bash","-c","SSH_ASKPASS=/bin/true ssh-keygen -y -f $tmp_job_key_file 2> /dev/null > $tmp_job_key_file.pub");
             if ($? != 0){
-                warn ("Error: Cannot read one or both of the files to import the job-key from: $import_job_key_file and $import_job_key_file.pub.\n");
+                warn ("Error: Fail to extract the public key. Please verify that the job key you want to import is valid.\n");
+                if (-e $tmp_job_key_file) { 
+                    unlink($tmp_job_key_file);
+                }
+                if (-e $tmp_job_key_file.".pub") { 
+                    unlink($tmp_job_key_file.".pub");
+                }
                 exit(14);
             }
-            # read private and public key files: sudo -u user needed in order to be able to read the file for sure
-            # safer way to do a `cmd`, see perl cookbook 
-            my $pid;
-            die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
-            if ($pid == 0) {
-                unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$import_job_key_file.'"')) {
-                    warn ("Error: Cannot exec bash shell");
-                    exit(14);
-                }
-            }else{
-                my @tmp_key;
-                while (<SAFE_CHILD>) {
-                    push @tmp_key, $_;
-                }
-                $job_key_priv = join "",@tmp_key;
-                close(SAFE_CHILD);                 # $? contains status
-                if ($? != 0) {
-                    warn ("Error: Cannot read the private part of your job key: $import_job_key_file.\n");
-                    exit(14);
-                }
-            }
-        
-            die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
-            if ($pid == 0) {
-                unless (exec("bash","-c",'sudo -u "'.$lusr.'" cat "'.$import_job_key_file.'.pub"')) {
-                    warn ("Error: Cannot exec bash shell");
-       	            exit(14);
-      	        }
-            }else{
-                my @tmp_key;
-                while (<SAFE_CHILD>) {
-                    push @tmp_key, $_;
-                }
-                $job_key_pub = join "",@tmp_key;
-                close(SAFE_CHILD);                 # $? contains status
-                if ($? != 0) {
-                    warn ("Error: Cannot read the public part of your job key: $import_job_key_file.pub.\n");
-                    exit(14);
-                } 
-            }
-        }
-        if (($job_key_priv eq "") and ($job_key_pub eq "")) {
-            # we must generate the ssh key
-            $gen_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
-            print("Generating a new public/private job key pair...\n");
+        } else {
+            # we must generate the key
+            print("Generate a job key...\n");
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
-            if (system({"bash"} "bash","-c",'ssh-keygen -b 1024 -C "OAR job key - '.strftime("generated at %F %T.",localtime()).'" -N "" -t rsa -f "'.$gen_job_key_file.'" > /dev/null')) {
+            system({"bash"} "bash","-c",'ssh-keygen -b 1024 -N "" -t rsa -f "'.$tmp_job_key_file.'" > /dev/null');
+            if ($? != 0) {
                 warn ("Error: Job key generation failed ($?).\n");
                 exit(14);
             }
-            # The key was automatically generated and oar own it
-            if (!(-r $gen_job_key_file and -r $gen_job_key_file.".pub")){
-                warn ("Error: Cannot read one or both of the files generated for the job key: $gen_job_key_file and $gen_job_key_file.pub.\n");
-                exit(14);
-            }
-            if (open(PRIVKEY, "$gen_job_key_file")){
-                while ($_ = <PRIVKEY>){
-                    $job_key_priv .= $_;
-                }
-                close(PRIVKEY);
-            }else{
-                warn ("Error: Cannot read the private part of your job key: $gen_job_key_file.\n");
-                exit(14);
-            }
-            if (open(PUBKEY, "$gen_job_key_file.pub")){
-                while ($_ = <PUBKEY>){
-                    $job_key_pub .= $_;
-                }
-                close(PUBKEY);
-            }else{
-                warn ("Error: Cannot read the public part of your job key: $gen_job_key_file.pub.\n");
-                exit(14);
-            }
-            unlink($gen_job_key_file,$gen_job_key_file.".pub");
         }
+        # priv and pub key file must now exist.
+        unless (open(F, "< $tmp_job_key_file")){
+            warn ("Error: fail to read private key.\n");
+            exit(14);
+        }
+        while ($_ = <F>){
+            $job_key_priv .= $_;
+        }
+        close(F);
+        unless (open(F, "< $tmp_job_key_file.pub")){
+            warn ("Error: fail to read private key.\n");
+            exit(14);
+        }
+        while ($_ = <F>){
+            $job_key_pub .= $_;
+        }
+        close(F);
+        unlink($tmp_job_key_file,$tmp_job_key_file.".pub");
     }
     
     # last checks
@@ -623,8 +597,7 @@ GetOptions ("resource|l=s" => \@resource,
             "yaml|Y" => \$YAML_mode,
             "dumper|D" => \$DUMPER_mode,
             "use-job-key|k" => \$use_job_key,
-            "import-job-key-inline-priv=s" => \$job_key_priv,
-            "import-job-key-inline-pub=s" => \$job_key_pub,
+            "import-job-key-inline-priv=s" => \$import_job_key_inline,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
             "export-job-key-to-file|K=s" => \$export_job_key_file,
             "version|V" => \$Version
@@ -849,23 +822,6 @@ if (defined($use_job_key) and ($export_job_key_file ne "")){
     $export_job_key_file =~ s/%jobid%/$Job_id/g;
     my $lusr= getpwuid($ENV{SUDO_UID});
     my $pid;
-    # write the public job key with the user ownership
-    unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
-        warn ("Error: Cannot open pipe ($?)");
-        exit(14);
-    }
-    if ($pid == 0) {
-        unless (exec("bash","-c",'sudo -u "'.$lusr.'" bash -c \'umask 0022 && cat > "'.$export_job_key_file.'.pub"\'')) {
-            warn ("Error: Cannot exec bash shell ($?)");
-            exit(14);
-        }
-    }else{
-        print SAFE_CHILD $job_key_pub."\n";
-        unless (close(SAFE_CHILD)) { 
-            warn ("Error: Cannot close pipe {$?}");
-            exit(14);
-        }
-    }
     # write the private job key with the user ownership
     unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
         warn ("Error: Cannot open pipe ($?)");
@@ -883,7 +839,7 @@ if (defined($use_job_key) and ($export_job_key_file ne "")){
             exit(14);
         }
     }
-    print "Job key exported to the files: ".$export_job_key_file." and ".$export_job_key_file.".pub.\n";
+    print "Export job key to file: ".$export_job_key_file."\n";
 }
 
 #Signal Almigthy
