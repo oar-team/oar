@@ -84,7 +84,7 @@ my $use_job_key;
 my $job_key_priv = "";
 my $job_key_pub = "";
 my $import_job_key_file = "";
-my $job_key_file = "OAR.%jobid%.jobkey";
+my $export_job_key_file = "";
 my $gen_job_key_file = "";
 
 #to catch ^C signal
@@ -302,25 +302,25 @@ Options are:
                                cpuset name then processes of a job could be
                                killed when another one finishes on the same
                                computer)
- -k, --use-job-key             Activate the job-key mechanism. A job-key will
-                               be generated allowing to connect the job from
-                               outside the set of resources managed by OAR.
+ -k, --use-job-key             Activate the job-key mechanism. 
  -i, --import-job-key-from-file=<file>
                                Import the job-key to use from existing files
                                (public and private key files) instead of
-                               generating a new one
+                               generating a new one.
      --import-job-key-inline-priv=<txt>
      --import-job-key-inline-pub=<txt>
                                Import the job-key to use passing both the
                                public and the private parts in the command
-                               line instead of generating a new one
-     --job-key-file=<file>     Specify the prefix of the files that will store
-                               the job-key for the job.
+                               line instead of generating a new one.
+ -K  --export-job-key-to-file=<file>
+                               Export the the job key used for the job in the
+                               specified file. Warning: File is overwritten if
+                               it already exists.
                                (the %jobid% pattern is automatically replaced)
-     --stdout-file=<file>      Specify the file that will store the standart
+ -O  --stdout=<file>           Specify the file that will store the standart
                                output stream of the job.
                                (the %jobid% pattern is automatically replaced)
-     --stderr-file=<file>      Specify the file that will store the standart
+ -E  --stderr=<file>           Specify the file that will store the standart
                                error stream of the job.
                                (the %jobid% pattern is automatically replaced)
      --hold                    Set the job state into Hold instead of Waiting,
@@ -614,10 +614,8 @@ GetOptions ("resource|l=s" => \@resource,
             "hold" => \$job_hold,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
-            "stdout=s" => \$Stdout_file,
-            "stdout-file=s" => \$Stdout_file,
-            "stderr=s" => \$Stderr_file,
-            "stderr-file=s" => \$Stderr_file,
+            "stdout|O=s" => \$Stdout_file,
+            "stderr|E=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
             "force-cpuset-name=s" => \$Cpuset_name,
             "scanscript|S" => \$Scan_script,
@@ -628,7 +626,7 @@ GetOptions ("resource|l=s" => \@resource,
             "import-job-key-inline-priv=s" => \$job_key_priv,
             "import-job-key-inline-pub=s" => \$job_key_pub,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
-            "job-key-file=s" => \$job_key_file,
+            "export-job-key-to-file|K=s" => \$export_job_key_file,
             "version|V" => \$Version
            );
 
@@ -846,9 +844,9 @@ if ($Job_id < 0){
     exit(8);
 }
 
-if (defined($use_job_key)){
+if (defined($use_job_key) and ($export_job_key_file ne "")){
     # we must copy the keys in the directory specified with the right name
-    $job_key_file =~ s/%jobid%/$Job_id/g;
+    $export_job_key_file =~ s/%jobid%/$Job_id/g;
     my $lusr= getpwuid($ENV{SUDO_UID});
     my $pid;
     # write the public job key with the user ownership
@@ -857,7 +855,7 @@ if (defined($use_job_key)){
         exit(14);
     }
     if ($pid == 0) {
-        unless (exec("bash","-c",'sudo -u "'.$lusr.'" bash -c \'umask 0022 && cat > "'.$job_key_file.'.pub"\'')) {
+        unless (exec("bash","-c",'sudo -u "'.$lusr.'" bash -c \'umask 0022 && cat > "'.$export_job_key_file.'.pub"\'')) {
             warn ("Error: Cannot exec bash shell ($?)");
             exit(14);
         }
@@ -874,7 +872,7 @@ if (defined($use_job_key)){
         exit(14);
     }
     if ($pid == 0) {
-        unless (exec("bash","-c",'sudo -u "'.$lusr.'" bash -c \'umask 0066 && cat > "'.$job_key_file.'"\'')) {
+        unless (exec("bash","-c",'sudo -u "'.$lusr.'" bash -c \'umask 0066 && cat > "'.$export_job_key_file.'"\'')) {
             warn ("Error: Cannot exec bash shell ($?)");
             exit(14);
         }
@@ -885,12 +883,7 @@ if (defined($use_job_key)){
             exit(14);
         }
     }
-    # print the job key filename
-    if ($job_key_file =~ /^\//) {
-	    print("OAR_JOB_KEY_FILE=".$job_key_file."\n");
-    } else {
-	    print("OAR_JOB_KEY_FILE=".$ENV{PWD}."/".$job_key_file."\n");
-    }
+    print "Job key exported to the files: ".$export_job_key_file." and ".$export_job_key_file.".pub.\n";
 }
 
 #Signal Almigthy
