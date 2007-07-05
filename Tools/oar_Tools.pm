@@ -58,6 +58,7 @@ sub format_ssh_pub_key($$$);
 sub get_default_oar_ssh_authorized_keys_file();
 sub get_default_node_file_db_field();
 sub get_default_node_file_db_field_distinct_values();
+sub replace_jobid_tag_in_string($$);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -235,6 +236,15 @@ sub get_oarsub_connections_file_name($){
     return($Default_oarexec_directory."/".$Oarsub_file_name_prefix.$job_id);
 }
 
+# Replace %jobid% in the string by the given job id
+# args: string, job id
+sub replace_jobid_tag_in_string($$){
+    my $str = shift;
+    my $job_id = shift;
+
+    $str =~ s/%jobid%/$job_id/g;
+    return($str);
+}
 
 # Send the given signal to the right oarexec process
 # args : host name, job id, signal, wait or not (0 or 1), DB ref (to close it in the child process)

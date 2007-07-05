@@ -1089,9 +1089,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
         $stderr .= ".$job_name" if ($job_name ne "NULL");
         $stderr .= '.%jobid%.stderr';
     }
-    # Replace %jobid% by the job id
-    $stdout =~ s/%jobid%/$job_id/g;
-    $stderr =~ s/%jobid%/$job_id/g;
 
     $stdout = $dbh->quote($stdout);
     $stderr = $dbh->quote($stderr);
@@ -1471,20 +1468,8 @@ sub resubmit_job($$){
              ");
     unlock_table($dbh);
 
-    my $stdout_file;
-    if ($job->{stdout_file} eq "OAR.$job_id.stdout"){
-        $stdout_file = "OAR.$new_job_id.stdout";
-    }else{
-        $stdout_file = $job->{stdout_file};
-    }
-    $stdout_file = $dbh->quote($stdout_file);
-    my $stderr_file;
-    if ($job->{stderr_file} eq "OAR.$job_id.stderr"){
-        $stderr_file = "OAR.$new_job_id.stderr";
-    }else{
-        $stderr_file = $job->{stderr_file};
-    }
-    $stderr_file = $dbh->quote($stderr_file);
+    my $stdout_file = $dbh->quote($job->{stdout_file});
+    my $stderr_file = $dbh->quote($job->{stderr_file});
 
     $dbh->do("UPDATE jobs
               SET

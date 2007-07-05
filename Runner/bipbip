@@ -316,8 +316,8 @@ my @oarexec_files = ("$ENV{OARDIR}/oar_Tools.pm","$ENV{OARDIR}/oarexec");
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
         job_id              => $Job_id,
-        stdout_file         => $job->{stdout_file},
-        stderr_file         => $job->{stderr_file},
+        stdout_file         => oar_Tools::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
+        stderr_file         => oar_Tools::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
         launching_directory => $job->{launching_directory},
         job_env             => $job->{job_env},
         resources           => \@resources,
