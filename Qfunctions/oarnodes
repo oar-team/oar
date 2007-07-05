@@ -347,8 +347,8 @@ if (defined($stateMode)){
                             #    $weight_index{$aa}++;
                             #}
                             #$job_str .= "$weight_index{$aa}/$j.oarserver,";
-                            if (!defined($tmp_already_there{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}})){
-                                $tmp_already_there{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}} = 1;
+                            if (!defined($tmp_already_there2{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}})){
+                                $tmp_already_there2{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}} = 1;
                                 $jobs[$c]="$j.oarserver";
                                 $c++; 
                                 $nb_jobs++;

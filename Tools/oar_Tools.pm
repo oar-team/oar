@@ -26,7 +26,7 @@ my $Default_cpuset_file_manager = "cpuset_manager.pl";
 my $Default_suspend_resume_file_manager = "suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
-my $Default_node_file_db_field_distinct_values = "cpu";
+my $Default_node_file_db_field_distinct_values = "resource_id";
 
 # Prototypes
 sub get_all_process_children();
