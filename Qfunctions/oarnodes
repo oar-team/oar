@@ -71,7 +71,7 @@ GetOptions ("state|s" => \$stateMode,
 
 if ($usage){
     print <<EOS;
-Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -v ]
+Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -V ]
 [list of nodes] [-X | -Y | -D] | --backward_compatible [--smp]]
 Display node informations
 Options:
@@ -88,7 +88,7 @@ Options:
      --smp          backward_compatible suboption: prints one node per resource
                     (usefull for big smp systems) 
  -h, --help         show this help screen
- -v, --version      print OAR version number
+ -V, --version      print OAR version number
 EOS
     exit(0);
 }

@@ -14,14 +14,14 @@ use oarversion;
 
 sub usage {
     print <<EOS;
-Usage: $0 [job_ids][--sql "sql syntax"][-r][-v][-h]
+Usage: $0 [job_ids][--sql "sql syntax"][-r][-V][-h]
 Ask OAR to not schedule job_id until oarresume command will be executed.
   -r, --running manage not only Waiting jobs but also Running one
                 (can suspend the job)
       --sql     hold jobs which respond to the SQL where clause on the table
                 jobs (ex: "project = 'p1'")
   -h, --help    show this help screen
-  -v, --version print OAR version number
+  -V, --version print OAR version number
 EOS
 }
 
@@ -30,7 +30,7 @@ my $Version;
 my $Suspend_running;
 my $Sql_property;
 GetOptions ("help|h" => \$Help,
-            "version|v" => \$Version,
+            "version|V" => \$Version,
             "sql=s"   => \$Sql_property,
             "running|r" => \$Suspend_running
            );

@@ -136,7 +136,7 @@ Options:
  -n, --nowait                    do not wait for job end when the node
                                  switches to Absent or Dead
      --help                      display this help
- -v, --version                   print OAR version number
+ -V, --version                   print OAR version number
 N.B.:
  - The states allowed are: Alive, Absent or Dead.
  - If not specified, the hostname will be retrieved via the 'hostname'
@@ -158,7 +158,7 @@ GetOptions ("state|s=s" => \$state,
             "help" => \$sos,
             "sql=s"   => \$Sql_property,
             "resource|r=i" => \@resource,
-            "version|v" => \$Version
+            "version|V" => \$Version
            );
 
 usage() if (defined($sos));

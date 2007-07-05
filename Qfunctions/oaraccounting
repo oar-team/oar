@@ -18,7 +18,7 @@ GetOptions (
     "reinitialize" => \$Reinitialize,
     "delete-before=i" => \$Delete_windows_before,
     "help|h" => \$Help,
-    "version|v" => \$Version
+    "version|V" => \$Version
            );
 if (defined($Version)){
     print("OAR version : ".oarversion::get_version()."\n") ;
@@ -27,7 +27,7 @@ if (defined($Version)){
 
 if (defined($Help)){
      print <<EOS;
-Usage: $0 [-h] [-v] [--reinitialize | --delete_before]
+Usage: $0 [-h] [-V] [--reinitialize | --delete_before]
 Feed accounting table to make usage statistics.
 Options:
       --reinitialize

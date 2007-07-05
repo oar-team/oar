@@ -14,13 +14,13 @@ use Getopt::Long;
 
 sub usage {
     print <<EOS;
-Usage: $0 [job_ids][--sql "sql syntax"][-v][-h] 
+Usage: $0 [job_ids][--sql "sql syntax"][-V][-h] 
 Ask OAR to change job_ids states into Waiting when it is Hold or in Running
 if it is Suspended.
       --sql     resume jobs which respond to the SQL where clause on the table
                 jobs (ex: "project = 'p1'")
   -h, --help    show this help screen
-  -v, --version print OAR version number
+  -V, --version print OAR version number
 EOS
 }
 
@@ -29,7 +29,7 @@ my $Help;
 my $Sql_property;
 
 GetOptions (
-    "version|v" => \$Version,
+    "version|V" => \$Version,
     "sql=s"   => \$Sql_property,
     "help|h" => \$Help
            );

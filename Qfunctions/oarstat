@@ -61,13 +61,13 @@ GetOptions ("help|h" => \$sos,
             "yaml|Y" => \$YAML_mode,
             "dumper|D" => \$DUMPER_mode,
             "backward_compatible" => \$Old,
-            "version|v" => \$Version
+            "version|V" => \$Version
            );
 
 if ($sos){
     print <<EOS;
 Usage: $0 [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date,date"] [--accounting "date,date"]]
-[-X | -Y | -D] [-v] [-u [user]]
+[-X | -Y | -D] [-V] [-u [user]]
 Display job informations
 Options:
   -h, --help                show this help screen
@@ -84,7 +84,7 @@ Options:
   -X, --xml                 print result in XML format
   -Y, --yaml                print result in YAML format
       --backward_compatible print informations of the form of 1.* OAR version
-  -v, --version             print OAR version number
+  -V, --version             print OAR version number
 EOS
     exit(0);
 }

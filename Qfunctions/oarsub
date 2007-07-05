@@ -332,7 +332,7 @@ Options are:
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format
  -h, --help                    Print this help message
- -v, --version                 Print OAR version number
+ -V, --version                 Print OAR version number
 EOS
 }
 
@@ -629,7 +629,7 @@ GetOptions ("resource|l=s" => \@resource,
             "import-job-key-inline-pub=s" => \$job_key_pub,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
             "job-key-file=s" => \$job_key_file,
-            "version|v" => \$Version
+            "version|V" => \$Version
            );
 
 

@@ -33,7 +33,7 @@ GetOptions( "help|h"   => \$Help,
             "list|l"   => \$List_properties,
             "quiet|q"  => \$Quiet,
             "varchar|c"  => \$Varchar,
-            "version|v" => \$Version
+            "version|V" => \$Version
           );
 
 if (defined($Version)){
@@ -141,7 +141,7 @@ exit(0);
 #Display usage
 sub print_usage() {
     print <<EOS;
-Usage: $0 [ -l | [ -a [ -v ] | -d ] ] [ -q ] [ -h ]
+Usage: $0 [ -l | [ -a [ -V ] | -d ] ] [ -q ] [ -h ]
 Manage OAR resource properties
 Options:
  -l, --list                             list properties
@@ -152,6 +152,7 @@ Options:
  -r "OLD_NAME,NEW_NAME", --rename ...   rename property OLD_NAME into NEW_NAME
  -q, --quiet                            quiet mode (no extra output)
  -h, --help                             show this help screen
+ -V, --version                          show OAR version
 EOS
 }
 

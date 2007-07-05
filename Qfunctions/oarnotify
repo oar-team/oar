@@ -25,7 +25,7 @@ my $Enable_all;
 my $Disable_all;
 my $List_queues;
 my $sos;
-GetOptions ("version|v" => \$Version,
+GetOptions ("version|V" => \$Version,
             "enable_queue|e=s" => \@Enable_queue,
             "disable_queue|d=s" => \@Disable_queue,
             "Enable_all_queues|E" => \$Enable_all,
@@ -51,7 +51,7 @@ Options:
       --remove_queue        remove an existing queue
   -l, --list_queues         list all queues and there status
   -h, --help                show this help screen
-  -v, --version             print OAR version number
+  -V, --version             print OAR version number
 EOS
     exit(1);
 }

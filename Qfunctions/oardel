@@ -18,7 +18,7 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-c][job_ids][-h][-v]
+Usage: $0 [-c][job_ids][-h][-V]
 Delete or send checkpoint signal to jobs.
 Options:
   -h, --help              show this help screen
@@ -26,7 +26,7 @@ Options:
       --sql               delete/checkpoint jobs which respond to the SQL
                           where clause on the table jobs
                           (ex: "project = 'p1'")
-  -v, --version           print OAR version number
+  -V, --version           print OAR version number
 EOS
     exit(1);
 }
@@ -52,7 +52,7 @@ my $Sql_property;
 GetOptions ("checkpoint|c" => \$Checkpoint,
             "help|h" => \$sos,
             "sql=s"   => \$Sql_property,
-            "version|v" => \$Version
+            "version|V" => \$Version
            );
 
 if (defined($sos)){
