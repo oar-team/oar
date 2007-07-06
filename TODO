@@ -15,22 +15,6 @@ Documentation
 
    http://oar.imag.fr/docs/manual.html
 
---------------
-Scheduling G5K
---------------
-  Rappel sur la politique décidée en CP:
-  
-    - Réservation complète possible dans la journée mais pas plus d'1 heure.
-    - Un job interactif ne doit pas dépasser 12h.
-    - En pleine journée, on autorise jusqu'à 12h, mais pas plus de 50% de la
-      machine.
-    - Nuit et journée. La nuit commence à 22h, la journée 7h.
-    - Nuit, on a le droit de tout faire.
-    - Tout autre job est une exception gérée par le responsable local.
-
-  Question soulevée : Que doit-on faire des jobs demandant 3 jours de walltime,
-  qui vont commencer la nuit et continuer le jour?
-
 ----------
 Simulateur
 ----------
@@ -51,14 +35,6 @@ Simulateur
    d'exactitude les ordonnanceurs introduits dans OAR grâce à des jeux
    de tests.
 
---------
-Sécurité
---------
-  - clés SSH sur les noeuds (réfléchir aussi à l'authentification par *rhost*)
-  - NFS, une image déployée sur un noeud peut tout monter ou restreindre le
-    NFS pour certaines IP (prologue/epilogue executés côté serveur)?
-  - VLAN?
-
 ------------------------------------
 Comparaison avec les autres systèmes
 ------------------------------------
@@ -67,17 +43,6 @@ Comparaison avec les autres systèmes
 OAR dans la debian
 ------------------
   Que reste-t-il à faire ?
-
-------------------------
-Console d'administration
-------------------------
-  Notamment il faut faire une commande pour flusher la base (serveur éteind et
-  noeuds éteind) = remettre tout d'aplomb...
-
-----------------------------------------------
-Rendre la base de données **transactionnelle**
-----------------------------------------------
-  Celà permettrait d'être plus tolérent aux pannes.
 
 ----------------------
 Interface avec OpenPBS
@@ -99,26 +64,4 @@ Stagein/stageout des fichiers de données
 -----------------------
 Tests de non regression
 -----------------------
-
-----
-BUGS
-----
-Regarder le bug des systemes sous redhat : il faut lancer le Almighty dans un
-screen et sans detachement du oarexec pour que ca marche. Certainement un 
-probleme de SSH avec le -t (essayer plusieurs -t ???). Probleme de tty???
-Probleme de sudo???
-
-scheduling besteffort (ne pas tuer un besteffort pour lancer un autre besteffort)
-co-system
-
-
-Suspend/Resume
-
-Licences : mettre dans WHERE type = 'default'
-
-projets/accounting --> Done
-
-code de retour de l appli user (oarexec) --> Done
-
-Dans oar.conf mettre les variables d environnements que l on souhaite garder lors du oarsub -C.
 
