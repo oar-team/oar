@@ -109,7 +109,7 @@ fix_opts() {
 parse_args $@
 # check if SSH or OARSH must be called depending on the host
 if is_do_ssh_host; then
-	exec $SSH_CMD "$@"
+	exec $SSHCMD "$@"
 fi
 
 # Remove the -l option and fix -i key options
