@@ -91,8 +91,7 @@ sudowrapper: man
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
-	install -m 0755 Tools/oarsh/ssh.oarsh3 $(OARDIR)/ssh.oarsh
-	install -m 0755 Tools/sudowrapper.sh $(BINDIR)/oarsh
+	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^OARCMD=.*#OARCMD=oarsh#" $(BINDIR)/oarsh
 	install -m 0755 Tools/configurator_wrapper.sh $(OARDIR)
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh

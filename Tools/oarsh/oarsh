@@ -3,7 +3,6 @@
 # In sshd_config you must have this line :
 #     AcceptEnv OAR_CPUSET SUDO_USER
 # User to become is in $SUDO_USER
-# $OAR_CPUSET contains the cpuset name
 
 ###############################################################################
 # Default variable definitions.
@@ -16,122 +15,100 @@ OPENSSH_CMD=/usr/bin/ssh
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 ###############################################################################
 
-source $OARCONFFILE || exit 7
-
-export OAR_CPUSET=""
+source "$OARCONFFILE" || exit 10
 
 # Add security option for X11 forwarding
 XAUTH_LOCATION="/usr/bin/X11/xauth"
-if [ -x "$XAUTH_LOCATION" ]
-then
+if [ -x "$XAUTH_LOCATION" ]; then
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=$XAUTH_LOCATION"
 else
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=/bin/true"
 fi
-
-if [ -z "$OAR_RUNTIME_DIRECTORY" ]
-then
-    OAR_RUNTIME_DIRECTORY="/tmp/oar_runtime"
-fi
-
-# Get the name of the current cpuset #
-function get_current_cpuset() {
-    CPUSETFILE=/proc/self/cpuset
-
-    if [ -r $CPUSETFILE ]
-    then
-        echo $(< $CPUSETFILE)
-    fi
-}
+[ -n "$OAR_RUNTIME_DIRECTORY" ] || OAR_RUNTIME_DIRECTORY="/tmp/oar_runtime"
 
 # Manage display
-function manage_display() {
-    if [ -n "$DISPLAY" ]
+if [ -n "$DISPLAY" ]
+then
+    if [ -x "$XAUTH_LOCATION" ]
     then
-        if [ -x "$XAUTH_LOCATION" ]
-        then
-            # first, get rid of remaining unused .Xautority.{pid} files if any...
-            for f in $HOME/.Xauthority.*; do
-                [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
-            done
-            # set the .Xautority.{pid} file as the xauthority file.
-            export XAUTHORITY=$HOME/.Xauthority.$$
-            # retrieve the X cookie from the user to user oar.
-            sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY#localhost}" | $XAUTH_LOCATION merge - 2> /dev/null
-            # ssh will push that cookie in the connection.
-        fi
+        # first, get rid of remaining unused .Xautority.{pid} files if any...
+        for f in $HOME/.Xauthority.*; do
+            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
+        done
+        # set the .Xautority.{pid} file as the xauthority file.
+        export XAUTHORITY=$HOME/.Xauthority.$$
+        # retrieve the X cookie from the user to user oar.
+        sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - '${DISPLAY/#localhost:/:}'" | $XAUTH_LOCATION merge - 2> /dev/null
+        # ssh will push that cookie in the connection.
     fi
-}
+fi
 
-###############################################################################
-# Main
-
-manage_display
-
-# connection using a user provided job key file 
+# -1- try connection using a user provided job key file for a job using the job key mechanism
 if [ -n "$OAR_JOB_KEY_FILE" ] 
 then
-    if [ -r $OAR_JOB_KEY_FILE ]
-    then
-        exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"
-    else
-        exec sudo -H -u $SUDO_USER $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" -l $USER "$@"
+    # first, get rid of remaining unused .Xautority.{pid} files if any...
+    for f in $OAR_RUNTIME_DIRECTORY/oarsh.jobkey.*; do
+        [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
+    done
+    TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
+    install -m 0600 /dev/null $TMP_JOB_KEY_FILE
+    sudo -u $SUDO_USER cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
+    if [ $? -ne 0 ]; then
+        echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
+        rm -f $TMP_JOB_KEY_FILE
+        exit 1
     fi
-    echo "[OARSH] Failed to connect using your job key: $OAR_JOB_KEY_FILE"
-    exit 8
+    
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
+    echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"
+    exit 2
 fi
 
-# manage cpuset
-OAR_CPUSET=$(get_current_cpuset)
-if [ "$OAR_CPUSET" == "" ] || [ "$OAR_CPUSET" == "/" ]
-then
-    if [ -n "$OARSH_OARSTAT_CMD" ]
-    then
-        # dirty check to insure that OAR_JOB_ID is an integer
-        if [ $OAR_JOB_ID -gt 0 ] 2>/dev/null
-        then
-            OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
-            if [ "$OAR_CPUSET" == "" ] 
-            then
-                echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-                echo "[OARSH] So you are not on a computing node and the job $OAR_JOB_ID does not exist." 1>&2
-                exit 1
-            else
-                echo $OAR_CPUSET | grep "^"$SUDO_USER"_" &> /dev/null
-                if [ $? -ne 0 ]
-                then
-                    echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-                    echo "[OARSH] So you are not on a computing node and the job $OAR_JOB_ID is not yours." 1>&2
-                    exit 2
-                fi
-            fi
-        else
-            echo "[OARSH] Cannot get the OAR job cpuset name." 1>&2
-            echo "[OARSH] AND there is not a valid OAR_JOB_ID environment variable defined." 1>&2
-            echo "[OARSH] With BASH you can use a syntax like (if your job is the 42):" 1>&2
-            echo "[OARSH]     OAR_JOB_ID=42 oarsh node_name ..." 1>&2
-            echo "[OARSH]   or" 1>&2
-            echo "[OARSH]     export OAR_JOB_ID=42" 1>&2
-            echo "[OARSH]     oarsh node_name ..." 1>&2
+
+# -2- try connection using a job key pushed by OAR for a job using the job key mechanism. 
+# (oarsh is run from one of the node of the job) 
+if [ -r /proc/self/cpuset ]; then
+    CPUSET=$(< /proc/self/cpuset)
+    if echo $CPUSET | grep -q "^/"$SUDO_USER"_"; then
+        JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$CPUSET.jobkey"
+        if [ -r $JOB_KEY_FILE ]; then
+            exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
+            echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE"
             exit 3
         fi
-    else
-        echo "[OARSH] Cannot get the OAR job cpuset name" 1>&2
-        exit 4
     fi
 fi
 
-# connection using the job key file stored by oar on nodes upon submission 
-OAR_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OAR_CPUSET.jobkey"
-if [ -r $OAR_JOB_KEY_FILE ]
-then
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i "$OAR_JOB_KEY_FILE" "$@"
-    echo "[OARSH] Failed to connect using the job key"
-    exit 5
-fi 
-
-# connection using cpuset
-exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
-echo "[OARSH] Exec with environments failed"
-exit 6
-
+# -3- try connection using the job id information (job key mechanism not needed)
+if [ -n "$OAR_JOB_ID" ]; then
+    # dirty check to insure that OAR_JOB_ID is an integer
+    if ! [ "$OAR_JOB_ID" -gt 0 ] 2>/dev/null; then     # dirty check to insure that OAR_JOB_ID is an integer
+        echo "oarsh: Invalid job id: $OAR_JOB_ID" 1>&2
+        exit 4
+    fi
+    if [ ! -x "$OARSH_OARSTAT_CMD" ]; then
+        echo "oarsh: Cannot connect using job id from this host." 1>&2
+        exit 5
+    fi
+    export OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
+    if [ "$OAR_CPUSET" == "" ]; then
+        echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
+        exit 6
+    else
+        if ! echo $OAR_CPUSET | grep -q "^"$SUDO_USER"_"; then
+            echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
+            exit 7
+        fi
+    fi
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+    echo "oarsh: Failed to connect using cpuset environement"
+    exit 8
+fi
+        
+cat 1>&2 <<EOF
+oarsh: Cannot connect. Please try to provide either:
+oarsh:  - a job id using the OAR_JOB_ID environement variable
+oarsh: or
+oarsh:  - a job key using the OAR_JOB_JOB_KEY environement variable
+EOF
+exit 9
