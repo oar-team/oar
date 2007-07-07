@@ -343,8 +343,8 @@ sub job_key_management() {
 		if (defined ($use_job_key) and !($import_job_key_inline ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
         $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
     }
-    if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne ""))){
-        warn("Error: You must use the -k or --use-job-key option prior to use other job key related options.\n");
+    if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne "") or ($export_job_key_file ne ""))){
+        warn("Error: You must set the --use-job-key (or -k) option in order to use other job key related options.\n");
         exit(15);
     }
     if (defined($use_job_key)){
