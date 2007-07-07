@@ -15,7 +15,7 @@ OPENSSH_CMD=/usr/bin/ssh
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 ###############################################################################
 
-source "$OARCONFFILE" || exit 10
+source "$OARCONFFILE" || exit 2
 
 # Add security option for X11 forwarding
 XAUTH_LOCATION="/usr/bin/X11/xauth"
@@ -56,12 +56,12 @@ then
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
         rm -f $TMP_JOB_KEY_FILE
-        exit 1
+        exit 3
     fi
     
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
     echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"
-    exit 2
+    exit 3
 fi
 
 
@@ -74,12 +74,12 @@ if [ -r /proc/self/cpuset ]; then
         if [ -r $JOB_KEY_FILE ]; then
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
             echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE"
-            exit 3
+            exit 4
         fi
         export OAR_CPUSET
         exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
         echo "oarsh: Failed to connect using cpuset environement"
-        exit 8
+        exit 5
     fi
 fi
 
@@ -88,7 +88,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     # dirty check to insure that OAR_JOB_ID is an integer
     if ! [ "$OAR_JOB_ID" -gt 0 ] 2>/dev/null; then     # dirty check to insure that OAR_JOB_ID is an integer
         echo "oarsh: Invalid job id: $OAR_JOB_ID" 1>&2
-        exit 4
+        exit 5
     fi
     if [ ! -x "$OARSH_OARSTAT_CMD" ]; then
         echo "oarsh: Cannot connect using job id from this host." 1>&2
@@ -97,23 +97,21 @@ if [ -n "$OAR_JOB_ID" ]; then
     OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
     if [ "$OAR_CPUSET" == "" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
-        exit 6
+        exit 5
     else
         if ! echo $OAR_CPUSET | grep -q "^"$SUDO_USER"_"; then
             echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
-            exit 7
+            exit 5
         fi
     fi
     export OAR_CPUSET
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
     echo "oarsh: Failed to connect using cpuset environement"
-    exit 8
+    exit 5
 fi
         
 cat 1>&2 <<EOF
-oarsh: Cannot connect. Please try to provide either:
-oarsh:  - a job id using the OAR_JOB_ID environement variable
-oarsh: or
-oarsh:  - a job key using the OAR_JOB_JOB_KEY environement variable
+oarsh: Cannot connect. Please set either a job id or a job key in your
+oarsh: environment using the OAR_JOB_ID or the OAR_JOB_KEY variable.
 EOF
-exit 9
+exit 6

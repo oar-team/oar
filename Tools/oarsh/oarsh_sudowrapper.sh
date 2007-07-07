@@ -117,4 +117,4 @@ fix_opts
 # Sudowrapper mechanism to call oarsh
 exec sudo -H -u $OARUSER $OARDIR/cmds/oarsh $OPTS $SSHARGS_HOST "$SSHARGS_COMMAND"
 echo "OARSH wrapper failed." 1>&2
-exit 11
+exit 1
