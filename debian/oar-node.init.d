@@ -16,14 +16,13 @@ DESC=oar-node
 OAR_NODE_NAME=$(hostname -f)
 OARSERVER=""
 OAR_SSHD_CONF="/etc/oar_sshd_config.conf"
-SSHD_OPTS=""
+SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/run/oar_sshd.pid"
 
 # Include oar defaults if available
 if [ -f /etc/default/oar-node ] ; then
     . /etc/default/oar-node
 fi
 
-test -n "$OARSERVER" || exit 0
 test -n "$OAR_NODE_NAME" || exit 0
 
 set -e
@@ -32,18 +31,20 @@ case "$1" in
   start)
     echo -n "Starting $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
-        start-stop-daemon --start --quiet --oknodo --pidfile /var/run/oar_sshd.pid --exec /usr/sbin/sshd -f $OAR_SSHD_CONF -- $SSHD_OPTS || exit 1
+        start-stop-daemon --start --quiet --oknodo --pidfile /var/run/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS || exit 1
     fi
-    sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Alive -h $OAR_NODE_NAME"
     echo "$NAME."
+    test -n "$OARSERVER" || exit 0
+    sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Alive -h $OAR_NODE_NAME"
     ;;
   stop)
     echo -n "Stopping $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
         start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/oar_sshd.pid
     fi
-    sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Absent -h $OAR_NODE_NAME"
     echo "$NAME."
+    test -n "$OARSERVER" || exit 0
+    sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Absent -h $OAR_NODE_NAME"
     ;;
   reload|force-reload|restart)
         $0 stop
