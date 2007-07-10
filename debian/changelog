@@ -1,8 +1,12 @@
 oar (2.0.2+svn588-1) unstable; urgency=low
 
+  [ Pierre Neyron ]
   * Updated to SVN revision 588.
 
- -- Pierre Neyron <neyron@tupinamba.imag.fr>  Wed, 20 Jun 2007 17:09:06 +0200
+  [ Capit Nicolas ]
+  * add sshd just for oar on the port 6667
+
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Tue, 10 Jul 2007 16:06:09 +0200
 
 oar (2.0.2-1) unstable; urgency=low
 

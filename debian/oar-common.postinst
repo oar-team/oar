@@ -33,6 +33,8 @@ setup_oar_user_group() {
 	if [ -e /etc/oar.conf ]; then
 		chown oar:root /etc/oar.conf > /dev/null 2>&1
 		chmod 0600 /etc/oar.conf > /dev/null 2>&1
+        echo '' >> /etc/oar.conf
+        echo 'OPENSSH_CMD="/usr/bin/ssh -p 6667"' >> /etc/oar.conf
 	fi
 }
 

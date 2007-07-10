@@ -33,22 +33,19 @@ chown oar.oar /var/lib/oar/oar_epilogue_local
 chown oar.oar /var/lib/oar/oar_prologue_local
 chown oar.oar /var/lib/oar/lock_user.sh
 
+# create oar sshd keys
+ssh-keygen -b 1024 -N "" -t rsa -f /etc/oar_ssh_host_rsa_key
+ssh-keygen -b 1024 -N "" -t dsa -f /etc/oar_ssh_host_dsa_key
+
 cat << EOF
 
 ##########################################################################
 # oar-node #
 ############
 If you want to use the CPUSET feature of OAR then you have to:
-    1. Add in the /etc/ssh/sshd_config
-        
-        AcceptEnv OAR_CPUSET SUDO_USER
-        PermitUserEnvironment yes
-        UseLogin no
-        AllowUsers oar"
-
-    2. Add just before the public ssh key of the user oar in his
-       /var/lib/oar/.ssh/authorized_keys (on the same line; on
-       the begining of the line):
+    Add just before the public ssh key of the user oar in his
+    /var/lib/oar/.ssh/authorized_keys (on the same line; on
+    the begining of the line):
 
         environment="OAR_KEY=1"
 
