@@ -119,6 +119,7 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		SBINLINKPATH=../lib/oar
 	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
+	mkdir -p $(CURDIR)/debian/oar-node/etc/init.d
 	$(MAKE) sanity-check node \
 		OARUSER=oar \
 		OAROWNER=root \
