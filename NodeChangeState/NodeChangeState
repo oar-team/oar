@@ -112,7 +112,7 @@ foreach my $i (@events_to_check){
             if ($#free_resources >= 0){
                 oar_warn("[NodeChangeState] There was an error ($i->{type}) on the node $j SO we are suspecting resource(s) : @free_resources\n");
                 foreach my $r (@free_resources){
-                    iolib::set_node_state($base,$j,"Suspected",$finaud_tag);
+                    iolib::set_resource_state($base,$r,"Suspected",$finaud_tag);
                     $Exit_code = 1;
                 }
             }else{
