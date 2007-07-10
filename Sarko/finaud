@@ -28,7 +28,7 @@ my %Node_list;
 foreach my $i (@resource_list_tmp){
     #Do not check occupied resources
     if ((!vec($Occupied_resources_vector, $i->{resource_id}, 1)) and ($i ne "")){
-        # Do not check Suspected resources not changed be me (finaud)
+        # Do not check Suspected resources not changed by me (finaud)
         if (($i->{state} ne "Suspected") or ($i->{finaud_decision} eq "YES")){
             push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
             push(@Resource_list,$i);

@@ -300,11 +300,6 @@ Options are:
                                    --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
      --resubmit=<job id>       Resubmit the given job as a new one
-     --force-cpuset-name=<txt> Specify a cpuset name to use instead of the job
-                               id (WARNING: if several jobs have the same
-                               cpuset name then processes of a job could be
-                               killed when another one finishes on the same
-                               computer)
  -k, --use-job-key             Activate the job-key mechanism. 
  -i, --import-job-key-from-file=<file>
                                Import the job-key to use from a files instead
@@ -334,6 +329,7 @@ Options are:
  -V, --version                 Print OAR version number
 EOS
 }
+
 
 # manage the job key is option is activated
 # read job key file if import from file 
@@ -605,7 +601,6 @@ GetOptions ("resource|l=s" => \@resource,
             "stdout|O=s" => \$Stdout_file,
             "stderr|E=s" => \$Stderr_file,
             "resubmit=i" => \$Resubmit,
-            "force-cpuset-name=s" => \$Cpuset_name,
             "scanscript|S" => \$Scan_script,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
