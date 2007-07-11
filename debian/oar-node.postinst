@@ -34,10 +34,20 @@ chown oar.oar /var/lib/oar/oar_prologue_local
 chown oar.oar /var/lib/oar/lock_user.sh
 
 # create oar sshd keys
-ssh-keygen -b 1024 -N "" -t rsa -f /etc/oar/oar_ssh_host_rsa_key
+if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
+    rm -f /etc/oar/oar_ssh_host_rsa_key.pub
+    ssh-keygen -b 1024 -N "" -t rsa -f /etc/oar/oar_ssh_host_rsa_key
+fi
 chown oar.oar /etc/oar/oar_ssh_host_rsa_key
-ssh-keygen -b 1024 -N "" -t dsa -f /etc/oar/oar_ssh_host_dsa_key
+chown oar.oar /etc/oar/oar_ssh_host_rsa_key.pub
+
+if [ ! -r /etc/oar/oar_ssh_host_dsa_key ]; then
+    rm -f /etc/oar/oar_ssh_host_dsa_key.pub
+    ssh-keygen -b 1024 -N "" -t dsa -f /etc/oar/oar_ssh_host_dsa_key
+fi
 chown oar.oar /etc/oar/oar_ssh_host_dsa_key
+chown oar.oar /etc/oar/oar_ssh_host_dsa_key.pub
+
 
 cat << EOF
 
