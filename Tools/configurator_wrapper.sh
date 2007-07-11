@@ -5,7 +5,7 @@ OARDIR=
 OARUSER=
 
 PERL5LIB=$OARDIR
-OARCONFFILE=/etc/oar.conf
+OARCONFFILE=/etc/oar/oar.conf
 export PERL5LIB
 export OARDIR
 export OARUSER

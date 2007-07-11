@@ -3,7 +3,7 @@
 SHELL=/bin/sh
 
 OARHOMEDIR=/var/lib/oar
-OARCONFDIR=/etc/
+OARCONFDIR=/etc/oar
 # OARUSER and OAROWNER should be the same value execpt for special needs 
 # (Debian packaging) 
 # OARUSER is the variable expanded in the sudoers file  
@@ -212,7 +212,7 @@ node: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
-	install -m 0600 -o root -g root Tools/oar_sshd_config.conf $(OARCONFDIR)
+	install -m 0600 -o root -g root Tools/sshd_config $(OARCONFDIR)
 	@if [ -f $(OARDIR)/detect_new_resources.sh ]; then echo "Warning: $(OARDIR)/detect_new_resources.sh already exists, not overwriting it." ; else install -m 0755 Tools/detect_new_resources.sh $(OARDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/oar_prologue ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/oar_epilogue ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR) ; fi

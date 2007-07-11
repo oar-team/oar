@@ -49,8 +49,6 @@ PrintMotd no
 PrintLastLog yes
 KeepAlive yes
 
-UsePAM yes
-
 AcceptEnv OAR_CPUSET SUDO_USER
 PermitUserEnvironment yes
 UseLogin no
