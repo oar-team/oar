@@ -5119,6 +5119,8 @@ sub job_finishing_sequence($$$$$$$$){
             my $cpuset_file = get_conf("CPUSET_FILE");
             $cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($cpuset_file));
             $cpuset_file = "$ENV{OARDIR}/$cpuset_file" if ($cpuset_file !~ /^\//);
+            my $cpuset_path = "";
+            $cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
             
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
@@ -5126,7 +5128,7 @@ sub job_finishing_sequence($$$$$$$$){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
                 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
-                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_name,$job->{job_user});
+                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_path.'/'.$cpuset_name,$job->{job_user});
                 my $cpuset_data_hash = {
                     name => $cpuset_name,
                     nodes => $cpuset_nodes,

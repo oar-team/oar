@@ -119,7 +119,7 @@ if ($ARGV[0] eq "init"){
                         exit(13);
                     }
                     $out .= $_;
-                }elsif ($_ =~ /environment=\"OAR_CPUSET=(.+)\"/){
+                }elsif ($_ =~ /environment=\"OAR_CPUSET=([\w\/]+)\"/){
                     # Remove from authorized keys outdated keys (typically after a reboot)
                     if (-d "/dev/cpuset/$1"){
                         $out .= $_;
