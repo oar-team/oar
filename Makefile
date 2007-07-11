@@ -211,8 +211,9 @@ user: man
 node: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
-	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
+	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o root -g root Tools/sshd_config $(OARCONFDIR)
+	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	@if [ -f $(OARDIR)/detect_new_resources.sh ]; then echo "Warning: $(OARDIR)/detect_new_resources.sh already exists, not overwriting it." ; else install -m 0755 Tools/detect_new_resources.sh $(OARDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/oar_prologue ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR) ; fi
 	@if [ -f $(OARHOMEDIR)/oar_epilogue ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR) ; fi
