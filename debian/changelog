@@ -1,3 +1,9 @@
+oar (2.0.2+svn623-1) unstable; urgency=low
+
+  * Updated to SVN revision 623.
+
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 11 Jul 2007 16:15:25 +0200
+
 oar (2.0.2+svn622-1) unstable; urgency=low
 
   * Updated to SVN revision 622.

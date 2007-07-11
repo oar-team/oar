@@ -16,7 +16,7 @@ DESC=oar-node
 OAR_NODE_NAME=$(hostname -f)
 OARSERVER=""
 OAR_SSHD_CONF="/etc/oar/sshd_config"
-SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/run/oar_sshd.pid"
+SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/lib/oar/oar_sshd.pid"
 
 # Include oar defaults if available
 if [ -f /etc/default/oar-node ] ; then
@@ -31,7 +31,7 @@ case "$1" in
   start)
     echo -n "Starting $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
-        start-stop-daemon --start --quiet --oknodo --pidfile /var/run/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS || exit 1
+        start-stop-daemon --start --quiet -c oar --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS || exit 1
     fi
     echo "$NAME."
     test -n "$OARSERVER" || exit 0
@@ -40,7 +40,7 @@ case "$1" in
   stop)
     echo -n "Stopping $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
-        start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/oar_sshd.pid
+        start-stop-daemon --stop --quiet --pidfile /var/lib/oar/oar_sshd.pid
     fi
     echo "$NAME."
     test -n "$OARSERVER" || exit 0
