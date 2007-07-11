@@ -30,11 +30,11 @@ setup_oar_user_group() {
 		adduser --quiet --system --home /var/lib/oar --ingroup oar --shell /bin/bash oar > /dev/null 2>&1
 	fi
 	chown oar:oar /var/lib/oar -R > /dev/null 2>&1
-	if [ -e /etc/oar.conf ]; then
-		chown oar:root /etc/oar.conf > /dev/null 2>&1
-		chmod 0600 /etc/oar.conf > /dev/null 2>&1
-        echo '' >> /etc/oar.conf
-        echo 'OPENSSH_CMD="/usr/bin/ssh -p 6667"' >> /etc/oar.conf
+	if [ -e /etc/oar/oar.conf ]; then
+		chown oar:root /etc/oar/oar.conf > /dev/null 2>&1
+		chmod 0600 /etc/oar/oar.conf > /dev/null 2>&1
+        echo '' >> /etc/oar/oar.conf
+        echo 'OPENSSH_CMD="/usr/bin/ssh -p 6667"' >> /etc/oar/oar.conf
 	fi
 }
 

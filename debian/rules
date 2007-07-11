@@ -71,7 +71,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-common/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-common/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-common/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-common/usr \
 		MANDIR=$(CURDIR)/debian/oar-common/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-common/usr/lib/oar \
@@ -83,7 +83,7 @@ install-indep:
 		SBINLINKPATH=../lib/oar
 	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=/usr/lib/oar/cmds/oarstat#" $(CURDIR)/debian/oar-common/usr/lib/oar/oarsh
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=/usr/bin/oarsh#" $(CURDIR)/debian/oar-common/usr/bin/oarcp
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/debian/oar-common/etc/oar.conf
+	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
 	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/configurator_wrapper.sh
 	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/sudowrapper.sh
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
@@ -92,7 +92,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-libs/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-libs/usr \
 		MANDIR=$(CURDIR)/debian/oar-libs/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-libs/usr/lib/oar \
@@ -108,7 +108,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-server/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-server/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-server/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-server/usr \
 		MANDIR=$(CURDIR)/debian/oar-server/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-server/usr/lib/oar \
@@ -125,7 +125,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-node/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-node/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-node/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-node/usr \
 		MANDIR=$(CURDIR)/debian/oar-node/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-node/usr/lib/oar \
@@ -141,7 +141,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-user/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-user/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-user/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-user/usr \
 		MANDIR=$(CURDIR)/debian/oar-user/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-user/usr/lib/oar \
@@ -156,7 +156,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-draw-gantt/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-draw-gantt/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-draw-gantt/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-draw-gantt/usr \
 		MANDIR=$(CURDIR)/debian/oar-draw-gantt/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/oar \
@@ -173,7 +173,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-agent/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-desktop-computing-agent/usr \
 		MANDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/lib/oar \
@@ -188,7 +188,7 @@ install-indep:
 		OAROWNER=root \
 		OARGROUP=root \
 		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/lib/oar \
-		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc \
+		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-desktop-computing-cgi/usr \
 		MANDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/oar \

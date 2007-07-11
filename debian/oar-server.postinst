@@ -44,8 +44,8 @@ EOF
 }
 
 setup_conf() {
-	if [ ! -r /etc/oar.conf ]; then
-		echo "Error: No /etc/oar.conf found."
+	if [ ! -r /etc/oar/oar.conf ]; then
+		echo "Error: No /etc/oar/oar.conf found."
 		exit 1
 	fi
     db_get oar/db/dbtype
@@ -78,9 +78,9 @@ setup_conf() {
 		s#^SERVER_HOSTNAME=.*#SERVER_HOSTNAME=$SERVER_HOSTNAME#;
 		s#^SERVER_PORT=.*#SERVER_PORT=$SERVER_PORT#;
 		s#^ALLOWED_NETWORKS=.*#ALLOWED_NETWORKS=$ALLOWED_NETWORKS#;" \
-		/etc/oar.conf
-	chown oar:root /etc/oar.conf
-	chmod 600 /etc/oar.conf
+		/etc/oar/oar.conf
+	chown oar:root /etc/oar/oar.conf
+	chmod 600 /etc/oar/oar.conf
 }
 
 setup_mysql_db() {
@@ -118,7 +118,7 @@ setup_nodes() {
 			NODE_FILE=$RET
 		fi
 		db_get oar/node/deploymethod
-		/usr/lib/oar/deploy_nodes.sh -e $RET -H /var/lib/oar -C /etc/oar.conf $NODE_FILE || true
+		/usr/lib/oar/deploy_nodes.sh -e $RET -H /var/lib/oar -C /etc/oar/oar.conf $NODE_FILE || true
 	fi
 }
 

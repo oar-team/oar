@@ -23,8 +23,8 @@ set -e
 db_version 2.0
 
 setup_conf() {
-	if [ ! -r /etc/oar.conf ]; then
-		echo "Error: No /etc/oar.conf found."
+	if [ ! -r /etc/oar/oar.conf ]; then
+		echo "Error: No /etc/oar/oar.conf found."
 		exit 1
 	fi
 	db_get oar/db/hostname
@@ -47,9 +47,9 @@ setup_conf() {
 		s/^DB_BASE_PASSWD=.*/DB_BASE_PASSWD=$DB_BASE_PASSWD/;
 		s/^SERVER_HOSTNAME=.*/SERVER_HOSTNAME=$SERVER_HOSTNAME/;
 		s/^SERVER_PORT=.*/SERVER_PORT=$SERVER_PORT/;" \
-		/etc/oar.conf
-	chown oar:root /etc/oar.conf
-	chmod 0600 /etc/oar.conf
+		/etc/oar/oar.conf
+	chown oar:root /etc/oar/oar.conf
+	chmod 0600 /etc/oar/oar.conf
 }
 
 setup_ssh() {

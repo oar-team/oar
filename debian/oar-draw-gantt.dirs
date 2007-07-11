@@ -1,4 +1,4 @@
 /usr/lib/cgi-bin
 /var/www
 /usr/share
-/etc
+/etc/oar
