@@ -34,8 +34,8 @@ chown oar.oar /var/lib/oar/oar_prologue_local
 chown oar.oar /var/lib/oar/lock_user.sh
 
 # create oar sshd keys
-ssh-keygen -b 1024 -N "" -t rsa -f /etc/oar_ssh_host_rsa_key
-ssh-keygen -b 1024 -N "" -t dsa -f /etc/oar_ssh_host_dsa_key
+ssh-keygen -b 1024 -N "" -t rsa -f /etc/oar/oar_ssh_host_rsa_key
+ssh-keygen -b 1024 -N "" -t dsa -f /etc/oar/oar_ssh_host_dsa_key
 
 cat << EOF
 
