@@ -45,6 +45,7 @@ my $remote_port;
 my $Deploy_hostname;
 my $Cosystem_hostname;
 my $Cpuset_field;
+my $Cpuset_path = "";
 my $Host = hostname ;
 
 my $base;
@@ -180,7 +181,7 @@ sub connect_job($$$){
         }
         #deploy, cosystem and no host part
         if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
-            $ENV{OAR_CPUSET} = iolib::get_job_cpuset_name($dbh,$job_id);
+            $ENV{OAR_CPUSET} = $Cpuset_path.'/'.iolib::get_job_cpuset_name($dbh,$job_id);
         }else{
             $ENV{OAR_CPUSET} = "";
         }
@@ -558,6 +559,7 @@ if (!defined($Cosystem_hostname)){
 }
 
 $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+$Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     oar_Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));

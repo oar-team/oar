@@ -69,8 +69,8 @@ fi
 # (oarsh is run from one of the node of the job) 
 if [ -r /proc/self/cpuset ]; then
     OAR_CPUSET=$(< /proc/self/cpuset)
-    if echo $OAR_CPUSET | grep -q "^/"$SUDO_USER"_"; then
-        JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OAR_CPUSET.jobkey"
+    if echo $OAR_CPUSET | grep -q "/"$SUDO_USER"_"; then
+        JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
         if [ -r $JOB_KEY_FILE ]; then
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
             echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE"
@@ -104,6 +104,7 @@ if [ -n "$OAR_JOB_ID" ]; then
             exit 5
         fi
     fi
+    OAR_CPUSET="$CPUSET_PATH/$OAR_CPUSET"
     export OAR_CPUSET
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
     echo "oarsh: Failed to connect using cpuset environement"

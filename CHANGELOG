@@ -17,6 +17,8 @@ upstream development version:
   - add NODE_FILE_DB_FIELD_DISTINCT_VALUES in oar.conf that enables the admin to configure the generated containt of the OAR_NODE_FILE
   - change ssh job key oarsub options behaviour
   - add options "--reinitialize" and "--delete-before" to the oaraccounting command
+  - cpuset are now stored in /dev/cpuset/oar
+  - debian packaging: configure and launch a specific sshd for the user oar
 
 version 2.0.2:
 --------------

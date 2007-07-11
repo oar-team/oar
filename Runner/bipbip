@@ -74,8 +74,9 @@ $Cpuset_file = "$ENV{OARDIR}/$Cpuset_file" if ($Cpuset_file !~ /^\//);
 my $base;
 
 $base = iolib::connect();
-my $Cpuset_name;
-$Cpuset_name = iolib::get_job_cpuset_name($base, $Job_id) if (defined($Cpuset_field));
+my $Cpuset_path = "";
+$Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+my $Cpuset_name = iolib::get_job_cpuset_name($base, $Job_id) if (defined($Cpuset_field));
 
 my $job = iolib::get_job($base,$Job_id);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($base,$Job_id);
@@ -135,7 +136,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     ###############
     my $cpuset_nodes;
     $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
-    $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_name,$job->{job_user});
+    $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_path.'/'.$Cpuset_name,$job->{job_user});
     my $cpuset_data_hash = {
         name => $Cpuset_name,
         nodes => $cpuset_nodes,
@@ -352,7 +353,7 @@ eval {
     my $ssh_option = "";
     if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
         # for oarsh_shell connection
-        $ENV{OAR_CPUSET} = $Cpuset_name;
+        $ENV{OAR_CPUSET} = $Cpuset_path.'/'.$Cpuset_name;
         $ssh_option = "-oSendEnv=OAR_CPUSET";
     }else{
         $ENV{OAR_CPUSET} = "";
