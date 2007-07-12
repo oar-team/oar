@@ -10,6 +10,7 @@ SSHCMD=/usr/bin/ssh
 OARDIR=/usr/lib/oar
 OARUSER=oar
 OARCMD=oarsh
+DEBUGFILE=
 
 # unset bash glob expension 
 set -f
@@ -21,10 +22,12 @@ parse_opts() {
 	while getopts "1246ab:c:e:fgi:kl:m:no:p:qstvxACD:F:I:L:MNO:PR:S:TVw:XY" OPT; do
 		case $OPT in
 			1 | 2 | 4 | 6 | n | f | x | X | Y | g | P | a | A | k | t | v | V | q | M | s | T | N | C )
-				SSHARGS_OPT[$((SSHARGS_OPTCOUNT++))]="-$OPT"
+				SSHARGS_OPT[SSHARGS_OPTCOUNT]=$OPT
+				SSHARGS_OPTARG[$((SSHARGS_OPTCOUNT++))]=""
 				;;
 			O | i | I | w | e | c | m | p | l | L | R | D | o | S | b | F )
-				SSHARGS_OPT[$((SSHARGS_OPTCOUNT++))]="-$OPT $OPTARG"
+				SSHARGS_OPT[$SSHARGS_OPTCOUNT]=$OPT
+				SSHARGS_OPTARG[$((SSHARGS_OPTCOUNT++))]=$OPTARG
 				;;
 			* ) 
 				SSHARGS_ERROR=255
@@ -37,31 +40,34 @@ parse_opts() {
 # Syntax is `ssh [opts] [user@]<host> [opts] [command]'
 parse_args() {
 	unset SSHARGS_OPT
+        unset SSHARGS_OPTARG
 	SSHARGS_ERROR=0
 	SSHARGS_OPTCOUNT=0
-	parse_opts $@
+	parse_opts "$@"
 	shift $((OPTIND-1))
 	SSHARGS_HOST="${1/#*@/}"
 	[ -n "$SSHARGS_HOST" ] || SSHARGS_ERROR=255
 	SSHARGS_USER="${1/%$SSHARGS_HOST/}"
 	SSHARGS_USER="${SSHARGS_USER/%@/}"
 	shift 1
-	parse_opts $@
+	parse_opts "$@"
 	shift $((OPTIND-1))
 	SSHARGS_COMMAND="$@"
 }
 
 # Debug function: dump parsed information
 dump() {
-	echo $SSHARGS_OPTCOUNT
 	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
-		echo "SSHARGS_OPT[$i]="${SSHARGS_OPT[$i]}
+		echo "SSHARGS_OPT[$i]="${SSHARGS_OPT[$i]} >> $DEBUGFILE
+		echo "SSHARGS_OPTARG[$i]="${SSHARGS_OPTARG[$i]} >> $DEBUGFILE
 	done
-	echo "SSHARGS_OPTCOUNT="$SSHARGS_OPTCOUNT
-	echo "SSHARGS_HOST="$SSHARGS_HOST
-	echo "SSHARGS_USER="$SSHARGS_USER
-	echo "SSHARGS_COMMAND="$SSHARGS_COMMAND
-	echo "SSHARGS_ERROR="$SSHARGS_ERROR
+        cat >> $DEBUGFILE <<EOF
+SSHARGS_OPTCOUNT=$SSHARGS_OPTCOUNT
+SSHARGS_HOST=$SSHARGS_HOST
+SSHARGS_USER=$SSHARGS_USER
+SSHARGS_COMMAND=$SSHARGS_COMMAND
+SSHARGS_ERROR=$SSHARGS_ERROR
+EOF
 }
 
 # Check whether SSH or OARSH must be run depending on the hostname.
@@ -91,14 +97,21 @@ is_do_ssh_host() {
 
 # Remove the -l ssh option for calls of OARSH.
 fix_opts() {
-	OPTS=
+        unset OPTS
+	OPTCOUNT=0
+        let j=0
 	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
 		if [[ ${SSHARGS_OPT[$i]} =~ "^-l" ]]; then
 			:
-    elif [[ ${SSHARGS_OPT[$i]} =~ "^-i" ]]; then
-			export OAR_JOB_KEY_FILE=${SSHARGS_OPT[$i]/#-i /}
+                elif [[ ${SSHARGS_OPT[$i]} =~ "^-i" ]]; then
+			export OAR_JOB_KEY_FILE=${SSHARGS_OPTARG[$i]}
 		else
-			OPTS="$OPTS ${SSHARGS_OPT[$i]}"
+
+                        if [ -z "${SSHARGS_OPTARG[$i]}" ]; then
+			        OPTS[$((OPTCOUNT++))]="-${SSHARGS_OPT[$i]}"
+                        else
+			        OPTS[$((OPTCOUNT++))]="-${SSHARGS_OPT[$i]} ${SSHARGS_OPTARG[$i]}"
+                        fi
 		fi
 	done
 }
@@ -106,7 +119,7 @@ fix_opts() {
 # Main program
 
 # Parse args (the $@ var of the main program stays unchanged)
-parse_args $@
+parse_args "$@"
 # check if SSH or OARSH must be called depending on the host
 if is_do_ssh_host; then
 	exec $SSHCMD "$@"
@@ -114,7 +127,15 @@ fi
 
 # Remove the -l option and fix -i key options
 fix_opts
+
+# Debug if DEBUGFILE is DEFINED
+if [ -n "$DEBUGFILE" ]; then
+ echo "$@" > $DEBUGFILE
+ dump
+ echo "${OPTS[@]}" >> $DEBUGFILE
+fi
+
 # Sudowrapper mechanism to call oarsh
-exec sudo -H -u $OARUSER $OARDIR/cmds/oarsh $OPTS $SSHARGS_HOST "$SSHARGS_COMMAND"
+exec sudo -H -u $OARUSER $OARDIR/cmds/oarsh "${OPTS[@]}" $SSHARGS_HOST "$SSHARGS_COMMAND"
 echo "OARSH wrapper failed." 1>&2
 exit 1
