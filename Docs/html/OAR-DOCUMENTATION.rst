@@ -212,30 +212,21 @@ Options::
                                    --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
      --resubmit=<job id>       Resubmit the given job as a new one
-     --force-cpuset-name=<txt> Specify a cpuset name to use instead of the job
-                               id (WARNING: if several jobs have the same
-                               cpuset name then processes of a job could be
-                               killed when another one finishes on the same
-                               computer)
- -k, --use-job-key             Activate the job-key mechanism. A job-key will
-                               be generated allowing to connect the job from
-                               outside the set of resources managed by OAR.
+ -k, --use-job-key             Activate the job-key mechanism.
  -i, --import-job-key-from-file=<file>
-                               Import the job-key to use from existing files
-                               (public and private key files) instead of
-                               generating a new one
-     --import-job-key-inline-priv=<txt>
-     --import-job-key-inline-pub=<txt>
-                               Import the job-key to use passing both the
-                               public and the private parts in the command
-                               line instead of generating a new one
-     --job-key-file=<file>     Specify the prefix of the files that will store
-                               the job-key for the job.
+                               Import the job-key to use from a files instead
+                               of generating a new one.
+     --import-job-key-inline=<txt>
+                               Import the job-key to use inline instead of
+                               generating a new one.
+ -K  --export-job-key-to-file=<file>
+                               Export the the job key to a file. Warning: the
+                               file will be overwritten if it already exists.
                                (the %jobid% pattern is automatically replaced)
-     --stdout-file=<file>      Specify the file that will store the standart
+ -O  --stdout=<file>           Specify the file that will store the standart
                                output stream of the job.
                                (the %jobid% pattern is automatically replaced)
-     --stderr-file=<file>      Specify the file that will store the standart
+ -E  --stderr=<file>           Specify the file that will store the standart
                                error stream of the job.
                                (the %jobid% pattern is automatically replaced)
      --hold                    Set the job state into Hold instead of Waiting,
@@ -247,7 +238,7 @@ Options::
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format
  -h, --help                    Print this help message
- -v, --version                 Print OAR version number
+ -V, --version                 Print OAR version number
 
 Wanted resources have to be described in a hierarchical manner using the  
 "-l" syntax option.

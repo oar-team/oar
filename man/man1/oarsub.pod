@@ -96,11 +96,6 @@ Ex:
 
 Resubmit the given job as a new one.
 
-=item B<--force-cpuset-name> <TXT>
-
-Specify a cpuset name to use instead of the job id.
-I<WARNING:> if several jobs have the same cpuset name then processes of a job could be killed when another one finishes on the same computer.
-
 =item B<-k, --use-job-key>
 
 Activate the job-key mechanism. A job-key will be generated allowing to connect the job from outside the set of resources managed by OAR.
@@ -109,15 +104,17 @@ Activate the job-key mechanism. A job-key will be generated allowing to connect 
 
 Import the job-key to use from existing files (public and private key files) instead of generating a new one.
 
-=item B<--import-job-key-inline-pub> and B<--import-job-key-inline-priv>
+=item B<--import-job-key-inline>
 
-Import the job-key to use passing both the public and the private parts in the command line instead of generating a new one.
+Import the job-key to use inline instead of generating a new one.
 
-=item B<--job-key-file>
+=item B<-K>
 
-Specify the prefix of the files that will store the job-key for the job. The %jobid% pattern is automatically replaced.
+Export the the job key to a file.
+I<Warning>: the file will be overwritten if it already exists.
+(the %jobid% pattern is automatically replaced)
 
-=item B<--stdout-file> <FILE> B<--stderr-file>
+=item B<-O> <FILE> B<-E>
 
 Specify the files that will store the standart output stream and standart error of the job. The %jobid% pattern is automatically replaced.
 
