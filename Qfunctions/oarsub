@@ -762,7 +762,6 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         #Test if this job is a reservation and the syntax is right
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
             $Reservation = iolib::sql_to_local("$1 $2");
-            print("$Reservation\n");
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
             iolib::disconnect($base);
@@ -784,7 +783,6 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         #Test if this job is a reservation and the syntax is right
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
             $Reservation = iolib::sql_to_local("$1 $2");
-            print("$Reservation\n");
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
             iolib::disconnect($base);
