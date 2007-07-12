@@ -1,9 +1,3 @@
-oar (2.0.2+svn628-1) unstable; urgency=low
-
-  * Updated to SVN revision 628.
-
- -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 11 Jul 2007 20:53:35 +0200
-
 oar (2.0.2+svn588-1) unstable; urgency=low
 
   [ Pierre Neyron ]
