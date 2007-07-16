@@ -138,11 +138,11 @@ sub parse_timesharing($$$){
 # Take care of currently scheduled jobs (gantt in the database)
 my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($base);
 foreach my $i (keys(%already_scheduled_jobs)){
+    my $types = iolib::get_current_job_types($base,$i);
     # Do not take care of besteffort jobs
-    if (($already_scheduled_jobs{$i}->[2] ne "besteffort") or ($queue eq "besteffort")){
+    if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my $user;
         my $name;
-        my $types = iolib::get_current_job_types($base,$i);
         if (defined($types->{timesharing})){
             ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
             if (!defined($timesharing_gantts->{$user}->{$name})){
@@ -285,7 +285,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     #my $moldable = $job_descriptions->[0];
     #print(Dumper($moldable));
         my $duration;
-        if ($queue eq "besteffort"){
+        if (defined($types->{besteffort})){
             $duration = $besteffort_duration;
         }else{
             $duration = $moldable->[1] + $security_time_overhead;

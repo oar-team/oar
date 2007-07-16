@@ -1926,7 +1926,7 @@ You have 4 different ways to share your slot:
   2. *timesharing=user,\** : This indicates that the job can be shared only
      with the same user and every job names.
 
-  3. *timesharing=\*,job_name\** : This indicates that the job can be shared
+  3. *timesharing=\*,job_name* : This indicates that the job can be shared
      with all users but only one with the same name.
 
   4. *timesharing=user,job_name* : This indicates that the job can be shared

@@ -474,13 +474,14 @@ sub get_history($$$){
     #print finished or running jobs
     my %jobs_history = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
     foreach my $i (keys(%jobs_history)){
-        if (!defined($job_gantt{$i}) || $job_gantt{$i}->{queue_name} eq "besteffort"){
+        my $types = iolib::get_current_job_types($base,$i);
+        if (!defined($job_gantt{$i}) || (defined($types->{besteffort}))){
             if (($jobs_history{$i}->{state} eq "Running") ||
                 ($jobs_history{$i}->{state} eq "toLaunch") ||
                 ($jobs_history{$i}->{state} eq "Suspended") ||
                 ($jobs_history{$i}->{state} eq "Resuming") ||
                 ($jobs_history{$i}->{state} eq "Launching")){
-                if ($jobs_history{$i}->{queue_name} eq "besteffort"){
+                if (defined($types->{besteffort})){
                     $jobs_history{$i}->{stop_time} = iolib::get_gantt_visu_date($base);
                 }else{
                     #This job must be already  printed by gantt

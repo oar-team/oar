@@ -255,6 +255,7 @@ CREATE TABLE resources (
   next_finaud_decision varchar(3) check (next_finaud_decision in ('YES','NO')) NOT NULL default 'NO',
   state_num integer NOT NULL default '0',
   suspended_jobs varchar(3) check (suspended_jobs in ('YES','NO')) NOT NULL default 'NO',
+  scheduler_priority integer NOT NULL default '0',
   switch varchar(50) NOT NULL default '0',
   cpu integer NOT NULL default '0',
   cpuset integer NOT NULL default '0',

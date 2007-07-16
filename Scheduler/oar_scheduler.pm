@@ -130,7 +130,8 @@ sub init_scheduler($$$$$$){
         iolib::add_gantt_scheduled_jobs($dbh,$i->{assigned_moldable_job},$date,\@resource_list);
 
         # Treate besteffort jobs like nothing!
-        if ($i->{queue_name} ne "besteffort"){
+        my $types = iolib::get_current_job_types($dbh,$i->{job_id});
+        if (! defined($types->{besteffort})){
             my $job_duration = $mold->{moldable_walltime};
             if ($i->{state} eq "Suspended"){
                 # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
@@ -340,7 +341,8 @@ sub check_reservation_jobs($$$$){
         # Take care of currently scheduled jobs except besteffort jobs if queue_name is not besteffort
         my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($dbh);
         foreach my $i (keys(%already_scheduled_jobs)){
-            if (($already_scheduled_jobs{$i}->[2] ne "besteffort") or ($queue_name eq "besteffort")){
+            my $types = iolib::get_current_job_types($dbh,$i);
+            if ((! defined($types->{besteffort})) or ($queue_name eq "besteffort")){
                 my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
                 my $job_duration = $already_scheduled_jobs{$i}->[1];
                 if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
