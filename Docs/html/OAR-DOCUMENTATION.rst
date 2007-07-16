@@ -1838,7 +1838,7 @@ Checkpoint
 The checkpoint is just a signal sent to the program specified with the oarsub_
 command.
 
-If the user uses "-k" option then Sarko_ will ask the OAR Perl script running
+If the user uses "--checkpoint" option then Sarko_ will ask the OAR Perl script running
 on the first node to send the signal to the process (SIGUSR2 or the one
 specified with "--signal").
 
