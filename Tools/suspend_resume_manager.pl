@@ -40,13 +40,13 @@ if (!defined($Cpuset_name)){
 if ($ARGV[0] eq "suspend"){
     # Suspend all processes of the cpuset
 
-    system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_name.'/tasks)
+    system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
             sudo kill -SIGSTOP $PROCESSES'
           );
 }elsif ($ARGV[0] eq "resume"){
     # Resume all processes of the cpuset
 
-    system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_name.'/tasks)
+    system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
             sudo kill -SIGCONT $PROCESSES'
           );
 }else{

@@ -7,6 +7,7 @@ use strict;
 use POSIX ":sys_wait_h";
 use IPC::Open2;
 use Data::Dumper;
+use Fcntl;
 
 # Constants
 my $Default_leon_soft_walltime = 20;
@@ -22,8 +23,8 @@ my $Default_prologue_epilogue_timeout = 60;
 my $Default_suspend_resume_script_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
-my $Default_cpuset_file_manager = "cpuset_manager.pl";
-my $Default_suspend_resume_file_manager = "suspend_resume_manager.pl";
+my $Default_cpuset_file_manager = "/etc/oar/cpuset_manager.pl";
+my $Default_suspend_resume_file_manager = "/etc/oar/suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
 my $Default_node_file_db_field_distinct_values = "resource_id";
@@ -762,23 +763,55 @@ sub manage_remote_commands($$$$$$$){
     }else{
         # Dispatch via taktuk
         my %tmp_node_hash;
-        my $m_option;
+
+        pipe(tak_node_read,tak_node_write);
+        pipe(tak_stdin_read,tak_stdin_write);
+        pipe(tak_stdout_read,tak_stdout_write);
+        my $pid = fork;
+        if($pid == 0){
+            #CHILD
+            $SIG{CHLD} = 'DEFAULT';
+            $SIG{TERM} = 'DEFAULT';
+            $SIG{INT}  = 'DEFAULT';
+            $SIG{QUIT} = 'DEFAULT';
+            $SIG{USR1} = 'DEFAULT';
+            $SIG{USR2} = 'DEFAULT';
+            my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $action ], broadcast file_input [ - ], broadcast close";
+            fcntl(tak_node_read, F_SETFD, 0);
+            close(tak_node_write);
+            close(tak_stdout_read);
+            close(STDOUT);
+            # Redirect taktuk output into the pipe
+            open(STDOUT, ">& tak_stdout_write");
+        
+            # Use the child STDIN to send the user command
+            close(tak_stdin_write);
+            close(STDIN);
+            open(STDIN, "<& tak_stdin_read");
+
+            exec($cmd);
+            warn("[ERROR] Cannot execute $cmd\n");
+            exit(-1);
+        }
+        close(tak_node_read);
+        close(tak_stdin_read);
+        close(tak_stdout_write);
+
+        # Send node list
         foreach my $n (@{$connect_hosts}){
             $tmp_node_hash{$n} = 1;
-            $m_option .= " -m $n";
+            print(tak_node_write "$n\n");
         }
+        close(tak_node_write);
        
-        my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''."$m_option broadcast exec [ perl - $action ], broadcast file_input [ - ], broadcast close";
-        #print("$cmd\n");
-        my $pid = open2(\*READ, \*WRITE, $cmd);
         eval{
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm(oar_Tools::get_ssh_timeout());     
             # Send data structure to all nodes
-            print(WRITE $string_to_transfer);
-            close(WRITE);
+            print(tak_stdin_write $string_to_transfer);
+            close(tak_stdin_write);
             # Check good nodes from the stdout taktuk
-            while(<READ>){
+            while(<tak_stdout_read>){
                 if ($_ =~ /^STATUS ([\w\.\-\d]+) (\d+)$/){
                     if ($2 == 0){
                         delete($tmp_node_hash{$1}) if (defined($tmp_node_hash{$1}));
@@ -787,7 +820,7 @@ sub manage_remote_commands($$$$$$$){
                     print("[TAKTUK OUTPUT] $_");
                 }
             }
-            close(READ);
+            close(tak_stdout_read);
             alarm(0);
         };
         @bad = keys(%tmp_node_hash);

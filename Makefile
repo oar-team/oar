@@ -124,6 +124,7 @@ common:
 
 server:
 	install -d -m 0755 $(OARDIR)
+	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
@@ -164,8 +165,8 @@ server:
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
-	@if [ -f $(OARDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARDIR); fi
-	@if [ -f $(OARDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARDIR); fi
+	@if [ -f $(OARCONFDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARCONFDIR); fi
+	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
 	rm $(OARDIR)/sudowrapper.sh
 
 user: man
@@ -215,12 +216,12 @@ node: man
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	@if [ -f $(OARDIR)/detect_new_resources.sh ]; then echo "Warning: $(OARDIR)/detect_new_resources.sh already exists, not overwriting it." ; else install -m 0755 Tools/detect_new_resources.sh $(OARDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_prologue ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_epilogue ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_diffuse_script ]; then echo "Warning: $(OARHOMEDIR)/oar_diffuse_script already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_epilogue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/oar_prologue_local ]; then echo "Warning: $(OARHOMEDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARHOMEDIR) ; fi
-	@if [ -f $(OARHOMEDIR)/lock_user.sh ]; then echo "Warning: $(OARHOMEDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARHOMEDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar_prologue ]; then echo "Warning: $(OARCONFDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar_epilogue ]; then echo "Warning: $(OARCONFDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar_diffuse_script ]; then echo "Warning: $(OARCONFDIR)/oar_diffuse_script already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar_epilogue_local ]; then echo "Warning: $(OARCONFDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar_prologue_local ]; then echo "Warning: $(OARCONFDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/lock_user.sh ]; then echo "Warning: $(OARCONFDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARCONFDIR) ; fi
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )

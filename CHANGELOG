@@ -19,6 +19,8 @@ upstream development version:
   - add options "--reinitialize" and "--delete-before" to the oaraccounting command
   - cpuset are now stored in /dev/cpuset/oar
   - debian packaging: configure and launch a specific sshd for the user oar
+  - use a file descriptor to send the node list --> able to handle a very large amount of nodes
+  - every config files are now in /etc/oar/
 
 version 2.0.2:
 --------------
