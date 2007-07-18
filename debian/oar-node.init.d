@@ -16,7 +16,7 @@ DESC=oar-node
 OAR_NODE_NAME=$(hostname -f)
 OARSERVER=""
 OAR_SSHD_CONF="/etc/oar/sshd_config"
-SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/lib/oar/oar_sshd.pid"
+SSHD_OPTS="-p 6667 -f $OAR_SSHD_CONF -o PidFile=/var/lib/oar/oar_sshd.pid"
 
 # Include oar defaults if available
 if [ -f /etc/default/oar-node ] ; then
