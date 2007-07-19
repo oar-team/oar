@@ -24,7 +24,7 @@ Options:
   -h, --help              show this help screen
   -c, --checkpoint        send checkpoint signal to the job_ids
   -b, --besteffort        tag specified jobs as besteffort (or remove it
-                          if they are already bestefort)
+                          if they are already besteffort)
       --sql               delete/checkpoint jobs which respond to the SQL
                           where clause on the table jobs
                           (ex: "project = 'p1'")

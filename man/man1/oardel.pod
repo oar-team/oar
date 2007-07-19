@@ -4,7 +4,7 @@ oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [-c][job_ids][-h][-v]
+B<oardel> [-c|-b][job_ids][-h][-v]
 
 =head1 DESCRIPTION
 
@@ -17,6 +17,10 @@ This command is used to delete or checkpoint job(s). Jobs are designed by their 
 =item B<-c, --checkpoint>
 
 Send the checkpoint signal designed from the "--signal" oarsub command option (default is SIGUSR2) to the process launched by the job "job_id".
+
+=item B<-b, --besteffort>
+
+Tag specified jobs as besteffort (or remove it if they are already besteffort)
 
 =item B<--sql>
 
