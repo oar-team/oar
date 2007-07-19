@@ -1284,6 +1284,7 @@ sub set_job_state($$$) {
         }elsif ($state eq "Resuming"){
             oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RESUMING","Job is resuming.");
         }elsif ($state eq "Running"){
+            update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+ 2");
             oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
         }elsif (($state eq "Terminated") or ($state eq "Error")){
             #$dbh->do("  DELETE FROM challenges
@@ -1309,6 +1310,7 @@ sub set_job_state($$$) {
             }
         }
         if (($state eq "Terminated") or ($state eq "Error")){ 
+            update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"- 2");
             add_new_event($dbh,"LOG_JOB",$job->{job_id},"The job $job->{job_id} is finished so we can make some optimizations in the database");
             # $dbh is valid so these 2 variables must be defined
             oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
@@ -2089,6 +2091,46 @@ sub get_jobs_to_schedule($$$){
                                 ORDER BY job_id
                                 LIMIT $limit
                             ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
+
+
+# get_random_jobs_to_schedule
+# args : base ref, queue name
+sub get_random_jobs_to_schedule($$$){
+    my $dbh = shift;
+    my $queue = shift;
+    my $limit = shift;
+
+    my $req;
+    if ($Db_type eq "Pg"){
+        $req = "SELECT *
+                FROM jobs
+                WHERE
+                    state = \'Waiting\'
+                    AND reservation = \'None\'
+                    AND queue_name = \'$queue\'
+                ORDER BY random()
+                LIMIT $limit
+               ";
+    }else{
+        $req = "SELECT *
+                FROM jobs
+                WHERE
+                    state = \'Waiting\'
+                    AND reservation = \'None\'
+                    AND queue_name = \'$queue\'
+                ORDER BY RAND()
+                LIMIT $limit
+               ";
+    }
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -3300,6 +3342,40 @@ sub list_resource_properties_fields($){
     return(%results);
 
 }
+
+
+# update_current_scheduler_priority
+# Update the scheduler_priority field of the table resources
+sub update_current_scheduler_priority($$$$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $moldable_id = shift;
+    my $value = shift;
+
+    if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")){
+        my $types = iolib::get_current_job_types($dbh,$job_id);
+        if (defined($types->{besteffort})){
+            my $index = 0;
+            foreach my $f (split('/',get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER"))){
+                next if ($f eq "");
+                $index++;
+                my $req =  "UPDATE resources
+                            SET scheduler_priority = scheduler_priority + ($value * $index)
+                            WHERE
+                                $f IN ( SELECT distinct($f)
+                                        FROM assigned_resources, resources
+                                        WHERE
+                                            assigned_resource_index = \'CURRENT\' AND
+                                            moldable_job_id = $moldable_id AND
+                                            assigned_resources.resource_id = resources.resource_id
+                              )
+                           ";
+                $dbh->do($req);       
+            }
+        }
+    }
+}
+
 
 #get the range when nodes are dead between two dates
 # arg : base, start date, end date

@@ -202,7 +202,7 @@ foreach my $r (iolib::get_resources_in_state($base,"Dead")){
     push(@Dead_resources, $r->{resource_id});
 }
 
-my @jobs = iolib::get_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated);
+my @jobs = iolib::get_random_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated);
 ###############################################################################
 # Sort jobs depending on their previous usage
 # Karma sort algorithm
