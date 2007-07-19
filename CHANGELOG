@@ -21,6 +21,7 @@ upstream development version:
   - debian packaging: configure and launch a specific sshd for the user oar
   - use a file descriptor to send the node list --> able to handle a very large amount of nodes
   - every config files are now in /etc/oar/
+  - oardel can add a besteffort type to jobs and vis versa
 
 version 2.0.2:
 --------------
