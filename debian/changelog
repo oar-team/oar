@@ -1,8 +1,8 @@
-oar (2.0.2+svn642-1) unstable; urgency=low
+oar (2.0.2+svn642-2) unstable; urgency=low
 
-  * Updated to SVN revision 642.
+  * release v2.1
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Thu, 19 Jul 2007 17:21:12 +0200
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Thu, 19 Jul 2007 17:51:59 +0200
 
 oar (2.0.2+svn588-1) unstable; urgency=low
 
