@@ -18,11 +18,13 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-c][job_ids][-h][-V]
+Usage: $0 [-c|-b][job_ids][-h][-V]
 Delete or send checkpoint signal to jobs.
 Options:
   -h, --help              show this help screen
-  -c, --checkpoint        send checkpoint signal to the job_id
+  -c, --checkpoint        send checkpoint signal to the job_ids
+  -b, --besteffort        tag specified jobs as besteffort (or remove it
+                          if they are already bestefort)
       --sql               delete/checkpoint jobs which respond to the SQL
                           where clause on the table jobs
                           (ex: "project = 'p1'")
@@ -49,7 +51,9 @@ my $Checkpoint;
 my $sos;
 my $Version;
 my $Sql_property;
+my $Besteffort;
 GetOptions ("checkpoint|c" => \$Checkpoint,
+            "besteffort|b" => \$Besteffort,
             "help|h" => \$sos,
             "sql=s"   => \$Sql_property,
             "version|V" => \$Version
@@ -136,6 +140,40 @@ if (defined($Checkpoint)){
                 print("$strComment\n");
                 iolib::add_new_event($base,"CHECKPOINT_SUCCESS",$idJob,$strComment);
             }
+        }
+    }
+}elsif (defined($Besteffort)){
+    my $lusr= getpwuid($ENV{SUDO_UID});
+    if (($lusr ne "oar") and ($lusr ne "root")){
+        $exitValue = 8;
+        warn("You must be oar or root to use the -b option\n");
+    }else{
+        foreach my $j (@job_ids){
+            iolib::lock_table($base,["jobs","job_types","resources","assigned_resources","events"]);
+            my $job = iolib::get_job($base, $j);
+            if (defined($job->{state}) and ($job->{state} eq "Running")){ 
+                my $types = iolib::get_current_job_types($base,$j);
+                if (defined($types->{besteffort})){
+                    iolib::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"- 2");
+                    iolib::remove_current_job_types($base,$job->{job_id},"besteffort");
+                    iolib::add_new_event($base,"DELETE_BESTEFFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr removed the besteffort type.");
+                    print("Remove besteffort type for the job $j.\n");
+                }else{
+                    iolib::add_current_job_types($base,$job->{job_id},"besteffort");
+                    iolib::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"+ 2");
+                    iolib::add_new_event($base,"ADD_BESTEFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr added the besteffort type.");
+                    print("Add besteffort type for the job $j.\n");
+                }
+            }else{
+                $exitValue = 9;
+                warn("The job $j is not in the Running state.\n");
+            }
+            iolib::unlock_table($base);
+        }
+        my $strError = oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+        if (defined($strError)){
+            warn("$strError\n");
+            $exitValue = 2;
         }
     }
 }else{

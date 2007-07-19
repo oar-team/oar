@@ -16,7 +16,7 @@ use Time::HiRes qw(gettimeofday);
 # Fairsharing parameters #
 ##########################
 # Avoid problems if there are too many waiting jobs
-my $Karma_max_number_of_jobs_treated = 1000;
+my $Karma_max_number_of_jobs_treated_per_user = 30;
 # number of seconds to consider for the fairsharing
 my $Karma_window_size = 3600 * 30;
 # specify the target percentages for project names (0 if not specified)
@@ -202,7 +202,7 @@ foreach my $r (iolib::get_resources_in_state($base,"Dead")){
     push(@Dead_resources, $r->{resource_id});
 }
 
-my @jobs = iolib::get_random_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated);
+my @jobs = iolib::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
 ###############################################################################
 # Sort jobs depending on their previous usage
 # Karma sort algorithm

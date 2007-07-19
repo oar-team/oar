@@ -2101,42 +2101,48 @@ sub get_jobs_to_schedule($$$){
 }
 
 
-# get_random_jobs_to_schedule
+# get_fairsharing_jobs_to_schedule
 # args : base ref, queue name
-sub get_random_jobs_to_schedule($$$){
+sub get_fairsharing_jobs_to_schedule($$$){
     my $dbh = shift;
     my $queue = shift;
     my $limit = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "SELECT *
-                FROM jobs
-                WHERE
-                    state = \'Waiting\'
-                    AND reservation = \'None\'
-                    AND queue_name = \'$queue\'
-                ORDER BY random()
-                LIMIT $limit
+    my $req = "SELECT distinct(job_user)
+               FROM jobs
+               WHERE
+                   state = \'Waiting\'
+                   AND reservation = \'None\'
+                   AND queue_name = \'$queue\'
                ";
-    }else{
-        $req = "SELECT *
-                FROM jobs
-                WHERE
-                    state = \'Waiting\'
-                    AND reservation = \'None\'
-                    AND queue_name = \'$queue\'
-                ORDER BY RAND()
-                LIMIT $limit
-               ";
-    }
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref);
+    my @users = ();
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@users, $ref[0]);
     }
     $sth->finish();
+
+    my @res = ();
+    foreach my $u (@users){
+        my $req2 = "SELECT *
+                    FROM jobs
+                    WHERE
+                        state = \'Waiting\'
+                        AND reservation = \'None\'
+                        AND queue_name = \'$queue\'
+                        AND job_user = \'$u\'
+                    ORDER BY job_id
+                    LIMIT $limit
+               ";
+        my $sth = $dbh->prepare($req2);
+        $sth->execute();
+        while (my $ref = $sth->fetchrow_hashref()) {
+            push(@res, $ref);
+        }
+        $sth->finish();
+    }
+
     return(@res);
 }
 
@@ -2187,6 +2193,32 @@ sub get_job_types($$){
     $sth->finish();
 
     return(@res);
+}
+
+
+# add_current_job_types
+sub add_current_job_types($$$){
+    my $dbh = shift;
+    my $jobId = shift;
+    my $type = shift;
+
+    $dbh->do("  INSERT INTO job_types (job_id,type,types_index)
+                VALUES ($jobId,\'$type\',\'CURRENT\')
+             ");
+}
+
+# remove_current_job_types
+sub remove_current_job_types($$$){
+    my $dbh = shift;
+    my $jobId = shift;
+    my $type = shift;
+
+    $dbh->do("  DELETE FROM job_types
+                WHERE
+                    job_id = $jobId AND
+                    type = \'$type\' AND
+                    types_index = \'CURRENT\'
+             ");
 }
 
 
