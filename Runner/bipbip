@@ -150,7 +150,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                                     key => $ssh_private_key
                                    }
                     },
-        oar_tmp_directory => oar_Tools::get_default_oarexec_directory()
+        oar_tmp_directory => oar_Tools::get_default_oarexec_directory(),
+        user => $job->{job_user}
     };
     if (defined($cpuset_nodes)){
         my $taktuk_cmd = get_conf("TAKTUK_CMD");

@@ -5242,7 +5242,8 @@ sub job_finishing_sequence($$$$$$$$){
                                                 key => $ssh_private_key
                                                }
                                 },
-                    oar_tmp_directory => oar_Tools::get_default_oarexec_directory()
+                    oar_tmp_directory => oar_Tools::get_default_oarexec_directory(),
+                    user => $job->{job_user}
                 };
                 my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
