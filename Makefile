@@ -222,7 +222,7 @@ node: man
 	@if [ -f $(OARCONFDIR)/oar_epilogue_local ]; then echo "Warning: $(OARCONFDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/oar_prologue_local ]; then echo "Warning: $(OARCONFDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/lock_user.sh ]; then echo "Warning: $(OARCONFDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_serveur_proepilogue.pl ]; then echo "Warning: $(OARCONFDIR)/oar_serveur_proepilogue.pl already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_serveur_proepilogue.pl $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/oar_server_proepilogue.pl ]; then echo "Warning: $(OARCONFDIR)/oar_server_proepilogue.pl already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_server_proepilogue.pl $(OARCONFDIR) ; fi
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )
