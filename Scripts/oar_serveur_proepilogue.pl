@@ -1,0 +1,120 @@
+#!/usr/bin/perl
+use Fcntl;
+
+my $Taktuk_cmd = "/usr/bin/taktuk -s -c 'ssh'";
+my $Oarstat_cmd = "oarstat";
+
+my $Job_id = $ARGV[1];
+if ($Job_id !~ m/^\d+$/m){
+    warn("ERROR: cannot get the job id\n");
+    exit(1);
+}
+
+my $struct;
+if (open(OARSTAT, "$Oarstat_cmd -fj $Job_id -D |")){
+    $struct = eval(<OARSTAT>);
+    close(OARSTAT);
+    if (!defined($struct->{state})){
+        warn("ERROR: Cannot read correctly the result of the command $Oarstat_cmd\n");
+        exit(4);
+    }
+}else{
+    warn("ERROR: Cannot execute command $Oarstat_cmd\n");
+    exit(3);
+}
+
+if ($ARGV[0] eq "START"){
+    my $str = <<EOF;
+print("HELLO\n");
+EOF
+    my @tmp = diffuse_cmd($struct->{assigned_network_address},$str,$Job_id);
+    if ($#tmp >= 0){
+        warn("ERROR: Some nodes are inaccessible @tmp\n");
+        exit(5);
+    }
+}elsif ($ARGV[0] eq "STOP"){
+    my $str = <<EOF;
+print("HOLLO\n");
+EOF
+    my @tmp = diffuse_cmd($struct->{assigned_network_address},$str,$Job_id);
+    if ($#tmp >= 0){
+        warn("ERROR: Some nodes are inaccessible @tmp\n");
+        exit(5);
+    }
+}else{
+    warn("ERROR: unknown first argument $ARGV[0]\n");
+    exit(2);
+}
+
+
+sub diffuse_cmd($$$){
+    my $hosts = shift;
+    my $perl_script = shift;
+    my $job_id = shift;
+
+
+    pipe(tak_node_read,tak_node_write);
+    pipe(tak_stdin_read,tak_stdin_write);
+    pipe(tak_stdout_read,tak_stdout_write);
+    my $pid = fork;
+    if($pid == 0){
+        #CHILD
+        $SIG{CHLD} = 'DEFAULT';
+        $SIG{TERM} = 'DEFAULT';
+        $SIG{INT}  = 'DEFAULT';
+        $SIG{QUIT} = 'DEFAULT';
+        $SIG{USR1} = 'DEFAULT';
+        $SIG{USR2} = 'DEFAULT';
+        my $cmd = "$Taktuk_cmd ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - SERVER_SCRIPT ], broadcast file_input [ - ], broadcast close";
+        fcntl(tak_node_read, F_SETFD, 0);
+        close(tak_node_write);
+        close(tak_stdout_read);
+        close(STDOUT);
+        # Redirect taktuk output into the pipe
+        open(STDOUT, ">& tak_stdout_write");
+    
+        # Use the child STDIN to send the user command
+        close(tak_stdin_write);
+        close(STDIN);
+        open(STDIN, "<& tak_stdin_read");
+
+        exec($cmd);
+        warn("[ERROR] Cannot execute $cmd\n");
+        exit(-1);
+    }
+    close(tak_node_read);
+    close(tak_stdin_read);
+    close(tak_stdout_write);
+
+    my $tmp_node_hash;
+    # Send node list
+    foreach my $n (@{$hosts}){
+        $tmp_node_hash{$n} = 1;
+        print(tak_node_write "$n\n");
+    }
+    close(tak_node_write);
+   
+    eval{
+        $SIG{ALRM} = sub { die "alarm\n" };
+        alarm(50);     
+        # Send data structure to all nodes
+        print(tak_stdin_write $perl_script);
+        close(tak_stdin_write);
+        # Check good nodes from the stdout taktuk
+        while(<tak_stdout_read>){
+            if ($_ =~ /^STATUS ([\w\.\-\d]+) (\d+)$/){
+                if ($2 == 0){
+                    delete($tmp_node_hash{$1}) if (defined($tmp_node_hash{$1}));
+                }
+            }else{
+                print("[TAKTUK OUTPUT] $_");
+            }
+        }
+        close(tak_stdout_read);
+        alarm(0);
+    };
+    @bad = keys(%tmp_node_hash);
+    return(@bad);
+}
+
+
