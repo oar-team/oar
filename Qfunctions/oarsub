@@ -883,7 +883,7 @@ if ($Reservation ne "0"){
             print("[".strftime("%F %T",localtime)."] $answer\n");
             $prev_str = $answer;
         }
-    }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^INVALID RESOURCES/));
+    }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
     print("\n");
     if ($answer eq "GOOD JOB"){
         exit(connect_job($Job_id,1,$Openssh_cmd));

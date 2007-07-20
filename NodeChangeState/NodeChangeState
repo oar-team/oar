@@ -127,10 +127,8 @@ foreach my $i (@events_to_check){
     if (
         ($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
         ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
-        ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||
         ($i->{type} eq "SERVER_EPILOGUE_TIMEOUT") ||
-        ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR") ||
-        ($i->{type} eq "SERVER_EPILOGUE_ERROR")
+        ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR")
        ){
         oar_warn("[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
         iolib::stop_all_queues($base);

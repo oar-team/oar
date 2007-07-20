@@ -5146,62 +5146,54 @@ sub job_finishing_sequence($$$$$$$$){
 
     if (defined($epilogue_script)){
         # launch server epilogue
-        if (-x $epilogue_script){
-            my $cmd = "$epilogue_script $job_id";
-            oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Launching command : $cmd\n");
-            my $pid;
-            my $exit_value;
-            my $signal_num;
-            my $dumped_core;
-            my $timeout = oar_Tools::get_default_server_prologue_epilogue_timeout();
-            if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
-                $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
+        my $cmd = "$epilogue_script $job_id";
+        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Launching command : $cmd\n");
+        my $pid;
+        my $exit_value;
+        my $signal_num;
+        my $dumped_core;
+        my $timeout = oar_Tools::get_default_server_prologue_epilogue_timeout();
+        if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
+            $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
+        }
+        eval{
+            $SIG{PIPE} = 'IGNORE';
+            $SIG{ALRM} = sub { die "alarm\n" };
+            alarm($timeout);
+            $pid = fork();
+            if ($pid == 0){
+                undef($dbh);
+                exec($cmd);
+                warn("[ERROR] Cannot find $cmd\n");
+                exit(-1);
             }
-            eval{
-                $SIG{PIPE} = 'IGNORE';
-                $SIG{ALRM} = sub { die "alarm\n" };
-                alarm($timeout);
-                $pid = fork();
-                if ($pid == 0){
-                    undef($dbh);
-                    exec($cmd);
-                    warn("[ERROR] Cannot find $cmd\n");
-                    exit(-1);
-                }
-                my $wait_res = 0;
-                # Avaoid to be disrupted by a signal
-                while ($wait_res != $pid){
-                    $wait_res = waitpid($pid,0);
-                }
-                alarm(0);
-                $exit_value  = $? >> 8;
-                $signal_num  = $? & 127;
-                $dumped_core = $? & 128;
-            };
-            if ($@){
-                if ($@ eq "alarm\n"){
-                    undef($state_to_switch);
-                    if (defined($pid)){
-                        my ($children,$cmd_name) = oar_Tools::get_one_process_children($pid);
-                        kill(9,@{$children});
-                    }
-                    my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
-                    oar_Judas::oar_error("$str\n");
-                    iolib::add_new_event($dbh,"SERVER_EPILOGUE_TIMEOUT",$job_id,"$str");
-                    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
-                }
-            }elsif ($exit_value != 0){
+            my $wait_res = 0;
+            # Avaoid to be disrupted by a signal
+            while ($wait_res != $pid){
+                $wait_res = waitpid($pid,0);
+            }
+            alarm(0);
+            $exit_value  = $? >> 8;
+            $signal_num  = $? & 127;
+            $dumped_core = $? & 128;
+        };
+        if ($@){
+            if ($@ eq "alarm\n"){
                 undef($state_to_switch);
-                my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
+                if (defined($pid)){
+                    my ($children,$cmd_name) = oar_Tools::get_one_process_children($pid);
+                    kill(9,@{$children});
+                }
+                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
                 oar_Judas::oar_error("$str\n");
-                iolib::add_new_event($dbh,"SERVER_EPILOGUE_EXIT_CODE_ERROR",$job_id,"$str");
+                iolib::add_new_event($dbh,"SERVER_EPILOGUE_TIMEOUT",$job_id,"$str");
                 oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
             }
-        }else{
+        }elsif ($exit_value != 0){
             undef($state_to_switch);
-            my $str = "[JOB FINISHING SEQUENCE] Try to execute $epilogue_script but I cannot find it or it is not executable";
-            oar_Judas::oar_warn("$str\n");
-            add_new_event($dbh,"SERVER_EPILOGUE_ERROR",$job_id,$str);
+            my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
+            oar_Judas::oar_error("$str\n");
+            iolib::add_new_event($dbh,"SERVER_EPILOGUE_EXIT_CODE_ERROR",$job_id,"$str");
             oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
         }
     }
