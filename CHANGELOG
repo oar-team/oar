@@ -3,6 +3,7 @@ OAR CHANGELOG
 
 upstream development version:
 -------------------------------
+  - oar_server_proepilogue.pl: can be used for server prologue and epilogue to authorize users to access to nodes that are completely allocated by OAR. If the whole node is assigned then it kills all jobs from the user if all cpus are assigned.
 
 version 2.1.0:
 --------------
