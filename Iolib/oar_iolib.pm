@@ -2388,18 +2388,18 @@ sub get_default_type_resources_in_state($$) {
 
 # get_resources_that_can_be_waked_up
 # returns a list of resources
-# parameters : base, job duration
+# parameters : base, date max
 # return value : list of resource ref
 sub get_resources_that_can_be_waked_up($$) {
     my $dbh = shift;
-    my $duration = shift;
+    my $max_date = shift;
     
-    my $date = get_date($dbh) + $duration + $Cm_security_duration;
-    my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
+    $max_date = $max_date + $Cm_security_duration;
+    my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
                                     state = \'Absent\' AND
-                                    resources.cm_availability > $date
+                                    resources.cm_availability > $max_date
                             ");
     $sth->execute();
     my @res = ();
@@ -2412,18 +2412,18 @@ sub get_resources_that_can_be_waked_up($$) {
 
 # get_resources_that_will_be_out
 # returns a list of resources
-# parameters : base, job duration
+# parameters : base, job max date
 # return value : list of resource ref
 sub get_resources_that_will_be_out($$) {
     my $dbh = shift;
-    my $duration = shift;
+    my $max_date = shift;
     
-    my $date = get_date($dbh) + $duration + $Cm_security_duration;
-    my $sth = $dbh->prepare("   SELECT resources.resource_id AS resource_id, resources.state AS state
+    $max_date = $max_date + $Cm_security_duration;
+    my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
                                 WHERE
                                     state = \'Alive\' AND
-                                    resources.cm_availability < $date
+                                    resources.cm_availability < $max_date
                             ");
     $sth->execute();
     my @res = ();
@@ -4100,25 +4100,46 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+    my $req = "SELECT DISTINCT(j.job_id)
                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
                WHERE
                    m.moldable_index = \'CURRENT\'
-                   AND g1.moldable_job_id= g2.moldable_job_id
+                   AND g1.moldable_job_id = g2.moldable_job_id
                    AND m.moldable_id = g1.moldable_job_id
                    AND j.job_id = m.moldable_job_id
                    AND g2.start_time <= $date
                    AND j.state = \'Waiting\'
                    AND resources.resource_id = g1.resource_id
-                   AND resources.state = \'Alive\'
+                   AND resources.state != \'Alive\'
               ";
-
     my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my %jobs_not_to_launch;
+    while (my @ref = $sth->fetchrow_array()) {
+        $jobs_not_to_launch{$ref[0]} = 1;
+    }
+    $sth->finish();
+
+    $req = "    SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+                WHERE
+                    m.moldable_index = \'CURRENT\'
+                    AND g1.moldable_job_id = g2.moldable_job_id
+                    AND m.moldable_id = g1.moldable_job_id
+                    AND j.job_id = m.moldable_job_id
+                    AND g2.start_time <= $date
+                    AND j.state = \'Waiting\'
+                    AND resources.resource_id = g1.resource_id
+                    AND resources.state = \'Alive\'
+           ";
+    $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        $res{$ref[2]}->[0] = $ref[0];
-        push(@{$res{$ref[2]}->[1]}, $ref[1]);
+        if(!defined($jobs_not_to_launch{$ref[2]})){
+            $res{$ref[2]}->[0] = $ref[0];
+            push(@{$res{$ref[2]}->[1]}, $ref[1]);
+        }
     }
     $sth->finish();
 
@@ -4139,10 +4160,10 @@ sub get_gantt_hostname_to_wake_up($$){
                    AND g1.moldable_job_id= g2.moldable_job_id
                    AND m.moldable_id = g1.moldable_job_id
                    AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= $date
+                   AND g2.start_time <= $date + 1
                    AND j.state = \'Waiting\'
                    AND resources.resource_id = g1.resource_id
-                   AND resources.state = \'Alive\'
+                   AND resources.state = \'Absent\'
                    AND resources.network_address != \'\'
                    AND resources.type = \'default\'
                GROUP BY resources.network_address

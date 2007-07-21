@@ -21,8 +21,13 @@ sub set_occupation($$$$);
 sub get_free_resources($$$);
 sub find_first_hole($$$$);
 sub pretty_print($);
+sub get_infinity_value();
 
 ###############################################################################
+
+sub get_infinity_value(){
+    return($Infinity);
+}
 
 sub pretty_print($){
     my $gantt = shift;

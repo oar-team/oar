@@ -249,10 +249,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         # CM part
         my $alive_resources_vector_store = $alive_resources_vector;
         if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-            foreach my $r (iolib::get_resources_that_can_be_waked_up($base,$duration)){
+            foreach my $r (iolib::get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)){
                 vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
             }
-            foreach my $r (iolib::get_resources_that_will_be_out($base,$duration)){
+            foreach my $r (iolib::get_resources_that_will_be_out($base, iolib::get_date($base) + $duration)){
                 vec($alive_resources_vector, $r->{resource_id}, 1) = 0;
             }
             my $str_tmp = "cm_availability DESC";

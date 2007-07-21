@@ -232,6 +232,35 @@ So when you will use oarsub_ to submit a "cluster2" job type only resources
 with the property "cluster=2" is used. This is the same when you will use the
 "cluster1" type.
 
+How to configure a more ecological cluster (or how to make some power consumption economies)?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This feature can be performed with the `Dynamic nodes coupling features`_.
+
+First you have to make sure that you have a command to wake up a computer
+that is stopped. For example you can use the WoL (Wake on Lan) feature
+(generally you have to right configure the BIOS and add right options to the
+Linux Ethernet driver; see "ethtool").
+
+If you want to enable a node to be woke up the next 12 hours::
+
+    ((DATE=$(date +%s)+3600*12))
+    oarnodesetting -h host_name -p cm_availability=$DATE
+
+Otherwise you can disable the wake up of nodes by::
+
+    oarnodesetting -h host_name -p cm_availability=0
+    
+Your `SCHEDULER_NODE_MANAGER_WAKE_UP_CMD`_ must be a script that read node
+names and translate them into the right wake up command.
+
+So with the right OAR and node configurations you can optimize the power
+consumption of your cluster (and your air conditioning infrastructure)
+without drawback for the users.
+
+Take a look at your cluster occupation and your electricity bill to know if it
+could interesting for you ;-)
+
 How to enable jobs to connect to the frontales from the nodes using oarsh?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 First you have to install the node part of OAR on the wanted nodes.
@@ -276,14 +305,6 @@ the OAR install directory (example with a bash shell)::
 How can I write my own scheduler?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: Scheduler/README
-
-Does OAR handle summer and winter hours?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-No.
-
-If you change the server time when OAR is executing jobs then their stop date
-will be wrong. So users have to be warned about this feature and database logs
-are not exact for these jobs.
 
 What is the syntax of this documentation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
