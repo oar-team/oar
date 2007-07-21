@@ -285,6 +285,7 @@ if (defined(@properties)){
             }
         }
     }
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
 }
 
 

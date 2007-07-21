@@ -161,18 +161,14 @@ sub init_scheduler($$$$$$){
     iolib::unlock_table($dbh);
 
     #Add in Gantt reserved jobs already scheduled
+    my $str_tmp = "state_num ASC";
     if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-        my $str_tmp = "cm_availability DESC";
-        if (!defined($order_part) or ($order_part eq "")){
-            $order_part = $str_tmp;
-        }else{
-            $order_part = "$str_tmp, $order_part";
-        }
+        $str_tmp .= ", cm_availability DESC";
     }
     if (!defined($order_part) or ($order_part eq "")){
-        $order_part = "state_num ASC";
+        $order_part = $str_tmp;
     }else{
-        $order_part = "state_num ASC, $order_part";
+        $order_part = "$str_tmp, $order_part";
     }
     my @Rjobs = iolib::get_waiting_reservation_jobs($dbh);
     foreach my $job (@Rjobs){
@@ -305,7 +301,7 @@ sub treate_waiting_reservation_jobs($$){
         # test if the job is going to be launched and there is no Alive node
         if (($#resa_alive_resources < 0) && ($job->{start_time} <= $current_time_sec)){
             oar_debug("[oar_scheduler] Reservation $job->{job_id} is in waiting mode because no resource is present\n");
-            iolib::set_gantt_job_startTime($dbh,$job->{job_id},iolib::local_to_sql($current_time_sec + 1));
+            iolib::set_gantt_job_startTime($dbh,$job->{job_id},$current_time_sec + 1);
         }elsif($job->{start_time} <= $current_time_sec){
             my @resa_resources = iolib::get_gantt_resources_for_job($dbh,$moldable->[2]);
             if ($job->{start_time} + $Reservation_waiting_timeout > $current_time_sec){
@@ -412,25 +408,10 @@ sub check_reservation_jobs($$$$){
             my @tmp_resource_list;
             # Get the list of resources where the reservation will be able to be launched
             push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
+            push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
             push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
             foreach my $r (@tmp_resource_list){
                 vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-            }
-
-            # CM part
-            if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-                foreach my $r (iolib::get_resources_that_can_be_waked_up($dbh,$job->{start_time} + $duration + $Security_time_overhead)){
-                    vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-                }
-                foreach my $r (iolib::get_resources_that_will_be_out($dbh,$job->{start_time} + $duration + $Security_time_overhead)){
-                    vec($available_resources_vector, $r->{resource_id}, 1) = 0;
-                }
-            }
-            # CM part
-            else{
-                foreach my $r (iolib::get_resources_in_state($dbh,"Absent")){
-                    vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-                }
             }
 
             my @dead_resources;
@@ -493,7 +474,7 @@ sub check_reservation_jobs($$$$){
                 if ($hole[0] == Gantt_2::get_infinity_value()){
                     iolib::set_job_message($dbh, $job->{job_id}, "This reservation cannot be run");
                 }else{
-                    iolib::set_job_message($dbh, $job->{job_id}, "This reservation may be $hole[0] run at ".iolib::local_to_sql($hole[0]));
+                    iolib::set_job_message($dbh, $job->{job_id}, "This reservation may be run at ".iolib::local_to_sql($hole[0]));
                 }
             }
         }
