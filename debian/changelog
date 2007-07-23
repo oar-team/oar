@@ -1,3 +1,9 @@
+oar (2.1.0-2) unstable; urgency=low
+
+  * debug ecolo feature
+
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Mon, 23 Jul 2007 22:15:44 +0200
+
 oar (2.1.0-1) unstable; urgency=low
 
   * release v2.1
