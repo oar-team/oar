@@ -7,6 +7,7 @@ use Data::Dumper;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use IPC::Open3;
+use oar_Tools;
 
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
@@ -94,9 +95,12 @@ sub taktuk_hosts(@){
         return(@hosts);
     }
 
+    my $openssh_cmd = get_conf("OPENSSH_CMD");
+    $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+
     my %check_test_nodes;
 
-    $taktuk_cmd .= ' -o status=\'"STATUS $host $line\n"\' -f - '.get_conf("PINGCHECKER_TAKTUK_ARG_COMMAND");
+    $taktuk_cmd .= " -c '$openssh_cmd'".' -o status=\'"STATUS $host $line\n"\' -f - '.get_conf("PINGCHECKER_TAKTUK_ARG_COMMAND");
 
     my @bad_hosts;
     oar_debug("[PingChecker] $taktuk_cmd\n");
