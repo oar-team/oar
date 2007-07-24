@@ -39,17 +39,25 @@ set -e
 
 case "$1" in
   start)
-    echo -n "Starting $DESC: "
+    echo "Starting $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
-        start-stop-daemon --start --quiet -c oar --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS || exit 1
+        if start-stop-daemon --start --quiet -c oar --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS; then
+            echo " - Specific OAR sshd daemon started."
+        else
+            echo " - ERROR starting the specific OAR sshd daemon."
+        fi
     fi
     echo "$NAME."
     start_oar_node
     ;;
   stop)
-    echo -n "Stopping $DESC: "
+    echo "Stopping $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
-        start-stop-daemon --stop --quiet --pidfile /var/lib/oar/oar_sshd.pid
+        if start-stop-daemon --stop --quiet --pidfile /var/lib/oar/oar_sshd.pid; then
+            echo " - Specific OAR sshd daemon stopped."
+        else
+            echo " - ERROR stopping the specific OAR sshd daemon."
+        fi
     fi
     echo "$NAME."
     stop_oar_node
