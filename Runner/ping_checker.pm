@@ -154,9 +154,12 @@ sub sentinelle_script_hosts(@){
         oar_warn("[PingChecker] You call sentinelle_script_hosts but PINGCHECKER_SENTINELLE_SCRIPT_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
+    
+    my $openssh_cmd = get_conf("OPENSSH_CMD");
+    $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
 
     my %check_test_nodes;
-    $sentinelle_cmd .= " -f - ";
+    $sentinelle_cmd .= " -c '$openssh_cmd' -f - ";
 
     my @bad_hosts;
     oar_debug("[PingChecker] $sentinelle_cmd \n");

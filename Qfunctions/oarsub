@@ -485,15 +485,15 @@ sub parse_resource_descriptions($){
             my @slash_split = split('\/', $resources_to_parse);
             my @resources_list;
             foreach my $l (@slash_split){
-                if ($l =~ /(\w+)\s*=\s*(\d+)/){
+                if ($l =~ /^\s*(\w+)\s*=\s*(\d+)\s*$/){
                     my $tmp = $1;
                     $tmp = "network_address" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => $2 });
-                }elsif ($l =~ /(\w+)\s*=\s*ALL/){
+                }elsif ($l =~ /^\s*(\w+)\s*=\s*ALL\s*$/){
                     my $tmp = $1;
                     $tmp = "network_address" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -1 });
-                }elsif ($l =~ /(\w+)\s*=\s*BEST/){
+                }elsif ($l =~ /^\s*(\w+)\s*=\s*BEST\s*$/){
                     my $tmp = $1;
                     $tmp = "network_address" if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -2 });
@@ -503,7 +503,7 @@ sub parse_resource_descriptions($){
             }
             $tmp_result{resources} = \@resources_list;
             
-            if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*(\,.+|\s*)$/){
+            if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*$/){
                 #walltime part
                 my ($w_h,$w_mn,$w_sec) = split(':',$1);
                 if (defined($w_h)){

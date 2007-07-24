@@ -1740,12 +1740,8 @@ DETACH_JOB_FROM_SERVER_ was set to 1 otherwise it returns directly.
 CPUSET
 ------
 
-If the "--force_cpuset_name" option of the oarsub_ command is not defined then
-OAR will use job identifier. The CPUSET name is effectively created on each
-nodes and is composed as "user_cpusetname".
-
-So if a user specifies "--force_cpuset_name" option, he will not be able to
-disturb other users.
+The cpuset name is effectively created on each nodes and is composed as
+"user_jobid".
 
 OAR system steps:
 
@@ -1754,6 +1750,8 @@ OAR system steps:
     `Taktuk <http://taktuk.gforge.inria.fr/>`_. If it is not
     installed and configured (TAKTUK_CMD_) then OAR uses an internal
     launching tool less optimized.
+    The processors assigned to this cpuset are taken from the defined database
+    field by CPUSET_RESOURCE_PROPERTY_DB_FIELD_ in the table resources_.
 
  2. After each job, OAR deletes all processes stored in the associated CPUSET.
     Thus all nodes are clean after a OAR job.

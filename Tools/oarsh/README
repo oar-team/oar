@@ -8,6 +8,9 @@ This feature is very usefull to restrict processor consumption on
 multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
+If you want to configure this feature into OAR then take a look also in CPUSET_
+and resources_.
+
 CPUSET definition
 .................
 
