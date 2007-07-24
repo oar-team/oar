@@ -43,7 +43,7 @@ Description: OAR batch scheduler user package
 
 Package: oar-draw-gantt
 Architecture: all
-Depends: oar-common, apache | httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, adduser
+Depends: apache | httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, adduser
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
  This package install the OAR batch scheduler Gantt reservation diagram CGI

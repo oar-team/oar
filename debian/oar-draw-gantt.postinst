@@ -22,7 +22,6 @@ set -e
 . /usr/share/debconf/confmodule
 db_version 2.0
 
-adduser www-data oar || true
 chmod 600 /usr/lib/cgi-bin/drawgantt.conf
 chown www-data /usr/lib/cgi-bin/drawgantt.conf
 mkdir -p /var/www/drawgantt/cache && chown www-data /var/www/drawgantt/cache || true
