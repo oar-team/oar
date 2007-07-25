@@ -1,9 +1,3 @@
-oar (2.1.1+svn670-1) unstable; urgency=low
-
-  * Updated to SVN revision 670.
-
- -- Capit Nicolas <nicolas.capit@imag.fr>  Tue, 24 Jul 2007 22:05:07 +0200
-
 oar (2.1.1-1) unstable; urgency=low
 
   * debug ecolo feature
