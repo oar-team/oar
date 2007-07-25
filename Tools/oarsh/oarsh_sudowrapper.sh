@@ -1,6 +1,8 @@
 #!/bin/bash
 # $Id$
 
+unset SUDO_USER
+
 # OARSH and SSH hosts REGEXs
 OARSH_HOSTS_INCLUDE_FILE=~/.oarsh-hosts-include
 OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
