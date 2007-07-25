@@ -3391,16 +3391,25 @@ sub update_current_scheduler_priority($$$$){
             foreach my $f (split('/',get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER"))){
                 next if ($f eq "");
                 $index++;
+
+                my $sth = $dbh->prepare("   SELECT distinct($f)
+                                            FROM assigned_resources, resources
+                                            WHERE
+                                                assigned_resource_index = \'CURRENT\' AND
+                                                moldable_job_id = $moldable_id AND
+                                                assigned_resources.resource_id = resources.resource_id
+                                        ");
+                $sth->execute();
+                my @tmp_res;
+                while (my @ref = $sth->fetchrow_array()){
+                    push(@tmp_res, $ref[0]);
+                }
+                $sth->finish();
+
                 my $req =  "UPDATE resources
                             SET scheduler_priority = scheduler_priority + ($value * $index)
                             WHERE
-                                $f IN ( SELECT distinct($f)
-                                        FROM assigned_resources, resources
-                                        WHERE
-                                            assigned_resource_index = \'CURRENT\' AND
-                                            moldable_job_id = $moldable_id AND
-                                            assigned_resources.resource_id = resources.resource_id
-                              )
+                                $f IN (".join(",","\'@tmp_res\'").")
                            ";
                 $dbh->do($req);       
             }

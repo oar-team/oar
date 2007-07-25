@@ -250,7 +250,7 @@ sub print_job($$){
                     $tmp_str .= "+";
                 }else{
                     # first group
-                    $tmp_str .= "-l '";
+                    $tmp_str .= "-l \"";
                 }
                 if ((defined($group->{property})) and ($group->{property} ne "")){
                     $tmp_str .= "{$group->{property}}";
@@ -265,7 +265,7 @@ sub print_job($$){
                     $tmp_str .= "/$resource->{resource}=$tmp_val";
                 }
             }
-            $tmp_str .= ",walltime=".iolib::duration_to_sql($moldable->[1])."' ";
+            $tmp_str .= ",walltime=".iolib::duration_to_sql($moldable->[1])."\" ";
             $resources_string .= $tmp_str;
         }
         
