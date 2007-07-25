@@ -1,8 +1,6 @@
 #!/bin/bash
 # $Id$
 
-unset SUDO_USER
-
 # OARSH and SSH hosts REGEXs
 OARSH_HOSTS_INCLUDE_FILE=~/.oarsh-hosts-include
 OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
@@ -138,6 +136,7 @@ if [ -n "$DEBUGFILE" ]; then
 fi
 
 # Sudowrapper mechanism to call oarsh
+unset SUDO_USER
 exec sudo -H -u $OARUSER $OARDIR/cmds/oarsh "${OPTS[@]}" $SSHARGS_HOST "$SSHARGS_COMMAND"
 echo "OARSH wrapper failed." 1>&2
 exit 1
