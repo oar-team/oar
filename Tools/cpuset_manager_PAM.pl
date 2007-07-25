@@ -98,7 +98,7 @@ if ($ARGV[0] eq "init"){
         }else{
             exit(14);
         }
-        system("sudo mv -f $Security_pam_file_tmp $Security_pam_file") && exit(15);
+        rename $Security_pam_file_tmp,$Security_pam_file or die "Cannot replace access.conf file.";
     }
     # PAM part
 
@@ -198,7 +198,7 @@ if ($ARGV[0] eq "init"){
         }else{
             exit(14);
         }
-        system("sudo mv -f $Security_pam_file_tmp $Security_pam_file") && exit(15);
+        rename $Security_pam_file_tmp,$Security_pam_file or die "Cannot replace access.conf file.";
         if (! system('diff /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.'/cpus /dev/cpuset/'.$Cpuset_path.'/cpus > /dev/null 2>&1')){
             unless ($Cpuset->{user} eq "root" or $Cpuset->{user} eq "oar") {
                 system("sudo -u $Cpuset->{user} kill -9 -1");
