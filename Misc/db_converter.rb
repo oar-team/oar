@@ -1,4 +1,4 @@
-#!/usr/bin/ruby -w
+#!/usr/bin/ruby 
 # $Id$
 # db_converter is a simple oar converter from 1.6 table schema to 2.0  
 #
@@ -73,6 +73,7 @@ $cpu = nil  #initial index for cpu field
 $core = nil #initial index for core field
 
 $job_id_offset = nil #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one 
+$event_id_offset = nil
 
 $empty = false #if true flush modified oar.v2 tables before convertion    
 #$empty = true	 # MUST BE SET TO false (for development/testing purpose)
@@ -332,7 +333,7 @@ def insert_resource_logs2(dbh,resources_log1,res_conv)
 
 	resources_log1.each do |res_log|
 
-		node = res_log['hostname']
+		node = res_conv[res_log['hostname']]
 		node.each do |res_id|
 			date_stop = "0"	
 			begin
@@ -354,6 +355,15 @@ def determine_job_id_offset(dbh)
 	puts "job_id_offset = #{$job_id_offset}"
 end
 
+def determine_event_id_offset(dbh)
+	if ($event_id_offset.nil?)
+		q = "SELECT MAX(event_id) FROM `event_logs`"
+		$event_id_offset = dbh.select_all(q).first.first.to_i
+	end
+	puts "event_id_offset = #{$event_id_offset}"
+end
+
+
 def insert_job2(dbh,job,res_conv, assigned_resources)
 
 	job_id2 = job['idJob'].to_i + $job_id_offset
@@ -366,7 +376,7 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 	end
 
 	begin
-		dbh.do("INSERT INTO `job_resource_groups` ( `res_group_id` , `res_group_moldable_id` , `res_group_property` , `res_group_index` ) VALUES (?, ?, ?, ?)", job_id2, job_id2 , "type = 'default" ,'LOG')
+		dbh.do("INSERT INTO `job_resource_groups` ( `res_group_id` , `res_group_moldable_id` , `res_group_property` , `res_group_index` ) VALUES (?, ?, ?, ?)", job_id2, job_id2 , "type = 'default'" ,'LOG')
 	rescue
 		puts "Failed to insert job resource groups: " + $!
 		exit
@@ -383,7 +393,7 @@ def insert_job2(dbh,job,res_conv, assigned_resources)
 
 		dbh.do("INSERT INTO `jobs` ( `job_id` , `job_name`, `job_type` , `info_type` , `state` , `reservation` , `message` , `job_user` , `command`, `queue_name` , `properties` , `launching_directory` , `submission_time` , `start_time` , `stop_time` , `file_id` , `accounted` , `assigned_moldable_job` , `checkpoint`) 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reservation'], message, job['user'], job['command'], job['queueName'], job['properties'], job['launchingDirectory'], to_unix_time(job['submissionTime']), start_time, stop_time, job['idFile'], job['accounted'], job['idJob'], job['checkpoint'] )
+job_id2, 'converted' , job['jobType'], job['infoType'], job['state'], job['reservation'], message, job['user'], job['command'], job['queueName'], job['properties'], job['launchingDirectory'], to_unix_time(job['submissionTime']), start_time, stop_time, job['idFile'], job['accounted'], job_id2, job['checkpoint'] )
 
 	rescue
 		puts "Failed to insert job: " + $!
@@ -475,10 +485,11 @@ def convert_event_logs(dbh1,dbh2)
 	sth = dbh1.execute("SELECT * FROM event_log")
   sth.each do |row|
 		job_id2 = row['idJob'].to_i + $job_id_offset
+		event_id2 = row['idEvent'].to_i + $event_id_offset
 		begin
 			dbh2.do("INSERT INTO `event_logs` ( `event_id` , `type` , `job_id` , `date` , `description` , `to_check` )
 VALUES (?, ?, ?, ?, ?, ?)",
-row['idEvent'], row['type'], job_id2, to_unix_time(row['date']), row['description'], row['toCheck'] )
+event_id2, row['type'], job_id2, to_unix_time(row['date']), row['description'], row['toCheck'] )
 		rescue
 			puts "WARNING: Unable to INSERT event logs: " + $!
 		end
@@ -490,8 +501,9 @@ def convert_event_log_hostnames(dbh1,dbh2)
 	puts "Convert event log hostnames"
 	sth = dbh1.execute("SELECT * FROM event_log_hosts")
   sth.each do |row|
+  		event_id2 = row['idEvent'].to_i + $event_id_offset
 		begin
-			dbh2.do("INSERT INTO `event_log_hostnames` ( `event_id` , `hostname` ) VALUES ('#{row['idEvent']}','#{row['hostname']}')")
+			dbh2.do("INSERT INTO `event_log_hostnames` ( `event_id` , `hostname` ) VALUES ('#{event_id2}','#{row['hostname']}')")
 		rescue
 			puts "WARNING: Unable to INSERT  event log hostnames: " + $!
 		end
@@ -549,19 +561,24 @@ determine_job_id_offset(dbh2)
 
 #get_all_job_id1
 all_job_id1 = get_all_job_id1(dbh1)
+nb_jobs = all_job_id1.size
 
+puts "Convert jobs..."
 all_job_id1.each_with_index do |job_id,i|
 #	job_info = all_job_id1.first
-	puts "#{i} jobs processed" if (i % 100) == 0
+	#puts "#{i} jobs processed" if (i % 100) == 0
+	STDERR.print sprintf(" %d / %d jobs processed\r",i+1,nb_jobs) if (((i % 10) == 0) || (i+1 == nb_jobs))
 	job_info =  get_job_info1_mod(dbh1,job_id)
 
 	assigned_resources = get_resources_job1(dbh1,job_id)
 
 	insert_job2(dbh2,job_info, res_conv2, assigned_resources)	
 end
+puts
 
 convert_job_state_logs(dbh1,dbh2)
 convert_frag_jobs(dbh1,dbh2)
+determine_event_id_offset(dbh2)
 convert_event_logs(dbh1,dbh2)
 convert_event_log_hostnames(dbh1,dbh2)
 
