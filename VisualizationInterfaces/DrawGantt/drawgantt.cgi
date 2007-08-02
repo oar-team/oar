@@ -236,8 +236,23 @@ def list_resource_properties_fields(dbh)
 	res.each do |r|
 		results << r.first
 	end
-  return(results)
+  return results 
 end
+
+# get_current_job_types
+# return a hash table with all types for the given job ID
+
+def get_current_job_types(dbh,job_id)
+    q = "SELECT type FROM job_types WHERE types_index = \'CURRENT\' AND job_id = #{job_id}"
+		result = []               
+    res = dbh.execute(q)
+		res.each do |r|
+			result << r[0] 
+		end
+    res.finish
+    return result
+end
+
 
 #
 # Methods adapted from oarstat and iolib
@@ -249,14 +264,16 @@ def get_history(dbh,date_start,date_stop)
 	#print finished or running jobs
 	jobs = job_gantt
 	jobs_history =  get_jobs_range_dates(dbh,date_start,date_stop)
+
 	jobs_history.each do |job_id,job|
-		if ((job_gantt[job_id] == nil) || (job_gantt[job_id]['queue_name'] == "besteffort"))
-    	if ((jobs_history[job_id]['state'] == "Running") ||
-					(jobs_history[job_id]['state'] == "toLaunch") ||
-					(jobs_history[job_id]['state'] == "Suspended") ||
-					(jobs_history[job_id]['state'] == "Resuming") ||
-					(jobs_history[job_id]['state'] == "Launching"))
-				if (jobs_history[job_id]['queue_name'] == "besteffort")
+		a_type = get_current_job_types(dbh,job_id)
+		if (job_gantt[job_id] == nil) || (a_type.include?("besteffort"))
+    	if (jobs_history[job_id]['state'] == "Running") ||
+				 (jobs_history[job_id]['state'] == "toLaunch") ||
+				 (jobs_history[job_id]['state'] == "Suspended") ||
+			   (jobs_history[job_id]['state'] == "Resuming") ||
+				 (jobs_history[job_id]['state'] == "Launching")
+				if a_type.include?("besteffort")
         	jobs_history[job_id]['qstop_time'] = get_gantt_visu_date(dbh);
         else
           #This job must be already  printed by gantt
