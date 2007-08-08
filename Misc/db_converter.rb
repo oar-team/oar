@@ -26,10 +26,12 @@
 # CONFIGURATION
 #
 #####################################################
+$cluster_size = nil
+$cluster_regexp = nil
 
 #base source oar-1.6 
 #$oar_db_1 = 'oar-1-6-grillon-grelon'
-$oar_db_1 = 'oar-ita-1-6'
+$oar_db_1 = 'oar-1-6-nancy'
 $host_1 = 'localhost'
 $login_1 = 'root'
 $passwd_1 = ''
@@ -44,21 +46,31 @@ $passwd_2 = ''
 ###
 ### NANCY
 ###
+$cluster = ['grillon','grelon'] #cluster propertie (cluster field in resource table) 
+$cluster_regexp= ['^grillon.*','^grelon.*']
+
+$nb_cpu = [2,2]   #number of cpu by node
+$nb_core = [1,2]  #number of core by cpu
+
+###
+### Cluster with  contiguous set nodes contigus nodes can use $cluster_size directly
+###
 #$cluster = ['grillon','grelon'] #cluster propertie (cluster field in resource table) 
-#$cluster_size =[46,120]
+#$cluster_size = [47,120]
 
 #$nb_cpu = [2,2]   #number of cpu by node
 #$nb_core = [1,2]  #number of core by cpu
+
 
 ###
 ### Grenoble/Icluster2
 ###
 
-$cluster = ['icluster2'] 
-$cluster_size = nil
+#$cluster = ['icluster2'] 
+#$cluster_size= nil
 
-$nb_cpu = [2]   #number of cpu by node
-$nb_core = [1]
+#$nb_cpu = [2]   #number of cpu by node
+#$nb_core = [1]
 
 ###
 ### Others: ...
@@ -301,19 +313,19 @@ def insert_resources2(dbh,resources)
 	
 		resources[resource_index_begin..(resource_index_begin + $cluster_size[index_cluster]-1) ].each do |res|
 
-			resources_conv[res['hostname']] = []
-			$resource_cluster[res['hostname']] = index_cluster 
+			resources_conv[res.first] = []
+			$resource_cluster[res.first] = index_cluster 
 			i = 0
 			$nb_cpu[index_cluster].times do |cp| 
 				$nb_core[index_cluster].times do |co|
 					begin
 						dbh.do("INSERT INTO `resources` ( `resource_id` , `network_address` , `cluster`, `cpu` , `core` , `cpuset`) 
-VALUES ('#{r_id}', '#{res['hostname']}', '#{cluster}', '#{$cpu}','#{$core}','#{i}')")
+VALUES ('#{r_id}', '#{res.first}', '#{cluster}', '#{$cpu}','#{$core}','#{i}')")
 					rescue
 						puts "Unable to INSERT resource: " + $!
 						exit
 					end
-					resources_conv[res['hostname']] << r_id
+					resources_conv[res.first] << r_id
 					$core += 1
 					i += 1
 					r_id += 1
@@ -321,7 +333,7 @@ VALUES ('#{r_id}', '#{res['hostname']}', '#{cluster}', '#{$cpu}','#{$core}','#{i
 				$cpu += 1
 			end
 		end
-	resource_index_begin = resource_index_begin + 	 $cluster_size[index_cluster]
+	resource_index_begin = resource_index_begin +  $cluster_size[index_cluster]
 
 	end
 	return resources_conv
@@ -333,7 +345,7 @@ def insert_resource_logs2(dbh,resources_log1,res_conv)
 
 	resources_log1.each do |res_log|
 
-		node = res_conv[res_log['hostname']]
+		node = res_conv[res_log.first]
 		node.each do |res_id|
 			date_stop = "0"	
 			begin
@@ -511,6 +523,25 @@ def convert_event_log_hostnames(dbh1,dbh2)
   sth.finish
 end
 
+def reorder_resources(resources)
+	puts "reorder resources"
+	$cluster_size = [] 
+	ordered_resources = []
+	$cluster_regexp.each_with_index do |str_regexp,i|
+		regexp = Regexp.new(str_regexp)
+		nb_nodes = 0
+		resources.each do |res|
+			if (regexp =~ res.first)
+				ordered_resources << res
+				nb_nodes = nb_nodes + 1
+			end
+		end
+		$cluster_size[i] = nb_nodes
+		puts "cluster #{$cluster[i]} has #{$cluster_size[i]} nodes"
+	end
+	return ordered_resources
+end
+
 def empty_db(dbh,name)
 
 	puts "\nEMPTY some tables of #{name} database (oar v2.0) !!"	
@@ -547,6 +578,8 @@ empty_db(dbh2,$oar_db_2) if $empty
 
 # Get resources
 resources = list_resources1(dbh1)
+
+resources = reorder_resources(resources) if !$cluster_regexp.nil?
 
 determine_scaling_weight_factor(dbh1)
 
