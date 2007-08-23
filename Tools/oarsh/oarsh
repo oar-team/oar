@@ -113,6 +113,6 @@ fi
         
 cat 1>&2 <<EOF
 oarsh: Cannot connect. Please set either a job id or a job key in your
-oarsh: environment using the OAR_JOB_ID or the OAR_JOB_KEY variable.
+oarsh: environment using the OAR_JOB_ID or the OAR_JOB_KEY_FILE variable.
 EOF
 exit 6
