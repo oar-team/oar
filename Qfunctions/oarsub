@@ -292,7 +292,7 @@ Options are:
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
- -e, --env=<txt>               Environment variables to set on the running
+     --env=<txt>               Environment variables to set on the running
                                proccess in the form "A=b C=d" (not implemented)
  -a, --anterior=<job id>       Anterior job that must be terminated to start
                                this new one
@@ -308,7 +308,7 @@ Options are:
      --import-job-key-inline=<txt>
                                Import the job-key to use inline instead of 
                                generating a new one.
- -K  --export-job-key-to-file=<file>
+ -e  --export-job-key-to-file=<file>
                                Export the the job key to a file. Warning: the
                                file will be overwritten if it already exists.
                                (the %jobid% pattern is automatically replaced)
@@ -596,7 +596,7 @@ GetOptions ("resource|l=s" => \@resource,
             "directory|d=s" => \$Directory,
             "name|n=s" => \$job_name,
             "project=s" => \$Project,
-            "env|e=s" => \$job_env,
+            "env=s" => \$job_env,
             "hold" => \$job_hold,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
@@ -610,7 +610,7 @@ GetOptions ("resource|l=s" => \@resource,
             "use-job-key|k" => \$use_job_key,
             "import-job-key-inline-priv=s" => \$import_job_key_inline,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
-            "export-job-key-to-file|K=s" => \$export_job_key_file,
+            "export-job-key-to-file|e=s" => \$export_job_key_file,
             "version|V" => \$Version
            );
 

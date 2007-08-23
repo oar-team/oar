@@ -203,7 +203,7 @@ Options::
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
- -e, --env=<txt>               Environment variables to set on the running
+     --env=<txt>               Environment variables to set on the running
                                proccess in the form "A=b C=d" (not implemented)
  -a, --anterior=<job id>       Anterior job that must be terminated to start
                                this new one
@@ -219,7 +219,7 @@ Options::
      --import-job-key-inline=<txt>
                                Import the job-key to use inline instead of
                                generating a new one.
- -K  --export-job-key-to-file=<file>
+ -e  --export-job-key-to-file=<file>
                                Export the the job key to a file. Warning: the
                                file will be overwritten if it already exists.
                                (the %jobid% pattern is automatically replaced)

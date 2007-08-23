@@ -77,7 +77,7 @@ Specify a name of a project the job belongs to.
 
 Specify an arbitrary name for the job.
 
-=item B<e, --env> <TXT>
+=item B<--env> <TXT>
 
 Environment variables to set on the running proccess in the form "A=b C=d" (not implemented)
 
@@ -98,25 +98,29 @@ Resubmit the given job as a new one.
 
 =item B<-k, --use-job-key>
 
-Activate the job-key mechanism. A job-key will be generated allowing to connect the job from outside the set of resources managed by OAR.
+Activate the job-key mechanism. A job-key will be generated allowing to connect the job from outside the set of resources managed by OAR. The job-key mechanism may be activated by default in your OAR environment. In this case this option is useless.
 
 =item B<-i, --import-job-key-from-file>
 
-Import the job-key to use from existing files (public and private key files) instead of generating a new one.
+Import the job-key to use from existing files (public and private key files) instead of generating a new one. One may also use the OAR_JOB_KEY_FILE environment variable.
 
 =item B<--import-job-key-inline>
 
 Import the job-key to use inline instead of generating a new one.
 
-=item B<-K>
+=item B<-e, --export-job-key-to-file>
 
 Export the the job key to a file.
 I<Warning>: the file will be overwritten if it already exists.
 (the %jobid% pattern is automatically replaced)
 
-=item B<-O> <FILE> B<-E>
+=item B<-O> <FILE>
 
-Specify the files that will store the standart output stream and standart error of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standart output stream of the job. The %jobid% pattern is automatically replaced.
+
+=item B<-E> <FILE>
+
+Specify the files that will store the standart error stream of the job. The %jobid% pattern is automatically replaced.
 
 =item B<--hold>
 
@@ -187,6 +191,10 @@ Pathname to the files storing the standart output and error of the job's executa
 =item B<OAR_WORKING_DIRECTORY> aka B<OAR_WORKDIR> aka B<OAR_O_WORKDIR>
 
 Working directory for the job. The job executable will be executed in this directory on the first node allocated to the job.
+
+=item B<OAR_JOB_KEY_FILE>
+
+Key file to use for the submission (or for oarsh) if using a job key (-k or --use-job-key option). One may provide the job key to import using the -i or --import-job-key-from-file option as well.
 
 =back
 
