@@ -16,7 +16,7 @@ Connect a node from the submission frontal of the cluster or any node.
 
 =head1 OPTIONS
 
-B<oarsh> uses I<OpenSSH> client (the ssh command) underneath to perform the connection. Thus any OpenSSH option can be used. Beware however that some I<OpenSSH> options may conflict with B<oarsh> mechanism, such as specifying a username using -l johndoe or johndoe@.
+B<oarsh> uses I<OpenSSH> client (the ssh command) underneath to perform the connection. Thus any OpenSSH option can be used. 
 
 =head1 ENVIRONMENT
 
@@ -28,8 +28,7 @@ From the frontal of the cluster or any node, specify the Id of the job B<oarsh> 
 
 =item B<OAR_JOB_KEY_FILE>
 
-Specify a job key to use in case of one was used for the job submission.
-This connection method is mandatory when connecting to one node of a job from a host that does not belong the nodes managed by the same OAR server as the one the job was submitted to.
+Specify a job key oarsh must use, e.g. the one that was used for the submission of the job you want to connect to. This is mandatory when connecting to a node of a job from a host that does not belong to the nodes managed by the OAR server the job was submitted to. The -i option may be used as well.
 
 =back
 
