@@ -101,9 +101,9 @@ fix_opts() {
 	OPTCOUNT=0
         let j=0
 	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
-		if [[ ${SSHARGS_OPT[$i]} =~ "^-l" ]]; then
+		if [[ ${SSHARGS_OPT[$i]} =~ "^l" ]]; then
 			:
-                elif [[ ${SSHARGS_OPT[$i]} =~ "^-i" ]]; then
+                elif [[ ${SSHARGS_OPT[$i]} =~ "^i" ]]; then
 			export OAR_JOB_KEY_FILE=${SSHARGS_OPTARG[$i]}
 		else
 
