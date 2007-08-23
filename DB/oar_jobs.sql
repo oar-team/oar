@@ -326,21 +326,26 @@ if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
     die("[ADMISSION RULE] Error : a besteffort typed job cannot be a reservation.\\n");
 }
 ');
-# Force deploy jobs to go on nodes with the deploy property
+# Force deploy jobs to go on resources with the deploy property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my @allowed_resources = ("network_address","switch");
 if (grep(/^deploy$/, @{$type_list})){
     if ($jobproperties ne ""){
         $jobproperties = "($jobproperties) AND deploy = \\\'YES\\\'";
     }else{
         $jobproperties = "deploy = \\\'YES\\\'";
     }
+}
+');
+# Force deploy and allow_classic_ssh type jobs to go only on nodes
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+my @allowed_resources = ("network_address","switch");
+if (grep(/^(deploy|allow_classic_ssh)$/, @{$type_list})){
     foreach my $mold (@{$ref_resource_list}){
         foreach my $r (@{$mold->[0]}){
             my $i = 0;
             while (($i <= $#{@{$r->{resources}}})){
                 if (! grep(/^$r->{resources}->[$i]->{resource}$/, @allowed_resources)){
-                    die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy type job\\n");
+                    die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy or allow_classic_ssh type job\\n");
                 }
                 $i++;
             }
@@ -348,7 +353,6 @@ if (grep(/^deploy$/, @{$type_list})){
     }
 }
 ');
-
 # Force desktop_computing jobs to go on nodes with the desktop_computing property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if (grep(/^desktop_computing$/, @{$type_list})){
