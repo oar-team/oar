@@ -465,9 +465,8 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	$color[0] = $white
 	(1..155).each {|i| $color[i] = img.colorAllocate((i%9) * 25, i ,(50 * i) % 255 )} 
 
-	# make the background transparent and interlaced
+	# make the background transparent 
 	#img.transparent(white)
-	img.interlace = true
 
 	#sort resources
 	typed_resources = {}
