@@ -8,14 +8,14 @@
    :width: 8cm
 
 :Author: Capit Nicolas
-:Address: Laboratoire Informatique et Distribution (ID)-IMAG
-          ENSIMAG - antenne de Montbonnot
+:Address: Laboratoire d'Informatique de Grenoble 
+          Bat. ENSIMAG - antenne de Montbonnot
           ZIRST 51, avenue Jean Kuntzmann
           38330 MONTBONNOT SAINT MARTIN
 :Contact: nicolas.capit@imag.fr
-:Authors: ID laboratory
-:Organization: ID laboratory
-:Status: This is a "work in progress"
+:Authors: LIG laboratory
+:Organization: LIG laboratory
+:Status: Stable
 :Copyright: licenced under the GNU GENERAL PUBLIC LICENSE
 
 :Dedication: For users, administrators and developpers.
