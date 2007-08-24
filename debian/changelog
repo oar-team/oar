@@ -1,8 +1,8 @@
-oar (2.1.1+svn678-1) unstable; urgency=low
+oar (2.2-1) unstable; urgency=low
 
   * Updated to SVN revision 678.
 
- -- Capit Nicolas <nicolas.capit@imag.fr>  Wed, 25 Jul 2007 18:48:25 +0200
+ -- Capit Nicolas <nicolas.capit@imag.fr>  Fri, 24 Aug 2007 21:16:08 +0200
 
 oar (2.1.1-1) unstable; urgency=low
 
