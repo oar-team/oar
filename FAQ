@@ -297,7 +297,7 @@ something wrong occurred (frontal has crashed, out of memory, ...).
 So you are able to turn manually a job into the "Error" state by typing in
 the OAR install directory (example with a bash shell)::
 
-    export OARCONFFILE=/etc/oar.conf
+    export OARCONFFILE=/etc/oar/oar.conf
     perl -e 'use oar_iolib; $db = iolib::connect(); iolib::set_job_state($db,42,"Error")'
 
 (Replace 42 by your job identifier)
