@@ -1,6 +1,14 @@
 FAQ
 ===
 
+Release policy
+--------------
+
+Since the version 2.2, release numbers are divided into 3 parts:
+ - The first represents the design and the implementation used.
+ - The second represents a set of OAR functionalities.
+ - The third is incremented after bug fixes.
+
 User
 ----
 

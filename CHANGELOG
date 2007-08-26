@@ -2,7 +2,12 @@ OAR CHANGELOG
 =============
 
 upstream development version:
--------------------------------
+-----------------------------
+
+
+version 2.2:
+------------
+
   - oar_server_proepilogue.pl: can be used for server prologue and epilogue to authorize users to access to nodes that are completely allocated by OAR. If the whole node is assigned then it kills all jobs from the user if all cpus are assigned.
   - the same thing can be done with cpuset_manager_PAM.pl as the script used to configure the cpuset. More efficent if cpusets are configured.
   - debug cm_availability feature to switch on and off nodes automatically depending on waiting jobs.
