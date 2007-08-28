@@ -5,6 +5,12 @@ upstream development version:
 -----------------------------
 
 
+version 2.2.1:
+--------------
+
+  - install the "allow_clasic_ssh" feature by default
+  - debug DB installer
+
 version 2.2:
 ------------
 
