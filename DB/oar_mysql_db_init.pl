@@ -62,51 +62,18 @@ system("tty &> /dev/null && stty echo");
 # Connect to the database.
 my $dbh = DBI->connect("DBI:mysql:database=mysql;host=$dbHost", $dbLogin, $dbPassword, {'RaiseError' => 0});
 my $query;
-# Database build
-$query = $dbh->prepare("CREATE DATABASE IF NOT EXISTS $dbName") or die $dbh->errstr;
-$query->execute();
-# Add oar user
-# Test if this user already exists
-$query = $dbh->prepare("SELECT * FROM user WHERE User=\"".$dbUserName."\" and (Host=\"localhost\" or Host=\"%\")");
-$query->execute();
-if (! $query->fetchrow_hashref()){
-	$query = $dbh->prepare("INSERT INTO user (Host,User,Password) VALUES('localhost','".$dbUserName."',PASSWORD('".$dbUserPassword."'))") or die $dbh->errstr;
-	$query->execute();
+# Database creation
+$dbh->do("CREATE DATABASE IF NOT EXISTS $dbName") or die $dbh->errstr;
 
-	$query = $dbh->prepare("INSERT INTO user (Host,User,Password) VALUES('%','".$dbUserName."',PASSWORD('".$dbUserPassword."'))") or die $dbh->errstr;
-	$query->execute();
+# Grant user the basic privileges
+$dbh->do('GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON '.$dbName.'.* TO '.$dbUserName.'@localhost IDENTIFIED BY "'.$dbUserPassword.'"') or die $dbh->errstr;
 
-	my $rightError = 0;
+$dbh->do('GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON '.$dbName.'.* TO '.$dbUserName.'@"%" IDENTIFIED BY "'.$dbUserPassword.'"') or die $dbh->errstr;
 
-	$dbh->do("INSERT INTO db (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv,Create_tmp_table_priv,Lock_tables_priv) VALUES ('localhost','".$dbName."','".$dbUserName."','Y','Y','Y','Y','Y','Y','Y','Y')") or $rightError = 1;
-
-	if ($rightError == 1){
-		print("--- not enough rights; it is not a bug, it is a feature ---\n");
-		# the properties  Create_tmp_table_priv and Lock_tables_priv dose not exist
-		$dbh->do("INSERT INTO db (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv) VALUES ('localhost','".$dbName."','".$dbUserName."','Y','Y','Y','Y','Y','Y')") or die $dbh->errstr;
-		$dbh->do("INSERT INTO db (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv) VALUES ('%','".$dbName."','".$dbUserName."','Y','Y','Y','Y','Y','Y')") or die $dbh->errstr;
-	}else{
-		$dbh->do("INSERT INTO db (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv,Create_tmp_table_priv,Lock_tables_priv) VALUES ('%','".$dbName."','".$dbUserName."','Y','Y','Y','Y','Y','Y','Y','Y')") or $rightError = 1;
-	}
-
-	$query = $dbh->prepare("FLUSH PRIVILEGES") or die $dbh->errstr;
-	$query->execute();
-}else{
-	print("Warning: the database user is already created.\n");
-}
-
-# Grant user
-$query = $dbh->prepare("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON ".$dbName.".* TO ".$dbUserName."\@localhost") or die $dbh->errstr;
-$query->execute();
-
-$query = $dbh->prepare("GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON ".$dbName.".* TO ".$dbUserName."@\"%\"") or die $dbh->errstr;
-$query->execute();
-
-$query = $dbh->prepare("FLUSH PRIVILEGES") or die $dbh->errstr;
-$query->execute();
+# Grant user some more privileges, wrt the new version of mysql
+$dbh->do('GRANT CREATE TEMPORARY TABLES, LOCK TABLES ON '.$dbName.'.* TO '.$dbUserName.'@localhost') and $dbh->do('GRANT CREATE TEMPORARY TABLES, LOCK TABLES ON '.$dbName.'.* TO '.$dbUserName.'@"%"') or warn "* CREATE TEMPORARY TABLES and LOCK TABLES privileges seems not supported by your mysql server, please ignore this error in that case.\n";
 
 $dbh->disconnect();
-
 
 # Connection to the oar database with oar user
 $dbh = DBI->connect("DBI:mysql:database=$dbName;host=$dbHost", $dbLogin, $dbPassword, {'RaiseError' => 1});
