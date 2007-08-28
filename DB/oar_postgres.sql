@@ -413,7 +413,7 @@ foreach my $mold (@{$ref_resource_list}){
 
 -- Check if types given by the user are right
 INSERT INTO admission_rules (rule) VALUES ('
-my @types = ("deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing");
+my @types = ("deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh");
 foreach my $t (@{$type_list}){
     my $i = 0;
     while (($types[$i] ne $t) and ($i <= $#types)){
