@@ -4,6 +4,7 @@ OAR CHANGELOG
 upstream development version:
 -----------------------------
 
+  - add new oarmonitor command. This will permit to monitor OAR jobs on compute nodes.
 
 version 2.2.1:
 --------------
