@@ -1,0 +1,18 @@
+These are the steps to perform when you want to release a new version of OAR:
+
+ 1. Commit your changes in the svn.
+
+ 2. Make a tag with the number that you want to assign. For example:
+
+    svn cp branches/2.2 tags/2.2.5
+
+This example creates the tag "2.2.5" from the branch "2.2"
+
+ 2. Use the *build_tgz.sh* script to create the right archive. For example:
+
+    ./build_tgz tags/2.2.5
+
+This example creates the archive "oar-2.2.5.tgz".
+
+See '--help' option for more features.
+
