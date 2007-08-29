@@ -11,6 +11,7 @@ version 2.2.2:
 
   - Switch nice value of the user processes into 0 in oarsh_shell (in case of
     sshd was launched with a different priority).
+  - debug taktuk zombies in pingchecker and oar_Tools
 
 version 2.2.1:
 --------------
