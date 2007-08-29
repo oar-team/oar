@@ -821,6 +821,7 @@ sub manage_remote_commands($$$$$$$){
                 }
             }
             close(tak_stdout_read);
+            waitpid($pid,0);
             alarm(0);
         };
         @bad = keys(%tmp_node_hash);

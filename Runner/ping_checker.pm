@@ -109,7 +109,7 @@ sub taktuk_hosts(@){
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_sentinelle);
-        open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
+        my $pid = open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
         foreach my $i (@hosts){
             print(WRITER "$i\n");
             $check_test_nodes{$i} = 1;
@@ -126,6 +126,7 @@ sub taktuk_hosts(@){
         }
         close(ERROR);
         close(READER);
+        waitpid($pid, 0);
         alarm(0);
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
@@ -168,7 +169,7 @@ sub sentinelle_script_hosts(@){
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_script_sentinelle);
-        open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
+        my $pid = open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
         foreach my $i (@hosts){
             print(WRITER "$i\n");
             $check_test_nodes{$i} = 1;
@@ -183,9 +184,9 @@ sub sentinelle_script_hosts(@){
                 }
             }
         }
-	wait();
         close(READER);
         close(ERROR);
+        waitpid($pid, 0);
         alarm(0);
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
@@ -227,7 +228,7 @@ sub fping_hosts(@){
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_fping);
-        open3(\*WRITER, \*READER, \*ERROR, $fping_cmd);
+        my $pid = open3(\*WRITER, \*READER, \*ERROR, $fping_cmd);
         close(WRITER);
         foreach my $i (\*READER, \*ERROR){
             while(<$i>){
@@ -242,9 +243,9 @@ sub fping_hosts(@){
                 }
             }
         }
-	wait();
         close(ERROR);
         close(READER);
+        waitpid($pid, 0);
         alarm(0);
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
@@ -293,7 +294,7 @@ sub nmap_hosts(@){
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Timeout_nmap);
-        open3(\*WRITER, \*READER, \*ERROR, $nmap_cmd);
+        my $pid = open3(\*WRITER, \*READER, \*ERROR, $nmap_cmd);
         close(WRITER);
         while(<READER>){
             chomp($_);
@@ -309,9 +310,9 @@ sub nmap_hosts(@){
                 }
             }
         }
-        wait();
         close(ERROR);
         close(READER);
+        waitpid($pid, 0);
         alarm(0);
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
@@ -359,7 +360,7 @@ sub generic_hosts(@){
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
         alarm($Default_timeout);
-        open3(\*WRITER, \*READER, \*ERROR, $test_cmd);
+        my $pid = open3(\*WRITER, \*READER, \*ERROR, $test_cmd);
         while(<ERROR>){
             chomp($_);
             $_ =~ m/^\s*([\w\.]+)\s*$/m;
@@ -368,10 +369,10 @@ sub generic_hosts(@){
                 push(@bad_hosts, $1);
             }
         }
-	wait();
         close(ERROR);
         close(WRITER);
         close(READER);
+        waitpid($pid, 0);
         alarm(0);
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
@@ -382,6 +383,5 @@ sub generic_hosts(@){
         return(@bad_hosts);
     }
 }   
-
 
 return 1;
