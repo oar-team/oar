@@ -19,7 +19,8 @@ my $tic = "";
 while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
     chop($tic);
 
-    print("by_host $tic name=cpu_percentage value=".get_global_cpu_percentage()."\n");
+    # print the DB table name and the values for each fields to store
+    print("by_host $tic network_address=$ENV{TAKTUK_HOSTNAME} name=cpu_percentage value=".get_global_cpu_percentage()."\n");
 
     print("END\n");
 

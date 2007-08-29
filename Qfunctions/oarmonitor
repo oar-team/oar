@@ -194,7 +194,9 @@ while (($stop == 0) and ($nb_end_nodes > $#hosts)){
                     warn("    $1 $2\n");
                     $stop++;
                 }else{
-                    print("$1 $2 $3\n");
+                    # Sensor gives the DB table name ($2) and the values for
+                    # each fields separated by spaces ($3)
+                    print("$2 $3\n");
                 }
             }else{
                 warn("[TAKTUK] $_\n");
