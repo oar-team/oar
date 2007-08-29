@@ -7,29 +7,32 @@
 use POSIX qw(strftime ceil);
 use Time::HiRes qw(gettimeofday tv_interval);
 
-my $Cpuset_name = "/dev/cpuset";
-$Cpuset_name = $ARGV[0] if (defined($ARGV[0]));
+$| = 1;
 
-warn("Starting $0 on the cpuset $Cpuset_name\n");
+my $Job_id = $ARGV[0];
+my $Cpuset_name = "/dev/cpuset/";
+$Cpuset_name .= $ARGV[1] if (defined($ARGV[1]));
+
+warn("Starting sensor on the cpuset $Cpuset_name for the job $Job_id\n");
 
 my $tic = "";
 while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
     chop($tic);
 
-    print("$tic by_host name=cpu_percentage value=".get_global_cpu_percentage()."\n");
+    print("by_host $tic name=cpu_percentage value=".get_global_cpu_percentage()."\n");
 
-    print("$tic END\n");
+    print("END\n");
 
     # avoid to become crazy
     select(undef,undef,undef,0.5);
 }
 
 if ($tic eq "STOP\n"){
-    warn("Stopping $0 as requested.\n");
+    warn("Stopping sensor as requested.\n");
     print("STOP_REQUESTED\n");
     exit(0);
 }elsif (! -r "$Cpuset_name/tasks"){
-    warn("Stopping $0, the cpuset $Cpuset_name does not exist anymore.\n");
+    warn("Stopping sensor, the cpuset $Cpuset_name does not exist anymore.\n");
     print("STOP\n");
     exit(1);
 }else{
@@ -69,3 +72,4 @@ sub get_global_cpu_percentage(){
         
     return($prev_cpu_value);
 }
+

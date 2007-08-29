@@ -24,6 +24,7 @@ my $Default_suspend_resume_script_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
 my $Default_cpuset_file_manager = "/etc/oar/cpuset_manager.pl";
+my $Default_monitor_file_sensor = "/etc/oar/oarmonitor_sensor.pl";
 my $Default_suspend_resume_file_manager = "/etc/oar/suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
@@ -125,6 +126,11 @@ sub get_default_node_file_db_field(){
 # Get the name of the DB field to use to fill the OAR_NODE_FILE
 sub get_default_node_file_db_field_distinct_values(){
     return($Default_node_file_db_field_distinct_values);
+}
+
+# Get default value for OARMONITOR_SENSOR_FILE tag
+sub get_default_monitor_sensor_file(){
+    return($Default_monitor_file_sensor);
 }
 
 # Get the name of the file of the private ssh key for the given cpuset name

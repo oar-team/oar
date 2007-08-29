@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # $Id: oarmonitor 598 2007-07-05 08:13:30Z neyron $
-# Feed the monitoring table
+# Feed the monitoring tables
 
 use strict;
 use warnings;
@@ -27,15 +27,20 @@ if (!defined($Taktuk_cmd)){
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
+my $Cpuset_path = "";
+$Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+
 Getopt::Long::Configure("gnu_getopt");
 my $Version;
 my $Job_id;
 my $Frequency = 60;
+my $Default_frequency = $Frequency;
 my $Frequency_min = 1;
+my $Timeout = 120;
 my $sos;
 GetOptions ("version|V" => \$Version,
             "job_id|j=i" => \$Job_id,
-            "frequency|f" => \$Frequency,
+            "frequency|f=i" => \$Frequency,
             "help|h" => \$sos
            );
 
@@ -48,11 +53,13 @@ of the job.
 Options:
   -j, --job_id              job id to monitor
   -f, --frequency           number of seconds between each data collect
-                            (default is $Frequency s)
+                            (default is $Default_frequency s)
   -h, --help                show this help screen
   -V, --version             print OAR version number
 EOS
 }
+
+$Frequency = $Frequency_min if ($Frequency < $Frequency_min);
 
 if (defined($sos)){
     usage();
@@ -66,14 +73,22 @@ if (defined($Version)){
 
 if (!defined($Job_id)){
     usage();
-    exit(2);
+
+exit(2);
 }
 
 my $base = iolib::connect();
 
 my $cpuset_name = iolib::get_job_cpuset_name($base, $Job_id);
+my @hosts = iolib::get_job_current_hostnames($base,$Job_id);
+if ($#hosts < 0){
+    warn("The job $Job_id does not have currently assigned hostnames\n");
+    exit(4);
+}
 
-# Dispatch via taktuk
+#############################
+# TAKTUK process management #
+###############################################################################
 pipe(tak_node_read,tak_node_write);
 pipe(tak_stdin_read,tak_stdin_write);
 pipe(tak_stdout_read,tak_stdout_write);
@@ -87,7 +102,7 @@ if($pid == 0){
     $SIG{QUIT} = 'DEFAULT';
     $SIG{USR1} = 'DEFAULT';
     $SIG{USR2} = 'DEFAULT';
-    my $cmd = "$Taktuk_cmd -c '$Openssh_cmd' ".'-o output=\'"OUTPUT $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $cpuset_name ], broadcast file_input [ - ], broadcast close";
+    my $cmd = "$Taktuk_cmd -c '$Openssh_cmd' ".'-o error=\'"INFO on $host: $line\n"\' -o output=\'"OUTPUT $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $Job_id $Cpuset_path/$cpuset_name ], broadcast file_input [ - ], broadcast close";
     fcntl(tak_node_read, F_SETFD, 0);
     close(tak_node_write);
     close(tak_stdout_read);
@@ -109,11 +124,6 @@ close(tak_stdin_read);
 close(tak_stdout_write);
 
 # Send node list
-my @hosts = iolib::get_job_current_hostnames($base,$Job_id);
-if ($#hosts < 0){
-    warn("The job $Job_id does not have currently assigned hostnames\n");
-    exit(4);
-}
 my $hosts_hash;
 foreach my $n (@hosts){
     $hosts_hash->{$n} = 1;
@@ -121,68 +131,83 @@ foreach my $n (@hosts){
 }
 close(tak_node_write);
 
-# Send perl script to all nodes
+my $oldfh;
+$oldfh = select(tak_stdin_write); $| = 1; select($oldfh);
+$oldfh = select(tak_stdout_read); $| = 1; select($oldfh);
+
+###############################################################################
+
+# Send sensor perl script to all nodes
 if (open(SENSOR, $Monitor_file)){
     while(<SENSOR>){
         print(tak_stdin_write $_);
     }
-    print(tak_stdin_write "\n__END__\n");
     close(SENSOR);
+    print(tak_stdin_write "\n__END__\n");
 }else{
     warn("Cannot read the monitor sensor file $Monitor_file\n");
     exit(3);
 }
 
+# Signals management
 sub exit_monitor(){
     print(tak_stdin_write "STOP\n");
 }
 
 $SIG{TERM} = \&exit_monitor;
 $SIG{INT} = \&exit_monitor;
+$SIG{QUIT} = \&exit_monitor;
+$SIG{USR2} = sub {return};
 
+# Node outputs parsing
 my $tmp_hosts_hash;
 my $nb_end_nodes = $#hosts + 1;
 my $stop = 0;
-my $tic = 0;
-my $tic_time = time();
+my $tic_time = 0;
 my $tic_time_prev = $tic_time;
 while (($stop == 0) and ($nb_end_nodes > $#hosts)){
-    sleep(time() - $tic_time);
+    my $sleep_time = $Frequency - (iolib::get_date($base) - $tic_time);
+    if ($sleep_time > 0){
+        iolib::disconnect($base);
+        sleep($sleep_time);
+        $base = iolib::connect();
+    }
+    $tic_time_prev = $tic_time;
+    $tic_time = iolib::get_date($base); $tic_time = $tic_time_prev if ($tic_time < $tic_time_prev);
     eval{
         $SIG{ALRM} = sub { die "alarm\n" };
-        alarm($Frequency + 30);
-        print(tak_stdin_write "$tic\n");
+        alarm($Frequency + $Timeout);
         
-        $tic_time_prev = $tic_time;
-        $tic_time = time();
+        # Ask every nodes to print their monitoring values
+        print(tak_stdin_write "window_start=$tic_time_prev window_stop=$tic_time\n");
+
         # Check the taktuk STDOUT
         $tmp_hosts_hash = dclone($hosts_hash);
         $nb_end_nodes = 0;
-        while (($nb_end_nodes <= $#hosts) and (<tak_stdout_read>)){
+        while (($nb_end_nodes <= $#hosts) and ($stop == 0) and ($_ = <tak_stdout_read>)){
+            chop;
             if ($_ =~ /^OUTPUT\s+([\w\.\-\d]+)\s+END$/){
                 delete($tmp_hosts_hash->{$1}) if (defined($tmp_hosts_hash->{$1}));
                 $nb_end_nodes++;
-                $stop++;
-            }elsif ($_ =~ /^OUTPUT\s+([\w\.\-\d]+)\s+(\w+)\s+(.+)$/){
-                if (($3 eq "STOP") or ($3 eq "STOP_REQUESTED") or ($3 eq "ERROR")){
-                    warn("$1 $2 $3\n");
+            }elsif ($_ =~ /^OUTPUT\s+([\w\.\-\d]+)\s+(\w+)\s*(.*)$/){
+                if (($2 eq "STOP") or ($2 eq "STOP_REQUESTED") or ($2 eq "ERROR")){
+                    warn("    $1 $2\n");
                     $stop++;
                 }else{
                     print("$1 $2 $3\n");
                 }
             }else{
-                warn("[TAKTUK OUTPUT] $_");
+                warn("[TAKTUK] $_\n");
             }
         }
         alarm(0);
     };
-    $tic++;
 }
 close(tak_stdin_write);
 close(tak_stdout_read);
 
 if ($stop > 0){
-    warn("$stop sensors stopped to retrieve data.\n");
+    warn("At least one sensor stopped to retrieve data.\n");
     exit(0);
 }
 
