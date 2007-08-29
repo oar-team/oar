@@ -37,7 +37,7 @@ case "$1" in
   start)
     echo "Starting $DESC:"
     if [ -f "$OAR_SSHD_CONF" ] ; then
-        if start-stop-daemon --start --quiet -c oar --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS; then
+        if start-stop-daemon --start -N "-20" --quiet -c oar --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS; then
             echo " - Specific OAR sshd daemon started."
         else
             echo " - ERROR starting the specific OAR sshd daemon."
