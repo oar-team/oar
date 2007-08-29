@@ -161,6 +161,10 @@ server:
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarproperty
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarproperty#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarproperty
+	install -m 0755 Qfunctions/oarmonitor $(OARDIR)
+	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarmonitor
+	perl -i -pe "s#^OARCMD=.*#OARCMD=oarmonitor#" $(OARDIR)/sudowrapper.sh
+	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarmonitor
 	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
@@ -169,6 +173,7 @@ server:
 	@if [ -f $(OARCONFDIR)/cpuset_manager_SGI_Altix_350_SLES9.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager_SGI_Altix_350_SLES9.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
+	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
 	rm $(OARDIR)/sudowrapper.sh
 
 user: man

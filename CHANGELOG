@@ -6,6 +6,12 @@ upstream development version:
 
   - add new oarmonitor command. This will permit to monitor OAR jobs on compute nodes.
 
+version 2.2.2:
+--------------
+
+  - Switch nice value of the user processes into 0 in oarsh_shell (in case of
+    sshd was launched with a different priority).
+
 version 2.2.1:
 --------------
 
