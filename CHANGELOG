@@ -4,6 +4,12 @@ OAR CHANGELOG
 upstream development version:
 -----------------------------
 
+version 2.2.2:
+--------------
+
+  - Switch nice value of the user processes into 0 in oarsh_shell (in case of
+    sshd was launched with a different priority).
+
 version 2.2.1:
 --------------
 

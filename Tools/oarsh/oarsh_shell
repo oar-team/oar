@@ -25,8 +25,8 @@ function add_process_to_cpuset() {
     for p in $@
     do
         sudo sh -c "echo $p > $CPUSETFILE" || return 1
-        sudo renice 0 $@ > /dev/null 2>&1
     done
+    sudo renice 0 $@ > /dev/null 2>&1
     ###########################################################################
 }
 
