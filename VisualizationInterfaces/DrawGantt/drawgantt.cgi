@@ -294,8 +294,8 @@ def draw_string(img,x,y,label)
 	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
 end
 
-
 def draw_resource_hierarchy(img)
+
 	deltay = ($sizey-(2*$offsetgridy))/$sorted_resources.length.to_f
 	
 	x0 = $x_per_prop * $prop_hierarchy.length + 2
@@ -310,7 +310,7 @@ def draw_resource_hierarchy(img)
 
 	(0..$prop_hierarchy.length ).each do |i|
 		x =  -x0 + $left_offsetgridx + $x_per_prop * i
-		img.line(x, $offsetgridy, x, $sizey - $offsetgridy, $gridcolor)
+		img.line(x, $offsetgridy, x,  $sizey - $offsetgridy, $gridcolor)
 	end
 
 	$prop_hierarchy.each_with_index do |prop,p_index|
@@ -338,6 +338,17 @@ def draw_resource_hierarchy(img)
 #				img.filledRectangle(x1, y1, x2, y2, $color_gray[( ( (3 * r_index) % 15) + 16 * p_index) % 31 ])
 				end
 				str_resource = ""
+
+				0.upto(p_index-1) do |i|
+					plabel = $prop_hierarchy[i]
+					plabel = 'host' if plabel == 'network_address'  
+					str_resource << plabel + "/"
+				end
+
+				plabel = prop
+				plabel = 'host' if plabel == 'network_address' 
+				str_resource <<  plabel + ':<br>' 
+
 				0.upto(p_index-1) {|i| str_resource << ($resources[resource][$resource_properties_fields.index($prop_hierarchy[i])]).to_s+"/" } 
 				str_resource << label.to_s
 
@@ -687,7 +698,6 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 					 '" href="monika.cgi?job='+ "#{info[4]}" + '" ' +
 					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
 					 "JobId: #{info[4]}" +
-					 "<br>User: #{j['user']}" + 
 					 "<br>Type: #{j['job_type']}" +
 					 "<br>State: #{j['state']}" +
 					 "<br>Command: #{j['command']}" +
