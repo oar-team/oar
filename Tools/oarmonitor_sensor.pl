@@ -5,7 +5,7 @@
 # cpuset name.
 
 use POSIX qw(strftime ceil);
-use Time::HiRes qw(gettimeofday tv_interval);
+use Data::Dumper;
 
 $| = 1;
 
@@ -15,12 +15,16 @@ $Cpuset_name .= $ARGV[1] if (defined($ARGV[1]));
 
 warn("Starting sensor on the cpuset $Cpuset_name for the job $Job_id\n");
 
+my $cpuset_processes;
 my $tic = "";
 while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
     chop($tic);
 
+    $cpuset_processes = get_info_on_cpuset_tasks($Cpuset_name,$cpuset_processes);
     # print the DB table name and the values for each fields to store
-    print("by_host $tic network_address=$ENV{TAKTUK_HOSTNAME} name=cpu_percentage value=".get_global_cpu_percentage()."\n");
+    my ($cpu,$cpuset_cpu) = get_cpu_percentages($cpuset_processes);
+    print("by_host $tic network_address=$ENV{TAKTUK_HOSTNAME} name=cpu_percentage value=$cpu\n") if (defined($cpu));
+    print("by_host $tic network_address=$ENV{TAKTUK_HOSTNAME} job_id=$Job_id name=cpuset_percentage value=$cpuset_cpu\n") if (defined($cpuset_cpu));
 
     print("END\n");
 
@@ -45,32 +49,71 @@ if ($tic eq "STOP\n"){
 ###############################################################################
 # Global variables to keep previous values
 
-# For get_global_cpu_percentage()
-my $prev_cpu_glob_time = 0;
+# For get_cpu_percentages()
 my $prev_cpu_all_time = 0;
 my $prev_cpu_idle_time = 0;
 
-sub get_global_cpu_percentage(){
-    my $cpu_time = [gettimeofday()];
+sub get_cpu_percentages($){
+    my $cpuset_tasks = shift();
+
+    my $cpu_percent;
+    my $cpu_cpuset_percent;
     if (open(CPU, "/proc/stat")){
         my $stat_line = <CPU>;
+        close(CPU);
         if ($stat_line =~ /^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/){
             my $curr_all_time = $1 + $2 + $3 + $4 + $5 + $6 + $7 + $8;
             my $curr_idle_time = $4 + $5;
             my $value = $curr_all_time - $prev_cpu_all_time;
             if ($value > 0){
-                $value = ceil(100 - (100 * ($curr_idle_time - $prev_cpu_idle_time) / $value));
-                $value = 100 if ($value > 100);
-                $value = 0 if ($value < 0);
+                $cpu_percent = ceil(100 - (100 * ($curr_idle_time - $prev_cpu_idle_time) / $value));
+                $cpu_percent = 100 if ($cpu_percent > 100);
+                $cpu_percent = 0 if ($cpu_percent < 0);
                 $prev_cpu_idle_time = $curr_idle_time;
                 $prev_cpu_all_time = $curr_all_time;
-                $prev_cpu_value = $value;
+            
+                # Track percentages for all processes from the cpuset
+                my $curr_cumul_process_all_time = 0;
+                my $prev_cumul_process_all_time = 0;
+                foreach my $p (keys(%{$cpuset_tasks->{CURR}})){
+                    if (defined($cpuset_tasks->{PREV}->{$p}->{STAT})){
+                        # add jiffies in user and kernel mode
+                        $curr_cumul_process_all_time += $cpuset_tasks->{CURR}->{$p}->{STAT}->[13] + $cpuset_tasks->{CURR}->{$p}->{STAT}->[14];
+                        $prev_cumul_process_all_time += $cpuset_tasks->{PREV}->{$p}->{STAT}->[13] + $cpuset_tasks->{PREV}->{$p}->{STAT}->[14];
+                    }
+                }
+                $cpu_cpuset_percent = ceil(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $value);
+                $cpu_cpuset_percent = 100 if ($cpu_cpuset_percent > 100);
+                $cpu_cpuset_percent = 0 if ($cpu_cpuset_percent < 0);
+                print("$cpu_cpuset_percent\n");
             }
         }
-        close(CPU);
     }
-    $prev_cpu_glob_time = $cpu_time;
-        
-    return($prev_cpu_value);
+
+    return($cpu_percent,$cpu_cpuset_percent);
 }
+
+# arg1: cpuset name
+# arg2: previous cpuset data structure to update
+sub get_info_on_cpuset_tasks($$){
+    my $task_path = shift()."/tasks";
+    my $cpuset_tasks = shift();
+
+    $cpuset_tasks->{PREV} = $cpuset_tasks->{CURR} if (defined($cpuset_tasks->{CURR}));
+    delete($cpuset_tasks->{CURR});
+    if (open(TASKS, "$task_path")){
+        my $task;
+        while ($task = <TASKS>){
+            chop($task);
+            if (open(PROCESSSTAT, "/proc/".$task."/stat")){
+                my @stats = split(' ',<PROCESSSTAT>);
+                $cpuset_tasks->{CURR}->{$task}->{STAT} = \@stats;
+                close(PROCESSSTAT);
+            }
+        }
+        close(TASKS);
+    }
+    return($cpuset_tasks);
+}
+
 
