@@ -290,9 +290,9 @@ sub signal_oarexec($$$$$$){
                 warn("[ERROR] Cannot find @cmd\n");
                 exit(-1);
             }
-            my $wait_res = 0;
+            my $wait_res = -1;
             # Avaoid to be disrupted by a signal
-            while ($wait_res != $ssh_pid){
+            while ((defined($ssh_pid)) and ($wait_res != $ssh_pid)){
                 $wait_res = waitpid($ssh_pid,0);
             }
             alarm(0);
