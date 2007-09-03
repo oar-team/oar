@@ -166,8 +166,8 @@ server:
 	install -m 0644 Runner/oarexec $(OARDIR)
 	@if [ -f $(OARCONFDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
-	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
 	rm $(OARDIR)/sudowrapper.sh
 
 user: man
@@ -217,22 +217,21 @@ node: man
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	install -m 0755 Tools/detect_resources $(OARDIR)
-	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )
 
 doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)
-	install -d -m 0755 $(DOCDIR)/figures
-	install -m 0644 Docs/Almighty.fig $(DOCDIR)/figures
-	install -m 0644 Docs/Almighty.ps $(DOCDIR)/figures
 	install -d -m 0755 $(DOCDIR)/html
 	install -m 0644 Docs/html/OAR-DOCUMENTATION.html $(DOCDIR)/html
 	install -m 0644 Docs/html/oar_logo.png $(DOCDIR)/html
 	install -m 0644 Docs/html/db_scheme.png $(DOCDIR)/html
 	install -m 0644 Docs/html/interactive_oarsub_scheme.png $(DOCDIR)/html
+	install -m 0644 Docs/Almighty.fig $(DOCDIR)/html
+	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
 	install -d -m 0755 $(DOCDIR)/scripts
 	install -d -m 0755 $(DOCDIR)/scripts/cpuset_manager
 	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/cpuset_manager
