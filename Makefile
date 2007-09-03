@@ -234,15 +234,16 @@ doc: build-html-doc
 	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
 	install -d -m 0755 $(DOCDIR)/scripts
 	install -d -m 0755 $(DOCDIR)/scripts/cpuset_manager
-	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/cpuset_manager
-	install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(DOCDIR)/scripts/cpuset_manager
-	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/oar_prologue_local $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/oar_epilogue_local $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/oar_diffuse_script $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/lock_user.sh $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/oar_server_proepilogue.pl $(DOCDIR)/scripts/prologue_epilogue
+	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/cpuset_manager/
+	install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(DOCDIR)/scripts/cpuset_manager/
+	install -d -m 0755 $(DOCDIR)/scripts/prologue_epilogue
+	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_prologue_local $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_epilogue_local $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_diffuse_script $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/lock_user.sh $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_server_proepilogue.pl $(DOCDIR)/scripts/prologue_epilogue/
 
 draw-gantt:
 	install -d -m 0755 $(OARDIR)
