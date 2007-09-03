@@ -116,7 +116,6 @@ common:
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnodesetting#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarnodesetting
 	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
-	install -m 0755 Tools/deploy_nodes.sh $(OARDIR)
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
@@ -169,11 +168,11 @@ server:
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
-	@if [ -f $(OARCONFDIR)/cpuset_manager_PAM.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager_PAM.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager_PAM.pl $(OARCONFDIR); fi
-	@if [ -f $(OARCONFDIR)/cpuset_manager_SGI_Altix_350_SLES9.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager_SGI_Altix_350_SLES9.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
+	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
 	rm $(OARDIR)/sudowrapper.sh
 
 user: man
@@ -222,27 +221,34 @@ node: man
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
-	@if [ -f $(OARDIR)/detect_new_resources.sh ]; then echo "Warning: $(OARDIR)/detect_new_resources.sh already exists, not overwriting it." ; else install -m 0755 Tools/detect_new_resources.sh $(OARDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_prologue ]; then echo "Warning: $(OARCONFDIR)/oar_prologue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_epilogue ]; then echo "Warning: $(OARCONFDIR)/oar_epilogue already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_diffuse_script ]; then echo "Warning: $(OARCONFDIR)/oar_diffuse_script already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_diffuse_script $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_epilogue_local ]; then echo "Warning: $(OARCONFDIR)/oar_epilogue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_epilogue_local $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_prologue_local ]; then echo "Warning: $(OARCONFDIR)/oar_prologue_local already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_prologue_local $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/lock_user.sh ]; then echo "Warning: $(OARCONFDIR)/lock_user.sh already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/lock_user.sh $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/oar_server_proepilogue.pl ]; then echo "Warning: $(OARCONFDIR)/oar_server_proepilogue.pl already exists, not overwriting it." ; else install -o $(OAROWNER) -g $(OARGROUP) -m 0755 Scripts/oar_server_proepilogue.pl $(OARCONFDIR) ; fi
+	install -m 0755 Tools/detect_resources $(OARDIR)
+	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
 
 build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
 	(cd Docs/html && $(MAKE) )
 
 doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)
-	install -m 0644 Docs/Almighty.fig $(DOCDIR)
-	install -m 0644 Docs/Almighty.ps $(DOCDIR)
 	install -d -m 0755 $(DOCDIR)/html
 	install -m 0644 Docs/html/OAR-DOCUMENTATION.html $(DOCDIR)/html
 	install -m 0644 Docs/html/oar_logo.png $(DOCDIR)/html
 	install -m 0644 Docs/html/db_scheme.png $(DOCDIR)/html
 	install -m 0644 Docs/html/interactive_oarsub_scheme.png $(DOCDIR)/html
+	install -m 0644 Docs/Almighty.fig $(DOCDIR)/html
+	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
+	install -d -m 0755 $(DOCDIR)/scripts
+	install -d -m 0755 $(DOCDIR)/scripts/cpuset_manager
+	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/cpuset_manager/
+	install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(DOCDIR)/scripts/cpuset_manager/
+	install -d -m 0755 $(DOCDIR)/scripts/prologue_epilogue
+	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_prologue_local $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_epilogue_local $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_diffuse_script $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/lock_user.sh $(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_server_proepilogue.pl $(DOCDIR)/scripts/prologue_epilogue/
 
 draw-gantt:
 	install -d -m 0755 $(OARDIR)

@@ -1,6 +1,10 @@
-# This script is executed as oar
 # $Id$
-
+# 
+# The cpuset_manager script is a perl script that oar server deploys on nodes 
+# to manage cpusets
+#
+# Usage:
+# Script is executed as oar
 # ARGV[0] can have two different values:
 #     - "init"  : then this script must create the right cpuset and assign
 #                 corresponding cpus

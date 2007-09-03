@@ -4,14 +4,24 @@
 # This file is executed on each nodes and retrive all data for the specified
 # cpuset name.
 
-use POSIX qw(strftime ceil);
+use POSIX qw(ceil);
 use Data::Dumper;
-
 $| = 1;
 
 my $Job_id = $ARGV[0];
+
 my $Cpuset_name = "/dev/cpuset/";
 $Cpuset_name .= $ARGV[1] if (defined($ARGV[1]));
+
+# Get names of cpus inside into the cpuset
+my @Cpus;
+if (open(CPUS, "$Cpuset_name/cpus")){
+    my $str = <CPUS>;
+    chop($str);
+    $str =~ s/\-/\.\./g;
+    @Cpus = eval($str);
+    close(CPUS);
+}
 
 warn("Starting sensor on the cpuset $Cpuset_name for the job $Job_id\n");
 
@@ -58,6 +68,7 @@ sub get_cpu_percentages($){
 
     my $cpu_percent;
     my $cpu_cpuset_percent;
+#    perl -e '$t = "1-3,4"; $t =~ s/\-/\.\./g; @a = eval($t);print "@a\n"'
     if (open(CPU, "/proc/stat")){
         my $stat_line = <CPU>;
         close(CPU);
@@ -105,7 +116,7 @@ sub get_info_on_cpuset_tasks($$){
         my $task;
         while ($task = <TASKS>){
             chop($task);
-            if (open(PROCESSSTAT, "/proc/".$task."/stat")){
+            if (open(PROCESSSTAT, "/proc/$task/stat")){
                 my @stats = split(' ',<PROCESSSTAT>);
                 $cpuset_tasks->{CURR}->{$task}->{STAT} = \@stats;
                 close(PROCESSSTAT);
