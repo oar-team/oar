@@ -137,7 +137,7 @@ fi
 
 #DEBHELPER#
 
-setup_nodes
+#setup_nodes
 
 exit 0
 
