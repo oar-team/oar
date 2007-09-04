@@ -1,5 +1,5 @@
 #! /bin/sh
-#
+# $Id$
 # skeleton	example file to build /etc/init.d/ scripts.
 #		This file should be used to construct scripts for /etc/init.d.
 #
@@ -17,13 +17,13 @@ OAR_SSHD_CONF="/etc/oar/sshd_config"
 SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/lib/oar/oar_sshd.pid"
 
 start_oar_node() {
-    echo " - Edit start_oar_node function in /etc/default/oar-node if you want"
-    echo "   to perform a specific action (like switch the node to Alive)"
+    echo "* Edit start_oar_node function in /etc/default/oar-node if you want"
+    echo "  to perform a specific action (like switch the node to Alive)"
 }
 
 stop_oar_node() {
-    echo " - Edit stop_oar_node function in /etc/default/oar-node if you want"
-    echo "   to perform a specific action (like switch the node to Absent)"
+    echo "* Edit stop_oar_node function in /etc/default/oar-node if you want"
+    echo "  to perform a specific action (like switch the node to Absent)"
 }
 
 # Include oar defaults if available
@@ -38,9 +38,9 @@ case "$1" in
     echo "Starting $DESC:"
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start-stop-daemon --start -N "-20" --quiet -c oar --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS; then
-            echo " - Specific OAR sshd daemon started."
+            echo "* Specific OAR sshd daemon started."
         else
-            echo " - ERROR starting the specific OAR sshd daemon."
+            echo "* ERROR starting the specific OAR sshd daemon."
         fi
     fi
     start_oar_node
@@ -49,9 +49,9 @@ case "$1" in
     echo "Stopping $DESC: "
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start-stop-daemon --stop --quiet --pidfile /var/lib/oar/oar_sshd.pid; then
-            echo " - Specific OAR sshd daemon stopped."
+            echo "* Specific OAR sshd daemon stopped."
         else
-            echo " - ERROR stopping the specific OAR sshd daemon."
+            echo "* ERROR stopping the specific OAR sshd daemon."
         fi
     fi
     stop_oar_node
