@@ -4,6 +4,11 @@ OAR CHANGELOG
 upstream development version:
 -----------------------------
 
+version 2.2.3:
+--------------
+
+    - Debug prologue and epilogue when oarexec receives a signal.
+
 version 2.2.2:
 --------------
 
