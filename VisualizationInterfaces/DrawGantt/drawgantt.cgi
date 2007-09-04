@@ -864,7 +864,7 @@ def cgi_html(cgi)
 					  # Javascript stuff thanks to NCSA TITAN cluster's page    
 					  CGI.escapeElement('<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>') + "\n" +
 					  CGI.escapeElement('<script src="/'+"#{$conf['directory']}"+
-						  								'/js/overlib.js" language="JavaScript">') + "\n" +
+						  								'/js/overlib.js" language="JavaScript"></script>') + "\n" +
 					  CGI.escapeElement("<em> Origin </em>") +
 					  cgi.popup_menu("NAME" => "year", "VALUES" => popup_year) +
 					  cgi.popup_menu("NAME" => "month", "VALUES" => popup_month) +
