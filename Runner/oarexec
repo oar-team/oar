@@ -251,7 +251,7 @@ print("[oarexec $Job_id] nom de commande [$Job->{command}]\n");
 
 if (defined($Job->{prologue})){
 # Launch prologue script
-    my $script_error = 0;
+    my $script_error = -1;
     eval {
         $SIG{ALRM} = sub { die "alarm\n" };
         print("[oarexec $Job_id] LAUNCH prologue : $Job->{prologue} $Job_id $Job->{user} $Node_file\n");
@@ -538,14 +538,13 @@ print("[oarexec $Job_id] Job Terminated\n");
 
 if (defined($Job->{epilogue})){
     # Launch epilogue script
-    my $script_error = 0;
+    my $script_error = -1;
     eval {
-        my $pid;
         $SIG{ALRM} = sub { die "alarm\n" };
         print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}\n");
         alarm($Job->{pro_epi_timeout});
         #$script_error = system("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
-        $pid = fork();
+        my $pid = fork();
         if($pid == 0){
             #CHILD
             $SIG{ALRM} = 'DEFAULT';
