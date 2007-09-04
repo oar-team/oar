@@ -6,6 +6,11 @@ upstream development version:
 
   - add new oarmonitor command. This will permit to monitor OAR jobs on compute nodes.
 
+version 2.2.3:
+--------------
+
+    - Debug prologue and epilogue when oarexec receives a signal.
+
 version 2.2.2:
 --------------
 
