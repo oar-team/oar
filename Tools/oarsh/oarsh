@@ -13,6 +13,7 @@
 OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+CPUSET_PATH="/oar"
 ###############################################################################
 
 source "$OARCONFFILE" || exit 2
