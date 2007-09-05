@@ -25,14 +25,6 @@ db_version 2.0
 # set OAR Shell
 chsh -s /usr/lib/oar/oarsh_shell oar
 
-# we can fix the ownership of these files, as oar user is now created
-chown oar.oar /etc/oar/oar_prologue
-chown oar.oar /etc/oar/oar_epilogue
-chown oar.oar /etc/oar/oar_diffuse_script
-chown oar.oar /etc/oar/oar_epilogue_local
-chown oar.oar /etc/oar/oar_prologue_local
-chown oar.oar /etc/oar/lock_user.sh
-
 # create oar sshd keys
 if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
     rm -f /etc/oar/oar_ssh_host_rsa_key.pub
