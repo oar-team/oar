@@ -34,6 +34,14 @@ my $mail_recipient = get_conf("MAIL_RECIPIENT");
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
+# this function redirect STDOUT and STDERR into the log file
+sub redirect_everything(){
+    if (open(REDIRECTFILE,">>$log_file")){
+        open(STDOUT, ">& REDIRECTFILE");
+        open(STDERR, ">& REDIRECTFILE");
+    }
+}
+
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;

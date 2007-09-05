@@ -35,6 +35,8 @@ if (defined($ENV{OARDIR})){
     exit(1);
 }
 
+oar_Judas::redirect_everything();
+
 my $scheduler_command = $binpath."oar_meta_sched";
 my $runner_command = $binpath."runner";
 my $check_for_villains_command = $binpath."sarko";

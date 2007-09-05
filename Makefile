@@ -119,6 +119,7 @@ common:
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
+	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	rm $(OARDIR)/sudowrapper.sh
 
 server:
