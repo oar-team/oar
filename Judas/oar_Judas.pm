@@ -37,8 +37,8 @@ $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 # this function redirect STDOUT and STDERR into the log file
 sub redirect_everything(){
     if (open(REDIRECTFILE,">>$log_file")){
-        open(STDOUT, ">& REDIRECTFILE");
-        open(STDERR, ">& REDIRECTFILE");
+        open(STDOUT, ">&".fileno(REDIRECTFILE));
+        open(STDERR, ">&".fileno(REDIRECTFILE));
     }
 }
 
