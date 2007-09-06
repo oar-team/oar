@@ -52,8 +52,9 @@ while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
 
     my $net_consumption = calculate_network_percentages($network_interfaces);
     foreach my $i (keys(%{$net_consumption})){
-        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=download subvalue=$net_consumption->{$i}->{DOWN}\n");
-        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=upload subvalue=$net_consumption->{$i}->{UP}\n");
+        $i =~ /^(\D+)(\d+)$/;
+        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network_$1 value=$2 subtype=download subvalue=$net_consumption->{$i}->{DOWN}\n");
+        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network_$1 value=$2 subtype=upload subvalue=$net_consumption->{$i}->{UP}\n");
     }
     
     print("END\n");
@@ -178,7 +179,6 @@ sub calculate_cpu_percentages($$$){
         $results->{CPUSET}->{VSIZE} += $cpuset_hash->{CURR}->{$p}->{STAT}->[22];
     }
     my $cpuset_cpus_all_time = $cumul_curr_cpus_all - $cumul_prev_cpus_all;
-            print $curr_cumul_process_all_time - $prev_cumul_process_all_time." $cpuset_cpus_all_time\n";
     if ($cpuset_cpus_all_time > 0){
         $results->{CPUSET}->{CPUPERCENT} = ceil(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $cpuset_cpus_all_time);
         $results->{CPUSET}->{CPUPERCENT} = 100 if ($results->{CPUSET}->{CPUPERCENT} > 100);

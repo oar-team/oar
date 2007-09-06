@@ -4474,6 +4474,60 @@ sub get_date($) {
 }
 
 
+# MONITORING
+
+sub register_monitoring_values($$$$){
+    my $dbh = shift;
+    my $table = shift;
+    my $fields = shift;
+    my $values = shift;
+
+    if (! insert_monitoring_row($dbh,$table,$fields,$values)){
+        my $create_str;
+        $create_str = "CREATE TABLE monitoring_$table (";
+        for (my $i=0; $i <= $#{@{$fields}}; $i++){
+            if ($values->[$i] =~ /^\d+$/){
+                if ($Db_type eq "Pg"){
+                    $create_str .= "$fields->[$i] integer,";
+                }else{
+                    $create_str .= "$fields->[$i] INT,";
+                }
+            }else{
+                $create_str .= "$fields->[$i] varchar(255),"
+            }
+        }
+        chop($create_str);
+        $create_str .= ")";
+        print("$create_str\n");
+        if ($dbh->do($create_str)){
+            if (! insert_monitoring_row($dbh,$table,$fields,$values)){
+                return(2);
+            }
+        }else{
+            return(1);
+        }
+    }
+    
+    return(0);
+}
+
+sub insert_monitoring_row($$$$){
+    my $dbh = shift;
+    my $table = shift;
+    my $fields = shift;
+    my $values = shift;
+
+    my $value_str;
+    foreach my $v (@{$values}){
+        $value_str .= $dbh->quote($v);
+        $value_str .= ',';
+    }
+    chop($value_str);
+    return($dbh->do("   INSERT INTO monitoring_$table (".join(",",@{$fields}).")
+                        VALUES (".$value_str.")
+                    "));
+}
+
 # ACCOUNTING
 
 # check jobs that are not treated in accounting table

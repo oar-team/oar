@@ -12,6 +12,7 @@ use oar_Tools;
 use oar_iolib;
 use Fcntl;
 use Storable qw(dclone);
+use Sys::Hostname;
 
 init_conf($ENV{OARCONFFILE});
 my $Monitor_file = get_conf("OARMONITOR_SENSOR_FILE");
@@ -38,10 +39,12 @@ my $Default_frequency = $Frequency;
 my $Frequency_min = 1;
 my $Timeout = 120;
 my $sos;
+my $Verbose;
 GetOptions ("version|V" => \$Version,
             "job_id|j=i" => \$Job_id,
             "frequency|f=i" => \$Frequency,
-            "help|h" => \$sos
+            "help|h" => \$sos,
+            "verbose|v" => \$Verbose
            );
 
 # Display command help
@@ -160,6 +163,7 @@ $SIG{QUIT} = \&exit_monitor;
 $SIG{USR2} = sub {return};
 
 # Node outputs parsing
+my $monitor_process_id = $Job_id.'_'.hostname().'_'.time().'_'.$$;
 my $tmp_hosts_hash;
 my $nb_end_nodes = $#hosts + 1;
 my $stop = 0;
@@ -179,7 +183,7 @@ while (($stop == 0) and ($nb_end_nodes > $#hosts)){
         alarm($Frequency + $Timeout);
         
         # Ask every nodes to print their monitoring values
-        print(tak_stdin_write "window_start=$tic_time_prev window_stop=$tic_time\n");
+        print(tak_stdin_write "monitor_process_id=$monitor_process_id window_start=$tic_time_prev window_stop=$tic_time\n");
 
         # Check the taktuk STDOUT
         $tmp_hosts_hash = dclone($hosts_hash);
@@ -196,7 +200,26 @@ while (($stop == 0) and ($nb_end_nodes > $#hosts)){
                 }else{
                     # Sensor gives the DB table name ($2) and the values for
                     # each fields separated by spaces ($3)
-                    print("$2 $3\n");
+                    if ($tic_time_prev > 0){
+                        my @fields;
+                        my @values;
+                        my @tmp = split(" ",$3);
+                        foreach my $i (@tmp){
+                            my ($field,$value) = split('=',$i);
+                            if ((defined($field)) and (defined($value))){
+                                push(@fields, $field);
+                                push(@values, $value);
+                            }
+                        }
+                        if (defined($Verbose)){
+                            print("@fields\n");
+                            print("@values\n");
+                        }
+                        if (iolib::register_monitoring_values($base,$2,\@fields,\@values) > 0){
+                            warn("[ERROR] Cannot register in the database: @fields, @values\n");
+                            $stop++;
+                        }
+                    }
                 }
             }else{
                 warn("[TAKTUK] $_\n");
