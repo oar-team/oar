@@ -26,33 +26,34 @@ if (open(CPUS, "$Cpuset_name/cpus")){
 warn("Starting sensor on the cpuset $Cpuset_name for the job $Job_id\n");
 
 my $cpuset_processes;
+my $cpus_data;
 my $network_interfaces;
 my $tic = "";
 while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
     chop($tic);
 
     $cpuset_processes = get_info_on_cpuset_tasks($Cpuset_name,$cpuset_processes);
+    $cpus_data = get_info_on_cpus($cpus_data);
+    $network_interfaces = get_network_data($network_interfaces);
+
     # print the DB table name and the values for each fields to store
-    my ($cpu,$cpuset_cpu) = get_cpu_percentages($cpuset_processes);
-    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=global_cpu_percent value=$cpu subtype=nb_forks subvalue=todo\n")
-        if (defined($cpu));
-
-    my $vsize = 0;
-    foreach my $p (keys(%{$cpuset_processes->{CURR}})){
-        $vsize += $cpuset_processes->{CURR}->{$p}->{STAT}->[22];
+    my $cpu_res = calculate_cpu_percentages($cpus_data,$cpuset_processes,\@Cpus);
+    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=global_cpu_percent value=$cpu_res->{ALL}->{CPUPERCENT} subtype=nb_forks subvalue=$cpu_res->{ALL}->{NEWPROCESSES}\n")
+        if (defined($cpu_res->{ALL}));
+    
+    foreach my $c (keys(%{$cpu_res->{EACH}})){
+        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=cpu value=$c subtype=cpu_percent subvalue=$cpu_res->{EACH}->{$c}->{CPUPERCENT}\n");
     }
-    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=job_id value=$Job_id subtype=cpuset_vsize subvalue=$vsize\n")
-        if (defined($cpuset_processes->{CURR}));
-    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=job_id value=$Job_id subtype=cpuset_cpu_percent subvalue=$cpuset_cpu\n")
-        if (defined($cpuset_cpu));
 
-    my $net_consumption;
-    ($network_interfaces,$net_consumption) = get_network_data($network_interfaces);
+    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=job_id value=$Job_id subtype=cpuset_vsize subvalue=$cpu_res->{CPUSET}->{VSIZE}\n")
+        if (defined($cpu_res->{CPUSET}->{VSIZE}));
+    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=job_id value=$Job_id subtype=cpuset_cpu_percent subvalue=$cpu_res->{CPUSET}->{CPUPERCENT}\n")
+        if (defined($cpu_res->{CPUSET}->{CPUPERCENT}));
+
+    my $net_consumption = calculate_network_percentages($network_interfaces);
     foreach my $i (keys(%{$net_consumption})){
-        if ($i ne "lo"){
-            print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=download subvalue=$net_consumption->{$i}->{DOWN}\n");
-            print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=upload subvalue=$net_consumption->{$i}->{UP}\n");
-        }
+        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=download subvalue=$net_consumption->{$i}->{DOWN}\n");
+        print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=upload subvalue=$net_consumption->{$i}->{UP}\n");
     }
     
     print("END\n");
@@ -76,49 +77,31 @@ if ($tic eq "STOP\n"){
 }
 
 ###############################################################################
-# Global variables to keep previous values
 
-# For get_cpu_percentages()
-my $prev_cpu_all_time = 0;
-my $prev_cpu_idle_time = 0;
+sub get_info_on_cpus($){
+    my $cpu_hash = shift();
 
-sub get_cpu_percentages($){
-    my $cpuset_tasks = shift();
-
+    $cpu_hash->{PREV} = $cpu_hash->{CURR} if (defined($cpu_hash->{CURR}));
+    delete($cpu_hash->{CURR});
     my $cpu_percent;
     my $cpu_cpuset_percent;
     if (open(CPU, "/proc/stat")){
-        my $stat_line = <CPU>;
-        close(CPU);
-        if ($stat_line =~ /^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/){
-            my $curr_all_time = $1 + $2 + $3 + $4 + $5 + $6 + $7 + $8;
-            my $curr_idle_time = $4 + $5;
-            my $value = $curr_all_time - $prev_cpu_all_time;
-            if ($value > 0){
-                $cpu_percent = ceil(100 - (100 * ($curr_idle_time - $prev_cpu_idle_time) / $value));
-                $cpu_percent = 100 if ($cpu_percent > 100);
-                $cpu_percent = 0 if ($cpu_percent < 0);
-                $prev_cpu_idle_time = $curr_idle_time;
-                $prev_cpu_all_time = $curr_all_time;
-            
-                # Track percentages for all processes from the cpuset
-                my $curr_cumul_process_all_time = 0;
-                my $prev_cumul_process_all_time = 0;
-                foreach my $p (keys(%{$cpuset_tasks->{CURR}})){
-                    if (defined($cpuset_tasks->{PREV}->{$p}->{STAT})){
-                        # add jiffies in user and kernel mode
-                        $curr_cumul_process_all_time += $cpuset_tasks->{CURR}->{$p}->{STAT}->[13] + $cpuset_tasks->{CURR}->{$p}->{STAT}->[14];
-                        $prev_cumul_process_all_time += $cpuset_tasks->{PREV}->{$p}->{STAT}->[13] + $cpuset_tasks->{PREV}->{$p}->{STAT}->[14];
-                    }
-                }
-                $cpu_cpuset_percent = ceil(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $value);
-                $cpu_cpuset_percent = 100 if ($cpu_cpuset_percent > 100);
-                $cpu_cpuset_percent = 0 if ($cpu_cpuset_percent < 0);
+        my $stat_line;
+        while ($stat_line = <CPU>){
+            if ($stat_line =~ /^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/){
+                $cpu_hash->{CURR}->{ALL}->{ALLTIME} = $1 + $2 + $3 + $4 + $5 + $6 + $7 + $8;
+                $cpu_hash->{CURR}->{ALL}->{IDLETIME} = $4 + $5;
+            }elsif ($stat_line =~ /^cpu(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/){
+                $cpu_hash->{CURR}->{EACH}->{$1}->{ALLTIME} = $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9;
+                $cpu_hash->{CURR}->{EACH}->{$1}->{IDLETIME} = $5 + $6;
+            }elsif ($stat_line =~ /^processes\s(\d+)$/){
+                $cpu_hash->{CURR}->{ALL}->{PROCESSES} = $1;
             }
         }
+        close(CPU);
     }
 
-    return($cpu_percent,$cpu_cpuset_percent);
+    return($cpu_hash);
 }
 
 # arg1: cpuset name
@@ -144,12 +127,71 @@ sub get_info_on_cpuset_tasks($$){
     return($cpuset_tasks);
 }
 
+# arg1: cpus hash
+# arg2: cpuset hash
+# arg3: cpuset cpus list
+sub calculate_cpu_percentages($$$){
+    my $cpus_hash = shift;
+    my $cpuset_hash = shift;
+    my $cpus = shift;
+
+    my $results;
+    if ((defined($cpus_hash->{CURR}->{ALL})) and (defined($cpus_hash->{PREV}->{ALL}))){
+        $results->{ALL}->{CPUPERCENT} = $cpus_hash->{CURR}->{ALL}->{ALLTIME} - $cpus_hash->{PREV}->{ALL}->{ALLTIME};
+        if ($results->{ALL}->{CPUPERCENT} > 0){
+            $results->{ALL}->{CPUPERCENT} = ceil(100 - (100 * ($cpus_hash->{CURR}->{ALL}->{IDLETIME} - $cpus_hash->{PREV}->{ALL}->{IDLETIME}) / $results->{ALL}->{CPUPERCENT}));
+            $results->{ALL}->{CPUPERCENT} = 100 if ($results->{ALL}->{CPUPERCENT} > 100);
+            $results->{ALL}->{CPUPERCENT} = 0 if ($results->{ALL}->{CPUPERCENT} < 0);
+        }else{
+            $results->{ALL}->{CPUPERCENT} = 0;
+        }
+
+        $results->{ALL}->{NEWPROCESSES} = $cpus_hash->{CURR}->{ALL}->{PROCESSES} - $cpus_hash->{PREV}->{ALL}->{PROCESSES};
+    }
+     
+    my $cumul_prev_cpus_all = 0;
+    my $cumul_curr_cpus_all = 0;
+    foreach my $c (@{$cpus}){
+        if ((defined($cpus_hash->{CURR}->{EACH}->{$c})) and (defined($cpus_hash->{PREV}->{EACH}->{$c}))){
+            $results->{EACH}->{$c}->{CPUPERCENT} = $cpus_hash->{CURR}->{EACH}->{$c}->{ALLTIME} - $cpus_hash->{PREV}->{EACH}->{$c}->{ALLTIME};
+            if ($results->{EACH}->{$c}->{CPUPERCENT} > 0){
+                $results->{EACH}->{$c}->{CPUPERCENT} = ceil(100 - (100 * ($cpus_hash->{CURR}->{EACH}->{$c}->{IDLETIME} - $cpus_hash->{PREV}->{EACH}->{$c}->{IDLETIME}) / $results->{EACH}->{$c}->{CPUPERCENT}));
+                $results->{EACH}->{$c}->{CPUPERCENT} = 100 if ($results->{EACH}->{$c}->{CPUPERCENT} > 100);
+                $results->{EACH}->{$c}->{CPUPERCENT} = 0 if ($results->{EACH}->{$c}->{CPUPERCENT} < 0);
+            }else{
+                $results->{EACH}->{$c}->{CPUPERCENT} = 0;
+            }
+            $cumul_curr_cpus_all += $cpus_hash->{CURR}->{EACH}->{$c}->{ALLTIME};
+            $cumul_prev_cpus_all += $cpus_hash->{PREV}->{EACH}->{$c}->{ALLTIME};
+        }
+    }
+
+    # Track percentages for all processes from the cpuset
+    my $curr_cumul_process_all_time = 0;
+    my $prev_cumul_process_all_time = 0;
+    foreach my $p (keys(%{$cpuset_hash->{CURR}})){
+        if (defined($cpuset_hash->{PREV}->{$p}->{STAT})){
+            # add jiffies in user and kernel mode
+            $curr_cumul_process_all_time += $cpuset_hash->{CURR}->{$p}->{STAT}->[13] + $cpuset_hash->{CURR}->{$p}->{STAT}->[14];
+            $prev_cumul_process_all_time += $cpuset_hash->{PREV}->{$p}->{STAT}->[13] + $cpuset_hash->{PREV}->{$p}->{STAT}->[14];
+        }
+        $results->{CPUSET}->{VSIZE} += $cpuset_hash->{CURR}->{$p}->{STAT}->[22];
+    }
+    my $cpuset_cpus_all_time = $cumul_curr_cpus_all - $cumul_prev_cpus_all;
+            print $curr_cumul_process_all_time - $prev_cumul_process_all_time." $cpuset_cpus_all_time\n";
+    if ($cpuset_cpus_all_time > 0){
+        $results->{CPUSET}->{CPUPERCENT} = ceil(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $cpuset_cpus_all_time);
+        $results->{CPUSET}->{CPUPERCENT} = 100 if ($results->{CPUSET}->{CPUPERCENT} > 100);
+        $results->{CPUSET}->{CPUPERCENT} = 0 if ($results->{CPUSET}->{CPUPERCENT} < 0);
+    }
+
+    return($results);
+}
 
 # Get network interfaces data
 sub get_network_data($){
     my $network_data = shift();
 
-    my $results;
     $network_data->{PREV} = $network_data->{CURR} if (defined($network_data->{CURR}));
     delete($network_data->{CURR});
     if (open(NET, "/proc/net/dev")){
@@ -157,14 +199,26 @@ sub get_network_data($){
             if ($_ =~ /^\s+(\w+):\s*(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/){
                 $network_data->{CURR}->{$1}->{DOWN} = $2;
                 $network_data->{CURR}->{$1}->{UP} = $3;
-                if ((defined($network_data->{PREV}->{$1}->{DOWN})) and (defined($network_data->{PREV}->{$1}->{UP}))){
-                    $results->{$1}->{DOWN} = $network_data->{CURR}->{$1}->{DOWN} - $network_data->{PREV}->{$1}->{DOWN};
-                    $results->{$1}->{UP} = $network_data->{CURR}->{$1}->{UP} - $network_data->{PREV}->{$1}->{UP};
-                }
             }
         }
         close(NET);
     }
     
-    return($network_data,$results);
+    return($network_data);
+}
+
+sub calculate_network_percentages($){
+    my $network_data = shift();
+
+    my $results;
+    foreach my $i (keys(%{$network_data->{CURR}})){
+        if ($i ne "lo"){
+            if ((defined($network_data->{PREV}->{$i}->{DOWN})) and (defined($network_data->{PREV}->{$i}->{UP}))){
+                $results->{$i}->{DOWN} = $network_data->{CURR}->{$i}->{DOWN} - $network_data->{PREV}->{$i}->{DOWN};
+                $results->{$i}->{UP} = $network_data->{CURR}->{$i}->{UP} - $network_data->{PREV}->{$i}->{UP};
+            }
+        }
+    }
+
+    return($results);
 }
