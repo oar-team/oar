@@ -26,6 +26,7 @@ if (open(CPUS, "$Cpuset_name/cpus")){
 warn("Starting sensor on the cpuset $Cpuset_name for the job $Job_id\n");
 
 my $cpuset_processes;
+my $network_interfaces;
 my $tic = "";
 while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
     chop($tic);
@@ -33,13 +34,31 @@ while ((-r "$Cpuset_name/tasks") and ($tic = <STDIN>) and ($tic ne "STOP\n")){
     $cpuset_processes = get_info_on_cpuset_tasks($Cpuset_name,$cpuset_processes);
     # print the DB table name and the values for each fields to store
     my ($cpu,$cpuset_cpu) = get_cpu_percentages($cpuset_processes);
-    print("by_host $tic network_address=$ENV{TAKTUK_HOSTNAME} name=cpu_percentage value=$cpu\n") if (defined($cpu));
-    print("by_host $tic network_address=$ENV{TAKTUK_HOSTNAME} job_id=$Job_id name=cpuset_percentage value=$cpuset_cpu\n") if (defined($cpuset_cpu));
+    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=global_cpu_percent value=$cpu subtype=nb_forks subvalue=todo\n")
+        if (defined($cpu));
 
+    my $vsize = 0;
+    foreach my $p (keys(%{$cpuset_processes->{CURR}})){
+        $vsize += $cpuset_processes->{CURR}->{$p}->{STAT}->[22];
+    }
+    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=job_id value=$Job_id subtype=cpuset_vsize subvalue=$vsize\n")
+        if (defined($cpuset_processes->{CURR}));
+    print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=job_id value=$Job_id subtype=cpuset_cpu_percent subvalue=$cpuset_cpu\n")
+        if (defined($cpuset_cpu));
+
+    my $net_consumption;
+    ($network_interfaces,$net_consumption) = get_network_data($network_interfaces);
+    foreach my $i (keys(%{$net_consumption})){
+        if ($i ne "lo"){
+            print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=download subvalue=$net_consumption->{$i}->{DOWN}\n");
+            print("generic $tic network_address=$ENV{TAKTUK_HOSTNAME} type=network value=$i subtype=upload subvalue=$net_consumption->{$i}->{UP}\n");
+        }
+    }
+    
     print("END\n");
 
     # avoid to become crazy
-    select(undef,undef,undef,0.5);
+    select(undef,undef,undef,0.2);
 }
 
 if ($tic eq "STOP\n"){
@@ -68,7 +87,6 @@ sub get_cpu_percentages($){
 
     my $cpu_percent;
     my $cpu_cpuset_percent;
-#    perl -e '$t = "1-3,4"; $t =~ s/\-/\.\./g; @a = eval($t);print "@a\n"'
     if (open(CPU, "/proc/stat")){
         my $stat_line = <CPU>;
         close(CPU);
@@ -96,7 +114,6 @@ sub get_cpu_percentages($){
                 $cpu_cpuset_percent = ceil(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $value);
                 $cpu_cpuset_percent = 100 if ($cpu_cpuset_percent > 100);
                 $cpu_cpuset_percent = 0 if ($cpu_cpuset_percent < 0);
-                print("$cpu_cpuset_percent\n");
             }
         }
     }
@@ -128,3 +145,26 @@ sub get_info_on_cpuset_tasks($$){
 }
 
 
+# Get network interfaces data
+sub get_network_data($){
+    my $network_data = shift();
+
+    my $results;
+    $network_data->{PREV} = $network_data->{CURR} if (defined($network_data->{CURR}));
+    delete($network_data->{CURR});
+    if (open(NET, "/proc/net/dev")){
+        while ($_ = <NET>){
+            if ($_ =~ /^\s+(\w+):\s*(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/){
+                $network_data->{CURR}->{$1}->{DOWN} = $2;
+                $network_data->{CURR}->{$1}->{UP} = $3;
+                if ((defined($network_data->{PREV}->{$1}->{DOWN})) and (defined($network_data->{PREV}->{$1}->{UP}))){
+                    $results->{$1}->{DOWN} = $network_data->{CURR}->{$1}->{DOWN} - $network_data->{PREV}->{$1}->{DOWN};
+                    $results->{$1}->{UP} = $network_data->{CURR}->{$1}->{UP} - $network_data->{PREV}->{$1}->{UP};
+                }
+            }
+        }
+        close(NET);
+    }
+    
+    return($network_data,$results);
+}
