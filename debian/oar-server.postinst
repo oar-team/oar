@@ -23,7 +23,7 @@ set -e
 db_version 2.0
 
 setup_oar_ssh() {
-	if [ -e /var/lib/oar/.ssh ]
+	if [ -e /var/lib/oar/.ssh ]; then
 		# Do nothing
 		:
 	else
