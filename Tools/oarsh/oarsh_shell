@@ -61,7 +61,6 @@ else
         XAUTH_LOCATION="/usr/bin/X11/xauth"
         if [ -x "$XAUTH_LOCATION" ]
         then
-            echo $XAUTHORITY >> /tmp/toto.log
             $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | sudo -H -u $SUDO_USER $XAUTH_LOCATION merge -
         fi
     fi
