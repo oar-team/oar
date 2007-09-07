@@ -77,10 +77,6 @@ Specify a name of a project the job belongs to.
 
 Specify an arbitrary name for the job.
 
-=item B<--env> <TXT>
-
-Environment variables to set on the running proccess in the form "A=b C=d" (not implemented)
-
 =item B<-a, --anterior> <OAR JOB ID>
 
 Previously submitted job that this new job execution must depend on. The new job will only start upon the end of the previous one.

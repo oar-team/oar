@@ -187,7 +187,7 @@ Options::
                                Ex: nodes=4/cpu=1,walltime=2:00:00
  -S, --scanscript              Batch mode only: asks oarsub to scan the given
                                script for OAR directives (#OAR -l ...)
- -q, --queue=<queue>           Set the the queue to submit the job to
+ -q, --queue=<queue>           Set the queue to submit the job to
  -p, --property="<list>"       Add constraints to properties for the job.
                                (format is a WHERE clause from the SQL syntax)
  -r, --reservation=<date>      Request a job start time reservation, 
@@ -203,8 +203,6 @@ Options::
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
-     --env=<txt>               Environment variables to set on the running
-                               proccess in the form "A=b C=d" (not implemented)
  -a, --anterior=<job id>       Anterior job that must be terminated to start
                                this new one
      --notify=<txt>            Specify a notification method
@@ -220,7 +218,7 @@ Options::
                                Import the job-key to use inline instead of
                                generating a new one.
  -e  --export-job-key-to-file=<file>
-                               Export the the job key to a file. Warning: the
+                               Export the job key to a file. Warning: the
                                file will be overwritten if it already exists.
                                (the %jobid% pattern is automatically replaced)
  -O  --stdout=<file>           Specify the file that will store the standart
