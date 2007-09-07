@@ -23,63 +23,63 @@ set -e
 db_version 2.0
 
 setup_oar_ssh() {
-	if [ -e /var/lib/oar/.ssh ]
+	if [ -e /var/lib/oar/.ssh ]; then
 		# Do nothing
 		:
 	else
 		mkdir -p /var/lib/oar/.ssh 
 		ssh-keygen -t rsa -q -f /var/lib/oar/.ssh/id_rsa -N '' || true
 		cat /var/lib/oar/.ssh/id_rsa.pub > /var/lib/oar/.ssh/authorized_keys || true
-	fi
-	cat <<EOF > /var/lib/oar/.ssh/config || true
+	  cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
     ForwardX11 no 
     StrictHostKeyChecking no
     PasswordAuthentication no
     AddressFamily inet
 EOF
-	chown oar:oar /var/lib/oar/.ssh -R || true
-}
-
-setup_conf() {
-	if [ ! -r /etc/oar/oar.conf ]; then
-		echo "Error: No /etc/oar/oar.conf found."
-		exit 1
+	  chown oar:oar /var/lib/oar/.ssh -R || true
 	fi
-    db_get oar/db/dbtype
-    if [ "x$RET" = "xMysql" ]; then
-        DB_TYPE="mysql"
-    else
-        DB_TYPE="Pg"
-    fi
-	db_get oar/db/hostname
-	DB_HOSTNAME=$RET
-	db_get oar/db/basename
-	DB_BASE_NAME=$RET
-	db_get oar/db/baselogin
-	DB_BASE_LOGIN=$RET
-	db_get oar/db/basepasswd
-	DB_BASE_PASSWD=$RET
-
-	db_get oar/server/hostname
-	SERVER_HOSTNAME=$RET
-	db_get oar/server/port
-	SERVER_PORT=$RET
-	db_get oar/server/allowednetworks
-	ALLOWED_NETWORKS=$RET
-	perl -i -pe \
-		"s#^DB_TYPE=.*#DB_TYPE=$DB_TYPE#;
-        s#^DB_HOSTNAME=.*#DB_HOSTNAME=$DB_HOSTNAME#;
-		s#^DB_BASE_NAME=.*#DB_BASE_NAME=$DB_BASE_NAME#;
-		s#^DB_BASE_LOGIN=.*#DB_BASE_LOGIN=$DB_BASE_LOGIN#;
-		s#^DB_BASE_PASSWD=.*#DB_BASE_PASSWD=$DB_BASE_PASSWD#;
-		s#^SERVER_HOSTNAME=.*#SERVER_HOSTNAME=$SERVER_HOSTNAME#;
-		s#^SERVER_PORT=.*#SERVER_PORT=$SERVER_PORT#;
-		s#^ALLOWED_NETWORKS=.*#ALLOWED_NETWORKS=$ALLOWED_NETWORKS#;" \
-		/etc/oar/oar.conf
-	chown oar:root /etc/oar/oar.conf
-	chmod 600 /etc/oar/oar.conf
 }
+
+#setup_conf() {
+#	if [ ! -r /etc/oar/oar.conf ]; then
+#		echo "Error: No /etc/oar/oar.conf found."
+#		exit 1
+#	fi
+#    db_get oar/db/dbtype
+#    if [ "x$RET" = "xMysql" ]; then
+#        DB_TYPE="mysql"
+#    else
+#        DB_TYPE="Pg"
+#    fi
+#	db_get oar/db/hostname
+#	DB_HOSTNAME=$RET
+#	db_get oar/db/basename
+#	DB_BASE_NAME=$RET
+#	db_get oar/db/baselogin
+#	DB_BASE_LOGIN=$RET
+#	db_get oar/db/basepasswd
+#	DB_BASE_PASSWD=$RET
+#
+#	db_get oar/server/hostname
+#	SERVER_HOSTNAME=$RET
+#	db_get oar/server/port
+#	SERVER_PORT=$RET
+#	db_get oar/server/allowednetworks
+#	ALLOWED_NETWORKS=$RET
+#	perl -i -pe \
+#		"s#^DB_TYPE=.*#DB_TYPE=$DB_TYPE#;
+#        s#^DB_HOSTNAME=.*#DB_HOSTNAME=$DB_HOSTNAME#;
+#		s#^DB_BASE_NAME=.*#DB_BASE_NAME=$DB_BASE_NAME#;
+#		s#^DB_BASE_LOGIN=.*#DB_BASE_LOGIN=$DB_BASE_LOGIN#;
+#		s#^DB_BASE_PASSWD=.*#DB_BASE_PASSWD=$DB_BASE_PASSWD#;
+#		s#^SERVER_HOSTNAME=.*#SERVER_HOSTNAME=$SERVER_HOSTNAME#;
+#		s#^SERVER_PORT=.*#SERVER_PORT=$SERVER_PORT#;
+#		s#^ALLOWED_NETWORKS=.*#ALLOWED_NETWORKS=$ALLOWED_NETWORKS#;" \
+#		/etc/oar/oar.conf
+#	chown oar:root /etc/oar/oar.conf
+#	chmod 600 /etc/oar/oar.conf
+#}
 
 setup_mysql_db() {
 	if [ ! -x /usr/sbin/oar_mysql_db_init ]; then
@@ -103,25 +103,25 @@ EOF
 	fi
 }
 
-setup_nodes() {
-	db_get oar/node/dosetup
-	if [ "x$RET" = "xtrue" ]; then
-		db_get oar/node/listmethod
-		if [ "x$RET" = "xinline" ]; then
-			NODE_FILE=`tempfile`
-			db_get oar/node/listinline
-			echo "$RET" | perl -pe 's/\s+/\n/g' > $NODE_FILE
-		elif [ "x$RET" = "xfile" ]; then
-			db_get oar/node/listfile
-			NODE_FILE=$RET
-		fi
-		db_get oar/node/deploymethod
-		/usr/lib/oar/deploy_nodes.sh -e $RET -H /var/lib/oar -C /etc/oar/oar.conf $NODE_FILE || true
-	fi
-}
+#setup_nodes() {
+#	db_get oar/node/dosetup
+#	if [ "x$RET" = "xtrue" ]; then
+#		db_get oar/node/listmethod
+#		if [ "x$RET" = "xinline" ]; then
+#			NODE_FILE=`tempfile`
+#			db_get oar/node/listinline
+#			echo "$RET" | perl -pe 's/\s+/\n/g' > $NODE_FILE
+#		elif [ "x$RET" = "xfile" ]; then
+#			db_get oar/node/listfile
+#			NODE_FILE=$RET
+#		fi
+#		db_get oar/node/deploymethod
+#		/usr/lib/oar/deploy_nodes.sh -e $RET -H /var/lib/oar -C /etc/oar/oar.conf $NODE_FILE || true
+#	fi
+#}
 
 setup_oar_ssh
-setup_conf
+#setup_conf
 
 db_get oar/db/dbtype
 if [ "x$RET" = "xMysql" ]; then 
