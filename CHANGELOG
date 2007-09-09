@@ -6,10 +6,17 @@ upstream development version:
 
   - add new oarmonitor command. This will permit to monitor OAR jobs on compute nodes.
 
+version 2.2.4:
+--------------
+  
+  - Redirect third party commands into oar.log (easier to debug).
+  - Add user info into drawgantt interface.
+  - Some bug fixes.
+
 version 2.2.3:
 --------------
 
-    - Debug prologue and epilogue when oarexec receives a signal.
+  - Debug prologue and epilogue when oarexec receives a signal.
 
 version 2.2.2:
 --------------
