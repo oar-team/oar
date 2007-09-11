@@ -541,14 +541,14 @@ if (defined($Job->{epilogue})){
     my $script_error = -1;
     eval {
         $SIG{ALRM} = sub { die "alarm\n" };
-        print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}\n");
+        print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{user} $Node_file\n");
         alarm($Job->{pro_epi_timeout});
         #$script_error = system("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
         my $pid = fork();
         if($pid == 0){
             #CHILD
             $SIG{ALRM} = 'DEFAULT';
-            exec("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
+            exec("$Job->{epilogue} $Job_id $Job->{user} $Node_file");
             warn("[ERROR] Cannot execute $Job->{epilogue}\n");
             exit(-1);
         }

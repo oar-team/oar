@@ -4,6 +4,11 @@ OAR CHANGELOG
 upstream development version:
 -----------------------------
 
+version 2.2.5:
+--------------
+
+  - Bug fix: remove user command when oar execute the epilogue script on the nodes.
+  
 version 2.2.4:
 --------------
   
