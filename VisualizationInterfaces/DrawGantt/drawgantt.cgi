@@ -19,6 +19,7 @@
 # 	- resource aggregation
 # 	- sparkline chart for workload information sumarize?
 #		- job/user highlighting (by apply some picture manipulation from general picture ?)
+#		- fix quote problem javascript popup
 #
 
 require 'dbi'
@@ -701,7 +702,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 					 "<br>User: #{j['user']}" + 
 					 "<br>Type: #{j['job_type']}" +
 					 "<br>State: #{j['state']}" +
-					 "<br>Command: #{j['command']}" +
+#					 "<br>Command: #{j['command']}" +   TODO: fix quote problem
 					 "<br>Queue: #{j['queue_name']}" + 
 					 "<br>Nb resources: #{j['resources'].length}" +
 					 "<br>Submission: #{Time.at(j['submission_time'].to_i).strftime("%a %b %e %H:%M %Y")}" +
