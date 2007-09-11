@@ -208,6 +208,8 @@ user: man
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oarresume#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarresume
 	rm $(OARDIR)/sudowrapper.sh
+	install -m 0755 Tools/oarmonitor_graph_gen.pl $(OARDIR)
+	ln -s -f $(OARDIR)/oarmonitor_graph_gen.pl $(BINDIR)/oarmonitor_graph_gen.pl
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
