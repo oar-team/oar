@@ -12,7 +12,7 @@ OARUSER=oar
 OAROWNER=$(OARUSER)
 OARGROUP=oar
 
-PREFIX=/home/neyron/tmp/
+PREFIX=/usr/local
 MANDIR=$(PREFIX)/man
 OARDIR=$(PREFIX)/oar
 BINDIR=$(PREFIX)/bin
