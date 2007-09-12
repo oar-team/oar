@@ -14,6 +14,8 @@ $oldfh = select(STDOUT); $| = 1; select($oldfh);
 #Everything is run by oar user
 $ENV{SUDO_UID}=$<;
 
+oar_Judas::redirect_everything();
+
 oar_warn("[Almighty] Start Almighty\n");
 
 # Signal handle system
@@ -38,7 +40,6 @@ if (defined($ENV{OARDIR})){
     exit(1);
 }
 
-oar_Judas::redirect_everything();
 
 my $scheduler_command = $binpath."oar_meta_sched";
 my $runner_command = $binpath."runner";

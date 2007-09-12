@@ -18,6 +18,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(oar_warn oar_debug oar_error);
 
+$| = 1;
 
 #Get log level in oar.conf file
 init_conf($ENV{OARCONFFILE});
@@ -35,11 +36,24 @@ my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
 # this function redirect STDOUT and STDERR into the log file
+# return the pid of the fork process
 sub redirect_everything(){
-    if (open(REDIRECTFILE,">>$log_file")){
-        open(STDOUT, ">&".fileno(REDIRECTFILE));
-        open(STDERR, ">&".fileno(REDIRECTFILE));
+    pipe(judas_read,judas_write);
+    my $pid = fork();
+    if ($pid == 0){
+        close(judas_write);
+        while (<judas_read>){
+            if (open(REDIRECTFILE,">>$log_file")){
+                print(REDIRECTFILE "$_");
+                close(REDIRECTFILE);
+            }
+        }
+        exit(1);
     }
+    close(judas_read);
+    my $old_fd = select(judas_write); $|=1; select($old_fd);
+    open(STDOUT, ">&".fileno(judas_write));
+    open(STDERR, ">&".fileno(judas_write));
 }
 
 # this function writes both on the stdout and in the log file
