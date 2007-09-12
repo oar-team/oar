@@ -35,9 +35,11 @@ my $mail_recipient = get_conf("MAIL_RECIPIENT");
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
+
 # this function redirect STDOUT and STDERR into the log file
 # return the pid of the fork process
 sub redirect_everything(){
+    return() if (! is_conf("LOG_FILE"));
     pipe(judas_read,judas_write);
     my $pid = fork();
     if ($pid == 0){
@@ -59,25 +61,11 @@ sub redirect_everything(){
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;
-    #print("$str");
-    if (-w $log_file){
-        open(LOG,">>$log_file");
+    if (open(LOG,">>$log_file")){
         print(LOG "$str");
         close(LOG);
-    }
-}
-
-sub oar_warn($){
-    my $string = shift;
-    
-    if ($log_level >= 2){
-        my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = int($microseconds / 1000);
-        $microseconds = sprintf("%03d",$microseconds);
-        $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-        print("$string");
-        write_log("[info] $string");
-        send_mail(undef,$mail_recipient, "OAR Info on ".hostname()." : ".substr($string,0,70),$string,0);
+    }else{
+        print("$str");
     }
 }
 
@@ -93,15 +81,27 @@ sub oar_debug($){
     }
 }
 
+sub oar_warn($){
+    my $string = shift;
+    
+    if ($log_level >= 2){
+        my ($seconds, $microseconds) = gettimeofday();
+        $microseconds = int($microseconds / 1000);
+        $microseconds = sprintf("%03d",$microseconds);
+        $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
+        write_log("[info] $string");
+        send_mail(undef,$mail_recipient, "Info: ".substr($string,0,70),$string,0);
+    }
+}
+
 sub oar_error($){
     my $string = shift;
     my ($seconds, $microseconds) = gettimeofday();
     $microseconds = int($microseconds / 1000);
     $microseconds = sprintf("%03d",$microseconds);
     $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-    print("$string");
     write_log("[error] $string");
-    send_mail(undef,$mail_recipient, "OAR Error on ".hostname()." : ".substr($string,0,70),$string,0);
+    send_mail(undef,$mail_recipient, "Error: ".substr($string,0,70),$string,0);
 }
 
 
