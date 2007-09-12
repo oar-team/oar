@@ -10,6 +10,7 @@ version 2.2.5:
 --------------
 
   - Bug fix: remove user command when oar execute the epilogue script on the nodes.
+  - Clean debug and mail messages format.
   
 version 2.2.4:
 --------------
