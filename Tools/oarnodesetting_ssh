@@ -14,7 +14,8 @@
 # 
 
 IP=$(echo $SSH_CONNECTION | cut -d " " -f 1 )
+OARNODESETTINGCMD=/usr/local/sbin/oarnodesetting
 [ -n "$IP" ] || exit 1
-exec /usr/sbin/oarnodesetting -s Alive --sql "ip = '$IP'"
+exec $OARNODESETTINGCMD -s Alive --sql "ip = '$IP'"
 exit 1
 

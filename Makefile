@@ -12,7 +12,7 @@ OARUSER=oar
 OAROWNER=$(OARUSER)
 OARGROUP=oar
 
-PREFIX=/usr/local
+PREFIX=/home/neyron/tmp/
 MANDIR=$(PREFIX)/man
 OARDIR=$(PREFIX)/oar
 BINDIR=$(PREFIX)/bin
@@ -121,6 +121,7 @@ common:
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
+	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 	rm $(OARDIR)/sudowrapper.sh
 
 server:
