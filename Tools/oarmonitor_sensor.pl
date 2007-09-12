@@ -89,13 +89,13 @@ sub get_info_on_cpus($){
     if (open(CPU, "/proc/stat")){
         my $stat_line;
         while ($stat_line = <CPU>){
-            if ($stat_line =~ /^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/){
+            if ($stat_line =~ /^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/){
                 $cpu_hash->{CURR}->{ALL}->{ALLTIME} = $1 + $2 + $3 + $4 + $5 + $6 + $7 + $8;
                 $cpu_hash->{CURR}->{ALL}->{IDLETIME} = $4 + $5;
-            }elsif ($stat_line =~ /^cpu(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/){
+            }elsif ($stat_line =~ /^cpu(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/){
                 $cpu_hash->{CURR}->{EACH}->{$1}->{ALLTIME} = $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9;
                 $cpu_hash->{CURR}->{EACH}->{$1}->{IDLETIME} = $5 + $6;
-            }elsif ($stat_line =~ /^processes\s(\d+)$/){
+            }elsif ($stat_line =~ /^processes\s(\d+)/){
                 $cpu_hash->{CURR}->{ALL}->{PROCESSES} = $1;
             }
         }
