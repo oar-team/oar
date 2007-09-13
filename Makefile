@@ -33,7 +33,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | debian-packages | rpm-packages }"
+	@echo "Where MODULES := { server-install | user-install | node-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install }"
 	@echo "      OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | OAROWNER | OARGROUP | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -266,12 +266,6 @@ draw-gantt:
 	install -d -m 0755 $(WWWDIR)/drawgantt/js
 	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
 	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(WWWDIR)/drawgantt/js
-
-debian-packages:
-	dpkg-buildpackage -rfakeroot $(DPKGOPTS)
-
-rpm-packages:
-	rpm/rpmbuilder.sh
 
 server-install: sanity-check configuration sudowrapper common server dbinit
 
