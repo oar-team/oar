@@ -90,7 +90,7 @@ sub oar_warn($){
         $microseconds = sprintf("%03d",$microseconds);
         $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
         write_log("[info] $string");
-        send_mail(undef,$mail_recipient, "Info: ".substr($string,0,70),$string,0);
+        send_mail(undef,$mail_recipient, "[OAR] Info: ".substr($string,0,70),$string,0);
     }
 }
 
@@ -101,7 +101,7 @@ sub oar_error($){
     $microseconds = sprintf("%03d",$microseconds);
     $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
     write_log("[error] $string");
-    send_mail(undef,$mail_recipient, "Error: ".substr($string,0,70),$string,0);
+    send_mail(undef,$mail_recipient, "[OAR] Error: ".substr($string,0,70),$string,0);
 }
 
 

@@ -77,8 +77,8 @@ The following steps have to be done, prior to installing OAR:
       /etc/sudoers must be configured. Please use visudo to add the following
       lines::
 
-            Defaults>oar    env_reset,env_keep += "PWD DISPLAY OAR_JOB_ID OAR_JOB_KEY_FILE"
-            Defaults:oar env_reset,env_keep += "DISPLAY SSH_CLIENT SSH2CLIENT"
+            Defaults>oar    env_reset,env_keep += "PWD DISPLAY OAR_JOB_ID OAR_JOB_KEY_FILE", !requiretty
+            Defaults:oar env_reset,env_keep += "DISPLAY SSH_CLIENT SSH2CLIENT", !requiretty
             
             Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
             /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
