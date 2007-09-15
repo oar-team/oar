@@ -165,7 +165,8 @@ sub connect_job($$$){
     my $job_id = shift;
     my $stop_oarexec = shift;
     my $openssh_cmd = shift;
-    
+   
+    my $xauth_path = $ENV{OARXAUTHLOCATION};
     my $dbh = iolib::connect_ro();
     my $lusr= getpwuid($ENV{SUDO_UID});
     my $job = iolib::get_job($dbh, $job_id);
@@ -189,7 +190,7 @@ sub connect_job($$$){
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
-        unless (-x "/usr/bin/X11/xauth" and $ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/) {
+        unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
             $ENV{DISPLAY}="";
         }
         if ($ENV{DISPLAY} ne ""){
@@ -197,7 +198,7 @@ sub connect_job($$$){
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
             $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority.$$";
-            system({"bash"} "bash","-c",'[ -x "/usr/bin/X11/xauth" ] && sudo -H -u "'.$lusr.'" bash -c "unset XAUTHORITY; xauth extract - ${DISPLAY/#localhost:/:}" | xauth -q merge - 2> /dev/null');
+            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && sudo -H -u "'.$lusr.'" bash -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2> /dev/null');
         }
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
@@ -224,7 +225,7 @@ sub connect_job($$$){
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && (which xauth > /dev/null && xauth -q extract - \${DISPLAY/#localhost:/:} | sudo -H -u $lusr xauth merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | sudo -H -u $lusr $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
         }else{
             $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
         }

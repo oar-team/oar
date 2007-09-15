@@ -5,6 +5,7 @@
 # the shell or the script of the user SUDO_USER.
 
 DEFAULT_SHELL=/bin/bash
+XAUTH_LOCATION="/usr/bin/xauth"
 
 # $1 = Name of the cpuset
 # $2,$3,... = PIDs to add
@@ -57,8 +58,6 @@ else
     #Manage display
     if [ -n "$DISPLAY" ]
     then
-        #XAUTH_LOCATION=$(which xauth)
-        XAUTH_LOCATION="/usr/bin/X11/xauth"
         if [ -x "$XAUTH_LOCATION" ]
         then
             $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | sudo -H -u $SUDO_USER $XAUTH_LOCATION merge -

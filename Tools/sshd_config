@@ -54,5 +54,5 @@ AcceptEnv OAR_CPUSET SUDO_USER
 PermitUserEnvironment yes
 UseLogin no
 AllowUsers oar
-#XAuthLocation /usr/bin/xauth
+XAuthLocation /usr/bin/xauth
 
