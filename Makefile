@@ -1,4 +1,4 @@
-!/usr/bin/make
+#!/usr/bin/make
 # $Id$
 SHELL=/bin/sh
 
