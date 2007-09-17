@@ -116,7 +116,7 @@ foreach my $i (@events_to_check){
                 }
             }
         }
-        oar_warn("[NodeChangeState] error ($i->{type}) on the nodes @hosts so we are suspecting corresponding free resources\n");
+        oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
     }
     
     ########################################
