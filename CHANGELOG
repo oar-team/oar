@@ -11,6 +11,9 @@ version 2.2.5:
 
   - Bug fix: remove user command when oar execute the epilogue script on the nodes.
   - Clean debug and mail messages format.
+  - Remove bad oarsub syntax fromoarsub doc.
+  - Debug xauth path.
+  - bug 3995: set project correctly when resubmitting a job 
   
 version 2.2.4:
 --------------

@@ -22,6 +22,10 @@ WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
 CONFIG_CMDS=$(OARDIR)/cmds
 DEB_INSTALL=$(OARDIR)
+XAUTHCMDPATH=$(shell which xauth)
+ifeq "$(XAUTHCMDPATH)" ""
+	XAUTHCMDPATH=/usr/bin/xauth
+endif
 
 BINLINKPATH=$(OARDIR)
 SBINLINKPATH=$(OARDIR)
@@ -91,10 +95,11 @@ sudowrapper: man
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
+	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
 	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^OARCMD=.*#OARCMD=oarsh#" $(BINDIR)/oarsh
 	install -m 0755 Tools/configurator_wrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/configurator_wrapper.sh
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#;;s#^OARXAUTHLOCATION=.*#OARXAUTHLOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/configurator_wrapper.sh
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	install -m 0755 Tools/oarsh/oarcp $(BINDIR)
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(BINDIR)/oarcp
@@ -224,7 +229,9 @@ node: man
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
+	perl -i -pe "s#^XAuthLocation.*#XAuthLocation\s$(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
+	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh_shell
 	install -m 0755 Tools/detect_resources $(OARDIR)
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
