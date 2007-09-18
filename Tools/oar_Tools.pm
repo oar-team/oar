@@ -466,9 +466,8 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$@){
     my $cmd_serial = Dumper(\@cmd);
 
     my $script = '
-if ((!defined($ENV{TERM})) or ($ENV{TERM} eq "") or ($ENV{TERM} eq "unknown")){
-    $ENV{TERM} = "xterm";
-}
+$ENV{TERM} = "unknown";
+$ENV{BASH_ENV} = "$ENV{HOME}/.bashrc";
 
 $ENV{OAR_STDOUT} = "'.$stdout_file.'";
 $ENV{OAR_STDERR} = "'.$stderr_file.'";
