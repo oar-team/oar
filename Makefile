@@ -223,7 +223,7 @@ node: man
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
-	perl -i -pe "s#^XAuthLocation.*#XAuthLocation\s$(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
+	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh_shell
 	install -m 0755 Tools/detect_resources $(OARDIR)
