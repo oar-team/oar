@@ -22,6 +22,7 @@ WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
 CONFIG_CMDS=$(OARDIR)/cmds
 DEB_INSTALL=$(OARDIR)
+DEB_SBINDIR=$(SBINDIR)
 XAUTHCMDPATH=$(shell which xauth)
 ifeq "$(XAUTHCMDPATH)" ""
 	XAUTHCMDPATH=/usr/bin/xauth
@@ -126,7 +127,7 @@ common:
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
-	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
+	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 	rm $(OARDIR)/sudowrapper.sh
 
 server:
