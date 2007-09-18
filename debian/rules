@@ -101,6 +101,7 @@ install-indep:
 		BINLINKPATH=../lib/oar \
 		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
+		DEB_SBINDIR=/usr/sbin \
 		SBINLINKPATH=../lib/oar
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
