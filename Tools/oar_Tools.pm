@@ -461,7 +461,7 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$@){
 
     my $script = '
 $ENV{TERM} = "unknown";
-$ENV{BASH_ENV} = "$ENV{HOME}/.bash_profile";
+$ENV{BASH_ENV} = "$ENV{HOME}/.bashrc";
 
 $ENV{OAR_STDOUT} = "'.$stdout_file.'";
 $ENV{OAR_STDERR} = "'.$stderr_file.'";
