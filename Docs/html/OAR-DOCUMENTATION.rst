@@ -27,7 +27,7 @@
   productive plateforms and research experiments.
 
 
-**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR 2.0**
+**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR >= 2.0.0**
 
 PDF version : `<OAR-DOCUMENTATION.pdf>`_
 

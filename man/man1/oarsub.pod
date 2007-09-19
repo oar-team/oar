@@ -214,13 +214,17 @@ Job submission with arguments :
 
 =back
 
-Script example:
+Script example (file /home/users/toto/script.sh):
 
 =over
 
-=item #OAR -l /nodes=4
+=item #!/bin/bash
 
-=item #OAR -q long -l walltime=2:30
+=item #OAR -l /nodes=4/cpu=1,walltime=3:15:00
+
+=item #OAR -q long
+
+=item #OAR -p "switch = 'sw3' or switch = 'sw5'"
 
 =item /home/users/toto/prog
 
@@ -230,7 +234,7 @@ Submit the script :
 
 =over
 
-=item oarsub -S /home/users/toto/script
+=item oarsub -S /home/users/toto/script.sh
 
 =back
 
