@@ -364,6 +364,7 @@ sub print_job($$){
             print("    comment = $job_info->{message}\n");
             print("    wanted_resources = $resources_string\n");
             print("    queue = $job_info->{queue_name}\n");
+            print("    types = ".join(", ",@job_types)."\n");
             $job_info->{command} = '' if (!defined($job_info->{command}));
             print("    command = $job_info->{command}\n");
             print("    launchingDirectory = $job_info->{launching_directory}\n");
