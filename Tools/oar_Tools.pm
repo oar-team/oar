@@ -211,6 +211,9 @@ sub get_ssh_timeout(){
     return($Timeout_ssh);
 }
 
+sub set_ssh_timeout($){
+    $Timeout_ssh = shift;
+}
 
 sub get_default_oarexec_directory(){
     return($Default_oarexec_directory);

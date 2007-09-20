@@ -71,6 +71,10 @@ my $Cpuset_file = get_conf("CPUSET_FILE");
 $Cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($Cpuset_file));
 $Cpuset_file = "$ENV{OARDIR}/$Cpuset_file" if ($Cpuset_file !~ /^\//);
 
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+}
+
 my $base;
 
 $base = iolib::connect();

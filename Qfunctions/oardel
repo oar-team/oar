@@ -45,6 +45,10 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
     oar_Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
 }
 
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+}
+
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
 my $Checkpoint;
