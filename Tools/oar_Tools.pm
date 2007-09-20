@@ -12,7 +12,7 @@ use Fcntl;
 # Constants
 my $Default_leon_soft_walltime = 20;
 my $Default_leon_walltime = 60;
-my $Timeout_ssh = 30;
+my $Timeout_ssh = 120;
 my $Default_server_prologue_epilogue_Timeout = 60;
 my $bipbip_oarexec_hashtable_send_timeout = 30;
 my $Default_Dead_switch_time = 0;

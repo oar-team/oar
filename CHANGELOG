@@ -10,6 +10,7 @@ version 2.2.5:
   - Debug xauth path.
   - bug 3995: set project correctly when resubmitting a job
   - debug 'bash -c' on Fedora
+  - debug reservations with CPUSET_ERROR (remove bad hosts and continue)
   
 version 2.2.4:
 --------------

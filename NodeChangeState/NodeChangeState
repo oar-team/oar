@@ -25,6 +25,7 @@ iolib::lock_table($base,["resources","assigned_resources","jobs","job_state_logs
 my @events_to_check = iolib::get_to_check_events($base);
 foreach my $i (@events_to_check){
     oar_debug("[NodeChangeState] Check event for the job $i->{job_id} with type $i->{type}\n");
+    my $job = iolib::get_job($base,$i->{job_id});
     
     #########################################
     # Check if we must change the job state #
@@ -42,10 +43,17 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "RESERVATION_NO_NODE") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
-        my $job = iolib::get_job($base,$i->{job_id});
         if (($job->{reservation} eq "None") or ($i->{type} eq "RESERVATION_NO_NODE") or ($job->{assigned_moldable_job} == 0)){
             iolib::set_job_state($base,$i->{job_id},"Error");
             iolib::log_job($base,$i->{job_id});
+        }elsif ($job->{reservation} ne "None"){
+            if (
+                ($i->{type} ne "PING_CHECKER_NODE_SUSPECTED") &&
+                ($i->{type} ne "CPUSET_ERROR")
+               ){
+                iolib::set_job_state($base,$i->{job_id},"Error");
+                iolib::log_job($base,$i->{job_id});
+            }
         }
     }
     
@@ -92,7 +100,6 @@ foreach my $i (@events_to_check){
                ){
             @hosts = iolib::get_hostname_event($base,$i->{event_id});
         }else{
-            my $job = iolib::get_job($base,$i->{job_id});
             @hosts = iolib::get_job_host_log($base,$job->{assigned_moldable_job});
             if (($i->{type} ne "EXTERMINATE_JOB") &&
                 ($i->{type} ne "PROLOGUE_ERROR") &&
@@ -150,7 +157,6 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT")
        ){
-        my $job = iolib::get_job($base,$i->{job_id});
         if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (iolib::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
             my $new_job_id = iolib::resubmit_job($base,$i->{job_id});
             oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because the event was $i->{type} and the job is neither a reservation nor an interactive job.\n");
@@ -166,7 +172,6 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "HOLD_RUNNING_JOB") ||
         ($i->{type} eq "RESUME_JOB")
        ){
-        my $job = iolib::get_job($base,$i->{job_id});
         if ((($i->{type} eq "HOLD_WAITING_JOB") or ($i->{type} eq "HOLD_RUNNING_JOB")) and (($job->{state} eq "Waiting"))){
             iolib::set_job_state($base,$job->{job_id},"Hold");
             if ($job->{job_type} eq "INTERACTIVE"){
@@ -258,7 +263,6 @@ foreach my $i (@events_to_check){
     if (
         ($i->{type} eq "FRAG_JOB_REQUEST")
        ){
-            my $job = iolib::get_job($base,$i->{job_id});
             my ($addr,$port) = split(/:/,$job->{info_type});
             oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"INFO","Your job was asked to be deleted\n$i->{description}");
     }

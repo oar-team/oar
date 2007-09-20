@@ -23,24 +23,15 @@ my $Cpuset;
 my $Cpuset_path = "oar";
 my $Allow_SSH_type = "allow_classic_ssh";
 die "Invalid cpuset_path: $Cpuset_path.\n" if $Cpuset_path =~ /\//;
-my $Data_structure_transfer_timeout = 30;
 my $Security_pam_file = "$ENV{HOME}/access.conf";
 my $Security_pam_file_tmp = "$ENV{HOME}/access.conf.tmp";
 
-eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Data_structure_transfer_timeout);
-    my $tmp = "";
-    while (<STDIN>){
-        $tmp .= $_;
-    }
-    $Cpuset = eval($tmp);
-    alarm(0);
-};
-if( $@ ){
-    print("[cpuset_manager] Timeout of hashtable SSH transfer\n");
-    exit(1);
+my $tmp = "";
+while (<STDIN>){
+    $tmp .= $_;
 }
+$Cpuset = eval($tmp);
+
 # Get the data structure only for this node
 my $Cpuset_name = $Cpuset->{name};
 my @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
