@@ -7,22 +7,13 @@
 #                       suspended
 
 my $Hash;
-my $Data_structure_transfer_timeout = 30;
 
-eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Data_structure_transfer_timeout);
-    my $tmp = "";
-    while (<STDIN>){
-        $tmp .= $_;
-    }
-    $Hash = eval($tmp);
-    alarm(0);
-};
-if( $@ ){
-    print("[suspend_resume_manager] Timeout of hashtable SSH transfer\n");
-    exit(1);
+my $tmp = "";
+while (<STDIN>){
+    $tmp .= $_;
 }
+$Hash = eval($tmp);
+
 # Get the cpuset name
 my $Cpuset_name = $Hash->{name};
 if (!defined($Cpuset_name)){

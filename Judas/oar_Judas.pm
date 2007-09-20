@@ -35,6 +35,9 @@ my $mail_recipient = get_conf("MAIL_RECIPIENT");
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+}
 
 # this function redirect STDOUT and STDERR into the log file
 # return the pid of the fork process

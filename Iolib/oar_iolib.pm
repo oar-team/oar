@@ -1403,6 +1403,39 @@ sub log_job($$){
 }
 
 
+# archive_some_moldable_job_nodes
+# sets the index fields to LOG in the table assigned_resources
+# parameters : base, mjobid, hostnames
+# return value : /
+sub archive_some_moldable_job_nodes($$$){
+    my $dbh = shift;
+    my $mjob_id = shift;
+    my $hosts = shift;
+    
+    if ($Db_type eq "Pg"){
+        $dbh->do("  UPDATE assigned_resources
+                    SET
+                        assigned_resource_index = \'LOG\'
+                    FROM resources
+                    WHERE
+                        assigned_resources.assigned_resource_index = \'CURRENT\'
+                        AND assigned_resources.moldable_job_id = $mjob_id
+                        AND resources.resource_id = assigned_resources.resource_id
+                        AND resources.network_address IN (".join(",","\'@{$hosts}\'").") 
+             ");
+    }else{
+        $dbh->do("  UPDATE assigned_resources, resources
+                    SET 
+                        assigned_resources.assigned_resource_index = \'LOG\'
+                    WHERE
+                        assigned_resources.assigned_resource_index = \'CURRENT\'
+                        AND assigned_resources.moldable_job_id = $mjob_id
+                        AND resources.resource_id = assigned_resources.resource_id
+                        AND resources.network_address IN (".join(",","\'@{$hosts}\'").")
+                ");
+    }
+}
+
 
 # Resubmit a job and give the new job_id
 # args : database, job id
@@ -5302,6 +5335,9 @@ sub job_finishing_sequence($$$$$$$$){
             my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
             my $openssh_cmd = get_conf("OPENSSH_CMD");
             $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+            if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+                oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+            }
             my $cpuset_file = get_conf("CPUSET_FILE");
             $cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($cpuset_file));
             $cpuset_file = "$ENV{OARDIR}/$cpuset_file" if ($cpuset_file !~ /^\//);

@@ -17,22 +17,13 @@ use Fcntl ':flock';
 use Data::Dumper;
 
 my $Cpuset;
-my $Data_structure_transfer_timeout = 30;
 
-eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
-    alarm($Data_structure_transfer_timeout);
-    my $tmp = "";
-    while (<STDIN>){
-        $tmp .= $_;
-    }
-    $Cpuset = eval($tmp);
-    alarm(0);
-};
-if( $@ ){
-    print("[cpuset_manager] Timeout of hashtable SSH transfer\n");
-    exit(1);
+my $tmp = "";
+while (<STDIN>){
+    $tmp .= $_;
 }
+$Cpuset = eval($tmp);
+
 # Get the data structure only for this node
 my $Cpuset_name = $Cpuset->{name};
 my @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};

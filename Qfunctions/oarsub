@@ -578,6 +578,10 @@ if (defined($ENV{OARDIR})){
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+}
+
 Getopt::Long::Configure ("gnu_getopt");
 my $Version;
 GetOptions ("resource|l=s" => \@resource,

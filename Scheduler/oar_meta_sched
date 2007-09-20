@@ -170,6 +170,9 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
                 my $openssh_cmd = get_conf("OPENSSH_CMD");
                 $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+                if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+                    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+                }
                 my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
                 $suspend_file = oar_Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
                 $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);

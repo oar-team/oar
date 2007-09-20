@@ -71,6 +71,10 @@ my $Cpuset_file = get_conf("CPUSET_FILE");
 $Cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($Cpuset_file));
 $Cpuset_file = "$ENV{OARDIR}/$Cpuset_file" if ($Cpuset_file !~ /^\//);
 
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+}
+
 my $base;
 
 $base = iolib::connect();
@@ -90,14 +94,7 @@ if (!(($job->{state} eq "Launching") or (($job->{state} eq "Running")))){
     exit 1;
 }
 
-my $host_to_connect_via_ssh = $hosts[0];
-#deploy, cosystem and no host part
-my $types = iolib::get_current_job_types($base,$Job_id);
-if ((defined($types->{cosystem})) or ($#hosts < 0)){
-    $host_to_connect_via_ssh = $Cosystem_hostname;
-}elsif (defined($types->{deploy})){
-    $host_to_connect_via_ssh = $Deploy_hostname;
-}
+
 #deploy, cosystem and no host part
 
 #check if we must treate the end of a oarexec
@@ -158,7 +155,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         my $taktuk_cmd = get_conf("TAKTUK_CMD");
         my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
-            my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$Job_id] Bad cpuset file : $Cpuset_file\n";
+            my $str = "[bipbip $Job_id] [CPUSET] Bad cpuset file : $Cpuset_file\n";
             oar_Judas::oar_error($str);
             iolib::add_new_event($base, "CPUSET_MANAGER_FILE", $Job_id, $str);
         }else{
@@ -168,16 +165,38 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
             # Clean already configured cpuset
             my @tmp_array = keys(%{$cpuset_nodes});
             if (($#bad >= 0) and ($#tmp_array > $#bad)){
-                # remove non initialized nodes
-                foreach my $b (@bad){
-                    delete($cpuset_nodes->{$b});
+                # Verify if the job is a reservation
+                if ($job->{reservation} ne "None"){
+                    # Look at if there is at least one alive node for the reservation
+                    my @tmp_hosts;
+                    # Keep only alive nodes
+                    foreach my $n (@hosts){
+                        my $i = 0;
+                        while (($i <= $#bad) and ($n ne $bad[$i])){
+                            $i++;
+                        }
+                        push(@tmp_hosts, $n) if ($i > $#bad);
+                    }
+                    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
+                    iolib::set_job_message($base,$Job_id,"One or several nodes are not cpuset responding correctly");
+                    iolib::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id : @bad",\@bad);
+                    iolib::archive_some_moldable_job_nodes($base,$job->{assigned_moldable_job},\@bad);
+                    iolib::unlock_table($base);
+                    oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+                    @hosts = @tmp_hosts;
+                    @bad = ();
+                }else{
+                    # remove non initialized nodes
+                    foreach my $b (@bad){
+                        delete($cpuset_nodes->{$b});
+                    }
+                    $cpuset_data_hash = {
+                        name => $Cpuset_name,
+                        nodes => $cpuset_nodes
+                    };
+                    my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
+                    push(@bad, @bad_tmp);
                 }
-                $cpuset_data_hash = {
-                    name => $Cpuset_name,
-                    nodes => $cpuset_nodes
-                };
-                my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
-                push(@bad, @bad_tmp);
             }
         }
     }
@@ -229,7 +248,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
             exit(2);
         }
     }else{
-        oar_debug("[bipbip $Job_id] No bad node\n");
+        oar_debug("[bipbip $Job_id] No (enough) bad node\n");
     }
     # end CHECK
 }
@@ -320,6 +339,15 @@ if (is_conf("EPILOGUE_EXEC_FILE")){
 }
 
 my @oarexec_files = ("$ENV{OARDIR}/oar_Tools.pm","$ENV{OARDIR}/oarexec");
+
+my $host_to_connect_via_ssh = $hosts[0];
+#deploy, cosystem and no host part
+my $types = iolib::get_current_job_types($base,$Job_id);
+if ((defined($types->{cosystem})) or ($#hosts < 0)){
+    $host_to_connect_via_ssh = $Cosystem_hostname;
+}elsif (defined($types->{deploy})){
+    $host_to_connect_via_ssh = $Deploy_hostname;
+}
 
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
