@@ -220,7 +220,6 @@ sub get_free_resources($$$){
     while (($h <= $#{@{$gantt->[$hole_index]->[1]}}) and ($gantt->[$hole_index]->[1]->[$h]->[0] < $end_date)){
         $h++;
     }
-    print("FEE RESOURCES: $hole_index $h\n");
     return($gantt->[$hole_index]->[1]->[$h]->[1]);
 }
 
