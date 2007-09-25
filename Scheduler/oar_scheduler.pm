@@ -181,7 +181,8 @@ sub init_scheduler($$$$$$){
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));	
-	    my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
+	    Gantt_2::pretty_print($gantt);
+        my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
                                      				            $job->{start_time},
                                         			            $moldable->[1] + $Security_time_overhead,
                                        			            );
@@ -267,7 +268,7 @@ sub init_scheduler($$$$$$){
             iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
             oar_debug("[oar_scheduler] Treate waiting reservation $job->{job_id}: add in gantt values\n");
         }else{
-            oar_info("[oar_scheduler] Treate waiting reservation $job->{job_id}: cannot find resources for this reservation, did you remove some resources or change states into Dead???\n");
+            oar_warn("[oar_scheduler] Treate waiting reservation $job->{job_id}: cannot find resources for this reservation, did you remove some resources or change states into Dead???\n");
         }
     }
 }
