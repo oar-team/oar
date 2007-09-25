@@ -265,6 +265,9 @@ sub init_scheduler($$$$$$){
             # Update database
             push(@resources, @Resources_to_always_add);
             iolib::add_gantt_scheduled_jobs($dbh,$moldable->[2],$job->{start_time},\@resources);
+            oar_debug("[oar_scheduler] Treate waiting reservation $job->{job_id}: add in gantt values\n");
+        }else{
+            oar_info("[oar_scheduler] Treate waiting reservation $job->{job_id}: cannot find resources for this reservation, did you remove some resources or change states into Dead???\n");
         }
     }
 }
