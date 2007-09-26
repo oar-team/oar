@@ -11,11 +11,16 @@ version 2.2.5:
 
   - Bug fix: remove user command when oar execute the epilogue script on the nodes.
   - Clean debug and mail messages format.
-  - Remove bad oarsub syntax fromoarsub doc.
+  - Remove bad oarsub syntax from oarsub doc.
   - Debug xauth path.
   - bug 3995: set project correctly when resubmitting a job
   - debug 'bash -c' on Fedora
-  - debug reservations with CPUSET_ERROR (remove bad hosts and continue)
+  - bug 4069: reservations with CPUSET_ERROR (remove bad hosts and continue with a
+    right integrity in the database)
+  - bug 4044: fix free resources query for reservation (get the nearest hole from
+    the beginning of the reservation)
+  - bug 4013: now Dead, Suspected and Absent resources have different colors in
+    drawgantt with a popup on them.
   
 version 2.2.4:
 --------------

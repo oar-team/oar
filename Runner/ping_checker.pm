@@ -17,9 +17,9 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 my $Timeout_ping = 5;
 my $Timeout_fping = 15;
 my $Timeout_nmap = 30;
-my $Timeout_sentinelle = 60;
-my $Timeout_script_sentinelle = 60;
-my $Default_timeout = 60;
+my $Timeout_sentinelle = 300;
+my $Timeout_script_sentinelle = 300;
+my $Default_timeout = 300;
 
 #resolve host name and give its IP or return 0
 sub get_host_ip($){

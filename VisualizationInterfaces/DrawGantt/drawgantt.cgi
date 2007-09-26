@@ -333,7 +333,7 @@ def draw_resource_hierarchy(img)
 				y2 = $offsetgridy + deltay * (r_index + 1)
 
 				if p_index == 0
-						img.line(x1, y1, $sizey - $offsetgridy , y1, $blue);  
+						img.line(x1, y1, $sizex - $right_offsetgridx , y1, $blue);  
 				else
  					img.line(x1, y1, x2, y1, $gridcolor);   
 #				img.filledRectangle(x1, y1, x2, y2, $color_gray[( ( (3 * r_index) % 15) + 16 * p_index) % 31 ])
@@ -464,6 +464,8 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 	# allocate some colors
 
+	
+
 	$background =  img.colorAllocate($conf['background'])
 	$gridcolor =  img.colorAllocate($conf['gridcolor'])
 
@@ -472,6 +474,11 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	$red = img.colorAllocate(255,0,0)      
 	$blue = img.colorAllocate(0,0,255)
 	$orange = img.colorAllocate(0xFF,0x99,0x33)
+	
+	$state_color = Hash.new($red)
+	$state_color['Dead'] =  $red
+	$state_color['Suspected'] =  img.colorAllocate(0xFF,0x7B,0x7B)
+	$state_color['Absent'] =  img.colorAllocate(0xC2,0x22,0x00)
 
 	$color=[]
 	$color[0] = $white
@@ -661,6 +668,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		end 
 	end
 
+	dead_map = ""
 	dead_resources.each do |resource,dead_period|
 		dead_period.each do |a|
 
@@ -678,8 +686,20 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			r_index = $sorted_resources.index(resource)
 			
 			if !r_index.nil?
-				img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), $red)
+				x1 = start_x
+				x2 = stop_x
+				y1 = $offsetgridy + deltay * r_index
+				y2 = $offsetgridy + deltay * (r_index+1)
+				
+				img.filledRectangle(x1,y1,x2,y2, $state_color[value])
+				dead_map << '<area shape="rect" coords="' + "#{x1},#{y1},#{x2},#{y2}" +
+					'" onmouseout="return nd()" onmouseover="return overlib(\'' +
+					"Resource Id: #{resource}" +
+					"<br>Host: #{$resources[resource][$resource_properties_fields.index('network_address')]}" + 
+					"<br>State: #{value}" +
+				'\')" >'
 			end
+
 		end
 	end
 	
@@ -718,6 +738,8 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 					 "#{info[4]}" +
 					 '\')" >'
 	end
+
+	f_map.puts dead_map
 
 	f_map.puts '</map>'
 	f_map.close
@@ -789,7 +811,12 @@ def cgi_html(cgi)
 		origin = now.to_i-RANGE_SEC[range]/2
 	end
 
- 	origin = origin - origin % 3600
+	if (range == '3 days') || (range == 'week') || (range == 'month')
+		origin = origin - origin % 86400 - Time.at(origin).gmt_offset
+	else
+ 		origin = origin - origin % 3600
+	end
+	
 	wday, month, day, hour, year = Time.at(origin).strftime("%a %b %e %H:00 %Y").split(" ")
 	
 	#

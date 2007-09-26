@@ -206,10 +206,16 @@ sub find_hole($$$){
 sub get_free_resources($$$){
     my ($gantt, $begin_date, $duration) = @_;
     
-    my $hole_index = find_hole($gantt, $begin_date, $duration);
-    return($gantt->[0]->[4]) if ($hole_index > $#{@{$gantt}});
-
     my $end_date = $begin_date + $duration;
+    my $hole_index = 0;
+    # search the nearest hole
+    while (($hole_index <= $#{@{$gantt}}) and ($gantt->[$hole_index]->[0] < $begin_date) and
+            (($gantt->[$hole_index]->[1]->[$#{@{$gantt->[$hole_index]->[1]}}]->[0] < $end_date) or 
+                (($hole_index + 1 <= $#{@{$gantt}}) and $gantt->[$hole_index + 1]->[0] < $begin_date))){
+        $hole_index++;
+    }
+    return($gantt->[0]->[4]) if ($hole_index > $#{@{$gantt}});
+    
     my $h = 0;
     while (($h <= $#{@{$gantt->[$hole_index]->[1]}}) and ($gantt->[$hole_index]->[1]->[$h]->[0] < $end_date)){
         $h++;
