@@ -333,7 +333,7 @@ def draw_resource_hierarchy(img)
 				y2 = $offsetgridy + deltay * (r_index + 1)
 
 				if p_index == 0
-						img.line(x1, y1, $sizey - $offsetgridy , y1, $blue);  
+						img.line(x1, y1, $sizex - $right_offsetgridx , y1, $blue);  
 				else
  					img.line(x1, y1, x2, y1, $gridcolor);   
 #				img.filledRectangle(x1, y1, x2, y2, $color_gray[( ( (3 * r_index) % 15) + 16 * p_index) % 31 ])
@@ -811,7 +811,12 @@ def cgi_html(cgi)
 		origin = now.to_i-RANGE_SEC[range]/2
 	end
 
- 	origin = origin - origin % 3600
+	if (range == '3 days') || (range == 'week') || (range == 'month')
+		origin = origin - origin % 86400 - Time.at(origin).gmt_offset
+	else
+ 		origin = origin - origin % 3600
+	end
+	
 	wday, month, day, hour, year = Time.at(origin).strftime("%a %b %e %H:00 %Y").split(" ")
 	
 	#
