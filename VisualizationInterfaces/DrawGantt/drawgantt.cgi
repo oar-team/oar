@@ -275,7 +275,7 @@ def get_history(dbh,date_start,date_stop)
 			   (jobs_history[job_id]['state'] == "Resuming") ||
 				 (jobs_history[job_id]['state'] == "Launching")
 				if a_type.include?("besteffort")
-        	jobs_history[job_id]['qstop_time'] = get_gantt_visu_date(dbh);
+        	jobs_history[job_id]['stop_time'] = get_gantt_visu_date(dbh);
         else
           #This job must be already  printed by gantt
           next
