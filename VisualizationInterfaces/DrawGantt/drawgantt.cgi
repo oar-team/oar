@@ -691,12 +691,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 				y1 = $offsetgridy + deltay * r_index
 				y2 = $offsetgridy + deltay * (r_index+1)
 				
-				img.filledRectangle(x1,y1,x2,y2, $state_color[$resources[resource][$resource_properties_fields.index('state')]])
+				img.filledRectangle(x1,y1,x2,y2, $state_color[value])
 				dead_map << '<area shape="rect" coords="' + "#{x1},#{y1},#{x2},#{y2}" +
 					'" onmouseout="return nd()" onmouseover="return overlib(\'' +
 					"Resource Id: #{resource}" +
 					"<br>Host: #{$resources[resource][$resource_properties_fields.index('network_address')]}" + 
-					"<br>State: #{ $resources[resource][$resource_properties_fields.index('state')]}" +
+					"<br>State: #{value}" +
 				'\')" >'
 			end
 
