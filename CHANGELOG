@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+version 2.2.6:
+--------------
+
+  - Bug fix: job types was not sent to cpuset manager script anymore.
+             (border effect from bug 4069 resolution)
+
 version 2.2.5:
 --------------
 
