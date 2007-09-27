@@ -125,6 +125,7 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     oar_Tools::notify_tcp_socket($addr,$port,"Starting...");
 }
 
+my $types = iolib::get_current_job_types($base,$Job_id);
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;
@@ -323,7 +324,6 @@ if (defined($Server_prologue)){
 
 #CALL OAREXEC ON THE FIRST NODE
 my $moldable = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});
-my $types = iolib::get_current_job_types($base,$Job_id);
 my @resources = iolib::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
 my $pro_epi_timeout = oar_Tools::get_default_prologue_epilogue_timeout();
 if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
@@ -342,7 +342,6 @@ my @oarexec_files = ("$ENV{OARDIR}/oar_Tools.pm","$ENV{OARDIR}/oarexec");
 
 my $host_to_connect_via_ssh = $hosts[0];
 #deploy, cosystem and no host part
-my $types = iolib::get_current_job_types($base,$Job_id);
 if ((defined($types->{cosystem})) or ($#hosts < 0)){
     $host_to_connect_via_ssh = $Cosystem_hostname;
 }elsif (defined($types->{deploy})){

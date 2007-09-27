@@ -6,6 +6,12 @@ upstream development version:
 
   - add new oarmonitor command. This will permit to monitor OAR jobs on compute nodes.
 
+version 2.2.6:
+--------------
+
+  - Bug fix: job types was not sent to cpuset manager script anymore.
+             (border effect from bug 4069 resolution)
+
 version 2.2.5:
 --------------
 
