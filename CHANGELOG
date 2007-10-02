@@ -9,7 +9,7 @@ upstream development version:
 version 2.2.7:
 --------------
 
-  - Bug 4106: extra unwanted spaces in oarsh arguments are not here anymore.
+  - Bug 4106: fix oarsh and oarcp issue with some options (erroneous leading space)
 
 version 2.2.6:
 --------------
