@@ -110,7 +110,7 @@ fix_opts() {
                         if [ -z "${SSHARGS_OPTARG[$i]}" ]; then
 			        OPTS[$((OPTCOUNT++))]="-${SSHARGS_OPT[$i]}"
                         else
-			        OPTS[$((OPTCOUNT++))]="-${SSHARGS_OPT[$i]} ${SSHARGS_OPTARG[$i]}"
+			        OPTS[$((OPTCOUNT++))]="-${SSHARGS_OPT[$i]}${SSHARGS_OPTARG[$i]}"
                         fi
 		fi
 	done

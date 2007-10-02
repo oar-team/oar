@@ -6,6 +6,11 @@ upstream development version:
 
   - add new oarmonitor command. This will permit to monitor OAR jobs on compute nodes.
 
+version 2.2.7:
+--------------
+
+  - Bug 4106: extra unwanted spaces in oarsh arguments are not here anymore.
+
 version 2.2.6:
 --------------
 
