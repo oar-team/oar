@@ -27,6 +27,15 @@ foreach my $i (@events_to_check){
     oar_debug("[NodeChangeState] Check event for the job $i->{job_id} with type $i->{type}\n");
     my $job = iolib::get_job($base,$i->{job_id});
     
+    ####################################################
+    # Check if we must expressely change the job state #
+    ####################################################
+    if ($i->{type} eq "SWITCH_INTO_TERMINATE_STATE"){
+        iolib::set_job_state($base,$i->{job_id},"Terminated");
+    }elsif ($i->{type} eq "SWITCH_INTO_ERROR_STATE"){
+        iolib::set_job_state($base,$i->{job_id},"Error");
+    }
+
     #########################################
     # Check if we must change the job state #
     #########################################
@@ -41,18 +50,18 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
         ($i->{type} eq "RESERVATION_NO_NODE") ||
+        ($i->{type} eq "BAD_HASHTABLE_DUMP") ||
+        ($i->{type} eq "SSH_TRANSFER_TIMEOUT") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
         if (($job->{reservation} eq "None") or ($i->{type} eq "RESERVATION_NO_NODE") or ($job->{assigned_moldable_job} == 0)){
             iolib::set_job_state($base,$i->{job_id},"Error");
-            iolib::log_job($base,$i->{job_id});
         }elsif ($job->{reservation} ne "None"){
             if (
                 ($i->{type} ne "PING_CHECKER_NODE_SUSPECTED") &&
                 ($i->{type} ne "CPUSET_ERROR")
                ){
                 iolib::set_job_state($base,$i->{job_id},"Error");
-                iolib::log_job($base,$i->{job_id});
             }
         }
     }
@@ -64,8 +73,7 @@ foreach my $i (@events_to_check){
         # At this point the job was executed normally
         # The state is changed here to avoid to schedule other jobs
         # on nodes that will be Suspected
-        iolib::set_job_state($base,$i->{job_id},"Error");
-        iolib::log_job($base,$i->{job_id});
+        iolib::set_job_state($base,$i->{job_id},"Terminated");
     }
     
     #######################################
@@ -83,6 +91,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "USER_SHELL") ||
         ($i->{type} eq "EXTERMINATE_JOB") ||
         ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
+        ($i->{type} eq "SSH_TRANSFER_TIMEOUT") ||
+        ($i->{type} eq "BAD_HASHTABLE_DUMP") ||
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
         ($i->{type} eq "EXIT_VALUE_OAREXEC")
        ){
@@ -138,7 +148,6 @@ foreach my $i (@events_to_check){
         oar_warn("[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
         iolib::stop_all_queues($base);
         iolib::set_job_state($base,$i->{job_id},"Error");
-        iolib::log_job($base,$i->{job_id});
     }
 
     #####################################
@@ -270,15 +279,6 @@ foreach my $i (@events_to_check){
             oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"INFO","Your job was asked to be deleted\n$i->{description}");
     }
      
-    ####################################
-    # Archive data of finished jobs    #
-    ####################################
-    if (
-        ($i->{type} eq "LOG_JOB")
-       ){
-            iolib::log_job($base,$i->{job_id});
-    }
-   
     iolib::check_event($base, $i->{type}, $i->{job_id});
 }
 

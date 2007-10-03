@@ -14,7 +14,7 @@
 #     - 12 : cannot go into the launching directory of the job and epilogue was in error
 #     - 10 : cannot go into the launching directory of the job
 #     - 20 : cannot create STDOUT and STDERR files
-#     - 22 : cannot go into the launching directory of the job and epilogue was in error
+#     - 22 : cannot create STDOUT and STDERR files and epilogue was in error
 #     - 30 : timeout of the bipbip hashtable send
 #     - 33 : oarexec was stopped normally via USR1 signal but there was an epilogue error
 #     - 34 : all worked normally and this is the result of an USR1 signal

@@ -1258,63 +1258,65 @@ sub set_job_state($$$) {
     my $job_id = shift;
     my $state = shift;
     
-    $dbh->do("  UPDATE jobs
-                SET
-                    state = \'$state\'
-                WHERE
-                    job_id = $job_id
-             ");
-    
-    my $date = get_date($dbh);
-    $dbh->do("  UPDATE job_state_logs
-                SET
-                    date_stop = \'$date\'
-                WHERE
-                    date_stop = 0
-                    AND job_id = $job_id
-             ");
-    $dbh->do("  INSERT INTO job_state_logs (job_id,job_state,date_start)
-                VALUES ($job_id,\'$state\',\'$date\')
-             ");
+    if ($dbh->do("  UPDATE jobs
+                    SET
+                        state = \'$state\'
+                    WHERE
+                        job_id = $job_id AND
+                        state != \'Error\' AND
+                        state != \'Terminated\'
+                 ") > 0){
+        my $date = get_date($dbh);
+        $dbh->do("  UPDATE job_state_logs
+                    SET
+                        date_stop = \'$date\'
+                    WHERE
+                        date_stop = 0
+                        AND job_id = $job_id
+                ");
+        $dbh->do("  INSERT INTO job_state_logs (job_id,job_state,date_start)
+                    VALUES ($job_id,\'$state\',\'$date\')
+                 ");
 
-    if (($state eq "Terminated") or ($state eq "Error") or ($state eq "Running") or ($state eq "Suspended") or ($state eq "Resuming")){
-        my $job = get_job($dbh,$job_id);
-        my ($addr,$port) = split(/:/,$job->{info_type});
-        if ($state eq "Suspended"){
-            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"SUSPENDED","Job is suspended.");
-        }elsif ($state eq "Resuming"){
-            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RESUMING","Job is resuming.");
-        }elsif ($state eq "Running"){
-            update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+ 2");
-            oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
-        }elsif (($state eq "Terminated") or ($state eq "Error")){
-            #$dbh->do("  DELETE FROM challenges
-            #            WHERE job_id = $job_id
-            #         ");
+        if (($state eq "Terminated") or ($state eq "Error") or ($state eq "Running") or ($state eq "Suspended") or ($state eq "Resuming")){
+            my $job = get_job($dbh,$job_id);
+            my ($addr,$port) = split(/:/,$job->{info_type});
+            if ($state eq "Suspended"){
+                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"SUSPENDED","Job is suspended.");
+            }elsif ($state eq "Resuming"){
+                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RESUMING","Job is resuming.");
+            }elsif ($state eq "Running"){
+                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+ 2");
+                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
+            }elsif (($state eq "Terminated") or ($state eq "Error")){
+                #$dbh->do("  DELETE FROM challenges
+                #            WHERE job_id = $job_id
+                #         ");
             
-            if ($job->{stop_time} < $job->{start_time}){
-                $dbh->do("  UPDATE jobs
-                            SET stop_time = start_time
-                            WHERE
-                                job_id = $job_id
-                         ");
-            }
-            if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
-                # Update last_job_date field for resources used
-                iolib::update_scheduler_last_job_date($dbh, $date,$job->{assigned_moldable_job});
-            }
+                if ($job->{stop_time} < $job->{start_time}){
+                    $dbh->do("  UPDATE jobs
+                                SET stop_time = start_time
+                                WHERE
+                                    job_id = $job_id
+                             ");
+                }
+                if (defined($job->{assigned_moldable_job}) and ($job->{assigned_moldable_job} ne "")){
+                    # Update last_job_date field for resources used
+                    iolib::update_scheduler_last_job_date($dbh, $date,$job->{assigned_moldable_job});
+                }
     
-            if ($state eq "Terminated"){
-                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
-            }else{
-                oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally or an OAR error occured.");
+                if ($state eq "Terminated"){
+                    oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
+                }else{
+                    oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally or an OAR error occured.");
+                }
+                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"- 2");
+                
+                # Here we must not be asynchronously with the scheduler
+                iolib::log_job($dbh,$job->{job_id});
+                # $dbh is valid so these 2 variables must be defined
+                oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
             }
-        }
-        if (($state eq "Terminated") or ($state eq "Error")){ 
-            update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"- 2");
-            add_new_event($dbh,"LOG_JOB",$job->{job_id},"The job $job->{job_id} is finished so we can make some optimizations in the database");
-            # $dbh is valid so these 2 variables must be defined
-            oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         }
     }
 }
@@ -4871,6 +4873,7 @@ sub get_to_check_events($){
                                 FROM event_logs
                                 WHERE
                                     to_check = \'YES\'
+                                ORDER BY event_id
                             ");
     $sth->execute();
 
@@ -5053,20 +5056,25 @@ sub check_end_of_job($$$$$$$$$$){
         set_job_state($base,$Jid,"Finishing");
         set_job_exit_code($base,$Jid,$exit_script_value);
         unlock_table($base);
+        my @events;
         if($error == 0){
             oar_Judas::oar_debug("[bipbip $Jid] User Launch completed OK\n");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 1){
             #Prologue error
-            my $strWARN = "[bipbip $Jid] error of oarexec prologue; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"PROLOGUE_ERROR",$strWARN);
+            my $strWARN = "[bipbip $Jid] error of oarexec prologue";
+            push(@events, {type => "PROLOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 2){
             #Epilogue error
-            my $strWARN = "[bipbip $Jid] error of oarexec epilogue; the node $hosts->[0] is Suspected; (jobId = $Jid)";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            my $strWARN = "[bipbip $Jid] error of oarexec epilogue (jobId = $Jid)";
+            push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] the job $Jid was killed by Leon";
             oar_Judas::oar_debug("$strWARN\n");
             my $types = iolib::get_current_job_types($base,$Jid);
@@ -5074,86 +5082,105 @@ sub check_end_of_job($$$$$$$$$$){
                 if (iolib::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);
                     oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
-                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id).\n");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] the job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id)"});
                 }
             }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 4){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] The job $Jid was killed by Leon and oarexec epilogue was in error";
             my $types = iolib::get_current_job_types($base,$Jid);
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
                 if (iolib::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);
                     oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
-                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id).\n");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id)"});
                 }
             }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 5){
             #Oarexec is not able to write in the node file
             my $strWARN = "[bipbip $Jid] oarexec cannot create the node file";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_WRITE_NODE_FILE",$strWARN);
+            push(@events, {type => "CANNOT_WRITE_NODE_FILE", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 6){
             #Oarexec can not write its pid file
             my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_WRITE_PID_FILE",$strWARN);
+            push(@events, {type => "CANNOT_WRITE_PID_FILE", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 7){
             #Can t get shell of user
             my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0]";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"USER_SHELL",$strWARN);
+            push(@events, {type => "USER_SHELL", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 8){
             #Oarexec can not create tmp directory
             my $strWARN = "[bipbip $Jid] oarexec cannot create tmp directory on $hosts->[0] : ".oar_Tools::get_default_oarexec_directory();
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"CANNOT_CREATE_TMP_DIRECTORY",$strWARN);
+            push(@events, {type => "CANNOT_CREATE_TMP_DIRECTORY", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0]";
-            add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
+            push(@events, {type => "WORKING_DIRECTORY", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 20){
             #oarexecuser.sh can not write stdout and stderr files
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] Cannot create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
-            add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Error",undef,undef);
+            push(@events, {type => "OUTPUT_FILES", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 12){
             #oarexecuser.sh can not go into working directory and epilogue is in error
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
             oar_Judas::oar_warn("$strWARN\n");
-            add_new_event($base,"WORKING_DIRECTORY",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            push(@events, {type => "WORKING_DIRECTORY", string => $strWARN});
+            push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 22){
-            #oarexecuser.sh can not write stdout and stderr files and epilogue is in error
-            my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0] AND epilogue is in error";
+            #oarexecuser.sh can not create STDOUT and STDERR files and epilogue is in error
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
+            my $strWARN = "[bipbip $Jid] Cannot create STDOUT and STDERR files AND epilogue is in error";
             oar_Judas::oar_warn("$strWARN\n");
-            add_new_event($base,"OUTPUT_FILES",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            push(@events, {type => "OUTPUT_FILES", string => $strWARN});
+            push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 30){
             #oarexec timeout on bipbip hashtable transfer via SSH
             my $strWARN = "[bipbip $Jid] Timeout SSH hashtable transfer on $hosts->[0]";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"SSH_TRANSFER_TIMEOUT",$strWARN);
+            push(@events, {type => "SSH_TRANSFER_TIMEOUT", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 31){
             #oarexec got a bad hashtable dump from bipbip
             my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"BAD_HASHTABLE_DUMP",$strWARN);
+            push(@events, {type => "BAD_HASHTABLE_DUMP", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 33){
             #oarexec received a SIGUSR1 signal and there was an epilogue error
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal and there was an epilogue error";
             #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 34){
             #oarexec received a SIGUSR1 signal
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
             oar_Judas::oar_debug("$strWARN\n");
             #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 50){
     	    # launching oarexec timeout
             my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"LAUNCHING_OAREXEC_TIMEOUT",$strWARN);
+            push(@events, {type => "LAUNCHING_OAREXEC_TIMEOUT", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }elsif ($error == 40){
             #oarexec received a SIGUSR2 signal
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
             oar_Judas::oar_debug("$strWARN\n");
             my $types = iolib::get_current_job_types($base,$Jid);
@@ -5161,16 +5188,17 @@ sub check_end_of_job($$$$$$$$$$){
                 if ($exit_script_value == 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);
                     oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
                 }else{
                     oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY_CANCELLED",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value.");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
                 }
             }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,"Terminated",undef,undef);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 41){
             #oarexec received a SIGUSR2 signal
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             oar_Judas::oar_debug("$strWARN\n");
             my $types = iolib::get_current_job_types($base,$Jid);
@@ -5178,17 +5206,19 @@ sub check_end_of_job($$$$$$$$$$){
                 if ($exit_script_value == 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);
                     oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id).");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
                 }else{
                     oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-                    iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY_CANCELLED",$Jid,"The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value.");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
                 }
             }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EPILOGUE_ERROR",$strWARN);
+            push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
             my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,undef,"EXIT_VALUE_OAREXEC",$strWARN);
+            push(@events, {type => "EXIT_VALUE_OAREXEC", string => $strWARN});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }
     }else{
         oar_Judas::oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
@@ -5199,15 +5229,13 @@ sub check_end_of_job($$$$$$$$$$){
 }
 
 
-sub job_finishing_sequence($$$$$$$$){
+sub job_finishing_sequence($$$$$$){
     my ($dbh,
         $epilogue_script,
         $almighty_host,
         $almighty_port,
         $job_id,
-        $state_to_switch,
-        $event_tag,
-        $event_string) = @_;
+        $events) = @_;
 
     if (defined($epilogue_script)){
         # launch server epilogue
@@ -5244,32 +5272,22 @@ sub job_finishing_sequence($$$$$$$$){
         };
         if ($@){
             if ($@ eq "alarm\n"){
-                undef($state_to_switch);
                 if (defined($pid)){
                     my ($children,$cmd_name) = oar_Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
                 my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
                 oar_Judas::oar_error("$str\n");
-                iolib::add_new_event($dbh,"SERVER_EPILOGUE_TIMEOUT",$job_id,"$str");
-                oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+                push(@{$events}, {type => "SERVER_EPILOGUE_TIMEOUT", string => $str});
             }
         }elsif ($exit_value != 0){
-            undef($state_to_switch);
             my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
             oar_Judas::oar_error("$str\n");
-            iolib::add_new_event($dbh,"SERVER_EPILOGUE_EXIT_CODE_ERROR",$job_id,"$str");
-            oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+            push(@{$events}, {type => "SERVER_EPILOGUE_EXIT_CODE_ERROR", string => $str});
         }
     }
     
-    if (defined($event_tag)){
-        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] 4\n");
-        oar_Judas::oar_warn("$event_string\n");
-        add_new_event($dbh,$event_tag,$job_id,$event_string);
-        oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
-    }
-    
+   
     my $types = iolib::get_current_job_types($dbh,$job_id);
     if ((!defined($types->{deploy})) and (!defined($types->{cosystem}))){
         ###############
@@ -5318,7 +5336,7 @@ sub job_finishing_sequence($$$$$$$$){
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
                     oar_Judas::oar_error($str);
-                    add_new_event($dbh, "CPUSET_MANAGER_FILE", $job_id, $str);
+                    push(@{$events}, {type => "CPUSET_MANAGER_FILE", string => $str});
                 }elsif ($#bad_tmp >= 0){
                     # Verify if the errors are not from another job with the same cpuset_name
                     # So the cpuset was already deleted --> not an error
@@ -5351,10 +5369,8 @@ sub job_finishing_sequence($$$$$$$$){
                         }
                     }
                     if ($#bad >= 0){
-                        undef($state_to_switch);
                         oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
-                        iolib::add_new_event_with_host($dbh,"CPUSET_CLEAN_ERROR",$job_id,"[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad",\@bad);
-                        oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState");
+                        push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad"});
                     }else{
                         oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
                     }
@@ -5366,14 +5382,11 @@ sub job_finishing_sequence($$$$$$$$){
         ####################
     }
 
-    if (defined($state_to_switch)){
-        lock_table($dbh,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-        oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] Set job $job_id into state $state_to_switch\n");
-        set_job_state($dbh,$job_id,$state_to_switch);
-        unlock_table($dbh);
+    foreach my $e (@{$events}){
+        oar_Judas::oar_warn("$e->{string}\n");
+        add_new_event($dbh,$e->{type},$job_id,$e->{string});
     }
-
-    # Look at if this is a besteffort job of the type idempotent
+    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{@{$events}} >= 0);
 }
 
 
