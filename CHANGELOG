@@ -9,7 +9,10 @@ upstream development version:
 version 2.2.7:
 --------------
 
-  - Bug 4106: fix oarsh and oarcp issue with some options (erroneous leading space)
+  - Bug 4106: fix oarsh and oarcp issue with some options (erroneous leading space).
+  - Bug 4125: remove exit_code data when it is not relevant.
+  - Fix potential bug when changing asynchronously the state of the jobs into
+    "Terminated" or "Error".
 
 version 2.2.6:
 --------------

@@ -722,8 +722,6 @@ The different event types are:
  - "LAUNCHING_OAREXEC_TIMEOUT" : oarexec was too long to initialize itself.
  - "RESERVATION_NO_NODE" : All nodes were detected as bad for the reservation
    job.
- - "LOG_JOB" : When a job is completely finished then tell OAR to optimize the
-   database content.
 
 *event_log_hostnames*
 ~~~~~~~~~~~~~~~~~~~~~
