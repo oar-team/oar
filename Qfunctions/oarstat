@@ -284,7 +284,6 @@ sub print_job($$){
             assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
-            exit_code => $job_info->{exit_code},
             launchingDirectory => $job_info->{launching_directory},
             jobType => $job_info->{job_type},
             properties => $job_info->{properties},
@@ -301,6 +300,9 @@ sub print_job($$){
             cpuset_name => $cpuset_name,
             types => \@job_types
         );
+        if ($job_info->{state} eq 'Terminated') {
+            $data_to_display{'exit_code'}=$job_info->{exit_code};
+        }
     }else{
         %data_to_display = (
             Job_Id => $job_info->{job_id},
@@ -405,10 +407,12 @@ sub print_job($$){
             print("    queue = $job_info->{queue_name}\n");
             $job_info->{command} = '' if (!defined($job_info->{command}));
             print("    command = $job_info->{command}\n");
-            my $exit_code = $job_info->{exit_code} >> 8;
-            my $exit_num = $job_info->{exit_code} & 127;
-            my $exit_core = $job_info->{exit_code} & 128;
-            print("    exit_code = $job_info->{exit_code} ($exit_code,$exit_num,$exit_core)\n");
+            if ($job_info->{state} eq 'Terminated') {
+                my $exit_code = $job_info->{exit_code} >> 8;
+                my $exit_num = $job_info->{exit_code} & 127;
+                my $exit_core = $job_info->{exit_code} & 128;
+                print("    exit_code = $job_info->{exit_code} ($exit_code,$exit_num,$exit_core)\n");
+            }
             print("    launchingDirectory = $job_info->{launching_directory}\n");
             print("    jobType = $job_info->{job_type}\n");
             print("    properties = $job_info->{properties}\n");
