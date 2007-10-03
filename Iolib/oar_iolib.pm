@@ -5383,7 +5383,7 @@ sub job_finishing_sequence($$$$$$){
     }
 
     foreach my $e (@{$events}){
-        oar_Judas::oar_warn("$e->{string}\n");
+        oar_Judas::oar_debug("$e->{string}\n");
         add_new_event($dbh,$e->{type},$job_id,$e->{string});
     }
     oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{@{$events}} >= 0);
