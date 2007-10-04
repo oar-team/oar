@@ -1,4 +1,4 @@
-# $Id: cpuset_manager.pl 627 2007-07-11 18:51:25Z capitn $
+# $Id$
 # 
 # The cpuset_manager script is a perl script that oar server deploys on nodes 
 # to manage cpusets
