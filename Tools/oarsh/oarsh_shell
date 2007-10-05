@@ -6,6 +6,7 @@
 
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="/usr/bin/xauth"
+OAR_SHELL_WRAPPER="/etc/oar/shell_user_wrapper.sh"
 
 # $1 = Name of the cpuset
 # $2,$3,... = PIDs to add
@@ -29,6 +30,22 @@ function add_process_to_cpuset() {
     done
     sudo renice 0 $@ > /dev/null 2>&1
     ###########################################################################
+}
+
+# $1 = Name of the user
+# set global variable to fit to the user
+function get_and_set_user_info() {
+    # Get user shell (must be optimized)
+    PASSWD_LINE=$(getent passwd $1)
+    export SHELL=$(echo $PASSWD_LINE | cut -d : -f 7)
+    if [ "$SHELL" == "" ]
+    then
+        echo "oarsh: No shell found for user $1." 1>&2
+        exit 4
+    else
+        export HOME=$(echo $PASSWD_LINE | cut -d : -f 6)
+        cd $HOME
+    fi
 }
 
 if [ "$SUDO_USER" == "" ]
@@ -68,20 +85,22 @@ else
     if [ "$1" == "" ]
     then
         # Simulate initial login
-        exec sudo -i -u $SUDO_USER
-    else
-        # Get user shell (must be optimized)
-        PASSWD_LINE=$(getent passwd $SUDO_USER)
-        export SHELL=$(echo $PASSWD_LINE | cut -d : -f 7)
-        if [ "$SHELL" == "" ]
+        if [ -x "$OAR_SHELL_WRAPPER" ]
         then
-            echo "oarsh: No shell found for user $SUDO_USER." 1>&2
-            exit 4
+            get_and_set_user_info $SUDO_USER
+            exec sudo -H -u $SUDO_USER $OAR_SHELL_WRAPPER $SHELL
+        else    
+            exec sudo -i -u $SUDO_USER
+        fi
+    else
+        get_and_set_user_info $SUDO_USER
+        if [ -x "$OAR_SHELL_WRAPPER" ]
+        then
+            exec sudo -H -u $SUDO_USER $OAR_SHELL_WRAPPER $SHELL "$@"
         else
-            export HOME=$(echo $PASSWD_LINE | cut -d : -f 6)
-            cd $HOME
             exec sudo -H -u $SUDO_USER $SHELL "$@"
-#            exec sudo -s -H -u $SUDO_USER -- "$@"
+        fi
+
         fi
     fi
 fi
