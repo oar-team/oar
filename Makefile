@@ -100,7 +100,7 @@ sudowrapper: man
 	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^OARCMD=.*#OARCMD=oarsh#" $(BINDIR)/oarsh
 	install -m 0755 Tools/configurator_wrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#;;s#^OARXAUTHLOCATION=.*#OARXAUTHLOCATION=$(XAUTHCMDPATH)#;;s#^OARCONFFILE=.*#OARCONFFILE=$(OARCONFDIR)/oar\.conf#;;s#^OARSHELLWRAPPER=.*#OARSHELLWRAPPER=$(OARCONFDIR)/shell_user_wrapper\.sh#" $(OARDIR)/configurator_wrapper.sh
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#;;s#^OARXAUTHLOCATION=.*#OARXAUTHLOCATION=$(XAUTHCMDPATH)#;;s#^OARCONFFILE=.*#OARCONFFILE=$(OARCONFDIR)/oar\.conf#;;s#^OARSHELLWRAPPER=.*#OARSHELLWRAPPER=$(OARCONFDIR)/shell_user_wrapper\.pl#" $(OARDIR)/configurator_wrapper.sh
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
 	install -m 0755 Tools/oarsh/oarcp $(BINDIR)
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(BINDIR)/oarcp
@@ -233,9 +233,9 @@ node: man
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh_shell
-	perl -i -pe "s#^OAR_SHELL_WRAPPER=.*#OAR_SHELL_WRAPPER=$(OARCONFDIR)/shell_user_wrapper.sh#" $(OARDIR)/oarsh_shell
+	perl -i -pe "s#^OAR_SHELL_WRAPPER=.*#OAR_SHELL_WRAPPER=$(OARCONFDIR)/shell_user_wrapper.pl#" $(OARDIR)/oarsh_shell
 	install -m 0755 Tools/detect_resources $(OARDIR)
-	@if [ -f $(OARCONFDIR)/shell_user_wrapper.sh ]; then echo "Warning: $(OARCONFDIR)/shell_user_wrapper.sh already exists, not overwriting it." ; else install -m 0755 Tools/shell_user_wrapper.sh $(OARCONFDIR) ; fi
+	@if [ -f $(OARCONFDIR)/shell_user_wrapper.pl ]; then echo "Warning: $(OARCONFDIR)/shell_user_wrapper.pl already exists, not overwriting it." ; else install -m 0755 Tools/shell_user_wrapper.pl $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
 

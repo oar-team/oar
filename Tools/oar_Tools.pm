@@ -550,7 +550,7 @@ exit(0);
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : bash -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
@@ -561,7 +561,8 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$){
         $job_project,
         $job_walltime,
         $job_walltime_sec,
-        $job_env) = @_;
+        $job_env,
+        $shell_wrapper) = @_;
 
     my $exp_env = "";
     if ($job_env !~ /^\s*$/){
@@ -605,7 +606,12 @@ else
     exit 2;
 fi;
 
-(exec -a -${SHELL##*/} $SHELL);
+if [ -x "'.$shell_wrapper.'" ];
+then
+    '.$shell_wrapper.' $SHELL;
+else
+    (exec -a -${SHELL##*/} $SHELL);
+fi;
 
 exit 0
 ';
