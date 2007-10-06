@@ -810,13 +810,13 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
         if ($XML_enabled == 1){
             print(XMLout($tmp));
         }else{
-            warn("[ERROR] Cannot load XML module.\n");
+            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
         }
     }elsif(defined($YAML_mode)){
         if ($YAML_enabled == 1){
             print(YAML::Dump($tmp));
         }else{
-            warn("[ERROR] Cannot load YAML module.\n");
+            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
         }
     }
     print("\n##########\n\n");
