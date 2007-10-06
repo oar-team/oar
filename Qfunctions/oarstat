@@ -133,14 +133,14 @@ if (!defined($accounting_query)){
             if ($XML_enabled == 1){
             print(XMLout($hist));
             }else{
-                warn("[ERROR] Cannot load XML module.\n");
+                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
                 return(5);
             }
         }elsif(defined($YAML_mode)){
             if ($YAML_enabled == 1){
                 print(YAML::Dump($hist));
             }else{
-                warn("[ERROR] Cannot load YAML module.\n");
+                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
                 return(6);
             }
         }else{
@@ -346,14 +346,14 @@ sub print_job($$){
         if ($XML_enabled == 1){
         print(XMLout(\%data_to_display));
         }else{
-            warn("[ERROR] Cannot load XML module.\n");
+            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             return(5);
         }
     }elsif(defined($YAML_mode)){
         if ($YAML_enabled == 1){
             print(YAML::Dump(\%data_to_display));
         }else{
-            warn("[ERROR] Cannot load YAML module.\n");
+            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
             return(6);
         }
     }else{
