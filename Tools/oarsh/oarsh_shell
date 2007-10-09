@@ -100,8 +100,6 @@ else
         else
             exec sudo -H -u $OAR_JOB_USER $SHELL "$@"
         fi
-
-        fi
     fi
 fi
 

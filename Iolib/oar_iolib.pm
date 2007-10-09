@@ -576,8 +576,11 @@ sub get_job_cpuset_uid($$$$) {
                                 ORDER BY resources.resource_id ASC
                                 LIMIT 1");
     $sth->execute();
-    my @res = $sth->fetchrow_array();
-    return($res[0]);
+    my $result;
+    if (my @res = $sth->fetchrow_array()){
+        $result = $res[0];
+    }
+    return($result);
 }
 
 
