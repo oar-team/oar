@@ -56,7 +56,7 @@ sub sentinelle($$$$$);
 sub check_resource_property($);
 sub check_resource_system_property($);
 sub get_private_ssh_key_file_name($);
-sub format_ssh_pub_key($$$);
+sub format_ssh_pub_key($$$$);
 sub get_default_oar_ssh_authorized_keys_file();
 sub get_default_node_file_db_field();
 sub get_default_node_file_db_field_distinct_values();
@@ -141,12 +141,25 @@ sub get_private_ssh_key_file_name($){
 }
 
 # Add right environment variables to the given public key
-sub format_ssh_pub_key($$$){
+sub format_ssh_pub_key($$$$){
     my $key = shift;
     my $cpuset = shift;
     my $user = shift;
+    my $job_user = shift;
 
-    return('environment="OAR_CPUSET='.$cpuset.'",environment="SUDO_USER='.$user.'" '.$key."\n");
+    $job_user = $user if (!defined($job_user));
+    return('environment="OAR_CPUSET='.$cpuset.'",environment="OAR_JOB_USER='.$job_user.'" '.$key."\n");
+}
+
+# Return the name of the user on the computing nodes
+sub format_job_user($$$){
+    my $user = shift;
+    my $jobid = shift;
+    my $uid = shift;
+
+    my $res = $user;
+    $res .= '_'.$jobid if (defined($uid));
+    return($res);
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names

@@ -50,7 +50,7 @@ PrintLastLog yes
 KeepAlive yes
 TCPKeepAlive yes
 
-AcceptEnv OAR_CPUSET SUDO_USER
+AcceptEnv OAR_CPUSET OAR_JOB_USER
 PermitUserEnvironment yes
 UseLogin no
 AllowUsers oar

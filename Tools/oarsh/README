@@ -74,7 +74,7 @@ OARSH
 Its goal is to propagate two environment variables:
 
     - OAR_CPUSET : The name of the OAR job cpuset
-    - SUDO_USER : The name of the user who has launched oarsh command
+    - OAR_JOB_USER : The name of the user corresponding to the job
 
 So "oarsh" must be run by oar and a simple user must run it via the
 "sudowrapper" script to become oar.
@@ -87,7 +87,7 @@ OARSH_SHELL
 
 "oarsh_shell" must be the shell of the oar user on each nodes where you want
 oarsh to worked.
-This script takes "OAR_CPUSET" and "SUDO_USER" environment variables and
+This script takes "OAR_CPUSET" and "OAR_JOB_USER" environment variables and
 adds its PID in OAR_CPUSET cpuset. Then it searchs user shell and home and
 executes the right command (like ssh).
 
@@ -98,7 +98,7 @@ Important notes
     - On each nodes you must add in the SSH server configuration file (you
       have to install an openssh server with a version >= **3.9**)::
 
-        AcceptEnv OAR_CPUSET SUDO_USER
+        AcceptEnv OAR_CPUSET OAR_JOB_USER
         PermitUserEnvironment yes
         UseLogin no
         AllowUsers oar

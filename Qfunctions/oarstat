@@ -12,6 +12,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+my $Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
 
 #Try to load XML module
 my $XML_enabled = 1;
@@ -231,6 +232,7 @@ sub print_job($$){
     my @date_tmp;
     my @job_events;
     my %data_to_display;
+    my $job_user;
     my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name = "";
     $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
@@ -274,11 +276,13 @@ sub print_job($$){
             @node_hostnames = iolib::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
             $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
         }
+        $job_user = oar_Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$Job_uid_resource_type);
         
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
+            job_user => $job_user,
             state => $job_info->{state},
             assigned_resources => \@nodes,
             assigned_network_address => \@node_hostnames,
@@ -399,6 +403,7 @@ sub print_job($$){
             print("    name = $job_info->{job_name}\n");
             print("    project = $job_info->{project}\n");
             print("    owner = $job_info->{job_user}\n");
+            print("    job_user = $job_user\n");
             print("    state = $job_info->{state}\n");
             print("    wanted_resources = $resources_string\n");
             print("    types = ".join(" ",@job_types)."\n");

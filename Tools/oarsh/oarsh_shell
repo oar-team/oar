@@ -2,7 +2,7 @@
 # $Id$
 # This is the shell program used with the oarsh script.
 # It adds its own process in the cpuset OAR_CPUSET and launches
-# the shell or the script of the user SUDO_USER.
+# the shell or the script of the user OAR_JOB_USER.
 
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="/usr/bin/xauth"
@@ -48,7 +48,7 @@ function get_and_set_user_info() {
     fi
 }
 
-if [ "$SUDO_USER" == "" ]
+if [ "$OAR_JOB_USER" == "" ]
 then
     if [ "$SSH_CLIENT" != ""  ] && [ "$OAR_KEY" != "1" ]
     then
@@ -66,7 +66,7 @@ then
 else
     if [ "$OAR_CPUSET" == "" ]
     then
-        echo "oarsh: OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET SUDO_USER' on all computing nodes?" 1>&2
+        echo "oarsh: OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET OAR_JOB_USER' on all computing nodes?" 1>&2
         exit 3
         
     fi
@@ -77,28 +77,28 @@ else
     then
         if [ -x "$XAUTH_LOCATION" ]
         then
-            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | sudo -H -u $SUDO_USER $XAUTH_LOCATION merge -
+            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | sudo -H -u $OAR_JOB_USER $XAUTH_LOCATION merge -
         fi
     fi
     #Change tty owner
-    TTY=$(tty) && test -e $TTY && sudo chown $SUDO_USER:oar $TTY && sudo chmod 660 $TTY
+    TTY=$(tty) && test -e $TTY && sudo chown $OAR_JOB_USER:oar $TTY && sudo chmod 660 $TTY
     if [ "$1" == "" ]
     then
         # Simulate initial login
         if [ -x "$OAR_SHELL_WRAPPER" ]
         then
-            get_and_set_user_info $SUDO_USER
-            exec sudo -H -u $SUDO_USER $OAR_SHELL_WRAPPER $SHELL
+            get_and_set_user_info $OAR_JOB_USER
+            exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL
         else    
-            exec sudo -i -u $SUDO_USER
+            exec sudo -i -u $OAR_JOB_USER
         fi
     else
-        get_and_set_user_info $SUDO_USER
+        get_and_set_user_info $OAR_JOB_USER
         if [ -x "$OAR_SHELL_WRAPPER" ]
         then
-            exec sudo -H -u $SUDO_USER $OAR_SHELL_WRAPPER $SHELL "$@"
+            exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL "$@"
         else
-            exec sudo -H -u $SUDO_USER $SHELL "$@"
+            exec sudo -H -u $OAR_JOB_USER $SHELL "$@"
         fi
 
         fi

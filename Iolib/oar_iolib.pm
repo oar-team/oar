@@ -557,6 +557,30 @@ sub get_job_current_resources($$$) {
 }
 
 
+# get_job_cpuset_uid
+# returns the uid of the user for this job
+# parameters : base, jobid, resource type, cpuset field
+# return value : number
+sub get_job_cpuset_uid($$$$) {
+    my $dbh = shift;
+    my $mjobid= shift;
+    my $resource_type = shift;
+    my $cpuset_field = shift;
+
+    my $sth = $dbh->prepare("   SELECT resources.$cpuset_field
+                                FROM jobs, resources, assigned_resources
+                                WHERE
+                                    resources.type = \'$resource_type\' AND
+                                    assigned_resources.moldable_job_id = $mjobid AND
+                                    assigned_resources.resource_id = resources.resource_id 
+                                ORDER BY resources.resource_id ASC
+                                LIMIT 1");
+    $sth->execute();
+    my @res = $sth->fetchrow_array();
+    return($res[0]);
+}
+
+
 # get_job_resources
 # returns the list of resources associated to the job passed in parameter
 # parameters : base, jobid
@@ -5361,14 +5385,18 @@ sub job_finishing_sequence($$$$$$){
             $cpuset_file = "$ENV{OARDIR}/$cpuset_file" if ($cpuset_file !~ /^\//);
             my $cpuset_path = "";
             $cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+            my $job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
             
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
+                my $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $job_uid_resource_type, $cpuset_field) if (defined($job_uid_resource_type));
+                my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
                 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
-                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_path.'/'.$cpuset_name,$job->{job_user});
+                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_path.'/'.$cpuset_name,$job->{job_user},$job_user);
+
                 my $cpuset_data_hash = {
                     name => $cpuset_name,
                     nodes => $cpuset_nodes,
@@ -5384,6 +5412,8 @@ sub job_finishing_sequence($$$$$$){
                                 },
                     oar_tmp_directory => oar_Tools::get_default_oarexec_directory(),
                     user => $job->{job_user},
+                    job_user => $job_user,
+                    job_uid => $job_cpuset_uid,
                     types => $types
                 };
                 my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);

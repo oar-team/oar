@@ -75,6 +75,9 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
     oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
+my $Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
+my $Job_user;
+
 my $base;
 
 $base = iolib::connect();
@@ -83,6 +86,7 @@ $Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
 my $Cpuset_name = iolib::get_job_cpuset_name($base, $Job_id) if (defined($Cpuset_field));
 
 my $job = iolib::get_job($base,$Job_id);
+$Job_user = oar_Tools::format_job_user($job->{job_user},$Job_id,$Job_uid_resource_type);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($base,$Job_id);
 
 my @hosts = iolib::get_job_current_hostnames($base,$Job_id);
@@ -134,7 +138,9 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     ###############
     my $cpuset_nodes;
     $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
-    $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_path.'/'.$Cpuset_name,$job->{job_user});
+    my $job_cpuset_uid = iolib::get_job_cpuset_uid($base, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
+
+    $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_path.'/'.$Cpuset_name,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
         name => $Cpuset_name,
         nodes => $cpuset_nodes,
@@ -150,6 +156,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                     },
         oar_tmp_directory => oar_Tools::get_default_oarexec_directory(),
         user => $job->{job_user},
+        job_user => $Job_user,
+        job_uid => $job_cpuset_uid,
         types => $types
     };
     if (defined($cpuset_nodes)){
@@ -362,6 +370,7 @@ my %data_to_transfer = (
         node_file_db_fields => $Node_file_db_field,
         node_file_db_fields_distinct_values => $Node_file_db_field_distinct_values,
         user                => $job->{job_user},
+        job_user            => $Job_user,
         types               => $types,
         name                => $job->{job_name},
         project             => $job->{project},
