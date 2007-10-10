@@ -188,7 +188,8 @@ sub connect_job($$$){
             $ENV{OAR_CPUSET} = "";
         }
         my $moldable = iolib::get_current_moldable_job($dbh,$job->{assigned_moldable_job});
-        my $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
+        my $job_cpuset_uid;
+        $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
         my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");

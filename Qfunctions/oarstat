@@ -235,6 +235,7 @@ sub print_job($$){
     my @job_events;
     my %data_to_display;
     my $job_user;
+    my $job_cpuset_uid;
     my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name = "";
     $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
@@ -278,13 +279,15 @@ sub print_job($$){
             @node_hostnames = iolib::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
             $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
         }
-        $job_user = oar_Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$Job_uid_resource_type);
+        $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job_info->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
+        $job_user = oar_Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$job_cpuset_uid);
         
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             job_user => $job_user,
+            job_uid => $job_cpuset_uid,
             state => $job_info->{state},
             assigned_resources => \@nodes,
             assigned_network_address => \@node_hostnames,
@@ -407,7 +410,10 @@ sub print_job($$){
             print("    name = $job_info->{job_name}\n");
             print("    project = $job_info->{project}\n");
             print("    owner = $job_info->{job_user}\n");
-            print("    job_user = $job_user\n");
+            if (defined($job_cpuset_uid)){
+                print("    job_user = $job_user\n");
+                print("    job_uid = $job_cpuset_uid\n");
+            }
             print("    state = $job_info->{state}\n");
             print("    wanted_resources = $resources_string\n");
             print("    types = ".join(" ",@job_types)."\n");

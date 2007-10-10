@@ -5395,7 +5395,8 @@ sub job_finishing_sequence($$$$$$){
             if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
                 oar_Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
-                my $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $job_uid_resource_type, $cpuset_field) if (defined($job_uid_resource_type));
+                my $job_cpuset_uid;
+                $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $job_uid_resource_type, $cpuset_field) if (defined($job_uid_resource_type));
                 my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
                 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
                 $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_path.'/'.$cpuset_name,$job->{job_user},$job_user);
