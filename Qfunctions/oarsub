@@ -22,7 +22,7 @@ $| = 1;
 
 #Try to load XML module
 my $XML_enabled = 1;
-unless (eval "use XML::Simple qw(XMLout);1"){
+unless (eval "use XML::Dumper qw(pl2xml);1"){
     $XML_enabled = 0;
 }
 
@@ -806,7 +806,7 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
         print(Dumper($tmp));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(XMLout($tmp));
+            print(pl2xml($tmp));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
         }
