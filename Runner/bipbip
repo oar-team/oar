@@ -81,9 +81,12 @@ my $Job_user;
 my $base;
 
 $base = iolib::connect();
-my $Cpuset_path = "";
-$Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+my $Cpuset_path = get_conf("CPUSET_PATH");
 my $Cpuset_name = iolib::get_job_cpuset_name($base, $Job_id) if (defined($Cpuset_field));
+my $Cpuset_full_path;
+if (defined($Cpuset_path) and defined($Cpuset_field)){
+    $Cpuset_full_path = $Cpuset_path.'/'.$Cpuset_name;
+}
 
 my $job = iolib::get_job($base,$Job_id);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($base,$Job_id);
@@ -141,10 +144,11 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     $job_cpuset_uid = iolib::get_job_cpuset_uid($base, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
 
     $Job_user = oar_Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
-    $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_path.'/'.$Cpuset_name,$job->{job_user},$Job_user);
+    $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
         name => $Cpuset_name,
         nodes => $cpuset_nodes,
+        cpuset_path => $Cpuset_path,
         ssh_keys => {
                         public => {
                                     file_name => oar_Tools::get_default_oar_ssh_authorized_keys_file(),
@@ -400,9 +404,9 @@ eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     my $ssh_option = "";
-    if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
+    if ((defined($Cpuset_full_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
         # for oarsh_shell connection
-        $ENV{OAR_CPUSET} = $Cpuset_path.'/'.$Cpuset_name;
+        $ENV{OAR_CPUSET} = $Cpuset_full_path;
         $ssh_option = "-oSendEnv=OAR_CPUSET";
     }else{
         $ENV{OAR_CPUSET} = "";

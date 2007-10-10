@@ -148,6 +148,7 @@ sub format_ssh_pub_key($$$$){
     my $job_user = shift;
 
     $job_user = $user if (!defined($job_user));
+    $cpuset = "undef" if (!defined($cpuset));
     return('environment="OAR_CPUSET='.$cpuset.'",environment="OAR_JOB_USER='.$job_user.'" '.$key."\n");
 }
 

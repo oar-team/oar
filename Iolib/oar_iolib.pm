@@ -5386,8 +5386,11 @@ sub job_finishing_sequence($$$$$$){
             my $cpuset_file = get_conf("CPUSET_FILE");
             $cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($cpuset_file));
             $cpuset_file = "$ENV{OARDIR}/$cpuset_file" if ($cpuset_file !~ /^\//);
-            my $cpuset_path = "";
-            $cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+            my $cpuset_path = get_conf("CPUSET_PATH");
+            my $cpuset_full_path;
+            if (defined($cpuset_path) and defined($cpuset_field)){
+                $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
+            }
             my $job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
             
             my $job = get_job($dbh, $job_id);
@@ -5399,11 +5402,12 @@ sub job_finishing_sequence($$$$$$){
                 $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $job_uid_resource_type, $cpuset_field) if (defined($job_uid_resource_type));
                 my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
                 my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge($dbh,$job_id);
-                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_path.'/'.$cpuset_name,$job->{job_user},$job_user);
+                $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_full_path,$job->{job_user},$job_user);
 
                 my $cpuset_data_hash = {
                     name => $cpuset_name,
                     nodes => $cpuset_nodes,
+                    cpuset_path => $cpuset_path,
                     ssh_keys => {
                                     public => {
                                                 file_name => oar_Tools::get_default_oar_ssh_authorized_keys_file(),

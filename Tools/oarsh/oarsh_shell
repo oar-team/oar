@@ -12,7 +12,7 @@ OAR_SHELL_WRAPPER="/etc/oar/shell_user_wrapper.sh"
 # $2,$3,... = PIDs to add
 # Add PIDS into the cpuset $1
 function add_process_to_cpuset() {
-    [ "$DISABLE_CPUSET_MANAGEMENT" != "" ] && return
+    [ "$1" != "undef" ] && return
     ######################
     # CPUSET assignation #
     ###########################################################################
@@ -60,10 +60,13 @@ then
     if [ "$OAR_CPUSET" != "" ]
     then
         add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
-        sudo renice 0 $$ $PPID > /dev/null 2>&1
     fi
+    sudo renice 0 $$ $PPID > /dev/null 2>&1
     export SHELL=$DEFAULT_SHELL
+    
     exec $DEFAULT_SHELL "$@"
+    echo "oarsh: exec failed" 1>&2
+    exit 6
 else
     if [ "$OAR_CPUSET" == "" ]
     then
@@ -90,17 +93,28 @@ else
         then
             get_and_set_user_info $OAR_JOB_USER
             exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL
+            echo "oarsh: exec failed" 1>&2
+            exit 6
         else    
             exec sudo -i -u $OAR_JOB_USER
+            echo "oarsh: exec failed" 1>&2
+            exit 6
         fi
     else
         get_and_set_user_info $OAR_JOB_USER
         if [ -x "$OAR_SHELL_WRAPPER" ]
         then
             exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL "$@"
+            echo "oarsh: exec failed" 1>&2
+            exit 6
         else
             exec sudo -H -u $OAR_JOB_USER $SHELL "$@"
+            echo "oarsh: exec failed" 1>&2
+            exit 6
         fi
     fi
 fi
+
+echo "oarsh: Really bad error" 1>&2
+exit 7
 

@@ -45,7 +45,7 @@ my $remote_port;
 my $Deploy_hostname;
 my $Cosystem_hostname;
 my $Cpuset_field;
-my $Cpuset_path = "";
+my $Cpuset_path;
 my $Host = hostname ;
 
 my $base;
@@ -182,7 +182,7 @@ sub connect_job($$$){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
         #deploy, cosystem and no host part
-        if ((defined($Cpuset_field) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
+        if ((defined($Cpuset_field) and defined($Cpuset_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
             $ENV{OAR_CPUSET} = $Cpuset_path.'/'.iolib::get_job_cpuset_name($dbh,$job_id);
         }else{
             $ENV{OAR_CPUSET} = "";
@@ -564,7 +564,7 @@ if (!defined($Cosystem_hostname)){
 }
 
 $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
-$Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+$Cpuset_path = get_conf("CPUSET_PATH");
 $Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){

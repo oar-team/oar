@@ -28,8 +28,11 @@ if (!defined($Taktuk_cmd)){
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
-my $Cpuset_path = "";
-$Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+my $Cpuset_path = get_conf("CPUSET_PATH");
+if (!defined($Cpuset_path) or (! is_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD"))){
+    warn("The CPUSET feature must be configured to use this command\n");
+    exit(6);
+}
 
 Getopt::Long::Configure("gnu_getopt");
 my $Version;
