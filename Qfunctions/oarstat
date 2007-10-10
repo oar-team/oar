@@ -475,7 +475,7 @@ sub get_history($$$){
     $hash_dumper_result{resources} = \@nodes;
     my %job_gantt = iolib::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
     $hash_dumper_result{jobs} = \%job_gantt;
-    print(Dumper(%hash_dumper_result));
+    #print(Dumper(%hash_dumper_result));
     #print finished or running jobs
     my %jobs_history = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
     foreach my $i (keys(%jobs_history)){
