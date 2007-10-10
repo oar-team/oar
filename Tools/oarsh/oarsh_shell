@@ -12,6 +12,7 @@ OAR_SHELL_WRAPPER="/etc/oar/shell_user_wrapper.sh"
 # $2,$3,... = PIDs to add
 # Add PIDS into the cpuset $1
 function add_process_to_cpuset() {
+    [ "$DISABLE_CPUSET_MANAGEMENT" != "" ] && return
     ######################
     # CPUSET assignation #
     ###########################################################################
@@ -28,7 +29,6 @@ function add_process_to_cpuset() {
     do
         sudo sh -c "echo $p > $CPUSETFILE" || return 1
     done
-    sudo renice 0 $@ > /dev/null 2>&1
     ###########################################################################
 }
 
@@ -60,6 +60,7 @@ then
     if [ "$OAR_CPUSET" != "" ]
     then
         add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
+        sudo renice 0 $$ $PPID > /dev/null 2>&1
     fi
     export SHELL=$DEFAULT_SHELL
     exec $DEFAULT_SHELL "$@"
@@ -68,7 +69,6 @@ else
     then
         echo "oarsh: OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET OAR_JOB_USER' on all computing nodes?" 1>&2
         exit 3
-        
     fi
     add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
     
@@ -82,6 +82,7 @@ else
     fi
     #Change tty owner
     TTY=$(tty) && test -e $TTY && sudo chown $OAR_JOB_USER:oar $TTY && sudo chmod 660 $TTY
+    sudo renice 0 $$ $PPID > /dev/null 2>&1
     if [ "$1" == "" ]
     then
         # Simulate initial login

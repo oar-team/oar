@@ -93,6 +93,13 @@ if ($ARGV[0] eq "init"){
                 exit(8);
             }
             close(PRIV);
+            if (defined($Cpuset->{job_uid})){
+                if (system("ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey")){
+                    warn("[cpuset_manager] Error ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey \n");
+                    unlink($Cpuset->{ssh_keys}->{private}->{file_name});
+                    exit(8);
+                }
+            }
         }else{
             warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{private}->{file_name} \n");
             exit(7);
@@ -140,6 +147,9 @@ if ($ARGV[0] eq "init"){
     if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
         # private key
         unlink($Cpuset->{ssh_keys}->{private}->{file_name});
+        if (defined($Cpuset->{job_uid})){
+            unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey");
+        }
 
         # public key
         if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){

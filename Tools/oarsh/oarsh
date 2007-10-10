@@ -1,8 +1,7 @@
 #!/bin/bash
 # $Id$
 # In sshd_config you must have this line :
-#     AcceptEnv OAR_CPUSET SUDO_USER
-# User to become is in $SUDO_USER
+#     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
 ###############################################################################
 # Default variable definitions.
@@ -52,7 +51,8 @@ then
         [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
     done
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
-    install -m 0600 /dev/null $TMP_JOB_KEY_FILE
+    #install -m 0600 /dev/null $TMP_JOB_KEY_FILE
+    $(> $TMP_JOB_KEY_FILE) && chmod 0600 $TMP_JOB_KEY_FILE
     sudo -u $SUDO_USER cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
@@ -68,6 +68,13 @@ fi
 
 # -2- try connection using a job key pushed by OAR for a job using the job key mechanism. 
 # (oarsh is run from one of the node of the job) 
+TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$SUDO_USER.jobkey"
+if [ -r $TMP_JOB_KEY_FILE ]; then
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
+    echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE"
+    exit 4
+fi
+
 if [ -r /proc/self/cpuset ]; then
     OAR_CPUSET=$(< /proc/self/cpuset)
     if echo $OAR_CPUSET | grep -q "$CPUSET_PATH"; then

@@ -88,6 +88,7 @@ my $job_key_pub = "";
 my $import_job_key_file = "";
 my $import_job_key_inline = "";
 my $export_job_key_file = "";
+my $Job_uid_resource_type;
 
 #to catch ^C signal
 $SIG{INT} = 'qdel';
@@ -187,6 +188,8 @@ sub connect_job($$$){
             $ENV{OAR_CPUSET} = "";
         }
         my $moldable = iolib::get_current_moldable_job($dbh,$job->{assigned_moldable_job});
+        my $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
+        my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
         iolib::disconnect($dbh);
         my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
         my $shell=$passinfo[8];
@@ -227,9 +230,9 @@ sub connect_job($$$){
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | sudo -H -u $lusr $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | sudo -H -u $job_user $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $job_user:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $job_user bash --noprofile --norc -c '$str'";$i++;
         }else{
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $lusr:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $lusr bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $job_user:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $job_user bash --noprofile --norc -c '$str'";$i++;
         }
         #print("oarsub launchs command : @cmd\n");
         #essential : you become oar instead of the user
@@ -561,6 +564,7 @@ if (!defined($Cosystem_hostname)){
 
 $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 $Cpuset_path = get_conf("CPUSET_PATH") if (is_conf("CPUSET_PATH"));
+$Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     oar_Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
