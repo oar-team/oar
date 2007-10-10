@@ -131,7 +131,9 @@ if (!defined($accounting_query)){
             print(Dumper($hist));
         }elsif(defined($XML_mode)){
             if ($XML_enabled == 1){
-                print(pl2xml($hist));
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml($hist));
             }else{
                 warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
                 return(5);
@@ -344,7 +346,9 @@ sub print_job($$){
         print(Dumper(\%data_to_display));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(pl2xml(\%data_to_display));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml(\%data_to_display));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             return(5);

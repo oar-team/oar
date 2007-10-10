@@ -806,7 +806,9 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
         print(Dumper($tmp));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(pl2xml($tmp));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml($tmp));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
         }
