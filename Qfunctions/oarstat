@@ -16,7 +16,7 @@ my $Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
 
 #Try to load XML module
 my $XML_enabled = 1;
-unless (eval "use XML::Simple qw(XMLout);1"){
+unless (eval "use XML::Dumper qw(pl2xml);1"){
     $XML_enabled = 0;
 }
 
@@ -132,7 +132,9 @@ if (!defined($accounting_query)){
             print(Dumper($hist));
         }elsif(defined($XML_mode)){
             if ($XML_enabled == 1){
-            print(XMLout($hist));
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml($hist));
             }else{
                 warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
                 return(5);
@@ -348,7 +350,9 @@ sub print_job($$){
         print(Dumper(\%data_to_display));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-        print(XMLout(\%data_to_display));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml(\%data_to_display));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             return(5);
@@ -480,7 +484,7 @@ sub get_history($$$){
     $hash_dumper_result{resources} = \@nodes;
     my %job_gantt = iolib::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
     $hash_dumper_result{jobs} = \%job_gantt;
-    print(Dumper(%hash_dumper_result));
+    #print(Dumper(%hash_dumper_result));
     #print finished or running jobs
     my %jobs_history = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
     foreach my $i (keys(%jobs_history)){

@@ -26,7 +26,7 @@ use oarversion;
 
 #Try to load XML module
 my $XML_enabled = 1;
-unless (eval "use XML::Simple qw(XMLout);1"){
+unless (eval "use XML::Dumper qw(pl2xml);1"){
     $XML_enabled = 0;
 }
 
@@ -136,7 +136,9 @@ if (($#resources >= 0) or (defined($sql_property))){
         print(Dumper($data_to_dump));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(XMLout($data_to_dump));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml($data_to_dump));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 5;
@@ -212,7 +214,9 @@ if (defined($stateMode)){
         print(Dumper(\%data_to_display));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(XMLout(\%data_to_display));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml(\%data_to_display));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 5;
@@ -239,7 +243,9 @@ if (defined($stateMode)){
         print(Dumper(\@nodes));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(XMLout(\@nodes));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml(\@nodes));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 5;
@@ -287,7 +293,9 @@ if (defined($stateMode)){
         print(Dumper(\%data_to_display));
     }elsif(defined($XML_mode)){
         if ($XML_enabled == 1){
-            print(XMLout(\%data_to_display));
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml(\%data_to_display));
         }else{
             warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 5;
