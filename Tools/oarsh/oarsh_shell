@@ -7,6 +7,7 @@
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="/usr/bin/xauth"
 OAR_SHELL_WRAPPER="/etc/oar/shell_user_wrapper.sh"
+CPUSET_MOUNT_POINT="/dev/cpuset"
 
 # $1 = Name of the cpuset
 # $2,$3,... = PIDs to add
@@ -16,10 +17,10 @@ function add_process_to_cpuset() {
     ######################
     # CPUSET assignation #
     ###########################################################################
-    CPUSET_MOUNT_POINT=$(mount -t cpuset | cut -d " " -f 3 | head -1)
+    #CPUSET_MOUNT_POINT=$(mount -t cpuset | cut -d " " -f 3 | head -1)
     CPUSETFILE="$CPUSET_MOUNT_POINT/$1/tasks"
     
-    if ( ! $(sudo test -w $CPUSETFILE) )
+    if [ ! -w $CPUSETFILE ]
     then
         echo "oarsh: Cannot find cpuset file : $CPUSETFILE" 1>&2
         exit 1
@@ -37,13 +38,23 @@ function add_process_to_cpuset() {
 function get_and_set_user_info() {
     # Get user shell (must be optimized)
     PASSWD_LINE=$(getent passwd $1)
-    export SHELL=$(echo $PASSWD_LINE | cut -d : -f 7)
+    declare -a PASS_INFO_ARRAY
+    OLD_IFS=$IFS
+    IFS=':'
+    i=0
+    for f in $PASSWD_LINE
+    do
+        PASS_INFO_ARRAY[$i]=$f
+        ((i++))
+    done
+    IFS=$OLD_IFS
+    export SHELL=${PASS_INFO_ARRAY[6]}
     if [ "$SHELL" == "" ]
     then
         echo "oarsh: No shell found for user $1." 1>&2
         exit 4
     else
-        export HOME=$(echo $PASSWD_LINE | cut -d : -f 6)
+        export HOME=${PASS_INFO_ARRAY[5]}
         cd $HOME
     fi
 }
@@ -89,7 +100,7 @@ else
     if [ "$1" == "" ]
     then
         # Simulate initial login
-        if [ -x "$OAR_SHELL_WRAPPER" ]
+        if [ -f "$OAR_SHELL_WRAPPER" ]
         then
             get_and_set_user_info $OAR_JOB_USER
             exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL
@@ -102,7 +113,7 @@ else
         fi
     else
         get_and_set_user_info $OAR_JOB_USER
-        if [ -x "$OAR_SHELL_WRAPPER" ]
+        if [ -f "$OAR_SHELL_WRAPPER" ]
         then
             exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL "$@"
             echo "oarsh: exec failed" 1>&2

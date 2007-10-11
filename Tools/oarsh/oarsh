@@ -52,7 +52,8 @@ then
     done
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
     #install -m 0600 /dev/null $TMP_JOB_KEY_FILE
-    $(> $TMP_JOB_KEY_FILE) && chmod 0600 $TMP_JOB_KEY_FILE
+    umask 0177
+    $(> $TMP_JOB_KEY_FILE)
     sudo -u $SUDO_USER cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
@@ -78,7 +79,7 @@ fi
 if [ "$CPUSET_PATH" != "" ]; then
     if [ -r /proc/self/cpuset ]; then
         OAR_CPUSET=$(< /proc/self/cpuset)
-        if echo $OAR_CPUSET | grep -q "$CPUSET_PATH"; then
+        if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
                 exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
@@ -105,7 +106,26 @@ if [ -n "$OAR_JOB_ID" ]; then
         echo "oarsh: Cannot connect using job id from this host." 1>&2
         exit 5
     fi
-    OAR_CPUSET=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    cpuset_name = " | cut -d " " -f 7)
+    STR=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | \
+            while read l; do
+                if [ "$l" != "" ]; then
+                    if [ "${l##cpuset_name*}" = "" ] ;then
+                        echo ${l/*cpuset_name = /}
+                    else
+                        if [ "${l##job_user*}" = "" ] ;then
+                            echo ${l/*job_user = /}
+                            exit
+                        fi
+                    fi
+                fi
+            done)
+
+    function extract_vars(){
+        OAR_CPUSET=$1
+        OAR_JOB_USER=$2
+    }
+    extract_vars $STR
+
     if [ "$OAR_CPUSET" == "" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
         exit 5
@@ -117,10 +137,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     fi
         
     # Check if we must use a tmp user id for this job
-    TMP_OAR_JOB_USER=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | grep "^    job_user = " | cut -d " " -f 7)
-    if [ "$TMP_OAR_JOB_USER" != "" ]; then
-        OAR_JOB_USER=$TMP_OAR_JOB_USER
-    else
+    if [ "$OAR_JOB_USER" == "" ]; then
         OAR_JOB_USER=$SUDO_USER
     fi
     if [ "$CPUSET_PATH" != "" ]; then
