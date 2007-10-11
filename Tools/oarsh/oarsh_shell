@@ -12,7 +12,7 @@ OAR_SHELL_WRAPPER="/etc/oar/shell_user_wrapper.sh"
 # $2,$3,... = PIDs to add
 # Add PIDS into the cpuset $1
 function add_process_to_cpuset() {
-    [ "$1" != "undef" ] && return
+    [ "$1" = "undef" ] && return
     ######################
     # CPUSET assignation #
     ###########################################################################
