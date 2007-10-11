@@ -4,7 +4,6 @@
 # This file is executed on each nodes and retrive all data for the specified
 # cpuset name.
 
-use POSIX qw(ceil);
 use Data::Dumper;
 $| = 1;
 
@@ -140,7 +139,7 @@ sub calculate_cpu_percentages($$$){
     if ((defined($cpus_hash->{CURR}->{ALL})) and (defined($cpus_hash->{PREV}->{ALL}))){
         $results->{ALL}->{CPUPERCENT} = $cpus_hash->{CURR}->{ALL}->{ALLTIME} - $cpus_hash->{PREV}->{ALL}->{ALLTIME};
         if ($results->{ALL}->{CPUPERCENT} > 0){
-            $results->{ALL}->{CPUPERCENT} = ceil(100 - (100 * ($cpus_hash->{CURR}->{ALL}->{IDLETIME} - $cpus_hash->{PREV}->{ALL}->{IDLETIME}) / $results->{ALL}->{CPUPERCENT}));
+            $results->{ALL}->{CPUPERCENT} = sprintf("%.0f",(100 - (100 * ($cpus_hash->{CURR}->{ALL}->{IDLETIME} - $cpus_hash->{PREV}->{ALL}->{IDLETIME}) / $results->{ALL}->{CPUPERCENT})));
             $results->{ALL}->{CPUPERCENT} = 100 if ($results->{ALL}->{CPUPERCENT} > 100);
             $results->{ALL}->{CPUPERCENT} = 0 if ($results->{ALL}->{CPUPERCENT} < 0);
         }else{
@@ -156,7 +155,7 @@ sub calculate_cpu_percentages($$$){
         if ((defined($cpus_hash->{CURR}->{EACH}->{$c})) and (defined($cpus_hash->{PREV}->{EACH}->{$c}))){
             $results->{EACH}->{$c}->{CPUPERCENT} = $cpus_hash->{CURR}->{EACH}->{$c}->{ALLTIME} - $cpus_hash->{PREV}->{EACH}->{$c}->{ALLTIME};
             if ($results->{EACH}->{$c}->{CPUPERCENT} > 0){
-                $results->{EACH}->{$c}->{CPUPERCENT} = ceil(100 - (100 * ($cpus_hash->{CURR}->{EACH}->{$c}->{IDLETIME} - $cpus_hash->{PREV}->{EACH}->{$c}->{IDLETIME}) / $results->{EACH}->{$c}->{CPUPERCENT}));
+                $results->{EACH}->{$c}->{CPUPERCENT} = sprintf("%.0f",(100 - (100 * ($cpus_hash->{CURR}->{EACH}->{$c}->{IDLETIME} - $cpus_hash->{PREV}->{EACH}->{$c}->{IDLETIME}) / $results->{EACH}->{$c}->{CPUPERCENT})));
                 $results->{EACH}->{$c}->{CPUPERCENT} = 100 if ($results->{EACH}->{$c}->{CPUPERCENT} > 100);
                 $results->{EACH}->{$c}->{CPUPERCENT} = 0 if ($results->{EACH}->{$c}->{CPUPERCENT} < 0);
             }else{
@@ -180,7 +179,7 @@ sub calculate_cpu_percentages($$$){
     }
     my $cpuset_cpus_all_time = $cumul_curr_cpus_all - $cumul_prev_cpus_all;
     if ($cpuset_cpus_all_time > 0){
-        $results->{CPUSET}->{CPUPERCENT} = ceil(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $cpuset_cpus_all_time);
+        $results->{CPUSET}->{CPUPERCENT} = sprintf("%.0f",(100 * ($curr_cumul_process_all_time - $prev_cumul_process_all_time) / $cpuset_cpus_all_time));
         $results->{CPUSET}->{CPUPERCENT} = 100 if ($results->{CPUSET}->{CPUPERCENT} > 100);
         $results->{CPUSET}->{CPUPERCENT} = 0 if ($results->{CPUSET}->{CPUPERCENT} < 0);
     }
