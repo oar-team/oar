@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my $Cmd_wrapper = "";
+
+###############################################################################
+
+my $oar_uid = getpwnam("oar");
+$ENV{OARDO_USER} = getpwuid($<);
+my @clean_argv;
+
+# BEGIN CLEAN
+
+# Clean ARGV to prevent tainted perl behaviour
+my %clean;
+for (my $i=0; $i <= $#ARGV; $i++){
+    $clean{$ARGV[$i]} = $i;
+}
+
+foreach my $c (keys(%clean)){
+    $clean_argv[$clean{$c}] = $c;
+}
+
+# unset shell variables
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
+
+# clean PATH
+$ENV{PATH} =~ m/^(.*)$/m; 
+$ENV{PATH} = $1;
+
+# END CLEAN
+
+if (($Cmd_wrapper eq "") and ($< == $oar_uid)){
+    # We are oar so we want to execute the command with root privileges
+    my @tmp = getpwnam("root");
+    $< = $tmp[2];
+    if ($!){
+        warn("oardo: Cannot set UID to 'root'\n");
+        exit(2);
+    }
+    $> = $tmp[2];
+    if ($!){
+        warn("oardo: Cannot set EUID to 'root'\n");
+        exit(2);
+    }
+#    $( = $tmp[3]."$(";
+#    $) = $tmp[3]."$)";
+    exec(@clean_argv);
+    warn("oardo: Cannot execute with oar privileges : @clean_argv\n");
+    exit(1);
+}
+
+my @tmp = getpwnam("oar");
+$< = $tmp[2];
+if ($!){
+    warn("oardo: Cannot set UID to 'oar'\n");
+    exit(2);
+}
+$> = $tmp[2];
+if ($!){
+    warn("oardo: Cannot set EUID to 'oar'\n");
+    exit(2);
+}
+#$) = $tmp[3];
+#$( = $tmp[3];
+exec(@clean_argv);
+warn("oardo: Cannot execute with oar privileges : @clean_argv\n");
+exit(1);
+

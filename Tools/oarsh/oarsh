@@ -110,21 +110,17 @@ if [ -n "$OAR_JOB_ID" ]; then
             while read l; do
                 if [ "$l" != "" ]; then
                     if [ "${l##cpuset_name*}" = "" ] ;then
-                        echo ${l/*cpuset_name = /}
+                        echo "OAR_CPUSET="${l/*cpuset_name = /}
                     else
                         if [ "${l##job_user*}" = "" ] ;then
-                            echo ${l/*job_user = /}
+                            echo "OAR_JOB_USER="${l/*job_user = /}
                             exit
                         fi
                     fi
                 fi
             done)
 
-    function extract_vars(){
-        OAR_CPUSET=$1
-        OAR_JOB_USER=$2
-    }
-    extract_vars $STR
+    eval $STR
 
     if [ "$OAR_CPUSET" == "" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2

@@ -128,6 +128,8 @@ common:
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 	rm $(OARDIR)/sudowrapper.sh
+	install -m 0755 Tools/oardo $(SBINDIR)
+	chmod a+s $(SBINDIR)/oardo
 
 server:
 	install -d -m 0755 $(OARDIR)

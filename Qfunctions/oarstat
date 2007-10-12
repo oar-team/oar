@@ -410,10 +410,6 @@ sub print_job($$){
             print("    name = $job_info->{job_name}\n");
             print("    project = $job_info->{project}\n");
             print("    owner = $job_info->{job_user}\n");
-            if (defined($job_cpuset_uid)){
-                print("    job_user = $job_user\n");
-                print("    job_uid = $job_cpuset_uid\n");
-            }
             print("    state = $job_info->{state}\n");
             print("    wanted_resources = $resources_string\n");
             print("    types = ".join(" ",@job_types)."\n");
@@ -442,6 +438,10 @@ sub print_job($$){
             print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
             print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
             print("    cpuset_name = $cpuset_name\n");
+            if (defined($job_cpuset_uid)){
+                print("    job_user = $job_user\n");
+                print("    job_uid = $job_cpuset_uid\n");
+            }
             print("    message = $job_info->{message}\n");
             if (!defined($date_tmp[0])){
                 $date_tmp[0] = "no prediction";
