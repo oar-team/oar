@@ -72,17 +72,19 @@ dbinit:
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
 
-sudowrapper: man
+oardo:
 	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(BINDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
-	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
 	install -m 6755 Tools/oardo $(OARDIR)
 	perl -i -pe "s#Oardir = .*#Oardir = '$(DEB_INSTALL)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				" $(OARDIR)/oardo
+common: man
+	install -d -m 0755 $(OARDIR)
+	install -d -m 0755 $(BINDIR)
+	install -d -m 0755 $(SBINDIR)
+	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
+	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
 	install -m 6755 $(OARDIR)/oardo $(SBINDIR)/oardo
 	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarsh'\;#" $(OARDIR)/oarsh_oardo
@@ -95,7 +97,7 @@ sudowrapper: man
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarcp.1
 	
-common:
+libs:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
@@ -238,18 +240,18 @@ draw-gantt:
 	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
 	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(WWWDIR)/drawgantt/js
 
-server-install: sanity-check configuration sudowrapper common server dbinit
+server-install: sanity-check configuration oardo common libs server dbinit
 
-user-install: sanity-check configuration sudowrapper common user
+user-install: sanity-check configuration oardo common libs user
 
-node-install: sanity-check configuration sudowrapper node
+node-install: sanity-check configuration oardo common node
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
 doc-install: doc
 
 draw-gantt-install: draw-gantt
 
-desktop-computing-cgi-install: sanity-check configuration sudowrapper common desktop-computing-cgi
+desktop-computing-cgi-install: sanity-check oardo configuration common libs desktop-computing-cgi
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
 
 desktop-computing-agent-install: desktop-computing-agent
