@@ -85,7 +85,7 @@ common: man
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
-	install -m 6755 $(OARDIR)/oardo $(SBINDIR)/oardo
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oardo
 	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarsh'\;#" $(OARDIR)/oarsh_oardo
 	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
