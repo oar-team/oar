@@ -82,7 +82,7 @@ sudowrapper: man
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				" $(OARDIR)/oardo
-	ln -s -f $(DEB_INSTALL)/oardo $(DEB_SBINDIR)/oardo
+	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oardo
 	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarsh'\;#" $(OARDIR)/oarsh_oardo
 	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
@@ -177,8 +177,7 @@ user: man
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
 	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarresume
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarresume'\;#" $(BINDIR)/oarresume
-	install -m 0755 Tools/oarmonitor_graph_gen.pl $(OARDIR)
-	ln -s -f $(DEB_INSTALL)/oarmonitor_graph_gen.pl $(DEB_BINDIR)/oarmonitor_graph_gen.pl
+	install -m 0755 Tools/oarmonitor_graph_gen.pl $(DEB_BINDIR)
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
