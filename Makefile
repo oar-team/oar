@@ -178,7 +178,7 @@ user: man common
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
 	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarresume
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarresume'\;#" $(BINDIR)/oarresume
-	install -m 0755 Tools/oarmonitor_graph_gen.pl $(DEB_BINDIR)
+	install -m 0755 Tools/oarmonitor_graph_gen.pl $(BINDIR)
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
