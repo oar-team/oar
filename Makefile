@@ -75,6 +75,7 @@ dbinit: sudowrapper
 sudowrapper: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
+	install -d -m 0755 $(SBINDIR)
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
 	install -m 6755 Tools/oardo $(OARDIR)
@@ -111,7 +112,7 @@ common: sudowrapper
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 
-server:
+server: common
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(BINDIR)
@@ -155,7 +156,7 @@ server:
 	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
 
-user: man
+user: man common
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
@@ -186,9 +187,8 @@ user: man
 	install -m 0644 man/man1/oarsub.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarhold.1 $(MANDIR)/man1
 
-node: man
+node: man common
 	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
