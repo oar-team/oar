@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 #
+# SUDO for OAR = OARDO
 # This script must be setuid root.
 # Cases to use this script:
 #   - user $Oaruser executes this script and OARDO_BECOME_USER is empty
@@ -10,8 +11,8 @@
 #       --> only $Cmd_wrapper can be executed with $Oaruser privileges with
 #           @ARGV arguments
 
-use strict;
-use warnings;
+#use strict;
+#use warnings;
 
 ###############################################################################
 # Static conf to edit #
@@ -19,10 +20,9 @@ use warnings;
 
 my $Cmd_wrapper = "";
 
-my $Oardir = "/var/lib/oar";
+my $Oardir = "";
 my $Oarconffile = "/etc/oar/oar.conf";
 my $Oarxauthlocation = "/usr/bin/xauth";
-my $Oarshellwrapper = "/etc/oar/shell_user_wrapper.pl";
 my $Oaruser = "oar";
 
 ###############################################################################
@@ -34,20 +34,21 @@ $ENV{PERL5LIB} = $Oardir;
 $ENV{OARUSER} = $Oaruser;
 $ENV{OARCONFFILE} = $Oarconffile;
 $ENV{OARXAUTHLOCATION} = $Oarxauthlocation;
-$ENV{OARSHELLWRAPPER} = $Oarshellwrapper;
 
 my @clean_argv;
 # BEGIN CLEAN
 
 # Clean ARGV to prevent tainted perl behaviour
-my %clean;
 for (my $i=0; $i <= $#ARGV; $i++){
-    $clean{$ARGV[$i]} = $i;
+    my $str = "";
+    foreach my $l (split("\n",$ARGV[$i])){
+        $l =~ m/(.*)/m;
+        $str .= $1."\n";
+    }
+    chop($str);
+    $clean_argv[$i] = $str;
 }
-
-foreach my $c (keys(%clean)){
-    $clean_argv[$clean{$c}] = $c;
-}
+#warn("@clean_argv\n");
 
 # unset shell variables
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV MAIL)};
@@ -66,6 +67,17 @@ sub change_process_owner($){
         warn("oardo: Cannot get information from user '$user'.\n");
         exit(2);
     }
+    
+    $( = "$tmp[3] $tmp[3]";
+    if ($!){
+        warn("oardo: Cannot set GID to '$tmp[3]'.\n");
+        exit(2);
+    }
+    $) = "$tmp[3] $tmp[3]";
+    if ($!){
+        warn("oardo: Cannot set EGID to '$tmp[3]'.\n");
+        exit(2);
+    }
     $< = $tmp[2];
     if ($!){
         warn("oardo: Cannot set UID to '$user'.\n");
@@ -76,8 +88,6 @@ sub change_process_owner($){
         warn("oardo: Cannot set EUID to '$user'.\n");
         exit(2);
     }
-#    $( = $tmp[3]."$(";
-#    $) = $tmp[3]."$)";
     $ENV{USER} = $user;
     $ENV{LOGNAME} = $user;
     $ENV{SHELL} = $tmp[8];
@@ -86,7 +96,7 @@ sub change_process_owner($){
 }
 
 if ($Cmd_wrapper ne ""){
-    # Try to execute a specific command by a lamba user
+    # Try to execute a specific command by a lambda user
     change_process_owner($Oaruser);
     exec($Cmd_wrapper,@clean_argv);
     warn("oardo: Cannot execute with oar privileges : @clean_argv\n");
@@ -99,7 +109,27 @@ if ($< == $oar_uid){
     my $user = "root";
     $user = $ENV{OARDO_BECOME_USER} if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne ""));
     change_process_owner($user);
-    exec(@clean_argv);
+    if ($#clean_argv < 0){
+        # Login shell
+        $ENV{HOME} =~ m/(.*)/m;
+        my $home = $1;
+        chdir($home);
+        $ENV{SHELL} =~ m/(.*)/m;
+        my $shell = $1;
+        my @tmp = split('/',$shell);
+        exec({$shell} "-$tmp[$#tmp]");
+    }else{
+        if (defined($ENV{OARDO_USE_USER_SHELL}) and ($ENV{OARDO_USE_USER_SHELL} ne "")){
+            $ENV{HOME} =~ m/(.*)/m;
+            my $home = $1;
+            chdir($home);
+            $ENV{SHELL} =~ m/(.*)/m;
+            my $shell = $1;
+            exec({$shell} $shell,@clean_argv);
+        }else{
+            exec(@clean_argv);
+        }
+    }
     warn("oardo: Cannot execute with oar privileges : @clean_argv.\n");
     exit(1);
 }else{

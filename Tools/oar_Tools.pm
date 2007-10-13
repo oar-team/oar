@@ -455,7 +455,7 @@ sub launch_command($){
 
 # Create the perl script used to execute right command for the user
 # The resulting script can be launched with : perl -e 'script'
-sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$@){
+sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$@){
     my ($node_file,
         $job_id,
         $user,
@@ -469,7 +469,6 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$@){
         $job_walltime,
         $job_walltime_sec,
         $job_env,
-        $shell_wrapper,
         @cmd) = @_;
 
 #    if ((defined($job_env)) and ($job_env !~ /^\s*$/)){
@@ -516,13 +515,6 @@ if (!chdir($ENV{OAR_WORKING_DIRECTORY})){
 }
 
 my $shell_executed = "'.$shell.'";
-my $process_name = $shell_executed;
-my @first_args = ($process_name);
-if (-x "'.$shell_wrapper.'"){
-    $shell_executed = "'.$shell_wrapper.'";
-    push(@first_args,$process_name);
-}
-
 
 #Store old FD
 open(OLDSTDOUT, ">& STDOUT");
@@ -544,7 +536,7 @@ if($pid == 0){
     # To be sure that user do not try to do something nasty
     close(OLDSTDERR);
     close(OLDSTDOUT);
-    exec({$shell_executed} @first_args,"-c",@{$cmd_exec});
+    exec({$shell_executed} $shell_executed,"-c",@{$cmd_exec});
     # if exec do not find the command
     warn("[OAR] Cannot find @{$cmd_exec}\n");
     exit(-1);
@@ -564,7 +556,7 @@ exit(0);
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : bash -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$){
     my ($node_file,
         $job_id,
         $user,
@@ -575,8 +567,7 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$){
         $job_project,
         $job_walltime,
         $job_walltime_sec,
-        $job_env,
-        $shell_wrapper) = @_;
+        $job_env) = @_;
 
     my $exp_env = "";
     if ($job_env !~ /^\s*$/){
@@ -620,12 +611,7 @@ else
     exit 2;
 fi;
 
-if [ -x "'.$shell_wrapper.'" ];
-then
-    '.$shell_wrapper.' $SHELL;
-else
-    (exec -a -${SHELL##*/} $SHELL);
-fi;
+(exec -a -${SHELL##*/} $SHELL);
 
 exit 0
 ';

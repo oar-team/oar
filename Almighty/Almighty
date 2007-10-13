@@ -12,7 +12,7 @@ my $oldfh = select(STDERR); $| = 1; select($oldfh);
 $oldfh = select(STDOUT); $| = 1; select($oldfh);
 
 #Everything is run by oar user
-$ENV{SUDO_UID}=$<;
+$ENV{OARDO_UID}=$<;
 
 oar_Judas::redirect_everything();
 

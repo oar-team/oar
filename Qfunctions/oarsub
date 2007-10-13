@@ -134,8 +134,8 @@ sub scan_script($){
     my %result;
     
     ($file) = split(" ",$file);
-    #my $lusr= getpwuid($ENV{SUDO_UID});
-    #open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return(%result);
+    #my $lusr= $ENV{OARDO_USER};
+    #open(FILE, "oardu su - $lusr -c 'cat $file' 2> /dev/null|") or return(%result);
     
     if (open(FILE, $file)){
         if (<FILE> =~ /^#/){
@@ -169,7 +169,7 @@ sub connect_job($$$){
    
     my $xauth_path = $ENV{OARXAUTHLOCATION};
     my $dbh = iolib::connect_ro();
-    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $lusr= $ENV{OARDO_USER};
     my $job = iolib::get_job($dbh, $job_id);
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
         my @hosts = iolib::get_job_current_hostnames($dbh,$job_id);
@@ -202,14 +202,12 @@ sub connect_job($$$){
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
             $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority.$$";
-            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && sudo -H -u "'.$lusr.'" bash -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2> /dev/null');
+            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardo bash --noprofile --norc -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2>/dev/null');
         }
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
-        my $shell_wrapper = "";
-        $shell_wrapper = $ENV{OARSHELLWRAPPER} if (defined($ENV{OARSHELLWRAPPER}));
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env},$shell_wrapper);
+        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env});
         my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
         my @cmd;
         my $i = 0;
@@ -231,9 +229,9 @@ sub connect_job($$$){
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | sudo -H -u $job_user $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && sudo chown $job_user:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $job_user bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$job_user oardo $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && oardo chown $job_user:oar \$TTY && oardo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardo bash --noprofile --norc -c '$str'";$i++;
         }else{
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && sudo chown $job_user:oar \$TTY && sudo chmod 660 \$TTY' && sudo -H -u $job_user bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardo chown $job_user:oar \$TTY && oardo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardo bash --noprofile --norc -c '$str'";$i++;
         }
         #print("oarsub launchs command : @cmd\n");
         #essential : you become oar instead of the user
@@ -373,13 +371,14 @@ sub job_key_management() {
             } else {
                 # file import
                 print ("Import job key from file: $import_job_key_file\n");
-                my $lusr= getpwuid($ENV{SUDO_UID});
-                # read key files: sudo -u user needed in order to be able to read the file for sure
+                my $lusr= $ENV{OARDO_USER};
+                # read key files: oardo su - user needed in order to be able to read the file for sure
                 # safer way to do a `cmd`, see perl cookbook 
                 my $pid;
                 die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
                 if ($pid == 0) {
-                    unless (exec({"sudo"} "sudo","-u",$lusr,"cat",$import_job_key_file)) {
+                    $ENV{OARDO_BECOME_USER} = $lusr;
+                    unless (exec({"oardo"} "oardo","cat $import_job_key_file")) {
                         warn ("Error: Cannot cannot read key file:$import_job_key_file\n");
                         exit(14);
                     }
@@ -840,7 +839,7 @@ if ($Job_id < 0){
 if (defined($use_job_key) and ($export_job_key_file ne "")){
     # we must copy the keys in the directory specified with the right name
     $export_job_key_file =~ s/%jobid%/$Job_id/g;
-    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $lusr= $ENV{OARDO_USER};
     my $pid;
     # write the private job key with the user ownership
     unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
@@ -848,7 +847,9 @@ if (defined($use_job_key) and ($export_job_key_file ne "")){
         exit(14);
     }
     if ($pid == 0) {
-        unless (exec({"sudo"} "sudo","-u",$lusr,"bash","-c","umask 0066 && cat > $export_job_key_file")) {
+        umask(oct(0066));
+        $ENV{OARDO_BECOME_USER} = $lusr;
+        unless (exec({"oardo"} "oardo","cat > $export_job_key_file")) {
             warn ("Error: Cannot exec user shell ($?)");
             exit(14);
         }

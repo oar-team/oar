@@ -147,7 +147,7 @@ if (defined($Checkpoint)){
         }
     }
 }elsif (defined($Besteffort)){
-    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $lusr= $ENV{OARDO_USER};
     if (($lusr ne "oar") and ($lusr ne "root")){
         $exitValue = 8;
         warn("You must be oar or root to use the -b option\n");

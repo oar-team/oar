@@ -95,7 +95,7 @@ if (defined($Version)){
     exit(0);
 }
 
-$user = getpwuid($ENV{SUDO_UID}) if (defined($user) and ($user eq ''));
+$user = $ENV{OARDO_USER} if (defined($user) and ($user eq ''));
 
 my $base = iolib::connect_ro();
 

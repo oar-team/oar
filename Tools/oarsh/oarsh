@@ -38,7 +38,7 @@ then
         # set the .Xautority.{pid} file as the xauthority file.
         export XAUTHORITY=$HOME/.Xauthority.$$
         # retrieve the X cookie from the user to user oar.
-        sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - '${DISPLAY/#localhost:/:}'" | $XAUTH_LOCATION merge - 2> /dev/null
+        OARDO_BECOME_USER=$OARDO_USER oardo bash --noprofile --norc -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | $XAUTH_LOCATION merge - 2> /dev/null
         # ssh will push that cookie in the connection.
     fi
 fi
@@ -53,8 +53,7 @@ then
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
     #install -m 0600 /dev/null $TMP_JOB_KEY_FILE
     umask 0177
-    $(> $TMP_JOB_KEY_FILE)
-    sudo -u $SUDO_USER cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
+    OARDO_BECOME_USER=$OAR_USER oardo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
         rm -f $TMP_JOB_KEY_FILE
@@ -69,7 +68,7 @@ fi
 
 # -2- try connection using a job key pushed by OAR for a job using the job key mechanism. 
 # (oarsh is run from one of the node of the job) 
-TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$SUDO_USER.jobkey"
+TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
 if [ -r $TMP_JOB_KEY_FILE ]; then
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
     echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE"
@@ -87,7 +86,7 @@ if [ "$CPUSET_PATH" != "" ]; then
                 exit 4
             fi
             export OAR_CPUSET
-            export OAR_JOB_USER=$SUDO_USER
+            export OAR_JOB_USER=$OARDO_USER
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
             echo "oarsh: Failed to connect using cpuset environement"
             exit 5
@@ -126,7 +125,7 @@ if [ -n "$OAR_JOB_ID" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
         exit 5
     else
-        if [ "$OAR_CPUSET" != "$SUDO_USER"_"$OAR_JOB_ID" ]; then
+        if [ "$OAR_CPUSET" != "$OARDO_USER"_"$OAR_JOB_ID" ]; then
             echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
             exit 5
         fi
@@ -134,7 +133,7 @@ if [ -n "$OAR_JOB_ID" ]; then
         
     # Check if we must use a tmp user id for this job
     if [ "$OAR_JOB_USER" == "" ]; then
-        OAR_JOB_USER=$SUDO_USER
+        OAR_JOB_USER=$OARDO_USER
     fi
     if [ "$CPUSET_PATH" != "" ]; then
         OAR_CPUSET="$CPUSET_PATH/$OAR_CPUSET"

@@ -361,9 +361,6 @@ if ((defined($types->{cosystem})) or ($#hosts < 0)){
     $host_to_connect_via_ssh = $Deploy_hostname;
 }
 
-my $shell_wrapper = "";
-$shell_wrapper = $ENV{OARSHELLWRAPPER} if (defined($ENV{OARSHELLWRAPPER}));
-
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 my %data_to_transfer = (
         job_id              => $Job_id,
@@ -393,8 +390,7 @@ my %data_to_transfer = (
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
         tmp_directory       => oar_Tools::get_default_oarexec_directory,
-        detach_oarexec      => $Detach_oarexec,
-        shell_wrapper       => $shell_wrapper
+        detach_oarexec      => $Detach_oarexec
     );
 
 my $error = 50;

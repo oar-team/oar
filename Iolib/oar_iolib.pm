@@ -982,7 +982,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     my $rules;
-    my $user= getpwuid($ENV{SUDO_UID});
+    my $user= $ENV{OARDO_USER};
 
     # Verify notify syntax
     if ((defined($notify)) and ($notify !~ m/^\s*(mail:|exec:).+$/m)){
@@ -1472,7 +1472,7 @@ sub resubmit_job($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $lusr= $ENV{OARDO_USER};
     
     my $job = get_job($dbh, $job_id);
     return(0) if (!defined($job->{job_id}));
@@ -1726,8 +1726,7 @@ sub frag_job($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    #my $lusr= getpwuid($<);
-    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $lusr= $ENV{OARDO_USER};
 
     my $job = get_job($dbh, $idJob);
 
@@ -1762,7 +1761,7 @@ sub ask_checkpoint_job($$){
     my $dbh = shift;
     my $idJob = shift;
 
-    my $lusr= getpwuid($ENV{SUDO_UID});
+    my $lusr= $ENV{OARDO_USER};
 
     my $job = get_job($dbh, $idJob);
 
@@ -1794,8 +1793,7 @@ sub hold_job($$$) {
     my $idJob = shift;
     my $waiting_and_running = shift;
 
-    #my $lusr= getpwuid($<);
-    my $lusr = getpwuid($ENV{SUDO_UID});
+    my $lusr = $ENV{OARDO_USER};
 
     my $job = get_job($dbh, $idJob);
     
@@ -1837,8 +1835,7 @@ sub resume_job($$) {
     my $dbh = shift;
     my $idJob = shift;
 
-    #my $lusr= getpwuid($<);
-    my $lusr = getpwuid($ENV{SUDO_UID});
+    my $lusr = $ENV{OARDO_USER};
 
     my $job = get_job($dbh, $idJob);
 

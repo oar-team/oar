@@ -8,8 +8,7 @@ OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
 SSHCMD=/usr/bin/ssh
 # OAR variables
 OARDIR=/usr/lib/oar
-OARUSER=oar
-OARCMD=oarsh
+OARSHCMD=oarsh
 DEBUGFILE=
 
 # unset bash glob expension 
@@ -136,7 +135,6 @@ if [ -n "$DEBUGFILE" ]; then
 fi
 
 # Sudowrapper mechanism to call oarsh
-unset SUDO_USER
-exec sudo -H -u $OARUSER $OARDIR/cmds/oarsh "${OPTS[@]}" $SSHARGS_HOST "$SSHARGS_COMMAND"
+exec $OARDIR/$OARSHCMD "${OPTS[@]}" $SSHARGS_HOST "$SSHARGS_COMMAND"
 echo "OARSH wrapper failed." 1>&2
 exit 1

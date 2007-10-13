@@ -6,8 +6,8 @@
 
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="/usr/bin/xauth"
-OAR_SHELL_WRAPPER="/etc/oar/shell_user_wrapper.sh"
 CPUSET_MOUNT_POINT="/dev/cpuset"
+OARDIR="/usr/lib/oar"
 
 # $1 = Name of the cpuset
 # $2,$3,... = PIDs to add
@@ -28,35 +28,9 @@ function add_process_to_cpuset() {
     shift
     for p in $@
     do
-        sudo sh -c "echo $p > $CPUSETFILE" || return 1
+        $OARDIR/oardo sh -c "echo $p > $CPUSETFILE" || return 1
     done
     ###########################################################################
-}
-
-# $1 = Name of the user
-# set global variable to fit to the user
-function get_and_set_user_info() {
-    # Get user shell (must be optimized)
-    PASSWD_LINE=$(getent passwd $1)
-    declare -a PASS_INFO_ARRAY
-    OLD_IFS=$IFS
-    IFS=':'
-    i=0
-    for f in $PASSWD_LINE
-    do
-        PASS_INFO_ARRAY[$i]=$f
-        ((i++))
-    done
-    IFS=$OLD_IFS
-    export SHELL=${PASS_INFO_ARRAY[6]}
-    if [ "$SHELL" == "" ]
-    then
-        echo "oarsh: No shell found for user $1." 1>&2
-        exit 4
-    else
-        export HOME=${PASS_INFO_ARRAY[5]}
-        cd $HOME
-    fi
 }
 
 if [ "$OAR_JOB_USER" == "" ]
@@ -72,7 +46,7 @@ then
     then
         add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
     fi
-    sudo renice 0 $$ $PPID > /dev/null 2>&1
+    $OARDIR/oardo renice 0 $$ $PPID > /dev/null 2>&1
     export SHELL=$DEFAULT_SHELL
     
     exec $DEFAULT_SHELL "$@"
@@ -91,38 +65,26 @@ else
     then
         if [ -x "$XAUTH_LOCATION" ]
         then
-            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | sudo -H -u $OAR_JOB_USER $XAUTH_LOCATION merge -
+            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=$OAR_JOB_USER $OARDIR/oardo $XAUTH_LOCATION merge -
         fi
     fi
     #Change tty owner
-    TTY=$(tty) && test -e $TTY && sudo chown $OAR_JOB_USER:oar $TTY && sudo chmod 660 $TTY
-    sudo renice 0 $$ $PPID > /dev/null 2>&1
+    TTY=$(tty) && test -e $TTY && $OARDIR/oardo chown $OAR_JOB_USER:oar $TTY && $OARDIR/oardo chmod 660 $TTY
+    $OARDIR/oardo renice 0 $$ $PPID > /dev/null 2>&1
     if [ "$1" == "" ]
     then
         # Simulate initial login
-        if [ -f "$OAR_SHELL_WRAPPER" ]
-        then
-            get_and_set_user_info $OAR_JOB_USER
-            exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL
-            echo "oarsh: exec failed" 1>&2
-            exit 6
-        else    
-            exec sudo -i -u $OAR_JOB_USER
-            echo "oarsh: exec failed" 1>&2
-            exit 6
-        fi
+        export OARDO_BECOME_USER=$OAR_JOB_USER
+        exec $OARDIR/oardo
+        #exec $OARDIR/oardo su - $OAR_JOB_USER
+        echo "oarsh: exec failed" 1>&2
+        exit 6
     else
-        get_and_set_user_info $OAR_JOB_USER
-        if [ -f "$OAR_SHELL_WRAPPER" ]
-        then
-            exec sudo -H -u $OAR_JOB_USER $OAR_SHELL_WRAPPER $SHELL "$@"
-            echo "oarsh: exec failed" 1>&2
-            exit 6
-        else
-            exec sudo -H -u $OAR_JOB_USER $SHELL "$@"
-            echo "oarsh: exec failed" 1>&2
-            exit 6
-        fi
+        export OARDO_BECOME_USER=$OAR_JOB_USER
+        export OARDO_USE_USER_SHELL=1
+        exec $OARDIR/oardo "$@"
+        echo "oarsh: exec failed" 1>&2
+        exit 6
     fi
 fi
 

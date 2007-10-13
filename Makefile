@@ -1,16 +1,13 @@
 #!/usr/bin/make
 # $Id$
-SHELL=/bin/sh
+SHELL=/bin/bash
 
-OARHOMEDIR=/var/lib/oar
 OARCONFDIR=/etc/oar
-# OARUSER and OAROWNER should be the same value execpt for special needs 
+# OARUSER and OAROWNER should be the same value except for special needs 
 # (Debian packaging) 
-# OARUSER is the variable expanded in the sudoers file  
 OARUSER=oar
 # OAROWNER is the variable expanded to set the ownership of the files
 OAROWNER=$(OARUSER)
-OARGROUP=oar
 
 PREFIX=/usr/local
 MANDIR=$(PREFIX)/man
@@ -20,17 +17,13 @@ SBINDIR=$(PREFIX)/sbin
 DOCDIR=$(PREFIX)/doc/oar
 WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
-CONFIG_CMDS=$(OARDIR)/cmds
 DEB_INSTALL=$(OARDIR)
 DEB_SBINDIR=$(SBINDIR)
+DEB_BINDIR=$(BINDIR)
 XAUTHCMDPATH=$(shell which xauth)
 ifeq "$(XAUTHCMDPATH)" ""
 	XAUTHCMDPATH=/usr/bin/xauth
 endif
-
-BINLINKPATH=$(OARDIR)
-SBINLINKPATH=$(OARDIR)
-CMDSLINKPATH=$(OARDIR)
 
 .PHONY: man
 
@@ -39,12 +32,11 @@ install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
 	@echo "Where MODULES := { server-install | user-install | node-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install }"
-	@echo "      OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | OAROWNER | OARGROUP | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
+	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
 	@[ "`id root`" = "`id`" ] || echo "Warning: root-privileges are required to install some files !"
 	@id $(OAROWNER) > /dev/null || ( echo "Error: User $(OAROWNER) does not exist!" ; exit -1 )
-	@[ -d $(OARHOMEDIR) ] || ( echo "Error: OAR home directory $(OARHOMEDIR) does not exist!" ; exit -1 )
 
 man:
 	@cd man/man1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
@@ -57,92 +49,76 @@ desktop-computing-agent:
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 DesktopComputing/oar-agent.pl $(BINDIR)/oar-agent
 
-desktop-computing-cgi:
+desktop-computing-cgi: sudowrapper
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -d -m 0755 $(CONFIG_CMDS)
-	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarcache
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarcache#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarcache
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarcache
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarcache'\;#" $(SBINDIR)/oarcache
 	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarres
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarres#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarres
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarres
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarres'\;#" $(SBINDIR)/oarres
 	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oar-cgi
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oar-cgi'\;#" $(CGIDIR)/oar-cgi
 	install -d -m 0755 $(CGIDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar-cgi
-	install -m 0755 Tools/sudowrapper.sh $(CGIDIR)/oar-cgi
-	rm $(OARDIR)/sudowrapper.sh
 
-dbinit:
+dbinit: sudowrapper
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -d -m 0755 $(CONFIG_CMDS)
-	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oar_mysql_db_init#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oar_mysql_db_init
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oar_mysql_db_init'\;#" $(SBINDIR)/oar_mysql_db_init
 	install -m 0644 DB/oar_jobs.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
-	rm $(OARDIR)/sudowrapper.sh
 
 sudowrapper: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
-	install -d -m 0755 $(CONFIG_CMDS)
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
+	install -m 6755 Tools/oardo $(OARDIR)
+	perl -i -pe "s#Oardir = .*#Oardir = '$(DEB_INSTALL)'\;#;;\
+			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				" $(OARDIR)/oardo
+	ln -s -f $(DEB_INSTALL)/oardo $(DEB_SBINDIR)/oardo
+	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oarsh_oardo
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarsh'\;#" $(OARDIR)/oarsh_oardo
 	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^OARCMD=.*#OARCMD=oarsh#" $(BINDIR)/oarsh
-	install -m 0755 Tools/configurator_wrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#;;s#^OARXAUTHLOCATION=.*#OARXAUTHLOCATION=$(XAUTHCMDPATH)#;;s#^OARCONFFILE=.*#OARCONFFILE=$(OARCONFDIR)/oar\.conf#;;s#^OARSHELLWRAPPER=.*#OARSHELLWRAPPER=$(OARCONFDIR)/shell_user_wrapper\.pl#" $(OARDIR)/configurator_wrapper.sh
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsh
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;\
+				 s#^OARSHCMD=.*#OARSHCMD=oarsh_oardo#\
+				" $(BINDIR)/oarsh
 	install -m 0755 Tools/oarsh/oarcp $(BINDIR)
-	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(BINDIR)/oarcp
+	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(DEB_BINDIR)/oarsh#" $(BINDIR)/oarcp
 	install -d -m 0755 $(MANDIR)/man1
-	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
+	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarcp.1
 	
-common:
+common: sudowrapper
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -d -m 0755 $(CONFIG_CMDS)
-	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
 	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodesetting
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnodesetting#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarnodesetting
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarnodesetting
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarnodesetting'\;#" $(SBINDIR)/oarnodesetting
 	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
 	install -m 0644 Tools/oarversion.pm $(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
-	rm $(OARDIR)/sudowrapper.sh
-	install -m 0755 Tools/oardo $(SBINDIR)
-	chmod a+s $(SBINDIR)/oardo
 
 server:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -d -m 0755 $(CONFIG_CMDS)
-	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Almighty/Almighty $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/Almighty
-	perl -i -pe "s#^OARCMD=.*#OARCMD=Almighty#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/Almighty
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/Almighty
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/Almighty'\;#" $(SBINDIR)/Almighty
 	install -m 0755 Leon/Leon	$(OARDIR)
 	install -m 0755 Runner/runner $(OARDIR)
 	install -m 0755 Sarko/sarko $(OARDIR)
@@ -154,26 +130,21 @@ server:
 	install -m 0755 Scheduler/oar_meta_sched $(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnotify
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnotify#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarnotify
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarnotify
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarnotify'\;#" $(SBINDIR)/oarnotify
 	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarremoveresource
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarremoveresource#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarremoveresource
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarremoveresource
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarremoveresource'\;#" $(SBINDIR)/oarremoveresource
 	install -m 0755 Qfunctions/oaraccounting $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oaraccounting
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oaraccounting#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oaraccounting
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oaraccounting
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oaraccounting'\;#" $(SBINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarproperty
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarproperty#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarproperty
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarproperty
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarproperty'\;#" $(SBINDIR)/oarproperty
 	install -m 0755 Qfunctions/oarmonitor $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarmonitor
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarmonitor#" $(OARDIR)/sudowrapper.sh
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oarmonitor
+	install -m 6750 $(OARDIR)/oardo $(SBINDIR)/oarmonitor
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarmonitor'\;#" $(SBINDIR)/oarmonitor
 	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
@@ -183,42 +154,31 @@ server:
 	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
-	rm $(OARDIR)/sudowrapper.sh
 
 user: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
-	install -d -m 0755 $(CONFIG_CMDS)
-	install -m 0755 Tools/sudowrapper.sh $(OARDIR)
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarnodes
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarnodes#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarnodes
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarnodes
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarnodes'\;#" $(BINDIR)/oarnodes
 	install -m 0755 Qfunctions/oardel $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oardel
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oardel#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oardel
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oardel
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oardel'\;#" $(BINDIR)/oardel
 	install -m 0755 Qfunctions/oarstat $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarstat
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarstat#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarstat
-	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=$(CONFIG_CMDS)/oarstat#" $(OARDIR)/oarsh
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarstat
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarstat'\;#" $(BINDIR)/oarstat
+	perl -i -pe "s#^OARSH_OARSTAT_CMD=.*#OARSH_OARSTAT_CMD=$(DEB_BINDIR)/oarstat#" $(OARDIR)/oarsh
 	install -m 0755 Qfunctions/oarsub $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarsub
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarsub#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarsub
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarsub
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarsub'\;#" $(BINDIR)/oarsub
 	install -m 0755 Qfunctions/oarhold $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarhold
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarhold#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarhold
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarhold
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarhold'\;#" $(BINDIR)/oarhold
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
-	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oarresume
-	perl -i -pe "s#^OARCMD=.*#OARCMD=oarresume#" $(OARDIR)/sudowrapper.sh 
-	install -m 0755 $(OARDIR)/sudowrapper.sh $(BINDIR)/oarresume
-	rm $(OARDIR)/sudowrapper.sh
+	install -m 6755 $(OARDIR)/oardo $(BINDIR)/oarresume
+	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarresume'\;#" $(BINDIR)/oarresume
 	install -m 0755 Tools/oarmonitor_graph_gen.pl $(OARDIR)
-	ln -s -f $(OARDIR)/oarmonitor_graph_gen.pl $(BINDIR)/oarmonitor_graph_gen.pl
+	ln -s -f $(DEB_INSTALL)/oarmonitor_graph_gen.pl $(DEB_BINDIR)/oarmonitor_graph_gen.pl
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
@@ -234,10 +194,10 @@ node: man
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
-	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh_shell
-	perl -i -pe "s#^OAR_SHELL_WRAPPER=.*#OAR_SHELL_WRAPPER=$(OARCONFDIR)/shell_user_wrapper.pl#" $(OARDIR)/oarsh_shell
+	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
+				 s#^OARDIR=.*#OARDIR=$(DEB_INSTALL)#;;\
+				" $(OARDIR)/oarsh_shell
 	install -m 0755 Tools/detect_resources $(OARDIR)
-	@if [ -f $(OARCONFDIR)/shell_user_wrapper.pl ]; then echo "Warning: $(OARCONFDIR)/shell_user_wrapper.pl already exists, not overwriting it." ; else install -m 0755 Tools/shell_user_wrapper.pl $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
 

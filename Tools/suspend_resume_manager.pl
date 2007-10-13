@@ -32,13 +32,13 @@ if ($ARGV[0] eq "suspend"){
     # Suspend all processes of the cpuset
 
     system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
-            sudo kill -SIGSTOP $PROCESSES'
+            oardo kill -SIGSTOP $PROCESSES'
           );
 }elsif ($ARGV[0] eq "resume"){
     # Resume all processes of the cpuset
 
     system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
-            sudo kill -SIGCONT $PROCESSES'
+            oardo kill -SIGCONT $PROCESSES'
           );
 }else{
     print("[suspend_resume_manager] Bad command line argument $ARGV[0].\n");

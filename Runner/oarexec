@@ -113,7 +113,7 @@ sub clean_all(){
                 if ($cmd_name =~ m/$file/m){
                     # remove ppid
                     print("[oarexec $Job_id] kill oarsub connections @pid_list\n");
-                    system({"bash"} "bash","-c","sudo kill -9 @pid_list > /dev/null 2>&1") if ($#pid_list >= 0);
+                    system({"oardo"} "oardo","kill","-9",@pid_list) if ($#pid_list >= 0);
                 }else{
                     print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that there is no OAR oarsub processes\n");
                 }
@@ -161,7 +161,7 @@ sub kill_children($){
     my $child_pid = shift;
 
     my ($children, $cmd_name) = oar_Tools::get_one_process_children($child_pid);
-    system({"bash"} "bash","-c","sudo kill -9 @{$children} 2>&1 > /dev/null");
+    system({"oardo"} "oardo","kill","-9",@{$children});
 }
 
 sub send_kill_signal_to_myself(){
@@ -296,9 +296,12 @@ my $stdin_script_to_send;
 if ( $Job->{mode} eq "PASSIVE" ){
     print("[oarexec $Job_id] Begin a passive command\n");
     my $str;
-    ($str, $stdin_script_to_send) = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{job_env},$Job->{shell_wrapper},$Job->{command});
+    ($str, $stdin_script_to_send) = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{job_env},$Job->{command});
     #print($str."\n");
-    @cmd = ("sudo","-H","-u","$Job->{job_user}","perl","-e",$str);
+    #@cmd = ("oardo","su","-","$Job->{job_user}","-c","perl -e '$str'");
+    @cmd = ("oardo","perl","-e",$str);
+    #$ENV{OARDO_BECOME_USER}=$Job->{job_user};
+    #@cmd = ("oardo","perl","-e",$str);
 }
 
 #resolve terminal type problems
@@ -311,7 +314,7 @@ if (($terminal ne "") and ($terminal ne "unknown")){
 
 #oar own the tty
 #so we must change owner for the user
-system({"bash"} "bash","-c","TTY=\$(tty) && test -e \$TTY && sudo chown $Job->{job_user}:oar \$TTY && sudo chmod 660 \$TTY");
+system({"bash"} "bash","-c","TTY=\$(tty) && test -e \$TTY && oardo chown $Job->{job_user}:oar \$TTY && oardo chmod 660 \$TTY");
 
 # pipe for notify the end of a child process
 pipe(pipe_child_read,pipe_child_write);
@@ -431,6 +434,7 @@ if ($Job->{mode} eq "PASSIVE"){
         close(STDIN);
         open(STDIN, "<& pipe_stdin_read");
 
+        $ENV{OARDO_BECOME_USER} = $Job->{job_user};
         exec(@cmd);
         warn("[ERROR] Cannot find @cmd\n");
         exit(-1);
@@ -512,7 +516,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
             if (defined($pid_to_send_kill)){
                 print("[oarexec $Job_id] Send signal SIGUSR2 to the pid $pid_to_send_kill\n");
-                system("sudo kill -s $Job->{checkpoint_signal} $pid_to_send_kill");
+                system({"oardo"} "oardo","kill","-s",$Job->{checkpoint_signal},$pid_to_send_kill);
             }else{
                 print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
                 send_kill_signal_to_myself();
