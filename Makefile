@@ -49,7 +49,7 @@ desktop-computing-agent:
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 DesktopComputing/oar-agent.pl $(BINDIR)/oar-agent
 
-desktop-computing-cgi: sudowrapper
+desktop-computing-cgi:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
@@ -63,7 +63,7 @@ desktop-computing-cgi: sudowrapper
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oar-cgi'\;#" $(CGIDIR)/oar-cgi
 	install -d -m 0755 $(CGIDIR)
 
-dbinit: sudowrapper
+dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
@@ -95,7 +95,7 @@ sudowrapper: man
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarcp.1
 	
-common: sudowrapper
+common:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
@@ -112,7 +112,7 @@ common: sudowrapper
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 
-server: common
+server:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(BINDIR)
@@ -156,7 +156,7 @@ server: common
 	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
 
-user: man common
+user: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
@@ -187,7 +187,7 @@ user: man common
 	install -m 0644 man/man1/oarsub.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarhold.1 $(MANDIR)/man1
 
-node: man common
+node: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
