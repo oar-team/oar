@@ -82,7 +82,7 @@ sudowrapper: man
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				" $(OARDIR)/oardo
-	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oardo
+	install -m 6755 $(OARDIR)/oardo $(SBINDIR)/oardo
 	install -m 6755 $(OARDIR)/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Cmd_wrapper = .*#Cmd_wrapper = '$(DEB_INSTALL)/oarsh'\;#" $(OARDIR)/oarsh_oardo
 	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
