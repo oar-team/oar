@@ -1,17 +1,19 @@
 #OAR_NODE_NAME=$(hostname -f)
 #OARSERVER="myserver"
 #
+# umask 0702
+#
 ## This function is called when oar-node service is started.
 ## You can change this to use another method to switch the node into the Alive state
 #start_oar_node() {
 #    test -n "$OARSERVER" || exit 0
-#    sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Alive -h $OAR_NODE_NAME"
+#    su - oar -c "/usr/bin/ssh $OARSERVER oarnodesetting -s Alive -h $OAR_NODE_NAME"
 #}
 #
 ## This function is called when oar-node service is stopped.
 ## You can change this to use another method to switch the node into the Absent state
 #stop_oar_node() {
 #    test -n "$OARSERVER" || exit 0
-#    sudo -u oar /usr/bin/ssh $OARSERVER "oarnodesetting -s Absent -h $OAR_NODE_NAME"
+#    su - oar -c "/usr/bin/ssh $OARSERVER oarnodesetting -s Absent -h $OAR_NODE_NAME"
 #}
 

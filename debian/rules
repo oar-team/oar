@@ -69,94 +69,72 @@ install-indep:
 	$(MAKE) sanity-check sudowrapper configuration \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-common/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-common/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-common/usr \
 		MANDIR=$(CURDIR)/debian/oar-common/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-common/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-common/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
-	perl -i -pe "s#^OARSTAT_CMD=.*#OARSTAT_CMD=/usr/lib/oar/cmds/oarstat#" $(CURDIR)/debian/oar-common/usr/lib/oar/oarsh
-	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=/usr/bin/oarsh#" $(CURDIR)/debian/oar-common/usr/bin/oarcp
+		DEB_SBINDIR=/usr/sbin \
+		DEB_BINDIR=/usr/bin
 	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
-	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/configurator_wrapper.sh
-	#perl -i -pe 's#^OARDIR=.*#OARDIR=/usr/lib/oar#' $(CURDIR)/debian/oar-common/usr/lib/oar/sudowrapper.sh
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
 	$(MAKE) sanity-check common \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-libs/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-libs/usr \
 		MANDIR=$(CURDIR)/debian/oar-libs/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-libs/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-libs/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-libs/usr/sbin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		DEB_SBINDIR=/usr/sbin \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-server/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-server/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-server/usr \
 		MANDIR=$(CURDIR)/debian/oar-server/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-server/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-server/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-server/usr/sbin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
 	mkdir -p $(CURDIR)/debian/oar-node/etc/init.d
 	$(MAKE) sanity-check node \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-node/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-node/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-node/usr \
 		MANDIR=$(CURDIR)/debian/oar-node/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-node/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-node/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-node/usr/sbin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
 	$(MAKE) sanity-check user \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-user/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-user/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-user/usr \
 		MANDIR=$(CURDIR)/debian/oar-user/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-user/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-user/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-user/usr/sbin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 	$(MAKE) draw-gantt \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-draw-gantt/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-draw-gantt/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-draw-gantt/usr \
 		MANDIR=$(CURDIR)/debian/oar-draw-gantt/usr/share/man \
@@ -165,30 +143,24 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-draw-gantt/usr/sbin \
 		WWWDIR=$(CURDIR)/debian/oar-draw-gantt/var/www \
 		CGIDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/cgi-bin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 	$(MAKE) desktop-computing-agent \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-agent/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-desktop-computing-agent/usr \
 		MANDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/share/man \
 		OARDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 	$(MAKE) desktop-computing-cgi \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARGROUP=root \
-		OARHOMEDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/lib/oar \
 		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc/oar \
 		PREFIX=$(CURDIR)/debian/oar-desktop-computing-cgi/usr \
 		MANDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/share/man \
@@ -197,10 +169,9 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/sbin \
 		WWWDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/www \
 		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
-		BINLINKPATH=../lib/oar \
-		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
-		SBINLINKPATH=../lib/oar
+		DEB_BINDIR=/usr/bin \
+		DEB_SBINDIR=/usr/sbin
 
 	dh_install -i
 

@@ -17,32 +17,10 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-remove_sudoers() {
-  if [ ! -e /etc/sudoers ]; then
-		echo "Error: No /etc/sudoers file. Is sudo installed ?" 
-		exit 1
-	fi
-	perl -e '
-use Fcntl;
-my $sudoers = "/etc/sudoers";
-my $sudoerstmp = "/etc/sudoers.tmp";
-my $oar_tag="# DO NOT REMOVE, needed by OAR package";
-my $struct=pack("ssll", F_WRLCK, SEEK_CUR, 0, 0);
-sysopen (SUDOERS, $sudoers, O_RDWR|O_CREAT, 0440) or die "sysopen $sudoers: $!";
-fcntl(SUDOERS, F_SETLK, $struct) or die "fcntl: $!";
-sysopen (SUDOERSTMP, "$sudoerstmp", O_RDWR|O_CREAT, 0440) or die "sysopen $sudoerstmp: $!";
-print SUDOERSTMP grep (!/$oar_tag/, <SUDOERS>);
-close SUDOERSTMP or die "close $sudoerstmp: $!";
-rename "/etc/sudoers.tmp", "/etc/sudoers" or die "rename: $!";
-close SUDOERS or die "close $sudoers: $!";
-'
-}
-
 case "$1" in
 	remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
 	    ;;
 	purge)
-		remove_sudoers || true
 		deluser --quiet oar > /dev/null 2>&1 || true
 		delgroup --quiet oar > /dev/null 2>&1 || true
 		rm -f /var/log/oar.log* || true
