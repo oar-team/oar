@@ -2,11 +2,26 @@
 #
 # SUDO for OAR = OARDO
 # This script must be setuid root.
-# Cases to use this script:
+# Cases for the use of this script:
+#
 #   - user $Oaruser executes this script and OARDO_BECOME_USER is empty
-#       --> @ARGV is executed with root privileges
+#       --> if @ARGV is empty
+#               then run the root shell with a dash in front of the process
+#               name (login shell)
+#           else
+#               @ARGV is executed with root privileges
+#
 #   - user $Oaruser executes this script and OARDO_BECOME_USER is set
-#       --> @ARGV is executed with $ENV{OARDO_BECOME_USER} privileges
+#       --> if @ARGV is empty
+#               then run the OARDO_BECOME_USER shell with a dash in front of
+#               the process name (login shell)
+#           else
+#               if OARDO_USE_USER_SHELL is set
+#                   then execute "shell @ARGV" with OARDO_BECOME_USER
+#                   privileges and shell user
+#               else
+#                   @ARGV is executed with OARDO_BECOME_USER privileges
+#
 #   - a user, different of $Oaruser, executes this script
 #       --> only $Cmd_wrapper can be executed with $Oaruser privileges with
 #           @ARGV arguments
@@ -92,7 +107,6 @@ sub change_process_owner($){
     $ENV{LOGNAME} = $user;
     $ENV{SHELL} = $tmp[8];
     $ENV{HOME} = $tmp[7];
-    delete($ENV{OARDO_BECOME_USER});
 }
 
 if ($Cmd_wrapper ne ""){
@@ -107,7 +121,10 @@ my $oar_uid = getpwnam($Oaruser);
 if ($< == $oar_uid){
     # We are oar so we want to execute the command with root privileges
     my $user = "root";
-    $user = $ENV{OARDO_BECOME_USER} if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne ""));
+    if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne "")){
+        $user = $ENV{OARDO_BECOME_USER};
+        delete($ENV{OARDO_BECOME_USER});
+    }
     change_process_owner($user);
     if ($#clean_argv < 0){
         # Login shell
@@ -120,6 +137,7 @@ if ($< == $oar_uid){
         exec({$shell} "-$tmp[$#tmp]");
     }else{
         if (defined($ENV{OARDO_USE_USER_SHELL}) and ($ENV{OARDO_USE_USER_SHELL} ne "")){
+            delete($ENV{OARDO_USE_USER_SHELL});
             $ENV{HOME} =~ m/(.*)/m;
             my $home = $1;
             chdir($home);
