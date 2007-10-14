@@ -19,15 +19,9 @@ These are :
       computational nodes ;
     - the computational nodes (a.k.a. the nodes), on which the jobs will run.
 
-On every node, the "sentinelle" binary can be installed (it is not necessary).
-This tool is used to launch commands on several computers, at a same time.
-It ships with the current OAR package (but it is also available
-separately in Taktuk in an Open Source License).
-
 On every nodes (server, login, computational), the following packages must be
 installed :
 
-    - sudo
     - Perl
     - Perl-base
     - openssh (server and client)
@@ -35,14 +29,13 @@ installed :
 On the OAR server and on the login nodes, the following packages must be
 installed:
 
-    - Perl-Mysql
+    - Perl-Mysql | Perl-PostegreSQL
     - Perl-DBI
-    - MySQL
-    - MySQL-shared
-    - libmysql
+    - MySQL | PostrgeSQL
+    - libmysql | libpostgres
 
-From now on, we will suppose all the Perl/Mysql packages are
-correctly installed and configured and mysql database is started.
+From now on, we will suppose all the packages are correctly installed and
+configured and the database is started.
 
 
 Configuration of the cluster
@@ -72,30 +65,6 @@ The following steps have to be done, prior to installing OAR:
         * test the ssh connection between (every) two nodes : there should not
           be any prompt.
 
-    - grant the user "oar" the permission to execute commands with root
-      privileges. To achieve that, OAR makes use of sudo. As a consequence,
-      /etc/sudoers must be configured. Please use visudo to add the following
-      lines::
-
-            Defaults>oar    env_reset,env_keep += "PWD DISPLAY OAR_JOB_ID OAR_JOB_KEY_FILE", !requiretty
-            Defaults:oar env_reset,env_keep += "DISPLAY SSH_CLIENT SSH2_CLIENT SHELL", !requiretty
-            
-            Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
-            /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
-            /usr/lib/oar/oarnotify, /usr/lib/oar/oarresume, /usr/lib/oar/oarsh
-            %oar ALL=(oar) NOPASSWD: OARCMD
-            
-            oar ALL=(ALL) NOPASSWD:ALL
-            
-            Defaults:www-data   env_keep += "SCRIPT_NAME SERVER_NAME
-            SERVER_ADMIN HTTP_CONNECTION REQUEST_METHOD CONTENT_LENGTH
-            SCRIPT_FILENAME SERVER_SOFTWARE HTTP_TE QUERY_STRING REMOTE_PORT
-            HTTP_USER_AGENT SERVER_PORT SERVER_SIGNATURE REMOTE_ADDR
-            CONTENT_TYPE SERVER_PROTOCOL PATH REQUEST_URI GATEWAY_INTERFACE
-            SERVER_ADDR DOCUMENT_ROOT HTTP_HOST"
-            
-            www-data ALL=(oar) NOPASSWD: /usr/lib/oar/oar-cgi
-
 There are a three different flavors of installation :
 
     * server:  install the daemon which must be running on the server
@@ -113,21 +82,25 @@ The installation is straightforward:
     - run make  <module> [module] ...
         where module := { server-install | user-install | node-install | doc-install | debian-package }
               OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }
-    - Edit /etc/oar.conf file to match your cluster configuration.
-    - Make sure that the PATH environnement variable contains $PREFIX/$BINDIR of
+    - Edit /etc/oar/oar.conf file to match your cluster configuration.
+    - Make sure that the PATH environment variable contains $PREFIX/$BINDIR of
       your installation (default is /usr/local/bin).
 
 
-Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init script provided
-with the server module installation and located in $PREFIX/sbin (/usr/local/sbin in default Makefile).
+Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init
+script provided with the server module installation and located in $PREFIX/sbin
+(/usr/local/sbin in default Makefile).
 
-If you want to use a postgres SQL server then there is currently no automatic installation script.
-You have to add a new user which can connect on a new oar database(use the commands *createdb* and *createuser*).
-After that, you have to authorize network connections on the postgresql server in the *postgresql.conf* (uncomment
-*tcpip_socket = true*).
-Then you can import the database scheme stored in *oar_postgres.sql* (use the SQL command "\\i").
+If you want to use a postgres SQL server then there is currently no automatic
+installation script.  You have to add a new user which can connect on a new oar
+database(use the commands *createdb* and *createuser*).  After that, you have
+to authorize network connections on the postgresql server in the
+*postgresql.conf* (uncomment *tcpip_socket = true*).  Then you can import the
+database scheme stored in *oar_postgres.sql* (use *psql* and the SQL command
+"\\i").
 
-Here is an example to perform all the potgres database install(there is certainly other ways to do that)::
+Here is an example to perform all the potgres database install(there is
+certainly other ways to do that)::
 
     sudo su - postgres
 
@@ -169,46 +142,54 @@ Here is an example to perform all the potgres database install(there is certainl
     psql oar oar_ro -h127.0.0.1
 
 
-For more informations about postgresql, go to http://www.postgresql.org/.
+For more information about postgresql, go to http://www.postgresql.org/.
 
-**Security issue**: For security reasons it is hardly **recommended** to configure a read only account for the OAR database (like the above example). Thus you will be able to add this data in DB_BASE_LOGIN_RO_ and DB_BASE_PASSWD_RO_ in *oar.conf*. 
+**Security issue**: For security reasons it is hardly **recommended** to
+configure a read only account for the OAR database (like the above example).
+Thus you will be able to add this data in DB_BASE_LOGIN_RO_ and
+DB_BASE_PASSWD_RO_ in *oar.conf*. 
 
 Note: The same machine may host several or even all modules.
 
-Note about X11:
-The easiest and scalable way to use X11 application on cluster nodes is to open X11 ports and set the right DISPLAY environment variable by hand.
-Otherwise users can use X11 forwarding via ssh to access cluster frontal. After that you must configure ssh server on this frontal with
-::
+Note about X11: The easiest and scalable way to use X11 application on cluster
+nodes is to open X11 ports and set the right DISPLAY environment variable by
+hand.  Otherwise users can use X11 forwarding via ssh to access cluster
+frontal. After that you must configure ssh server on this frontal with ::
 
     X11Forwarding yes
     X11UseLocalhost no
 
-With this configuration, users can launch X11 applications after a 'oarsub -I' on the given node.
+With this configuration, users can launch X11 applications after a 'oarsub -I'
+on the given node.
 
 CPUSET installation
 ~~~~~~~~~~~~~~~~~~~
-..  OAR can use CPUSET features provided with the Linux kernel >= 2.6. This enables
-    to restrict user processes only on reserved processors and clean correctly nodes
-    after the job.
-    To perform this installation you must read the documentation in Tools/oarsh/README.
+
+..  OAR can use CPUSET features provided with the Linux kernel >= 2.6. This
+    enables to restrict user processes only on reserved processors and clean
+    correctly nodes after the job.  To perform this installation you must read
+    the documentation in Tools/oarsh/README.
 
 .. include:: Tools/oarsh/README
 
 Visualization tools installation
 --------------------------------
 
-There are two different tools. One, named Monika, displays the current cluster state
-with all active and waiting jobs. The other, named drawgantt, diplays node occupation
-in a lapse of time.
-These tools are CGI scripts and generate HTML pages.
+There are two different tools. One, named Monika, displays the current cluster
+state with all active and waiting jobs. The other, named drawgantt, displays
+node occupation in a lapse of time.  These tools are CGI scripts and generate
+HTML pages.
 
 You can install these in this way:
     drawgantt:
     
-        - Make sure you installed "ruby", "libdbd-mysql-ruby" or "libdbd-pg-ruby" and "libgd-ruby1.8" packages.
-        - Copy "drawgantt.cgi" and "drawgantt.conf" in the CGI folder of your web server
+        - Make sure you installed "ruby", "libdbd-mysql-ruby" or
+          "libdbd-pg-ruby" and "libgd-ruby1.8" packages.
+        - Copy "drawgantt.cgi" and "drawgantt.conf" in the CGI folder of your
+          web server
           (ex: /usr/lib/cgi-bin/ for Debian).
-        - Copy all icons and javascript files in a folder that web server can find them
+        - Copy all icons and javascript files in a folder that web server can
+          find them
           (ex: /var/www/oar/Icons and /var/www/oar/Icons).
         - Make sure that these files can be read by the web server user.
         - Edit "drawgantt.conf" and change tags to fit your configuration.
@@ -225,39 +206,39 @@ Debian packages
 ---------------
 
 OAR is also released under Debian packages (or Ubuntu). You can find them at
-http://oar.imag.fr/download.html.
+https://gforge.inria.fr/frs/?group_id=125.
 
 If you want to add it as a new source in your /etc/apt/sources.list then add
 the line::
 
     deb http://oar.imag.fr/download ./
 
-The installation will ask you if you want to initialize the nodes. It will copy
-the oar SSH key on each specified nodes. You can skeep this step by you will
-have to do this manually.
+.. The installation will ask you if you want to initialize the nodes. It will copy
+   the oar SSH key on each specified nodes. You can skeep this step by you will
+   have to do this manually.
 
 **IMPORTANT** : if you want to use the cpuset features then you have to install
-the oar-node package on computing nodes otherwise this is not mandatory.
-But if this is performed then the configuration of `Important notes`_ 
-must be set on these nodes.
+the oar-node package on computing nodes otherwise this is not mandatory.  But
+if this is performed then the configuration of `Important notes`_ must be set
+on these nodes.
 
 After installing packages, you have to edit the `configuration file`_ on the
-server, submition nodes and computing nodes to fit your needs.
+server, submission nodes and computing nodes to fit your needs.
 
 Starting
 --------
 
 First, you must start OAR daemon on the server (its name is "Almighty").
 
-    - if you have installed OAR from sources, become oar user and launch command
-      "Almighty" (it stands in $PREFIX/sbin).
+    - if you have installed OAR from sources, become root user and launch
+      command "Almighty" (it stands in $PREFIX/sbin).
     - if you have installed OAR from Debian packages, use the script
       "/etc/init.d/oar-server" to start the daemon.
 
 Then you have to insert new resources in the database via the command
 oarnodesetting_.
 If you want to have an idea how does it work then launch
-$PREFIX/oar/detect_new_resources.sh. It will print right commands execute with
+*$PREFIX/oar/detect_new_resources.sh*. It will print right commands execute with
 an appropriate value for the memory and the cpuset properties.
 
 If you want to initialize your whole cluster in 1 command you can use this one

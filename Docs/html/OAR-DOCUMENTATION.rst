@@ -27,7 +27,7 @@
   productive plateforms and research experiments.
 
 
-**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR >= 2.0.0**
+**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR >= 2.3.0**
 
 PDF version : `<OAR-DOCUMENTATION.pdf>`_
 
@@ -489,7 +489,33 @@ Option are: ::
   -l                  list all queues and there status
   -h                  show this help screen
   -v                  print OAR version number
-                                                        
+
+*oarmonitor*
+~~~~~~~~~~~~
+
+This command collects monitoring data from compute nodes and stores them into
+the database.
+
+The TAKTUK_CMD_ is mandatory in the *oar.conf* and data comes from the sensor
+file OARMONITOR_SENSOR_FILE_ (parse */proc* filesystem for example) and print
+it in the right way.
+
+For example, the user "oar" or "root" can run the following command on the
+server:
+
+    oarmonitor -j 4242 -f 10
+
+(Retrieve data from compute nodes of the job 4242 every 10 seconds and store
+them into database tables monitoring_*)
+
+For now, there is just a very minimalist command for the user to view these
+data. It creates PNG images and a movie...
+
+    oarmonitor_graph_gen.pl -j 4242
+
+Then the user can look into the directory *OAR.1653.monitoring* in the current
+directory.
+
 Database scheme
 ---------------
 
@@ -1576,6 +1602,13 @@ Each configuration tag found in /etc/oar.conf is now described:
     there for security reasons::
 
       OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+
+.. _OARMONITOR_SENSOR_FILE:
+
+  - Name of the perl script the retrive monitoring data from compute nodes.
+    This is used in oarmonitor command.
+
+      OARMONITOR_SENSOR_FILE="/etc/oar/oarmonitor_sensor.pl"
 
 Module descriptions
 ===================
