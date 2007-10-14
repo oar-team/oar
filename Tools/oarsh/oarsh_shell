@@ -23,7 +23,7 @@ function add_process_to_cpuset() {
     if [ ! -w $CPUSETFILE ]
     then
         echo "oarsh: Cannot find cpuset file : $CPUSETFILE" 1>&2
-        exit 1
+        exit 61
     fi
     shift
     for p in $@
@@ -39,26 +39,26 @@ then
     then
         echo "oarsh: The OAR_KEY environment variable is not defined and this seems to be a oar user connection." 1>&2
         echo "oarsh: See 'Important notes' part of the 'CPUSET installation' section of the OAR documentation." 1>&2
-        exit 5
+        exit 65
     fi
     # It must be oar
     if [ "$OAR_CPUSET" != "" ]
     then
-        add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
+        add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
     fi
     $OARDIR/oardo renice 0 $$ $PPID > /dev/null 2>&1
     export SHELL=$DEFAULT_SHELL
     
     exec $DEFAULT_SHELL "$@"
     echo "oarsh: exec failed" 1>&2
-    exit 6
+    exit 66
 else
     if [ "$OAR_CPUSET" == "" ]
     then
         echo "oarsh: OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET OAR_JOB_USER' on all computing nodes?" 1>&2
-        exit 3
+        exit 63
     fi
-    add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 2
+    add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
     
     #Manage display
     if [ -n "$DISPLAY" ]
@@ -78,16 +78,16 @@ else
         exec $OARDIR/oardo
         #exec $OARDIR/oardo su - $OAR_JOB_USER
         echo "oarsh: exec failed" 1>&2
-        exit 6
+        exit 66
     else
         export OARDO_BECOME_USER=$OAR_JOB_USER
         export OARDO_USE_USER_SHELL=1
         exec $OARDIR/oardo "$@"
         echo "oarsh: exec failed" 1>&2
-        exit 6
+        exit 66
     fi
 fi
 
 echo "oarsh: Really bad error" 1>&2
-exit 7
+exit 67
 

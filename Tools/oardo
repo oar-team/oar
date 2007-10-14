@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Id$
 #
 # SUDO for OAR = OARDO
 # This script must be setuid root.
@@ -80,28 +81,28 @@ sub change_process_owner($){
     my @tmp = getpwnam($user);
     if ($#tmp < 0){
         warn("oardo: Cannot get information from user '$user'.\n");
-        exit(2);
+        exit(52);
     }
     
     $( = "$tmp[3] $tmp[3]";
     if ($!){
         warn("oardo: Cannot set GID to '$tmp[3]'.\n");
-        exit(2);
+        exit(52);
     }
     $) = "$tmp[3] $tmp[3]";
     if ($!){
         warn("oardo: Cannot set EGID to '$tmp[3]'.\n");
-        exit(2);
+        exit(52);
     }
     $< = $tmp[2];
     if ($!){
         warn("oardo: Cannot set UID to '$user'.\n");
-        exit(2);
+        exit(52);
     }
     $> = $tmp[2];
     if ($!){
         warn("oardo: Cannot set EUID to '$user'.\n");
-        exit(2);
+        exit(52);
     }
     $ENV{USER} = $user;
     $ENV{LOGNAME} = $user;
@@ -114,7 +115,7 @@ if ($Cmd_wrapper ne ""){
     change_process_owner($Oaruser);
     exec($Cmd_wrapper,@clean_argv);
     warn("oardo: Cannot execute with oar privileges : @clean_argv\n");
-    exit(1);
+    exit(51);
 }
 
 my $oar_uid = getpwnam($Oaruser);
@@ -149,9 +150,9 @@ if ($< == $oar_uid){
         }
     }
     warn("oardo: Cannot execute with oar privileges : @clean_argv.\n");
-    exit(1);
+    exit(51);
 }else{
     warn("oardo: You are not oar so you cannot use this command.\n");
-    exit(3);
+    exit(53);
 }
 
