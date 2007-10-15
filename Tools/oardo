@@ -97,7 +97,7 @@ sub change_process_owner($){
                 close(child_stdout_read);
                 close(STDOUT);
                 open(STDOUT, ">& child_stdout_write");
-                #close(STDERR);
+                close(STDERR);
                 close(STDIN);
                 exec({$Id_cmd} $Id_cmd,'-G',$user);
                 exit(1);
@@ -107,7 +107,7 @@ sub change_process_owner($){
                 $groups = "$tmp[3] $1";
             }
             close(child_stdout_read);
-            #wait();
+            wait();
         }else{
             close(child_stdout_write);
             close(child_stdout_read);
