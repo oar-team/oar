@@ -509,6 +509,8 @@ $ENV{SUDO_COMMAND}="OAR";
 delete($ENV{SSH_CLIENT});
 delete($ENV{SSH2_CLIENT});
 
+$ENV{SHLVL}=0;
+
 # Test if we can go into the launching directory
 if (!chdir($ENV{OAR_WORKING_DIRECTORY})){
     exit(1);
@@ -603,6 +605,7 @@ export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.';
 export SHELL='.$shell.';
 
 export SUDO_COMMAND=OAR;
+SHLVL=1;
 
 if ( cd $OAR_WORKING_DIRECTORY &> /dev/null );
 then

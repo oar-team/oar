@@ -40,6 +40,7 @@ my $Oardir = "";
 my $Oarconffile = "/etc/oar/oar.conf";
 my $Oarxauthlocation = "/usr/bin/xauth";
 my $Oaruser = "oar";
+my $Id_cmd = "/usr/bin/id";
 
 ###############################################################################
 
@@ -83,25 +84,55 @@ sub change_process_owner($){
         warn("oardo: Cannot get information from user '$user'.\n");
         exit(52);
     }
+
+    my $groups = "$tmp[3] $tmp[3]";
     
-    $( = "$tmp[3] $tmp[3]";
+    # Try to retrieve all group ids
+    if ((defined($Id_cmd)) and (-x $Id_cmd)){
+        pipe(child_stdout_read,child_stdout_write);
+        my $pid = fork();
+        if (defined($pid)){
+            if($pid == 0){
+                #CHILD
+                close(child_stdout_read);
+                close(STDOUT);
+                open(STDOUT, ">& child_stdout_write");
+                #close(STDERR);
+                close(STDIN);
+                exec({$Id_cmd} $Id_cmd,'-G',$user);
+                exit(1);
+            }
+            close(child_stdout_write);
+            if (<child_stdout_read> =~ m/^([\d\s]+)\n$/m){
+                $groups = "$tmp[3] $1";
+            }
+            close(child_stdout_read);
+            #wait();
+        }else{
+            close(child_stdout_write);
+            close(child_stdout_read);
+        }
+        undef($!);
+    }
+
+    $( = $groups;
     if ($!){
-        warn("oardo: Cannot set GID to '$tmp[3]'.\n");
+        warn("oardo: $!\n       Cannot set GID to '$groups'.\n");
         exit(52);
     }
-    $) = "$tmp[3] $tmp[3]";
+    $) = $groups;
     if ($!){
-        warn("oardo: Cannot set EGID to '$tmp[3]'.\n");
+        warn("oardo: $!\n       Cannot set EGID to '$groups'.\n");
         exit(52);
     }
     $< = $tmp[2];
     if ($!){
-        warn("oardo: Cannot set UID to '$user'.\n");
+        warn("oardo: $!\n       Cannot set UID to '$user'.\n");
         exit(52);
     }
     $> = $tmp[2];
     if ($!){
-        warn("oardo: Cannot set EUID to '$user'.\n");
+        warn("oardo: $!\n       Cannot set EUID to '$user'.\n");
         exit(52);
     }
     $ENV{USER} = $user;
@@ -123,7 +154,8 @@ if ($< == $oar_uid){
     # We are oar so we want to execute the command with root privileges
     my $user = "root";
     if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne "")){
-        $user = $ENV{OARDO_BECOME_USER};
+        $ENV{OARDO_BECOME_USER} =~ m/^(.+)$/m;
+        $user = $1;
         delete($ENV{OARDO_BECOME_USER});
     }
     change_process_owner($user);
