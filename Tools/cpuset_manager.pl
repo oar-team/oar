@@ -125,6 +125,7 @@ if ($ARGV[0] eq "init"){
         # public key
         if (open(PUB,"+<",$Cpuset->{ssh_keys}->{public}->{file_name})){
             flock(PUB,LOCK_EX);
+            seek(PUB,0,0);
             my $out = "\n".$Cpuset->{ssh_keys}->{public}->{key}."\n";
             while (<PUB>){
                 if ($_ =~ /environment=\"OAR_KEY=1\"/){
@@ -171,6 +172,7 @@ if ($ARGV[0] eq "init"){
         # public key
         if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){
             flock(PUB,LOCK_EX);
+            seek(PUB,0,0);
             #Change file on the fly
             my $out = "";
             while (<PUB>){
@@ -203,7 +205,7 @@ if ($ARGV[0] eq "init"){
         if (system('oardo rmdir /dev/cpuset'.$Cpuset_path)){
             # Uncomment this line if you want to use several network_address properties
             # which are the same physical computer (linux kernel)
-            exit(0);
+            #exit(0);
             exit(6);
         }
     }

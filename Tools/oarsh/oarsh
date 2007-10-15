@@ -51,7 +51,7 @@ then
         [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
     done
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
-    #install -m 0600 /dev/null $TMP_JOB_KEY_FILE
+    OLDUMASK=$(umask)
     umask 0177
     OARDO_BECOME_USER=$OAR_USER oardo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
@@ -59,6 +59,7 @@ then
         rm -f $TMP_JOB_KEY_FILE
         exit 3
     fi
+    umask $OLDUMASK
     
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
     echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"

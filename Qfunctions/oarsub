@@ -847,9 +847,10 @@ if (defined($use_job_key) and ($export_job_key_file ne "")){
         exit(14);
     }
     if ($pid == 0) {
-        umask(oct(0066));
+        umask(oct(0177));
         $ENV{OARDO_BECOME_USER} = $lusr;
-        unless (exec({"oardo"} "oardo","cat > $export_job_key_file")) {
+        open(STDERR, ">/dev/null");
+        unless (exec({"oardo"} "oardo","dd of=$export_job_key_file")) {
             warn ("Error: Cannot exec user shell ($?)");
             exit(14);
         }
