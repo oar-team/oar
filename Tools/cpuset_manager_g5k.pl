@@ -234,34 +234,32 @@ if ($ARGV[0] eq "init"){
             exit(6);
         }
         my @cpusets = ();
-        opendir(DIR, "/dev/cpuset/".$Cpuset_path.'/') || die "can’t opendir: /dev/cpuset/$Cpuset_path";
-        @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
-        closedir DIR;
+        if (opendir(DIR, "/dev/cpuset/".$Cpuset_path.'/')) {
+            @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
+            closedir DIR;
+        } else {
+            warn ("Can't opendir: /dev/cpuset/$Cpuset_path\n");
+            exit(18);
+        }
         if ($#cpusets < 0) {
             print ("Purging /tmp...\n");
-            system("sudo -u $Cpuset->{user} find /tmp -user $Cpuset->{user} -exec rm -rfv {} \\;"); 
+            system("sudo find /tmp -user $Cpuset->{user} -exec rm -rfv {} \\;"); 
             my $ipcrm_args="";
-            open(IPC,"sudo -u $Cpuset->{user} ipcs -m|");
-            while (<IPC>) {
-                if (/^0x\d+\s+(\d+)\s+($Cpuset->{user})/) {
-                    $ipcrm_args .= " -m $1";
+            if (open(IPC,"sudo -u $Cpuset->{user} ipcs -a|")) {
+                my $opt="";
+                while (<IPC>) {
+                    if (/^0x\d+\s+(\d+)\s+($Cpuset->{user})/) {
+                        $ipcrm_args .= " -$opt $1";
+                    } elsif (/- Shared Memory Segments -/) {
+                        $opt = 'm';
+                    } elsif (/- Semaphore Arrays -/) {
+                        $opt = 's';
+                    } elsif (/- Message Queues -/) {
+                        $opt = 'q';
+                    }
                 }
+                close (IPC);
             }
-            close (IPC);
-            open(IPC,"sudo -u $Cpuset->{user} ipcs -s|");
-            while (<IPC>) {
-                if (/^0x\d+\s(\d+)\s+$Cpuset->{user}\s+/) {
-                    $ipcrm_args .= " -s $1";
-                }
-            }
-            close (IPC);
-            open(IPC,"sudo -u $Cpuset->{user} ipcs -q|");
-            while (<IPC>) {
-                if (/^0x\d+\s(\d+)\s+$Cpuset->{user}\s+/) {
-                    $ipcrm_args .= " -q $1";
-                }
-            }
-            close (IPC);
             if ($ipcrm_args) {
                 print ("Purging SysV IPC: ipcrm $ipcrm_args\n");
                 system("sudo -u $Cpuset->{user} ipcrm $ipcrm_args"); 
