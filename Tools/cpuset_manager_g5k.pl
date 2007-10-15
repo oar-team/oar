@@ -26,7 +26,7 @@ my $Allow_SSH_type = "allow_classic_ssh";
 die "Invalid cpuset_path: $Cpuset_path.\n" if $Cpuset_path =~ /\//;
 my $Security_pam_file = "$ENV{HOME}/access.conf";
 my $Security_pam_file_tmp = "$ENV{HOME}/access.conf.tmp";
-my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock";
+my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
 
 my $tmp = "";
 while (<STDIN>){
@@ -75,8 +75,8 @@ if ($ARGV[0] eq "init"){
     
 #'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_name.'/mems; done && '.
 
-    if (open(LOCK,">", $Cpuset_lock_file)){
-        flock(LOCK,LOCK_EX);
+    if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
+        flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
 # Be careful with the physical_package_id. Is it corresponding to the memory bank?
         if (system( 'sudo mkdir -p /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.' && '.
                     'sudo chown -R oar /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.' && '.
@@ -87,7 +87,7 @@ if ($ARGV[0] eq "init"){
                   )){
             exit(5);
         }
-        flock(LOCK,LOCK_UN);
+        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
         close(LOCK);
     }else{
         warn("[cpuset_manager] Error opening $Cpuset_lock_file\n");
@@ -134,7 +134,7 @@ if ($ARGV[0] eq "init"){
 
         # public key
         if (open(PUB,"+<",$Cpuset->{ssh_keys}->{public}->{file_name})){
-            flock(PUB,LOCK_EX);
+            flock(PUB,LOCK_EX) or die "flock failed: $!\n";
             my $out = "\n".$Cpuset->{ssh_keys}->{public}->{key}."\n";
             while (<PUB>){
                 if ($_ =~ /environment=\"OAR_KEY=1\"/){
@@ -161,7 +161,7 @@ if ($ARGV[0] eq "init"){
                 warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
                 exit(9);
             }
-            flock(PUB,LOCK_UN);
+            flock(PUB,LOCK_UN) or die "flock failed: $!\n";
             close(PUB);
         }else{
             unlink($Cpuset->{ssh_keys}->{private}->{file_name});
@@ -177,7 +177,7 @@ if ($ARGV[0] eq "init"){
 
         # public key
         if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){
-            flock(PUB,LOCK_EX);
+            flock(PUB,LOCK_EX) or die "flock failed: $!\n";
             #Change file on the fly
             my $out = "";
             while (<PUB>){
@@ -189,7 +189,7 @@ if ($ARGV[0] eq "init"){
                 warn("[cpuset_manager] Error changing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
                 exit(12);
             }
-            flock(PUB,LOCK_UN);
+            flock(PUB,LOCK_UN) or die "flock failed: $!\n";
             close(PUB);
         }else{
             warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
@@ -225,8 +225,8 @@ if ($ARGV[0] eq "init"){
             done'
           );
 
-    if (open(LOCK,">", $Cpuset_lock_file)){
-        flock(LOCK,LOCK_EX);
+    if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
+        flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
         if (system('sudo rmdir /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name)){
             # Uncomment this line if you want to use several network_address properties
             # which are the same physical computer (linux kernel)
@@ -265,9 +265,9 @@ if ($ARGV[0] eq "init"){
                 system("sudo -u $Cpuset->{user} ipcrm $ipcrm_args"); 
             }
         } else {
-            print("SysV IPC and /tmp not purged as $Cpuset->{user} still as a job on this host.\n");
+            print("Not purging SysV IPC and /tmp as $Cpuset->{user} still as a job on this host.\n");
         }
-        flock(LOCK,LOCK_UN);
+        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
         close(LOCK);
     }else{
         warn("[cpuset_manager] Error opening $Cpuset_lock_file\n");
