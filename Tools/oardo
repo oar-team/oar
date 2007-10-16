@@ -67,13 +67,11 @@ for (my $i=0; $i <= $#ARGV; $i++){
 }
 #warn("@clean_argv\n");
 
-# unset shell variables
-delete @ENV{qw(IFS CDPATH ENV BASH_ENV MAIL)};
-
 # clean PATH
 $ENV{PATH} =~ m/^(.*)$/m; 
 $ENV{PATH} = $1;
 
+delete @ENV{'IFS', 'CDPATH', 'MAIL'};
 # END CLEAN
 
 sub change_process_owner($){
@@ -143,6 +141,9 @@ sub change_process_owner($){
 
 if ($Cmd_wrapper ne ""){
     # Try to execute a specific command by a lambda user
+    # unset shell variables
+    delete @ENV{'ENV','BASH_ENV','LD_LIBRARY_PATH'};
+    $ENV{PATH} = "/bin:/sbin:/usr/bin:/usr/sbin:$Oardir/../bin:$Oardir/../sbin";
     change_process_owner($Oaruser);
     exec($Cmd_wrapper,@clean_argv);
     warn("oardo: Cannot execute with oar privileges : @clean_argv\n");
@@ -151,7 +152,7 @@ if ($Cmd_wrapper ne ""){
 
 my $oar_uid = getpwnam($Oaruser);
 if ($< == $oar_uid){
-    # We are oar so we want to execute the command with root privileges
+    # We are oar so we want to execute the command with another user privilege
     my $user = "root";
     if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne "")){
         $ENV{OARDO_BECOME_USER} =~ m/^(.+)$/m;
