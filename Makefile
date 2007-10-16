@@ -152,7 +152,7 @@ server:
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
-	@if [ -f $(OARCONFDIR)/cpuset_manager.pl ]; then echo "Warning: $(OARCONFDIR)/cpuset_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/cpuset_manager.pl $(OARCONFDIR); fi
+	@if [ -f $(OARCONFDIR)/job_resource_manager.pl ]; then echo "Warning: $(OARCONFDIR)/job_resource_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/job_resource_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
@@ -215,9 +215,9 @@ doc: build-html-doc
 	install -m 0644 Docs/Almighty.fig $(DOCDIR)/html
 	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
 	install -d -m 0755 $(DOCDIR)/scripts
-	install -d -m 0755 $(DOCDIR)/scripts/cpuset_manager
-	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/cpuset_manager/
-	install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(DOCDIR)/scripts/cpuset_manager/
+	install -d -m 0755 $(DOCDIR)/scripts/job_resource_manager
+	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/job_resource_manager/
+	install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(DOCDIR)/scripts/job_resource_manager/
 	install -d -m 0755 $(DOCDIR)/scripts/prologue_epilogue
 	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue/
 	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue/

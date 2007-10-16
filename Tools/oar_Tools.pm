@@ -23,7 +23,7 @@ my $Default_prologue_epilogue_timeout = 60;
 my $Default_suspend_resume_script_timeout = 60;
 my $Ssh_rendez_vous = "oarexec is initialized and ready to do the job\n";
 my $Default_openssh_cmd = "ssh";
-my $Default_cpuset_file_manager = "/etc/oar/cpuset_manager.pl";
+my $Default_cpuset_file_manager = "/etc/oar/job_resource_manager.pl";
 my $Default_monitor_file_sensor = "/etc/oar/oarmonitor_sensor.pl";
 my $Default_suspend_resume_file_manager = "/etc/oar/suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
@@ -103,7 +103,7 @@ sub get_default_openssh_cmd(){
     return($Default_openssh_cmd);
 }
 
-# Get default value for CPUSET_FILE tag
+# Get default value for JOB_RESOURCE_MANAGER_FILE tag
 sub get_default_cpuset_file(){
     return($Default_cpuset_file_manager);
 }

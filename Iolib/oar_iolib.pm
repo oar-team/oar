@@ -5372,7 +5372,7 @@ sub job_finishing_sequence($$$$$$){
         # CPUSET PART #
         ###############
         # Clean all CPUSETs if needed
-        my $cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+        my $cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
         if (defined($cpuset_field)){
             my $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_id);
             my $openssh_cmd = get_conf("OPENSSH_CMD");
@@ -5380,7 +5380,7 @@ sub job_finishing_sequence($$$$$$){
             if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
                 oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
             }
-            my $cpuset_file = get_conf("CPUSET_FILE");
+            my $cpuset_file = get_conf("JOB_RESOURCE_MANAGER_FILE");
             $cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($cpuset_file));
             $cpuset_file = "$ENV{OARDIR}/$cpuset_file" if ($cpuset_file !~ /^\//);
             my $cpuset_path = get_conf("CPUSET_PATH");
@@ -5388,7 +5388,7 @@ sub job_finishing_sequence($$$$$$){
             if (defined($cpuset_path) and defined($cpuset_field)){
                 $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
             }
-            my $job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
+            my $job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
             
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});

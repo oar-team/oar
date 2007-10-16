@@ -1,7 +1,7 @@
 # $Id$
 # 
-# The cpuset_manager script is a perl script that oar server deploys on nodes 
-# to manage cpusets
+# The job_resource_manager script is a perl script that oar server deploys on nodes 
+# to manage cpusets, users, job keys, ...
 #
 # Usage:
 # Script is executed as oar
@@ -26,7 +26,7 @@ $Cpuset = eval($tmp);
 
 # Get the data structure only for this node
 if (!defined($Cpuset->{name})){
-    print("[cpuset_manager] Bad SSH hashtable transfered\n");
+    print("[job_resource_manager] Bad SSH hashtable transfered\n");
     exit(2);
 }
 my $Cpuset_path;
@@ -98,27 +98,27 @@ if ($ARGV[0] eq "init"){
     if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
         # First, create the tmp oar directory
         if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
-            print("[cpuset_manager] Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
+            print("[job_resource_manager] Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
             exit(13);
         }
         # private key
         if (open(PRIV, ">".$Cpuset->{ssh_keys}->{private}->{file_name})){
             chmod(0600,$Cpuset->{ssh_keys}->{private}->{file_name});
             if (!print(PRIV $Cpuset->{ssh_keys}->{private}->{key})){
-                warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{private}->{file_name} \n");
+                warn("[job_resource_manager] Error writing $Cpuset->{ssh_keys}->{private}->{file_name} \n");
                 unlink($Cpuset->{ssh_keys}->{private}->{file_name});
                 exit(8);
             }
             close(PRIV);
             if (defined($Cpuset->{job_uid})){
                 if (system("ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey")){
-                    warn("[cpuset_manager] Error ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey \n");
+                    warn("[job_resource_manager] Error ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey \n");
                     unlink($Cpuset->{ssh_keys}->{private}->{file_name});
                     exit(8);
                 }
             }
         }else{
-            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{private}->{file_name} \n");
+            warn("[job_resource_manager] Error opening $Cpuset->{ssh_keys}->{private}->{file_name} \n");
             exit(7);
         }
 
@@ -135,7 +135,7 @@ if ($ARGV[0] eq "init"){
                     $Cpuset->{ssh_keys}->{public}->{key} =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
                     my $curr_key = $2;
                     if ($curr_key eq $oar_key){
-                        warn("[cpuset_manager] ERROR: the user has specified the same ssh key than used by the user oar.\n");
+                        warn("[job_resource_manager] ERROR: the user has specified the same ssh key than used by the user oar.\n");
                         exit(13);
                     }
                     $out .= $_;
@@ -149,14 +149,14 @@ if ($ARGV[0] eq "init"){
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
-                warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+                warn("[job_resource_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
                 exit(9);
             }
             flock(PUB,LOCK_UN) or die "flock failed: $!\n";
             close(PUB);
         }else{
             unlink($Cpuset->{ssh_keys}->{private}->{file_name});
-            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+            warn("[job_resource_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
             exit(10);
         }
     }
@@ -181,13 +181,13 @@ if ($ARGV[0] eq "init"){
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
-                warn("[cpuset_manager] Error changing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+                warn("[job_resource_manager] Error changing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
                 exit(12);
             }
             flock(PUB,LOCK_UN) or die "flock failed: $!\n";
             close(PUB);
         }else{
-            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
+            warn("[job_resource_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
             exit(11);
         }
     }
@@ -210,7 +210,7 @@ if ($ARGV[0] eq "init"){
         }
     }
 }else{
-    print("[cpuset_manager] Bad command line argument $ARGV[0].\n");
+    print("[job_resource_manager] Bad command line argument $ARGV[0].\n");
     exit(3);
 }
 

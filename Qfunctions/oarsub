@@ -562,9 +562,9 @@ if (!defined($Cosystem_hostname)){
     $Cosystem_hostname = $remote_host;
 }
 
-$Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+$Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 $Cpuset_path = get_conf("CPUSET_PATH");
-$Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
+$Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     oar_Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));

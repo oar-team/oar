@@ -36,7 +36,7 @@ if (defined($ENV{OARDIR})){
     die("[MetaSched] OARDIR env variable must be defined\n");
 }
 
-my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
+my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 

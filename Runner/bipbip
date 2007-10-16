@@ -66,8 +66,8 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
 my $Server_prologue = get_conf("SERVER_PROLOGUE_EXEC_FILE");
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
 
-my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
-my $Cpuset_file = get_conf("CPUSET_FILE");
+my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Cpuset_file = get_conf("JOB_RESOURCE_MANAGER_FILE");
 $Cpuset_file = oar_Tools::get_default_cpuset_file() if (!defined($Cpuset_file));
 $Cpuset_file = "$ENV{OARDIR}/$Cpuset_file" if ($Cpuset_file !~ /^\//);
 
@@ -75,7 +75,7 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
     oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
-my $Job_uid_resource_type = get_conf("OAR_CPUSET_JOB_UID_RESOURCE_TYPE");
+my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 my $Job_user;
 
 my $base;

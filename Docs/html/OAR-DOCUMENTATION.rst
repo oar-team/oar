@@ -1121,7 +1121,7 @@ suspended_jobs        ENUM('YES','NO')      specify if there is at least one
 switch                VARCHAR(50)           name of the switch
 cpu                   INT UNSIGNED          global cluster cpu number
 cpuset                INT UNSIGNED          field used with the
-                                            CPUSET_RESOURCE_PROPERTY_DB_FIELD_
+                                            JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD_
 besteffort            ENUM('YES','NO')      accept or not besteffort jobs
 deploy                ENUM('YES','NO')      specify if the resource is deployable
 expiry_date           INT UNSIGNED          field used for the desktop computing
@@ -1165,7 +1165,7 @@ Several properties are added by default:
    to distinguish all cpus.
  - cpuset : this is the name of the cpu on the node. The Linux kernel sets this
    to an integer beginning at 0. This field is linked to the configuration tag
-   CPUSET_RESOURCE_PROPERTY_DB_FIELD_.
+   JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD__.
 
 *resource_logs*
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1513,16 +1513,16 @@ Each configuration tag found in /etc/oar.conf is now described:
  
       SUSPEND_RESUME_SCRIPT_TIMEOUT=60
 
-.. _CPUSET_RESOURCE_PROPERTY_DB_FIELD:
+.. _JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD:
 
   - Indicate the name of the database field that contains the cpu number of
     the node. If this option is set then users must use `OARSH`_ instead of
     ssh to walk on each nodes that they have reserved via oarsub.
     ::
 
-      CPUSET_RESOURCE_PROPERTY_DB_FIELD=cpuset
+      JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD=cpuset
 
-.. _CPUSET_FILE:
+.. _JOB_RESOURCE_MANAGER_FILE:
 
   - Name of the perl script that manages cpuset. You have to install your
     script in $OARDIR and give only the name of the file without the
@@ -1530,7 +1530,7 @@ Each configuration tag found in /etc/oar.conf is now described:
     (default is cpuset_manager.pl which handles the linux kernel cpuset)
     ::
     
-      CPUSET_FILE="cpuset_manager.pl"
+      JOB_RESOURCE_MANAGER_FILE="cpuset_manager.pl"
 
 .. _TAKTUK_CMD:
 
@@ -1780,7 +1780,7 @@ OAR system steps:
     installed and configured (TAKTUK_CMD_) then OAR uses an internal
     launching tool less optimized.
     The processors assigned to this cpuset are taken from the defined database
-    field by CPUSET_RESOURCE_PROPERTY_DB_FIELD_ in the table resources_.
+    field by JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD_ in the table resources_.
 
  2. After each job, OAR deletes all processes stored in the associated CPUSET.
     Thus all nodes are clean after a OAR job.
