@@ -124,8 +124,8 @@ if ($ARGV[0] eq "init"){
 
         # public key
         if (open(PUB,"+<",$Cpuset->{ssh_keys}->{public}->{file_name})){
-            flock(PUB,LOCK_EX);
-            seek(PUB,0,0);
+            flock(PUB,LOCK_EX) or die "flock failed: $!\n";
+            seek(PUB,0,0) or die "seek failed: $!\n";
             my $out = "\n".$Cpuset->{ssh_keys}->{public}->{key}."\n";
             while (<PUB>){
                 if ($_ =~ /environment=\"OAR_KEY=1\"/){
@@ -152,7 +152,7 @@ if ($ARGV[0] eq "init"){
                 warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
                 exit(9);
             }
-            flock(PUB,LOCK_UN);
+            flock(PUB,LOCK_UN) or die "flock failed: $!\n";
             close(PUB);
         }else{
             unlink($Cpuset->{ssh_keys}->{private}->{file_name});
@@ -171,8 +171,8 @@ if ($ARGV[0] eq "init"){
 
         # public key
         if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){
-            flock(PUB,LOCK_EX);
-            seek(PUB,0,0);
+            flock(PUB,LOCK_EX) or die "flock failed: $!\n";
+            seek(PUB,0,0) or die "seek failed: $!\n";
             #Change file on the fly
             my $out = "";
             while (<PUB>){
@@ -184,7 +184,7 @@ if ($ARGV[0] eq "init"){
                 warn("[cpuset_manager] Error changing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
                 exit(12);
             }
-            flock(PUB,LOCK_UN);
+            flock(PUB,LOCK_UN) or die "flock failed: $!\n";
             close(PUB);
         }else{
             warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
