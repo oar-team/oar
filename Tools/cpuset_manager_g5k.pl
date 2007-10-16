@@ -245,16 +245,16 @@ if ($ARGV[0] eq "init"){
             print ("Purging /tmp...\n");
             system("sudo find /tmp -user $Cpuset->{user} -exec rm -rfv {} \\;"); 
             my $ipcrm_args="";
-            if (open(IPC,"sudo -u $Cpuset->{user} ipcs -a|")) {
+            if (open(IPC,"sudo -u $Cpuset->{user} ipcs -c|")) {
                 my $opt="";
                 while (<IPC>) {
-                    if (/^0x\d+\s+(\d+)\s+($Cpuset->{user})/) {
+                    if (/^(\d+)\s+\d+\s+\w+\s+\w+\s+$Cpuset->{user}\s+\w+\s*$/) {
                         $ipcrm_args .= " -$opt $1";
-                    } elsif (/- Shared Memory Segments -/) {
+                    } elsif (/- Shared Memory Segment/) {
                         $opt = 'm';
-                    } elsif (/- Semaphore Arrays -/) {
+                    } elsif (/- Semaphore Arrays/) {
                         $opt = 's';
-                    } elsif (/- Message Queues -/) {
+                    } elsif (/- Message Queues/) {
                         $opt = 'q';
                     }
                 }
