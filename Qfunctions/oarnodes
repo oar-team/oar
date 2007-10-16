@@ -24,6 +24,9 @@ use oar_iolib;
 use Getopt::Long;
 use oarversion;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 #Try to load XML module
 my $XML_enabled = 1;
 unless (eval "use XML::Dumper qw(pl2xml);1"){

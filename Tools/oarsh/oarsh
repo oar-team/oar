@@ -3,6 +3,9 @@
 # In sshd_config you must have this line :
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
+OLDUMASK=$(umask)
+umask 0022
+
 ###############################################################################
 # Default variable definitions.
 # If you want to change them then make it in the configuration file (oar.conf)
@@ -51,7 +54,7 @@ then
         [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
     done
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
-    OLDUMASK=$(umask)
+    TMPOLDUMASK=$(umask)
     umask 0177
     OARDO_BECOME_USER=$OAR_USER oardo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
@@ -59,8 +62,9 @@ then
         rm -f $TMP_JOB_KEY_FILE
         exit 3
     fi
-    umask $OLDUMASK
+    umask $TMPOLDUMASK
     
+    umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
     echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"
     exit 3
@@ -71,6 +75,7 @@ fi
 # (oarsh is run from one of the node of the job) 
 TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
 if [ -r $TMP_JOB_KEY_FILE ]; then
+    umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
     echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE"
     exit 4
@@ -82,12 +87,14 @@ if [ "$CPUSET_PATH" != "" ]; then
         if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
+                umask $OLDUMASK
                 exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
                 echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE"
                 exit 4
             fi
             export OAR_CPUSET
             export OAR_JOB_USER=$OARDO_USER
+            umask $OLDUMASK
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
             echo "oarsh: Failed to connect using cpuset environement"
             exit 5
@@ -144,6 +151,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     export OAR_JOB_USER
     export OAR_CPUSET
 
+    umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
     echo "oarsh: Failed to connect using cpuset environement"
     exit 5

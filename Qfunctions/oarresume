@@ -12,6 +12,9 @@ use oar_Tools;
 use oarversion;
 use Getopt::Long;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 sub usage {
     print <<EOS;
 Usage: $0 [job_ids][--sql "sql syntax"][-V][-h] 

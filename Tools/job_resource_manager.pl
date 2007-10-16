@@ -16,6 +16,9 @@
 use Fcntl ':flock';
 use Data::Dumper;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 my $Cpuset;
 
 my $tmp = "";

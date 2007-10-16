@@ -36,6 +36,8 @@ use strict;
 use Sys::Hostname;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
 
 $SIG{PIPE} = 'IGNORE';
 $SIG{HUP} = 'IGNORE';
@@ -435,6 +437,7 @@ if ($Job->{mode} eq "PASSIVE"){
         open(STDIN, "<& pipe_stdin_read");
 
         $ENV{OARDO_BECOME_USER} = $Job->{job_user};
+        umask(oct($Old_umask));
         exec(@cmd);
         warn("[ERROR] Cannot find @cmd\n");
         exit(-1);

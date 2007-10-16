@@ -5,6 +5,10 @@
 # cpuset name.
 
 use Data::Dumper;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 $| = 1;
 
 my $Job_id = $ARGV[0];

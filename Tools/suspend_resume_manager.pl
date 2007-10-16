@@ -6,6 +6,9 @@
 #     - "resume"   :    then this script must resume alld processes previously
 #                       suspended
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 my $Hash;
 
 my $tmp = "";

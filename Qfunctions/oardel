@@ -13,6 +13,9 @@ use oar_Tools;
 use Getopt::Long;
 use oarversion;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 my $exitValue = 0;
 
 # Display command help

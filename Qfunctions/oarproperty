@@ -15,6 +15,9 @@ use Getopt::Long;
 use oarversion;
 use oar_Tools;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 # The functions are appended at the end of this file
 sub print_usage();
 sub check_property_name($);

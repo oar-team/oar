@@ -9,6 +9,9 @@ XAUTH_LOCATION="/usr/bin/xauth"
 CPUSET_MOUNT_POINT="/dev/cpuset"
 OARDIR="/usr/lib/oar"
 
+OLDUMASK=$(umask)
+umask 0022
+
 # $1 = Name of the cpuset
 # $2,$3,... = PIDs to add
 # Add PIDS into the cpuset $1
@@ -49,6 +52,7 @@ then
     $OARDIR/oardo renice 0 $$ $PPID > /dev/null 2>&1
     export SHELL=$DEFAULT_SHELL
     
+    umask $OLDUMASK
     exec $DEFAULT_SHELL "$@"
     echo "oarsh: exec failed" 1>&2
     exit 66
@@ -75,6 +79,7 @@ else
     then
         # Simulate initial login
         export OARDO_BECOME_USER=$OAR_JOB_USER
+        umask $OLDUMASK
         exec $OARDIR/oardo
         #exec $OARDIR/oardo su - $OAR_JOB_USER
         echo "oarsh: exec failed" 1>&2
@@ -82,6 +87,7 @@ else
     else
         export OARDO_BECOME_USER=$OAR_JOB_USER
         export OARDO_USE_USER_SHELL=1
+        umask $OLDUMASK
         exec $OARDIR/oardo "$@"
         echo "oarsh: exec failed" 1>&2
         exit 66

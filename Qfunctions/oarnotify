@@ -11,6 +11,9 @@ use oarversion;
 use oar_Tools;
 use oar_iolib;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 init_conf($ENV{OARCONFFILE});
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");

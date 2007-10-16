@@ -10,6 +10,9 @@ use Getopt::Long;
 use oarversion;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");

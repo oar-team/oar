@@ -14,6 +14,9 @@ use Fcntl;
 use Storable qw(dclone);
 use Sys::Hostname;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 init_conf($ENV{OARCONFFILE});
 my $Monitor_file = get_conf("OARMONITOR_SENSOR_FILE");
 $Monitor_file = oar_Tools::get_default_monitor_sensor_file() if (!defined($Monitor_file));

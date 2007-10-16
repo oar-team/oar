@@ -12,6 +12,9 @@ use Getopt::Long;
 use oar_Tools;
 use oarversion;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 $| = 1;
 
 my $exit_code = 0;

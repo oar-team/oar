@@ -9,6 +9,9 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Getopt::Long;
 use oarversion;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 Getopt::Long::Configure ("gnu_getopt");
 my $Version;
 my $Help;
