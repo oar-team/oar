@@ -244,21 +244,40 @@ if ($ARGV[0] eq "init"){
         if ($#cpusets < 0) {
             print ("Purging /tmp...\n");
             system("sudo find /tmp -user $Cpuset->{user} -exec rm -rfv {} \\;"); 
+            my $useruid=getpwnam($Cpuset->{user});
             my $ipcrm_args="";
-            if (open(IPC,"sudo -u $Cpuset->{user} ipcs -c|")) {
-                my $opt="";
-                while (<IPC>) {
-                    if (/^(\d+)\s+\d+\s+\w+\s+\w+\s+$Cpuset->{user}\s+\w+\s*$/) {
-                        $ipcrm_args .= " -$opt $1";
-                    } elsif (/- Shared Memory Segment/) {
-                        $opt = 'm';
-                    } elsif (/- Semaphore Arrays/) {
-                        $opt = 's';
-                    } elsif (/- Message Queues/) {
-                        $opt = 'q';
+            if (open(IPCMSG,"< /proc/sysvipc/msg")) {
+                <IPCMSG>;
+                while (<IPCMSG>) {
+                    if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}$/) {
+                        $ipcrm_args .= " -q $1";
                     }
                 }
-                close (IPC);
+                close (IPCMSG);
+            } else {
+                warn("Cannot open /proc/sysvipc/msg: $!.\n");
+            }
+            if (open(IPCSHM,"< /proc/sysvipc/shm")) {
+                <IPCSHM>;
+                while (<IPCSHM>) {
+                    if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}$/) {
+                        $ipcrm_args .= " -m $1";
+                    }
+                }
+                close (IPCSHM);
+            } else {
+                warn("Cannot open /proc/sysvipc/shm: $!.\n");
+            }
+            if (open(IPCSEM,"< /proc/sysvipc/sem")) {
+                <IPCSEM>;
+                while (<IPCSEM>) {
+                    if (/\s+\d+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}$/) {
+                        $ipcrm_args .= " -s $1";
+                    }
+                }
+                close (IPCSEM);
+            } else {
+                warn("Cannot open /proc/sysvipc/sem: $!.\n");
             }
             if ($ipcrm_args) {
                 print ("Purging SysV IPC: ipcrm $ipcrm_args\n");
