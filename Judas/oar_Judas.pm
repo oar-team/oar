@@ -203,7 +203,7 @@ sub notify_user($$$$$$$$){
         my $server_hostname = hostname();
         send_mail($base,$1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
     }elsif($method =~ m/\s*exec:(.+)$/m){
-        my $cmd = "$Openssh_cmd -x -T $host OARDO_BECOME_USER=$user oardo $1 $job_id $job_name $tag \\\"$comments\\\" > /dev/null 2>&1";
+        my $cmd = "$Openssh_cmd -x -T $host OARDO_BECOME_USER=$user oardodo $1 $job_id $job_name $tag \\\"$comments\\\" > /dev/null 2>&1";
         $SIG{PIPE} = 'IGNORE';
         my $pid = fork();
         if ($pid == 0){

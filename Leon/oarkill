@@ -29,14 +29,14 @@ if (!($ARGV[0] =~ /\d+/)){
 #Kill all
 my ($children,$cmd) = oar_Tools::get_one_process_children($ARGV[0]);
 
-my $cmd = "oardo /bin/kill -9 @{$children} 2>&1 > /dev/null";
+my $cmd = "oardodo /bin/kill -9 @{$children} 2>&1 > /dev/null";
 print("$cmd\n");
 system("$cmd");
 
 #for my $pid (@childs){
-#    #print("oardo kill -9 $pid\n");
+#    #print("oardodo kill -9 $pid\n");
 #    #print("OAR is killing the job with pid=$pid\n");
-#    system("oardo /bin/kill -9 $pid 2>&1 > /dev/null");
+#    system("oardodo /bin/kill -9 $pid 2>&1 > /dev/null");
 #}
 
 exit(0);

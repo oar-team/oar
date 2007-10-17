@@ -68,7 +68,7 @@ sub ping_hosts(@){
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm($Timeout_ping);
             #$exit_value = system("ping -c 1 $i > /dev/null");
-            $exit_value = system("oardo ping -c 10 -l 9 $i > /dev/null");
+            $exit_value = system("oardodo ping -c 10 -l 9 $i > /dev/null");
             alarm(0);
         };
         oar_debug("[PingChecker] PONG with exit_value=$exit_value and alarm=$@\n");

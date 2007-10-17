@@ -1,34 +1,6 @@
 #!/usr/bin/perl
 # $Id$
-#
-# SUDO for OAR = OARDO
-# This script must be setuid root.
-# Cases for the use of this script:
-#
-#   - user $Oaruser executes this script and OARDO_BECOME_USER is empty
-#       --> if @ARGV is empty
-#               then run the root shell with a dash in front of the process
-#               name (login shell)
-#           else
-#               @ARGV is executed with root privileges
-#
-#   - user $Oaruser executes this script and OARDO_BECOME_USER is set
-#       --> if @ARGV is empty
-#               then run the OARDO_BECOME_USER shell with a dash in front of
-#               the process name (login shell)
-#           else
-#               if OARDO_USE_USER_SHELL is set
-#                   then execute "shell @ARGV" with OARDO_BECOME_USER
-#                   privileges and shell user
-#               else
-#                   @ARGV is executed with OARDO_BECOME_USER privileges
-#
-#   - a user, different of $Oaruser, executes this script
-#       --> only $Cmd_wrapper can be executed with $Oaruser privileges with
-#           @ARGV arguments
-
-#use strict;
-#use warnings;
+# This wrapper is used to execute user commands with oar privileges.
 
 ###############################################################################
 # Static conf to edit #
@@ -39,8 +11,6 @@ my $Cmd_wrapper = "";
 my $Oardir = "";
 my $Oarconffile = "/etc/oar/oar.conf";
 my $Oarxauthlocation = "/usr/bin/xauth";
-my $Oaruser = "oar";
-my $Id_cmd = "/usr/bin/id";
 
 ###############################################################################
 
@@ -48,7 +18,6 @@ $ENV{OARDO_USER} = getpwuid($<);
 $ENV{OARDO_UID} = $<;
 $ENV{OARDIR} = $Oardir;
 $ENV{PERL5LIB} = $Oardir;
-$ENV{OARUSER} = $Oaruser;
 $ENV{OARCONFFILE} = $Oarconffile;
 $ENV{OARXAUTHLOCATION} = $Oarxauthlocation;
 
@@ -68,124 +37,38 @@ for (my $i=0; $i <= $#ARGV; $i++){
 #warn("@clean_argv\n");
 
 # clean PATH
-$ENV{PATH} =~ m/^(.*)$/m; 
-$ENV{PATH} = $1;
+$ENV{PATH} = "/bin:/sbin:/usr/bin:/usr/sbin:$Oardir/../bin:$Oardir/../sbin";
 
-delete @ENV{'IFS', 'CDPATH', 'MAIL'};
+delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV','BASH_ENV','LD_LIBRARY_PATH'};
 # END CLEAN
 
-sub change_process_owner($){
-    my $user = shift;
 
-    my @tmp = getpwnam($user);
-    if ($#tmp < 0){
-        warn("oardo: Cannot get information from user '$user'.\n");
-        exit(52);
-    }
-
-    my $groups = "$tmp[3] $tmp[3]";
-    
-    # Try to retrieve all group ids
-    if ((defined($Id_cmd)) and (-x $Id_cmd)){
-        pipe(child_stdout_read,child_stdout_write);
-        my $pid = fork();
-        if (defined($pid)){
-            if($pid == 0){
-                #CHILD
-                close(child_stdout_read);
-                close(STDOUT);
-                open(STDOUT, ">& child_stdout_write");
-                close(STDERR);
-                close(STDIN);
-                exec({$Id_cmd} $Id_cmd,'-G',$user);
-                exit(1);
-            }
-            close(child_stdout_write);
-            if (<child_stdout_read> =~ m/^([\d\s]+)\n$/m){
-                $groups = "$tmp[3] $1";
-            }
-            close(child_stdout_read);
-            wait();
-        }else{
-            close(child_stdout_write);
-            close(child_stdout_read);
-        }
-        undef($!);
-    }
-
-    $( = $groups;
-    if ($!){
-        warn("oardo: $!\n       Cannot set GID to '$groups'.\n");
-        exit(52);
-    }
-    $) = $groups;
-    if ($!){
-        warn("oardo: $!\n       Cannot set EGID to '$groups'.\n");
-        exit(52);
-    }
-    $< = $tmp[2];
-    if ($!){
-        warn("oardo: $!\n       Cannot set UID to '$user'.\n");
-        exit(52);
-    }
-    $> = $tmp[2];
-    if ($!){
-        warn("oardo: $!\n       Cannot set EUID to '$user'.\n");
-        exit(52);
-    }
-    $ENV{USER} = $user;
-    $ENV{LOGNAME} = $user;
-    $ENV{SHELL} = $tmp[8];
-    $ENV{HOME} = $tmp[7];
+# GID = EGID
+$( = $);
+if ($!){
+    warn("$Cmd_wrapper: $!\n       Cannot set GID to '$)'.\n");
+    exit(2);
+}
+# UID = EUID
+$< = $>;
+if ($!){
+    warn("$Cmd_wrapper: $!\n       Cannot set UID to '$>'.\n");
+    exit(2);
 }
 
-if ($Cmd_wrapper ne ""){
-    # Try to execute a specific command by a lambda user
-    # unset shell variables
-    delete @ENV{'ENV','BASH_ENV','LD_LIBRARY_PATH'};
-    $ENV{PATH} = "/bin:/sbin:/usr/bin:/usr/sbin:$Oardir/../bin:$Oardir/../sbin";
-    change_process_owner($Oaruser);
-    exec($Cmd_wrapper,@clean_argv);
-    warn("oardo: Cannot execute with oar privileges : @clean_argv\n");
-    exit(51);
+my @tmp = getpwuid($>);
+if ($#tmp < 0){
+    warn("oardo: Cannot get information from uid $>.\n");
+    exit(2);
 }
 
-my $oar_uid = getpwnam($Oaruser);
-if ($< == $oar_uid){
-    # We are oar so we want to execute the command with another user privilege
-    my $user = "root";
-    if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne "")){
-        $ENV{OARDO_BECOME_USER} =~ m/^(.+)$/m;
-        $user = $1;
-        delete($ENV{OARDO_BECOME_USER});
-    }
-    change_process_owner($user);
-    if ($#clean_argv < 0){
-        # Login shell
-        $ENV{HOME} =~ m/(.*)/m;
-        my $home = $1;
-        chdir($home);
-        $ENV{SHELL} =~ m/(.*)/m;
-        my $shell = $1;
-        my @tmp = split('/',$shell);
-        exec({$shell} "-$tmp[$#tmp]");
-    }else{
-        if (defined($ENV{OARDO_USE_USER_SHELL}) and ($ENV{OARDO_USE_USER_SHELL} ne "")){
-            delete($ENV{OARDO_USE_USER_SHELL});
-            $ENV{HOME} =~ m/(.*)/m;
-            my $home = $1;
-            chdir($home);
-            $ENV{SHELL} =~ m/(.*)/m;
-            my $shell = $1;
-            exec({$shell} $shell,@clean_argv);
-        }else{
-            exec(@clean_argv);
-        }
-    }
-    warn("oardo: Cannot execute with oar privileges : @clean_argv.\n");
-    exit(51);
-}else{
-    warn("oardo: You are not oar so you cannot use this command.\n");
-    exit(53);
-}
+$ENV{USER} = $tmp[0];
+$ENV{LOGNAME} = $tmp[0];
+$ENV{SHELL} = $tmp[8];
+$ENV{HOME} = $tmp[7];
+$ENV{OARUSER} = $tmp[0];
+
+exec($Cmd_wrapper,@clean_argv);
+warn("$Cmd_wrapper: Cannot execute with oar privileges : @clean_argv\n");
+exit(1);
 

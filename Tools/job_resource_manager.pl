@@ -66,14 +66,14 @@ if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
 
     if (defined($Cpuset_path)){
-        if (system('oardo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
-            if (system('oardo mkdir -p /dev/cpuset && oardo mount -t cpuset none /dev/cpuset')){
+        if (system('oardodo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
+            if (system('oardodo mkdir -p /dev/cpuset && oardodo mount -t cpuset none /dev/cpuset')){
                 exit(4);
             }
         }
         if (!(-d '/dev/cpuset/oar')){
-            if (system( 'oardo mkdir -p /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'. 
-                        'oardo chown -R oar /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'.
+            if (system( 'oardodo mkdir -p /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'. 
+                        'oardodo chown -R oar /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'.
                         '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
                         '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/cpu_exclusive && '.
                         'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/mems &&'.
@@ -86,8 +86,8 @@ if ($ARGV[0] eq "init"){
 #'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_path.'/mems; done && '.
 
 # Be careful with the physical_package_id. Is it corresponding to the memory banc?
-        if (system( 'oardo mkdir -p /dev/cpuset/'.$Cpuset_path.' && '.
-                    'oardo chown -R oar /dev/cpuset/'.$Cpuset_path.' && '.
+        if (system( 'oardodo mkdir -p /dev/cpuset/'.$Cpuset_path.' && '.
+                    'oardodo chown -R oar /dev/cpuset/'.$Cpuset_path.' && '.
                     '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path.'/notify_on_release && '.
                     '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path.'/cpu_exclusive && '.
                     'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path.'/mems && '.
@@ -200,12 +200,12 @@ if ($ARGV[0] eq "init"){
         system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_path.'/tasks)
                 while [ "$PROCESSES" != "" ]
                 do
-                    oardo kill -9 $PROCESSES
+                    oardodo kill -9 $PROCESSES
                     PROCESSES=$(cat /dev/cpuset/'.$Cpuset_path.'/tasks)
                 done'
               );
 
-        if (system('oardo rmdir /dev/cpuset'.$Cpuset_path)){
+        if (system('oardodo rmdir /dev/cpuset'.$Cpuset_path)){
             # Uncomment this line if you want to use several network_address properties
             # which are the same physical computer (linux kernel)
             #exit(0);

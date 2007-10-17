@@ -17,6 +17,7 @@ use File::Temp qw/ tempfile /;
 use oar_Tools;
 use oarversion;
 
+
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
@@ -205,7 +206,7 @@ sub connect_job($$$){
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
             $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority.$$";
-            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardo bash --noprofile --norc -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2>/dev/null');
+            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardodo bash --noprofile --norc -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2>/dev/null');
         }
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
@@ -232,9 +233,9 @@ sub connect_job($$$){
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$job_user oardo $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && oardo chown $job_user:oar \$TTY && oardo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$job_user oardodo $xauth_path merge -); TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
         }else{
-            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardo chown $job_user:oar \$TTY && oardo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
         }
         #print("oarsub launchs command : @cmd\n");
         #essential : you become oar instead of the user
@@ -375,13 +376,13 @@ sub job_key_management() {
                 # file import
                 print ("Import job key from file: $import_job_key_file\n");
                 my $lusr= $ENV{OARDO_USER};
-                # read key files: oardo su - user needed in order to be able to read the file for sure
+                # read key files: oardodo su - user needed in order to be able to read the file for sure
                 # safer way to do a `cmd`, see perl cookbook 
                 my $pid;
                 die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
                 if ($pid == 0) {
                     $ENV{OARDO_BECOME_USER} = $lusr;
-                    unless (exec({"oardo"} "oardo","cat $import_job_key_file")) {
+                    unless (exec({"oardodo"} "oardodo","cat $import_job_key_file")) {
                         warn ("Error: Cannot cannot read key file:$import_job_key_file\n");
                         exit(14);
                     }
@@ -853,7 +854,7 @@ if (defined($use_job_key) and ($export_job_key_file ne "")){
         umask(oct("177"));
         $ENV{OARDO_BECOME_USER} = $lusr;
         open(STDERR, ">/dev/null");
-        unless (exec({"oardo"} "oardo","dd of=$export_job_key_file")) {
+        unless (exec({"oardodo"} "oardodo","dd of=$export_job_key_file")) {
             warn ("Error: Cannot exec user shell ($?)");
             exit(14);
         }
