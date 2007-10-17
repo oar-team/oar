@@ -83,12 +83,18 @@ db_version 2.0
 #setup_users
 
 # Manage setuid bits
-chmod a+s /usr/bin/oarnodes
-chmod a+s /usr/bin/oardel
-chmod a+s /usr/bin/oarstat
-chmod a+s /usr/bin/oarsub
-chmod a+s /usr/bin/oarhold
-chmod a+s /usr/bin/oarresume
+chown oar:oar /usr/bin/oarnodes
+chmod 6755 /usr/bin/oarnodes
+chown oar:oar /usr/bin/oardel
+chmod 6755 /usr/bin/oardel
+chown oar:oar /usr/bin/oarstat
+chmod 6755 /usr/bin/oarstat
+chown oar:oar /usr/bin/oarsub
+chmod 6755 /usr/bin/oarsub
+chown oar:oar /usr/bin/oarhold
+chmod 6755 /usr/bin/oarhold
+chown oar:oar /usr/bin/oarresume
+chmod 6755 /usr/bin/oarresume
 
 
 # dh_installdeb will replace this with shell code automatically

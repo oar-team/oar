@@ -131,12 +131,18 @@ if [ "x$RET" = "xMysql" ]; then
 fi
 
 # Manage setuid bits
-chmod a+s /usr/sbin/Almighty
-chmod a+s /usr/sbin/oarnotify
-chmod a+s /usr/sbin/oarremoveresource
-chmod a+s /usr/sbin/oaraccounting
-chmod a+s /usr/sbin/oarproperty
-chmod a+s /usr/sbin/oarmonitor
+chown oar:oar /usr/sbin/Almighty
+chmod 6750 /usr/sbin/Almighty
+chown oar:oar /usr/sbin/oarnotify
+chmod 6750 /usr/sbin/oarnotify
+chown oar:oar /usr/sbin/oarremoveresource
+chmod 6750 /usr/sbin/oarremoveresource
+chown oar:oar /usr/sbin/oaraccounting
+chmod 6750 /usr/sbin/oaraccounting
+chown oar:oar /usr/sbin/oarproperty
+chmod 6750 /usr/sbin/oarproperty
+chown oar:oar /usr/sbin/oarmonitor
+chmod 6750 /usr/sbin/oarmonitor
 
 
 # dh_installdeb will replace this with shell code automatically

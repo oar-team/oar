@@ -66,7 +66,7 @@ install-indep:
 		PREFIX=$(CURDIR)/debian/oar-doc/usr \
 		DOCDIR=$(CURDIR)/debian/oar-doc/usr/share/doc/oar-doc
 	mkdir -p $(CURDIR)/debian/oar-common/var/lib/oar
-	$(MAKE) sanity-check oardo common configuration \
+	$(MAKE) sanity-check common configuration \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-common/etc/oar \
@@ -77,10 +77,11 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_SBINDIR=/usr/sbin \
+		DEB_SBINDIR_LN=../lib/oar \
 		DEB_BINDIR=/usr/bin
 	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
-	$(MAKE) sanity-check oardo libs \
+	$(MAKE) sanity-check libs \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc/oar \
@@ -92,9 +93,8 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_BINDIR=/usr/bin \
 		DEB_SBINDIR=/usr/sbin
-	rm $(CURDIR)/debian/oar-libs/usr/lib/oar/oardo
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
-	$(MAKE) sanity-check oardo server dbinit\
+	$(MAKE) sanity-check server dbinit\
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-server/etc/oar \
@@ -106,10 +106,9 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_BINDIR=/usr/bin \
 		DEB_SBINDIR=/usr/sbin
-	rm $(CURDIR)/debian/oar-server/usr/lib/oar/oardo
 	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
 	mkdir -p $(CURDIR)/debian/oar-node/etc/init.d
-	$(MAKE) sanity-check oardo node \
+	$(MAKE) sanity-check node \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-node/etc/oar \
@@ -121,9 +120,8 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_BINDIR=/usr/bin \
 		DEB_SBINDIR=/usr/sbin
-	rm $(CURDIR)/debian/oar-node/usr/lib/oar/oardo
 	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
-	$(MAKE) sanity-check oardo user \
+	$(MAKE) sanity-check user \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-user/etc/oar \
@@ -135,7 +133,6 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_BINDIR=/usr/bin \
 		DEB_SBINDIR=/usr/sbin
-	rm $(CURDIR)/debian/oar-user/usr/lib/oar/oardo
 	$(MAKE) draw-gantt \
 		OARUSER=oar \
 		OAROWNER=root \
@@ -162,7 +159,7 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_BINDIR=/usr/bin \
 		DEB_SBINDIR=/usr/sbin
-	$(MAKE) oardo desktop-computing-cgi \
+	$(MAKE) desktop-computing-cgi \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc/oar \
@@ -176,7 +173,6 @@ install-indep:
 		DEB_INSTALL=/usr/lib/oar \
 		DEB_BINDIR=/usr/bin \
 		DEB_SBINDIR=/usr/sbin
-	rm $(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/oar/oardo
 
 	dh_install -i
 
