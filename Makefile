@@ -101,7 +101,7 @@ common: man
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				" $(OARDIR)/oardodo
-	ln -sf $(OARDIR)/oardodo $(DEB_SBINDIR_LN)/oardodo
+	ln -sf $(DEB_SBINDIR_LN)/oardodo $(SBINDIR)/oardodo
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(DEB_INSTALL)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
