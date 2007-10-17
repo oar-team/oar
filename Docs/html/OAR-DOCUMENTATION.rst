@@ -1165,7 +1165,7 @@ Several properties are added by default:
    to distinguish all cpus.
  - cpuset : this is the name of the cpu on the node. The Linux kernel sets this
    to an integer beginning at 0. This field is linked to the configuration tag
-   JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD__.
+   JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD_.
 
 *resource_logs*
 ~~~~~~~~~~~~~~~~~~~~~~~~

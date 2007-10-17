@@ -43,6 +43,7 @@ delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV','BASH_ENV','LD_LIBRARY_PATH'};
 # END CLEAN
 
 
+undef($!);
 # GID = EGID
 $( = $);
 if ($!){

@@ -104,9 +104,9 @@ sub change_process_owner($){
             close(child_stdout_write);
             close(child_stdout_read);
         }
-        undef($!);
     }
 
+    undef($!);
     $( = $groups;
     if ($!){
         warn("oardo: $!\n       Cannot set GID to '$groups'.\n");
