@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oardo 911 2007-10-16 10:30:32Z capitn $
+# $Id$
 #
 # This script must be setuid root.
 # Cases for the use of this script:
