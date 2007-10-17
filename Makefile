@@ -20,6 +20,7 @@ WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
 DEB_INSTALL=$(OARDIR)
 DEB_SBINDIR=$(SBINDIR)
+DEB_SBINDIR_LN=$(SBINDIR)
 DEB_BINDIR=$(BINDIR)
 XAUTHCMDPATH=$(shell which xauth)
 ifeq "$(XAUTHCMDPATH)" ""
@@ -100,7 +101,7 @@ common: man
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				" $(OARDIR)/oardodo
-	ln -sf $(DEB_INSTALL)/oardodo $(DEB_SBINDIR)/oardodo
+	ln -sf $(OARDIR)/oardodo $(DEB_SBINDIR_LN)/oardodo
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(DEB_INSTALL)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
