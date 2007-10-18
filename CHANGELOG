@@ -12,6 +12,8 @@ version 2.2.8:
 
   - Bug 4159: remove unneeded Dump print from oarstat.
   - Bug 4158: replace XML::Simple module by XML::Dumper one.
+  - Bug fix for reservation (recalculate the right walltime).
+  - Print job dependencies in oarstat.
 
 version 2.2.7:
 --------------

@@ -239,6 +239,7 @@ sub print_job($$){
     my %data_to_display;
     my $job_user;
     my $job_cpuset_uid;
+    my @job_dependencies;
     my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name = "";
     $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
@@ -247,6 +248,7 @@ sub print_job($$){
     if (defined($full_view) or defined($Old)){
         @date_tmp = iolib::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
         @job_events = iolib::get_job_events($dbh,$job_info->{job_id});
+        @job_dependencies = iolib::get_current_job_dependencies($dbh,$job_info->{job_id});
    
         #Get the job resource description to print -l option
         my $job_descriptions = iolib::get_resources_data_structure_current_job($dbh,$job_info->{job_id});
@@ -310,7 +312,8 @@ sub print_job($$){
             wanted_resources => $resources_string,
             project => $job_info->{project},
             cpuset_name => $cpuset_name,
-            types => \@job_types
+            types => \@job_types,
+            dependencies => \@job_dependencies
         );
         if ($job_info->{state} eq 'Terminated') {
             $data_to_display{'exit_code'}=$job_info->{exit_code};
@@ -333,7 +336,8 @@ sub print_job($$){
             resubmit_job_id => $job_info->{resubmit_job_id},
             project => $job_info->{project},
             cpuset_name => $cpuset_name,
-            types => \@job_types
+            types => \@job_types,
+            dependencies => \@job_dependencies
         );
     }
  
@@ -416,6 +420,7 @@ sub print_job($$){
             print("    state = $job_info->{state}\n");
             print("    wanted_resources = $resources_string\n");
             print("    types = ".join(" ",@job_types)."\n");
+            print("    dependencies = ".join(" ",@job_dependencies)."\n");
             print("    assigned_resources = ".join("+",@nodes)."\n");
             print("    assigned_hostnames = ".join("+",@node_hostnames)."\n");
             print("    queue = $job_info->{queue_name}\n");
