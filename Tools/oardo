@@ -57,6 +57,7 @@ if ($!){
     exit(2);
 }
 
+# Get oar user info
 my @tmp = getpwuid($>);
 if ($#tmp < 0){
     warn("oardo: Cannot get information from uid $>.\n");

@@ -23,9 +23,6 @@
 #                   @ARGV is executed with OARDO_BECOME_USER privileges
 #
 
-#use strict;
-#use warnings;
-
 ###############################################################################
 # Static conf to edit #
 #######################
