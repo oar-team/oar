@@ -410,6 +410,7 @@ sub print_job($$){
             print("    assigned_hostnames = ".join("+",@node_hostnames)."\n");
             print("    nbNodes = ". ($#node_hostnames +1) ."\n");
             print("    weight = ". ($#nodes + 1) ."\n");
+            print("    dependencies = ".join(" ",@job_dependencies)."\n");
             print("\n");
         }elsif (defined($full_view)){
             print("Job_Id: $job_info->{job_id}\n");
