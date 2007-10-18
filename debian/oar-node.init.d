@@ -1,14 +1,16 @@
 #! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:         oar-node
+# Required-Start:   $network $local_fs $remote_fs
+# Required-Stop:
+# Default-Start:    2 3 4 5
+# Default-Stop:     0 1 6
+# Short-Description:    OAR node init script (launch its own sshd)
+### END INIT INFO
+
 # $Id$
-# skeleton	example file to build /etc/init.d/ scripts.
-#		This file should be used to construct scripts for /etc/init.d.
-#
-#		Written by Miquel van Smoorenburg <miquels@cistron.nl>.
-#		Modified for Debian 
-#		by Ian Murdock <imurdock@gnu.ai.mit.edu>.
-#
-# Version:	@(#)skeleton  1.9  26-Feb-2001  miquels@cistron.nl
-#
+
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 NAME=oar-node
