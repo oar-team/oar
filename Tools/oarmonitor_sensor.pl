@@ -1,4 +1,3 @@
-#!/usr/bin/perl
 # $Id: oarmonitor_sensor.pl 598 2007-07-05 08:13:30Z neyron $
 #
 # This file is executed on each nodes and retrive all data for the specified
