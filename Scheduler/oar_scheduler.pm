@@ -525,8 +525,6 @@ sub check_jobs_to_launch($){
     
     foreach my $i (keys(%jobs_to_launch)){
         oar_debug("[oar_scheduler] check_jobs_to_launch : set job $i in state toLaunch ($current_time_sql)\n");
-        iolib::set_job_state($dbh, $i, "toLaunch");
-        iolib::set_running_date_arbitrary($dbh,$i,$current_time_sec);
         # We must look at reservations to not go after the initial stop time
         my $mold = iolib::get_current_moldable_job($dbh,$jobs_to_launch{$i}->[0]);
         my $job = iolib::get_job($dbh,$i);
@@ -536,6 +534,8 @@ sub check_jobs_to_launch($){
             oar_debug("[oar_scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             iolib::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
         }
+        iolib::set_job_state($dbh, $i, "toLaunch");
+        iolib::set_running_date_arbitrary($dbh,$i,$current_time_sec);
         iolib::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
         foreach my $r (@{$jobs_to_launch{$i}->[1]}){
             iolib::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);

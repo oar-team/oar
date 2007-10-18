@@ -2282,6 +2282,28 @@ sub get_current_job_dependencies($$){
 }
 
 
+# get_job_dependencies
+# return an array table with all dependencies for the given job ID
+sub get_job_dependencies($$){
+    my $dbh = shift;
+    my $jobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT job_id_required
+                                FROM job_dependencies
+                                WHERE
+                                    job_id = $jobId
+                            ");
+    $sth->execute();
+    my @res;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{job_id_required});
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
 # Get all waiting toSchedule reservation jobs in the specified queue
 # parameter : database ref, queuename
 # return an array of job informations
