@@ -199,7 +199,7 @@ binary-common:
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-	dh_installinit -- start 90 2 3 4 5 . stop 90 0 1 6 .
+	dh_installinit -- start 90 2 3 4 5 . stop 01 0 1 6 .
 	dh_installcron
 #	dh_installinfo
 	dh_installman
