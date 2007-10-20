@@ -80,6 +80,7 @@ install-indep:
 		DEB_SBINDIR_LN=../lib/oar \
 		DEB_BINDIR=/usr/bin
 	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
+	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
 	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
 	$(MAKE) sanity-check libs \
 		OARUSER=oar \
