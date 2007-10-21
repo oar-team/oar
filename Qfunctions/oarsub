@@ -896,9 +896,13 @@ if ($Reservation ne "0"){
         my $client = $Server->accept();
         $answer = <$client>;
         chop($answer);
-        if (($answer ne $prev_str) and ($answer ne "GOOD JOB")){
+        if ($answer =~ /\](.*)$/){
+            if ($1 ne $prev_str){
+                print("$answer\n");
+                $prev_str = $1;
+            }
+        }elsif ($answer ne "GOOD JOB"){
             print("$answer\n");
-            $prev_str = $answer;
         }
     }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
     print("\n");
