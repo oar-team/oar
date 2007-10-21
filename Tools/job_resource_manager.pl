@@ -65,6 +65,10 @@ if (defined($Cpuset->{cpuset_path})){
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
 
+#    if (defined($Cpuset->{job_uid})){
+#        adduser --quiet --system --home /var/lib/oar --ingroup oar --shell /bin/bash oar
+#    }
+
     if (defined($Cpuset_path)){
         if (system('oardodo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
             if (system('oardodo mkdir -p /dev/cpuset && oardodo mount -t cpuset none /dev/cpuset')){
