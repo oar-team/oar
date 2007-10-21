@@ -537,13 +537,19 @@ sub get_job_current_resources($$$) {
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
                         assigned_resources.moldable_job_id = $jobid";
-    }else{    
+    }else{
+        my $type_str;
+        foreach my $t (@{$not_type_list}){
+            $type_str .= $dbh->quote($t);
+            $type_str .= ',';
+        }
+        chop($type_str);
         $tmp_str = "FROM assigned_resources,resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
                         assigned_resources.moldable_job_id = $jobid AND
                         resources.resource_id = assigned_resources.resource_id AND
-                        resources.type NOT IN (".join(",","\'@{$not_type_list}\'").")";
+                        resources.type NOT IN (".$type_str.")";
     }
     my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
                                 $tmp_str
@@ -1413,7 +1419,14 @@ sub archive_some_moldable_job_nodes($$$){
     my $dbh = shift;
     my $mjob_id = shift;
     my $hosts = shift;
-    
+   
+    my $value_str;
+    foreach my $v (@{$hosts}){
+        $value_str .= $dbh->quote($v);
+        $value_str .= ',';
+    }
+    chop($value_str);
+
     if ($Db_type eq "Pg"){
         $dbh->do("  UPDATE assigned_resources
                     SET
@@ -1423,7 +1436,7 @@ sub archive_some_moldable_job_nodes($$$){
                         assigned_resources.assigned_resource_index = \'CURRENT\'
                         AND assigned_resources.moldable_job_id = $mjob_id
                         AND resources.resource_id = assigned_resources.resource_id
-                        AND resources.network_address IN (".join(",","\'@{$hosts}\'").") 
+                        AND resources.network_address IN (".$value_str.") 
              ");
     }else{
         $dbh->do("  UPDATE assigned_resources, resources
@@ -1433,7 +1446,7 @@ sub archive_some_moldable_job_nodes($$$){
                         assigned_resources.assigned_resource_index = \'CURRENT\'
                         AND assigned_resources.moldable_job_id = $mjob_id
                         AND resources.resource_id = assigned_resources.resource_id
-                        AND resources.network_address IN (".join(",","\'@{$hosts}\'").")
+                        AND resources.network_address IN (".$value_str.")
                 ");
     }
 }
@@ -3459,16 +3472,19 @@ sub update_current_scheduler_priority($$$$){
                                                 assigned_resources.resource_id = resources.resource_id
                                         ");
                 $sth->execute();
-                my @tmp_res;
+                my $value_str;
                 while (my @ref = $sth->fetchrow_array()){
-                    push(@tmp_res, $ref[0]);
+                    $value_str .= $dbh->quote($ref[0]);
+                    $value_str .= ',';
                 }
                 $sth->finish();
 
+                return if (!defined($value_str));
+                chop($value_str);
                 my $req =  "UPDATE resources
                             SET scheduler_priority = scheduler_priority + ($value * $index)
                             WHERE
-                                $f IN (".join(",","\'@tmp_res\'").")
+                                $f IN (".$value_str.")
                            ";
                 $dbh->do($req);       
             }
