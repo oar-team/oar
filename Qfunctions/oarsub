@@ -897,7 +897,7 @@ if ($Reservation ne "0"){
         $answer = <$client>;
         chop($answer);
         if (($answer ne $prev_str) and ($answer ne "GOOD JOB")){
-            print("[".strftime("%F %T",localtime)."] $answer\n");
+            print("$answer\n");
             $prev_str = $answer;
         }
     }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
