@@ -12,10 +12,13 @@
 # serveur as follows:
 # command="/usr/lib/oar/oarnodesetting_ssh" [dediacted pub key info]...
 # 
+# Warning: if $IP does not exist in the database or every corresponding
+#          resource states are 'Dead' then this script will return an exit code
+#          of 12 not 0 (this is the default behaviour of "oarnodesetting").
 
 IP=$(echo $SSH_CONNECTION | cut -d " " -f 1 )
 OARNODESETTINGCMD=/usr/local/sbin/oarnodesetting
 [ -n "$IP" ] || exit 1
-exec $OARNODESETTINGCMD -s Alive --sql "ip = '$IP'"
+exec $OARNODESETTINGCMD -s Alive --sql "ip = '$IP' AND state != 'Dead'"
 exit 1
 

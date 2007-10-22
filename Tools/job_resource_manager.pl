@@ -14,7 +14,7 @@
 # TAKTUK_HOSTNAME envirionment variable must be defined and must be a name
 # that we will be able to find in the transfered hashtable.
 use Fcntl ':flock';
-use Data::Dumper;
+#use Data::Dumper;
 
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
