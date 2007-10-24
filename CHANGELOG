@@ -4,7 +4,8 @@ OAR CHANGELOG
 version 2.2.9:
 --------------
 
-
+  - Bug 4225: Dump only 1 data structure when using -X or -Y or -D.
+  - Bug fix in Finishing sequence (Suspect right nodes).
 
 version 2.2.8:
 --------------

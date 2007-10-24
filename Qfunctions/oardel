@@ -153,7 +153,7 @@ if (defined($Checkpoint)){
         warn("You must be oar or root to use the -b option\n");
     }else{
         foreach my $j (@job_ids){
-            iolib::lock_table($base,["jobs","job_types","resources","assigned_resources","events"]);
+            iolib::lock_table($base,["jobs","job_types","resources","assigned_resources","event_logs"]);
             my $job = iolib::get_job($base, $j);
             if (defined($job->{state}) and ($job->{state} eq "Running")){ 
                 my $types = iolib::get_current_job_types($base,$j);
