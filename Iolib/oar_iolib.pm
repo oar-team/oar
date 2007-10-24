@@ -5408,7 +5408,7 @@ sub job_finishing_sequence($$$$$$){
                     }
                     if ($#bad >= 0){
                         oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
-                        push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad"});
+                        push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad", hosts => \@bad});
                     }else{
                         oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
                     }
@@ -5422,7 +5422,11 @@ sub job_finishing_sequence($$$$$$){
 
     foreach my $e (@{$events}){
         oar_Judas::oar_debug("$e->{string}\n");
-        add_new_event($dbh,$e->{type},$job_id,$e->{string});
+        if (defined($e->{hosts})){
+            add_new_event_with_host($dbh,$e->{type},$job_id,$e->{string},$e->{hosts});
+        }else{
+            add_new_event($dbh,$e->{type},$job_id,$e->{string});
+        }
     }
     oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{@{$events}} >= 0);
 }
