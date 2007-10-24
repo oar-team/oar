@@ -42,7 +42,7 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
 # this function redirect STDOUT and STDERR into the log file
 # return the pid of the fork process
 sub redirect_everything(){
-    return() if (! is_conf("LOG_FILE"));
+    return(0) if (! is_conf("LOG_FILE"));
     pipe(judas_read,judas_write);
     my $pid = fork();
     if ($pid == 0){
@@ -59,6 +59,8 @@ sub redirect_everything(){
     my $old_fd = select(judas_write); $|=1; select($old_fd);
     open(STDOUT, ">&".fileno(judas_write));
     open(STDERR, ">&".fileno(judas_write));
+
+    return($pid);
 }
 
 # this function writes both on the stdout and in the log file

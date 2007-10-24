@@ -14,7 +14,7 @@ $oldfh = select(STDOUT); $| = 1; select($oldfh);
 #Everything is run by oar user
 $ENV{SUDO_UID}=$<;
 
-oar_Judas::redirect_everything();
+my $Redirect_STD_process = oar_Judas::redirect_everything();
 
 oar_warn("[Almighty] Start Almighty\n");
 
@@ -417,6 +417,7 @@ while (1){
     if ($finishTag == 1){
         oar_debug("[Almighty] kill child process $appendice_pid\n");
         kill(9,$appendice_pid);
+        kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
         oar_warn("[Almighty] stop Almighty\n");
         exit(10);
     }
