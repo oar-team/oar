@@ -38,6 +38,9 @@ sub get_host_ip($){
 #Launch the right sub
 sub test_hosts(@){
     init_conf($ENV{OARCONFFILE});
+    if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+        oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+    }
     if (is_conf("PINGCHECKER_TAKTUK_ARG_COMMAND") and is_conf("TAKTUK_CMD")){
         return(taktuk_hosts(@_));
     }elsif (is_conf("PINGCHECKER_SENTINELLE_SCRIPT_COMMAND")){
@@ -108,7 +111,7 @@ sub taktuk_hosts(@){
     $ENV{ENV}="";
     eval {
         $SIG{ALRM} = sub { die("alarm\n") };
-        alarm($Timeout_sentinelle);
+        alarm(oar_Tools::get_taktuk_timeout());
         my $pid = open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
         foreach my $i (@hosts){
             print(WRITER "$i\n");

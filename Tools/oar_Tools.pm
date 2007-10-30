@@ -41,6 +41,7 @@ sub get_default_openssh_cmd();
 sub get_oar_pid_file_name($);
 sub get_oarsub_connections_file_name($);
 sub get_ssh_timeout();
+sub get_taktuk_timeout();
 sub get_default_leon_soft_walltime();
 sub get_default_leon_walltime();
 sub get_default_dead_switch_time();
@@ -233,6 +234,10 @@ sub get_ssh_timeout(){
 
 sub set_ssh_timeout($){
     $Timeout_ssh = shift;
+}
+
+sub get_taktuk_timeout(){
+    return($Timeout_ssh * 2);
 }
 
 sub get_default_oarexec_directory(){
@@ -835,7 +840,7 @@ sub manage_remote_commands($$$$$$$){
        
         eval{
             $SIG{ALRM} = sub { die "alarm\n" };
-            alarm(oar_Tools::get_ssh_timeout());     
+            alarm(oar_Tools::get_taktuk_timeout());     
             # Send data structure to all nodes
             print(tak_stdin_write $string_to_transfer);
             close(tak_stdin_write);
