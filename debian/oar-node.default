@@ -5,6 +5,7 @@
 
 ## If you want to change the default umask
 #umask 0702
+#umask 0002
 
 
 #OAR_NODE_NAME=$(hostname -f)
