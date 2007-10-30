@@ -65,9 +65,19 @@ if (defined($Cpuset->{cpuset_path})){
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
 
-#    if (defined($Cpuset->{job_uid})){
-#        adduser --quiet --system --home /var/lib/oar --ingroup oar --shell /bin/bash oar
-#    }
+    if (defined($Cpuset->{job_uid})){
+        my $prevuser = getpwuid($Cpuset->{job_uid});
+        system("oardodo deluser --quiet $prevuser") if (defined($prevuser));
+        my @tmp = getpwnam($Cpuset->{user});
+        if ($#tmp < 0){
+            print("[job_resource_manager] Cannot get information from user '$Cpuset->{user}'.\n");
+            exit(15);
+        }
+        if (system("oardodo adduser --disabled-password --gecos 'OAR temporary user' --no-create-home --force-badname --quiet --home $tmp[7] --gid $tmp[3] --shell $tmp[8] --uid $Cpuset->{job_uid} $Cpuset->{job_user}")){
+            print("[job_resource_manager] Failed to create $Cpuset->{job_user} with uid $Cpuset->{job_uid} and home $tmp[7] and group $tmp[3] and shell $tmp[8]\n");
+            exit(15);
+        }
+    }
 
     if (defined($Cpuset_path)){
         if (system('oardodo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
@@ -118,11 +128,7 @@ if ($ARGV[0] eq "init"){
             }
             close(PRIV);
             if (defined($Cpuset->{job_uid})){
-                if (system("ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey")){
-                    warn("[job_resource_manager] Error ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey \n");
-                    unlink($Cpuset->{ssh_keys}->{private}->{file_name});
-                    exit(8);
-                }
+                system("ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey");
             }
         }else{
             warn("[job_resource_manager] Error opening $Cpuset->{ssh_keys}->{private}->{file_name} \n");
@@ -215,6 +221,55 @@ if ($ARGV[0] eq "init"){
             #exit(0);
             exit(6);
         }
+    }
+    if (defined($Cpuset->{job_uid})){
+        #print ("Purging /tmp...\n");
+        system("sudo find /tmp -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
+        my $ipcrm_args="";
+        if (open(IPCMSG,"< /proc/sysvipc/msg")) {
+            <IPCMSG>;
+            while (<IPCMSG>) {
+                if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
+                    $ipcrm_args .= " -q $1";
+                }
+            }
+            close (IPCMSG);
+        }else{
+            warn("Cannot open /proc/sysvipc/msg: $!.\n");
+            exit(14);
+        }
+        if (open(IPCSHM,"< /proc/sysvipc/shm")) {
+            <IPCSHM>;
+            while (<IPCSHM>) {
+                if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
+                    $ipcrm_args .= " -m $1";
+                }
+            }
+            close (IPCSHM);
+        }else{
+            warn("Cannot open /proc/sysvipc/shm: $!.\n");
+            exit(14);
+        }
+        if (open(IPCSEM,"< /proc/sysvipc/sem")) {
+            <IPCSEM>;
+            while (<IPCSEM>) {
+                if (/\s+\d+\s+(\d+)(?:\s+\d+){2}\s+$Cpuset->{job_uid}(?:\s+\d+){5}$/) {
+                    $ipcrm_args .= " -s $1";
+                }
+            }
+            close (IPCSEM);
+        }else{
+            warn("Cannot open /proc/sysvipc/sem: $!.\n");
+            exit(14);
+        }
+        if ($ipcrm_args) {
+            #print ("Purging SysV IPC: ipcrm $ipcrm_args\n");
+            if(system("oardodo ipcrm $ipcrm_args")){
+                warn("Failed to purge IPC: ipcrm $ipcrm_args\n");
+                exit(14);
+            }
+        }
+        system("oardodo deluser --quiet $Cpuset->{job_user}");
     }
 }else{
     print("[job_resource_manager] Bad command line argument $ARGV[0].\n");

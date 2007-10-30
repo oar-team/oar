@@ -466,6 +466,7 @@ sub parse_resource_descriptions($){
     if ($#resource < 0){
         push(@resource,$Default_resources);
     }
+    
     #print "--@resource--\n";
 
     my @result;
@@ -539,6 +540,17 @@ sub parse_resource_descriptions($){
         }
         push(@result, \@resource_groups);
     }
+    # Add resource constraints for JOB_RESOURCE_MANAGER_JOB_UID_TYPE for each resource groups
+    if (defined($Job_uid_resource_type) and defined($Cpuset_field)){
+        my %tmp = ( 
+                    property => "type = '$Job_uid_resource_type'",
+                    resources => [ {resource => $Cpuset_field, value => 1} ]
+                  );
+        foreach my $moldable (@result){
+            push(@{$moldable->[0]},\%tmp);
+        }
+    }
+
     return(@result);
 }
 
