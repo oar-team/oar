@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+version 2.2.10:
+---------------
+
+  - Job dependencies: if the required jobs do not have an exit code == 0 and in
+    the state Terminated then the schedulers refuse to schedule this job.
+
 version 2.2.9:
 --------------
 

@@ -211,6 +211,12 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 $skip_job = 1;
                 next;
             }
+        }elsif ($dep_job->{exit_code} != 0){
+            my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
+            iolib::set_job_message($base,$j->{job_id},$message);
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
+            $skip_job = 1;
+            next;
         }
     }
     next if ($skip_job == 1);
@@ -348,6 +354,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
+        iolib::set_job_message($base,$j->{job_id},"FIFO scheduling OK");
     }else{
         my $message = "Cannot find enough resources which fit for the job $j->{job_id}";
         iolib::set_job_message($base,$j->{job_id},$message);
