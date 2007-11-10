@@ -233,7 +233,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     $job_index ++;
     
     oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Start scheduling (Karma note = ".karma($j).")\n");
-    iolib::set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
     
     my $scheduler_init_date = $current_time;
     # Search for dependencies
@@ -399,6 +398,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
+        iolib::set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
     }else{
         my $message = "Cannot find enough resources which fit for the job $j->{job_id}";
         iolib::set_job_message($base,$j->{job_id},$message);

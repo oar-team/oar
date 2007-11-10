@@ -41,7 +41,7 @@ then
         # set the .Xautority.{pid} file as the xauthority file.
         export XAUTHORITY=$HOME/.Xauthority.$$
         # retrieve the X cookie from the user to user oar.
-        OARDO_BECOME_USER=$OARDO_USER oardodo bash --noprofile --norc -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | $XAUTH_LOCATION merge - 2> /dev/null
+        OARDO_BECOME_USER=${OARDO_USER%_*} oardodo bash --noprofile --norc -c "unset XAUTHORITY; $XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | $XAUTH_LOCATION merge - 2> /dev/null
         # ssh will push that cookie in the connection.
     fi
 fi

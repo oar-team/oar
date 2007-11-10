@@ -69,7 +69,8 @@ else
     then
         if [ -x "$XAUTH_LOCATION" ]
         then
-            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=$OAR_JOB_USER $OARDIR/oardodo $XAUTH_LOCATION merge -
+            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=${OAR_JOB_USER%_*} $OARDIR/oardodo $XAUTH_LOCATION merge -
+            [ "${OAR_JOB_USER%_*}" != "$OAR_JOB_USER" ] && OARDO_BECOME_USER=${OAR_JOB_USER%_*} $OARDIR/oardodo bash --noprofile --norc -c 'chmod 660 $HOME/.Xauthority'
         fi
     fi
     #Change tty owner
