@@ -28,6 +28,12 @@ setup_oar_user_group() {
 	fi
 	if ! getent passwd oar > /dev/null 2>&1 ; then
 		adduser --quiet --system --home /var/lib/oar --ingroup oar --shell /bin/bash oar > /dev/null 2>&1
+        cd /var/lib/oar
+        echo '' >> .bash_profile
+        echo 'export PATH="$PATH:/usr/sbin"' >> .bash_profile
+        chown oar:oar /var/lib/oar/.bash_profile
+        ln -s .bash_profile .bashrc
+        chown oar:oar .bashrc
 	fi
 	chown oar:oar /var/lib/oar -R > /dev/null 2>&1
 	if [ -e /etc/oar/oar.conf ]; then
