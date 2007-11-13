@@ -4163,7 +4163,8 @@ sub search_idle_nodes($$){
                 (resources.state = \'Alive\' OR
                 resources.state = \'Suspected\') AND
                 resources.network_address != \'\' AND
-                resources.type = \'default\'
+                resources.type = \'default\' AND
+                resources.cm_availability > 0
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();
