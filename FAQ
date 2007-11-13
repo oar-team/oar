@@ -255,7 +255,11 @@ If you want to enable a node to be woke up the next 12 hours::
     ((DATE=$(date +%s)+3600*12))
     oarnodesetting -h host_name -p cm_availability=$DATE
 
-Otherwise you can disable the wake up of nodes by::
+Otherwise you can disable the wake up of nodes (but not the halt) by::
+
+    oarnodesetting -h host_name -p cm_availability=1
+
+If you want to disable the wake up and the halt on a node::
 
     oarnodesetting -h host_name -p cm_availability=0
     
