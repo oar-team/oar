@@ -19,7 +19,7 @@ version 2.2.10:
   - Job dependencies: if the required jobs do not have an exit code == 0 and in 
     the state Terminated then the schedulers refuse to schedule this job.
   - Add the possibility to disable the halt command on nodes with
-    cm_availability=0.
+    cm_availability value.
 
 version 2.2.9:
 --------------
