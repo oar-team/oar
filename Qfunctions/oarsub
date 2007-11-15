@@ -145,8 +145,40 @@ sub scan_script($){
                         push(@{$result{resources}}, $2);
                     }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {
                         $result{queue} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*"(.+)"\s*$/m) {
+                    }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*(.+)\s*$/m) {
                         $result{property} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--checkpoint)\s*(\d+)\s*$/m) {
+                        $result{checkpoint} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--notify)\s*(.+)\s*$/m) {
+                        $result{notify} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-t|--type)\s*(.+)\s*$/m) {
+                        push(@{$result{types}}, $2);
+                    }elsif ($line =~ m/^#OAR\s+(-d|--directory)\s*(.+)\s*$/m) {
+                        $result{directory} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-n|--name)\s*(.+)\s*$/m) {
+                        $result{name} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--project)\s*(.+)\s*$/m) {
+                        $result{project} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--hold)\s*$/m) {
+                        $result{hold} = 1;
+                    }elsif ($line =~ m/^#OAR\s+(-a|--anterior)\s*(\d+)\s*$/m) {
+                        push(@{$result{anterior}}, $2);
+                    }elsif ($line =~ m/^#OAR\s+(--signal)\s*(\d+)\s*$/m) {
+                        $result{signal} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-O|--stdout)\s*(.+)\s*$/m) {
+                        $result{stdout} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-E|--stderr)\s*(.+)\s*$/m) {
+                        $result{stderr} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-k|--use-job-key)\s*$/m) {
+                        $result{usejobkey} = 1;
+                    }elsif ($line =~ m/^#OAR\s+(--import-job-key-inline-priv)\s*(.+)\s*$/m) {
+                        $result{importjobkeyinlinepriv} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-i|--import-job-key-from-file)\s*(.+)\s*$/m) {
+                        $result{importjobkeyfromfile} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-e|--export-job-key-to-file)\s*(.+)\s*$/m) {
+                        $result{exportjobkeytofile} = $2;
+                    }else{
+                        warn("/!\\ Not able to scan file line: $line");
                     }
                 }
             }
@@ -723,31 +755,95 @@ if (defined($connect_job)){
 }
 # End connection to a reservation
 
-job_key_management();
-
 my $base_ro = iolib::connect_ro();
 
 if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
     if (defined($Scan_script)){
         my %scan_result = scan_script($exec) if ($exec ne "");
-        #print("$Queue_name \n");
         if (defined($scan_result{queue}) && !defined($Queue_name)){
             $Queue_name = $scan_result{queue}
         }elsif(defined($scan_result{queue}) && defined($Queue_name)){
-            warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.");
+            warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.\n");
         }
-        if (defined($scan_result{property}) && !defined($Job_sql_properties)){
-            $Job_sql_properties = $scan_result{property}
-        }elsif(defined($scan_result{property}) && defined($Job_sql_properties)){
-            warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.");
+        if (defined($scan_result{property}) && ($Job_sql_properties eq "")){
+            $Job_sql_properties = $scan_result{property};
+        }elsif(defined($scan_result{property}) && ($Job_sql_properties ne "")){
+            warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.\n");
         }
         if (defined($scan_result{resources})){
             push(@resource, @{$scan_result{resources}});
         }
+        if (defined($scan_result{types})){
+            push(@Type, @{$scan_result{types}});
+        }
+        if (defined($scan_result{anterior})){
+            push(@Anterior_job, @{$scan_result{anterior}});
+        }
+        if (defined($scan_result{checkpoint}) && ($Checkpoint == 0)){
+            $Checkpoint = $scan_result{checkpoint};
+        }elsif(defined($scan_result{checkpoint}) && ($Checkpoint != 0)){
+            warn("/!\\ Ignore script value for checkpoint parameter : $scan_result{checkpoint}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{notify}) && (!defined($notify))){
+            $notify = $scan_result{notify};
+        }elsif(defined($scan_result{notify}) && (defined($notify))){
+            warn("/!\\ Ignore script value for notify parameter : $scan_result{notify}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{directory})){
+            $Directory = $scan_result{directory};
+        }
+        if (defined($scan_result{name}) && (!defined($job_name))){
+            $job_name = $scan_result{name};
+        }elsif(defined($scan_result{name}) && (defined($job_name))){
+            warn("/!\\ Ignore script value for name parameter : $scan_result{name}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{project})){
+            $Project = $scan_result{project};
+        }
+        if (defined($scan_result{hold}) && (!defined($job_hold))){
+            $job_hold = $scan_result{hold};
+        }elsif(defined($scan_result{hold}) && (defined($job_hold))){
+            warn("/!\\ Ignore script value for hold parameter : $scan_result{hold}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{signal})){
+            $Checkpoint_signal = $scan_result{signal};
+        }
+        if (defined($scan_result{stdout}) && (!defined($Stdout_file))){
+            $Stdout_file = $scan_result{stdout};
+        }elsif(defined($scan_result{stdout}) && (defined($Stdout_file))){
+            warn("/!\\ Ignore script value for stdout parameter : $scan_result{stdout}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{stderr}) && (!defined($Stderr_file))){
+            $Stderr_file = $scan_result{stderr};
+        }elsif(defined($scan_result{stderr}) && (defined($Stderr_file))){
+            warn("/!\\ Ignore script value for stderr parameter : $scan_result{stderr}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{usejobkey}) && (!defined($use_job_key))){
+            $use_job_key = $scan_result{usejobkey};
+        }elsif(defined($scan_result{usejobkey}) && (defined($use_job_key))){
+            warn("/!\\ Ignore script value for use-job-key parameter : $scan_result{usejobkey}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")){
+            $import_job_key_inline = $scan_result{importjobkeyinlinepriv};
+        }elsif(defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline ne "")){
+            warn("/!\\ Ignore script value for import-job-key-inline-priv parameter : $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file eq "")){
+            $import_job_key_file = $scan_result{importjobkeyfromfile};
+        }elsif(defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file ne "")){
+            warn("/!\\ Ignore script value for import-job-key-from-file parameter : $scan_result{importjobkeyfromfile}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{exportjobkeytofile}) && ($export_job_key_file eq "")){
+            $export_job_key_file = $scan_result{exportjobkeytofile};
+        }elsif(defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")){
+            warn("/!\\ Ignore script value for export-job-key-to-file parameter : $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
+        }
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
+
+    job_key_management();
 
     #if (!($exec =~ m/^\/.+$/m)){
         # WARNING: we are not the real user, we are oar user!!!
@@ -781,6 +877,8 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my @resource_list = parse_resource_descriptions(\@resource);
  
+    job_key_management();
+
     if ($Reservation ne "0"){
         #Test if this job is a reservation and the syntax is right
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
