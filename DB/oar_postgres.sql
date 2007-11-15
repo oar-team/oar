@@ -264,6 +264,7 @@ CREATE TABLE resources (
   expiry_date integer NOT NULL default '0',
   desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
   last_job_date integer NOT NULL default '0',
+  cm_availability integer NOT NULL default '0',
   mem integer NOT NULL default '0',
   PRIMARY KEY (resource_id)
 );
