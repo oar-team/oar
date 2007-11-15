@@ -222,9 +222,17 @@ Script example (file /home/users/toto/script.sh):
 
 =item #OAR -l /nodes=4/cpu=1,walltime=3:15:00
 
-=item #OAR -q long
+=item #OAR -p switch = 'sw3' or switch = 'sw5'
 
-=item #OAR -p "switch = 'sw3' or switch = 'sw5'"
+=item #OAR -t besteffort
+
+=item #OAR -t type2
+
+=item #OAR -k
+
+=item #OAR -e /path/to/job/key
+
+=item #OAR --stdout stdoutfile.log
 
 =item /home/users/toto/prog
 
