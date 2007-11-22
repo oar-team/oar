@@ -586,7 +586,7 @@ file and change the value of the tag ACCOUNTING_WINDOW_.
 Fields            Types                 Descriptions
 ================  ====================  =======================================
 id                INT UNSIGNED          id number
-rule              VARCHAR(255)          rule written in Perl applied when a
+rule              TEXT                  rule written in Perl applied when a
                                         job is going to be registered
 ================  ====================  =======================================
 
@@ -1118,6 +1118,9 @@ state_num             INT                   corresponding state number (useful
                                             with the SQL "ORDER" query)
 suspended_jobs        ENUM('YES','NO')      specify if there is at least one
                                             suspended job on the resource
+scheduler_priority    INT UNSIGNED          arbitrary number given by the system
+                                            to select resources with more
+                                            intelligence
 switch                VARCHAR(50)           name of the switch
 cpu                   INT UNSIGNED          global cluster cpu number
 cpuset                INT UNSIGNED          field used with the
