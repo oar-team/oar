@@ -38,7 +38,7 @@ Options:
       --delete-before=<number_of_seconds>
                 delete every records number_of_seconds ago
   -h, --help    show this help screen
-  -v, --version print OAR version number
+  -V, --version print OAR version number
 EOS
     exit(0);
 }
