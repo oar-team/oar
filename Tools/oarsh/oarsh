@@ -14,6 +14,10 @@ OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 CPUSET_PATH="/oar"
+
+# If you set this variable to something diiferent from 0 then oarsh will act
+# like a normal ssh without CPUSET restriction
+OARSH_BYPASS_WHOLE_SECURITY="0"
 ###############################################################################
 
 source "$OARCONFFILE" || exit 2
@@ -42,6 +46,15 @@ then
         sudo -H -u $SUDO_USER bash -c "unset XAUTHORITY; $XAUTH_LOCATION extract - '${DISPLAY/#localhost:/:}'" | $XAUTH_LOCATION merge - 2> /dev/null
         # ssh will push that cookie in the connection.
     fi
+fi
+
+# -0- Check OARSH_BYPASS_WHOLE_SECURITY variable
+# (oarsh acts like a ssh and can connect on every nodes)
+if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
+    export OAR_CPUSET="undef"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET SUDO_USER" "$@"
+    echo "oarsh: Failed to connect using undef cpuset environement"
+    exit 5
 fi
 
 # -1- try connection using a user provided job key file for a job using the job key mechanism
