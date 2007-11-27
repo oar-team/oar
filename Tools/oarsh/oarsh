@@ -16,6 +16,10 @@ OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 CPUSET_PATH=
+
+# If you set this variable to something diiferent from 0 then oarsh will act
+# like a normal ssh without CPUSET restriction
+OARSH_BYPASS_WHOLE_SECURITY="0"
 ###############################################################################
 
 source "$OARCONFFILE" || exit 2
@@ -46,6 +50,15 @@ then
     fi
 fi
 
+# -0- Check OARSH_BYPASS_WHOLE_SECURITY variable
+# (oarsh acts like a ssh and can connect on every nodes)
+if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
+    export OAR_CPUSET="undef"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
+    echo "oarsh: Failed to connect using cpuset environement"
+    exit 5
+fi
+
 # -1- try connection using a user provided job key file for a job using the job key mechanism
 if [ -n "$OAR_JOB_KEY_FILE" ] 
 then
@@ -63,7 +76,7 @@ then
         exit 3
     fi
     umask $TMPOLDUMASK
-    
+
     umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
     echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"
@@ -138,7 +151,7 @@ if [ -n "$OAR_JOB_ID" ]; then
             exit 5
         fi
     fi
-        
+
     # Check if we must use a tmp user id for this job
     if [ "$OAR_JOB_USER" == "" ]; then
         OAR_JOB_USER=$OARDO_USER
@@ -156,7 +169,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     echo "oarsh: Failed to connect using cpuset environement"
     exit 5
 fi
-        
+
 cat 1>&2 <<EOF
 oarsh: Cannot connect. Please set either a job id or a job key in your
 oarsh: environment using the OAR_JOB_ID or the OAR_JOB_KEY_FILE variable.

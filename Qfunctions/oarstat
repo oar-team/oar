@@ -242,7 +242,7 @@ sub get_job_data($$){
     my $job_cpuset_uid;
     my @job_dependencies;
     my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
-    my $cpuset_name = "";
+    my $cpuset_name;
     $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
 
     my $resources_string = "";
@@ -456,7 +456,9 @@ sub print_job_data($$){
                 print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
                 print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
                 print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
-                print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
+                if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
+                    print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
+                }
                 if (defined($data->{$job_info->{job_id}}->{job_uid})){
                     print("    job_user = $data->{$job_info->{job_id}}->{job_user}\n");
                     print("    job_uid = $data->{$job_info->{job_id}}->{job_uid}\n");
