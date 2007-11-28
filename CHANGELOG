@@ -9,6 +9,8 @@ version 2.2.10:
   - Add the possibility to disable the halt command on nodes with
     cm_availability value.
   - Enhance oarsub "-S" option (more #OAR parsed).
+  - Add the possibility to use oarsh without configuring the CPUSETs (can be
+    useful for users that don't want to configure there ssh keys)
 
 version 2.2.9:
 --------------

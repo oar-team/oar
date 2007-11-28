@@ -146,7 +146,7 @@ Print result in YAML format.
 
 Print this help message.
 
-=item B<-v, --version>
+=item B<-V, --version>
 
 Print the version of OAR.
 
