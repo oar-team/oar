@@ -17,7 +17,7 @@ OPENSSH_CMD=/usr/bin/ssh
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 CPUSET_PATH=
 
-# If you set this variable to something diiferent from 0 then oarsh will act
+# If you set this variable to something different from 0 then oarsh will act
 # like a normal ssh without CPUSET restriction
 OARSH_BYPASS_WHOLE_SECURITY="0"
 ###############################################################################

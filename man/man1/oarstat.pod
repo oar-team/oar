@@ -4,7 +4,7 @@ oarstat - show job's informations.
 
 =head1 SYNOPSIS
 
-B<oarstat> [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date_start,date_stop"]] [-X | -Y | -D] [-v]
+B<oarstat> [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date_start,date_stop"]] [-X | -Y | -D] [-V]
 
 =head1 DESCRIPTION
 
@@ -53,7 +53,7 @@ Print result in XML format.
 
 Print result in YAML format.
 
-=item B<-v, --version>
+=item B<-V, --version>
 
 Print OAR version number.
 

@@ -4,7 +4,7 @@ oarnodes - show occupation and state of compute nodes.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ -a | -s | -r numbers | --sql sql_properties | -l | -h | -v ] [list of nodes] [-X | -Y | -D]
+B<oarnodes> [ -a | -s | -r numbers | --sql sql_properties | -l | -h | -V ] [list of nodes] [-X | -Y | -D]
 
 =head1 DESCRIPTION
 
@@ -46,7 +46,7 @@ Print result in XML format.
 
 Print result in YAML format.
 
-=item B<-v, --version>
+=item B<-V, --version>
 
 Print OAR version number.
 

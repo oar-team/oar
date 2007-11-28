@@ -4,7 +4,7 @@ oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [-c|-b][job_ids][-h][-v]
+B<oardel> [-c|-b][job_ids][-h][-V]
 
 =head1 DESCRIPTION
 
@@ -26,7 +26,7 @@ Tag specified jobs as besteffort (or remove it if they are already besteffort)
 
 Delete/checkpoint jobs which respond to the SQL where clause on the table jobs (ex: "project = 'p1'").
 
-=item B<-v, --version>
+=item B<-V, --version>
 
 Print OAR version number.
 
