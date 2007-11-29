@@ -154,3 +154,4 @@ Important notes
 
       Here only users from oarsh group can execute oarsh
 
+    - You can disable the cpuset security mechanism by setting the OARSH_BYPASS_WHOLE_SECURITY field to 1 in your oar.conf file. WARNING: this is a critical functionality (this is only useful if users want to have a command to connect on every nodes without taking care of there ssh configuration and act like a ssh).

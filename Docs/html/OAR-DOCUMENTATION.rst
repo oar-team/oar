@@ -12,7 +12,7 @@
           Bat. ENSIMAG - antenne de Montbonnot
           ZIRST 51, avenue Jean Kuntzmann
           38330 MONTBONNOT SAINT MARTIN
-:Contact: nicolas.capit@imag.fr
+:Contact: nicolas.capit@imag.fr, joseph.emeras@imag.fr
 :Authors: LIG laboratory
 :Organization: LIG laboratory
 :Status: Stable
@@ -22,7 +22,7 @@
 
 :Abstract:
 
-  OAR is a resource manager or (batch scheduler) for large clusters. In
+  OAR is a resource manager (or batch scheduler) for large clusters. In
   functionnalities, it's near of PBS, LSF, CCS and Condor. It's suitable for
   productive plateforms and research experiments.
 
@@ -42,8 +42,8 @@ Oar is an opensource batch scheduler which provides a simple and flexible
 exploitation of a cluster.
 
 It manages resources of clusters as a traditional batch scheduler
-(as PBS / Torque / LSF / SGE).
- 
+(as PBS / Torque / LSF / SGE). In other words, it doesn't execute your job on the resources but manages them (reservation, acces granting) in order to allow you to connect these resources and use them.
+
 Its design is based on high level tools: 
   - relational database engine MySQL or PostgreSQL,
   - scripting language Perl,  
@@ -1892,6 +1892,11 @@ General steps used to schedule a job:
      gantt_jobs_predictions_ and gantt_jobs_resources_ tables.
 
 See User_ section from the FAQ_ for more examples and features.
+
+Job dependencies
+----------------
+
+A job dependency is a situation where a job needs the ending of another job to start. OAR deals with job dependency problems by refusing to schedule dependant jobs if their required job is in Terminated state and have an exit code != 0 (an error occured). If the required job is resubmited, its jobId is no longer the same and OAR updates the database and sets the job_id_required field to this new jobId for the dependant job. 
 
 User notification
 -----------------

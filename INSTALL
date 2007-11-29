@@ -29,9 +29,9 @@ installed :
 On the OAR server and on the login nodes, the following packages must be
 installed:
 
-    - Perl-Mysql | Perl-PostegreSQL
+    - Perl-Mysql | Perl-PostgreSQL
     - Perl-DBI
-    - MySQL | PostrgeSQL
+    - MySQL | PostgreSQL
     - libmysql | libpostgres
 
 From now on, we will suppose all the packages are correctly installed and

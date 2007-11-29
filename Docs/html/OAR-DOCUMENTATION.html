@@ -1,0 +1,4497 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.4.1: http://docutils.sourceforge.net/" />
+<title>OAR Documentation</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger
+:Contact: goodger@users.sourceforge.net
+:Date: $Date: 2005-12-18 01:56:14 +0100 (Sun, 18 Dec 2005) $
+:Revision: $Revision: 4224 $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin-left: 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left {
+  clear: left }
+
+img.align-right {
+  clear: right }
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font-family: serif ;
+  font-size: 100% }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em ;
+  background-color: #eeeeee }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+tt.docutils {
+  background-color: #eeeeee }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="oar-documentation">
+<h1 class="title">OAR Documentation</h1>
+<div align="center" class="align-center"><img alt="OAR logo" class="align-center" src="oar_logo.png" style="width: 8cm;" /></div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Author:</th><td class="field-body">Capit Nicolas</td>
+</tr>
+<tr class="field"><th class="field-name">Address:</th><td class="field-body">Laboratoire d'Informatique de Grenoble
+Bat. ENSIMAG - antenne de Montbonnot
+ZIRST 51, avenue Jean Kuntzmann
+38330 MONTBONNOT SAINT MARTIN</td>
+</tr>
+<tr class="field"><th class="field-name">Contact:</th><td class="field-body"><a class="reference" href="mailto:nicolas.capit&#64;imag.fr">nicolas.capit&#64;imag.fr</a>, <a class="reference" href="mailto:joseph.emeras&#64;imag.fr">joseph.emeras&#64;imag.fr</a></td>
+</tr>
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">LIG laboratory</td>
+</tr>
+<tr class="field"><th class="field-name">Organization:</th><td class="field-body">LIG laboratory</td>
+</tr>
+<tr class="field"><th class="field-name">Status:</th><td class="field-body">Stable</td>
+</tr>
+<tr class="field"><th class="field-name">Copyright:</th><td class="field-body">licenced under the GNU GENERAL PUBLIC LICENSE</td>
+</tr>
+<tr class="field"><th class="field-name">Dedication:</th><td class="field-body">For users, administrators and developpers.</td>
+</tr>
+<tr class="field"><th class="field-name">Abstract:</th><td class="field-body">OAR is a resource manager (or batch scheduler) for large clusters. In
+functionnalities, it's near of PBS, LSF, CCS and Condor. It's suitable for
+productive plateforms and research experiments.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>BE CAREFULL : THIS DOCUMENTATION IS FOR OAR &gt;= 2.3.0</strong></p>
+<p>PDF version : <a class="reference" href="OAR-DOCUMENTATION.pdf">OAR-DOCUMENTATION.pdf</a></p>
+<div class="contents topic">
+<p class="topic-title first"><a id="table-of-contents" name="table-of-contents">Table of Contents</a></p>
+<ul class="auto-toc simple">
+<li><a class="reference" href="#oar-capabilities" id="id2" name="id2">1&nbsp;&nbsp;&nbsp;OAR capabilities</a></li>
+<li><a class="reference" href="#installing-the-oar-batch-system" id="id3" name="id3">2&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a><ul class="auto-toc">
+<li><a class="reference" href="#requirements" id="id4" name="id4">2.1&nbsp;&nbsp;&nbsp;Requirements</a></li>
+<li><a class="reference" href="#configuration-of-the-cluster" id="id5" name="id5">2.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a><ul class="auto-toc">
+<li><a class="reference" href="#cpuset-installation" id="id6" name="id6">2.2.1&nbsp;&nbsp;&nbsp;CPUSET installation</a><ul class="auto-toc">
+<li><a class="reference" href="#what-are-oarsh-and-oarsh-shell-scripts" id="id7" name="id7">2.2.1.1&nbsp;&nbsp;&nbsp;What are &quot;oarsh&quot; and &quot;oarsh_shell&quot; scripts?</a></li>
+<li><a class="reference" href="#cpuset-definition" id="id8" name="id8">2.2.1.2&nbsp;&nbsp;&nbsp;CPUSET definition</a></li>
+<li><a class="reference" href="#oarsh" id="id9" name="id9">2.2.1.3&nbsp;&nbsp;&nbsp;OARSH</a></li>
+<li><a class="reference" href="#oarsh-shell" id="id10" name="id10">2.2.1.4&nbsp;&nbsp;&nbsp;OARSH_SHELL</a></li>
+<li><a class="reference" href="#important-notes" id="id11" name="id11">2.2.1.5&nbsp;&nbsp;&nbsp;Important notes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#visualization-tools-installation" id="id12" name="id12">2.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></li>
+<li><a class="reference" href="#debian-packages" id="id13" name="id13">2.4&nbsp;&nbsp;&nbsp;Debian packages</a></li>
+<li><a class="reference" href="#starting" id="id14" name="id14">2.5&nbsp;&nbsp;&nbsp;Starting</a></li>
+<li><a class="reference" href="#further-informations" id="id15" name="id15">2.6&nbsp;&nbsp;&nbsp;Further informations</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#user-guide" id="id16" name="id16">3&nbsp;&nbsp;&nbsp;User guide</a><ul class="auto-toc">
+<li><a class="reference" href="#description-of-the-different-commands" id="id17" name="id17">3.1&nbsp;&nbsp;&nbsp;Description of the different commands</a><ul class="auto-toc">
+<li><a class="reference" href="#oarstat" id="id18" name="id18">3.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></li>
+<li><a class="reference" href="#oarnodes" id="id19" name="id19">3.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></li>
+<li><a class="reference" href="#oarsub" id="id20" name="id20">3.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></li>
+<li><a class="reference" href="#oardel" id="id21" name="id21">3.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></li>
+<li><a class="reference" href="#oarhold" id="id22" name="id22">3.1.5&nbsp;&nbsp;&nbsp;<em>oarhold</em></a></li>
+<li><a class="reference" href="#oarresume" id="id23" name="id23">3.1.6&nbsp;&nbsp;&nbsp;<em>oarresume</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#visualisation-tools" id="id24" name="id24">3.2&nbsp;&nbsp;&nbsp;Visualisation tools</a><ul class="auto-toc">
+<li><a class="reference" href="#monika" id="id25" name="id25">3.2.1&nbsp;&nbsp;&nbsp;Monika</a></li>
+<li><a class="reference" href="#drawoargantt" id="id26" name="id26">3.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#administrator-guide" id="id27" name="id27">4&nbsp;&nbsp;&nbsp;Administrator guide</a><ul class="auto-toc">
+<li><a class="reference" href="#administrator-commands" id="id28" name="id28">4.1&nbsp;&nbsp;&nbsp;Administrator commands</a><ul class="auto-toc">
+<li><a class="reference" href="#oarproperty" id="id29" name="id29">4.1.1&nbsp;&nbsp;&nbsp;<em>oarproperty</em></a></li>
+<li><a class="reference" href="#oarnodesetting" id="id30" name="id30">4.1.2&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></li>
+<li><a class="reference" href="#oarremoveresource" id="id31" name="id31">4.1.3&nbsp;&nbsp;&nbsp;<em>oarremoveresource</em></a></li>
+<li><a class="reference" href="#oaraccounting" id="id32" name="id32">4.1.4&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
+<li><a class="reference" href="#oarnotify" id="id33" name="id33">4.1.5&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
+<li><a class="reference" href="#oarmonitor" id="id34" name="id34">4.1.6&nbsp;&nbsp;&nbsp;<em>oarmonitor</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#database-scheme" id="id35" name="id35">4.2&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
+<li><a class="reference" href="#accounting" id="id36" name="id36">4.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
+<li><a class="reference" href="#admission-rules" id="id37" name="id37">4.2.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></li>
+<li><a class="reference" href="#event-logs" id="id38" name="id38">4.2.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></li>
+<li><a class="reference" href="#event-log-hostnames" id="id39" name="id39">4.2.4&nbsp;&nbsp;&nbsp;<em>event_log_hostnames</em></a></li>
+<li><a class="reference" href="#files" id="id40" name="id40">4.2.5&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
+<li><a class="reference" href="#frag-jobs" id="id41" name="id41">4.2.6&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></li>
+<li><a class="reference" href="#gantt-jobs-resources" id="id42" name="id42">4.2.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></li>
+<li><a class="reference" href="#gantt-jobs-resources-visu" id="id43" name="id43">4.2.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></li>
+<li><a class="reference" href="#gantt-jobs-predictions" id="id44" name="id44">4.2.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></li>
+<li><a class="reference" href="#gantt-jobs-predictions-visu" id="id45" name="id45">4.2.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></li>
+<li><a class="reference" href="#jobs" id="id46" name="id46">4.2.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
+<li><a class="reference" href="#job-dependencies" id="id47" name="id47">4.2.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></li>
+<li><a class="reference" href="#moldable-job-descriptions" id="id48" name="id48">4.2.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></li>
+<li><a class="reference" href="#job-resource-groups" id="id49" name="id49">4.2.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></li>
+<li><a class="reference" href="#job-resource-descriptions" id="id50" name="id50">4.2.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></li>
+<li><a class="reference" href="#job-state-logs" id="id51" name="id51">4.2.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></li>
+<li><a class="reference" href="#job-types" id="id52" name="id52">4.2.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></li>
+<li><a class="reference" href="#resources" id="id53" name="id53">4.2.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></li>
+<li><a class="reference" href="#resource-logs" id="id54" name="id54">4.2.19&nbsp;&nbsp;&nbsp;<em>resource_logs</em></a></li>
+<li><a class="reference" href="#assigned-resources" id="id55" name="id55">4.2.20&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></li>
+<li><a class="reference" href="#queues" id="id56" name="id56">4.2.21&nbsp;&nbsp;&nbsp;<em>queues</em></a></li>
+<li><a class="reference" href="#challenges" id="id57" name="id57">4.2.22&nbsp;&nbsp;&nbsp;<em>challenges</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#configuration-file" id="id58" name="id58">5&nbsp;&nbsp;&nbsp;Configuration file</a></li>
+<li><a class="reference" href="#module-descriptions" id="id59" name="id59">6&nbsp;&nbsp;&nbsp;Module descriptions</a><ul class="auto-toc">
+<li><a class="reference" href="#almighty" id="id60" name="id60">6.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
+<li><a class="reference" href="#sarko" id="id61" name="id61">6.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
+<li><a class="reference" href="#judas" id="id62" name="id62">6.3&nbsp;&nbsp;&nbsp;Judas</a></li>
+<li><a class="reference" href="#leon" id="id63" name="id63">6.4&nbsp;&nbsp;&nbsp;Leon</a></li>
+<li><a class="reference" href="#nodechangestate" id="id64" name="id64">6.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
+<li><a class="reference" href="#scheduler" id="id65" name="id65">6.6&nbsp;&nbsp;&nbsp;Scheduler</a><ul class="auto-toc">
+<li><a class="reference" href="#oar-sched-gantt-with-timesharing" id="id66" name="id66">6.6.1&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing</a></li>
+<li><a class="reference" href="#oar-sched-gantt-with-timesharing-and-fairsharing" id="id67" name="id67">6.6.2&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing_and_fairsharing</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#runner" id="id68" name="id68">6.7&nbsp;&nbsp;&nbsp;Runner</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#mechanisms" id="id69" name="id69">7&nbsp;&nbsp;&nbsp;Mechanisms</a><ul class="auto-toc">
+<li><a class="reference" href="#how-does-an-interactive-oarsub-work" id="id70" name="id70">7.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></li>
+<li><a class="reference" href="#job-launch" id="id71" name="id71">7.2&nbsp;&nbsp;&nbsp;Job launch</a></li>
+<li><a class="reference" href="#cpuset" id="id72" name="id72">7.3&nbsp;&nbsp;&nbsp;CPUSET</a></li>
+<li><a class="reference" href="#ssh-connection-key-definition" id="id73" name="id73">7.4&nbsp;&nbsp;&nbsp;SSH connection key definition</a></li>
+<li><a class="reference" href="#suspend-resume" id="id74" name="id74">7.5&nbsp;&nbsp;&nbsp;Suspend/resume</a></li>
+<li><a class="reference" href="#job-deletion" id="id75" name="id75">7.6&nbsp;&nbsp;&nbsp;Job deletion</a></li>
+<li><a class="reference" href="#checkpoint" id="id76" name="id76">7.7&nbsp;&nbsp;&nbsp;Checkpoint</a></li>
+<li><a class="reference" href="#scheduling" id="id77" name="id77">7.8&nbsp;&nbsp;&nbsp;Scheduling</a></li>
+<li><a class="reference" href="#id1" id="id78" name="id78">7.9&nbsp;&nbsp;&nbsp;Job dependencies</a></li>
+<li><a class="reference" href="#user-notification" id="id79" name="id79">7.10&nbsp;&nbsp;&nbsp;User notification</a></li>
+<li><a class="reference" href="#accounting-aggregator" id="id80" name="id80">7.11&nbsp;&nbsp;&nbsp;Accounting aggregator</a></li>
+<li><a class="reference" href="#dynamic-nodes-coupling-features" id="id81" name="id81">7.12&nbsp;&nbsp;&nbsp;Dynamic nodes coupling features</a></li>
+<li><a class="reference" href="#timesharing" id="id82" name="id82">7.13&nbsp;&nbsp;&nbsp;Timesharing</a></li>
+<li><a class="reference" href="#besteffort-jobs" id="id83" name="id83">7.14&nbsp;&nbsp;&nbsp;Besteffort jobs</a></li>
+<li><a class="reference" href="#cosystem-jobs" id="id84" name="id84">7.15&nbsp;&nbsp;&nbsp;Cosystem jobs</a></li>
+<li><a class="reference" href="#deploy-jobs" id="id85" name="id85">7.16&nbsp;&nbsp;&nbsp;Deploy jobs</a></li>
+<li><a class="reference" href="#desktop-computing" id="id86" name="id86">7.17&nbsp;&nbsp;&nbsp;Desktop computing</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#faq" id="id87" name="id87">8&nbsp;&nbsp;&nbsp;FAQ</a><ul class="auto-toc">
+<li><a class="reference" href="#release-policy" id="id88" name="id88">8.1&nbsp;&nbsp;&nbsp;Release policy</a></li>
+<li><a class="reference" href="#user" id="id89" name="id89">8.2&nbsp;&nbsp;&nbsp;User</a><ul class="auto-toc">
+<li><a class="reference" href="#how-can-i-submit-a-moldable-job" id="id90" name="id90">8.2.1&nbsp;&nbsp;&nbsp;How can I submit a moldable job?</a></li>
+<li><a class="reference" href="#how-can-i-submit-a-job-with-a-non-uniform-description" id="id91" name="id91">8.2.2&nbsp;&nbsp;&nbsp;How can I submit a job with a non uniform description?</a></li>
+<li><a class="reference" href="#can-i-perform-a-fix-scheduled-reservation-and-then-launch-several-jobs-in-it" id="id92" name="id92">8.2.3&nbsp;&nbsp;&nbsp;Can I perform a fix scheduled reservation and then launch several jobs in it?</a></li>
+<li><a class="reference" href="#how-can-a-checkpointable-job-be-resubmitted-automatically" id="id93" name="id93">8.2.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted automatically?</a></li>
+<li><a class="reference" href="#how-to-submit-a-non-disturbing-job-for-other-users" id="id94" name="id94">8.2.5&nbsp;&nbsp;&nbsp;How to submit a non disturbing job for other users?</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#administrator" id="id95" name="id95">8.3&nbsp;&nbsp;&nbsp;Administrator</a><ul class="auto-toc">
+<li><a class="reference" href="#what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh" id="id96" name="id96">8.3.1&nbsp;&nbsp;&nbsp;What means the error &quot;Bad configuration option: PermitLocalCommand&quot; when I am using oarsh?</a></li>
+<li><a class="reference" href="#how-to-manage-start-stop-of-the-nodes" id="id97" name="id97">8.3.2&nbsp;&nbsp;&nbsp;How to manage start/stop of the nodes?</a></li>
+<li><a class="reference" href="#how-can-i-manage-scheduling-queues" id="id98" name="id98">8.3.3&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></li>
+<li><a class="reference" href="#how-can-i-handle-licence-tokens" id="id99" name="id99">8.3.4&nbsp;&nbsp;&nbsp;How can I handle licence tokens?</a></li>
+<li><a class="reference" href="#how-can-i-handle-multiple-clusters-with-one-oar" id="id100" name="id100">8.3.5&nbsp;&nbsp;&nbsp;How can I handle multiple clusters with one OAR?</a></li>
+<li><a class="reference" href="#how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies" id="id101" name="id101">8.3.6&nbsp;&nbsp;&nbsp;How to configure a more ecological cluster (or how to make some power consumption economies)?</a></li>
+<li><a class="reference" href="#how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh" id="id102" name="id102">8.3.7&nbsp;&nbsp;&nbsp;How to enable jobs to connect to the frontales from the nodes using oarsh?</a></li>
+<li><a class="reference" href="#a-job-remains-in-the-finishing-state-what-can-i-do" id="id103" name="id103">8.3.8&nbsp;&nbsp;&nbsp;A job remains in the &quot;Finishing&quot; state, what can I do?</a></li>
+<li><a class="reference" href="#how-can-i-write-my-own-scheduler" id="id104" name="id104">8.3.9&nbsp;&nbsp;&nbsp;How can I write my own scheduler?</a></li>
+<li><a class="reference" href="#what-is-the-syntax-of-this-documentation" id="id105" name="id105">8.3.10&nbsp;&nbsp;&nbsp;What is the syntax of this documentation?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#oar-changelog" id="id106" name="id106">9&nbsp;&nbsp;&nbsp;OAR CHANGELOG</a><ul class="auto-toc">
+<li><a class="reference" href="#upstream-development-version" id="id107" name="id107">9.1&nbsp;&nbsp;&nbsp;upstream development version:</a></li>
+<li><a class="reference" href="#version-2-2-10" id="id108" name="id108">9.2&nbsp;&nbsp;&nbsp;version 2.2.10:</a></li>
+<li><a class="reference" href="#version-2-2-9" id="id109" name="id109">9.3&nbsp;&nbsp;&nbsp;version 2.2.9:</a></li>
+<li><a class="reference" href="#version-2-2-8" id="id110" name="id110">9.4&nbsp;&nbsp;&nbsp;version 2.2.8:</a></li>
+<li><a class="reference" href="#version-2-2-7" id="id111" name="id111">9.5&nbsp;&nbsp;&nbsp;version 2.2.7:</a></li>
+<li><a class="reference" href="#version-2-2-6" id="id112" name="id112">9.6&nbsp;&nbsp;&nbsp;version 2.2.6:</a></li>
+<li><a class="reference" href="#version-2-2-5" id="id113" name="id113">9.7&nbsp;&nbsp;&nbsp;version 2.2.5:</a></li>
+<li><a class="reference" href="#version-2-2-4" id="id114" name="id114">9.8&nbsp;&nbsp;&nbsp;version 2.2.4:</a></li>
+<li><a class="reference" href="#version-2-2-3" id="id115" name="id115">9.9&nbsp;&nbsp;&nbsp;version 2.2.3:</a></li>
+<li><a class="reference" href="#version-2-2-2" id="id116" name="id116">9.10&nbsp;&nbsp;&nbsp;version 2.2.2:</a></li>
+<li><a class="reference" href="#version-2-2-1" id="id117" name="id117">9.11&nbsp;&nbsp;&nbsp;version 2.2.1:</a></li>
+<li><a class="reference" href="#version-2-2" id="id118" name="id118">9.12&nbsp;&nbsp;&nbsp;version 2.2:</a></li>
+<li><a class="reference" href="#version-2-1-0" id="id119" name="id119">9.13&nbsp;&nbsp;&nbsp;version 2.1.0:</a></li>
+<li><a class="reference" href="#version-2-0-2" id="id120" name="id120">9.14&nbsp;&nbsp;&nbsp;version 2.0.2:</a></li>
+<li><a class="reference" href="#version-2-0-0-enhanced" id="id121" name="id121">9.15&nbsp;&nbsp;&nbsp;version 2.0.0++ enhanced:</a></li>
+<li><a class="reference" href="#version-1-6-1" id="id122" name="id122">9.16&nbsp;&nbsp;&nbsp;version 1.6.1:</a></li>
+<li><a class="reference" href="#version-1-6" id="id123" name="id123">9.17&nbsp;&nbsp;&nbsp;version 1.6:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<hr class="docutils" />
+<div class="section">
+<h1><a class="toc-backref" href="#id2" id="oar-capabilities" name="oar-capabilities">1&nbsp;&nbsp;&nbsp;OAR capabilities</a></h1>
+<p>Oar is an opensource batch scheduler which provides a simple and flexible
+exploitation of a cluster.</p>
+<p>It manages resources of clusters as a traditional batch scheduler
+(as PBS / Torque / LSF / SGE). In other words, it doesn't execute your job on the resources but manages them (reservation, acces granting) in order to allow you to connect these resources and use them.</p>
+<dl class="docutils">
+<dt>Its design is based on high level tools:</dt>
+<dd><ul class="first last simple">
+<li>relational database engine MySQL or PostgreSQL,</li>
+<li>scripting language Perl,</li>
+<li>confinement system mechanism cpuset,</li>
+<li>scalable exploiting tool Taktuk.</li>
+</ul>
+</dd>
+</dl>
+<p>It is flexible enough to be suitable for production clusters and research
+experiments.
+It currently manages over than 5000 nodes and has executed more than 5 million
+jobs.</p>
+<dl class="docutils">
+<dt>OAR advantages:</dt>
+<dd><ul class="first last simple">
+<li>No specific daemon on nodes.</li>
+<li>No dependence on specific computing libraries like MPI. We support all
+sort of parallel user applications.</li>
+<li>Upgrades are made on the servers, nothing to do on computing nodes.</li>
+<li>CPUSET (2.6 linux kernel) integration which restricts the jobs on
+assigned resources (also useful to clean completely a job, even
+parallel jobs).</li>
+<li>All administration tasks are performed with the taktuk command (a large
+scale remote execution deployment): <a class="reference" href="http://taktuk.gforge.inria.fr/">http://taktuk.gforge.inria.fr/</a>.</li>
+<li>Hierarchical resource requests (handle heterogeneous clusters).</li>
+<li>Gantt scheduling (so you can visualize the internal scheduler decisions).</li>
+<li>Full or partial time-sharing.</li>
+<li>Checkpoint/resubmit.</li>
+<li>Licences servers management support.</li>
+<li>Best effort jobs : if another job wants the same resources then it is
+deleted automatically (useful to execute programs like <em>SETI&#64;home</em>).</li>
+<li>Environment deployment support (Kadeploy):
+<a class="reference" href="http://kadeploy.imag.fr/">http://kadeploy.imag.fr/</a>.</li>
+</ul>
+</dd>
+<dt>Other more <em>common</em> features:</dt>
+<dd><ul class="first last simple">
+<li>Batch and Interactive jobs.</li>
+<li>Admission rules.</li>
+<li>Walltime.</li>
+<li>Multi-schedulers support.</li>
+<li>Multi-queues with priority.</li>
+<li>Backfilling.</li>
+<li>First-Fit Scheduler.</li>
+<li>Reservation.</li>
+<li>Support of moldable tasks.</li>
+<li>Check compute nodes.</li>
+<li>Epilogue/Prologue scripts.</li>
+<li>Support of dynamic nodes.</li>
+<li>Logging/Accounting.</li>
+<li>Suspend/resume jobs.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id3" id="installing-the-oar-batch-system" name="installing-the-oar-batch-system">2&nbsp;&nbsp;&nbsp;Installing the OAR batch system</a></h1>
+<dl class="docutils">
+<dt>What do you need?</dt>
+<dd><ul class="first last simple">
+<li>a cluster</li>
+<li>to be an admin of this cluster</li>
+<li>to get the install package of OAR (normally you have already done that)</li>
+</ul>
+</dd>
+</dl>
+<div class="section">
+<h2><a class="toc-backref" href="#id4" id="requirements" name="requirements">2.1&nbsp;&nbsp;&nbsp;Requirements</a></h2>
+<p>There a three kinds of nodes, each requiring a specific software configuration.</p>
+<p>These are :</p>
+<blockquote>
+<ul class="simple">
+<li>the server node, which will hold all of OAR &quot;smartness&quot; ;</li>
+<li>the login nodes, on which you will be allowed to login, then reserve some
+computational nodes ;</li>
+<li>the computational nodes (a.k.a. the nodes), on which the jobs will run.</li>
+</ul>
+</blockquote>
+<p>On every nodes (server, login, computational), the following packages must be
+installed :</p>
+<blockquote>
+<ul class="simple">
+<li>Perl</li>
+<li>Perl-base</li>
+<li>openssh (server and client)</li>
+</ul>
+</blockquote>
+<p>On the OAR server and on the login nodes, the following packages must be
+installed:</p>
+<blockquote>
+<ul class="simple">
+<li>Perl-Mysql | Perl-PostgreSQL</li>
+<li>Perl-DBI</li>
+<li>MySQL | PostgreSQL</li>
+<li>libmysql | libpostgres</li>
+</ul>
+</blockquote>
+<p>From now on, we will suppose all the packages are correctly installed and
+configured and the database is started.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id5" id="configuration-of-the-cluster" name="configuration-of-the-cluster">2.2&nbsp;&nbsp;&nbsp;Configuration of the cluster</a></h2>
+<p>The following steps have to be done, prior to installing OAR:</p>
+<blockquote>
+<ul>
+<li><p class="first">add a user named &quot;oar&quot; in the group &quot;oar&quot; on every node</p>
+</li>
+<li><p class="first">let the user &quot;oar&quot; connect through ssh from any node to any node WITHOUT
+password. To achieve this, here is some standard procedure for OpenSSH:</p>
+<blockquote>
+<ul>
+<li><p class="first">create a set of ssh keys for the user &quot;oar&quot; with ssh-keygen (for
+instance 'id_dsa.pub' and 'id_dsa')</p>
+</li>
+<li><p class="first">copy these keys on each node of the cluster in the &quot;.ssh&quot; folder of
+the user &quot;oar&quot;</p>
+</li>
+<li><p class="first">append the contents of 'id_dsa.pub' to the file
+&quot;~/.ssh/authorized_keys&quot;</p>
+</li>
+<li><p class="first">in &quot;~/.ssh/config&quot; add the lines:</p>
+<pre class="literal-block">
+Host *
+    ForwardX11 no
+    StrictHostKeyChecking no
+    PasswordAuthentication no
+    AddressFamily inet
+</pre>
+</li>
+<li><p class="first">test the ssh connection between (every) two nodes : there should not
+be any prompt.</p>
+</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+<p>There are a three different flavors of installation :</p>
+<blockquote>
+<ul class="simple">
+<li>server:  install the daemon which must be running on the server</li>
+<li>user:    install all the tools needed to submit and manage jobs for the
+users (oarsub, oarstat, oarnodes, ...)</li>
+<li>node:    install the tools for a computing node</li>
+</ul>
+</blockquote>
+<p>The installation is straightforward:</p>
+<blockquote>
+<ul>
+<li><p class="first">become root</p>
+</li>
+<li><p class="first">go to OAR source repository</p>
+</li>
+<li><p class="first">You can set Makefile variables in the command line to suit your configuration
+(change &quot;OARHOMEDIR&quot; to the home of your user oar and &quot;PREFIX&quot; where you want
+to copy all OAR files).</p>
+</li>
+<li><dl class="first docutils">
+<dt>run make  &lt;module&gt; [module] ...</dt>
+<dd><dl class="first last docutils">
+<dt>where module := { server-install | user-install | node-install | doc-install | debian-package }</dt>
+<dd><p class="first last">OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><p class="first">Edit /etc/oar/oar.conf file to match your cluster configuration.</p>
+</li>
+<li><p class="first">Make sure that the PATH environment variable contains $PREFIX/$BINDIR of
+your installation (default is /usr/local/bin).</p>
+</li>
+</ul>
+</blockquote>
+<p>Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init
+script provided with the server module installation and located in $PREFIX/sbin
+(/usr/local/sbin in default Makefile).</p>
+<p>If you want to use a postgres SQL server then there is currently no automatic
+installation script.  You have to add a new user which can connect on a new oar
+database(use the commands <em>createdb</em> and <em>createuser</em>).  After that, you have
+to authorize network connections on the postgresql server in the
+<em>postgresql.conf</em> (uncomment <em>tcpip_socket = true</em>).  Then you can import the
+database scheme stored in <em>oar_postgres.sql</em> (use <em>psql</em> and the SQL command
+&quot;\i&quot;).</p>
+<p>Here is an example to perform all the potgres database install(there is
+certainly other ways to do that):</p>
+<pre class="literal-block">
+sudo su - postgres
+
+createuser -P
+    Enter name of role to add: oar
+    Enter password for new role:
+    Enter it again:
+    Shall the new role be a superuser? (y/n) n
+    Shall the new role be allowed to create databases? (y/n) n
+    Shall the new role be allowed to create more new roles? (y/n) n
+    CREATE ROLE
+
+createuser -P
+    Enter name of role to add: oar_ro
+    Enter password for new role:
+    Enter it again:
+    Shall the new role be a superuser? (y/n) n
+    Shall the new role be allowed to create databases? (y/n) n
+    Shall the new
+
+createdb oar
+
+sudo vi /etc/postgresql/8.1/main/pg_hba.conf
+    host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
+    host    oar         oar               127.0.0.1          255.255.255.255    md5
+
+sudo /etc/init.d/postgresql-8.1 reload
+
+psql -Uoar -h127.0.0.1 oar
+    \i /usr/lib/oar/oar_postgres.sql
+    \q
+
+psql oar
+    GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar;
+    GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar_ro;
+    \q
+
+# You can test it with
+psql oar oar_ro -h127.0.0.1
+</pre>
+<p>For more information about postgresql, go to <a class="reference" href="http://www.postgresql.org/">http://www.postgresql.org/</a>.</p>
+<p><strong>Security issue</strong>: For security reasons it is hardly <strong>recommended</strong> to
+configure a read only account for the OAR database (like the above example).
+Thus you will be able to add this data in <a class="reference" href="#db-base-login-ro">DB_BASE_LOGIN_RO</a> and
+<a class="reference" href="#db-base-passwd-ro">DB_BASE_PASSWD_RO</a> in <em>oar.conf</em>.</p>
+<p>Note: The same machine may host several or even all modules.</p>
+<p>Note about X11: The easiest and scalable way to use X11 application on cluster
+nodes is to open X11 ports and set the right DISPLAY environment variable by
+hand.  Otherwise users can use X11 forwarding via ssh to access cluster
+frontal. After that you must configure ssh server on this frontal with</p>
+<pre class="literal-block">
+X11Forwarding yes
+X11UseLocalhost no
+</pre>
+<p>With this configuration, users can launch X11 applications after a 'oarsub -I'
+on the given node.</p>
+<div class="section">
+<h3><a class="toc-backref" href="#id6" id="cpuset-installation" name="cpuset-installation">2.2.1&nbsp;&nbsp;&nbsp;CPUSET installation</a></h3>
+<!-- OAR can use CPUSET features provided with the Linux kernel >= 2.6. This
+enables to restrict user processes only on reserved processors and clean
+correctly nodes after the job.  To perform this installation you must read
+the documentation in Tools/oarsh/README. -->
+<div class="section">
+<h4><a class="toc-backref" href="#id7" id="what-are-oarsh-and-oarsh-shell-scripts" name="what-are-oarsh-and-oarsh-shell-scripts">2.2.1.1&nbsp;&nbsp;&nbsp;What are &quot;oarsh&quot; and &quot;oarsh_shell&quot; scripts?</a></h4>
+<p>&quot;oarsh&quot; and &quot;oarsh_shell&quot; are two scripts that can restrict user processes to
+stay in the same cpuset on all nodes.</p>
+<p>This feature is very usefull to restrict processor consumption on
+multiprocessors computers and to kill all processes of a same
+OAR job on several nodes.</p>
+<p>If you want to configure this feature into OAR then take a look also in <a class="reference" href="#cpuset">CPUSET</a>
+and <a class="reference" href="#resources">resources</a>.</p>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id8" id="cpuset-definition" name="cpuset-definition">2.2.1.2&nbsp;&nbsp;&nbsp;CPUSET definition</a></h4>
+<p>CPUSET is a module integrated in the Linux kernel since 2.6.x.
+In the kernel documentation, you can read:</p>
+<pre class="literal-block">
+Cpusets provide a mechanism for assigning a set of CPUs and Memory
+Nodes to a set of tasks.
+
+Cpusets constrain the CPU and Memory placement of tasks to only
+the resources within a tasks current cpuset.  They form a nested
+hierarchy visible in a virtual file system.  These are the essential
+hooks, beyond what is already present, required to manage dynamic
+job placement on large systems.
+
+Each task has a pointer to a cpuset.  Multiple tasks may reference
+the same cpuset.  Requests by a task, using the sched_setaffinity(2)
+system call to include CPUs in its CPU affinity mask, and using the
+mbind(2) and set_mempolicy(2) system calls to include Memory Nodes
+in its memory policy, are both filtered through that tasks cpuset,
+filtering out any CPUs or Memory Nodes not in that cpuset.  The
+scheduler will not schedule a task on a CPU that is not allowed in
+its cpus_allowed vector, and the kernel page allocator will not
+allocate a page on a node that is not allowed in the requesting tasks
+mems_allowed vector.
+
+If a cpuset is cpu or mem exclusive, no other cpuset, other than a direct
+ancestor or descendent, may share any of the same CPUs or Memory Nodes.
+A cpuset that is cpu exclusive has a sched domain associated with it.
+The sched domain consists of all cpus in the current cpuset that are not
+part of any exclusive child cpusets.
+This ensures that the scheduler load balacing code only balances
+against the cpus that are in the sched domain as defined above and not
+all of the cpus in the system. This removes any overhead due to
+load balancing code trying to pull tasks outside of the cpu exclusive
+cpuset only to be prevented by the tasks' cpus_allowed mask.
+
+A cpuset that is mem_exclusive restricts kernel allocations for
+page, buffer and other data commonly shared by the kernel across
+multiple users.  All cpusets, whether mem_exclusive or not, restrict
+allocations of memory for user space.  This enables configuring a
+system so that several independent jobs can share common kernel
+data, such as file system pages, while isolating each jobs user
+allocation in its own cpuset.  To do this, construct a large
+mem_exclusive cpuset to hold all the jobs, and construct child,
+non-mem_exclusive cpusets for each individual job.  Only a small
+amount of typical kernel memory, such as requests from interrupt
+handlers, is allowed to be taken outside even a mem_exclusive cpuset.
+
+User level code may create and destroy cpusets by name in the cpuset
+virtual file system, manage the attributes and permissions of these
+cpusets and which CPUs and Memory Nodes are assigned to each cpuset,
+specify and query to which cpuset a task is assigned, and list the
+task pids assigned to a cpuset.
+</pre>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id9" id="oarsh" name="oarsh">2.2.1.3&nbsp;&nbsp;&nbsp;OARSH</a></h4>
+<p>&quot;oarsh&quot; is a wrapper around the &quot;ssh&quot; command (tested with openSSH).
+Its goal is to propagate two environment variables:</p>
+<blockquote>
+<ul class="simple">
+<li>OAR_CPUSET : The name of the OAR job cpuset</li>
+<li>OAR_JOB_USER : The name of the user corresponding to the job</li>
+</ul>
+</blockquote>
+<p>So &quot;oarsh&quot; must be run by oar and a simple user must run it via the
+&quot;sudowrapper&quot; script to become oar.
+In this way each cluster user who can execute &quot;oarsh&quot; via &quot;sudowrapper&quot; can
+connect himself on each cluster nodes (if oarsh is installed everywhere).</p>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id10" id="oarsh-shell" name="oarsh-shell">2.2.1.4&nbsp;&nbsp;&nbsp;OARSH_SHELL</a></h4>
+<p>&quot;oarsh_shell&quot; must be the shell of the oar user on each nodes where you want
+oarsh to worked.
+This script takes &quot;OAR_CPUSET&quot; and &quot;OAR_JOB_USER&quot; environment variables and
+adds its PID in OAR_CPUSET cpuset. Then it searchs user shell and home and
+executes the right command (like ssh).</p>
+</div>
+<div class="section">
+<h4><a class="toc-backref" href="#id11" id="important-notes" name="important-notes">2.2.1.5&nbsp;&nbsp;&nbsp;Important notes</a></h4>
+<blockquote>
+<ul>
+<li><p class="first">On each nodes you must add in the SSH server configuration file (you
+have to install an openssh server with a version &gt;= <strong>3.9</strong>):</p>
+<pre class="literal-block">
+AcceptEnv OAR_CPUSET OAR_JOB_USER
+PermitUserEnvironment yes
+UseLogin no
+AllowUsers oar
+</pre>
+<p>In Debian the file is &quot;/etc/ssh/sshd_config&quot;.</p>
+<p><em>AllowUsers</em> restricts the users which can connect directly on the
+nodes. With cpuset enabled, only the user oar is needed but other logins
+can be added with this syntax(it is safer):</p>
+<pre class="literal-block">
+AllowUsers oar admin1 admin2 ...
+</pre>
+<p>After that you have to restart the SSH server.</p>
+</li>
+<li><p class="first">The default oar ssh public key in the authorized_keys file must be tagged
+for the security. So this prefix must be set in front of the public key:</p>
+<pre class="literal-block">
+environment=&quot;OAR_KEY=1&quot;
+</pre>
+<p>So if the oar public key is:</p>
+<pre class="literal-block">
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr7NLozrRUENDHPX1GNdy34m6YoZ3+Q27i+ob3qClFLW4QpcyzPqgYV3Fvk6/o8guahYbREH9akvtWPAXonJqQR6+Ig2/LPk0hlH6A+SpnOLR0m7x/f6Lh+uIxM0L8BHJsU4lBge7+ZWnsPNel1oQOuZa902ARCiJ0nfjapXC/V+zWNWdNwe+g9vT8uQ==
+</pre>
+<p>then it must be switch into:</p>
+<pre class="literal-block">
+environment=&quot;OAR_KEY=1&quot; ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr7NLozrRUENDHPX1GNdy34m6YoZ3+Q27i+ob3qClFLW4QpcyzPqgYV3Fvk6/o8guahYbREH9akvtWPAXonJqQR6+Ig2/LPk0hlH6A+SpnOLR0m7x/f6Lh+uIxM0L8BHJsU4lBge7+ZWnsPNel1oQOuZa902ARCiJ0nfjapXC/V+zWNWdNwe+g9vT8uQ==
+</pre>
+</li>
+<li><p class="first">the command &quot;scp&quot; can be used with oarsh. The syntax is:</p>
+<pre class="literal-block">
+scp -S /path/to/oarsh ...
+</pre>
+</li>
+<li><p class="first">If you want to use oarsh from the user frontale, you can. You have to
+define the environment OAR_JOB_ID and then launch oarsh on a node used
+by your OAR job. This feature works only where the <a class="reference" href="#oarstat">oarstat</a> command is
+configured:</p>
+<pre class="literal-block">
+OAR_JOB_ID=42 oarsh node12
+</pre>
+<p>or:</p>
+<pre class="literal-block">
+export OAR_JOB_ID=42
+oarsh node12
+</pre>
+<p>This command gives you a shell on the &quot;node12&quot; from the OAR job 42.</p>
+<p>You can also copy files with a syntax like:</p>
+<pre class="literal-block">
+OAR_JOB_ID=42 scp -S /path/to/oarsh ...
+</pre>
+</li>
+<li><p class="first">You can restrict the use of oarsh with the sudo configuration:</p>
+<pre class="literal-block">
+%oarsh ALL=(oar) NOPASSWD: /path/to/oarsh
+</pre>
+<p>Here only users from oarsh group can execute oarsh</p>
+</li>
+<li><p class="first">You can disable the cpuset security mechanism by setting the OARSH_BYPASS_WHOLE_SECURITY field to 1 in your oar.conf file. WARNING: this is a critical functionality (this is only useful if users want to have a command to connect on every nodes without taking care of there ssh configuration and act like a ssh).</p>
+</li>
+</ul>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id12" id="visualization-tools-installation" name="visualization-tools-installation">2.3&nbsp;&nbsp;&nbsp;Visualization tools installation</a></h2>
+<p>There are two different tools. One, named Monika, displays the current cluster
+state with all active and waiting jobs. The other, named drawgantt, displays
+node occupation in a lapse of time.  These tools are CGI scripts and generate
+HTML pages.</p>
+<dl class="docutils">
+<dt>You can install these in this way:</dt>
+<dd><p class="first">drawgantt:</p>
+<blockquote>
+<ul class="simple">
+<li>Make sure you installed &quot;ruby&quot;, &quot;libdbd-mysql-ruby&quot; or
+&quot;libdbd-pg-ruby&quot; and &quot;libgd-ruby1.8&quot; packages.</li>
+<li>Copy &quot;drawgantt.cgi&quot; and &quot;drawgantt.conf&quot; in the CGI folder of your
+web server
+(ex: /usr/lib/cgi-bin/ for Debian).</li>
+<li>Copy all icons and javascript files in a folder that web server can
+find them
+(ex: /var/www/oar/Icons and /var/www/oar/Icons).</li>
+<li>Make sure that these files can be read by the web server user.</li>
+<li>Edit &quot;drawgantt.conf&quot; and change tags to fit your configuration.</li>
+</ul>
+</blockquote>
+<p>Monika:</p>
+<blockquote class="last">
+<ul class="simple">
+<li>The package &quot;perl-AppConfig&quot; is required.</li>
+<li>Read INSTALL file in the monika repository.</li>
+<li>replace the &quot;oarstat&quot; and &quot;oarnodes&quot; commands in the configuration
+file by &quot;oarstat --backward_compatible&quot; and
+&quot;oarnodes --backward_compatible&quot;</li>
+</ul>
+</blockquote>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id13" id="debian-packages" name="debian-packages">2.4&nbsp;&nbsp;&nbsp;Debian packages</a></h2>
+<p>OAR is also released under Debian packages (or Ubuntu). You can find them at
+<a class="reference" href="https://gforge.inria.fr/frs/?group_id=125">https://gforge.inria.fr/frs/?group_id=125</a>.</p>
+<p>If you want to add it as a new source in your /etc/apt/sources.list then add
+the line:</p>
+<pre class="literal-block">
+deb http://oar.imag.fr/download ./
+</pre>
+<!-- The installation will ask you if you want to initialize the nodes. It will copy
+the oar SSH key on each specified nodes. You can skeep this step by you will
+have to do this manually. -->
+<p><strong>IMPORTANT</strong> : if you want to use the cpuset features then you have to install
+the oar-node package on computing nodes otherwise this is not mandatory.  But
+if this is performed then the configuration of <a class="reference" href="#important-notes">Important notes</a> must be set
+on these nodes.</p>
+<p>After installing packages, you have to edit the <a class="reference" href="#configuration-file">configuration file</a> on the
+server, submission nodes and computing nodes to fit your needs.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id14" id="starting" name="starting">2.5&nbsp;&nbsp;&nbsp;Starting</a></h2>
+<p>First, you must start OAR daemon on the server (its name is &quot;Almighty&quot;).</p>
+<blockquote>
+<ul class="simple">
+<li>if you have installed OAR from sources, become root user and launch
+command &quot;Almighty&quot; (it stands in $PREFIX/sbin).</li>
+<li>if you have installed OAR from Debian packages, use the script
+&quot;/etc/init.d/oar-server&quot; to start the daemon.</li>
+</ul>
+</blockquote>
+<p>Then you have to insert new resources in the database via the command
+<a class="reference" href="#oarnodesetting">oarnodesetting</a>.
+If you want to have an idea how does it work then launch
+<em>$PREFIX/oar/detect_new_resources.sh</em>. It will print right commands execute with
+an appropriate value for the memory and the cpuset properties.</p>
+<p>If you want to initialize your whole cluster in 1 command you can use this one
+(tune it to fit your cluster). You must be oar to run this command because
+<a class="reference" href="#oarnodesetting">oarnodesetting</a> will called and the sentinelle.pl will log onto all nodes
+stored in &quot;node_list.txt&quot; file without password:</p>
+<pre class="literal-block">
+export PREFIX=/var/lib
+$PREFIX/oar/sentinelle.pl -f node_list.txt \
+-p &quot;$PREFIX/oar/detect_new_resources.sh&quot; | sh
+</pre>
+<p>Then you can launch the <a class="reference" href="#oarnodes">oarnodes</a> command and see all new resources inserted.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id15" id="further-informations" name="further-informations">2.6&nbsp;&nbsp;&nbsp;Further informations</a></h2>
+<p>For further information, please check <a class="reference" href="http://oar.imag.fr/">http://oar.imag.fr/</a>.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id16" id="user-guide" name="user-guide">3&nbsp;&nbsp;&nbsp;User guide</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id17" id="description-of-the-different-commands" name="description-of-the-different-commands">3.1&nbsp;&nbsp;&nbsp;Description of the different commands</a></h2>
+<p>All user commands are installed on cluster login nodes. So you must connect to
+one of these computers first.</p>
+<div class="section">
+<h3><a class="toc-backref" href="#id18" id="oarstat" name="oarstat">3.1.1&nbsp;&nbsp;&nbsp;<em>oarstat</em></a></h3>
+<p>This command prints jobs in execution mode on the terminal.</p>
+<p>Options</p>
+<pre class="literal-block">
+-f                    : prints each job in full details
+-j job_id             : prints the specified job_id informations (even if it is finished)
+--sql &quot;sql where&quot;     : Restricts display with the SQL where clause on the table jobs
+-g &quot;d1,d2&quot;            : prints history of jobs and state of resources between two dates.
+-D                    : formats outputs in Perl Dumper
+-X                    : formats outputs in XML
+-Y                    : formats outputs in YAML
+</pre>
+<p>Examples</p>
+<pre class="literal-block">
+# oarstat
+# oarstat -j 42 -f
+# oarstat --sql &quot;project = 'p1'&quot;
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id19" id="oarnodes" name="oarnodes">3.1.2&nbsp;&nbsp;&nbsp;<em>oarnodes</em></a></h3>
+<p>This command prints informations about cluster resources (state, which jobs on
+which resources, resource properties, ...).</p>
+<p>Options</p>
+<pre class="literal-block">
+-a                : shows all resources with their properties
+-r                : show only properties of a resource
+-s                : shows only resource states
+-l                : shows only resource list
+--sql &quot;sql where&quot; : Display resources which matches this sql where clause
+-D                : formats outputs in Perl Dumper
+-X                : formats outputs in XML
+-Y                : formats outputs in YAML
+</pre>
+<p>Examples</p>
+<pre class="literal-block">
+# oarnodes
+# oarnodes -s
+# oarnodes --sql &quot;state = 'Suspected'&quot;
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id20" id="oarsub" name="oarsub">3.1.3&nbsp;&nbsp;&nbsp;<em>oarsub</em></a></h3>
+<p>The user can submit a job with this command. So, what is a job in our context?</p>
+<blockquote>
+<p>A job is defined by needed resources and a script/program to run. So, the user
+must specify how many resources and what kind of them are needed by his
+application. Thus, OAR system will give him or not what he wants and will
+control the execution. When a job is launched, OAR executes user program only
+on the first reservation node. So this program can access some environment
+variables to know its environment:</p>
+<pre class="literal-block">
+$OAR_NODEFILE                 contains the name of a file which lists
+                              all reserved nodes for this job
+$OAR_JOB_ID                   contains the OAR job identificator
+$OAR_RESOURCE_PROPERTIES_FILE contains the name of a file which lists
+                              all resources and their properties
+$OAR_JOB_NAME                 name of the job given by the &quot;-n&quot; option
+$OAR_PROJECT_NAME             job project name
+</pre>
+</blockquote>
+<p>Options:</p>
+<pre class="literal-block">
+-I, --interactive             Request an interactive job. Open a login shell
+                              on the first node of the reservation instead of
+                              running a script.
+-C, --connect=&lt;job id&gt;        Connect to a running job
+-l, --resource=&lt;list&gt;         Set the requested resources for the job.
+                              The different parameters are resource properties
+                              registered in OAR database, and `walltime' which
+                              specifies the duration before the job must be
+                              automatically terminated if still running.
+                              Walltime format is [hour:mn:sec|hour:mn|hour].
+                              Ex: nodes=4/cpu=1,walltime=2:00:00
+-S, --scanscript              Batch mode only: asks oarsub to scan the given
+                              script for OAR directives (#OAR -l ...)
+-q, --queue=&lt;queue&gt;           Set the queue to submit the job to
+-p, --property=&quot;&lt;list&gt;&quot;       Add constraints to properties for the job.
+                              (format is a WHERE clause from the SQL syntax)
+-r, --reservation=&lt;date&gt;      Request a job start time reservation,
+                              instead of a submission.
+    --checkpoint=&lt;delay&gt;      Enable the checkpointing for the job. A signal
+                              is sent DELAY seconds before the walltime on
+                              the first processus of the job
+    --signal=&lt;#sig&gt;           Specify the signal to use when checkpointing
+                              Use signal numbers, default is 12 (SIGUSR2)
+-t, --type=&lt;type&gt;             Specify a specific type (deploy, besteffort,
+                              cosystem, checkpoint, timesharing)
+-d, --directory=&lt;dir&gt;         Specify the directory where to launch the
+                              command (default is current directory)
+    --project=&lt;txt&gt;           Specify a name of a project the job belongs to
+-n, --name=&lt;txt&gt;              Specify an arbitrary name for the job
+-a, --anterior=&lt;job id&gt;       Anterior job that must be terminated to start
+                              this new one
+    --notify=&lt;txt&gt;            Specify a notification method
+                              (mail or command to execute). Ex:
+                                  --notify &quot;mail:name\&#64;domain.com&quot;
+                                  --notify &quot;exec:/path/to/script args&quot;
+    --resubmit=&lt;job id&gt;       Resubmit the given job as a new one
+-k, --use-job-key             Activate the job-key mechanism.
+-i, --import-job-key-from-file=&lt;file&gt;
+                              Import the job-key to use from a files instead
+                              of generating a new one.
+    --import-job-key-inline=&lt;txt&gt;
+                              Import the job-key to use inline instead of
+                              generating a new one.
+-e  --export-job-key-to-file=&lt;file&gt;
+                              Export the job key to a file. Warning: the
+                              file will be overwritten if it already exists.
+                              (the %jobid% pattern is automatically replaced)
+-O  --stdout=&lt;file&gt;           Specify the file that will store the standart
+                              output stream of the job.
+                              (the %jobid% pattern is automatically replaced)
+-E  --stderr=&lt;file&gt;           Specify the file that will store the standart
+                              error stream of the job.
+                              (the %jobid% pattern is automatically replaced)
+    --hold                    Set the job state into Hold instead of Waiting,
+                              so that it is not scheduled (you must run
+                              &quot;oarresume&quot; to turn it into the Waiting state)
+-s, --stagein=&lt;dir|tgz&gt;       Set the stagein directory or archive
+    --stagein-md5sum=&lt;md5sum&gt; Set the stagein file md5sum
+-D, --dumper                  Print result in DUMPER format
+-X, --xml                     Print result in XML format
+-Y, --yaml                    Print result in YAML format
+-h, --help                    Print this help message
+-V, --version                 Print OAR version number
+</pre>
+<p>Wanted resources have to be described in a hierarchical manner using the
+&quot;-l&quot; syntax option.</p>
+<p>Moreover it is possible to give a specification that must be matched on properties.</p>
+<p>So the long and complete syntax is of the form:</p>
+<pre class="literal-block">
+&quot;{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00&quot;
+</pre>
+<dl class="docutils">
+<dt>where:</dt>
+<dd><ul class="first last simple">
+<li><em>sql1</em> : SQL WHERE clause on the table of resources that filters resource
+names used in the hierarchical description</li>
+<li><em>prop1</em> : first type of resources</li>
+<li><em>prop2</em> : second type of resources</li>
+<li><em>+</em> : add another resource hierarchy to the previous one</li>
+<li><em>sql2</em> : SQL WHERE clause to apply on the second hierarchy request</li>
+<li>...</li>
+</ul>
+</dd>
+</dl>
+<p>So we want to reserve 3 resources with the same value of the type <em>prop2</em> and
+with the same property <em>prop1</em> and these resources must fit <em>sql1</em>. To that
+possible resources we want to add 2 others which fit <em>sql2</em> and the hierarchy
+<em>/prop3=2/prop4=1/prop5=1</em>.</p>
+<div class="figure">
+<a class="reference image-reference" href="hierarchical_resources.png"><img alt="Hierarchical resource example" src="hierarchical_resources.png" style="width: 17cm;" /></a>
+<p class="caption">Example of a resource hierarchy and 2 different oarsub commands</p>
+</div>
+<p><a class="reference" href="hierarchical_resources.svg">hierarchical_resources.svg</a></p>
+<p>Examples</p>
+<pre class="literal-block">
+# oarsub -l /node=4 test.sh
+</pre>
+<p>(the &quot;test.sh&quot; script will be run on 4 entire nodes in the default queue with
+the default walltime)</p>
+<pre class="literal-block">
+# oarsub --stdout='test12.%jobid%.stdout' --stderr='test12.%jobid%.stderr' -l /nodes=4 test.sh
+  ...
+  OAR_JOB_ID=702
+  ...
+</pre>
+<p>(same example than above but here the standard output of &quot;test.sh&quot; will be
+written in the file &quot;test12.702.stdout&quot; and the standard error in
+&quot;test12.702.stderr&quot;)</p>
+<pre class="literal-block">
+# oarsub -q default -l /node=10/cpu=3,walltime=2:15:00 \
+  -p &quot;switch = 'sw1'&quot; /home/users/toto/prog
+</pre>
+<p>(the &quot;/home/users/toto/prog&quot; script will be run on 10 nodes with 3 cpus (so a
+total of 30 cpus) in the default queue with a walltime of  2:15:00.
+Moreover &quot;-p&quot; option restricts resources only on the switch 'sw1')</p>
+<pre class="literal-block">
+# oarsub -r &quot;2009-04-27 11:00:00&quot; -l /node=12/cpu=2
+</pre>
+<p>(a reservation will begin at &quot;2009-04-27 11:00:00&quot; on 12 nodes with 2 cpus
+on each one)</p>
+<pre class="literal-block">
+#  oarsub -C 42
+</pre>
+<p>(connects to the job 42 on the first node and set all OAR environment
+variables)</p>
+<pre class="literal-block">
+# oarsub -I
+</pre>
+<p>(gives a shell on a resource)</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id21" id="oardel" name="oardel">3.1.4&nbsp;&nbsp;&nbsp;<em>oardel</em></a></h3>
+<p>This command is used to delete or checkpoint job(s). They are designed by
+their identifier.</p>
+<p>Option</p>
+<pre class="literal-block">
+--sql     : delete/checkpoint jobs which respond to the SQL where clause
+            on the table jobs (ex: &quot;project = 'p1'&quot;)
+-c job_id : send checkpoint signal to the job (signal was
+            definedwith &quot;--signal&quot; option in oarsub)
+</pre>
+<p>Examples</p>
+<pre class="literal-block">
+# oardel 14 42
+</pre>
+<p>(delete jobs 14 and 42)</p>
+<pre class="literal-block">
+# oardel -c 42
+</pre>
+<p>(send checkpoint signal to the job 42)</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id22" id="oarhold" name="oarhold">3.1.5&nbsp;&nbsp;&nbsp;<em>oarhold</em></a></h3>
+<p>This command is used to remove a job from the scheduling queue if it is in
+the &quot;Waiting&quot; state.</p>
+<p>Moreover if its state is &quot;Running&quot; <a class="reference" href="#oarhold">oarhold</a> can suspend the execution and
+enable other jobs to use its resources. In that way, a <strong>SIGINT</strong> signal
+is sent to every processes.</p>
+<p>Options</p>
+<pre class="literal-block">
+--sql : hold jobs which respond to the SQL where clause on the table
+        jobs (ex: &quot;project = 'p1'&quot;)
+-r    : Manage not only Waiting jobs but also Running one
+        (can suspend the job)
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id23" id="oarresume" name="oarresume">3.1.6&nbsp;&nbsp;&nbsp;<em>oarresume</em></a></h3>
+<p>This command resumes jobs in the states <em>Hold</em> or <em>Suspended</em></p>
+<p>Option</p>
+<pre class="literal-block">
+--sql : resume jobs which respond to the SQL where clause on the table
+        jobs (ex: &quot;project = 'p1'&quot;)
+</pre>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id24" id="visualisation-tools" name="visualisation-tools">3.2&nbsp;&nbsp;&nbsp;Visualisation tools</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id25" id="monika" name="monika">3.2.1&nbsp;&nbsp;&nbsp;Monika</a></h3>
+<p>This is a web cgi normally installed on the cluster frontal. This tool executes
+<a class="reference" href="#oarnodes">oarnodes</a> and <a class="reference" href="#oarstat">oarstat</a> then format data in a html page.</p>
+<p>Thus you can have a global view of cluster state and where your jobs are
+running.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id26" id="drawoargantt" name="drawoargantt">3.2.2&nbsp;&nbsp;&nbsp;DrawOARGantt</a></h3>
+<p>This is also a web cgi. It creates a Gantt chart which shows job repartition on
+nodes in the time. It is very useful to see cluster occupation in the past
+and to know when a job will be launched in the future.</p>
+</div>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id27" id="administrator-guide" name="administrator-guide">4&nbsp;&nbsp;&nbsp;Administrator guide</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id28" id="administrator-commands" name="administrator-commands">4.1&nbsp;&nbsp;&nbsp;Administrator commands</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id29" id="oarproperty" name="oarproperty">4.1.1&nbsp;&nbsp;&nbsp;<em>oarproperty</em></a></h3>
+<p>This command manages OAR resource properties stored in the database.</p>
+<p>Options are:</p>
+<pre class="literal-block">
+-l : list properties
+-a NAME : add a property
+  -c : sql new field of type VARCHAR(255) (default is integer)
+-d NAME : delete a property
+-r &quot;OLD_NAME,NEW_NAME&quot; : rename property OLD_NAME into NEW_NAME
+</pre>
+<p>Examples:</p>
+<pre class="literal-block">
+# oarproperty -a cpu_freq
+# oarproperty -a type
+# oarproperty -r &quot;cpu_freq,freq&quot;
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id30" id="oarnodesetting" name="oarnodesetting">4.1.2&nbsp;&nbsp;&nbsp;<em>oarnodesetting</em></a></h3>
+<p>This command permits to change the state or a property of a node or of several
+resources resources.</p>
+<p>By default the node name used by <a class="reference" href="#oarnodesetting">oarnodesetting</a> is the result of the command
+<em>hostname</em>.</p>
+<p>Options are:</p>
+<pre class="literal-block">
+-a    : add a new resource
+-s    : state to assign to the node:
+        * &quot;Alive&quot; : a job can be run on the node.
+        * &quot;Absent&quot; : administrator wants to remove the node from the pool
+           for a moment.
+        * &quot;Dead&quot; : the node will not be used and will be deleted.
+-h    : specify the node name (override hostname).
+-r    : specify the resource number
+--sql : get resource identifiers which respond to the
+        SQL where clause on the table jobs
+        (ex: &quot;type = 'default'&quot;)
+-p    : change the value of a property specified resources.
+-n    : specify this option if you do not want to wait the end of jobs running
+        on this node when you change its state into &quot;Absent&quot; or &quot;Dead&quot;.
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id31" id="oarremoveresource" name="oarremoveresource">4.1.3&nbsp;&nbsp;&nbsp;<em>oarremoveresource</em></a></h3>
+<p>This command permits to remove a resource from the database.</p>
+<p>The node must be in the state &quot;Dead&quot; (use <a class="reference" href="#oarnodesetting">oarnodesetting</a> to do this) and then
+you can use this command to delete it.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id32" id="oaraccounting" name="oaraccounting">4.1.4&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></h3>
+<p>This command permits to update the <a class="reference" href="#accounting">accounting</a> table for jobs ended since the
+last launch.</p>
+<p>Option &quot;--reinitialize&quot; removes everything in the <a class="reference" href="#accounting">accounting</a> table and
+switches the &quot;accounted&quot; field of the table <a class="reference" href="#jobs">jobs</a> into &quot;NO&quot;. So when you will
+launch the <a class="reference" href="#oaraccounting">oaraccounting</a> command again, it will take the whole jobs.</p>
+<p>Option &quot;--delete_before&quot; removes records from the <a class="reference" href="#accounting">accounting</a> table that are
+older than the amount of time specified. So if the table becomes too big you
+can shrink old data; for example:</p>
+<pre class="literal-block">
+oaraccounting --delete_before 2678400
+</pre>
+<p>(Remove everything older than 31 days)</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id33" id="oarnotify" name="oarnotify">4.1.5&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></h3>
+<p>This command sends commands to the <a class="reference" href="#almighty">Almighty</a> module and manages scheduling
+queues.</p>
+<p>Option are:</p>
+<pre class="literal-block">
+    Almighty_tag    send this tag to the Almighty (default is TERM)
+-e                  active an existing queue
+-d                  inactive an existing queue
+-E                  active all queues
+-D                  inactive all queues
+--add_queue         add a new queue; syntax is name,priority,scheduler
+                    (ex: &quot;name,3,&quot;oar_sched_gantt_with_timesharing&quot;
+--remove_queue      remove an existing queue
+-l                  list all queues and there status
+-h                  show this help screen
+-v                  print OAR version number
+</pre>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id34" id="oarmonitor" name="oarmonitor">4.1.6&nbsp;&nbsp;&nbsp;<em>oarmonitor</em></a></h3>
+<p>This command collects monitoring data from compute nodes and stores them into
+the database.</p>
+<p>The <a class="reference" href="#taktuk-cmd">TAKTUK_CMD</a> is mandatory in the <em>oar.conf</em> and data comes from the sensor
+file <a class="reference" href="#oarmonitor-sensor-file">OARMONITOR_SENSOR_FILE</a> (parse <em>/proc</em> filesystem for example) and print
+it in the right way.</p>
+<p>For example, the user &quot;oar&quot; or &quot;root&quot; can run the following command on the
+server:</p>
+<blockquote>
+oarmonitor -j 4242 -f 10</blockquote>
+<p>(Retrieve data from compute nodes of the job 4242 every 10 seconds and store
+them into database tables monitoring_*)</p>
+<p>For now, there is just a very minimalist command for the user to view these
+data. It creates PNG images and a movie...</p>
+<blockquote>
+oarmonitor_graph_gen.pl -j 4242</blockquote>
+<p>Then the user can look into the directory <em>OAR.1653.monitoring</em> in the current
+directory.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id35" id="database-scheme" name="database-scheme">4.2&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
+<div class="figure">
+<a class="reference image-reference" href="db_scheme.png"><img alt="Database scheme" src="db_scheme.png" style="width: 17cm;" /></a>
+<p class="caption">Database scheme
+(red lines seem PRIMARY KEY,
+blue lines seem INDEX)</p>
+</div>
+<p><a class="reference" href="db_scheme.svg">db_scheme.svg</a></p>
+<p>Note : all dates and duration are stored in an integer manner (number of
+seconds since the EPOCH).</p>
+<div class="section">
+<h3><a class="toc-backref" href="#id36" id="accounting" name="accounting">4.2.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="26%" />
+<col width="51%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>window_start</td>
+<td>INT UNSIGNED</td>
+<td>start date of the accounting interval</td>
+</tr>
+<tr><td>window_stop</td>
+<td>INT UNSIGNED</td>
+<td>stop date of the accounting interval</td>
+</tr>
+<tr><td>accounting_user</td>
+<td>VARCHAR(20)</td>
+<td>user name</td>
+</tr>
+<tr><td>accounting_project</td>
+<td>VARCHAR(255)</td>
+<td>name of the related project</td>
+</tr>
+<tr><td>queue_name</td>
+<td>VARCHAR(100)</td>
+<td>queue name</td>
+</tr>
+<tr><td>consumption_type</td>
+<td>ENUM(&quot;ASKED&quot;,
+&quot;USED&quot;)</td>
+<td>&quot;ASKED&quot; corresponds to the walltimes
+specified by the user. &quot;USED&quot;
+corresponds to the effective time
+used by the user.</td>
+</tr>
+<tr><td>consumption</td>
+<td>INT UNSIGNED</td>
+<td>number of seconds used</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">window_start, window_stop, accounting_user, queue_name,
+accounting_project, consumption_type</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">window_start, window_stop, accounting_user, queue_name,
+accounting_project, consumption_type</td>
+</tr>
+</tbody>
+</table>
+<p>This table is a summary of the consumption for each user on each queue. This
+increases the speed of queries about user consumptions and statistic
+generation.</p>
+<p>Data are inserted through the command <a class="reference" href="#oaraccounting">oaraccounting</a> (when a job is treated
+the field <em>accounted</em> in table jobs is passed into &quot;YES&quot;). So it is possible to
+regenerate this table completely in this way :</p>
+<blockquote>
+<ul>
+<li><p class="first">Delete all data of the table:</p>
+<pre class="literal-block">
+DELETE FROM accounting;
+</pre>
+</li>
+<li><p class="first">Set the field <em>accounted</em> in the table jobs to &quot;NO&quot; for each row:</p>
+<pre class="literal-block">
+UPDATE jobs SET accounted = &quot;NO&quot;;
+</pre>
+</li>
+<li><p class="first">Run the <a class="reference" href="#oaraccounting">oaraccounting</a> command.</p>
+</li>
+</ul>
+</blockquote>
+<p>You can change the amount of time for each window : edit the oar configuration
+file and change the value of the tag <a class="reference" href="#accounting-window">ACCOUNTING_WINDOW</a>.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id37" id="admission-rules" name="admission-rules">4.2.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>id</td>
+<td>INT UNSIGNED</td>
+<td>id number</td>
+</tr>
+<tr><td>rule</td>
+<td>TEXT</td>
+<td>rule written in Perl applied when a
+job is going to be registered</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>You can use these rules to change some values of some properties when a job is
+submitted. So each admission rule is executed in the order of the id field and
+it can set several variables. If one of them exits then the others will not
+be evaluated and <a class="reference" href="#oarsub">oarsub</a> returns an error.</p>
+<p>Some examples are better than a long description :</p>
+<blockquote>
+<ul>
+<li><p class="first">Specify the default value for queue parameter</p>
+<pre class="literal-block">
+INSERT INTO admission_rules (rule) VALUES('
+  if (not defined($queue_name)) {
+      $queue_name=&quot;default&quot;;
+  }
+');
+</pre>
+</li>
+<li><p class="first">Avoid users except oar to go in the admin queue</p>
+<pre class="literal-block">
+INSERT INTO admission_rules (rule) VALUES ('
+  if (($queue_name eq &quot;admin&quot;) &amp;&amp; ($user ne &quot;oar&quot;)) {
+    die(&quot;[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n&quot;);
+  }
+');
+</pre>
+</li>
+<li><p class="first">Restrict the maximum of the walltime for interactive jobs</p>
+<pre class="literal-block">
+INSERT INTO admission_rules (rule) VALUES ('
+  my $max_walltime = iolib::sql_to_duration(&quot;12:00:00&quot;);
+  if ($jobType eq &quot;INTERACTIVE&quot;){
+    foreach my $mold (&#64;{$ref_resource_list}){
+      if (
+        (defined($mold-&gt;[1])) and
+        ($max_walltime &lt; $mold-&gt;[1])
+      ){
+        print(&quot;[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n&quot;);
+        $mold-&gt;[1] = $max_walltime;
+      }
+    }
+  }
+');
+</pre>
+</li>
+<li><p class="first">Specify the default walltime</p>
+<pre class="literal-block">
+INSERT INTO admission_rules (rule) VALUES ('
+  my $default_wall = iolib::sql_to_duration(&quot;2:00:00&quot;);
+  foreach my $mold (&#64;{$ref_resource_list}){
+    if (!defined($mold-&gt;[1])){
+      print(&quot;[ADMISSION RULE] Set default walltime to $default_wall.\\n&quot;);
+      $mold-&gt;[1] = $default_wall;
+    }
+  }
+');
+</pre>
+</li>
+<li><p class="first">How to perform actions if the user name is in a file</p>
+<pre class="literal-block">
+INSERT INTO admission_rules (rule) VALUES ('
+  open(FILE, &quot;/tmp/users.txt&quot;);
+  while (($queue_name ne &quot;admin&quot;) and ($_ = &lt;FILE&gt;)){
+    if ($_ =~ m/^\\s*$user\\s*$/m){
+      print(&quot;[ADMISSION RULE] Change assigned queue into admin\\n&quot;);
+      $queue_name = &quot;admin&quot;;
+    }
+  }
+  close(FILE);
+');
+</pre>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id38" id="event-logs" name="event-logs">4.2.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>event_id</td>
+<td>INT UNSIGNED</td>
+<td>event identifier</td>
+</tr>
+<tr><td>type</td>
+<td>VARCHAR(50)</td>
+<td>event type</td>
+</tr>
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>job related of the event</td>
+</tr>
+<tr><td>date</td>
+<td>INT UNSIGNED</td>
+<td>event date</td>
+</tr>
+<tr><td>description</td>
+<td>VARCHAR(255)</td>
+<td>textual description of the event</td>
+</tr>
+<tr><td>to_check</td>
+<td>ENUM('YES', 'NO')</td>
+<td>specify if the module <em>NodeChangeState</em>
+must check this event to Suspect or not
+some nodes</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">event_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">type, to_check</td>
+</tr>
+</tbody>
+</table>
+<p>The different event types are:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;PING_CHECKER_NODE_SUSPECTED&quot; : the system detected via the module &quot;finaud&quot;
+that a node is not responding.</li>
+<li>&quot;PROLOGUE_ERROR&quot; : an error occurred during the execution of the job
+prologue (exit code != 0).</li>
+<li>&quot;EPILOGUE_ERROR&quot; : an error occurred during the execution of the job
+epilogue (exit code != 0).</li>
+<li>&quot;CANNOT_CREATE_TMP_DIRECTORY&quot; : OAR cannot create the directory where all
+information files will be stored.</li>
+<li>&quot;CAN_NOT_WRITE_NODE_FILE&quot; : the system was not able to write file which had
+to contain the node list on the first node (<em>/tmp/OAR_job_id</em>).</li>
+<li>&quot;CAN_NOT_WRITE_PID_FILE&quot; : the system was not able to write the file which
+had to contain the pid of oarexec process on the first node
+(<em>/tmp/pid_of_oarexec_for_job_id</em>).</li>
+<li>&quot;USER_SHELL&quot; : the system was not able to get informations about the user
+shell on the first node.</li>
+<li>&quot;EXIT_VALUE_OAREXEC&quot; : the oarexec process terminated with an unknown exit
+code.</li>
+<li>&quot;SEND_KILL_JOB&quot; : signal that OAR has transmitted a kill signal to the
+oarexec of the specified job.</li>
+<li>&quot;LEON_KILL_BIPBIP_TIMEOUT&quot; : Leon module has detected that something wrong
+occurred during the kill of a job and so kill the local <em>bipbip</em> process.</li>
+<li>&quot;EXTERMINATE_JOB&quot; : Leon module has detected that something wrong occurred
+during the kill of a job and so clean the database and terminate the job
+artificially.</li>
+<li>&quot;WORKING_DIRECTORY&quot; : the directory from which the job was submitted does
+not exist on the node assigned by the system.</li>
+<li>&quot;OUTPUT_FILES&quot; : OAR cannot write the output files (stdout and stderr) in
+the working directory.</li>
+<li>&quot;CANNOT_NOTIFY_OARSUB&quot; : OAR cannot notify the <a class="reference" href="#oarsub">oarsub</a> process for an
+interactive job (maybe the user has killed this process).</li>
+<li>&quot;WALLTIME&quot; : the job has reached its walltime.</li>
+<li>&quot;SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION&quot; : this means that there is not
+enough nodes for the reservation and so the scheduler do the best and
+gives less nodes than the user wanted (this occurres when nodes become
+Suspected or Absent).</li>
+<li>&quot;BESTEFFORT_KILL&quot; : the job is of the type <em>besteffort</em> and was killed
+because a normal job wanted the nodes.</li>
+<li>&quot;FRAG_JOB_REQUEST&quot; : someone wants to delete a job.</li>
+<li>&quot;CHECKPOINT&quot; : the checkpoint signal was sent to the job.</li>
+<li>&quot;CHECKPOINT_ERROR&quot; : OAR cannot send the signal to the job.</li>
+<li>&quot;CHECKPOINT_SUCCESS&quot; : system has sent the signal correctly.</li>
+<li>&quot;SERVER_EPILOGUE_TIMEOUT&quot; : epilogue server script has time outed.</li>
+<li>&quot;SERVER_EPILOGUE_EXIT_CODE_ERROR&quot; : epilogue server script did not return 0.</li>
+<li>&quot;SERVER_EPILOGUE_ERROR&quot; : cannot find epilogue server script file.</li>
+<li>&quot;SERVER_PROLOGUE_TIMEOUT&quot; : prologue server script has time outed.</li>
+<li>&quot;SERVER_PROLOGUE_EXIT_CODE_ERROR&quot; : prologue server script did not return 0.</li>
+<li>&quot;SERVER_PROLOGUE_ERROR&quot; : cannot find prologue server script file.</li>
+<li>&quot;CPUSET_CLEAN_ERROR&quot; : OAR cannot clean correctly cpuset files for a job
+on the remote node.</li>
+<li>&quot;MAIL_NOTIFICATION_ERROR&quot; : a mail cannot be sent.</li>
+<li>&quot;USER_MAIL_NOTIFICATION&quot; : user mail notification cannot be performed.</li>
+<li>&quot;USER_EXEC_NOTIFICATION_ERROR&quot; : user script execution notification cannot
+be performed.</li>
+<li>&quot;BIPBIP_BAD_JOBID&quot; : error when retrieving informations about a running job.</li>
+<li>&quot;BIPBIP_CHALLENGE&quot; : OAR is configured to detach jobs when they are launched
+on compute nodes and the job return a bad challenge number.</li>
+<li>&quot;RESUBMIT_JOB_AUTOMATICALLY&quot; : the job was automatically resubmitted.</li>
+<li>&quot;WALLTIME&quot; : the job reached its walltime.</li>
+<li>&quot;REDUCE_RESERVATION_WALLTIME&quot; : the reservation job was shrunk.</li>
+<li>&quot;SSH_TRANSFER_TIMEOUT&quot; : node OAR part script was too long to transfer.</li>
+<li>&quot;BAD_HASHTABLE_DUMP&quot; : OAR transfered a bad hashtable.</li>
+<li>&quot;LAUNCHING_OAREXEC_TIMEOUT&quot; : oarexec was too long to initialize itself.</li>
+<li>&quot;RESERVATION_NO_NODE&quot; : All nodes were detected as bad for the reservation
+job.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id39" id="event-log-hostnames" name="event-log-hostnames">4.2.4&nbsp;&nbsp;&nbsp;<em>event_log_hostnames</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>event_id</td>
+<td>INT UNSIGNED</td>
+<td>event identifier</td>
+</tr>
+<tr><td>hostname</td>
+<td>VARCHAR(255)</td>
+<td>name of the node where the event
+has occured</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">event_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">hostname</td>
+</tr>
+</tbody>
+</table>
+<p>This table stores hostnames related to events like
+&quot;PING_CHECKER_NODE_SUSPECTED&quot;.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id40" id="files" name="files">4.2.5&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>idFile</td>
+<td>INT UNSIGNED</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>md5sum</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>location</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>method</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>compression</td>
+<td>VARCHAR(255)</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>size</td>
+<td>INT UNSIGNED</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">idFile</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">md5sum</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id41" id="frag-jobs" name="frag-jobs">4.2.6&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="35%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>frag_id_job</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>frag_date</td>
+<td>INT UNSIGNED</td>
+<td>kill job decision date</td>
+</tr>
+<tr><td>frag_state</td>
+<td>ENUM('LEON', 'TIMER_ARMED'
+, 'LEON_EXTERMINATE',
+'FRAGGED')
+DEFAULT 'LEON'</td>
+<td>state to tell Leon what to do</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">frag_id_job</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">frag_state</td>
+</tr>
+</tbody>
+</table>
+<p>What do these states mean:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;LEON&quot; : the Leon module must try to kill the job and change the state into
+&quot;TIMER_ARMED&quot;.</li>
+<li>&quot;TIMER_ARMED&quot; : the Sarko module must wait a response from the job during
+a timeout (default is 60s)</li>
+<li>&quot;LEON_EXTERMINATE&quot; : the Sarko module has decided that the job time outed and
+asked Leon to clean up the database.</li>
+<li>&quot;FRAGGED&quot; : job is fragged.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id42" id="gantt-jobs-resources" name="gantt-jobs-resources">4.2.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>moldable job id</td>
+</tr>
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id, resource_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table specifies which resources are attributed to which jobs.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id43" id="gantt-jobs-resources-visu" name="gantt-jobs-resources-visu">4.2.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>moldable job id</td>
+</tr>
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id, resource_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table is the same as <a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a> and is used by visualisation
+tools. It is updated atomically (a lock is used).</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id44" id="gantt-jobs-predictions" name="gantt-jobs-predictions">4.2.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>start_time</td>
+<td>INT UNSIGNED</td>
+<td>date when the job is scheduled to start</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>With this table and <a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a> you can know exactly what are the
+decisions taken by the schedulers for each waiting jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">note:</th><td class="field-body">The special job id &quot;0&quot; is used to store the scheduling reference date.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id45" id="gantt-jobs-predictions-visu" name="gantt-jobs-predictions-visu">4.2.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>start_time</td>
+<td>INT UNSIGNED</td>
+<td>date when the job is scheduled to start</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table is the same as <a class="reference" href="#gantt-jobs-predictions">gantt_jobs_predictions</a> and is used by visualisation
+tools. It is made up to date in an atomic action (with a lock).</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id46" id="jobs" name="jobs">4.2.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="27%" />
+<col width="48%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>job identifier</td>
+</tr>
+<tr><td>job_name</td>
+<td>VARCHAR(100)</td>
+<td>name given by the user</td>
+</tr>
+<tr><td>cpuset_name</td>
+<td>VARCHAR(255)</td>
+<td>name of the cpuset directory used for
+this job on each nodes</td>
+</tr>
+<tr><td>job_type</td>
+<td>ENUM('INTERACTIVE',
+'PASSIVE') DEFAULT
+'PASSIVE'</td>
+<td>specify if the user wants to launch a
+program or get an interactive shell</td>
+</tr>
+<tr><td>info_type</td>
+<td>VARCHAR(255)</td>
+<td>some informations about <a class="reference" href="#oarsub">oarsub</a>
+command</td>
+</tr>
+<tr><td>state</td>
+<td>ENUM('Waiting','Hold',
+'toLaunch', 'toError',
+'toAckReservation',
+'Launching', 'Running'
+'Suspended',
+'Resuming',
+, 'Finishing',
+'Terminated', 'Error')</td>
+<td>job state</td>
+</tr>
+<tr><td>reservation</td>
+<td>ENUM('None',
+'toSchedule',
+'Scheduled') DEFAULT
+'None'</td>
+<td>specify if the job is a reservation
+and the state of this one</td>
+</tr>
+<tr><td>message</td>
+<td>VARCHAR(255)</td>
+<td>readable information message for the
+user</td>
+</tr>
+<tr><td>job_user</td>
+<td>VARCHAR(255)</td>
+<td>user name</td>
+</tr>
+<tr><td>command</td>
+<td>TEXT</td>
+<td>program to run</td>
+</tr>
+<tr><td>queue_name</td>
+<td>VARCHAR(100)</td>
+<td>queue name</td>
+</tr>
+<tr><td>properties</td>
+<td>TEXT</td>
+<td>properties that assigned nodes must
+match</td>
+</tr>
+<tr><td>launching_directory</td>
+<td>TEXT</td>
+<td>path of the directory where to launch
+the user process</td>
+</tr>
+<tr><td>submission_time</td>
+<td>INT UNSIGNED</td>
+<td>date when the job was submitted</td>
+</tr>
+<tr><td>start_time</td>
+<td>INT UNSIGNED</td>
+<td>date when the job was launched</td>
+</tr>
+<tr><td>stop_time</td>
+<td>INT UNSIGNED</td>
+<td>date when the job was stopped</td>
+</tr>
+<tr><td>file_id</td>
+<td>INT UNSIGNED</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>accounted</td>
+<td>ENUM(&quot;YES&quot;, &quot;NO&quot;)
+DEFAULT &quot;NO&quot;</td>
+<td>specify if the job was considered by
+the accounting mechanism or not</td>
+</tr>
+<tr><td>notify</td>
+<td>VARCHAR(255)</td>
+<td>gives the way to notify the user about
+the job (mail or script )</td>
+</tr>
+<tr><td>assigned_moldable_job</td>
+<td>INT UNSIGNED</td>
+<td>moldable job chosen by the scheduler</td>
+</tr>
+<tr><td>checkpoint</td>
+<td>INT UNSIGNED</td>
+<td>number of seconds before the walltime
+to send the checkpoint signal to the
+job</td>
+</tr>
+<tr><td>checkpoint_signal</td>
+<td>INT UNSIGNED</td>
+<td>signal to use when checkpointing the
+job</td>
+</tr>
+<tr><td>stdout_file</td>
+<td>TEXT</td>
+<td>file name where to redirect program
+STDOUT</td>
+</tr>
+<tr><td>stderr_file</td>
+<td>TEXT</td>
+<td>file name where to redirect program
+STDERR</td>
+</tr>
+<tr><td>resubmit_job_id</td>
+<td>INT UNSIGNED</td>
+<td>if a job is resubmitted then the new
+one store the previous</td>
+</tr>
+<tr><td>project</td>
+<td>VARCHAR(255)</td>
+<td>arbitrary name given by the user or an
+admission rule</td>
+</tr>
+<tr><td>suspended</td>
+<td>ENUM(&quot;YES&quot;,&quot;NO&quot;)</td>
+<td>specify if the job was suspended
+(<a class="reference" href="#oarhold">oarhold</a>)</td>
+</tr>
+<tr><td>job_env</td>
+<td>TEXT</td>
+<td>environment variables to set for the
+job</td>
+</tr>
+<tr><td>exit_code</td>
+<td>INT DEFAULT 0</td>
+<td>exit code for passive jobs</td>
+</tr>
+<tr><td>job_group</td>
+<td>VARCHAR(255)</td>
+<td>not used</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">state, reservation, queue_name, accounted, suspended</td>
+</tr>
+</tbody>
+</table>
+<p>Explications about the &quot;state&quot; field:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;Waiting&quot; : the job is waiting OAR scheduler decision.</li>
+<li>&quot;Hold&quot; : user or administrator wants to hold the job (<a class="reference" href="#oarhold">oarhold</a> command).
+So it will not be scheduled by the system.</li>
+<li>&quot;toLaunch&quot; : the OAR scheduler has attributed some nodes to the job. So it
+will be launched.</li>
+<li>&quot;toError&quot; : something wrong occurred and the job is going into the error
+state.</li>
+<li>&quot;toAckReservation&quot; : the OAR scheduler must say &quot;YES&quot; or &quot;NO&quot; to the waiting
+<a class="reference" href="#oarsub">oarsub</a> command because it requested a reservation.</li>
+<li>&quot;Launching&quot; : OAR has launched the job and will execute the user command
+on the first node.</li>
+<li>&quot;Running&quot; : the user command is executing on the first node.</li>
+<li>&quot;Suspended&quot; : the job was in Running state and there was a request
+(<a class="reference" href="#oarhold">oarhold</a> with &quot;-r&quot; option) to suspend this job. In this state other jobs
+can be scheduled on the same resources (these resources has the
+&quot;suspended_jobs&quot; field to &quot;YES&quot;).</li>
+<li>&quot;Finishing&quot; : the user command has terminated and OAR is doing work internally</li>
+<li>&quot;Terminated&quot; : the job has terminated normally.</li>
+<li>&quot;Error&quot; : a problem has occurred.</li>
+</ul>
+</blockquote>
+<p>Explications about the &quot;reservation&quot; field:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;None&quot; : the job is not a reservation.</li>
+<li>&quot;toSchedule&quot; : the job is a reservation and must be approved by the
+scheduler.</li>
+<li>&quot;Scheduled&quot; : the job is a reservation and is scheduled by OAR.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id47" id="job-dependencies" name="job-dependencies">4.2.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>job identifier</td>
+</tr>
+<tr><td>job_id_required</td>
+<td>INT UNSIGNED</td>
+<td>job needed to be completed before
+launching job_id</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_id, job_id_required</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">job_id, job_id_required</td>
+</tr>
+</tbody>
+</table>
+<p>This table is feeded by <a class="reference" href="#oarsub">oarsub</a> command with the &quot;-a&quot; option.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id48" id="moldable-job-descriptions" name="moldable-job-descriptions">4.2.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="26%" />
+<col width="51%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_id</td>
+<td>INT UNSIGNED</td>
+<td>moldable job identifier</td>
+</tr>
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding job identifier</td>
+</tr>
+<tr><td>moldable_walltime</td>
+<td>INT UNSIGNED</td>
+<td>instance duration</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">moldable_job_id</td>
+</tr>
+</tbody>
+</table>
+<p>A job can be described with several instances. Thus OAR scheduler can choose one
+of them. For example it can calculate which instance will finish first.
+So this table stores all instances for all jobs.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id49" id="job-resource-groups" name="job-resource-groups">4.2.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="25%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>res_group_id</td>
+<td>INT UNSIGNED</td>
+<td>group identifier</td>
+</tr>
+<tr><td>res_group_moldable_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding moldable job identifier</td>
+</tr>
+<tr><td>res_group_property</td>
+<td>TEXT</td>
+<td>SQL constraint properties</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">res_group_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">res_group_moldable_id</td>
+</tr>
+</tbody>
+</table>
+<p>As you can specify job global properties with <a class="reference" href="#oarsub">oarsub</a> and the &quot;-p&quot; option,
+you can do the same thing for each resource groups that you define with
+the &quot;-l&quot; option.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id50" id="job-resource-descriptions" name="job-resource-descriptions">4.2.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="25%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>res_job_group_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding group identifier</td>
+</tr>
+<tr><td>res_job_resource_type</td>
+<td>VARCHAR(255)</td>
+<td>resource type (name of a field in
+resources)</td>
+</tr>
+<tr><td>res_job_value</td>
+<td>INT</td>
+<td>wanted resource number</td>
+</tr>
+<tr><td>res_job_order</td>
+<td>INT UNSIGNED</td>
+<td>order of the request</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">res_job_group_id, res_job_resource_type, res_job_order</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">res_job_group_id</td>
+</tr>
+</tbody>
+</table>
+<p>This table store the hierarchical resource description given with <a class="reference" href="#oarsub">oarsub</a> and
+the &quot;-l&quot; option.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id51" id="job-state-logs" name="job-state-logs">4.2.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="26%" />
+<col width="51%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_state_log_id</td>
+<td>INT UNSIGNED</td>
+<td>identifier</td>
+</tr>
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding job identifier</td>
+</tr>
+<tr><td>job_state</td>
+<td>ENUM('Waiting',
+'Hold', 'toLaunch',
+'toError',
+'toAckReservation',
+'Launching',
+'Finishing',
+'Running',
+'Suspended',
+'Resuming',
+'Terminated',
+'Error')</td>
+<td>job state during the interval</td>
+</tr>
+<tr><td>date_start</td>
+<td>INT UNSIGNED</td>
+<td>start date of the interval</td>
+</tr>
+<tr><td>date_stop</td>
+<td>INT UNSIGNED</td>
+<td>end date of the interval</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_state_log_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">job_id, job_state</td>
+</tr>
+</tbody>
+</table>
+<p>This table keeps informations about state changes of jobs.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id52" id="job-types" name="job-types">4.2.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_type_id</td>
+<td>INT UNSIGNED</td>
+<td>identifier</td>
+</tr>
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>corresponding job identifier</td>
+</tr>
+<tr><td>type</td>
+<td>VARCHAR(255)</td>
+<td>job type like &quot;deploy&quot;, &quot;timesharing&quot;,
+...</td>
+</tr>
+<tr><td>type_index</td>
+<td>ENUM('CURRENT',
+'LOG')</td>
+<td>index field</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_type_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">job_id, type</td>
+</tr>
+</tbody>
+</table>
+<p>This table stores job types given with the <a class="reference" href="#oarsub">oarsub</a> command and &quot;-t&quot; options.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id53" id="resources" name="resources">4.2.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource identifier</td>
+</tr>
+<tr><td>type</td>
+<td>VARCHAR(100)
+DEFAULT &quot;default&quot;</td>
+<td>resource type (used for licence
+resources for example)</td>
+</tr>
+<tr><td>network_address</td>
+<td>VARCHAR(100)</td>
+<td>node name (used to connect via SSH)</td>
+</tr>
+<tr><td>state</td>
+<td>ENUM('Alive', 'Dead'
+, 'Suspected',
+'Absent')</td>
+<td>resource state</td>
+</tr>
+<tr><td>next_state</td>
+<td>ENUM('UnChanged',
+'Alive', 'Dead',
+'Absent',
+'Suspected') DEFAULT
+'UnChanged'</td>
+<td>state for the resource to switch</td>
+</tr>
+<tr><td>finaud_decision</td>
+<td>ENUM('YES', 'NO')
+DEFAULT 'NO'</td>
+<td>tell if the actual state results in a
+&quot;finaud&quot; module decision</td>
+</tr>
+<tr><td>next_finaud_decision</td>
+<td>ENUM('YES', 'NO')
+DEFAULT 'NO'</td>
+<td>tell if the next node state results in
+a &quot;finaud&quot; module decision</td>
+</tr>
+<tr><td>state_num</td>
+<td>INT</td>
+<td>corresponding state number (useful
+with the SQL &quot;ORDER&quot; query)</td>
+</tr>
+<tr><td>suspended_jobs</td>
+<td>ENUM('YES','NO')</td>
+<td>specify if there is at least one
+suspended job on the resource</td>
+</tr>
+<tr><td>scheduler_priority</td>
+<td>INT UNSIGNED</td>
+<td>arbitrary number given by the system
+to select resources with more
+intelligence</td>
+</tr>
+<tr><td>switch</td>
+<td>VARCHAR(50)</td>
+<td>name of the switch</td>
+</tr>
+<tr><td>cpu</td>
+<td>INT UNSIGNED</td>
+<td>global cluster cpu number</td>
+</tr>
+<tr><td>cpuset</td>
+<td>INT UNSIGNED</td>
+<td>field used with the
+<a class="reference" href="#job-resource-manager-property-db-field">JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD</a></td>
+</tr>
+<tr><td>besteffort</td>
+<td>ENUM('YES','NO')</td>
+<td>accept or not besteffort jobs</td>
+</tr>
+<tr><td>deploy</td>
+<td>ENUM('YES','NO')</td>
+<td>specify if the resource is deployable</td>
+</tr>
+<tr><td>expiry_date</td>
+<td>INT UNSIGNED</td>
+<td>field used for the desktop computing
+feature</td>
+</tr>
+<tr><td>desktop_computing</td>
+<td>ENUM('YES','NO')</td>
+<td>tell if it is a desktop computing
+resource (with an agent)</td>
+</tr>
+<tr><td>last_job_date</td>
+<td>INT UNSIGNED</td>
+<td>store the date when the resource
+was used for the last time</td>
+</tr>
+<tr><td>cm_availability</td>
+<td>INT UNSIGNED</td>
+<td>used with compute mode features to
+know if an Absent resource can be
+switch on</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">resource_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">state, next_state, type, suspended_jobs</td>
+</tr>
+</tbody>
+</table>
+<p>State explications:</p>
+<blockquote>
+<ul class="simple">
+<li>&quot;Alive&quot; : the resource is ready to accept a job.</li>
+<li>&quot;Absent&quot; : the oar administrator has decided to pull out the resource. This
+computer can come back.</li>
+<li>&quot;Suspected&quot; : OAR system has detected a problem on this resource and so has
+suspected it (you can look in the <a class="reference" href="#event-logs">event_logs</a> table to know what has
+happened). This computer can come back (automatically if this is a
+&quot;finaud&quot; module decision).</li>
+<li>&quot;Dead&quot; : The oar administrator considers that the resource will not come back
+and will be removed from the pool.</li>
+</ul>
+</blockquote>
+<p>This table permits to specify different properties for each resources. These can
+be used with the <a class="reference" href="#oarsub">oarsub</a> command (&quot;-p&quot; and &quot;-l&quot; options).</p>
+<p>You can add your own properties with <a class="reference" href="#oarproperty">oarproperty</a> command.</p>
+<p>These properties can be updated with the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command (&quot;-p&quot; option).</p>
+<p>Several properties are added by default:</p>
+<blockquote>
+<ul class="simple">
+<li>switch : you have to register the name of the switch where the node is
+plugged.</li>
+<li>cpu : this is a unique name given to each cpus. This enables OAR scheduler
+to distinguish all cpus.</li>
+<li>cpuset : this is the name of the cpu on the node. The Linux kernel sets this
+to an integer beginning at 0. This field is linked to the configuration tag
+<a class="reference" href="#job-resource-manager-property-db-field">JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD</a>.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id54" id="resource-logs" name="resource-logs">4.2.19&nbsp;&nbsp;&nbsp;<em>resource_logs</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="26%" />
+<col width="51%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>resource_log_id</td>
+<td>INT UNSIGNED</td>
+<td>unique id</td>
+</tr>
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource identifier</td>
+</tr>
+<tr><td>attribute</td>
+<td>VARCHAR(255)</td>
+<td>name of corresponding field in
+resources</td>
+</tr>
+<tr><td>value</td>
+<td>VARCHAR(255)</td>
+<td>value of the field</td>
+</tr>
+<tr><td>date_start</td>
+<td>INT UNSIGNED</td>
+<td>interval start date</td>
+</tr>
+<tr><td>date_stop</td>
+<td>INT UNSIGNED</td>
+<td>interval stop date</td>
+</tr>
+<tr><td>finaud_decision</td>
+<td>ENUM('YES','NO')</td>
+<td>store if this is a system change or a
+human one</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body"><em>None</em></td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">resource_id, attribute</td>
+</tr>
+</tbody>
+</table>
+<p>This table permits to keep a trace of every property changes (consequence of
+the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command with the &quot;-p&quot; option).</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id55" id="assigned-resources" name="assigned-resources">4.2.20&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>moldable_job_id</td>
+<td>INT UNSIGNED</td>
+<td>job id</td>
+</tr>
+<tr><td>resource_id</td>
+<td>INT UNSIGNED</td>
+<td>resource assigned to the job</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">moldable_job_id, resource_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body">moldable_job_id</td>
+</tr>
+</tbody>
+</table>
+<p>This table keeps informations for jobs on which resources they were
+scheduled.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id56" id="queues" name="queues">4.2.21&nbsp;&nbsp;&nbsp;<em>queues</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>queue_name</td>
+<td>VARCHAR(100)</td>
+<td>queue name</td>
+</tr>
+<tr><td>priority</td>
+<td>INT UNSIGNED</td>
+<td>the scheduling priority</td>
+</tr>
+<tr><td>scheduler_policy</td>
+<td>VARCHAR(100)</td>
+<td>path of the associated scheduler</td>
+</tr>
+<tr><td>state</td>
+<td>ENUM('Active',
+'notActive')
+DEFAULT 'Active'</td>
+<td>permits to stop the scheduling for a
+queue</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">queue_name</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table contains the schedulers executed by the <em>oar_meta_scheduler</em> module.
+Executables are launched one after one in the specified priority.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id57" id="challenges" name="challenges">4.2.22&nbsp;&nbsp;&nbsp;<em>challenges</em></a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Fields</th>
+<th class="head">Types</th>
+<th class="head">Descriptions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>job_id</td>
+<td>INT UNSIGNED</td>
+<td>job identifier</td>
+</tr>
+<tr><td>challenge</td>
+<td>VARCHAR(255)</td>
+<td>challenge string</td>
+</tr>
+<tr><td>ssh_private_key</td>
+<td>TEXT DEFAULT NULL</td>
+<td>ssh private key given by the user
+(in grid usage it enables to connect
+onto all nodes of the job of all
+clusers with <a class="reference" href="#oarsh">oarsh</a>)</td>
+</tr>
+<tr><td>ssh_public_key</td>
+<td>TEXT DEFAULT NULL</td>
+<td>ssh public key</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Primary key:</th><td class="field-body">job_id</td>
+</tr>
+<tr class="field"><th class="field-name">Index fields:</th><td class="field-body"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<p>This table is used to share a secret between OAR server and oarexec process on
+computing nodes (avoid a job id being stolen/forged by malicious user).</p>
+<p>For security reasons, this table <strong>must not be readable</strong> for a database
+account given to users who want to access OAR internal informations(like statistics).</p>
+</div>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id58" id="configuration-file" name="configuration-file">5&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
+<p>Be careful, the syntax of this file must be bash compliant(so after editing
+you must be able to launch in bash 'source /etc/oar.conf' and have variables
+assigned).
+Each configuration tag found in /etc/oar.conf is now described:</p>
+<blockquote>
+<ul>
+<li><p class="first">Database type : you can use a MySQL or a PostgreSQL database (tags are
+&quot;mysql&quot; or &quot;Pg&quot;):</p>
+<pre class="literal-block">
+DB_TYPE=mysql
+</pre>
+</li>
+<li><p class="first">Database hostname:</p>
+<pre class="literal-block">
+DB_HOSTNAME=localhost
+</pre>
+</li>
+<li><p class="first">Database base name:</p>
+<pre class="literal-block">
+DB_BASE_NAME=oar
+</pre>
+</li>
+<li><p class="first">DataBase user name:</p>
+<pre class="literal-block">
+DB_BASE_LOGIN=oar
+</pre>
+</li>
+<li><p class="first">DataBase user password:</p>
+<pre class="literal-block">
+DB_BASE_PASSWD=oar
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="db-base-login-ro">
+<ul>
+<li><p class="first">DataBase read only user name:</p>
+<pre class="literal-block">
+DB_BASE_LOGIN_RO=oar_ro
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="db-base-passwd-ro">
+<ul>
+<li><p class="first">DataBase read only user password:</p>
+<pre class="literal-block">
+DB_BASE_PASSWD_RO=oar_ro
+</pre>
+</li>
+<li><p class="first">OAR server hostname:</p>
+<pre class="literal-block">
+SERVER_HOSTNAME=localhost
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="server-port">
+<ul>
+<li><p class="first">OAR server port:</p>
+<pre class="literal-block">
+SERVER_PORT=6666
+</pre>
+</li>
+<li><p class="first">When the user does not specify a -l option then oar use this:</p>
+<pre class="literal-block">
+OARSUB_DEFAULT_RESOURCES=&quot;/resource_id=1&quot;
+</pre>
+</li>
+<li><p class="first">Force use of job key even if --use-job-key or -k is not set in oarsub:</p>
+<pre class="literal-block">
+OARSUB_FORCE_JOB_KEY=&quot;no&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="deploy-hostname">
+<ul>
+<li><p class="first">Specify where we are connected in the deploy queue(the node to connect
+to when the job is in the deploy queue):</p>
+<pre class="literal-block">
+DEPLOY_HOSTNAME=&quot;127.0.0.1&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="cosystem-hostname">
+<ul>
+<li><p class="first">Specify where we are connected with a job of the cosystem type:</p>
+<pre class="literal-block">
+COSYSTEM_HOSTNAME=&quot;127.0.0.1&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="detach-job-from-server">
+<ul>
+<li><p class="first">Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh
+connection between the node and the server. Otherwise set this tag to 0:</p>
+<pre class="literal-block">
+DETACH_JOB_FROM_SERVER=1
+</pre>
+</li>
+<li><p class="first">Set the directory where OAR will store its temporary files on each nodes
+of the cluster. This value MUST be the same in all oar.conf on
+all nodes:</p>
+<pre class="literal-block">
+OAR_RUNTIME_DIRECTORY=&quot;/tmp/oar_runtime&quot;
+</pre>
+</li>
+<li><p class="first">Specify the database field to use to fill the file on the first node of
+the job in $OAR_NODE_FILE (default is 'network_address'). Only resources
+with type=default are displayed in this file:</p>
+<pre class="literal-block">
+NODE_FILE_DB_FIELD=&quot;network_address&quot;
+</pre>
+</li>
+<li><p class="first">Specify the database field that will be considered to fill the node file
+used by the user on the first node of the job. for each different value
+of this field then OAR will put 1 line in the node file(by default &quot;cpu&quot;):</p>
+<pre class="literal-block">
+NODE_FILE_DB_FIELD_DISTINCT_VALUES=&quot;core&quot;
+</pre>
+</li>
+<li><p class="first">By default OAR uses the ping command to detect if nodes are down or not.
+To enhance this diagnostic you can specify one of these other methods (
+give the complete command path):</p>
+<blockquote>
+<ul>
+<li><p class="first">OAR taktuk:</p>
+<pre class="literal-block">
+PINGCHECKER_TAKTUK_ARG_COMMAND=&quot;-t 3 broadcast exec [ true ]&quot;
+</pre>
+<p>If you use sentinelle.pl then you must use this tag:</p>
+<pre class="literal-block">
+PINGCHECKER_SENTINELLE_SCRIPT_COMMAND=&quot;/var/lib/oar/sentinelle.pl -t 5 -w 20&quot;
+</pre>
+</li>
+<li><p class="first">OAR fping:</p>
+<pre class="literal-block">
+PINGCHECKER_FPING_COMMAND=&quot;/usr/bin/fping -q&quot;
+</pre>
+</li>
+<li><p class="first">OAR nmap : it will test to connect on the ssh port (22):</p>
+<pre class="literal-block">
+PINGCHECKER_NMAP_COMMAND=&quot;/usr/bin/nmap -p 22 -n -T5&quot;
+</pre>
+</li>
+<li><p class="first">OAR generic : a specific script may be used instead of ping to check
+aliveness of nodes. The script must return bad nodes on STDERR (1 line
+for a bad node and it must have exactly the same name that OAR has
+given in argument of the command):</p>
+<pre class="literal-block">
+PINGCHECKER_GENERIC_COMMAND=&quot;/path/to/command arg1 arg2&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">OAR log level: 3(debug+warnings+errors), 2(warnings+errors), 1(errors):</p>
+<pre class="literal-block">
+LOG_LEVEL=2
+</pre>
+</li>
+<li><p class="first">OAR log file:</p>
+<pre class="literal-block">
+LOG_FILE=&quot;/var/log/oar.log&quot;
+</pre>
+</li>
+<li><p class="first">If you want to debug oarexec on nodes then affect 1 (only effective if
+DETACH_JOB_FROM_SERVER = 1):</p>
+<pre class="literal-block">
+OAREXEC_DEBUG_MODE=0
+</pre>
+</li>
+<li><p class="first">OAR Allowed networks, Networks or hosts allowed to submit jobs to OAR and
+compute nodes may be specified here(0.0.0.0/0 means all IPs are allowed
+and 127.0.0.1/32 means only IP 127.0.0.1 is allowed):</p>
+<pre class="literal-block">
+ALLOWED_NETWORKS=&quot;127.0.0.1/32 0.0.0.0/0&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="accounting-window">
+<ul>
+<li><p class="first">Set the granularity of the OAR accounting feature (in seconds). Default is
+1 day (86400s):</p>
+<pre class="literal-block">
+ACCOUNTING_WINDOW=&quot;86400&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="mail">
+<ul>
+<li><p class="first">OAR informations may be notified by email to the administror.
+Set accordingly to your configuration the next lines to activate
+this feature:</p>
+<pre class="literal-block">
+MAIL_SMTP_SERVER=&quot;smtp.serveur.com&quot;
+MAIL_RECIPIENT=&quot;user&#64;domain.com&quot;
+MAIL_SENDER=&quot;oar&#64;domain.com&quot;
+</pre>
+</li>
+<li><p class="first">Set the timeout for the prologue and epilogue execution on computing
+nodes:</p>
+<pre class="literal-block">
+PROLOGUE_EPILOGUE_TIMEOUT=60
+</pre>
+</li>
+<li><p class="first">Files to execute before and after each job on the first computing node
+(by default nothing is executed):</p>
+<pre class="literal-block">
+PROLOGUE_EXEC_FILE=&quot;/path/to/prog&quot;
+EPILOGUE_EXEC_FILE=&quot;/path/to/prog&quot;
+</pre>
+</li>
+<li><p class="first">Set the timeout for the prologue and epilogue execution on the OAR server:</p>
+<pre class="literal-block">
+SERVER_PROLOGUE_EPILOGUE_TIMEOUT=60
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="server-script-exec-file">
+<ul>
+<li><p class="first">Files to execute before and after each job on the OAR server
+(by default nothing is executed):</p>
+<pre class="literal-block">
+SERVER_PROLOGUE_EXEC_FILE=&quot;/path/to/prog&quot;
+SERVER_EPILOGUE_EXEC_FILE=&quot;/path/to/prog&quot;
+</pre>
+</li>
+<li><p class="first">Set the frequency for checking Alive and Suspected resources:</p>
+<pre class="literal-block">
+FINAUD_FREQUENCY=300
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="dead-switch-time">
+<ul>
+<li><p class="first">Set time after which resources become Dead (default is 0 and it means
+never):</p>
+<pre class="literal-block">
+DEAD_SWITCH_TIME=600
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-timeout">
+<ul>
+<li><p class="first">Maximum of seconds used by a scheduler:</p>
+<pre class="literal-block">
+SCHEDULER_TIMEOUT=10
+</pre>
+</li>
+<li><p class="first">Time to wait when a reservation has not got all resources that it has
+reserved (some resources could have become Suspected or Absent since the
+job submission) before to launch the job in the remaining resources:</p>
+<pre class="literal-block">
+RESERVATION_WAITING_RESOURCES_TIMEOUT=300
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-job-security-time">
+<ul>
+<li><p class="first">Time to add between each jobs (time for administration tasks or time to
+let computers to reboot):</p>
+<pre class="literal-block">
+SCHEDULER_JOB_SECURITY_TIME=1
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-gantt-hole-minimum-time">
+<ul>
+<li><p class="first">Minimum time in seconds that can be considered like a hole where a job
+could be scheduled in:</p>
+<pre class="literal-block">
+SCHEDULER_GANTT_HOLE_MINIMUM_TIME=300
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-resource-order">
+<ul>
+<li><p class="first">You can add an order preference on resource assigned by the system(SQL
+ORDER syntax):</p>
+<pre class="literal-block">
+SCHEDULER_RESOURCE_ORDER=&quot;switch ASC, network_address DESC, resource_id ASC&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-resources-always-assigned-type">
+<ul>
+<li><p class="first">You can specify resources from a resource type that will be always assigned for
+each job (for example: enable all jobs to be able to log on the cluster
+frontales).
+For more information, see the <a class="reference" href="#faq">FAQ</a>:</p>
+<pre class="literal-block">
+SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE=&quot;42 54 12 34&quot;
+</pre>
+</li>
+<li><p class="first">This says to the scheduler to treate resources of these types, where there is
+a suspended job, like free ones. So some other jobs can be scheduled on these
+resources. (list resource types separate with spaces; Default value is
+nothing so no other job can be scheduled on suspended job resources):</p>
+<pre class="literal-block">
+SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE=&quot;default licence vlan&quot;
+</pre>
+</li>
+<li><p class="first">Name of the perl script that manages suspend/resume. You have to install your
+script in $OARDIR and give only the name of the file without the entire path.
+(default is suspend_resume_manager.pl):</p>
+<pre class="literal-block">
+SUSPEND_RESUME_FILE=&quot;suspend_resume_manager.pl&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="just-before-resume-exec-file">
+<span id="just-after-suspend-exec-file"></span><ul>
+<li><p class="first">Files to execute just after a job was suspended and just before a job was
+resumed:</p>
+<pre class="literal-block">
+JUST_AFTER_SUSPEND_EXEC_FILE=&quot;/path/to/prog&quot;
+JUST_BEFORE_RESUME_EXEC_FILE=&quot;/path/to/prog&quot;
+</pre>
+</li>
+<li><p class="first">Timeout for the two previous scripts:</p>
+<pre class="literal-block">
+SUSPEND_RESUME_SCRIPT_TIMEOUT=60
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="job-resource-manager-property-db-field">
+<ul>
+<li><p class="first">Indicate the name of the database field that contains the cpu number of
+the node. If this option is set then users must use <a class="reference" href="#oarsh">OARSH</a> instead of
+ssh to walk on each nodes that they have reserved via oarsub.</p>
+<pre class="literal-block">
+JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD=cpuset
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="job-resource-manager-file">
+<ul>
+<li><p class="first">Name of the perl script that manages cpuset. You have to install your
+script in $OARDIR and give only the name of the file without the
+entire path.
+(default is cpuset_manager.pl which handles the linux kernel cpuset)</p>
+<pre class="literal-block">
+JOB_RESOURCE_MANAGER_FILE=&quot;cpuset_manager.pl&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="taktuk-cmd">
+<ul>
+<li><p class="first">If you have installed taktuk and want to use it to manage cpusets
+then give the full command path (with your options except &quot;-m&quot; and &quot;-o&quot;
+and &quot;-c&quot;).
+You don t also have to give any taktuk command.</p>
+<pre class="literal-block">
+TAKTUK_CMD=&quot;/usr/bin/taktuk -s&quot;
+</pre>
+</li>
+<li><p class="first">If you want to manage nodes to be started and stoped. OAR gives you this
+API:</p>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-node-manager-wake-up-cmd">
+<ul>
+<li><p class="first">When OAR scheduler wants some nodes to wake up then it launches this
+command and puts on its STDIN the list of nodes to wake up (one hostname
+by line).The scheduler looks at <em>cm_availability</em> field in the <a class="reference" href="#resources">resources</a>
+table to know if the node will be started for enough time:</p>
+<pre class="literal-block">
+SCHEDULER_NODE_MANAGER_WAKE_UP_CMD=&quot;/path/to/the/command with your args&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-node-manager-sleep-cmd">
+<ul>
+<li><p class="first">When OAR considers that some nodes can be shut down, it launches this
+command and puts the node list on its STDIN(one hostname by line):</p>
+<pre class="literal-block">
+SCHEDULER_NODE_MANAGER_SLEEP_CMD=&quot;/path/to/the/command args&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-node-manager-idle-time">
+<ul>
+<li><p class="first">Parameters for the scheduler to decide when a node is idle(number of
+seconds since the last job was terminated on the nodes):</p>
+<pre class="literal-block">
+SCHEDULER_NODE_MANAGER_IDLE_TIME=600
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="scheduler-node-manager-sleep-time">
+<ul>
+<li><p class="first">Parameters for the scheduler to decide if a node will have enough time
+to sleep(number of seconds before the next job):</p>
+<pre class="literal-block">
+SCHEDULER_NODE_MANAGER_SLEEP_TIME=600
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="openssh-cmd">
+<ul>
+<li><p class="first">Command to use to connect to other nodes (default is &quot;ssh&quot; in the PATH)</p>
+<pre class="literal-block">
+OPENSSH_CMD=&quot;/usr/bin/ssh&quot;
+</pre>
+</li>
+<li><p class="first">These are configuration tags for OAR in the desktop-computing mode:</p>
+<pre class="literal-block">
+DESKTOP_COMPUTING_ALLOW_CREATE_NODE=0
+DESKTOP_COMPUTING_EXPIRY=10
+STAGEOUT_DIR=&quot;/var/lib/oar/stageouts/&quot;
+STAGEIN_DIR=&quot;/var/lib/oar/stageins&quot;
+STAGEIN_CACHE_EXPIRY=144
+</pre>
+</li>
+<li><p class="first">This variable must be set to enable the use of oarsh from a frontale node.
+Otherwise you must not set this variable if you are not on a frontale:</p>
+<pre class="literal-block">
+OARSH_OARSTAT_CMD=&quot;/usr/bin/oarstat&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="oarsh-openssh-default-options">
+<ul>
+<li><p class="first">The following variable adds options to ssh. If one option is not handled
+by your ssh version just remove it BUT be careful because these options are
+there for security reasons:</p>
+<pre class="literal-block">
+OARSH_OPENSSH_DEFAULT_OPTIONS=&quot;-oProxyCommand=none -oPermitLocalCommand=no&quot;
+</pre>
+</li>
+</ul>
+</blockquote>
+<blockquote id="oarmonitor-sensor-file">
+<ul>
+<li><p class="first">Name of the perl script the retrive monitoring data from compute nodes.
+This is used in oarmonitor command.</p>
+<blockquote>
+<p>OARMONITOR_SENSOR_FILE=&quot;/etc/oar/oarmonitor_sensor.pl&quot;</p>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id59" id="module-descriptions" name="module-descriptions">6&nbsp;&nbsp;&nbsp;Module descriptions</a></h1>
+<p>OAR can be decomposed into several modules which perform different tasks.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id60" id="almighty" name="almighty">6.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
+<p>This module is the OAR server. It decides what actions must be performed. It
+is divided into 2 processes:</p>
+<blockquote>
+<ul class="simple">
+<li>One listens to a TCP/IP socket. It waits informations or commands from OAR
+user program or from the other modules.</li>
+<li>Another one deals with commands thanks to an automaton and launch right
+modules one after one.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id61" id="sarko" name="sarko">6.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
+<p>This module is executed periodically by the Almighty (default is every
+30 seconds).</p>
+<p>The jobs of Sarko are :</p>
+<blockquote>
+<ul class="simple">
+<li>Look at running job walltimes and ask to frag them if they had expired.</li>
+<li>Detect if fragged jobs are really fragged otherwise asks to exterminate
+them.</li>
+<li>In &quot;Desktop Computing&quot; mode, it detects if a node date has expired and
+asks to change its state into &quot;Suspected&quot;.</li>
+<li>Can change &quot;Suspected&quot; resources into &quot;Dead&quot; after <a class="reference" href="#dead-switch-time">DEAD_SWITCH_TIME</a> seconds.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id62" id="judas" name="judas">6.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
+<p>This is the module dedicated to print and log every debugging, warning and
+error messages.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id63" id="leon" name="leon">6.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
+<p>This module is in charge to delete the jobs. Other OAR modules or commands
+can ask to kill a job and this is Leon which performs that.</p>
+<p>There are 2 frag types :</p>
+<blockquote>
+<ul class="simple">
+<li><em>normal</em> : Leon tries to connect to the first node allocated for the job and
+terminates the job.
+oarexec to end itself.</li>
+<li><em>exterminate</em> : after a timeout if the <em>normal</em> method did not succeed
+then Leon notifies this case and clean up the database for these jobs. So
+OAR doesn't know what occured on the node and Suspects it.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id64" id="nodechangestate" name="nodechangestate">6.5&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
+<p>This module is in charge of changing resource states and checking if there are
+jobs on these.</p>
+<p>It also checks all pending events in the table <a class="reference" href="#event-logs">event_logs</a>.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id65" id="scheduler" name="scheduler">6.6&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
+<p>This module checks for each reservation jobs if it is valid and launches them
+at the right time.</p>
+<p><a class="reference" href="#scheduler">Scheduler</a> launches all gantt scheduler in the order of the priority specified
+in the database and update all visualization tables
+(<a class="reference" href="#gantt-jobs-predictions-visu">gantt_jobs_predictions_visu</a> and <a class="reference" href="#gantt-jobs-resources-visu">gantt_jobs_resources_visu</a>).</p>
+<div class="section">
+<h3><a class="toc-backref" href="#id66" id="oar-sched-gantt-with-timesharing" name="oar-sched-gantt-with-timesharing">6.6.1&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing</a></h3>
+<p>This is the default OAR scheduler. It implements all functionalities like
+<a class="reference" href="#timesharing">timesharing</a>, moldable jobs, <a class="reference" href="#besteffort-jobs">besteffort jobs</a>, ...</p>
+<p>By default, this scheduler is used by all default queues.</p>
+<p>We have implemented the FIFO with backfilling algorithm. Some parameters
+can be changed in the <a class="reference" href="#configuration-file">configuration file</a> (see <a class="reference" href="#scheduler-timeout">SCHEDULER_TIMEOUT</a>,
+<a class="reference" href="#scheduler-job-security-time">SCHEDULER_JOB_SECURITY_TIME</a>, <a class="reference" href="#scheduler-gantt-hole-minimum-time">SCHEDULER_GANTT_HOLE_MINIMUM_TIME</a>,
+<a class="reference" href="#scheduler-resource-order">SCHEDULER_RESOURCE_ORDER</a>).</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id67" id="oar-sched-gantt-with-timesharing-and-fairsharing" name="oar-sched-gantt-with-timesharing-and-fairsharing">6.6.2&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing_and_fairsharing</a></h3>
+<p>This scheduler is the same than <a class="reference" href="#oar-sched-gantt-with-timesharing">oar_sched_gantt_with_timesharing</a> but it looks
+at the consumption past and try to order waiting jobs with fairsharing in mind.</p>
+<p>Some parameters can be changed directly in the file:</p>
+<pre class="literal-block">
+###############################################################################
+# Fairsharing parameters #
+##########################
+# Avoid problems if there are too many waiting jobs
+my $Karma_max_number_of_jobs_treated = 1000;
+# number of seconds to consider for the fairsharing
+my $Karma_window_size = 3600 * 30;
+# specify the target percentages for project names (0 if not specified)
+my $Karma_project_targets = {
+    first =&gt; 75,
+    default =&gt; 25
+};
+
+# specify the target percentages for users (0 if not specified)
+my $Karma_user_targets = {
+    oar =&gt; 100
+};
+# weight given to each criteria
+my $Karma_coeff_project_consumption = 3;
+my $Karma_coeff_user_consumption = 2;
+my $Karma_coeff_user_asked_consumption = 1;
+###############################################################################
+</pre>
+<p>This scheduler takes its historical data in the <a class="reference" href="#accounting">accounting</a> table. To fill this,
+the command <a class="reference" href="#oaraccounting">oaraccounting</a> have to be run periodically (in a cron job for
+example). Otherwise the scheduler cannot be aware of new user consumptions.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id68" id="runner" name="runner">6.7&nbsp;&nbsp;&nbsp;Runner</a></h2>
+<p>This module launches OAR effective jobs. These processes are run asynchronously
+with all modules.</p>
+<p>For each job, the <a class="reference" href="#runner">Runner</a> uses <a class="reference" href="#openssh-cmd">OPENSSH_CMD</a> to connect to the first node of the
+reservation and propagate a Perl script which handles the execution of the user
+command.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id69" id="mechanisms" name="mechanisms">7&nbsp;&nbsp;&nbsp;Mechanisms</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id70" id="how-does-an-interactive-oarsub-work" name="how-does-an-interactive-oarsub-work"><span id="interactive"></span>7.1&nbsp;&nbsp;&nbsp;How does an interactive <em>oarsub</em> work?</a></h2>
+<div class="figure">
+<a class="reference image-reference" href="interactive_oarsub_scheme.png"><img alt="interactive oarsub decomposition" src="interactive_oarsub_scheme.png" style="width: 17cm;" /></a>
+<p class="caption">Interactive oarsub decomposition</p>
+</div>
+<p><a class="reference" href="interactive_oarsub_scheme.svg">interactive_oarsub_scheme.svg</a></p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id71" id="job-launch" name="job-launch">7.2&nbsp;&nbsp;&nbsp;Job launch</a></h2>
+<p>For PASSIVE jobs, the mechanism is similar to the <a class="reference" href="#interactive">INTERACTIVE</a> one, except for
+the shell launched from the frontal node.</p>
+<p>The job is finished when the user command ends. Then oarexec return its exit
+value (what errors occured) on the <a class="reference" href="#almighty">Almighty</a> via the <a class="reference" href="#server-port">SERVER_PORT</a> if
+<a class="reference" href="#detach-job-from-server">DETACH_JOB_FROM_SERVER</a> was set to 1 otherwise it returns directly.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id72" id="cpuset" name="cpuset">7.3&nbsp;&nbsp;&nbsp;CPUSET</a></h2>
+<p>The cpuset name is effectively created on each nodes and is composed as
+&quot;user_jobid&quot;.</p>
+<p>OAR system steps:</p>
+<blockquote>
+<ol class="arabic simple">
+<li>Before each job, the <a class="reference" href="#runner">Runner</a> initialize the CPUSET (see <a class="reference" href="#cpuset-definition">CPUSET
+definition</a>) with <a class="reference" href="#openssh-cmd">OPENSSH_CMD</a> and an efficient launching tool :
+<a class="reference" href="http://taktuk.gforge.inria.fr/">Taktuk</a>. If it is not
+installed and configured (<a class="reference" href="#taktuk-cmd">TAKTUK_CMD</a>) then OAR uses an internal
+launching tool less optimized.
+The processors assigned to this cpuset are taken from the defined database
+field by <a class="reference" href="#job-resource-manager-property-db-field">JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD</a> in the table <a class="reference" href="#resources">resources</a>.</li>
+<li>After each job, OAR deletes all processes stored in the associated CPUSET.
+Thus all nodes are clean after a OAR job.</li>
+</ol>
+</blockquote>
+<p>If you don't want to use this feature, you can, but nothing will warranty that
+every user processes will be killed after the end of a job.</p>
+<p>If you want you can implement your own cpuset management. This is done by
+editing 3 files (see also <a class="reference" href="#cpuset-installation">CPUSET installation</a>):</p>
+<blockquote>
+<ul class="simple">
+<li>cpuset_manager.pl : this script creates the cpuset on each nodes
+and also delete it at the end of the job. For more informations, you have to
+look at this script (there are several comments).</li>
+<li>oarsh : (<a class="reference" href="#oarsh">OARSH</a>) this script is used to replace the standard &quot;ssh&quot;
+command. It gets the cpuset name where it is running and transfer this
+information via &quot;ssh&quot; and the &quot;SendEnv&quot; option. In this file, you have
+to change the &quot;get_current_cpuset&quot; function.</li>
+<li>oarsh_shell : (<a class="reference" href="#oarsh-shell">OARSH_SHELL</a>) this script is the shell of the oar user on
+each nodes. It gets environment variables and look at if there is a cpuset
+name. So if there is one it assigns the current process and its father to
+this cpusetname. So all further user processes will remind in the cpuset.
+In this file you just have to change the &quot;add_process_to_cpuset&quot; function.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id73" id="ssh-connection-key-definition" name="ssh-connection-key-definition">7.4&nbsp;&nbsp;&nbsp;SSH connection key definition</a></h2>
+<p>This function is performed by <a class="reference" href="#oarsub">oarsub</a> with the --ssh_private_key and
+--ssh_public_key options.</p>
+<p>It enables the user to define a ssh key pair to connect on their nodes.
+So <a class="reference" href="#oarsh">oarsh</a> can be used on nodes of different clusters to connect
+each others if the same ssh keys are used with each <a class="reference" href="#oarsub">oarsub</a>.</p>
+<p>So a grid reservation (&quot;-r&quot; option of <a class="reference" href="#oarsub">oarsub</a> on each OAR batch scheduler of
+each wanted clusters) can be done with this functionality.</p>
+<p>Example:</p>
+<pre class="literal-block">
+ssh-keygen -f oar_key
+oarsub --ssh_private_key &quot;$(cat oar_key)&quot; --ssh_public_key &quot;$(cat oar_key.pub)&quot; ./script.sh
+</pre>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id74" id="suspend-resume" name="suspend-resume">7.5&nbsp;&nbsp;&nbsp;Suspend/resume</a></h2>
+<p>Jobs can be suspended with the command <a class="reference" href="#oarhold">oarhold</a> (send a &quot;SIGSTOP&quot; on every
+processes on every nodes) to allow other jobs to be executed.</p>
+<p>&quot;Suspended&quot; jobs can be resumed with the command <a class="reference" href="#oarresume">oarresume</a> (send a &quot;SIGSTOP&quot;
+on every suspended processes on every nodes). They will
+pass into &quot;Running&quot; when assigned resources will be free.</p>
+<p>IMPORTANT: This feature is available only if <a class="reference" href="#cpuset">CPUSET</a> is configured.</p>
+<p>You can specify 2 scripts if you have to perform any actions just after
+(<a class="reference" href="#just-after-suspend-exec-file">JUST_AFTER_SUSPEND_EXEC_FILE</a>) suspend and just before resume
+(<a class="reference" href="#just-before-resume-exec-file">JUST_BEFORE_RESUME_EXEC_FILE</a>).</p>
+<p>Moreover you can perform other actions (than send signals to processes)
+if you want: just edit the &quot;suspend_resume_manager.pl&quot; file.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id75" id="job-deletion" name="job-deletion">7.6&nbsp;&nbsp;&nbsp;Job deletion</a></h2>
+<p><a class="reference" href="#leon">Leon</a> tries to connect to OAR Perl script running on the first job node (find
+it thanks to the file <em>/tmp/oar/pid_of_oarexec_for_jobId_id</em>) and sends a
+&quot;SIGTERM&quot; signal. Then the script catch it and normally end the job (kill
+processes that it has launched).</p>
+<p>If this method didn't succeed then <a class="reference" href="#leon">Leon</a> will flush the OAR database for the
+job and nodes will be &quot;Suspected&quot; by <a class="reference" href="#nodechangestate">NodeChangeState</a>.</p>
+<p>If your job is check pointed and is of the type <em>idempotent</em> (<a class="reference" href="#oarsub">oarsub</a> &quot;-t&quot;
+option) and its exit code is equal to 0 then another job is automatically
+created and scheduled with same behaviours.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id76" id="checkpoint" name="checkpoint">7.7&nbsp;&nbsp;&nbsp;Checkpoint</a></h2>
+<p>The checkpoint is just a signal sent to the program specified with the <a class="reference" href="#oarsub">oarsub</a>
+command.</p>
+<p>If the user uses &quot;--checkpoint&quot; option then <a class="reference" href="#sarko">Sarko</a> will ask the OAR Perl script running
+on the first node to send the signal to the process (SIGUSR2 or the one
+specified with &quot;--signal&quot;).</p>
+<p>You can also use <a class="reference" href="#oardel">oardel</a> command to send the signal.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id77" id="scheduling" name="scheduling">7.8&nbsp;&nbsp;&nbsp;Scheduling</a></h2>
+<p>General steps used to schedule a job:</p>
+<blockquote>
+<ol class="arabic simple">
+<li>All previous scheduled jobs are stored in a Gantt data structure.</li>
+<li>All resources that match property constraints of the job(&quot;-p&quot; option and
+indication in the &quot;{...}&quot; from the &quot;-l&quot; option of the <a class="reference" href="#oarsub">oarsub</a>) are stored in
+a tree data structure according to the hierarchy given with the &quot;-l&quot; option.</li>
+<li>Then this tree is given to the Gantt library to find the first hole where
+the job can be launched.</li>
+<li>The scheduler stores its decision into the database in the
+<a class="reference" href="#gantt-jobs-predictions">gantt_jobs_predictions</a> and <a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a> tables.</li>
+</ol>
+</blockquote>
+<p>See <a class="reference" href="#user">User</a> section from the <a class="reference" href="#faq">FAQ</a> for more examples and features.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id78" id="id1" name="id1">7.9&nbsp;&nbsp;&nbsp;Job dependencies</a></h2>
+<p>A job dependency is a situation where a job needs the ending of another job to start. OAR deals with job dependency problems by refusing to schedule dependant jobs if their required job is in Terminated state and have an exit code != 0 (an error occured). If the required job is resubmited, its jobId is no longer the same and OAR updates the database and sets the job_id_required field to this new jobId for the dependant job.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id79" id="user-notification" name="user-notification">7.10&nbsp;&nbsp;&nbsp;User notification</a></h2>
+<p>This section explains how the &quot;--notify&quot; <a class="reference" href="#oarsub">oarsub</a> option is handled by OAR:</p>
+<blockquote>
+<ul>
+<li><p class="first">The user wants to receive an email:</p>
+<blockquote>
+<p>The syntax is &quot;mail:name&#64;domain.com&quot;. <a class="reference" href="#mail">Mail</a> section in the <a class="reference" href="#configuration-file">Configuration
+file</a> must be present otherwise the mail cannot be sent.</p>
+</blockquote>
+</li>
+<li><p class="first">The user wants to launch a script:</p>
+<blockquote>
+<p>The syntax is &quot;exec:/path/to/script args&quot;. OAR server will connect (using
+<a class="reference" href="#openssh-cmd">OPENSSH_CMD</a>) on the node where the <a class="reference" href="#oarsub">oarsub</a> command was invoked and then
+launches the script with in argument : <em>job_id</em>, <em>job_name</em>, <em>tag</em>,
+<em>comments</em>.</p>
+<p>(<em>tag</em> is a value in : &quot;START&quot;, &quot;END&quot;, &quot;ERROR&quot;)</p>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id80" id="accounting-aggregator" name="accounting-aggregator">7.11&nbsp;&nbsp;&nbsp;Accounting aggregator</a></h2>
+<p>In the <a class="reference" href="#configuration-file">Configuration file</a> you can set the <a class="reference" href="#accounting-window">ACCOUNTING_WINDOW</a> parameter. Thus
+the command <a class="reference" href="#oaraccounting">oaraccounting</a> will split the time with this amount and feed the
+table <a class="reference" href="#accounting">accounting</a>.</p>
+<p>So this is very easily and faster to get usage statistics of the cluster. We
+can see that like a &quot;data warehousing&quot; information extraction method.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id81" id="dynamic-nodes-coupling-features" name="dynamic-nodes-coupling-features">7.12&nbsp;&nbsp;&nbsp;Dynamic nodes coupling features</a></h2>
+<p>We are working with the <a class="reference" href="http://www.icatis.com/">Icatis</a> company on clusters
+composed by Intranet computers. These nodes can be switch in computing mode
+only at specific times. So we have implemented a functionality that can
+request to power on some hardware if they can be in the cluster.</p>
+<p>We are using the field <em>cm_availability</em> from the table <a class="reference" href="#resources">resources</a>
+to know when a node will be inaccessible in the cluster mode (easily settable
+with <a class="reference" href="#oarnodesetting">oarnodesetting</a> command). So when the OAR scheduler wants some potential
+available computers to launch the jobs then it executes the command
+<a class="reference" href="#scheduler-node-manager-wake-up-cmd">SCHEDULER_NODE_MANAGER_WAKE_UP_CMD</a>.</p>
+<p>Moreover if a node didn't execute a job for <a class="reference" href="#scheduler-node-manager-idle-time">SCHEDULER_NODE_MANAGER_IDLE_TIME</a>
+seconds and no job is scheduled on it before <a class="reference" href="#scheduler-node-manager-sleep-time">SCHEDULER_NODE_MANAGER_SLEEP_TIME</a>
+seconds then OAR will launch the command <a class="reference" href="#scheduler-node-manager-sleep-cmd">SCHEDULER_NODE_MANAGER_SLEEP_CMD</a>.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id82" id="timesharing" name="timesharing">7.13&nbsp;&nbsp;&nbsp;Timesharing</a></h2>
+<p>It is possible to share the slot time of a job with other ones.
+To perform this feature you have to specify the type <em>timesharing</em> when you use
+<a class="reference" href="#oarsub">oarsub</a>.</p>
+<p>You have 4 different ways to share your slot:</p>
+<blockquote>
+<ol class="arabic simple">
+<li><em>timesharing=*,*</em> : This is the default behavior if nothing but
+timesharing is specified.
+It indicates that the job can be shared with all users and every job
+names.</li>
+<li><em>timesharing=user,*</em> : This indicates that the job can be shared only
+with the same user and every job names.</li>
+<li><em>timesharing=*,job_name</em> : This indicates that the job can be shared
+with all users but only one with the same name.</li>
+<li><em>timesharing=user,job_name</em> : This indicates that the job can be shared
+only with the same user and one with the same job name.</li>
+</ol>
+</blockquote>
+<p>See <a class="reference" href="#user">User</a> section from the <a class="reference" href="#faq">FAQ</a> for more examples and features.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id83" id="besteffort-jobs" name="besteffort-jobs">7.14&nbsp;&nbsp;&nbsp;Besteffort jobs</a></h2>
+<p>Besteffort jobs are scheduled in the besteffort queue. Their particularity is
+that they are deleted if another not besteffort job want resources where they
+are running.</p>
+<p>For example you can use this feature to maximize the use of your cluster with
+multiparametric jobs. This what it is done by the
+<a class="reference" href="http://cigri.ujf-grenoble.fr">CIGRI</a> project.</p>
+<p>When you submit a job you have to use &quot;-t besteffort&quot; option of <a class="reference" href="#oarsub">oarsub</a> to
+specify that this is a besteffort job.</p>
+<p>Important : a besteffort job cannot be a reservation.</p>
+<p>If your job is of the type <em>besteffort</em> and <em>idempotent</em> (<a class="reference" href="#oarsub">oarsub</a> &quot;-t&quot;
+option) and killed by the OAR scheduler then another job is automatically
+created and scheduled with same behaviours.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id84" id="cosystem-jobs" name="cosystem-jobs">7.15&nbsp;&nbsp;&nbsp;Cosystem jobs</a></h2>
+<p>This feature enables to reserve some resources without launching any
+program on corresponding nodes. Thus nothing is done by OAR on computing nodes
+when a job is starting except on the <a class="reference" href="#cosystem-hostname">COSYSTEM_HOSTNAME</a> defined in the
+configuration file.</p>
+<p>This is useful with an other launching system that will declare its time
+slot in OAR. So yo can have two different batch scheduler.</p>
+<p>When you submit a job you have to use &quot;-t cosystem&quot; option of <a class="reference" href="#oarsub">oarsub</a> to
+specify that this is a cosystem job.</p>
+<p>These jobs are stopped by the <a class="reference" href="#oardel">oardel</a> command or when they reach their
+walltime or their command has finished.
+They also use the node <a class="reference" href="#cosystem-hostname">COSYSTEM_HOSTNAME</a> to launch the specified program
+or shell.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id85" id="deploy-jobs" name="deploy-jobs">7.16&nbsp;&nbsp;&nbsp;Deploy jobs</a></h2>
+<p>This feature is useful when you want to enable the users to reinstall their
+reserved nodes. So the OAR jobs will not log on the first computer of the
+reservation but on the <a class="reference" href="#deploy-hostname">DEPLOY_HOSTNAME</a>.</p>
+<p>So prologue and epilogue scripts are executed on <a class="reference" href="#deploy-hostname">DEPLOY_HOSTNAME</a> and if the
+user wants to launch a script it is also executed on <a class="reference" href="#deploy-hostname">DEPLOY_HOSTNAME</a>.</p>
+<p>OAR does nothing on computing nodes because they normally will be rebooted to
+install a new system image.</p>
+<p>This feature is strongly used in the <a class="reference" href="https://www.grid5000.fr/">Grid5000</a>
+project with <a class="reference" href="http://ka-tools.imag.fr/">Kadeploy</a> tools.</p>
+<p>When you submit a job you have to use &quot;-t deploy&quot; option of <a class="reference" href="#oarsub">oarsub</a> to
+specify that this is a deploy job.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id86" id="desktop-computing" name="desktop-computing">7.17&nbsp;&nbsp;&nbsp;Desktop computing</a></h2>
+<p>If you cannot contact the computers via SSH you can install the &quot;desktop
+computing&quot; OAR mode.
+This kind of installation is based on two programs:</p>
+<blockquote>
+<ul class="simple">
+<li>oar-cgi : this is a web CGI used by the nodes to communicate with
+the OAR server.</li>
+<li>oar-agent.pl : This program asks periodically the server web CGI to know what it
+has to do.</li>
+</ul>
+</blockquote>
+<p>This method replaces the SSH command. Computers which want to register them into
+OAR just has to be able to contact OAR HTTP server.</p>
+<p>In this situation we don't have a NFS file system to share the same repertories
+over all nodes so we have to use a stagein/stageout solution. In this case you
+can use the <a class="reference" href="#oarsub">oarsub</a> option &quot;stagein&quot; to migrate your data.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id87" id="faq" name="faq">8&nbsp;&nbsp;&nbsp;FAQ</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id88" id="release-policy" name="release-policy">8.1&nbsp;&nbsp;&nbsp;Release policy</a></h2>
+<dl class="docutils">
+<dt>Since the version 2.2, release numbers are divided into 3 parts:</dt>
+<dd><ul class="first last simple">
+<li>The first represents the design and the implementation used.</li>
+<li>The second represents a set of OAR functionalities.</li>
+<li>The third is incremented after bug fixes.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id89" id="user" name="user">8.2&nbsp;&nbsp;&nbsp;User</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id90" id="how-can-i-submit-a-moldable-job" name="how-can-i-submit-a-moldable-job">8.2.1&nbsp;&nbsp;&nbsp;How can I submit a moldable job?</a></h3>
+<p>You just have to use several &quot;-l&quot; <a class="reference" href="#oarsub">oarsub</a> option(one for each moldable
+description). By default the OAR scheduler will launch the moldable job which
+will end first.</p>
+<p>So you can see some free resources but the scheduler can decide to start your
+job later because they will have more free resources and the job walltime will
+be smaller.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id91" id="how-can-i-submit-a-job-with-a-non-uniform-description" name="how-can-i-submit-a-job-with-a-non-uniform-description">8.2.2&nbsp;&nbsp;&nbsp;How can I submit a job with a non uniform description?</a></h3>
+<p>Example:</p>
+<pre class="literal-block">
+oarsub -I -l '{switch = &quot;sw1&quot; or switch = &quot;sw5&quot;}/switch=1+/node=1'
+</pre>
+<p>This example asks OAR to reserve all resources from the switch sw1 or the
+switch sw2 <strong>and</strong> a node on another switch.</p>
+<p>You can see the &quot;+&quot; syntax as a sub-reservation directive.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id92" id="can-i-perform-a-fix-scheduled-reservation-and-then-launch-several-jobs-in-it" name="can-i-perform-a-fix-scheduled-reservation-and-then-launch-several-jobs-in-it">8.2.3&nbsp;&nbsp;&nbsp;Can I perform a fix scheduled reservation and then launch several jobs in it?</a></h3>
+<p>Yes. You have to use the OAR scheduler &quot;timesharing&quot; feature.
+To use it, the reservation and your further jobs must be of the type
+timesharing (only for you).</p>
+<p>Example:</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Make your reservation:</p>
+<pre class="literal-block">
+oarsub -r &quot;2006-09-12 8:00:00&quot; -l /switch=1 -t 'timesharing=user,*'
+</pre>
+<p>This command asks all resources from one switch at the given date for the
+default walltime. It also specifies that this job can be shared with
+himself and without a constraint on the job name.</p>
+</li>
+<li><p class="first">Once your reservation has begun then you can launch:</p>
+<pre class="literal-block">
+oarsub -I -l /node=2,walltime=0:50:00 -p 'switch = &quot;nom_du_switch_schedule&quot;'\
+-t 'timesharing=user,*'
+</pre>
+<p>So this job will be scheduled on nodes assigned from the previous reservation.</p>
+</li>
+</ol>
+</blockquote>
+<p>The &quot;timesharing&quot; <a class="reference" href="#oarsub">oarsub</a> command possibilities are enumerated in <a class="reference" href="#timesharing">Timesharing</a>.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id93" id="how-can-a-checkpointable-job-be-resubmitted-automatically" name="how-can-a-checkpointable-job-be-resubmitted-automatically">8.2.4&nbsp;&nbsp;&nbsp;How can a checkpointable job be resubmitted automatically?</a></h3>
+<p>You have to specify that your job is <em>idempotent</em>. So, after a successful
+checkpoint, if the job is resubmitted then all will go right and there will have
+no problem (like file creation, deletion, ...).</p>
+<p>Example:</p>
+<pre class="literal-block">
+oarsub --checkpoint 600 --signal 2 -t idempotent /path/to/prog
+</pre>
+<p>So this job will send a signal <em>SIGINT</em> (see <em>man kill</em> to know signal
+numbers) 10 minutes before the walltime ends. Then if everything goes
+well it will be resubmitted.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id94" id="how-to-submit-a-non-disturbing-job-for-other-users" name="how-to-submit-a-non-disturbing-job-for-other-users">8.2.5&nbsp;&nbsp;&nbsp;How to submit a non disturbing job for other users?</a></h3>
+<p>You can use the <em>besteffort</em> job type. Thus your job will be launched only
+if there is a hole and will be deleted if another job wants its resources.</p>
+<p>Example:</p>
+<pre class="literal-block">
+oarsub -t besteffort /path/to/prog
+</pre>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id95" id="administrator" name="administrator">8.3&nbsp;&nbsp;&nbsp;Administrator</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id96" id="what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh" name="what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh">8.3.1&nbsp;&nbsp;&nbsp;What means the error &quot;Bad configuration option: PermitLocalCommand&quot; when I am using oarsh?</a></h3>
+<p>For security reasons, on the latest OpenSSH releases you are able to execute
+a local command when you are connecting to the remote host and we must
+deactivate this option because the <a class="reference" href="#oarsh">oarsh</a> wrapper executes the <em>ssh</em> command
+into the user oar.</p>
+<p>So if you encounter this error message it means that your OpenSSH does
+not know this option and you have to remove it from the oar.conf.
+There is a variable named <a class="reference" href="#oarsh-openssh-default-options">OARSH_OPENSSH_DEFAULT_OPTIONS</a> in oar.conf used by oarsh.
+So you have just to remove the not yet implemented option.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id97" id="how-to-manage-start-stop-of-the-nodes" name="how-to-manage-start-stop-of-the-nodes">8.3.2&nbsp;&nbsp;&nbsp;How to manage start/stop of the nodes?</a></h3>
+<p>You have to add a script in /etc/init.d which switches resources of the node
+into the &quot;Alive&quot; or &quot;Absent&quot; state.
+So when this script is called at boot time, it will change the state into
+&quot;Alive&quot;. And when it is called at halt time, it will change into &quot;Absent&quot;.</p>
+<p>There two ways to perform this action:</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Install OAR &quot;oar-libs&quot; part on all nodes. Thus you will be able to launch
+the command <a class="reference" href="#oarnodesetting">oarnodesetting</a> (be careful to right configure &quot;oar.conf&quot; with
+database login and password AND to allow network connections on this
+database).
+So you can execute:</p>
+<pre class="literal-block">
+oarnodesetting -s Alive -h node_hostname
+    or
+oarnodesetting -s Absent -h node_hostname
+</pre>
+</li>
+<li><p class="first">You do not want to install anything else on each node. So you have to
+enable oar user to connect to the server via ssh (for security you
+can use another SSH key with restrictions on the command that oar can
+launch with this one). Thus you will have in you init script
+something like:</p>
+<pre class="literal-block">
+sudo -u oar ssh oar-server &quot;oarnodesetting -s Alive -h node_hostname&quot;
+    or
+sudo -u oar ssh oar-server &quot;oarnodesetting -s Absent -h node_hostname&quot;
+</pre>
+<p>In this case, further OAR software upgrade will be more painless.</p>
+</li>
+</ol>
+</blockquote>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id98" id="how-can-i-manage-scheduling-queues" name="how-can-i-manage-scheduling-queues">8.3.3&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></h3>
+<p>see <a class="reference" href="#oarnotify">oarnotify</a>.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id99" id="how-can-i-handle-licence-tokens" name="how-can-i-handle-licence-tokens">8.3.4&nbsp;&nbsp;&nbsp;How can I handle licence tokens?</a></h3>
+<p>OAR does not manage resources with an empty &quot;network_address&quot;. So you can
+define resources that are not linked with a real node.</p>
+<p>So the steps to configure OAR with the possibility to reserve licences (or
+whatever you want that are other notions):</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Add a new field in the table <a class="reference" href="#resources">resources</a> to specify the licence name.</p>
+<pre class="literal-block">
+oarproperty -a licence -c
+</pre>
+</li>
+<li><p class="first">Add your licence name resources with <a class="reference" href="#oarnodesetting">oarnodesetting</a>.</p>
+<pre class="literal-block">
+oarnodesetting -a -h &quot;&quot; -p type=mathlab -p licence=l1
+oarnodesetting -a -h &quot;&quot; -p type=mathlab -p licence=l2
+oarnodesetting -a -h &quot;&quot; -p type=fluent -p licence=l1
+...
+</pre>
+</li>
+<li><p class="first">Now you have to write an admission rule to force <a class="reference" href="#oarsub">oarsub</a> &quot;-l&quot; option on
+resources of the type &quot;default&quot; (node resources) if there is no other
+specifications.</p>
+<pre class="literal-block">
+INSERT INTO admission_rules (rule) VALUES ('
+foreach my $mold (&#64;{$ref_resource_list}){
+    foreach my $r (&#64;{$mold-&gt;[0]}){
+        my $prop = $r-&gt;{property};
+        if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
+            if (!defined($prop)){
+                $r-&gt;{property} = &quot;type = \\\'default\\\'&quot;;
+            }else{
+                $r-&gt;{property} = &quot;($r-&gt;{property}) AND type = \\\'default\\\'&quot;;
+            }
+        }
+    }
+}
+print(&quot;[ADMISSION RULE] Modify resource description with type constraints\\n&quot;);
+');
+</pre>
+</li>
+</ol>
+</blockquote>
+<p>After this configuration, users can perform submissions like</p>
+<pre class="literal-block">
+oarsub -I -l &quot;/switch=2/nodes=10+{type = 'mathlab'}/licence=20&quot;
+</pre>
+<p>So users ask OAR to give them some other resource types but nothing block
+their program to take more licences than they asked.
+You can resolve this problem with the <a class="reference" href="#server-script-exec-file">SERVER_SCRIPT_EXEC_FILE</a> configuration.
+In these files you have to bind OAR allocated resources to the licence servers
+to restrict user consumptions to what they asked. This is very dependant of
+the licence management.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id100" id="how-can-i-handle-multiple-clusters-with-one-oar" name="how-can-i-handle-multiple-clusters-with-one-oar">8.3.5&nbsp;&nbsp;&nbsp;How can I handle multiple clusters with one OAR?</a></h3>
+<p>These are the steps to follow:</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">create a resource property to identify the corresponding cluster (like &quot;cluster&quot;):</p>
+<pre class="literal-block">
+oarproperty -a cluster
+</pre>
+<p>(you can see this new property when you use <a class="reference" href="#oarnodes">oarnodes</a>)</p>
+</li>
+<li><p class="first">with <a class="reference" href="#oarnodesetting">oarnodesetting</a> you have to fill this field for all resources; for example:</p>
+<pre class="literal-block">
+oarnodesetting -h node42.cluster1.com -p cluster=1
+oarnodesetting -h node43.cluster1.com -p cluster=1
+oarnodesetting -h node2.cluster2.com -p cluster=2
+...
+</pre>
+</li>
+<li><p class="first">Then you have to restrict properties for new job type.
+So an admission rule performs this job (this is a SQL syntax to use in a database interpreter):</p>
+<pre class="literal-block">
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+    my $cluster_constraint = 0;
+    if (grep(/^cluster1$/, &#64;{$type_list})){
+        $cluster_constraint = 1;
+    }elsif (grep(/^cluster2$/, &#64;{$type_list})){
+        $cluster_constraint = 2;
+    }
+if ($cluster_constraint &gt; 0){
+    if ($jobproperties ne &quot;&quot;){
+        $jobproperties = &quot;($jobproperties) AND cluster = $cluster_constraint&quot;;
+    }else{
+        $jobproperties = &quot;cluster = $cluster_constraint&quot;;
+    }
+    print(&quot;[ADMISSION RULE] Added automatically cluster resource constraint\\n&quot;);
+}
+');
+</pre>
+</li>
+<li><p class="first">Edit the admission rule which checks the right job types and add
+&quot;cluster1&quot; and &quot;cluster2&quot; in.</p>
+</li>
+</ol>
+</blockquote>
+<p>So when you will use <a class="reference" href="#oarsub">oarsub</a> to submit a &quot;cluster2&quot; job type only resources
+with the property &quot;cluster=2&quot; is used. This is the same when you will use the
+&quot;cluster1&quot; type.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id101" id="how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies" name="how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies">8.3.6&nbsp;&nbsp;&nbsp;How to configure a more ecological cluster (or how to make some power consumption economies)?</a></h3>
+<p>This feature can be performed with the <a class="reference" href="#dynamic-nodes-coupling-features">Dynamic nodes coupling features</a>.</p>
+<p>First you have to make sure that you have a command to wake up a computer
+that is stopped. For example you can use the WoL (Wake on Lan) feature
+(generally you have to right configure the BIOS and add right options to the
+Linux Ethernet driver; see &quot;ethtool&quot;).</p>
+<p>If you want to enable a node to be woke up the next 12 hours:</p>
+<pre class="literal-block">
+((DATE=$(date +%s)+3600*12))
+oarnodesetting -h host_name -p cm_availability=$DATE
+</pre>
+<p>Otherwise you can disable the wake up of nodes (but not the halt) by:</p>
+<pre class="literal-block">
+oarnodesetting -h host_name -p cm_availability=0
+</pre>
+<p>If you want to disable the halt on a node:</p>
+<pre class="literal-block">
+oarnodesetting -h host_name -p cm_availability=2147483647
+</pre>
+<p>2147483647 = 2^31 - 1 : we take this value as infinite and it is used to
+disable the halt mechanism.</p>
+<p>Your <a class="reference" href="#scheduler-node-manager-wake-up-cmd">SCHEDULER_NODE_MANAGER_WAKE_UP_CMD</a> must be a script that read node
+names and translate them into the right wake up command.</p>
+<p>So with the right OAR and node configurations you can optimize the power
+consumption of your cluster (and your air conditioning infrastructure)
+without drawback for the users.</p>
+<p>Take a look at your cluster occupation and your electricity bill to know if it
+could be interesting for you ;-)</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id102" id="how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh" name="how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh">8.3.7&nbsp;&nbsp;&nbsp;How to enable jobs to connect to the frontales from the nodes using oarsh?</a></h3>
+<p>First you have to install the node part of OAR on the wanted nodes.</p>
+<p>After that you have to register the frontales into the database using
+<a class="reference" href="#oarnodesetting">oarnodesetting</a> with the &quot;frontal&quot; (for example) type and assigned the desired
+cpus into the cpuset field; for example:</p>
+<pre class="literal-block">
+oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=0
+oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=1
+oarnodesetting -a -h frontal2 -p type=frontal -p cpuset=0
+...
+</pre>
+<p>Thus you will be able to see resources identifier of these resources with
+<a class="reference" href="#oarnodes">oarnodes</a>; try to type:</p>
+<pre class="literal-block">
+oarnodes --sql &quot;type='frontal'&quot;
+</pre>
+<p>Then put this type name (here &quot;frontal&quot;) into the <em>oar.conf</em> file on the OAR
+server into the tag <a class="reference" href="#scheduler-resources-always-assigned-type">SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE</a>.</p>
+<dl class="docutils">
+<dt>Notes:</dt>
+<dd><ul class="first last simple">
+<li>if one of these resources become &quot;Suspected&quot; then the scheduling will
+stop.</li>
+<li>you can disable this feature with <a class="reference" href="#oarnodesetting">oarnodesetting</a> and put these resources
+into the &quot;Absent&quot; state.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id103" id="a-job-remains-in-the-finishing-state-what-can-i-do" name="a-job-remains-in-the-finishing-state-what-can-i-do">8.3.8&nbsp;&nbsp;&nbsp;A job remains in the &quot;Finishing&quot; state, what can I do?</a></h3>
+<p>If you have waited more than a couple of minutes (5mn for example) then
+something wrong occurred (frontal has crashed, out of memory, ...).</p>
+<p>So you are able to turn manually a job into the &quot;Error&quot; state by typing in
+the OAR install directory (example with a bash shell):</p>
+<pre class="literal-block">
+export OARCONFFILE=/etc/oar/oar.conf
+perl -e 'use oar_iolib; $db = iolib::connect(); iolib::set_job_state($db,42,&quot;Error&quot;)'
+</pre>
+<p>(Replace 42 by your job identifier)</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id104" id="how-can-i-write-my-own-scheduler" name="how-can-i-write-my-own-scheduler">8.3.9&nbsp;&nbsp;&nbsp;How can I write my own scheduler?</a></h3>
+<dl class="docutils">
+<dt>What can and must do a scheduler:</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>your program will get 3 arguments:</dt>
+<dd><ol class="first last arabic simple">
+<li>queue name</li>
+<li>reference time in second</li>
+<li>reference time in sql format</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first">you must manipulate only jobs in your queue and with their state =
+&quot;Waiting&quot; and &quot;Reservation&quot; = &quot;None&quot;</p>
+</li>
+<li><p class="first">you can get all informations stored in the database (in read mode)</p>
+</li>
+<li><p class="first">you have to load previous decisions of the other schedulers (load
+informations from tables <a class="reference" href="#gantt-jobs-predictions">gantt_jobs_predictions</a> and
+<a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a>) or your decisions can conflict with previous.</p>
+</li>
+<li><p class="first">you must store your decisions in the tables <a class="reference" href="#gantt-jobs-predictions">gantt_jobs_predictions</a> and
+<a class="reference" href="#gantt-jobs-resources">gantt_jobs_resources</a></p>
+</li>
+<li><p class="first">you can set state of jobs to &quot;toError&quot; and OAR will delete them. After
+you must exit from your program with &quot;exit code&quot; = 1 otherwise 0.</p>
+</li>
+</ul>
+</dd>
+</dl>
+<p>You can look at the default OAR scheduler &quot;oar_sched_gantt_with_timesharing&quot;.
+It uses a gantt and a resource tree libraries that are essential to take some
+decisions.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id105" id="what-is-the-syntax-of-this-documentation" name="what-is-the-syntax-of-this-documentation">8.3.10&nbsp;&nbsp;&nbsp;What is the syntax of this documentation?</a></h3>
+<p>We are using the RST format from the <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> project. This syntax is easily readable
+and can be converted into HTML, LaTex or XML.</p>
+<p>You can find basic informations on
+<a class="reference" href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">http://docutils.sourceforge.net/docs/user/rst/quickref.html</a></p>
+</div>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id106" id="oar-changelog" name="oar-changelog">9&nbsp;&nbsp;&nbsp;OAR CHANGELOG</a></h1>
+<div class="section">
+<h2><a class="toc-backref" href="#id107" id="upstream-development-version" name="upstream-development-version">9.1&nbsp;&nbsp;&nbsp;upstream development version:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Add new oarmonitor command. This will permit to monitor OAR jobs on compute
+nodes.</li>
+<li>Remove sudo dependency and replace it by the commands &quot;oardo&quot; and
+&quot;oardodo&quot;.</li>
+<li>Add possibility to create a temporary user for each jobs on compute nodes.
+So you can perform very strong restrictions for each job (ex: bandwidth
+restrictions with iptable, memory management, ... everything that can be
+handled with a user id)</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id108" id="version-2-2-10" name="version-2-2-10">9.2&nbsp;&nbsp;&nbsp;version 2.2.10:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Job dependencies: if the required jobs do not have an exit code == 0 and in
+the state Terminated then the schedulers refuse to schedule this job.</li>
+<li>Add the possibility to disable the halt command on nodes with
+cm_availability value.</li>
+<li>Enhance oarsub &quot;-S&quot; option (more #OAR parsed).</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id109" id="version-2-2-9" name="version-2-2-9">9.3&nbsp;&nbsp;&nbsp;version 2.2.9:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Bug 4225: Dump only 1 data structure when using -X or -Y or -D.</li>
+<li>Bug fix in Finishing sequence (Suspect right nodes).</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id110" id="version-2-2-8" name="version-2-2-8">9.4&nbsp;&nbsp;&nbsp;version 2.2.8:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Bug 4159: remove unneeded Dump print from oarstat.</li>
+<li>Bug 4158: replace XML::Simple module by XML::Dumper one.</li>
+<li>Bug fix for reservation (recalculate the right walltime).</li>
+<li>Print job dependencies in oarstat.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id111" id="version-2-2-7" name="version-2-2-7">9.5&nbsp;&nbsp;&nbsp;version 2.2.7:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Bug 4106: fix oarsh and oarcp issue with some options (erroneous leading
+space).</li>
+<li>Bug 4125: remove exit_code data when it is not relevant.</li>
+<li>Fix potential bug when changing asynchronously the state of the jobs into
+&quot;Terminated&quot; or &quot;Error&quot;.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id112" id="version-2-2-6" name="version-2-2-6">9.6&nbsp;&nbsp;&nbsp;version 2.2.6:</a></h2>
+<blockquote>
+<ul>
+<li><dl class="first docutils">
+<dt>Bug fix: job types was not sent to cpuset manager script anymore.</dt>
+<dd><p class="first last">(border effect from bug 4069 resolution)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id113" id="version-2-2-5" name="version-2-2-5">9.7&nbsp;&nbsp;&nbsp;version 2.2.5:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Bug fix: remove user command when oar execute the epilogue script on the
+nodes.</li>
+<li>Clean debug and mail messages format.</li>
+<li>Remove bad oarsub syntax from oarsub doc.</li>
+<li>Debug xauth path.</li>
+<li>bug 3995: set project correctly when resubmitting a job</li>
+<li>debug 'bash -c' on Fedora</li>
+<li>bug 4069: reservations with CPUSET_ERROR (remove bad hosts and continue
+with a right integrity in the database)</li>
+<li>bug 4044: fix free resources query for reservation (get the nearest hole
+from the beginning of the reservation)</li>
+<li>bug 4013: now Dead, Suspected and Absent resources have different colors in
+drawgantt with a popup on them.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id114" id="version-2-2-4" name="version-2-2-4">9.8&nbsp;&nbsp;&nbsp;version 2.2.4:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Redirect third party commands into oar.log (easier to debug).</li>
+<li>Add user info into drawgantt interface.</li>
+<li>Some bug fixes.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id115" id="version-2-2-3" name="version-2-2-3">9.9&nbsp;&nbsp;&nbsp;version 2.2.3:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Debug prologue and epilogue when oarexec receives a signal.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id116" id="version-2-2-2" name="version-2-2-2">9.10&nbsp;&nbsp;&nbsp;version 2.2.2:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Switch nice value of the user processes into 0 in oarsh_shell (in case of
+sshd was launched with a different priority).</li>
+<li>debug taktuk zombies in pingchecker and oar_Tools</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id117" id="version-2-2-1" name="version-2-2-1">9.11&nbsp;&nbsp;&nbsp;version 2.2.1:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>install the &quot;allow_clasic_ssh&quot; feature by default</li>
+<li>debug DB installer</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id118" id="version-2-2" name="version-2-2">9.12&nbsp;&nbsp;&nbsp;version 2.2:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>oar_server_proepilogue.pl: can be used for server prologue and epilogue to
+authorize users to access to nodes that are completely allocated by OAR. If
+the whole node is assigned then it kills all jobs from the user if all cpus
+are assigned.</li>
+<li>the same thing can be done with cpuset_manager_PAM.pl as the script used to
+configure the cpuset. More efficent if cpusets are configured.</li>
+<li>debug cm_availability feature to switch on and off nodes automatically
+depending on waiting jobs.</li>
+<li>reservations now take care of cm_availability field</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id119" id="version-2-1-0" name="version-2-1-0">9.13&nbsp;&nbsp;&nbsp;version 2.1.0:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>add &quot;oarcp&quot; command to help the users to copy files using oarsh.</li>
+<li>add sudo configuration to deal with bash. Now oarsub and oarsh have the
+same behaviour as ssh (the bash configuration files are loaded correctly)</li>
+<li>bug fix in drawgantt (loose jobs after submission of a moldable one)</li>
+<li>add SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE into oar.conf. Thus admin can
+add some resources for each jobs (like frontale node)</li>
+<li>add possibility to use taktuk to check the aliveness of the nodes</li>
+<li>%jobid% is now replaced in stdout and stderr file names by the effective
+job id</li>
+<li>change interface to shu down or wake up nodes automatically (now the node
+list is read on STDIN)</li>
+<li>add OARSUB_FORCE_JOB_KEY in oar.conf. It says to create a job ssh key by
+default for each job.</li>
+<li>%jobid% is now replaced in the ssh job key name (oarsub -k ...).</li>
+<li>add NODE_FILE_DB_FIELD_DISTINCT_VALUES in oar.conf that enables the admin
+to configure the generated containt of the OAR_NODE_FILE</li>
+<li>change ssh job key oarsub options behaviour</li>
+<li>add options &quot;--reinitialize&quot; and &quot;--delete-before&quot; to the oaraccounting
+command</li>
+<li>cpuset are now stored in /dev/cpuset/oar</li>
+<li>debian packaging: configure and launch a specific sshd for the user oar</li>
+<li>use a file descriptor to send the node list --&gt; able to handle a very large
+amount of nodes</li>
+<li>every config files are now in /etc/oar/</li>
+<li>oardel can add a besteffort type to jobs and vis versa</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id120" id="version-2-0-2" name="version-2-0-2">9.14&nbsp;&nbsp;&nbsp;version 2.0.2:</a></h2>
+<blockquote>
+<ul class="simple">
+<li>add warnings and exit code to oarnodesetting when there is a bad node name
+or resource number</li>
+<li>change package version</li>
+<li>change default behaviour for the cpuset_manager.pl (more portable)</li>
+<li>enable a user to use the same ssh key for several jobs (at his own risk!)</li>
+<li>add node hostnames in oarstat -f</li>
+<li>add --accounting and -u options in oarstat</li>
+<li>bug fix on index fields in the database (syncro): bug 2020</li>
+<li>bug fix about server pro/epilogue: bug 2022</li>
+<li>change the default output of oarstat. Now it is usable: bug 1875</li>
+<li>remove keys in authorized_keys of oar (on the nodes) that do not
+correspond to an active cpuset (clean after a reboot)</li>
+<li>reread oar.conf after each database connection tries</li>
+<li>add support for X11 forwarding in oarsub -I and -C</li>
+<li>debug mysql initialization script in debian package</li>
+<li>add a variable in oarsh for the default options of ssh to use
+(more useful to change if the ssh version installed does not
+handle one of these options)</li>
+<li>read oar.conf in oarsh (so admin can more easily change options in this
+script)</li>
+<li>add support for X11 forwarding via oarsh</li>
+<li>change variable for oarsh: OARSH_JOB_ID --&gt; OAR_JOB_ID</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id121" id="version-2-0-0-enhanced" name="version-2-0-0-enhanced">9.15&nbsp;&nbsp;&nbsp;version 2.0.0++ enhanced:</a></h2>
+<blockquote>
+<ul>
+<li><p class="first">Now, with the ability to declare any type of resources like licences,
+VLAN, IP range, computing resources must have the type <em>default</em> and a
+network_address not null.</p>
+</li>
+<li><p class="first">Possibility to declare associated resources like licences, IP ranges, ...
+and to reserve them like others.</p>
+</li>
+<li><p class="first">Now you can connect to your jobs (not only for reservations).</p>
+</li>
+<li><p class="first">Add &quot;cosystem&quot; job type (execute and do nothing for these jobs).</p>
+</li>
+<li><p class="first">New scheduler : &quot;oar_sched_gantt_with_timesharing&quot;. You can specify jobs
+with the type &quot;timesharing&quot; that indicates that this scheduler can launch
+more than 1 job on a resource at a time. It is possible to restrict this
+feature with words &quot;user and name&quot;. For example, '-t
+timesharing=user,name' indicates that only a job from the same user with
+the same name can be launched in the same time than it.</p>
+</li>
+<li><p class="first">Add PostGresSQL support. So there is a choice to make between MySQL and
+PostgresSQL.</p>
+</li>
+<li><p class="first">New approach for the scheduling : administrators have to insert into the
+databases descriptions about resources and not nodes. Resources have a
+network address (physical node) and properties. For example, if you have
+dual-processor, then you can create 2 different resources with the same
+natwork address but with 2 different processor names.</p>
+</li>
+<li><p class="first">The scheduler can now handle resource properties in a hierarchical
+manner. Thus, for example, you can do &quot;oarsub -l /switch=1/cpu=5&quot; which
+submit a job on 5 processors on the same switch.</p>
+</li>
+<li><p class="first">Add a signal handler in oarexec and propagate this signal to the user
+process.</p>
+</li>
+<li><p class="first">Support '#OAR -p ...' options in user script.</p>
+</li>
+<li><dl class="first docutils">
+<dt>Add in oar.conf:</dt>
+<dd><ul class="first last simple">
+<li>DB_BASE_PASSWD_RO : for security issues, it is possible to execute
+request with parts specified by users with a read only account (like
+&quot;-p&quot; option).</li>
+<li>OARSUB_DEFAULT_RESOURCES : when nothing is specified with the oarsub
+command then OAR takes this default resource description.</li>
+<li>OAREXEC_DEBUG_MODE : turn on or off debug mode in oarexec (create
+/tmp/oar/oar.log on nodes).</li>
+<li>FINAUD_FREQUENCY : indicates the frequency when OAR launchs Finaud
+(search dead nodes).</li>
+<li>SCHEDULER_TIMEOUT : indicates to the scheduler the amount of time
+after what it must end itself.</li>
+<li>SCHEDULER_JOB_SECURITY_TIME : time between each job.</li>
+<li>DEAD_SWITCH_TIME : after this time Absent and Suspected resources are
+turned on the Dead state.</li>
+<li>PROLOGUE_EPILOGUE_TIMEOUT : the possibility to specify a different
+timeout for prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT).</li>
+<li>PROLOGUE_EXEC_FILE : you can specify the path of the prologue script
+executed on nodes.</li>
+<li>EPILOGUE_EXEC_FILE : you can specify the path of the epilogue script
+executed on nodes.</li>
+<li>GENERIC_COMMAND : a specific script may be used instead of ping to
+check aliveness of nodes. The script must return bad nodes on STDERR
+(1 line for a bad node and it must have exactly the same name that
+OAR has given in argument of the command).</li>
+<li>JOBDEL_SOFTWALLTIME : time after a normal frag that the system waits
+to retry to frag the job.</li>
+<li>JOBDEL_WALLTIME : time after a normal frag that the system waits
+before to delete the job arbitrary and suspects nodes.</li>
+<li>LOG_FILE : specify the path of OAR log file (default :
+/var/log/oar.log).</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">Add wait() in pingchecker to avoid zombies.</p>
+</li>
+<li><p class="first">Better code modularization.</p>
+</li>
+<li><p class="first">Remove node install part to launch jobs. So it is easier to upgrade from
+one version to an other (oarnodesetting must already be installed on each
+nodes if we want to use it).</p>
+</li>
+<li><p class="first">Users can specify a method to be notified (mail or script).</p>
+</li>
+<li><p class="first">Add cpuset support</p>
+</li>
+<li><p class="first">Add prologue and epilogue script to be executed on the OAR server before
+and after launching a job.</p>
+</li>
+<li><p class="first">Add dependancy support between jobs (&quot;-a&quot; option in oarsub).</p>
+</li>
+<li><p class="first">In oarsub you can specify the launching directory (&quot;-d&quot; option).</p>
+</li>
+<li><p class="first">In oarsub you can specify a job name (&quot;-n&quot; option).</p>
+</li>
+<li><p class="first">In oarsub you can specify stdout and stderr file names.</p>
+</li>
+<li><p class="first">User can resubmit a job (option &quot;--resubmit&quot; in oarsub).</p>
+</li>
+<li><p class="first">It is possible to specify a read only database account and it will be
+used to evaluate SQL properties given by the user with the oarsub command
+(more scecure).</p>
+</li>
+<li><p class="first">Add possibility to order assigned resources with their properties by the
+scheduler. So you can privilege some resources than others
+(SCHEDULER_RESOURCE_ORDER tag in oar.conf file)</p>
+</li>
+<li><p class="first">a command can be specified to switch off idle nodes
+(SCHEDULER_NODE_MANAGER_SLEEP_CMD, SCHEDULER_NODE_MANAGER_IDLE_TIME,
+SCHEDULER_NODE_MANAGER_SLEEP_TIME in oar.conf)</p>
+</li>
+<li><p class="first">a command can be specified to switch on nodes in the Absent state
+according to the resource property <em>cm_availability</em> in the table
+<a class="reference" href="#resources">resources</a> (SCHEDULER_NODE_MANAGER_WAKE_UP_CMD in oar.conf).</p>
+</li>
+<li><p class="first">if a job goes in Error state and this is not its fault then OAR will
+resubmit this one.</p>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id122" id="version-1-6-1" name="version-1-6-1">9.16&nbsp;&nbsp;&nbsp;version 1.6.1:</a></h2>
+<blockquote>
+<ul>
+<li><p class="first">initialise the &quot;ganttJobsPrediction&quot; table with a right reference date
+(1970-01-01 00:00:01)</p>
+</li>
+<li><p class="first">oarsub has the &quot;-k, --checkpoint&quot; option. It specifies the number of
+seconds before job walltime to send a SIGUSR2 on it.</p>
+</li>
+<li><p class="first">You can see the list of events for jobs with -f option in oarstat</p>
+</li>
+<li><p class="first">oardel can now send SIGUSR2 to the oarexec of a job (-c option)</p>
+</li>
+<li><p class="first">oardel can now delete several jobs</p>
+</li>
+<li><p class="first">Add a signal handler in oarexec and propagate this signal to the user
+process</p>
+</li>
+<li><p class="first">Support '#OAR -p ...' options in user script</p>
+</li>
+<li><p class="first">Add in oar.conf the possibility to specify a different timeout for
+prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT)</p>
+</li>
+<li><p class="first">when a connection to the DB fails, OAR retrie 5 times</p>
+</li>
+<li><p class="first">handle the EXTERMINATE_JOB event and suspect all nodes if possible</p>
+</li>
+<li><p class="first">add job state log table</p>
+</li>
+<li><p class="first">add node properties log table</p>
+</li>
+<li><p class="first">add possibility to use sentinelle.rb script in the ping_checker module</p>
+</li>
+<li><p class="first">add a GRID5000 specific scheduler which implements specific policy
+(oar_sched_gant_g5k)</p>
+</li>
+<li><p class="first">add -s option to oarnodes command --&gt; show only state of nodes</p>
+</li>
+<li><p class="first">add -l option to oarnodes command --&gt; show only the node list</p>
+</li>
+<li><p class="first">root can now delete any jobs in the same way the oar user could</p>
+</li>
+<li><p class="first">change a few oardel messages</p>
+</li>
+<li><p class="first">limit the commands (with arguments) specified by users:</p>
+<pre class="literal-block">
+regular expression : [\w\s\/\.\-]*
+</pre>
+</li>
+<li><p class="first">change oaremovenode command to oarremovenode</p>
+</li>
+<li><p class="first">enhance job error management</p>
+</li>
+<li><p class="first">enhance suspicious nodes detection</p>
+</li>
+<li><p class="first">fix bugs about accounting</p>
+</li>
+</ul>
+</blockquote>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id123" id="version-1-6" name="version-1-6">9.17&nbsp;&nbsp;&nbsp;version 1.6:</a></h2>
+<blockquote>
+<ul>
+<li><p class="first">debug reservation jobs (if the job has not the right number of requested
+nodes then it will wait for a delay. Once expired, the job will be
+launched on the nodes available).</p>
+</li>
+<li><p class="first">add a cache for visualization of the gantt scheme (add two gantt table
+for the visu)</p>
+</li>
+<li><p class="first">add an event log mechanism. It permits to know all decisions and events
+occuring in OAR with regards to jobs.</p>
+</li>
+<li><dl class="first docutils">
+<dt>detection of errors (they can be traced via event_log table):</dt>
+<dd><ul class="first last simple">
+<li>job working directory does not exist on the node output files cannot</li>
+<li>be created</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">add deploy scheduler awareness (schedule on non deploy nodes firstly)</p>
+</li>
+<li><p class="first">possibility to change property value via oarnodesetting command (-p
+option)</p>
+</li>
+<li><p class="first">add the command &quot;oaremovenode&quot; that allows to delete a node of the
+database definitely</p>
+</li>
+<li><p class="first">bug fix : now oarsub can use the user's script even if the oar user
+cannot</p>
+</li>
+<li><p class="first">now, you can use special value &quot;all&quot; in oarsub (&quot;nodes&quot; resource). It
+gives all free nodes corresponding to the weight and properties
+specified.</p>
+</li>
+<li><p class="first">debug Gantt visualization</p>
+</li>
+<li><p class="first">add the possibility to test nodes via nmap</p>
+</li>
+<li><p class="first">add accounting features (accounting table)</p>
+</li>
+<li><p class="first">change nodeState_log table scheme to increase rapidity</p>
+</li>
+</ul>
+</blockquote>
+<p>$Id: OAR-DOCUMENTATION.rst 989 2007-11-22 18:44:21Z capitn $</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+<a class="reference" href="OAR-DOCUMENTATION.rst">View document source</a>.
+Generated on: 2007-11-29 08:28 UTC.
+Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>
