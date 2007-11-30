@@ -143,7 +143,7 @@ if (defined($Checkpoint)){
                 }
             }else{
                 print("DONE.\n");
-                $strComment = "The job $idJob was notified to checkpoint itself (send SIGUSR2).";
+                $strComment = "The job $idJob was notified to checkpoint itself.";
                 print("$strComment\n");
                 iolib::add_new_event($base,"CHECKPOINT_SUCCESS",$idJob,$strComment);
             }
