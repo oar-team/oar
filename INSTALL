@@ -75,7 +75,8 @@ The following steps have to be done, prior to installing OAR:
     - grant the user "oar" the permission to execute commands with root
       privileges. To achieve that, OAR makes use of sudo. As a consequence,
       /etc/sudoers must be configured. Please use visudo to add the following
-      lines::
+      lines (here we assume that OAR is installed in /usr/lib/oar so replace
+      this path by yours)::
 
             Defaults>oar    env_reset,env_keep += "PWD DISPLAY OAR_JOB_ID OAR_JOB_KEY_FILE", !requiretty
             Defaults:oar env_reset,env_keep += "DISPLAY SSH_CLIENT SSH2CLIENT SHELL", !requiretty
@@ -101,7 +102,9 @@ There are a three different flavors of installation :
     * server:  install the daemon which must be running on the server
     * user:    install all the tools needed to submit and manage jobs for the
       users (oarsub, oarstat, oarnodes, ...)
-    * node:    install the tools for a computing node
+    * node:    install the tools for a computing node (only mandatory if you
+      want to use CPUSET (`CPUSET installation`_) feature or oarsh_ command).
+      You have to follow the `Important notes`_.
 
 The installation is straightforward:
 
