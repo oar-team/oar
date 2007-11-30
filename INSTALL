@@ -70,7 +70,10 @@ There are a three different flavors of installation :
     * server:  install the daemon which must be running on the server
     * user:    install all the tools needed to submit and manage jobs for the
       users (oarsub, oarstat, oarnodes, ...)
-    * node:    install the tools for a computing node
+    * node:    install the tools for a computing node (verify that the command
+      "oardodo" is in the PATH of the oar user on each nodes. You have also to
+      check in *~oar/.ssh/authorized_keys* that the oar user ssh key is
+      prefixed by "environment="OAR_KEY=1", see `Important notes`_)
 
 The installation is straightforward:
 

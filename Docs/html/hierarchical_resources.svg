@@ -12,13 +12,14 @@
    height="595.27557pt"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.44.1"
+   inkscape:version="0.45.1"
    version="1.0"
-   sodipodi:docbase="/home/capitn/SC06"
+   sodipodi:docbase="/cryptedhome/capitn/dev/oar/trunk/Docs/html"
    sodipodi:docname="hierarchical_resources.svg"
-   inkscape:export-filename="/home/capitn/SC06/hierarchical_resources.png"
+   inkscape:export-filename="/cryptedhome/capitn/dev/oar/trunk/Docs/html/hierarchical_resources.png"
    inkscape:export-xdpi="299.96078"
-   inkscape:export-ydpi="299.96078">
+   inkscape:export-ydpi="299.96078"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
   <defs
      id="defs4">
     <marker
@@ -95,16 +96,16 @@
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="461.58604"
-     inkscape:cy="205.10238"
+     inkscape:cx="523.62227"
+     inkscape:cy="436.53095"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      showguides="false"
-     inkscape:window-width="1398"
-     inkscape:window-height="1031"
+     inkscape:window-width="895"
+     inkscape:window-height="783"
      inkscape:window-x="0"
-     inkscape:window-y="17" />
+     inkscape:window-y="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -493,7 +494,7 @@
          sodipodi:role="line"
          id="tspan3246"
          x="161.5605"
-         y="30.974295">Rresource property</tspan><tspan
+         y="30.974295">Resource property</tspan><tspan
          sodipodi:role="line"
          x="161.5605"
          y="60.896959"
