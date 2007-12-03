@@ -23,7 +23,7 @@
 
 \institute{
     \begin{center}
-        \includegraphics[scale=0.4]{src/img/oar_logo.png}
+%        \includegraphics[scale=0.4]{src/img/oar_logo.png}
     \end{center}
     {\bf http://oar.imag.fr/}
 }
@@ -56,102 +56,264 @@
 \section{Introduction}
         \frame{
             \frametitle{What is OAR designed for}
+            OAR is an open source batch/resource manager for clusters.\\
+            \bigskip
+            Historically: created to replace PBSpro on the Icluster (begun non free for universities).\\
+            \bigskip
+            OAR:
             \begin{itemize}
-                \item TOTO
-                \pause
-                \item TITI
-                \pause
-                \item TITI
+                \item use OpenSSH daemon on compute nodes
+                \item batch or interactive jobs
+                \item gantt scheduling (with reservations)
+                \item no dependence on specific computing libraries like MPI
+                \item 2 web interfaces (Monika and DrawGantt)
             \end{itemize}
         }
         \frame{
-            \frametitle{Goals}
-            \begin{itemize}
-                \item TOTO2
-            \end{itemize}
+            \frametitle{What is OAR designed for}
+            \begin{center}
+%                \includegraphics[height=40ex]{src/img/clusters_intro.png}
+            \end{center}
         }
         \frame{
-            \frametitle{OAR2 key words}
+            \frametitle{OAR2 enhancements}
+            OAR2 is a huge rewrite of the first version:
             \begin{itemize}
-                \item TOTO
+                \item manage heterogeneous clusters
+                \item solution to clean properly compute nodes
+                \item support of dynamic nodes
+                \item support moldable jobs
+                \item support job types
+                \item suspend/resume job execution
+                \item faire sharing scheduler algorithm
+                \item ...
             \end{itemize}
         }
 
 \section{Strong concepts}
     \subsection{Modules around a database}
         \frame{
-            \frametitle{OAR}
+            \frametitle{Modules around a database}
+            Everything is stored in a database.\\
+            This is the only way to communicate between the functional modules.\\
             \begin{itemize}
-                \item TOTO
+                \item Advantages
+                    \begin{itemize}
+                        \item simplicity
+                        \item able to write each module in the language that you want
+                        \item able to use every database technology for replication, backup, ...
+                    \end{itemize}
+                \item Drawback
+                    \begin{itemize}
+                        \item huge amount of database request
+                    \end{itemize}
             \end{itemize}
+            \bigskip
+            So everything is logged and can be post-treated by other tools.
+        }
+        \frame{
+            \frametitle{Database scheme}
+            \begin{center}
+%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+            \end{center}
         }
     \subsection{Hierarchical resources}
         \frame{
-            \frametitle{OAR}
+            \frametitle{Resources}
+                Everything is a {\Large resource} or a set of {\Large resources}:
+                \begin{itemize}
+                    \item compute nodes
+                    \item CPUs
+                    \item CPU cores
+                    \item memory slots
+                    \item licences (MathLab, Fluent, ...)
+                    \item ...
+                \end{itemize}
+            By default a resource references a node.
+            OAR2 uses these data in a hierarchical manner.
+        }
+        \frame{
+            \frametitle{The hierarchies}
+            Not only 1 hierarchy but everything the users want.\\
+            Depends on what the administrator fills in the database.\\
+            For example:
+            \begin{itemize}
+                \item nodes
+                \item cpus $>$ nodes
+                \item cores $>$ cpus $>$ nodes $>$ switches $>$ clusters
+                \item cores $>$ switches
+                \item ...
+            \end{itemize}
+        }
+        \frame{
+            \frametitle{Graphical example}
             \begin{center}
-                \includegraphics[height=40ex]{src/img/hierarchical_resources.png}
+%                \includegraphics[height=40ex]{src/img/hierarchical_resources.png}
             \end{center}
         }
     \subsection{oarsh}
         \frame{
             \frametitle{oarsh/oarsh\_shell}
-            Wrapper around the ssh command.\\
-            Connect on compute nodes.
+            Wrapper around the {\Large ssh} command.\\
+            Only way to connect from one compute node to an other.
             \begin{itemize}
                 \item Advantages
-                \item Drawbacks
+                    \begin{itemize}
+                        \item OAR manages user connections
+                        \item the users don't need anymore to configure their SSH keys
+                        \item transfer automatically jobs information (CPUSET, user id)
+                        \item can use oarsh like ssh (for example: "-X" is working)
+                        \item the users are not able to go on unreserved resources
+                    \end{itemize}
+                \item Drawback
+                    \begin{itemize}
+                        \item the users have to use oarsh in their program to log on nodes(replace ssh by oarsh).\\
+                        {\tiny But there is a solution if it is not possible (see "job key" subsection)}
+                    \end{itemize}
             \end{itemize}
         }
         \frame{
             \frametitle{CPUSETs}
+            Mechanism for assigning a set of CPUs and Memory Nodes to a set of tasks.\\
+            (this functionality is included in 2.6 Linux kernels)\\
+            \bigskip
+            OAR creates 1 CPUSET by job on each reserved nodes.\\
+            Then it fills CPUs and Memory Nodes with the right value (from the database resources).\\
+            \bigskip
+            The CPUSET name is propagated via "oarsh" on each nodes. So the
+            users cannot get out of their CPUSET during a job.
+        }
+        \frame{
+            \frametitle{CPUSET advantages}
             \begin{itemize}
-                \item TOTO
+                \item restricts the use of the Cpus and Memories
+                \item very usefull on big NUMA nodes but not only...
+                \item keeps the list of every children processes of a job\\
+                      So it is possible to track job user forks and then to
+                      clean (kill remaining processes) all the nodes after the
+                      end of the job.
             \end{itemize}
+            \bigskip
+            {\Large This is a really huge enhancement in the OAR job clean process.}
         }
         \frame{
             \frametitle{job key}
+            Concept: assign a SSH key for each OAR job.\\
+            \bigskip
             \begin{itemize}
-                \item TOTO
+                \item the users are able to use this key to connect to all
+                      nodes of their job via the {\tt normal} "ssh" command
+                      ("-i" option)
+                \item Grid usage: can use the same job key on 2 OAR server on 2 different clusters and then connect to the whole nodes.\\
+                      Once submitted with the same job key, the connections are completely transparent via "oarsh".
             \end{itemize}
         }
         \frame{
             \frametitle{job temporary user}
+                From now, the best container on every UNIX systems is: {\Large user id}
             \begin{itemize}
-                \item TOTO
+                \item processes
+                \item files
+                \item sockets
+                \item IPC (shared memory)
+                \item ...
+            \end{itemize}
+        }
+        \frame{
+            \frametitle{job temporary user}
+            Idea:
+            \begin{enumerate}
+                \item add a pool of temporary user id in the resources
+                \item reserve automatically one of these user id when submitting a new job
+                \item at the beginning of the job, just create the temporary user
+                \item at the end of the job, clean everything you want from this temporary user and then delete it.
+            \end{enumerate}
+            Drawbacks:
+            \begin{itemize}
+                \item each user must have an unique primary group
+                \item the same temporary user id can be used by different users
+                      (not at the same time). So be careful with file
+                      permissions
             \end{itemize}
         }
     \subsection{Scalability}
         \frame{
             \frametitle{Taktuk}
             \begin{itemize}
-                \item TOTO
+                \item Performs large scale remote execution deployment.
+                \item Platform independent
+                \item Not needed to install it on compute nodes.
+                \item I/O redirection
+                \item Sliding window + tree diffusion (uses work-stealing) algorithm.
+                \item Uses a generic connector (ssh, rsh, ...). Here it is ssh.
             \end{itemize}
+
+            Every OAR node management actions are performed via the Taktuk command.\\
+        }
+        \frame{
+            \frametitle{Taktuk example}
+            \begin{center}
+%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+            \end{center}
+
         }
         \frame{
             \frametitle{Scheduling}
             \begin{itemize}
                 \item Every possibilities == impossible
-                \item hirearchical job resource description == make the job of the scheduler easier and so more scalable
+                \item hierarchical job resource description == make the work of the scheduler easier and more scalable
             \end{itemize}
+            \bigskip
+            Can be implemented with another programming language.
         }
 
 \section{Functionalities}
     \subsection{Administrator side}
         \frame{
-            \frametitle{OAR}
+            \frametitle{Administrator functionalities}
             \begin{itemize}
-                \item TOTO4
+                \item add/remove resources
+                \item add/remove resource properties
+                \item change property values of resources
+                \item manage scheduling queues (priority, scheduler)
+                \item suspend/resume jobs
+                \item change admission rules
+                \item configure dynamic nodes (save power by switch on only right nodes and switch off the others)
             \end{itemize}
         }
 
     \subsection{User side}
         \frame{
-            \frametitle{OAR}
-            \begin{itemize}
-                \item TOTO4
-            \end{itemize}
+            \frametitle{Monika}
+            \begin{center}
+%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+            \end{center}
         }
-
+        \frame{
+            \frametitle{DrawGantt}
+            \begin{center}
+%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+            \end{center}
+        }
+        \frame{
+            \frametitle{User functionalities}
+            \begin{itemize}
+                \item reservations
+                \item moldable jobs
+                \item timesharing
+                \item besteffort jobs
+                \item checkpoint notification
+                \item change default stdout and stderr files
+                \item job dependencies
+                \item notification (start and end of the job)
+                \begin{itemize}
+                    \item send emails
+                    \item execute a program on the frontale
+                \end{itemize}
+                \item resubmission
+            \end{itemize}
+            {\tiny All user commands have a XML, YAML and Perl DUMPER output format}
+        }
 
     \subsection{Simple use cases}
         \frame{
@@ -171,12 +333,25 @@
 
 \section{OAR2 in action}
     \frame{
-        \frametitle{OAR}
+        \frametitle{Current installations}
         OAR2 is ready for production and is already installed on:
         \begin{itemize}
-            \item TOTO4
-            \item TOTI3
+            \item in the {\large CIMENT} project ({\tt https://ciment.ujf-grenoble.fr/})\\
+                  almost 500 cores in 9 different clusters
+            \item in the {\large GRID5000} project ({\tt https://www.grid5000.fr/})\\
+                  9 sites (with 1 OAR server per site)\\
+                  more than 3000 cores in 20 clusters
         \end{itemize}
+    }
+    \frame{
+        \frametitle{Current installations}
+            Unknown persons:
+            \begin{itemize}
+                \item from Poland ({\tt http://www.ioe.wat.edu.pl/})
+                \item from ithe University of Michigan
+                \item from a french bank
+                \item ...
+            \end{itemize}
     }
     \frame{
         \frametitle{Versioning}
@@ -186,6 +361,10 @@
         The version under development is the 2.3.\\
         \bigskip
         Other branches can be used for research oriented experimentations.\\
+        \bigskip
+        For for sources,Debian packages and USB live key images:\\
+        \bigskip
+        \hspace{4ex}{\tt http://oar.imag.fr/download.html}
     }
 
 %%%%%%%%%%%%%%%
