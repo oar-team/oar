@@ -15,9 +15,10 @@
     OAR2\\
     An open source resource manager for large clusters
 }
-\author{
-    LIG-ID\\
-    Nicolas.Capit@imag.fr Olivier.Richard@imag.fr Yiannis.Georgiou@imag.fr
+\author[LIG-ID]{
+    {\bf LIG-ID}\\
+    {\small Nicolas.Capit@imag.fr Olivier.Richard@imag.fr
+            Yiannis.Georgiou@imag.fr}
 }
 
 \institute{
@@ -26,7 +27,7 @@
     \end{center}
     {\bf http://oar.imag.fr/}
 }
-\date{\today}
+\date{{\tiny \today}}
 
 \begin{document}
 
@@ -53,9 +54,8 @@
 \frame{\partpage}
 
 \section{Introduction}
-    \subsection{Context}
         \frame{
-            \frametitle{Context}
+            \frametitle{What is OAR designed for}
             \begin{itemize}
                 \item TOTO
                 \pause
@@ -64,8 +64,12 @@
                 \item TITI
             \end{itemize}
         }
-
-    \subsection{OAR2 key words}
+        \frame{
+            \frametitle{Goals}
+            \begin{itemize}
+                \item TOTO2
+            \end{itemize}
+        }
         \frame{
             \frametitle{OAR2 key words}
             \begin{itemize}
@@ -73,21 +77,63 @@
             \end{itemize}
         }
 
-    \subsection{Goals}
+\section{Strong concepts}
+    \subsection{Modules around a database}
         \frame{
             \frametitle{OAR}
             \begin{itemize}
-                \item TOTO2
+                \item TOTO
             \end{itemize}
         }
-
-\section{Strong concepts}
-    \frame{
-        \frametitle{OAR}
-        \begin{center}
-            \includegraphics[height=40ex]{src/img/hierarchical_resources.png}
-        \end{center}
-    }
+    \subsection{Hierarchical resources}
+        \frame{
+            \frametitle{OAR}
+            \begin{center}
+                \includegraphics[height=40ex]{src/img/hierarchical_resources.png}
+            \end{center}
+        }
+    \subsection{oarsh}
+        \frame{
+            \frametitle{oarsh/oarsh\_shell}
+            Wrapper around the ssh command.\\
+            Connect on compute nodes.
+            \begin{itemize}
+                \item Advantages
+                \item Drawbacks
+            \end{itemize}
+        }
+        \frame{
+            \frametitle{CPUSETs}
+            \begin{itemize}
+                \item TOTO
+            \end{itemize}
+        }
+        \frame{
+            \frametitle{job key}
+            \begin{itemize}
+                \item TOTO
+            \end{itemize}
+        }
+        \frame{
+            \frametitle{job temporary user}
+            \begin{itemize}
+                \item TOTO
+            \end{itemize}
+        }
+    \subsection{Scalability}
+        \frame{
+            \frametitle{Taktuk}
+            \begin{itemize}
+                \item TOTO
+            \end{itemize}
+        }
+        \frame{
+            \frametitle{Scheduling}
+            \begin{itemize}
+                \item Every possibilities == impossible
+                \item hirearchical job resource description == make the job of the scheduler easier and so more scalable
+            \end{itemize}
+        }
 
 \section{Functionalities}
     \subsection{Administrator side}
@@ -125,8 +171,21 @@
 
 \section{OAR2 in action}
     \frame{
-        \frametitle{Part II: Research}
-        \tableofcontents[pausesections,part=2]
+        \frametitle{OAR}
+        OAR2 is ready for production and is already installed on:
+        \begin{itemize}
+            \item TOTO4
+            \item TOTI3
+        \end{itemize}
+    }
+    \frame{
+        \frametitle{Versioning}
+        The current stable branch is the 2.2.\\
+        The third digit is used to bring out only bug fix released.\\
+        \bigskip
+        The version under development is the 2.3.\\
+        \bigskip
+        Other branches can be used for research oriented experimentations.\\
     }
 
 %%%%%%%%%%%%%%%
