@@ -17,13 +17,13 @@
 }
 \author[LIG-ID]{
     {\bf LIG-ID}\\
-    {\small Nicolas.Capit@imag.fr Olivier.Richard@imag.fr
+    {\tiny Joseph.Emeras@imag.fr Nicolas.Capit@imag.fr Olivier.Richard@imag.fr
             Yiannis.Georgiou@imag.fr}
 }
 
 \institute{
     \begin{center}
-%        \includegraphics[scale=0.4]{src/img/oar_logo.png}
+        \includegraphics[scale=0.4]{src/img/oar_logo.png}
     \end{center}
     {\bf http://oar.imag.fr/}
 }
@@ -72,7 +72,7 @@
         \frame{
             \frametitle{What is OAR designed for}
             \begin{center}
-%                \includegraphics[height=40ex]{src/img/clusters_intro.png}
+                \includegraphics[height=40ex]{src/img/clusters_intro.png}
             \end{center}
         }
         \frame{
@@ -105,7 +105,7 @@
                     \end{itemize}
                 \item Drawback
                     \begin{itemize}
-                        \item huge amount of database request
+                        \item huge amount of database requests
                     \end{itemize}
             \end{itemize}
             \bigskip
@@ -114,7 +114,7 @@
         \frame{
             \frametitle{Database scheme}
             \begin{center}
-%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+                \includegraphics[height=40ex]{src/img/db_scheme.png}
             \end{center}
         }
     \subsection{Hierarchical resources}
@@ -129,7 +129,7 @@
                     \item licences (MathLab, Fluent, ...)
                     \item ...
                 \end{itemize}
-            By default a resource references a node.
+            By default a resource references a node.\\
             OAR2 uses these data in a hierarchical manner.
         }
         \frame{
@@ -148,7 +148,7 @@
         \frame{
             \frametitle{Graphical example}
             \begin{center}
-%                \includegraphics[height=40ex]{src/img/hierarchical_resources.png}
+                \includegraphics[height=40ex]{src/img/hierarchical_resources.png}
             \end{center}
         }
     \subsection{oarsh}
@@ -163,7 +163,7 @@
                         \item the users don't need anymore to configure their SSH keys
                         \item transfer automatically jobs information (CPUSET, user id)
                         \item can use oarsh like ssh (for example: "-X" is working)
-                        \item the users are not able to go on unreserved resources
+                        \item the users are not able to log on unreserved resources
                     \end{itemize}
                 \item Drawback
                     \begin{itemize}
@@ -239,6 +239,7 @@
     \subsection{Scalability}
         \frame{
             \frametitle{Taktuk}
+            External command({\tt http://taktuk.gforge.inria.fr/}):
             \begin{itemize}
                 \item Performs large scale remote execution deployment.
                 \item Platform independent
@@ -247,13 +248,12 @@
                 \item Sliding window + tree diffusion (uses work-stealing) algorithm.
                 \item Uses a generic connector (ssh, rsh, ...). Here it is ssh.
             \end{itemize}
-
             Every OAR node management actions are performed via the Taktuk command.\\
         }
         \frame{
             \frametitle{Taktuk example}
             \begin{center}
-%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+                \includegraphics[height=40ex]{src/img/db_scheme.png}
             \end{center}
 
         }
@@ -286,13 +286,13 @@
         \frame{
             \frametitle{Monika}
             \begin{center}
-%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+                \includegraphics[height=40ex]{src/img/db_scheme.png}
             \end{center}
         }
         \frame{
             \frametitle{DrawGantt}
             \begin{center}
-%                \includegraphics[height=40ex]{src/img/db_scheme.png}
+                \includegraphics[height=40ex]{src/img/db_scheme.png}
             \end{center}
         }
         \frame{
