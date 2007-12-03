@@ -312,6 +312,21 @@ draw-gantt:
 	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
 	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(WWWDIR)/drawgantt/js
 
+monika:
+	install -d -m 0755 $(OARDIR)
+	install -d -m 0755 $(CGIDIR)
+	install -d -m 0755 $(WWWDIR)
+	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
+	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(CGIDIR)
+	install -m 0644 VisualizationInterfaces/Monika/VERSION $(CGIDIR)
+	install -d -m 0755 $(OARCONFDIR)
+	@if [ -f $(CGIDIR)/monika.conf ]; then echo "Warning: $(CGIDIR)/monika.conf already exists, not overwriting it." ; else install -m 0644 VisualizationInterfaces/Monika/monika.conf $(CGIDIR) ; fi
+	install -d -m 0755 $(CGIDIR)/Sort
+	install -m 0755 VisualizationInterfaces/Monika/Sort/Naturally.pm $(CGIDIR)/Sort
+	install -d -m 0755 $(CGIDIR)/monika
+	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(CGIDIR)/monika
+	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(CGIDIR)/monika
+
 server-install: sanity-check configuration common libs server dbinit
 
 user-install: sanity-check configuration common libs user
@@ -322,6 +337,8 @@ node-install: sanity-check configuration common node
 doc-install: doc
 
 draw-gantt-install: draw-gantt
+
+monika-install: monika
 
 desktop-computing-cgi-install: sanity-check configuration common libs desktop-computing-cgi
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
