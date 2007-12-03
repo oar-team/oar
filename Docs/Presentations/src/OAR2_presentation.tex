@@ -62,11 +62,11 @@
             \bigskip
             OAR:
             \begin{itemize}
-                \item use OpenSSH daemon on compute nodes
-                \item batch or interactive jobs
-                \item gantt scheduling (with reservations)
-                \item no dependence on specific computing libraries like MPI
-                \item 2 web interfaces (Monika and DrawGantt)
+                \item Use OpenSSH daemon on compute nodes.
+                \item Batch or interactive jobs.
+                \item Gantt scheduling (with reservations).
+                \item No dependence on specific computing libraries like MPI.
+                \item 2 web interfaces (Monika and DrawGantt).
             \end{itemize}
         }
         \frame{
@@ -79,13 +79,13 @@
             \frametitle{OAR2 enhancements}
             OAR2 is a huge rewrite of the first version:
             \begin{itemize}
-                \item manage heterogeneous clusters
-                \item solution to clean properly compute nodes
-                \item support of dynamic nodes
-                \item support moldable jobs
-                \item support job types
-                \item suspend/resume job execution
-                \item faire sharing scheduler algorithm
+                \item Manage heterogeneous clusters.
+                \item Solution to clean properly compute nodes.
+                \item Support of dynamic nodes.
+                \item Support moldable jobs.
+                \item Support job types.
+                \item Suspend/resume job execution.
+                \item Faire sharing scheduler algorithm.
                 \item ...
             \end{itemize}
         }
@@ -95,17 +95,17 @@
         \frame{
             \frametitle{Modules around a database}
             Everything is stored in a database.\\
-            This is the only way to communicate between the functional modules.\\
+            This is the only way of communication between each functional modules.\\
             \begin{itemize}
-                \item Advantages
+                \item Advantages:
                     \begin{itemize}
-                        \item simplicity
-                        \item able to write each module in the language that you want
-                        \item able to use every database technology for replication, backup, ...
+                        \item Simplicity.
+                        \item Choose your language to write the modules (currently in Perl).
+                        \item Able to use database technologies for the replication, backup, mirroring, ...
                     \end{itemize}
-                \item Drawback
+                \item Drawback:
                     \begin{itemize}
-                        \item huge amount of database requests
+                        \item Huge amount of database requests.
                     \end{itemize}
             \end{itemize}
             \bigskip
@@ -120,7 +120,7 @@
     \subsection{Hierarchical resources}
         \frame{
             \frametitle{Resources}
-                Everything is a {\Large resource} or a set of {\Large resources}:
+                Everything is a {\Large resource}(or a set of resources):
                 \begin{itemize}
                     \item compute nodes
                     \item CPUs
@@ -159,16 +159,16 @@
             \begin{itemize}
                 \item Advantages
                     \begin{itemize}
-                        \item OAR manages user connections
-                        \item the users don't need anymore to configure their SSH keys
-                        \item transfer automatically jobs information (CPUSET, user id)
-                        \item can use oarsh like ssh (for example: "-X" is working)
-                        \item the users are not able to log on unreserved resources
+                        \item OAR manages user connections.
+                        \item The users don't need anymore to configure their SSH keys.
+                        \item Transfer automatically jobs information (CPUSET, user id).
+                        \item Can use oarsh like ssh (for example: "-X" is working).
+                        \item The users are not able to log on unreserved resources.
                     \end{itemize}
                 \item Drawback
                     \begin{itemize}
-                        \item the users have to use oarsh in their program to log on nodes(replace ssh by oarsh).\\
-                        {\tiny But there is a solution if it is not possible (see "job key" subsection)}
+                        \item The users have to use oarsh in their program to log on the nodes (replace ssh by oarsh).\\
+                        {\tiny But there is a solution if it is not possible (see "job key" subsection).}
                     \end{itemize}
             \end{itemize}
         }
@@ -186,9 +186,9 @@
         \frame{
             \frametitle{CPUSET advantages}
             \begin{itemize}
-                \item restricts the use of the Cpus and Memories
-                \item very usefull on big NUMA nodes but not only...
-                \item keeps the list of every children processes of a job\\
+                \item Restricts the use of the Cpus and Memories.
+                \item Very usefull on big NUMA nodes but not only...
+                \item Keeps the list of every child processes of a job.\\
                       So it is possible to track job user forks and then to
                       clean (kill remaining processes) all the nodes after the
                       end of the job.
@@ -201,16 +201,19 @@
             Concept: assign a SSH key for each OAR job.\\
             \bigskip
             \begin{itemize}
-                \item the users are able to use this key to connect to all
+                \item The users are able to use this key to connect to all
                       nodes of their job via the {\tt normal} "ssh" command
-                      ("-i" option)
-                \item Grid usage: can use the same job key on 2 OAR server on 2 different clusters and then connect to the whole nodes.\\
-                      Once submitted with the same job key, the connections are completely transparent via "oarsh".
+                      ("-i" option).
+                \item Grid usage: can use the same job key on 2 OAR server
+                      on 2 different clusters and then connect to the whole nodes.\\
+                      Once submitted with the same job key, the connections are
+                      completely transparent via "oarsh".
             \end{itemize}
         }
         \frame{
             \frametitle{job temporary user}
-                From now, the best container on every UNIX systems is: {\Large user id}
+                From now,\\
+                the best container on every UNIX systems is the {\Large user id}:
             \begin{itemize}
                 \item processes
                 \item files
@@ -223,30 +226,31 @@
             \frametitle{job temporary user}
             Idea:
             \begin{enumerate}
-                \item add a pool of temporary user id in the resources
-                \item reserve automatically one of these user id when submitting a new job
-                \item at the beginning of the job, just create the temporary user
-                \item at the end of the job, clean everything you want from this temporary user and then delete it.
+                \item Add a pool of temporary user id in the resources.
+                \item Reserve automatically one of these user id when submitting a new job.
+                \item At the beginning of the job, just create the temporary user.
+                \item At the end of the job, clean everything you want from this temporary user and then delete it.
             \end{enumerate}
             Drawbacks:
             \begin{itemize}
-                \item each user must have an unique primary group
-                \item the same temporary user id can be used by different users
+                \item Each user must have an unique primary group.
+                \item The same temporary user id can be used by different users
                       (not at the same time). So be careful with file
-                      permissions
+                      permissions.
             \end{itemize}
+            $\Rightarrow$ it depends of the distributed file system used.
         }
     \subsection{Scalability}
         \frame{
             \frametitle{Taktuk}
-            External command({\tt http://taktuk.gforge.inria.fr/}):
+            External command ({\tt http://taktuk.gforge.inria.fr/}):
             \begin{itemize}
                 \item Performs large scale remote execution deployment.
-                \item Platform independent
+                \item Platform independent.
                 \item Not needed to install it on compute nodes.
                 \item I/O redirection
                 \item Sliding window + tree diffusion (uses work-stealing) algorithm.
-                \item Uses a generic connector (ssh, rsh, ...). Here it is ssh.
+                \item Uses a generic connector like ssh, rsh, ... (here it is ssh).
             \end{itemize}
             Every OAR node management actions are performed via the Taktuk command.\\
         }
@@ -260,8 +264,8 @@
         \frame{
             \frametitle{Scheduling}
             \begin{itemize}
-                \item Every possibilities == impossible
-                \item hierarchical job resource description == make the work of the scheduler easier and more scalable
+                \item Every possibilities = impossible
+                \item hierarchical job resource description = make the work of the scheduler easier and more scalable
             \end{itemize}
             \bigskip
             Can be implemented with another programming language.
@@ -272,13 +276,13 @@
         \frame{
             \frametitle{Administrator functionalities}
             \begin{itemize}
-                \item add/remove resources
-                \item add/remove resource properties
-                \item change property values of resources
-                \item manage scheduling queues (priority, scheduler)
-                \item suspend/resume jobs
-                \item change admission rules
-                \item configure dynamic nodes (save power by switch on only right nodes and switch off the others)
+                \item Add/remove resources.
+                \item Add/remove resource properties.
+                \item Change property values of resources.
+                \item Manage scheduling queues (priority, scheduler).
+                \item Suspend/resume jobs.
+                \item Change admission rules.
+                \item Configure dynamic nodes (save power by switch on only right nodes and switch off the others).
             \end{itemize}
         }
 
@@ -298,19 +302,19 @@
         \frame{
             \frametitle{User functionalities}
             \begin{itemize}
-                \item reservations
-                \item moldable jobs
-                \item timesharing
-                \item besteffort jobs
-                \item checkpoint notification
-                \item change default stdout and stderr files
-                \item job dependencies
-                \item notification (start and end of the job)
+                \item Reservations.
+                \item Moldable jobs.
+                \item Timesharing.
+                \item Besteffort jobs.
+                \item Checkpoint notification.
+                \item Change default stdout and stderr files.
+                \item Job dependencies.
+                \item Notification (start and end of the job).
                 \begin{itemize}
-                    \item send emails
-                    \item execute a program on the frontale
+                    \item Send emails.
+                    \item Execute a program on the frontale.
                 \end{itemize}
-                \item resubmission
+                \item Resubmission.
             \end{itemize}
             {\tiny All user commands have a XML, YAML and Perl DUMPER output format}
         }
@@ -334,11 +338,11 @@
 \section{OAR2 in action}
     \frame{
         \frametitle{Current installations}
-        OAR2 is ready for production and is already installed on:
+        OAR2 is ready for production and is already installed in:
         \begin{itemize}
-            \item in the {\large CIMENT} project ({\tt https://ciment.ujf-grenoble.fr/})\\
+            \item the {\large CIMENT} project ({\tt https://ciment.ujf-grenoble.fr/})\\
                   almost 500 cores in 9 different clusters
-            \item in the {\large GRID5000} project ({\tt https://www.grid5000.fr/})\\
+            \item the {\large GRID5000} project ({\tt https://www.grid5000.fr/})\\
                   9 sites (with 1 OAR server per site)\\
                   more than 3000 cores in 20 clusters
         \end{itemize}
@@ -362,7 +366,7 @@
         \bigskip
         Other branches can be used for research oriented experimentations.\\
         \bigskip
-        For for sources,Debian packages and USB live key images:\\
+        For sources,Debian packages and USB live key images:\\
         \bigskip
         \hspace{4ex}{\tt http://oar.imag.fr/download.html}
     }
