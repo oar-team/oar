@@ -2660,6 +2660,7 @@ sub get_gantt_waiting_interactive_prediction_date($){
          FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
          WHERE
              jobs.state = \'Waiting\' AND
+             jobs.reservation = \'None\' AND
              moldable_job_descriptions.moldable_index = \'CURRENT\' AND
              moldable_job_descriptions.moldable_job_id = jobs.job_id AND
              gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id
