@@ -85,7 +85,7 @@
                 \item Support moldable jobs.
                 \item Support job types.
                 \item Suspend/resume job execution.
-                \item Faire sharing scheduler algorithm.
+                \item Fair sharing scheduler algorithm.
                 \item ...
             \end{itemize}
         }
@@ -177,7 +177,7 @@
             Mechanism for assigning a set of CPUs and Memory Nodes to a set of tasks.\\
             (this functionality is included in 2.6 Linux kernels)\\
             \bigskip
-            OAR creates 1 CPUSET by job on each reserved nodes.\\
+            OAR creates 1 CPUSET per job on each reserved nodes.\\
             Then it fills CPUs and Memory Nodes with the right value (from the database resources).\\
             \bigskip
             The CPUSET name is propagated via "oarsh" on each nodes. So the
@@ -186,7 +186,7 @@
         \frame{
             \frametitle{CPUSET advantages}
             \begin{itemize}
-                \item Restricts the use of the Cpus and Memories.
+                \item Restricts the use of the Cpus and Memory.
                 \item Very usefull on big NUMA nodes but not only...
                 \item Keeps the list of every child processes of a job.\\
                       So it is possible to track job user forks and then to
@@ -352,7 +352,7 @@
             Unknown persons:
             \begin{itemize}
                 \item from Poland ({\tt http://www.ioe.wat.edu.pl/})
-                \item from ithe University of Michigan
+                \item from the University of Michigan
                 \item from a french bank
                 \item ...
             \end{itemize}
