@@ -15,17 +15,21 @@
     OAR2\\
     An open source resource manager for large clusters
 }
-\author[LIG-ID]{
-    {\bf LIG-ID}\\
+\author[Mescal/ID]{
+    {\bf Mescal/ID}\\
     {\tiny Joseph.Emeras@imag.fr Nicolas.Capit@imag.fr Olivier.Richard@imag.fr
             Yiannis.Georgiou@imag.fr}
 }
 
 \institute{
     \begin{center}
-        \includegraphics[scale=0.4]{src/img/oar_logo.png}
+        \includegraphics[height=16ex]{src/img/oar_logo.png}
     \end{center}
     {\bf http://oar.imag.fr/}
+    \begin{center}
+        %\vspace{2ex}
+        \includegraphics[height=9ex]{src/img/LIG_coul.jpg}
+    \end{center}
 }
 \date{{\tiny \today}}
 
@@ -62,9 +66,9 @@
             \bigskip
             OAR:
             \begin{itemize}
-                \item Use OpenSSH daemon on compute nodes.
+                \item Use {\bf OpenSSH} daemon on compute nodes.
                 \item Batch or interactive jobs.
-                \item Gantt scheduling (with reservations).
+                \item {\bf Gantt} scheduling (with reservations).
                 \item No dependence on specific computing libraries like MPI.
                 \item 2 web interfaces (Monika and DrawGantt).
             \end{itemize}
@@ -79,8 +83,8 @@
             \frametitle{OAR2 enhancements}
             OAR2 is a huge rewrite of the first version:
             \begin{itemize}
-                \item Manage heterogeneous clusters.
-                \item Solution to clean properly compute nodes.
+                \item Manage {\bf heterogeneous} clusters.
+                \item Solution to {\bf clean} properly compute nodes.
                 \item Support of dynamic nodes.
                 \item Support moldable jobs.
                 \item Support job types.
@@ -94,7 +98,7 @@
     \subsection{Modules around a database}
         \frame{
             \frametitle{Modules around a database}
-            Everything is stored in a database.\\
+            Everything is stored in a {\bf database} (PostgreSQL or MySQL).\\
             This is the only way of communication between each functional modules.\\
             \begin{itemize}
                 \item Advantages:
@@ -129,7 +133,7 @@
                     \item licences (MathLab, Fluent, ...)
                     \item ...
                 \end{itemize}
-            By default a resource references a node.\\
+            By default a resource = part of a node.\\
             OAR2 uses these data in a hierarchical manner.
         }
         \frame{
@@ -155,7 +159,7 @@
         \frame{
             \frametitle{oarsh/oarsh\_shell}
             Wrapper around the {\Large ssh} command.\\
-            Only way to connect from one compute node to an other.
+            Only way to {\bf connect} from one compute node to an other.
             \begin{itemize}
                 \item Advantages
                     \begin{itemize}
@@ -177,20 +181,20 @@
             Mechanism for assigning a set of CPUs and Memory Nodes to a set of tasks.\\
             (this functionality is included in 2.6 Linux kernels)\\
             \bigskip
-            OAR creates 1 CPUSET per job on each reserved nodes.\\
+            OAR creates 1 CPUSET per job on {\bf each} reserved nodes.\\
             Then it fills CPUs and Memory Nodes with the right value (from the database resources).\\
             \bigskip
-            The CPUSET name is propagated via "oarsh" on each nodes. So the
-            users cannot get out of their CPUSET during a job.
+            The CPUSET name is propagated via {\bf oarsh} on each nodes. So the
+            users cannot go out of their CPUSET during a job.
         }
         \frame{
             \frametitle{CPUSET advantages}
             \begin{itemize}
-                \item Restricts the use of the Cpus and Memory.
-                \item Very usefull on big NUMA nodes but not only...
-                \item Keeps the list of every child processes of a job.\\
+                \item {\bf Restricts} the use of the Cpus and Memory.
+                \item Very useful on big NUMA nodes but not only...
+                \item Keeps the {\bf list} of every child {\bf processes} of a job.\\
                       So it is possible to track job user forks and then to
-                      clean (kill remaining processes) all the nodes after the
+                      {\bf clean} (kill remaining processes) all the nodes after the
                       end of the job.
             \end{itemize}
             \bigskip
@@ -198,13 +202,13 @@
         }
         \frame{
             \frametitle{job key}
-            Concept: assign a SSH key for each OAR job.\\
+            Concept: assign a {\bf SSH key} for each OAR job.\\
             \bigskip
             \begin{itemize}
                 \item The users are able to use this key to connect to all
-                      nodes of their job via the {\tt normal} "ssh" command
+                      nodes of their job via the {\tt normal} {\bf ssh} command
                       ("-i" option).
-                \item Grid usage: can use the same job key on 2 OAR server
+                \item {\bf Grid} usage: can use the same job key on 2 OAR server
                       on 2 different clusters and then connect to the whole nodes.\\
                       Once submitted with the same job key, the connections are
                       completely transparent via "oarsh".
@@ -213,7 +217,7 @@
         \frame{
             \frametitle{job temporary user (1)}
                 From now,\\
-                the best container on every UNIX systems is the {\Large user id}:
+                the best {\bf container} on every UNIX systems is the {\Large user id}:
             \begin{itemize}
                 \item processes
                 \item files
@@ -403,7 +407,7 @@ oarsub -I\
     }
     \frame{
         \frametitle{Versioning}
-        The current stable branch is the 2.2.\\
+        The current {\bf stable branch} is the {\bf 2.2}.\\
         The third digit is used to bring out only bug fix released.\\
         \bigskip
         The version under development is the 2.3.\\
