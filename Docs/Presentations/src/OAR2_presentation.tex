@@ -15,8 +15,8 @@
     OAR2\\
     An open source resource manager for large clusters
 }
-\author[Mescal/LIG]{
-    {\bf Mescal/LIG}\\
+\author[LIG-ID]{
+    {\bf LIG-ID}\\
     {\tiny Joseph.Emeras@imag.fr Nicolas.Capit@imag.fr Olivier.Richard@imag.fr
             Yiannis.Georgiou@imag.fr}
 }
@@ -426,18 +426,171 @@ oarsub -I\
     \tableofcontents[pausesections,part=2]
 }
 
-
-\section{YOPYOYPOP}
+\section{Resource Management Systems: Evaluation Methodology}
 \frame{
-    \frametitle{First slide}
-    Yop
+    \frametitle{RMS: Theoretical Comparaison}
+            \begin{itemize}
+                \item Identity Classification
+		\item Functionalities Comparaison
+		\item Based on Projects Documentation
+            \end{itemize}
+\href{http://oar.imag.fr/rms_comparison_tables3.html}
+{{\color{blue} Resource Management Systems Comparaison Table} }
+	
 }
 
-\section{YEPYEPEYEP}
 \frame{
-    \frametitle{Second slide}
-    Yep
+    \frametitle{RMS: Performance Evaluation Values}
+           Define What to compare?
+            \begin{enumerate}
+                \item Nodes-Jobs Scalability
+		\item Scheduler Efficiency
+		\item Parallel jobs treatment 
+		\item ....
+            \end{enumerate}
 }
+
+\frame{
+    \frametitle{RMS: Performance Evaluation Methods}
+           Define How to compare? ---: Games of Tests
+            \begin{enumerate}
+                \item Game of simple similar tests/RMS configurations
+		\begin{itemize}
+			\item Random Job generation and Submission 
+			\item Based on known clusters Workload Traces
+		\end{itemize}
+		\item Effective System Performance Benchmark (ESP)
+		\item Hybrid method (definition of a new ESP...??)
+            \end{enumerate}
+}
+
+\frame{
+    \frametitle{Experimentation Methodology}
+\begin{itemize}
+\item \textbf{Grid5000} experimental grid platform: direct experimentation
+\item Experimentation of different RMS in real-life: \textbf{controlled} and thus \textbf{reproducible} experiments 
+\begin{itemize}
+\item Image containing all the RMS to be evaluated along with the tests to be launched 
+\item Image deployed on desired number of Grid5000 ...Cluster RMS configured
+\item Play Games ... Evaluate Real-life values (ex. overheads, NFS streching, database reaction, scheduler efficiency, ...)
+\item Collect Results
+\end{itemize}
+\item Automatic experimentation driven by bash scripts
+\item Methodology constructed and validated for the study of a lightweight grid CIGRI (ref: escience2007)
+\end{itemize}
+}
+
+
+\section{Integrating SLURM with OAR2}
+\frame{
+    \frametitle{SLURM Description}
+SLURM Basic Resource Management System key features:
+\begin{itemize}
+\item Highly scalable
+\item Fault tolerant
+\item Basic queue and batch scheduler
+\item API for scheduler integration (Maui,Moab,LSF)
+\end{itemize}
+ 
+}
+
+\frame{
+    \frametitle{Integration Concepts}
+Interest of SLURM-OAR2 integration...
+\begin{itemize}
+\item Can the 2 systems really complement one another?
+\item Does SLURM need a better queue and batch scheduler?
+\item Is OAR not scalable and efficient resource manager?
+\end{itemize}
+}
+
+\frame{
+    \frametitle{Ways of integration}
+\begin{enumerate}
+	\item Use the OAR2 scheduler on top of SLURM
+	\begin{itemize}
+		\item Drawback : Skips all the advantages of OAR2 queue management system (ex. multiple queues, moldable jobs, cosystem jobs)
+		\item Easier approach: Rewrite the OAR2 Scheduler using SLURM API
+	\end{itemize}
+	\item Replace a part of the resource management engine of OAR with SLURM  
+	\begin{itemize}
+		\item SLURM/srun in the place of Taktuk/SSH engine
+		\item Desactivate OAR2 cpusets, use SLURM cpusets
+	\end{itemize}
+\end{enumerate}
+
+}
+
+
+\section{Evolving/Malleable applications}
+\frame{
+    \frametitle{Definition-Concepts}
+Parallel jobs Classification (Feitelson97)
+\begin{figure}[tp]
+\begin{center}
+{\footnotesize{
+\hspace{-0.5cm}
+\begin{tabular}{|l|l|l|}
+\hline  
+who decides (number)/ when is it decided & at submission & during submission \\
+\hline 
+User & \textbf{Rigid} & \textbf{Evolving} \\
+\hline 
+System & \textbf{Moldable} & \textbf{Malleable} \\
+\hline
+\end{tabular}
+}}
+\vspace{-0.2cm}
+\end{center}
+\end{figure}
+
+}
+
+\frame{
+    \frametitle{Problem definition}
+	Problems concerning the \textcolor{red}{Resource management system}:
+	\begin{itemize}
+		\item Theoretically the RMS system can support malleable jobs for full system flexibility to improve the overall system utilization
+			but in practice it is a very complicated task for the scheduler.
+		\item A lot of theoretical Related Work for malleable jobs
+		\item Need of a practical study with real-life experimenation...
+		\item Need of concrete Use Cases (real scientific malleable applications)
+	\end{itemize}
+
+	
+}
+
+\frame{
+    \frametitle{Problem definition}
+	Problems concerning the \textcolor{red}{Parallel Applications:}
+	\begin{itemize}
+		\item How to modify a rigid/moldable parallel application to be malleable?
+		\item Related work: \textcolor{blue}{Co-Design} of the programming environment and the resource management system.
+		\item Need of a simpler method...?
+	\end{itemize}
+}
+
+
+\frame{
+    \frametitle{Ideas for Ongoing Work}
+        \begin{itemize}
+		\item Techniques and Strategies for scheduling efficiently malleable jobs 
+			without changing the resource manager... use of already existing features:
+		\begin{itemize}
+			\item Timesharing 
+			\item Backfilling 
+			\item Checkpoint-Restart
+			\item Suspend-Resume
+			\item Combinations
+		\end{itemize}
+		\item Techniques for transforming a parallel appllication into malleable
+		\begin{itemize}
+			\item Problem of LAM-MPI...
+		\end{itemize}
+	\end{itemize}
+
+}
+
 
 \end{document}
 
