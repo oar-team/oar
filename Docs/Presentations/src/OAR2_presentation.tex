@@ -337,6 +337,8 @@
         \frame[containsverbatim]{
             \frametitle{Simple use cases (1)}
 \begin{verbatim}
+oarsub -I
+
 oarsub -I -l nodes=3,walltime=2:00:00
 
 oarsub -l nodes=3,walltime=2:00:00 ./prog.sh
@@ -348,21 +350,18 @@ oarsub -I -l nodes=40/cpu=4
 oarsub -I -l switch=3/nodes=1
 
 oarsub -I -l nodes=10 -p "mem >= 512"
-
-oarsub -r "2008-01-10 18:00:00"\
--l nodes=120,walltime=48:00:00
 \end{verbatim}
         }
         \frame[containsverbatim]{
             \frametitle{Simple use cases (2)}
 \begin{verbatim}
-oarsub -I -a 4256 -a 4257 -l switch=1
-
 oarsub -r "2008-01-10 18:00:00"\
 -l nodes=120,walltime=48:00:00
 
 oarsub -r "2008-01-10 18:00:00"\
 -l nodes=120,walltime=48:00:00 ./prog.sh
+
+oarsub -I -a 4256 -a 4257 -l switch=1
 
 oarsub --notify "mail:capitn@imag.fr" ./prog.sh
 
@@ -375,6 +374,7 @@ oarsub -l core=1,walltime=1:0:0 --checkpoint 900\
 
     \subsection{More complex use cases}
         \frame[containsverbatim]{
+            \frametitle{More complex use case}
 \begin{verbatim}
 oarsub --checkpoint 600 --signal 2 -t idempotent ./prog.sh
 
@@ -395,7 +395,7 @@ oarsub -I\
 
 \section{OAR2 in action}
     \frame{
-        \frametitle{Current installations}
+        \frametitle{Current installations (1)}
         OAR2 is ready for production and is already installed in:
         \begin{itemize}
             \item the {\large CIMENT} project ({\tt https://ciment.ujf-grenoble.fr/})\\
@@ -406,8 +406,7 @@ oarsub -I\
         \end{itemize}
     }
     \frame{
-        \frametitle{Current installations}
-            Unknown persons:
+        \frametitle{Current installations (2)}
             \begin{itemize}
                 \item from Poland ({\tt http://www.ioe.wat.edu.pl/})
                 \item from the University of Michigan
