@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+version 2.2.11:
+---------------
+  - Fix Debian package dependency on a CGI web server.
+  - Fix little bug: remove notification (scheduled start time) for Interactive
+    reservation.
+
 version 2.2.10:
 ---------------
 
