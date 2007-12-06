@@ -1,22 +1,16 @@
 OAR CHANGELOG
 =============
 
-upstream development version:
------------------------------
-
-  - Add new oarmonitor command. This will permit to monitor OAR jobs on compute
-    nodes.
-  - Remove sudo dependency and replace it by the commands "oardo" and
-    "oardodo".
-  - Add possibility to create a temporary user for each jobs on compute nodes.
-    So you can perform very strong restrictions for each job (ex: bandwidth
-    restrictions with iptable, memory management, ... everything that can be
-    handled with a user id)
+version 2.2.11:
+---------------
+  - Fix Debian package dependency on a CGI web server.
+  - Fix little bug: remove notification (scheduled start time) for Interactive
+    reservation.
 
 version 2.2.10:
 ---------------
 
-  - Job dependencies: if the required jobs do not have an exit code == 0 and in 
+  - Job dependencies: if the required jobs do not have an exit code == 0 and in
     the state Terminated then the schedulers refuse to schedule this job.
   - Add the possibility to disable the halt command on nodes with
     cm_availability value.
