@@ -10,6 +10,9 @@ OARUSER=oar
 OAROWNER=$(OARUSER)
 OAROWNERGROUP=$(OAROWNER)
 
+# Set the user of web server (for CGI installation)
+WWWUSER=www-data
+
 PREFIX=/usr/local
 MANDIR=$(PREFIX)/man
 OARDIR=$(PREFIX)/oar
@@ -33,7 +36,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install }"
+	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install }"
 	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -300,27 +303,23 @@ doc: build-html-doc
 	install -m 0644 Scripts/oar_server_proepilogue.pl $(DOCDIR)/scripts/prologue_epilogue/
 
 draw-gantt:
-	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(CGIDIR)
 	install -d -m 0755 $(WWWDIR)
 	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	@if [ -f $(CGIDIR)/drawgantt.conf ]; then echo "Warning: $(CGIDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(CGIDIR) ; fi
-#	install -m 0644 ConfLib/oar_conflib.pm $(CGIDIR)
+	@if [ -f $(CGIDIR)/drawgantt.conf ]; then echo "Warning: $(CGIDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(CGIDIR) ; fi
 	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
 	install -d -m 0755 $(WWWDIR)/drawgantt/js
 	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
 	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(WWWDIR)/drawgantt/js
+	install -d -o $(WWWUSER) -m 0755 $(WWWDIR)/drawgantt/cache
 
 monika:
-	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(CGIDIR)
-	install -d -m 0755 $(WWWDIR)
+	@if [ -f $(CGIDIR)/monika.conf ]; then echo "Warning: $(CGIDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(CGIDIR) ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
 	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(CGIDIR)
 	install -m 0644 VisualizationInterfaces/Monika/VERSION $(CGIDIR)
-	install -d -m 0755 $(OARCONFDIR)
-	@if [ -f $(CGIDIR)/monika.conf ]; then echo "Warning: $(CGIDIR)/monika.conf already exists, not overwriting it." ; else install -m 0644 VisualizationInterfaces/Monika/monika.conf $(CGIDIR) ; fi
 	install -d -m 0755 $(CGIDIR)/Sort
 	install -m 0755 VisualizationInterfaces/Monika/Sort/Naturally.pm $(CGIDIR)/Sort
 	install -d -m 0755 $(CGIDIR)/monika
