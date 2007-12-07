@@ -6,30 +6,30 @@ use strict;
 use Data::Dumper;
 use oar_iolib;
 use oar_resource_tree;
-use Gantt_2;
+use Gantt_hole_storage;
 
 my $max = 30;
 
-my $gantt = Gantt_2::new($max);
+my $gantt = Gantt_hole_storage::new($max);
 
 my $vec = '';
 vec($vec,3,1) = 1;
-Gantt_2::add_new_resources($gantt, $vec);
+Gantt_hole_storage::add_new_resources($gantt, $vec);
 $vec = '';
 vec($vec,2,1) = 1;
 vec($vec,1,1) = 1;
-Gantt_2::add_new_resources($gantt, $vec);
+Gantt_hole_storage::add_new_resources($gantt, $vec);
 
 #$vec = '';
 #for (my $i = 0; $i < $max; $i++){
 #    vec($vec,$i,1) = 1;
 #}
 #print("---S\n");
-#Gantt_2::add_new_resource($gantt, $vec);
+#Gantt_hole_storage::add_new_resource($gantt, $vec);
 #print("---E\n");
 #$vec = '';
 #vec($vec,100000,1) = 1;
-#Gantt_2::add_new_resource($gantt, $vec);
+#Gantt_hole_storage::add_new_resource($gantt, $vec);
 #sleep 10;
 #print vec($gantt->[3]->[0]->[1], 30, 1)."\n";
 #print vec($gantt->[4], 5, 1)."\n";
@@ -60,32 +60,32 @@ $vec = '';
 #vec($vec,1,1) = 1;
 #vec($vec,2,1) = 1;
 #vec($vec,3,1) = 1;
-#Gantt_2::set_occupation($gantt, 2, 30, $vec);
+#Gantt_hole_storage::set_occupation($gantt, 2, 30, $vec);
 
 $vec = '';
 vec($vec,3,1) = 1;
-Gantt_2::set_occupation($gantt, 5, 5, $vec);
+Gantt_hole_storage::set_occupation($gantt, 5, 5, $vec);
 vec($vec,2,1) = 1;
-Gantt_2::set_occupation($gantt, 8, 5, $vec);
+Gantt_hole_storage::set_occupation($gantt, 8, 5, $vec);
 
 $vec = '';
 vec($vec,1,1) = 1;
-Gantt_2::set_occupation($gantt, 5, 10, $vec);
-#Gantt_2::set_occupation($gantt, 2, 1, $vec);
+Gantt_hole_storage::set_occupation($gantt, 5, 10, $vec);
+#Gantt_hole_storage::set_occupation($gantt, 2, 1, $vec);
 #$vec = '';
 #vec($vec,1,1) = 1;
-#Gantt_2::set_occupation($gantt, 7, 8, $vec);
+#Gantt_hole_storage::set_occupation($gantt, 7, 8, $vec);
 #$vec = '';
 #vec($vec,3,1) = 1;
-#Gantt_2::set_occupation($gantt, 13, 3, $vec);
+#Gantt_hole_storage::set_occupation($gantt, 13, 3, $vec);
 
 #print(Dumper($gantt));
-Gantt_2::pretty_print($gantt);
+Gantt_hole_storage::pretty_print($gantt);
 
 $vec = '';
 vec($vec,2,1) = 1;
 vec($vec,1,1) = 1;
-print(Gantt_2::is_resources_free($gantt,2,2,$vec)."\n");
+print(Gantt_hole_storage::is_resources_free($gantt,2,2,$vec)."\n");
 exit;
 
 

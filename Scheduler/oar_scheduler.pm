@@ -5,7 +5,7 @@ use Data::Dumper;
 use strict;
 use warnings;
 use oar_iolib;
-use Gantt_2;
+use Gantt_hole_storage;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf get_conf is_conf);
 
@@ -109,9 +109,9 @@ sub init_scheduler($$$$$$){
         vec($vec,$r->{resource_id},1) = 1;
         $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
-    my $gantt = Gantt_2::new($max_resources, $Minimum_hole_time);
-    Gantt_2::add_new_resources($gantt, $vec);
-    
+    my $gantt = Gantt_hole_storage::new($max_resources, $Minimum_hole_time);
+    Gantt_hole_storage::add_new_resources($gantt, $vec);
+
     foreach my $i (@initial_jobs){
         next if ($i->{assigned_moldable_job} == 0);
         my $mold = iolib::get_current_moldable_job($dbh,$i->{assigned_moldable_job});
@@ -146,7 +146,7 @@ sub init_scheduler($$$$$$){
             foreach my $r (@resource_list){
                 vec($vec, $r, 1) = 1;
             }
-            Gantt_2::set_occupation(  $gantt,
+            Gantt_hole_storage::set_occupation(  $gantt,
                                       $date,
                                       $job_duration + $Security_time_overhead,
                                       $vec
@@ -181,11 +181,11 @@ sub init_scheduler($$$$$$){
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));	
-	    #Gantt_2::pretty_print($gantt);
-        my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
-                                     				            $job->{start_time},
-                                        			            $moldable->[1] + $Security_time_overhead,
-                                       			            );
+        #Gantt_hole_storage::pretty_print($gantt);
+        my $free_resources_vec = Gantt_hole_storage::get_free_resources(    $gantt,
+                                                                            $job->{start_time},
+                                                                            $moldable->[1] + $Security_time_overhead,
+                                                                       );
         foreach my $r (@tmp_resource_list){
             if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
                 vec($available_resources_vector, $r->{resource_id}, 1) = 1;
@@ -258,7 +258,7 @@ sub init_scheduler($$$$$$){
             foreach my $r (@resources){
                 vec($vec, $r, 1) = 1;
             }
-            Gantt_2::set_occupation(  $gantt,
+            Gantt_hole_storage::set_occupation(  $gantt,
                                       $job->{start_time},
                                       $moldable->[1] + $Security_time_overhead,
                                       $vec
@@ -355,8 +355,8 @@ sub check_reservation_jobs($$$$){
         vec($vec,$r->{resource_id},1) = 1;
         $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
-    my $gantt = Gantt_2::new($max_resources, $Minimum_hole_time);
-    Gantt_2::add_new_resources($gantt, $vec);
+    my $gantt = Gantt_hole_storage::new($max_resources, $Minimum_hole_time);
+    Gantt_hole_storage::add_new_resources($gantt, $vec);
 
     # Find jobs to check
     my @jobs_to_sched = iolib::get_waiting_toSchedule_reservation_jobs_specific_queue($dbh,$queue_name);
@@ -383,7 +383,7 @@ sub check_reservation_jobs($$$$){
                 foreach my $r (@resource_list){
                     vec($vec, $r, 1) = 1;
                 }
-                Gantt_2::set_occupation(  $gantt,
+                Gantt_hole_storage::set_occupation(  $gantt,
                                           $already_scheduled_jobs{$i}->[0],
                                           $job_duration + $Security_time_overhead,
                                           $vec
@@ -443,7 +443,7 @@ sub check_reservation_jobs($$$$){
                     vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
                 }
             }
-            my @hole = Gantt_2::find_first_hole($gantt,$job->{start_time}, $duration, \@tree_list);
+            my @hole = Gantt_hole_storage::find_first_hole($gantt,$job->{start_time}, $duration, \@tree_list);
             #print(Dumper(@hole));
             if ($hole[0] == $job->{start_time}){
                 # The reservation can be scheduled
@@ -463,7 +463,7 @@ sub check_reservation_jobs($$$$){
                 foreach my $r (@resources){
                     vec($vec, $r, 1) = 1;
                 }
-                Gantt_2::set_occupation(  $gantt,
+                Gantt_hole_storage::set_occupation(  $gantt,
                                           $job->{start_time},
                                           $moldable->[1] + $Security_time_overhead,
                                           $vec
@@ -475,7 +475,7 @@ sub check_reservation_jobs($$$$){
             }else{           
                 oar_debug("[oar_scheduler] check_reservation_jobs : Cancel reservation $job->{job_id}, not enough nodes\n");
                 iolib::set_job_state($dbh, $job->{job_id}, "toError");
-                if ($hole[0] == Gantt_2::get_infinity_value()){
+                if ($hole[0] == Gantt_hole_storage::get_infinity_value()){
                     iolib::set_job_message($dbh, $job->{job_id}, "This reservation cannot be run");
                 }else{
                     iolib::set_job_message($dbh, $job->{job_id}, "This reservation may be run at ".iolib::local_to_sql($hole[0]));

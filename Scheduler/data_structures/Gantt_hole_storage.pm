@@ -1,5 +1,5 @@
 # $Id$
-package Gantt_2;
+package Gantt_hole_storage;
 require Exporter;
 use oar_resource_tree;
 use Data::Dumper;

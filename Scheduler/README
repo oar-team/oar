@@ -5,10 +5,10 @@ What can and must do a scheduler:
         3. reference time in sql format
     - you must manipulate only jobs in your queue and with their state =
       "Waiting" and "Reservation" = "None"
-    - you can get all informations stored in the database (in read mode)
+    - you can get all information stored in the database (in read mode)
     - you have to load previous decisions of the other schedulers (load
-      informations from tables gantt_jobs_predictions_ and
-      gantt_jobs_resources_) or your decisions can conflict with previous.
+      information from tables gantt_jobs_predictions_ and
+      gantt_jobs_resources_) or your decisions could conflict with previous.
     - you must store your decisions in the tables gantt_jobs_predictions_ and
       gantt_jobs_resources_
     - you can set state of jobs to "toError" and OAR will delete them. After

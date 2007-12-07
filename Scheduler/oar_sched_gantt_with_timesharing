@@ -8,7 +8,7 @@ use oar_iolib;
 use Data::Dumper;
 use oar_Judas qw(oar_debug oar_warn oar_error);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use Gantt_2;
+use Gantt_hole_storage;
 use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
 
@@ -92,8 +92,8 @@ foreach my $r (iolib::list_resources($base)){
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
 
-my $gantt = Gantt_2::new($max_resources, $minimum_hole_time);
-Gantt_2::add_new_resources($gantt, $vec);
+my $gantt = Gantt_hole_storage::new($max_resources, $minimum_hole_time);
+Gantt_hole_storage::add_new_resources($gantt, $vec);
 
 sub parse_timesharing($$$){
     my $str = shift;
@@ -150,7 +150,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
         foreach my $u (keys(%{$timesharing_gantts})){
             foreach my $n (keys(%{$timesharing_gantts->{$u}})){
                 if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
-                    Gantt_2::set_occupation($timesharing_gantts->{$u}->{$n},
+                    Gantt_hole_storage::set_occupation($timesharing_gantts->{$u}->{$n},
                                             $already_scheduled_jobs{$i}->[0],
                                             $job_duration + $security_time_overhead,
                                             $vec
@@ -158,7 +158,7 @@ foreach my $i (keys(%already_scheduled_jobs)){
                 }
             }
         }
-        Gantt_2::set_occupation(  $gantt,
+        Gantt_hole_storage::set_occupation(  $gantt,
                                   $already_scheduled_jobs{$i}->[0],
                                   $job_duration + $security_time_overhead,
                                   $vec
@@ -232,7 +232,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         $gantt_to_use = $timesharing_gantts->{$user}->{$name};
         oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for ($user,$name)\n");
     }
-    #print("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_2::pretty_print($gantt_to_use)."\n");
+    #print("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
 
     my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
@@ -284,8 +284,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
-        #print("###\n".Gantt_2::pretty_print($gantt_to_use)."\n");
-        my @hole = Gantt_2::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
+        #print("###\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
+        my @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
         
 #        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;
@@ -332,7 +332,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
             vec($vec, $r, 1) = 1;
         }
-        Gantt_2::set_occupation(    $gantt,
+        Gantt_hole_storage::set_occupation(    $gantt,
                                     $moldable_results[$index_to_choose]->{start_date},
                                     $moldable_results[$index_to_choose]->{duration},
                                     $vec
@@ -342,7 +342,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 #        print("[GANTT] 17 ".gettimeofday."\n");
             foreach my $n (keys(%{$timesharing_gantts->{$u}})){
                 if (($gantt_to_use != $timesharing_gantts->{$u}->{$n})){
-                    Gantt_2::set_occupation(  $timesharing_gantts->{$u}->{$n},
+                    Gantt_hole_storage::set_occupation(  $timesharing_gantts->{$u}->{$n},
                                               $moldable_results[$index_to_choose]->{start_date},
                                               $moldable_results[$index_to_choose]->{duration},
                                               $vec
@@ -374,4 +374,4 @@ if ($job_index <= $#jobs){
 
 oar_debug("[oar_sched_gantt_with_timesharing] End of scheduler for queue $queue\n");
 
-#print(Gantt_2::pretty_print($gantt)."\n");
+#print(Gantt_hole_storage::pretty_print($gantt)."\n");
