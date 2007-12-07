@@ -71,14 +71,14 @@ desktop-computing-cgi:
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarres'\;#;;\
 				" $(SBINDIR)/oares
-	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar-cgi
+	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi.pl
+	install -d -m 0755 $(CGIDIR)
+	install -m 6750 -o $(OAROWNER) -g $(WWWUSER) Tools/oardo $(CGIDIR)/oar-cgi
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar-cgi'\;#;;\
-				" $(SBINDIR)/oar-cgi
-	install -d -m 0755 $(CGIDIR)
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar-cgi.pl'\;#;;\
+				" $(CGIDIR)/oar-cgi
 
 dbinit:
 	install -d -m 0755 $(OARDIR)
@@ -157,7 +157,6 @@ server:
 	install -m 0755 Runner/runner $(OARDIR)
 	install -m 0755 Sarko/sarko $(OARDIR)
 	install -m 0755 Sarko/finaud $(OARDIR)
-	install -m 0644 Scheduler/data_structures/Gantt.pm $(OARDIR)
 	install -m 0644 Scheduler/data_structures/Gantt_hole_storage.pm $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(OARDIR)
@@ -199,7 +198,6 @@ server:
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarmonitor'\;#;;\
 				" $(SBINDIR)/oarmonitor
-	install -m 0644 Scheduler/data_structures/sorted_chained_list.pm $(OARDIR)
 	install -m 0755 Runner/bipbip $(OARDIR)
 	install -m 0644 Runner/ping_checker.pm $(OARDIR)
 	install -m 0644 Runner/oarexec $(OARDIR)
@@ -340,6 +338,5 @@ draw-gantt-install: draw-gantt
 monika-install: monika
 
 desktop-computing-cgi-install: sanity-check configuration common libs desktop-computing-cgi
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(CGIDIR)/oar-cgi 
 
 desktop-computing-agent-install: desktop-computing-agent
