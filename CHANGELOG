@@ -1,6 +1,20 @@
 OAR CHANGELOG
 =============
 
+upstream development version:
+-----------------------------
+
+  - Add new oarmonitor command. This will permit to monitor OAR jobs on compute
+    nodes.
+  - Remove sudo dependency and replace it by the commands "oardo" and
+    "oardodo".
+  - Add possibility to create a temporary user for each jobs on compute nodes.
+    So you can perform very strong restrictions for each job (ex: bandwidth
+    restrictions with iptable, memory management, ... everything that can be
+    handled with a user id)
+  - Debian packaging: Run OAR specific sshd with root privileges (under heavy
+    load, kernel may be more responsive for root processes...)
+
 version 2.2.11:
 ---------------
   - Fix Debian package dependency on a CGI web server.
