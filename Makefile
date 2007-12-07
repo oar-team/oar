@@ -319,10 +319,10 @@ monika:
 	@if [ -f $(CGIDIR)/monika.conf ]; then echo "Warning: $(CGIDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(CGIDIR) ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
 	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(CGIDIR)
-	install -m 0644 VisualizationInterfaces/Monika/VERSION $(CGIDIR)
-	install -d -m 0755 $(CGIDIR)/Sort
-	install -m 0755 VisualizationInterfaces/Monika/Sort/Naturally.pm $(CGIDIR)/Sort
 	install -d -m 0755 $(CGIDIR)/monika
+	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(CGIDIR)/monika
+	install -d -m 0755 $(CGIDIR)/monika/Sort
+	install -m 0755 VisualizationInterfaces/Monika/monika/Sort/Naturally.pm $(CGIDIR)/monika/Sort
 	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(CGIDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(CGIDIR)/monika
 

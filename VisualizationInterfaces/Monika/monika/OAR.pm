@@ -76,11 +76,12 @@ sub oarnodes {
 
   my $self = shift;
   my $hostname= monika::Conf::myself->hostname;
+  my $dbtype= monika::Conf::myself->dbtype;
   my $dbname= monika::Conf::myself->dbname;
   my $username= monika::Conf::myself->username;
   my $pwd= monika::Conf::myself->password;
 
-  my $dbh = monika::db_io::dbConnection($hostname, $dbname, $username, $pwd);
+  my $dbh = monika::db_io::dbConnection($hostname, $dbtype, $dbname, $username, $pwd);
   my @nodeNames= monika::db_io::list_nodes($dbh);
   foreach my $currentNode (@nodeNames){
     my @currentNodeRessources= monika::db_io::get_all_resources_on_node($dbh, $currentNode);
@@ -126,11 +127,12 @@ sub qstat {
   my $self = shift;
   my $cgi = shift;
   my $hostname= monika::Conf::myself->hostname;
+  my $dbtype= monika::Conf::myself->dbtype;
   my $dbname= monika::Conf::myself->dbname;
   my $username= monika::Conf::myself->username;
   my $pwd= monika::Conf::myself->password;
 
-  my $dbh = monika::db_io::dbConnection($hostname, $dbname, $username, $pwd);
+  my $dbh = monika::db_io::dbConnection($hostname, $dbtype, $dbname, $username, $pwd);
   my @jobIds= monika::db_io::get_queued_jobs($dbh);
   foreach my $currentJobId (@jobIds){
     my $jobInfos= monika::db_io::get_job_stat_infos($dbh, $currentJobId);

@@ -117,7 +117,7 @@ if (defined $cgi->param('node') and defined $nodes{$cgi->param('node')}) {
   print $oar->htmlJobTable($cgi);
 
 }
-open VERSION, "<VERSION";
+open VERSION, "<./monika/VERSION";
 my $version="";
 while (<VERSION>) {
   $version.=$_;

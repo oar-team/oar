@@ -13,13 +13,14 @@ use POSIX qw(strftime);
 ###########################################################################################
 
 # Creates a connection to the DB and returns it
-sub dbConnection($$$$){
+sub dbConnection($$$$$){
     #my $this= shift;
     my $host = shift;
+    my $dbtype = shift;
     my $dbname = shift;
     my $user = shift;
     my $pwd = shift;
-    my $dbh= DBI->connect("DBI:mysql:database=$dbname;host=$host", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
+    my $dbh= DBI->connect("DBI:$dbtype:database=$dbname;host=$host", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
 }
 

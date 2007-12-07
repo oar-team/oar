@@ -1,7 +1,5 @@
 ## Modified on November 2007 by Joseph.Emeras@imag.fr
 ## added: OAR2 compatibility
-##        added 4 parameters to acces OAR2 DB: hostname, dbname, username, password
-
 ## This package handles monika.conf file.
 ## it uses ConfNode.pm to store nodes description got from the configuration file.
 package monika::Conf;
@@ -35,7 +33,7 @@ sub parse {
   if (@_) {
     $self->{FILE} = shift;
   } else {
-    $self->{FILE} = "/etc/monika.conf";
+    $self->{FILE} = "/etc/oar/monika.conf";
   }
   my $config = AppConfig->new({
 				  GLOBAL => {
@@ -52,6 +50,10 @@ sub parse {
 		   DEFAULT => "Grid"
 		  });
   $config->define("hostname",
+		  {
+		   DEFAULT => ""
+		  });
+  $config->define("dbtype",
 		  {
 		   DEFAULT => ""
 		  });
@@ -120,6 +122,7 @@ sub parse {
   $self->{CLUSTERNAME} = $config->clustername();
   $self->{GRIDNAME} = $config->gridname();
   $self->{HOSTNAME} = $config->hostname();
+  $self->{DBTYPE} = $config->dbtype();
   $self->{DBNAME} = $config->dbname();
   $self->{USERNAME} = $config->username();
   $self->{PASSWORD} = $config->password();
@@ -176,6 +179,12 @@ sub gridname {
 sub hostname {
   my $self = shift;
   return $self->{HOSTNAME};
+}
+
+## return the dbtype
+sub dbtype {
+  my $self = shift;
+  return $self->{DBTYPE};
 }
 
 ## return the dbname
