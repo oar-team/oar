@@ -1,18 +1,28 @@
 These are the steps to perform when you want to release a new version of OAR:
 
- 1. Commit your changes in the svn.
+ 1. Commit your changes in the svn. (put the right version number into
+    Tools/oarversion.pm)
 
- 2. Make a tag with the number that you want to assign. For example:
+ 2. Make a tag (for sources and Debian packaging) with the number that you want
+    to assign. For example::
 
-    svn cp branches/2.2 tags/2.2.5
+        svn cp branches/2.2 tags/2.2.5
+        svn cp Debian/branch-2.2 Debian/tags/2.2.5
 
-This example creates the tag "2.2.5" from the branch "2.2"
+    This example creates the tag "2.2.5" from the branch "2.2"
 
- 2. Use the *build_tgz.sh* script to create the right archive. For example:
+ 2. Use the *build_tgz.sh* script to create the right archive. For example::
 
-    ./build_tgz tags/2.2.5
+        ./build_tgz tags/2.2.5
 
-This example creates the archive "oar-2.2.5.tgz".
+    This example creates the archive "oar-2.2.5.tgz".
 
-See '--help' option for more features.
+    See '--help' option for more features.
+
+ 3. Create Debian packages. Go to the *Debian* directory and use
+    *build-debian.rb*. For example::
+
+        ./build-debian.rb ../oar-2.2.5.tgz
+
+    Everything is created into the *build-area* directory.
 
