@@ -157,34 +157,34 @@ install-indep:
 		REAL_SBINDIR=/usr/sbin \
 		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
-	$(MAKE) desktop-computing-agent \
-		OARUSER=oar \
-		OAROWNER=root \
-		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc/oar \
-		PREFIX=$(CURDIR)/debian/oar-desktop-computing-agent/usr \
-		MANDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/share/man \
-		OARDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/lib/oar \
-		BINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/bin \
-		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
-		REAL_OARDIR=/usr/lib/oar \
-		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
-		REAL_BINDIR=/usr/bin
-	$(MAKE) desktop-computing-cgi \
-		OARUSER=oar \
-		OAROWNER=root \
-		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc/oar \
-		PREFIX=$(CURDIR)/debian/oar-desktop-computing-cgi/usr \
-		MANDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/share/man \
-		OARDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/oar \
-		BINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/bin \
-		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/sbin \
-		WWWDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/www \
-		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
-		REAL_OARDIR=/usr/lib/oar \
-		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
-		REAL_BINDIR=/usr/bin
+#	$(MAKE) desktop-computing-agent \
+#		OARUSER=oar \
+#		OAROWNER=root \
+#		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-agent/etc/oar \
+#		PREFIX=$(CURDIR)/debian/oar-desktop-computing-agent/usr \
+#		MANDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/share/man \
+#		OARDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/lib/oar \
+#		BINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/bin \
+#		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
+#		REAL_OARDIR=/usr/lib/oar \
+#		REAL_SBINDIR=/usr/sbin \
+#		REAL_SBINDIR_LN=../lib/oar \
+#		REAL_BINDIR=/usr/bin
+#	$(MAKE) desktop-computing-cgi \
+#		OARUSER=oar \
+#		OAROWNER=root \
+#		OARCONFDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/etc/oar \
+#		PREFIX=$(CURDIR)/debian/oar-desktop-computing-cgi/usr \
+#		MANDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/share/man \
+#		OARDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/oar \
+#		BINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/bin \
+#		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/sbin \
+#		WWWDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/www \
+#		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
+#		REAL_OARDIR=/usr/lib/oar \
+#		REAL_SBINDIR=/usr/sbin \
+#		REAL_SBINDIR_LN=../lib/oar \
+#		REAL_BINDIR=/usr/bin
 
 	dh_install -i
 
