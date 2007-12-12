@@ -1587,7 +1587,8 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       OPENSSH_CMD="/usr/bin/ssh"
 
-  - These are configuration tags for OAR in the desktop-computing mode::
+  - These are configuration tags for OAR in the desktop-computing mode *(for now
+    this functionality is not working. So don't try to use it)*::
   
       DESKTOP_COMPUTING_ALLOW_CREATE_NODE=0
       DESKTOP_COMPUTING_EXPIRY=10
@@ -2036,6 +2037,8 @@ specify that this is a deploy job.
 
 Desktop computing
 -----------------
+
+*(for now this functionality is not working. So don't try to use it)*
 
 If you cannot contact the computers via SSH you can install the "desktop
 computing" OAR mode.
