@@ -7,6 +7,8 @@ version 2.2.11:
   - Fix Debian package dependency on a CGI web server.
   - Fix little bug: remove notification (scheduled start time) for Interactive
     reservation.
+  - Fix bug in reservation: take care of the SCHEDULER_JOB_SECURITY_TIME for
+    reservations to check.
 
 version 2.2.10:
 ---------------
