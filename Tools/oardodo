@@ -62,7 +62,9 @@ for (my $i=0; $i <= $#ARGV; $i++){
 $ENV{PATH} =~ m/^(.*)$/m; 
 $ENV{PATH} = $1;
 
-delete @ENV{'IFS', 'CDPATH', 'MAIL'};
+delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV'};
+# BASH_ENV not deleted because used in oarexec to launch user script
+
 # END CLEAN
 
 sub change_process_owner($){
