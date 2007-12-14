@@ -253,7 +253,7 @@ user: man
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarresume'\;#;;\
 				" $(BINDIR)/oarresume
-	install -m 0755 Tools/oarmonitor_graph_gen.pl $(BINDIR)
+	install -m 0755 Tools/oarmonitor_graph_gen.pl $(BINDIR)/oarmonitor_graph_gen
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
@@ -289,8 +289,6 @@ doc: build-html-doc
 	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
 	install -d -m 0755 $(DOCDIR)/scripts
 	install -d -m 0755 $(DOCDIR)/scripts/job_resource_manager
-	install -m 0644 Tools/cpuset_manager_PAM.pl $(DOCDIR)/scripts/job_resource_manager/
-	install -m 0644 Tools/cpuset_manager_SGI_Altix_350_SLES9.pl $(DOCDIR)/scripts/job_resource_manager/
 	install -d -m 0755 $(DOCDIR)/scripts/prologue_epilogue
 	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue/
 	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue/
