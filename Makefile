@@ -328,7 +328,7 @@ server-install: sanity-check configuration common libs server dbinit
 
 user-install: sanity-check configuration common libs user
 
-node-install: sanity-check configuration common node
+node-install: sanity-check configuration common libs node
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
 doc-install: doc
