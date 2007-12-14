@@ -63,6 +63,10 @@ sub redirect_everything(){
     return($pid);
 }
 
+sub get_log_level(){
+    return($log_level);
+}
+
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;

@@ -59,11 +59,16 @@ for (my $i=0; $i <= $#ARGV; $i++){
 #warn("@clean_argv\n");
 
 # clean PATH
-$ENV{PATH} =~ m/^(.*)$/m; 
+$ENV{PATH} =~ m/^(.*)$/m;
 $ENV{PATH} = $1;
 
-delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV'};
-# BASH_ENV not deleted because used in oarexec to launch user script
+delete @ENV{'IFS', 'CDPATH', 'MAIL', 'LD_LIBRARY_PATH'};
+# BASH_ENV is not deleted because used in oarexec to launch user script (see
+# 'man bash')
+$ENV{BASH_ENV} =~ m/^(.*)$/m;
+$ENV{BASH_ENV} = $1;
+$ENV{ENV} =~ m/^(.*)$/m;
+$ENV{ENV} = $1;
 
 # END CLEAN
 
