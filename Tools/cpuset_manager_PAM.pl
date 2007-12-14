@@ -52,23 +52,34 @@ if (!defined($Cpuset_name)){
 
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
-
-    print("[cpuset_manager] name = $Cpuset_name ; cpus = @Cpuset_cpus\n");
-    if (system('sudo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
-        if (system('sudo mkdir -p /dev/cpuset && sudo mount -t cpuset none /dev/cpuset')){
-            exit(4);
-        }
+    # First, create the tmp oar directory
+    if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
+        print("[cpuset_manager] Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
+        exit(13);
     }
-    if (!(-d '/dev/cpuset/'.$Cpuset_path)){
-        if (system( 'sudo mkdir -p /dev/cpuset/'.$Cpuset_path.' &&'. 
-                    'sudo chown -R oar /dev/cpuset/'.$Cpuset_path.' &&'.
-                    '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path.'/notify_on_release && '.
-                    '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path.'/cpu_exclusive && '.
-                    'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path.'/mems &&'.
-                    'cat /dev/cpuset/cpus > /dev/cpuset/'.$Cpuset_path.'/cpus'
-                  )){
-            exit(4);
+
+    if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
+        flock(LOCKFILE,LOCK_EX) or die("flock failed: $!\n");
+        print("[cpuset_manager] name = $Cpuset_name ; cpus = @Cpuset_cpus\n");
+        if (system('sudo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
+            if (system('sudo mkdir -p /dev/cpuset && sudo mount -t cpuset none /dev/cpuset')){
+                exit(4);
+            }
         }
+        if (!(-d '/dev/cpuset/'.$Cpuset_path)){
+            if (system( 'sudo mkdir -p /dev/cpuset/'.$Cpuset_path.' &&'. 
+                        'sudo chown -R oar /dev/cpuset/'.$Cpuset_path.' &&'.
+                        '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path.'/notify_on_release && '.
+                        '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path.'/cpu_exclusive && '.
+                        'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path.'/mems &&'.
+                        'cat /dev/cpuset/cpus > /dev/cpuset/'.$Cpuset_path.'/cpus'
+                      )){
+                exit(4);
+            }
+        }
+    }else{
+        warn("Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file\n");
+        exit(16);
     }
     
 #'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_name.'/mems; done && '.
@@ -103,11 +114,6 @@ if ($ARGV[0] eq "init"){
 
     # Copy ssh key files
     if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
-        # First, create the tmp oar directory
-        if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
-            print("[cpuset_manager] Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
-            exit(13);
-        }
         # private key
         if (open(PRIV, ">".$Cpuset->{ssh_keys}->{private}->{file_name})){
             chmod(0600,$Cpuset->{ssh_keys}->{private}->{file_name});
