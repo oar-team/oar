@@ -9,6 +9,8 @@ version 2.2.11:
     reservation.
   - Fix bug in reservation: take care of the SCHEDULER_JOB_SECURITY_TIME for
     reservations to check.
+  - Fix bug: add a lock around the section which creates and feed the OAR
+    cpuset.
 
 version 2.2.10:
 ---------------
