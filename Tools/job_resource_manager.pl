@@ -64,6 +64,7 @@ if (defined($Cpuset->{cpuset_path})){
 #               job_user => "job user"
 #               job_uid => "job uid for the job_user if needed"
 #               types => hashtable with job types as keys
+#               log_level => debug level number
 #           }
 
 print_log(3,"$ARGV[0]");

@@ -12,6 +12,8 @@ See INSTALL file to be shown with a detailed installation procedure.
 Feel free to check the manpages and the OAR web site (http://oar.imag.fr/) for
 further information.
 
+Licence: GNU GENERAL PUBLIC LICENSE (see COPYING file for more information).
+
 Some features of OAR :
 
 - Batch and Interactive jobs

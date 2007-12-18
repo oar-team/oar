@@ -71,7 +71,12 @@ There are a three different flavors of installation :
     * user:    install all the tools needed to submit and manage jobs for the
       users (oarsub, oarstat, oarnodes, ...)
     * node:    install the tools for a computing node (verify that the command
-      "oardodo" is in the PATH of the oar user on each nodes. You have also to
+      "oardodo" is in the PATH of the oar user on each nodes. For example you
+      have to add::
+
+        export PATH=/usr/local/oar/oardodo:$PATH
+
+      into *~/.bashrc* and *~/.bash_profile* of oar user. You have also to
       check in *~oar/.ssh/authorized_keys* that the oar user ssh key is
       prefixed by "environment="OAR_KEY=1", see `Important notes`_)
 

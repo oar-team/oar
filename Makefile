@@ -23,7 +23,6 @@ WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
 REAL_OARDIR=$(OARDIR)
 REAL_SBINDIR=$(SBINDIR)
-REAL_SBINDIR_LN=../oar
 REAL_BINDIR=$(BINDIR)
 XAUTHCMDPATH=$(shell which xauth)
 ifeq "$(XAUTHCMDPATH)" ""
@@ -99,12 +98,12 @@ common: man
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
+	install -d -m 0755 $(OARDIR)/oardodo
 	install -m 6750 -o root -g $(OAROWNERGROUP) Tools/oardodo $(OARDIR)/oardodo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				" $(OARDIR)/oardodo
-	ln -sf $(REAL_SBINDIR_LN)/oardodo $(SBINDIR)/oardodo
+				" $(OARDIR)/oardodo/oardodo
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
