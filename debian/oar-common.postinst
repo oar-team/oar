@@ -50,8 +50,9 @@ install -o oar -m 755 -d /var/run/oar
 # Manage setuid bits
 chown oar:oar /usr/lib/oar/oarsh_oardo
 chmod 6755 /usr/lib/oar/oarsh_oardo
-chown root:oar /usr/lib/oar/oardodo
-chmod 6750 /usr/lib/oar/oardodo
+chown root:oar /usr/lib/oar/oardodo/oardodo
+chmod 6750 /usr/lib/oar/oardodo/oardodo
+
 
 # Manage setuid bits
 chown oar:oar /usr/sbin/oarnodesetting
