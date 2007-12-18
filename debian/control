@@ -1,9 +1,9 @@
 Source: oar
 Section: contrib/misc
-Priority: optional
+Priority: extra
 Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
 Build-Depends: debhelper (>= 4.0.0), python-docutils, perl
-Standards-Version: 3.6.0
+Standards-Version: 3.7.3
 
 Package: oar-common
 Architecture: all
@@ -15,7 +15,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-libs
 Architecture: all
-Depends: oar-common (= ${binary:Version}), libdbi-perl, libdbd-mysql-perl|libdbd-pg-perl
+Depends: oar-common (= ${binary:Version}), libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler libs package
  This package installs the common part or the OAR batch scheduler
