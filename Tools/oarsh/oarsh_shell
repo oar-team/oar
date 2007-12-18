@@ -7,7 +7,6 @@
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="/usr/bin/xauth"
 CPUSET_MOUNT_POINT="/dev/cpuset"
-OARDIR="/usr/lib/oar"
 
 OLDUMASK=$(umask)
 umask 0022
@@ -31,7 +30,7 @@ function add_process_to_cpuset() {
     shift
     for p in $@
     do
-        $OARDIR/oardodo sh -c "echo $p > $CPUSETFILE" || return 1
+        oardodo sh -c "echo $p > $CPUSETFILE" || return 1
     done
     ###########################################################################
 }
@@ -49,7 +48,7 @@ then
     then
         add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
     fi
-    $OARDIR/oardodo renice 0 $$ $PPID > /dev/null 2>&1
+    oardodo renice 0 $$ $PPID > /dev/null 2>&1
     export SHELL=$DEFAULT_SHELL
     
     umask $OLDUMASK
@@ -69,19 +68,19 @@ else
     then
         if [ -x "$XAUTH_LOCATION" ]
         then
-            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=${OAR_JOB_USER%_*} $OARDIR/oardodo $XAUTH_LOCATION merge -
-            [ "${OAR_JOB_USER%_*}" != "$OAR_JOB_USER" ] && OARDO_BECOME_USER=${OAR_JOB_USER%_*} $OARDIR/oardodo bash --noprofile --norc -c 'chmod 660 $HOME/.Xauthority'
+            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=${OAR_JOB_USER%_*} oardodo $XAUTH_LOCATION merge -
+            [ "${OAR_JOB_USER%_*}" != "$OAR_JOB_USER" ] && OARDO_BECOME_USER=${OAR_JOB_USER%_*} oardodo bash --noprofile --norc -c 'chmod 660 $HOME/.Xauthority'
         fi
     fi
     #Change tty owner
-    TTY=$(tty) && test -e $TTY && $OARDIR/oardodo chown $OAR_JOB_USER:oar $TTY && $OARDIR/oardodo chmod 660 $TTY
-    $OARDIR/oardodo renice 0 $$ $PPID > /dev/null 2>&1
+    TTY=$(tty) && test -e $TTY && oardodo chown $OAR_JOB_USER:oar $TTY && oardodo chmod 660 $TTY
+    oardodo renice 0 $$ $PPID > /dev/null 2>&1
     if [ "$1" == "" ]
     then
         # Simulate initial login
         export OARDO_BECOME_USER=$OAR_JOB_USER
         umask $OLDUMASK
-        exec $OARDIR/oardodo
+        exec oardodo
         #exec oardodo su - $OAR_JOB_USER
         echo "oarsh: exec failed" 1>&2
         exit 66
@@ -89,7 +88,7 @@ else
         export OARDO_BECOME_USER=$OAR_JOB_USER
         export OARDO_USE_USER_SHELL=1
         umask $OLDUMASK
-        exec $OARDIR/oardodo "$@"
+        exec oardodo "$@"
         echo "oarsh: exec failed" 1>&2
         exit 66
     fi
