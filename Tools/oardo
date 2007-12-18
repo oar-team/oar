@@ -37,7 +37,7 @@ for (my $i=0; $i <= $#ARGV; $i++){
 #warn("@clean_argv\n");
 
 # clean PATH
-$ENV{PATH} = "/bin:/sbin:/usr/bin:/usr/sbin:$Oardir/../bin:$Oardir/../sbin";
+$ENV{PATH} = "/bin:/sbin:/usr/bin:/usr/sbin:$Oardir/../bin:$Oardir/../sbin:$Oardir/oardodo";
 
 delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV','BASH_ENV','LD_LIBRARY_PATH'};
 # END CLEAN
