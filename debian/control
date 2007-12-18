@@ -1,5 +1,5 @@
 Source: oar
-Section: contrib/misc
+Section: admin
 Priority: extra
 Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
 Build-Depends: debhelper (>= 4.0.0), python-docutils, perl
@@ -7,22 +7,14 @@ Standards-Version: 3.7.3
 
 Package: oar-common
 Architecture: all
-Depends: perl, perl-suid, adduser
+Depends: perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  This package installs the common part or the OAR batch scheduler
 
-
-Package: oar-libs
-Architecture: all
-Depends: oar-common (= ${binary:Version}), libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
-Suggests: oar-server, oar-user, oar-node, oar-doc
-Description: OAR batch scheduler libs package
- This package installs the common part or the OAR batch scheduler
-
 Package: oar-server
 Architecture: all
-Depends: oar-libs (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, openssh-client | ssh
+Depends: ${misc:Depends}, ${perl:Depends}, openssh-client | ssh
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk, mysql-client | postgresql-client, mysql-server | postgresql, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
@@ -37,7 +29,7 @@ Description: OAR batch scheduler node package
 
 Package: oar-user
 Architecture: all
-Depends: oar-libs (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}
+Depends: ${misc:Depends}, ${perl:Depends}
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xbase-clients
 Description: OAR batch scheduler user package

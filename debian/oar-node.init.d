@@ -43,6 +43,7 @@ case "$1" in
             echo " * OAR dedicated SSH server started."
         else
             echo " * Failed to start OAR dedicated SSH server."
+            exit 1
         fi
     fi
     start_oar_node

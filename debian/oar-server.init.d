@@ -29,13 +29,13 @@ case "$1" in
   start)
 	echo -n "Starting $DESC: "
 	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
-		--make-pidfile --background --exec $DAEMON -- $DAEMON_OPTS || true
+		--make-pidfile --background --exec $DAEMON -- $DAEMON_OPTS
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
 	start-stop-daemon --stop --quiet --pidfile /var/run/$NAME.pid && \
-		rm -f /var/run/$NAME.pid || true
+		rm -f /var/run/$NAME.pid
 	echo "$NAME."
 	;;
   reload|force-reload|restart)

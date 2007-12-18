@@ -67,10 +67,9 @@ install-indep:
 		DOCDIR=$(CURDIR)/debian/oar-doc/usr/share/doc/oar-doc \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
 	mkdir -p $(CURDIR)/debian/oar-common/var/lib/oar
-	$(MAKE) sanity-check common configuration \
+	$(MAKE) sanity-check common configuration libs \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-common/etc/oar \
@@ -81,24 +80,9 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
 	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
 	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(CURDIR)/debian/oar-common/etc/oar/oar.conf
-	mkdir -p $(CURDIR)/debian/oar-libs/var/lib/oar
-	$(MAKE) sanity-check libs \
-		OARUSER=oar \
-		OAROWNER=root \
-		OARCONFDIR=$(CURDIR)/debian/oar-libs/etc/oar \
-		PREFIX=$(CURDIR)/debian/oar-libs/usr \
-		MANDIR=$(CURDIR)/debian/oar-libs/usr/share/man \
-		OARDIR=$(CURDIR)/debian/oar-libs/usr/lib/oar \
-		BINDIR=$(CURDIR)/debian/oar-libs/usr/bin \
-		SBINDIR=$(CURDIR)/debian/oar-libs/usr/sbin \
-		REAL_OARDIR=/usr/lib/oar \
-		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
-		REAL_BINDIR=/usr/bin
 	mkdir -p $(CURDIR)/debian/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
 		OARUSER=oar \
@@ -111,7 +95,6 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-server/usr/sbin \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
 	mkdir -p $(CURDIR)/debian/oar-node/var/lib/oar
 	mkdir -p $(CURDIR)/debian/oar-node/etc/init.d
@@ -126,7 +109,6 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-node/usr/sbin \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
 	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
 	$(MAKE) sanity-check user \
@@ -140,7 +122,6 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-user/usr/sbin \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
 	$(MAKE) draw-gantt \
 		OARUSER=oar \
@@ -155,7 +136,6 @@ install-indep:
 		CGIDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/cgi-bin \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_SBINDIR_LN=../lib/oar \
 		REAL_BINDIR=/usr/bin
 #	$(MAKE) desktop-computing-agent \
 #		OARUSER=oar \
@@ -168,7 +148,6 @@ install-indep:
 #		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
 #		REAL_OARDIR=/usr/lib/oar \
 #		REAL_SBINDIR=/usr/sbin \
-#		REAL_SBINDIR_LN=../lib/oar \
 #		REAL_BINDIR=/usr/bin
 #	$(MAKE) desktop-computing-cgi \
 #		OARUSER=oar \
@@ -183,7 +162,6 @@ install-indep:
 #		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
 #		REAL_OARDIR=/usr/lib/oar \
 #		REAL_SBINDIR=/usr/sbin \
-#		REAL_SBINDIR_LN=../lib/oar \
 #		REAL_BINDIR=/usr/bin
 
 	dh_install -i
