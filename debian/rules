@@ -78,6 +78,7 @@ install-indep:
 		OARDIR=$(CURDIR)/debian/oar-common/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-common/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-common/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
@@ -93,6 +94,7 @@ install-indep:
 		OARDIR=$(CURDIR)/debian/oar-server/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-server/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-server/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
@@ -107,6 +109,7 @@ install-indep:
 		OARDIR=$(CURDIR)/debian/oar-node/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-node/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-node/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
@@ -120,6 +123,7 @@ install-indep:
 		OARDIR=$(CURDIR)/debian/oar-user/usr/lib/oar \
 		BINDIR=$(CURDIR)/debian/oar-user/usr/bin \
 		SBINDIR=$(CURDIR)/debian/oar-user/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
@@ -134,6 +138,7 @@ install-indep:
 		SBINDIR=$(CURDIR)/debian/oar-draw-gantt/usr/sbin \
 		WWWDIR=$(CURDIR)/debian/oar-draw-gantt/var/www \
 		CGIDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/cgi-bin \
+		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
@@ -146,6 +151,7 @@ install-indep:
 #		OARDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/lib/oar \
 #		BINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/bin \
 #		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-agent/usr/sbin \
+#		REAL_OARCONFDIR=/etc/oar \
 #		REAL_OARDIR=/usr/lib/oar \
 #		REAL_SBINDIR=/usr/sbin \
 #		REAL_BINDIR=/usr/bin
@@ -160,6 +166,7 @@ install-indep:
 #		SBINDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/sbin \
 #		WWWDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/var/www \
 #		CGIDIR=$(CURDIR)/debian/oar-desktop-computing-cgi/usr/lib/cgi-bin \
+#		REAL_OARCONFDIR=/etc/oar \
 #		REAL_OARDIR=/usr/lib/oar \
 #		REAL_SBINDIR=/usr/sbin \
 #		REAL_BINDIR=/usr/bin

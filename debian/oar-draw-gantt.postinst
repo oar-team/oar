@@ -22,8 +22,6 @@ set -e
 . /usr/share/debconf/confmodule
 db_version 2.0
 
-chmod 600 /usr/lib/cgi-bin/drawgantt.conf
-chown www-data /usr/lib/cgi-bin/drawgantt.conf
 mkdir -p /var/www/drawgantt/cache && chown www-data /var/www/drawgantt/cache || true
 
 # dh_installdeb will replace this with shell code automatically
