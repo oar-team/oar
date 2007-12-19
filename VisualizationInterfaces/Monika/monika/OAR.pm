@@ -225,7 +225,7 @@ sub nodecount {
   my $free = 0;
   my $freecpu = 0;;
   my $other = 0;
-  my ($totallicence, $freelicence, $busylicence, $totalmemory, $busymemory, $freememory) = (0, 0, 0, 0, 0, 0);
+  my ($totallicence, $freelicence, $busylicence, $totalmemory, $busymemory, $freememory,$totaluserid,$busyuserid,$freeuserid) = (0, 0, 0, 0, 0, 0, 0, 0, 0);
   my @nodes = values %{$self->allnodes};
   my %alreadyCounted;
   my %alreadyCountedTotal;
@@ -273,9 +273,19 @@ sub nodecount {
           $other++;
         }
       }
+      elsif($node->{'Ressources'}->{$currentRessource}->{infos}->{type} eq 'userid'){
+        $totaluserid++;
+        if ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '1'){
+          $busyuserid++;
+        }elsif ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '0'){
+          $freeuserid++;
+        }else{
+          $other++;
+        }
+      }
     }
   }
-  return ($total,$totalcpu,$free,$freecpu,$busy,$busycpu,$other,$totallicence,$freelicence,$busylicence,$totalmemory,$busymemory,$freememory);
+  return ($total,$totalcpu,$free,$freecpu,$busy,$busycpu,$other,$totallicence,$freelicence,$busylicence,$totalmemory,$busymemory,$freememory,$totaluserid,$busyuserid,$freeuserid);
 }
 
 ## print a HTML summary table of the current usage of the nodes.
@@ -290,7 +300,7 @@ sub htmlSummaryTable {
     $summary_display =~ s/(.*?),//;
     push(@array_display, $1);
   }
-  my($flag_default, $flag_licence, $flag_memory) = (0, 0, 0);
+  my($flag_default, $flag_licence, $flag_memory, $flag_userid) = (0, 0, 0);
   foreach (@array_display){
     if($_ eq 'licence'){
         $flag_licence = 1;
@@ -301,8 +311,11 @@ sub htmlSummaryTable {
     elsif($_ eq 'memory'){
         $flag_memory = 1;
     }
+    elsif($_ eq 'userid'){
+        $flag_userid = 1;
+    }
   }
-  my ($total,$totalcpu,$free,$freecpu,$busy,$busycpu,$other,$totallicence,$freelicence,$busylicence,$totalmemory,$busymemory,$freememory) = $self->nodecount();
+  my ($total,$totalcpu,$free,$freecpu,$busy,$busycpu,$other,$totallicence,$freelicence,$busylicence,$totalmemory,$busymemory,$freememory,$totaluserid,$busyuserid,$freeuserid) = $self->nodecount();
   $output .= $cgi->start_table({-border=>"1",
 		     -align =>"center"
 		    });
@@ -344,6 +357,14 @@ sub htmlSummaryTable {
 		   });
     $output .= $cgi->td($cgi->b("Memory"));
     $output .= $cgi->td([$freememory,$busymemory,$totalmemory]);
+    $output .= $cgi->end_Tr();
+  }
+  if ($totaluserid ne 0 && $flag_userid eq 1) {
+    $output .= $cgi->start_Tr({-valign=>"middle",
+		    -align=>"center"
+		   });
+    $output .= $cgi->td($cgi->b("UserId"));
+    $output .= $cgi->td([$freeuserid,$busyuserid,$totaluserid]);
     $output .= $cgi->end_Tr();
   }
   $output .= $cgi->end_table();
