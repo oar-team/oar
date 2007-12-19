@@ -305,14 +305,14 @@ sub treate_waiting_reservation_jobs($$){
         # test if the job is going to be launched and there is no Alive node
         if (($#resa_alive_resources < 0) && ($job->{start_time} <= $current_time_sec)){
             oar_debug("[oar_scheduler] Reservation $job->{job_id} is in waiting mode because no resource is present\n");
-            iolib::set_gantt_job_startTime($dbh,$job->{job_id},$current_time_sec + 1);
+            iolib::set_gantt_job_startTime($dbh,$moldable->[2],$current_time_sec + 1);
         }elsif($job->{start_time} <= $current_time_sec){
             my @resa_resources = iolib::get_gantt_resources_for_job($dbh,$moldable->[2]);
             if ($job->{start_time} + $Reservation_waiting_timeout > $current_time_sec){
                 if ($#resa_resources > $#resa_alive_resources){
                     # we have not the same number of nodes than in the query --> wait the specified timeout
                     oar_debug("[oar_scheduler] Reservation $job->{job_id} is in waiting mode because all nodes are not yet available.\n");
-                    iolib::set_gantt_job_startTime($dbh,$job->{job_id},($current_time_sec + 1));
+                    iolib::set_gantt_job_startTime($dbh,$moldable->[2],($current_time_sec + 1));
                 }
             }else{
                 #Check if resources are in Alive state otherwise remove them, the job is going to be launched
@@ -531,6 +531,8 @@ sub check_jobs_to_launch($){
         if (($job->{reservation} eq "Scheduled") and ($job->{start_time} < $current_time_sec)){
             my $max_time = $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
             iolib::set_moldable_job_max_time($dbh,$jobs_to_launch{$i}->[0], $max_time);
+            iolib::set_gantt_job_startTime($dbh,$jobs_to_launch{$i}->[0],$current_time_sec);
+            oar_warn("[oar_scheduler] AAAAAAA $job->{job_id} $current_time_sec\n");
             oar_debug("[oar_scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             iolib::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
         }
