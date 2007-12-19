@@ -59,14 +59,14 @@ desktop-computing-cgi:
 	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarcache
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarcache'\;#;;\
 				" $(SBINDIR)/oarcache
 	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarres
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarres'\;#;;\
 				" $(SBINDIR)/oares
@@ -74,7 +74,7 @@ desktop-computing-cgi:
 	install -d -m 0755 $(CGIDIR)
 	install -m 6750 -o $(OAROWNER) -g $(WWWUSER) Tools/oardo $(CGIDIR)/oar-cgi
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar-cgi.pl'\;#;;\
 				" $(CGIDIR)/oar-cgi
@@ -85,7 +85,7 @@ dbinit:
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_mysql_db_init
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar_mysql_db_init'\;#;;\
 				" $(SBINDIR)/oar_mysql_db_init
@@ -102,11 +102,12 @@ common: man
 	install -m 6750 -o root -g $(OAROWNERGROUP) Tools/oardodo $(OARDIR)/oardodo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				" $(OARDIR)/oardodo/oardodo
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarsh_oardo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarsh'\;#;;\
 				" $(OARDIR)/oarsh_oardo
@@ -129,7 +130,7 @@ libs:
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarnodesetting
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnodesetting'\;#;;\
 				" $(SBINDIR)/oarnodesetting
@@ -148,7 +149,7 @@ server:
 	install -m 0755 Almighty/Almighty $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/Almighty
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/Almighty'\;#;;\
 				" $(SBINDIR)/Almighty
@@ -164,7 +165,7 @@ server:
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarnotify
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnotify'\;#;;\
 				" $(SBINDIR)/oarnotify
@@ -172,28 +173,28 @@ server:
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarremoveresource
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarremoveresource'\;#;;\
 				" $(SBINDIR)/oarremoveresource
 	install -m 0755 Qfunctions/oaraccounting $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oaraccounting
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oaraccounting'\;#;;\
 				" $(SBINDIR)/oaraccounting
 	install -m 0755 Qfunctions/oarproperty $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarproperty
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarproperty'\;#;;\
 				" $(SBINDIR)/oarproperty
 	install -m 0755 Qfunctions/oarmonitor $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarmonitor
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarmonitor'\;#;;\
 				" $(SBINDIR)/oarmonitor
@@ -212,21 +213,21 @@ user: man
 	install -m 0755 Qfunctions/oarnodes $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarnodes
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnodes'\;#;;\
 				" $(BINDIR)/oarnodes
 	install -m 0755 Qfunctions/oardel $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oardel
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oardel'\;#;;\
 				" $(BINDIR)/oardel
 	install -m 0755 Qfunctions/oarstat $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarstat
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarstat'\;#;;\
 				" $(BINDIR)/oarstat
@@ -234,21 +235,21 @@ user: man
 	install -m 0755 Qfunctions/oarsub $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarsub
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarsub'\;#;;\
 				" $(BINDIR)/oarsub
 	install -m 0755 Qfunctions/oarhold $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarhold
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarhold'\;#;;\
 				" $(BINDIR)/oarhold
 	install -m 0755 Qfunctions/oarresume $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarresume
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarresume'\;#;;\
 				" $(BINDIR)/oarresume
@@ -301,8 +302,9 @@ draw-gantt:
 	install -d -m 0755 $(CGIDIR)
 	install -d -m 0755 $(WWWDIR)
 	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(CGIDIR)
+	perl -i -pe "s#drawgantt\.conf#$(OARCONFDIR)/drawgantt\.conf#;;" $(CGIDIR)/drawgantt.cgi
 	install -d -m 0755 $(OARCONFDIR)
-	@if [ -f $(CGIDIR)/drawgantt.conf ]; then echo "Warning: $(CGIDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(CGIDIR) ; fi
+	@if [ -f $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
 	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
 	install -d -m 0755 $(WWWDIR)/drawgantt/js
 	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
@@ -311,8 +313,10 @@ draw-gantt:
 
 monika:
 	install -d -m 0755 $(CGIDIR)
-	@if [ -f $(CGIDIR)/monika.conf ]; then echo "Warning: $(CGIDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(CGIDIR) ; fi
+	install -d -m 0755 $(OARCONFDIR)
+	@if [ -f $(OARCONFDIR)/monika.conf ]; then echo "Warning: $(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(OARCONFDIR) ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARCONFDIR)'\;#;;" $(CGIDIR)/monika.cgi
 	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(CGIDIR)
 	install -d -m 0755 $(CGIDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(CGIDIR)/monika

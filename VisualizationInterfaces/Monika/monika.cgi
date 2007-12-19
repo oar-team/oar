@@ -20,15 +20,18 @@ my $cgi = monika::monikaCGI->new;
 my $file = $cgi->param("conf");
 
 ## first get nodes description from the configuration file
+my $Oardir = "/etc/oar";
 my $conf = monika::Conf->new;
 if ( defined $file and -r $file) {
   $conf->parse($file);
+} elsif (-r "$Oardir/$basename.conf") {
+  $conf->parse("$Oardir/monika.conf");
 } elsif (-r "./$basename.conf") {
   $conf->parse("./$basename.conf");
 } elsif (-r "/etc/$basename.conf") {
   $conf->parse("/etc/$basename.conf");
 } else {
-  die "Neither /etc/$basename.conf nor ./$basename.conf are readable. I need a configuration file !";
+  die "Neither $Oardir/$basename.conf nor /etc/$basename.conf nor ./$basename.conf are readable. I need a configuration file !";
 }
 
 ## then get nodes description
