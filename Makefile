@@ -122,7 +122,7 @@ common: man
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarcp.1
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarsh.1
 	
-libs:
+libs: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
@@ -142,6 +142,8 @@ libs:
 	install -m 0755 Tools/sentinelle.pl $(OARDIR)
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(REAL_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
+	install -d -m 0755 $(MANDIR)/man1
+	install -m 0644 man/man1/oarnodesetting.1 $(MANDIR)/man1/oarnodesetting.1
 
 server: man
 	install -d -m 0755 $(OARDIR)
@@ -216,7 +218,6 @@ server: man
 	install -m 0644 man/man1/oarnotify.1 $(MANDIR)/man1/oarnotify.1
 	install -m 0644 man/man1/oarproperty.1 $(MANDIR)/man1/oarproperty.1
 	install -m 0644 man/man1/oarremoveresource.1 $(MANDIR)/man1/oarremoveresource.1
-	install -m 0644 man/man1/oarnodesetting.1 $(MANDIR)/man1/oarnodesetting.1
 
 user: man
 	install -d -m 0755 $(OARDIR)
