@@ -14,7 +14,7 @@ umask(oct("022"));
 sub usage(){
     print <<EOS;
 Usage: oarremoveresource resource_number
-WARNING : this command remove all records in the database
+WARNING : this command removes all records in the database
 about "resource_number".
 
 So you will loose this resource history and jobs executed on this one

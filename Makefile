@@ -141,7 +141,7 @@ libs:
 	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(REAL_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 
-server:
+server: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(BINDIR)
@@ -206,6 +206,15 @@ server:
 	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
+	install -d -m 0755 $(MANDIR)/man1
+	install -m 0644 man/man1/Almighty.1 $(MANDIR)/man1/Almighty.1
+	install -m 0644 man/man1/oar_mysql_db_init.1 $(MANDIR)/man1/oar_mysql_db_init.1
+	install -m 0644 man/man1/oaraccounting.1 $(MANDIR)/man1/oaraccounting.1
+	install -m 0644 man/man1/oarmonitor.1 $(MANDIR)/man1/oarmonitor.1
+	install -m 0644 man/man1/oarnotify.1 $(MANDIR)/man1/oarnotify.1
+	install -m 0644 man/man1/oarproperty.1 $(MANDIR)/man1/oarproperty.1
+	install -m 0644 man/man1/oarremoveresource.1 $(MANDIR)/man1/oarremoveresource.1
+	install -m 0644 man/man1/oarnodesetting.1 $(MANDIR)/man1/oarnodesetting.1
 
 user: man
 	install -d -m 0755 $(OARDIR)
@@ -261,6 +270,7 @@ user: man
 	install -m 0644 man/man1/oarstat.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarsub.1 $(MANDIR)/man1
 	install -m 0644 man/man1/oarhold.1 $(MANDIR)/man1
+	install -m 0644 man/man1/oarmonitor_graph_gen.1 $(MANDIR)/man1/oarmonitor_graph_gen.1
 
 node: man
 	install -d -m 0755 $(OARDIR)

@@ -41,7 +41,7 @@ GetOptions ("version|V" => \$Version,
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-h] [-v] [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue]
+Usage: $0 [-h] [-V] [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue]
 [-l] [tag_to_Almighty]
 Send a tag to Almighty and manage queues
 Options:
@@ -50,7 +50,7 @@ Options:
   -E, --Enable_all_queues   active all queues
   -D, --Disable_all_queues  inactive all queues
       --add_queue           add a new queue; syntax is name,priority,scheduler
-                            (ex: "name,3,oar_sched_gantt_with_timesharing"
+                            (ex: "name,3,oar_sched_gantt_with_timesharing")
       --remove_queue        remove an existing queue
   -l, --list_queues         list all queues and there status
   -h, --help                show this help screen
