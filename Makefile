@@ -268,6 +268,7 @@ node: man
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
 	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
+				 s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;\
 				" $(OARDIR)/oarsh_shell
 	install -m 0755 Tools/detect_resources $(OARDIR)
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
