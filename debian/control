@@ -2,7 +2,8 @@ Source: oar
 Section: admin
 Priority: extra
 Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
-Build-Depends: debhelper (>= 4.0.0), python-docutils, perl
+Build-Depends: debhelper (>= 4.0.0)
+Build-Depends-Indep: python-docutils, perl
 Standards-Version: 3.7.3
 
 Package: oar-common
