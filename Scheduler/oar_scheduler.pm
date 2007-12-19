@@ -532,7 +532,6 @@ sub check_jobs_to_launch($){
             my $max_time = $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
             iolib::set_moldable_job_max_time($dbh,$jobs_to_launch{$i}->[0], $max_time);
             iolib::set_gantt_job_startTime($dbh,$jobs_to_launch{$i}->[0],$current_time_sec);
-            oar_warn("[oar_scheduler] AAAAAAA $job->{job_id} $current_time_sec\n");
             oar_debug("[oar_scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             iolib::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
         }
