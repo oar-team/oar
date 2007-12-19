@@ -49,6 +49,10 @@ sub parse {
 		  {
 		   DEFAULT => "Grid"
 		  });
+  $config->define("summary_display",
+		  {
+		   DEFAULT => "default"
+		  });
   $config->define("hostname",
 		  {
 		   DEFAULT => ""
@@ -121,6 +125,7 @@ sub parse {
 
   $self->{CLUSTERNAME} = $config->clustername();
   $self->{GRIDNAME} = $config->gridname();
+  $self->{SUMMARY_DISPLAY} = $config->summary_display();
   $self->{HOSTNAME} = $config->hostname();
   $self->{DBTYPE} = $config->dbtype();
   $self->{DBNAME} = $config->dbname();
@@ -169,10 +174,17 @@ sub clustername {
   my $self = shift;
   return $self->{CLUSTERNAME};
 }
+
 ## return grid name
 sub gridname {
   my $self = shift;
   return $self->{GRIDNAME};
+}
+
+## return summary_display properties
+sub summary_display {
+  my $self = shift;
+  return $self->{SUMMARY_DISPLAY};
 }
 
 ## return the hostname
