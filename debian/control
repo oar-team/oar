@@ -5,13 +5,16 @@ Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
 Build-Depends: debhelper (>= 4.0.0)
 Build-Depends-Indep: python-docutils, perl
 Standards-Version: 3.7.3
+Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/Debian/trunk/
+Vcs-Browser: https://gforge.inria.fr/plugins/scmsvn/viewcvs.php/Debian/trunk/?root=oar
+Homepage: http://oar.imag.fr/
 
 Package: oar-common
 Architecture: all
 Depends: perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
- This package installs the common part or the OAR batch scheduler
+ This package installs the common part of the OAR batch scheduler
 
 Package: oar-server
 Architecture: all
@@ -19,14 +22,14 @@ Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, ope
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk, mysql-client | postgresql-client, mysql-server | postgresql, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
- This package installs the server part or the OAR batch scheduler
+ This package installs the server part of the OAR batch scheduler
 
 Package: oar-node
 Architecture: all
 Depends: oar-common (= ${binary:Version}), openssh-client | ssh, openssh-server | ssh
 Suggests: oar-doc, xbase-clients
 Description: OAR batch scheduler node package
- This package installs the execution node part or the OAR batch scheduler
+ This package installs the execution node part of the OAR batch scheduler
 
 Package: oar-user
 Architecture: all
@@ -34,7 +37,7 @@ Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xbase-clients
 Description: OAR batch scheduler user package
- This package install the submition and query part or the OAR batch scheduler
+ This package install the submition and query part of the OAR batch scheduler
 
 Package: oar-draw-gantt
 Architecture: all
