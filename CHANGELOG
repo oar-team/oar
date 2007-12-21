@@ -14,6 +14,8 @@ upstream development version:
     handled with a user id)
   - Debian packaging: Run OAR specific sshd with root privileges (under heavy
     load, kernel may be more responsive for root processes...)
+  - Remove ALLOWED_NETWORKS tag in oar.conf (added more complexeity than
+    resolving problems)
 
 version 2.2.11:
 ---------------
@@ -25,6 +27,7 @@ version 2.2.11:
     reservations to check.
   - Fix bug: add a lock around the section which creates and feed the OAR
     cpuset.
+  - Taktuk command line API has changed (we need taktuk >= 3.6).
 
 version 2.2.10:
 ---------------

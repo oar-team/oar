@@ -162,7 +162,6 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
         if ((defined($Cpuset_field)) and ($skip == 0)){
             my $cpuset_name = iolib::get_job_cpuset_name($base, $j->{job_id}) if (defined($Cpuset_field));
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$j->{assigned_moldable_job});
-            my $cpuset_data_hash;
             my $suspend_data_hash = {
                 name => $cpuset_name,
             };

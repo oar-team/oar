@@ -5440,6 +5440,7 @@ sub job_finishing_sequence($$$$$$){
                 $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$cpuset_full_path,$job->{job_user},$job_user);
 
                 my $cpuset_data_hash = {
+                    job_id => $job_id,
                     name => $cpuset_name,
                     nodes => $cpuset_nodes,
                     cpuset_path => $cpuset_path,

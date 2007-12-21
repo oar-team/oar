@@ -95,7 +95,7 @@ sub diffuse_cmd($$$){
         $SIG{QUIT} = 'DEFAULT';
         $SIG{USR1} = 'DEFAULT';
         $SIG{USR2} = 'DEFAULT';
-        my $cmd = "$Taktuk_cmd ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ sudo perl - SERVER_SCRIPT ], broadcast file_input [ - ], broadcast close";
+        my $cmd = "$Taktuk_cmd ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ sudo perl - SERVER_SCRIPT ], broadcast input file [ - ], broadcast input close";
         fcntl(tak_node_read, F_SETFD, 0);
         close(tak_node_write);
         close(tak_stdout_read);

@@ -1393,12 +1393,6 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       OAREXEC_DEBUG_MODE=0
 
-  - OAR Allowed networks, Networks or hosts allowed to submit jobs to OAR and
-    compute nodes may be specified here(0.0.0.0/0 means all IPs are allowed
-    and 127.0.0.1/32 means only IP 127.0.0.1 is allowed)::
-      
-      ALLOWED_NETWORKS="127.0.0.1/32 0.0.0.0/0"
-
 .. _ACCOUNTING_WINDOW:
 
   - Set the granularity of the OAR accounting feature (in seconds). Default is

@@ -62,22 +62,6 @@ if (is_conf("SERVER_PORT")){
 }
 my $servermaxconnect=100;
 
-#Get authorized networks that can connect to my socket
-my @authorizedHosts ;
-if (is_conf("ALLOWED_NETWORKS")){
-    my $networks = get_conf("ALLOWED_NETWORKS");
-    oar_debug("[Almighty] Authorized networks = $networks\n");
-    my @netTmp = split(" ", $networks);
-    foreach my $i (@netTmp){
-        if ($i =~ m/\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)\s*$/m){
-            push(@authorizedHosts, [$1,$2,$3,$4,$5]);
-        }
-    }
-}
-if (!defined(@authorizedHosts)){
-    push(@authorizedHosts, [0,0,0,0,0]);
-}
-
 # This timeout is used by appendice to prevent a client to block
 # reception by letting a connection opened
 # should be left at a positive value
@@ -166,17 +150,6 @@ sub qget_appendice(){
         my $res;
         my $carac;
         my $client=$server->accept();
-
-        #Test if this peer is allowed
-        my ($hostAllow,@logs) = oar_Tools::check_client_host_ip($client,\@authorizedHosts);
-        foreach my $l (@logs){
-            oar_debug("[Almighty] $l");
-        }
-        if ($hostAllow == 0){
-            $client->close();
-            #return nothing
-            return();
-        }
 
         if (!defined($client)){
             oar_error("[Almighty] End of appendice listening : the socket disappeared!\n");

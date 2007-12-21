@@ -111,7 +111,7 @@ if($pid == 0){
     $SIG{QUIT} = 'DEFAULT';
     $SIG{USR1} = 'DEFAULT';
     $SIG{USR2} = 'DEFAULT';
-    my $cmd = "$Taktuk_cmd -c '$Openssh_cmd' ".'-o error=\'"INFO on $host: $line\n"\' -o output=\'"OUTPUT $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $Job_id $Cpuset_path/$cpuset_name ], broadcast file_input [ - ], broadcast close";
+    my $cmd = "$Taktuk_cmd -c '$Openssh_cmd' ".'-o error=\'"INFO on $host: $line\n"\' -o output=\'"OUTPUT $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $Job_id $Cpuset_path/$cpuset_name ], broadcast input file [ - ], broadcast input close";
     fcntl(tak_node_read, F_SETFD, 0);
     close(tak_node_write);
     close(tak_stdout_read);

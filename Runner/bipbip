@@ -146,6 +146,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     $Job_user = oar_Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
     $ssh_public_key = oar_Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
+        job_id => $Job_id,
         name => $Cpuset_name,
         nodes => $cpuset_nodes,
         cpuset_path => $Cpuset_path,

@@ -199,7 +199,6 @@ foreach my $i (@events_to_check){
             if (defined($Cpuset_field)){
                 my $cpuset_name = iolib::get_job_cpuset_name($base, $i->{job_id}) if (defined($Cpuset_field));
                 my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
-                my $cpuset_data_hash;
                 my $suspend_data_hash = {
                     name => $cpuset_name,
                 };

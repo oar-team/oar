@@ -46,6 +46,7 @@ if (defined($Cpuset->{cpuset_path})){
 
 # From now, "Cpuset" is of the form: 
 # $Cpuset = {
+#               job_id => id of the corresponding job
 #               name => "cpuset name",
 #               cpuset_path => "relative path in the cpuset FS",
 #               nodes => hostname => [array with the content of the database cpuset field]
@@ -280,7 +281,7 @@ sub exit_myself($$){
     my $exit_code = shift;
     my $str = shift;
 
-    warn("[job_resource_manager][ERROR] ".$str."\n");
+    warn("[job_resource_manager][$Cpuset->{job_id}][ERROR] ".$str."\n");
     exit($exit_code);
 }
 
@@ -290,7 +291,7 @@ sub print_log($$){
     my $str = shift;
 
     if ($l <= $Log_level){
-        print("[job_resource_manager][DEBUG] $str\n");
+        print("[job_resource_manager][$Cpuset->{job_id}][DEBUG] $str\n");
     }
 }
 

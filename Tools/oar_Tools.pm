@@ -45,7 +45,6 @@ sub get_taktuk_timeout();
 sub get_default_leon_soft_walltime();
 sub get_default_leon_walltime();
 sub get_default_dead_switch_time();
-sub check_client_host_ip($$);
 sub fork_no_wait($$);
 sub launch_command($);
 sub get_default_prologue_epilogue_timeout();
@@ -347,42 +346,6 @@ sub signal_oarexec($$$$$$){
     }else{
         return(undef);
     }
-}
-
-
-# Check if a client socket is authorized to connect to us
-# args : client socket, ref of an array of authorized networks
-# return 1 for success else 0
-sub check_client_host_ip($$){
-    my $client = shift;
-    my $ref_array = shift;
-
-    my @authorized_hosts = @{$ref_array};
-
-    my @logs;
-    my $extrem = getpeername($client);
-    my ($remote_port,$addr_in) = unpack_sockaddr_in($extrem);
-    my $remote_host = inet_ntoa($addr_in);
-    push(@logs, "[checkClientHostIP] Remote host = $remote_host ; remote port = $remote_port\n");
-    $remote_host =~ m/^\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*$/m;
-    $remote_host = ($1 << 24)+($2 << 16)+($3 << 8)+$4;
-    my $i = 0;
-    my $host_allow = 0;
-    while (($host_allow == 0) && ($#authorized_hosts >= $i)){
-        my $str = "Check host with $authorized_hosts[$i]->[0].$authorized_hosts[$i]->[1].$authorized_hosts[$i]->[2].$authorized_hosts[$i]->[3]/$authorized_hosts[$i]->[4] --> ";
-        my $network = ($authorized_hosts[$i]->[0] << 24)+($authorized_hosts[$i]->[1] << 16)+($authorized_hosts[$i]->[2] << 8)+$authorized_hosts[$i]->[3];
-        my $mask = 2**32 - 2**(32-$authorized_hosts[$i]->[4]);
-        if (($remote_host & $mask) == $network){
-            $str .= "OK";
-            $host_allow = 1;
-        }else{
-            $str .= "BAD";
-            push(@logs, "[checkClientHostIP] $str\n");
-        }
-        push(@logs, "[checkClientHostIP] $str\n");
-        $i++;
-    }
-    return($host_allow,@logs);
 }
 
 
@@ -810,7 +773,7 @@ sub manage_remote_commands($$$$$$$){
             $SIG{QUIT} = 'DEFAULT';
             $SIG{USR1} = 'DEFAULT';
             $SIG{USR2} = 'DEFAULT';
-            my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $action ], broadcast file_input [ - ], broadcast close";
+            my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $action ], broadcast input file [ - ], broadcast input close";
             fcntl(tak_node_read, F_SETFD, 0);
             close(tak_node_write);
             close(tak_stdout_read);
