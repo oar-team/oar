@@ -48,7 +48,7 @@ Description: Do you want to initialize the OAR database now ?
  The OAR database can be created and configured for you now
 
 Template: oar/db/initfailed
-Type: note
+Type: error
 Description: Failed to initialize OAR database
  OAR database initialization failed.
  You may try to initialize it by hand once packages installation is finished.
