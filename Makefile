@@ -148,7 +148,6 @@ libs: man
 server: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 Almighty/Almighty $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/Almighty
