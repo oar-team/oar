@@ -302,6 +302,7 @@ doc: build-html-doc
 	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
 	install -d -m 0755 $(DOCDIR)/scripts
 	install -d -m 0755 $(DOCDIR)/scripts/job_resource_manager
+	install -m 0644 Tools/job_resource_manager.pl $(DOCDIR)/scripts/job_resource_manager/
 	install -d -m 0755 $(DOCDIR)/scripts/prologue_epilogue
 	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue/
 	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue/
