@@ -1536,7 +1536,8 @@ Each configuration tag found in /etc/oar.conf is now described:
   - If you have installed taktuk and want to use it to manage cpusets
     then give the full command path (with your options except "-m" and "-o"
     and "-c").
-    You don t also have to give any taktuk command.
+    You don't also have to give any taktuk command.(taktuk version must be >=
+    3.6)
     ::
 
       TAKTUK_CMD="/usr/bin/taktuk -s"
