@@ -778,7 +778,7 @@ sub manage_remote_commands($$$$$$$){
             $SIG{QUIT} = 'DEFAULT';
             $SIG{USR1} = 'DEFAULT';
             $SIG{USR2} = 'DEFAULT';
-            my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $action ], broadcast file_input [ - ], broadcast close";
+            my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $action ], broadcast input file [ - ], broadcast input close";
             fcntl(tak_node_read, F_SETFD, 0);
             close(tak_node_write);
             close(tak_stdout_read);
