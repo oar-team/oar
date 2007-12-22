@@ -130,14 +130,14 @@ install-indep:
 	$(MAKE) draw-gantt \
 		OARUSER=oar \
 		OAROWNER=root \
-		OARCONFDIR=$(CURDIR)/debian/oar-draw-gantt/etc/oar \
-		PREFIX=$(CURDIR)/debian/oar-draw-gantt/usr \
-		MANDIR=$(CURDIR)/debian/oar-draw-gantt/usr/share/man \
-		OARDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/oar \
-		BINDIR=$(CURDIR)/debian/oar-draw-gantt/usr/bin \
-		SBINDIR=$(CURDIR)/debian/oar-draw-gantt/usr/sbin \
-		WWWDIR=$(CURDIR)/debian/oar-draw-gantt/var/www \
-		CGIDIR=$(CURDIR)/debian/oar-draw-gantt/usr/lib/cgi-bin \
+		OARCONFDIR=$(CURDIR)/debian/oar-web-status/etc/oar \
+		PREFIX=$(CURDIR)/debian/oar-web-status/usr \
+		MANDIR=$(CURDIR)/debian/oar-web-status/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-web-status/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-web-status/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-web-status/usr/sbin \
+		WWWDIR=$(CURDIR)/debian/oar-web-status/var/www \
+		CGIDIR=$(CURDIR)/debian/oar-web-status/usr/lib/cgi-bin \
 		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
