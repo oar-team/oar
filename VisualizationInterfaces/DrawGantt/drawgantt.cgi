@@ -935,8 +935,8 @@ $prefix= ""
 $prefix= cgi.params['prefix'].to_s if (cgi.params['prefix'].length>0)
 
 puts "### Reading configuration file..." if $verbose
-
-if cgi['conf']
+	
+if cgi['conf'].length > 0
 	$conf = YAML::load(cgi['conf'])
 else
 	$conf = YAML::load(IO::read(configfile))
