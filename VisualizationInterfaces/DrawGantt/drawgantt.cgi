@@ -13,10 +13,10 @@
 # 
 #
 # TODO:
+# 	- transparencies for aggregation and timesharing
 #		- debug postgresql case
 #		- wizard for auto configuration ?
 # 	- display state node information for status different of alive
-# 	- resource aggregation
 # 	- sparkline chart for workload information sumarize?
 #		- job/user highlighting (by apply some picture manipulation from general picture ?)
 #		- fix quote problem javascript popup
@@ -27,7 +27,6 @@ require 'cgi'
 require 'time'
 require 'optparse'
 require 'yaml'
-require 'pp'
 require 'GD'
 
 MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -836,8 +835,8 @@ def cgi_html(cgi)
 	file_range = '1_2_day' if (range =='1/2 day') 
 	file_range = '1_6_day' if (range == '1/6 day') 
 
-	file_img =  $platform + '_gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
-	file_map =  $platform + '_map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_img =  $prefix+ '_gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_map =  $prefix+ '_map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
 
 	#test if it's on old file ?
 	if (origin + RANGE_SEC[range] > now.to_i)
@@ -877,9 +876,13 @@ def cgi_html(cgi)
 		end
 	end
 
-	if (cgi.params['mode'].length>0)
-		puts "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}"
-		puts "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
+	#$stderr.print ">>>>#{cgi.params['mode'].class}"
+
+	if (cgi.params['mode'].to_s=='image_map_only')
+		cgi.out("text/plain") {
+				"/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}" + "\n" +
+				"/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}" 
+			}
 	else
 	  cgi.out {
 		  cgi.html {
@@ -926,13 +929,18 @@ end
 
 cgi = CGI.new("html3") # add HTML generation methods
 
-configfile = 'drawgantt.conf'
+configfile = '/etc/oar/drawgantt.conf'
 configfile = cgi.params['configfile'].to_s if (cgi.params['configfile'].length>0)
-$platform = ""
-$platform = cgi.params['platform'].to_s if (cgi.params['platform'].length>0)
+$prefix= ""
+$prefix= cgi.params['prefix'].to_s if (cgi.params['prefix'].length>0)
 
 puts "### Reading configuration file..." if $verbose
-$conf = YAML::load(IO::read(configfile))
+
+if cgi['conf']
+	$conf = YAML::load(cgi['conf'])
+else
+	$conf = YAML::load(IO::read(configfile))
+end
 
 $title = $conf['title']
 $sizex = $conf['sizex']
