@@ -66,7 +66,7 @@ $cgi->setColorPool($conf->colorPool());
 
 ## begin html printing
 print $cgi->page_head("Monika: ".$conf->clustername." "." nodes");
-
+print '<link rel="stylesheet" type="text/css" href="/monika.css">';
 print $cgi->h1({-align => "center"},
 	       $conf->clustername()." "." nodes");
 

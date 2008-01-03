@@ -331,6 +331,7 @@ monika:
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARCONFDIR)'\;#;;" $(CGIDIR)/monika.cgi
 	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(CGIDIR)
+	install -m 0644 VisualizationInterfaces/Monika/monika.css $(WWWDIR)
 	install -d -m 0755 $(CGIDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(CGIDIR)/monika
 	install -d -m 0755 $(CGIDIR)/monika/Sort

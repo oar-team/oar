@@ -215,107 +215,46 @@ sub alljobs {
   return $self->{ALLJOBS};
 }
 
-## compute a summary of the usage of OAR nodes
-sub nodecount {
-  my $self = shift;
-  my $total = 0;
-  my $totalcpu = 0;
-  my $busy = 0;
-  my $busycpu = 0;
-  my $free = 0;
-  my $freecpu = 0;;
-  my $other = 0;
-  my ($totallicence, $freelicence, $busylicence, $totalmemory, $busymemory, $freememory,$totaluserid,$busyuserid,$freeuserid) = (0, 0, 0, 0, 0, 0, 0, 0, 0);
-  my @nodes = values %{$self->allnodes};
-  my %alreadyCounted;
-  my %alreadyCountedTotal;
-  foreach my $node (@nodes) {
-    foreach my $currentRessource (keys %{$node->{Ressources}}) {
-      if($node->{'Ressources'}->{$currentRessource}->{infos}->{type} eq 'default'){
-        $totalcpu++;
-        unless (defined($alreadyCountedTotal{$node->name})){
-            $total++;
-            $alreadyCountedTotal{$node->name}= 1;
-        };
-        if ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '1'){
-          $busycpu++;
-          unless (defined($alreadyCounted{$node->name})){
-            $busy++;
-            $alreadyCounted{$node->name}= 1;
-          }
-        }elsif ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '0'){
-          $freecpu++;
-          unless (defined($alreadyCounted{$node->name})){
-            $free++;
-            $alreadyCounted{$node->name}= 1;
-          }
-        }else{
-          $other++;
-        }
-      }
-      elsif($node->{'Ressources'}->{$currentRessource}->{infos}->{type} eq 'licence'){
-        $totallicence++;
-        if ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '1'){
-          $busylicence++;
-        }elsif ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '0'){
-          $freelicence++;
-        }else{
-          $other++;
-        }
-      }
-      elsif($node->{'Ressources'}->{$currentRessource}->{infos}->{type} eq 'memory'){
-        $totalmemory++;
-        if ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '1'){
-          $busymemory++;
-        }elsif ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '0'){
-          $freememory++;
-        }else{
-          $other++;
-        }
-      }
-      elsif($node->{'Ressources'}->{$currentRessource}->{infos}->{type} eq 'userid'){
-        $totaluserid++;
-        if ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '1'){
-          $busyuserid++;
-        }elsif ($node->ressourceState($currentRessource) eq "Alive" && $node->isRessourceWorking($currentRessource) eq '0'){
-          $freeuserid++;
-        }else{
-          $other++;
-        }
-      }
-    }
-  }
-  return ($total,$totalcpu,$free,$freecpu,$busy,$busycpu,$other,$totallicence,$freelicence,$busylicence,$totalmemory,$busymemory,$freememory,$totaluserid,$busyuserid,$freeuserid);
-}
-
 ## print a HTML summary table of the current usage of the nodes.
 sub htmlSummaryTable {
   my $self = shift;
   my $cgi = shift;
   my $output = "";
   my $summary_display = monika::Conf::myself->summary_display;
-  $summary_display = $summary_display.",";  ## for parsing the string
-  my @array_display;
+  $summary_display = $summary_display.";";  ## add a ., to the end for parsing the string
+  my %hash_display;
   while($summary_display ne ""){
-    $summary_display =~ s/(.*?),//;
-    push(@array_display, $1);
+    $summary_display =~ s/(.*?);//;
+    my $tmp=$1;
+    my $key;
+    if($tmp =~ m/(.*?):/){
+      $tmp = $tmp.",";
+      $tmp =~ s/(.*?)://;
+      $key = ($1);
+      my @array_values;
+      while($tmp ne ""){
+        $tmp =~ s/(.*?),//;
+        my $value = $1;
+        ##hack for simplification of the user admin
+        if($key eq 'default'){
+          if($value eq 'nodes' || $value eq 'node'){
+            $value = 'network_address';
+          }
+          elsif($value eq 'cores' || $value eq 'core'){
+            $value = 'cpu';
+          }
+        }
+        push @array_values, $value;
+      }
+      $hash_display{$key} = \@array_values;
+    }
+    else{
+      $key = $tmp;
+      my @array_values;
+      push @array_values, "resource_id";
+      $hash_display{"$key"} = \@array_values;
+    }
   }
-  my($flag_default, $flag_licence, $flag_memory, $flag_userid) = (0, 0, 0);
-  foreach (@array_display){
-    if($_ eq 'licence'){
-        $flag_licence = 1;
-    }
-    elsif($_ eq 'default'){
-        $flag_default = 1;
-    }
-    elsif($_ eq 'memory'){
-        $flag_memory = 1;
-    }
-    elsif($_ eq 'userid'){
-        $flag_userid = 1;
-    }
-  }
-  my ($total,$totalcpu,$free,$freecpu,$busy,$busycpu,$other,$totallicence,$freelicence,$busylicence,$totalmemory,$busymemory,$freememory,$totaluserid,$busyuserid,$freeuserid) = $self->nodecount();
   $output .= $cgi->start_table({-border=>"1",
 		     -align =>"center"
 		    });
@@ -327,48 +266,82 @@ sub htmlSummaryTable {
   $output .= $cgi->td($cgi->b("Busy"));
   $output .= $cgi->td($cgi->b("Total"));
   $output .= $cgi->end_Tr();
+  
+  foreach (keys %hash_display){
+    my $type_res = $_;
+    if($type_res eq 'default'){
+      foreach my $val (@{$hash_display{$type_res}}){
+        if($val eq 'network_address'){
+          $output .= $cgi->td($cgi->b("nodes"));
+        }
+        elsif($val eq 'cpu'){
+          $output .= $cgi->td($cgi->b("cores"));
+        }
+        else{
+          $output .= $cgi->td($cgi->b("default"));
+        }
+        my ($free, $busy, $total) = $self->resourceCount($type_res, $val);
+        $output .= $cgi->td([$free, $busy, $total]);
+        $output .= $cgi->end_Tr();
+      }
+    }
+    else{
+      foreach my $val (@{$hash_display{$type_res}}){
+        my ($free, $busy, $total) = $self->resourceCount($type_res, $val);
+        $output .= $cgi->td($cgi->b($type_res));
+        $output .= $cgi->td([$free, $busy, $total]);
+        $output .= $cgi->end_Tr();
+      }
+    }
 
-  $output .= $cgi->start_Tr({-valign=>"middle",
-		  -align=>"center"
-	         });
-  $output .= $cgi->td($cgi->b("Nodes"));
-  $output .= $cgi->td([$free,$busy,$total]);
-  $output .= $cgi->end_Tr();
-
-  if ($total != $totalcpu) {
-    $output .= $cgi->start_Tr({-valign=>"middle",
-		    -align=>"center"
-		   });
-    $output .= $cgi->td($cgi->b("Cores"));
-    $output .= $cgi->td([$freecpu,$busycpu,$totalcpu]);
-    $output .= $cgi->end_Tr();
-  }
-  if ($totallicence ne 0 && $flag_licence eq 1) {
-    $output .= $cgi->start_Tr({-valign=>"middle",
-		    -align=>"center"
-		   });
-    $output .= $cgi->td($cgi->b("Licences"));
-    $output .= $cgi->td([$freelicence,$busylicence,$totallicence]);
-    $output .= $cgi->end_Tr();
-  }
-  if ($totalmemory ne 0 && $flag_memory eq 1) {
-    $output .= $cgi->start_Tr({-valign=>"middle",
-		    -align=>"center"
-		   });
-    $output .= $cgi->td($cgi->b("Memory"));
-    $output .= $cgi->td([$freememory,$busymemory,$totalmemory]);
-    $output .= $cgi->end_Tr();
-  }
-  if ($totaluserid ne 0 && $flag_userid eq 1) {
-    $output .= $cgi->start_Tr({-valign=>"middle",
-		    -align=>"center"
-		   });
-    $output .= $cgi->td($cgi->b("UserId"));
-    $output .= $cgi->td([$freeuserid,$busyuserid,$totaluserid]);
-    $output .= $cgi->end_Tr();
   }
   $output .= $cgi->end_table();
   return $output;
+}
+
+## compute a summary of the usage of OAR nodes
+sub resourceCount {
+  my $self = shift;
+  my $type_resource = shift;
+  my $att_name = shift;
+  my ($free, $busy, $total) = (0,0,0);
+  my %alreadySeen;
+  foreach my $resource_name (keys %{$self->{'ALLNODES'}}){
+    foreach my $resource_id (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}}){
+      foreach my $att (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}}){
+        if($att eq $att_name && $type_resource eq $self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'type'}){       
+          if($att_name eq 'network_address'){ ## it's a node
+            unless(exists($alreadySeen{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'network_address'}})){
+              if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
+                $busy++;
+                $total++;
+              }
+              else{
+                $total++;
+                if($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
+                  $free++;
+                }
+              }
+              $alreadySeen{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'network_address'}} = 'true';
+            }
+          }
+          else{
+            if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
+                $busy++;
+                $total++;
+              }
+            else{
+              $total++;
+              if($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
+                $free++;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return ($free, $busy, $total);
 }
 
 ## print a HTML tables describing current OAR jobs.
