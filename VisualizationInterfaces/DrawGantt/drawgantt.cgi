@@ -942,7 +942,7 @@ else
 	$conf = YAML::load(IO::read(configfile))
 end
 
-$title = $conf['title']
+$title = $conf['title'] || 'Gantt Chart' 
 $sizex = $conf['sizex']
 #$sizey = $conf['sizey']
 $offsetgridy = $conf['offsetgridy']
