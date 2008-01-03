@@ -258,27 +258,27 @@ sub htmlSummaryTable {
   $output .= $cgi->start_table({-border=>"1",
 		     -align =>"center"
 		    });
-  $output .= $cgi->start_Tr({-valign=>"middle",
-		  -align=>"center"
-	         });
-  $output .= $cgi->td($cgi->i("Resources status"));
-  $output .= $cgi->td($cgi->b("Free"));
-  $output .= $cgi->td($cgi->b("Busy"));
-  $output .= $cgi->td($cgi->b("Total"));
-  $output .= $cgi->end_Tr();
-  
-  foreach (keys %hash_display){
-    my $type_res = $_;
+  foreach my $type_res (keys %hash_display){
+    $output .= $cgi->start_Tr({-align => "center"});
+	  $output .= $cgi->td();
+    $output .= $cgi->start_table({-border=>"1",-align =>"center"});
+		$output .= $cgi->start_Tr({-align => "center"});
+	  $output .= $cgi->td($cgi->i($type_res." summary"));
+	  $output .= $cgi->end_Tr();
+    $output .= $cgi->start_Tr({-align=>"center"});
+    $output .= $cgi->td($cgi->i(""));
+    $output .= $cgi->td($cgi->b("Free"));
+    $output .= $cgi->td($cgi->b("Busy"));
+    $output .= $cgi->td($cgi->b("Total"));
+    $output .= $cgi->end_Tr();
+    
     if($type_res eq 'default'){
       foreach my $val (@{$hash_display{$type_res}}){
         if($val eq 'network_address'){
           $output .= $cgi->td($cgi->b("nodes"));
         }
-        elsif($val eq 'cpu'){
-          $output .= $cgi->td($cgi->b("cores"));
-        }
         else{
-          $output .= $cgi->td($cgi->b("default"));
+          $output .= $cgi->td($cgi->b($val));
         }
         my ($free, $busy, $total) = $self->resourceCount($type_res, $val);
         $output .= $cgi->td([$free, $busy, $total]);
@@ -288,12 +288,13 @@ sub htmlSummaryTable {
     else{
       foreach my $val (@{$hash_display{$type_res}}){
         my ($free, $busy, $total) = $self->resourceCount($type_res, $val);
-        $output .= $cgi->td($cgi->b($type_res));
+        $output .= $cgi->td($cgi->b($val));
         $output .= $cgi->td([$free, $busy, $total]);
         $output .= $cgi->end_Tr();
       }
-    }
-
+    }  
+    $output .= $cgi->end_table();
+    $output .= $cgi->end_Tr();
   }
   $output .= $cgi->end_table();
   return $output;
