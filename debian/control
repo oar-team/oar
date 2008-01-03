@@ -61,6 +61,8 @@ Description: OAR batch scheduler Gantt reservation diagram
 # This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
 Package: oar-doc
+Section: doc
 Architecture: all
 Description: OAR batch scheduler documentation package
  This package install some documentation for OAR batch scheduler
+
