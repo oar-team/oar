@@ -315,7 +315,6 @@ draw-gantt:
 	install -d -m 0755 $(CGIDIR)
 	install -d -m 0755 $(WWWDIR)
 	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(CGIDIR)
-	perl -i -pe "s#drawgantt\.conf#$(REAL_OARCONFDIR)/drawgantt\.conf#;;" $(CGIDIR)/drawgantt.cgi
 	install -d -m 0755 $(OARCONFDIR)
 	@if [ -f $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
 	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
