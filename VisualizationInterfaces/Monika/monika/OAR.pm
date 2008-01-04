@@ -13,6 +13,7 @@ use Data::Dumper;
 use monika::db_io;
 use monika::OARNode;
 use monika::OARJob;
+use Tie::IxHash;
 
 ## Class constructor
 sub new {
@@ -223,6 +224,7 @@ sub htmlSummaryTable {
   my $summary_display = monika::Conf::myself->summary_display;
   $summary_display = $summary_display.";";  ## add a ., to the end for parsing the string
   my %hash_display;
+  tie %hash_display, "Tie::IxHash"; ## for hash insertion order
   while($summary_display ne ""){
     $summary_display =~ s/(.*?);//;
     my $tmp=$1;
@@ -258,12 +260,12 @@ sub htmlSummaryTable {
   $output .= $cgi->start_table({-border=>"1",
 		     -align =>"center"
 		    });
+	$output .= $cgi->start_Tr({-align => "center"});
   foreach my $type_res (keys %hash_display){
-    $output .= $cgi->start_Tr({-align => "center"});
-	  $output .= $cgi->td();
+  	$output .= $cgi->td();
     $output .= $cgi->start_table({-border=>"1",-align =>"center"});
 		$output .= $cgi->start_Tr({-align => "center"});
-	  $output .= $cgi->td($cgi->i($type_res." summary"));
+	  $output .= $cgi->td($cgi->i($cgi->u($type_res." summary")));
 	  $output .= $cgi->end_Tr();
     $output .= $cgi->start_Tr({-align=>"center"});
     $output .= $cgi->td($cgi->i(""));
@@ -271,7 +273,6 @@ sub htmlSummaryTable {
     $output .= $cgi->td($cgi->b("Busy"));
     $output .= $cgi->td($cgi->b("Total"));
     $output .= $cgi->end_Tr();
-    
     if($type_res eq 'default'){
       foreach my $val (@{$hash_display{$type_res}}){
         if($val eq 'network_address'){
@@ -294,8 +295,8 @@ sub htmlSummaryTable {
       }
     }  
     $output .= $cgi->end_table();
-    $output .= $cgi->end_Tr();
   }
+  $output .= $cgi->end_Tr();
   $output .= $cgi->end_table();
   return $output;
 }
