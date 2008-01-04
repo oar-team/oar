@@ -93,8 +93,6 @@ if (defined $cgi->param('node') and defined $nodes{$cgi->param('node')}) {
 ## else show the main page
 } else {
   ## print oar status summary
-  print $cgi->h2({-align => "center"},
-		 "Summary:");
   print $oar->htmlSummaryTable($cgi);
   print $cgi->br();
 
