@@ -28,6 +28,7 @@ require 'time'
 require 'optparse'
 require 'yaml'
 require 'GD'
+require 'pp'
 
 MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -710,7 +711,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	f_img.close
 
 	f_map = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}", 'w')
-	f_map.puts  '<map name="ganttmap">'
+	f_map.puts  '<map name="' + $prefix + '_ganttmap">'
 	map_info.each do |info|
 		j = jobs[info[4]]
 		f_map.puts '<area shape="rect" coords="' + 
@@ -861,7 +862,13 @@ def cgi_html(cgi)
 		end
 		file_time_sorted = file_time.sort{|a,b| a[1]<=>b[1]}
 		#puts file_time_sorted.length/2
-		file_time_sorted[0..file_time_sorted.length/2].each {|f| File.delete(f.first)}
+		file_time_sorted[0..file_time_sorted.length/2].each do |f| 
+			begin
+				File.delete(f.first)
+			rescue
+				$stderr.print "Can't flush file: " + $! if $verbose
+			end
+		end
 	end
 
 	#build image file
@@ -915,7 +922,7 @@ def cgi_html(cgi)
 						CGI.escapeElement('<div style="text-align: center">') +
 #						cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
 						cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}",
-										"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
+										"ALT" => "gantt image", "USEMAP" => "#" + $prefix +"_ganttmap" ) +
 						CGI.escapeElement('</div>'); 
 					}
 				}
@@ -935,11 +942,16 @@ $prefix= ""
 $prefix= cgi.params['prefix'].to_s if (cgi.params['prefix'].length>0)
 
 puts "### Reading configuration file..." if $verbose
-	
+
+$conf = YAML::load(IO::read(configfile))
+
 if cgi['conf'].length > 0
-	$conf = YAML::load(cgi['conf'])
-else
-	$conf = YAML::load(IO::read(configfile))
+	conf = YAML::load(cgi['conf'])
+	#override configuration parameters with received ones
+	conf.each do |key,value|
+		$conf.delete(key) if $conf[key]
+	 	$conf[key] = value
+	end
 end
 
 $title = $conf['title'] || 'Gantt Chart' 
