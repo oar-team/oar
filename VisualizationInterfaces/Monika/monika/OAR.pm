@@ -312,7 +312,19 @@ sub resourceCount {
     foreach my $resource_id (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}}){
       foreach my $att (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}}){
         if($att eq $att_name && $type_resource eq $self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'type'}){       
-          if($att_name eq 'network_address'){ ## it's a node
+          if($att_name eq 'cpu' || $att_name eq 'core'){
+            if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
+                $busy++;
+                $total++;
+              }
+            else{
+              $total++;
+              if($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
+                $free++;
+              }
+            }
+          }
+          else{
             unless(exists($alreadySeen{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'network_address'}})){
               if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
                 $busy++;
@@ -325,19 +337,7 @@ sub resourceCount {
                 }
               }
               $alreadySeen{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'network_address'}} = 'true';
-            }
-          }
-          else{
-            if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
-                $busy++;
-                $total++;
-              }
-            else{
-              $total++;
-              if($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
-                $free++;
-              }
-            }
+            } 
           }
         }
       }
