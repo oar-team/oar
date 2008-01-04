@@ -133,10 +133,10 @@ sub scan_script($){
     my %result;
     
     ($file) = split(" ",$file);
-    #my $lusr= getpwuid($ENV{SUDO_UID});
-    #open(FILE, "sudo -u $lusr cat $file 2> /dev/null|") or return(%result);
+    my $lusr= getpwuid($ENV{SUDO_UID});
+    if (open(FILE, "sudo -u $lusr cat $file |")){
     
-    if (open(FILE, $file)){
+#    if (open(FILE, $file)){
         if (<FILE> =~ /^#/){
             while (<FILE>) {
                 if ( /^#OAR\s+/ ){
@@ -183,9 +183,12 @@ sub scan_script($){
                 }
             }
         }
-        close(FILE);
+        if (!close(FILE)){
+            warn("[ERROR] Cannot open the file $file. Check if it is readable by everybody (744).\n");
+            exit(12);
+        }
     }else{
-        warn("[ERROR] Cannot open the file $file. Check if it is readable by everybody (744).\n");
+        warn("[ERROR] Cannot execute: sudo -u $lusr cat $file\n");
         exit(12);
     }
 
