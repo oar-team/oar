@@ -1088,12 +1088,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
 
     if (!defined($stdout) or ($stdout eq "")){
         $stdout = "OAR";
-        $stdout .= ".$job_name" if ($job_name ne "NULL");
+        $stdout .= ".$job_name" if (defined($job_name));
         $stdout .= '.%jobid%.stdout';
     }
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR";
-        $stderr .= ".$job_name" if ($job_name ne "NULL");
+        $stderr .= ".$job_name" if (defined($job_name));
         $stderr .= '.%jobid%.stderr';
     }
 
