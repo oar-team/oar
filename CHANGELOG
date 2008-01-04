@@ -12,6 +12,7 @@ version 2.2.11:
   - Fix bug: add a lock around the section which creates and feed the OAR
     cpuset.
   - Taktuk command line API has changed (we need taktuk >= 3.6).
+  - Fix extra ' in the name of output files when using a job name.
 
 version 2.2.10:
 ---------------
