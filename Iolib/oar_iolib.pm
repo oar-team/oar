@@ -1090,7 +1090,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
     #Insert job
     my $date = get_date($dbh);
     #lock_table($dbh,["jobs"]);
-    $job_name = $dbh->quote($job_name);
+    my $job_name_quoted = $dbh->quote($job_name);
     $notify = $dbh->quote($notify);
     $command = $dbh->quote($command);
     $job_env = $dbh->quote($job_env);
@@ -1099,7 +1099,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
     $project = $dbh->quote($project);
     $dbh->do("INSERT INTO jobs
               (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name,$notify,\'$checkpoint_signal\',$job_env,$project)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project)
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -1508,13 +1508,14 @@ sub resubmit_job($$){
     my $file_id = $dbh->quote($job->{file_id});
     my $jenv = $dbh->quote($job->{job_env});
     my $project = $dbh->quote($job->{project});
+    my $job_name = $dbh->quote($job->{job_name});
     my $date = get_date($dbh);
     my $start_time = 0;
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
               (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,cpuset_name,job_env,project)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},\'$job->{job_name}\',\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',\'$job->{cpuset_name}\',$jenv,$project)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',\'$job->{cpuset_name}\',$jenv,$project)
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
