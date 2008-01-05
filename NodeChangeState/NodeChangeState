@@ -5,7 +5,7 @@
 use English;
 use oar_iolib;
 use Data::Dumper;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
 use IO::Socket::INET;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use strict;
@@ -134,6 +134,7 @@ foreach my $i (@events_to_check){
             }
         }
         oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
+        send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
     }
     
     ########################################
@@ -146,6 +147,7 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR")
        ){
         oar_warn("[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
+        send_log_by_email("Stop all scheduling queues","[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
         iolib::stop_all_queues($base);
         iolib::set_job_state($base,$i->{job_id},"Error");
     }
@@ -239,6 +241,7 @@ foreach my $i (@events_to_check){
                                 if( $@ || ($script_error != 0)){
                                     my $str = "[NodeChangeState] [$i->{job_id}] Suspend script error (so we are resuming it): $@; return code = $script_error\n";
                                     oar_warn($str);
+                                    send_log_by_email("Suspend script error","$str");
                                     iolib::add_new_event($base,"SUSPEND_SCRIPT_ERROR",$i->{job_id},$str);
                                     iolib::set_job_state($base,$i->{job_id},"Resuming");
                                     oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");
@@ -325,7 +328,10 @@ foreach my $h (keys(%debug_info)){
     }
     $str .= "\n";
 }
-oar_warn("[NodeChangeState] Resource state changes requested:\n$str\n") if (defined($str));
+if (defined($str)){
+    oar_warn("[NodeChangeState] Resource state changes requested:\n$str\n");
+    send_log_by_email("Resource state modifications","[NodeChangeState] Resource state changes requested:\n$str\n");
+}
 
 iolib::unlock_table($base);
 iolib::disconnect($base);

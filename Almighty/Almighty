@@ -4,7 +4,7 @@
 use strict;
 use Data::Dumper;
 use IO::Socket::INET;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
 
@@ -20,6 +20,7 @@ $ENV{OARDO_UID}=$<;
 my $Redirect_STD_process = oar_Judas::redirect_everything();
 
 oar_warn("[Almighty] Start Almighty\n");
+send_log_by_email("Start OAR server","[Almighty] Start Almighty");
 
 # Signal handle system
 my $finishTag = 0;
@@ -394,7 +395,8 @@ while (1){
         oar_debug("[Almighty] kill child process $appendice_pid\n");
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
-        oar_warn("[Almighty] stop Almighty\n");
+        oar_warn("[Almighty] Stop Almighty\n");
+        send_log_by_email("Stop OAR server","[Almighty] Stop Almighty");
         exit(10);
     }
     # INIT

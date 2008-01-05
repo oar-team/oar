@@ -5,7 +5,7 @@
 use oar_iolib;
 use Sys::Hostname;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
 use ping_checker;
 use oar_Tools;
 use Data::Dumper;

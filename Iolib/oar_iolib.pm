@@ -15,7 +15,7 @@ use DBI;
 use oar_conflib qw(init_conf get_conf is_conf reset_conf);
 use Data::Dumper;
 use Time::Local;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
 use strict;
 use oar_resource_tree;
 use oar_Tools;
@@ -205,7 +205,7 @@ sub connect_db($$$$$) {
     }elsif ($Db_type eq "mysql"){
         $type = "mysql";
     }else{
-        oar_Judas::oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
+        oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
         $type = "mysql";
         $Db_type = "mysql";
     }
@@ -213,11 +213,12 @@ sub connect_db($$$$$) {
     my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
     
     if (!defined($dbh)){
-        oar_Judas::oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
+        oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
         if ($Timeout_db_connection < $Max_db_connection_timeout){
             $Timeout_db_connection += 2;
         }
-        oar_Judas::oar_warn("[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
+        oar_warn("[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
+        send_log_by_email("OAR database connection failed","[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
         sleep($Timeout_db_connection);
     }
     
@@ -5253,7 +5254,7 @@ sub check_end_of_job($$$$$$$$$$){
             #oarexecuser.sh can not go into working directory and epilogue is in error
             push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
-            oar_Judas::oar_warn("$strWARN\n");
+            oar_warn("$strWARN\n");
             push(@events, {type => "WORKING_DIRECTORY", string => $strWARN});
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
@@ -5261,7 +5262,7 @@ sub check_end_of_job($$$$$$$$$$){
             #oarexecuser.sh can not create STDOUT and STDERR files and epilogue is in error
             push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] Cannot create STDOUT and STDERR files AND epilogue is in error";
-            oar_Judas::oar_warn("$strWARN\n");
+            oar_warn("$strWARN\n");
             push(@events, {type => "OUTPUT_FILES", string => $strWARN});
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
@@ -5394,12 +5395,12 @@ sub job_finishing_sequence($$$$$$){
                     kill(9,@{$children});
                 }
                 my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd : $cmd)";
-                oar_Judas::oar_error("$str\n");
+                oar_error("$str\n");
                 push(@{$events}, {type => "SERVER_EPILOGUE_TIMEOUT", string => $str});
             }
         }elsif ($exit_value != 0){
             my $str = "[JOB FINISHING SEQUENCE] Server epilogue exit code $exit_value (!=0) (cmd : $cmd)";
-            oar_Judas::oar_error("$str\n");
+            oar_error("$str\n");
             push(@{$events}, {type => "SERVER_EPILOGUE_EXIT_CODE_ERROR", string => $str});
         }
     }
@@ -5465,7 +5466,7 @@ sub job_finishing_sequence($$$$$$){
                 my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
-                    oar_Judas::oar_error($str);
+                    oar_error($str);
                     push(@{$events}, {type => "CPUSET_MANAGER_FILE", string => $str});
                 }elsif ($#bad_tmp >= 0){
                     # Verify if the errors are not from another job with the same cpuset_name

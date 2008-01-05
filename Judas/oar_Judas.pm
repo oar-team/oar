@@ -16,7 +16,7 @@ use oar_Tools;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(oar_warn oar_debug oar_error);
+@EXPORT_OK = qw(oar_warn oar_debug oar_error send_log_by_email);
 
 $| = 1;
 
@@ -78,9 +78,21 @@ sub write_log($){
     }
 }
 
+# Send an email to the admin
+sub send_log_by_email($$){
+    my $subject = shift;
+    my $body = shift;
+
+    if (!defined($subject)){
+        my ($sub,@null) = split("\n",$body);
+        $subject = substr($sub,0,70);
+    }
+    send_mail($mail_recipient, $subject,$body,0);
+}
+
 sub oar_debug($){
     my $string = shift;
-    
+
     if ($log_level >= 3){
         my ($seconds, $microseconds) = gettimeofday();
         $microseconds = int($microseconds / 1000);
@@ -92,10 +104,8 @@ sub oar_debug($){
 
 sub oar_warn($){
     my $string = shift;
-    
+
     if ($log_level >= 2){
-        my ($subject,@null) = split("\n",$string);
-        send_mail(undef,$mail_recipient, "[OAR] Info: ".substr($subject,0,70),$string,0);
         my ($seconds, $microseconds) = gettimeofday();
         $microseconds = int($microseconds / 1000);
         $microseconds = sprintf("%03d",$microseconds);
@@ -106,16 +116,14 @@ sub oar_warn($){
 
 sub oar_error($){
     my $string = shift;
-    
-    my ($subject,@null) = split("\n",$string);
-    send_mail(undef,$mail_recipient, "[OAR] Error: ".substr($subject,0,70),$string,0);
+
+    send_log_by_email(undef,"[error] $string");
     my ($seconds, $microseconds) = gettimeofday();
     $microseconds = int($microseconds / 1000);
     $microseconds = sprintf("%03d",$microseconds);
     $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
     write_log("[error] $string");
 }
-
 
 # Must be only used in the fork of the send_mail function to store errors in OAR DB
 sub treate_mail_error($$$$$$$){
@@ -138,10 +146,7 @@ sub treate_mail_error($$$$$$$){
 
 
 # send mail to OAR admin
-# arg1 --> object
-# arg2 --> body
-sub send_mail($$$$$){
-    my $base = shift;
+sub send_mail($$$$){
     my $mail_recipient_address = shift;
     my $object = shift;
     my $body = shift;
@@ -157,7 +162,6 @@ sub send_mail($$$$$){
     $SIG{PIPE} = 'IGNORE';
     my $pid=fork;
     if ($pid == 0){
-        undef($base);
         $SIG{USR1} = 'IGNORE';
         $SIG{INT}  = 'IGNORE';
         $SIG{TERM} = 'IGNORE';
@@ -191,7 +195,7 @@ sub send_mail($$$$$){
 
 
 # Parse notify method and send an email or execute a command
-# args : DB ref, notify method string, frontal host, user, job id, job name, tag, commentaries
+# args : notify method string, frontal host, user, job id, job name, tag, commentaries
 sub notify_user($$$$$$$$){
     my $base = shift;
     my $method = shift;
@@ -207,7 +211,7 @@ sub notify_user($$$$$$$$){
     if ($method =~ m/^\s*mail:(.+)$/m){
         iolib::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
         my $server_hostname = hostname();
-        send_mail($base,$1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
+        send_mail($1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
     }elsif($method =~ m/\s*exec:(.+)$/m){
         my $cmd = "$Openssh_cmd -x -T $host OARDO_BECOME_USER=$user oardodo $1 $job_id $job_name $tag \\\"$comments\\\" > /dev/null 2>&1";
         $SIG{PIPE} = 'IGNORE';

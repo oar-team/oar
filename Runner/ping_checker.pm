@@ -4,7 +4,7 @@ require Exporter;
 
 use strict;
 use Data::Dumper;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use IPC::Open3;
 use oar_Tools;
@@ -94,7 +94,7 @@ sub taktuk_hosts(@){
     my ($cmd, @null) = split(" ",$taktuk_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
     if (!defined($taktuk_cmd) || (! -x $cmd)){
-        oar_warn("[PingChecker] You call taktuk_hosts but TAKTUK_CMD in oar.conf is not valid.\n");
+        oar_error("[PingChecker] You call taktuk_hosts but TAKTUK_CMD in oar.conf is not valid.\n");
         return(@hosts);
     }
 
@@ -134,7 +134,7 @@ sub taktuk_hosts(@){
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
     if ($@){
-        oar_warn("[PingChecker] taktuk command times out : it is bad\n");
+        oar_error("[PingChecker] taktuk command times out : it is bad\n");
         return(@hosts);
     }else{
         @bad_hosts = keys(%check_test_nodes);
@@ -155,7 +155,7 @@ sub sentinelle_script_hosts(@){
     my ($cmd, @null) = split(" ",$sentinelle_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
     if (!defined($sentinelle_cmd) || (! -x $cmd)){
-        oar_warn("[PingChecker] You call sentinelle_script_hosts but PINGCHECKER_SENTINELLE_SCRIPT_COMMAND in oar.conf is not valid\n");
+        oar_error("[PingChecker] You call sentinelle_script_hosts but PINGCHECKER_SENTINELLE_SCRIPT_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
     
@@ -194,7 +194,7 @@ sub sentinelle_script_hosts(@){
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
     if ($@){
-        oar_warn("[PingChecker] sentinelle script command times out : it is bad\n");
+        oar_error("[PingChecker] sentinelle script command times out : it is bad\n");
         return(@hosts);
     }else{
         return(@bad_hosts);
@@ -213,7 +213,7 @@ sub fping_hosts(@){
     my ($cmd, @null) = split(" ",$fping_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
     if (!defined($fping_cmd) || (! -x $cmd)){
-        oar_warn("[PingChecker] You want to call fping test method but PINGCHECKER_FPING_COMMAND in oar.conf is not valid\n");
+        oar_error("[PingChecker] You want to call fping test method but PINGCHECKER_FPING_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
 
@@ -253,7 +253,7 @@ sub fping_hosts(@){
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
     if ($@){
-        oar_warn("[PingChecker] fping command times out : it is bad\n");
+        oar_error("[PingChecker] fping command times out : it is bad\n");
         return(@hosts);
     }else{
         return(@bad_hosts);
@@ -273,7 +273,7 @@ sub nmap_hosts(@){
     my ($cmd, @null) = split(" ",$nmap_cmd);
     oar_debug("[PingChecker] command to run with arguments : $cmd\n");
     if (!defined($nmap_cmd) || (! -x $cmd)){
-        oar_warn("[PingChecker] You want to call nmap test method but PINGCHECKER_NMAP_COMMAND in oar.conf is not valid\n");
+        oar_error("[PingChecker] You want to call nmap test method but PINGCHECKER_NMAP_COMMAND in oar.conf is not valid\n");
         return(@hosts);
     }
 
@@ -320,7 +320,7 @@ sub nmap_hosts(@){
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
     if ($@){
-        oar_warn("[PingChecker] nmap command times out : it is bad\n");
+        oar_error("[PingChecker] nmap command times out : it is bad\n");
         return(@hosts);
     }else{
         foreach my $n (@hosts){
@@ -380,7 +380,7 @@ sub generic_hosts(@){
     };
     oar_debug("[PingChecker] End of command; alarm=$@\n");
     if ($@){
-        oar_warn("[PingChecker] PINGCHECKER_GENERIC_COMMAND timed out : it is bad\n");
+        oar_error("[PingChecker] PINGCHECKER_GENERIC_COMMAND timed out : it is bad\n");
         return(@hosts);
     }else{
         return(@bad_hosts);
