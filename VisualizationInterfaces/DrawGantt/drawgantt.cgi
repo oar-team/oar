@@ -886,10 +886,13 @@ def cgi_html(cgi)
 	#$stderr.print ">>>>#{cgi.params['mode'].class}"
 
 	if (cgi.params['mode'].to_s=='image_map_only')
-		cgi.out("text/plain") {
-				"/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}" + "\n" +
-				"/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}" 
-			}
+			f_img = file_img
+			f_map = file_map
+		if cgi.params['path'].to_s != "no"
+			f_img = "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}"
+			f_map = "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
+		end
+		cgi.out("text/plain") { "#{f_img}" + "\n" + "#{f_map}" }
 	else
 	  cgi.out {
 		  cgi.html {
