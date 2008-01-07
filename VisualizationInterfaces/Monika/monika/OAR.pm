@@ -242,9 +242,6 @@ sub htmlSummaryTable {
           if($value eq 'nodes' || $value eq 'node'){
             $value = 'network_address';
           }
-          elsif($value eq 'cores' || $value eq 'core'){
-            $value = 'cpu';
-          }
         }
         push @array_values, $value;
       }
@@ -319,8 +316,8 @@ sub resourceCount($$$$) {
   my $att_name = shift;
   my $all_resources = shift;
   my ($free, $busy, $total) = (0,0,0);
-  my %hashbusy;
   my %hashtotal;
+  my %hashfree;
   my %alreadyCounted;
   foreach my $resource_id (keys %{$all_resources}){
     foreach my $att (keys %{$all_resources->{$resource_id}->{'infos'}}){   
@@ -328,12 +325,12 @@ sub resourceCount($$$$) {
       if($att eq $att_name && $type_resource eq $all_resources->{$resource_id}->{'infos'}->{'type'}){
         unless(exists $alreadyCounted{$value}){
           $total++;
-          if(defined ($all_resources->{$resource_id}->{'jobs'}) && @{$all_resources->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
-            $hashbusy{"$value:$att:$type_resource"}++;
+          if(defined ($all_resources->{$resource_id}->{'jobs'}) && @{$all_resources->{$resource_id}->{'jobs'}} > 0){
+            $busy++;
           }
           else{
             if($all_resources->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
-              $free++;
+              $hashfree{"$value:$att:$type_resource"}++;
             }
           }
           $alreadyCounted{$value} = "$att:$type_resource";
@@ -341,16 +338,16 @@ sub resourceCount($$$$) {
         }
         else{
           $hashtotal{"$value:$att:$type_resource"}++;
-          if(defined ($all_resources->{$resource_id}->{'jobs'}) && @{$all_resources->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
-            $hashbusy{"$value:$att:$type_resource"}++;
+          unless(@{$all_resources->{$resource_id}->{'jobs'}} > 0){
+            $hashfree{"$value:$att:$type_resource"}++;
           }
         }
       }
     }
   }
-  foreach (keys %hashbusy){
-    if($hashbusy{$_} eq $hashtotal{$_}){
-      $busy++;
+  foreach (keys %hashfree){
+    if($hashfree{$_} eq $hashtotal{$_}){
+      $free++;
     }
   }
   return ($free, $busy, $total);
