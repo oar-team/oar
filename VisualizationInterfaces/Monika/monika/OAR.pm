@@ -261,6 +261,7 @@ sub htmlSummaryTable {
 		     -align =>"center"
 		    });
 	$output .= $cgi->start_Tr({-align => "center"});
+  my $pt_resources = $self->getResources();
   foreach my $type_res (keys %hash_display){
   	$output .= $cgi->td();
     $output .= $cgi->start_table({-border=>"1",-align =>"center"});
@@ -281,14 +282,14 @@ sub htmlSummaryTable {
         else{
           $output .= $cgi->td($cgi->b($val));
         }
-        my ($free, $busy, $total) = $self->resourceCount($type_res, $val);
+        my ($free, $busy, $total) = $self->resourceCount($type_res, $val, $pt_resources);
         $output .= $cgi->td([$free, $busy, $total]);
         $output .= $cgi->end_Tr();
       }
     }
     else{
       foreach my $val (@{$hash_display{$type_res}}){
-        my ($free, $busy, $total) = $self->resourceCount($type_res, $val);
+        my ($free, $busy, $total) = $self->resourceCount($type_res, $val, $pt_resources);
         $output .= $cgi->td($cgi->b($val));
         $output .= $cgi->td([$free, $busy, $total]);
         $output .= $cgi->end_Tr();
@@ -300,47 +301,56 @@ sub htmlSummaryTable {
   $output .= $cgi->end_table();
   return $output;
 }
+sub getResources{
+  my $self = shift;
+  my %resources;
+  foreach my $resource_name (keys %{$self->{'ALLNODES'}}){
+    foreach my $resource_id (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}}){
+      $resources{$resource_id} = $self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id};
+    }
+  }
+  return \%resources;
+}
 
 ## compute a summary of the usage of OAR nodes
-sub resourceCount {
+sub resourceCount($$$$) {
   my $self = shift;
   my $type_resource = shift;
   my $att_name = shift;
+  my $all_resources = shift;
   my ($free, $busy, $total) = (0,0,0);
-  my %alreadySeen;
-  foreach my $resource_name (keys %{$self->{'ALLNODES'}}){
-    foreach my $resource_id (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}}){
-      foreach my $att (keys %{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}}){
-        if($att eq $att_name && $type_resource eq $self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'type'}){       
-          if($att_name eq 'cpu' || $att_name eq 'core'){
-            if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
-                $busy++;
-                $total++;
-              }
-            else{
-              $total++;
-              if($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
-                $free++;
-              }
-            }
+  my %hashbusy;
+  my %hashtotal;
+  my %alreadyCounted;
+  foreach my $resource_id (keys %{$all_resources}){
+    foreach my $att (keys %{$all_resources->{$resource_id}->{'infos'}}){   
+      my $value= $all_resources->{$resource_id}->{'infos'}->{$att};
+      if($att eq $att_name && $type_resource eq $all_resources->{$resource_id}->{'infos'}->{'type'}){
+        unless(exists $alreadyCounted{$value}){
+          $total++;
+          if(defined ($all_resources->{$resource_id}->{'jobs'}) && @{$all_resources->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
+            $hashbusy{"$value:$att:$type_resource"}++;
           }
           else{
-            unless(exists($alreadySeen{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'network_address'}})){
-              if(defined ($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}) && @{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
-                $busy++;
-                $total++;
-              }
-              else{
-                $total++;
-                if($self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
-                  $free++;
-                }
-              }
-              $alreadySeen{$self->{'ALLNODES'}->{$resource_name}->{'Ressources'}->{$resource_id}->{'infos'}->{'network_address'}} = 'true';
-            } 
+            if($all_resources->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
+              $free++;
+            }
+          }
+          $alreadyCounted{$value} = "$att:$type_resource";
+          $hashtotal{"$value:$att:$type_resource"} = 1;
+        }
+        else{
+          $hashtotal{"$value:$att:$type_resource"}++;
+          if(defined ($all_resources->{$resource_id}->{'jobs'}) && @{$all_resources->{$resource_id}->{'jobs'}} > 0){ ## if a job is running on this resource
+            $hashbusy{"$value:$att:$type_resource"}++;
           }
         }
       }
+    }
+  }
+  foreach (keys %hashbusy){
+    if($hashbusy{$_} eq $hashtotal{$_}){
+      $busy++;
     }
   }
   return ($free, $busy, $total);
