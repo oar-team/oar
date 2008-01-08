@@ -344,13 +344,14 @@ sub resourceCount($$$$) {
       }
     }
   }
-  my $bool_busy = 0;
+  my %cpt_att;
   foreach (@associated_resources){
     if(@{$all_resources->{$_}->{'jobs'}} > 0){
-      $bool_busy = 1;
+      my $value= $all_resources->{$_}->{'infos'}->{$att_name};
+      $cpt_att{$value} = '';
     }  
   }
-  if($bool_busy eq 1){
+  foreach (keys %cpt_att){
     $busy++;
   }
   foreach (keys %hashfree){
