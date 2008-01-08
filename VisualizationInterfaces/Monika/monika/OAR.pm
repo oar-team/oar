@@ -239,7 +239,7 @@ sub htmlSummaryTable {
         my $value = $1;
         ##hack for simplification of the user admin
         if($key eq 'default'){
-          if($value eq 'nodes' || $value eq 'node'){
+          if($value eq 'node'){
             $value = 'network_address';
           }
         }
@@ -274,7 +274,7 @@ sub htmlSummaryTable {
     if($type_res eq 'default'){
       foreach my $val (@{$hash_display{$type_res}}){
         if($val eq 'network_address'){
-          $output .= $cgi->td($cgi->b("nodes"));
+          $output .= $cgi->td($cgi->b("node"));
         }
         else{
           $output .= $cgi->td($cgi->b($val));
@@ -319,16 +319,15 @@ sub resourceCount($$$$) {
   my %hashtotal;
   my %hashfree;
   my %alreadyCounted;
+  my @associated_resources;
   foreach my $resource_id (keys %{$all_resources}){
     foreach my $att (keys %{$all_resources->{$resource_id}->{'infos'}}){   
       my $value= $all_resources->{$resource_id}->{'infos'}->{$att};
       if($att eq $att_name && $type_resource eq $all_resources->{$resource_id}->{'infos'}->{'type'}){
+        push @associated_resources, $resource_id;
         unless(exists $alreadyCounted{$value}){
           $total++;
-          if(defined ($all_resources->{$resource_id}->{'jobs'}) && @{$all_resources->{$resource_id}->{'jobs'}} > 0){
-            $busy++;
-          }
-          else{
+          if(!(@{$all_resources->{$resource_id}->{'jobs'}} > 0)){
             if($all_resources->{$resource_id}->{'infos'}->{'state'} eq 'Alive'){
               $hashfree{"$value:$att:$type_resource"}++;
             }
@@ -344,6 +343,15 @@ sub resourceCount($$$$) {
         }
       }
     }
+  }
+  my $bool_busy = 0;
+  foreach (@associated_resources){
+    if(@{$all_resources->{$_}->{'jobs'}} > 0){
+      $bool_busy = 1;
+    }  
+  }
+  if($bool_busy eq 1){
+    $busy++;
   }
   foreach (keys %hashfree){
     if($hashfree{$_} eq $hashtotal{$_}){
