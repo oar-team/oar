@@ -19,6 +19,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 @EXPORT_OK = qw(oar_warn oar_debug oar_error send_log_by_email);
 
 $| = 1;
+my $CURRENT_LOG_CAT;
 
 #Get log level in oar.conf file
 init_conf($ENV{OARCONFFILE});
@@ -30,6 +31,12 @@ my $log_file = get_conf("LOG_FILE");
 if (!defined($log_file)){
     $log_file = "/var/log/oar.log";
 }
+my %log_categories;
+@log_categories{split(/,/, get_conf("LOG_CATEGORIES"))} = ();
+if (!defined(%log_categories)){
+    @log_categories{"all"} = ();
+}
+
 my $mail_recipient = get_conf("MAIL_RECIPIENT");
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
@@ -66,15 +73,23 @@ sub redirect_everything(){
 sub get_log_level(){
     return($log_level);
 }
+ 
+# this function must be called by each module that has something to say in
+# the logs with his proper category name.
+sub set_current_log_category($){
+    $CURRENT_LOG_CAT = shift;
+}
 
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;
-    if (open(LOG,">>$log_file")){
-        print(LOG "$str");
-        close(LOG);
-    }else{
-        print("$str");
+    if(exists($log_categories{$CURRENT_LOG_CAT}) || exists($log_categories{"all"})){
+      if (open(LOG,">>$log_file")){
+          print(LOG "$str");
+          close(LOG);
+      }else{
+          print("$str");
+      }
     }
 }
 
