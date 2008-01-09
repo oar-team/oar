@@ -6,11 +6,14 @@ use strict;
 use DBI();
 use oar_iolib;
 use Data::Dumper;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use Gantt_hole_storage;
 use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
+
+# Log category
+set_current_log_category('scheduler');
 
 my $initial_time = time();
 my $timeout = 10;

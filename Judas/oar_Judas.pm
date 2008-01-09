@@ -16,7 +16,7 @@ use oar_Tools;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(oar_warn oar_debug oar_error send_log_by_email);
+@EXPORT_OK = qw(oar_warn oar_debug oar_error send_log_by_email set_current_log_category);
 
 $| = 1;
 my $CURRENT_LOG_CAT;

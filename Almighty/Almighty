@@ -4,9 +4,12 @@
 use strict;
 use Data::Dumper;
 use IO::Socket::INET;
-use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_Tools;
+
+# Log category
+set_current_log_category('main');
 
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));

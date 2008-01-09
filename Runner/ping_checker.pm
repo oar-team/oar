@@ -4,7 +4,7 @@ require Exporter;
 
 use strict;
 use Data::Dumper;
-use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use IPC::Open3;
 use oar_Tools;
@@ -13,6 +13,9 @@ require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(ping_hosts sentinelle_hosts test_hosts);
+
+# Log category
+set_current_log_category('main');
 
 my $Timeout_ping = 5;
 my $Timeout_fping = 15;

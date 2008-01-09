@@ -15,7 +15,7 @@ use DBI;
 use oar_conflib qw(init_conf get_conf is_conf reset_conf);
 use Data::Dumper;
 use Time::Local;
-use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use strict;
 use oar_resource_tree;
 use oar_Tools;
@@ -170,6 +170,9 @@ my %State_to_num = (
     "Suspected" => 3,
     "Dead" => 4
 );
+
+# Log category
+#set_current_log_category('main');
 
 my $Db_type = "mysql";
 

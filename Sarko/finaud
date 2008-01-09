@@ -3,11 +3,14 @@
 # This program aims to change node state automatically when they are inaccesible or they become alive
 
 use oar_iolib;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use ping_checker qw(test_hosts);
 use Data::Dumper;
 use strict;
 use IO::Socket::INET;
+
+# Log category
+set_current_log_category('main');
 
 oar_debug("[finaud] Finaud started\n");
 

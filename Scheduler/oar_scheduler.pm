@@ -6,9 +6,11 @@ use strict;
 use warnings;
 use oar_iolib;
 use Gantt_hole_storage;
-use oar_Judas qw(oar_debug oar_warn oar_error);
+use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use oar_conflib qw(init_conf get_conf is_conf);
 
+# Log category
+set_current_log_category('scheduler');
 
 init_conf($ENV{OARCONFFILE});
 my @Sched_available_suspended_resource_type;

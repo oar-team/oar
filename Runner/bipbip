@@ -5,7 +5,7 @@
 use oar_iolib;
 use Sys::Hostname;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email);
+use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use ping_checker;
 use oar_Tools;
 use Data::Dumper;
@@ -16,6 +16,9 @@ $Data::Dumper::Purity = 1;
 $Data::Dumper::Terse = 1;
 $Data::Dumper::Indent = 0;
 $Data::Dumper::Deepcopy = 1;
+
+# Log category
+set_current_log_category('main');
 
 my $Job_id= shift;
 my $Oarexec_reattach_exit_value = shift;
