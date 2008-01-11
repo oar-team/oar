@@ -716,7 +716,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 		j = jobs[info[4]]
 		f_map.puts '<area shape="rect" coords="' + 
 					 "#{info[0]},#{info[1]},#{info[2]},#{info[3]}" + 
-					 '" href="monika.cgi?job='+ "#{info[4]}" + '" ' +
+					 '" href="monika.cgi?job='+ "#{info[4]}" +
 					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
 					 "JobId: #{info[4]}" +
 					 "<br>User: #{j['user']}" + 
