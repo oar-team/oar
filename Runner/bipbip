@@ -108,7 +108,7 @@ if (!(($job->{state} eq "Launching") or (($job->{state} eq "Running")))){
 
 #check if we must treate the end of a oarexec
 if (defined($Oarexec_reattach_exit_value)){
-    if (($Oarexec_reattach_exit_value =~ m/\d+/m) and ($Oarexec_reattach_script_exit_value =~ m/\d+/m)){
+    if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
             iolib::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
             iolib::disconnect($base);
@@ -399,7 +399,7 @@ my %data_to_transfer = (
     );
 
 my $error = 50;
-my $exit_script_value = 0;
+my $exit_script_value = 'N';
 my $init_done = 0;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
@@ -452,7 +452,7 @@ eval {
         }
 
         # Get user script exit code
-        if ($_ =~ /^OAREXEC_SCRIPT_EXIT_VALUE\s(\d+)$/){
+        if ($_ =~ /^OAREXEC_SCRIPT_EXIT_VALUE\s(\d+|N)$/){
             $exit_script_value = $1;
         }
     }

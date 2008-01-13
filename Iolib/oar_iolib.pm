@@ -5175,7 +5175,7 @@ sub check_end_of_job($$$$$$$$$$){
         oar_Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
         set_finish_date($base,$Jid);
         set_job_state($base,$Jid,"Finishing");
-        set_job_exit_code($base,$Jid,$exit_script_value);
+        set_job_exit_code($base,$Jid,$exit_script_value) if ($exit_script_value =~ /^\d+$/);
         unlock_table($base);
         my @events;
         if($error == 0){
@@ -5305,7 +5305,7 @@ sub check_end_of_job($$$$$$$$$$){
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
             oar_Judas::oar_debug("$strWARN\n");
             my $types = iolib::get_current_job_types($base,$Jid);
-            if (defined($types->{idempotent})){
+            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
                 if ($exit_script_value == 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);
                     oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
@@ -5323,7 +5323,7 @@ sub check_end_of_job($$$$$$$$$$){
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             oar_Judas::oar_debug("$strWARN\n");
             my $types = iolib::get_current_job_types($base,$Jid);
-            if (defined($types->{idempotent})){
+            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
                 if ($exit_script_value == 0){
                     my $new_job_id = iolib::resubmit_job($base,$Jid);
                     oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");

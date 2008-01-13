@@ -62,7 +62,7 @@ my $Res_file;
 my $Pid_file;
 my $Kill_myself = 0;
 my $Oarexec_exit_code = 0;
-my $Exit_script_code = 0;
+my $Exit_script_code = 'N';
 
 #Notify Almighty.
 #arg1 --> exit value

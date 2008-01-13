@@ -314,11 +314,9 @@ sub get_job_data($$){
             project => $job_info->{project},
             cpuset_name => $cpuset_name,
             types => \@job_types,
-            dependencies => \@job_dependencies
+            dependencies => \@job_dependencies,
+            exit_code => $job_info->{exit_code}
         );
-        if ($job_info->{state} eq 'Terminated') {
-            $data_to_display{'exit_code'}=$job_info->{exit_code};
-        }
     }else{
         %data_to_display = (
             Job_Id => $job_info->{job_id},
@@ -437,11 +435,13 @@ sub print_job_data($$){
                 print("    queue = $job_info->{queue_name}\n");
                 $job_info->{command} = '' if (!defined($job_info->{command}));
                 print("    command = $job_info->{command}\n");
-                if ($job_info->{state} eq 'Terminated') {
+                if (defined($job_info->{exit_code})){
                     my $exit_code = $job_info->{exit_code} >> 8;
                     my $exit_num = $job_info->{exit_code} & 127;
                     my $exit_core = $job_info->{exit_code} & 128;
                     print("    exit_code = $job_info->{exit_code} ($exit_code,$exit_num,$exit_core)\n");
+                }else{
+                    print("    exit_code = \n");
                 }
                 print("    launchingDirectory = $job_info->{launching_directory}\n");
                 print("    jobType = $job_info->{job_type}\n");

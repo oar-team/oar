@@ -16,6 +16,10 @@ upstream development version:
     load, kernel may be more responsive for root processes...)
   - Remove ALLOWED_NETWORKS tag in oar.conf (added more complexeity than
     resolving problems)
+  - /!\ change database scheme for the field *exit_code* in the table *jobs*.
+    Now *oarstat* *exit_code* line reflects the right exit code of the user
+    passive job (before, even when the user script was not launched the
+    *exit_code* was 0 which was BAD)
 
 version 2.2.11:
 ---------------

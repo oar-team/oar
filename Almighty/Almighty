@@ -438,7 +438,7 @@ while (1){
             $state="Time update";
         }elsif ($command eq "ChState"){
             $state="Change node state";
-        }elsif ($command =~ m/OAREXEC_(\d+)_(\d+)_(\d+)_(\d+)/m){
+        }elsif ($command =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
             my $pid=0;
             $pid=fork;
             if($pid==0){
