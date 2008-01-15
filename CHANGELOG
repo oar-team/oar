@@ -25,6 +25,8 @@ version 2.2.10:
   - Enhance oarsub "-S" option (more #OAR parsed).
   - Add the possibility to use oarsh without configuring the CPUSETs (can be
     useful for users that don't want to configure there ssh keys)
+  - Bug #4787: check if the remote socket is defined (problem of timing with
+    nmap)
 
 version 2.2.9:
 --------------
