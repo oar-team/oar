@@ -34,6 +34,9 @@ version 2.2.11:
   - Taktuk command line API has changed (we need taktuk >= 3.6).
   - Fix extra ' in the name of output files when using a job name.
   - Bug 4740: open the file in oarsub with user privileges (-S option)
+  - Bug #4787: check if the remote socket is defined (problem of timing with
+    nmap)
+
 
 version 2.2.10:
 ---------------
