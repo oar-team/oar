@@ -336,6 +336,7 @@ sub check_client_host_ip($$){
 
     my @logs;
     my $extrem = getpeername($client);
+    return(0,("[checkClientHostIP] Remote host undefined\n")) if (!defined($extrem));
     my ($remote_port,$addr_in) = unpack_sockaddr_in($extrem);
     my $remote_host = inet_ntoa($addr_in);
     push(@logs, "[checkClientHostIP] Remote host = $remote_host ; remote port = $remote_port\n");
