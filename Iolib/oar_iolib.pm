@@ -172,7 +172,7 @@ my %State_to_num = (
 );
 
 # Log category
-#set_current_log_category('main');
+# set_current_log_category('main');
 
 my $Db_type = "mysql";
 

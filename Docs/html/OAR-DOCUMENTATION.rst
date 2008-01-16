@@ -381,8 +381,8 @@ Visualisation tools
 Monika
 ~~~~~~
 
-This is a web cgi normally installed on the cluster frontal. This tool executes
-`oarnodes`_ and `oarstat`_ then format data in a html page.
+This is a web cgi normally installed on the cluster frontal. This tool connects
+to the DB, gets relevant information then format data in a html page.
 
 Thus you can have a global view of cluster state and where your jobs are
 running.

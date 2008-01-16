@@ -123,6 +123,59 @@ sub initjobs {
     }
 }
 
+## retrieve a OAR job description.
+sub getJobProperties {
+  my $myself = shift;
+  my $currentJobId = shift;
+  my $cgi = shift;
+  my $hostname= monika::Conf::myself->hostname;
+  my $dbtype= monika::Conf::myself->dbtype;
+  my $dbname= monika::Conf::myself->dbname;
+  my $username= monika::Conf::myself->username;
+  my $pwd= monika::Conf::myself->password;
+
+  my $dbh = monika::db_io::dbConnection($hostname, $dbtype, $dbname, $username, $pwd);
+  
+  my $jobInfos= monika::db_io::get_job_stat_infos($dbh, $currentJobId);
+  my $job = monika::OARJob->new($currentJobId);
+  foreach my $key (keys %{$jobInfos}){
+    my $value= $jobInfos->{$key};
+    $job->set($key,$value,$cgi);
+  }
+
+  ## let's count the nodes and cpu used.
+
+  my $structure= monika::db_io::get_resources_data_structure_current_job($dbh, $currentJobId);
+  my $parrayRessources= $structure->[0]->[0]->[0]->{'resources'};
+  my $property= $structure->[0]->[0]->[0]->{'property'};
+  my $walltime= $structure->[0]->[1];
+  my $string= "-l \"{$property}";
+  foreach my $ressourceGroup (@$parrayRessources){
+    $string.= "/".$ressourceGroup->{resource}."=".$ressourceGroup->{value};
+  }
+
+  my $sec=$walltime%60;
+  $walltime/=60;
+  my $min=$walltime%60;
+  $walltime = int($walltime / 60);
+  my $hour=$walltime;
+  my $hWallTime= "$hour:$min:$sec";
+  $job->set("walltime",$hWallTime,$cgi);
+  $string.=",walltime=$hWallTime\"";
+  $job->set("wanted_resources",$string,$cgi);
+
+  ## dates formatting
+  my $submission_time= $job->get("submission_time");
+  #my ($year,$mon,$mday,$hour,$min,$sec)= monika::db_io::local_to_ymdhms($submission_time);
+  #$submission_time= "$year-$mon-$mday $hour:$min:$sec";
+  $job->set("submission_time",monika::db_io::local_to_sql($submission_time),$cgi);
+
+  my $start_time= $job->get("start_time");
+  $job->set("start_time",monika::db_io::local_to_sql($start_time),$cgi);
+  
+  return $job;
+}
+
 ## retrieve OAR jobs description and store them in the ALLJOBS hash.
 sub qstat {
   my $self = shift;

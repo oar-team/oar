@@ -89,7 +89,6 @@ my $max_successive_read = 10;
 
 # Max waiting time before new scheduling attempt (in the case of
 # no notification)
-# notice that this is the age of the christ at death time
 my $schedulertimeout = 60;
 
 # Max waiting time before check for jobs whose time allowed has elapsed
@@ -139,7 +138,7 @@ sub launch_command($){
         oar_debug("[Almighty] Signal num : $signal_num\n");
         oar_debug("[Almighty] Core dumped : $dumped_core\n");
         if ($signal_num || $dumped_core){
-            oar_error("[Almighty] Something wrong occured (signal or core dumped) for command [$command] !!!\n");
+            oar_error("[Almighty] Something wrong occured (signal or core dumped) when trying to call [$command] command\n");
             $finishTag = 1;
             #exit(2);
         }
@@ -156,10 +155,10 @@ sub qget_appendice(){
         my $client=$server->accept();
 
         if (!defined($client)){
-            oar_error("[Almighty] End of appendice listening : the socket disappeared!\n");
+            oar_error("[Almighty] End of appendice listening : the socket disappeared\n");
             exit(16);
         }
-        # Lecture non bloquante (pour eviter les petits problemes)
+        # non-blocking read
         $rin = '';
         my $rinTmp = '';
         vec($rin,fileno($client),1) = 1;
@@ -167,7 +166,7 @@ sub qget_appendice(){
         $carac="A";
         while (($res > 0) && ($carac ne "\n")){
             if (!defined(sysread($client, $carac, 1))){
-                oar_warn("[Almighty] End of appendice listening for the current client, client socket is undef; MAYBE SOMEONE USE NMAP ON THE SERVER SOCKET!!!\n");
+                oar_warn("[Almighty] End of appendice listening for the current client, client socket is undef; MAYBE SOMEONE USE NMAP ON THE SERVER SOCKET !!!\n");
                 #exit(3);
                 $res = 0;
             }elsif ($carac eq ""){
@@ -185,7 +184,7 @@ sub qget_appendice(){
             $carac=chop $answer;
         }
         $answer = $answer.$carac;
-        # with nmap thes lines crash the appendice
+        # with nmap these lines crash the appendice
         #print $client "Your request [$answer] was received\n";
         close($client);
 
@@ -199,7 +198,6 @@ sub qget_appendice(){
 # performing some other internal task in the meantime
 sub comportement_appendice(){
         close TATA;
-
 
         while (1){
             my $answer = qget_appendice();
@@ -239,7 +237,7 @@ sub init(){
     $appendice_pid = fork();
 
     if(!defined($appendice_pid)){
-        oar_error("[Almighty] Cannot fork appendice\n");
+        oar_error("[Almighty] Cannot fork appendice (fork process dedicated to the listening of commands from clients)\n");
         exit(6);
     }
     if (!$appendice_pid){
@@ -247,7 +245,7 @@ sub init(){
         $SIG{INT}  = 'IGNORE';
         $SIG{TERM}  = 'IGNORE';
         comportement_appendice();
-        oar_error("[Almighty] Returned from comportement appendice, this should not happen\n");
+        oar_error("[Almighty] Returned from comportement_appendice, this should not happen (infinite loop for listening messages on the server socket)\n");
         exit(7);
     }
     close YOYO;
@@ -274,7 +272,7 @@ sub qget($){
         $carac="OAR";
         while ($carac ne "\n"){
             if ((!defined(sysread(TATA, $carac, 1))) || ($carac eq "")){
-                oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died !!\n");
+                oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died\n");
                 exit(8);
             }
             if ($carac ne "\n"){
@@ -286,7 +284,7 @@ sub qget($){
             oar_debug("[Almighty] Premature end of select cmd. res = $res. It is normal, Almighty is stopping\n");
             $answer = "Time";
         }else{
-            oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died, the result code of select = $res !!\n");
+            oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died, the result code of select = $res\n");
             exit(15);
         }
     }else{

@@ -6,9 +6,9 @@
 ##
 ## - Usage: init_conf(<filename>);
 ##   Read the first file matching <filename> in
-##   . curretn directory
+##   . current directory
 ##   . $OARDIR directory
-##     . /etc directory
+##   . /etc directory
 ##
 ## - Configuration file format:
 ## A line of the configuration file looks like that:

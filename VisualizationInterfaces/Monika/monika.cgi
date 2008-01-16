@@ -81,11 +81,18 @@ if (defined $cgi->param('node') and defined $nodes{$cgi->param('node')}) {
 		"back to main page"
 	      ));
 ## if job param is present, show detailed view of the pointed job
-} elsif (defined $cgi->param('job') and defined $oar->alljobs()->{$cgi->param('job')}) {
+} 
+elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param('job')}
   my $job = $cgi->param('job');
   print $cgi->h2({-align => "center"},
 		 "Job ".$job." detailed status:");
-  print $oar->alljobs()->{$job}->htmlStatusTable($cgi);
+	if(exists($oar->alljobs()->{$job})){
+	  print $oar->alljobs()->{$job}->htmlStatusTable($cgi);
+	}
+  else{
+    my $jobInfos = $oar->getJobProperties($job, $cgi);
+    print $jobInfos->htmlStatusTable($cgi);
+  }
   print $cgi->h3({ -align => "center" },
 		 $cgi->a({ -href => $cgi->self_url(-query=>0)},
 		"back to main page"
