@@ -16,7 +16,7 @@ GetOptions ("help|h"  => \$usage);
 if ($usage){
     print <<EOS;
 Usage: $0 [-h|--help]
-Setup the database used by OAR
+Fills the database used by OAR
 Options:
  -h, --help        show this help screen
 EOS

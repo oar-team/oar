@@ -99,12 +99,13 @@ Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init
 script provided with the server module installation and located in $PREFIX/sbin
 (/usr/local/sbin in default Makefile).
 
-If you want to use a postgres SQL server then there is currently no automatic
-installation script.  You have to add a new user which can connect on a new oar
-database(use the commands *createdb* and *createuser*).  After that, you have
-to authorize network connections on the postgresql server in the
-*postgresql.conf* (uncomment *tcpip_socket = true*).  Then you can import the
-database scheme stored in *oar_postgres.sql* (use *psql* and the SQL command
+If you want to use a postgres SQL server then you can call the init_pg_server.pl
+script that will do all the users and tables creation for you.
+If you want to do this by yourself, you have to add a  new user which can 
+connect on a new oar database (use the commands *createdb* and *createuser*). 
+After that, you have to authorize network connections on the postgresql server 
+in the *postgresql.conf* (uncomment *tcpip_socket = true*).  Then you can import
+the database scheme stored in *oar_postgres.sql* (use *psql* and the SQL command
 "\\i").
 
 Here is an example to perform all the potgres database install(there is
