@@ -228,8 +228,6 @@ sub nodeReservationTable {
   }
   $output .= $self->end_Tr();
   $output .= $self->end_table();
-#  $output .= $self->endform();
-
   return $output;
 }
 

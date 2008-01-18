@@ -396,8 +396,6 @@ sub htmlJobTable {
     }
   }
   $output .= $cgi->end_table();
-#  $output .= $cgi->endform();
-
   return $output;
 }
 
@@ -406,28 +404,46 @@ sub htmlPropertyChooser {
   my $cgi = shift;
   my $output = "";
 	# do not show hidden properties...
-  my @checkboxes = ();
+	my @checkboxes = ();
   my @hiddenProperties = monika::Conf::myself()->hiddenProperties();
   my @nodes = values %{$self->allnodes};
-  my %alreadyCounted;
-  foreach my $node(@nodes){
-    my %hashRessProp= $node->properties();
-    foreach my $ress (keys %hashRessProp){
-          my %hashProp= %{$hashRessProp{$ress}};
-          foreach my $p (keys %hashProp) {
-                  my $hidden = undef;
-                  my $prop= $p."=".$hashProp{$p};
-                  foreach my $h (@hiddenProperties) {
-                          $prop =~ /^$h=/ and $hidden = 1;
-                  }
-                  unless (defined($alreadyCounted{$prop})){
-                    defined $hidden or push @checkboxes, $prop;
-                    $alreadyCounted{$prop}= 1;
-                  }
-          }
+  #my %alreadyCounted;
+  my %hashtemp;
+  my %props = $nodes[0]->properties();
+  foreach my $currentRes (keys %props){
+    my $ress = $props{$currentRes};
+    foreach my $att (keys %$ress){
+      $hashtemp{$att} = "";
     }
-  
   }
+  my %hiddenHash;
+  foreach(@hiddenProperties){
+    $hiddenHash{$_} = '';
+  }
+  # TODO: finish this
+  my @validvalues = ();
+  foreach(keys %hashtemp){
+    push(@validvalues, $_) unless exists $hiddenHash{$_};
+  }
+  
+  # old one, very slow...
+  #foreach my $node(@nodes){
+  #  my %hashRessProp= $node->properties();
+  #  foreach my $ress (keys %hashRessProp){
+  #        my %hashProp= %{$hashRessProp{$ress}};
+  #        foreach my $p (keys %hashProp) {
+  #                my $hidden = undef;
+  #                my $prop= $p."=".$hashProp{$p};
+  #                foreach my $h (@hiddenProperties) {
+  #                        $prop =~ /^$h=/ and $hidden = 1;
+  #                }
+  #                unless (defined($alreadyCounted{$prop})){
+  #                  defined $hidden or push @checkboxes, $prop;
+  #                  $alreadyCounted{$prop}= 1;
+  #                }
+  #        }
+  #  }
+  #}
   if ($#checkboxes >= 0) {
     my @sortedCheckboxes= sort { $a cmp $b } @checkboxes;
     $output .= $cgi->start_div({ -align => "center" });

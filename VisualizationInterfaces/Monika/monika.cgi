@@ -117,13 +117,11 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
   ## print oar node property chooser
   print $cgi->br();
   print $oar->htmlPropertyChooser($cgi);
-
   ## print oar job status
   print $cgi->br();
   print $cgi->h2({-align => "center"},
 		 "Job details:");
   print $oar->htmlJobTable($cgi);
-
 }
 open VERSION, "<./monika/VERSION";
 my $version="";
