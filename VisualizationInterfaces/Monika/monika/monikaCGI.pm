@@ -232,58 +232,7 @@ sub nodeReservationTable {
 
   return $output;
 }
-sub oargridReservationTable {
-  my $self = shift;
-  my $nodes = shift;
-  my $popupjobInfo = shift;
-  my $scale = shift;
-  my $nodelist = shift;
-  my $output = "";
-  my @names;
-  if (defined $nodelist) {
-    @names = @$nodelist;
-  } else {
-    @names = keys %$nodes;
-  }
-  my $is_sorted = 1;
-  #@names = sort {$a <=> $b or $a cmp $b} @names or $is_sorted = 0;
-  @names = sort {$a <=> $b or Sort::Naturally::ncmp($a,$b)} @names or $is_sorted = 0;
-  
-  $output .= $self->start_table({-border=>"1",
-				 -align => "center"
-				});
-  $output .= $self->start_Tr();
-  my $i=1;
-  ## each nodes get printed in the right order
-  foreach my $name (@names) {
-#
-# Uncomment to display node's name      
-#
 
-#    $output .= $self->start_td({-align => "center",
-#			       });
-#    #$output .= $self->b($self->small($self->small($self->a({ -href => $self->self_url(-query=>0)."?node=".$name,
-#   my $cgiName = File::Basename::basename($self->self_url(-query=>0));
-#    $output .= $self->b($self->small($self->small($self->a({ -href => $cgiName."?node=".$name,
-#							     -title => "click to see node details"
-#							   },$$nodes{$name}->displayHTMLname()))));
-#    $output .= $self->end_td();
-
-    $output .= $self->start_td();
-    ## print this node status sub table
-    $output .= $$nodes{$name}->oargridhtmlTable($self,$popupjobInfo);
-    $output .= $self->end_td();
-    if ($i++ % (monika::Conf::myself()->nodes_per_line() / $scale) == 0) {
-      $output .= $self->end_Tr();
-      $output .= $self->start_Tr();
-    }
-  }
-  $output .= $self->end_Tr();
-  $output .= $self->end_table();
-#  $output .= $self->endform();
-
-  return $output;
-}
 
 ## print page head
 sub page_head {

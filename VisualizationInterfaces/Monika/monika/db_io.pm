@@ -14,7 +14,6 @@ use POSIX qw(strftime);
 
 # Creates a connection to the DB and returns it
 sub dbConnection($$$$$){
-    #my $this= shift;
     my $host = shift;
     my $dbtype = shift;
     my $dbname = shift;
@@ -23,7 +22,12 @@ sub dbConnection($$$$$){
     my $dbh= DBI->connect("DBI:$dbtype:database=$dbname;host=$host", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
 }
+sub dbDisconnect($) {
+    my $dbh = shift;
 
+    # Disconnect from the database.
+    $dbh->disconnect();
+}
 
 # get_all_resources_on_node
 # returns the current resources on node whose hostname is passed in parameter

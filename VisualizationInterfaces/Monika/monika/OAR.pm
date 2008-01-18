@@ -38,40 +38,6 @@ sub properties {
   return $self->{PROPERTIES};
 }
 
-## as oarnodes method for oargrid context 
-## convert allinfo nodes description and store them in the ALLNODES hash.
-sub initnodes {
-    my $self = shift;
-    my $allinfoNodes = shift;
-    my $nodejob = shift;
-    my $value;
-    my $state;
-
-    foreach my $name (keys( %$allinfoNodes)) {
-        my $node = new monika::OARNode($name);
-        foreach my $key (keys( %{$$allinfoNodes{$name}})) {
-             $value = $$allinfoNodes{$name}{$key};
-            if ($key =~ /state/) {
-                $state = $value;
-            } else {
-                $node->set($key,$value);
-            }
-        }
-        if ($node->get("maxWeight") == 0) {
-            $state = "Absent";
-        }
-        $node->set('state',$state);
-        
-        if ( $$nodejob{$name}) {
-            $node->set("jobs",\@{$$nodejob{$name}});
-        }
-       #  $self->allnodes()->{$node->displayname} = $node;
-       
-       $self->allnodes()->{$name} = $node;
-    }
-}
-
-
 ## acces DataBase and get information about nodes
 sub oarnodes {
 
@@ -97,30 +63,7 @@ sub oarnodes {
     my $node= new monika::OARNode($currentNode, \%hashInfoCurrentNodeRessources);
     $self->allnodes()->{$node->displayname} = $node;
   }
-}
-
-
-sub initjobs {
-    my $self = shift;
-    my $allinfoJobs = shift;
-    my $cgi = shift;
-    my $jobId;
-    my $value;
-
-    foreach $jobId (keys( %$allinfoJobs)) {
-       my $job = monika::OARJob->new($jobId);
-         foreach my $key (keys( %{$$allinfoJobs{$jobId}})) {
-             if ($key =~ /hostnames/) {
-                 $job->set($key,@{$$allinfoJobs{$jobId}{$key}},$cgi);
-             } else {
-                 if($$allinfoJobs{$jobId}{$key}) {
-                     $value = $$allinfoJobs{$jobId}{$key};
-                     $job->set($key,$value,$cgi);
-                }
-             }
-         }
-        $self->alljobs()->{$job->jobId} = $job;
-    }
+  monika::db_io::dbDisconnect($dbh);
 }
 
 ## retrieve a OAR job description.
@@ -172,7 +115,7 @@ sub getJobProperties {
 
   my $start_time= $job->get("start_time");
   $job->set("start_time",monika::db_io::local_to_sql($start_time),$cgi);
-  
+  monika::db_io::dbDisconnect($dbh);
   return $job;
 }
 
@@ -232,6 +175,7 @@ sub qstat {
 
     $self->alljobs()->{$currentJobId} = $job;
   }
+  monika::db_io::dbDisconnect($dbh);
 }
 
 
@@ -454,102 +398,6 @@ sub htmlJobTable {
   $output .= $cgi->end_table();
 #  $output .= $cgi->endform();
 
-  return $output;
-}
-
-## print a HTML summary table of the current usage of the nodes.
-sub htmlGridSummaryTable {
-  my $self = shift;
-  my $cgi = shift;
-  my $allInfo = shift;
-  my $load_img_path = shift;
-  my @clusterSet = @_;
-  my $output = "";
-  my $allfree = 0;
-  my $allbusy = 0;
-  my $all = 0;
-	my $src_img;
-
-  $output .= $cgi->start_table({-border=>"1",
-			   -align =>"center"
-			  });
-              
-  $output .= $cgi->start_Tr({-valign=>"middle", -align=>"center"});
-  $output .= $cgi->td($cgi->i("Cluster Name")); 
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lgray"},$cgi->b($cluster));
-  }
-  $output .= $cgi->td($cgi->b("all"));
-  $output .= $cgi->end_Tr();
-
-
-  #Load
-  $output .= $cgi->start_Tr({-valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "load"},$cgi->i("Load"));
-  foreach my $cluster (@clusterSet){
-			$src_img = '<img src="'.$load_img_path.'pie_'.$cluster.'.png" alt="pie_load">';
-      $output .= $cgi->td({-class=> "load"},$src_img);
-	}
-	$src_img = '<img src="'.$load_img_path.'pie_all.png" alt="pie_load">';
-  $output .= $cgi->td({-class=> "load"},$src_img);
-  $output .= $cgi->end_Tr();
-
-  #Site
-  $output .= $cgi->start_Tr({-valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "lblue"},$cgi->i("Site")); 
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lblue"},$$allInfo{$cluster}{info}{site});
-    
-  }
-  $output .= $cgi->td("");
-  $output .= $cgi->end_Tr();
-
-  #Architecture Proc
-  $output .= $cgi->start_Tr({ -valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "lgray"},$cgi->i("Type")); 
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lgray"},$$allInfo{$cluster}{info}{architecture});
-  }
-  $output .= $cgi->td("");
-  $output .= $cgi->end_Tr();
-
-  #Resource unit
-  $output .= $cgi->start_Tr({ -valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "lgray"},$cgi->i("Resource unit"));
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lgray"},$$allInfo{$cluster}{info}{resourceUnit});
-  }
-  $output .= $cgi->td("");
-  $output .= $cgi->end_Tr();
-  
-  $output .= $cgi->start_Tr({-valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "lblue"},$cgi->i("Free Resources")); 
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lblue"},$$allInfo{$cluster}{stats}{freeNodes});
-      $allfree += $$allInfo{$cluster}{stats}{freeNodes}
-  }
-  $output .= $cgi->td({-class=> "lblue"},$cgi->b($allfree));
-  $output .= $cgi->end_Tr();
-  
-  $output .= $cgi->start_Tr({ -valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "lgray"},$cgi->i("Busy Resources")); 
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lgray"},$$allInfo{$cluster}{stats}{busyNodes});
-      $allbusy += $$allInfo{$cluster}{stats}{busyNodes};
-  }
-  $output .= $cgi->td({-class=> "lgray"},$cgi->b($allbusy));
-  $output .= $cgi->end_Tr();
-  
-  $output .= $cgi->start_Tr({-valign=>"middle", -align=>"center"});
-  $output .= $cgi->td({-class=> "lblue"},$cgi->i("All Resources")); 
-  foreach my $cluster (@clusterSet){
-      $output .= $cgi->td({-class=> "lblue"},$$allInfo{$cluster}{stats}{allNodes});
-      $all += $$allInfo{$cluster}{stats}{allNodes};
-  }
-  $output .= $cgi->td({-class=> "lblue"},$cgi->b($all));
-  $output .= $cgi->end_Tr();
-  
-  $output .= $cgi->end_table();
   return $output;
 }
 

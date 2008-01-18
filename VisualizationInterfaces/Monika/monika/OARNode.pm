@@ -205,53 +205,6 @@ sub htmlTable {
   return $output;
 }
 
-
-
-## TODO: oargrid stuffs
-## print this node status HTML table in oargrid context
-#sub oargridhtmlTable {
-#  my $self = shift;
-#  my $cgi = shift;
-#  my $popupjobInfo = shift;
-#  my $output = "";
-#
-#  $output .= $cgi->start_table({ 
-#                  -class => "bgray",
-#                 -border => "1",
-#				-cellspacing => "0",
-#				-cellpadding => "0",
-#				-width => "100%"
-#			       });
-#  $output .= $cgi->start_Tr( {-align => "center"});
-#  if ($self->state =~ /down/) {
-#    $output .= $cgi->colorjavascriptTd("Down","",$self->name);
-#  } elsif ($self->state =~ /Absent/) {
-#    if ($self->get("gridprems") =~/NO/) {
-#	$output .= $cgi->colorjavascriptTd("Abst","",$self->name);
-#    } else {
-#    	$output .= $cgi->colorjavascriptTd("GridPrems","",$self->name);
-#    }
-#  } elsif ($self->state =~ /Suspected/) {
-#    $output .= $cgi->colorjavascriptTd("Susp.","",$self->name);
-#  } elsif ($self->state eq "Alive") {
-#      if ($self->get("weight") > 0) {
-#        my $jobs = $self->get("jobs");
-#        for (my $i=0;$i<$self->get("weight");$i++) {
-#            $output .= $cgi->colorjavascriptTd($jobs->[$i],100/$self->cpus."%",$self->name.$$popupjobInfo{$jobs->[$i]});
-#        }
-#      }
-#      for (my $i=$self->get("weight");$i<$self->cpus;$i++) {
-#          $output .= $cgi->colorjavascriptTd("Free",100/$self->cpus."%",$self->name);
-#      }
-#    } else {
-#    $output .= $cgi->colorTd("Down");
-#  }
-#  $output .= $cgi->end_Tr();
-#  $output .= $cgi->end_table();
-#  return $output;
-#}
-#
-
 sub getRessourceInfos {
   my $self = shift;
   my $ressource = shift;
