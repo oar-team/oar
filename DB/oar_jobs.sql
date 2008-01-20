@@ -23,6 +23,7 @@
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
 job_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+initial_request TEXT,
 job_name VARCHAR( 100 ) ,
 job_env TEXT ,
 cpuset_name VARCHAR(255),

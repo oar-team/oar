@@ -315,7 +315,8 @@ sub get_job_data($$){
             cpuset_name => $cpuset_name,
             types => \@job_types,
             dependencies => \@job_dependencies,
-            exit_code => $job_info->{exit_code}
+            exit_code => $job_info->{exit_code},
+            initial_request => $job_info->{initial_request}
         );
     }else{
         %data_to_display = (
@@ -462,6 +463,11 @@ sub print_job_data($$){
                 if (defined($data->{$job_info->{job_id}}->{job_uid})){
                     print("    job_user = $data->{$job_info->{job_id}}->{job_user}\n");
                     print("    job_uid = $data->{$job_info->{job_id}}->{job_uid}\n");
+                }
+                if (defined($job_info->{initial_request})){
+                    print("    initial_request = $job_info->{initial_request}\n");
+                }else{
+                    print("    initial_request = \n");
                 }
                 print("    message = $job_info->{message}\n");
                 if (!defined($data->{$job_info->{job_id}}->{scheduledStart})){

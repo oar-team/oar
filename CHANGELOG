@@ -20,6 +20,8 @@ upstream development version:
     Now *oarstat* *exit_code* line reflects the right exit code of the user
     passive job (before, even when the user script was not launched the
     *exit_code* was 0 which was BAD)
+  - /!\ add DB field *initial_request* in the table *jobs* that stores the
+    oarsub line of the user
 
 version 2.2.11:
 ---------------
@@ -36,7 +38,6 @@ version 2.2.11:
   - Bug 4740: open the file in oarsub with user privileges (-S option)
   - Bug #4787: check if the remote socket is defined (problem of timing with
     nmap)
-
 
 version 2.2.10:
 ---------------
