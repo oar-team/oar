@@ -29,6 +29,47 @@ sub dbDisconnect($) {
     $dbh->disconnect();
 }
 
+# get_properties_values
+# returns the list of the fields of the job table and their values
+# usefull for the 'properties' section in Monika 
+# parameters : base, list of excluded fields
+# return value : list of fields end values
+# side effects : /
+sub get_properties_values($$) {
+    my $dbh = shift;
+    my $excluded = shift;
+    my $sth = $dbh->prepare("   DESC resources
+                            ");
+    $sth->execute();
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        my $current_value = $ref->{'Field'};
+        unless (defined($excluded->{$current_value})){
+          push(@result, $current_value);
+        }
+    }
+    $sth->finish();
+    
+    my $str = "SELECT DISTINCT ";
+    foreach(@result){
+      $str = $str.$_.", ";
+    }
+    $str  = substr $str, 0, length($str) - 2;
+    $str = $str." FROM resources;";
+    
+    my $sth2 = $dbh->prepare($str);
+    $sth2->execute();
+    my $ref;
+    my $i = 0;
+    while (my $current = $sth2->fetchrow_hashref()){
+      $i++;
+      $ref->{$i} = $current;
+    }
+    $sth2->finish();
+
+    return $ref;
+}
+
 # get_all_resources_on_node
 # returns the current resources on node whose hostname is passed in parameter
 # parameters : base, hostname

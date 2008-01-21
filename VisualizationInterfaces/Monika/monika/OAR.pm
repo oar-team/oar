@@ -407,25 +407,29 @@ sub htmlPropertyChooser {
 	my @checkboxes = ();
   my @hiddenProperties = monika::Conf::myself()->hiddenProperties();
   my @nodes = values %{$self->allnodes};
-  #my %alreadyCounted;
-  my %hashtemp;
-  my %props = $nodes[0]->properties();
-  foreach my $currentRes (keys %props){
-    my $ress = $props{$currentRes};
-    foreach my $att (keys %$ress){
-      $hashtemp{$att} = "";
-    }
-  }
+  #my %alreadyCounted;  
   my %hiddenHash;
   foreach(@hiddenProperties){
     $hiddenHash{$_} = '';
   }
-  # TODO: finish this
-  my @validvalues = ();
-  foreach(keys %hashtemp){
-    push(@validvalues, $_) unless exists $hiddenHash{$_};
+  my $hostname= monika::Conf::myself->hostname;
+  my $dbtype= monika::Conf::myself->dbtype;
+  my $dbname= monika::Conf::myself->dbname;
+  my $username= monika::Conf::myself->username;
+  my $pwd= monika::Conf::myself->password;
+  my $dbh = monika::db_io::dbConnection($hostname, $dbtype, $dbname, $username, $pwd);
+  my $result = monika::db_io::get_properties_values($dbh, \%hiddenHash);
+  monika::db_io::dbDisconnect($dbh);
+  my %hashcheckboxes;
+  foreach(keys %{$result}){
+    foreach my $prop (keys %{$result->{$_}}){
+      my $str = $prop."=".$result->{$_}->{$prop};
+      $hashcheckboxes{$str} = '';
+    }
   }
-  
+  foreach(keys %hashcheckboxes){
+    push @checkboxes, $_;
+  }
   # old one, very slow...
   #foreach my $node(@nodes){
   #  my %hashRessProp= $node->properties();
