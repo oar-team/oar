@@ -204,7 +204,7 @@ sub scan_script($){
     return(%result);
 }
 
-# Connect to a job and give the shell of the user on te remote host
+# Connect to a job and give the shell of the user on the remote host
 sub connect_job($$$){
     my $job_id = shift;
     my $stop_oarexec = shift;
@@ -224,7 +224,7 @@ sub connect_job($$$){
         }elsif (defined($types->{deploy})){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
-        #deploy, cosystem and no host part
+        #cpuset part
         if ((defined($Cpuset_field) and defined($Cpuset_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
             $ENV{OAR_CPUSET} = $Cpuset_path.'/'.iolib::get_job_cpuset_name($dbh,$job_id);
         }else{
@@ -235,7 +235,7 @@ sub connect_job($$$){
         $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
         my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
         iolib::disconnect($dbh);
-        my @passinfo = getpwnam($lusr) or die("Cannot retrive system informations for user $lusr\n");
+        my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
         unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
             $ENV{DISPLAY}="";
@@ -270,7 +270,7 @@ sub connect_job($$$){
         $i++;
         $cmd[$i] = "-t";$i++;
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
-        $str =~ s/\n//g;
+        $str =~ s/\n//g;      
         if ($ENV{DISPLAY} ne ""){
             $cmd[$i] = "bash -c 'echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
         }else{

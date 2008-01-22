@@ -11,7 +11,7 @@
 #     - "clean" : then this script must kill all processes in the cpuset and
 #                 clean the cpuset structure
 
-# TAKTUK_HOSTNAME envirionment variable must be defined and must be a name
+# TAKTUK_HOSTNAME environment variable must be defined and must be a name
 # that we will be able to find in the transfered hashtable.
 use Fcntl ':flock';
 #use Data::Dumper;
