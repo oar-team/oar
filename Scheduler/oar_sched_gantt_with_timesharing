@@ -235,7 +235,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         $gantt_to_use = $timesharing_gantts->{$user}->{$name};
         oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for ($user,$name)\n");
     }
-    #print("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
+    #oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
 
     my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
@@ -247,7 +247,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{job_id});
     foreach my $moldable (@{$job_descriptions}){
     #my $moldable = $job_descriptions->[0];
-    #print(Dumper($moldable));
         my $duration;
         if (defined($types->{besteffort})){
             $duration = $besteffort_duration;
@@ -377,4 +376,3 @@ if ($job_index <= $#jobs){
 
 oar_debug("[oar_sched_gantt_with_timesharing] End of scheduler for queue $queue\n");
 
-#print(Gantt_hole_storage::pretty_print($gantt)."\n");

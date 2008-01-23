@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# This script launch a oarstat command to retrive all data about the given job.
+# This script launch a oarstat command to retreive all data about the given job.
 # Then all nodes are contacted and their /etc/security/access_cluster.conf
 # are populated to enable the ssh connection to this OAR job owner if the whole
 # nodes are allocated.

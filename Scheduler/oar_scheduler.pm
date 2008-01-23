@@ -427,7 +427,6 @@ sub check_reservation_jobs($$$$){
                 push(@dead_resources, $r->{resource_id});
             }
             my $job_properties = "\'1\'";
-            #print(Dumper($job));
             if ((defined($job->{properties})) and ($job->{properties} ne "")){
                 $job_properties = $job->{properties};
             }
@@ -436,7 +435,6 @@ sub check_reservation_jobs($$$$){
             my @tree_list;
             foreach my $m (@{$moldable->[0]}){
                 my $tmp_properties = "\'1\'";
-                #print(Dumper($m));
                 if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
                 }
@@ -448,7 +446,6 @@ sub check_reservation_jobs($$$$){
                 }
             }
             my @hole = Gantt_hole_storage::find_first_hole($gantt,$job->{start_time}, $duration + $Security_time_overhead, \@tree_list);
-            #print(Dumper(@hole));
             if ($hole[0] == $job->{start_time}){
                 # The reservation can be scheduled
                 my @res_trees;

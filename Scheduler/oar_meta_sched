@@ -183,7 +183,6 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
                     oar_error($str);
                     iolib::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
                 }else{
-                    #print("@bad\n");
                     if (($#bad < 0)){
                         iolib::resume_job_action($base,$j->{job_id});
                    }else{

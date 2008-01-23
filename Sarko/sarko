@@ -85,7 +85,6 @@ foreach my $job (iolib::get_jobs_in_state($base, "Running")){
 
     # Get starting time
     $start = $job->{start_time};
-    #print "Job [$job{idJob}] startTime $date\n";
 
     # Get maxtime
     my $mold_job = iolib::get_current_moldable_job($base,$job->{assigned_moldable_job});

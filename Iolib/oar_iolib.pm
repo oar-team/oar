@@ -901,7 +901,6 @@ sub get_possible_wanted_resources($$$$$$$){
                                 });
     }
     
-    #print(Dumper(@wanted_resources));
     my $sql_where_string = "\'1\'";
     
     if ((defined($properties)) and ($properties ne "")){
@@ -915,8 +914,6 @@ sub get_possible_wanted_resources($$$$$$$){
     }
     chop($resource_string);
 
-    #print("$sql_where_string\n");
-    #print("$sql_in_string\n");
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resources
                              WHERE
@@ -960,7 +957,6 @@ sub get_possible_wanted_resources($$$$$$$){
     }
     
     $sth->finish();
-    #print(Dumper($result));
     $result = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($result);
 
     return($result);
@@ -1025,7 +1021,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
     $sth->finish();
     #Apply rules
-    #print "Admission rules => $rules \n";
     eval $rules;
     if ($@) {
         warn("Admission Rule ERROR : $@ \n");
@@ -1060,7 +1055,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$){
                     $tmp_properties = "($tmp_properties) AND ($jobproperties)"
                 }
             }
-            #print(Dumper($r->{resources}));
             my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
@@ -4604,7 +4598,7 @@ sub register_monitoring_values($$$$){
         }
         chop($create_str);
         $create_str .= ")";
-        print("$create_str\n");
+        oar_debug("$create_str\n");
         if ($dbh->do($create_str)){
             if (! insert_monitoring_row($dbh,$table,$fields,$values)){
                 return(2);
@@ -4664,7 +4658,7 @@ sub check_accounting_update($$){
         my $start = $ref[0];
         my $stop = $ref[1];
         my $theoricalStopTime = $ref[2] + $start;
-        print("[ACCOUNTING] Treate job $ref[3]\n");
+        oar_debug("[ACCOUNTING] Treate job $ref[3]\n");
         update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
         update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
         $dbh->do("  UPDATE jobs
@@ -4737,7 +4731,7 @@ sub add_accounting_row($$$$$$$$){
     if (defined($ref[0])){
         # Update the existing window
         $conso += $ref[0];
-        print("[ACCOUNTING] Update the existing window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
+        oar_debug("[ACCOUNTING] Update the existing window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
         $dbh->do("  UPDATE accounting
                     SET consumption = $conso
                     WHERE
@@ -4750,7 +4744,7 @@ sub add_accounting_row($$$$$$$$){
                 ");
     }else{
         # Create the window
-        print("[ACCOUNTING] Create new window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
+        oar_debug("[ACCOUNTING] Create new window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
         $dbh->do("  INSERT INTO accounting (accounting_user,consumption_type,queue_name,window_start,window_stop,consumption,accounting_project)
                     VALUES (\'$user\',\'$type\',\'$queue\',\'$start\',\'$stop\',$conso,\'$project\')
                  ");

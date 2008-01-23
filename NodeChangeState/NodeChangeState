@@ -222,7 +222,6 @@ foreach my $i (@events_to_check){
                         oar_error($str);
                         iolib::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $i->{job_id}, $str);
                     }else{
-                        #print("@bad\n");
                         if (($#bad < 0)){
                             iolib::suspend_job_action($base,$i->{job_id},$job->{assigned_moldable_job});
                             

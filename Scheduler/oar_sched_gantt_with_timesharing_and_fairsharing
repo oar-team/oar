@@ -279,7 +279,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         $gantt_to_use = $timesharing_gantts->{$user}->{$name};
         oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Use gantt for ($user,$name)\n");
     }
-    #print("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
+    #oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
 
     my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
@@ -291,7 +291,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{job_id});
     foreach my $moldable (@{$job_descriptions}){
     #my $moldable = $job_descriptions->[0];
-    #print(Dumper($moldable));
         my $duration;
         if (defined($types->{besteffort})){
             $duration = $besteffort_duration;
@@ -331,7 +330,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
-        #print("###\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
         my @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
         
 #        print("[GANTT] 10 ".gettimeofday."\n");
@@ -421,4 +419,3 @@ if ($job_index <= $#jobs){
 
 oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End of scheduler for queue $queue\n");
 
-#print(Gantt_hole_storage::pretty_print($gantt)."\n");

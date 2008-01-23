@@ -180,7 +180,6 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         }else{
             push (@bad, @bad_tmp);
             $event_type = "CPUSET_ERROR";
-            #print("@bad\n");
             # Clean already configured cpuset
             my @tmp_array = keys(%{$cpuset_nodes});
             if (($#bad >= 0) and ($#tmp_array > $#bad)){
