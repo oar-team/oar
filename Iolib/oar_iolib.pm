@@ -4658,7 +4658,7 @@ sub check_accounting_update($$){
         my $start = $ref[0];
         my $stop = $ref[1];
         my $theoricalStopTime = $ref[2] + $start;
-        oar_debug("[ACCOUNTING] Treate job $ref[3]\n");
+        print("[ACCOUNTING] Treate job $ref[3]\n");
         update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
         update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
         $dbh->do("  UPDATE jobs
@@ -4731,7 +4731,7 @@ sub add_accounting_row($$$$$$$$){
     if (defined($ref[0])){
         # Update the existing window
         $conso += $ref[0];
-        oar_debug("[ACCOUNTING] Update the existing window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
+        print("[ACCOUNTING] Update the existing window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
         $dbh->do("  UPDATE accounting
                     SET consumption = $conso
                     WHERE
@@ -4744,7 +4744,7 @@ sub add_accounting_row($$$$$$$$){
                 ");
     }else{
         # Create the window
-        oar_debug("[ACCOUNTING] Create new window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
+        print("[ACCOUNTING] Create new window $start --> $stop , project $project, user $user, queue $queue, type $type with conso = $conso s\n");
         $dbh->do("  INSERT INTO accounting (accounting_user,consumption_type,queue_name,window_start,window_stop,consumption,accounting_project)
                     VALUES (\'$user\',\'$type\',\'$queue\',\'$start\',\'$stop\',$conso,\'$project\')
                  ");

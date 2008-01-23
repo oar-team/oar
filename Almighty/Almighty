@@ -153,7 +153,7 @@ sub qget_appendice(){
         my $res;
         my $carac;
         my $client=$server->accept();
-
+        oar_debug("[Almighty] Appendice received a connection\n");
         if (!defined($client)){
             oar_error("[Almighty] End of appendice listening : the socket disappeared\n");
             exit(16);
@@ -197,14 +197,14 @@ sub qget_appendice(){
 # notification as soon as possible (i.e. reactivity) even if the almighty is
 # performing some other internal task in the meantime
 sub comportement_appendice(){
-        close TATA;
+        close READ;
 
         while (1){
             my $answer = qget_appendice();
             if ($answer ne ""){
                 oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
-                print YOYO "$answer\n";
-                flush YOYO;
+                print WRITE "$answer\n";
+                flush WRITE;
             }else{
                 oar_debug("[Almighty] A connection was opened but nothing was written in the socket\n");
                 #sleep(1);
@@ -214,13 +214,13 @@ sub comportement_appendice(){
 
 # initial stuff that has to be done
 sub init(){
-    if(!(pipe (TATA, YOYO))){
+    if(!(pipe (READ, WRITE))){
         oar_error("[Almighty] Cannot open pipe !!!\n");
         exit(5);
     }
 
-    autoflush TATA 1;
-    autoflush YOYO 1;
+    autoflush READ 1;
+    autoflush WRITE 1;
 
     $server = IO::Socket::INET->new(LocalPort=> $serverport,
                                     Type => SOCK_STREAM,
@@ -248,7 +248,7 @@ sub init(){
         oar_error("[Almighty] Returned from comportement_appendice, this should not happen (infinite loop for listening messages on the server socket)\n");
         exit(7);
     }
-    close YOYO;
+    close WRITE;
     close $server;
 
     $lastscheduler= time;
@@ -266,12 +266,12 @@ sub qget($){
     my $rin = '';
     my $rinTmp = '';
     my $carac;
-    vec($rin,fileno(TATA),1) = 1;
+    vec($rin,fileno(READ),1) = 1;
     my $res = select($rinTmp = $rin, undef, undef, $timeout);
     if ($res > 0){
         $carac="OAR";
         while ($carac ne "\n"){
-            if ((!defined(sysread(TATA, $carac, 1))) || ($carac eq "")){
+            if ((!defined(sysread(READ, $carac, 1))) || ($carac eq "")){
                 oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died\n");
                 exit(8);
             }
