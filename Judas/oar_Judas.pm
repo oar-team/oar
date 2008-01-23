@@ -210,7 +210,7 @@ sub send_mail($$$$){
 
 
 # Parse notify method and send an email or execute a command
-# args : notify method string, frontal host, user, job id, job name, tag, commentaries
+# args : notify method string, frontal host, user, job id, job name, tag, comments
 sub notify_user($$$$$$$$){
     my $base = shift;
     my $method = shift;

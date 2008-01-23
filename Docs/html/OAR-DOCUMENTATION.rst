@@ -22,7 +22,7 @@
 
 :Abstract:
 
-  OAR is a resource manager (or batch scheduler) for large clusters. In
+  OAR is a resource manager (or batch scheduler) for large clusters. By it's
   functionnalities, it's near of PBS, LSF, CCS and Condor. It's suitable for
   productive plateforms and research experiments.
 
@@ -201,7 +201,7 @@ Options::
                                Use signal numbers, default is 12 (SIGUSR2)
  -t, --type=<type>             Specify a specific type (deploy, besteffort,
                                cosystem, checkpoint, timesharing)
- -d, --directory=<dir>         Specify the directory where to launch the
+ -d, --directory=<dir>         Specify the directory where OAR will launch the
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job

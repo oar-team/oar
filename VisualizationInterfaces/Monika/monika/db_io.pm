@@ -8,6 +8,12 @@ use warnings;
 use Time::Local;
 use POSIX qw(strftime);
 
+
+my $Db_type;
+sub get_database_type(){
+    return($Db_type);
+}
+
 ###########################################################################################
 ## Methods for Monika exclusively:                                                        #
 ###########################################################################################
@@ -19,6 +25,7 @@ sub dbConnection($$$$$){
     my $dbname = shift;
     my $user = shift;
     my $pwd = shift;
+    $Db_type = $dbtype;
     my $dbh= DBI->connect("DBI:$dbtype:database=$dbname;host=$host", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
 }
@@ -38,15 +45,29 @@ sub dbDisconnect($) {
 sub get_properties_values($$) {
     my $dbh = shift;
     my $excluded = shift;
-    my $sth = $dbh->prepare("   DESC resources
-                            ");
-    $sth->execute();
     my @result;
+    my $sth;
+    if ($Db_type eq "Pg"){
+      $sth = $dbh->prepare("SELECT a.attname
+                               FROM pg_class AS c, pg_attribute AS a 
+                               WHERE relname = 'resources' AND c.oid = a.attrelid AND a.attnum > 0;");
+    }
+    else{
+      $sth = $dbh->prepare("DESC resources"); 
+    }
+    
+    $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()){
-        my $current_value = $ref->{'Field'};
-        unless (defined($excluded->{$current_value})){
-          push(@result, $current_value);
-        }
+      my $current_value;
+      if ($Db_type eq "Pg"){
+        $current_value = $ref->{'attname'};
+      }
+      else{
+        $current_value = $ref->{'Field'};
+      }
+      unless (defined($excluded->{$current_value})){
+        push(@result, $current_value);
+      }
     }
     $sth->finish();
     
@@ -56,7 +77,6 @@ sub get_properties_values($$) {
     }
     $str  = substr $str, 0, length($str) - 2;
     $str = $str." FROM resources;";
-    
     my $sth2 = $dbh->prepare($str);
     $sth2->execute();
     my $ref;
