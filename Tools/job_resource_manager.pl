@@ -227,7 +227,7 @@ if ($ARGV[0] eq "init"){
     }
     if (defined($Cpuset->{job_uid})){
         print_log(3,"Purging /tmp...");
-        system("sudo find /tmp -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
+        system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
         my $ipcrm_args="";
         if (open(IPCMSG,"< /proc/sysvipc/msg")) {
             <IPCMSG>;
