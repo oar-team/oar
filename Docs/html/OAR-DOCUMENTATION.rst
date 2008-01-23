@@ -95,6 +95,8 @@ Other more *common* features:
 
 .. include:: ../../INSTALL
 
+.. include:: oar_security.rst
+
 User guide
 ==========
 
