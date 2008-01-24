@@ -40,6 +40,7 @@ version 2.2.11:
     nmap)
   - Scheduler: add timeout for each job == 1/4 of the remaining scheduler
     timeout.
+  - Feature Request #4874: check system names when renaming properties
 
 version 2.2.10:
 ---------------
