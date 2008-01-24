@@ -22,6 +22,9 @@ upstream development version:
     *exit_code* was 0 which was BAD)
   - /!\ add DB field *initial_request* in the table *jobs* that stores the
     oarsub line of the user
+  - Feature Request #4868: Add a parameter to specify what the "nodes" resource
+    is a synomym for. Network_address must be seen as a internal data and not
+    used.
 
 version 2.2.11:
 ---------------
