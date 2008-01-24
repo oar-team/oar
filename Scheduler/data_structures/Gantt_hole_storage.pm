@@ -19,7 +19,7 @@ sub new($$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
-sub find_first_hole($$$$);
+sub find_first_hole($$$$$);
 sub pretty_print($);
 sub get_infinity_value();
 
@@ -61,9 +61,10 @@ sub new($$){
                         [                               # ref of a structure which contains hole stop times and corresponding resources (ordered by end time)
                             [$Infinity, $empty_vec]
                         ],
-                        $empty_vec,                             # Store all inserted resources (Only for the first Gantt hole)
+                        $empty_vec,                     # Store all inserted resources (Only for the first Gantt hole)
                         $empty_vec,                     # Store empty vec with enough 0 (Only for the first hole)
-                        $minimum_hole_duration          # minimum time for a hole 
+                        $minimum_hole_duration,         # minimum time for a hole
+                        [$Infinity,$Infinity]           # times that find_first_hole must not go after
                     ]
                 ];
     
@@ -226,8 +227,8 @@ sub get_free_resources($$$){
 
 # Take a list of resource trees and find a hole that fit
 # args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
-sub find_first_hole($$$$){
-    my ($gantt, $initial_time, $duration, $tree_description_list) = @_;
+sub find_first_hole($$$$$){
+    my ($gantt, $initial_time, $duration, $tree_description_list, $timeout) = @_;
 
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
@@ -238,6 +239,7 @@ sub find_first_hole($$$$){
     my @result_tree_list = ();
     my $end_loop = 0;
     my $current_time = $initial_time;
+    my $timeout_initial_time = time();
     # begin research at the first potential hole
     my $current_hole_index = find_hole($gantt, $initial_time, $duration);
     my $h = 0;
@@ -303,6 +305,23 @@ sub find_first_hole($$$$){
                     $h++;
                 }
             }
+        }
+        # Check timeout
+        if (($end_loop == 0) and ($current_hole_index <= $#{@{$gantt}}) and
+            (((time() - $timeout_initial_time) >= $timeout) or
+            (($gantt->[$current_hole_index]->[0] == $gantt->[0]->[5]->[0]) and ($gantt->[$current_hole_index]->[1]->[$h]->[0] >= $gantt->[0]->[5]->[1])) or
+            ($gantt->[$current_hole_index]->[0] > $gantt->[0]->[5]->[0]))){
+            if (($gantt->[0]->[5]->[0] == $gantt->[$current_hole_index]->[0]) and
+                ($gantt->[0]->[5]->[1] > $gantt->[$current_hole_index]->[1]->[$h]->[0])){
+                $gantt->[0]->[5]->[1] = $gantt->[$current_hole_index]->[1]->[$h]->[0];
+            }elsif ($gantt->[0]->[5]->[0] > $gantt->[$current_hole_index]->[0]){
+                $gantt->[0]->[5]->[0] = $gantt->[$current_hole_index]->[0];
+                $gantt->[0]->[5]->[1] = $gantt->[$current_hole_index]->[1]->[$h]->[0];
+            }
+            #print("TTTTTTT $gantt->[0]->[5]->[0] $gantt->[0]->[5]->[1] -- $gantt->[$current_hole_index]->[0] $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
+            $current_time = $Infinity;
+            @result_tree_list = ();
+            $end_loop = 1;
         }
     }
 

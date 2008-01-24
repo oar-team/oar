@@ -286,8 +286,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
-        #print("###\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
-        my @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list);
+        my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
+        $gantt_timeout = 0 if ($gantt_timeout < 0);
+        oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] find_first_hole with a timeout of $gantt_timeout\n");
+        my @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
         
 #        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;

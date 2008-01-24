@@ -445,7 +445,7 @@ sub check_reservation_jobs($$$$){
                     vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
                 }
             }
-            my @hole = Gantt_hole_storage::find_first_hole($gantt,$job->{start_time}, $duration + $Security_time_overhead, \@tree_list);
+            my @hole = Gantt_hole_storage::find_first_hole($gantt,$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
             if ($hole[0] == $job->{start_time}){
                 # The reservation can be scheduled
                 my @res_trees;

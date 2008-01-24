@@ -38,6 +38,8 @@ version 2.2.11:
   - Bug #4740: open the file in oarsub with user privileges (-S option)
   - Bug #4787: check if the remote socket is defined (problem of timing with
     nmap)
+  - Scheduler: add timeout for each job == 1/4 of the remaining scheduler
+    timeout.
 
 version 2.2.10:
 ---------------
