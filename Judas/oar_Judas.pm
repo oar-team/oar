@@ -32,10 +32,16 @@ if (!defined($log_file)){
     $log_file = "/var/log/oar.log";
 }
 my %log_categories;
-@log_categories{split(/,/, get_conf("LOG_CATEGORIES"))} = ();
-if (!defined(%log_categories)){
-    @log_categories{"all"} = ();
+if (is_conf("LOG_CATEGORIES")){
+    my @prelogs = split(/,/, get_conf("LOG_CATEGORIES"));
+    foreach(@prelogs){
+      $log_categories{$_} = ();
+    }
 }
+else{
+  $log_categories{"all"} = ();
+}
+
 
 my $mail_recipient = get_conf("MAIL_RECIPIENT");
 
