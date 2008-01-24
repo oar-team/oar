@@ -445,8 +445,9 @@ while (1){
                 $SIG{INT}  = 'IGNORE';
                 $SIG{TERM} = 'IGNORE';
 
-                exec("$bipbip_command $1 $2 $3 $4"); 
+                exec("$bipbip_command $1 $2 $3 $4");
             }
+            oar_debug("\n\n\n[Almighty] called bipbip with params: $1 $2 $3 $4\n \n\n\n");
             #launch_command("$bipbip_command $1 ATTACH &"); 
         }else{
             oar_debug("[Almighty] Unknown command found in queue : $command\n");

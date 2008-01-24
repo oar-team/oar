@@ -167,11 +167,20 @@ sub qstat {
     $job->set("submission_time",monika::db_io::local_to_sql($submission_time),$cgi);
 
     my $start_time= $job->get("start_time");
-    $job->set("start_time",monika::db_io::local_to_sql($start_time),$cgi);
-
+    if($start_time ne '0'){
+      $job->set("start_time",monika::db_io::local_to_sql($start_time),$cgi);
+    }
+    else{
+      $job->set("start_time", "n/a", $cgi);
+    }
     my @scheduled_start_array= monika::db_io::get_gantt_job_start_time($dbh, $currentJobId);
     my $scheduled_start= $scheduled_start_array[0];
-    $job->set("scheduled_start",monika::db_io::local_to_sql($scheduled_start),$cgi);
+    if($scheduled_start ne '0'){
+      $job->set("scheduled_start",monika::db_io::local_to_sql($scheduled_start),$cgi);
+    }
+    else{
+      $job->set("scheduled_start", "no prediction", $cgi);
+    }
 
     $self->alljobs()->{$currentJobId} = $job;
   }
