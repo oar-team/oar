@@ -127,7 +127,7 @@ install-indep:
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
-	$(MAKE) draw-gantt \
+	$(MAKE) draw-gantt monika \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/debian/oar-web-status/etc/oar \
