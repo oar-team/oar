@@ -175,7 +175,7 @@ sub qstat {
     }
     my @scheduled_start_array= monika::db_io::get_gantt_job_start_time($dbh, $currentJobId);
     my $scheduled_start= $scheduled_start_array[0];
-    if($scheduled_start ne '0'){
+    if(defined && $scheduled_start ne '0'){
       $job->set("scheduled_start",monika::db_io::local_to_sql($scheduled_start),$cgi);
     }
     else{
