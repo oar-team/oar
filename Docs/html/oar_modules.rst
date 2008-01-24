@@ -9,7 +9,7 @@ OAR modules
       
       .. image:: schemas/almighty_automaton_general.png
       
-      * Scheduler schema: 
+      * Scheduler schema:
       
       .. image:: schemas/almighty_automaton_scheduler_part.png
       
