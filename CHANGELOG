@@ -16,6 +16,7 @@ version 2.2.11:
   - Bug #4740: open the file in oarsub with user privileges (-S option)
   - Bug #4787: check if the remote socket is defined (problem of timing with
     nmap)
+  - Feature Request #4874: check system names when renaming propertie
 
 version 2.2.10:
 ---------------

@@ -94,6 +94,8 @@ foreach my $p (@Rename_property){
     $old_prop = $1;
     $new_prop = $2;
     
+    check_property_name($old_prop);
+    check_property_name($new_prop);
     if (iolib::get_database_type() eq "Pg"){
         $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
             or die("DB error: " . $base->errstr."\n");
