@@ -25,6 +25,8 @@ upstream development version:
   - Feature Request #4868: Add a parameter to specify what the "nodes" resource
     is a synomym for. Network_address must be seen as a internal data and not
     used.
+  - Scheduler: add timeout for each job == 1/4 of the remaining scheduler
+    timeout.
 
 version 2.2.11:
 ---------------
@@ -41,8 +43,6 @@ version 2.2.11:
   - Bug #4740: open the file in oarsub with user privileges (-S option)
   - Bug #4787: check if the remote socket is defined (problem of timing with
     nmap)
-  - Scheduler: add timeout for each job == 1/4 of the remaining scheduler
-    timeout.
   - Feature Request #4874: check system names when renaming properties
 
 version 2.2.10:

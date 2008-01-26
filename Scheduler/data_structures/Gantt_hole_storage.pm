@@ -307,7 +307,7 @@ sub find_first_hole($$$$$){
             }
         }
         # Check timeout
-        if (($end_loop == 0) and ($current_hole_index <= $#{@{$gantt}}) and
+        if (($current_hole_index <= $#{@{$gantt}}) and
             (((time() - $timeout_initial_time) >= $timeout) or
             (($gantt->[$current_hole_index]->[0] == $gantt->[0]->[5]->[0]) and ($gantt->[$current_hole_index]->[1]->[$h]->[0] >= $gantt->[0]->[5]->[1])) or
             ($gantt->[$current_hole_index]->[0] > $gantt->[0]->[5]->[0]))){
