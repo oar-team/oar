@@ -13,6 +13,7 @@ my $Db_type;
 sub get_database_type(){
     return($Db_type);
 }
+my $nodes_synonym;
 
 ###########################################################################################
 ## Methods for Monika exclusively:                                                        #
@@ -26,6 +27,7 @@ sub dbConnection($$$$$){
     my $user = shift;
     my $pwd = shift;
     $Db_type = $dbtype;
+    $nodes_synonym = monika::Conf::myself->nodes_synonym;
     my $dbh= DBI->connect("DBI:$dbtype:database=$dbname;host=$host", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
 }
@@ -99,18 +101,10 @@ sub get_all_resources_on_node($$) {
     my $dbh = shift;
     my $hostname = shift;
 
-    #my $sth = $dbh->prepare("   SELECT resources.resource_id as resource
-    #                            FROM assigned_resources, resources
-    #                            WHERE
-    #                                assigned_resources.assigned_resource_index = \'CURRENT\'
-    #                                AND resources.network_address = \'$hostname\'
-    #                                AND resources.resource_id = assigned_resources.resource_id
-    #                        ");
-
     my $sth = $dbh->prepare("   SELECT resources.resource_id as resource
                                 FROM resources
                                 WHERE
-                                    resources.network_address = \'$hostname\'
+                                    resources.$nodes_synonym = \'$hostname\'
                             ");
     $sth->execute();
     my @result;
@@ -227,17 +221,14 @@ sub get_resource_job($$) {
 sub list_nodes($) {
     my $dbh = shift;
 
-    #my $sth = $dbh->prepare("   SELECT distinct(network_address), resource_id
-    #                            FROM resources
-    #                            ORDER BY resource_id ASC");
-    my $sth = $dbh->prepare("   SELECT distinct(network_address)
+    my $sth = $dbh->prepare("   SELECT distinct($nodes_synonym)
                                 FROM resources
-                                ORDER BY network_address ASC
+                                ORDER BY $nodes_synonym ASC
                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'network_address'});
+        push(@res, $ref->{$nodes_synonym});
     }
     $sth->finish();
     return(@res);
