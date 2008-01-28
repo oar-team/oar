@@ -12,8 +12,6 @@ use Data::Dumper;
 use Time::Local;
 use POSIX qw(strftime);
 
-## TODO: clean class
-
 ## class constructor
 sub new {
   my $proto = shift;
@@ -168,7 +166,7 @@ sub htmlTable {
     if ($ressourceState eq "Alive" && $self->isRessourceWorking($currentRessource) eq '1') {
       my @jobs = @{$self->{Ressources}->{$currentRessource}->{jobs}};
 
-      ## TODO: which job to show on screen ??? default: 0
+      ## which job to show on screen ??? default: 0
       $output .= $cgi->colorTd($jobs[0],100/$self->cpus."%");
     }
     elsif ($ressourceState eq "Alive" && $self->isRessourceWorking($currentRessource) eq '0'){
@@ -218,6 +216,7 @@ sub htmlStatusTable {
   my $self = shift;
   my $cgi = shift;
   my $output = "";
+  my $nodes_synonym = monika::Conf::myself->nodes_synonym;
   $output .= $cgi->start_table({-border=>"1", -align => "center"});
   $output .= $cgi->start_Tr();
   $output .= $cgi->th({-align => "left", bgcolor => "^c0c0c0"}, $cgi->i("Nodename"));
@@ -240,7 +239,7 @@ sub htmlStatusTable {
     $output .= $cgi->th({-align => "left", bgcolor => "^c0c0c0"}, $cgi->i($prop));
     foreach my $key (sort @keylist) {
       my $value= $self->{Ressources}->{$key}->{infos}->{$prop};
-      if($prop eq 'host' || $prop eq 'network_address'){
+      if($prop eq $nodes_synonym){
         $value= $self->displayHTMLname();
       }
       if($prop eq 'cm_availability'){

@@ -57,6 +57,10 @@ sub parse {
 		  {
 		   DEFAULT => ""
 		  });
+  $config->define("nodes_synonym",
+		  {
+		   DEFAULT => "network_address"
+		  });
   $config->define("dbtype",
 		  {
 		   DEFAULT => ""
@@ -127,6 +131,7 @@ sub parse {
   $self->{GRIDNAME} = $config->gridname();
   $self->{SUMMARY_DISPLAY} = $config->summary_display();
   $self->{HOSTNAME} = $config->hostname();
+  $self->{NODES_SYNONYM} = $config->nodes_synonym();
   $self->{DBTYPE} = $config->dbtype();
   $self->{DBNAME} = $config->dbname();
   $self->{USERNAME} = $config->username();
@@ -191,6 +196,12 @@ sub summary_display {
 sub hostname {
   my $self = shift;
   return $self->{HOSTNAME};
+}
+
+## return the nodes_synonym
+sub nodes_synonym {
+  my $self = shift;
+  return $self->{NODES_SYNONYM};
 }
 
 ## return the dbtype

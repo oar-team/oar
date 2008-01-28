@@ -228,6 +228,7 @@ sub htmlSummaryTable {
   my $cgi = shift;
   my $output = "";
   my $summary_display = monika::Conf::myself->summary_display;
+  my $nodes_synonym = monika::Conf::myself->nodes_synonym;
   $summary_display = $summary_display.";";  ## add a ., to the end for parsing the string
   my %hash_display;
   tie %hash_display, "Tie::IxHash"; ## for hash insertion order
@@ -243,12 +244,9 @@ sub htmlSummaryTable {
       while($tmp ne ""){
         $tmp =~ s/(.*?),//;
         my $value = $1;
-        ##hack for simplification of the user admin
-        if($key eq 'default'){
-          if($value eq 'node'){
-            $value = 'network_address';
-          }
-        }
+        if($value eq 'nodes_synonym'){
+          $value = $nodes_synonym;
+        }        
         push @array_values, $value;
       }
       $hash_display{$key} = \@array_values;
@@ -279,12 +277,7 @@ sub htmlSummaryTable {
     $output .= $cgi->end_Tr();
     if($type_res eq 'default'){
       foreach my $val (@{$hash_display{$type_res}}){
-        if($val eq 'network_address'){
-          $output .= $cgi->td($cgi->b("node"));
-        }
-        else{
-          $output .= $cgi->td($cgi->b($val));
-        }
+        $output .= $cgi->td($cgi->b($val));
         my ($free, $busy, $total) = $self->resourceCount($type_res, $val, $pt_resources);
         $output .= $cgi->td([$free, $busy, $total]);
         $output .= $cgi->end_Tr();

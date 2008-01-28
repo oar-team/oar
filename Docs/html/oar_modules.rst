@@ -47,3 +47,42 @@ OAR modules
           message
           
       
+    - Judas: offers logging and notification methods.
+      The notification functions are the following:
+      
+        * send_mail(mail_recipient_address, object, body, job_id) that sends 
+          emails to the OAR admin
+          
+        * notify_user(base, method, host, user, job_id, job_name, tag, comments)
+          that parses the notify method. This method can be a user script or a 
+          mail to send. If the "method" field begins with 
+          "mail:", notify_user will send an email to the user. If the 
+          beginning is "exec:", it will execute the script as the "user".
+          
+      The main logging functions are the following:
+      
+        * redirect_everything() this function redirects STDOUT and STDERR into 
+          the log file
+          
+        * oar_debug(message)
+        
+        * oar_warn(message)
+        
+        * oar_error(message)
+        
+      The three last functions are used to set the log level of the message.
+      
+      
+    - Runner: 
+      
+    
+    
+    
+    
+    
+    - NodeChangeState: 
+      
+    
+    
+    
+    
