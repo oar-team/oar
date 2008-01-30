@@ -59,7 +59,7 @@ sub parse {
 		  });
   $config->define("nodes_synonym",
 		  {
-		   DEFAULT => "network_address"
+		   DEFAULT => "resource_id"
 		  });
   $config->define("dbtype",
 		  {

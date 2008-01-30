@@ -74,15 +74,17 @@ OAR modules
       
       
     - Runner: 
+    
+        * for each job in "toError" state, answer to the oarsub client: 
+          "BAD JOB". This will exit the client with an error code.
+      
+        * for each job in "toAckReservation" state, try to acknowledge the 
+          oarsub client reservation. If runner cannot contact the client, it will 
+          frag the job.
+      
+        * for each job to launch, launch job's bipbip.
       
     
-    
-    
-    
-    
-    - NodeChangeState: 
-      
-    
-    
+    - NodeChangeState: this module's job is to change nodes states.
     
     

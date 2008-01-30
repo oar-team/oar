@@ -195,7 +195,8 @@ Options::
  -p, --property="<list>"       Add constraints to properties for the job.
                                (format is a WHERE clause from the SQL syntax)
  -r, --reservation=<date>      Request a job start time reservation, 
-                               instead of a submission. 
+                               instead of a submission. The date format is
+                               "YYYY-MM-DD HH:MM:SS".
      --checkpoint=<delay>      Enable the checkpointing for the job. A signal 
                                is sent DELAY seconds before the walltime on
                                the first processus of the job 
