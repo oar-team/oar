@@ -5462,48 +5462,14 @@ sub job_finishing_sequence($$$$$$){
                     types => $types,
                     log_level => oar_Judas::get_log_level()
                 };
-                my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
+                my ($tag,@bad) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file : $cpuset_file\n";
                     oar_error($str);
                     push(@{$events}, {type => "CPUSET_MANAGER_FILE", string => $str});
-                }elsif ($#bad_tmp >= 0){
-                    # Verify if the errors are not from another job with the same cpuset_name
-                    # So the cpuset was already deleted --> not an error
-                    my $req = "
-                                SELECT resources.network_address
-                                FROM jobs, assigned_resources, resources
-                                WHERE
-                                    jobs.job_user = \'$job->{job_user}\' AND
-                                    jobs.cpuset_name = \'$job->{cpuset_name}\' AND
-                                    stop_time >= $job->{start_time} AND
-                                    assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
-                                    assigned_resources.resource_id = resources.resource_id AND
-                                    jobs.job_id != $job_id AND
-                                    resources.network_address != \'\' AND
-                                    resources.type = \'type\'
-                              ";
- 
-                   my $sth = $dbh->prepare("$req");
-                    $sth->execute();
-                    my %potential_same_cpuset;
-                    while (my @ref = $sth->fetchrow_array()) {
-                        $potential_same_cpuset{$ref[0]} = 1; 
-                    }
-                    $sth->finish();
-
-                    my @bad;
-                    foreach my $b (@bad_tmp){
-                        if (!defined($potential_same_cpuset{$b})){
-                            push(@bad, $b);
-                        }
-                    }
-                    if ($#bad >= 0){
-                        oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
-                        push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad", hosts => \@bad});
-                    }else{
-                        oar_warn("[job_finishing_sequence] [$job_id] Cpuset error but there was another cpuset with the same name at the same time on the same nodes\n");
-                    }
+                }elsif ($#bad >= 0){
+                    oar_error("[job_finishing_sequence] [$job_id] Cpuset error and register event CPUSET_CLEAN_ERROR on nodes : @bad\n");
+                    push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad", hosts => \@bad});
                 }
             }
         }
