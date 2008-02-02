@@ -82,7 +82,6 @@ my $Checkpoint_signal = 12; # SIGUSR2
 my $Stdout_file;
 my $Stderr_file;
 my $Resubmit;
-my $Cpuset_name;
 my $Project = "default";
 my $XML_mode;
 my $YAML_mode;
@@ -393,10 +392,6 @@ sub job_key_management() {
         exit(15);
     }
     if (defined($use_job_key)){
-        if (defined($Cpuset_name)){
-            warn("Error: You cannot set a cpuset name when using a job key.\n");
-            exit(15);
-        }
         if (($import_job_key_inline ne "") and ($import_job_key_file ne "")){
             warn("Error: You cannot import a job key both inline and from a file at the same time.\n");
             exit(15);
@@ -904,7 +899,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         ($Server, $server_port) = init_tcp_server();
     }
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -929,7 +924,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$Cpuset_name,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
+    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
 }
 print("OAR_JOB_ID=$Job_id\n");
 

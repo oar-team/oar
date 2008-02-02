@@ -52,7 +52,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -336,19 +336,14 @@ sub get_job_cpuset_name($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT cpuset_name, job_user
+    my $sth = $dbh->prepare("   SELECT job_user
                                 FROM jobs
                                 WHERE
                                     job_id = $job_id
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
-    my $cpuset;
-    if ($res[0] eq ""){
-        $cpuset = $res[1]."_".$job_id;
-    }else{
-        $cpuset = $res[1]."_".$res[0];
-    }
+    my $cpuset = $res[0]."_".$job_id;
     return($cpuset);
 }
 
@@ -975,8 +970,8 @@ sub get_possible_wanted_resources($$$$$$$){
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$cpuset,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string) = @_;
 
     my $default_walltime = "3600";
     my $startTimeJob = "0";
@@ -1134,17 +1129,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$){
                   AND job_id = $job_id
     ");
 
-    # Form cpuset name
-    if (defined($cpuset)){
-        $dbh->do("  UPDATE jobs
-                    SET
-                        cpuset_name = \'$cpuset\'
-                    WHERE
-                        state = \'Hold\'
-                        AND job_id = $job_id
-        ");
-    }
-    
     foreach my $moldable_resource (@{$ref_resource_list}){
         #lock_table($dbh,["moldable_job_descriptions"]);
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
@@ -1514,8 +1498,8 @@ sub resubmit_job($$){
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,cpuset_name,job_env,project,initial_request)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',\'$job->{cpuset_name}\',$jenv,$project,$initial_request_string)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,job_env,project,initial_request)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',$jenv,$project,$initial_request_string)
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
