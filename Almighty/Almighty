@@ -456,15 +456,28 @@ while (1){
 
     # SCHEDULER
     elsif($state eq "Scheduler"){
-        my $scheduler_result=scheduler();
-        if ($scheduler_result == 1){
-            $state="Runner";
-        }elsif ($scheduler_result == 0){
-            $state="Time update";
-        }elsif ($scheduler_result == 2){
+        # First, check pending events
+        my $check_result=nodeChangeState();
+        if ($check_result == 2){
             $state="Leon";
+            add_command("Term");
+        }elsif ($check_result == 1){
+            $state="Scheduler";
+        }elsif ($check_result == 0){
+            #Launch the scheduler
+            my $scheduler_result=scheduler();
+            if ($scheduler_result == 1){
+                $state="Runner";
+            }elsif ($scheduler_result == 0){
+                $state="Time update";
+            }elsif ($scheduler_result == 2){
+                $state="Leon";
+            }else{
+                oar_error("[Almighty] Scheduler returned an unknown value : $scheduler_result\n");
+                $finishTag = 1;
+            }
         }else{
-            oar_error("[Almighty] Scheduler returned an unknown value : $scheduler_result\n");
+            oar_error("[Almighty] $nodeChangeState_command returned an unknown value\n");
             $finishTag = 1;
         }
     }
