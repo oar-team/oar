@@ -7,7 +7,7 @@
    :align: center
    :width: 8cm
 
-:Author: Capit Nicolas
+:Authors: Capit Nicolas, Emeras Joseph
 :Address: Laboratoire d'Informatique de Grenoble 
           Bat. ENSIMAG - antenne de Montbonnot
           ZIRST 51, avenue Jean Kuntzmann
@@ -1627,8 +1627,35 @@ is divided into 2 processes:
 
  - One listens to a TCP/IP socket. It waits informations or commands from OAR
    user program or from the other modules.
+   
  - Another one deals with commands thanks to an automaton and launch right
    modules one after one.
+   
+It's behaviour is represented in these schemes.
+    
+  - General schema:
+
+  .. image:: schemas/almighty_automaton_general.png
+
+  - Scheduler schema:
+
+  .. image:: schemas/almighty_automaton_scheduler_part.png
+
+  - Finaud schema: 
+
+  .. image:: schemas/almighty_automaton_finaud_part.png
+
+  - Leon schema:
+
+  .. image:: schemas/almighty_automaton_leon_part.png
+
+  - Sarko schema:
+      
+  .. image:: schemas/almighty_automaton_villains_part.png
+
+  - ChangeNode schema:
+
+  .. image:: schemas/almighty_automaton_changenode_part.png
 
 Sarko
 -----
@@ -1639,10 +1666,13 @@ This module is executed periodically by the Almighty (default is every
 The jobs of Sarko are :
 
  - Look at running job walltimes and ask to frag them if they had expired.
+ 
  - Detect if fragged jobs are really fragged otherwise asks to exterminate
    them.
+   
  - In "Desktop Computing" mode, it detects if a node date has expired and
    asks to change its state into "Suspected".
+   
  - Can change "Suspected" resources into "Dead" after DEAD_SWITCH_TIME_ seconds.
 
 Judas
@@ -1650,6 +1680,30 @@ Judas
 
 This is the module dedicated to print and log every debugging, warning and
 error messages.
+
+The notification functions are the following:
+
+  - send_mail(mail_recipient_address, object, body, job_id) that sends 
+    emails to the OAR admin
+    
+  - notify_user(base, method, host, user, job_id, job_name, tag, comments)
+    that parses the notify method. This method can be a user script or a 
+    mail to send. If the "method" field begins with 
+    "mail:", notify_user will send an email to the user. If the 
+    beginning is "exec:", it will execute the script as the "user".
+    
+The main logging functions are the following:
+
+  - redirect_everything() this function redirects STDOUT and STDERR into 
+    the log file
+    
+  - oar_debug(message)
+  
+  - oar_warn(message)
+  
+  - oar_error(message)
+  
+The three last functions are used to set the log level of the message.
 
 Leon
 ----
@@ -1661,10 +1715,30 @@ There are 2 frag types :
 
  - *normal* : Leon tries to connect to the first node allocated for the job and
    terminates the job.
-   oarexec to end itself.
+   
  - *exterminate* : after a timeout if the *normal* method did not succeed
    then Leon notifies this case and clean up the database for these jobs. So
    OAR doesn't know what occured on the node and Suspects it.
+   
+   
+Runner
+------
+
+This module launches OAR effective jobs. These processes are run asynchronously
+with all modules.
+
+For each job, the Runner_ uses OPENSSH_CMD_ to connect to the first node of the
+reservation and propagate a Perl script which handles the execution of the user
+command. 
+
+  - for each job in "toError" state, answer to the oarsub client: "BAD JOB". 
+    This will exit the client with an error code.
+
+  - for each job in "toAckReservation" state, try to acknowledge the 
+    oarsub client reservation. If runner cannot contact the client, it will 
+    frag the job.
+
+  - for each job to launch, launch job's bipbip.
 
 NodeChangeState
 ---------------
@@ -1732,15 +1806,6 @@ This scheduler takes its historical data in the accounting_ table. To fill this,
 the command oaraccounting_ have to be run periodically (in a cron job for
 example). Otherwise the scheduler cannot be aware of new user consumptions.
 
-Runner
-------
-
-This module launches OAR effective jobs. These processes are run asynchronously
-with all modules.
-
-For each job, the Runner_ uses OPENSSH_CMD_ to connect to the first node of the
-reservation and propagate a Perl script which handles the execution of the user
-command. 
 
 Mechanisms
 ==========
@@ -1909,10 +1974,10 @@ User notification
 
 This section explains how the "--notify" oarsub_ option is handled by OAR:
 
- - The user wants to receive an email:
-     
+ - The user wants to receive an email:    
      The syntax is "mail:name@domain.com". Mail_ section in the `Configuration
      file`_ must be present otherwise the mail cannot be sent.
+     
  - The user wants to launch a script:
 
      The syntax is "exec:/path/to/script args". OAR server will connect (using
@@ -2044,6 +2109,7 @@ This kind of installation is based on two programs:
  
  - oar-cgi : this is a web CGI used by the nodes to communicate with
    the OAR server.
+   
  - oar-agent.pl : This program asks periodically the server web CGI to know what it
    has to do.
 

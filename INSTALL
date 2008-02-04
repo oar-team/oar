@@ -65,7 +65,7 @@ The following steps have to be done, prior to installing OAR:
         * test the ssh connection between (every) two nodes : there should not
           be any prompt.
 
-There are a three different flavors of installation :
+There are three different flavors of installation :
 
     * server:  install the daemon which must be running on the server
     * user:    install all the tools needed to submit and manage jobs for the
@@ -143,8 +143,26 @@ certainly other ways to do that)::
         \q
     
     psql oar
-        GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar;
-        GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO oar_ro;
+        GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,
+        challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,
+        gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,
+        job_dependencies,job_resource_descriptions,job_resource_groups,
+        job_state_logs,job_types,jobs,moldable_job_descriptions,queues,
+        resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,
+        files_file_id_seq,job_resource_groups_res_group_id_seq,
+        job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,
+        moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,
+        resources_resource_id_seq,jobs_job_id_seq TO oar;
+        
+        GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,
+        event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,
+        gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,
+        job_resource_descriptions,job_resource_groups,job_state_logs,job_types,
+        jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,
+        event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,
+        job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,
+        moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,
+        resources_resource_id_seq,jobs_job_id_seq TO oar_ro;
         \q
     
     # You can test it with
@@ -205,11 +223,9 @@ You can install these in this way:
 
     Monika:
     
-        - The package "perl-AppConfig" is required.
+        - The packages "libdbd-mysql-perl" or
+          "libdbd-pg-perl" and "perl-AppConfig" are required.
         - Read INSTALL file in the monika repository.
-        - replace the "oarstat" and "oarnodes" commands in the configuration
-          file by "oarstat --backward_compatible" and
-          "oarnodes --backward_compatible"
 
 Debian packages
 ---------------
@@ -223,7 +239,7 @@ the line::
     deb http://oar.imag.fr/download ./
 
 .. The installation will ask you if you want to initialize the nodes. It will copy
-   the oar SSH key on each specified nodes. You can skeep this step by you will
+   the oar SSH key on each specified nodes. If you skip this step you will
    have to do this manually.
 
 **IMPORTANT** : if you want to use the cpuset features then you have to install
@@ -252,7 +268,7 @@ an appropriate value for the memory and the cpuset properties.
 
 If you want to initialize your whole cluster in 1 command you can use this one
 (tune it to fit your cluster). You must be oar to run this command because
-oarnodesetting_ will called and the sentinelle.pl will log onto all nodes
+oarnodesetting_ will be called and the sentinelle.pl will log onto all nodes
 stored in "node_list.txt" file without password:
 ::
 

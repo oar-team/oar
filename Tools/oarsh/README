@@ -86,16 +86,16 @@ OARSH_SHELL
 ...........
 
 "oarsh_shell" must be the shell of the oar user on each nodes where you want
-oarsh to worked.
+oarsh to work.
 This script takes "OAR_CPUSET" and "OAR_JOB_USER" environment variables and
-adds its PID in OAR_CPUSET cpuset. Then it searchs user shell and home and
+adds its PID in OAR_CPUSET cpuset. Then it searches user shell and home and
 executes the right command (like ssh).
 
 
 Important notes
 ...............
 
-    - On each nodes you must add in the SSH server configuration file (you
+    - On each node you must add in the SSH server configuration file (you
       have to install an openssh server with a version >= **3.9**)::
 
         AcceptEnv OAR_CPUSET OAR_JOB_USER
@@ -120,11 +120,16 @@ Important notes
 
       So if the oar public key is::
 
-        ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr7NLozrRUENDHPX1GNdy34m6YoZ3+Q27i+ob3qClFLW4QpcyzPqgYV3Fvk6/o8guahYbREH9akvtWPAXonJqQR6+Ig2/LPk0hlH6A+SpnOLR0m7x/f6Lh+uIxM0L8BHJsU4lBge7+ZWnsPNel1oQOuZa902ARCiJ0nfjapXC/V+zWNWdNwe+g9vT8uQ==
+        ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4b
+        zkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPW
+        FOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr
 
-      then it must be switch into::
 
-        environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr7NLozrRUENDHPX1GNdy34m6YoZ3+Q27i+ob3qClFLW4QpcyzPqgYV3Fvk6/o8guahYbREH9akvtWPAXonJqQR6+Ig2/LPk0hlH6A+SpnOLR0m7x/f6Lh+uIxM0L8BHJsU4lBge7+ZWnsPNel1oQOuZa902ARCiJ0nfjapXC/V+zWNWdNwe+g9vT8uQ==
+      then it must be switched into::
+
+        environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP9
+        1oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM2
+        68p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr
     
     - the command "scp" can be used with oarsh. The syntax is::
 
@@ -158,4 +163,4 @@ Important notes
       OARSH_BYPASS_WHOLE_SECURITY field to 1 in your oar.conf file. 
       WARNING: this is a critical functionality (this is only useful 
       if users want to have a command to connect on every nodes without 
-      taking care of there ssh configuration and act like a ssh).
+      taking care of their ssh configuration and act like a ssh).
