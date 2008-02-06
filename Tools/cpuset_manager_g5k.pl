@@ -291,7 +291,7 @@ if ($ARGV[0] eq "init"){
                 system("sudo -u $Cpuset->{user} ipcrm $ipcrm_args"); 
             }
             print ("Purging /tmp...\n");
-            system("sudo find /tmp -user $Cpuset->{user} -exec rm -rfv {} \\;"); 
+            system("sudo find /tmp/ -user $Cpuset->{user} -exec rm -rfv {} \\;"); 
         } else {
             print("Not purging SysV IPC and /tmp as $Cpuset->{user} still as a job on this host.\n");
         }
