@@ -1,5 +1,5 @@
-FAQ
-===
+FAQ - ADMIN
+===========
 
 Release policy
 --------------
@@ -9,93 +9,8 @@ Since the version 2.2, release numbers are divided into 3 parts:
  - The second represents a set of OAR functionalities.
  - The third is incremented after bug fixes.
 
-User
-----
-
-How can I submit a moldable job?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You just have to use several "-l" oarsub_ option(one for each moldable
-description). By default the OAR scheduler will launch the moldable job which
-will end first.
-
-So you can see some free resources but the scheduler can decide to start your
-job later because they will have more free resources and the job walltime will
-be smaller.
-
-How can I submit a job with a non uniform description?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Example:
-::
-    
-    oarsub -I -l '{switch = "sw1" or switch = "sw5"}/switch=1+/node=1'
-
-This example asks OAR to reserve all resources from the switch sw1 or the
-switch sw2 **and** a node on another switch.
-
-You can see the "+" syntax as a sub-reservation directive.
-
-Can I perform a fix scheduled reservation and then launch several jobs in it?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Yes. You have to use the OAR scheduler "timesharing" feature.
-To use it, the reservation and your further jobs must be of the type
-timesharing (only for you).
-
-Example:
-
-  1. Make your reservation:
-     ::
-        
-        oarsub -r "2006-09-12 8:00:00" -l /switch=1 -t 'timesharing=user,*'
-
-     This command asks all resources from one switch at the given date for the
-     default walltime. It also specifies that this job can be shared with
-     himself and without a constraint on the job name.
-
-  2. Once your reservation has begun then you can launch:
-     ::
-
-        oarsub -I -l /node=2,walltime=0:50:00 -p 'switch = "nom_du_switch_schedule"'\
-        -t 'timesharing=user,*'
-
-     So this job will be scheduled on nodes assigned from the previous reservation.
-
-The "timesharing" oarsub_ command possibilities are enumerated in Timesharing_.
-
-How can a checkpointable job be resubmitted automatically?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You have to specify that your job is *idempotent*. So, after a successful
-checkpoint, if the job is resubmitted then all will go right and there will have
-no problem (like file creation, deletion, ...).
-
-Example:
-::
-    
-    oarsub --checkpoint 600 --signal 2 -t idempotent /path/to/prog
-
-So this job will send a signal *SIGINT* (see *man kill* to know signal
-numbers) 10 minutes before the walltime ends. Then if everything goes
-well it will be resubmitted.
-
-How to submit a non disturbing job for other users?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can use the *besteffort* job type. Thus your job will be launched only
-if there is a hole and will be deleted if another job wants its resources.
-
-Example:
-::
-
-    oarsub -t besteffort /path/to/prog
-
-Administrator
--------------
-
 What means the error "Bad configuration option: PermitLocalCommand" when I am using oarsh?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------------------------------------------------
 
 For security reasons, on the latest OpenSSH releases you are able to execute
 a local command when you are connecting to the remote host and we must
@@ -108,7 +23,7 @@ There is a variable named OARSH_OPENSSH_DEFAULT_OPTIONS_ in oar.conf used by oar
 So you have just to remove the not yet implemented option.
 
 How to manage start/stop of the nodes?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 You have to add a script in /etc/init.d which switches resources of the node
 into the "Alive" or "Absent" state.
 So when this script is called at boot time, it will change the state into
@@ -139,11 +54,11 @@ There two ways to perform this action:
     In this case, further OAR software upgrade will be more painless.
 
 How can I manage scheduling queues?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 see oarnotify_.
 
 How can I handle licence tokens?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 OAR does not manage resources with an empty "network_address". So you can
 define resources that are not linked with a real node.
 
@@ -163,7 +78,7 @@ whatever you want that are other notions):
         oarnodesetting -a -h "" -p type=fluent -p licence=l1
         ...
 
- 3. Now you have to write an admission rule to force oarsub_ "-l" option on
+ 3. Now you have to write an admission rule to force oarsub "-l" option on
     resources of the type "default" (node resources) if there is no other
     specifications. 
     ::
@@ -197,14 +112,14 @@ to restrict user consumptions to what they asked. This is very dependant of
 the licence management.
 
 How can I handle multiple clusters with one OAR?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 These are the steps to follow:
 
  1. create a resource property to identify the corresponding cluster (like "cluster")::
 
         oarproperty -a cluster
 
-    (you can see this new property when you use oarnodes_)
+    (you can see this new property when you use oarnodes)
 
  2. with oarnodesetting_ you have to fill this field for all resources; for example::
  
@@ -236,14 +151,14 @@ These are the steps to follow:
  4. Edit the admission rule which checks the right job types and add
     "cluster1" and "cluster2" in.
 
-So when you will use oarsub_ to submit a "cluster2" job type only resources
+So when you will use oarsub to submit a "cluster2" job type only resources
 with the property "cluster=2" is used. This is the same when you will use the
 "cluster1" type.
 
 How to configure a more ecological cluster (or how to make some power consumption economies)?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------------------------------------------------
 
-This feature can be performed with the `Dynamic nodes coupling features`_.
+This feature can be performed with the `Dynamic nodes coupling features`.
 
 First you have to make sure that you have a command to wake up a computer
 that is stopped. For example you can use the WoL (Wake on Lan) feature
@@ -277,12 +192,12 @@ Take a look at your cluster occupation and your electricity bill to know if it
 could be interesting for you ;-)
 
 How to enable jobs to connect to the frontales from the nodes using oarsh?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------------------------
 First you have to install the node part of OAR on the wanted nodes.
 
 
 After that you have to register the frontales into the database using
-oarnodesetting_ with the "frontal" (for example) type and assigned the desired
+oarnodesetting with the "frontal" (for example) type and assigned the desired
 cpus into the cpuset field; for example::
 
     oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=0
@@ -291,7 +206,7 @@ cpus into the cpuset field; for example::
     ...
 
 Thus you will be able to see resources identifier of these resources with
-oarnodes_; try to type::
+oarnodes; try to type::
 
     oarnodes --sql "type='frontal'"
     
@@ -305,7 +220,7 @@ Notes:
    into the "Absent" state.
 
 A job remains in the "Finishing" state, what can I do?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------------
 If you have waited more than a couple of minutes (5mn for example) then
 something wrong occurred (frontal has crashed, out of memory, ...).
 
@@ -318,11 +233,11 @@ the OAR install directory (example with a bash shell)::
 (Replace 42 by your job identifier)
 
 How can I write my own scheduler?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 .. include:: Scheduler/README
 
 What is the syntax of this documentation?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------
 
 We are using the RST format from the `Docutils
 <http://docutils.sourceforge.net/>`_ project. This syntax is easily readable

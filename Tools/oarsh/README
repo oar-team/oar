@@ -8,7 +8,7 @@ This feature is very usefull to restrict processor consumption on
 multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
-If you want to configure this feature into OAR then take a look also in CPUSET_
+If you want to configure this feature into OAR then take a look also in CPUSET
 and resources_.
 
 CPUSET definition
@@ -137,7 +137,7 @@ Important notes
     
     - If you want to use oarsh from the user frontale, you can. You have to
       define the environment OAR_JOB_ID and then launch oarsh on a node used
-      by your OAR job. This feature works only where the oarstat_ command is
+      by your OAR job. This feature works only where the oarstat command is
       configured::
 
         OAR_JOB_ID=42 oarsh node12

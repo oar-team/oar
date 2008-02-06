@@ -281,7 +281,7 @@ version 2.0.0:
     SCHEDULER_NODE_MANAGER_SLEEP_TIME in oar.conf)
   - a command can be specified to switch on nodes in the Absent state
     according to the resource property *cm_availability* in the table
-    resources_ (SCHEDULER_NODE_MANAGER_WAKE_UP_CMD in oar.conf).
+    resources (SCHEDULER_NODE_MANAGER_WAKE_UP_CMD in oar.conf).
   - if a job goes in Error state and this is not its fault then OAR will
     resubmit this one.
 

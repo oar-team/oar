@@ -276,7 +276,7 @@ stored in "node_list.txt" file without password:
     $PREFIX/oar/sentinelle.pl -f node_list.txt \
     -p "$PREFIX/oar/detect_new_resources.sh" | sh
 
-Then you can launch the oarnodes_ command and see all new resources inserted.
+Then you can launch the oarnodes command and see all new resources inserted.
 
 Further informations
 --------------------
