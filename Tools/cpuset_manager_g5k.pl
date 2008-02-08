@@ -293,7 +293,7 @@ if ($ARGV[0] eq "init"){
             print ("Purging /tmp...\n");
             system("sudo find /tmp/. -user $Cpuset->{user} -delete"); 
         } else {
-            print("Not purging SysV IPC and /tmp as $Cpuset->{user} still as a job on this host.\n");
+            print("Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.\n");
         }
         flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
         close(LOCK);
