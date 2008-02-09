@@ -279,12 +279,12 @@ if (defined($stateMode)){
         foreach my $r (@node_info){
             my %tmp_hash2;
             $tmp_hash2{state} = $r->{state};
-            if ($r->{state} eq "Alive") {    
+            #if ($r->{state} eq "Alive") {    
                 my @jobs = iolib::get_resource_job($base,$r->{resource_id});
                 if ($#jobs >= 0){
                     $tmp_hash2{jobs} = \@jobs;
                 }
-            }
+            #}
             $tmp_hash2{network_address} = $r->{network_address};
             my $properties = iolib::get_resource_info($base,$r->{resource_id});
             $tmp_hash2{properties} = $properties;

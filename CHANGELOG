@@ -27,6 +27,8 @@ upstream development version:
     used.
   - Scheduler: add timeout for each job == 1/4 of the remaining scheduler
     timeout.
+  - Bug #4866: now the whole node is Suspected instead of just the par where
+    there is no job onto. So it is possible to have a job on Suspected nodes.
 
 version 2.2.11:
 ---------------
