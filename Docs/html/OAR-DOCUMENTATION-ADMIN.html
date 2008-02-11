@@ -329,7 +329,7 @@ productive plateforms and research experiments.</td>
 </tbody>
 </table>
 <p><strong>BE CAREFULL : THIS DOCUMENTATION IS FOR OAR &gt;= 2.3.0</strong></p>
-<p>PDF version : <a class="reference" href="OAR-DOCUMENTATION.pdf">OAR-DOCUMENTATION.pdf</a></p>
+<p>PDF version : <a class="reference" href="OAR-DOCUMENTATION-ADMIN.pdf">OAR-DOCUMENTATION-ADMIN.pdf</a></p>
 <div class="contents topic">
 <p class="topic-title first"><a id="table-of-contents" name="table-of-contents">Table of Contents</a></p>
 <ul class="auto-toc simple">
@@ -361,79 +361,79 @@ productive plateforms and research experiments.</td>
 <li><a class="reference" href="#oaraccounting" id="id20" name="id20">4.4&nbsp;&nbsp;&nbsp;<em>oaraccounting</em></a></li>
 <li><a class="reference" href="#oarnotify" id="id21" name="id21">4.5&nbsp;&nbsp;&nbsp;<em>oarnotify</em></a></li>
 <li><a class="reference" href="#oarmonitor" id="id22" name="id22">4.6&nbsp;&nbsp;&nbsp;<em>oarmonitor</em></a></li>
-<li><a class="reference" href="#database-scheme" id="id23" name="id23">4.7&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
-<li><a class="reference" href="#accounting" id="id24" name="id24">4.7.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
-<li><a class="reference" href="#admission-rules" id="id25" name="id25">4.7.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></li>
-<li><a class="reference" href="#event-logs" id="id26" name="id26">4.7.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></li>
-<li><a class="reference" href="#event-log-hostnames" id="id27" name="id27">4.7.4&nbsp;&nbsp;&nbsp;<em>event_log_hostnames</em></a></li>
-<li><a class="reference" href="#files" id="id28" name="id28">4.7.5&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
-<li><a class="reference" href="#frag-jobs" id="id29" name="id29">4.7.6&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></li>
-<li><a class="reference" href="#gantt-jobs-resources" id="id30" name="id30">4.7.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></li>
-<li><a class="reference" href="#gantt-jobs-resources-visu" id="id31" name="id31">4.7.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></li>
-<li><a class="reference" href="#gantt-jobs-predictions" id="id32" name="id32">4.7.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></li>
-<li><a class="reference" href="#gantt-jobs-predictions-visu" id="id33" name="id33">4.7.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></li>
-<li><a class="reference" href="#jobs" id="id34" name="id34">4.7.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
-<li><a class="reference" href="#job-dependencies" id="id35" name="id35">4.7.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></li>
-<li><a class="reference" href="#moldable-job-descriptions" id="id36" name="id36">4.7.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></li>
-<li><a class="reference" href="#job-resource-groups" id="id37" name="id37">4.7.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></li>
-<li><a class="reference" href="#job-resource-descriptions" id="id38" name="id38">4.7.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></li>
-<li><a class="reference" href="#job-state-logs" id="id39" name="id39">4.7.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></li>
-<li><a class="reference" href="#job-types" id="id40" name="id40">4.7.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></li>
-<li><a class="reference" href="#resources" id="id41" name="id41">4.7.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></li>
-<li><a class="reference" href="#resource-logs" id="id42" name="id42">4.7.19&nbsp;&nbsp;&nbsp;<em>resource_logs</em></a></li>
-<li><a class="reference" href="#assigned-resources" id="id43" name="id43">4.7.20&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></li>
-<li><a class="reference" href="#queues" id="id44" name="id44">4.7.21&nbsp;&nbsp;&nbsp;<em>queues</em></a></li>
-<li><a class="reference" href="#challenges" id="id45" name="id45">4.7.22&nbsp;&nbsp;&nbsp;<em>challenges</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#database-scheme" id="id23" name="id23">5&nbsp;&nbsp;&nbsp;Database scheme</a><ul class="auto-toc">
+<li><a class="reference" href="#accounting" id="id24" name="id24">5.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></li>
+<li><a class="reference" href="#admission-rules" id="id25" name="id25">5.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></li>
+<li><a class="reference" href="#event-logs" id="id26" name="id26">5.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></li>
+<li><a class="reference" href="#event-log-hostnames" id="id27" name="id27">5.4&nbsp;&nbsp;&nbsp;<em>event_log_hostnames</em></a></li>
+<li><a class="reference" href="#files" id="id28" name="id28">5.5&nbsp;&nbsp;&nbsp;<em>files</em></a></li>
+<li><a class="reference" href="#frag-jobs" id="id29" name="id29">5.6&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></li>
+<li><a class="reference" href="#gantt-jobs-resources" id="id30" name="id30">5.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></li>
+<li><a class="reference" href="#gantt-jobs-resources-visu" id="id31" name="id31">5.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></li>
+<li><a class="reference" href="#gantt-jobs-predictions" id="id32" name="id32">5.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></li>
+<li><a class="reference" href="#gantt-jobs-predictions-visu" id="id33" name="id33">5.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></li>
+<li><a class="reference" href="#jobs" id="id34" name="id34">5.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></li>
+<li><a class="reference" href="#job-dependencies" id="id35" name="id35">5.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></li>
+<li><a class="reference" href="#moldable-job-descriptions" id="id36" name="id36">5.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></li>
+<li><a class="reference" href="#job-resource-groups" id="id37" name="id37">5.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></li>
+<li><a class="reference" href="#job-resource-descriptions" id="id38" name="id38">5.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></li>
+<li><a class="reference" href="#job-state-logs" id="id39" name="id39">5.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></li>
+<li><a class="reference" href="#job-types" id="id40" name="id40">5.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></li>
+<li><a class="reference" href="#resources" id="id41" name="id41">5.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></li>
+<li><a class="reference" href="#resource-logs" id="id42" name="id42">5.19&nbsp;&nbsp;&nbsp;<em>resource_logs</em></a></li>
+<li><a class="reference" href="#assigned-resources" id="id43" name="id43">5.20&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></li>
+<li><a class="reference" href="#queues" id="id44" name="id44">5.21&nbsp;&nbsp;&nbsp;<em>queues</em></a></li>
+<li><a class="reference" href="#challenges" id="id45" name="id45">5.22&nbsp;&nbsp;&nbsp;<em>challenges</em></a></li>
+</ul>
+</li>
+<li><a class="reference" href="#configuration-file" id="id46" name="id46">6&nbsp;&nbsp;&nbsp;Configuration file</a></li>
+<li><a class="reference" href="#modules-descriptions" id="id47" name="id47">7&nbsp;&nbsp;&nbsp;Modules descriptions</a><ul class="auto-toc">
+<li><a class="reference" href="#almighty" id="id48" name="id48">7.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
+<li><a class="reference" href="#sarko" id="id49" name="id49">7.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
+<li><a class="reference" href="#judas" id="id50" name="id50">7.3&nbsp;&nbsp;&nbsp;Judas</a></li>
+<li><a class="reference" href="#leon" id="id51" name="id51">7.4&nbsp;&nbsp;&nbsp;Leon</a></li>
+<li><a class="reference" href="#runner" id="id52" name="id52">7.5&nbsp;&nbsp;&nbsp;Runner</a></li>
+<li><a class="reference" href="#nodechangestate" id="id53" name="id53">7.6&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
+<li><a class="reference" href="#scheduler" id="id54" name="id54">7.7&nbsp;&nbsp;&nbsp;Scheduler</a><ul class="auto-toc">
+<li><a class="reference" href="#oar-sched-gantt-with-timesharing" id="id55" name="id55">7.7.1&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing</a></li>
+<li><a class="reference" href="#oar-sched-gantt-with-timesharing-and-fairsharing" id="id56" name="id56">7.7.2&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing_and_fairsharing</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference" href="#configuration-file" id="id46" name="id46">5&nbsp;&nbsp;&nbsp;Configuration file</a></li>
-<li><a class="reference" href="#modules-descriptions" id="id47" name="id47">6&nbsp;&nbsp;&nbsp;Modules descriptions</a><ul class="auto-toc">
-<li><a class="reference" href="#almighty" id="id48" name="id48">6.1&nbsp;&nbsp;&nbsp;Almighty</a></li>
-<li><a class="reference" href="#sarko" id="id49" name="id49">6.2&nbsp;&nbsp;&nbsp;Sarko</a></li>
-<li><a class="reference" href="#judas" id="id50" name="id50">6.3&nbsp;&nbsp;&nbsp;Judas</a></li>
-<li><a class="reference" href="#leon" id="id51" name="id51">6.4&nbsp;&nbsp;&nbsp;Leon</a></li>
-<li><a class="reference" href="#runner" id="id52" name="id52">6.5&nbsp;&nbsp;&nbsp;Runner</a></li>
-<li><a class="reference" href="#nodechangestate" id="id53" name="id53">6.6&nbsp;&nbsp;&nbsp;NodeChangeState</a></li>
-<li><a class="reference" href="#scheduler" id="id54" name="id54">6.7&nbsp;&nbsp;&nbsp;Scheduler</a><ul class="auto-toc">
-<li><a class="reference" href="#oar-sched-gantt-with-timesharing" id="id55" name="id55">6.7.1&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing</a></li>
-<li><a class="reference" href="#oar-sched-gantt-with-timesharing-and-fairsharing" id="id56" name="id56">6.7.2&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing_and_fairsharing</a></li>
+<li><a class="reference" href="#faq-admin" id="id57" name="id57">8&nbsp;&nbsp;&nbsp;FAQ - ADMIN</a><ul class="auto-toc">
+<li><a class="reference" href="#release-policy" id="id58" name="id58">8.1&nbsp;&nbsp;&nbsp;Release policy</a></li>
+<li><a class="reference" href="#what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh" id="id59" name="id59">8.2&nbsp;&nbsp;&nbsp;What means the error &quot;Bad configuration option: PermitLocalCommand&quot; when I am using oarsh?</a></li>
+<li><a class="reference" href="#how-to-manage-start-stop-of-the-nodes" id="id60" name="id60">8.3&nbsp;&nbsp;&nbsp;How to manage start/stop of the nodes?</a></li>
+<li><a class="reference" href="#how-can-i-manage-scheduling-queues" id="id61" name="id61">8.4&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></li>
+<li><a class="reference" href="#how-can-i-handle-licence-tokens" id="id62" name="id62">8.5&nbsp;&nbsp;&nbsp;How can I handle licence tokens?</a></li>
+<li><a class="reference" href="#how-can-i-handle-multiple-clusters-with-one-oar" id="id63" name="id63">8.6&nbsp;&nbsp;&nbsp;How can I handle multiple clusters with one OAR?</a></li>
+<li><a class="reference" href="#how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies" id="id64" name="id64">8.7&nbsp;&nbsp;&nbsp;How to configure a more ecological cluster (or how to make some power consumption economies)?</a></li>
+<li><a class="reference" href="#how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh" id="id65" name="id65">8.8&nbsp;&nbsp;&nbsp;How to enable jobs to connect to the frontales from the nodes using oarsh?</a></li>
+<li><a class="reference" href="#a-job-remains-in-the-finishing-state-what-can-i-do" id="id66" name="id66">8.9&nbsp;&nbsp;&nbsp;A job remains in the &quot;Finishing&quot; state, what can I do?</a></li>
+<li><a class="reference" href="#how-can-i-write-my-own-scheduler" id="id67" name="id67">8.10&nbsp;&nbsp;&nbsp;How can I write my own scheduler?</a></li>
+<li><a class="reference" href="#what-is-the-syntax-of-this-documentation" id="id68" name="id68">8.11&nbsp;&nbsp;&nbsp;What is the syntax of this documentation?</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a class="reference" href="#faq-admin" id="id57" name="id57">7&nbsp;&nbsp;&nbsp;FAQ - ADMIN</a><ul class="auto-toc">
-<li><a class="reference" href="#release-policy" id="id58" name="id58">7.1&nbsp;&nbsp;&nbsp;Release policy</a></li>
-<li><a class="reference" href="#what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh" id="id59" name="id59">7.2&nbsp;&nbsp;&nbsp;What means the error &quot;Bad configuration option: PermitLocalCommand&quot; when I am using oarsh?</a></li>
-<li><a class="reference" href="#how-to-manage-start-stop-of-the-nodes" id="id60" name="id60">7.3&nbsp;&nbsp;&nbsp;How to manage start/stop of the nodes?</a></li>
-<li><a class="reference" href="#how-can-i-manage-scheduling-queues" id="id61" name="id61">7.4&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></li>
-<li><a class="reference" href="#how-can-i-handle-licence-tokens" id="id62" name="id62">7.5&nbsp;&nbsp;&nbsp;How can I handle licence tokens?</a></li>
-<li><a class="reference" href="#how-can-i-handle-multiple-clusters-with-one-oar" id="id63" name="id63">7.6&nbsp;&nbsp;&nbsp;How can I handle multiple clusters with one OAR?</a></li>
-<li><a class="reference" href="#how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies" id="id64" name="id64">7.7&nbsp;&nbsp;&nbsp;How to configure a more ecological cluster (or how to make some power consumption economies)?</a></li>
-<li><a class="reference" href="#how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh" id="id65" name="id65">7.8&nbsp;&nbsp;&nbsp;How to enable jobs to connect to the frontales from the nodes using oarsh?</a></li>
-<li><a class="reference" href="#a-job-remains-in-the-finishing-state-what-can-i-do" id="id66" name="id66">7.9&nbsp;&nbsp;&nbsp;A job remains in the &quot;Finishing&quot; state, what can I do?</a></li>
-<li><a class="reference" href="#how-can-i-write-my-own-scheduler" id="id67" name="id67">7.10&nbsp;&nbsp;&nbsp;How can I write my own scheduler?</a></li>
-<li><a class="reference" href="#what-is-the-syntax-of-this-documentation" id="id68" name="id68">7.11&nbsp;&nbsp;&nbsp;What is the syntax of this documentation?</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#oar-changelog" id="id69" name="id69">8&nbsp;&nbsp;&nbsp;OAR CHANGELOG</a><ul class="auto-toc">
-<li><a class="reference" href="#upstream-development-version" id="id70" name="id70">8.1&nbsp;&nbsp;&nbsp;upstream development version:</a></li>
-<li><a class="reference" href="#version-2-2-11" id="id71" name="id71">8.2&nbsp;&nbsp;&nbsp;version 2.2.11:</a></li>
-<li><a class="reference" href="#version-2-2-10" id="id72" name="id72">8.3&nbsp;&nbsp;&nbsp;version 2.2.10:</a></li>
-<li><a class="reference" href="#version-2-2-9" id="id73" name="id73">8.4&nbsp;&nbsp;&nbsp;version 2.2.9:</a></li>
-<li><a class="reference" href="#version-2-2-8" id="id74" name="id74">8.5&nbsp;&nbsp;&nbsp;version 2.2.8:</a></li>
-<li><a class="reference" href="#version-2-2-7" id="id75" name="id75">8.6&nbsp;&nbsp;&nbsp;version 2.2.7:</a></li>
-<li><a class="reference" href="#version-2-2-6" id="id76" name="id76">8.7&nbsp;&nbsp;&nbsp;version 2.2.6:</a></li>
-<li><a class="reference" href="#version-2-2-5" id="id77" name="id77">8.8&nbsp;&nbsp;&nbsp;version 2.2.5:</a></li>
-<li><a class="reference" href="#version-2-2-4" id="id78" name="id78">8.9&nbsp;&nbsp;&nbsp;version 2.2.4:</a></li>
-<li><a class="reference" href="#version-2-2-3" id="id79" name="id79">8.10&nbsp;&nbsp;&nbsp;version 2.2.3:</a></li>
-<li><a class="reference" href="#version-2-2-2" id="id80" name="id80">8.11&nbsp;&nbsp;&nbsp;version 2.2.2:</a></li>
-<li><a class="reference" href="#version-2-2-1" id="id81" name="id81">8.12&nbsp;&nbsp;&nbsp;version 2.2.1:</a></li>
-<li><a class="reference" href="#version-2-2" id="id82" name="id82">8.13&nbsp;&nbsp;&nbsp;version 2.2:</a></li>
-<li><a class="reference" href="#version-2-1-0" id="id83" name="id83">8.14&nbsp;&nbsp;&nbsp;version 2.1.0:</a></li>
-<li><a class="reference" href="#version-2-0-2" id="id84" name="id84">8.15&nbsp;&nbsp;&nbsp;version 2.0.2:</a></li>
-<li><a class="reference" href="#version-2-0-0" id="id85" name="id85">8.16&nbsp;&nbsp;&nbsp;version 2.0.0:</a></li>
+<li><a class="reference" href="#oar-changelog" id="id69" name="id69">9&nbsp;&nbsp;&nbsp;OAR CHANGELOG</a><ul class="auto-toc">
+<li><a class="reference" href="#upstream-development-version" id="id70" name="id70">9.1&nbsp;&nbsp;&nbsp;upstream development version:</a></li>
+<li><a class="reference" href="#version-2-2-11" id="id71" name="id71">9.2&nbsp;&nbsp;&nbsp;version 2.2.11:</a></li>
+<li><a class="reference" href="#version-2-2-10" id="id72" name="id72">9.3&nbsp;&nbsp;&nbsp;version 2.2.10:</a></li>
+<li><a class="reference" href="#version-2-2-9" id="id73" name="id73">9.4&nbsp;&nbsp;&nbsp;version 2.2.9:</a></li>
+<li><a class="reference" href="#version-2-2-8" id="id74" name="id74">9.5&nbsp;&nbsp;&nbsp;version 2.2.8:</a></li>
+<li><a class="reference" href="#version-2-2-7" id="id75" name="id75">9.6&nbsp;&nbsp;&nbsp;version 2.2.7:</a></li>
+<li><a class="reference" href="#version-2-2-6" id="id76" name="id76">9.7&nbsp;&nbsp;&nbsp;version 2.2.6:</a></li>
+<li><a class="reference" href="#version-2-2-5" id="id77" name="id77">9.8&nbsp;&nbsp;&nbsp;version 2.2.5:</a></li>
+<li><a class="reference" href="#version-2-2-4" id="id78" name="id78">9.9&nbsp;&nbsp;&nbsp;version 2.2.4:</a></li>
+<li><a class="reference" href="#version-2-2-3" id="id79" name="id79">9.10&nbsp;&nbsp;&nbsp;version 2.2.3:</a></li>
+<li><a class="reference" href="#version-2-2-2" id="id80" name="id80">9.11&nbsp;&nbsp;&nbsp;version 2.2.2:</a></li>
+<li><a class="reference" href="#version-2-2-1" id="id81" name="id81">9.12&nbsp;&nbsp;&nbsp;version 2.2.1:</a></li>
+<li><a class="reference" href="#version-2-2" id="id82" name="id82">9.13&nbsp;&nbsp;&nbsp;version 2.2:</a></li>
+<li><a class="reference" href="#version-2-1-0" id="id83" name="id83">9.14&nbsp;&nbsp;&nbsp;version 2.1.0:</a></li>
+<li><a class="reference" href="#version-2-0-2" id="id84" name="id84">9.15&nbsp;&nbsp;&nbsp;version 2.0.2:</a></li>
+<li><a class="reference" href="#version-2-0-0" id="id85" name="id85">9.16&nbsp;&nbsp;&nbsp;version 2.0.0:</a></li>
 </ul>
 </li>
 </ul>
@@ -1190,8 +1190,9 @@ oarmonitor_graph_gen.pl -j 4242</blockquote>
 <p>Then the user can look into the directory <em>OAR.1653.monitoring</em> in the current
 directory.</p>
 </div>
+</div>
 <div class="section">
-<h2><a class="toc-backref" href="#id23" id="database-scheme" name="database-scheme">4.7&nbsp;&nbsp;&nbsp;Database scheme</a></h2>
+<h1><a class="toc-backref" href="#id23" id="database-scheme" name="database-scheme">5&nbsp;&nbsp;&nbsp;Database scheme</a></h1>
 <div class="figure">
 <a class="reference image-reference" href="db_scheme.png"><img alt="Database scheme" src="../schemas/db_scheme.png" style="width: 17cm;" /></a>
 <p class="caption">Database scheme
@@ -1202,7 +1203,7 @@ blue lines seem INDEX)</p>
 <p>Note : all dates and duration are stored in an integer manner (number of
 seconds since the EPOCH).</p>
 <div class="section">
-<h3><a class="toc-backref" href="#id24" id="accounting" name="accounting">4.7.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h3>
+<h2><a class="toc-backref" href="#id24" id="accounting" name="accounting">5.1&nbsp;&nbsp;&nbsp;<em>accounting</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="23%" />
@@ -1288,7 +1289,7 @@ UPDATE jobs SET accounted = &quot;NO&quot;;
 file and change the value of the tag <a class="reference" href="#accounting-window">ACCOUNTING_WINDOW</a>.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id25" id="admission-rules" name="admission-rules">4.7.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></h3>
+<h2><a class="toc-backref" href="#id25" id="admission-rules" name="admission-rules">5.2&nbsp;&nbsp;&nbsp;<em>admission_rules</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1397,7 +1398,7 @@ INSERT INTO admission_rules (rule) VALUES ('
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id26" id="event-logs" name="event-logs">4.7.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></h3>
+<h2><a class="toc-backref" href="#id26" id="event-logs" name="event-logs">5.3&nbsp;&nbsp;&nbsp;<em>event_logs</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1520,7 +1521,7 @@ job.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id27" id="event-log-hostnames" name="event-log-hostnames">4.7.4&nbsp;&nbsp;&nbsp;<em>event_log_hostnames</em></a></h3>
+<h2><a class="toc-backref" href="#id27" id="event-log-hostnames" name="event-log-hostnames">5.4&nbsp;&nbsp;&nbsp;<em>event_log_hostnames</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1559,7 +1560,7 @@ has occured</td>
 &quot;PING_CHECKER_NODE_SUSPECTED&quot;.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id28" id="files" name="files">4.7.5&nbsp;&nbsp;&nbsp;<em>files</em></a></h3>
+<h2><a class="toc-backref" href="#id28" id="files" name="files">5.5&nbsp;&nbsp;&nbsp;<em>files</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1611,7 +1612,7 @@ has occured</td>
 </table>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id29" id="frag-jobs" name="frag-jobs">4.7.6&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></h3>
+<h2><a class="toc-backref" href="#id29" id="frag-jobs" name="frag-jobs">5.6&nbsp;&nbsp;&nbsp;<em>frag_jobs</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1666,7 +1667,7 @@ asked Leon to clean up the database.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id30" id="gantt-jobs-resources" name="gantt-jobs-resources">4.7.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></h3>
+<h2><a class="toc-backref" href="#id30" id="gantt-jobs-resources" name="gantt-jobs-resources">5.7&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1703,7 +1704,7 @@ asked Leon to clean up the database.</li>
 <p>This table specifies which resources are attributed to which jobs.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id31" id="gantt-jobs-resources-visu" name="gantt-jobs-resources-visu">4.7.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></h3>
+<h2><a class="toc-backref" href="#id31" id="gantt-jobs-resources-visu" name="gantt-jobs-resources-visu">5.8&nbsp;&nbsp;&nbsp;<em>gantt_jobs_resources_visu</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1741,7 +1742,7 @@ asked Leon to clean up the database.</li>
 tools. It is updated atomically (a lock is used).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id32" id="gantt-jobs-predictions" name="gantt-jobs-predictions">4.7.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></h3>
+<h2><a class="toc-backref" href="#id32" id="gantt-jobs-predictions" name="gantt-jobs-predictions">5.9&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1787,7 +1788,7 @@ decisions taken by the schedulers for each waiting jobs.</p>
 </table>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id33" id="gantt-jobs-predictions-visu" name="gantt-jobs-predictions-visu">4.7.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></h3>
+<h2><a class="toc-backref" href="#id33" id="gantt-jobs-predictions-visu" name="gantt-jobs-predictions-visu">5.10&nbsp;&nbsp;&nbsp;<em>gantt_jobs_predictions_visu</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -1825,7 +1826,7 @@ decisions taken by the schedulers for each waiting jobs.</p>
 tools. It is made up to date in an atomic action (with a lock).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id34" id="jobs" name="jobs">4.7.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h3>
+<h2><a class="toc-backref" href="#id34" id="jobs" name="jobs">5.11&nbsp;&nbsp;&nbsp;<em>jobs</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="26%" />
@@ -2037,7 +2038,7 @@ scheduler.</li>
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id35" id="job-dependencies" name="job-dependencies">4.7.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></h3>
+<h2><a class="toc-backref" href="#id35" id="job-dependencies" name="job-dependencies">5.12&nbsp;&nbsp;&nbsp;<em>job_dependencies</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2075,7 +2076,7 @@ launching job_id</td>
 <p>This table is feeded by <cite>oarsub</cite> command with the &quot;-a&quot; option.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id36" id="moldable-job-descriptions" name="moldable-job-descriptions">4.7.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></h3>
+<h2><a class="toc-backref" href="#id36" id="moldable-job-descriptions" name="moldable-job-descriptions">5.13&nbsp;&nbsp;&nbsp;<em>moldable_job_descriptions</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="22%" />
@@ -2118,7 +2119,7 @@ of them. For example it can calculate which instance will finish first.
 So this table stores all instances for all jobs.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id37" id="job-resource-groups" name="job-resource-groups">4.7.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></h3>
+<h2><a class="toc-backref" href="#id37" id="job-resource-groups" name="job-resource-groups">5.14&nbsp;&nbsp;&nbsp;<em>job_resource_groups</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="26%" />
@@ -2161,7 +2162,7 @@ you can do the same thing for each resource groups that you define with
 the &quot;-l&quot; option.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id38" id="job-resource-descriptions" name="job-resource-descriptions">4.7.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></h3>
+<h2><a class="toc-backref" href="#id38" id="job-resource-descriptions" name="job-resource-descriptions">5.15&nbsp;&nbsp;&nbsp;<em>job_resource_descriptions</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="26%" />
@@ -2208,7 +2209,7 @@ resources)</td>
 the &quot;-l&quot; option.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id39" id="job-state-logs" name="job-state-logs">4.7.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></h3>
+<h2><a class="toc-backref" href="#id39" id="job-state-logs" name="job-state-logs">5.16&nbsp;&nbsp;&nbsp;<em>job_state_logs</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="22%" />
@@ -2267,7 +2268,7 @@ the &quot;-l&quot; option.</p>
 <p>This table keeps informations about state changes of jobs.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id40" id="job-types" name="job-types">4.7.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></h3>
+<h2><a class="toc-backref" href="#id40" id="job-types" name="job-types">5.17&nbsp;&nbsp;&nbsp;<em>job_types</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2314,7 +2315,7 @@ the &quot;-l&quot; option.</p>
 <p>This table stores job types given with the <cite>oarsub</cite> command and &quot;-t&quot; options.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id41" id="resources" name="resources">4.7.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></h3>
+<h2><a class="toc-backref" href="#id41" id="resources" name="resources">5.18&nbsp;&nbsp;&nbsp;<em>resources</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="25%" />
@@ -2470,7 +2471,7 @@ to an integer beginning at 0. This field is linked to the configuration tag
 </blockquote>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id42" id="resource-logs" name="resource-logs">4.7.19&nbsp;&nbsp;&nbsp;<em>resource_logs</em></a></h3>
+<h2><a class="toc-backref" href="#id42" id="resource-logs" name="resource-logs">5.19&nbsp;&nbsp;&nbsp;<em>resource_logs</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="22%" />
@@ -2530,7 +2531,7 @@ human one</td>
 the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command with the &quot;-p&quot; option).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id43" id="assigned-resources" name="assigned-resources">4.7.20&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></h3>
+<h2><a class="toc-backref" href="#id43" id="assigned-resources" name="assigned-resources">5.20&nbsp;&nbsp;&nbsp;<em>assigned_resources</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2568,7 +2569,7 @@ the <a class="reference" href="#oarnodesetting">oarnodesetting</a> command with 
 scheduled.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id44" id="queues" name="queues">4.7.21&nbsp;&nbsp;&nbsp;<em>queues</em></a></h3>
+<h2><a class="toc-backref" href="#id44" id="queues" name="queues">5.21&nbsp;&nbsp;&nbsp;<em>queues</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2617,7 +2618,7 @@ queue</td>
 Executables are launched one after one in the specified priority.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id45" id="challenges" name="challenges">4.7.22&nbsp;&nbsp;&nbsp;<em>challenges</em></a></h3>
+<h2><a class="toc-backref" href="#id45" id="challenges" name="challenges">5.22&nbsp;&nbsp;&nbsp;<em>challenges</em></a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -2668,9 +2669,8 @@ computing nodes (avoid a job id being stolen/forged by malicious user).</p>
 account given to users who want to access OAR internal informations(like statistics).</p>
 </div>
 </div>
-</div>
 <div class="section">
-<h1><a class="toc-backref" href="#id46" id="configuration-file" name="configuration-file">5&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
+<h1><a class="toc-backref" href="#id46" id="configuration-file" name="configuration-file">6&nbsp;&nbsp;&nbsp;Configuration file</a></h1>
 <p>Be careful, the syntax of this file must be bash compliant(so after editing
 you must be able to launch in bash 'source /etc/oar.conf' and have variables
 assigned).
@@ -3133,10 +3133,10 @@ This is used in oarmonitor command.</p>
 </blockquote>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id47" id="modules-descriptions" name="modules-descriptions">6&nbsp;&nbsp;&nbsp;Modules descriptions</a></h1>
+<h1><a class="toc-backref" href="#id47" id="modules-descriptions" name="modules-descriptions">7&nbsp;&nbsp;&nbsp;Modules descriptions</a></h1>
 <p>OAR can be decomposed into several modules which perform different tasks.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id48" id="almighty" name="almighty">6.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
+<h2><a class="toc-backref" href="#id48" id="almighty" name="almighty">7.1&nbsp;&nbsp;&nbsp;Almighty</a></h2>
 <p>This module is the OAR server. It decides what actions must be performed. It
 is divided into 2 processes:</p>
 <blockquote>
@@ -3191,7 +3191,7 @@ modules one after one.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id49" id="sarko" name="sarko">6.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
+<h2><a class="toc-backref" href="#id49" id="sarko" name="sarko">7.2&nbsp;&nbsp;&nbsp;Sarko</a></h2>
 <p>This module is executed periodically by the Almighty (default is every
 30 seconds).</p>
 <p>The jobs of Sarko are :</p>
@@ -3207,7 +3207,7 @@ asks to change its state into &quot;Suspected&quot;.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id50" id="judas" name="judas">6.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
+<h2><a class="toc-backref" href="#id50" id="judas" name="judas">7.3&nbsp;&nbsp;&nbsp;Judas</a></h2>
 <p>This is the module dedicated to print and log every debugging, warning and
 error messages.</p>
 <p>The notification functions are the following:</p>
@@ -3235,7 +3235,7 @@ the log file</li>
 <p>The three last functions are used to set the log level of the message.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id51" id="leon" name="leon">6.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
+<h2><a class="toc-backref" href="#id51" id="leon" name="leon">7.4&nbsp;&nbsp;&nbsp;Leon</a></h2>
 <p>This module is in charge to delete the jobs. Other OAR modules or commands
 can ask to kill a job and this is Leon which performs that.</p>
 <p>There are 2 frag types :</p>
@@ -3250,7 +3250,7 @@ OAR doesn't know what occured on the node and Suspects it.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id52" id="runner" name="runner">6.5&nbsp;&nbsp;&nbsp;Runner</a></h2>
+<h2><a class="toc-backref" href="#id52" id="runner" name="runner">7.5&nbsp;&nbsp;&nbsp;Runner</a></h2>
 <p>This module launches OAR effective jobs. These processes are run asynchronously
 with all modules.</p>
 <p>For each job, the <a class="reference" href="#runner">Runner</a> uses <a class="reference" href="#openssh-cmd">OPENSSH_CMD</a> to connect to the first node of the
@@ -3268,20 +3268,20 @@ frag the job.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id53" id="nodechangestate" name="nodechangestate">6.6&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
+<h2><a class="toc-backref" href="#id53" id="nodechangestate" name="nodechangestate">7.6&nbsp;&nbsp;&nbsp;NodeChangeState</a></h2>
 <p>This module is in charge of changing resource states and checking if there are
 jobs on these.</p>
 <p>It also checks all pending events in the table <a class="reference" href="#event-logs">event_logs</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id54" id="scheduler" name="scheduler">6.7&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
+<h2><a class="toc-backref" href="#id54" id="scheduler" name="scheduler">7.7&nbsp;&nbsp;&nbsp;Scheduler</a></h2>
 <p>This module checks for each reservation jobs if it is valid and launches them
 at the right time.</p>
 <p><a class="reference" href="#scheduler">Scheduler</a> launches all gantt scheduler in the order of the priority specified
 in the database and update all visualization tables
 (<a class="reference" href="#gantt-jobs-predictions-visu">gantt_jobs_predictions_visu</a> and <a class="reference" href="#gantt-jobs-resources-visu">gantt_jobs_resources_visu</a>).</p>
 <div class="section">
-<h3><a class="toc-backref" href="#id55" id="oar-sched-gantt-with-timesharing" name="oar-sched-gantt-with-timesharing">6.7.1&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing</a></h3>
+<h3><a class="toc-backref" href="#id55" id="oar-sched-gantt-with-timesharing" name="oar-sched-gantt-with-timesharing">7.7.1&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing</a></h3>
 <p>This is the default OAR scheduler. It implements all functionalities like
 timesharing, moldable jobs, <cite>besteffort jobs</cite>, ...</p>
 <p>By default, this scheduler is used by all default queues.</p>
@@ -3291,7 +3291,7 @@ can be changed in the <a class="reference" href="#configuration-file">configurat
 <a class="reference" href="#scheduler-resource-order">SCHEDULER_RESOURCE_ORDER</a>).</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id56" id="oar-sched-gantt-with-timesharing-and-fairsharing" name="oar-sched-gantt-with-timesharing-and-fairsharing">6.7.2&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing_and_fairsharing</a></h3>
+<h3><a class="toc-backref" href="#id56" id="oar-sched-gantt-with-timesharing-and-fairsharing" name="oar-sched-gantt-with-timesharing-and-fairsharing">7.7.2&nbsp;&nbsp;&nbsp;oar_sched_gantt_with_timesharing_and_fairsharing</a></h3>
 <p>This scheduler is the same than <a class="reference" href="#oar-sched-gantt-with-timesharing">oar_sched_gantt_with_timesharing</a> but it looks
 at the consumption past and try to order waiting jobs with fairsharing in mind.</p>
 <p>Some parameters can be changed directly in the file:</p>
@@ -3326,9 +3326,9 @@ example). Otherwise the scheduler cannot be aware of new user consumptions.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id57" id="faq-admin" name="faq-admin">7&nbsp;&nbsp;&nbsp;FAQ - ADMIN</a></h1>
+<h1><a class="toc-backref" href="#id57" id="faq-admin" name="faq-admin">8&nbsp;&nbsp;&nbsp;FAQ - ADMIN</a></h1>
 <div class="section">
-<h2><a class="toc-backref" href="#id58" id="release-policy" name="release-policy">7.1&nbsp;&nbsp;&nbsp;Release policy</a></h2>
+<h2><a class="toc-backref" href="#id58" id="release-policy" name="release-policy">8.1&nbsp;&nbsp;&nbsp;Release policy</a></h2>
 <dl class="docutils">
 <dt>Since the version 2.2, release numbers are divided into 3 parts:</dt>
 <dd><ul class="first last simple">
@@ -3340,7 +3340,7 @@ example). Otherwise the scheduler cannot be aware of new user consumptions.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id59" id="what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh" name="what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh">7.2&nbsp;&nbsp;&nbsp;What means the error &quot;Bad configuration option: PermitLocalCommand&quot; when I am using oarsh?</a></h2>
+<h2><a class="toc-backref" href="#id59" id="what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh" name="what-means-the-error-bad-configuration-option-permitlocalcommand-when-i-am-using-oarsh">8.2&nbsp;&nbsp;&nbsp;What means the error &quot;Bad configuration option: PermitLocalCommand&quot; when I am using oarsh?</a></h2>
 <p>For security reasons, on the latest OpenSSH releases you are able to execute
 a local command when you are connecting to the remote host and we must
 deactivate this option because the <a class="reference" href="#oarsh">oarsh</a> wrapper executes the <em>ssh</em> command
@@ -3351,7 +3351,7 @@ There is a variable named <a class="reference" href="#oarsh-openssh-default-opti
 So you have just to remove the not yet implemented option.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id60" id="how-to-manage-start-stop-of-the-nodes" name="how-to-manage-start-stop-of-the-nodes">7.3&nbsp;&nbsp;&nbsp;How to manage start/stop of the nodes?</a></h2>
+<h2><a class="toc-backref" href="#id60" id="how-to-manage-start-stop-of-the-nodes" name="how-to-manage-start-stop-of-the-nodes">8.3&nbsp;&nbsp;&nbsp;How to manage start/stop of the nodes?</a></h2>
 <p>You have to add a script in /etc/init.d which switches resources of the node
 into the &quot;Alive&quot; or &quot;Absent&quot; state.
 So when this script is called at boot time, it will change the state into
@@ -3386,11 +3386,11 @@ sudo -u oar ssh oar-server &quot;oarnodesetting -s Absent -h node_hostname&quot;
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id61" id="how-can-i-manage-scheduling-queues" name="how-can-i-manage-scheduling-queues">7.4&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></h2>
+<h2><a class="toc-backref" href="#id61" id="how-can-i-manage-scheduling-queues" name="how-can-i-manage-scheduling-queues">8.4&nbsp;&nbsp;&nbsp;How can I manage scheduling queues?</a></h2>
 <p>see <a class="reference" href="#oarnotify">oarnotify</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id62" id="how-can-i-handle-licence-tokens" name="how-can-i-handle-licence-tokens">7.5&nbsp;&nbsp;&nbsp;How can I handle licence tokens?</a></h2>
+<h2><a class="toc-backref" href="#id62" id="how-can-i-handle-licence-tokens" name="how-can-i-handle-licence-tokens">8.5&nbsp;&nbsp;&nbsp;How can I handle licence tokens?</a></h2>
 <p>OAR does not manage resources with an empty &quot;network_address&quot;. So you can
 define resources that are not linked with a real node.</p>
 <p>So the steps to configure OAR with the possibility to reserve licences (or
@@ -3445,7 +3445,7 @@ to restrict user consumptions to what they asked. This is very dependant of
 the licence management.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id63" id="how-can-i-handle-multiple-clusters-with-one-oar" name="how-can-i-handle-multiple-clusters-with-one-oar">7.6&nbsp;&nbsp;&nbsp;How can I handle multiple clusters with one OAR?</a></h2>
+<h2><a class="toc-backref" href="#id63" id="how-can-i-handle-multiple-clusters-with-one-oar" name="how-can-i-handle-multiple-clusters-with-one-oar">8.6&nbsp;&nbsp;&nbsp;How can I handle multiple clusters with one OAR?</a></h2>
 <p>These are the steps to follow:</p>
 <blockquote>
 <ol class="arabic">
@@ -3494,7 +3494,7 @@ with the property &quot;cluster=2&quot; is used. This is the same when you will 
 &quot;cluster1&quot; type.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id64" id="how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies" name="how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies">7.7&nbsp;&nbsp;&nbsp;How to configure a more ecological cluster (or how to make some power consumption economies)?</a></h2>
+<h2><a class="toc-backref" href="#id64" id="how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies" name="how-to-configure-a-more-ecological-cluster-or-how-to-make-some-power-consumption-economies">8.7&nbsp;&nbsp;&nbsp;How to configure a more ecological cluster (or how to make some power consumption economies)?</a></h2>
 <p>This feature can be performed with the <cite>Dynamic nodes coupling features</cite>.</p>
 <p>First you have to make sure that you have a command to wake up a computer
 that is stopped. For example you can use the WoL (Wake on Lan) feature
@@ -3524,7 +3524,7 @@ without drawback for the users.</p>
 could be interesting for you ;-)</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id65" id="how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh" name="how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh">7.8&nbsp;&nbsp;&nbsp;How to enable jobs to connect to the frontales from the nodes using oarsh?</a></h2>
+<h2><a class="toc-backref" href="#id65" id="how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh" name="how-to-enable-jobs-to-connect-to-the-frontales-from-the-nodes-using-oarsh">8.8&nbsp;&nbsp;&nbsp;How to enable jobs to connect to the frontales from the nodes using oarsh?</a></h2>
 <p>First you have to install the node part of OAR on the wanted nodes.</p>
 <p>After that you have to register the frontales into the database using
 oarnodesetting with the &quot;frontal&quot; (for example) type and assigned the desired
@@ -3554,7 +3554,7 @@ into the &quot;Absent&quot; state.</li>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id66" id="a-job-remains-in-the-finishing-state-what-can-i-do" name="a-job-remains-in-the-finishing-state-what-can-i-do">7.9&nbsp;&nbsp;&nbsp;A job remains in the &quot;Finishing&quot; state, what can I do?</a></h2>
+<h2><a class="toc-backref" href="#id66" id="a-job-remains-in-the-finishing-state-what-can-i-do" name="a-job-remains-in-the-finishing-state-what-can-i-do">8.9&nbsp;&nbsp;&nbsp;A job remains in the &quot;Finishing&quot; state, what can I do?</a></h2>
 <p>If you have waited more than a couple of minutes (5mn for example) then
 something wrong occurred (frontal has crashed, out of memory, ...).</p>
 <p>So you are able to turn manually a job into the &quot;Error&quot; state by typing in
@@ -3566,7 +3566,7 @@ perl -e 'use oar_iolib; $db = iolib::connect(); iolib::set_job_state($db,42,&quo
 <p>(Replace 42 by your job identifier)</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id67" id="how-can-i-write-my-own-scheduler" name="how-can-i-write-my-own-scheduler">7.10&nbsp;&nbsp;&nbsp;How can I write my own scheduler?</a></h2>
+<h2><a class="toc-backref" href="#id67" id="how-can-i-write-my-own-scheduler" name="how-can-i-write-my-own-scheduler">8.10&nbsp;&nbsp;&nbsp;How can I write my own scheduler?</a></h2>
 <dl class="docutils">
 <dt>What can and must do a scheduler:</dt>
 <dd><ul class="first last">
@@ -3603,7 +3603,7 @@ It uses a gantt and a resource tree libraries that are essential to take some
 decisions.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id68" id="what-is-the-syntax-of-this-documentation" name="what-is-the-syntax-of-this-documentation">7.11&nbsp;&nbsp;&nbsp;What is the syntax of this documentation?</a></h2>
+<h2><a class="toc-backref" href="#id68" id="what-is-the-syntax-of-this-documentation" name="what-is-the-syntax-of-this-documentation">8.11&nbsp;&nbsp;&nbsp;What is the syntax of this documentation?</a></h2>
 <p>We are using the RST format from the <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> project. This syntax is easily readable
 and can be converted into HTML, LaTex or XML.</p>
 <p>You can find basic informations on
@@ -3611,9 +3611,9 @@ and can be converted into HTML, LaTex or XML.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id69" id="oar-changelog" name="oar-changelog">8&nbsp;&nbsp;&nbsp;OAR CHANGELOG</a></h1>
+<h1><a class="toc-backref" href="#id69" id="oar-changelog" name="oar-changelog">9&nbsp;&nbsp;&nbsp;OAR CHANGELOG</a></h1>
 <div class="section">
-<h2><a class="toc-backref" href="#id70" id="upstream-development-version" name="upstream-development-version">8.1&nbsp;&nbsp;&nbsp;upstream development version:</a></h2>
+<h2><a class="toc-backref" href="#id70" id="upstream-development-version" name="upstream-development-version">9.1&nbsp;&nbsp;&nbsp;upstream development version:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Add new oarmonitor command. This will permit to monitor OAR jobs on compute
@@ -3643,7 +3643,7 @@ timeout.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id71" id="version-2-2-11" name="version-2-2-11">8.2&nbsp;&nbsp;&nbsp;version 2.2.11:</a></h2>
+<h2><a class="toc-backref" href="#id71" id="version-2-2-11" name="version-2-2-11">9.2&nbsp;&nbsp;&nbsp;version 2.2.11:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Fix Debian package dependency on a CGI web server.</li>
@@ -3663,7 +3663,7 @@ nmap)</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id72" id="version-2-2-10" name="version-2-2-10">8.3&nbsp;&nbsp;&nbsp;version 2.2.10:</a></h2>
+<h2><a class="toc-backref" href="#id72" id="version-2-2-10" name="version-2-2-10">9.3&nbsp;&nbsp;&nbsp;version 2.2.10:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Job dependencies: if the required jobs do not have an exit code == 0 and in
@@ -3677,7 +3677,7 @@ useful for users that don't want to configure there ssh keys)</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id73" id="version-2-2-9" name="version-2-2-9">8.4&nbsp;&nbsp;&nbsp;version 2.2.9:</a></h2>
+<h2><a class="toc-backref" href="#id73" id="version-2-2-9" name="version-2-2-9">9.4&nbsp;&nbsp;&nbsp;version 2.2.9:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Bug 4225: Dump only 1 data structure when using -X or -Y or -D.</li>
@@ -3686,7 +3686,7 @@ useful for users that don't want to configure there ssh keys)</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id74" id="version-2-2-8" name="version-2-2-8">8.5&nbsp;&nbsp;&nbsp;version 2.2.8:</a></h2>
+<h2><a class="toc-backref" href="#id74" id="version-2-2-8" name="version-2-2-8">9.5&nbsp;&nbsp;&nbsp;version 2.2.8:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Bug 4159: remove unneeded Dump print from oarstat.</li>
@@ -3697,7 +3697,7 @@ useful for users that don't want to configure there ssh keys)</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id75" id="version-2-2-7" name="version-2-2-7">8.6&nbsp;&nbsp;&nbsp;version 2.2.7:</a></h2>
+<h2><a class="toc-backref" href="#id75" id="version-2-2-7" name="version-2-2-7">9.6&nbsp;&nbsp;&nbsp;version 2.2.7:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Bug 4106: fix oarsh and oarcp issue with some options (erroneous leading
@@ -3709,7 +3709,7 @@ space).</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id76" id="version-2-2-6" name="version-2-2-6">8.7&nbsp;&nbsp;&nbsp;version 2.2.6:</a></h2>
+<h2><a class="toc-backref" href="#id76" id="version-2-2-6" name="version-2-2-6">9.7&nbsp;&nbsp;&nbsp;version 2.2.6:</a></h2>
 <blockquote>
 <ul>
 <li><dl class="first docutils">
@@ -3722,7 +3722,7 @@ space).</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id77" id="version-2-2-5" name="version-2-2-5">8.8&nbsp;&nbsp;&nbsp;version 2.2.5:</a></h2>
+<h2><a class="toc-backref" href="#id77" id="version-2-2-5" name="version-2-2-5">9.8&nbsp;&nbsp;&nbsp;version 2.2.5:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Bug fix: remove user command when oar execute the epilogue script on the
@@ -3742,7 +3742,7 @@ drawgantt with a popup on them.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id78" id="version-2-2-4" name="version-2-2-4">8.9&nbsp;&nbsp;&nbsp;version 2.2.4:</a></h2>
+<h2><a class="toc-backref" href="#id78" id="version-2-2-4" name="version-2-2-4">9.9&nbsp;&nbsp;&nbsp;version 2.2.4:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Redirect third party commands into oar.log (easier to debug).</li>
@@ -3752,7 +3752,7 @@ drawgantt with a popup on them.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id79" id="version-2-2-3" name="version-2-2-3">8.10&nbsp;&nbsp;&nbsp;version 2.2.3:</a></h2>
+<h2><a class="toc-backref" href="#id79" id="version-2-2-3" name="version-2-2-3">9.10&nbsp;&nbsp;&nbsp;version 2.2.3:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Debug prologue and epilogue when oarexec receives a signal.</li>
@@ -3760,7 +3760,7 @@ drawgantt with a popup on them.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id80" id="version-2-2-2" name="version-2-2-2">8.11&nbsp;&nbsp;&nbsp;version 2.2.2:</a></h2>
+<h2><a class="toc-backref" href="#id80" id="version-2-2-2" name="version-2-2-2">9.11&nbsp;&nbsp;&nbsp;version 2.2.2:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Switch nice value of the user processes into 0 in oarsh_shell (in case of
@@ -3770,7 +3770,7 @@ sshd was launched with a different priority).</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id81" id="version-2-2-1" name="version-2-2-1">8.12&nbsp;&nbsp;&nbsp;version 2.2.1:</a></h2>
+<h2><a class="toc-backref" href="#id81" id="version-2-2-1" name="version-2-2-1">9.12&nbsp;&nbsp;&nbsp;version 2.2.1:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>install the &quot;allow_clasic_ssh&quot; feature by default</li>
@@ -3779,7 +3779,7 @@ sshd was launched with a different priority).</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id82" id="version-2-2" name="version-2-2">8.13&nbsp;&nbsp;&nbsp;version 2.2:</a></h2>
+<h2><a class="toc-backref" href="#id82" id="version-2-2" name="version-2-2">9.13&nbsp;&nbsp;&nbsp;version 2.2:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>oar_server_proepilogue.pl: can be used for server prologue and epilogue to
@@ -3795,7 +3795,7 @@ depending on waiting jobs.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id83" id="version-2-1-0" name="version-2-1-0">8.14&nbsp;&nbsp;&nbsp;version 2.1.0:</a></h2>
+<h2><a class="toc-backref" href="#id83" id="version-2-1-0" name="version-2-1-0">9.14&nbsp;&nbsp;&nbsp;version 2.1.0:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>add &quot;oarcp&quot; command to help the users to copy files using oarsh.</li>
@@ -3827,7 +3827,7 @@ amount of nodes</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id84" id="version-2-0-2" name="version-2-0-2">8.15&nbsp;&nbsp;&nbsp;version 2.0.2:</a></h2>
+<h2><a class="toc-backref" href="#id84" id="version-2-0-2" name="version-2-0-2">9.15&nbsp;&nbsp;&nbsp;version 2.0.2:</a></h2>
 <blockquote>
 <ul class="simple">
 <li>add warnings and exit code to oarnodesetting when there is a bad node name
@@ -3856,7 +3856,7 @@ script)</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id85" id="version-2-0-0" name="version-2-0-0">8.16&nbsp;&nbsp;&nbsp;version 2.0.0:</a></h2>
+<h2><a class="toc-backref" href="#id85" id="version-2-0-0" name="version-2-0-0">9.16&nbsp;&nbsp;&nbsp;version 2.0.0:</a></h2>
 <blockquote>
 <ul>
 <li><p class="first">Now, with the ability to declare any type of resources like licences,

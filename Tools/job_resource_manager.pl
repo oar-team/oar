@@ -96,7 +96,7 @@ if ($ARGV[0] eq "init"){
                     exit_myself(4,"Failed to mount cpuset pseudo filesystem");
                 }
             }
-            if (!(-d '/dev/cpuset/oar')){
+            if (!(-d '/dev/cpuset/'.$Cpuset->{cpuset_path})){
                 if (system( 'oardodo mkdir -p /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'. 
                             'oardodo chown -R oar /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'.
                             '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
@@ -226,8 +226,6 @@ if ($ARGV[0] eq "init"){
         }
     }
     if (defined($Cpuset->{job_uid})){
-        print_log(3,"Purging /tmp...");
-        system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
         my $ipcrm_args="";
         if (open(IPCMSG,"< /proc/sysvipc/msg")) {
             <IPCMSG>;
@@ -268,6 +266,9 @@ if ($ARGV[0] eq "init"){
                 exit_myself(14,"Failed to purge IPC: ipcrm $ipcrm_args");
             }
         }
+        print_log(3,"Purging /tmp...");
+        #system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
+        system("oardodo find /tmp/. -user $Cpuset->{job_user} -delete"); 
         system("oardodo deluser --quiet $Cpuset->{job_user}");
     }
 }else{

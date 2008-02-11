@@ -8,6 +8,16 @@
 
 .. include:: doc_abstract.rst
 
+**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR >= 2.3.0**
+
+PDF version : `<OAR-DOCUMENTATION-ADMIN.pdf>`_
+
+.. section-numbering::
+.. contents:: Table of Contents
+
+-------------------------------------------------------------------------------
+
+
 .. include:: doc_oar-presentation.rst
 
 .. include:: ../../INSTALL
@@ -135,7 +145,7 @@ Then the user can look into the directory *OAR.1653.monitoring* in the current
 directory.
 
 Database scheme
----------------
+===============
 
 .. figure:: ../schemas/db_scheme.png
    :width: 17cm
@@ -152,7 +162,7 @@ Note : all dates and duration are stored in an integer manner (number of
 seconds since the EPOCH).
 
 *accounting*
-~~~~~~~~~~~~
+------------
 
 ==================  ====================  =======================================
 Fields              Types                 Descriptions
@@ -198,7 +208,7 @@ You can change the amount of time for each window : edit the oar configuration
 file and change the value of the tag ACCOUNTING_WINDOW_.
 
 *admission_rules*
-~~~~~~~~~~~~~~~~~
+-----------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -282,7 +292,7 @@ Some examples are better than a long description :
     ');
     
 *event_logs*
-~~~~~~~~~~~~
+------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -368,7 +378,7 @@ The different event types are:
    job.
 
 *event_log_hostnames*
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -385,7 +395,7 @@ This table stores hostnames related to events like
 "PING_CHECKER_NODE_SUSPECTED".
 
 *files*
-~~~~~~~
+-------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -402,7 +412,7 @@ size              INT UNSIGNED
 :Index fields: md5sum
 
 *frag_jobs*
-~~~~~~~~~~~
+-----------
 
 ================  ==========================  =================================
 Fields            Types                       Descriptions
@@ -429,7 +439,7 @@ What do these states mean:
  - "FRAGGED" : job is fragged.
 
 *gantt_jobs_resources*
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -444,7 +454,7 @@ resource_id       INT UNSIGNED          resource assigned to the job
 This table specifies which resources are attributed to which jobs.
 
 *gantt_jobs_resources_visu*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -460,7 +470,7 @@ This table is the same as `gantt_jobs_resources`_ and is used by visualisation
 tools. It is updated atomically (a lock is used).
 
 *gantt_jobs_predictions*
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -478,7 +488,7 @@ decisions taken by the schedulers for each waiting jobs.
 :note: The special job id "0" is used to store the scheduling reference date.
 
 *gantt_jobs_predictions_visu*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -494,7 +504,7 @@ This table is the same as `gantt_jobs_predictions`_ and is used by visualisation
 tools. It is made up to date in an atomic action (with a lock).
 
 *jobs*
-~~~~~~
+------
 
 ===================== ======================  =======================================
 Fields                Types                   Descriptions
@@ -593,7 +603,7 @@ Explications about the "reservation" field:
  - "Scheduled" : the job is a reservation and is scheduled by OAR.
 
 *job_dependencies*
-~~~~~~~~~~~~~~~~~~
+------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -609,7 +619,7 @@ job_id_required   INT UNSIGNED          job needed to be completed before
 This table is feeded by `oarsub` command with the "-a" option.
 
 *moldable_job_descriptions*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 =================  ====================  =======================================
 Fields             Types                 Descriptions
@@ -627,7 +637,7 @@ of them. For example it can calculate which instance will finish first.
 So this table stores all instances for all jobs.
 
 *job_resource_groups*
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 ===================== ====================  =======================================
 Fields                Types                 Descriptions
@@ -645,7 +655,7 @@ you can do the same thing for each resource groups that you define with
 the "-l" option.
 
 *job_resource_descriptions*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 ===================== ====================  =======================================
 Fields                Types                 Descriptions
@@ -664,7 +674,7 @@ This table store the hierarchical resource description given with `oarsub` and
 the "-l" option.
 
 *job_state_logs*
-~~~~~~~~~~~~~~~~
+----------------
 
 =================  ====================  =======================================
 Fields             Types                 Descriptions
@@ -692,7 +702,7 @@ date_stop          INT UNSIGNED          end date of the interval
 This table keeps informations about state changes of jobs.
 
 *job_types*
-~~~~~~~~~~~
+-----------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -711,7 +721,7 @@ type_index        ENUM('CURRENT',       index field
 This table stores job types given with the `oarsub` command and "-t" options.
 
 *resources*
-~~~~~~~~~~~
+-----------
 
 ====================  ====================  =======================================
 Fields                Types                 Descriptions
@@ -789,7 +799,7 @@ Several properties are added by default:
    JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD_.
 
 *resource_logs*
-~~~~~~~~~~~~~~~~~~~~~~~~
+---------------
 
 =================  ====================  =======================================
 Fields             Types                 Descriptions
@@ -812,7 +822,7 @@ This table permits to keep a trace of every property changes (consequence of
 the `oarnodesetting`_ command with the "-p" option).
 
 *assigned_resources*
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -828,7 +838,7 @@ This table keeps informations for jobs on which resources they were
 scheduled.
 
 *queues*
-~~~~~~~~
+--------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions
@@ -848,7 +858,7 @@ This table contains the schedulers executed by the *oar_meta_scheduler* module.
 Executables are launched one after one in the specified priority.
 
 *challenges*
-~~~~~~~~~~~~
+------------
 
 ================  ====================  =======================================
 Fields            Types                 Descriptions

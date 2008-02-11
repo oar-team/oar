@@ -9,6 +9,15 @@
 
 .. include:: doc_abstract.rst
 
+**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR >= 2.3.0**
+
+PDF version : `<OAR-DOCUMENTATION-USER.pdf>`_
+
+.. section-numbering::
+.. contents:: Table of Contents
+
+-------------------------------------------------------------------------------
+
 .. include:: doc_oar-presentation.rst
 
 

@@ -78,7 +78,7 @@ There are three different flavors of installation :
 
       into *~/.bashrc* and *~/.bash_profile* of oar user. You have also to
       check in *~oar/.ssh/authorized_keys* that the oar user ssh key is
-      prefixed by "environment="OAR_KEY=1", see `Important notes`_)
+      prefixed by environment="OAR_KEY=1", see `Important notes`_)
 
 The installation is straightforward:
 
