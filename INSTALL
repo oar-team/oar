@@ -190,7 +190,7 @@ With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node.
 
 CPUSET installation
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 ..  OAR can use CPUSET features provided with the Linux kernel >= 2.6. This
     enables to restrict user processes only on reserved processors and clean
