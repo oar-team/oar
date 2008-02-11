@@ -119,11 +119,11 @@ sub wait_end_of_running_jobs($$){
 }
 
 
-# print explainations for the user and exit
+# print explanations for the user and exit
 sub usage {
     print <<EOS;
-Usage: $0 [-h hostname | [[-r resource_number][--sql "sql syntax"] | -a]]
-[-a] [-p "property=value"] [-s state]
+Usage: $0 [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_number] || 
+[--sql "sql syntax"] [-s state] [-p "property=value"]]
 Change the state and properties of a node in OAR.
 You can also create a new resource.
 Options:
