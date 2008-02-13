@@ -149,14 +149,12 @@ Database scheme
 
 .. figure:: ../schemas/db_scheme.png
    :width: 17cm
-   :target: db_scheme.png
+   :target: ../schemas/db_scheme.svg
    :alt: Database scheme
 
    Database scheme
    (red lines seem PRIMARY KEY,
    blue lines seem INDEX)
-   
-`db_scheme.svg <../schemas/db_scheme.svg>`_
 
 Note : all dates and duration are stored in an integer manner (number of
 seconds since the EPOCH).

@@ -295,11 +295,11 @@ doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)/html
 	install -m 0644 Docs/html/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
 	install -m 0644 Docs/html/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
-#	install -m 0644 Docs/html/oar_logo.png $(DOCDIR)/html
-#	install -m 0644 Docs/html/db_scheme.png $(DOCDIR)/html
-#	install -m 0644 Docs/html/interactive_oarsub_scheme.png $(DOCDIR)/html
-#	install -m 0644 Docs/Almighty.fig $(DOCDIR)/html
-#	install -m 0644 Docs/Almighty.ps $(DOCDIR)/html
+	install -m 0644 Docs/schemas/oar_logo.png $(DOCDIR)/html
+	install -m 0644 Docs/schemas/db_scheme.png $(DOCDIR)/html
+	install -m 0644 Docs/schemas/interactive_oarsub_scheme.png $(DOCDIR)/html
+	install -m 0644 Docs/schemas/Almighty.fig $(DOCDIR)/html
+	install -m 0644 Docs/schemas/Almighty.ps $(DOCDIR)/html
 	install -d -m 0755 $(DOCDIR)/scripts
 	install -d -m 0755 $(DOCDIR)/scripts/job_resource_manager
 	install -m 0644 Tools/job_resource_manager.pl $(DOCDIR)/scripts/job_resource_manager/
