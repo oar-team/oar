@@ -287,7 +287,7 @@ node: man
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
 
-build-html-doc: Docs/html/OAR-DOCUMENTATION.rst
+build-html-doc: Docs/html/
 	(cd Docs/html && $(MAKE) )
 
 doc: build-html-doc
