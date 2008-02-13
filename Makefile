@@ -293,7 +293,8 @@ build-html-doc: Docs/html/
 doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)
 	install -d -m 0755 $(DOCDIR)/html
-	install -m 0644 Docs/html/OAR-DOCUMENTATION.html $(DOCDIR)/html
+	install -m 0644 Docs/html/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
+	install -m 0644 Docs/html/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
 	install -m 0644 Docs/html/oar_logo.png $(DOCDIR)/html
 	install -m 0644 Docs/html/db_scheme.png $(DOCDIR)/html
 	install -m 0644 Docs/html/interactive_oarsub_scheme.png $(DOCDIR)/html
