@@ -29,14 +29,19 @@ push(@resource_list_tmp, iolib::get_default_type_resources_in_state($base,"Suspe
 
 my %Node_list;
 foreach my $i (@resource_list_tmp){
-    #Do not check occupied resources
-    if ((!vec($Occupied_resources_vector, $i->{resource_id}, 1)) and ($i ne "")){
+
+    # bugfix: if we don't check busy resources we can have a problem of partially
+    # suspected nodes... the resource where the job is running is still marked 
+    # as Alive although the other resources on the same node are marked Suspected.
+    
+    # Do not check occupied resources
+    #if ((!vec($Occupied_resources_vector, $i->{resource_id}, 1)) and ($i ne "")){
         # Do not check Suspected resources not changed by me (finaud)
         if (($i->{state} ne "Suspected") or ($i->{finaud_decision} eq "YES")){
             push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
             push(@Resource_list,$i);
         }
-    }
+    #}
 }
 
 my @Nodes_to_check = keys(%Node_list);
