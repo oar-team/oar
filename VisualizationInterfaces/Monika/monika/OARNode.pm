@@ -192,7 +192,14 @@ sub htmlTable {
       }
     }
     elsif ($ressourceState eq "Suspected") {
-      $output .= $cgi->colorTd("Suspected",100/$self->cpus."%");
+      # if the resource is suspected and running a job, we must display it
+      # differently
+      if($self->isRessourceWorking($currentRessource) eq '0'){
+        $output .= $cgi->colorTd($cgi->i("Suspected"),100/$self->cpus."%");
+      }
+      else{
+        $output .= $cgi->colorTd("Suspected",100/$self->cpus."%");
+      }
     }
     else {
       $output .= $cgi->colorTd("Down",100/$self->cpus."%");
