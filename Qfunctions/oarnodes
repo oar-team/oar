@@ -122,12 +122,12 @@ if (($#resources >= 0) or (defined($sql_property))){
         $tmp_hash{state} = $resource_info->{state};
         $tmp_hash{network_address} = $resource_info->{network_address};
         $tmp_hash{properties} = $resource_info;
-        if ($resource_info->{state} eq "Alive") {    
+        #if ($resource_info->{state} eq "Alive") {    
             my @jobs = iolib::get_resource_job($base,$resource_info->{resource_id});
             if ($#jobs >= 0){
                 $tmp_hash{jobs} = \@jobs;
             }
-        }
+        #}
         $tmp_hash{resource_id} = $r;
         push(@data_to_display, \%tmp_hash);
     }
