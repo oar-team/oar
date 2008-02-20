@@ -104,8 +104,7 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
   print $cgi->br();
 
   ## print nodes reservations table
-  print $cgi->h2({-align => "center"},
-		 "Reservations:");
+  print $cgi->h2({-align => "center"}, "Reservations:");
   ## print resources for each of the properties if asked in the CGI request, or all resources.
   if (defined $cgi->param('props')) {
     ## print resources property, for the properties selected in the CGI request
@@ -114,6 +113,7 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
     ## print all resources
     print $cgi->nodeReservationTable(\%nodes);
   }
+  print $cgi->h5({-align => "center"}, "*: Running job but suspected resources.");
   ## print oar node property chooser
   print $cgi->br();
   print $oar->htmlPropertyChooser($cgi);

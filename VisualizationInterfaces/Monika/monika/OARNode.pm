@@ -196,7 +196,7 @@ sub htmlTable {
       # differently
       if($self->isRessourceWorking($currentRessource) eq '1'){
         my @jobs = @{$self->{Ressources}->{$currentRessource}->{jobs}};
-        $output .= $cgi->colorTd($cgi->i('*'.$jobs[0].'*'),100/$self->cpus."%");
+        $output .= $cgi->colorTd($jobs[0].'*',100/$self->cpus."%");
         #$output .= $cgi->colorTd($cgi->i("Suspected"),100/$self->cpus."%");
       }
       else{
