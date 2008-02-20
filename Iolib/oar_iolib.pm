@@ -2443,18 +2443,18 @@ sub get_resources_in_state($$) {
 }
 
 
-# get_default_type_resources_in_state
-# returns the list of resources in the state specified and with the default type
-# parameters : base, state
-# return value : list of resource ref
-sub get_default_type_resources_in_state($$) {
+# get_finaud_nodes
+# returns the list of nodes for finaud
+# parameters : base
+# return value : list of nodes
+sub get_finaud_nodes($) {
     my $dbh = shift;
-    my $state = shift;
     
-    my $sth = $dbh->prepare("   SELECT *
+    my $sth = $dbh->prepare("   SELECT DISTINCT(network_address), *
                                 FROM resources
                                 WHERE
-                                    state = \'$state\' AND
+                                    state = \'Alive\' OR
+                                    (state = \'Suspected\' AND finaud_decision = \'YES\') AND
                                     type = \'default\'
                             ");
     $sth->execute();
@@ -2989,6 +2989,29 @@ sub is_node_exists($$) {
 }
 
 
+# get_current_assigned_nodes
+# returns the current nodes
+# parameters : base
+sub get_current_assigned_nodes($) {
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT DISTINCT(resources.network_address)
+                                FROM assigned_resources, resources
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                                    resources.resource_id = assigned_resources.resource_id
+                            ");
+    $sth->execute();
+    my %result;
+    while (my @ref = $sth->fetchrow_array()){
+        $result{$ref[0]} = 1;
+    }
+    $sth->finish();
+
+    return(\%result);
+}
+
+
 # get_current_assigned_resources
 # returns the current resources
 # parameters : base
@@ -3245,6 +3268,22 @@ sub update_resource_nextFinaudDecision($$$){
                 SET next_finaud_decision = \'$finaud\'
                 WHERE
                     resource_id = $resourceId
+             ");
+}
+
+
+# update_node_nextFinaudDecision
+# update nextFinaudDecision field
+# parameters : base, network_address, "YES" or "NO"
+sub update_node_nextFinaudDecision($$$){
+    my $dbh = shift;
+    my $node = shift;
+    my $finaud = shift;
+
+    $dbh->do("  UPDATE resources
+                SET next_finaud_decision = \'$finaud\'
+                WHERE
+                    network_address = \'$node\'
              ");
 }
 

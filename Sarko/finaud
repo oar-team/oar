@@ -17,55 +17,38 @@ oar_debug("[finaud] Finaud started\n");
 oar_debug("[finaud] Check Alive and Suspected nodes\n");
 my $base = iolib::connect();
 
-my $Occupied_resources_vector;
-for my $r (iolib::get_current_assigned_resources($base)){
-    vec($Occupied_resources_vector,$r,1) = 1;
+my @node_list_tmp = iolib::get_finaud_nodes($base);
+my $Occupied_nodes = iolib::get_current_assigned_nodes($base);
+
+my %Nodes_hash;
+foreach my $i (@node_list_tmp){
+    if (!defined($Occupied_nodes->{$i->{network_address}})){
+        $Nodes_hash{$i->{network_address}} = $i;
+    }
 }
 
-my @Resource_list;
-my @resource_list_tmp;
-push(@resource_list_tmp, iolib::get_default_type_resources_in_state($base,"Alive"));
-push(@resource_list_tmp, iolib::get_default_type_resources_in_state($base,"Suspected"));
-
-my %Node_list;
-foreach my $i (@resource_list_tmp){
-
-    # bugfix: if we don't check busy resources we can have a problem of partially
-    # suspected nodes... the resource where the job is running is still marked 
-    # as Alive although the other resources on the same node are marked Suspected.
-    
-    # Do not check occupied resources
-    #if ((!vec($Occupied_resources_vector, $i->{resource_id}, 1)) and ($i ne "")){
-        # Do not check Suspected resources not changed by me (finaud)
-        if (($i->{state} ne "Suspected") or ($i->{finaud_decision} eq "YES")){
-            push(@{$Node_list{$i->{network_address}}}, $i->{resource_id});
-            push(@Resource_list,$i);
-        }
-    #}
-}
-
-my @Nodes_to_check = keys(%Node_list);
+my @Nodes_to_check = keys(%Nodes_hash);
 oar_debug("[finaud] Testing resource(s) on : @Nodes_to_check\n");
 
 # Call the right program to test each nodes
 my %bad_node_hash;
 foreach my $i (test_hosts(@Nodes_to_check)){
-    $bad_node_hash{$i} = 0;
+    $bad_node_hash{$i} = 1;
 }
 
 #Make the decisions
 my $return_value = 0;
-foreach my $i (@Resource_list){
+foreach my $i (values(%Nodes_hash)){
     if (defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq "Alive")){
-        iolib::set_resource_nextState($base,$i->{resource_id},"Suspected");
-        iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
+        iolib::set_node_nextState($base,$i->{network_address},"Suspected");
+        iolib::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
         $return_value = 1;
-        oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Suspected\n");
+        oar_debug("[finaud] Set the next state of $i->{network_address} to Suspected\n");
     }elsif (!defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq "Suspected")){
-        iolib::set_resource_nextState($base,$i->{resource_id},"Alive");
-        iolib::update_resource_nextFinaudDecision($base,$i->{resource_id},"YES");
+        iolib::set_node_nextState($base,$i->{network_address},"Alive");
+        iolib::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
         $return_value = 1;
-        oar_debug("[finaud] Set the next state of $i->{resource_id}, $i->{network_address} to Alive\n");
+        oar_debug("[finaud] Set the next state of $i->{network_address} to Alive\n");
     }
 }
 
