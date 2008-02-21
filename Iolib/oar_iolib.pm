@@ -2449,14 +2449,38 @@ sub get_resources_in_state($$) {
 # return value : list of nodes
 sub get_finaud_nodes($) {
     my $dbh = shift;
-    
-    my $sth = $dbh->prepare("   SELECT DISTINCT(network_address), *
-                                FROM resources
-                                WHERE
+    my $sth = "";
+    if ($Db_type eq "Pg"){
+      $sth = $dbh->prepare("   SELECT DISTINCT(network_address), *
+                                  FROM resources
+                                  WHERE
                                     state = \'Alive\' OR
                                     (state = \'Suspected\' AND finaud_decision = \'YES\') AND
                                     type = \'default\'
-                            ");
+                              ");
+    }
+    else{
+      my @result;
+      my $presth = $dbh->prepare("DESC resources"); 
+      $presth->execute();
+      while (my $ref = $presth->fetchrow_hashref()){
+        my $current_value = $ref->{'Field'};
+        push(@result, $current_value);
+      }
+    
+      $presth->finish();
+    
+      my $str = "SELECT DISTINCT(network_address)";
+      foreach(@result){
+        $str = $str.", ".$_;
+      }
+      $str = $str." FROM resources
+                    WHERE
+                      state = \'Alive\' OR
+                      (state = \'Suspected\' AND finaud_decision = \'YES\') AND
+                      type = \'default\'";
+      $sth = $dbh->prepare($str);
+    }
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
