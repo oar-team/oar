@@ -11,5 +11,6 @@
 # argv[1] is the jobid
 # argv[2] is the user's name
 # argv[3] is the file which contains the list of nodes used
+# argv[4] is the job walltime in seconds
 
 exit

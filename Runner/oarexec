@@ -255,7 +255,7 @@ if (defined($Job->{prologue})){
     my $script_error = -1;
     eval {
         $SIG{ALRM} = sub { die "alarm\n" };
-        print("[oarexec $Job_id] LAUNCH prologue : $Job->{prologue} $Job_id $Job->{job_user} $Node_file\n");
+        print("[oarexec $Job_id] LAUNCH prologue : $Job->{prologue} $Job_id $Job->{job_user} $Node_file $Job->{walltime_seconds}\n");
         alarm($Job->{pro_epi_timeout});
         #$script_error = system("$Job->{prologue} $Job_id $Job->{user} $Node_file");
         my $pid = fork();
@@ -547,7 +547,7 @@ if (defined($Job->{epilogue})){
     my $script_error = -1;
     eval {
         $SIG{ALRM} = sub { die "alarm\n" };
-        print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{job_user} $Node_file\n");
+        print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{job_user} $Node_file $Job->{walltime_seconds}\n");
         alarm($Job->{pro_epi_timeout});
         #$script_error = system("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
         my $pid = fork();
