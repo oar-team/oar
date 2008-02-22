@@ -165,10 +165,12 @@ if (($#resources >= 0) or (defined($sql_property))){
                 if ($b eq "properties"){
                     my $str = "properties : ";
                     foreach my $prop (sort(keys(%{$a{$b}}))){
-                        if (defined($a{$b}->{$prop})){
-                            $str .= "$prop=$a{$b}->{$prop},";
-                        }else{
-                            $str .= "$prop=,";
+                        if (oar_Tools::check_resource_system_property($prop) == 0){
+                            if (defined($a{$b}->{$prop})){
+                                $str .= "$prop=$a{$b}->{$prop},";
+                            }else{
+                                $str .= "$prop=,";
+                            }
                         }
                     }
                     chop($str);
@@ -428,10 +430,12 @@ if (defined($stateMode)){
                     if ($cc eq "properties"){
                         my $str = "properties : ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
-                            if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
-                                $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
-                            }else{
-                                $str .= "$prop=,";
+                            if (oar_Tools::check_resource_system_property($prop) == 0){
+                                if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
+                                    $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                                }else{
+                                    $str .= "$prop=,";
+                                }
                             }
                         }
                         chop($str);

@@ -31,6 +31,7 @@ upstream development version:
     there is no job onto. So it is possible to have a job on Suspected nodes.
   - Add job walltime (in seconds) in parameter of prologue and epilogue on
     compute nodes.
+  - oarnodes does not show system properties anymore.
 
 version 2.2.11:
 ---------------
