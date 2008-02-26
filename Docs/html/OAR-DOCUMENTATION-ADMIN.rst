@@ -1236,6 +1236,8 @@ Each configuration tag found in /etc/oar.conf is now described:
       OARMONITOR_SENSOR_FILE="/etc/oar/oarmonitor_sensor.pl"
       
 .. include:: doc_modules.rst
+
+.. include:: doc_internal_mechanisms.rst
       
 .. include:: ../../FAQ-ADMIN
 

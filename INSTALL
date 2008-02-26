@@ -199,6 +199,19 @@ CPUSET installation
 
 .. include:: Tools/oarsh/README
 
+Using Taktuk
+------------
+
+If you want to use taktuk to manage remote admnistration commands, you have to
+install it. You can find information about taktuk from its website: 
+http://taktuk.gforge.inria.fr.
+Then, you have to edit your oar configuration file and to fill in the different 
+related parameters: 
+
+  - TAKTUK_CMD (the path to the taktuk command)
+  - PINGCHECKER_TAKTUK_ARG_COMMAND (the command used to check resources states)
+  - SCHEDULER_NODE_MANAGER_SLEEP_CMD (command used for halting nodes)
+
 Visualization tools installation
 --------------------------------
 
