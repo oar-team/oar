@@ -84,14 +84,19 @@ dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
+	install -m 0755 DB/init_pg_server.pl $(OARDIR)/init_pg_server
+	install -m 0755 DB/oar_pg_db_filling.pl $(OARDIR)/oar_pg_db_filling
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_mysql_db_init
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar_mysql_db_init'\;#;;\
 				" $(SBINDIR)/oar_mysql_db_init
-	install -m 0644 DB/oar_jobs.sql $(OARDIR)
-	install -m 0644 DB/oar_postgres.sql $(OARDIR)
+	install -m 0644 DB/default_data.sql $(OARDIR)
+	install -m 0644 DB/mysql_default_admission_rules.sql $(OARDIR)
+	install -m 0644 DB/mysql_structure.sql $(OARDIR)
+	install -m 0644 DB/pg_default_admission_rules.sql $(OARDIR)
+	install -m 0644 DB/pg_structure.sql $(OARDIR)
 
 common: man
 	install -d -m 0755 $(OARDIR)

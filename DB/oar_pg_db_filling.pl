@@ -38,8 +38,10 @@ if (defined($ENV{OARCONFFILE})){
 }
 
 
-# use the oar_postgres.sql file to create the database
-my $sqlFile = $binpath.'oar_postgres.sql';
+# use the pg_structure.sql file to create the database
+my $sqlFile = $binpath.'pg_structure.sql';
+my $admission_rules_file = $binpath.'pg_default_admission_rules.sql';
+my $default_data = $binpath.'default_data.sql';
 ( -r $sqlFile ) or die "[ERROR] Initialization SQL file not found ($sqlFile)\n";
 
 init_conf($conffile);
@@ -62,5 +64,17 @@ if (-r $sqlFile){
 	}
 }else{
 	die("[ERROR] Database installation : can't open $sqlFile \n");
+}
+if (-r $admission_rules_file){
+	system("psql -U$dbUserName -h$dbHost -d$dbName -f$admission_rules_file");
+	if ($? != 0){
+		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -d$dbName -f$admission_rules_file ; \$?=$?, $! \n");
+	}
+}
+if (-r $default_data){
+	system("psql -U$dbUserName -h$dbHost -d$dbName -f$default_data");
+	if ($? != 0){
+		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -d$dbName -f$default_data ; \$?=$?, $! \n");
+	}
 }
 print "done.\n";

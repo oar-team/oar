@@ -29,8 +29,11 @@ EOS
 #("$usrName" eq "root") or die "[ERROR] You must be root to run this script\n";
 
 # use the oar_jobs.sql file to create the database
-my $mysqlFile = $ENV{'OARDIR'}.'/oar_jobs.sql';
-print "Using $mysqlFile for the database creation\n";
+my $mysqlFile = $ENV{'OARDIR'}.'/mysql_structure.sql';
+my $admission_rules_file = $ENV{'OARDIR'}.'/mysql_default_admission_rules.sql';
+my $default_data = $ENV{'OARDIR'}.'/default_data.sql';
+print "Using $mysqlFile for the database creation, $admission_rules_file for the 
+admission rules insertion and $default_data for the default data\n";
 ( -r $mysqlFile ) or die "[ERROR] Initialization SQL file not found ($mysqlFile)\n";
 
 init_conf($ENV{OARCONFFILE});
@@ -85,6 +88,18 @@ if (-r $mysqlFile){
 	}
 }else{
 	die("[ERROR] Database installation : can't open $mysqlFile \n");
+}
+if (-r $admission_rules_file){
+	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $admission_rules_file");
+	if ($? != 0){
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $admission_rules_file; \$?=$?, $! \n");
+	}
+}
+if (-r $default_data){
+	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $default_data");
+	if ($? != 0){
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $default_data; \$?=$?, $! \n");
+	}
 }
 $dbh->disconnect();
 print "done.\n";
