@@ -21,7 +21,7 @@ set_current_log_category('scheduler');
 # Avoid problems if there are too many waiting jobs
 my $Karma_max_number_of_jobs_treated_per_user = 30;
 # number of seconds to consider for the fairsharing
-my $Karma_window_size = 3600 * 30;
+my $Karma_window_size = 3600 * 30 * 24;
 # specify the target percentages for project names (0 if not specified)
 my $Karma_project_targets = {
     first => 75,
