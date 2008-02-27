@@ -136,7 +136,7 @@ Options:
                                  (ex: "type = 'default'")
  -p, --property="PROPERTY=VALUE" set the property of the node to the given
                                  value
- -n, --nowait                    do not wait for job end when the node
+ -n, --no-wait                    do not wait for job end when the node
                                  switches to Absent or Dead
      --help                      display this help
  -V, --version                   print OAR version number
@@ -155,7 +155,7 @@ my $Version;
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
             "hostname|h=s"   => \@hostnames,
-            "nowait|n" => \$nowaitMode,
+            "no-wait|n" => \$nowaitMode,
             "property|p=s" => \@properties,
             "add|a" => \$new_resource,
             "help" => \$sos,
