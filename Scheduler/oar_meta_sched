@@ -56,15 +56,15 @@ foreach my $i (@queues){
     my $waiting_jobs = iolib::is_waiting_job_specific_queue_present($base,$name);
     if ($waiting_jobs == 1){
         oar_debug("[MetaSched] Launching scheduler $name with $policy at time $initial_time{sql}\n");
-        my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = oar_Tools::launch_command("$binpath/$policy $name $initial_time{sec} \"$initial_time{sql}\"");
+        my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = oar_Tools::launch_command("$binpath/schedulers/$policy $name $initial_time{sec} \"$initial_time{sql}\"");
         if (($sched_signal_num != 0) || ($sched_dumped_core != 0)){
-            oar_error("[MetaSched] Something wrong occured, we inactive the queue $name (signal or core dumped or '$binpath/$policy' cannot be executed)!!! Look at 'oarnotify' if you want to change queue settings.\n");
+            oar_error("[MetaSched] Something wrong occured, we inactive the queue $name (signal or core dumped or '$binpath/schedulers/$policy' cannot be executed)!!! Look at 'oarnotify' if you want to change queue settings.\n");
             iolib::stop_a_queue($base,$name);
         }
         if ($sched_exit_code == 1){
             $exit_code = 1;
         }elsif($sched_exit_code != 0){
-            oar_error("[MetaSched] Scheduler $binpath/$policy on queue $name at time $initial_time{sec} returns a bad value : $sched_exit_code. So this queue will be disabled (look at 'oarnotify' if you want to change queue settings).\n");
+            oar_error("[MetaSched] Scheduler $binpath/schedulers/$policy on queue $name at time $initial_time{sec} returns a bad value : $sched_exit_code. So this queue will be disabled (look at 'oarnotify' if you want to change queue settings).\n");
             iolib::stop_a_queue($base,$name);
             #$exit_code = 3;
         }

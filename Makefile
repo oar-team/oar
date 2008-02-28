@@ -152,6 +152,7 @@ libs: man
 
 server: man
 	install -d -m 0755 $(OARDIR)
+	install -d -m 0755 $(OARDIR)/schedulers
 	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 Almighty/Almighty $(OARDIR)
@@ -166,8 +167,8 @@ server: man
 	install -m 0755 Sarko/sarko $(OARDIR)
 	install -m 0755 Sarko/finaud $(OARDIR)
 	install -m 0644 Scheduler/data_structures/Gantt_hole_storage.pm $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(OARDIR)
+	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing $(OARDIR)/schedulers/oar_sched_gantt_with_timesharing
+	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
 	install -m 0755 Scheduler/oar_meta_sched $(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(OARDIR)
