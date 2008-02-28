@@ -13,10 +13,10 @@
 # 
 #
 # TODO:
+# 	- transparencies for aggregation and timesharing
 #		- debug postgresql case
 #		- wizard for auto configuration ?
 # 	- display state node information for status different of alive
-# 	- resource aggregation
 # 	- sparkline chart for workload information sumarize?
 #		- job/user highlighting (by apply some picture manipulation from general picture ?)
 #		- fix quote problem javascript popup
@@ -27,8 +27,8 @@ require 'cgi'
 require 'time'
 require 'optparse'
 require 'yaml'
-require 'pp'
 require 'GD'
+require 'pp'
 
 MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -711,12 +711,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	f_img.close
 
 	f_map = File::new("#{$conf['web_root']}/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}", 'w')
-	f_map.puts  '<map name="ganttmap">'
+	f_map.puts  '<map name="' + $prefix + '_ganttmap">'
 	map_info.each do |info|
 		j = jobs[info[4]]
 		f_map.puts '<area shape="rect" coords="' + 
 					 "#{info[0]},#{info[1]},#{info[2]},#{info[3]}" + 
-					 '" href="monika.cgi?job='+ "#{info[4]}" + '" ' +
+					 '" href="monika.cgi?job='+ "#{info[4]}" +
 					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
 					 "JobId: #{info[4]}" +
 					 "<br>User: #{j['user']}" + 
@@ -836,8 +836,8 @@ def cgi_html(cgi)
 	file_range = '1_2_day' if (range =='1/2 day') 
 	file_range = '1_6_day' if (range == '1/6 day') 
 
-	file_img =  $platform + '_gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
-	file_map =  $platform + '_map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_img =  $prefix+ '_gantt_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
+	file_map =  $prefix+ '_map_' + year + '_' + month + '_' + day + '_' + hour + '_' + file_range
 
 	#test if it's on old file ?
 	if (origin + RANGE_SEC[range] > now.to_i)
@@ -862,7 +862,13 @@ def cgi_html(cgi)
 		end
 		file_time_sorted = file_time.sort{|a,b| a[1]<=>b[1]}
 		#puts file_time_sorted.length/2
-		file_time_sorted[0..file_time_sorted.length/2].each {|f| File.delete(f.first)}
+		file_time_sorted[0..file_time_sorted.length/2].each do |f| 
+			begin
+				File.delete(f.first)
+			rescue
+				$stderr.print "Can't flush file: " + $! if $verbose
+			end
+		end
 	end
 
 	#build image file
@@ -877,9 +883,16 @@ def cgi_html(cgi)
 		end
 	end
 
-	if (cgi.params['mode'].length>0)
-		puts "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}"
-		puts "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
+	#$stderr.print ">>>>#{cgi.params['mode'].class}"
+
+	if (cgi.params['mode'].to_s=='image_map_only')
+			f_img = file_img
+			f_map = file_map
+		if cgi.params['path'].to_s != "no"
+			f_img = "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}"
+			f_map = "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_map}"
+		end
+		cgi.out("text/plain") { "#{f_img}" + "\n" + "#{f_map}" }
 	else
 	  cgi.out {
 		  cgi.html {
@@ -912,7 +925,7 @@ def cgi_html(cgi)
 						CGI.escapeElement('<div style="text-align: center">') +
 #						cgi.img("/#{$conf['directory']}/#{$conf['web_cache_directory']}/yop.png", "gantt image","" ) +
 						cgi.img("SRC" => "/#{$conf['directory']}/#{$conf['web_cache_directory']}/#{file_img}",
-										"ALT" => "gantt image", "USEMAP" => "#ganttmap" ) +
+										"ALT" => "gantt image", "USEMAP" => "#" + $prefix +"_ganttmap" ) +
 						CGI.escapeElement('</div>'); 
 					}
 				}
@@ -926,15 +939,25 @@ end
 
 cgi = CGI.new("html3") # add HTML generation methods
 
-configfile = 'drawgantt.conf'
+configfile = '/etc/oar/drawgantt.conf'
 configfile = cgi.params['configfile'].to_s if (cgi.params['configfile'].length>0)
-$platform = ""
-$platform = cgi.params['platform'].to_s if (cgi.params['platform'].length>0)
+$prefix= ""
+$prefix= cgi.params['prefix'].to_s if (cgi.params['prefix'].length>0)
 
 puts "### Reading configuration file..." if $verbose
+
 $conf = YAML::load(IO::read(configfile))
 
-$title = $conf['title']
+if cgi['conf'].length > 0
+	conf = YAML::load(cgi['conf'])
+	#override configuration parameters with received ones
+	conf.each do |key,value|
+		$conf.delete(key) if $conf[key]
+	 	$conf[key] = value
+	end
+end
+
+$title = $conf['title'] || 'Gantt Chart' 
 $sizex = $conf['sizex']
 #$sizey = $conf['sizey']
 $offsetgridy = $conf['offsetgridy']
