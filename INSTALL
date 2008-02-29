@@ -194,10 +194,9 @@ CPUSET installation
 
 ..  OAR can use CPUSET features provided with the Linux kernel >= 2.6. This
     enables to restrict user processes only on reserved processors and clean
-    correctly nodes after the job.  To perform this installation you must read
-    the documentation in Tools/oarsh/README.
+    correctly nodes after the job.
 
-.. include:: Tools/oarsh/README
+.. include:: CPUSET
 
 Using Taktuk
 ------------
