@@ -291,6 +291,26 @@ def get_history(dbh,date_start,date_stop)
 	return resources,jobs,dead_resources
 end
 
+# get_date
+# returns the current time in the format used by the sql database
+# parameters : database
+# return value : date string
+# side effects : /
+def get_date(dbh)
+	db_type = $conf['DB_TYPE']
+ 	if (db_type == "Pg")
+		q = "select EXTRACT(EPOCH FROM current_timestamp)";
+	else
+		q = "SELECT UNIX_TIMESTAMP()";
+	end
+	res = dbh.execute(q)
+	r = res.fetch_array
+	return r[0]
+end
+
+
+
+
 def draw_string(img,x,y,label)
 	 img.string(GD::Font::SmallFont, x - (7 * label.length) / 2, y, label, $gridcolor)
 end
@@ -451,7 +471,7 @@ end
 
 def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
-	dbh = base_connect
+	dbh = $dbh
 	#resources, jobs, dead_resources = get_history(dbh,1155041223,1155047311)
 	$resources, jobs, dead_resources = get_history(dbh,origin,origin+RANGE_SEC[range])
 	dbh.disconnect
@@ -759,8 +779,8 @@ def cgi_html(cgi)
 
 #	cgi = CGI.new("html3") # add HTML generation methods
 
-	now = Time.now
-
+#	now = Time.now
+	now = Time.at(get_date($dbh))
 	range = $conf['default_range']
 	month, day, hour, year = now.strftime("%b %e %H:00 %Y").split(" ")
 	popup_year = [(year.to_i-1).to_s, year, (year.to_i+1).to_s ]
@@ -976,6 +996,8 @@ $x_per_prop = 10
 
 $map_prop_hierarchy = [] 
 $sorted_resources = []
+
+$dbh = base_connect
 
 cgi_html(cgi)
 
