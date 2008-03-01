@@ -39,6 +39,7 @@ my $Karma_coeff_user_asked_consumption = 1;
 ###############################################################################
 my $initial_time = time();
 my $timeout = 10;
+my $Minimum_timeout_per_job = 2;
 init_conf($ENV{OARCONFFILE});
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout = get_conf("SCHEDULER_TIMEOUT");
@@ -331,7 +332,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
-        $gantt_timeout = 0 if ($gantt_timeout < 0);
+        $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout < ($timeout / 3));
         oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] find_first_hole with a timeout of $gantt_timeout\n");
         my @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
         
