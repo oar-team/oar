@@ -95,8 +95,9 @@ foreach my $r (iolib::list_resources($base)){
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
 
-my $gantt = Gantt_hole_storage::new($max_resources, $minimum_hole_time);
-Gantt_hole_storage::add_new_resources($gantt, $vec);
+my %Container_gantt_hash;
+$Container_gantt_hash{0} = Gantt_hole_storage::new($max_resources, $minimum_hole_time);
+Gantt_hole_storage::add_new_resources($Container_gantt_hash{0}, $vec);
 
 sub parse_timesharing($$$){
     my $str = shift;
@@ -121,18 +122,9 @@ sub parse_timesharing($$$){
 # Take care of currently scheduled jobs (gantt in the database)
 my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($base);
 foreach my $i (keys(%already_scheduled_jobs)){
-    # Do not take care of besteffort jobs
     my $types = iolib::get_current_job_types($base,$i);
+    # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
-        my $user;
-        my $name;
-        if (defined($types->{timesharing})){
-            ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
-            if (!defined($timesharing_gantts->{$user}->{$name})){
-                $timesharing_gantts->{$user}->{$name} = dclone($gantt);
-                oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt for ($user, $name)\n");
-            }
-        }
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
         my $job_duration = $already_scheduled_jobs{$i}->[1];
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
@@ -149,23 +141,50 @@ foreach my $i (keys(%already_scheduled_jobs)){
         foreach my $r (@resource_list){
             vec($vec,$r,1) = 1;
         }
+
+        my $gantt_to_use = $Container_gantt_hash{0};
+        my $container_num = 0;
+        if (defined($types->{container})){
+            oar_debug("[oar_sched_gantt_with_timesharing] Create gantt for the container $i\n");
+            $Container_gantt_hash{$i} = Gantt_hole_storage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec);
+            $gantt_to_use = $Container_gantt_hash{$i};
+            $container_num = $i;
+        }
+
+        my $user;
+        my $name;
+        if (defined($types->{timesharing})){
+            ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
+            if (!defined($timesharing_gantts->{$container_num}->{$user}->{$name})){
+                $timesharing_gantts->{$container_num}->{$user}->{$name} = dclone($gantt_to_use);
+                oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt for ($user, $name)\n");
+            }
+        }
+
         #Fill all other gantts
-        foreach my $u (keys(%{$timesharing_gantts})){
-            foreach my $n (keys(%{$timesharing_gantts->{$u}})){
-                if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
-                    Gantt_hole_storage::set_occupation($timesharing_gantts->{$u}->{$n},
-                                            $already_scheduled_jobs{$i}->[0],
-                                            $job_duration + $security_time_overhead,
-                                            $vec
-                                         );
+        foreach my $g (keys(%Container_gantt_hash)){
+            if ($i != $g){
+                oar_debug("[oar_sched_gantt_with_timesharing] Add occupation in container $g for job $i\n");
+                Gantt_hole_storage::set_occupation(  $Container_gantt_hash{$g},
+                                                     $already_scheduled_jobs{$i}->[0],
+                                                     $job_duration + $security_time_overhead,
+                                                     $vec
+                                                  );
+            }
+        }
+        foreach my $c (keys(%{$timesharing_gantts})){
+            foreach my $u (keys(%{$timesharing_gantts->{$c}})){
+                foreach my $n (keys(%{$timesharing_gantts->{$c}->{$u}})){
+                    if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
+                        Gantt_hole_storage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
+                                                            $already_scheduled_jobs{$i}->[0],
+                                                            $job_duration + $security_time_overhead,
+                                                            $vec
+                                                          );
+                    }
                 }
             }
         }
-        Gantt_hole_storage::set_occupation(  $gantt,
-                                  $already_scheduled_jobs{$i}->[0],
-                                  $job_duration + $security_time_overhead,
-                                  $vec
-                             );
     }
 }
 
@@ -223,17 +242,29 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
     }
     next if ($skip_job == 1);
-     
-    my $gantt_to_use = $gantt;
+
+    my $gantt_to_use = $Container_gantt_hash{0};
+    my $container_num = 0;
     my $types = iolib::get_current_job_types($base,$j->{job_id});
+    if (defined($types->{inside}) and ($types->{inside} =~ /^(\d+)$/)){
+        if (defined($Container_gantt_hash{$1})){
+            $gantt_to_use = $Container_gantt_hash{$1};
+            $container_num = $1;
+            oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] Using container $container_num\n");
+        }else{
+            oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] Container $1 does not exist.\n");
+            iolib::set_job_message($base,$j->{job_id},"Container $1 does not exist");
+            next;
+        }
+    }
     if (defined($types->{timesharing})){
         my ($user, $name) = parse_timesharing($types->{timesharing}, $j->{job_user}, $j->{job_name});
-        if (!defined($timesharing_gantts->{$user}->{$name})){
-            $timesharing_gantts->{$user}->{$name} = dclone($gantt);
+        if (!defined($timesharing_gantts->{$container_num}->{$user}->{$name})){
+            $timesharing_gantts->{$container_num}->{$user}->{$name} = dclone($gantt_to_use);
             oar_debug("[oar_sched_gantt_with_timesharing] Create new gantt in phase II for ($user, $name)\n");
         }
-        $gantt_to_use = $timesharing_gantts->{$user}->{$name};
-        oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for ($user,$name)\n");
+        $gantt_to_use = $timesharing_gantts->{$container_num}->{$user}->{$name};
+        oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for ($container_num,$user,$name)\n");
     }
     #oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
 
@@ -336,25 +367,37 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
             vec($vec, $r, 1) = 1;
         }
-        Gantt_hole_storage::set_occupation(    $gantt,
-                                    $moldable_results[$index_to_choose]->{start_date},
-                                    $moldable_results[$index_to_choose]->{duration},
-                                    $vec
-                                );
         #Fill all other gantts
-        foreach my $u (keys(%{$timesharing_gantts})){
+        foreach my $g (keys(%Container_gantt_hash)){
+            if ($j->{job_id} != $g){
+                oar_debug("[oar_sched_gantt_with_timesharing] Add live occupation in container $g for job $j->{job_id}\n");
+                Gantt_hole_storage::set_occupation(  $Container_gantt_hash{$g},
+                                                     $moldable_results[$index_to_choose]->{start_date},
+                                                     $moldable_results[$index_to_choose]->{duration},
+                                                     $vec
+                                                  );
+            }
+        }
+        if (defined($types->{container})){
+            $Container_gantt_hash{$j->{job_id}} = Gantt_hole_storage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec);
+        }
+
+        foreach my $c (keys(%{$timesharing_gantts})){
+            foreach my $u (keys(%{$timesharing_gantts->{$c}})){
 #        print("[GANTT] 17 ".gettimeofday."\n");
-            foreach my $n (keys(%{$timesharing_gantts->{$u}})){
-                if (($gantt_to_use != $timesharing_gantts->{$u}->{$n})){
-                    Gantt_hole_storage::set_occupation(  $timesharing_gantts->{$u}->{$n},
-                                              $moldable_results[$index_to_choose]->{start_date},
-                                              $moldable_results[$index_to_choose]->{duration},
-                                              $vec
-                                         );
+                foreach my $n (keys(%{$timesharing_gantts->{$c}->{$u}})){
+                    if (($gantt_to_use != $timesharing_gantts->{$c}->{$u}->{$n})){
+                        Gantt_hole_storage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
+                                                            $moldable_results[$index_to_choose]->{start_date},
+                                                            $moldable_results[$index_to_choose]->{duration},
+                                                            $vec
+                                                          );
+                        }
                 }
             }
         }
-        
+
+
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});

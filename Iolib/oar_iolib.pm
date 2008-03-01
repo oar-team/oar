@@ -3926,6 +3926,7 @@ sub get_gantt_scheduled_jobs($){
                                 AND g1.moldable_job_id = g2.moldable_job_id
                                 AND m.moldable_id = g2.moldable_job_id
                                 AND j.job_id = m.moldable_job_id
+                             ORDER BY j.start_time, j.job_id
                             ");
     $sth->execute();
     my %res ;

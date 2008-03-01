@@ -16,6 +16,7 @@ my $Infinity = 4294967296;
 # Prototypes
 # gantt chart management
 sub new($$);
+sub new_with_1_hole($$$$$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
@@ -69,6 +70,27 @@ sub new($$){
                 ];
     
     return($result);
+}
+
+
+# Creates a Gantt with 1 hole
+# arg : number of the max resource id
+sub new_with_1_hole($$$$$){
+    my $max_resource_number = shift;
+    my $minimum_hole_duration = shift;
+    my $date = shift;
+    my $duration = shift;
+    my $resources_vec = shift;
+
+    my $gantt = Gantt_hole_storage::new($max_resource_number, $minimum_hole_duration);
+
+    # Feed vector with enough 0
+    $resources_vec |= $gantt->[0]->[3];
+
+    $gantt->[0]->[0] = $date;
+    $gantt->[0]->[1] = [[($date + $duration), $resources_vec]];
+
+    return($gantt);
 }
 
 

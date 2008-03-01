@@ -9,6 +9,8 @@ XAUTH_LOCATION="/usr/bin/xauth"
 CPUSET_MOUNT_POINT="/dev/cpuset"
 OARDIR="/usr/lib/oar"
 
+export PATH=$OARDIR/oardodo:$PATH
+
 OLDUMASK=$(umask)
 umask 0022
 

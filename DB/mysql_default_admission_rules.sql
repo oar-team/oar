@@ -156,17 +156,18 @@ foreach my $mold (@{$ref_resource_list}){
 
 # Check if types given by the user are right
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my @types = ("deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh");
+my @types = ("container","inside","deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh");
 foreach my $t (@{$type_list}){
     my $i = 0;
     while (($types[$i] ne $t) and ($i <= $#types)){
         $i++;
     }
-    if (($i > $#types) and ($t !~ /^timesharing/)){
+    if (($i > $#types) and ($t !~ /^(timesharing|inside)/)){
         die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
     }
 }
 ');
+
 # If resource types are not specified, then we force them to default
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 foreach my $mold (@{$ref_resource_list}){
