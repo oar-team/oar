@@ -230,6 +230,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }else{
                 my $message = "Cannot determine scheduling time due to dependency with the job $d";
                 iolib::set_job_message($base,$j->{job_id},$message);
+                iolib::set_job_scheduler_info($base,$j->{job_id},$message);
                 oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
                 $skip_job = 1;
                 next;
@@ -237,6 +238,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
             my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
             iolib::set_job_message($base,$j->{job_id},$message);
+            iolib::set_job_scheduler_info($base,$j->{job_id},$message);
             oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
             $skip_job = 1;
             next;
@@ -255,6 +257,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }else{
             oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] Container $1 does not exist.\n");
             iolib::set_job_message($base,$j->{job_id},"Container $1 does not exist");
+            iolib::set_job_scheduler_info($base,$j->{job_id},"Container $1 does not exist");
             next;
         }
     }
@@ -403,9 +406,11 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
         iolib::set_job_message($base,$j->{job_id},"FIFO scheduling OK");
+        iolib::set_job_scheduler_info($base,$j->{job_id},"FIFO scheduling OK");
     }else{
         my $message = "Cannot find enough resources which fit for the job $j->{job_id}";
         iolib::set_job_message($base,$j->{job_id},$message);
+        iolib::set_job_scheduler_info($base,$j->{job_id},$message);
         oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
     }
 #        print("[GANTT] 18 ".gettimeofday."\n");

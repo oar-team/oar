@@ -1699,6 +1699,25 @@ sub set_job_message($$$) {
              ");
 }
 
+
+# set_job_scheduler_info
+# sets the scheduler_info field of the job of id passed in parameter
+# parameters : base, jobid, message
+# return value : /
+sub set_job_scheduler_info($$$) {
+    my $dbh = shift;
+    my $idJob = shift;
+    my $message = shift;
+
+    $message = $dbh->quote($message);
+    $dbh->do("  UPDATE jobs
+                SET scheduler_info = $message
+                WHERE
+                    job_id = $idJob
+             ");
+}
+
+
 # set_job_autoCheckpointed
 # sets the autoCheckpointed field into YES of the job of id passed in parameter
 # parameters : base, jobid

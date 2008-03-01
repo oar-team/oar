@@ -177,6 +177,7 @@ CREATE TABLE jobs (
   state varchar(16) check (state in ('Waiting','Hold','toLaunch','toError','toAckReservation','Launching','Running','Suspended','Resuming','Finishing','Terminated','Error')) NOT NULL default 'Waiting',
   reservation varchar(10) check (reservation in ('None','toSchedule','Scheduled')) NOT NULL default 'None',
   message varchar(255) NOT NULL default '',
+  scheduler_info varchar(255) NOT NULL default '',
   job_user varchar(255) NOT NULL default '',
   project varchar(255) NOT NULL default '',
   job_group varchar(255) NOT NULL default '',
