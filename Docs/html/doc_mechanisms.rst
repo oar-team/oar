@@ -231,6 +231,33 @@ You have 4 different ways to share your slot:
 
 See User section from the FAQ for more examples and features.
 
+Container jobs
+--------------
+
+With this functionality it is possible to execute jobs only in another one. So
+it is like a sub-scheduling mechanism.
+
+First a job with the type *container* must be submitted, for example::
+
+    oarsub -I -t container -l node=10
+    ...
+    OAR_JOB_ID=42
+    ...
+
+After it is possible to use the type *inside* to schedule the jobs only in a
+container one::
+
+    oarsub -I -t inside=42 -l nodes=7
+    oarsub -I -t inside=42 -l nodes=1
+    oarsub -I -t inside=42 -l nodes=10
+
+Note::
+
+    oarsub -I -t inside=42 -l nodes=11
+
+This job will not be scheduled because the container job "42" reserved only 10
+nodes.
+
 Besteffort jobs
 ---------------
 
