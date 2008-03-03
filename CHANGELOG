@@ -16,9 +16,10 @@ version 2.2.11:
   - Bug #4740: open the file in oarsub with user privileges (-S option)
   - Bug #4787: check if the remote socket is defined (problem of timing with
     nmap)
-  - Feature Request #4874: check system names when renaming propertie
+  - Feature Request #4874: check system names when renaming properties
   - DrawGantt can export charts to be reused to build a global multi-OAR view
     (e.g. DrawGridGantt).
+  - Bug #4990: DrawGantt now uses the database localtime as its time reference. 
 
 version 2.2.10:
 ---------------
