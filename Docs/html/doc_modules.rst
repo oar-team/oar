@@ -21,6 +21,13 @@ It's behaviour is represented in these schemes.
 
   .. image:: ../schemas/almighty_automaton_general.png
   
+When the Almighty automaton starts it will first open a socket and creates a 
+pipe for the process communication with it's forked son. Then, Almighty will 
+fork itself in a process called "appendice" which role is to listen to incoming 
+connections on the socket and catch clients messages. These messages will be
+thereafter piped to Almighty. Then, the automaton will change it's state
+according to what message has been received. 
+  
 --------------------------------------------------------------------------------
 
   - Scheduler schema:

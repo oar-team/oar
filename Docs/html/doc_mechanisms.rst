@@ -262,7 +262,7 @@ Besteffort jobs
 ---------------
 
 Besteffort jobs are scheduled in the besteffort queue. Their particularity is
-that they are deleted if another not besteffort job want resources where they
+that they are deleted if another not besteffort job wants resources where they
 are running.
 
 For example you can use this feature to maximize the use of your cluster with
