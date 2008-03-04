@@ -31,13 +31,16 @@ $cluster_regexp = nil
 
 #base source oar-1.6 
 #$oar_db_1 = 'oar-1-6-grillon-grelon'
-$oar_db_1 = 'oar-1-6-nancy'
+#$oar_db_1 = 'oar-1-6-nancy'
+$oar_db_1 = 'oar-1-6-toulouse'
 $host_1 = 'localhost'
 $login_1 = 'root'
 $passwd_1 = ''
 
 #base source oar-2
-$oar_db_2 = 'oar-2-nancy'
+#$oar_db_2 = 'oar-2-nancy'
+$oar_db_2 = 'oar2test'
+
 $host_2 = 'localhost'
 $login_2 = 'root'
 $passwd_2 = ''
@@ -46,11 +49,20 @@ $passwd_2 = ''
 ###
 ### NANCY
 ###
-$cluster = ['grillon','grelon'] #cluster propertie (cluster field in resource table) 
-$cluster_regexp= ['^grillon.*','^grelon.*']
+$cluster = ['violette'] #cluster propertie (cluster field in resource table) 
 
-$nb_cpu = [2,2]   #number of cpu by node
-$nb_core = [1,2]  #number of core by cpu
+$nb_cpu = [2]   #number of cpu by node
+$nb_core = [1]  #number of core by cpu
+
+
+###
+### NANCY
+###
+#$cluster = ['grillon','grelon'] #cluster propertie (cluster field in resource table) 
+#$cluster_regexp= ['^grillon.*','^grelon.*']
+
+#$nb_cpu = [2,2]   #number of cpu by node
+#$nb_core = [1,2]  #number of core by cpu
 
 ###
 ### Cluster with  contiguous set nodes contigus nodes can use $cluster_size directly
@@ -87,7 +99,7 @@ $core = nil #initial index for core field
 $job_id_offset = nil #job_id_offset is add to oar_1.6's job_id to give oar_2's job_id one 
 $event_id_offset = nil
 
-$empty = false #if true flush modified oar.v2 tables before convertion    
+$empty = true #if true flush modified oar.v2 tables before convertion    
 #$empty = true	 # MUST BE SET TO false (for development/testing purpose)
 
 $resource_cluster = {}
@@ -336,6 +348,7 @@ VALUES ('#{r_id}', '#{res.first}', '#{cluster}', '#{$cpu}','#{$core}','#{i}')")
 	resource_index_begin = resource_index_begin +  $cluster_size[index_cluster]
 
 	end
+	p resources_conv
 	return resources_conv
 end
 
@@ -345,7 +358,11 @@ def insert_resource_logs2(dbh,resources_log1,res_conv)
 
 	resources_log1.each do |res_log|
 
+		p res_log.first
 		node = res_conv[res_log.first]
+
+		p node	
+
 		node.each do |res_id|
 			date_stop = "0"	
 			begin

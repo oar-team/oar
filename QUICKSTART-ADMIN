@@ -22,7 +22,7 @@ First of all you have to install the following libs:
 * MySQL
 * libmysql
 
-You also have to install a >= 2.6 kernel in order tu use cpuset feature.
+You also have to install a >= 2.6 kernel in order to use cpuset feature.
 
 1°) Pave the way for install
 ----------------------------
