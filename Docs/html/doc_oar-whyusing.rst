@@ -86,7 +86,21 @@ OAR 2 features a mechanism to manage resources like software licenses or other
 non-material resources the same way it manages classical resources.
 
 
-OAR Use cases
--------------
+OAR Uses and Users
+------------------
 
+At the present time, OAR is used in several countries (France, Slovakia, Brazil)
+by several types of users.
+These users are not only programmers and computer specialists but also simple
+scientists, novices at programming. Thus the spread of users type is wide.
+
+They are mainly:
+- physicists 
+- biologists that work on medical imaging, radioactivity study...
+- weathermen
+- chemical engineers
+- computer sciences engineers and researchers that work on many subjects as 
+  cryptography, data mining, HPC...
+- stargazers that work on subjetcs like trajectory computation and data analysis
+  from probes.
 
