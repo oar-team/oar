@@ -251,12 +251,17 @@ container one::
     oarsub -I -t inside=42 -l nodes=1
     oarsub -I -t inside=42 -l nodes=10
 
-Note::
+Notes:
 
-    oarsub -I -t inside=42 -l nodes=11
+    - In the case:
+      ::
 
-This job will not be scheduled because the container job "42" reserved only 10
-nodes.
+        oarsub -I -t inside=42 -l nodes=11
+
+      This job will never be scheduled because the container job "42" reserved only 10
+      nodes.
+    - "-t container" is handled by every kind of jobs (passive, interactive and
+      reservations). But "-t inside=..." cannot be used with a reservation.
 
 Besteffort jobs
 ---------------
