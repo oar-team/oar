@@ -264,10 +264,18 @@ def get_history(dbh,date_start,date_stop)
 
 	#print finished or running jobs
 	jobs = job_gantt
+
+	if  !$conf['cosystem'].nil?
+		jobs.each do  |job_id,job|
+			job['cosystem'] = true if get_current_job_types(dbh,job_id).include?("cosystem")
+		end
+	end
+
 	jobs_history =  get_jobs_range_dates(dbh,date_start,date_stop)
 
 	jobs_history.each do |job_id,job|
 		a_type = get_current_job_types(dbh,job_id)
+		job['cosystem'] = true if a_type.include?('cosystem')
 		if (job_gantt[job_id] == nil) || (a_type.include?("besteffort"))
     	if (jobs_history[job_id]['state'] == "Running") ||
 				 (jobs_history[job_id]['state'] == "toLaunch") ||
@@ -489,6 +497,8 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	$background =  img.colorAllocate($conf['background'])
 	$gridcolor =  img.colorAllocate($conf['gridcolor'])
 
+	$cosystem_color =  img.colorAllocate($conf['cosystem_color']) if !$conf['cosystem_color'].nil?
+
 	$white = img.colorAllocate(255,255,255)
 	$black = img.colorAllocate(0,0,0)       
 	$red = img.colorAllocate(255,0,0)      
@@ -655,7 +665,12 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			r_index = $sorted_resources.index(r)
 			if !(r_index.nil?)
 				ares_index << r_index
-				img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), $color[(job_id.to_i % 154) + 1])
+				if j['cosystem']
+					color = $cosystem_color	
+				else
+					color = $color[(job_id.to_i % 154) + 1]
+				end
+				img.filledRectangle(start_x,$offsetgridy + deltay * r_index,stop_x,$offsetgridy + deltay * (r_index+1), color)
 #			yop = "*#{start_x} #{$offsetgridy + deltay * r_index} #{stop_x} #{$offsetgridy + deltay * (r_index+1)}*"
 			end
 		end
@@ -670,7 +685,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 				if (r != i_high) 
 					if (r > i_high + 1 )
 						if (i_high -i_low) >= $nb_cont_res
-							draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2-5,job_id.to_s)
+							draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2-5,job_id.to_s) if !j['cosystem']
 							map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*(i_high+1),job_id]	
 						end
 						i_low = r
@@ -682,7 +697,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 			end
 
 			if (i_high -i_low) >= $nb_cont_res
-				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2.0-5,job_id.to_s)	
+				draw_string(img,(stop_x+start_x)/2,$offsetgridy+deltay*(i_high+i_low+1)/2.0-5,job_id.to_s)  if !j['cosystem']
 				map_info << [start_x,$offsetgridy+deltay*i_low,stop_x,$offsetgridy+deltay*(i_high+1),job_id]	
 			end
 		end 
@@ -734,11 +749,17 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	f_map.puts  '<map name="' + $prefix + '_ganttmap">'
 	map_info.each do |info|
 		j = jobs[info[4]]
+		if j['cosystem']
+			cosystem = "<br>Job Cosystem"
+		else
+			cosystem = ''
+		end
 		f_map.puts '<area shape="rect" coords="' + 
 					 "#{info[0]},#{info[1]},#{info[2]},#{info[3]}" + 
 					 '" href="monika.cgi?job='+ "#{info[4]}" +
 					 '" onmouseout="return nd()" onmouseover="return overlib(\'' +
 					 "JobId: #{info[4]}" +
+					 cosystem +
 					 "<br>User: #{j['user']}" + 
 					 "<br>Type: #{j['job_type']}" +
 					 "<br>State: #{j['state']}" +
@@ -832,7 +853,7 @@ def cgi_html(cgi)
 	end
 
 	if (range == '3 days') || (range == 'week') || (range == 'month')
-		origin = origin - origin % 86400 - Time.at(origin).gmt_offset
+		origin = origin - origin % 86400 - Time.at(origin).gmt_offset + 86400
 	else
  		origin = origin - origin % 3600
 	end
