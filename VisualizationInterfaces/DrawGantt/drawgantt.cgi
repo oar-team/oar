@@ -240,11 +240,11 @@ def list_resource_properties_fields(dbh)
   return results 
 end
 
-# get_current_job_types
+# get_job_types
 # return a hash table with all types for the given job ID
 
-def get_current_job_types(dbh,job_id)
-    q = "SELECT type FROM job_types WHERE types_index = \'CURRENT\' AND job_id = #{job_id}"
+def get_job_types(dbh,job_id)
+    q = "SELECT type FROM job_types WHERE job_id = #{job_id}"
 		result = []               
     res = dbh.execute(q)
 		res.each do |r|
@@ -265,17 +265,17 @@ def get_history(dbh,date_start,date_stop)
 	#print finished or running jobs
 	jobs = job_gantt
 
-	if  !$conf['cosystem'].nil?
+	if $conf['cosystem']
 		jobs.each do  |job_id,job|
-			job['cosystem'] = true if get_current_job_types(dbh,job_id).include?("cosystem")
+			job['cosystem'] = true if get_job_types(dbh,job_id).include?("cosystem")
 		end
 	end
 
 	jobs_history =  get_jobs_range_dates(dbh,date_start,date_stop)
 
 	jobs_history.each do |job_id,job|
-		a_type = get_current_job_types(dbh,job_id)
-		job['cosystem'] = true if a_type.include?('cosystem')
+		a_type = get_job_types(dbh,job_id)
+		jobs_history[job_id]['cosystem'] = true if a_type.include?('cosystem')
 		if (job_gantt[job_id] == nil) || (a_type.include?("besteffort"))
     	if (jobs_history[job_id]['state'] == "Running") ||
 				 (jobs_history[job_id]['state'] == "toLaunch") ||
