@@ -553,11 +553,11 @@ fi;
 
 '.$exp_env.'
 
-export OAR_FILE_NODES='.$node_file.';
+export OAR_FILE_NODES="'.$node_file.'";
 export OAR_JOBID='.$job_id.';
-export OAR_USER='.$user.';
-export OAR_WORKDIR='.$launching_directory.';
-export OAR_RESOURCE_PROPERTIES_FILE='.$resource_file.';
+export OAR_USER="'.$user.'";
+export OAR_WORKDIR="'.$launching_directory.'";
+export OAR_RESOURCE_PROPERTIES_FILE="'.$resource_file.'";
 
 export OAR_NODEFILE=$OAR_FILE_NODES;
 export OAR_O_WORKDIR=$OAR_WORKDIR;
@@ -565,12 +565,12 @@ export OAR_NODE_FILE=$OAR_FILE_NODES;
 export OAR_RESOURCE_FILE=$OAR_FILE_NODES;
 export OAR_WORKING_DIRECTORY=$OAR_WORKDIR;
 export OAR_JOB_ID=$OAR_JOBID;
-export OAR_JOB_NAME='.$job_name.';
-export OAR_PROJECT_NAME='.$job_project.';
-export OAR_JOB_WALLTIME='.$job_walltime.';
+export OAR_JOB_NAME="'.$job_name.'";
+export OAR_PROJECT_NAME="'.$job_project.'";
+export OAR_JOB_WALLTIME="'.$job_walltime.'";
 export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.';
 
-export SHELL='.$shell.';
+export SHELL="'.$shell.'";
 
 export SUDO_COMMAND=OAR;
 SHLVL=1;

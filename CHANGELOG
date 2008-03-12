@@ -38,6 +38,10 @@ upstream development version:
       oarsub -t inside=42
       ...
 
+version 2.2.12:
+---------------
+  - Bug #5239: fix the bug if there are spaces into job name or project
+
 version 2.2.11:
 ---------------
 
