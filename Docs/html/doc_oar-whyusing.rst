@@ -95,6 +95,7 @@ These users are not only programmers and computer specialists but also simple
 scientists, novices at programming. Thus the spread of users type is wide.
 
 They are mainly:
+
 - physicists 
 - biologists that work on medical imaging, radioactivity study...
 - weathermen
@@ -102,5 +103,5 @@ They are mainly:
 - computer sciences engineers and researchers that work on many subjects as 
   cryptography, data mining, HPC...
 - stargazers that work on subjetcs like trajectory computation and data analysis
-  from probes.
+  from probes
 
