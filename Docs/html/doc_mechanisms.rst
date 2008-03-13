@@ -234,34 +234,34 @@ See User section from the FAQ for more examples and features.
 Container jobs
 --------------
 
-With this functionality it is possible to execute jobs only in another one. So
+With this functionality it is possible to execute jobs within another one. So
 it is like a sub-scheduling mechanism.
 
-First a job with the type *container* must be submitted, for example::
+First a job of the type *container* must be submitted, for example::
 
     oarsub -I -t container -l node=10
     ...
     OAR_JOB_ID=42
     ...
 
-After it is possible to use the type *inside* to schedule the jobs only in a
-container one::
+Then it is possible to use the *inner* type to schedule the new jobs within the
+previously created container job::
 
-    oarsub -I -t inside=42 -l nodes=7
-    oarsub -I -t inside=42 -l nodes=1
-    oarsub -I -t inside=42 -l nodes=10
+    oarsub -I -t inner=42 -l nodes=7
+    oarsub -I -t inner=42 -l nodes=1
+    oarsub -I -t inner=42 -l nodes=10
 
 Notes:
 
     - In the case:
       ::
 
-        oarsub -I -t inside=42 -l nodes=11
+        oarsub -I -t inner=42 -l nodes=11
 
       This job will never be scheduled because the container job "42" reserved only 10
       nodes.
     - "-t container" is handled by every kind of jobs (passive, interactive and
-      reservations). But "-t inside=..." cannot be used with a reservation.
+      reservations). But "-t inner=..." cannot be used with a reservation.
 
 Besteffort jobs
 ---------------

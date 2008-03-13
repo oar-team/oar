@@ -249,7 +249,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $gantt_to_use = $Container_gantt_hash{0};
     my $container_num = 0;
     my $types = iolib::get_current_job_types($base,$j->{job_id});
-    if (defined($types->{inside}) and ($types->{inside} =~ /^(\d+)$/)){
+    if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         if (defined($Container_gantt_hash{$1})){
             $gantt_to_use = $Container_gantt_hash{$1};
             $container_num = $1;

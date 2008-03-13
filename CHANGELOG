@@ -32,11 +32,11 @@ upstream development version:
   - Add job walltime (in seconds) in parameter of prologue and epilogue on
     compute nodes.
   - oarnodes does not show system properties anymore.
-  - It is now possible to have containers for jobs (sub scheduling in 1 job).
-      oarsub -t container ....
-      oarsub -t inside=42
-      oarsub -t inside=42
-      ...
+  - New feature: container job type now allows to submit inner jobs for a 
+    scheduling within the container job
+  - New feature: local checks on nodes can be plugged in the oarnodecheck
+    mechanism. Results are asynchronously checked from the server (taktuk
+    ping checker)
 
 version 2.2.12:
 ---------------
