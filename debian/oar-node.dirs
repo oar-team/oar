@@ -1,0 +1,5 @@
+/usr/lib/oar
+/etc/oar
+/etc/oar/check.d
+/var/lib/oar
+/var/lib/oar/checklogs
