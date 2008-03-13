@@ -12,6 +12,7 @@
 [ -n "$CHECKLOGFILE" ] || CHECKLOGFILE=/dev/stderr
 
 ###############################################################################
+# EDIT SCRIPT BELOW
 
 # Example of check
 [ -d /var/lib/oar ] || echo "OAR runtime directory (/var/lib/oar) does not exist)" > $CHECKLOGFILE 
