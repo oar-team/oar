@@ -292,6 +292,14 @@ node: man
 	install -m 0755 Tools/detect_resources $(OARDIR)
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
+	install -m 0755 Tools/oarnodecheck/oarnodechecklist $(BINDIR)
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(BINDIR)/oarnodechecklist
+	install -m 0755 Tools/oarnodecheck/oarnodecheckquery $(BINDIR)
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(BINDIR)/oarnodecheckquery
+	install -d -m 0755 $(OARCONFDIR)/check.d
+	install -m 0755 Tools/oarnodecheck/oarnodecheckcron $(OARDIR)
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*$#CHECKSCRIPTDIR=$(REAL_OARCONFDIR)/check.d#" $(OARDIR)/oarnodecheckcron
+	install -m 0755 Tools/oarnodecheck/template $(OARCONFDIR)/check.d
 
 build-html-doc: Docs/html/
 	(cd Docs/html && $(MAKE) )

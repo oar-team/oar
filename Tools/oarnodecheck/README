@@ -1,0 +1,14 @@
+This directory contains the simple node local check mechanism as follows:
+* the oarnodecheckquery script is meant to be call by OAR ping checker, 
+  to report the node health status (see oar.conf)
+* health status is bad as soon as one checklog file is present in the checklog 
+  directory (/var/lib/oar/checklogs)
+* the chechscript directory (/etc/oar/checkscripts/) directory contains admin
+  defined scripts that perform checks with regard to eventual errors 
+* if and only if an error is detected, a checklog file is created within the
+  checklog directory
+* the oarnodecheckcron must be run by cron (/etc/cron.hourly for instance) to
+  execute all scripts of the chechscripts directory
+* the oarnodechecklist script lists the currently recorder checklogs
+See the templatecheck.sh script for a template of check script to place in the
+checkscript directory

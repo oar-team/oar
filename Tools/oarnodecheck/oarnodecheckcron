@@ -1,0 +1,22 @@
+#!/bin/bash
+# $Id$
+
+OARUSER=oar
+eval CHECKLOGDIR=~$OARUSER/checklogs
+CHECKSCRIPTDIR=/etc/oar/check.d
+
+if ! [ -r $CHECKLOGDIR ]; then
+	echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
+	exit 1
+fi 
+
+if ! [ -r $CHECKSCRIPTDIR ]; then
+	echo 1>&2 "Error: Checkscripts directory does not exist ($CHECKSCRIPTDIR) !"
+	exit 1
+fi 
+
+shopt -s nullglob
+cd $CHECKSCRIPTDIR
+for f in *; do 
+	[ -x $f ] && CHECKLOGFILE=$CHECKLOGDIR/$f.$(date +%F.%T) ./$f
+done
