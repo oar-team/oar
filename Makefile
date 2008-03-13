@@ -298,7 +298,7 @@ node: man
 	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(BINDIR)/oarnodecheckquery
 	install -d -m 0755 $(OARCONFDIR)/check.d
 	install -m 0755 Tools/oarnodecheck/oarnodecheckcron $(OARDIR)
-	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*$#CHECKSCRIPTDIR=$(REAL_OARCONFDIR)/check.d#" $(OARDIR)/oarnodecheckcron
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*#CHECKSCRIPTDIR=$(REAL_OARCONFDIR)/check.d#" $(OARDIR)/oarnodecheckcron
 	install -m 0755 Tools/oarnodecheck/template $(OARCONFDIR)/check.d
 
 build-html-doc: Docs/html/
