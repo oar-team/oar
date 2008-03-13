@@ -281,6 +281,7 @@ user: man
 	install -m 0644 man/man1/oarmonitor_graph_gen.1 $(MANDIR)/man1/oarmonitor_graph_gen.1
 
 node: man
+	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
