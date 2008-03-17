@@ -1,0 +1,19 @@
+What can and must do a scheduler:
+    - your program will get 3 arguments:
+        1. queue name
+        2. reference time in second
+        3. reference time in sql format
+    - you must manipulate only jobs in your queue and with their state =
+      "Waiting" and "Reservation" = "None"
+    - you can get all information stored in the database (in read mode)
+    - you have to load previous decisions of the other schedulers (load
+      information from tables gantt_jobs_predictions_ and
+      gantt_jobs_resources_) or your decisions could conflict with previous.
+    - you must store your decisions in the tables gantt_jobs_predictions_ and
+      gantt_jobs_resources_
+    - you can set state of jobs to "toError" and OAR will delete them. After
+      you must exit from your program with "exit code" = 1 otherwise 0.
+
+You can look at the default OAR scheduler "oar_sched_gantt_with_timesharing".
+It uses a gantt and a resource tree libraries that are essential to take some
+decisions.

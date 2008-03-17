@@ -1,0 +1,596 @@
+# $Id$
+#script executed on the first reserved node
+# Exit codes are:
+#     - 0 : everything worked normally
+#     - 1 : prologue error (exit value not equal to 0 or timeout exceeded)
+#     - 2 : epilogue error (exit value not equal to 0 or timeout exceeded)
+#     - 3 : this script was killed by Leon normally
+#     - 4 : this script was killed by Leon normally and epilogue was in error (like for 2)
+#     - 5 : this script was not able to create the node file
+#     - 6 : this script was not able to create the pid file
+#     - 7 : cannot get the shell value for the user
+#     - 8 : this script was not able to create tmp directory
+#     - 12 : cannot go into the launching directory of the job and epilogue was in error
+#     - 10 : cannot go into the launching directory of the job
+#     - 20 : cannot create STDOUT and STDERR files
+#     - 22 : cannot create STDOUT and STDERR files and epilogue was in error
+#     - 30 : timeout of the bipbip hashtable send
+#     - 33 : oarexec was stopped normally via USR1 signal but there was an epilogue error
+#     - 34 : all worked normally and this is the result of an USR1 signal
+#     - 40 : all worked normally and the user process received the checkpoint signal
+#     - 41 : oarexec has sent the checkpoint signal but there were an epilogue error
+#
+# The exit code is sent to the Almighty via its TCP socket
+#
+# oarexec read a hashtable from bipbip, execute the prologue and then close STD file descriptor + fork a child and kill itself.
+# So the SSH return just after job initialisation and prologue
+
+BEGIN{
+    if (!defined(&oar_Tools::get_all_process_children())){
+        require(oar_Tools);
+    }
+}
+
+use strict;
+use Sys::Hostname;
+use POSIX qw(:signal_h :errno_h :sys_wait_h);
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+$SIG{PIPE} = 'IGNORE';
+$SIG{HUP} = 'IGNORE';
+# To deblock sshd father when oardel in suspended state
+$SIG{CONT} = sub{
+    kill('CONT',getppid());
+};
+
+my $Job_id = shift;
+
+$| = 1;
+# block signals until we define the handlers
+my $sigset   = POSIX::SigSet->new;
+my $Blockset = POSIX::SigSet->new(SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIGUSR2, SIGUSR1);
+sigprocmask(SIG_BLOCK, $Blockset, $sigset);
+
+my $Bin_Path = $ENV{OARDIR}."/";
+my $Tmp_file_prefix;
+
+my $Debug_mode;
+my $Node_file;
+my $Res_file;
+my $Pid_file;
+my $Kill_myself = 0;
+my $Oarexec_exit_code = 0;
+my $Exit_script_code = 'N';
+
+#Notify Almighty.
+#arg1 --> exit value
+sub quit_oarexec($$){
+    my $exit_value = shift;
+    my $job_data = shift;
+    
+    if ($job_data->{detach_oarexec} == 1){
+        # We must contact Almighty
+        my $max_wait_time = 300;
+        my $wait_time = 30;
+    
+        while (1){
+            if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$Exit_script_code"."_$job_data->{challenge}"))){
+                print("[oarexec $Job_id] I notified Almighty with my exit value $exit_value;so I am exiting\n");
+                exit($exit_value);
+            }else{
+                print("[oarexec $Job_id] I cannot notify Almighty; maybe the server is down or network is wrong configured\n");
+            }
+            sleep($wait_time);
+            if ($wait_time < $max_wait_time){
+                $wait_time = 2 * $wait_time;
+                if ($wait_time > $max_wait_time){
+                    $wait_time = $max_wait_time;
+                }
+            }
+        }
+    }
+    
+    exit($exit_value);
+}
+
+
+
+#delete temporary file
+sub clean_all(){
+    #system("rm -f $OAR_FILE_NODES $oarPidFile");
+    unlink($Node_file,$Res_file,$Pid_file);
+    # Kill oarsub connections
+    my $file = oar_Tools::get_oarsub_connections_file_name($Job_id);
+    if (open(OARSUBS,$file)){
+        while ($_ = <OARSUBS>){
+            if ($_ =~ m/^(\d+)$/m){
+                my $ppid = $1;
+                my ($children,$cmd_name) = oar_Tools::get_one_process_children($ppid);
+                my @pid_list = @{$children};
+                shift(@pid_list);
+                shift(@pid_list);
+                if ($cmd_name =~ m/$file/m){
+                    # remove ppid
+                    print("[oarexec $Job_id] kill oarsub connections @pid_list\n");
+                    system({"oardodo"} "oardodo","kill","-9",@pid_list) if ($#pid_list >= 0);
+                }else{
+                    print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that there is no OAR oarsub processes\n");
+                }
+            }
+        }
+        close(OARSUBS);
+    }
+    unlink($file);
+
+    # Delete unwanted children
+    my ($children,$cmd_name) = oar_Tools::get_one_process_children($$);
+    shift(@{$children});
+    kill(9,@{$children});
+}
+
+# read a line on a socket
+# arg1 --> socket
+# arg2 --> timeout
+# return 0 if the read times out
+sub read_socket_line($$){
+    my $sock = shift;
+    my $timeout = shift;
+
+    my $char = "a";
+    my $res = 1;
+    my $rin = '';
+    my $line;
+    vec($rin,fileno($sock),1) = 1;
+    my $rin_tmp;
+    while (($res > 0) && ($char ne "\n") && ($char ne "")){
+        $res = select($rin_tmp = $rin, undef, undef, $timeout);
+        if ($res > 0){
+            sysread($sock,$char,1);
+            if ($char ne "\n"){
+                $line .= $char;
+            }
+        }
+    }
+    return($res,$line);
+}
+
+#kill all child of the pid
+# arg1 --> child pid
+sub kill_children($){
+    my $child_pid = shift;
+
+    my ($children, $cmd_name) = oar_Tools::get_one_process_children($child_pid);
+    system({"oardodo"} "oardodo","kill","-9",@{$children});
+}
+
+sub send_kill_signal_to_myself(){
+    my $father = $$;
+    my $pid=fork;
+    if($pid==0){
+        sleep(5);
+        kill('SIGUSR2', $father);
+        exit();
+    }
+}
+
+# Retrieve job informations from bipbip
+my $Job;
+eval {
+    $SIG{ALRM} = sub { die "alarm\n" };
+    alarm(oar_Tools::get_bipbip_ssh_hashtable_send_timeout());
+    my $tmp = "";
+    while (<STDIN>){
+        $tmp .= $_;
+    }
+    $Job = eval($tmp);
+    alarm(0);
+};
+if( $@ ){
+    print("[oarexec $Job_id] Timeout of hashtable SSH transfer\n");
+    exit(30);
+}
+if (!defined($Job->{job_id})){
+    print("[oarexec $Job_id] Bad SSH hashtable transfered\n");
+    exit(31);
+}
+
+my $host = hostname();
+
+print("[oarexec $Job_id] job id : $Job_id user : $Job->{job_user}; launchingDirectory : $Job->{launching_directory}\n");
+
+oar_Tools::set_default_oarexec_directory($Job->{tmp_directory});
+$Tmp_file_prefix = oar_Tools::get_default_oarexec_directory();
+# Test if OAR directory exists and is owned by oar or if we can create it
+if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_prefix)))){
+    print("[oarexec $Job_id] Directory $Tmp_file_prefix does not exist and I cannot create it\n");
+    exit(8);
+}
+chdir($Tmp_file_prefix);
+
+#create node set file
+$Node_file = "$Tmp_file_prefix/$Job_id";
+if (! open(FILE,">$Node_file")){
+    print("[oarexec $Job_id] I cannot write file $Node_file\n");
+    exit(5);
+}
+#Feed the node file
+my @tmp_res;
+my %tmp_already_there;
+foreach my $r (@{$Job->{resources}}){
+    if (($r->{$Job->{node_file_db_fields}} ne "") and ($r->{type} eq "default")){
+        if (($r->{$Job->{node_file_db_fields_distinct_values}} ne "") and (!defined($tmp_already_there{$r->{$Job->{node_file_db_fields_distinct_values}}}))){
+            push(@tmp_res, $r->{$Job->{node_file_db_fields}});
+            $tmp_already_there{$r->{$Job->{node_file_db_fields_distinct_values}}} = 1;
+        }
+    }
+}
+foreach my $f (sort(@tmp_res)){
+    print(FILE "$f\n") or exit(5);
+}
+close(FILE);
+
+#create resource set file
+$Res_file = "$Tmp_file_prefix/$Job_id"."_resources";
+if (! open(FILE,">$Res_file")){
+    print("[oarexec $Job_id] I cannot write file $Res_file\n");
+    exit(5);
+}
+#Feed the resource file
+foreach my $r (@{$Job->{resources}}){
+    my $line = "";
+    foreach my $p (keys(%{$r})){
+        $line .= " $p = '$r->{$p}' ,"
+    }
+    chop($line);
+    print(FILE "$line\n") or exit(5);
+}
+close(FILE);
+
+print("[oarexec $Job_id] nom de commande [$Job->{command}]\n");
+
+if (defined($Job->{prologue})){
+# Launch prologue script
+    my $script_error = -1;
+    eval {
+        $SIG{ALRM} = sub { die "alarm\n" };
+        print("[oarexec $Job_id] LAUNCH prologue : $Job->{prologue} $Job_id $Job->{job_user} $Node_file $Job->{walltime_seconds}\n");
+        alarm($Job->{pro_epi_timeout});
+        #$script_error = system("$Job->{prologue} $Job_id $Job->{user} $Node_file");
+        my $pid = fork();
+        if($pid == 0){
+            #CHILD
+            $SIG{ALRM} = 'DEFAULT';
+            exec("$Job->{prologue} $Job_id $Job->{job_user} $Node_file");
+            warn("[ERROR] Cannot execute $Job->{prologue}\n");
+            exit(-1);
+        }
+        my $wait_res = -1;
+        # Avaoid to be disrupted by a signal
+        while ((defined($pid)) and ($wait_res != $pid)){
+            $wait_res = waitpid($pid,0);
+            $script_error = $?;
+        }
+        alarm(0);
+        print("[oarexec $Job_id] END prologue : $Job->{prologue}\n");
+    };
+    if( $@ || ($script_error != 0)){
+        print("[oarexec $Job_id] Prologue error : $@; return code = $script_error\n");
+        clean_all();
+        print("[oarexec $Job_id] Error in the OAR prolog execution\n");
+        exit(1);
+    }
+}
+
+# Get user shell
+my @pass_info = getpwnam($Job->{job_user});
+my $shell = $pass_info[8];
+if (!defined($shell)){
+    clean_all();
+    print("[oarexec $Job_id] Error : user $Job->{job_user} does not exist on this node, $host\n");
+    exit(7);
+}
+
+my @cmd;
+my $stdin_script_to_send;
+if ( $Job->{mode} eq "PASSIVE" ){
+    print("[oarexec $Job_id] Begin a passive command\n");
+    my $str;
+    ($str, $stdin_script_to_send) = oar_Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{job_env},$Job->{command});
+    #print($str."\n");
+    #@cmd = ("oardo","su","-","$Job->{job_user}","-c","perl -e '$str'");
+    @cmd = ("oardodo","perl","-e",$str);
+    #$ENV{OARDO_BECOME_USER}=$Job->{job_user};
+    #@cmd = ("oardo","perl","-e",$str);
+}
+
+#resolve terminal type problems
+my $terminal = $ENV{TERM};
+if (($terminal ne "") and ($terminal ne "unknown")){
+    $ENV{TERM} = $terminal;
+}else{
+    $ENV{TERM} = "xterm";
+}
+
+#oar own the tty
+#so we must change owner for the user
+system({"bash"} "bash","-c","TTY=\$(tty) && test -e \$TTY && oardodo chown $Job->{job_user}:oar \$TTY && oardodo chmod 660 \$TTY");
+
+# pipe for notify the end of a child process
+pipe(pipe_child_read,pipe_child_write);
+autoflush pipe_child_write 1;
+autoflush pipe_child_read 1;
+
+sub child_signal_handler {
+    $SIG{CHLD} = \&child_signal_handler;
+    
+    my $wait_pid_ret ;
+    while (($wait_pid_ret = waitpid(-1,WNOHANG)) > 0){
+        my $exit_value = $? >> 8;
+        print(pipe_child_write "$wait_pid_ret $exit_value\n");
+    }
+}
+$SIG{CHLD} = \&child_signal_handler;
+
+#For kill signal
+pipe(pipe_kill_read,pipe_kill_write);
+autoflush pipe_kill_write 1;
+autoflush pipe_kill_read 1;
+
+sub kill_signal_handler {
+    $SIG{TERM} = \&kill_signal_handler;
+    $SIG{INT} = \&kill_signal_handler;
+    $SIG{QUIT} = \&kill_signal_handler;
+
+    print("[oarexec $Job_id] In signal handler of @_\n");
+    print(pipe_kill_write "KILL\n");
+}
+
+$SIG{TERM} = \&kill_signal_handler;
+$SIG{INT} = \&kill_signal_handler;
+$SIG{QUIT} = \&kill_signal_handler;
+
+sub stop_signal_handler {
+    $SIG{USR1} = \&stop_signal_handler;
+
+    print("[oarexec $Job_id] In stop signal handler of @_\n");
+    print(pipe_kill_write "STOP\n");
+}
+
+$SIG{USR1} = \&stop_signal_handler;
+
+sub chekpoint_signal_handler {
+    $SIG{USR2} = \&chekpoint_signal_handler;
+
+    print("[oarexec $Job_id] In checkpoint signal handler of @_\n");
+    print(pipe_kill_write "CHECKPOINT\n");
+}
+
+$SIG{USR2} = \&chekpoint_signal_handler;
+
+if ($Job->{detach_oarexec} == 1){
+    #Detach process from bipbip SSH
+    print("[oarexec $Job_id] I am detaching the oarexec process\n");
+
+    if(fork() != 0){
+        print(oar_Tools::get_bipbip_oarexec_rendez_vous());
+        # Exit from main oarexec
+        exit(0);
+    }
+    # We must redirect STD to close SSH
+    open(STDIN, "/dev/zero");
+    if ($Job->{debug_mode} > 0){
+        open(STDOUT, ">>$Tmp_file_prefix/oar.log");
+        open(STDERR, ">>$Tmp_file_prefix/oar.log");
+    }else{
+        open(STDOUT, ">/dev/null");
+        open(STDERR, ">/dev/null");
+    }
+}else{
+    print(oar_Tools::get_bipbip_oarexec_rendez_vous());
+}
+
+#Write file with this oarexec pid
+$Pid_file = oar_Tools::get_oar_pid_file_name($Job_id);
+if ((!open(FILEPID,">$Pid_file")) or (!print(FILEPID "$$"))){
+    print("[oarexec $Job_id] I cannot write file $Pid_file\n");
+    clean_all();
+    quit_oarexec(6,$Job);
+}
+close(FILEPID);
+
+sigprocmask(SIG_UNBLOCK, $Blockset);
+
+my $pid = $$;
+my $rin_script = '';
+if ($Job->{mode} eq "PASSIVE"){
+    # For parsing script outputs
+    pipe(pipe_script_read,pipe_script_write);
+    autoflush pipe_script_write 1;
+    autoflush pipe_script_read 1;
+    vec($rin_script,fileno(pipe_script_read),1) = 1;
+    # To send command line
+    pipe(pipe_stdin_read,pipe_stdin_write);
+    autoflush pipe_stdin_write 1;
+    autoflush pipe_stdin_read 1;
+    #print("[oarexec $Job_id] Launch the command : $cmd\n");
+    $pid = fork;
+    if($pid == 0){
+        #CHILD
+        $SIG{CHLD} = 'DEFAULT';
+        $SIG{TERM} = 'DEFAULT';
+        $SIG{INT}  = 'DEFAULT';
+        $SIG{QUIT} = 'DEFAULT';
+        $SIG{USR1} = 'DEFAULT';
+        $SIG{USR2} = 'DEFAULT';
+        print("[oarexec $Job_id] child exec: @cmd\n");
+        close(pipe_script_read);
+        close(STDOUT);
+        # Redirect script output into the pipe
+        open(STDOUT, ">& pipe_script_write");
+        
+        # Use the child STDIN to send the user command
+        close(pipe_stdin_write);
+        close(STDIN);
+        open(STDIN, "<& pipe_stdin_read");
+
+        $ENV{OARDO_BECOME_USER} = $Job->{job_user};
+        umask(oct($Old_umask));
+        exec(@cmd);
+        warn("[ERROR] Cannot find @cmd\n");
+        exit(-1);
+    }
+    close(pipe_script_write);
+    close(pipe_stdin_read);
+    # Send user command without any interpretation security isssue!!!
+    #print("[oarexec $Job_id] ########### $stdin_script_to_send\n");
+    # This is the most secure manner that I find
+    print(pipe_stdin_write $stdin_script_to_send."\n");
+    open(pipe_stdin_write,"<& /dev/null");
+}
+
+print("[oarexec $Job_id] child pid = $pid\n");
+
+my $kill_myself = 0;
+
+my $res_read;
+my $line_read;
+my $rin = '';
+my $rin_sig = '';
+my $rin_pipe = '';
+vec($rin_sig,fileno(pipe_kill_read),1) = 1;
+vec($rin_pipe,fileno(pipe_child_read),1) = 1;
+$rin = $rin_sig | $rin_pipe | $rin_script;
+my $rin_tmp;
+my $Stop_signal = 0;
+my $Checkpoint_signal = 0;
+my $stop_loop = 0;
+# wait end of the child process or KILL notification
+while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
+    print("[oarexec $Job_id] wait end of child process or kill notification\n");
+    select($rin_tmp = $rin, undef, undef, undef);
+    
+    if (vec($rin_tmp, fileno(pipe_script_read), 1)){
+        ($res_read,$line_read) = read_socket_line(\*pipe_script_read,1);
+        if (($res_read == 1) and ($line_read eq "")){
+            # Script is finished
+            close(pipe_script_read);
+            close(pipe_stdin_write);
+        }else{
+            print("[oarexec $Job_id] pipe script writes : $res_read,$line_read\n");
+            if ($line_read =~ /^EXIT_CODE\s(\d+)$/){
+                $Exit_script_code = $1;
+                print("OAREXEC_SCRIPT_EXIT_VALUE $Exit_script_code\n");
+            }
+        }
+    }elsif (vec($rin_tmp, fileno(pipe_child_read), 1)){
+        ($res_read,$line_read) = read_socket_line(\*pipe_child_read,1);
+        print("[oarexec $Job_id] PIPE reads : $res_read,$line_read\n");
+        if ($line_read =~ m/(\d+) (\d+)/m){
+            if ($1 == $pid){
+                print("[oarexec $Job_id] Reset CHLD signal handler\n");
+                $line_read = $pid;
+                $Oarexec_exit_code = $2 * 10;
+            }
+        }
+    }elsif (vec($rin_tmp, fileno(pipe_kill_read), 1)){
+        ($res_read,$line_read) = read_socket_line(\*pipe_kill_read,1);
+        print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
+        if ($line_read eq "KILL"){
+            print("[oarexec $Job_id] Kill children\n");
+            if ($Job->{mode} eq "INTERACTIVE"){
+                $stop_loop = 1;
+            }else{
+                kill_children($pid);
+            }
+            $kill_myself = 1;
+        }elsif ($line_read eq "STOP"){
+            print("[oarexec $Job_id] Receive STOP notification\n");
+            if ($Job->{mode} eq "INTERACTIVE"){
+                $Stop_signal = 1;
+            }else{
+                print("[oarexec $Job_id] Receive USR1 signal so someone wants to finish this job but it is not an INTERACTIVE one\n");
+            }
+        }elsif ($line_read eq "CHECKPOINT"){
+            #We must send SIGUSR2 to the child of $pid
+            my ($tmp_hash, $tmp_cmd_hash) = oar_Tools::get_all_process_children();
+            my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
+            if (defined($pid_to_send_kill)){
+                print("[oarexec $Job_id] Send signal SIGUSR2 to the pid $pid_to_send_kill\n");
+                system({"oardodo"} "oardodo","kill","-s",$Job->{checkpoint_signal},$pid_to_send_kill);
+            }else{
+                print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
+                send_kill_signal_to_myself();
+            }
+            $Checkpoint_signal = 1;
+        }
+    }    
+}
+
+$SIG{CHLD} = 'DEFAULT';
+$SIG{TERM} = 'IGNORE';
+$SIG{INT}  = 'IGNORE';
+$SIG{QUIT} = 'IGNORE';
+$SIG{USR1} = 'DEFAULT';
+$SIG{USR2} = 'DEFAULT';
+close(pipe_script_read) if ($rin_script ne '');
+close(pipe_child_write);
+close(pipe_child_read);
+close(pipe_kill_write);
+close(pipe_kill_read);
+
+print("[oarexec $Job_id] Job Terminated\n");
+
+if (defined($Job->{epilogue})){
+    # Launch epilogue script
+    my $script_error = -1;
+    eval {
+        $SIG{ALRM} = sub { die "alarm\n" };
+        print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{job_user} $Node_file $Job->{walltime_seconds}\n");
+        alarm($Job->{pro_epi_timeout});
+        #$script_error = system("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
+        my $pid = fork();
+        if($pid == 0){
+            #CHILD
+            $SIG{ALRM} = 'DEFAULT';
+            exec("$Job->{epilogue} $Job_id $Job->{job_user} $Node_file");
+            warn("[ERROR] Cannot execute $Job->{epilogue}\n");
+            exit(-1);
+        }
+        my $wait_res = -1;
+        # Avaoid to be disrupted by a signal
+        while ((defined($pid)) and ($wait_res != $pid)){
+            $wait_res = waitpid($pid,0);
+            $script_error = $?;
+        }
+        alarm(0);
+        print("[oarexec $Job_id] END epilogue : $Job->{epilogue}\n");
+    };
+    if( $@ || ($script_error != 0)){
+        print("[oarexec $Job_id] Epilogue error : $@; return code = $script_error\n");
+        clean_all();
+        print("[oarexec $Job_id] Error in the OAR epilog execution\n");
+        if ($Kill_myself == 1){
+            quit_oarexec(4,$Job);
+        }elsif($Stop_signal == 1){
+            quit_oarexec(33,$Job);
+        }elsif($Checkpoint_signal == 1){
+            quit_oarexec(41,$Job);
+        }else{
+            quit_oarexec(2+$Oarexec_exit_code,$Job);
+        }
+    }
+}
+
+clean_all();
+if ($kill_myself == 1){
+    quit_oarexec(3,$Job);
+}elsif($Stop_signal == 1){
+    quit_oarexec(34,$Job);
+}elsif($Checkpoint_signal == 1){
+    quit_oarexec(40,$Job);
+}else{
+    quit_oarexec(0+$Oarexec_exit_code,$Job);
+}
+

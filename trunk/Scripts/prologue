@@ -1,0 +1,16 @@
+#!/bin/sh
+# $Id$
+#
+# This a placeholder script for OAR jobs prologue.
+# This script is to be run on the first node of a job, upon start.
+# This feature is activated if and only if PROLOGUE_EXEC_FILE is set in OAR
+# configuration file.
+#
+# Usage:
+# Script is run under uid of oar who is sudo
+# argv[1] is the jobid
+# argv[2] is the user's name
+# argv[3] is the file which contains the list of nodes used
+# argv[4] is the job walltime in seconds
+
+exit

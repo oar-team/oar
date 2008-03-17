@@ -1,0 +1,33 @@
+=head1 NAME
+
+oarresume - resume a job in OAR batch scheduler.
+
+=head1 SYNOPSIS
+
+B<oarresume> [job_ids][--sql "sql syntax"][-V][-h]
+
+=head1 DESCRIPTION
+
+Ask OAR to change job_ids states into Waiting when it is Hold or in Running if it is Suspended.
+
+=head1 OPTIONS
+
+=over
+
+=item B<--sql>
+
+Hold jobs which repond to the SQL where clause on the table jobs (ex: "project = 'p1'")
+
+=item B<-V, --version>
+
+Print OAR version number.
+
+=item B<-h, --help>
+
+Print help command message.
+
+oarsub(1), oardel(1) oarstat(1), oarnodes(1), oarhold(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2003 Laboratoire Id-Imag (http://www-id.imag.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
