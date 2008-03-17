@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id$
+# $Id: sarko 1123 2008-01-23 14:47:46Z emeras $
 #Almighty module : check walltimes and jobs to frag
 use strict;
 use DBI();

@@ -28,7 +28,7 @@
 ##  > print "toto = ".get_conf("toto")."\n" if is_conf("toto");
 ##
 ###############################################################################
-# $Id$
+# $Id: oar_conflib.pm 1112 2008-01-16 15:01:05Z emeras $
 package oar_conflib;
 
 use strict;

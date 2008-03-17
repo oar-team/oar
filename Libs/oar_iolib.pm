@@ -7,7 +7,7 @@
 # - the list of the return values
 # - the list of the side effects
 
-# $Id$
+# $Id: oar_iolib.pm 1206 2008-03-10 11:22:44Z capitn $
 package iolib;
 require Exporter;
 

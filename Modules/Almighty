@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id$
+# $Id: Almighty 1145 2008-02-02 17:25:15Z capitn $
 
 use strict;
 use Data::Dumper;

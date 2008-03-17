@@ -1,7 +1,7 @@
 package oar_Judas;
 require Exporter;
 # this module allows to log on a file and stdout with three different level
-# $Id$
+# $Id: oar_Judas.pm 1135 2008-01-24 15:19:05Z emeras $
 
 use strict;
 use Data::Dumper;

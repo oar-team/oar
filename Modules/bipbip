@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id$
+# $Id: bipbip 1123 2008-01-23 14:47:46Z emeras $
 #
 
 use oar_iolib;

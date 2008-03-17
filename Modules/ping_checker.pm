@@ -1,4 +1,4 @@
-# $Id$
+# $Id: ping_checker.pm 1107 2008-01-09 13:30:23Z emeras $
 package ping_checker;
 require Exporter;
 

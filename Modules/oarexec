@@ -1,4 +1,4 @@
-# $Id$
+# $Id: oarexec 1171 2008-02-22 15:03:43Z capitn $
 #script executed on the first reserved node
 # Exit codes are:
 #     - 0 : everything worked normally

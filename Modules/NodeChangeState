@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id$
+# $Id: NodeChangeState 1156 2008-02-09 15:31:55Z capitn $
 #Almighty module which changes node state
 
 use English;
