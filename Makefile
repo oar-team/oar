@@ -52,26 +52,26 @@ configuration:
 
 desktop-computing-agent:
 	install -d -m 0755 $(BINDIR)
-	install -m 0755 Misc/DesktopComputing/oar-agent.pl $(BINDIR)/oar-agent
+	install -m 0755 DesktopComputing/oar-agent.pl $(BINDIR)/oar-agent
 
 desktop-computing-cgi:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Misc/DesktopComputing/oarcache.pl $(OARDIR)/oarcache
+	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarcache
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarcache'\;#;;\
 				" $(SBINDIR)/oarcache
-	install -m 0755 Misc/DesktopComputing/oarres.pl $(OARDIR)/oarres
+	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarres
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarres'\;#;;\
 				" $(SBINDIR)/oares
-	install -m 0755 Misc/DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi.pl
+	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi.pl
 	install -d -m 0755 $(CGIDIR)
 	install -m 6750 -o $(OAROWNER) -g $(WWWUSER) Tools/oardo $(CGIDIR)/oar-cgi
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
@@ -131,9 +131,9 @@ libs: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -m 0644 Libs/oar_conflib.pm $(OARDIR)
-	install -m 0644 Libs/oar_iolib.pm $(OARDIR)
-	install -m 0644 Modules/oar_Judas.pm $(OARDIR)
+	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
+	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
+	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarnodesetting
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
@@ -155,17 +155,17 @@ server: man
 	install -d -m 0755 $(OARDIR)/schedulers
 	install -d -m 0755 $(OARCONFDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Modules/Almighty $(OARDIR)
+	install -m 0755 Almighty/Almighty $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/Almighty
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/Almighty'\;#;;\
 				" $(SBINDIR)/Almighty
-	install -m 0755 Modules/Leon	$(OARDIR)
-	install -m 0755 Modules/runner $(OARDIR)
-	install -m 0755 Modules/sarko $(OARDIR)
-	install -m 0755 Modules/finaud $(OARDIR)
+	install -m 0755 Leon/Leon	$(OARDIR)
+	install -m 0755 Runner/runner $(OARDIR)
+	install -m 0755 Sarko/sarko $(OARDIR)
+	install -m 0755 Sarko/finaud $(OARDIR)
 	install -m 0644 Scheduler/data_structures/Gantt_hole_storage.pm $(OARDIR)
 	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing $(OARDIR)/schedulers/oar_sched_gantt_with_timesharing
 	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
@@ -178,7 +178,7 @@ server: man
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnotify'\;#;;\
 				" $(SBINDIR)/oarnotify
-	install -m 0755 Modules/NodeChangeState $(OARDIR)
+	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
 	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarremoveresource
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
@@ -207,9 +207,9 @@ server: man
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarmonitor'\;#;;\
 				" $(SBINDIR)/oarmonitor
-	install -m 0755 Modules/bipbip $(OARDIR)
-	install -m 0644 Modules/ping_checker.pm $(OARDIR)
-	install -m 0644 Modules/oarexec $(OARDIR)
+	install -m 0755 Runner/bipbip $(OARDIR)
+	install -m 0644 Runner/ping_checker.pm $(OARDIR)
+	install -m 0644 Runner/oarexec $(OARDIR)
 	@if [ -f $(OARCONFDIR)/job_resource_manager.pl ]; then echo "Warning: $(OARCONFDIR)/job_resource_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/job_resource_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
 	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
@@ -301,14 +301,14 @@ node: man
 	install -m 0755 Tools/oarnodecheck/oarnodecheckcron $(OARDIR)
 	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*#CHECKSCRIPTDIR=$(REAL_OARCONFDIR)/check.d#" $(OARDIR)/oarnodecheckcron
 
-build-html-doc: Docs/documentation/
-	(cd Docs/documentation && $(MAKE) )
+build-html-doc: Docs/html/
+	(cd Docs/html && $(MAKE) )
 
 doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)
 	install -d -m 0755 $(DOCDIR)/html
-	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
-	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
+	install -m 0644 Docs/html/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
+	install -m 0644 Docs/html/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
 	install -m 0644 Docs/schemas/oar_logo.png $(DOCDIR)/html
 	install -m 0644 Docs/schemas/db_scheme.png $(DOCDIR)/html
 	install -m 0644 Docs/schemas/interactive_oarsub_scheme.png $(DOCDIR)/html
