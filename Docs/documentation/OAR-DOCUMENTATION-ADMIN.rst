@@ -1239,7 +1239,7 @@ Each configuration tag found in /etc/oar.conf is now described:
 
 .. include:: doc_internal_mechanisms.rst
       
-.. include:: ../../FAQ-ADMIN
+.. include:: FAQ-ADMIN
 
 .. include:: ../../CHANGELOG
 

@@ -190,7 +190,7 @@ CPUSET installation
     enables to restrict user processes only on reserved processors and clean
     correctly nodes after the job.
 
-.. include:: CPUSET
+.. include:: Docs/documentation/CPUSET
 
 Using Taktuk
 ------------

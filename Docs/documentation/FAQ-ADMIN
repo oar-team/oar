@@ -234,7 +234,7 @@ the OAR install directory (example with a bash shell)::
 
 How can I write my own scheduler?
 ---------------------------------
-.. include:: Scheduler/README
+.. include:: ../../Scheduler/README
 
 What is the syntax of this documentation?
 -----------------------------------------
