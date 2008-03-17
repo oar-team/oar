@@ -323,6 +323,6 @@ and to know when a job will be launched in the future.
 
 .. include:: doc_mechanisms.rst
 
-.. include:: FAQ-USER
+.. include:: ../../FAQ-USER
 
 .. include:: ../../CHANGELOG
