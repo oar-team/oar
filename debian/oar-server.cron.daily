@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Run OAR Accounting
-/usr/sbin/oaraccounting
