@@ -9,7 +9,7 @@ oarnodecheck is a simple local node check mechanism working as follows:
 * if and only if an error is detected, a checklog file must be created within
   the checklog directory (using the pathname defined by the CHECKLOGFILE
   environmenet variable)
-* the oarnodecheckcron must be run by cron (/etc/cron.hourly for instance) to
+* the oarnodecheckrun must be run by cron (on a hourly basis for instance) to
   execute all scripts of the directory of check scripts
 * the oarnodechecklist command lists the currently recorder check logs
 See the template script for a template of check script to place in the
