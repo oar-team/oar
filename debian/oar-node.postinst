@@ -31,17 +31,12 @@ if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
     cp /etc/ssh/ssh_host_rsa_key /etc/oar/oar_ssh_host_rsa_key
     cp /etc/ssh/ssh_host_rsa_key.pub /etc/oar/oar_ssh_host_rsa_key.pub
 fi
-chown oar:oar /etc/oar/oar_ssh_host_rsa_key
-chown oar:oar /etc/oar/oar_ssh_host_rsa_key.pub
 
 if [ ! -r /etc/oar/oar_ssh_host_dsa_key ]; then
     rm -f /etc/oar/oar_ssh_host_dsa_key.pub
     cp /etc/ssh/ssh_host_dsa_key /etc/oar/oar_ssh_host_dsa_key
     cp /etc/ssh/ssh_host_dsa_key.pub /etc/oar/oar_ssh_host_dsa_key.pub
 fi
-chown oar:oar /etc/oar/oar_ssh_host_dsa_key
-chown oar:oar /etc/oar/oar_ssh_host_dsa_key.pub
-
 
 cat << EOF
 
