@@ -8,5 +8,14 @@ if ! [ -d $CHECKLOGDIR ]; then
 	exit 1
 fi 
 	
-echo "Checklog directory is $CHECKLOGDIR"
-ls $CHECKLOGDIR
+echo "Checklogs list in $CHECKLOGDIR:"
+shopt -s nullglob
+cd $CHECKLOGDIR/
+for t in *; do
+	for f in *; do
+		echo "  $f"
+	done
+	exit 0
+done
+echo "  <empty>"
+exit 0
