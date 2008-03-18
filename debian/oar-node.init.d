@@ -18,6 +18,14 @@ DESC=oar-node
 OAR_SSHD_CONF="/etc/oar/sshd_config"
 SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/lib/oar/oar_sshd.pid"
 
+check_node() {
+    if ! oarnodecheckquery; then
+        echo "Not starting oar-node as some node checklogs are still to be taken into account"
+        echo "(See oarnodechecklist output)"
+        exit 1
+    fi
+}
+
 start_oar_node() {
     echo " * Edit start_oar_node function in /etc/default/oar-node if you want"
     echo "   to perform a specific action (e.g. to switch the node to Alive)"
@@ -38,6 +46,7 @@ set -e
 case "$1" in
   start)
     echo "Starting $DESC:"
+    check_node
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start-stop-daemon --start -N "-20" --quiet --pidfile /var/lib/oar/oar_sshd.pid --exec /usr/sbin/sshd -- $SSHD_OPTS; then
             echo " * OAR dedicated SSH server started."
