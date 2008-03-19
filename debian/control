@@ -37,7 +37,7 @@ Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xbase-clients
 Description: OAR batch scheduler user package
- This package install the submition and query part of the OAR batch scheduler
+ This package install the submission and query part of the OAR batch scheduler
 
 Package: oar-web-status
 Architecture: all
