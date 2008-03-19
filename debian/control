@@ -44,7 +44,7 @@ Architecture: all
 Depends: httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
- This package install the OAR batch scheduler Gantt reservation diagram CGI
+ This package install the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
 
 #Package: oar-desktop-computing-agent
 #Architecture: all
