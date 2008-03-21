@@ -1,4 +1,4 @@
-%define version 2.2.11
+%define version 2.3.0
 %define release 1
 
 Name: 		oar
@@ -69,7 +69,7 @@ Summary:	OAR batch scheduler doc package
 Group:          System/Servers
 Requires:       man
 BuildArch: 	noarch
-BuildRequires:  python-docutils
+BuildRequires:  python-docutils, apache
 %description doc
 This package install some documentation for OAR batch scheduler
 
@@ -79,7 +79,7 @@ cp %{_topdir}/SOURCES/Makefile.install .
 
 %build
 # Install into separated directories using a specific Makefile
-make -f Makefile.install pkginstall BUILDDIR=tmp
+make -f Makefile.install pkginstall BUILDDIR=tmp WWWUSER=apache
 mkdir -p $RPM_BUILD_ROOT
 # Reconstruct the whole system
 cp -a tmp/*/* $RPM_BUILD_ROOT/
