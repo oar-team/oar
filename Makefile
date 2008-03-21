@@ -248,7 +248,6 @@ user: man
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarstat'\;#;;\
 				" $(BINDIR)/oarstat
-	perl -i -pe "s#^OARSH_OARSTAT_CMD=.*#OARSH_OARSTAT_CMD=$(REAL_BINDIR)/oarstat#" $(OARDIR)/oarsh
 	install -m 0755 Qfunctions/oarsub $(OARDIR)
 	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarsub
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
