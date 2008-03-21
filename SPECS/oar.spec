@@ -96,6 +96,10 @@ done
 
 %files common -f oar-common.files
 %config %attr(0600,oar,root) /etc/oar/oar.conf 
+%verify(mode user group) /etc/oar/oar.conf
+%attr(6755,oar,oar) /usr/lib/oar/oarsh_oardo
+%attr(6750,root,oar) /usr/lib/oar/oardodo/oardodo
+%attr(6750,oar,oar) /usr/sbin/oarnodesetting
 
 %files server -f oar-server.files
 %config /etc/oar/job_resource_manager.pl
@@ -119,3 +123,27 @@ done
 %files doc -f oar-doc.files
 %docdir /usr/share/doc/oar-doc 
 
+%pre common
+# Set up the oar user
+if ! getent group oar > /dev/null 2>&1 ; then
+    groupadd oar
+fi
+if ! getent passwd oar > /dev/null 2>&1 ; then
+    useradd -r -d /var/lib/oar -g oar -s /bin/bash oar
+    cd /var/lib/oar
+    echo '' >> .bash_profile
+    echo 'export PATH="/usr/lib/oar/oardodo:$PATH"' >> .bash_profile
+    chown oar:oar /var/lib/oar/.bash_profile
+    ln -s -f .bash_profile .bashrc
+    chown oar:oar .bashrc
+fi
+chown oar:oar /var/lib/oar -R > /dev/null 2>&1
+# Create log and status files
+touch /var/log/oar.log && chown oar:root /var/log/oar.log && chmod 0644 /var/log/oar.log || true
+install -o oar -m 755 -d /var/run/oar
+
+%postun common
+userdel oar &> /dev/null || true
+groupdel oar &> /dev/null || true
+rm -f /var/log/oar.log* || true
+rm -rf /var/run/oar || true
