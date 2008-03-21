@@ -1,0 +1,91 @@
+#!/usr/bin/make -f
+#
+# Makefile for OAR package building
+# Intended to be distribution independent
+#
+
+BUILDDIR=tmp
+
+all:
+#nothing
+pkginstall:
+	$(MAKE) doc-install \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-doc/usr \
+		DOCDIR=$(CURDIR)/$(BUILDDIR)/oar-doc/usr/share/doc/oar-doc \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-common/var/lib/oar
+	$(MAKE) sanity-check common configuration libs \
+		OARUSER=oar \
+		OAROWNER=root \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-common/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-common/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-common/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-common/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-common/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-common/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(CURDIR)/$(BUILDDIR)/oar-common/etc/oar/oar.conf
+	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(CURDIR)/$(BUILDDIR)/oar-common/etc/oar/oar.conf
+	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-server/var/lib/oar
+	$(MAKE) sanity-check server dbinit\
+		OARUSER=oar \
+		OAROWNER=root \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-server/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-server/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-server/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-server/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-server/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-server/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-node/var/lib/oar
+	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-node/etc/init.d
+	$(MAKE) sanity-check node \
+		OARUSER=oar \
+		OAROWNER=root \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-node/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-node/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-node/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-node/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-node/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-node/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-user/var/lib/oar
+	$(MAKE) sanity-check user \
+		OARUSER=oar \
+		OAROWNER=root \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-user/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-user/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-user/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-user/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-user/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-user/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+	$(MAKE) draw-gantt monika \
+		OARUSER=oar \
+		OAROWNER=root \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/sbin \
+		WWWDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www \
+		CGIDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/lib/cgi-bin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
