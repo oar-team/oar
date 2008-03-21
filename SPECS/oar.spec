@@ -95,10 +95,27 @@ done
 #rm -rf tmp
 
 %files common -f oar-common.files
-%files server -f oar-server.files
-%files node -f oar-node.files
-%files user -f oar-user.files
-%files web-status -f oar-web-status.files
-%files doc -f oar-doc.files
+%config %attr(0600,oar,root) /etc/oar/oar.conf 
 
+%files server -f oar-server.files
+%config /etc/oar/job_resource_manager.pl
+%config /etc/oar/oarmonitor_sensor.pl
+%config /etc/oar/server_epilogue
+%config /etc/oar/server_prologue
+%config /etc/oar/suspend_resume_manager.pl
+
+%files node -f oar-node.files
+%config /etc/oar/epilogue
+%config /etc/oar/prologue
+%config /etc/oar/sshd_config
+%config /etc/oar/check.d
+
+%files user -f oar-user.files
+
+%files web-status -f oar-web-status.files
+%config /etc/oar/drawgantt.conf
+%config /etc/oar/monika.conf
+
+%files doc -f oar-doc.files
+%docdir /usr/share/doc/oar-doc 
 
