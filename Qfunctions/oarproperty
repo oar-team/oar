@@ -56,7 +56,9 @@ my $query;
 if (defined($List_properties)) {
     my %list = iolib::list_resource_properties_fields($base);
     foreach my $l (keys(%list)){
-        print("$l\n");
+        unless  (oar_Tools::check_resource_property($l) == 1){
+            print("$l\n");
+        }
     }
 }
 
