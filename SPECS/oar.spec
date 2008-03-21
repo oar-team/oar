@@ -68,7 +68,7 @@ This package install the OAR batch scheduler Gantt reservation diagram CGI: Draw
 %package doc
 Summary:	OAR batch scheduler doc package
 Group:          System/Servers
-Requires:       man
+Requires:       man, httpd
 BuildArch: 	noarch
 BuildRequires:  python-docutils, httpd
 %description doc
