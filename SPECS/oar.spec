@@ -61,6 +61,7 @@ Group:          System/Servers
 Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig
  # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8)
 BuildArch: 	noarch
+Provides:	perl(monika::Sort::Naturally), Monika, DrawGantt
 %description web-status
 This package install the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
 
@@ -69,7 +70,7 @@ Summary:	OAR batch scheduler doc package
 Group:          System/Servers
 Requires:       man
 BuildArch: 	noarch
-BuildRequires:  python-docutils, apache
+BuildRequires:  python-docutils, httpd
 %description doc
 This package install some documentation for OAR batch scheduler
 
