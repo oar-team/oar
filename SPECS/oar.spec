@@ -15,6 +15,7 @@ Url:            http://oar.imag.fr
 
 Source0: 	oar_%version.tar.gz
 Source1:	Makefile.install
+Source2:	oar-common.logrotate
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar xauth
 BuildArch: 	noarch
@@ -89,6 +90,7 @@ for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) > $package.files
 done
+install -D -o root -m 644 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
 
 %clean
 #rm -rf $RPM_BUILD_ROOT
@@ -97,6 +99,7 @@ done
 %files common -f oar-common.files
 %config %attr(0600,oar,root) /etc/oar/oar.conf 
 %verify(mode user group) /etc/oar/oar.conf
+%config %attr(0755,root,root) /etc/logrotate.d/oar
 %attr(6755,oar,oar) /usr/lib/oar/oarsh_oardo
 %attr(6750,root,oar) /usr/lib/oar/oardodo/oardodo
 %attr(6750,oar,oar) /usr/sbin/oarnodesetting
