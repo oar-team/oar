@@ -1,3 +1,4 @@
+# $Id: $
 %define version 2.3.0
 %define release 1
 
@@ -16,6 +17,11 @@ Url:            http://oar.imag.fr
 Source0: 	oar_%version.tar.gz
 Source1:	Makefile.install
 Source2:	oar-common.logrotate
+Source3:	oar-server.init.d
+Source4:	oar-server.cron.d
+Source5:	oar-server
+Source6:	oar-node.init.d
+Source7:	oar-node.cron.d
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar xauth
 BuildArch: 	noarch
@@ -80,51 +86,87 @@ This package install some documentation for OAR batch scheduler
 cp %{_topdir}/SOURCES/Makefile.install .
 
 %build
-# Install into separated directories using a specific Makefile
+# Install into separated directories using the provided makefile
 make -f Makefile.install pkginstall BUILDDIR=tmp WWWUSER=apache
-mkdir -p $RPM_BUILD_ROOT
 # Reconstruct the whole system
+mkdir -p $RPM_BUILD_ROOT
 cp -a tmp/*/* $RPM_BUILD_ROOT/
-# Get the file lists for every package
+# Get the file lists for every package (except those explicitely listed later)
+EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.pl\$\
+|oar/oardodo/oardodo\$|oarmonitor_sensor.pl\$|server_epilogue\$|server_prologue\$\
+|suspend_resume_manager.pl\$|bin/oarnotify\$|bin/oarremoveresource\$|bin/oaraccounting\$\
+|bin/Almighty\$|bin/oarnotify\$|bin/oarremoveresource\$|bin/oaraccounting\$\
+|bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
+|oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
+|bin/oarsub\$|bin/oarhold\$|bin/oarresume\$"
 for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc
 do
-  ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) > $package.files
+  ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
+    | egrep -v "$EXCEPTS" > $package.files
 done
-install -D -o root -m 644 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
+# Additional distribution dependent scripts
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.init.d $RPM_BUILD_ROOT/etc/init.d/oar-server
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc/init.d/oar-node
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
 
 %clean
-#rm -rf $RPM_BUILD_ROOT
-#rm -rf tmp
+rm -rf $RPM_BUILD_ROOT
+rm -rf tmp
+
+
+###### files and permissions ######
 
 %files common -f oar-common.files
 %config %attr(0600,oar,root) /etc/oar/oar.conf 
-%verify(mode user group) /etc/oar/oar.conf
 %config %attr(0755,root,root) /etc/logrotate.d/oar
 %attr(6755,oar,oar) /usr/lib/oar/oarsh_oardo
 %attr(6750,root,oar) /usr/lib/oar/oardodo/oardodo
 %attr(6750,oar,oar) /usr/sbin/oarnodesetting
 
 %files server -f oar-server.files
+%attr(0755,root,root) /etc/init.d/oar-server
 %config /etc/oar/job_resource_manager.pl
 %config /etc/oar/oarmonitor_sensor.pl
 %config /etc/oar/server_epilogue
 %config /etc/oar/server_prologue
 %config /etc/oar/suspend_resume_manager.pl
+%config /etc/cron.d/oar-server
+%attr (6750,oar,oar) /usr/sbin/Almighty
+%attr (6750,oar,oar) /usr/sbin/oarnotify
+%attr (6750,oar,oar) /usr/sbin/oarremoveresource
+%attr (6750,oar,oar) /usr/sbin/oaraccounting
+%attr (6750,oar,oar) /usr/sbin/oarproperty
+%attr (6750,oar,oar) /usr/sbin/oarmonitor
+%attr (0750,oar,oar) /usr/sbin/oar-server
 
 %files node -f oar-node.files
+%attr(0755,root,root) /etc/init.d/oar-node
 %config /etc/oar/epilogue
 %config /etc/oar/prologue
 %config /etc/oar/sshd_config
 %config /etc/oar/check.d
+%config /etc/cron.d/oar-node
 
 %files user -f oar-user.files
+%attr (6755,oar,oar) /usr/bin/oarnodes
+%attr (6755,oar,oar) /usr/bin/oardel
+%attr (6755,oar,oar) /usr/bin/oarstat
+%attr (6755,oar,oar) /usr/bin/oarsub
+%attr (6755,oar,oar) /usr/bin/oarhold
+%attr (6755,oar,oar) /usr/bin/oarresume
 
 %files web-status -f oar-web-status.files
-%config /etc/oar/drawgantt.conf
+%config %attr (0600,apache,root) /etc/oar/drawgantt.conf
 %config /etc/oar/monika.conf
 
 %files doc -f oar-doc.files
 %docdir /usr/share/doc/oar-doc 
+
+
+###### oar-common scripts ######
 
 %pre common
 # Set up the oar user
@@ -150,3 +192,66 @@ userdel oar &> /dev/null || true
 groupdel oar &> /dev/null || true
 rm -f /var/log/oar.log* || true
 rm -rf /var/run/oar || true
+
+
+###### oar-server scripts ######
+
+%post server
+# Set up ssh configuration
+if [ -e /var/lib/oar/.ssh ]; then
+    # Do nothing
+    :
+else
+    mkdir -p /var/lib/oar/.ssh
+    ssh-keygen -t rsa -q -f /var/lib/oar/.ssh/id_rsa -N '' || true
+    cat /var/lib/oar/.ssh/id_rsa.pub > /var/lib/oar/.ssh/authorized_keys || true
+    cat <<EOF > /var/lib/oar/.ssh/config || true
+Host *
+    ForwardX11 no
+    StrictHostKeyChecking no
+    PasswordAuthentication no
+    AddressFamily inet
+EOF
+    chown oar:oar /var/lib/oar/.ssh -R || true
+fi
+chkconfig --add oar-server
+
+%preun server
+/etc/init.d/oar-server stop || true
+
+
+###### oar-node scripts ######
+
+%post node
+# set OAR Shell
+chsh -s /usr/lib/oar/oarsh_shell oar
+# create oar sshd keys
+if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
+    rm -f /etc/oar/oar_ssh_host_rsa_key.pub
+    cp /etc/ssh/ssh_host_rsa_key /etc/oar/oar_ssh_host_rsa_key
+    cp /etc/ssh/ssh_host_rsa_key.pub /etc/oar/oar_ssh_host_rsa_key.pub
+fi
+
+if [ ! -r /etc/oar/oar_ssh_host_dsa_key ]; then
+    rm -f /etc/oar/oar_ssh_host_dsa_key.pub
+    cp /etc/ssh/ssh_host_dsa_key /etc/oar/oar_ssh_host_dsa_key
+    cp /etc/ssh/ssh_host_dsa_key.pub /etc/oar/oar_ssh_host_dsa_key.pub
+fi
+chkconfig --add oar-node
+
+%preun node
+/etc/init.d/oar-node stop || true
+
+%postun node
+chsh -s /bin/bash oar
+
+
+###### oar-web-status scripts ######
+
+%post web-status
+mkdir -p /var/www/drawgantt/cache && chown apache /var/www/drawgantt/cache || true
+
+
+%changelog
+* Sun Mar 23 2008 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.3.0-1
+- First RPM packaging for 2.3 branch. Inspired from 1.6 RPM packaging and 2.3 Debian packaging.
