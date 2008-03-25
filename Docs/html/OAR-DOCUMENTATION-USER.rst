@@ -241,6 +241,11 @@ on each one)
 variables)
 ::
 
+  #  oarsub -p "not host like 'nodename.%'"
+
+(To exclude a node from the request)
+::
+
   # oarsub -I
 
 (gives a shell on a resource)
