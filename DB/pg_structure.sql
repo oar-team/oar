@@ -271,7 +271,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL
 );
 
-# schema version, change here if you have updated the db schema
+-- schema version, change here if you have updated the db schema
 INSERT INTO schema ('2.3.0');
 
 CREATE INDEX resource_state ON resources (state);
