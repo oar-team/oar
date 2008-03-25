@@ -266,6 +266,11 @@ CREATE TABLE resources (
   cm_availability integer NOT NULL default '0',
   PRIMARY KEY (resource_id)
 );
+
+CREATE TABLE schema (
+  version VARCHAR( 255 ) NOT NULL
+);
+
 CREATE INDEX resource_state ON resources (state);
 CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);

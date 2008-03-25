@@ -295,3 +295,7 @@ INDEX log (job_dependency_index),
 PRIMARY KEY (job_id,job_id_required)
 );
 
+
+CREATE TABLE IF NOT EXISTS schema (
+version VARCHAR( 255 ) NOT NULL
+);
