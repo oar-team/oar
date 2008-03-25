@@ -1,3 +1,9 @@
+-- schema version, change here if you have updated the db schema
+CREATE TABLE schema (
+  version VARCHAR( 255 ) NOT NULL
+);
+INSERT INTO schema VALUES ('2.3.0');
+
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
   window_stop integer NOT NULL DEFAULT '0',
@@ -266,14 +272,6 @@ CREATE TABLE resources (
   cm_availability integer NOT NULL default '0',
   PRIMARY KEY (resource_id)
 );
-
-CREATE TABLE schema (
-  version VARCHAR( 255 ) NOT NULL
-);
-
--- schema version, change here if you have updated the db schema
-INSERT INTO schema ('2.3.0');
-
 CREATE INDEX resource_state ON resources (state);
 CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);

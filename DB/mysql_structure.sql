@@ -20,6 +20,13 @@
 
 #CONNECT oar;
 # Creation des tables dans la base de donnees oar
+
+# schema version, change here if you have updated the db schema
+CREATE TABLE IF NOT EXISTS schema (
+version VARCHAR( 255 ) NOT NULL
+);
+INSERT INTO schema VALUES ('2.3.0');
+
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
 job_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -294,12 +301,4 @@ INDEX id (job_id),
 INDEX log (job_dependency_index),
 PRIMARY KEY (job_id,job_id_required)
 );
-
-
-CREATE TABLE IF NOT EXISTS schema (
-version VARCHAR( 255 ) NOT NULL
-);
-
-# schema version, change here if you have updated the db schema
-INSERT INTO schema ('2.3.0');
 
