@@ -299,3 +299,7 @@ PRIMARY KEY (job_id,job_id_required)
 CREATE TABLE IF NOT EXISTS schema (
 version VARCHAR( 255 ) NOT NULL
 );
+
+# schema version, change here if you have updated the db schema
+INSERT INTO schema ('2.3.0');
+
