@@ -13,6 +13,7 @@ RETVAL=0
 DAEMON=/usr/sbin/oar-server
 DESC=oar-server
 PIDFILE=/var/run/oar-server.pid
+CONFIG=/etc/oar/oar.conf
 
 test -x $DAEMON || exit 0
 
@@ -21,6 +22,38 @@ test -x $DAEMON || exit 0
 
 # Set sysconfig settings
 [ -f /etc/sysconfig/oar ] && . /etc/sysconfig/oar
+
+check_sql() {
+        echo -n "Checking oar SQL base: "
+	if [ -f $CONFIG ] && . $CONFIG ; then
+           :
+        else
+          echo -n "Error loading $CONFIG"
+          failure
+          exit 1
+        fi
+        if [ "$DB_TYPE" = "mysql" -o "$DB_TYPE" = "Pg" ] ; then
+          perl <<EOS && success || failure 
+          \$ENV{PERL5LIB} = "/usr/lib/oar";
+          \$ENV{OARCONFFILE} = "/etc/oar/oar.conf";
+          use oar_iolib;
+          if (iolib::connect_db("$DB_HOSTNAME","$DB_BASE_NAME","$DB_BASE_LOGIN","$DB_BASE_PASSWD",0)) { exit 0; }
+          else { exit 1; }
+EOS
+        else
+          echo -n "Unknown $DB_TYPE database type"
+          failure
+          exit 1
+        fi
+}
+
+sql_init_error_msg (){
+  echo
+  echo "OAR database seems to be unreachable." 
+  echo "Did you forget to initialize it or to configure the oar.conf file?"
+  echo "See http://oar.imag.fr/docs/manual.html#configuration-of-the-cluster for more infos"
+  exit 1
+}
 
 start() {
         echo -n "Starting $DESC: "
@@ -38,7 +71,7 @@ stop() {
             killall -9 Almighty 2>/dev/null
             RETVAL=3
         else
-            failure "Stopping $DESC"
+            failure $"Stopping $DESC"
         fi
         RETVAL=$?
         echo
@@ -46,6 +79,7 @@ stop() {
 
 case "$1" in
   start)
+        check_sql || sql_init_error_msg
         start
         ;;
   stop)
