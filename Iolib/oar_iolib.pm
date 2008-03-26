@@ -197,6 +197,27 @@ sub connect_db($$$$$$) {
     my $user = shift;
     my $pwd = shift;
     my $debug_level = shift;
+    
+    if($host=~m/;/){
+    	my $oldHost = $host;
+			$host=~s/;.*//;
+			oar_error("[IOlib] Error reading $oldHost attribute from OAR configuration file, using $host instead.\n");
+		}
+		if($dbport=~m/;/){
+			my $oldDbport = $dbport;
+			$dbport=~s/;.*//;
+			oar_error("[IOlib] Error reading $oldDbport attribute from OAR configuration file, using $dbport instead.\n");
+		}
+		if($name=~m/;/){
+			my $oldname = $name;
+			$name=~s/;.*//;
+			oar_error("[IOlib] Error reading $oldname attribute from OAR configuration file, using $name instead.\n");
+		}
+		if($user=~m/;/){
+			my $olduser = $user;
+			$user=~s/;.*//;
+			oar_error("[IOlib] Error reading $olduser attribute from OAR configuration file, using $user instead.\n");
+		}
 
     my $printerror = 0;
     if (defined($debug_level) and ($debug_level >= 3)){
