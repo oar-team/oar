@@ -54,9 +54,10 @@ sub get_properties_values($$) {
     my @result;
     my $sth;
     if ($Db_type eq "Pg"){
-      $sth = $dbh->prepare("SELECT a.attname
-                               FROM pg_class AS c, pg_attribute AS a 
-                               WHERE relname = 'resources' AND c.oid = a.attrelid AND a.attnum > 0;");
+      #$sth = $dbh->prepare("SELECT a.attname
+      #                         FROM pg_class AS c, pg_attribute AS a 
+      #                         WHERE relname = 'resources' AND c.oid = a.attrelid AND a.attnum > 0;");
+      $sth = $dbh->prepare("SELECT column_name AS field FROM information_schema.columns WHERE table_name = \'resources\'");
     }
     else{
       $sth = $dbh->prepare("DESC resources"); 
@@ -65,12 +66,12 @@ sub get_properties_values($$) {
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()){
       my $current_value;
-      if ($Db_type eq "Pg"){
-        $current_value = $ref->{'attname'};
-      }
-      else{
-        $current_value = $ref->{'Field'};
-      }
+      #if ($Db_type eq "Pg"){
+      #  $current_value = $ref->{'attname'};
+      #}
+      #else{
+      $current_value = $ref->{'Field'};
+      #}
       unless (defined($excluded->{$current_value})){
         push(@result, $current_value);
       }
