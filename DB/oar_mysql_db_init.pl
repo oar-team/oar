@@ -38,6 +38,7 @@ admission rules insertion and $default_data for the default data\n";
 
 init_conf($ENV{OARCONFFILE});
 my $dbHost = get_conf("DB_HOSTNAME");
+my $dbPort = get_conf("DB_PORT");
 my $dbName = get_conf("DB_BASE_NAME");
 my $dbUserName = get_conf("DB_BASE_LOGIN");
 my $dbUserPassword = get_conf("DB_BASE_PASSWD");
@@ -45,6 +46,7 @@ my $dbUserPassword = get_conf("DB_BASE_PASSWD");
 print "## Initializing OAR MySQL database ##\n";
 print "Retrieving OAR base configuration for OAR configuration file:\n";
 print "\tMySQL server hostname: $dbHost\n";
+print "\tMySQL server port: $dbPort\n";
 print "\tOAR base name: $dbName\n";
 print "\tOAR base login: $dbUserName\n";
 
@@ -63,7 +65,7 @@ print("\n");
 system("tty &> /dev/null && stty echo");
 
 # Connect to the database.
-my $dbh = DBI->connect("DBI:mysql:database=mysql;host=$dbHost", $dbLogin, $dbPassword, {'RaiseError' => 0});
+my $dbh = DBI->connect("DBI:mysql:database=mysql;host=$dbHost;port=$dbPort", $dbLogin, $dbPassword, {'RaiseError' => 0});
 my $query;
 # Database creation
 $dbh->do("CREATE DATABASE IF NOT EXISTS $dbName") or die $dbh->errstr;
@@ -79,26 +81,26 @@ $dbh->do('GRANT CREATE TEMPORARY TABLES, LOCK TABLES ON '.$dbName.'.* TO '.$dbUs
 $dbh->disconnect();
 
 # Connection to the oar database with oar user
-$dbh = DBI->connect("DBI:mysql:database=$dbName;host=$dbHost", $dbLogin, $dbPassword, {'RaiseError' => 1});
+$dbh = DBI->connect("DBI:mysql:database=$dbName;host=$dbHost;port=$dbPort", $dbLogin, $dbPassword, {'RaiseError' => 1});
 
 if (-r $mysqlFile){
-	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $mysqlFile");
+	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $mysqlFile");
 	if ($? != 0){
-		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $mysqlFile; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $mysqlFile; \$?=$?, $! \n");
 	}
 }else{
 	die("[ERROR] Database installation : can't open $mysqlFile \n");
 }
 if (-r $admission_rules_file){
-	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $admission_rules_file");
+	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $admission_rules_file");
 	if ($? != 0){
-		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $admission_rules_file; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $admission_rules_file; \$?=$?, $! \n");
 	}
 }
 if (-r $default_data){
-	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $default_data");
+	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $default_data");
 	if ($? != 0){
-		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -D$dbName < $default_data; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $default_data; \$?=$?, $! \n");
 	}
 }
 $dbh->disconnect();

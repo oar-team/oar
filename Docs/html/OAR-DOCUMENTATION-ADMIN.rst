@@ -895,6 +895,10 @@ Each configuration tag found in /etc/oar.conf is now described:
   - Database hostname::
   
       DB_HOSTNAME=localhost
+      
+	- Database port::
+  
+      DB_PORT=3306
 
   - Database base name::
   

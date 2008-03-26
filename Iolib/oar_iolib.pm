@@ -190,8 +190,9 @@ my $Max_db_connection_timeout = 10;
 # connect_db
 # Connects to database and returns the base identifier
 # return value : base
-sub connect_db($$$$$) {
+sub connect_db($$$$$$) {
     my $host = shift;
+    my $dbport = shift;
     my $name = shift;
     my $user = shift;
     my $pwd = shift;
@@ -203,7 +204,7 @@ sub connect_db($$$$$) {
     }
 
     my $type;
-    if ($Db_type eq "Pg"){
+    if ($Db_type eq "Pg" || $Db_type eq "psql"){
         $type = "Pg";
     }elsif ($Db_type eq "mysql"){
         $type = "mysql";
@@ -213,7 +214,7 @@ sub connect_db($$$$$) {
         $Db_type = "mysql";
     }
 
-    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
+    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host;port=$dbport", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
     
     if (!defined($dbh)){
         oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
@@ -242,6 +243,7 @@ sub connect() {
         init_conf($ENV{OARCONFFILE});
 
         my $host = get_conf("DB_HOSTNAME");
+        my $dbport = get_conf("DB_PORT");
         my $name = get_conf("DB_BASE_NAME");
         my $user = get_conf("DB_BASE_LOGIN");
         my $pwd = get_conf("DB_BASE_PASSWD");
@@ -252,7 +254,7 @@ sub connect() {
         $Remote_host = get_conf("SERVER_HOSTNAME");
         $Remote_port = get_conf("SERVER_PORT");
 
-        $dbh = connect_db($host,$name,$user,$pwd,$log_level);
+        $dbh = connect_db($host,$dbport,$name,$user,$pwd,$log_level);
     }
     return($dbh);
 }
@@ -271,6 +273,7 @@ sub connect_ro() {
         init_conf($ENV{OARCONFFILE});
 
         my $host = get_conf("DB_HOSTNAME");
+        my $dbport = get_conf("DB_PORT");
         my $name = get_conf("DB_BASE_NAME");
         my $user = get_conf("DB_BASE_LOGIN_RO");
         $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
@@ -283,7 +286,7 @@ sub connect_ro() {
         $Remote_host = get_conf("SERVER_HOSTNAME");
         $Remote_port = get_conf("SERVER_PORT");
 
-        $dbh = connect_db($host,$name,$user,$pwd,$log_level);
+        $dbh = connect_db($host,$dbport,$name,$user,$pwd,$log_level);
     }
     return($dbh);
 }

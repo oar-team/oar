@@ -46,35 +46,37 @@ my $default_data = $binpath.'default_data.sql';
 
 init_conf($conffile);
 my $dbHost = get_conf("DB_HOSTNAME");
+my $dbPort = get_conf("DB_PORT");
 my $dbName = get_conf("DB_BASE_NAME");
 my $dbUserName = get_conf("DB_BASE_LOGIN");
 my $dbUserPassword = get_conf("DB_BASE_PASSWD");
 print "## Initializing OAR Pg database ##\n";
 print "Retrieving OAR base configuration for OAR configuration file:\n";
 print "\tPg server hostname: $dbHost\n";
+print "\tPg server port: $dbPort\n";
 print "\tOAR base name: $dbName\n";
 print "\tOAR base login: $dbUserName\n";
 $| = 1;
 
 
 if (-r $sqlFile){
-	system("psql -U$dbUserName -h$dbHost -d$dbName -f$sqlFile");
+	system("psql -U$dbUserName -h$dbHost -P$dbPort -d$dbName -f$sqlFile");
 	if ($? != 0){
-		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -d$dbName -f$sqlFile ; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -P$dbPort -d$dbName -f$sqlFile ; \$?=$?, $! \n");
 	}
 }else{
 	die("[ERROR] Database installation : can't open $sqlFile \n");
 }
 if (-r $admission_rules_file){
-	system("psql -U$dbUserName -h$dbHost -d$dbName -f$admission_rules_file");
+	system("psql -U$dbUserName -h$dbHost -P$dbPort -d$dbName -f$admission_rules_file");
 	if ($? != 0){
-		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -d$dbName -f$admission_rules_file ; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -P$dbPort -d$dbName -f$admission_rules_file ; \$?=$?, $! \n");
 	}
 }
 if (-r $default_data){
-	system("psql -U$dbUserName -h$dbHost -d$dbName -f$default_data");
+	system("psql -U$dbUserName -h$dbHost -P$dbPort -d$dbName -f$default_data");
 	if ($? != 0){
-		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -d$dbName -f$default_data ; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : psql -U$dbUserName -h$dbHost -P$dbPort -d$dbName -f$default_data ; \$?=$?, $! \n");
 	}
 }
 print "done.\n";
