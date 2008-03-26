@@ -1,7 +1,7 @@
 #
 # cron.d/oar-server -- schedules OAR accounting data mining
 # 
-# $Id: oar-server.cron.d 1235 2008-03-18 10:03:12Z neyron $
+# $Id$
 
 # By default, run every hours
 0 * * * * root [ -x /usr/sbin/oaraccounting ] && /usr/sbin/oaraccounting

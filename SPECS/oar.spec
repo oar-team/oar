@@ -1,4 +1,4 @@
-# $Id: $
+# $Id$
 %define version 2.3.0
 %define release 1
 
