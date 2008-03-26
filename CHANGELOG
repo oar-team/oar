@@ -37,6 +37,9 @@ upstream development version:
   - New feature: local checks on nodes can be plugged in the oarnodecheck
     mechanism. Results are asynchronously checked from the server (taktuk
     ping checker)
+  - Monika refactoring and now in the oar packaging.
+  - Added a table schema in the db with the field version, reprensenting the 
+  	version of the db schema. 
 
 version 2.2.12:
 ---------------
