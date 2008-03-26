@@ -3538,13 +3538,16 @@ sub list_resource_properties_fields($){
     
     my $req;
     if ($Db_type eq "Pg"){
-        $req = "SELECT pg_attribute.attname AS field
-                FROM pg_class, pg_attribute
-                WHERE
-                    pg_class.relname = \'resources\'
-                    and pg_attribute.attnum > 0
-                    and pg_attribute.attrelid = pg_class.oid
-               ";
+#        $req = "SELECT pg_attribute.attname AS field
+#                FROM pg_class, pg_attribute
+#                WHERE
+#                    pg_class.relname = \'resources\'
+#                    and pg_attribute.attnum > 0
+#                    and pg_attribute.attrelid = pg_class.oid
+#               ";
+
+				$req = "SELECT column_name AS field FROM information_schema.columns WHERE table_name = \'resources\'";
+
     }else{
         $req = "SHOW COLUMNS FROM resources";
     }
