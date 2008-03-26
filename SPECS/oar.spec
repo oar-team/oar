@@ -111,6 +111,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
+mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -149,6 +150,7 @@ rm -rf tmp
 %config /etc/oar/sshd_config
 %config /etc/oar/check.d
 %config /etc/cron.d/oar-node
+%config /var/lib/oar/checklogs
 
 %files user -f oar-user.files
 %attr (6755,oar,oar) /usr/bin/oarnodes
@@ -217,7 +219,7 @@ fi
 chkconfig --add oar-server
 
 %preun server
-/etc/init.d/oar-server stop || true
+/etc/init.d/oar-server stop 2>/dev/null || true
 
 
 ###### oar-node scripts ######
@@ -240,10 +242,10 @@ fi
 chkconfig --add oar-node
 
 %preun node
-/etc/init.d/oar-node stop || true
+/etc/init.d/oar-node stop 2>/dev/null|| true
 
 %postun node
-chsh -s /bin/bash oar
+chsh -s /bin/bash oar 2>/dev/null || true
 
 
 ###### oar-web-status scripts ######

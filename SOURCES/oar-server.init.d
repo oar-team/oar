@@ -33,9 +33,9 @@ check_sql() {
           exit 1
         fi
         if [ "$DB_TYPE" = "mysql" -o "$DB_TYPE" = "Pg" ] ; then
+          export PERL5LIB="/usr/lib/oar"
+          export OARCONFFILE="$CONFIG"
           perl <<EOS && success || failure 
-          \$ENV{PERL5LIB} = "/usr/lib/oar";
-          \$ENV{OARCONFFILE} = "/etc/oar/oar.conf";
           use oar_iolib;
           if (iolib::connect_db("$DB_HOSTNAME","$DB_BASE_NAME","$DB_BASE_LOGIN","$DB_BASE_PASSWD",0)) { exit 0; }
           else { exit 1; }
