@@ -20,15 +20,19 @@ my $nodes_synonym;
 ###########################################################################################
 
 # Creates a connection to the DB and returns it
-sub dbConnection($$$$$){
+sub dbConnection($$$$$$){
     my $host = shift;
+    my $port = shift;
     my $dbtype = shift;
     my $dbname = shift;
     my $user = shift;
     my $pwd = shift;
+    if($dbtype eq "psql"){
+    	$dbtype = "Pg";
+    }
     $Db_type = $dbtype;
     $nodes_synonym = monika::Conf::myself->nodes_synonym;
-    my $dbh= DBI->connect("DBI:$dbtype:database=$dbname;host=$host", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
+    my $dbh= DBI->connect("DBI:$dbtype:database=$dbname;host=$host;port=$port", $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
 }
 sub dbDisconnect($) {

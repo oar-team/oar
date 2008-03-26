@@ -58,3 +58,46 @@ Connecting to our job
 	Last login: Wed Mar  7 08:52:18 2007 from idpot9.imag.fr
 	jdoe@idpot5:~$
 
+
+Batch mode job
+--------------
+
+Submission using a script
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+	jdoe@paramount:~$ oarsub -l core=10 runhpl/runhpl
+	Generate a job key...
+	[ADMISSION RULE] Set default walltime to 3600.
+	[ADMISSION RULE] Modify resource description with type constraints
+	OAR_JOB_ID=199522
+
+Watching results
+~~~~~~~~~~~~~~~~
+
+::
+
+	jdoe@paramount:~$ cat OAR.199522.stdout
+	...
+
+Submission using an inline command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes it is very useful to run a little command in oarsub:
+::
+
+	jdoe@paramount:~$ oarsub -l core=1 'echo $PATH;which ssh
+	Generate a job key...
+	[ADMISSION RULE] Set default walltime to 3600.
+	[ADMISSION RULE] Modify resource description with type constraints
+	OAR_JOB_ID=199523
+
+Watching results
+~~~~~~~~~~~~~~~~
+
+::
+
+	jdoe@paramount:~$ cat OAR.199523.stdout
+	...
+
