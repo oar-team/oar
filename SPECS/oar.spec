@@ -22,6 +22,7 @@ Source4:	oar-server.cron.d
 Source5:	oar-server
 Source6:	oar-node.init.d
 Source7:	oar-node.cron.d
+Source8:	oar-node.sysconfig
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar xauth
 BuildArch: 	noarch
@@ -111,6 +112,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean

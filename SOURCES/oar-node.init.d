@@ -17,8 +17,20 @@ SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=/var/lib/oar/oar_sshd.pid"
 # Source function library.
 . /etc/init.d/functions
 
+
+start_oar_node() {
+    echo " * Edit start_oar_node function in /etc/sysconfig/oar-node if you want"
+    echo "   to perform a specific action (e.g. to switch the node to Alive)"
+}
+
+stop_oar_node() {
+    echo " * Edit stop_oar_node function in /etc/sysconfig/oar-node if you want"
+    echo "   to perform a specific action (e.g. to switch the node to Absent)"
+}
+
+
 # Set sysconfig settings
-[ -f /etc/sysconfig/oar ] && . /etc/sysconfig/oar
+[ -f /etc/sysconfig/oar-node ] && . /etc/sysconfig/oar-node
 
 start() {
         echo -n "Starting $DESC: "
@@ -55,9 +67,11 @@ reload() {
 case "$1" in
   start)
         start
+        start_oar_node
         ;;
   stop)
         stop
+        stop_oar_node
         ;;
   reload)
         reload
