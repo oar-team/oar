@@ -57,7 +57,7 @@ sub get_properties_values($$) {
       #$sth = $dbh->prepare("SELECT a.attname
       #                         FROM pg_class AS c, pg_attribute AS a 
       #                         WHERE relname = 'resources' AND c.oid = a.attrelid AND a.attnum > 0;");
-      $sth = $dbh->prepare("SELECT column_name AS field FROM information_schema.columns WHERE table_name = \'resources\'");
+      $sth = $dbh->prepare("SELECT column_name AS Field FROM information_schema.columns WHERE table_name = \'resources\'");
     }
     else{
       $sth = $dbh->prepare("DESC resources"); 
