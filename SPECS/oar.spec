@@ -23,6 +23,7 @@ Source5:	oar-server
 Source6:	oar-node.init.d
 Source7:	oar-node.cron.d
 Source8:	oar-node.sysconfig
+Source9:	oar-server.sysconfig
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar xauth
 BuildArch: 	noarch
@@ -113,6 +114,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
@@ -136,7 +138,7 @@ rm -rf tmp
 %config /etc/oar/server_epilogue
 %config /etc/oar/server_prologue
 %config /etc/oar/suspend_resume_manager.pl
-%config /etc/cron.d/oar-server
+%config %attr(0644,root,root) /etc/cron.d/oar-server
 %attr (6750,oar,oar) /usr/sbin/Almighty
 %attr (6750,oar,oar) /usr/sbin/oarnotify
 %attr (6750,oar,oar) /usr/sbin/oarremoveresource
@@ -144,6 +146,7 @@ rm -rf tmp
 %attr (6750,oar,oar) /usr/sbin/oarproperty
 %attr (6750,oar,oar) /usr/sbin/oarmonitor
 %attr (0750,oar,oar) /usr/sbin/oar-server
+%config /etc/sysconfig/oar-server
 
 %files node -f oar-node.files
 %attr(0755,root,root) /etc/init.d/oar-node
@@ -151,8 +154,9 @@ rm -rf tmp
 %config /etc/oar/prologue
 %config /etc/oar/sshd_config
 %config /etc/oar/check.d
-%config /etc/cron.d/oar-node
+%config %attr(0644,root,root) /etc/cron.d/oar-node
 %config /var/lib/oar/checklogs
+%config /etc/sysconfig/oar-node
 
 %files user -f oar-user.files
 %attr (6755,oar,oar) /usr/bin/oarnodes

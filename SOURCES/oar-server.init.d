@@ -21,7 +21,7 @@ test -x $DAEMON || exit 0
 . /etc/init.d/functions
 
 # Set sysconfig settings
-[ -f /etc/sysconfig/oar ] && . /etc/sysconfig/oar
+[ -f /etc/sysconfig/oar-server ] && . /etc/sysconfig/oar-server
 
 check_sql() {
         echo -n "Checking oar SQL base: "
