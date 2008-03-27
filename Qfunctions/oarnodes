@@ -67,7 +67,7 @@ GetOptions ("state|s" => \$stateMode,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
             "dumper|D" => \$DUMPER_mode,
-            "backward_compatible" => \$Old,
+            "backward-compatible" => \$Old,
             "smp" => \$smp,
             "version|V" => \$Version
            );
@@ -75,7 +75,7 @@ GetOptions ("state|s" => \$stateMode,
 if ($usage){
     print <<EOS;
 Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -V ]
-[list of nodes] [-X | -Y | -D] | --backward_compatible [--smp]]
+[list of nodes] [-X | -Y | -D] | --backward-compatible [--smp]]
 Display node informations
 Options:
  -a, --all          show all nodes with their properties
@@ -87,8 +87,8 @@ Options:
  -D, --dumper       print result in DUMPER format
  -X, --xml          print result in XML format
  -Y, --yaml         print result in YAML format
-     --backward_compatible print informations of the form of 1.* OAR version
-     --smp          backward_compatible suboption: prints one node per resource
+     --backward-compatible print informations of the form of 1.* OAR version
+     --smp          backward-compatible suboption: prints one node per resource
                     (usefull for big smp systems) 
  -h, --help         show this help screen
  -V, --version      print OAR version number
