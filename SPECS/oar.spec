@@ -182,7 +182,7 @@ if ! getent group oar > /dev/null 2>&1 ; then
     groupadd oar
 fi
 if ! getent passwd oar > /dev/null 2>&1 ; then
-    useradd -r -d /var/lib/oar -g oar -s /bin/bash oar
+    useradd -r -m -d /var/lib/oar -g oar -s /bin/bash oar
     cd /var/lib/oar
     echo '' >> .bash_profile
     echo 'export PATH="/usr/lib/oar/oardodo:$PATH"' >> .bash_profile
