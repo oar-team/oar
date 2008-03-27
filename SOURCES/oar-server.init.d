@@ -37,7 +37,7 @@ check_sql() {
           export OARCONFFILE="$CONFIG"
           perl <<EOS && success || failure 
           use oar_iolib;
-          if (iolib::connect_db("$DB_HOSTNAME","$DB_BASE_NAME","$DB_BASE_LOGIN","$DB_BASE_PASSWD",0)) { exit 0; }
+          if (iolib::connect_db("$DB_HOSTNAME","$DB_PORT","$DB_BASE_NAME","$DB_BASE_LOGIN","$DB_BASE_PASSWD",0)) { exit 0; }
           else { exit 1; }
 EOS
         else
