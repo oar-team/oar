@@ -35,7 +35,7 @@ stop_oar_node() {
 start() {
         echo -n "Starting $DESC: "
         if [ -f "$OAR_SSHD_CONF" ] ; then
-            daemon --pidfile /var/lib/oar/oar_sshd.pid /usr/sbin/sshd $SSHD_OPTS && success || failure
+            daemon --force /usr/sbin/sshd $SSHD_OPTS && success || failure
             RETVAL=$?
             echo
         else 
@@ -45,7 +45,7 @@ start() {
 stop() {
         echo -n "Stopping $DESC: "
         if [ -n "`cat /var/lib/oar/oar_sshd.pid 2>/dev/null`" ]; then
-            killproc -p /var/lib/oar/oar_sshd.pid
+            kill `cat /var/lib/oar/oar_sshd.pid` && success || failure
             RETVAL=3
         else
             failure $"Stopping $DESC"
