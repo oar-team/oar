@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0
+%define version 2.3.0+svn1280
 %define release 1
 
 Name: 		oar
@@ -110,7 +110,7 @@ done
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.init.d $RPM_BUILD_ROOT/etc/init.d/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc/init.d/oar-node
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin
+install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
