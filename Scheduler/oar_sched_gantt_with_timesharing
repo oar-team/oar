@@ -121,8 +121,8 @@ sub parse_timesharing($$$){
 }
 
 # Take care of currently scheduled jobs (gantt in the database)
-my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($base);
-foreach my $i (keys(%already_scheduled_jobs)){
+my ($order,%already_scheduled_jobs) = iolib::get_gantt_scheduled_jobs($base);
+foreach my $i (@{$order}){
     my $types = iolib::get_current_job_types($base,$i);
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){

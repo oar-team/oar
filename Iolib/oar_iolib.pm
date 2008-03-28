@@ -3976,6 +3976,7 @@ sub get_gantt_scheduled_jobs($){
                             ");
     $sth->execute();
     my %res ;
+    my @order;
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($res{$ref[0]})){
             $res{$ref[0]}->[0] = $ref[1];
@@ -3987,12 +3988,13 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[6] = $ref[7];
             $res{$ref[0]}->[7] = $ref[8];
             $res{$ref[0]}->[8] = $ref[9];
+            push(@order,$ref[0]);
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
     }
     $sth->finish();
 
-    return(%res);
+    return(\@order, %res);
 }
 
 

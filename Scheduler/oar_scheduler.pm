@@ -367,7 +367,7 @@ sub check_reservation_jobs($$$$){
     if ($#jobs_to_sched >= 0){
         # Build gantt diagram of other jobs
         # Take care of currently scheduled jobs except besteffort jobs if queue_name is not besteffort
-        my %already_scheduled_jobs = iolib::get_gantt_scheduled_jobs($dbh);
+        my ($order, %already_scheduled_jobs) = iolib::get_gantt_scheduled_jobs($dbh);
         foreach my $i (keys(%already_scheduled_jobs)){
             my $types = iolib::get_current_job_types($dbh,$i);
             if ((! defined($types->{besteffort})) or ($queue_name eq "besteffort")){
