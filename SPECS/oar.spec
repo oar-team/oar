@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1280
+%define version 2.3.0+svn1286
 %define release 1
 
 Name: 		oar
@@ -118,7 +118,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROO
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROOT/*
 rm -rf tmp
 
 
@@ -179,9 +179,10 @@ rm -rf tmp
 %pre common
 # Set up the oar user
 if ! getent group oar > /dev/null 2>&1 ; then
-    groupadd oar
+    groupadd -r oar
 fi
 if ! getent passwd oar > /dev/null 2>&1 ; then
+    mkdir -p /var/lib/oar
     useradd -r -m -d /var/lib/oar -g oar -s /bin/bash oar
     cd /var/lib/oar
     echo '' >> .bash_profile
