@@ -3801,7 +3801,7 @@ sub get_absent_suspected_resources_for_a_timeout($$){
                 FROM resource_logs
                 WHERE
                     attribute = \'state\'
-                    date_stop = 0
+                    AND date_stop = 0
                     AND date_start + $timeout < $date
               ";
     my $sth = $dbh->prepare($req);
