@@ -1,8 +1,8 @@
--- schema version, change here if you have updated the db schema
-CREATE TABLE schema (
+-- info version, change here if you have updated the db schema
+CREATE TABLE info (
   version VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.3.0');
+INSERT INTO info VALUES ('2.3.0');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,

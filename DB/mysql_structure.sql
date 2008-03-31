@@ -22,10 +22,10 @@
 # Creation des tables dans la base de donnees oar
 
 # schema version, change here if you have updated the db schema
-CREATE TABLE IF NOT EXISTS schema (
+CREATE TABLE IF NOT EXISTS info (
 version VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.3.0');
+INSERT INTO info VALUES ('2.3.0');
 
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
