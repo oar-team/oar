@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: oar_pg_db_init.pl 2008-01-03 07:46 emeras $
+# $Id$
 #
 
 use strict;

@@ -1,3 +1,4 @@
+-- $Id$
 -- info version, change here if you have updated the db schema
 CREATE TABLE info (
   version VARCHAR( 255 ) NOT NULL
