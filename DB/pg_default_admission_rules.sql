@@ -1,5 +1,5 @@
 -- Default admission rules for OAR 2
--- $Id: default_admission_rules.sql 807 2007-09-13 14:03:22Z capitn $
+-- $Id$
 
 DROP TABLE IF EXISTS admission_rules;
 CREATE TABLE admission_rules (
@@ -168,7 +168,7 @@ if ($reservationField eq "toSchedule") {
 -- Limit walltime for interactive jobs
 INSERT INTO admission_rules (rule) VALUES ('
 my $max_walltime = iolib::sql_to_duration("12:00:00");
-if ($jobType eq "INTERACTIVE"){ 
+if (($jobType eq "INTERACTIVE") and ($reservationField eq "None")){ 
     foreach my $mold (@{$ref_resource_list}){
         if ((defined($mold->[1])) and ($max_walltime < $mold->[1])){
             print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
