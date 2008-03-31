@@ -8,13 +8,27 @@ rule TEXT NOT NULL,
 PRIMARY KEY (id)
 );
 
-# Default insertions
+# Default admission rules
+
 # Specify the default value for queue parameter
 INSERT IGNORE INTO admission_rules (rule) VALUES ('if (not defined($queue_name)) {$queue_name="default";}');
-# Prevent root to submit jobs.
-INSERT IGNORE INTO admission_rules (rule) VALUES ('die ("[ADMISSION RULE] Root user is not allowed to submit jobs.\\n") if ( $user eq "root" );');
-# Avoid users except oar to go in the admin queue
-INSERT IGNORE INTO admission_rules (rule) VALUES ('if (($queue_name eq "admin") && ($user ne "oar")) {die("[ADMISSION RULE] Only the user oar can submit jobs in the admin queue\\n");}');
+
+# Prevent root and oar to submit jobs.
+INSERT IGNORE INTO admission_rules (rule) VALUES ('die ("[ADMISSION RULE] root and oar users are not allowed to submit jobs.\\n") if ( $user eq "root" or $user eq "oar" );');
+
+# Avoid users except admin to go in the admin queue
+INSERT IGNORE INTO admission_rules (rule) VALUES ('
+my $admin_group = "admin";
+if ($queue_name eq "admin") {
+    my $members; 
+    (undef,undef,undef, $members) = getgrnam($admin_group);
+    my %h = map { $_ => 1 } split(/\s/,$members);
+    if ( $h{$user} ne 1 ) {
+        {die("[ADMISSION RULE] Only member of the group ".$admin_group." can submit jobs in the admin queue\\n");}
+    }
+}
+');
+
 # Prevent the use of system properties
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 my @bad_resources = ("type","state","next_state","finaud_decision","next_finaud_decision","state_num","suspended_jobs","cpuset","besteffort","deploy","expiry_date","desktop_computing","last_job_date","cm_availability","scheduler_priority");
@@ -30,30 +44,36 @@ foreach my $mold (@{$ref_resource_list}){
     }
 }
 ');
-# Force besteffort jobs to go on nodes with the besteffort property
+
+# Force besteffort jobs to run in the besteffort queue
+# Force job of the besteffort queue to be of the besteffort type
+# Force besteffort jobs to run on nodes with the besteffort property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
+if (grep(/^besteffort$/, @{$type_list}) and not $queue_name eq "besteffort"){
+    $queue_name = "besteffort";
+    print("[ADMISSION RULE] Automatically redirect in the besteffort queue\\n");
+}
+if ($queue_name eq "besteffort" and not grep(/^besteffort$/, @{$type_list})) {
+    push(@{$type_list},"besteffort");
+    print("[ADMISSION RULE] Automatically add the besteffort type\\n");
+}
 if (grep(/^besteffort$/, @{$type_list})){
     if ($jobproperties ne ""){
         $jobproperties = "($jobproperties) AND besteffort = \\\'YES\\\'";
     }else{
         $jobproperties = "besteffort = \\\'YES\\\'";
     }
-    print("[ADMISSION RULE] Added automatically besteffort resource constraint\\n");
+    print("[ADMISSION RULE] Automatically add the besteffort constraint on the resources\\n");
 }
 ');
-# Force besteffort jobs to go in the besteffort queue
-INSERT IGNORE INTO admission_rules (rule) VALUES ('
-if (grep(/^besteffort$/, @{$type_list})){
-    $queue_name = "besteffort";
-    print("[ADMISSION RULE] Redirect automatically in the besteffort queue\\n");
-}
-');
+
 # Verify if besteffort jobs are not reservations
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
     die("[ADMISSION RULE] Error: a job cannot both be of type besteffort and be a reservation.\\n");
 }
 ');
+
 # Force deploy jobs to go on resources with the deploy property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if (grep(/^deploy$/, @{$type_list})){
@@ -64,6 +84,7 @@ if (grep(/^deploy$/, @{$type_list})){
     }
 }
 ');
+
 # Prevent deploy and allow_classic_ssh type jobs on none entire nodes
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 my @bad_resources = ("core","cpu","resource_id",);
@@ -81,6 +102,7 @@ if (grep(/^(deploy|allow_classic_ssh)$/, @{$type_list})){
     }
 }
 ');
+
 # Force desktop_computing jobs to go on nodes with the desktop_computing property
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if (grep(/^desktop_computing$/, @{$type_list})){
@@ -99,21 +121,34 @@ if (grep(/^desktop_computing$/, @{$type_list})){
 }
 ');
 
-# How to limit reservation number by user
+# Limit the number of reservations that a user can do.
+# (overrided on user basis using the file: ~oar/unlimited_reservation.users)
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
 if ($reservationField eq "toSchedule") {
-    my $max_nb_resa = 2;
-    my $nb_resa = $dbh->do("    SELECT job_id
-                                FROM jobs
-                                WHERE
-                                    job_user = \\\'$user\\\' AND
-                                    (reservation = \\\'toSchedule\\\' OR
-                                    reservation = \\\'Scheduled\\\') AND
-                                    (state = \\\'Waiting\\\' OR
-                                     state = \\\'Hold\\\')
-             ");
-    if ($nb_resa >= $max_nb_resa){
-        die("[ADMISSION RULE] Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
+    my $unlimited=0;
+    if (open(FILE, "< $ENV{HOME}/unlimited_reservation.users")) {
+        while (<FILE>){
+            if (m/^\\s*$user\\s*$/m){
+                $unlimited=1;
+            }
+        }
+        close(FILE);
+    }
+    if ($unlimited > 0) {
+        print("[ADMISSION RULE] $user is granted the privilege to do unlimited reservations\\n");
+    } else {
+        my $max_nb_resa = 2;
+        my $nb_resa = $dbh->do("    SELECT job_id
+                                    FROM jobs
+                                    WHERE
+                                        job_user = \\\'$user\\\' AND
+                                        (reservation = \\\'toSchedule\\\' OR
+                                        reservation = \\\'Scheduled\\\') AND
+                                        (state = \\\'Waiting\\\' OR state = \\\'Hold\\\')
+                               ");
+        if ($nb_resa >= $max_nb_resa){
+            die("[ADMISSION RULE] Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
+        }
     }
 }
 ');
