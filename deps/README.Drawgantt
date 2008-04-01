@@ -1,0 +1,14 @@
+Drawgantt needs some libs that have not yet been packaged into RPMS to work.
+For the moment, the only way I found to get drawgantt.cgi working on an RPM-based distribution is:
+
+- Install ruby-dbi from source:
+http://www.kitebird.com/articles/ruby-dbi.html#TOC_3
+
+- Install ruby gems and some libs needed to build ruby-gd:
+yum install rubygems ruby-devel gd-devel libpng-devel zlib-devel
+
+- Install ruby-gd:
+gem install ruby-gd
+
+- Add a line at the top of drawgantt.cgi to load rubygems:
+require 'rubygems'
