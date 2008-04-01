@@ -3582,7 +3582,7 @@ sub update_current_scheduler_priority($$$$){
                 next if ($f eq "");
                 $index++;
 
-                my $sth = $dbh->prepare("   SELECT distinct($f)
+                my $sth = $dbh->prepare("   SELECT distinct(resources.$f)
                                             FROM assigned_resources, resources
                                             WHERE
                                                 assigned_resource_index = \'CURRENT\' AND
