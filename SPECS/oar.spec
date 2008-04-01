@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1286
+%define version 2.3.0+svn1300
 %define release 1
 
 Name: 		oar
@@ -168,7 +168,7 @@ rm -rf tmp
 
 %files web-status -f oar-web-status.files
 %config %attr (0600,apache,root) /etc/oar/drawgantt.conf
-%config /etc/oar/monika.conf
+%config %attr (0600,apache,root) /etc/oar/monika.conf
 
 %files doc -f oar-doc.files
 %docdir /usr/share/doc/oar-doc 

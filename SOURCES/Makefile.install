@@ -83,8 +83,8 @@ pkginstall:
 		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/lib/oar \
 		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/bin \
 		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/sbin \
-		WWWDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www \
-		CGIDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/lib/cgi-bin \
+		WWWDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www/html \
+		CGIDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www/cgi-bin \
 		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
