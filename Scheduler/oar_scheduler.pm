@@ -500,14 +500,16 @@ sub check_jobs_to_kill($){
     oar_debug("[oar_scheduler] check_jobs_to_kill : check besteffort jobs\n");
     my $return = 0;
     my %nodes_for_jobs_to_launch = iolib::get_gantt_resources_for_jobs_to_launch($dbh,$current_time_sec);
+    my %fragged_jobs = ();
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
-        if (defined($besteffort_resource_occupation{$r})){
+        if (defined($besteffort_resource_occupation{$r} and not defined($fragged_jobs{$besteffort_resource_occupation{$r}}))){
             oar_debug("[oar_scheduler] check_jobs_to_kill : besteffort job $besteffort_resource_occupation{$r} must be killed\n");
             iolib::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[oar_scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
             iolib::lock_table($dbh,["frag_jobs","event_logs","jobs"]);
             iolib::frag_job($dbh, $besteffort_resource_occupation{$r});
             iolib::unlock_table($dbh);
             $return = 1;
+            $fragged_jobs{$besteffort_resource_occupation{$r}} = 1;
         }
      }
      return($return);
