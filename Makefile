@@ -84,8 +84,7 @@ dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
-	install -m 0755 DB/init_pg_server.pl $(OARDIR)/init_pg_server
-	install -m 0755 DB/oar_pg_db_filling.pl $(OARDIR)/oar_pg_db_filling
+	install -m 0755 DB/oar_psql_db_init.pl $(OARDIR)/oar_psql_db_init
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_mysql_db_init
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\

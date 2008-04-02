@@ -234,8 +234,14 @@ sub connect_db($$$$$$) {
         $type = "mysql";
         $Db_type = "mysql";
     }
-
-    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host;port=$dbport", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
+		my $connection_string;
+    if($dbport eq "" || !($dbport>1 && $dbport<65535)){
+    	$connection_string = "DBI:$type:database=$name;host=$host";
+    }
+    else{
+    	$connection_string = "DBI:$type:database=$name;host=$host;port=$dbport";
+    }
+    my $dbh = DBI->connect($connection_string, $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
     
     if (!defined($dbh)){
         oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
