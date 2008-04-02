@@ -59,9 +59,9 @@ if ($queue_name eq "besteffort" and not grep(/^besteffort$/, @{$type_list})) {
 }
 if (grep(/^besteffort$/, @{$type_list})){
     if ($jobproperties ne ""){
-        $jobproperties = "($jobproperties) AND besteffort = \\\'YES\\\'";
+        $jobproperties = "($jobproperties) AND besteffort = ''YES''";
     }else{
-        $jobproperties = "besteffort = \\\'YES\\\'";
+        $jobproperties = "besteffort = ''YES''";
     }
     print("[ADMISSION RULE] Automatically add the besteffort constraint on the resources\\n");
 }
@@ -78,9 +78,9 @@ if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
 INSERT INTO admission_rules (rule) VALUES ('
 if (grep(/^deploy$/, @{$type_list})){
     if ($jobproperties ne ""){
-        $jobproperties = "($jobproperties) AND deploy = \\\'YES\\\'";
+        $jobproperties = "($jobproperties) AND deploy = ''YES''";
     }else{
-        $jobproperties = "deploy = \\\'YES\\\'";
+        $jobproperties = "deploy = ''YES''";
     }
 }
 ');
@@ -108,15 +108,15 @@ INSERT INTO admission_rules (rule) VALUES ('
 if (grep(/^desktop_computing$/, @{$type_list})){
     print("[ADMISSION RULE] Added automatically desktop_computing resource constraints\\n");
     if ($jobproperties ne ""){
-        $jobproperties = "($jobproperties) AND desktop_computing = \\\'YES\\\'";
+        $jobproperties = "($jobproperties) AND desktop_computing = ''YES''";
     }else{
-        $jobproperties = "desktop_computing = \\\'YES\\\'";
+        $jobproperties = "desktop_computing = ''YES''";
     }
 }else{
     if ($jobproperties ne ""){
-        $jobproperties = "($jobproperties) AND desktop_computing = \\\'NO\\\'";
+        $jobproperties = "($jobproperties) AND desktop_computing = ''NO''";
     }else{
-        $jobproperties = "desktop_computing = \\\'NO\\\'";
+        $jobproperties = "desktop_computing = ''NO''";
     }
 }
 ');
@@ -141,10 +141,10 @@ if ($reservationField eq "toSchedule") {
         my $nb_resa = $dbh->do("    SELECT job_id
                                     FROM jobs
                                     WHERE
-                                        job_user = \\\'$user\\\' AND
-                                        (reservation = \\\'toSchedule\\\' OR
-                                        reservation = \\\'Scheduled\\\') AND
-                                        (state = \\\'Waiting\\\' OR state = \\\'Hold\\\')
+                                        job_user = ''$user'' AND
+                                        (reservation = ''toSchedule'' OR
+                                        reservation = ''Scheduled'') AND
+                                        (state = ''Waiting'' OR state = ''Hold'')
                                ");
         if ($nb_resa >= $max_nb_resa){
             die("[ADMISSION RULE] Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
@@ -210,9 +210,9 @@ foreach my $mold (@{$ref_resource_list}){
         my $prop = $r->{property};
         if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
             if (!defined($prop)){
-                $r->{property} = "type = \\\'default\\\'";
+                $r->{property} = "type = ''default''";
             }else{
-                $r->{property} = "($r->{property}) AND type = \\\'default\\\'";
+                $r->{property} = "($r->{property}) AND type = ''default''";
             }
         }
     }
