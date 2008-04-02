@@ -1,9 +1,9 @@
 -- $Id$
 -- info version, change here if you have updated the db schema
-CREATE TABLE info (
+CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO info VALUES ('2.3.0');
+INSERT INTO schema VALUES ('2.3.0');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
