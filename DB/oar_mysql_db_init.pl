@@ -26,7 +26,7 @@ EOS
 
 #my $usrName = getpwuid($<);
 # test user name
-#("$usrName" eq "root") or die "[ERROR] You must be root to run this script\n";
+#("$usrName" eq "root") or die "[ERROR] You must be root to run this script and not $usrName\n";
 
 # use the oar_jobs.sql file to create the database
 my $mysqlFile = $ENV{'OARDIR'}.'/mysql_structure.sql';

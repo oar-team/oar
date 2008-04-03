@@ -3,8 +3,9 @@
 
 use strict;
 use warnings;
-
 use Getopt::Long;
+
+my $oardir = "/usr/local/oar";
 
 Getopt::Long::Configure ("gnu_getopt");
 my $usage;
@@ -21,17 +22,17 @@ EOS
     exit(0);
 }
 
-my $usrName = getpwuid($<);
+#my $usrName = getpwuid($<);
 # test user name
-("$usrName" eq "root") or die "[ERROR] You must be root to run this script\n";
+#("$usrName" eq "root") or die "[ERROR] You must be root to run this script and not $usrName\n";
 
 # DataBase name
 print "Please enter the name of the DB you want to create:\n";
 print "\tDB name: ";
 my $dbName = <STDIN>;
 chomp $dbName;
-system("sudo -u postgres createdb $dbName");
 
+system("sudo -u postgres createdb $dbName");
 print "Please enter the information of the user you want to create:\n";
 print "\tuser name: ";
 my $userName = <STDIN>;
@@ -56,10 +57,13 @@ print("\n");
 system("tty &> /dev/null && stty echo");
 system("sudo -u postgres psql -c \"CREATE ROLE $ro_userName LOGIN PASSWORD \'$ro_password\'\"");
 
-print "Please enter the path to the script that initiates the DB (default: ./pg_structure.sql):\n";
+print "Please enter the path to the script that initiates the DB (default: /usr/local/oar/pg_structure.sql):\n";
 print "\tpath: ";
 my $sqlFile = <STDIN>;
 chomp $sqlFile;
+if($sqlFile eq ""){
+	$sqlFile = $oardir."/pg_structure.sql";
+}
 if (-r $sqlFile){
 	system("psql -U$userName -h 127.0.0.1 -d$dbName -f$sqlFile");
 	if ($? != 0){
@@ -69,10 +73,13 @@ if (-r $sqlFile){
 	die("[ERROR] Database installation : can't open $sqlFile \n");
 }
 
-print "Please enter the path to the script that inserts the admission rules (default: ./pg_default_admission_rules.sql):\n";
+print "Please enter the path to the script that inserts the admission rules (default: /usr/local/oar/pg_default_admission_rules.sql):\n";
 print "\tpath: ";
 my $admission_rules = <STDIN>;
 chomp $admission_rules;
+if($admission_rules eq ""){
+	$admission_rules = $oardir."/pg_default_admission_rules.sql";
+}
 if (-r $admission_rules){
 	system("psql -U$userName -h 127.0.0.1 -d$dbName -f$admission_rules");
 	if ($? != 0){
@@ -80,10 +87,13 @@ if (-r $admission_rules){
 	}
 }
 
-print "Please enter the path to the script that inserts the default data (default: ./default_data.sql):\n";
+print "Please enter the path to the script that inserts the default data (default: /usr/local/oar/default_data.sql):\n";
 print "\tpath: ";
 my $default_data = <STDIN>;
 chomp $default_data;
+if($default_data eq ""){
+	$default_data = $oardir."/default_data.sql";
+}
 if (-r $default_data){
 	system("psql -U$userName -h 127.0.0.1 -d$dbName -f$default_data");
 	if ($? != 0){
