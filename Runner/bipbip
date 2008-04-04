@@ -208,10 +208,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                     foreach my $b (@bad){
                         delete($cpuset_nodes->{$b});
                     }
-                    $cpuset_data_hash = {
-                        name => $Cpuset_name,
-                        nodes => $cpuset_nodes
-                    };
+                    $cpuset_data_hash->{nodes}=$cpuset_nodes;
                     my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"clean",$Openssh_cmd,$taktuk_cmd,$base);
                     push(@bad, @bad_tmp);
                 }

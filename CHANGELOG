@@ -45,7 +45,8 @@ upstream development version:
 version 2.2.12:
 ---------------
   - Bug #5239: fix the bug if there are spaces into job name or project
-  - fix the bug in Iolib if DEAD_SWITCH_TIME >0
+  - Fix the bug in Iolib if DEAD_SWITCH_TIME >0
+  - Fix a bug in bipbip when calling the cpuset_manager to clean jobs in error
 
 version 2.2.11:
 ---------------
