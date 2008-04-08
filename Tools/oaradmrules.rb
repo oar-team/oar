@@ -9,14 +9,19 @@
 # 
 # To activate the verbose mode, add -w at the end of the first line. Ex : #!/usr/bin/ruby -w
 #
-
 # Usage / examples
 #   This program search and read oar.conf (with OARDIR environment variable or in current directory) 
-#   Each rule may have # at the front lines - useful for summary display
+#   Recommended format for admission rules
+#	First line : title or object of the admission rule (first character is #)
+#       Following lines beginning with # : description of the admission rule or main algorithm 
+#    	Rest of lines : rest of the admission rule
+#
 #   1 - list admission rules
-#       ./oaradmrules.rb -l       => summary display for all admission rules
-#       ./oaradmrules.rb -l -c    => full content for all admission rules
-#       ./oaradmrules.rb -l 3 5   => display admission rules nb 3 and 5
+#       ./oaradmrules.rb -l         => display only the title or object for admission rules
+#       ./oaradmrules.rb -l -v      => display also description lines for all admission rules
+#       ./oaradmrules.rb -l -vv     => display all content for all admission rules
+#       ./oaradmrules.rb -l 3 5     => display title for admission rules nb 3 and 5
+#       ./oaradmrules.rb -lvv 3 5   => display all content for admission rules nb 3 and 5
 #   
 #   2 - add admission rules
 #       ./oaradmrules.rb -a -f file		=> add admission rule from file 
@@ -44,21 +49,12 @@ $msg[0] = "Incoherence in specified options"
 $msg[1] = "Configuration file not found"
 $msg[2] = "Error access to the database"
 $msg[3] = "Error : file not found or unreadable"
-$msg[4] = "Admission rule added"
-$msg[5] = "Error : bad admission rule number"
-$msg[6] = "Error : no admission rule number given"
-$msg[7] = "Admission rule updated"
-$msg[8] = "Error while creating file"
-
+$msg[4] = "Error : bad admission rule number"
+$msg[5] = "Error : no admission rule number given"
 
 
 $config = {} 		# Contains parameters of the configuration file
-$list_rules = []
-$result = []
 $script = ""
-
-$fic_base = "admission_rule_"		# Default name for file export
-
 
 
 # Load configuration
@@ -112,10 +108,9 @@ end	# load_configuration
 
 
 
-
 # Options for parsing
 $options = {}
-$options[:list] = $options[:content] = $options[:add] = $options[:file] = $options[:update] = $options[:export] = $options[:delete] = false
+$options[:list] = $options[:verbose] = $options[:add] = $options[:file] = $options[:update] = $options[:export] = $options[:delete] = false
 opts = OptionParser.new do |opts|
     opts.banner = "Usage: oaradmrules [-l [-c]] [-a [no_rule] -f file] [-u no_rule -f file] [-d no_rule [no_rule]] [-x [no_rule] -f file]"
 
@@ -124,9 +119,9 @@ opts = OptionParser.new do |opts|
        $options[:list] = true 
     end
 
-    # full content 
-    opts.on("-c","--content","Full content display") do
-       $options[:content] = true
+    # display level 
+    opts.on("-v","--verbose","Display more details") do
+       $options[:verbose] = true
     end
    
     # add admission rules
@@ -165,139 +160,19 @@ end
 
 
 
-# Display one rule
-# Ndx : index in $result[] table
-def rule_display ndx
-
-    puts "------"
-    puts "Rule : " + $result[ndx][:id]						# rule number
-
-    title = false
-    $result[ndx][:rule].each do |line|						# only the beginning of the rule : each line whith # caracter
-         if line.strip.length > 0
-            if line[0..0] == "#" 
-               if !title
-      	          puts "Beginning of the rule : " + line
-	          title = !title
-               else
-                  puts "                        " + line
-               end
-            else
-   	       break
-            end
-	 end 
-    end
-    puts "Beginning of the rule : " if !title
-
-
-    if $options[:content]								# full content display
-       puts "Content : "
-       puts $result[ndx][:rule] 
-    end
-
-end 	# rule_display
-
-
-
 # Retrieve list of rules given by user in the command line
-# Store numbers of rules in $list_rules
 def rule_list_from_command_line
 
+   r = []
    (0..ARGV.length-1).each do |i|
 	if ARGV[i] =~ /\d+/
-	   $list_rules.push($&.to_s)
+	   r.push($&.to_s)
 	end
    end
 
+   return r
+
 end	# rule_list_from_command_line
-
-
-# Select one or more rules 
-# Store selected rules in $result 
-def rule_select
-
-   q = "SELECT * FROM admission_rules "
-   if $list_rules.length > 0
-      q += "WHERE id IN ("
-      $list_rules.each_with_index do |item, item_index|
-      	 q += item
-	 q += "," if item_index < $list_rules.length-1
-      end
-      q += ") "
-   else
-      q += "ORDER BY id"
-   end
-   rows = $dbh.execute(q)
-   rows.each do |r|
-   	$result.push({:id => r["id"].to_s, :rule => r["rule"]})
-   end
-   rows.finish
-
-end	# rule_select
-
-
-
-# Test if files for export admission rules already exists
-# Ask question if needed
-# Return : 
-#    true  => files can be overwrite
-#    false => do not overwrite
-def test_files_exists
-
-   fic_already_exists = []
-
-   if $list_rules.length > 0
-       # Rules specified by user
-       $list_rules.each do |item|
-         (0..$result.length-1).each do |i|
-	     if item == $result[i][:id]
-                fic_already_exists.push($fic_base + $result[i][:id]) if File.exist?($fic_base + $result[i][:id])
-	     end
-	 end
-       end
-   else
-       # All rules
-       (0..$result.length-1).each do |i|
-           fic_already_exists.push($fic_base + $result[i][:id]) if File.exist?($fic_base + $result[i][:id])
-       end
-   end
-
-   if fic_already_exists.length > 0 
-      c = ""
-      fic_already_exists.each { |f| 
-         c += f
-	 c += " "
-	 }
-      puts "Warning ! Some files already exists : " + c 
-      print "Overwrite [N/y] ? "
-      r = ""
-      begin
-         r = $stdin.gets.chomp
-      end while ( r != "" && r != "N" && r != "y" )
-      if r == "y" 
-         return true
-      else
-         return false
-      end
-   else
-      return true
-   end 
-
-end 	# test_files_exists
-
-
-
-# Export a rule in a file
-# n : number of rule to export
-def rule_export n
-
-    fic_name = $fic_base + $result[n][:id]
-    puts "Export admission rule " + $result[n][:id] + " into file " + fic_name
-    f = File.new(fic_name, "w")
-    f.print $result[n][:rule]
-    f.close
-
-end 	# rule_export
 
 
 
@@ -315,7 +190,7 @@ def load_rule_from_file
       end
       if !File.readable?(file_name) 
          puts $msg[3] 
-         exit(5)
+         exit(10)
       else
      	 File.open(file_name) do |file|
 	      while line = file.gets
@@ -329,6 +204,332 @@ end
 
 
 
+# Object Rules represents a set of admission rules. This object can contain one or more rules
+# Methods :
+#    - display         : display one or more rules
+#    - add             : add one rule
+#    - update          : update one rule
+#    - delete          : delete one or more rules
+#    - export_to_file  : export one or more rules into files
+#
+# Parameters for initialization :
+#    @bdd  : object for database access DBI::DatabaseHandle
+class Rules
+
+      def initialize(bdd)
+	  @bdd = bdd
+	  @rules_set = []
+      end
+
+      # Display rules
+      # Parameters : 
+      #   list_rules : list of rules given by user
+      #   display_level : nb level for more details
+      # if no numbers rules specified => display all rules
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      def display(list_rules, display_level)
+	  status = 0
+
+	  # Load rules from database
+	  select_rules(list_rules)
+	  
+	  # Display admission rules
+	  if list_rules.length > 0
+      	     # Display rules specified by user
+      	     list_rules.each do |item|
+         	  rule_exist=false
+         	  (0..@rules_set.length-1).each do |i|
+	     	      if item == @rules_set[i][:id]
+	        	 rule_exist=true
+			 display_rule(i, display_level)
+	     	      end
+	 	  end
+         	  if !rule_exist
+	    	     puts "Error : the rule #{item} does not exist"
+		     status = 1
+	 	  end
+      	     end      
+   	  else
+      	     # Display all rules
+      	     (0..@rules_set.length-1).each do |i|
+          	 display_rule(i, display_level)
+      	     end
+   	  end
+	  status
+      end	# def display
+
+
+      # Add one rule
+      # if no number rule specified => add at the end of table
+      # if number specified => insert admission rule at the nb_rule position
+      #    the numbers above or equal to nb_rule are increased by 1
+      # Parameters : 
+      #    nb_rule : the number rule to add
+      #    script  : the content of the admission rule to add
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      def add(nb_rule, script)
+	  status = 0
+	  msg = []
+	  msg[0] = "Admission rule added"
+	  if nb_rule
+	     # no rule already exist in database ?
+	     q = "SELECT * FROM admission_rules WHERE id = " + nb_rule.to_s
+	     rows = @bdd.select_one(q) 
+	     if rows
+	        # add +1 to the id rules
+	        q = "SELECT * FROM admission_rules WHERE id >= " + nb_rule.to_s + " ORDER BY id DESC"
+  	        rows = @bdd.execute(q)
+	        rows.each do |r|
+		     q = "UPDATE admission_rules SET id = " + (r["id"] + 1).to_s + " WHERE id = " + r["id"].to_s
+		     status = bdd_do(q)
+	        end
+	        rows.finish
+	     end
+	
+	     # Add rule in database
+             q = "INSERT INTO admission_rules (id, rule) VALUES(?, ?)"
+	     status = bdd_do(q, nb_rule, script)
+	     puts msg[0] if status == 0
+
+	  else
+	     # add admission rule at the end of table
+             q = "INSERT INTO admission_rules (rule) VALUES(?)"
+	     status = bdd_do(q, script)
+	     puts msg[0] if status == 0
+	  end
+	  status
+      end	# def add
+
+
+      # Update one rule
+      # Parameters : 
+      #    nb_rule : the number rule to add
+      #    script  : the content of the admission rule to add
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      def update(nb_rule, script)
+	  status = 0
+	  msg = []
+	  msg[0] = "Admission rule updated"
+          # no rule already exist in database ?
+          q = "SELECT * FROM admission_rules WHERE id = " + nb_rule.to_s
+          rows = @bdd.select_one(q) 
+          if rows
+	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + nb_rule.to_s
+	     status = bdd_do(q, script)
+	     puts msg[0] if status == 0
+          else
+	      puts "Error : the rule " + nb_rule.to_s + " does not exist"
+	      status = 1
+          end
+	  status
+      end	# def update 
+
+      
+      # Delete one or several admission rules specified by user
+      # Parameters : 
+      #   list_rules : list of rules given by user
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      def delete(list_rules)
+	  status_1 = status_2 = 0
+	  select_rules(list_rules)
+          list_rules.each do |item|
+             rule_exist=false
+             (0..@rules_set.length-1).each do |i|
+	         if item == @rules_set[i][:id]
+	            rule_exist=true
+		    q = "DELETE FROM admission_rules WHERE id = " + @rules_set[i][:id]
+	            status_2 = bdd_do(q)
+	       	    puts "Admission rule " + @rules_set[i][:id] + " deleted" if status_2 == 0
+	         end
+	     end
+             if !rule_exist
+	        puts "Error : the rule #{item} does not exist"
+		status_1 = 1
+	     end
+          end
+      	  (status_1 != 0 || status_2 != 0) ? 1 : 0 
+      end 	# def delete
+
+      
+      # Export one or more admission rules into files 
+      # Parameters : 
+      #   list_rules : list of rules given by user to export into files
+      #              : export_file_name,
+      #		     : export_file_name_with_nb_rule
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      def export_to_file(list_rules, export_file_name, export_file_name_with_nb_rule)
+	  status = 0 
+	  select_rules(list_rules)
+	  if files_overwrite(list_rules, export_file_name, export_file_name_with_nb_rule) 
+             if list_rules.length > 0
+                # Export rules specified by user
+                list_rules.each do |item|
+                   rule_exist=false
+                   (0..@rules_set.length-1).each do |i|
+	               if item == @rules_set[i][:id]
+	                  rule_exist=true
+		          export_rule(i, export_file_name, export_file_name_with_nb_rule)
+	               end
+	           end
+                   if !rule_exist
+	              puts "Error : the rule #{item} does not exist"
+		      status = 1
+	           end
+                 end
+             else
+                 # Export all rules
+                 (0..@rules_set.length-1).each do |i|
+                     export_rule(i, export_file_name, export_file_name_with_nb_rule)
+                 end
+             end
+	  end
+	  status
+      end 	# def export_to_file
+
+
+      private
+
+      # Display one rule
+      def display_rule(ndx, display_level)
+    	  puts "------"
+    	  puts "Rule : " + @rules_set[ndx][:id]								# rule number
+
+	  description_end = false
+	  @rules_set[ndx][:rule].each_with_index do |line,line_index|	
+	 	if line_index == 0									# title or object of the admission rule 
+		   puts line
+		end
+		if (display_level==1 || display_level==2) && line_index > 0 && !description_end		# description of the admission rule
+		   if line[0..0]=="#"
+		      puts line
+		   else
+		      description_end = !description_end 
+		   end
+		end
+		if display_level==2 && line_index > 0 && description_end				# rest of the admission rule
+		   puts line 
+		end
+	  end
+      end	# def display_rule(ndx)
+
+
+      # Select one or more rules 
+      # Store selected rules in @rules_set 
+      def select_rules(list_rules)
+
+          q = "SELECT * FROM admission_rules "
+          if list_rules.length > 0
+             q += "WHERE id IN ("
+             list_rules.each_with_index do |item, item_index|
+      	        q += item
+	        q += "," if item_index < list_rules.length-1
+             end
+             q += ") "
+          else
+             q += "ORDER BY id"
+          end
+          rows = @bdd.execute(q)
+          rows.each do |r|
+   	       @rules_set.push({:id => r["id"].to_s, :rule => r["rule"]})
+          end
+          rows.finish
+
+      end	# def select_rules
+
+
+      # Test if files for export admission rules already exists
+      # Ask question to user, if needed, to overwrite files or not 
+      # Return : 
+      #    true  => files can be overwrite
+      #    false => do not overwrite
+      def files_overwrite(list_rules, export_file_name, export_file_name_with_nb_rule)
+
+   	  files_already_exists = []
+   	  if list_rules.length > 0
+       	     # Rules specified by user
+       	     list_rules.each do |item|
+         	  (0..@rules_set.length-1).each do |i|
+	     	      if item == @rules_set[i][:id]
+			 if export_file_name_with_nb_rule
+                            files_already_exists.push(export_file_name + @rules_set[i][:id]) if File.exist?(export_file_name + @rules_set[i][:id])
+			 else
+                            files_already_exists.push(export_file_name) if File.exist?(export_file_name)
+			 end
+	     	      end
+	 	  end
+       	     end
+   	  else
+       	     # All rules
+       	     (0..@rules_set.length-1).each do |i|
+           	 files_already_exists.push(export_file_name + @rules_set[i][:id]) if File.exist?(export_file_name + @rules_set[i][:id])
+       	     end
+   	  end
+
+   	  if files_already_exists.length > 0 
+	     c = ""
+      	     files_already_exists.each { |f| 
+                 c += f
+	         c += " "
+	     }
+             puts "Warning ! Some files already exists : " + c 
+             print "Overwrite [N/y] ? "
+             r = ""
+             begin
+         	 r = $stdin.gets.chomp
+             end while ( r != "" && r != "N" && r != "y" )
+	     r == "y" ? true : false
+	  else
+      	     return true
+          end 
+
+      end 	# def files_overwrite
+
+
+      # Export one rule into a file
+      def export_rule(n, export_file_name, export_file_name_with_nb_rule)
+
+	  f_name = export_file_name 
+	  f_name += @rules_set[n][:id] if export_file_name_with_nb_rule
+
+          puts "Export admission rule " + @rules_set[n][:id] + " into file " + f_name
+          f = File.new(f_name, "w")
+          f.print @rules_set[n][:rule]
+          f.close
+
+      end	# def export_rule
+
+
+      # Access to the database and catch errors
+      # Parameters : 
+      #   q : sql order
+      #   *params : parameters for sql order
+      # Return : 
+      #    status => code error if an error occurs
+      def bdd_do(q, *params)
+	  status = 0
+	  begin
+               @bdd.do(q, *params)
+               rescue DBI::DatabaseError => e
+		   status = e.err
+		   puts "Error access to the database"
+               	   puts "Error code: #{e.err}"
+               	   puts "Error message: #{e.errstr}"
+	  end
+          status  
+      end
+
+
+end	# class Rules
+
+
+
+
+
 #####################
 # MAIN PROGRAM
 #####################
@@ -339,18 +540,17 @@ begin
      rescue OptionParser::ParseError => no_erreur
         puts no_erreur
         exit(1)
-
 end
 
 
 # Other tests on syntax
-if !( ( $options[:list] && !$options[:content] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -l 
-      ( $options[:list] &&  $options[:content] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -l -c
-      (!$options[:list] && !$options[:content] &&  $options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -a -f
-      (!$options[:list] && !$options[:content] && !$options[:add] &&  $options[:file] &&  $options[:update] && !$options[:delete] && !$options[:export]) || 	# -u -f
-      (!$options[:list] && !$options[:content] && !$options[:add] && !$options[:file] && !$options[:update] &&  $options[:delete] && !$options[:export]) || 	# -d 
-      (!$options[:list] && !$options[:content] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export]) || 	# -x  
-      (!$options[:list] && !$options[:content] && !$options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export]) ) 	# -x -f
+if !( ( $options[:list] && !$options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -l 
+      ( $options[:list] &&  $options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -l -v
+      (!$options[:list] && !$options[:verbose] &&  $options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -a -f
+      (!$options[:list] && !$options[:verbose] && !$options[:add] &&  $options[:file] &&  $options[:update] && !$options[:delete] && !$options[:export]) || 	# -u -f
+      (!$options[:list] && !$options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] &&  $options[:delete] && !$options[:export]) || 	# -d 
+      (!$options[:list] && !$options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export]) || 	# -x  
+      (!$options[:list] && !$options[:verbose] && !$options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export]) ) 	# -x -f
 
       puts $msg[0]
       exit(2)
@@ -373,7 +573,7 @@ end
 begin
      db_type = $config['DB_TYPE']
      db_type = "Mysql" if db_type == "mysql"
-     $dbh = DBI.connect("dbi:#{db_type}:#{$config['DB_BASE_NAME']}:#{$config['DB_HOSTNAME']}",
+     dbh = DBI.connect("dbi:#{db_type}:#{$config['DB_BASE_NAME']}:#{$config['DB_HOSTNAME']}",
 				 "#{$config['DB_BASE_LOGIN']}","#{$config['DB_BASE_PASSWD']}")
 
      rescue DBI::DatabaseError => e
@@ -383,303 +583,125 @@ begin
 	 exit(4)
 end
 
+rules = Rules.new(dbh) 
 
-# List admission rules
-if $options[:list]
-
-   # rules given by user
-   rule_list_from_command_line
-
-   # select rules from database
-   rule_select
-
-   if $list_rules.length > 0
-      # Display rules specified by user
-      $list_rules.each do |item|
-         rule_exist=false
-         (0..$result.length-1).each do |i|
-	     if item == $result[i][:id]
-	        rule_exist=true
-		rule_display i
-	     end
-	 end
-         if !rule_exist
-	    puts "Error : the rule #{item} does not exist"
-	 end
-      end      
-   else
-      # Display all rules
-      (0..$result.length-1).each do |i|
-          rule_display i
-      end
-   end
-
-end 	# if $options[:list]
-
-
-
-
-# Add admission rule
-if $options[:add]
-
-   no_rule = nil 
-
-   # retrieve no rule specified by user
-   (0..ARGV.length-1).each do |i|
-       if ARGV[i] == "-a" 
-          if i < ARGV.length-1
-	     no_rule = $&.to_s.to_i if ARGV[i+1] =~ /\d+/ 
- 	  end
-       end
-   end
-
-   # add one admission rule from a file 
-   load_rule_from_file
-
-   # add admission rule in database
-   if no_rule
-	# no rule given by user ok ?
- 	if no_rule <= 0
-	   puts $msg[5]
-           exit(7)
-	end
-	# no rule already exist in database ?
-	q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
-	rows = $dbh.select_one(q) 
-	if rows
-	   # add +1 to the id rules
-	   q = "SELECT * FROM admission_rules WHERE id >= " + no_rule.to_s + " ORDER BY id DESC"
-   	   rows = $dbh.execute(q)
-	   rows.each do |r|
-		begin
-		    q = "UPDATE admission_rules SET id = " + (r["id"] + 1).to_s + " WHERE id = " + r["id"].to_s
-            	    $dbh.do(q)
-            	    rescue DBI::DatabaseError => e
-                	puts $msg[2] 
-                	puts "Error code: #{e.err}"
-                	puts "Error message: #{e.errstr}"
-	        	exit(6) 
-		end
-	   end
-	   rows.finish
-	end
-	
-	# Add rule in database
-        begin
-            $dbh.do("INSERT INTO admission_rules (id, rule) VALUES(?, ?)", no_rule, $script)
-	    puts $msg[4]
-	    exit
-            rescue DBI::DatabaseError => e
-                puts $msg[2] 
-                puts "Error code: #{e.err}"
-                puts "Error message: #{e.errstr}"
-	        exit(6) 
-        end
-
-   else
-	# add admission rule at the end of table
-        begin
-            $dbh.do("INSERT INTO admission_rules (rule) VALUES(?)", $script)
-	    puts $msg[4]
-	    exit
-            rescue DBI::DatabaseError => e
-                puts $msg[2] 
-                puts "Error code: #{e.err}"
-                puts "Error message: #{e.errstr}"
-	        exit(6) 
-        end
-   end
-
-end	# if $options[:add]
-
-
-
-# Update admission rule
-if $options[:update]
-
-   no_rule = nil 
-
-   # retrieve no rule specified by user
-   (0..ARGV.length-1).each do |i|
-       if ARGV[i] == "-u" 
-          if i < ARGV.length-1
-	     no_rule = $&.to_s.to_i if ARGV[i+1] =~ /\d+/ 
- 	  end
-       end
-   end
-
-   load_rule_from_file
-
-   if no_rule
-      if no_rule <= 0
-         puts $msg[5]
-         exit(7)
-      end
-      # no rule already exist in database ?
-      q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
-      rows = $dbh.select_one(q) 
-      if rows
-	 begin
-	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + no_rule.to_s
-             $dbh.do(q, $script)
-	     puts $msg[7]
-             rescue DBI::DatabaseError => e
-               	puts $msg[2] 
-               	puts "Error code: #{e.err}"
-               	puts "Error message: #{e.errstr}"
-	       	exit(6) 
-	 end
-      else
-	  puts "Error : the rule " + no_rule.to_s + " does not exist"
-      end
-   else
-      puts $msg[6]
-      exit(7) 
-   end
-
-end	# if $options[:update]
-
-
-
-# Delete admission rules
-if $options[:delete]
-
-   # rules given by user
-   rule_list_from_command_line
-
-   # select rules from database
-   rule_select
-
-   if $list_rules.length > 0
-      # Delete rules specified by user
-      $list_rules.each do |item|
-         rule_exist=false
-         (0..$result.length-1).each do |i|
-	     if item == $result[i][:id]
-	        rule_exist=true
-        	begin
-		    q = "DELETE FROM admission_rules WHERE id = " + $result[i][:id]
-            	    $dbh.execute(q)
-	       	    puts "Admission rule " + $result[i][:id] + " deleted"
-            	    rescue DBI::DatabaseError => e
-                	puts $msg[2] 
-                	puts "Error code: #{e.err}"
-                	puts "Error message: #{e.errstr}"
-	        	exit(6) 
-        	end
-	     end
-	 end
-         if !rule_exist
-	    puts "Error : the rule #{item} does not exist"
-	 end
-      end      
-   else
-      puts $msg[6]
-      exit(7)
-   end
-
-#   if $list_rules.length > 0
-#      # Display rules specified by user
-#      $list_rules.each do |item|
-#         rule_exist=false
-#         (0..$result.length-1).each do |i|
-#	     if item == $result[i][:id]
-#	        rule_exist=true
-#		rule_display i
-#	     end
-#	 end
-#         if !rule_exist
-#	    puts "Error : the rule #{item} does not exist"
-#	 end
-#      end      
-#   else
-#      # Display all rules
-#      (0..$result.length-1).each do |i|
-#          rule_display i
-#      end
-#   end
-# ZZZZ
-
-
-end	# if $options[:delete]
-
-
-
-# Export admission rules
-if $options[:export]
-
-   # rules given by user
-   rule_list_from_command_line
-
-   # select rules from database
-   rule_select
-
-
-   if $options[:file]   								# export one admission rule into a file specified by user 
-      if $list_rules.length > 0
-	 if $list_rules[0].to_i == 0
-	    puts $msg[5]
-	    exit(7) 
-	 end
+case
+    when $options[:list]
+	 # List admission rules
 	 
-         rule_exist=false
-         (0..$result.length-1).each do |i|
-	     if $list_rules[0] == $result[i][:id]
-	        rule_exist=true
- 		# Create file
-		file_name = "" 
-		(0..ARGV.length-1).each do |j|
-		   if ARGV[j] == "-f"
-		      file_name = ARGV[j+1] if j < ARGV.length-1
-		   end
-		end
-		f = File.new(file_name, "w")
-		f.print $result[i][:rule]
-		f.close
-		puts "Export admission rule " + $result[i][:id] + " into file " + file_name
-	     end
-	 end
-         if !rule_exist
-	    puts "Error : the rule #{$list_rules[0]} does not exist"
-	 end
-
-
-
-      else
-	 puts $msg[6]
-	 exit(7)
-      end
-   elsif test_files_exists								# export one or several admission rules into default file name
-      if $list_rules.length > 0
-          # Export rules specified by user
-          $list_rules.each do |item|
-            rule_exist=false
-            (0..$result.length-1).each do |i|
-	        if item == $result[i][:id]
-	           rule_exist=true
-		   rule_export i
-	        end
+   	 # rules given by user
+   	 list_rules = rule_list_from_command_line
+	 level = 0
+	 if $options[:verbose]
+	    level = 1
+   	    (0..ARGV.length-1).each do |i|
+		level = 2 if ARGV[i]=~/-lvv/ || ARGV[i]=~/-vv/
 	    end
-            if !rule_exist
-	       puts "Error : the rule #{item} does not exist"
-	    end
-          end
-      else
-          # Export all rules
-          (0..$result.length-1).each do |i|
-              rule_export i
-          end
-      end
-   else
-      puts "Nothing done"
-   end		# if test_files_exists
+	 end 
+   	 status = rules.display(list_rules, level)
+	 exit(5) if status != 0
 
-end 	# if $options[:export]
+
+    when $options[:add]
+	 # Add admission rule
+
+	 no_rule = nil 
+   	 # retrieve no rule specified by user
+   	 (0..ARGV.length-1).each do |i|
+       	     if ARGV[i] == "-a" 
+          	if i < ARGV.length-1
+	     	   no_rule = $&.to_s.to_i if ARGV[i+1] =~ /\d+/ 
+ 	  	end
+       	     end
+   	 end
+
+   	 # load admission rule from a file 
+   	 load_rule_from_file
+
+	 if no_rule && no_rule == 0 
+	    puts $msg[4]
+	    exit(6)
+	 end
+
+   	 status = rules.add(no_rule, $script)
+	 exit(6) if status != 0
+
+
+    when $options[:update]
+	 # Update admission rule
+
+   	 no_rule = nil 
+   	 # retrieve no rule specified by user
+   	 (0..ARGV.length-1).each do |i|
+       	     if ARGV[i] == "-u" 
+          	if i < ARGV.length-1
+	     	   no_rule = $&.to_s.to_i if ARGV[i+1] =~ /\d+/ 
+ 	  	end
+       	     end
+   	 end
+
+	 if no_rule 
+	    if no_rule == 0 
+	       puts $msg[4]
+	       exit(7)
+	    end
+   	    load_rule_from_file
+   	    status = rules.update(no_rule, $script)
+	    exit(7) if status != 0
+	 else
+      	    puts $msg[5]
+      	    exit(7)
+	 end
+
+
+    when $options[:delete]
+	 # Delete admission rules
+
+   	 # rules given by user
+   	 list_rules = rule_list_from_command_line
+
+   	 if list_rules.length > 0
+      	    status = rules.delete(list_rules)
+	    exit(8) if status != 0
+   	 else
+      	    puts $msg[5]
+      	    exit(8)
+   	 end
+
+
+    when $options[:export]
+	 # Export admission rules
+
+   	 # rules given by user
+   	 list_rules = rule_list_from_command_line
+
+   	 if list_rules.length >= 2 && $options[:file]
+            puts $msg[0]
+            exit(9)
+   	 end
+
+   	 if $options[:file]
+      	    user_file_name = "" 
+      	    (0..ARGV.length-1).each do |i|
+          	if ARGV[i] == "-f"
+             	   user_file_name = ARGV[i+1] if i < ARGV.length-1
+          	end
+      	    end
+      	    status = rules.export_to_file(list_rules, user_file_name, false)
+   	 else
+      	    status = rules.export_to_file(list_rules, "admission_rule_", true)
+   	 end
+	 exit(9) if status != 0
+
+end
+
 
 
 
 # Disconnect from database
-$dbh.disconnect if $dbh
+dbh.disconnect if dbh
+
+
 
 
 
