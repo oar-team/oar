@@ -45,6 +45,10 @@ sub parse {
 		  {
 		   DEFAULT => "Cluster"
 		  });
+	$config->define("css_path",
+		  {
+		   DEFAULT => "/monika.css"
+		  });
   $config->define("gridname",
 		  {
 		   DEFAULT => "Grid"
@@ -132,6 +136,7 @@ sub parse {
   $config->file($self->{FILE});
 
   $self->{CLUSTERNAME} = $config->clustername();
+  $self->{CSS_PATH} = $config->css_path();
   $self->{GRIDNAME} = $config->gridname();
   $self->{SUMMARY_DISPLAY} = $config->summary_display();
   $self->{HOSTNAME} = $config->hostname();
@@ -183,6 +188,12 @@ sub parse {
 sub clustername {
   my $self = shift;
   return $self->{CLUSTERNAME};
+}
+
+## return css path
+sub css_path {
+  my $self = shift;
+  return $self->{CSS_PATH};
 }
 
 ## return grid name
