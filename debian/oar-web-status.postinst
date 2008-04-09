@@ -22,7 +22,9 @@ set -e
 . /usr/share/debconf/confmodule
 db_version 2.0
 
-mkdir -p /var/www/drawgantt/cache && chown www-data /var/www/drawgantt/cache || true
+mkdir -p /var/www/oar-web-status-files/drawgantt/cache && chown www-data /var/www/oar-web-status-files/drawgantt/cache || true
+
+ln -s /etc/oar/apache.conf /etc/apache2/conf.d/oar-web-status.conf || true
 
 chown www-data:root /etc/oar/drawgantt.conf > /dev/null 2>&1
 chmod 0600 /etc/oar/drawgantt.conf > /dev/null 2>&1
