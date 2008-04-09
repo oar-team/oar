@@ -341,6 +341,7 @@ draw-gantt:
 monika:
 	install -d -m 0755 $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
+	perl -i -pe "s#^css_path = .*#css_path = $(WWWDIR)/monika.css#" VisualizationInterfaces/Monika/monika.conf
 	@if [ -f $(OARCONFDIR)/monika.conf ]; then echo "Warning: $(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(OARCONFDIR) ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARCONFDIR)'\;#;;" $(CGIDIR)/monika.cgi
