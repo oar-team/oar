@@ -330,7 +330,7 @@ draw-gantt:
 	install -d -m 0755 $(WWWDIR)
 	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	perl -i -pe "s#^web_root: .*#web_root: '$(WWWDIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf
+	perl -i -pe "s#^web_root: .*#web_root: '$(WWWDIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
 	@if [ -f $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
 	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
 	install -d -m 0755 $(WWWDIR)/drawgantt/js
