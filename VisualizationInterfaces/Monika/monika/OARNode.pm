@@ -166,8 +166,15 @@ sub htmlTable {
     if ($ressourceState eq "Alive" && $self->isRessourceWorking($currentRessource) eq '1') {
       my @jobs = @{$self->{Ressources}->{$currentRessource}->{jobs}};
 
-      ## which job to show on screen ??? default: 0
-      $output .= $cgi->colorTd($jobs[0],100/$self->cpus."%");
+      $output .= $cgi->start_td();
+      $output .= $cgi->start_table({-border => "1", -cellspacing => "0", -cellpadding => "0", -width => "100%"});
+      foreach my $curr_job (@jobs){
+      	$output .= $cgi->start_Tr({-align => "center"});
+      	$output .= $cgi->colorTd($curr_job, 100/$self->cpus."%");
+      	$output .= $cgi->end_Tr();
+      }
+      $output .= $cgi->end_table();
+			$output .= $cgi->end_td();
     }
     elsif ($ressourceState eq "Alive" && $self->isRessourceWorking($currentRessource) eq '0'){
       $output .= $cgi->colorTd("Free",100/$self->cpus."%");

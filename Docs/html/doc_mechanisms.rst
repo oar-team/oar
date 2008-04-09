@@ -239,7 +239,7 @@ it is like a sub-scheduling mechanism.
 
 First a job of the type *container* must be submitted, for example::
 
-    oarsub -I -t container -l node=10
+    oarsub -I -t container -l nodes=10,walltime=2:10:00
     ...
     OAR_JOB_ID=42
     ...
