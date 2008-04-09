@@ -352,6 +352,10 @@ monika:
 	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(CGIDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(CGIDIR)/monika
 
+www-conf:
+	install -d -m 0755 $(OARCONFDIR)
+	@if [ -f $(OARCONFDIR)/apache.conf ]; then echo "Warning: $(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/apache.conf $(OARCONFDIR) ; fi
+
 server-install: sanity-check configuration common libs server dbinit
 
 user-install: sanity-check configuration common libs user
