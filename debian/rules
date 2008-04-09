@@ -141,7 +141,8 @@ install-indep:
 		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_BINDIR=/usr/bin
+		REAL_BINDIR=/usr/bin \
+		REAL_WWWDIR=/var/www/oar-web-status-files
 #	$(MAKE) desktop-computing-agent \
 #		OARUSER=oar \
 #		OAROWNER=root \
