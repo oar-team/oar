@@ -142,7 +142,9 @@ install-indep:
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin \
-		REAL_WWWDIR=/var/www/oar-web-status-files
+		WWW_ROOTDIR=/oar-web-status-files \
+		GANTT_WEB_ROOT=/var/www/ \
+		GANTT_WEB_DIR=oar-web-status-files/drawgantt 
 #	$(MAKE) desktop-computing-agent \
 #		OARUSER=oar \
 #		OAROWNER=root \
