@@ -25,7 +25,9 @@ REAL_OARCONFDIR=$(OARCONFDIR)
 REAL_OARDIR=$(OARDIR)
 REAL_SBINDIR=$(SBINDIR)
 REAL_BINDIR=$(BINDIR)
-REAL_WWWDIR=/var/www
+WWW_ROOTDIR=/
+GANTT_WEB_ROOT=$(WWWDIR)
+GANTT_WEB_DIR=drawgantt
 XAUTHCMDPATH=$(shell which xauth)
 ifeq "$(XAUTHCMDPATH)" ""
 	XAUTHCMDPATH=/usr/bin/xauth
@@ -331,7 +333,8 @@ draw-gantt:
 	install -d -m 0755 $(WWWDIR)
 	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	perl -i -pe "s#^web_root: .*#web_root: '$(REAL_WWWDIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
+	perl -i -pe "s#^web_root: .*#web_root: '$(GANTT_WEB_ROOT)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
+	perl -i -pe "s#^directory: .*#directory: '$(GANTT_WEB_DIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
 	@if [ -f $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
 	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
 	install -d -m 0755 $(WWWDIR)/drawgantt/js
@@ -342,7 +345,7 @@ draw-gantt:
 monika:
 	install -d -m 0755 $(CGIDIR)
 	install -d -m 0755 $(OARCONFDIR)
-	perl -i -pe "s#^css_path = .*#css_path = $(REAL_WWWDIR)/monika.css#" VisualizationInterfaces/Monika/monika.conf
+	perl -i -pe "s#^css_path = .*#css_path = $(WWW_ROOTDIR)/monika.css#" VisualizationInterfaces/Monika/monika.conf
 	@if [ -f $(OARCONFDIR)/monika.conf ]; then echo "Warning: $(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(OARCONFDIR) ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARCONFDIR)'\;#;;" $(CGIDIR)/monika.cgi
