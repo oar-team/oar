@@ -105,8 +105,6 @@ sub htmlTableRow {
   }
   #Until now, we've displayed jobId and User...
 
-  #my $nbNodes=$self->get("nbNodes");
-  #my $nbCores=$self->get("nbCores");
   my $wanted_resources=$self->get("wanted_resources");
   my $walltime=$self->get("walltime");
   my $state= $self->get("state");
@@ -117,23 +115,16 @@ sub htmlTableRow {
   my $submission_time = $self->get("submission_time");
   my $start_time = $self->get("start_time");
   my $scheduled_start = $self->get("scheduled_start");
-
-
-  ## dates formatting
-  #my $submission_time= $self->get("submission_time");
-  #my ($year,$mon,$mday,$hour,$min,$sec)= monika::db_io::local_to_ymdhms($submission_time);
-  #$submission_time= "$year-$mon-$mday $hour:$min:$sec";
-  #$self->set("submission_time",$submission_time,$cgi);
-
-  #my $start_time= $self->get("start_time");
-  #($year,$mon,$mday,$hour,$min,$sec)= monika::db_io::local_to_ymdhms($start_time);
-  #$start_time= "$year-$mon-$mday $hour:$min:$sec";
-  #$self->set("start_time",$start_time,$cgi);
+  my $initial_request = $self->get("initial_request");
+  if($initial_request =~ /-t container/){
+  	$type.=" - container";
+  }
+  elsif($initial_request =~ /-t inner=(\d+)/){
+  	$type.=" - inner job (container=$1)";
+  }
 
   $output .= $cgi->td({-align => "center"},$state);
   $output .= $cgi->td({-align => "center"},$queue);
-  #$output .= $cgi->td({-align => "center"},$nbNodes);
-  #$output .= $cgi->td({-align => "center"},$nbCores);
   $output .= $cgi->td({-align => "center"},$wanted_resources);
   $output .= $cgi->td({-align => "center"},$type);
   $output .= $cgi->td({-align => "center"},$properties);
