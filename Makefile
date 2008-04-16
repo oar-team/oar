@@ -303,14 +303,14 @@ node: man
 	install -m 0755 Tools/oarnodecheck/oarnodecheckrun $(OARDIR)
 	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*#CHECKSCRIPTDIR=$(REAL_OARCONFDIR)/check.d#" $(OARDIR)/oarnodecheckrun
 
-build-html-doc: Docs/html/
-	(cd Docs/html && $(MAKE) )
+build-html-doc: Docs/documentation/
+	(cd Docs/documentation && $(MAKE) )
 
 doc: build-html-doc
 	install -d -m 0755 $(DOCDIR)
 	install -d -m 0755 $(DOCDIR)/html
-	install -m 0644 Docs/html/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
-	install -m 0644 Docs/html/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
+	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
+	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
 	install -m 0644 Docs/schemas/oar_logo.png $(DOCDIR)/html
 	install -m 0644 Docs/schemas/db_scheme.png $(DOCDIR)/html
 	install -m 0644 Docs/schemas/interactive_oarsub_scheme.png $(DOCDIR)/html
