@@ -182,7 +182,8 @@ sub init_scheduler($$$$$$){
         my @tmp_resource_list;
         # Get the list of resources where the reservation will be able to be launched
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
-        push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));	
+        push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
+        push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Dead"));
         #Gantt_hole_storage::pretty_print($gantt);
         my $free_resources_vec = Gantt_hole_storage::get_free_resources(    $gantt,
                                                                             $job->{start_time},
@@ -215,9 +216,9 @@ sub init_scheduler($$$$$$){
         }
  
         my @dead_resources;
-        foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
-            push(@dead_resources, $r->{resource_id});
-        }
+        #foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
+        #    push(@dead_resources, $r->{resource_id});
+        #}
         
         my $job_properties = "\'1\'";
         if ((defined($job->{properties})) and ($job->{properties} ne "")){
