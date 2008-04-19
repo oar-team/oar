@@ -182,6 +182,7 @@ sub init_scheduler($$$$$$){
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Alive"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Suspected"));
         push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Dead"));
+        push(@tmp_resource_list, iolib::get_resources_in_state($dbh,"Absent"));
 	    #Gantt_2::pretty_print($gantt);
         my $free_resources_vec = Gantt_2::get_free_resources(	$gantt,
                                      				            $job->{start_time},
@@ -193,25 +194,25 @@ sub init_scheduler($$$$$$){
             }
         }
         
-        # CM part
-        if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-            foreach my $r (iolib::get_resources_that_can_be_waked_up($dbh,$job->{start_time} + $moldable->[1] + $Security_time_overhead)){
-                if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
-                    vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-                }
-            }
-            foreach my $r (iolib::get_resources_that_will_be_out($dbh,$job->{start_time} + $moldable->[1] + $Security_time_overhead)){
-                vec($available_resources_vector, $r->{resource_id}, 1) = 0;
-            }
-        }
-        # CM part
-        else{
-            foreach my $r (iolib::get_resources_in_state($dbh,"Absent")){
-                if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
-                    vec($available_resources_vector, $r->{resource_id}, 1) = 1;
-                }
-            }
-        }
+#        # CM part
+#        if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+#            foreach my $r (iolib::get_resources_that_can_be_waked_up($dbh,$job->{start_time} + $moldable->[1] + $Security_time_overhead)){
+#                if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
+#                    vec($available_resources_vector, $r->{resource_id}, 1) = 1;
+#                }
+#            }
+#            foreach my $r (iolib::get_resources_that_will_be_out($dbh,$job->{start_time} + $moldable->[1] + $Security_time_overhead)){
+#                vec($available_resources_vector, $r->{resource_id}, 1) = 0;
+#            }
+#        }
+#        # CM part
+#        else{
+#            foreach my $r (iolib::get_resources_in_state($dbh,"Absent")){
+#                if (vec($free_resources_vec, $r->{resource_id}, 1) == 1){
+#                    vec($available_resources_vector, $r->{resource_id}, 1) = 1;
+#                }
+#            }
+#        }
  
         my @dead_resources;
         #foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
