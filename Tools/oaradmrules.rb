@@ -11,6 +11,8 @@
 #
 # Usage / examples
 #   This program search and read oar.conf (with OARDIR environment variable or in current directory) 
+#   The default text editor to edit an admission rule is vi
+#   The value of $EDITOR is used if $EDITOR is defined
 #   Recommended format for admission rules
 #	First line : title or object of the admission rule (first character is #)
 #       Following lines beginning with # : description of the admission rule or main algorithm 
@@ -24,10 +26,13 @@
 #       ./oaradmrules.rb -lvv 3 5   => display all content for admission rules nb 3 and 5
 #   
 #   2 - add admission rules
+#       ./oaradmrules.rb -a  			=> add admission rule using a text editor 
+#       ./oaradmrules.rb -a no_rule 		=> add admission rule at the no_rule position using a text editor 
 #       ./oaradmrules.rb -a -f file		=> add admission rule from file 
 #       ./oaradmrules.rb -a no_rule -f file	=> insert admission rule at the no_rule position from file 
 #						   the numbers above or equal to no_rule are increased by 1 
 #   3 - update admission rule
+#       ./oaradmrules.rb -u no_rule 		=> update the admission rule specified using a text editor 
 #       ./oaradmrules.rb -u no_rule -f file	=> update the admission rule specified by no_rule from file 
 #
 #   4 - delete admission rules
@@ -35,10 +40,13 @@
 #       ./oaradmrules.rb -d 10 12 		=> delete admission rules 10 and 12 from database 
 #
 #   5 - export admission rules from database into text files in current directory
-#       ./oaradmrules.rb -x       	=> export all admission rules from database and create one file per admission_rule with the name admission_rule_<no_rule> 
-#       ./oaradmrules.rb -x 3 5   	=> export admission rules nb 3 and 5. Files admission_rule_3 and admission_rule_5 created
-#       ./oaradmrules.rb -x 3 -f file   => export admission rules nb 5 into file
+#       ./oaradmrules.rb -e       	=> export all admission rules from database and create one file per admission_rule with the name admission_rule_<no_rule> 
+#       ./oaradmrules.rb -e 3 5   	=> export admission rules nb 3 and 5. Files admission_rule_3 and admission_rule_5 created
+#       ./oaradmrules.rb -e 3 -f file   => export admission rules nb 5 into file
 #       
+#   6 - comment or uncomment an admission rule 
+#       ./oaradmrules.rb -c 10      	 	=> comment all the lines of the admission rule 10 
+#       ./oaradmrules.rb --no-comment 10       	=> comment all the lines of the admission rule 10 
 
 
 require 'optparse'
@@ -110,22 +118,19 @@ end	# load_configuration
 
 # Options for parsing
 $options = {}
-$options[:list] = $options[:verbose] = $options[:add] = $options[:file] = $options[:update] = $options[:export] = $options[:delete] = false
+$options[:list] = $options[:add] = $options[:file] = $options[:update] = $options[:export] = $options[:delete] = false
+$options[:comment] = nil
+
 opts = OptionParser.new do |opts|
-    opts.banner = "Usage: oaradmrules [-l [-c]] [-a [no_rule] -f file] [-u no_rule -f file] [-d no_rule [no_rule]] [-x [no_rule] -f file]"
+    opts.banner = "Usage: oaradmrules [-l|-ll|-lll] [-a [no_rule] [-f file]] [-u no_rule [-f file]] [-d no_rule [no_rule]]\n                   [-e [no_rule] [-f file]] [-c|--[no-]comment no_rule]"
 
     # list admission rules
     opts.on("-l","--list","List admission rules") do 
        $options[:list] = true 
     end
 
-    # display level 
-    opts.on("-v","--verbose","Display more details") do
-       $options[:verbose] = true
-    end
-   
     # add admission rules
-    opts.on("-a","--add","Add admission rules") do 
+    opts.on("-a","--add","Add an admission rule") do 
        $options[:add] = true 
     end
 
@@ -135,7 +140,7 @@ opts = OptionParser.new do |opts|
     end
 
     # update admission rules
-    opts.on("-u","--update","Update admission rules") do 
+    opts.on("-u","--update","Update an admission rule") do 
        $options[:update] = true 
     end
 
@@ -145,8 +150,13 @@ opts = OptionParser.new do |opts|
     end
 
     # export admission rules 
-    opts.on("-x","--export","Export admission rules") do
+    opts.on("-e","--export","Export admission rules") do
        $options[:export] = true
+    end
+
+    # comment/uncomment an admission rule an admission rule 
+    opts.on("-c","--[no-]comment","Comment or uncomment an admission rule") do |comment|
+       $options[:comment] = comment
     end
 
     # help
@@ -164,12 +174,15 @@ end
 def rule_list_from_command_line
 
    r = []
-   (0..ARGV.length-1).each do |i|
-	if ARGV[i] =~ /\d+/
-	   r.push($&.to_s)
-	end
+   i = 0
+   while i < ARGV.length 
+         if ARGV[i] == "-f"
+            i += 1
+         else
+            r.push(ARGV[i]) if !(ARGV[i] =~ /[^0-9]+/)
+         end
+         i += 1
    end
-
    return r
 
 end	# rule_list_from_command_line
@@ -262,24 +275,24 @@ class Rules
 
       # Add one rule
       # if no number rule specified => add at the end of table
-      # if number specified => insert admission rule at the nb_rule position
-      #    the numbers above or equal to nb_rule are increased by 1
+      # if number specified => insert admission rule at the no_rule position
+      #    the numbers above or equal to no_rule are increased by 1
       # Parameters : 
-      #    nb_rule : the number rule to add
+      #    no_rule : the number rule to add
       #    script  : the content of the admission rule to add
       # Return :
       #    status : 0 : no error - > 0 : one error occurs
-      def add(nb_rule, script)
+      def add(no_rule, script)
 	  status = 0
 	  msg = []
 	  msg[0] = "Admission rule added"
-	  if nb_rule
+	  if no_rule
 	     # no rule already exist in database ?
-	     q = "SELECT * FROM admission_rules WHERE id = " + nb_rule.to_s
+	     q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
 	     rows = @bdd.select_one(q) 
 	     if rows
 	        # add +1 to the id rules
-	        q = "SELECT * FROM admission_rules WHERE id >= " + nb_rule.to_s + " ORDER BY id DESC"
+	        q = "SELECT * FROM admission_rules WHERE id >= " + no_rule.to_s + " ORDER BY id DESC"
   	        rows = @bdd.execute(q)
 	        rows.each do |r|
 		     q = "UPDATE admission_rules SET id = " + (r["id"] + 1).to_s + " WHERE id = " + r["id"].to_s
@@ -290,7 +303,7 @@ class Rules
 	
 	     # Add rule in database
              q = "INSERT INTO admission_rules (id, rule) VALUES(?, ?)"
-	     status = bdd_do(q, nb_rule, script)
+	     status = bdd_do(q, no_rule, script)
 	     puts msg[0] if status == 0
 
 	  else
@@ -305,23 +318,23 @@ class Rules
 
       # Update one rule
       # Parameters : 
-      #    nb_rule : the number rule to add
+      #    no_rule : the number rule to add
       #    script  : the content of the admission rule to add
       # Return :
       #    status : 0 : no error - > 0 : one error occurs
-      def update(nb_rule, script)
+      def update(no_rule, script)
 	  status = 0
 	  msg = []
 	  msg[0] = "Admission rule updated"
           # no rule already exist in database ?
-          q = "SELECT * FROM admission_rules WHERE id = " + nb_rule.to_s
+          q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
           rows = @bdd.select_one(q) 
           if rows
-	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + nb_rule.to_s
+	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + no_rule.to_s
 	     status = bdd_do(q, script)
 	     puts msg[0] if status == 0
           else
-	      puts "Error : the rule " + nb_rule.to_s + " does not exist"
+	      puts "Error : the rule " + no_rule.to_s + " does not exist"
 	      status = 1
           end
 	  status
@@ -359,13 +372,13 @@ class Rules
       # Parameters : 
       #   list_rules : list of rules given by user to export into files
       #              : export_file_name,
-      #		     : export_file_name_with_nb_rule
+      #		     : export_file_name_with_no_rule
       # Return :
       #    status : 0 : no error - > 0 : one error occurs
-      def export_to_file(list_rules, export_file_name, export_file_name_with_nb_rule)
+      def export_to_file(list_rules, export_file_name, export_file_name_with_no_rule)
 	  status = 0 
 	  select_rules(list_rules)
-	  if files_overwrite(list_rules, export_file_name, export_file_name_with_nb_rule) 
+	  if files_overwrite(list_rules, export_file_name, export_file_name_with_no_rule) 
              if list_rules.length > 0
                 # Export rules specified by user
                 list_rules.each do |item|
@@ -373,7 +386,7 @@ class Rules
                    (0..@rules_set.length-1).each do |i|
 	               if item == @rules_set[i][:id]
 	                  rule_exist=true
-		          export_rule(i, export_file_name, export_file_name_with_nb_rule)
+		          export_rule(i, export_file_name, export_file_name_with_no_rule)
 	               end
 	           end
                    if !rule_exist
@@ -384,12 +397,140 @@ class Rules
              else
                  # Export all rules
                  (0..@rules_set.length-1).each do |i|
-                     export_rule(i, export_file_name, export_file_name_with_nb_rule)
+                     export_rule(i, export_file_name, export_file_name_with_no_rule)
                  end
              end
 	  end
 	  status
       end 	# def export_to_file
+
+
+      # Edit an admission rule
+      # Parameters : 
+      #    no_rule            : the number rule to edit - nil if new admission rule
+      #    no_rule_must_exist : test if the no_rule must be exist or not : true/false
+      #    file_name          : temporary file name to store the admission rule
+      #    editor             : command to be used for the text editor 
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      #    user_choice : 0 : continue and commit changes in oar database - 1 : abort changes, nothing is done in oar database
+      #    script : contains the Perl script of the admission rule 
+      def edit(no_rule, no_rule_must_exist, file_name, editor)
+	  status = 0
+	  user_choice = 1
+	  script = ""
+
+	  if no_rule && no_rule_must_exist
+             q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
+             rows = @bdd.select_one(q) 
+             if rows
+	 	script = rows[:rule]	
+             else
+	         puts "Error : the rule " + no_rule.to_s + " does not exist"
+	         status = 1
+             end
+	  end
+	  if status == 0
+	     begin
+             	  f = File.new(file_name, "w")
+             	  if script.length > 0
+             	     f.print script 
+             	  else
+		     f.print "# Title :  \n"
+		     f.print "# Description :  \n\n" 
+		  end
+             	  f.close
+		  rescue Exception => e
+			 puts "Error while creating temporary file to edit admission rule" 
+			 puts e.message
+			 status=1
+	     end
+	     if status==0
+		user_choice = ""
+		status1 = true
+		str = editor + " " + file_name
+		begin
+		    status1 = system(str)
+		    if status1
+	   	       begin
+			   puts "(e)dit admission rule again,"
+			   puts "(c)ommit changes in oar database and quit,"
+			   print "(Q)uit and abort without changes in oar database :  "
+			   user_choice = $stdin.gets.chomp
+	   	       end while(user_choice != "e" && user_choice != "c" && user_choice != "Q")
+		    else
+	    	       puts "Error during the launch of the text editor with the command : " + str
+		    end
+		end while(user_choice != "c" && user_choice != "Q" && status1)
+		status = 1 if !status1
+		if status == 0 && user_choice == "c"
+		   user_choice = 0
+		   script = ""
+		   begin 
+     	 	       File.open(file_name) do |file|
+	      		    while line = file.gets
+	            	          script << line
+	      		    end
+	 	       end
+		       rescue Exception => e
+		   end
+		end 
+	     end	
+	  end	  
+
+	  begin
+               File.delete(file_name)
+	       rescue Exception => e
+	  end
+
+	  return status, user_choice, script
+
+      end	# def edit
+
+
+      # Comment/uncomment an admission rule
+      # Parameters : 
+      #    no_rule : the number rule to comment or uncomment
+      #    action  : true : comment - false : uncomment
+      # Return :
+      #    status : 0 : no error - > 0 : one error occurs
+      def comment(no_rule, action)
+	  status=0
+          q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
+          rows = @bdd.select_one(q) 
+          if rows
+	     # The no_rule is already commented or not ? 
+	     str=""
+	     already_commented=true
+	     rows["rule"].each do |line|
+	         already_commented=false if line[0..0]!="#" && line.strip.length > 0
+	     end
+	     if action
+		if !already_commented
+	           rows["rule"].each do |line|
+		       str = str + "#" + line
+	           end
+	           status = self.update(no_rule, str)
+		else
+		   puts "The rule is already commented" 
+		end
+	     else
+		if already_commented
+	           rows["rule"].each do |line|
+			line.length>0 ? str = str + line[1..line.length-1] : str += line
+	           end
+	           status = self.update(no_rule, str)
+		else
+		   puts "The rule is already uncommented" 
+		end	
+	     end 
+          else
+	      puts "Error : the rule " + no_rule.to_s + " does not exist"
+	      status = 1
+          end
+	  status
+      end 	# comment
+
 
 
       private
@@ -399,20 +540,21 @@ class Rules
     	  puts "------"
     	  puts "Rule : " + @rules_set[ndx][:id]								# rule number
 
+	  no_char = 65
 	  description_end = false
 	  @rules_set[ndx][:rule].each_with_index do |line,line_index|	
-	 	if line_index == 0									# title or object of the admission rule 
-		   puts line
+	 	if line_index == 0 									# title or object of the admission rule 
+		   puts line[0..no_char]
 		end
 		if (display_level==1 || display_level==2) && line_index > 0 && !description_end		# description of the admission rule
 		   if line[0..0]=="#"
-		      puts line
+		      puts line[0..no_char]
 		   else
 		      description_end = !description_end 
 		   end
 		end
 		if display_level==2 && line_index > 0 && description_end				# rest of the admission rule
-		   puts line 
+		   puts line[0..no_char] 
 		end
 	  end
       end	# def display_rule(ndx)
@@ -447,7 +589,7 @@ class Rules
       # Return : 
       #    true  => files can be overwrite
       #    false => do not overwrite
-      def files_overwrite(list_rules, export_file_name, export_file_name_with_nb_rule)
+      def files_overwrite(list_rules, export_file_name, export_file_name_with_no_rule)
 
    	  files_already_exists = []
    	  if list_rules.length > 0
@@ -455,7 +597,7 @@ class Rules
        	     list_rules.each do |item|
          	  (0..@rules_set.length-1).each do |i|
 	     	      if item == @rules_set[i][:id]
-			 if export_file_name_with_nb_rule
+			 if export_file_name_with_no_rule
                             files_already_exists.push(export_file_name + @rules_set[i][:id]) if File.exist?(export_file_name + @rules_set[i][:id])
 			 else
                             files_already_exists.push(export_file_name) if File.exist?(export_file_name)
@@ -491,10 +633,10 @@ class Rules
 
 
       # Export one rule into a file
-      def export_rule(n, export_file_name, export_file_name_with_nb_rule)
+      def export_rule(n, export_file_name, export_file_name_with_no_rule)
 
 	  f_name = export_file_name 
-	  f_name += @rules_set[n][:id] if export_file_name_with_nb_rule
+	  f_name += @rules_set[n][:id] if export_file_name_with_no_rule
 
           puts "Export admission rule " + @rules_set[n][:id] + " into file " + f_name
           f = File.new(f_name, "w")
@@ -544,22 +686,19 @@ end
 
 
 # Other tests on syntax
-if !( ( $options[:list] && !$options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -l 
-      ( $options[:list] &&  $options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -l -v
-      (!$options[:list] && !$options[:verbose] &&  $options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] && !$options[:export]) || 	# -a -f
-      (!$options[:list] && !$options[:verbose] && !$options[:add] &&  $options[:file] &&  $options[:update] && !$options[:delete] && !$options[:export]) || 	# -u -f
-      (!$options[:list] && !$options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] &&  $options[:delete] && !$options[:export]) || 	# -d 
-      (!$options[:list] && !$options[:verbose] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export]) || 	# -x  
-      (!$options[:list] && !$options[:verbose] && !$options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export]) ) 	# -x -f
+if !( ( $options[:list] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -l 
+      (!$options[:list] &&  $options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -a 
+      (!$options[:list] &&  $options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -a -f
+      (!$options[:list] && !$options[:add] && !$options[:file] &&  $options[:update] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -u 
+      (!$options[:list] && !$options[:add] &&  $options[:file] &&  $options[:update] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -u -f
+      (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:update] &&  $options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -d 
+      (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? ) ||   # -e  
+      (!$options[:list] && !$options[:add] &&  $options[:file] && !$options[:update] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? ) ||   # -e -f
+      (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:update] && !$options[:delete] && !$options[:export] && !$options[:comment].nil? )  )   # [no]comment
 
       puts $msg[0]
       exit(2)
 end
-
-
-# Choice of the editor  
-$editor = "vi"
-$editor = ENV['EDITOR'] if ENV['EDITOR']
 
 
 # Load configuration file
@@ -568,6 +707,18 @@ if load_configuration > 0
 	exit(3)
 end
 
+filename_base = "admission_rule_"
+
+# Text editor to edit an admission rule 
+editor = "vi"
+editor = ENV['EDITOR'] if ENV['EDITOR']
+
+# Directory to edit an admission rule
+directory="/tmp/"
+if $config['OAR_RUNTIME_DIRECTORY']
+   directory = $config['OAR_RUNTIME_DIRECTORY']
+   directory += "/" if directory[directory.length-1..directory.length-1]!="/" 
+end
 
 # Connect to the database
 begin
@@ -591,13 +742,15 @@ case
 	 
    	 # rules given by user
    	 list_rules = rule_list_from_command_line
-	 level = 0
-	 if $options[:verbose]
-	    level = 1
-   	    (0..ARGV.length-1).each do |i|
-		level = 2 if ARGV[i]=~/-lvv/ || ARGV[i]=~/-vv/
-	    end
-	 end 
+	 
+         level = level_max = 0
+   	 (0..ARGV.length-1).each do |i|
+	     level = 1 if ARGV[i]=~/-ll/ 
+	     level = 2 if ARGV[i]=~/-lll/ 
+	     level_max = level if level > level_max
+	 end
+	 level = level_max
+
    	 status = rules.display(list_rules, level)
 	 exit(5) if status != 0
 
@@ -615,16 +768,26 @@ case
        	     end
    	 end
 
-   	 # load admission rule from a file 
-   	 load_rule_from_file
-
 	 if no_rule && no_rule == 0 
 	    puts $msg[4]
 	    exit(6)
 	 end
 
-   	 status = rules.add(no_rule, $script)
-	 exit(6) if status != 0
+	 if $options[:file]
+   	    # add admission rule from a file 
+   	    load_rule_from_file
+   	    status = rules.add(no_rule, $script)
+	    exit(6) if status != 0
+	 else
+   	    # add admission rule using a text editor 
+	    file_name = directory + "OAR_tmp_" + filename_base
+	    file_name += no_rule.to_s if no_rule
+	    status, user_choice, $script = rules.edit(no_rule, false, file_name, editor)
+	    if status==0 && user_choice==0
+   	       status = rules.add(no_rule, $script)
+	       exit(6) if status != 0
+	    end
+	 end
 
 
     when $options[:update]
@@ -645,9 +808,21 @@ case
 	       puts $msg[4]
 	       exit(7)
 	    end
-   	    load_rule_from_file
-   	    status = rules.update(no_rule, $script)
-	    exit(7) if status != 0
+	    if $options[:file] 
+   	       # update admission rule from a file 
+	       load_rule_from_file
+   	       status = rules.update(no_rule, $script)
+	       exit(7) if status != 0
+	    else
+	       # update admission rule using a text editor
+	       file_name = directory + "OAR_tmp_" + filename_base
+	       file_name += no_rule.to_s if no_rule
+	       status, user_choice, $script = rules.edit(no_rule, true, file_name, editor)
+	       if status==0 && user_choice==0
+   	          status = rules.update(no_rule, $script)
+	          exit(7) if status != 0
+	       end
+	    end
 	 else
       	    puts $msg[5]
       	    exit(7)
@@ -689,9 +864,21 @@ case
       	    end
       	    status = rules.export_to_file(list_rules, user_file_name, false)
    	 else
-      	    status = rules.export_to_file(list_rules, "admission_rule_", true)
+      	    status = rules.export_to_file(list_rules, filename_base, true)
    	 end
 	 exit(9) if status != 0
+
+
+    when !$options[:comment].nil?
+	 # Comment or uncomment an admission rules
+   	 list_rules = rule_list_from_command_line
+   	 if list_rules.length == 0 || list_rules.length > 1
+            puts $msg[0]
+            exit(10)
+   	 end
+
+      	 status = rules.comment(list_rules, $options[:comment])
+	 exit(10) if status != 0
 
 end
 
