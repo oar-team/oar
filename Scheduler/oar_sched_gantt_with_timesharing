@@ -239,7 +239,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
             iolib::set_job_message($base,$j->{job_id},$message);
             iolib::set_job_scheduler_info($base,$j->{job_id},$message);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
+            oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
             $skip_job = 1;
             next;
         }
