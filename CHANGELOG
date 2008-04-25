@@ -41,6 +41,7 @@ upstream development version:
   - Added a table schema in the db with the field version, reprensenting the 
   	version of the db schema.
   - Added a field DB_PORT in the oar config file. 
+  - Bug #5518: add right initialization of the job user name.
 
 version 2.2.12:
 ---------------

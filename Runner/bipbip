@@ -134,6 +134,8 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     oar_Tools::notify_tcp_socket($addr,$port,"Starting...");
 }
 
+my $job_cpuset_uid;
+$Job_user = oar_Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
 my $types = iolib::get_current_job_types($base,$Job_id);
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
@@ -142,7 +144,6 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     # CPUSET PART #
     ###############
     my $cpuset_nodes;
-    my $job_cpuset_uid;
     $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
     $job_cpuset_uid = iolib::get_job_cpuset_uid($base, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
 
