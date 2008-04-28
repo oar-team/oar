@@ -20,7 +20,7 @@ PDF version : `<OAR-DOCUMENTATION-ADMIN.pdf>`_
 
 .. include:: doc_oar-presentation.rst
 
-.. include:: ../../INSTALL
+.. include:: INSTALL
 
 .. include:: doc_security.rst
 
