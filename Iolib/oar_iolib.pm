@@ -4004,45 +4004,6 @@ sub get_gantt_scheduled_jobs($){
 }
 
 
-#get previous scheduler decisions
-#args : base
-#return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
-sub get_gantt_scheduled_jobs_visu($){
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
-                             FROM gantt_jobs_resources_visu g1, gantt_jobs_predictions_visu g2, moldable_job_descriptions m, jobs j
-                             WHERE
-                                m.moldable_index = \'CURRENT\'
-                                AND g1.moldable_job_id = g2.moldable_job_id
-                                AND m.moldable_id = g2.moldable_job_id
-                                AND j.job_id = m.moldable_job_id
-                             ORDER BY j.start_time, j.job_id
-                            ");
-    $sth->execute();
-    my %res ;
-    my @order;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($res{$ref[0]})){
-            $res{$ref[0]}->[0] = $ref[1];
-            $res{$ref[0]}->[1] = $ref[2];
-            $res{$ref[0]}->[2] = $ref[4];
-#            $res{$ref[0]}->[3] = $ref[3];
-            $res{$ref[0]}->[4] = $ref[5];
-            $res{$ref[0]}->[5] = $ref[6];
-            $res{$ref[0]}->[6] = $ref[7];
-            $res{$ref[0]}->[7] = $ref[8];
-            $res{$ref[0]}->[8] = $ref[9];
-            push(@order,$ref[0]);
-        }
-        push(@{$res{$ref[0]}->[3]}, $ref[3]);
-    }
-    $sth->finish();
-
-    return(\@order, %res);
-}
-
-
-
 #get previous scheduler decisions for visu
 #args : base
 #return a hashtable : job_id --> [start_time,weight,walltime,queue_name,\@nodes]
