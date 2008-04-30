@@ -369,7 +369,7 @@ sub check_reservation_jobs($$$$){
     if ($#jobs_to_sched >= 0){
         # Build gantt diagram of other jobs
         # Take care of currently scheduled jobs except besteffort jobs if queue_name is not besteffort
-        my ($order, %already_scheduled_jobs) = iolib::get_gantt_scheduled_jobs($dbh);
+        my ($order, %already_scheduled_jobs) = iolib::get_gantt_scheduled_jobs_visu($dbh);
         foreach my $i (keys(%already_scheduled_jobs)){
             my $types = iolib::get_current_job_types($dbh,$i);
             if ((! defined($types->{besteffort})) or ($queue_name eq "besteffort")){
@@ -452,7 +452,7 @@ sub check_reservation_jobs($$$$){
                 # The reservation can be scheduled
                 my @res_trees;
                 my @resources;
-                foreach my $t (@tree_list){
+                foreach my $t (@{$hole[1]}){
                     my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
                     push(@res_trees, $minimal_tree);
                     foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
@@ -461,7 +461,7 @@ sub check_reservation_jobs($$$$){
                 }
         
                 # We can schedule the job
-                oar_debug("[oar_scheduler] check_reservation_jobs : Confirm reservation $job->{job_id} and add in gantt\n");
+                oar_debug("[oar_scheduler] check_reservation_jobs : Confirm reservation $job->{job_id} and add in gantt (@resources)\n");
                 my $vec = '';
                 foreach my $r (@resources){
                     vec($vec, $r, 1) = 1;
