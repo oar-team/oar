@@ -49,17 +49,38 @@ while (my $jobid0 = shift(@jobids)) {
 			$jobs->{$jobid0}->{start_time} >= $jobs->{$jobidN}->{start_time} and
 			$jobs->{$jobid0}->{stop_time} <= $jobs->{$jobidN}->{stop_time}
 			)) {
-			my @m = match($jobs->{$jobid0}->{resources},$jobs->{$jobidN}->{resources});
-			if (@m) {
-				print "CONFLICT: $jobid0 and $jobidN\n";
-				foreach my $j ($jobid0,$jobidN) {
-					print "|-[$j]-start_time: ".localtime($jobs->{$j}->{start_time})."\n";
-					print "|-[$j]-stop_time: ".localtime($jobs->{$j}->{stop_time})."\n";
-					print "|-[$j]-user: ".$jobs->{$j}->{user}."\n";
-					print "|-[$j]-walltime: ".$jobs->{$j}->{walltime}."\n";
-				}
-				print "`-confict resources: ".join(", ",@m)."\n";
 
+			# exceptions
+			my $ok;
+			foreach my $r ($jobid0,$jobidN) {
+				my $j = ($r == $jobid0)?$jobidN:$jobid0;
+				if ( # besteffort
+					$jobs->{$r}->{queue_name} eq 'besteffort' and  
+					$jobs->{$j}->{queue_name} ne 'besteffort' and
+					$jobs->{$r}->{state} eq 'Waiting' and  #other states ?
+					$jobs->{$j}->{state} eq 'Waiting' and  #other states ?
+					$jobs->{$r}->{start_time} < $jobs->{$j}->{start_time}
+				) {
+					$ok=1;
+				} elsif (0) { # container
+				} elsif (0) { # timesharing
+				}
+				last if (defined($ok))
+			}	
+
+			# default jobs
+			unless (defined($ok)) {
+				my @m = match($jobs->{$jobid0}->{resources},$jobs->{$jobidN}->{resources});
+				if (@m) {
+					print "CONFLICT: $jobid0 and $jobidN\n";
+					foreach my $j ($jobid0,$jobidN) {
+						print "|-[$j]-start_time: ".localtime($jobs->{$j}->{start_time})."\n";
+						print "|-[$j]-stop_time: ".localtime($jobs->{$j}->{stop_time})."\n";
+						print "|-[$j]-user: ".$jobs->{$j}->{user}."\n";
+						print "|-[$j]-walltime: ".$jobs->{$j}->{walltime}."\n";
+					}
+					print "`-confict resources: ".join(", ",@m)."\n";
+				}
 			}
 		}		
 	}	
