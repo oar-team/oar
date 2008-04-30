@@ -7,6 +7,7 @@ version 2.2.12:
   - Fix the bug in Iolib if DEAD_SWITCH_TIME >0
   - Fix a bug in bipbip when calling the cpuset_manager to clean jobs in error
   - Bug #5469: fix the bug with reservations and Dead resources
+  - Bug #5535: reservations were checked badly at the same time.
 
 version 2.2.11:
 ---------------

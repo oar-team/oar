@@ -453,7 +453,7 @@ sub check_reservation_jobs($$$$){
                 # The reservation can be scheduled
                 my @res_trees;
                 my @resources;
-                foreach my $t (@tree_list){
+                foreach my $t (@{$hole[1]}){
                     my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
                     push(@res_trees, $minimal_tree);
                     foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
