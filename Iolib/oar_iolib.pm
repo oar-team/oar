@@ -5371,7 +5371,8 @@ sub job_finishing_sequence($$$$$$){
                                 },
                     oar_tmp_directory => oar_Tools::get_default_oarexec_directory(),
                     user => $job->{job_user},
-                    types => $types
+                    types => $types,
+                    log_level => oar_Judas::get_log_level()
                 };
                 my ($tag,@bad_tmp) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
