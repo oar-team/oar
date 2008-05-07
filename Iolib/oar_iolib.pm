@@ -4453,7 +4453,7 @@ sub get_gantt_resources_for_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req = "SELECT g1.resource_id
+    my $req = "SELECT g1.resource_id, j.job_id
                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m
                WHERE
                   m.moldable_index = \'CURRENT\'
@@ -4462,14 +4462,13 @@ sub get_gantt_resources_for_jobs_to_launch($$){
                   AND g1.moldable_job_id = g2.moldable_job_id
                   AND g2.start_time <= $date
                   AND j.state = \'Waiting\'
-               GROUP BY g1.resource_id
               ";
     
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        $res{$ref[0]} = 1; 
+        $res{$ref[0]} = $ref[1];
     }
     $sth->finish();
 
