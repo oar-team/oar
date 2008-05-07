@@ -92,8 +92,9 @@ sub init_scheduler($$$$$$){
     $current_time_sec++;
     $current_time_sql = iolib::local_to_sql($current_time_sec);
 
-   
-    iolib::gantt_flush_tables($dbh);
+    my $reservation_already_there = iolib::get_waiting_reservations_already_scheduled($dbh);
+    
+    iolib::gantt_flush_tables($dbh, $reservation_already_there);
     iolib::set_gantt_date($dbh,$current_time_sec);
     
     my @initial_jobs;
@@ -113,6 +114,20 @@ sub init_scheduler($$$$$$){
     }
     my $gantt = Gantt_hole_storage::new($max_resources, $Minimum_hole_time);
     Gantt_hole_storage::add_new_resources($gantt, $vec);
+
+    # Add already scheduled reservations into the gantt
+    foreach my $resa (keys(%{$reservation_already_there})){
+        my $vec = '';
+        foreach my $r (@{$reservation_already_there->{$resa}->{resources}}){
+            vec($vec, $r, 1) = 1;
+        }
+        Gantt_hole_storage::set_occupation( $gantt,
+                                            $reservation_already_there->{$resa}->{start_time},
+                                            $reservation_already_there->{$resa}->{walltime} + $Security_time_overhead,
+                                            $vec
+                                          );
+        oar_debug("[oar_scheduler] init_scheduler : add in gantt already scheduled reservation (moldable id $resa) at $reservation_already_there->{$resa}->{start_time} with walltime=$reservation_already_there->{$resa}->{walltime} on resources @{$reservation_already_there->{$resa}->{resources}}\n");
+    }
 
     foreach my $i (@initial_jobs){
         next if ($i->{assigned_moldable_job} == 0);
@@ -177,6 +192,7 @@ sub init_scheduler($$$$$$){
         my $job_descriptions = iolib::get_resources_data_structure_current_job($dbh,$job->{job_id});
         # For reservation we take the first moldable job
         my $moldable = $job_descriptions->[0];
+        next if (defined($reservation_already_there->{$moldable->[2]}));
         my $available_resources_vector = '';
         #my $alive_resources_vector = '';
         my @tmp_resource_list;
