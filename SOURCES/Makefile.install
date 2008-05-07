@@ -83,9 +83,13 @@ pkginstall:
 		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/lib/oar \
 		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/bin \
 		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/sbin \
-		WWWDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www/html \
+		WWWDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www/html/oar-web-status-files \
 		CGIDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/var/www/cgi-bin \
 		REAL_OARCONFDIR=/etc/oar \
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
-		REAL_BINDIR=/usr/bin
+		REAL_BINDIR=/usr/bin \
+                WWW_ROOTDIR=/oar-web-status-files \
+                GANTT_WEB_ROOT=/var/www/html \
+                GANTT_WEB_DIR=oar-web-status-files/drawgantt
+
