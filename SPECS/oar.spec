@@ -115,6 +115,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/e
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
+install -D -o apache -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
@@ -259,8 +260,13 @@ chsh -s /bin/bash oar 2>/dev/null || true
 ###### oar-web-status scripts ######
 
 %post web-status
-mkdir -p /var/www/drawgantt/cache && chown apache /var/www/drawgantt/cache || true
+mkdir -p /var/www/html/oar-web-status-files/drawgantt/cache && chown apache /var/www/html/oar-web-status-files/drawgantt/cache || true
+ln -s /etc/oar/apache.conf /etc/httpd/conf.d/oar-web-status.conf || true
+service httpd reload || true
 
+%postun web-status
+rm -f /etc/httpd/conf.d/oar-web-status.conf || true
+rm -rf /var/www/html/oar-web-status-files/drawgantt/cache
 
 %changelog
 * Sun Mar 23 2008 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.3.0-1

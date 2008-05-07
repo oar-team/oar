@@ -74,7 +74,7 @@ pkginstall:
 		REAL_OARDIR=/usr/lib/oar \
 		REAL_SBINDIR=/usr/sbin \
 		REAL_BINDIR=/usr/bin
-	$(MAKE) draw-gantt monika \
+	$(MAKE) draw-gantt monika www-conf \
 		OARUSER=oar \
 		OAROWNER=root \
 		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/etc/oar \
