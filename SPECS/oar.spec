@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1300
+%define version 2.3.0+svn1364
 %define release 1
 
 Name: 		oar
@@ -184,6 +184,7 @@ fi
 if ! getent passwd oar > /dev/null 2>&1 ; then
     mkdir -p /var/lib/oar
     useradd -r -m -d /var/lib/oar -g oar -s /bin/bash oar
+    usermod -U oar
     cd /var/lib/oar
     echo '' >> .bash_profile
     echo 'export PATH="/usr/lib/oar/oardodo:$PATH"' >> .bash_profile
