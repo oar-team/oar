@@ -103,6 +103,14 @@ CREATE TABLE gantt_jobs_predictions_visu (
 );
 
 
+CREATE TABLE gantt_jobs_predictions_log (
+  sched_date integer NOT NULL default '0',
+  moldable_job_id integer NOT NULL default '0',
+  start_time integer NOT NULL default '0',
+  PRIMARY KEY  (sched_date, moldable_job_id)
+);
+
+
 CREATE TABLE gantt_jobs_resources (
   moldable_job_id integer NOT NULL default '0',
   resource_id integer NOT NULL default '0',
@@ -114,6 +122,14 @@ CREATE TABLE gantt_jobs_resources_visu (
   moldable_job_id integer NOT NULL default '0',
   resource_id integer NOT NULL default '0',
   PRIMARY KEY  (moldable_job_id,resource_id)
+);
+
+
+CREATE TABLE gantt_jobs_resources_log (
+  sched_date integer NOT NULL default '0',
+  moldable_job_id integer NOT NULL default '0',
+  resource_id integer NOT NULL default '0',
+  PRIMARY KEY  (sched_date, moldable_job_id,resource_id)
 );
 
 

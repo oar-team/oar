@@ -114,7 +114,7 @@ sub get_all_queue_informations($);
 sub get_gantt_scheduled_jobs($);
 sub get_gantt_visu_scheduled_jobs($);
 sub add_gantt_scheduled_jobs($$$$);
-sub gantt_flush_tables($$);
+sub gantt_flush_tables($$$);
 sub set_gantt_date($$);
 sub get_gantt_date($);
 sub get_gantt_visu_date($);
@@ -4228,9 +4228,24 @@ sub get_waiting_reservations_already_scheduled($){
 
 
 #Flush gantt tables
-sub gantt_flush_tables($$){
+sub gantt_flush_tables($$$){
     my $dbh = shift;
     my $reservations_to_keep = shift;
+    my $log = shift;
+
+    if ($log > 2){
+        my $date = get_gantt_date($dbh);
+        $dbh->do("  INSERT INTO gantt_jobs_predictions_log (sched_date,moldable_job_id,start_time)
+                        SELECT \'$date\', gantt_jobs_predictions.moldable_job_id, gantt_jobs_predictions.start_time
+                        FROM gantt_jobs_predictions
+                        WHERE
+                            gantt_jobs_predictions.moldable_job_id != 0
+        ");
+        $dbh->do("  INSERT INTO gantt_jobs_resources_log (sched_date,moldable_job_id,resource_id)
+                        SELECT \'$date\', gantt_jobs_resources.moldable_job_id, gantt_jobs_resources.resource_id
+                        FROM gantt_jobs_resources
+        ");
+    }
 
     my $sql = "\'1\'";
     my @jobs_to_keep = keys(%{$reservations_to_keep});

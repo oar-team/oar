@@ -94,7 +94,7 @@ sub init_scheduler($$$$$$){
 
     my $reservation_already_there = iolib::get_waiting_reservations_already_scheduled($dbh);
     
-    iolib::gantt_flush_tables($dbh, $reservation_already_there);
+    iolib::gantt_flush_tables($dbh, $reservation_already_there, oar_Judas::get_log_level());
     iolib::set_gantt_date($dbh,$current_time_sec);
     
     my @initial_jobs;
