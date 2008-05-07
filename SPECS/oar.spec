@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1364
+%define version 2.3.0+svn1370
 %define release 1
 
 Name: 		oar
@@ -115,7 +115,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/e
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
-install -D -o apache -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar
+install -D -o apache -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
