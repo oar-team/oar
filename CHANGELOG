@@ -8,6 +8,11 @@ version 2.2.12:
   - Fix a bug in bipbip when calling the cpuset_manager to clean jobs in error
   - Bug #5469: fix the bug with reservations and Dead resources
   - Bug #5535: reservations were checked badly at the same time.
+  - Add 2 new tables to keep scheduling decisions log
+    (gantt_jobs_predictions_log and gantt_jobs_resources_log). This will help
+    to debug scheduling troubles
+  - Now reservations are scheduled only once (at submission time). So resources
+    for a reservation cannot change in the time.
 
 version 2.2.11:
 ---------------

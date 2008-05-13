@@ -114,7 +114,7 @@ sub get_all_queue_informations($);
 sub get_gantt_scheduled_jobs($);
 sub get_gantt_visu_scheduled_jobs($);
 sub add_gantt_scheduled_jobs($$$$);
-sub gantt_flush_tables($);
+sub gantt_flush_tables($$$);
 sub set_gantt_date($$);
 sub get_gantt_date($);
 sub get_gantt_visu_date($);
@@ -4075,14 +4075,69 @@ sub get_gantt_visu_date($){
 }
 
 
-#Flush gantt tables
-sub gantt_flush_tables($){
+# Get all waiting reservation jobs
+# parameter : database ref
+# return an array of moldable job informations
+sub get_waiting_reservations_already_scheduled($){
     my $dbh = shift;
 
+    my $sth = $dbh->prepare("   SELECT m.moldable_id, o.start_time, p.resource_id, m.moldable_walltime
+                                FROM jobs j, moldable_job_descriptions m, gantt_jobs_predictions o, gantt_jobs_resources p
+                                WHERE
+                                    (j.state = \'Waiting\'
+                                        OR j.state = \'toAckReservation\')
+                                    AND j.reservation = \'Scheduled\'
+                                    AND j.job_id = m.moldable_job_id
+                                    AND o.moldable_job_id = m.moldable_id
+                                    AND p.moldable_job_id = m.moldable_id
+                            ");
+    $sth->execute();
+    my $res;
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@{$res->{$ref[0]}->{resources}}, $ref[2]);
+        $res->{$ref[0]}->{start_time} = $ref[1];
+        $res->{$ref[0]}->{walltime} = $ref[3];
+    }
+    $sth->finish();
+    return($res);
+}
+
+
+#Flush gantt tables
+sub gantt_flush_tables($$$){
+    my $dbh = shift;
+    my $reservations_to_keep = shift;
+    my $log = shift;
+
+    if ($log > 2){
+        my $date = get_gantt_date($dbh);
+        $dbh->do("  INSERT INTO gantt_jobs_predictions_log (sched_date,moldable_job_id,start_time)
+                        SELECT \'$date\', gantt_jobs_predictions.moldable_job_id, gantt_jobs_predictions.start_time
+                        FROM gantt_jobs_predictions
+                        WHERE
+                            gantt_jobs_predictions.moldable_job_id != 0
+        ");
+        $dbh->do("  INSERT INTO gantt_jobs_resources_log (sched_date,moldable_job_id,resource_id)
+                        SELECT \'$date\', gantt_jobs_resources.moldable_job_id, gantt_jobs_resources.resource_id
+                        FROM gantt_jobs_resources
+        ");
+    }
+
+    my $sql = "\'1\'";
+    my @jobs_to_keep = keys(%{$reservations_to_keep});
+    if ($#jobs_to_keep >= 0){
+        $sql = "moldable_job_id NOT IN (".join(',',@jobs_to_keep).")";
+    }
     #$dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
-    $dbh->do("DELETE FROM gantt_jobs_predictions");
+    $dbh->do("  DELETE FROM gantt_jobs_predictions
+                WHERE
+                    $sql
+             ");
     #$dbh->do("TRUNCATE TABLE gantt_jobs_resources");
-    $dbh->do("DELETE FROM gantt_jobs_resources");
+    $dbh->do("  DELETE FROM gantt_jobs_resources
+                WHERE
+                    $sql
+             ");
     
 #   $dbh->do("OPTIMIZE TABLE ganttJobs, ganttJobsPrediction");
 }
