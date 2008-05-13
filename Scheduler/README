@@ -1,19 +1,33 @@
 Definition of the scheduler's interface:
 
-The scheduler can be any executable file, stored in the schedulers repository (/usr/lib/oar/schedulers/ for installations using the Debian packages)
-The scheduler is executed by the "metascheduler", that handles sequentially the different queues by priority order and make the glue between them (besteffort jobs to kill, etc).
+The scheduler can be any executable file, stored in the schedulers repository
+(/usr/lib/oar/schedulers/ for installations using the Debian packages).
+The scheduler is executed by the "metascheduler", that handles sequentially the
+different queues by priority order and make the glue between them (besteffort
+jobs to kill, etc).
 THe scheduler executable has the following interface:
-    - it gets 3 arguments:
-        1. queue name
-        2. reference time in second
-        3. reference time in sql format (for conveniance only)
-    - only jobs of your queue and with the state "Waiting" or "Reservation = None" should be manipulated
-    - any information stored in the database can however be taken into account (read).
-    - previous decisions of the other schedulers (other queues) should be taken into account: information from tables gantt_jobs_predictions_ and gantt_jobs_resources_, in order to avoid conflicts between jobs of different queues.
-    - decisions must be stored in the tables gantt_jobs_predictions_ and gantt_jobs_resources_
-    - the state of some jobs can be set to "toError" so that OAR delete them after the scheduler's run. If any job is set to that state, the scheduler must return an exit code equal to 1, in order to notify the metascheduler, otherwise exit code must be 0.
 
-As an example, you can look at the default OAR scheduler "oar_sched_gantt_with_timesharing".
+  - it gets 3 arguments:
+      1. queue name
+      2. reference time in second
+      3. reference time in sql format (for conveniance only)
+  - only jobs of your queue and with the state "Waiting" or "Reservation =
+    None" should be manipulated
+  - any information stored in the database can however be taken into account
+    (read).
+  - previous decisions of the other schedulers (other queues) should be taken
+    into account: information from tables gantt_jobs_predictions_ and
+    gantt_jobs_resources_, in order to avoid conflicts between jobs of
+    different queues.
+  - decisions must be stored in the tables gantt_jobs_predictions_ and
+    gantt_jobs_resources_
+  - the state of some jobs can be set to "toError" so that OAR delete them
+    after the scheduler's run. If any job is set to that state, the scheduler
+    must return an exit code equal to 1, in order to notify the metascheduler,
+    otherwise exit code must be 0.
+
+As an example, you can look at the default OAR scheduler
+"oar_sched_gantt_with_timesharing".
 It uses a gantt and a resource tree libraries that are essential to take some
 decisions.
 
