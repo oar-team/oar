@@ -20,7 +20,24 @@ use strict;
 use Fcntl ':flock';
 use Data::Dumper;
 
+# Constants
+use constant LOGMSG => qw( error info debug );
+use constant {
+    ERROR => 1,
+    INFO => 2,
+    DEBUG => 3,
+};
+use constant {
+    OK => 0,
+    PARAMS => 1,
+    FILE => 2,
+    LOCK => 3,
+    CPUSET => 4,
+    SSH => 5
+};
+
 my $Cpuset;
+my $Log_level;
 my $Cpuset_path = "oar";
 my $Allow_SSH_type = "allow_classic_ssh";
 die "Invalid cpuset_path: $Cpuset_path.\n" if $Cpuset_path =~ /\//;
@@ -33,15 +50,29 @@ while (<STDIN>){
     $tmp .= $_;
 }
 $Cpuset = eval($tmp);
+$Log_level = $Cpuset->{log_level};
+
+if (!defined $Log_level) {
+    warn("[error] bad parameter structure\n");
+    exit(PARAMS);
+}
+
+# message functions
+sub message(@) {
+    my $level=shift();
+    if ($level <= $Log_level) {
+        warn("[".(LOGMSG)[$level]."] ",@_);
+    }
+}
+
 
 # Get the data structure only for this node
 my $Cpuset_name = $Cpuset->{name};
 my @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
 if (!defined($Cpuset_name)){
-    print("[cpuset_manager] Bad SSH hashtable transfered\n");
-    exit(2);
+    message(ERROR,"bad parameter structure\n");
+    exit(PARAMS);
 }
-
 
 # From now, "Cpuset" is of the form: 
 # $Cpuset = {
@@ -56,17 +87,21 @@ if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
     # First, create the tmp oar directory
     if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
-        print("[cpuset_manager] Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
-        exit(13);
+        message(ERROR,"directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created\n");
+        exit(FILE);
     }
 
-    print("[cpuset_manager] name = $Cpuset_name ; cpus = @Cpuset_cpus\n");
+    message(DEBUG,"name = $Cpuset_name ; cpus = @Cpuset_cpus\n");
     
     if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
-        flock(LOCKFILE,LOCK_EX) or die("flock failed: $!\n");
+        if (! flock(LOCKFILE,LOCK_EX)) {
+            message(ERROR,"flock failed: $!\n"));
+            exit(LOCK);
+        }
         if (system('sudo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
-            if (system('sudo mkdir -p /dev/cpuset && sudo mount -t cpuset none /dev/cpuset')){
-                exit(4);
+            if (system('sudo mkdir -p /dev/cpuset && sudo mount -t cpuset none /dev/cpuset 2> /dev/null')){
+                message(ERROR,"system cpuset initialization failed: $!\n"));
+                exit(CPUSET);
             }
         }
         if (!(-d '/dev/cpuset/'.$Cpuset_path)){
@@ -77,20 +112,27 @@ if ($ARGV[0] eq "init"){
                         'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path.'/mems &&'.
                         'cat /dev/cpuset/cpus > /dev/cpuset/'.$Cpuset_path.'/cpus'
                       )){
-                exit(4);
+                message(ERROR,"job cpuset initialization failed: $!\n"));
+                exit(CPUSET);
             }
         }
-        flock(LOCKFILE,LOCK_UN) or die("flock failed: $!\n");
+        if (! flock(LOCKFILE,LOCK_UN)) {
+           message(ERROR,"flock failed: $!\n");
+           exit(LOCK);
+        }
         close(LOCKFILE);
     }else{
-        warn("Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file\n");
-        exit(16);
+        message(ERROR,"failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file $!\n");
+        exit(LOCK);
     }
     
 #'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_name.'/mems; done && '.
 
-    if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
-        flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
+    if (open(LOCKFILE,">", $Cpuset_lock_file.$Cpuset->{user})){
+        if (! flock(LOCKFILE,LOCK_EX)) {
+            message(ERROR,"flock failed: $!\n"));
+            exit(LOCK);
+        }
 # Be careful with the physical_package_id. Is it corresponding to the memory bank?
         if (system( 'sudo mkdir -p /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.' && '.
                     'sudo chown -R oar /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.' && '.
@@ -99,13 +141,16 @@ if ($ARGV[0] eq "init"){
                     'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.'/mems && '.
                     '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.'/cpus'
                   )){
-            exit(5);
+            exit(CPUSET);
         }
-        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
-        close(LOCK);
+        if (! flock(LOCKFILE,LOCK_UN)) {
+           message(ERROR,"flock failed: $!\n");
+           exit(LOCK);
+        }
+        close(LOCKFILE);
     }else{
-        warn("[cpuset_manager] Error opening $Cpuset_lock_file\n");
-        exit(16);
+        message(ERROR,"failed to open $Cpuset_lock_file $!\n");
+        exit(LOCK);
     }
 
     # PAM part
@@ -119,9 +164,13 @@ if ($ARGV[0] eq "init"){
             print(ACCESS "$file_str");
             close(ACCESS);
         }else{
-            exit(14);
+            message(ERROR,"failed to open $Security_pam_file_tmp: $!\n");
+            exit(FILE);
         }
-        rename $Security_pam_file_tmp,$Security_pam_file or die "Cannot replace access.conf file.";
+        if (! rename($Security_pam_file_tmp,$Security_pam_file)) {
+            message(ERROR,"cannot replace access.conf file: $!\n";
+            exit(FILE);
+        }
     }
     # PAM part
 
@@ -131,19 +180,22 @@ if ($ARGV[0] eq "init"){
         if (open(PRIV, ">".$Cpuset->{ssh_keys}->{private}->{file_name})){
             chmod(0600,$Cpuset->{ssh_keys}->{private}->{file_name});
             if (!print(PRIV $Cpuset->{ssh_keys}->{private}->{key})){
-                warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{private}->{file_name} \n");
+                message(ERROR,"failed to write $Cpuset->{ssh_keys}->{private}->{file_name}\n");
                 unlink($Cpuset->{ssh_keys}->{private}->{file_name});
-                exit(8);
+                exit(FILE);
             }
             close(PRIV);
         }else{
-            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{private}->{file_name} \n");
-            exit(7);
+            message(ERROR,"failed to open $Cpuset->{ssh_keys}->{private}->{file_name}\n");
+            exit(FILE);
         }
 
         # public key
         if (open(PUB,"+<",$Cpuset->{ssh_keys}->{public}->{file_name})){
-            flock(PUB,LOCK_EX) or die "flock failed: $!\n";
+            if (! flock(PUB,LOCK_EX)) {
+                message(ERROR, "flock failed: $!\n");
+                exit(LOCK);
+            }
             my $out = "\n".$Cpuset->{ssh_keys}->{public}->{key}."\n";
             while (<PUB>){
                 if ($_ =~ /environment=\"OAR_KEY=1\"/){
@@ -153,8 +205,8 @@ if ($ARGV[0] eq "init"){
                     $Cpuset->{ssh_keys}->{public}->{key} =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
                     my $curr_key = $2;
                     if ($curr_key eq $oar_key){
-                        warn("[cpuset_manager] ERROR: the user has specified the same ssh key than used by the user oar.\n");
-                        exit(13);
+                        message(ERROR,"user specified the same ssh key as the one used by the oar user.\n");
+                        exit(SSH);
                     }
                     $out .= $_;
                 }elsif ($_ =~ /environment=\"OAR_CPUSET=([\w\/]+)\"/){
@@ -167,15 +219,18 @@ if ($ARGV[0] eq "init"){
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
-                warn("[cpuset_manager] Error writing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
-                exit(9);
+                message(ERROR,"failed to write $Cpuset->{ssh_keys}->{public}->{file_name}\n");
+                exit(FILE);
             }
-            flock(PUB,LOCK_UN) or die "flock failed: $!\n";
+            if (! flock(PUB,LOCK_UN)) {
+                message(ERROR,"flock failed: $!\n");
+                exit(LOCK);
+            }
             close(PUB);
         }else{
             unlink($Cpuset->{ssh_keys}->{private}->{file_name});
-            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
-            exit(10);
+            message(ERROR,"failed to open $Cpuset->{ssh_keys}->{public}->{file_name}\n");
+            exit(FILE);
         }
     }
 }elsif ($ARGV[0] eq "clean"){
@@ -186,7 +241,10 @@ if ($ARGV[0] eq "init"){
 
         # public key
         if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){
-            flock(PUB,LOCK_EX) or die "flock failed: $!\n";
+            if (! flock(PUB,LOCK_EX)) {
+                message(ERROR,"flock failed: $!\n");
+                exit(LOCK);
+            }
             #Change file on the fly
             my $out = "";
             while (<PUB>){
@@ -195,14 +253,17 @@ if ($ARGV[0] eq "init"){
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))){
-                warn("[cpuset_manager] Error changing $Cpuset->{ssh_keys}->{public}->{file_name} \n");
-                exit(12);
+                message(ERROR,"failed to update $Cpuset->{ssh_keys}->{public}->{file_name}\n");
+                exit(FILE);
             }
-            flock(PUB,LOCK_UN) or die "flock failed: $!\n";
+            if (! flock(PUB,LOCK_UN)) {
+                message(ERROR,"flock failed: $!\n");
+                exit(LOCK);
+            }
             close(PUB);
         }else{
-            warn("[cpuset_manager] Error opening $Cpuset->{ssh_keys}->{public}->{file_name} \n");
-            exit(11);
+            message(ERROR,"failed to open $Cpuset->{ssh_keys}->{public}->{file_name}\n");
+            exit(FILE);
         }
     }
 
@@ -214,11 +275,14 @@ if ($ARGV[0] eq "init"){
             print(ACCESS "$file_str");
             close(ACCESS);
         }else{
-            exit(14);
+            exit(FILE);
         }
-        rename $Security_pam_file_tmp,$Security_pam_file or die "Cannot replace access.conf file.";
+        if (! rename($Security_pam_file_tmp,$Security_pam_file)) {
+            message(ERROR,"cannot replace access.conf file.";
+            exit(FILE);
+        }
         if (defined($Cpuset->{types}->{$Allow_SSH_type}) and ! system('diff /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.'/cpus /dev/cpuset/'.$Cpuset_path.'/cpus > /dev/null 2>&1')){
-            unless ($Cpuset->{user} eq "root" or $Cpuset->{user} eq "oar") {
+            if (! $Cpuset->{user} eq "root" or $Cpuset->{user} eq "oar") {
                 system("sudo -u $Cpuset->{user} kill -9 -1");
             }
         }
@@ -234,21 +298,24 @@ if ($ARGV[0] eq "init"){
             done'
           );
 
-    if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
-        flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
+    if (open(LOCKFILE,">", $Cpuset_lock_file.$Cpuset->{user})){
+        if (! flock(LOCKFILE,LOCK_EX)) {
+            message(ERROR,"flock failed: $!\n");
+            exit(LOCK);
+        }
         if (system('sudo rmdir /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name)){
             # Uncomment this line if you want to use several network_address properties
             # which are the same physical computer (linux kernel)
-            # exit(0);
-            exit(6);
+            # exit(OK);
+            exit(CPUSET);
         }
         my @cpusets = ();
         if (opendir(DIR, "/dev/cpuset/".$Cpuset_path.'/')) {
             @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
             closedir DIR;
         } else {
-            warn ("Can't opendir: /dev/cpuset/$Cpuset_path\n");
-            exit(18);
+            message(ERROR,"can't opendir: /dev/cpuset/$Cpuset_path\n");
+            exit(CPUSET);
         }
         if ($#cpusets < 0) {
             my $useruid=getpwnam($Cpuset->{user});
@@ -262,7 +329,7 @@ if ($ARGV[0] eq "init"){
                 }
                 close (IPCMSG);
             } else {
-                warn("Cannot open /proc/sysvipc/msg: $!.\n");
+                message(INFO,"Cannot open /proc/sysvipc/msg: $!\n");
             }
             if (open(IPCSHM,"< /proc/sysvipc/shm")) {
                 <IPCSHM>;
@@ -273,7 +340,7 @@ if ($ARGV[0] eq "init"){
                 }
                 close (IPCSHM);
             } else {
-                warn("Cannot open /proc/sysvipc/shm: $!.\n");
+                message(INFO,"Cannot open /proc/sysvipc/shm: $!\n");
             }
             if (open(IPCSEM,"< /proc/sysvipc/sem")) {
                 <IPCSEM>;
@@ -284,27 +351,34 @@ if ($ARGV[0] eq "init"){
                 }
                 close (IPCSEM);
             } else {
-                warn("Cannot open /proc/sysvipc/sem: $!.\n");
+                message(INFO,"Cannot open /proc/sysvipc/sem: $!\n");
             }
             if ($ipcrm_args) {
-                print ("Purging SysV IPC: ipcrm $ipcrm_args\n");
+                message(DEBUG,"Purging SysV IPC: ipcrm $ipcrm_args\n");
                 system("sudo -u $Cpuset->{user} ipcrm $ipcrm_args"); 
             }
-            print ("Purging /tmp...\n");
-            system("sudo find /tmp/. -user $Cpuset->{user} -delete"); 
+            message(DEBUG,"Purging /tmp...\n");
+            if ($Log_level < DEBUG) {
+                 system("sudo find /tmp/. -user $Cpuset->{user} -delete"); 
+            } else {
+                 system("sudo find /tmp/. -user $Cpuset->{user} -delete -print"); 
+            }
         } else {
-            print("Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.\n");
+            message(INFO,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.\n");
         }
-        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
-        close(LOCK);
+        if (! flock(LOCKFILE,LOCK_UN)) {
+            message(ERROR,"flock failed: $!\n");
+            exit(LOCK);
+        }
+        close(LOCKFILE);
     }else{
-        warn("[cpuset_manager] Error opening $Cpuset_lock_file\n");
-        exit(17);
+        message(ERROR,"failed to open $Cpuset_lock_file\n");
+        exit(LOCK);
     }
 }else{
-    print("[cpuset_manager] Bad command line argument $ARGV[0].\n");
-    exit(3);
+    message(ERROR,"unknown action \"$ARGV[0]\".\n");
+    exit(PARAMS);
 }
 
-exit(0);
+exit(OK);
 
