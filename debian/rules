@@ -136,6 +136,7 @@ install-indep:
 		CMDSLINKPATH=.. \
 		DEB_INSTALL=/usr/lib/oar \
 		SBINLINKPATH=../lib/oar
+	perl -i -pe 's#^CHECKSCRIPTDIR=.*#CHECKSCRIPTDIR="/etc/oar/check.d"#' $(CURDIR)/debian/oar-node/usr/lib/oar/oarnodecheckrun
 	mkdir -p $(CURDIR)/debian/oar-user/var/lib/oar
 	$(MAKE) sanity-check user \
 		OARUSER=oar \
