@@ -80,7 +80,7 @@ sub init_scheduler($$$$$$){
 
     # Take care of the currently (or nearly) running jobs
     # Lock to prevent bipbip update in same time
-    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions","resources","job_state_logs"]);
+    iolib::lock_table($dbh,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions","resources","job_state_logs","gantt_jobs_predictions_log","gantt_jobs_resources_log"]);
    
     #calculate now date with no overlap with other jobs
     my $previous_ref_time_sec = iolib::get_gantt_date($dbh);
