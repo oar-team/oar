@@ -67,8 +67,8 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:	OAR batch scheduler web-status package
 Group:          System/Servers
-Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI
- # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8)
+Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD
+ # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby)
 BuildArch: 	noarch
 Provides:	perl(monika::Sort::Naturally), Monika, DrawGantt
 %description web-status
