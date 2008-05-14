@@ -4081,15 +4081,15 @@ sub get_gantt_visu_date($){
 sub get_waiting_reservations_already_scheduled($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT m.moldable_id, o.start_time, p.resource_id, m.moldable_walltime
-                                FROM jobs j, moldable_job_descriptions m, gantt_jobs_predictions o, gantt_jobs_resources p
+    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime
+                                FROM jobs, moldable_job_descriptions, gantt_jobs_predictions, gantt_jobs_resources
                                 WHERE
-                                    (j.state = \'Waiting\'
-                                        OR j.state = \'toAckReservation\')
-                                    AND j.reservation = \'Scheduled\'
-                                    AND j.job_id = m.moldable_job_id
-                                    AND o.moldable_job_id = m.moldable_id
-                                    AND p.moldable_job_id = m.moldable_id
+                                    (jobs.state = \'Waiting\'
+                                        OR jobs.state = \'toAckReservation\')
+                                    AND jobs.reservation = \'Scheduled\'
+                                    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+                                    AND gantt_jobs_predictions.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND gantt_jobs_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                             ");
     $sth->execute();
     my $res;
