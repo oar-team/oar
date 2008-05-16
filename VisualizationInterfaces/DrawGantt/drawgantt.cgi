@@ -83,7 +83,7 @@ def list_resources(dbh)
 	return resources
 end
 
-# get all jobs in a range of date in the gantt
+# get all jobs in a range of date in furtur in the gantt from predictions_visu tables (= results from previous scheduling pass)
 # args : dbh, start range, end range
 def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
 
@@ -125,7 +125,7 @@ def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
 	return results
 end
 
-# get all jobs in a range of date
+# get all jobs in a range of date (from past to now)
 # args : dbh, start range, end range
 def get_jobs_range_dates(dbh,date_begin,date_end)
 	q = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
