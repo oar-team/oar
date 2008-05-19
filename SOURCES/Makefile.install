@@ -92,4 +92,17 @@ pkginstall:
                 WWW_ROOTDIR=/oar-web-status-files \
                 GANTT_WEB_ROOT=/var/www/html \
                 GANTT_WEB_DIR=oar-web-status-files/drawgantt
-
+	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-admin
+	$(MAKE) sanity-check tools \
+                OARUSER=oar \
+                OAROWNER=root \
+                OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/etc/oar \
+                PREFIX=$(CURDIR)/$(BUILDDIR)/oar-admin/usr \
+                MANDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/usr/share/man \
+                OARDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/usr/lib/oar \
+                BINDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/usr/bin \
+                SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/usr/sbin \
+                REAL_OARCONFDIR=/etc/oar \
+                REAL_OARDIR=/usr/lib/oar \
+                REAL_SBINDIR=/usr/sbin \
+                REAL_BINDIR=/usr/bin

@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1377
+%define version 2.3.0+svn1402
 %define release 1
 
 Name: 		oar
@@ -72,7 +72,7 @@ Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-
 BuildArch: 	noarch
 Provides:	perl(monika::Sort::Naturally), Monika, DrawGantt
 %description web-status
-This package install the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
+This package installs the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
 
 %package doc
 Summary:	OAR batch scheduler doc package
@@ -81,7 +81,15 @@ Requires:       man, httpd
 BuildArch: 	noarch
 BuildRequires:  python-docutils, httpd
 %description doc
-This package install some documentation for OAR batch scheduler
+This package installs some documentation for OAR batch scheduler
+
+%package admin
+Summary:	OAR batch scheduler administration tools package
+Group:          System/Servers
+Requires:       oar-common = %version-%release, ruby, ruby-DBI
+BuildArch: 	noarch
+%description admin
+This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
 
 %prep
 %setup -T -b 0
@@ -100,8 +108,8 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |bin/Almighty\$|bin/oarnotify\$|bin/oarremoveresource\$|bin/oaraccounting\$\
 |bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
-|bin/oarsub\$|bin/oarhold\$|bin/oarresume\$"
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc
+|bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$"
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | egrep -v "$EXCEPTS" > $package.files
@@ -174,6 +182,8 @@ rm -rf tmp
 %files doc -f oar-doc.files
 %docdir /usr/share/doc/oar-doc 
 
+%files admin -f oar-admin.files
+%attr(6750,oar,oar) /usr/sbin/oaradmin
 
 ###### oar-common scripts ######
 
@@ -199,11 +209,13 @@ touch /var/log/oar.log && chown oar:root /var/log/oar.log && chmod 0644 /var/log
 install -o oar -m 755 -d /var/run/oar
 
 %postun common
-userdel oar &> /dev/null || true
-groupdel oar &> /dev/null || true
-rm -f /var/log/oar.log* || true
-rm -rf /var/run/oar || true
-
+if [ "$1" = 0 ];
+then
+  userdel oar &> /dev/null || true
+  groupdel oar &> /dev/null || true
+  rm -f /var/log/oar.log* || true
+  rm -rf /var/run/oar || true
+fi
 
 ###### oar-server scripts ######
 
@@ -254,8 +266,10 @@ chkconfig --add oar-node
 /etc/init.d/oar-node stop 2>/dev/null|| true
 
 %postun node
-chsh -s /bin/bash oar 2>/dev/null || true
-
+if [ "$1" = 0 ];
+then
+  chsh -s /bin/bash oar 2>/dev/null || true
+fi
 
 ###### oar-web-status scripts ######
 
