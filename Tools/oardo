@@ -18,6 +18,7 @@ $ENV{OARDO_USER} = getpwuid($<);
 $ENV{OARDO_UID} = $<;
 $ENV{OARDIR} = $Oardir;
 $ENV{PERL5LIB} = $Oardir;
+$ENV{RUBYLIB} = $Oardir;
 $ENV{OARCONFFILE} = $Oarconffile;
 $ENV{OARXAUTHLOCATION} = $Oarxauthlocation;
 
