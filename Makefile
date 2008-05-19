@@ -363,6 +363,8 @@ www-conf:
 	@if [ -f $(OARCONFDIR)/apache.conf ]; then echo "Warning: $(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/apache.conf $(OARCONFDIR) ; fi
 
 tools:
+	install -d -m 0755 $(OARDIR)
+	install -d -m 0755 $(SBINDIR)
 	install -m 0755 Oaradmin/oaradmin.rb $(OARDIR)
 	install -m 0755 Oaradmin/oar_modules.rb $(OARDIR)
 	install -m 0755 Oaradmin/oaradmin_modules.rb $(OARDIR)
