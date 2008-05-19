@@ -26,10 +26,12 @@ module Oar
 	   # search config file 
            config_file = "oar.conf"
 	   if !File.readable?(config_file)
-	      if ENV['OARDIR'] && File.readable?(ENV['OARDIR'].to_s + "/" + config_file)
-	         config_file = ENV['OARDIR'] + "/" + config_file
+	      if ENV['OARCONFFILE'] && File.readable?(ENV['OARCONFFILE'])
+	         config_file = ENV['OARCONFFILE']
               elsif File.readable?("/etc/" + config_file)
 	             config_file = "/etc/" + config_file
+              elsif File.readable?("/etc/oar/" + config_file)
+	             config_file = "/etc/oar/" + config_file
 	      else
 	   	   result = 1
 	      end
