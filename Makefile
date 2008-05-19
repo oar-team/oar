@@ -39,7 +39,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install }"
+	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install }"
 	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -362,6 +362,17 @@ www-conf:
 	install -d -m 0755 $(OARCONFDIR)
 	@if [ -f $(OARCONFDIR)/apache.conf ]; then echo "Warning: $(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/apache.conf $(OARCONFDIR) ; fi
 
+tools:
+	install -m 0755 Oaradmin/oaradmin.rb $(OARDIR)
+	install -m 0755 Oaradmin/oar_modules.rb $(OARDIR)
+	install -m 0755 Oaradmin/oaradmin_modules.rb $(OARDIR)
+	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oaradmin
+	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
+                     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+                     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+                     s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oaradmin.rb'\;#;;\
+                    " $(SBINDIR)/oaradmin
+        
 server-install: sanity-check configuration common libs server dbinit
 
 user-install: sanity-check configuration common libs user
@@ -378,3 +389,5 @@ monika-install: monika
 desktop-computing-cgi-install: sanity-check configuration common libs desktop-computing-cgi
 
 desktop-computing-agent-install: desktop-computing-agent
+
+tools-install: sanity-check configuration common libs tools
