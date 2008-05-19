@@ -59,6 +59,22 @@ module Oar
 
        end	# load_configuration
 
+       # Print OAR version number       
+       def Oar.version_number
+	   version="OAR version : "
+	   conf = Oar.load_configuration
+	   dbh = Bdd.connect(conf) 
+	   if dbh
+	      table = "schema"	     
+	      table = "`" + table + "`" if conf['DB_TYPE'].upcase == "MYSQL" 
+	      q = "SELECT * FROM " + table 
+	      rows = dbh.select_one(q) 
+	      version += rows["version"] if rows
+	      dbh.disconnect 
+	   end
+	   puts version
+       end 	# Oar.version_number
+
 end	# module Oar
 
 
