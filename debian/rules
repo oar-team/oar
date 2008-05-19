@@ -144,7 +144,22 @@ install-indep:
 		REAL_BINDIR=/usr/bin \
 		WWW_ROOTDIR=/oar-web-status-files \
 		GANTT_WEB_ROOT=/var/www/ \
-		GANTT_WEB_DIR=oar-web-status-files/drawgantt 
+		GANTT_WEB_DIR=oar-web-status-files/drawgantt
+	mkdir -p $(CURDIR)/debian/oar-admin
+	$(MAKE) sanity-check tools \
+		OARUSER=oar \
+		OAROWNER=root \
+		OARCONFDIR=$(CURDIR)/debian/oar-admin/etc/oar \
+		PREFIX=$(CURDIR)/debian/oar-admin/usr \
+		MANDIR=$(CURDIR)/debian/oar-admin/usr/share/man \
+		OARDIR=$(CURDIR)/debian/oar-admin/usr/lib/oar \
+		BINDIR=$(CURDIR)/debian/oar-admin/usr/bin \
+		SBINDIR=$(CURDIR)/debian/oar-admin/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+
 #	$(MAKE) desktop-computing-agent \
 #		OARUSER=oar \
 #		OAROWNER=root \
