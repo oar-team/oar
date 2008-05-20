@@ -87,8 +87,20 @@ In order to use this feature, you have to uncomment the line with the
 Adding resources to the system
 ------------------------------
 
-A script is available to help detecting resources on a local machine:
+A tool is availaible to help you in the administrative tasks of a OAR server.
+You can install it with ::
+
+  make tools-install
+
+or by installing the oar-admin package.
+
+Then, you can launch as root, a command like the following::
+
+  oaradmin resources -a /nodes=mycluster{12%2d}/cpu={4}/core={2} -c
+
+This will create a cluster of 12 nodes called **mycluster01** to **mycluster12** with 4 cpus per node and 2 cores per cpu.
+
+A script is also available to help detecting resources on a local machine:
 **/usr/local/oar/detect_resources**. You can use it to have an idea of how
-works oarnodesetting. You may also type **oarnodesetting --help** as root for more
-options.
+works oarnodesetting. You may also type **oarnodesetting --help** as root for more options.
 
