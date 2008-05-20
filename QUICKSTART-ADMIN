@@ -96,7 +96,7 @@ or by installing the oar-admin package.
 
 Then, you can launch as root, a command like the following::
 
-  oaradmin resources -a /nodes=mycluster{12%2d}/cpu={4}/core={2} -c
+  oaradmin resources -a /nodes=mycluster{%2d12}.local/cpu={4}/core={2} -c
 
 This will create a cluster of 12 nodes called **mycluster01** to **mycluster12** with 4 cpus per node and 2 cores per cpu.
 
