@@ -1,0 +1,96 @@
+=head1 NAME
+
+oaradmin - OAR administration tool.
+
+=head1 SYNOPSIS
+
+B<oaradmin> resources OPTIONS
+ 
+B<oaradmin> rules OPTIONS
+
+B<oaradmin> version
+
+=head1 DESCRIPTION
+
+This command is used to manage OAR configuration. 
+
+The command B<oaradmin resources> manage resources in OAR database : add, update and delete many resources in a single command line.
+
+The command B<oaradmin rules> manage admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. 
+
+The command B<oaradmin version> print the version of OAR. 
+
+Each subcommand has a long and an optional short form :  B<oaradmin resources> or B<oaradmin re>, B<oaradmin rules> or B<oaradmin ru> for examples.
+
+=head1 OPTIONS
+
+=head2 Options for resources subcommand
+
+=over
+
+=item In progress ! 
+
+.../...
+
+=back
+
+=head2 Options for rules subcommand
+
+=over
+
+=item B<-l, --list> | B<-ll> | B<-lll> [no_rules]
+
+The format recommended is as follows. The first line commented with # is the title of the rule. The following lines also commented contains the description or algorithm of the rule. The following lines contains the content of the Perl script. This format is not mandatory. Admission rules can contains only Perl script lines without comments. The -l option print only the title line. The -ll option print title and description lines and -lll print the entire contents. If no rules numbers given, print all admission rules. Ex : 
+  oaradmin rules -l
+  oaradmin rules -lll 3 5 8  
+
+=item B<-a, --add> [no_rule] [-f file]
+
+Add an admission rule with a text editor or directly from a file. $EDITOR variable environment is used to launch the preferred text editor. If not defined, vi is used. Without no_rule, the new rule is added at the end of the admission rules table in OAR database. If no_rule is defined, the new rule is inserted at the no_rule position. The numbers above or equals to no_rule are incresed by 1. This is useful to group the rules that have the same type of treatment. The filename must be specified just after -f option. Ex : 
+  oaradmin rules -a
+  oaradmin rules -a 10
+  oaradmin rules -a -f my_file
+
+=item B<-d, --delete> no_rule [no_rules]
+
+Delete one or more admission rules. Ex :
+  oaradmin rules -d 2 
+  oaradmin rules -d 2 3 4
+
+=item B<-x, --export> [no_rules] | B<-x, --export> no_rule -f file
+
+Export admission rules into files. The default filename used for export is admission_rule_<no_rule> and these files are created in the current directory. The -x option alone export all admission rules. With -f file option, only one rule can be exported. If files already exists, oaradmin ask confirmation to overwrite. Ex : 
+  oaradmin rules -x
+  oaradmin rules -x 1 5 18
+  oaradmin rules -x 3 -f my_file
+  oaradmin rules -x 18 -f /my_directory/my_file
+
+=item B<-e, --edit> no_rule [-f file]
+
+Edit the no_rule admission rule using a text editor. A temporary file is used to edit the admission rule. This file is stored in the directory specified by OAR_RUNTIME_DIRECTORY in the OAR configuration file. If this parameter is not defined, /tmp is used. Oaradmin ask user to commit in database only if changes are made in the rule. Editing differents admission rules at the same time, into two consoles is possible. Editing the same admission rule into two consoles at the same time is also possible. But careful, in this case, depending on manipulations some data can be lost. Like add feature, $EDITOR variable environment can specify a text editor. If a filename is specified whith -f option, oaradmin directly update the no_rule admission rule in database without editing. Ex :
+  oaradmin rules -e 3
+  oaradmin rules -e 3 -f my_file
+
+=item B<-1, --enable> no_rule 
+
+Enable the no_rule admission rule. The # comments character at the beginning of each line is deleted. So the admission rule is enabled and evaluated in oarsub command. Ex :
+  oaradmin rules -1 10
+
+=item B<-0, --disable> no_rule 
+
+Disable the no_rule admission rule. The # comments character is added at the beginning of each line of the rule. So the admission rule is not evaluated and has no effect in oarsub command. Ex :
+  oaradmin rules -0 10
+
+=item B<-h, --help> 
+
+Print this help message.
+
+=back
+
+=head1 SEE ALSO
+
+oarnodes(1), oarnodesetting(1), oarproperty(1), oarremoveresource(1), oarsub(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2003 Laboratoire Id-Imag (http://www-id.imag.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
