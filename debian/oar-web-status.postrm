@@ -1,5 +1,5 @@
 #! /bin/sh
-# postrm script for test
+# postrm script for oar-web-status
 #
 # see: dh_installdeb(1)
 
@@ -22,6 +22,7 @@ case "$1" in
 	    rm -f /etc/apache2/conf.d/oar-web-status.conf || true
         ;;
 	purge)
+	    rm -rf /var/www/oar-web-status-files/drawgantt/cache
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2
