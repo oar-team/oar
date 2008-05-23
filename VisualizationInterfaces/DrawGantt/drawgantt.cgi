@@ -83,7 +83,8 @@ def list_resources(dbh)
 	return resources
 end
 
-# get all jobs in a range of date in the gantt
+# get all jobs in a range of dates in future from predictions_visu tables
+# (= results from the previous scheduling pass)
 # args : dbh, start range, end range
 def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
 
@@ -95,7 +96,8 @@ def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
              jobs.job_id = moldable_job_descriptions.moldable_job_id AND
              gantt_jobs_predictions_visu.start_time < #{date_end} AND
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= #{date_begin}
+             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= #{date_begin} AND
+             NOT jobs.queue_name = 'besteffort'
          ORDER BY jobs.job_id"
 	res = dbh.execute(q)
 	
@@ -125,7 +127,7 @@ def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
 	return results
 end
 
-# get all jobs in a range of date
+# get all jobs in a range of date (from past to now)
 # args : dbh, start range, end range
 def get_jobs_range_dates(dbh,date_begin,date_end)
 	q = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
