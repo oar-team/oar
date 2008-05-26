@@ -242,11 +242,11 @@ def list_resource_properties_fields(dbh)
   return results 
 end
 
-# get_current_job_types
+# get_job_types
 # return a hash table with all types for the given job ID
 
-def get_current_job_types(dbh,job_id)
-    q = "SELECT type FROM job_types WHERE types_index = \'CURRENT\' AND job_id = #{job_id}"
+def get_job_types(dbh,job_id)
+    q = "SELECT type FROM job_types WHERE job_id = #{job_id}"
 		result = []               
     res = dbh.execute(q)
 		res.each do |r|
@@ -269,7 +269,7 @@ def get_history(dbh,date_start,date_stop)
 	jobs_history =  get_jobs_range_dates(dbh,date_start,date_stop)
 
 	jobs_history.each do |job_id,job|
-		a_type = get_current_job_types(dbh,job_id)
+		a_type = get_job_types(dbh,job_id)
 		if (job_gantt[job_id] == nil) || (a_type.include?("besteffort"))
     	if (jobs_history[job_id]['state'] == "Running") ||
 				 (jobs_history[job_id]['state'] == "toLaunch") ||
@@ -834,7 +834,7 @@ def cgi_html(cgi)
 	end
 
 	if (range == '3 days') || (range == 'week') || (range == 'month')
-		origin = origin - origin % 86400 - Time.at(origin).gmt_offset
+		origin = origin - origin % 86400 - Time.at(origin).gmt_offset + 86400
 	else
  		origin = origin - origin % 3600
 	end
