@@ -97,7 +97,7 @@ def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
              gantt_jobs_predictions_visu.start_time < #{date_end} AND
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
              gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= #{date_begin} AND
-             NOT jobs.queue_name = 'besteffort'
+             NOT jobs.job_id IN ( SELECT job_id FROM job_types WHERE queue_name = 'besteffort' )
          ORDER BY jobs.job_id"
 	res = dbh.execute(q)
 	
