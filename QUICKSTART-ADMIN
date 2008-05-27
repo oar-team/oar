@@ -1,5 +1,5 @@
-Installing OAR in five steps
-============================
+Installing OAR in six steps
+===========================
 
 Warning, the goal of this document is to explain how to install a typical OAR
 system. To fine down the process, we will only treat the case where we install
@@ -87,7 +87,7 @@ In order to use this feature, you have to uncomment the line with the
 Adding resources to the system
 ------------------------------
 
-A tool is availaible to help you in the administrative tasks of a OAR server.
+A tool is available to help you in the administrative tasks of a OAR server.
 You can install it with ::
 
   make tools-install
