@@ -52,7 +52,7 @@ version 2.2.12:
     ping checker)
   - Add 2 new tables to keep scheduling decisions log
     (gantt_jobs_predictions_log and gantt_jobs_resources_log). This will help
-    to debug scheduling troubles
+    to debug scheduling troubles (see SCHEDULER_LOG_DECISIONS in oar.conf)
   - Now reservations are scheduled only once (at submission time). So resources
     for a reservation cannot change in the time.
 

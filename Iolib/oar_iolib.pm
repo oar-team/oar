@@ -4233,7 +4233,7 @@ sub gantt_flush_tables($$$){
     my $reservations_to_keep = shift;
     my $log = shift;
 
-    if ($log > 2){
+    if (defined($log)){
         my $date = get_gantt_date($dbh);
         $dbh->do("  INSERT INTO gantt_jobs_predictions_log (sched_date,moldable_job_id,start_time)
                         SELECT \'$date\', gantt_jobs_predictions.moldable_job_id, gantt_jobs_predictions.start_time
