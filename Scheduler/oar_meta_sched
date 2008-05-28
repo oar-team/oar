@@ -206,7 +206,7 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
 foreach my $j (iolib::get_gantt_waiting_interactive_prediction_date($base)){
     my ($addr,$port) = split(/:/,$j->{info_type});
     my $new_start_prediction = iolib::local_to_sql($j->{start_time});
-    oar_debug("[MetaSched] [$j->{job_id}] Notifying user - [$initial_time{sql}] Start prediction: $new_start_prediction (".$j->{message}.")");
+    oar_debug("[MetaSched] [$j->{job_id}] Notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
     oar_Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] Start prediction: $new_start_prediction (".$j->{message}.")");
 }
 
