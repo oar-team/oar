@@ -23,6 +23,10 @@ if (!defined($sched_available_suspended_resource_type_tmp)){
 my $Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
 my @Resources_to_always_add = ();
 
+# Do we log every scheduler's computation ?
+my $Log_scheduling = get_conf("SCHEDULER_LOG_DECISIONS");
+if ($Log_scheduling ne "yes") { $Log_scheduling = undef; }
+
 #minimum of seconds between each jobs
 my $Security_time_overhead = 1;
 
@@ -62,7 +66,7 @@ sub init_scheduler($$$$$$){
         my $tmp_result_state_resources = iolib::get_specific_resource_states($dbh,$Resources_to_always_add_type);
         if (defined($tmp_result_state_resources->{"Alive"})){
             @Resources_to_always_add = @{$tmp_result_state_resources->{"Alive"}};
-            oar_debug("[oar_scheduler] Resources that we must add for every reservations: @Resources_to_always_add\n");
+            oar_debug("[oar_scheduler] Resources automatically added to every reservations: @Resources_to_always_add\n");
         }
     }
 
@@ -92,7 +96,7 @@ sub init_scheduler($$$$$$){
 
     my $reservation_already_there = iolib::get_waiting_reservations_already_scheduled($dbh);
     
-    iolib::gantt_flush_tables($dbh, $reservation_already_there, oar_Judas::get_log_level());
+    iolib::gantt_flush_tables($dbh, $reservation_already_there, $Log_scheduling);
     iolib::set_gantt_date($dbh,$current_time_sec);
     
     my @initial_jobs;
