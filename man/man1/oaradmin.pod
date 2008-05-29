@@ -28,7 +28,7 @@ Each subcommand has a long and an optional short form :  B<oaradmin resources> o
 
 =over
 
-=item B<-a> <EXP> [B<-p> <EXP>] 
+=item B<-a> <EXP> [--cpusetproperty=property] [B<-p> <EXP>] 
 
 These options can create and define many resources in OAR database. In a single command line, it is possible to create the whole definition cluster. 
 
@@ -45,6 +45,10 @@ Some expressions does not match or are not allowed :
   -a /nodes=cluster_a{12},cluster_b{12}. Only one argument must be used with {} form in each <EXP>.
   -a /nodes=cluster_a{12},cluster_b[1-10]. {} and [] forms are exclusive.
 
+
+--cpusetproperty option is useful to define the property used for numbers cpusets. 
+Ex : -a /nodes=mycluster{12}/cpu={2}/core={2} --cpusetproperty=cpu means one cpuset per cpu.
+If the option is not used, one cpuset is created per resource_id. 
 
 -p option is usefull to define other properties that are not in properties hierarchy : memory, project...
 With -p option <EXP> form is as follows : property=value. Several expressions -p property=value can be used. -p is mandatory at the beginning of each <EXP>. Ex :
