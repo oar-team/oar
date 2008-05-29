@@ -14,6 +14,7 @@
 
 require 'optparse'
 require 'dbi'
+require 'yaml'
 require 'oar_modules'
 require 'oaradmin_modules'
 
@@ -71,7 +72,7 @@ case
 	# Manage resources 
 	# ################
 
-        $msg[0] = "Incoherence in specified options"
+        $msg[0] = "Incoherence or syntax error in specified options"
 
         $cmd_user = []
         $oar_cmd = ""
@@ -81,12 +82,20 @@ case
         # Options for parsing
         $options = {}
         $options[:add] = $options[:select] = $options[:property] = $options[:delete] = $options[:commit] = false
+	$options[:cpusetproperty] = false
+	$options[:cpusetproperty_name] = ""
         opts = OptionParser.new do |opts|
-            opts.banner = "Usage: oaradmin resources [-a [-p]] [-s -p] [-d] [-c]"
+            opts.banner = "Usage: oaradmin resources [-a [--cpusetproperty=prop][-p]] [-s -p] [-d] [-c]"
 
             # add resources
             opts.on("-a","--add","Add new resources") do 
                $options[:add] = true 
+            end
+
+            # cpusetproperty
+            opts.on("--cpusetproperty=prop","Property name for cpuset numbers") do |opt|
+	       $options[:cpusetproperty]=true
+               $options[:cpusetproperty_name] = opt 
             end
 
             # update resources
@@ -131,8 +140,8 @@ case
 
         if !( ($options[:add] && !$options[:property] && !$options[:select] && !$options[:delete]) ||	# -a alone
               ($options[:add] && $options[:property] && !$options[:select] && !$options[:delete]) ||	# -a -p
-              ($options[:select] && $options[:property] && !$options[:add] && !$options[:delete]) ||  	# -s -p
-              (!$options[:select] && !$options[:property] && !$options[:add] && $options[:delete]) ) 	# -d alone
+              ($options[:select] && $options[:property] && !$options[:add] && !$options[:cpusetproperty] && !$options[:delete]) ||  	# -s -p
+              (!$options[:select] && !$options[:property] && !$options[:add] && !$options[:cpusetproperty] && $options[:delete]) ) 	# -d alone
 
               puts $msg[0]
               puts opts
@@ -145,8 +154,31 @@ case
 
            $oar_cmd = "oarnodesetting -a "
 
+	   # Test syntax for --cpusetproperty
+	   if [:cpusetproperty]
+	      i=0
+	      while i<ARGV.length
+		    if !ARGV[i].nil? && ARGV[i][0..1]=="--"
+		       if ARGV[i]=~/^--\S+=\S+/
+		          ARGV.delete_at(i)
+		          redo
+		       else
+              		  puts $msg[0]
+              		  puts opts
+              		  exit(1)
+		       end
+		    end
+		    i+=1
+	      end
+	   end
+
            # Decompose ARGV[] in hash table $cmd_user
            Resources.decompose_argv
+
+	   $cpuset_host_previous = $cpuset_host_current = ""
+	   $cpuset_property_previous_value = $cpuset_property_current_value = ""
+	   $cpuset_no=0	   
+	   $cpuset_property_name=$options[:cpusetproperty_name]
 
            Resources.tree 1, $oar_cmd
 
@@ -160,31 +192,37 @@ case
            Resources.decompose_argv
    
            if $cmd_user[0][:property_nb].is_a?(Fixnum)
-              # We have a form param={3} - Ex : core={2} nodes={12}
+              # We have a form param={3} - Ex : core={2} nodes=mycluster{12}.local
               # Recover the max value of param 
               val_max = -1
-              r = `oarnodes -a`
+              r = `oarnodes -a -Y`
               if $?.exitstatus == 0
+		 r_hash = YAML::load(r)
                  if $cmd_user[0][:property_name] == "nodes"
 	            str = "network_address"
                  else
 	            str = $cmd_user[0][:property_name]
 	         end
-	         str = str + "=" + $cmd_user[0][:property_fixed_value]
-	         r.each_line do |line|
-	           if line =~ /#{str}/
-                      if $'=~ /\d+/
-                         val_tmp = $&.to_s.to_i
-                         suite=$'
-	                 if suite =~ /,/
-	                    suite = $`
-	                 end
-	                 if suite == $cmd_user[0][:property_fixed_value2] 
-	                       val_max = val_tmp if val_tmp > val_max
-	                 end
-                      end
-	           end
-	         end
+		 str2 = $cmd_user[0][:property_fixed_value]
+		 str3 = $cmd_user[0][:property_fixed_value2]
+		 r_hash_list_nodes=r_hash.keys		 
+		 r_hash_list_nodes.each do |n|		 
+		      r_hash_list_resources = r_hash[n].keys 
+		      r_hash_list_resources.each do |r|
+			   r_hash[n][r]['properties'].each do |key,value|
+			        if key==str
+				   value=value.to_s
+				   if value =~ /^#{str2}\d+#{str3}/
+				      if value =~ /\d+/
+	   				 if $`.to_s == str2 && $'.to_s == str3
+	                       	            val_max = $&.to_i if $&.to_i > val_max
+	   				 end
+				      end
+				   end
+				end
+			   end 
+		      end
+		 end
               end	# if $?.exitstatus == 0
 
               i = j = k = 1
@@ -289,44 +327,52 @@ case
 
               # Recover list of resource_id
               # $list_resources_id[] contains the list of resources to delete
-              r = `oarnodes -a`
+              r = `oarnodes -a -Y`
               if $?.exitstatus == 0
+		 r_hash = YAML::load(r)
                  if $cmd_user[0][:property_name] == "nodes"
 	            str = "network_address"
                  else
 	            str = $cmd_user[0][:property_name]
-                 end
-                 str += "=" 
-
+	         end
                  list_val.each do |v|
-	            str2 = str + v
-	            r.each_line do |line|
-	              if line =~ /#{str2}/
-	                 str3 = $&
-                         suite=$'
-	                 if suite =~ /,/
-	                    suite = $`
-	                 end
-                         if (str3.split('=')[1] + suite) == v
-  	                    if line =~ Regexp.new('resource_id=\d+')
-      	                       $list_resources_id.push($&.to_s.split('=')[1])
-      	                    end
-	                 end
-	              end 
-	            end
-                 end
+		     r_hash_list_nodes=r_hash.keys
+		     r_hash_list_nodes.each do |n|		 
+		          r_hash_list_resources = r_hash[n].keys 
+		          r_hash_list_resources.each do |r|
+			       r_hash[n][r]['properties'].each do |key,value|
+			            if key==str
+				       value=value.to_s
+				       $list_resources_id.push(r_hash[n][r]['properties']['resource_id'].to_s) if value==v
+				    end
+			       end 
+		          end
+		     end
+		 end
               end	# if $?.exitstatus == 0
            else
               # search all resources_id
-              r = `oarnodes -a`
+              r = `oarnodes -a -Y`
               if $?.exitstatus == 0
-                 r.each_line do |line|
-  	           if line =~ Regexp.new('resource_id=\d+')
-      	              $list_resources_id.push($&.to_s.split('=')[1])
-      	           end
-                 end
+		 r_hash = YAML::load(r)
+		 r_hash_list_nodes=r_hash.keys
+		 r_hash_list_nodes.each do |n|		 
+		      r_hash_list_resources = r_hash[n].keys 
+		      r_hash_list_resources.each do |r|
+			   $list_resources_id.push(r_hash[n][r]['properties']['resource_id'].to_s) 
+		      end
+		 end
               end 
            end 
+
+	   # Sort
+	   $list_resources_id.each do |item|
+		item=item.to_i
+	   end
+	   $list_resources_id.sort!
+	   $list_resources_id.each do |item|
+		item=item.to_s
+	   end
 
            # Delete each resource_id
            $list_resources_id.each do |r|

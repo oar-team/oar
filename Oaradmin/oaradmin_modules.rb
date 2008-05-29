@@ -191,6 +191,17 @@ module Resources
    	         v = ($cmd_user[n-1][:property_ndx] + $cmd_user[n-1][:offset]) 
 	         v = sprintf("#{$cmd_user[n-1][:format_num]}", v) if $cmd_user[n-1][:format_num].length > 0 
    	         str = str2 + v.to_s + $cmd_user[n-1][:property_fixed_value2] + " "
+
+		 # For cpuset no
+		 if $cmd_user[n-1][:property_name]=="nodes"
+		    $cpuset_host_current=$cmd_user[n-1][:property_fixed_value] + v.to_s + $cmd_user[n-1][:property_fixed_value2]
+		 end
+		 if $cpuset_property_name != ""
+		    if $cpuset_property_name == $cmd_user[n-1][:property_name] 
+		       $cpuset_property_current_value = $cmd_user[n-1][:property_fixed_value] + v.to_s + $cmd_user[n-1][:property_fixed_value2]
+		    end
+		 end
+
 	         tree n+1, str
              end
           else
@@ -199,12 +210,34 @@ module Resources
 
 	     list_val.each do |item|
 	         str = str2 + item + " "
+
+		 # For cpuset no
+		 if $cmd_user[n-1][:property_name]=="nodes"
+		    $cpuset_host_current=item
+		 end
+
 	         tree n+1, str
 	     end
 
           end 	# if $cmd_user[n-1][:property_nb].is_a?(Fixnum)
 
        else
+	  # Cpuset
+	  if $cpuset_host_current != $cpuset_host_previous
+	     $cpuset_no=0
+	     $cpuset_host_previous=$cpuset_host_current
+	     $cpuset_property_previous_value = $cpuset_property_current_value
+	  else
+	     if $cpuset_property_name != ""
+	  	if $cpuset_property_previous_value != $cpuset_property_current_value
+	     	   $cpuset_no+=1
+		   $cpuset_property_previous_value = $cpuset_property_current_value
+	  	end
+	     else
+	     	$cpuset_no+=1
+	     end
+	  end
+	  str += " -p cpuset="+$cpuset_no.to_s
 
           # End of levels - execution
           execute_command(str)
