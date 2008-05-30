@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1403
+%define version 2.3.0+svn1427
 %define release 1
 
 Name: 		oar
@@ -114,7 +114,7 @@ do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | egrep -v "$EXCEPTS" > $package.files
 done
-# Additional distribution dependent scripts
+# Additional distribution dependent files
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.init.d $RPM_BUILD_ROOT/etc/init.d/oar-server
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc/init.d/oar-node
@@ -123,6 +123,7 @@ install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/e
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
 install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
+install -D -o root -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
 install -D -o apache -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
