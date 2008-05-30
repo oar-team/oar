@@ -14,9 +14,9 @@ B<oaradmin> version
 
 This command is used to manage OAR configuration. 
 
-The command B<oaradmin resources> manage resources in OAR database : add, update and delete many resources in a single command line.
+The command B<oaradmin resources> manages resources in OAR database : add, update and delete many resources in a single command line.
 
-The command B<oaradmin rules> manage admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. 
+The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. 
 
 The command B<oaradmin version> print the version of OAR. 
 
@@ -57,11 +57,11 @@ With -p option <EXP> form is as follows : property=value. Several expressions -p
 Witout -c option, oaradmin print only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 
 Other examples :
-  oaradmin resources -a /switch=sw{5}/nodes=mycluster{12}.domain/cpu=2
+  oaradmin resources -a /switch=sw{5}/nodes=mycluster{12}.domain/cpu={2}
   Creates a cluster with 5 switchs, 12 nodes per switch, 2 cpus per node.
 
-  oaradmin resources -a /nodes=mycluster-{%3d250}/cpu=2
-  oaradmin resources -a /nodes=mycluster-[%3d1-250]/cpu=2
+  oaradmin resources -a /nodes=mycluster-{%3d250}/cpu={2}
+  oaradmin resources -a /nodes=mycluster-[%3d1-250]/cpu={2}
   Creates nodes from mycluster-001 to mycluster-250 with 2 cpus per node.
 
   oaradmin resources -a /nodes=mycluster[1-25]/cpu={2} -p mem=1024 -p arch=amd_64 -p infiniband=YES -c
