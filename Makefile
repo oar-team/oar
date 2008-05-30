@@ -374,6 +374,7 @@ tools:
                      s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
                      s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oaradmin.rb'\;#;;\
                     " $(SBINDIR)/oaradmin
+	install -m 0644 man/man1/oaradmin.1 $(MANDIR)/man1/oaradmin.1
         
 server-install: sanity-check configuration common libs server dbinit
 
