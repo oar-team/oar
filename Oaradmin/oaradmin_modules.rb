@@ -15,19 +15,52 @@
 
 module Resources
 
-   # Decompose the command given by user and store values in $cmd_user[]
+
+   # Decompose parameters property=value and store values in $cmd_user[]
+   # property_name : the name of one property. Ex : /switch=sw{3} => property_name = switch
+   # property_fixed_value : the fixed part of the property value. Ex : /switch=sw{3} => property_fixed_value = sw
+   # property_fixed_value2 : the second part of the property value. Ex : /nodes=host{12}.domain => property_fixed_value2 = .domain
+   # property_nb : the number of elements in the hierarchy. Ex : /switch=sw{3} => property_nb = 3
+   # property_ndx : current index for increments
+   # index : position to store values in $cmd_user[]
+   # Ex : -a /switch=sw{3} => $cmd_user[0] = {:property_name => "switch", :property_fixed_value="sw", property_fixed_value2="", :property_nb=3}
+   #      -a /nodes=host{12}.domain => $cmd_user[0] = {:property_name => "nodes", :property_fixed_value="host", :property_fixed_value2=".domain", :property_nb=12}
+   #      -a /nodes=host-[1-12,18],host_b 
+   #       => $cmd_user[0] = {:property_name => "nodes", :property_fixed_value="", :property_fixed_value2="" ,:property_nb="host-[1-12,18].domain,host_b.domain"}
+   #      -p infiniband=NO => $cmd_user[n] = {:property_name => "infiniband", :property_fixed_value="", :property_fixed_value2="", :property_nb="NO"}
+   #      -a /nodes=host{12+40offset} => $cmd_user[0] = {:property_name => "nodes"  .../...  :offset=>40}  to create host41, host42, host43 .../... host52
+   #      -a /nodes=host{%3d12} => $cmd_user[0] = {:property_name => "nodes" .../... :format_num => "%03d"} to create host001, host002...
    def Resources.decompose_argv
 
        (0..ARGV.length-2).step(2) do |i|
+
            if ARGV[i] == "-a"
               ARGV[i+1].split('/').each do |item|
-                  if item.length > 0
-		     Resources.decompose_param(item)
+                  if item != ""
+       		     property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset = Resources.decompose_param(ARGV[i], item)
+             	     $cmd_user.push({:property_name => property_name, :property_fixed_value => property_fixed_value, 
+                          	     :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
+	  	          	     :offset => offset, :format_num => format_num }) 
+
 	          end
               end
            end
 
-           if ARGV[i] == "-p" || ARGV[i] == "-d"
+           if ARGV[i] == "-s"
+       	      property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset = Resources.decompose_param(ARGV[i], ARGV[i+1])
+              $cmd_user = $cmd_user.insert(0, {:property_name => property_name, :property_fixed_value => property_fixed_value, 
+	                                       :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
+	  				       :offset => offset, :format_num => format_num }) 
+           end
+
+           if ARGV[i] == "-p"
+       	      property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset = Resources.decompose_param(ARGV[i], ARGV[i+1])
+              $cmd_user.push({:property_name => property_name, :property_fixed_value => property_fixed_value, 
+                       	      :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
+	  	       	      :offset => offset, :format_num => format_num }) 
+           end
+
+           if ARGV[i] == "-d"
               property_name = property_fixed_value = property_fixed_value2 = property_nb = ""
 	      if ARGV[i+1] =~ /=/
                  property_name = $`
@@ -37,10 +70,6 @@ module Resources
               end
            end
 
-           if ARGV[i] == "-s"
-	      Resources.decompose_param(ARGV[i+1])
-           end
-
        end	    # (0..ARGV.length-2).step(2) do |i|
 
        p $cmd_user if $VERBOSE
@@ -48,64 +77,50 @@ module Resources
    end 		# decompose_argv
 
 
-   # Decompose one parameter and store values in $cmd_user[]
-   # property_name : the name of one property. Ex : /switch=sw{3} => property_name = switch
-   # property_fixed_value : the fixed part of the property value. Ex : /switch=sw{3} => property_fixed_value = sw
-   # property_fixed_value2 : the second part of the property value. Ex : /nodes=host{12}.domain => property_fixed_value2 = .domain
-   # property_nb : the number of elements in the hierarchy. Ex : /switch=sw{3} => property_nb = 3
-   # property_ndx : current index for increments
-   # Ex : -a /switch=sw{3} => $cmd_user[0] = {:property_name => "switch", :property_fixed_value="sw", property_fixed_value2="", :property_nb=3}
-   #      -a /nodes=host{12}.domain => $cmd_user[0] = {:property_name => "nodes", :property_fixed_value="host", :property_fixed_value2=".domain", :property_nb=12}
-   #      -a /nodes=host-[1-12,18],host_b 
-   #       => $cmd_user[0] = {:property_name => "nodes", :property_fixed_value="", :property_fixed_value2="" ,:property_nb="host-[1-12,18].domain,host_b.domain"}
-   #      -p infiniband=NO => $cmd_user[n] = {:property_name => "infiniband", :property_fixed_value="", :property_fixed_value2="", :property_nb="NO"}
-   #      -a /nodes=host{12+40offset} => $cmd_user[0] = {:property_name => "nodes"  .../...  :offset=>40}  to create host41, host42, host43 .../... host52
-   #      -a /nodes=host{%3d12} => $cmd_user[0] = {:property_name => "nodes" .../... :format_num => "%03d"} to create host001, host002...
-   def Resources.decompose_param(str)
+   # Decompose parameters property=value - retrieve offset and numeric format 
+   def Resources.decompose_param(form, str)
 
-       property_name = property_fixed_value = property_fixed_value2 = property_nb = format_num = ""
+       property_name = property_fixed_value = property_fixed_value2 = property_nb = format_num = str2 = ""
        offset=0
        if str =~ /=/
           property_name = $`
           property_fixed_value = val_tmp = $'
 
-          if val_tmp =~ Regexp.new('\{(.*)\}')
-	     # we have a form /param={5}
+          if val_tmp =~ /\{.*\}/
+	     # case with follows forms : 
+	     #    - with a number and/or numeric format and/or offset : param={5} param=part_a{12}part_b param=part_a{%2d+20offset12} 
+	     #    - with % as increment operator and/or numeric format and/or offset : param={%} param=part_a{%}part_b param=part_a{%2d%+20offset} 
+	     # numeric format and offset can be anywhere in {...}
 	     property_fixed_value = $`
 	     property_fixed_value2 = $'
-	     property_nb = $&[1..($&.length-2)]
 
-	     if property_nb =~ /(\+|-)\d*offset/		# offset : +50offset -1offset
+	     str2 = $&[1..$&.length-2]
+	     if str2 =~ /(\+|-)\d*offset/		# offset : +50offset -1offset
 	        offset = $&.to_i
-	        property_nb = $`
+	        str2 = $` + $'
 	     end
-
-	     if property_nb =~ /%\d*d/			# numeric format
+	     if str2 =~ /%\d*d/				# numeric format
 	        format_num = $&			
  	        format_num = format_num[0..0] + "0" + format_num[1..format_num.length]
-	        property_nb = $'				
+	        str2 = $` + $'
 	     end						
 
-	     property_nb = property_nb.to_i
+	     property_nb = str2.to_i if form == "-a" || form == "-s"		# Only {number} form allowed with -a and -s params
+	     property_nb = 1 if form == "-p"					# Only {%} form allowed with -p params
 
           else
-	     # we have a form /param=host1,host[1-5,18]
+	     # case with follows forms : 
+	     #    - param=host1,host[1-5,18]
+	     #    - param=host1,host[%2d1-5,18]
 	     property_fixed_value=""
 	     property_nb = val_tmp
           end
 
-          $cmd_user.push({:property_name => property_name, :property_fixed_value => property_fixed_value, 
-                          :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
-	 	          :offset => offset, :format_num => format_num }) if $options[:add]
-
-          # The select clause is always the first element
-          $cmd_user = $cmd_user.insert(0, {:property_name => property_name, :property_fixed_value => property_fixed_value, 
-	                                   :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
-					   :offset => offset, :format_num => format_num }) if $options[:select]
-
        end
 
-   end
+       return property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset
+
+   end	# decompose_param
 
 
    # Decompose an expression of type host_a,host-[1-12,18,24-30],host_b,host_c in a table where each element is a value
@@ -119,7 +134,7 @@ module Resources
        if str =~ /%\d*d/	
           format_num = $&			
           format_num = format_num[0..0] + "0" + format_num[1..format_num.length]
-          str = $`.to_s + $'.to_s				
+          str = $` + $'				
        end						
 
        j = 0

@@ -7,6 +7,7 @@
 # ruby1.8 (or greater)
 # libdbi-ruby 
 # libdbd-mysql-ruby or libdbd-pg-ruby
+# libyaml-ruby
 # 
 # To activate the verbose mode, add -w at the end of the first line. Ex : #!/usr/bin/ruby -w
 #
@@ -235,11 +236,15 @@ case
 	            # Properties in the oar command
 	            (1..$cmd_user.length-1).each do |n|
 	    	        str += "-p " + $cmd_user[n][:property_name] + "="
-		        if $cmd_user[n][:property_nb] =~ /%/
-		           str = str + $`.to_s + k.to_s + $'.to_s
-		        else
+		        if $cmd_user[n][:property_nb].is_a?(Fixnum)
+			   # we can have the follows forms : property=param{%}  property=text_part_a{%2d%+20offset}text_part_b
+			   v = k + $cmd_user[n][:offset]
+	         	   v = sprintf("#{$cmd_user[n][:format_num]}", v) if $cmd_user[n][:format_num].length > 0 
+   	         	   str += $cmd_user[n][:property_fixed_value] + v.to_s + $cmd_user[n][:property_fixed_value2]
+			else
+			   # we can have : property=value but without {%} operator
 		           str += $cmd_user[n][:property_nb]
-		        end
+			end
 		        str += " "
 	            end
 	    
@@ -276,7 +281,7 @@ case
            else
        	        # We have a form param=host_a,host_b, host[10-20,30,35-50,70],host_c,host[80-120]
 	        list_val = Resources.decompose_list_values($cmd_user[0][:property_nb])
-
+		k = 1
  	        list_val.each do |item|
 	
 	            # First part of oar command
@@ -284,7 +289,17 @@ case
 
 	            # Properties in the oar command
 	            (1..$cmd_user.length-1).each do |n|
-	                str += "-p " + $cmd_user[n][:property_name] + "=" + $cmd_user[n][:property_nb] + " "
+	                str += "-p " + $cmd_user[n][:property_name] + "=" 
+		        if $cmd_user[n][:property_nb].is_a?(Fixnum)
+			   # we can have the follows forms : property=param{%}  property=text_part_a{%2d%+20offset}text_part_b
+			   v = k + $cmd_user[n][:offset]
+	         	   v = sprintf("#{$cmd_user[n][:format_num]}", v) if $cmd_user[n][:format_num].length > 0 
+   	         	   str += $cmd_user[n][:property_fixed_value] + v.to_s + $cmd_user[n][:property_fixed_value2]
+			else
+			   # we can have : property=value but without {%} operator
+		           str += $cmd_user[n][:property_nb]
+			end
+		    	str += " "
 	            end
 	    
 	            # --sql clause in the oar command or -h hostname
@@ -306,7 +321,9 @@ case
 
 	            # Execution
 	            Resources.execute_command(str)
-	    
+	    		
+		    k += 1
+
 	        end
 
            end 		# if $cmd_user[0][:property_nb].is_a?(Fixnum)
