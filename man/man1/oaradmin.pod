@@ -160,6 +160,11 @@ Print this help message.
 
 =back
 
+=head1 NOTES
+
+Oaradmin ressources subcommand uses oarnodes outputs with yaml format. So, Perl yaml and Ruby yaml packages must be installed.
+
+
 =head1 SEE ALSO
 
 oarnodes(1), oarnodesetting(1), oarproperty(1), oarremoveresource(1), oarsub(1)
