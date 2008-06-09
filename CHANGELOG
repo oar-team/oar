@@ -58,6 +58,8 @@ version 2.2.12:
   - Now reservations are scheduled only once (at submission time). Resources
     allocated to a reservations are definitively set once the validated is
     done and won't change in next scheduler's pass.
+  - Fix DrawGantt to not display besteffort jobs in the future which is
+    meaningless. 
 
 version 2.2.11:
 ---------------
