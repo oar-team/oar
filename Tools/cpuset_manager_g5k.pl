@@ -95,12 +95,12 @@ if ($ARGV[0] eq "init"){
     
     if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
         if (! flock(LOCKFILE,LOCK_EX)) {
-            message(ERROR,"flock failed: $!\n"));
+            message(ERROR,"flock failed: $!\n");
             exit(LOCK);
         }
         if (system('sudo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
             if (system('sudo mkdir -p /dev/cpuset && sudo mount -t cpuset none /dev/cpuset 2> /dev/null')){
-                message(ERROR,"system cpuset initialization failed: $!\n"));
+                message(ERROR,"system cpuset initialization failed: $!\n");
                 exit(CPUSET);
             }
         }
@@ -112,7 +112,7 @@ if ($ARGV[0] eq "init"){
                         'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path.'/mems &&'.
                         'cat /dev/cpuset/cpus > /dev/cpuset/'.$Cpuset_path.'/cpus'
                       )){
-                message(ERROR,"job cpuset initialization failed: $!\n"));
+                message(ERROR,"job cpuset initialization failed: $!\n");
                 exit(CPUSET);
             }
         }
@@ -130,7 +130,7 @@ if ($ARGV[0] eq "init"){
 
     if (open(LOCKFILE,">", $Cpuset_lock_file.$Cpuset->{user})){
         if (! flock(LOCKFILE,LOCK_EX)) {
-            message(ERROR,"flock failed: $!\n"));
+            message(ERROR,"flock failed: $!\n");
             exit(LOCK);
         }
 # Be careful with the physical_package_id. Is it corresponding to the memory bank?
@@ -168,7 +168,7 @@ if ($ARGV[0] eq "init"){
             exit(FILE);
         }
         if (! rename($Security_pam_file_tmp,$Security_pam_file)) {
-            message(ERROR,"cannot replace access.conf file: $!\n";
+            message(ERROR,"cannot replace access.conf file: $!\n");
             exit(FILE);
         }
     }
@@ -278,7 +278,7 @@ if ($ARGV[0] eq "init"){
             exit(FILE);
         }
         if (! rename($Security_pam_file_tmp,$Security_pam_file)) {
-            message(ERROR,"cannot replace access.conf file.";
+            message(ERROR,"cannot replace access.conf file.");
             exit(FILE);
         }
         if (defined($Cpuset->{types}->{$Allow_SSH_type}) and ! system('diff /dev/cpuset/'.$Cpuset_path.'/'.$Cpuset_name.'/cpus /dev/cpuset/'.$Cpuset_path.'/cpus > /dev/null 2>&1')){
