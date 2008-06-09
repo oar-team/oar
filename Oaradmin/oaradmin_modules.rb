@@ -15,6 +15,131 @@
 
 module Resources
 
+   # Test syntax in command line
+   # Return :
+   #	0 : no error
+   #	1 : one parameter is wrong
+   #    2 : a parameter after an option is missing
+   #    3 : one error occurs in {...} expression with -a or -s option. 
+   #        only a numeric value with optional numeric format and offset are allowed
+   #    4 : one error occurs in {...} expression with -p option
+   #        only % character with optional numeric format and offset are allowed
+   #    5 : {...} expression not allowed with -d option
+   def Resources.parsing
+       r=0
+       i=0
+       while i<ARGV.length
+
+	     # A parameter must be exist after some options
+             if ARGV[i] =~ /^(\-a|\-\-add|\-p|\-\-property|\-s|\-\-select)$/ 
+	        if ARGV[i+1].nil?
+	     	   r=2
+	     	   return r
+	     	end 
+	     end
+
+	     # Test each parameter after an option
+	     case
+		when ARGV[i] == "-a" || ARGV[i] == "--add"
+		     if !(ARGV[i+1] =~ /^\/\S+=\S+/)
+		        r=1
+		        return r
+		     else
+   		        ARGV[i+1].split('/').each do |item|
+			    if item != "" 
+	   		       if !(item =~ /\S+=\S+/)
+		      		  r=1
+		      		  return r
+	   		       else
+	      		  	  r = Resources.parsing_value(item.split('=')[1], "-a")
+				  if r > 0
+				     r = 3 
+				     return r 
+	      			  end 
+	   		       end
+			    end
+   		        end
+		     end
+		     i+=1
+
+		when ARGV[i] == "-p" || ARGV[i] == "--property"
+		     if !(ARGV[i+1] =~ /\S+=\S+/)
+		        r=1
+		        return r
+		     else
+	      	        r = Resources.parsing_value(ARGV[i+1].split('=')[1], "-p")
+		        if r > 0
+		           r = 4 
+		           return r 
+	      	        end 
+		     end 
+		     i+=1
+
+		when ARGV[i] == "-s" || ARGV[i] == "--select"
+		     if !(ARGV[i+1] =~ /^\w\S*=\S+/)
+		        r=1
+		        return r
+		     else
+	      	        r = Resources.parsing_value(ARGV[i+1].split('=')[1], "-s")
+		        if r > 0
+		           r = 3 
+		           return r 
+	      	        end 
+		     end 
+		     i+=1
+
+		when ARGV[i] == "-d" || ARGV[i] == "--delete"
+		     if ARGV[i+1] && ARGV[i+1] != "-c" && ARGV[i+1] != "--commit"
+		        if !(ARGV[i+1] =~ /^\w\S*=\S+/)
+		           r=1
+		           return r
+		        else
+	  		   if ARGV[i+1] =~ /\{.*\}/
+			      r=5
+			      return r
+			   end
+		        end 
+		     end
+		     i+=1
+
+		when ARGV[i] == "-c" || ARGV[i] == "--commit"
+		     # Nothing to do
+
+       		when ARGV[i] =~ /^\-\-\S+=\S+$/
+		     # Nothing to do
+		
+		else
+		    r=1      
+		    return r
+
+	     end 	# case
+	     i+=1
+       end 	# while i<ARGV.length
+
+       return r
+   end 	# Resources.parsing
+
+   # Test syntax of values using {...} expression
+   # Return 
+   #    0 : no error
+   #    1 : one error occurs in {...} expression 
+   def Resources.parsing_value(v, form)
+       r = 0
+       if form == "-a" || form == "-s"		# Only {number} form allowed with optional numeric format and offset when {...} operator is used 
+	  if v =~ /\{.*\}/
+	     r = 1 if !(v =~ /\{((%\d*d)|((\+|\-)\d*offset))*\d+((%\d*d)|((\+|\-)\d*offset))*\}/)
+	  end
+       end
+       if form == "-p" 				# Only {%} form allowed with optional numeric format and offset when {...} operator is used 
+	  if v =~ /\{.*\}/
+	     r = 1 if !(v =~ /\{((%\d*d)|((\+|\-)\d*offset))*%((%\d*d)|((\+|\-)\d*offset))*\}/)
+	  end
+       end
+
+
+       return r
+   end 	# Resources.parsing_value
+
 
    # Decompose parameters property=value and store values in $cmd_user[]
    # property_name : the name of one property. Ex : /switch=sw{3} => property_name = switch
@@ -30,11 +155,12 @@ module Resources
    #      -p infiniband=NO => $cmd_user[n] = {:property_name => "infiniband", :property_fixed_value="", :property_fixed_value2="", :property_nb="NO"}
    #      -a /nodes=host{12+40offset} => $cmd_user[0] = {:property_name => "nodes"  .../...  :offset=>40}  to create host41, host42, host43 .../... host52
    #      -a /nodes=host{%3d12} => $cmd_user[0] = {:property_name => "nodes" .../... :format_num => "%03d"} to create host001, host002...
+   #      We can use /nodes or /node. Ex : -a /node=mycluster[1-10]
    def Resources.decompose_argv
 
-       (0..ARGV.length-2).step(2) do |i|
+       (0..ARGV.length-1).each do |i|
 
-           if ARGV[i] == "-a"
+           if ARGV[i] == "-a" || ARGV[i] == "--add"
               ARGV[i+1].split('/').each do |item|
                   if item != ""
        		     property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset = Resources.decompose_param(ARGV[i], item)
@@ -46,21 +172,21 @@ module Resources
               end
            end
 
-           if ARGV[i] == "-s"
+           if ARGV[i] == "-s" || ARGV[i] == "--select"
        	      property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset = Resources.decompose_param(ARGV[i], ARGV[i+1])
               $cmd_user = $cmd_user.insert(0, {:property_name => property_name, :property_fixed_value => property_fixed_value, 
 	                                       :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
 	  				       :offset => offset, :format_num => format_num }) 
            end
 
-           if ARGV[i] == "-p"
+           if ARGV[i] == "-p" || ARGV[i] == "--property"
        	      property_name, property_fixed_value, property_fixed_value2, property_nb, format_num, offset = Resources.decompose_param(ARGV[i], ARGV[i+1])
               $cmd_user.push({:property_name => property_name, :property_fixed_value => property_fixed_value, 
                        	      :property_fixed_value2 => property_fixed_value2, :property_ndx => 0, :property_nb => property_nb,
 	  	       	      :offset => offset, :format_num => format_num }) 
            end
 
-           if ARGV[i] == "-d"
+           if ARGV[i] == "-d" || ARGV[i] == "--delete"
               property_name = property_fixed_value = property_fixed_value2 = property_nb = ""
 	      if ARGV[i+1] =~ /=/
                  property_name = $`
@@ -70,7 +196,7 @@ module Resources
               end
            end
 
-       end	    # (0..ARGV.length-2).step(2) do |i|
+       end 		#(0..ARGV.length-1) do |i|
 
        p $cmd_user if $VERBOSE
 
@@ -105,8 +231,8 @@ module Resources
 	        str2 = $` + $'
 	     end						
 
-	     property_nb = str2.to_i if form == "-a" || form == "-s"		# Only {number} form allowed with -a and -s params
-	     property_nb = 1 if form == "-p"					# Only {%} form allowed with -p params
+	     property_nb = str2.to_i if form=="-a" || form=="--add" || form=="-s" || form=="--select"		# Only {number} form allowed with -a and -s params
+	     property_nb = 1 if form=="-p" || form=="--property"						# Only {%} form allowed with -p params
 
           else
 	     # case with follows forms : 
@@ -184,6 +310,50 @@ module Resources
    end 		# Resources.decompose_list_values
 
 
+   # Test if properties specified in command line exist in OAR database. Use "oarproperty -l" command
+   # Test done only with -c option.
+   # If one property does not exist, display error message and exit
+   def Resources.properties_exists
+       properties = nil
+       prop_command_line=[]	# properties from command line
+       if $options[:commit]
+
+	  # retrieve all properties from command line
+	  ARGV.each do |i|
+    	      if i =~ /\//
+       		 i.split('/').each do |j|
+		   prop_command_line.push($`) if j =~ /=/
+      		 end
+    	      elsif i =~ /=/
+		   prop_command_line.push($`) 
+    	      end
+	  end
+
+	  # Test also cpuset property name if defined by user
+	  prop_command_line.push($options[:cpusetproperty_name]) if $options[:cpusetproperty_name] != ""
+
+	  # "nodes" or "node" are keywords for oaradmin
+	  prop_command_line.delete_if {|x| x == "nodes" || x == "node" }
+
+          r1 = `oarproperty -l`
+          r2 = $?.exitstatus
+          if r2 > 0
+             $stderr.puts "[OARADMIN ERROR]: can't execute oarproperty -l command." 
+	     exit(2)
+ 	  else
+	     properties = prop_command_line - r1.split("\n")
+	     if !properties.empty?
+	        $stderr.print "[OARADMIN ERROR]: One or more properties does not exist : "
+	        $stderr.print properties.join(", ") + " ! \n"
+	        $stderr.print "[OARADMIN ERROR]: Please, use oarproperty command before.\n"
+	        exit(3)
+	     end
+ 
+          end
+       end
+   end 	# Resources.properties_exists
+
+
    # Explore $cmd_user[] table and create oar commands - recursiv algorithm
    def Resources.tree n, str
        # n : the current level 
@@ -192,7 +362,7 @@ module Resources
        if n <= $cmd_user.length 
        
           # Create oarnodesetting command with correct syntax
-          if $cmd_user[n-1][:property_name] == "nodes"
+          if $cmd_user[n-1][:property_name] == "nodes" || $cmd_user[n-1][:property_name] == "node"
              str += "-h " + $cmd_user[n-1][:property_fixed_value]
           else
              str += "-p " + $cmd_user[n-1][:property_name] + "=" + $cmd_user[n-1][:property_fixed_value]
@@ -208,7 +378,7 @@ module Resources
    	         str = str2 + v.to_s + $cmd_user[n-1][:property_fixed_value2] + " "
 
 		 # For cpuset no
-		 if $cmd_user[n-1][:property_name]=="nodes"
+		 if $cmd_user[n-1][:property_name]=="nodes" || $cmd_user[n-1][:property_name]=="node"
 		    $cpuset_host_current=$cmd_user[n-1][:property_fixed_value] + v.to_s + $cmd_user[n-1][:property_fixed_value2]
 		 end
 		 if $cpuset_property_name != ""
@@ -227,7 +397,7 @@ module Resources
 	         str = str2 + item + " "
 
 		 # For cpuset no
-		 if $cmd_user[n-1][:property_name]=="nodes"
+		 if $cmd_user[n-1][:property_name]=="nodes" || $cmd_user[n-1][:property_name]=="node"
 		    $cpuset_host_current=item
 		 end
 
@@ -273,8 +443,8 @@ module Resources
           r1 = `#{str}`
           r2 = $?.exitstatus
           if r2 > 0
-             puts "[ERROR]" + " command : " + str
-             puts r1
+             $stderr.puts "[OARADMIN ERROR]" + " command : " + str
+             $stderr.puts r1
           end
        end
 

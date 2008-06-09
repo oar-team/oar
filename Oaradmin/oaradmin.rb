@@ -74,6 +74,11 @@ case
 	# ################
 
         $msg[0] = "Incoherence or syntax error in specified options"
+        $msg[1] = "A parameter after an option is missing"
+        $msg[2] = "With -a and -s options, in {...} expression only a numeric value with optional numeric format and offset are allowed"
+        $msg[3] = "With -p option, in {...} expression only % character with optional numeric format and offset are allowed"
+        $msg[4] = "With -d option, {...} expression is not allowed"
+        $msg[5] = "[OARADMIN]: No resource selected"
 
         $cmd_user = []
         $oar_cmd = ""
@@ -149,6 +154,18 @@ case
               exit(1)
         end
 
+        # Tests syntax in command line
+        r = Resources.parsing
+	if r > 0
+              puts $msg[0] if r == 1
+              puts $msg[1] if r == 2
+              puts $msg[2] if r == 3
+              puts $msg[3] if r == 4
+              puts $msg[4] if r == 5
+	      
+              puts opts
+              exit(1)
+        end
 
         # add resources
         if $options[:add]
@@ -159,17 +176,17 @@ case
 	   if [:cpusetproperty]
 	      i=0
 	      while i<ARGV.length
-		    if !ARGV[i].nil? && ARGV[i][0..1]=="--"
-		       if ARGV[i]=~/^--\S+=\S+/
-		          ARGV.delete_at(i)
-		          redo
-		       else
-              		  puts $msg[0]
+	   	    if !ARGV[i].nil? && ARGV[i][0..1]=="--"
+	   	       if ARGV[i]=~/^--\S+=\S+/
+	   	          ARGV.delete_at(i)	
+	   	          redo
+	   	       elsif ARGV[i]!="--add" && ARGV[i]!="--property" && ARGV[i]!="--select" && ARGV[i]!="--delete" && ARGV[i]!="--commit"
+            		  puts $msg[0]
               		  puts opts
               		  exit(1)
-		       end
-		    end
-		    i+=1
+	   	       end
+	   	    end
+	   	    i+=1
 	      end
 	   end
 
@@ -181,6 +198,9 @@ case
 	   $cpuset_no=0	   
 	   $cpuset_property_name=$options[:cpusetproperty_name]
 
+	   # Properties exists in OAR database ?
+	   Resources.properties_exists
+
            Resources.tree 1, $oar_cmd
 
         end 	# if $options[:add]
@@ -188,6 +208,9 @@ case
 
         # update resources : -s and -p  
         if $options[:select] && $options[:property]
+
+	   # Properties exists in OAR database ?
+	   Resources.properties_exists
 
            # Decompose ARGV[] in hash table $cmd_user
            Resources.decompose_argv
@@ -199,7 +222,7 @@ case
               r = `oarnodes -a -Y`
               if $?.exitstatus == 0
 		 r_hash = YAML::load(r)
-                 if $cmd_user[0][:property_name] == "nodes"
+                 if $cmd_user[0][:property_name] == "nodes" || $cmd_user[0][:property_name] == "node"
 	            str = "network_address"
                  else
 	            str = $cmd_user[0][:property_name]
@@ -226,6 +249,7 @@ case
 		 end
               end	# if $?.exitstatus == 0
 
+	      resources_selected=false
               i = j = k = 1
               i += $cmd_user[0][:offset]
               while i <= val_max && j+$cmd_user[0][:offset] <= val_max
@@ -252,7 +276,7 @@ case
 	            v = i
 	            v = sprintf("#{$cmd_user[0][:format_num]}", v) if $cmd_user[0][:format_num].length > 0 
 	            v = v.to_s
-	            if $cmd_user[0][:property_name] == "nodes"
+	            if $cmd_user[0][:property_name] == "nodes" || $cmd_user[0][:property_name] == "node"
 	               str = str + "-h " + $cmd_user[0][:property_fixed_value] + v + $cmd_user[0][:property_fixed_value2] 
 	            else
 	                str += "--sql "
@@ -269,6 +293,7 @@ case
 	            # Execution
 	            Resources.execute_command(str)
 
+		    resources_selected=true
                     i += 1
 	            j += 1
 	            if j > $cmd_user[0][:property_nb]
@@ -277,7 +302,8 @@ case
 	            end
 	    
               end
-   
+	      puts $msg[5] if !resources_selected
+ 
            else
        	        # We have a form param=host_a,host_b, host[10-20,30,35-50,70],host_c,host[80-120]
 	        list_val = Resources.decompose_list_values($cmd_user[0][:property_nb])
@@ -303,7 +329,7 @@ case
 	            end
 	    
 	            # --sql clause in the oar command or -h hostname
-	            if $cmd_user[0][:property_name] == "nodes"
+	            if $cmd_user[0][:property_name] == "nodes" || $cmd_user[0][:property_name] == "node"
 	               str = str + "-h " + item  
 	            else
 	                str += "--sql "
@@ -334,6 +360,9 @@ case
         # delete resources
         if $options[:delete]
 
+	   # Properties exists in OAR database ?
+	   Resources.properties_exists
+
            # Decompose ARGV[] in hash table $cmd_user
            Resources.decompose_argv
 
@@ -347,7 +376,7 @@ case
               r = `oarnodes -a -Y`
               if $?.exitstatus == 0
 		 r_hash = YAML::load(r)
-                 if $cmd_user[0][:property_name] == "nodes"
+                 if $cmd_user[0][:property_name] == "nodes" || $cmd_user[0][:property_name] == "node"
 	            str = "network_address"
                  else
 	            str = $cmd_user[0][:property_name]
@@ -392,12 +421,16 @@ case
 	   end
 
            # Delete each resource_id
-           $list_resources_id.each do |r|
-               str = "oarnodesetting -r " + r + " -s Dead -n "
-               Resources.execute_command(str)
-               str = "oarremoveresource " + r
-               Resources.execute_command(str)
-           end
+           if !$list_resources_id.empty? 
+              $list_resources_id.each do |r|
+                  str = "oarnodesetting -r " + r + " -s Dead -n "
+                  Resources.execute_command(str)
+                  str = "oarremoveresource " + r
+                  Resources.execute_command(str)
+              end
+	   else
+	      puts $msg[5]
+	   end
 
         end 	# if $options[:delete]
 
