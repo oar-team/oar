@@ -25,7 +25,7 @@ my @Resources_to_always_add = ();
 
 # Do we log every scheduler's computation ?
 my $Log_scheduling = get_conf("SCHEDULER_LOG_DECISIONS");
-if ($Log_scheduling ne "yes") { $Log_scheduling = undef; }
+if (defined($Log_scheduling) and $Log_scheduling ne "yes") { $Log_scheduling = undef; }
 
 #minimum of seconds between each jobs
 my $Security_time_overhead = 1;
