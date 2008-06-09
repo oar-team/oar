@@ -32,22 +32,22 @@ Each subcommand has a long and an optional short form :  B<oaradmin resources> o
 
 These options can create and define many resources in OAR database. In a single command line, it is possible to create the whole definition cluster. 
 
-With -a option <EXP> form is as follows : /property=value. Several <EXP> can be used : /property=value/property=value... Property field correspond to the name of a property in OAR database : cpu, core, switch for examples. A specific keyword "nodes" is use to indicate nodes names. Order of <EXP> expressions is important : it describe the resources properties hierarchy in the cluster. Properties used in <EXP> must exist and must be created with oarproperty command before. '/' caracter is mandatory at the beginning of each expression, no space between two expressions. 
+With -a option <EXP> form is as follows : /property=value. Several <EXP> can be used : /property=value/property=value... Property field correspond to the name of a property in OAR database : cpu, core, switch for examples. A specific keyword "node" (or "nodes") is use to indicate nodes names. Order of <EXP> expressions is important : it describe the resources properties hierarchy in the cluster. Properties used in <EXP> must exist and must be created with oarproperty command before. '/' caracter is mandatory at the beginning of each expression, no space between two expressions. 
 
-Ex : oaradmin resources -a /nodes=mycluster{12}.local/cpu={2}/core={2}. Number in {} is the number of elements for one element of previous level. So in this example 12 nodes, each node has 2 cpus, each cpu has 2 cores. Oaradmin creates follows resources : mycluster1.local cpu=1 core=1, mycluster1.local cpu=1 core=2, mycluster1.local cpu=2 core=3, mycluster1.local cpu=2 core=4, mycluster2.local cpu=3 core=5...
+Ex : oaradmin resources -a /node=mycluster{12}.local/cpu={2}/core={2}. Number in {} is the number of elements for one element of previous level. So in this example 12 nodes, each node has 2 cpus, each cpu has 2 cores. Oaradmin creates follows resources : mycluster1.local cpu=1 core=1, mycluster1.local cpu=1 core=2, mycluster1.local cpu=2 core=3, mycluster1.local cpu=2 core=4, mycluster2.local cpu=3 core=5...
 
-A second form is useful to name nodes. The expression -a /nodes=mycluster[1-100].local creates nodes mycluster1.local, mycluster2.local... mycluster100.local. It is possible to specify lists and groups for hosts. Ex : -a /nodes=mycluster[1-8,10,15,20-30],host_a,host_b/cpu={2}. Of course, in [...] only numeric values are allowed. Expression -a /nodes=chemistry_cluster[1-10,18],physics_cluster[1-50]/cpu={2} is also possible.
+A second form is useful to name nodes. The expression -a /node=mycluster[1-100].local creates nodes mycluster1.local, mycluster2.local... mycluster100.local. It is possible to specify lists and groups for hosts. Ex : -a /node=mycluster[1-8,10,15,20-30],host_a,host_b/cpu={2}. Of course, in [...] only numeric values are allowed. Expression -a /node=chemistry_cluster[1-10,18],physics_cluster[1-50]/cpu={2} is also possible.
 
-For naming nodes, a numeric format and an offset are available. The numeric format is specified with %xd where x is the number of digits. Ex : -a /nodes=mycluster-{%2d12} will create nodes mycluster-01, mycluster-02... The offset is specified with +xoffset where x is the offset value. mycluster{12+20offset} will create mycluster21 as first node name. Remember that the first node name with mycluster{12} is mycluster1. So the first numeric value is increased by +20offset. Offset can be negative with -xoffset. Numeric format and offset can be used anywhere in {} expression : {12%3d+20offset} or {+20offset12%3d}.  With [] form in nodes names, offset is useless ; only numeric format can be used in this case. mycluster[1-100] define values of names. mycluster{12} defined at the same time a number of elements and values of names.
+For naming nodes, a numeric format and an offset are available. The numeric format is specified with %xd where x is the number of digits. Ex : -a /node=mycluster-{%2d12} will create nodes mycluster-01, mycluster-02... The offset is specified with +xoffset where x is the offset value. mycluster{12+20offset} will create mycluster21 as first node name. Remember that the first node name with mycluster{12} is mycluster1. So the first numeric value is increased by +20offset. Offset can be negative with -xoffset. Numeric format and offset can be used anywhere in {} expression : {12%3d+20offset} or {+20offset12%3d}.  With [] form in nodes names, offset is useless ; only numeric format can be used in this case. mycluster[1-100] define values of names. mycluster{12} defined at the same time a number of elements and values of names.
 
 Some expressions does not match or are not allowed :
-  -a /switch={2}/nodes=mycluster[1-12]. If an expression uses [], it must be the first expression behind -a.
-  -a /nodes=cluster_a{12},cluster_b{12}. Only one argument must be used with {} form in each <EXP>.
-  -a /nodes=cluster_a{12},cluster_b[1-10]. {} and [] forms are exclusive.
+  -a /switch={2}/node=mycluster[1-12]. If an expression uses [], it must be the first expression behind -a.
+  -a /node=cluster_a{12},cluster_b{12}. Only one argument must be used with {} form in each <EXP>.
+  -a /node=cluster_a{12},cluster_b[1-10]. {} and [] forms are exclusive.
 
 
 --cpusetproperty option is useful to define the property used for numbers cpusets. 
-Ex : -a /nodes=mycluster{12}/cpu={2}/core={2} --cpusetproperty=cpu means one cpuset per cpu.
+Ex : -a /node=mycluster{12}/cpu={2}/core={2} --cpusetproperty=cpu means one cpuset per cpu.
 If the option is not used, one cpuset is created per resource_id. 
 
 -p option is usefull to define other properties that are not in properties hierarchy : memory, project...
@@ -57,21 +57,21 @@ With -p option <EXP> form is as follows : property=value. Several expressions -p
 Witout -c option, oaradmin print only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 
 Other examples :
-  oaradmin resources -a /switch=sw{5}/nodes=mycluster{12}.domain/cpu={2}
+  oaradmin resources -a /switch=sw{5}/node=mycluster{12}.domain/cpu={2}
   Creates a cluster with 5 switchs, 12 nodes per switch, 2 cpus per node.
 
-  oaradmin resources -a /nodes=mycluster-{%3d250}/cpu={2}
-  oaradmin resources -a /nodes=mycluster-[%3d1-250]/cpu={2}
+  oaradmin resources -a /node=mycluster-{%3d250}/cpu={2}
+  oaradmin resources -a /node=mycluster-[%3d1-250]/cpu={2}
   Creates nodes from mycluster-001 to mycluster-250 with 2 cpus per node.
 
-  oaradmin resources -a /nodes=mycluster[1-25]/cpu={2} -p mem=1024 -p arch=amd_64 -p infiniband=YES -c
+  oaradmin resources -a /node=mycluster[1-25]/cpu={2} -p mem=1024 -p arch=amd_64 -p infiniband=YES -c
 
 
 =item B<-s> <EXP> B<-p> <EXP> 
 
 These options update many resources in OAR database. -s <EXP> define the condition to select resources and -p <EXP> define the data to update on the selected resources. 
 
-Form for <EXP> is property=value. As add feature, property field correspond to the name of a property in OAR database already created with oarproperty command. With -s option, only one <EXP> expression can be specified. The boolean operators AND and OR cannot be used. With -p option, several <EXP> expressions can be used. When digits are used in host names, the expression -s mycluster[%3d1-8] must be used instead of -s mycluster[001-008].
+Form for <EXP> is property=value. As add feature, property field correspond to the name of a property in OAR database already created with oarproperty command. With -s option, only one <EXP> expression can be specified. The boolean operators AND and OR cannot be used. With -p option, several <EXP> expressions can be used. When digits are used in host names, the expression -s node=mycluster[%3d1-8] must be used instead of -s node=mycluster[001-008].
 
 It is possible to group resources with {x} and {%} operators. {x} define a group of x elements or means "each x elements". {%} means an increment of 1 to 1. Ex : 
 oaradmin resources -s core={4} -p cpu={%}. Creates one cpu each 4 cores. {x} is allowed only in the select expression. {%} is allowed only with -p option.
@@ -81,7 +81,7 @@ Offset can be used in this form : oaradmin resources -s core={4+56offset} -p cpu
 Witout -c option, oaradmin print only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 
 Other examples :
-  oaradmin resources -s nodes=mycluster-[%3d1-100] -p infiniband=YES -p project=chemistry
+  oaradmin resources -s node=mycluster-[%3d1-100] -p infiniband=YES -p project=chemistry
   Update infiniband and project properties on nodes mycluster-001, mycluster-002...
 
   oaradmin resources -s v_node={4} -p p_node={%}
@@ -97,7 +97,7 @@ Delete many resources in OAR database.
 
 Examples : 
   oaradmin resources -d -c
-  oaradmin resources -d nodes=mycluster[1-100] -c  
+  oaradmin resources -d node=mycluster[1-100] -c  
 
 
 =item B<-c> 
