@@ -3483,6 +3483,7 @@ sub update_current_scheduler_priority($$$$){
 
                 return if (!defined($value_str));
                 chop($value_str);
+                oar_Judas::oar_debug("Updating scheduler priority += ($value * $index) for $f in $value_str\n");
                 my $req =  "UPDATE resources
                             SET scheduler_priority = scheduler_priority + ($value * $index)
                             WHERE

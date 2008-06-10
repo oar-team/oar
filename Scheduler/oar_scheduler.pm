@@ -145,7 +145,7 @@ sub init_scheduler($$$$$$){
         }else{
             $date = $i->{start_time};
         }
-        oar_debug("[oar_scheduler] init_scheduler: add in gantt job $i->{job_id}\n");
+        oar_debug("[oar_scheduler] init_scheduler: add in gantt current job $i->{job_id}\n");
         iolib::add_gantt_scheduled_jobs($dbh,$i->{assigned_moldable_job},$date,\@resource_list);
 
         # Treate besteffort jobs like nothing!
