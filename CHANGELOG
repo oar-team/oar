@@ -19,6 +19,7 @@ version 2.2.12:
     done and won't change in next scheduler's pass.
   - Fix DrawGantt to not display besteffort jobs in the future which is
     meaningless. 
+  - Add some debug messages.
 
 version 2.2.11:
 ---------------
