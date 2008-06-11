@@ -351,7 +351,7 @@ if (defined($stateMode)){
                         chop($str);
                         $properties = $str;
                     }elsif ($cc eq "jobs"){
-                        #$nb_jobs += $#{@{$data_to_display{$aa}->{$bb}->{$cc}}} + 1;
+                        #$nb_jobs += $#{$data_to_display{$aa}->{$bb}->{$cc}} + 1;
                         my $c=0;
                         foreach my $j (@{$data_to_display{$aa}->{$bb}->{$cc}}){
                             #if (!defined($weight_index{$aa})){

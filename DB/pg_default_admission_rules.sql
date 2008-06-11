@@ -35,7 +35,7 @@ my @bad_resources = ("type","state","next_state","finaud_decision","next_finaud_
 foreach my $mold (@{$ref_resource_list}){
     foreach my $r (@{$mold->[0]}){
         my $i = 0;
-        while (($i <= $#{@{$r->{resources}}})){
+        while (($i <= $#{$r->{resources}})){
             if (grep(/^$r->{resources}->[$i]->{resource}$/, @bad_resources)){
                 die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed\\n");
             }
@@ -92,7 +92,7 @@ if (grep(/^(deploy|allow_classic_ssh)$/, @{$type_list})){
     foreach my $mold (@{$ref_resource_list}){
         foreach my $r (@{$mold->[0]}){
             my $i = 0;
-            while (($i <= $#{@{$r->{resources}}})){
+            while (($i <= $#{$r->{resources}})){
                 if (grep(/^$r->{resources}->[$i]->{resource}$/, @bad_resources)){
                     die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy or allow_classic_ssh type job\\n");
                 }

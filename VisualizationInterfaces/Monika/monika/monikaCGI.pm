@@ -50,7 +50,7 @@ sub getColorFromPool {
   my $self = shift;
   my $key = shift;
   my $color_pool = $self->{COLOR_POOL};
-  my $color = $color_pool->[$key % ($#{@$color_pool}+1)];
+  my $color = $color_pool->[$key % ($#{$color_pool}+1)];
   #my $color = shift @$color_pool;
   #push @$color_pool,$color;
   return $color;
