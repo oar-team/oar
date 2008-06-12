@@ -32,7 +32,7 @@ if (is_conf("SCHEDULER_FAIRSHARING_WINDOW_SIZE")) {
 # specify the target percentages for project names (0 if not specified)
 my $Karma_project_targets = { first => 75, default => 25 };
 if (is_conf("SCHEDULER_FAIRSHARING_PROJECT_TARGETS")) {
-    my $Karma_project_targets = eval(get_conf("SCHEDULER_FAIRSHARING_TARGETS").";");
+    $Karma_project_targets = eval(get_conf("SCHEDULER_FAIRSHARING_PROJECT_TARGETS").";");
     if ($@) {
         oar_error("Syntax error in configuration file: SCHEDULER_FAIRSHARING_PROJECT_TARGETS");
         exit (1);
@@ -42,12 +42,13 @@ if (is_conf("SCHEDULER_FAIRSHARING_PROJECT_TARGETS")) {
 # specify the target percentages for users (0 if not specified)
 my $Karma_user_targets = { oar => 100 };
 if (is_conf("SCHEDULER_FAIRSHARING_USER_TARGETS")) {
-    my $Karma_project_targets = eval(get_conf("SCHEDULER_USER_TARGETS").";");
+    $Karma_user_targets = eval(get_conf("SCHEDULER_FAIRSHARING_USER_TARGETS").";");
     if ($@) {
         oar_error("Syntax error in configuration file: SCHEDULER_FAIRSHARING_USER_TARGETS");
         exit (1);
     }
 }
+print Dumper($Karma_user_targets);
 # weight given to each criteria
 my $Karma_coeff_project_consumption = 0;
 if (is_conf("SCHEDULER_FAIRSHARING_COEF_PROJECT")) {
@@ -265,8 +266,8 @@ sub karma($){
 
     my $note = 0;
     $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{project}} / 100));
+    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
+    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
 
     return($note);
 }
