@@ -284,6 +284,11 @@ stored in "node_list.txt" file without password:
 
 Then you can launch the oarnodes command and see all new resources inserted.
 
+A tool is now available to help you managing your oar resources and admission 
+rules : oaradmin.
+Take a look at the oaradmin documentation in the administrator commands section 
+for more details.
+
 Further informations
 --------------------
 For further information, please check http://oar.imag.fr/.

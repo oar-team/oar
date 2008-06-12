@@ -71,7 +71,9 @@ Options are: ::
  -p    : change the value of a property specified resources.
  -n    : specify this option if you do not want to wait the end of jobs running
          on this node when you change its state into "Absent" or "Dead".
-
+         
+.. include:: oaradmin.rst       
+         
 *oarremoveresource*
 -------------------
 

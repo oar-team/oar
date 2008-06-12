@@ -23,7 +23,7 @@ upstream development version:
   - /!\ add DB field *initial_request* in the table *jobs* that stores the
     oarsub line of the user
   - Feature Request #4868: Add a parameter to specify what the "nodes" resource
-    is a synomym for. Network_address must be seen as a internal data and not
+    is a synomym for. Network_address must be seen as an internal data and not
     used.
   - Scheduler: add timeout for each job == 1/4 of the remaining scheduler
     timeout.

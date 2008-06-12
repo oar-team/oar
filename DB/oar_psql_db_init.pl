@@ -44,6 +44,7 @@ chomp $password;
 print("\n");
 system("tty &> /dev/null && stty echo");
 system("sudo -u postgres psql -c \"CREATE ROLE $userName LOGIN PASSWORD \'$password\'\"");
+## or createuser test -S -D -R but we still have to set the user's passwd
 
 print "Please enter the information of the read only user you want to create:\n";
 print "\tread only user name: ";

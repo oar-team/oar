@@ -84,8 +84,8 @@ and customize it if you want to.
 In order to use this feature, you have to uncomment the line with the 
 **JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD** field in your oar.conf file.
 
-Adding resources to the system
-------------------------------
+6°) Adding resources to the system
+----------------------------------
 
 A tool is available to help you in the administrative tasks of a OAR server.
 You can install it with ::
