@@ -12,7 +12,7 @@ can refer to the INSTALL document.
 Prerequisites: Install the libs
 -------------------------------
 
-First of all you have to install the following libs:
+First of all you have to install the following packages:
 
 * Perl
 * Perl-base
@@ -21,6 +21,7 @@ First of all you have to install the following libs:
 * Perl-DBI
 * MySQL
 * libmysql
+* perl-suid
 
 You also have to install a >= 2.6 kernel in order to use cpuset feature.
 
