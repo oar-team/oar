@@ -4,8 +4,7 @@
 
 This command permits to create resources and manage admission rules easily.
 
-Requirements
-~~~~~~~~~~~~
+:Requirements:
 
 For oaradmin, the following packages must be installed:
  
