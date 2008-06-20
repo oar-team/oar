@@ -4,6 +4,8 @@ OAR CHANGELOG
 upstream development version:
 -----------------------------
 
+version 2.3.1:
+--------------
   - Add new oarmonitor command. This will permit to monitor OAR jobs on compute
     nodes.
   - Remove sudo dependency and replace it by the commands "oardo" and
