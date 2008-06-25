@@ -157,8 +157,6 @@ Options::
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
- -s, --stagein=<dir|tgz>       Set the stagein directory or archive
-     --stagein-md5sum=<md5sum> Set the stagein file md5sum
  -D, --dumper                  Print result in DUMPER format
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format

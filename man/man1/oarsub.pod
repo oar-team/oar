@@ -122,14 +122,6 @@ Specify the files that will store the standart error stream of the job. The %job
 
 Set the job state into Hold instead of Waiting, so that it is not scheduled (you must run I<oarresume> to turn it into the Waiting state).
 
-=item B<-s, --stagein> <DIR|TGZ>
-
-Set the stagein directory or archive (Desktop Computing mode).
-
-=item B<--stagein-md5sum> <MD5SUM>
-
-Set the stagein file md5sum (Desktop Computing mode).
-
 =item B<-D, --dumper>
 
 Print result in Perl Data::Dumper format.
