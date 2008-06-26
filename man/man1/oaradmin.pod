@@ -28,21 +28,21 @@ Each subcommand has a long and an optional short form :  B<oaradmin resources> o
 
 =over
 
-=item B<-a> <EXP> [--cpusetproperty=property] [B<-p> <EXP>] 
+=item B<-a> <EXPR> [--cpusetproperty=property] [B<-p> <EXPR>] 
 
-These options can create and define many resources in OAR database. In a single command line, it is possible to create the whole definition cluster. 
+These options can create and define many resources in OAR database. In a single command line, it is possible to create the whole cluster definition. 
 
-With -a option <EXP> form is as follows : /property=value. Several <EXP> can be used : /property=value/property=value... Property field correspond to the name of a property in OAR database : cpu, core, switch for examples. A specific keyword "node" (or "nodes") is use to indicate nodes names. Order of <EXP> expressions is important : it describe the resources properties hierarchy in the cluster. Properties used in <EXP> must exist and must be created with oarproperty command before. '/' caracter is mandatory at the beginning of each expression, no space between two expressions. 
+With -a option, <EXPR> form is like : (/property=value)+. Several <EXPR> can be used : /property=value/property=value... Property field correspond to the name of a property in OAR database : cpu, core, switch for example. A specific keyword "node" (or "nodes") is use to indicate nodes names. Order of <EXPR> expressions is important : it describes the resources properties hierarchy in the cluster. Properties used in <EXPR> must exist and must be created with oarproperty command before. '/' caracter is mandatory at the beginning of each expression, no space between two expressions. 
 
-Ex : oaradmin resources -a /node=mycluster{12}.local/cpu={2}/core={2}. Number in {} is the number of elements for one element of previous level. So in this example 12 nodes, each node has 2 cpus, each cpu has 2 cores. Oaradmin creates follows resources : mycluster1.local cpu=1 core=1, mycluster1.local cpu=1 core=2, mycluster1.local cpu=2 core=3, mycluster1.local cpu=2 core=4, mycluster2.local cpu=3 core=5...
+Ex : oaradmin resources -a /node=mycluster{12}.local/cpu={2}/core={2}. Number in {} is the number of elements for one element of previous level. So in this example 12 nodes, each node has 2 cpus, each cpu has 2 cores. Oaradmin creates following resources : mycluster1.local cpu=1 core=1, mycluster1.local cpu=1 core=2, mycluster1.local cpu=2 core=3, mycluster1.local cpu=2 core=4, mycluster2.local cpu=3 core=5...
 
 A second form is useful to name nodes. The expression -a /node=mycluster[1-100].local creates nodes mycluster1.local, mycluster2.local... mycluster100.local. It is possible to specify lists and groups for hosts. Ex : -a /node=mycluster[1-8,10,15,20-30],host_a,host_b/cpu={2}. Of course, in [...] only numeric values are allowed. Expression -a /node=chemistry_cluster[1-10,18],physics_cluster[1-50]/cpu={2} is also possible.
 
-For naming nodes, a numeric format and an offset are available. The numeric format is specified with %xd where x is the number of digits. Ex : -a /node=mycluster-{%2d12} will create nodes mycluster-01, mycluster-02... The offset is specified with +xoffset where x is the offset value. mycluster{12+20offset} will create mycluster21 as first node name. Remember that the first node name with mycluster{12} is mycluster1. So the first numeric value is increased by +20offset. Offset can be negative with -xoffset. Numeric format and offset can be used anywhere in {} expression : {12%3d+20offset} or {+20offset12%3d}.  With [] form in nodes names, offset is useless ; only numeric format can be used in this case. mycluster[1-100] define values of names. mycluster{12} defined at the same time a number of elements and values of names.
+For nodes naming, a numeric format and an offset are available. The numeric format is specified with %xd where x is the number of digits. Ex : -a /node=mycluster-{%2d12} will create nodes mycluster-01, mycluster-02... The offset is specified with +xoffset where x is the offset value. mycluster{12+20offset} will create mycluster21 as first node name. Remember that the first node name with mycluster{12} is mycluster1. So the first numeric value is increased by +20offset. Offset can be negative with -xoffset. Numeric format and offset can be used anywhere in {} expression : {12%3d+20offset} or {+20offset12%3d}.  With [] form in nodes names, offset is useless ; only numeric format can be used in this case. mycluster[1-100] define values of names. mycluster{12} defined at the same time a number of elements and values of names.
 
 Some expressions does not match or are not allowed :
   -a /switch={2}/node=mycluster[1-12]. If an expression uses [], it must be the first expression behind -a.
-  -a /node=cluster_a{12},cluster_b{12}. Only one argument must be used with {} form in each <EXP>.
+  -a /node=cluster_a{12},cluster_b{12}. Only one argument must be used with {} form in each <EXPR>.
   -a /node=cluster_a{12},cluster_b[1-10]. {} and [] forms are exclusive.
 
 
@@ -51,8 +51,8 @@ Ex : -a /node=mycluster{12}/cpu={2}/core={2} --cpusetproperty=cpu means one cpus
 If the option is not used, one cpuset is created per resource_id. 
 
 -p option is usefull to define other properties that are not in properties hierarchy : memory, project...
-With -p option <EXP> form is as follows : property=value. Several expressions -p property=value can be used. -p is mandatory at the beginning of each <EXP>. Ex :
--p mem=1024 -p arch=amd_64 -p infiniband=YES.  An operator {%} is available to increment by 1 a property value. Ex : -p ip=192.168.1.{%} 
+With -p option <EXPR> form is as follows : property=value. Several expressions -p property=value can be used. -p is mandatory at the beginning of each <EXPR>. Ex :
+-p mem=1024 -p arch=amd_64 -p infiniband=YES. An operator {%} is available to increment by 1 a property value. Ex : -p ip=192.168.1.{%} 
 
 Witout -c option, oaradmin print only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 
@@ -67,18 +67,18 @@ Other examples :
   oaradmin resources -a /node=mycluster[1-25]/cpu={2} -p mem=1024 -p arch=amd_64 -p infiniband=YES -c
 
 
-=item B<-s> <EXP> B<-p> <EXP> 
+=item B<-s> <EXPR> B<-p> <EXPR> 
 
-These options update many resources in OAR database. -s <EXP> define the condition to select resources and -p <EXP> define the data to update on the selected resources. 
+These options update several resources in OAR database. -s <EXPR> defines the condition to select resources and -p <EXPR> defines the data to update on the selected resources. 
 
-Form for <EXP> is property=value. As add feature, property field correspond to the name of a property in OAR database already created with oarproperty command. With -s option, only one <EXP> expression can be specified. The boolean operators AND and OR cannot be used. With -p option, several <EXP> expressions can be used. When digits are used in host names, the expression -s node=mycluster[%3d1-8] must be used instead of -s node=mycluster[001-008].
+The <EXPR> form is : property=value. As add feature, property field corresponds to the name of a property in OAR database already created with oarproperty command. With -s option, only one <EXPR> expression can be specified. The boolean operators AND and OR cannot be used. With -p option, several <EXPR> expressions can be used. When digits are used in host names, the expression -s node=mycluster[%3d1-8] must be used instead of -s node=mycluster[001-008].
 
-It is possible to group resources with {x} and {%} operators. {x} define a group of x elements or means "each x elements". {%} means an increment of 1 to 1. Ex : 
-oaradmin resources -s core={4} -p cpu={%}. Creates one cpu each 4 cores. {x} is allowed only in the select expression. {%} is allowed only with -p option.
+It is possible to group resources with {x} and {%} operators. {x} defines a group of x elements or means "each x elements". {%} means an increment of 1 to 1. Ex : 
+oaradmin resources -s core={4} -p cpu={%}. Creates one cpu each 4 cores. {x} is allowed only in the selected expression. {%} is allowed only with -p option.
 
 Offset can be used in this form : oaradmin resources -s core={4+56offset} -p cpu={%+56offset}.
 
-Witout -c option, oaradmin print only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
+Witout -c option, oaradmin prints only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 
 Other examples :
   oaradmin resources -s node=mycluster-[%3d1-100] -p infiniband=YES -p project=chemistry
@@ -87,13 +87,13 @@ Other examples :
   oaradmin resources -s v_node={4} -p p_node={%}
   Create one physical node (p_node property) every each 4 virtual nodes (v_node property).
 
-=item B<-d> [<EXP>] 
+=item B<-d> [<EXPR>] 
 
 Delete many resources in OAR database.
 
 -d alone delete all resources.
 
--d <EXP> delete selected resources by <EXP> expression. It's form is property=value. As -s option, boolean operators does not match and only one <EXP> expression can be specified.
+-d <EXPR> delete selected resources by <EXPR> expression. It's form is property=value. As -s option, boolean operators does not match and only one <EXPR> expression can be specified.
 
 Examples : 
   oaradmin resources -d -c
@@ -113,13 +113,13 @@ Examples :
 
 =item B<-l, --list> | B<-ll> | B<-lll> [no_rules]
 
-The format recommended is as follows. The first line commented with # is the title of the rule. The following lines also commented contains the description or algorithm of the rule. The following lines contains the content of the Perl script. This format is not mandatory. Admission rules can contains only Perl script lines without comments. The -l option print only the title line. The -ll option print title and description lines and -lll print the entire contents. If no rules numbers given, print all admission rules. Ex : 
+The recommended format is as follows. The first line commented with # is the title of the rule. The following lines also commented contains the description or algorithm of the rule. The following lines contains the content of the Perl script. This format is not mandatory. Admission rules can contains only Perl script lines without comments. The -l option prints only the title line. The -ll option prints title and description lines and -lll prints the entire contents. If no rules numbers given, it prints all admission rules. Ex : 
   oaradmin rules -l
   oaradmin rules -lll 3 5 8  
 
 =item B<-a, --add> [no_rule] [-f file]
 
-Add an admission rule with a text editor or directly from a file. $EDITOR variable environment is used to launch the preferred text editor. If not defined, vi is used. Without no_rule, the new rule is added at the end of the admission rules table in OAR database. If no_rule is defined, the new rule is inserted at the no_rule position. The numbers above or equals to no_rule are incresed by 1. This is useful to group the rules that have the same type of treatment. The filename must be specified just after -f option. Ex : 
+Add an admission rule with a text editor or directly from a file. $EDITOR variable environment is used to launch the preferred text editor. If not defined, vi is used. Without no_rule, the new rule is added at the end of the admission rules table in OAR database. If no_rule is defined, the new rule is inserted at the no_rule position. The numbers above or equals to no_rule are increased by 1. This is useful to group the rules that have the same type of treatment. The filename must be specified just after -f option. Ex : 
   oaradmin rules -a
   oaradmin rules -a 10
   oaradmin rules -a -f my_file
@@ -132,7 +132,7 @@ Delete one or more admission rules. Ex :
 
 =item B<-x, --export> [no_rules] | B<-x, --export> no_rule -f file
 
-Export admission rules into files. The default filename used for export is admission_rule_<no_rule> and these files are created in the current directory. The -x option alone export all admission rules. With -f file option, only one rule can be exported. If files already exists, oaradmin ask confirmation to overwrite. Ex : 
+Export admission rules into files. The default filename used for export is admission_rule_<no_rule> and these files are created in the current directory. The -x option alone exports all admission rules. With -f file option, only one rule can be exported. If files already exists, oaradmin asks confirmation to overwrite. Ex : 
   oaradmin rules -x
   oaradmin rules -x 1 5 18
   oaradmin rules -x 3 -f my_file
@@ -140,7 +140,7 @@ Export admission rules into files. The default filename used for export is admis
 
 =item B<-e, --edit> no_rule [-f file]
 
-Edit the no_rule admission rule using a text editor. A temporary file is used to edit the admission rule. This file is stored in the directory specified by OAR_RUNTIME_DIRECTORY in the OAR configuration file. If this parameter is not defined, /tmp is used. Oaradmin ask user to commit in database only if changes are made in the rule. Editing differents admission rules at the same time, into two consoles is possible. Editing the same admission rule into two consoles at the same time is also possible. But careful, in this case, depending on manipulations some data can be lost. Like add feature, $EDITOR variable environment can specify a text editor. If a filename is specified whith -f option, oaradmin directly update the no_rule admission rule in database without editing. Ex :
+Edit the no_rule admission rule using a text editor. A temporary file is used to edit the admission rule. This file is stored in the directory specified by OAR_RUNTIME_DIRECTORY in the OAR configuration file. If this parameter is not defined, /tmp is used. Oaradmin asks user to commit in database only if changes are made in the rule. Editing differents admission rules at the same time, into two consoles is possible. Editing the same admission rule into two consoles at the same time is also possible. But careful, in this case, depending on manipulations some data can be lost. Like add feature, $EDITOR variable environment can specify a text editor. If a filename is specified whith -f option, oaradmin directly update the no_rule admission rule in database without editing. Ex :
   oaradmin rules -e 3
   oaradmin rules -e 3 -f my_file
 
@@ -162,7 +162,7 @@ Print this help message.
 
 =head1 NOTES
 
-Oaradmin ressources subcommand uses oarnodes outputs with yaml format. So, Perl yaml and Ruby yaml packages must be installed.
+Oaradmin resources subcommand uses oarnodes outputs with yaml format. So, Perl yaml and Ruby yaml packages must be installed.
 
 
 =head1 SEE ALSO

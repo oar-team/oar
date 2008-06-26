@@ -65,7 +65,7 @@ while (my ($state,$color) = each %{$colorHash}) {
 $cgi->setColorPool($conf->colorPool());
 
 ## begin html printing
-print $cgi->page_head("Monika: ".$conf->clustername." "." nodes");
+print $cgi->page_head($conf->clustername." - Monika");
 my $css_path = monika::Conf::myself->css_path;
 print "<link rel=\"stylesheet\" type=\"text/css\" href=\"$css_path\">";
 print $cgi->h1({-align => "center"},

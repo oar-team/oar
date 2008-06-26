@@ -350,7 +350,7 @@ sub signal_oarexec($$$$$$){
 
 
 # exec a command and do not wait its end
-# arg : command, DB ref (to close it in the child)
+# arg : command, DB ref (to close in the child)
 sub fork_no_wait($$){
     my $cmd = shift;
     my $base = shift;

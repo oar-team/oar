@@ -175,7 +175,7 @@ sub send_kill_signal_to_myself(){
     }
 }
 
-# Retrieve job informations from bipbip
+# Retrieve job information from bipbip
 my $Job;
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
@@ -248,7 +248,7 @@ foreach my $r (@{$Job->{resources}}){
 }
 close(FILE);
 
-print("[oarexec $Job_id] nom de commande [$Job->{command}]\n");
+print("[oarexec $Job_id] command name [$Job->{command}]\n");
 
 if (defined($Job->{prologue})){
 # Launch prologue script
@@ -267,7 +267,7 @@ if (defined($Job->{prologue})){
             exit(-1);
         }
         my $wait_res = -1;
-        # Avaoid to be disrupted by a signal
+        # Avoid to be disrupted by a signal
         while ((defined($pid)) and ($wait_res != $pid)){
             $wait_res = waitpid($pid,0);
             $script_error = $?;
@@ -278,7 +278,7 @@ if (defined($Job->{prologue})){
     if( $@ || ($script_error != 0)){
         print("[oarexec $Job_id] Prologue error : $@; return code = $script_error\n");
         clean_all();
-        print("[oarexec $Job_id] Error in the OAR prolog execution\n");
+        print("[oarexec $Job_id] Error in the OAR prologue execution\n");
         exit(1);
     }
 }
