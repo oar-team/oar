@@ -161,14 +161,14 @@ if (defined($Checkpoint)){
             if (defined($job->{state}) and ($job->{state} eq "Running")){ 
                 my $types = iolib::get_current_job_types($base,$j);
                 if (defined($types->{besteffort})){
-                    iolib::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"- 2");
+                    iolib::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"-2");
                     iolib::remove_current_job_types($base,$job->{job_id},"besteffort");
                     iolib::add_new_event($base,"DELETE_BESTEFFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr removed the besteffort type.");
                     print("Remove besteffort type for the job $j.\n");
                 }else{
                     iolib::add_current_job_types($base,$job->{job_id},"besteffort");
-                    iolib::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"+ 2");
-                    iolib::add_new_event($base,"ADD_BESTEFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr added the besteffort type.");
+                    iolib::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"+2");
+                    iolib::add_new_event($base,"ADD_BESTEFFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr added the besteffort type.");
                     print("Add besteffort type for the job $j.\n");
                 }
             }else{
