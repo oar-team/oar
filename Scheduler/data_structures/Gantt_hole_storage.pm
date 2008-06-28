@@ -332,7 +332,8 @@ sub find_first_hole($$$$$){
         if (($current_hole_index <= $#{$gantt}) and
             (((time() - $timeout_initial_time) >= $timeout) or
             (($gantt->[$current_hole_index]->[0] == $gantt->[0]->[5]->[0]) and ($gantt->[$current_hole_index]->[1]->[$h]->[0] >= $gantt->[0]->[5]->[1])) or
-            ($gantt->[$current_hole_index]->[0] > $gantt->[0]->[5]->[0]))){
+            ($gantt->[$current_hole_index]->[0] > $gantt->[0]->[5]->[0])) and
+            ($gantt->[$current_hole_index]->[0] > $initial_time)){
             if (($gantt->[0]->[5]->[0] == $gantt->[$current_hole_index]->[0]) and
                 ($gantt->[0]->[5]->[1] > $gantt->[$current_hole_index]->[1]->[$h]->[0])){
                 $gantt->[0]->[5]->[1] = $gantt->[$current_hole_index]->[1]->[$h]->[0];

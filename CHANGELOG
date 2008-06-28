@@ -3,6 +3,7 @@ OAR CHANGELOG
 
 upstream development version:
 -----------------------------
+  - Change scheduler timeout implementation to schedule the maximum of jobs.
 
 version 2.3.1:
 --------------
