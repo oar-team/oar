@@ -448,6 +448,17 @@ sub check_reservation_jobs($$$$){
             foreach my $r (iolib::get_resources_in_state($dbh,"Dead")){
                 push(@dead_resources, $r->{resource_id});
             }
+            
+            my $str_tmp = "state_num ASC";
+            if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+                $str_tmp .= ", cm_availability DESC";
+            }
+            if (!defined($order_part) or ($order_part eq "")){
+                $order_part = $str_tmp;
+            }else{
+                $order_part = "$str_tmp, $order_part";
+            }
+            
             my $job_properties = "\'1\'";
             if ((defined($job->{properties})) and ($job->{properties} ne "")){
                 $job_properties = $job->{properties};
