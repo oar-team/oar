@@ -6,7 +6,7 @@ libs that are needed to some OAR packages.
 
 /-ruby-DBI :
   The source tree for building the ruby-DBI package. To create the package, 
-  'cd' into this directory and 'rpmbuild -ba SPECS/ruby-DBI.spec'
+  'cd' into this directory and 'rpmbuild -ba SPECS/ruby-dbi.spec'
   You may also need to install ruby-mysql or ruby-pg that is needed by the
   DBI driver you are planning to use.
   (ie http://rpm.pbone.net/index.php3/stat/4/idpl/4853637/com/ruby-mysql-2.7.3-1.el5.x86_64.rpm.html)
