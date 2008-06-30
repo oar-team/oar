@@ -3582,7 +3582,7 @@ sub update_current_scheduler_priority($$$$){
 
     if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")){
         my $types = iolib::get_current_job_types($dbh,$job_id);
-        if ((defined($types->{besteffort})) and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED") <= 0)){
+        if ((defined($types->{besteffort})) and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED$value") <= 0)){
             my $index = 0;
             foreach my $f (split('/',get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER"))){
                 next if ($f eq "");
