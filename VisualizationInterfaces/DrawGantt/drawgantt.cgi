@@ -97,7 +97,7 @@ def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
              gantt_jobs_predictions_visu.start_time < #{date_end} AND
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
              gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= #{date_begin} AND
-             jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' )
+             jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
          ORDER BY jobs.job_id"
 	res = dbh.execute(q)
 	
