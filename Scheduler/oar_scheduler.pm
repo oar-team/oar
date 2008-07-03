@@ -320,7 +320,7 @@ sub treate_waiting_reservation_jobs($$){
     
         my $start = $job->{start_time};
         my $max = $moldable->[1];
-        # Test if the job is in the paste
+        # Test if the job is in the past
         if ($current_time_sec > $start+$max ){
             oar_warn("[oar_scheduler] treate_waiting_reservation_jobs :  Reservation $job->{job_id} in ERROR\n");
             iolib::set_job_state($dbh, $job->{job_id}, "Error");

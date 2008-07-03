@@ -2,7 +2,8 @@ Security aspects in OAR
 =======================
 
 In OAR2, security and user switching is managed by the "oardodo" script.
-It is a suid script and is used to launch a command, a terminal or a script with
+It is a suid script executable only by root and the oar group members that
+is used to launch a command, a terminal or a script with
 the privileges of a particular user.
 When "oardodo" is called, it checks the value of an environment variable: 
 OARDO_BECOME_USER.

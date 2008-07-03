@@ -570,7 +570,7 @@ if (defined($Job->{epilogue})){
     if( $@ || ($script_error != 0)){
         print("[oarexec $Job_id] Epilogue error : $@; return code = $script_error\n");
         clean_all();
-        print("[oarexec $Job_id] Error in the OAR epilog execution\n");
+        print("[oarexec $Job_id] Error in the OAR epilogue execution\n");
         if ($Kill_myself == 1){
             quit_oarexec(4,$Job);
         }elsif($Stop_signal == 1){
