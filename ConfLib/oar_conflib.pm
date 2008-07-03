@@ -36,7 +36,7 @@ use warnings;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(init_conf get_conf is_conf dump_conf reset_conf);
+@EXPORT_OK = qw(init_conf get_conf is_conf dump_conf reset_conf get_conf_with_default_param);
 
 ## the configuration file.
 my $file = undef;
@@ -78,6 +78,19 @@ sub init_conf ($){
   }
   close CONF;
   return 1;
+}
+
+## retrieve a parameter if exists, set it to the default value otherwise
+## params: arg1 param name, arg2 default value
+sub get_conf_with_default_param ( $$ ) {
+    my $key = shift;
+    my $default = shift;
+    (defined $key) or die "missing a key!";
+    (defined $default) or die "missing a default value!";
+    if(exists $params{$key}){
+    	return $params{$key};
+    }
+    else {return $default;}
 }
 
 ## retrieve a parameter

@@ -5,7 +5,7 @@ use strict;
 use Data::Dumper;
 use IO::Socket::INET;
 use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
-use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use oar_Tools;
 
 # Log category
@@ -95,10 +95,7 @@ my $schedulertimeout = 60;
 my $villainstimeout = 10;
 
 # Max waiting time before check node states
-my $checknodestimeout = 300;
-if (is_conf("FINAUD_FREQUENCY")){
-    $checknodestimeout = get_conf("FINAUD_FREQUENCY");
-}
+my $checknodestimeout = get_conf_with_default_param("FINAUD_FREQUENCY", 300);
 
 # Internal stuff, not relevant for average user
 my $lastscheduler;
