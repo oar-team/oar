@@ -9,8 +9,8 @@ Source: http://rubyforge.org/frs/download.php/12368/ruby-dbi/%{tarname}-%{versio
 URL: http://ruby-dbi.rubyforge.org/
 Packager: Ian Macdonald <ian@caliban.org>
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-BuildRequires: ruby
-Requires: ruby >= 1.8.0
+#BuildRequires: ruby
+#Requires: ruby >= 1.8.0
 Provides: ruby-DBI, ruby-dbi, ruby-dbd-mysql, ruby-DBD-Mysql, ruby-dbd-pg, ruby-DBD-Pg
 
 %define _topdir %(pwd)

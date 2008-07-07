@@ -209,6 +209,10 @@ chown oar:oar /var/lib/oar -R > /dev/null 2>&1
 touch /var/log/oar.log && chown oar:root /var/log/oar.log && chmod 0644 /var/log/oar.log || true
 install -o oar -m 755 -d /var/run/oar
 
+%post common
+# set OAR Shell
+chsh -s /usr/lib/oar/oarsh_shell oar
+
 %postun common
 if [ "$1" = 0 ];
 then
@@ -247,8 +251,6 @@ chkconfig --add oar-server
 ###### oar-node scripts ######
 
 %post node
-# set OAR Shell
-chsh -s /usr/lib/oar/oarsh_shell oar
 # create oar sshd keys
 if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
     rm -f /etc/oar/oar_ssh_host_rsa_key.pub

@@ -9,8 +9,8 @@ Source: libgd-ruby_%{version}.tar.gz
 URL: http://www.boutell.com/gd/
 Packager: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
-BuildRequires: ruby ruby-devel gd-devel >= 2 libpng-devel zlib-devel
-Requires: ruby >= 1.8.0, gd >= 2
+#BuildRequires: ruby ruby-devel gd-devel >= 2 libpng-devel zlib-devel
+#Requires: ruby >= 1.8.0, gd >= 2
 Provides: ruby-GD, ruby-gd, libruby-gd
 
 %define _topdir %(pwd)
