@@ -108,6 +108,11 @@ common: man
 	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
 	install -d -m 0755 $(OARDIR)/oardodo
+	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
+	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
+				 s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;\
+				" $(OARDIR)/oarsh_shell
+	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 	install -m 6750 -o root -g $(OAROWNERGROUP) Tools/oardodo $(OARDIR)/oardodo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
@@ -288,10 +293,6 @@ node: man
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
-	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
-	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
-				 s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;\
-				" $(OARDIR)/oarsh_shell
 	install -m 0755 Tools/detect_resources $(OARDIR)
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
@@ -382,7 +383,6 @@ server-install: sanity-check configuration common libs server dbinit
 user-install: sanity-check configuration common libs user
 
 node-install: sanity-check configuration common libs node
-	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
 doc-install: doc
 
