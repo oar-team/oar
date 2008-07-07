@@ -46,6 +46,8 @@ def subcommand_usage
        end
    end 
    puts
+   puts "See also oaradmin man page for more information"
+   puts
    exit(1)
 end
 

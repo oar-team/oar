@@ -583,17 +583,23 @@ class Rule
     	  puts "Rule : " + @no_rule.to_s								# rule number
 
 	  no_char = 65
+	  mark_more_text = "..."
+	  if display_level == 2		# display all text with -lll option
+	     no_char = -1
+	     mark_more_text=""
+	  end
+
 	  description_end = false
 	  @script.each_with_index do |line,line_index|	
 	 	if line_index == 0 									# title or object of the admission rule 
 		   str = line[0..no_char]
-		   str += "..." if line.length > no_char+2
+		   str += mark_more_text if line.length > no_char+2
 		   puts str
 		end
 		if (display_level==1 || display_level==2) && line_index > 0 && !description_end		# description of the admission rule
 		   if line[0..0]=="#"
 		      str = line[0..no_char]
-		      str += "..." if line.length > no_char+2
+		      str += mark_more_text if line.length > no_char+2
 		      puts str
 		   else
 		      description_end = !description_end 
@@ -601,7 +607,7 @@ class Rule
 		end
 		if display_level==2 && line_index > 0 && description_end				# rest of the admission rule
 		   str = line[0..no_char]
-		   str += "..." if line.length > no_char+2
+		   str += mark_more_text if line.length > no_char+2
 		   puts str
 		end
 	  end
