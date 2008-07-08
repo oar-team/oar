@@ -112,7 +112,6 @@ common: man
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
 				 s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;\
 				" $(OARDIR)/oarsh_shell
-	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 	install -m 6750 -o root -g $(OAROWNERGROUP) Tools/oardodo $(OARDIR)/oardodo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
@@ -378,11 +377,14 @@ tools:
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oaradmin.1 $(MANDIR)/man1/oaradmin.1
         
-server-install: sanity-check configuration common libs server dbinit
+common-install: common
+	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
-user-install: sanity-check configuration common libs user
+server-install: sanity-check configuration common-install libs server dbinit
 
-node-install: sanity-check configuration common libs node
+user-install: sanity-check configuration common-install libs user
+
+node-install: sanity-check configuration common-install libs node
 
 doc-install: doc
 
@@ -390,8 +392,8 @@ draw-gantt-install: draw-gantt
 
 monika-install: monika
 
-desktop-computing-cgi-install: sanity-check configuration common libs desktop-computing-cgi
+desktop-computing-cgi-install: sanity-check configuration common-install libs desktop-computing-cgi
 
 desktop-computing-agent-install: desktop-computing-agent
 
-tools-install: sanity-check configuration common libs tools
+tools-install: sanity-check configuration common-install libs tools
