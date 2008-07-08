@@ -4,6 +4,8 @@ OAR CHANGELOG
 upstream development version:
 -----------------------------
   - Change scheduler timeout implementation to schedule the maximum of jobs.
+  - Bug #5879: do not show initial_request in oarstat when it is not a job of
+    the user who launched the oarstat command (oar or root).
 
 version 2.3.1:
 --------------
