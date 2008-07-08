@@ -19,6 +19,7 @@ set -e
 
 case "$1" in
 	remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+	    chsh -s /bin/bash oar
 	    ;;
 	purge)
 		deluser --quiet oar > /dev/null 2>&1 || true
