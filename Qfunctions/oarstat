@@ -36,11 +36,13 @@ $Data::Dumper::Indent = 0;
 $Data::Dumper::Deepcopy = 1;
 
 my $Printed_jobs = 0;
+my $Printed_logs = 0;
 
 sub get_job_data($$);
 sub print_job_data($$);
 sub get_history($$$);
 sub duration($);
+sub print_event_logs($);
 
 Getopt::Long::Configure ("gnu_getopt");
 my $sos;
@@ -55,11 +57,13 @@ my $YAML_mode;
 my $DUMPER_mode;
 my $Version;
 my $Old;
+my $logs;
 GetOptions ("help|h" => \$sos,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
             "user|u:s" => \$user,
             "gantt|g=s"   => \$gantt_query,
+            "logs|l" => \$logs,
             "accounting=s"   => \$accounting_query,
             "sql=s"   => \$sql_property,
             "xml|X" => \$XML_mode,
@@ -81,6 +85,7 @@ Options:
   -u, --user                show informations for this user only
   -g, --gantt               show job informations between two dates
                             like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
+  -l, --logs                show event logs table
       --accounting          show accounting informations between two dates
                             like "2006-03-30, 2006-04-30"
       --sql                 restricts display with the SQL where clause on the
@@ -108,30 +113,55 @@ my @jobs;
 # JOBS STATS OUTPUT
 if (!defined($accounting_query)){
     if (!defined($gantt_query)){
-        if ($#job_ids < 0){
-            if (defined($sql_property)){
-                push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
-            }else{
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Finishing", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Running", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Resuming", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Suspended", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Launching", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "toLaunch", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Waiting", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "toAckReservation", $user));
-                push(@jobs, iolib::get_jobs_in_state_for_user($base, "Hold", $user));
+        if(!defined($logs)){
+            if ($#job_ids < 0){
+                if (defined($sql_property)){
+                    push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
+                }else{
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Finishing", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Running", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Resuming", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Suspended", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Launching", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "toLaunch", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Waiting", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "toAckReservation", $user));
+                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Hold", $user));
+                }
+            }elsif($#job_ids >= 0){
+                foreach my $j (@job_ids){
+                    push(@jobs, iolib::get_job($base,$j));
+                }
             }
-        }elsif($#job_ids >= 0){
-            foreach my $j (@job_ids){
-                push(@jobs, iolib::get_job($base,$j));
+            my %data_to_print;
+            foreach my $g (@jobs) {
+                $data_to_print{$g->{job_id}} = get_job_data($base,$g);
+            }
+            print_job_data(\%data_to_print,\@jobs);
+        }elsif(defined($logs)){
+
+            # One or multi jobs output
+            if($#job_ids >= 0){
+                foreach my $current_job_id (@job_ids){
+                    my @events = iolib::get_job_events($base, $current_job_id);
+                    foreach my $current_event (@events){
+                        print_event_logs($current_event);
+                    }
+                }
+            }
+            
+            # All jobs output
+            else{
+                my @jobs = iolib::get_all_events_jobs($base);
+                #TODO: sort better than that
+                foreach my $current_job (sort @jobs){
+                    my @events = iolib::get_job_events($base, $current_job);
+                    foreach my $current_event (@events){
+                        print_event_logs($current_event);
+                    }
+                }
             }
         }
-        my %data_to_print;
-        foreach my $g (@jobs) {
-            $data_to_print{$g->{job_id}} = get_job_data($base,$g);
-        }
-        print_job_data(\%data_to_print,\@jobs);
     }elsif ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
         my $hist = get_history($base, "$1 $2", "$3 $4");
         if (defined($DUMPER_mode)){
@@ -202,7 +232,7 @@ if (!defined($accounting_query)){
     # All users array output
     }else{
         print <<EOS;
-User       Fisrt window starts  Last window ends     Asked (seconds)  Used seconds)
+User       First window starts  Last window ends     Asked (seconds)  Used seconds)
 ---------- -------------------- -------------------- ---------------- ----------------
 EOS
         foreach $login (keys %{$Consumptions}) {
@@ -218,7 +248,8 @@ EOS
         }
     }
     
-}else{
+}
+else{
     print("/!\\ Bad syntax with '--accounting' option\n");
     iolib::disconnect($base);
     exit(1);
@@ -227,6 +258,27 @@ EOS
 iolib::disconnect($base);
 
 exit(0);
+
+
+sub print_event_logs($){
+    my $event_hashref = shift;
+    if ($Printed_logs == 0){
+    #TODO: better display of the information
+    print <<EOS;
+Job id     Event id   Type                           Date                Description                                        To Check
+---------- ---------- ------------------------------ ------------------- -------------------------------------------------- --------
+EOS
+    }
+    printf("%-10.10s %-10.10s %-30.30s %-20.20s %50.50s %-8.8s\n",
+        $event_hashref->{'job_id'},
+        $event_hashref->{'event_id'},
+        $event_hashref->{'type'},
+        iolib::local_to_sql($event_hashref->{'date'}),
+        $event_hashref->{'description'},
+        $event_hashref->{'to_check'}
+    );
+    $Printed_logs++;
+}
 
 sub get_job_data($$){
     my $dbh = shift;

@@ -39,6 +39,9 @@ unless (eval "use YAML;1"){
     $YAML_enabled = 0;
 }
 
+sub print_event_logs($);
+my $Printed_logs = 0;
+
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Terse = 1;
@@ -58,10 +61,14 @@ my $DUMPER_mode;
 my $Version;
 my $Old;
 my $smp;
+my $log_hostname;
+my $date;
 GetOptions ("state|s" => \$stateMode,
             "help|h"  => \$usage,
             "list|l"  => \$listall,
             "all|a"   => \$listallwithinfo,
+            "logs=s"  => \$log_hostname,
+            "date|d=s" => \$date,
             "resource|r=i" => \@resources,
             "sql=s" => \$sql_property,
             "xml|X" => \$XML_mode,
@@ -82,6 +89,8 @@ Options:
  -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
+     --logs         show the logs of a resource
+ -d, --date         to use with --logs option, show only logs from this date
      --sql          display resources which matches this sql where clause
                     (ex: "state = 'Suspected'")
  -D, --dumper       print result in DUMPER format
@@ -104,354 +113,391 @@ if (defined($Version)){
 my $exitstatus = 0;
 my $base = iolib::connect_ro();
 
-if (($#resources >= 0) or (defined($sql_property))){
-    if (defined($sql_property)){
-        push(@resources, iolib::get_resources_with_given_sql($base,$sql_property));
+sub print_event_logs($){
+    my $event_hashref = shift;
+    if ($Printed_logs == 0){
+#TODO: better display of the information
+print <<EOS;
+hostname             Job id     Event id   Type                           Date                Description                                        To Check
+-------------------- ---------- ---------- ------------------------------ ------------------- -------------------------------------------------- --------
+EOS
     }
-    my @data_to_display;
-    my %state_hash;
-    foreach my $r (@resources) {
-        my $resource_info = iolib::get_resource_info($base,$r);
-        if (!defined($resource_info)) {
-            warn("/!\\ $r UNKNOWN\n");
-            $exitstatus = 1;
-            next;
+    printf("%-20.20s %-10.10s %-10.10s %-30.30s %-20.20s %50.50s %-8.8s\n",
+        $event_hashref->{'hostname'},
+        $event_hashref->{'job_id'},
+        $event_hashref->{'event_id'},
+        $event_hashref->{'type'},
+        iolib::local_to_sql($event_hashref->{'date'}),
+        $event_hashref->{'description'},
+        $event_hashref->{'to_check'}
+    );
+    $Printed_logs++;
+}
+
+if (defined ($log_hostname)){ 
+    if(defined($date)){
+        my @events = iolib::get_events_from_hostname_since_date($base, $log_hostname, $date);    
+        foreach my $current_event (@events){  
+            print_event_logs($current_event);
         }
-        $state_hash{$r} = $resource_info->{state};
-        my %tmp_hash;
-        $tmp_hash{state} = $resource_info->{state};
-        $tmp_hash{network_address} = $resource_info->{network_address};
-        $tmp_hash{properties} = $resource_info;
-        #if ($resource_info->{state} eq "Alive") {    
-            my @jobs = iolib::get_resource_job($base,$resource_info->{resource_id});
-            if ($#jobs >= 0){
-                $tmp_hash{jobs} = \@jobs;
-            }
-        #}
-        $tmp_hash{resource_id} = $r;
-        push(@data_to_display, \%tmp_hash);
     }
-    my $data_to_dump = \@data_to_display;
-    if (defined($stateMode)){
-        $data_to_dump = \%state_hash;
+    else{
+        my @events = iolib::get_events_from_hostname($base, $log_hostname);    
+        foreach my $current_event (@events){  
+            print_event_logs($current_event);
+        }
     }
-    if (defined($DUMPER_mode)){
-        print(Dumper($data_to_dump));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml($data_to_dump));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
+}
+
+else{
+    if (($#resources >= 0) or (defined($sql_property))){
+        if (defined($sql_property)){
+            push(@resources, iolib::get_resources_with_given_sql($base,$sql_property));
         }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump($data_to_dump));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-    }else{
-        foreach my $h (@data_to_display){
-            my %a = %{$h};
-            if (defined($stateMode)){
-                print("$a{resource_id} : $a{state}\n");
+        my @data_to_display;
+        my %state_hash;
+        foreach my $r (@resources) {
+            my $resource_info = iolib::get_resource_info($base,$r);
+            if (!defined($resource_info)) {
+                warn("/!\\ $r UNKNOWN\n");
+                $exitstatus = 1;
                 next;
             }
-            print("resource_id : $a{resource_id}\n");
-            foreach my $b (keys(%a)){
-                if ($b eq "properties"){
-                    my $str = "properties : ";
-                    foreach my $prop (sort(keys(%{$a{$b}}))){
-                        if (oar_Tools::check_resource_system_property($prop) == 0){
-                            if (defined($a{$b}->{$prop})){
-                                $str .= "$prop=$a{$b}->{$prop},";
-                            }else{
-                                $str .= "$prop=,";
-                            }
-                        }
-                    }
-                    chop($str);
-                    print("$str\n");
-                }elsif ($b eq "jobs"){
-                    print("job : @{$a{$b}}\n");
-                }elsif ($b eq "resource_id"){
-                    next;
-                }else{
-                    print("$b : $a{$b}\n");
-                }
-            }
-            print("\n");
-        }
-    }
-    iolib::disconnect($base);
-
-    exit($exitstatus);
-}
-
-
-# Nodes list handling (set @nodes to what has been requested)
-my @nodes;
-if($ARGV[0]){
-    @nodes = @ARGV;
-}else{
-    @nodes = iolib::list_nodes($base);
-}
-
-if (defined($stateMode)){
-    # Display the state of each resources
-    my %data_to_display;
-    foreach my $node ( @nodes ) {
-        my @node_info = iolib::get_node_info($base,$node);
-        if ($#node_info >= 0){
-            my %tmp_data;
-            foreach my $n (@node_info){
-                $tmp_data{$n->{resource_id}} = $n->{state};
-            }
-            $data_to_display{$node} = \%tmp_data;
-        }else{
-            $data_to_display{$node} = undef;
-        }
-    }
-    if (defined($DUMPER_mode)){
-        print(Dumper(\%data_to_display));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml(\%data_to_display));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump(\%data_to_display));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-    }else{
-        foreach my $d (sort(keys(%data_to_display))){
-            print("$d\n");
-            foreach my $e (sort({$a <=> $b} keys(%{$data_to_display{$d}}))){
-                print("    $e : $data_to_display{$d}->{$e}\n");
-            }
-            print("\n");
-        }
-    }
-}elsif(defined($listall)){
-    # Simple list handling
-    if (defined($DUMPER_mode)){
-        print(Dumper(\@nodes));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml(\@nodes));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump(\@nodes));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-    }else{
-        foreach my $node ( @nodes ) {
-            print($node,"\n");
-        }
-    }
-}else{
-    # Default display of oarnodes
-    my %data_to_display;
-    foreach my $node ( @nodes ) {
-        my @node_info = iolib::get_node_info($base,$node);
-        if ($#node_info < 0) {
-            warn("/!\\ $node UNKNOWN\n");
-            $exitstatus = 1;
-            next;
-        }
-        my %tmp_hash1;
-        foreach my $r (@node_info){
-            my %tmp_hash2;
-            $tmp_hash2{state} = $r->{state};
-            #if ($r->{state} eq "Alive") {    
-                my @jobs = iolib::get_resource_job($base,$r->{resource_id});
+            $state_hash{$r} = $resource_info->{state};
+            my %tmp_hash;
+            $tmp_hash{state} = $resource_info->{state};
+            $tmp_hash{network_address} = $resource_info->{network_address};
+            $tmp_hash{properties} = $resource_info;
+            #if ($resource_info->{state} eq "Alive") {    
+                my @jobs = iolib::get_resource_job($base,$resource_info->{resource_id});
                 if ($#jobs >= 0){
-                    $tmp_hash2{jobs} = \@jobs;
+                    $tmp_hash{jobs} = \@jobs;
                 }
             #}
-            $tmp_hash2{network_address} = $r->{network_address};
-            my $properties = iolib::get_resource_info($base,$r->{resource_id});
-            $tmp_hash2{properties} = $properties;
-            $tmp_hash1{$r->{resource_id}} = \%tmp_hash2;
+            $tmp_hash{resource_id} = $r;
+            push(@data_to_display, \%tmp_hash);
         }
-        $data_to_display{$node} = \%tmp_hash1;
-    }
-    if (defined($DUMPER_mode)){
-        print(Dumper(\%data_to_display));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml(\%data_to_display));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
+        my $data_to_dump = \@data_to_display;
+        if (defined($stateMode)){
+            $data_to_dump = \%state_hash;
         }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump(\%data_to_display));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-    }elsif($Old){
-        my $Node_file_db_field_distinct_values = get_conf("NODE_FILE_DB_FIELD_DISTINCT_VALUES");
-        $Node_file_db_field_distinct_values = oar_Tools::get_default_node_file_db_field_distinct_values() if (!defined($Node_file_db_field_distinct_values));
-        foreach my $aa (sort(keys(%data_to_display))){
-            my @res = keys(%{$data_to_display{$aa}});
-            my %tmp_already_there;
-            my %tmp_already_there2;
-            my $nb = 0;
-            my $nb_jobs = 0;
-            my $state;
-            my $properties;
-            my $hostname;
-            my $job_str = '';
-            my $pass = 0;
-            #my %weight_index;
-            foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
-                my $cpuset;
-                my @jobs;
-                foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
-                    if ($cc eq "properties"){
-                        my $str = "properties = ";
-                        foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
-                            if ($prop eq "cpuset") { $cpuset=$data_to_display{$aa}->{$bb}->{$cc}->{$prop};}
-                            if ($prop eq $Node_file_db_field_distinct_values) {
-                                if (!defined($tmp_already_there{$data_to_display{$aa}->{$bb}->{$cc}->{$prop}})){
-                                    $nb++;
-                                    $tmp_already_there{$data_to_display{$aa}->{$bb}->{$cc}->{$prop}} = 1;
-                                }
-                            }
-                            $pass = 1 if (($prop eq "type") and ($data_to_display{$aa}->{$bb}->{$cc}->{$prop} eq "frontal"));
-                            if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
-                                $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
-                            }else{
-                                $str .= "$prop=,";
-                            }
-                        }
-                        chop($str);
-                        $properties = $str;
-                    }elsif ($cc eq "jobs"){
-                        #$nb_jobs += $#{$data_to_display{$aa}->{$bb}->{$cc}} + 1;
-                        my $c=0;
-                        foreach my $j (@{$data_to_display{$aa}->{$bb}->{$cc}}){
-                            #if (!defined($weight_index{$aa})){
-                            #    $weight_index{$aa} = 0;
-                            #}else{
-                            #    $weight_index{$aa}++;
-                            #}
-                            #$job_str .= "$weight_index{$aa}/$j.oarserver,";
-                            if (!defined($tmp_already_there2{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}})){
-                                $tmp_already_there2{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}} = 1;
-                                $jobs[$c]="$j.oarserver";
-                                $c++; 
-                                $nb_jobs++;
-                            }
-                        }
-                    }elsif ($cc eq "network_address"){
-                        $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
-                    }elsif ($cc eq "state"){
-                        if ($smp) {
-                            $state = $data_to_display{$aa}->{$bb}->{$cc};
-                        }else{
-                            $state = $data_to_display{$aa}->{$res[0]}->{$cc};
-                        }
-                    }
-                }
-                # Construct the jobs string
-                my $c=0;
-                foreach my $j (@jobs) {
-                    if ($cpuset ne "" && !$smp) {
-                        $job_str .= "$cpuset/$j,";
-                    }else{
-                        $job_str .= "$c/$j,";
-                    }
-                    $c++;
-                }
-                
-                if ($smp) {
-                    next if ($hostname eq "");
-                    next if ($pass == 1);
-                    printf("%s[%03d]\n",$hostname,$bb);
-                    print("     pcpus = 1\n");
-                    chop($job_str) if (defined($job_str));
-                    print("     jobs = $job_str\n");
-                    print("     weight = $nb_jobs\n");
-                    print("     hostname = $hostname\n");
-                    $state = "free" if ($state eq "Alive");
-                    $state = "job" if ($job_str ne '');
-                    print("     state = $state\n");
-                    print("     $properties\n");
-                    print("\n");
-                    $job_str = "";
-                }
+        if (defined($DUMPER_mode)){
+            print(Dumper($data_to_dump));
+        }elsif(defined($XML_mode)){
+            if ($XML_enabled == 1){
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml($data_to_dump));
+            }else{
+                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 5;
             }
-            if (!$smp) { 
-                next if ($hostname eq "");
-                next if ($pass == 1);
-                print("$aa\n");
-                print("     pcpus = $nb\n");
-                chop($job_str) if (defined($job_str));
-                print("     jobs = $job_str\n");
-                print("     weight = $nb_jobs\n");
-                print("     hostname = $hostname\n");
-                $state = "free" if ($state eq "Alive");
-                $state = "job" if ($nb == $nb_jobs);
-                print("     state = $state\n");
-                print("     $properties\n");
-                print("\n");
+        }elsif(defined($YAML_mode)){
+            if ($YAML_enabled == 1){
+                print(YAML::Dump($data_to_dump));
+            }else{
+                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 6;
             }
-        }
-    }else{
-        foreach my $aa (sort(keys(%data_to_display))){
-            print("$aa\n");
-            foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
-                print("    $bb\n");
-                foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
-                    if ($cc eq "properties"){
+        }else{
+            foreach my $h (@data_to_display){
+                my %a = %{$h};
+                if (defined($stateMode)){
+                    print("$a{resource_id} : $a{state}\n");
+                    next;
+                }
+                print("resource_id : $a{resource_id}\n");
+                foreach my $b (keys(%a)){
+                    if ($b eq "properties"){
                         my $str = "properties : ";
-                        foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
+                        foreach my $prop (sort(keys(%{$a{$b}}))){
                             if (oar_Tools::check_resource_system_property($prop) == 0){
-                                if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
-                                    $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                                if (defined($a{$b}->{$prop})){
+                                    $str .= "$prop=$a{$b}->{$prop},";
                                 }else{
                                     $str .= "$prop=,";
                                 }
                             }
                         }
                         chop($str);
-                        print("        $str\n");
-                    }elsif ($cc eq "jobs"){
-                        print("        jobs : @{$data_to_display{$aa}->{$bb}->{$cc}}\n");
+                        print("$str\n");
+                    }elsif ($b eq "jobs"){
+                        print("job : @{$a{$b}}\n");
+                    }elsif ($b eq "resource_id"){
+                        next;
                     }else{
-                        print("        $cc : $data_to_display{$aa}->{$bb}->{$cc}\n");
+                        print("$b : $a{$b}\n");
                     }
                 }
                 print("\n");
             }
         }
+        iolib::disconnect($base);
+
+        exit($exitstatus);
     }
+
+
+    # Nodes list handling (set @nodes to what has been requested)
+    my @nodes;
+    if($ARGV[0]){
+        @nodes = @ARGV;
+    }else{
+        @nodes = iolib::list_nodes($base);
+    }
+
+    if (defined($stateMode)){
+        # Display the state of each resources
+        my %data_to_display;
+        foreach my $node ( @nodes ) {
+            my @node_info = iolib::get_node_info($base,$node);
+            if ($#node_info >= 0){
+                my %tmp_data;
+                foreach my $n (@node_info){
+                    $tmp_data{$n->{resource_id}} = $n->{state};
+                }
+                $data_to_display{$node} = \%tmp_data;
+            }else{
+                $data_to_display{$node} = undef;
+            }
+        }
+        if (defined($DUMPER_mode)){
+            print(Dumper(\%data_to_display));
+        }elsif(defined($XML_mode)){
+            if ($XML_enabled == 1){
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml(\%data_to_display));
+            }else{
+                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 5;
+            }
+        }elsif(defined($YAML_mode)){
+            if ($YAML_enabled == 1){
+                print(YAML::Dump(\%data_to_display));
+            }else{
+                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 6;
+            }
+        }else{
+            foreach my $d (sort(keys(%data_to_display))){
+                print("$d\n");
+                foreach my $e (sort({$a <=> $b} keys(%{$data_to_display{$d}}))){
+                    print("    $e : $data_to_display{$d}->{$e}\n");
+                }
+                print("\n");
+            }
+        }
+    }elsif(defined($listall)){
+        # Simple list handling
+        if (defined($DUMPER_mode)){
+            print(Dumper(\@nodes));
+        }elsif(defined($XML_mode)){
+            if ($XML_enabled == 1){
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml(\@nodes));
+            }else{
+                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 5;
+            }
+        }elsif(defined($YAML_mode)){
+            if ($YAML_enabled == 1){
+                print(YAML::Dump(\@nodes));
+            }else{
+                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 6;
+            }
+        }else{
+            foreach my $node ( @nodes ) {
+                print($node,"\n");
+            }
+        }
+    }else{
+        # Default display of oarnodes
+        my %data_to_display;
+        foreach my $node ( @nodes ) {
+            my @node_info = iolib::get_node_info($base,$node);
+            if ($#node_info < 0) {
+                warn("/!\\ $node UNKNOWN\n");
+                $exitstatus = 1;
+                next;
+            }
+            my %tmp_hash1;
+            foreach my $r (@node_info){
+                my %tmp_hash2;
+                $tmp_hash2{state} = $r->{state};
+                #if ($r->{state} eq "Alive") {    
+                    my @jobs = iolib::get_resource_job($base,$r->{resource_id});
+                    if ($#jobs >= 0){
+                        $tmp_hash2{jobs} = \@jobs;
+                    }
+                #}
+                $tmp_hash2{network_address} = $r->{network_address};
+                my $properties = iolib::get_resource_info($base,$r->{resource_id});
+                $tmp_hash2{properties} = $properties;
+                $tmp_hash1{$r->{resource_id}} = \%tmp_hash2;
+            }
+            $data_to_display{$node} = \%tmp_hash1;
+        }
+        if (defined($DUMPER_mode)){
+            print(Dumper(\%data_to_display));
+        }elsif(defined($XML_mode)){
+            if ($XML_enabled == 1){
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml(\%data_to_display));
+            }else{
+                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 5;
+            }
+        }elsif(defined($YAML_mode)){
+            if ($YAML_enabled == 1){
+                print(YAML::Dump(\%data_to_display));
+            }else{
+                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+                $exitstatus = 6;
+            }
+        }elsif($Old){
+            my $Node_file_db_field_distinct_values = get_conf("NODE_FILE_DB_FIELD_DISTINCT_VALUES");
+            $Node_file_db_field_distinct_values = oar_Tools::get_default_node_file_db_field_distinct_values() if (!defined($Node_file_db_field_distinct_values));
+            foreach my $aa (sort(keys(%data_to_display))){
+                my @res = keys(%{$data_to_display{$aa}});
+                my %tmp_already_there;
+                my %tmp_already_there2;
+                my $nb = 0;
+                my $nb_jobs = 0;
+                my $state;
+                my $properties;
+                my $hostname;
+                my $job_str = '';
+                my $pass = 0;
+                #my %weight_index;
+                foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
+                    my $cpuset;
+                    my @jobs;
+                    foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
+                        if ($cc eq "properties"){
+                            my $str = "properties = ";
+                            foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
+                                if ($prop eq "cpuset") { $cpuset=$data_to_display{$aa}->{$bb}->{$cc}->{$prop};}
+                                if ($prop eq $Node_file_db_field_distinct_values) {
+                                    if (!defined($tmp_already_there{$data_to_display{$aa}->{$bb}->{$cc}->{$prop}})){
+                                        $nb++;
+                                        $tmp_already_there{$data_to_display{$aa}->{$bb}->{$cc}->{$prop}} = 1;
+                                    }
+                                }
+                                $pass = 1 if (($prop eq "type") and ($data_to_display{$aa}->{$bb}->{$cc}->{$prop} eq "frontal"));
+                                if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
+                                    $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                                }else{
+                                    $str .= "$prop=,";
+                                }
+                            }
+                            chop($str);
+                            $properties = $str;
+                        }elsif ($cc eq "jobs"){
+                            #$nb_jobs += $#{$data_to_display{$aa}->{$bb}->{$cc}} + 1;
+                            my $c=0;
+                            foreach my $j (@{$data_to_display{$aa}->{$bb}->{$cc}}){
+                                #if (!defined($weight_index{$aa})){
+                                #    $weight_index{$aa} = 0;
+                                #}else{
+                                #    $weight_index{$aa}++;
+                                #}
+                                #$job_str .= "$weight_index{$aa}/$j.oarserver,";
+                                if (!defined($tmp_already_there2{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}})){
+                                    $tmp_already_there2{$data_to_display{$aa}->{$bb}->{properties}->{$Node_file_db_field_distinct_values}} = 1;
+                                    $jobs[$c]="$j.oarserver";
+                                    $c++; 
+                                    $nb_jobs++;
+                                }
+                            }
+                        }elsif ($cc eq "network_address"){
+                            $hostname = $data_to_display{$aa}->{$res[0]}->{$cc};
+                        }elsif ($cc eq "state"){
+                            if ($smp) {
+                                $state = $data_to_display{$aa}->{$bb}->{$cc};
+                            }else{
+                                $state = $data_to_display{$aa}->{$res[0]}->{$cc};
+                            }
+                        }
+                    }
+                    # Construct the jobs string
+                    my $c=0;
+                    foreach my $j (@jobs) {
+                        if ($cpuset ne "" && !$smp) {
+                            $job_str .= "$cpuset/$j,";
+                        }else{
+                            $job_str .= "$c/$j,";
+                        }
+                        $c++;
+                    }
+                    
+                    if ($smp) {
+                        next if ($hostname eq "");
+                        next if ($pass == 1);
+                        printf("%s[%03d]\n",$hostname,$bb);
+                        print("     pcpus = 1\n");
+                        chop($job_str) if (defined($job_str));
+                        print("     jobs = $job_str\n");
+                        print("     weight = $nb_jobs\n");
+                        print("     hostname = $hostname\n");
+                        $state = "free" if ($state eq "Alive");
+                        $state = "job" if ($job_str ne '');
+                        print("     state = $state\n");
+                        print("     $properties\n");
+                        print("\n");
+                        $job_str = "";
+                    }
+                }
+                if (!$smp) { 
+                    next if ($hostname eq "");
+                    next if ($pass == 1);
+                    print("$aa\n");
+                    print("     pcpus = $nb\n");
+                    chop($job_str) if (defined($job_str));
+                    print("     jobs = $job_str\n");
+                    print("     weight = $nb_jobs\n");
+                    print("     hostname = $hostname\n");
+                    $state = "free" if ($state eq "Alive");
+                    $state = "job" if ($nb == $nb_jobs);
+                    print("     state = $state\n");
+                    print("     $properties\n");
+                    print("\n");
+                }
+            }
+        }else{
+            foreach my $aa (sort(keys(%data_to_display))){
+                print("$aa\n");
+                foreach my $bb (sort({$a <=> $b} keys(%{$data_to_display{$aa}}))){
+                    print("    $bb\n");
+                    foreach my $cc (sort(keys(%{$data_to_display{$aa}->{$bb}}))){
+                        if ($cc eq "properties"){
+                            my $str = "properties : ";
+                            foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
+                                if (oar_Tools::check_resource_system_property($prop) == 0){
+                                    if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
+                                        $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                                    }else{
+                                        $str .= "$prop=,";
+                                    }
+                                }
+                            }
+                            chop($str);
+                            print("        $str\n");
+                        }elsif ($cc eq "jobs"){
+                            print("        jobs : @{$data_to_display{$aa}->{$bb}->{$cc}}\n");
+                        }else{
+                            print("        $cc : $data_to_display{$aa}->{$bb}->{$cc}\n");
+                        }
+                    }
+                    print("\n");
+                }
+            }
+        }
+    }
+    iolib::disconnect($base);
+
+    exit($exitstatus);
 }
-iolib::disconnect($base);
-
-exit($exitstatus);
-

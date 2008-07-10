@@ -19,7 +19,7 @@ my $base = iolib::connect();
 my $base_ro = iolib::connect_ro();
 
 init_conf($ENV{OARCONFFILE});
-my $security_time_overhead = 1;
+my $security_time_overhead = 60;
 if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
     $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
 }

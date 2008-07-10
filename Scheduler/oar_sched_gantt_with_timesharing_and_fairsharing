@@ -75,7 +75,7 @@ my $besteffort_duration = 5*60;
 
 # $security_time_overhead is the security time (second) used to be sure there
 # are no problem with overlaping jobs
-my $security_time_overhead = 1;
+my $security_time_overhead = 60;
 if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
     $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
 }

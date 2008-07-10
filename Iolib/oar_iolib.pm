@@ -5188,6 +5188,54 @@ sub get_hostname_event($$){
     return(@results);
 }
 
+# Get events corresponding to the hostname passed in parameter
+# args: database ref, network_address
+sub get_events_from_hostname($$){
+    my $dbh = shift;
+    my $host = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM event_log_hostnames, event_logs
+                                WHERE
+                                    event_log_hostnames.event_id = event_logs.event_id
+                                    AND event_log_hostnames.hostname = '$host'
+                            ");
+    $sth->execute();
+
+     my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
+
+# Get events corresponding to the hostname passed in parameter since the date 
+# passed in parameter
+# args: database ref, network_address, date
+sub get_events_from_hostname_since_date($$$){
+    my $dbh = shift;
+    my $host = shift;
+    my $date = sql_to_local(shift);
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM event_log_hostnames, event_logs
+                                WHERE
+                                    event_log_hostnames.event_id = event_logs.event_id
+                                    AND event_log_hostnames.hostname = '$host'
+                                    AND event_logs.date >= $date
+                            ");
+    $sth->execute();
+
+     my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
 
 # Get events for the specified job
 # args: database ref, job id
@@ -5211,6 +5259,25 @@ sub get_job_events($$){
     return(@results);
 }
 
+# Get all the jobs ids that created an event
+# args: database ref
+# returns an array with the job ids
+sub get_all_events_jobs($){
+    my $dbh =shift;
+    
+    my $sth = $dbh->prepare("   SELECT distinct job_id
+                                FROM event_logs
+                            ");
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@results, $ref->{'job_id'});
+    }
+    $sth->finish();
+    
+    return(@results);
+}
 
 sub is_an_event_exists($$$){
     my $dbh =shift;
