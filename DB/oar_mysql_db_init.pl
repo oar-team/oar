@@ -28,8 +28,8 @@ EOS
 # test user name
 #("$usrName" eq "root") or die "[ERROR] You must be root to run this script\n";
 
-# use the oar_jobs.sql file to create the database
-my $mysqlFile = $ENV{'OARDIR'}.'/oar_jobs.sql';
+# use the oar_mysql.sql file to create the database
+my $mysqlFile = $ENV{'OARDIR'}.'/oar_mysql.sql';
 print "Using $mysqlFile for the database creation\n";
 ( -r $mysqlFile ) or die "[ERROR] Initialization SQL file not found ($mysqlFile)\n";
 
