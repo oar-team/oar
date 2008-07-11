@@ -70,7 +70,7 @@ oar_debug("[oar_sched_gantt_with_timesharing] Begining of Gantt scheduler on que
 # First check states of resources that we must add for each job
 if (defined($Resources_to_always_add_type)){
     my $tmp_result_state_resources = iolib::get_specific_resource_states($base,$Resources_to_always_add_type);
-    if ($#{@{$tmp_result_state_resources->{"Suspected"}}} >= 0){
+    if ($#{$tmp_result_state_resources->{"Suspected"}} >= 0){
         oar_warn("[oar_sched_gantt_with_timesharing] There are resources that are specified in oar.conf (SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE) which are Suspected. So I cannot schedule any job now.\n");
         exit(1);
     }else{
@@ -317,7 +317,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 #        print("[GANTT] 14 ".gettimeofday."\n");
     for (my $i=0; $i <= $#moldable_results; $i++){
         #my @tmp_array = @{$moldable_results[$i]->{resources}};
-        if ($#{@{$moldable_results[$i]->{resources}}} >= 0){
+        if ($#{$moldable_results[$i]->{resources}} >= 0){
             my $tmp_stop_date = $moldable_results[$i]->{start_date} + $moldable_results[$i]->{duration};
             if ((!defined($best_stop_time)) or ($best_stop_time > $tmp_stop_date)){
                 $best_stop_time = $tmp_stop_date;

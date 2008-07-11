@@ -850,7 +850,7 @@ sub get_possible_wanted_resources($$$$$$$){
     my $order_part = shift;
 
     my $sql_in_string = "\'1\'";
-    if (defined($resources_to_ignore_array) and ($#{@{$resources_to_ignore_array}} >= 0)){
+    if (defined($resources_to_ignore_array) and ($#{$resources_to_ignore_array} >= 0)){
         $sql_in_string = "resource_id NOT IN (";
         $sql_in_string .= join(",",@{$resources_to_ignore_array});
         $sql_in_string .= ")";
@@ -5487,7 +5487,7 @@ sub job_finishing_sequence($$$$$$){
             add_new_event($dbh,$e->{type},$job_id,$e->{string});
         }
     }
-    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{@{$events}} >= 0);
+    oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
 }
 
 

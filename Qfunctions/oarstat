@@ -408,8 +408,8 @@ sub print_job_data($$){
                 print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
                 print("    assigned_resources = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_resources}})."\n");
                 print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_network_address}})."\n");
-                print("    nbNodes = ". ($#{@{$data->{$job_info->{job_id}}->{assigned_network_address}}} +1) ."\n");
-                print("    weight = ". ($#{@{$data->{$job_info->{job_id}}->{assigned_resources}}} + 1) ."\n");
+                print("    nbNodes = ". ($#{$data->{$job_info->{job_id}}->{assigned_network_address}} +1) ."\n");
+                print("    weight = ". ($#{$data->{$job_info->{job_id}}->{assigned_resources}} + 1) ."\n");
                 print("    dependencies = ".join(" ",@{$data->{$job_info->{job_id}}->{dependencies}})."\n");
                 print("\n");
             }elsif (defined($full_view)){

@@ -1,6 +1,15 @@
 OAR CHANGELOG
 =============
 
+version 2.2.13:
+---------------
+  - Fix resource allocation order: sort by state first to allocate available
+    resources at first to reservations (2.2.12 regression)
+  - Fix ganttchart: display of jobs in the future is back (2.2.12 regression)
+  - Fix database initialization files
+  - Bug #5692: fix syntax with regard to Perl 5.10 upgrade: replace
+    "$#{@{$array}}" by "$#{$array}"
+
 version 2.2.12:
 ---------------
   - Bug #5239: fix the bug if there are spaces into job name or project
