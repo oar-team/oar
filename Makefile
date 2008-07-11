@@ -87,7 +87,7 @@ dbinit:
 	ln -s -f $(CMDSLINKPATH)/configurator_wrapper.sh $(CONFIG_CMDS)/oar_mysql_db_init
 	perl -i -pe "s#^OARCMD=.*#OARCMD=oar_mysql_db_init#" $(OARDIR)/sudowrapper.sh 
 	install -m 0755 $(OARDIR)/sudowrapper.sh $(SBINDIR)/oar_mysql_db_init
-	install -m 0644 DB/oar_jobs.sql $(OARDIR)
+	install -m 0644 DB/oar_mysql.sql $(OARDIR)
 	install -m 0644 DB/oar_postgres.sql $(OARDIR)
 	rm $(OARDIR)/sudowrapper.sh
 
