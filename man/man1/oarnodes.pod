@@ -34,6 +34,7 @@ Show only node list.
 
 show the events of a resource (given as the first parameter).
 ie: oarnodes foo --events
+By default, display the 20 last events.
 You can also restrict the results by specifying the start date. 
 ie: oarnodes foo -E <date> will show only logs from this date.
 

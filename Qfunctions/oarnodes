@@ -89,6 +89,7 @@ Options:
  -l, --list         show only node list
  -E, --events       show the events of a resource (given as the first parameter).
                     ie: oarnodes foo --events
+                    By default, display the 20 last events.
                     You can also restrict the results by specifying the start 
                     date. 
                     ie: oarnodes foo -E <date> will show only logs from this date.
@@ -151,7 +152,7 @@ if (defined ($ARGV[0]) && defined ($event_mode)){
         #}
         
         # we display only $max_row_displayed rows
-        my $max_row_displayed = 10;
+        my $max_row_displayed = 20;
         my $start_display = $#events - $max_row_displayed + 1;
         if($start_display < 0){
             $start_display = 0;
