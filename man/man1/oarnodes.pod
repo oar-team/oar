@@ -30,6 +30,13 @@ Show only resource states.
      
 Show only node list.
 
+=item B<-E, --events>
+
+show the events of a resource (given as the first parameter).
+ie: oarnodes foo --events
+You can also restrict the results by specifying the start date. 
+ie: oarnodes foo -E <date> will show only logs from this date.
+
 =item B<--sql>
 
 Display resources which matches this sql where clause (ex: "state = 'Suspected'")

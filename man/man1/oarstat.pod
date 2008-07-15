@@ -22,6 +22,10 @@ Very detailed display.
 
 Print informations from a specific job.
 
+=item B<-E, --events>
+
+Show events table.
+           
 =item B<-u, --user> [login]
 
 Print informations for the current user or the one given.

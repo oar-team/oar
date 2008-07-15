@@ -63,7 +63,7 @@ GetOptions ("help|h" => \$sos,
             "full|f"  => \$full_view,
             "user|u:s" => \$user,
             "gantt|g=s"   => \$gantt_query,
-            "logs|l" => \$logs,
+            "events|E" => \$logs,
             "accounting=s"   => \$accounting_query,
             "sql=s"   => \$sql_property,
             "xml|X" => \$XML_mode,
@@ -85,7 +85,7 @@ Options:
   -u, --user                show informations for this user only
   -g, --gantt               show job informations between two dates
                             like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
-  -l, --logs                show event logs table
+  -E, --events              show events table
       --accounting          show accounting informations between two dates
                             like "2006-03-30, 2006-04-30"
       --sql                 restricts display with the SQL where clause on the
@@ -153,8 +153,7 @@ if (!defined($accounting_query)){
             # All jobs output
             else{
                 my @jobs = iolib::get_all_events_jobs($base);
-                #TODO: sort better than that
-                foreach my $current_job (sort @jobs){
+                foreach my $current_job (@jobs){
                     my @events = iolib::get_job_events($base, $current_job);
                     foreach my $current_event (@events){
                         print_event_logs($current_event);
@@ -265,17 +264,16 @@ sub print_event_logs($){
     if ($Printed_logs == 0){
     #TODO: better display of the information
     print <<EOS;
-Job id     Event id   Type                           Date                Description                                        To Check
----------- ---------- ------------------------------ ------------------- -------------------------------------------------- --------
+Date                Job id     Event id   Type                           Description                                       
+------------------- ---------- ---------- ------------------------------ --------------------------------------------------
 EOS
     }
-    printf("%-10.10s %-10.10s %-30.30s %-20.20s %50.50s %-8.8s\n",
+    printf("%-20.20s %-10.10s %-10.10s %-30.30s %50.50s\n",
+        iolib::local_to_sql($event_hashref->{'date'}),
         $event_hashref->{'job_id'},
         $event_hashref->{'event_id'},
         $event_hashref->{'type'},
-        iolib::local_to_sql($event_hashref->{'date'}),
-        $event_hashref->{'description'},
-        $event_hashref->{'to_check'}
+        $event_hashref->{'description'}
     );
     $Printed_logs++;
 }

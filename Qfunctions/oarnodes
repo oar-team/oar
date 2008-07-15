@@ -61,14 +61,12 @@ my $DUMPER_mode;
 my $Version;
 my $Old;
 my $smp;
-my $log_hostname;
-my $date;
+my $event_mode;
 GetOptions ("state|s" => \$stateMode,
             "help|h"  => \$usage,
             "list|l"  => \$listall,
             "all|a"   => \$listallwithinfo,
-            "logs=s"  => \$log_hostname,
-            "date|d=s" => \$date,
+            "events|E:s"  => \$event_mode,
             "resource|r=i" => \@resources,
             "sql=s" => \$sql_property,
             "xml|X" => \$XML_mode,
@@ -89,8 +87,11 @@ Options:
  -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
-     --logs         show the logs of a resource
- -d, --date         to use with --logs option, show only logs from this date
+ -E, --events       show the events of a resource (given as the first parameter).
+                    ie: oarnodes foo --events
+                    You can also restrict the results by specifying the start 
+                    date. 
+                    ie: oarnodes foo -E <date> will show only logs from this date.
      --sql          display resources which matches this sql where clause
                     (ex: "state = 'Suspected'")
  -D, --dumper       print result in DUMPER format
@@ -118,37 +119,51 @@ sub print_event_logs($){
     if ($Printed_logs == 0){
 #TODO: better display of the information
 print <<EOS;
-hostname             Job id     Event id   Type                           Date                Description                                        To Check
--------------------- ---------- ---------- ------------------------------ ------------------- -------------------------------------------------- --------
+Date                hostname             Job id     Event id   Type                           Description                                        
+------------------- -------------------- ---------- ---------- ------------------------------ --------------------------------------------------
 EOS
     }
-    printf("%-20.20s %-10.10s %-10.10s %-30.30s %-20.20s %50.50s %-8.8s\n",
+    printf("%-20.20s %-20.20s %-10.10s %-10.10s %-30.30s %50.50s\n", 
+        iolib::local_to_sql($event_hashref->{'date'}),
         $event_hashref->{'hostname'},
         $event_hashref->{'job_id'},
         $event_hashref->{'event_id'},
         $event_hashref->{'type'},
-        iolib::local_to_sql($event_hashref->{'date'}),
-        $event_hashref->{'description'},
-        $event_hashref->{'to_check'}
+        $event_hashref->{'description'}
     );
     $Printed_logs++;
 }
 
-if (defined ($log_hostname)){ 
-    if(defined($date)){
-        my @events = iolib::get_events_from_hostname_since_date($base, $log_hostname, $date);    
+if (defined ($ARGV[0]) && defined ($event_mode)){
+    my $log_hostname = $ARGV[0];
+ 
+    # here $event_mode can contain the date from which we have to display info.
+    if($event_mode ne ""){
+        my @events = iolib::get_events_from_hostname_since_date($base, $log_hostname, $event_mode);    
         foreach my $current_event (@events){  
             print_event_logs($current_event);
         }
     }
     else{
         my @events = iolib::get_events_from_hostname($base, $log_hostname);    
-        foreach my $current_event (@events){  
-            print_event_logs($current_event);
+        #foreach my $current_event (@events){  
+        #    print_event_logs($current_event);
+        #}
+        
+        # we display only $max_row_displayed rows
+        my $max_row_displayed = 10;
+        my $start_display = $#events - $max_row_displayed + 1;
+        if($start_display < 0){
+            $start_display = 0;
+        }
+        for (my $cpt=$start_display; $cpt<=$#events; $cpt++) {
+	        print_event_logs($events[$cpt]);
         }
     }
 }
-
+elsif(!defined ($ARGV[0]) && defined ($event_mode)){
+    warn("/!\\ the hostname is not defined\n");
+}
 else{
     if (($#resources >= 0) or (defined($sql_property))){
         if (defined($sql_property)){
