@@ -7,7 +7,7 @@ if [ ! -r $OARCONFFILE ]; then
 	cat <<EOF 2>&1
 Error: 
  OAR configuration file not found or not readable.
- Please run this script as oar or root from the oar server machine.
+ Please run this script as the user oar or root from OAR server machine.
 EOF
 	exit 1
 fi
@@ -82,11 +82,13 @@ if [ "x$REPLY" != "xy" ]; then
 	echo Aborting.
 	exit 2
 fi 
+echo
+echo Fix in progress:
 export OARCONFFILE
 for j in $(sort -u $TMPFILE); do
 	echo -n "$j "
 #	oarstat -fj $j	
-	(cd /usr/lib/oar; echo perl -e "use oar_iolib; \$db = iolib::connect(); iolib::log_job(\$db,$j); iolib::disconnect(\$db);")
+	(cd /usr/lib/oar; perl -e "use oar_iolib; \$db = iolib::connect(); iolib::log_job(\$db,$j); iolib::disconnect(\$db);")
 done
 echo
 echo "done"
