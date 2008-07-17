@@ -1292,7 +1292,7 @@ sub set_job_state($$$) {
             }elsif ($state eq "Resuming"){
                 oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RESUMING","Job is resuming.");
             }elsif ($state eq "Running"){
-                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+ 2");
+                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+2","START");
                 oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
             }elsif (($state eq "Terminated") or ($state eq "Error")){
                 #$dbh->do("  DELETE FROM challenges
@@ -1316,7 +1316,7 @@ sub set_job_state($$$) {
                 }else{
                     oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally or an OAR error occured.");
                 }
-                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"- 2");
+                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"-2","STOP");
                 
                 # Here we must not be asynchronously with the scheduler
                 iolib::log_job($dbh,$job->{job_id});
@@ -3452,15 +3452,21 @@ sub list_resource_properties_fields($){
 
 # update_current_scheduler_priority
 # Update the scheduler_priority field of the table resources
-sub update_current_scheduler_priority($$$$){
+sub update_current_scheduler_priority($$$$$){
     my $dbh = shift;
     my $job_id = shift;
     my $moldable_id = shift;
     my $value = shift;
+    my $state = shift;
+    
+    $state = "STOP" if ($state ne "START");
 
     if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")){
         my $types = iolib::get_current_job_types($dbh,$job_id);
-        if (defined($types->{besteffort})){
+        if ((defined($types->{besteffort}))
+            and (($state eq "START" and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED_START") <= 0))
+                or (($state eq "STOP") and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED_START") > 0)))
+           ){
             my $index = 0;
             foreach my $f (split('/',get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER"))){
                 next if ($f eq "");
@@ -3491,6 +3497,7 @@ sub update_current_scheduler_priority($$$$){
                            ";
                 $dbh->do($req);       
             }
+            add_new_event($dbh,"SCHEDULER_PRIORITY_UPDATED_$state",$job_id,"Scheduler priority for job $job_id updated (".get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER").")");
         }
     }
 }
