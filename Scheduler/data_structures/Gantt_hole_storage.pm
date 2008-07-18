@@ -412,7 +412,6 @@ sub find_first_hole_parallel($$$$$$){
                     #Child
                     close($P1);
                     #print "PID $$ : $process_index ($current_hole_index)\n";
-                    sleep 1;
                     #print("Treate hole $current_hole_index, $h : $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
                     $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
                     #Check all trees
@@ -483,7 +482,7 @@ sub find_first_hole_parallel($$$$$$){
                 }
             }
 
-            while (defined($result_children[$process_index_to_check])){
+            while ((defined($result_children[$process_index_to_check])) and ($end_loop == 0)){
                 if (defined($result_children[$process_index_to_check]->{result_tree_list})){
                     # We find the first hole
                     #print "MASTER using hole from process index $process_index_to_check\n";
