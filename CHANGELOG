@@ -9,6 +9,8 @@ version 2.2.13:
   - Fix database initialization files
   - Bug #5692: fix syntax with regard to Perl 5.10 upgrade: replace
     "$#{@{$array}}" by "$#{$array}"
+  - Fix the scheduler_priority divergence bug in case of besteffort jobs in 
+    error
 
 version 2.2.12:
 ---------------
