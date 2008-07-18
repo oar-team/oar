@@ -99,7 +99,7 @@ if (!defined($sched_available_suspended_resource_type_tmp)){
 my $Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
 my @Resources_to_always_add = ();
 
-my $Max_nb_processes = get_conf_with_default_param("SCHEDULER_NB_PROCESSES",2);
+my $Max_nb_processes = get_conf_with_default_param("SCHEDULER_NB_PROCESSES",1);
 
 my $current_time ;
 
