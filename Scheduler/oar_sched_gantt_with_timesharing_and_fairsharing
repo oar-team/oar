@@ -7,7 +7,7 @@ use DBI();
 use oar_iolib;
 use Data::Dumper;
 use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
-use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use Gantt_hole_storage;
 use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
@@ -98,6 +98,8 @@ if (!defined($sched_available_suspended_resource_type_tmp)){
 # Look at resources that we must add for each job
 my $Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
 my @Resources_to_always_add = ();
+
+my $Max_nb_processes = get_conf_with_default_param("SCHEDULER_NB_PROCESSES",2);
 
 my $current_time ;
 
@@ -393,7 +395,13 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
         $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
         oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] find_first_hole with a timeout of $gantt_timeout\n");
-        my @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
+        my @hole;
+        if ($Max_nb_processes <= 1){
+            @hole = Gantt_hole_storage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
+        }else{
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Using Gantt PARALLEL algorithm\n");
+            @hole = Gantt_hole_storage::find_first_hole_parallel($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
+        }
         
 #        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;
