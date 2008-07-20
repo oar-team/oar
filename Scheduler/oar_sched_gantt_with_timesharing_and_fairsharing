@@ -22,12 +22,12 @@ init_conf($ENV{OARCONFFILE});
 # Avoid problems if there are too many waiting jobs
 my $Karma_max_number_of_jobs_treated_per_user = 30;
 if (is_conf("SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER")) {
-    my $Karma_max_number_of_jobs_treated_per_user = get_conf("SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER");
+    $Karma_max_number_of_jobs_treated_per_user = get_conf("SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER");
 }
 # number of seconds to consider for the fairsharing
 my $Karma_window_size = 3600 * 30 * 24;
 if (is_conf("SCHEDULER_FAIRSHARING_WINDOW_SIZE")) {
-    my $Karma_max_number_of_jobs_treated_per_user = get_conf("SCHEDULER_FAIRSHARING_WINDOW_SIZE");
+    $Karma_window_size = get_conf("SCHEDULER_FAIRSHARING_WINDOW_SIZE");
 }
 # specify the target percentages for project names (0 if not specified)
 my $Karma_project_targets = { first => 75, default => 25 };

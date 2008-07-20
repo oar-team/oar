@@ -189,6 +189,13 @@ sub set_occupation($$$$){
                         splice(@{$gantt->[$g]->[1]}, $h, 1);
                         $h--;
                         $slot_deleted = 1;
+                    }elsif ($h > 0){
+                        # check if this is the same hole than the previous one
+                        my $tmp_vec = $gantt->[$g]->[1]->[$h-1]->[1] ^ $gantt->[$g]->[1]->[$h]->[1];
+                        if (unpack("%32b*",$tmp_vec) == 0){
+                            splice(@{$gantt->[$g]->[1]}, $h-1, 1);
+                            $h--;
+                        }
                     }
                 }
                 # Go to the next slot
@@ -199,6 +206,24 @@ sub set_occupation($$$$){
             # There is no free slot on the current hole so we delete it
             splice(@{$gantt}, $g, 1);
             $g--;
+        }elsif($g > 0){
+            # Test if there is a same hole
+            my $different = 0;
+            if ($#{$gantt->[$g - 1]->[1]} != $#{$gantt->[$g]->[1]}){
+                $different = 1;
+            }
+            my $tmp_h = 0;
+            while (($different == 0) and (defined($gantt->[$g]->[1]->[$tmp_h]))){
+                my $tmp_vec = $gantt->[$g - 1]->[1]->[$tmp_h]->[1] ^ $gantt->[$g]->[1]->[$tmp_h]->[1];
+                if (unpack("%32b*",$tmp_vec) != 0){
+                    $different = 1;
+                }
+                $tmp_h++;
+            }
+            if ($different == 0){
+                splice(@{$gantt}, $g, 1);
+                $g--;
+            }
         }
         # Go to the next hole
         $g++;
