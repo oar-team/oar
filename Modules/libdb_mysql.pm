@@ -35,7 +35,8 @@ sub instance() {
 # parameters : mutex, timeout
 # return value : 1 if the lock was obtained successfully, 0 if the attempt timed out or undef if an error occurred  
 # side effects : a second get_lock of the same mutex will be blocked until release_lock is called on the mutex
-sub get_lock($$) {
+sub get_lock {
+	my $class = shift;
     my $mutex = shift;
     my $timeout = shift;
 
@@ -58,7 +59,8 @@ sub get_lock($$) {
 # parameters : mutex
 # return value : 1 if the lock was released, 0 if the lock wasn't locked by this thread , and NULL if the named lock didn't exist
 # side effects : unlock the mutex, a blocked get_lock may be unblocked
-sub release_lock($) {
+sub release_lock {
+	my $class = shift;
     my $mutex = shift;
 
 	my $dbh = $self->{connection};
@@ -78,7 +80,8 @@ sub release_lock($) {
 # lock_tables
 # creates a sql lock on the tables given in param.
 # params: tables to lock
-sub lock_tables($) {
+sub lock_tables {
+	my $class = shift;
     my $tables= shift;
 
     my $str = "LOCK TABLE ";
@@ -92,7 +95,7 @@ sub lock_tables($) {
 # unlock_tables
 # removes the sql lock of the tables.
 # params: none
-sub unlock_tables(){
+sub unlock_tables {
     $self->{'connection'}->do("UNLOCK TABLE");
 }
 

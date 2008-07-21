@@ -5,6 +5,7 @@
 package db_connection_creator;
 
 use strict;
+use warnings;
 
 use libdb_mysql;
 use libdb_Pg;

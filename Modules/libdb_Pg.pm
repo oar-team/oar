@@ -32,25 +32,25 @@ sub instance() {
 
 # get_lock
 # lock a sql mutex
-sub get_lock() {
+sub get_lock {
     $self->{connection}->begin_work();
 }
 
 # release_lock
 # unlock a sql mutex
-sub release_lock() {
+sub release_lock {
     $self->{connection}->commit();
 }
 
 # lock_tables
 # creates a sql lock
-sub lock_tables($) {
+sub lock_tables {
     $self->{'connection'}->begin_work();
 }
 
 # unlock_tables
 # removes the sql lock
-sub unlock_tables() {
+sub unlock_tables {
     $self->{'connection'}->commit();
 }
 

@@ -32,29 +32,29 @@ $Data::Dumper::Deepcopy = 1;
 
 ### BEGIN PROTOTYPES DECLARATION ###
 # TIME CONVERSION
-sub ymdhms_to_sql($$$$$$);
-sub sql_to_ymdhms($);
-sub ymdhms_to_local($$$$$$);
-sub local_to_ymdhms($);
-sub sql_to_local($);
-sub local_to_sql($);
-sub sql_to_hms($);
-sub hms_to_duration($$$);
-sub hms_to_sql($$$);
-sub duration_to_hms($);
-sub duration_to_sql($);
-sub sql_to_duration($);
-sub get_date();
+sub ymdhms_to_sql;
+sub sql_to_ymdhms;
+sub ymdhms_to_local;
+sub local_to_ymdhms;
+sub sql_to_local;
+sub local_to_sql;
+sub sql_to_hms;
+sub hms_to_duration;
+sub hms_to_sql;
+sub duration_to_hms;
+sub duration_to_sql;
+sub sql_to_duration;
+sub get_date;
 
 # LOCK FUNCTIONS:
-sub get_lock($$);
-sub release_lock($);
-sub lock_tables($);
-sub unlock_tables();
+sub get_lock;
+sub release_lock;
+sub lock_tables;
+sub unlock_tables;
 
 # QUEUES MANAGEMENT
-sub get_active_queues();
-sub get_all_queues_information();
+sub get_active_queues;
+sub get_all_queues_information;
 
 ### END PROTOTYPES DECLARATION ###
 
@@ -78,22 +78,6 @@ my %State_to_num = (
 my $Cm_security_duration = 600;
 
 ### END GLOBAL VARIABLES DECLARATION ###
-
-
-sub test() {
-	
-    my $sth = $self->{connection}->prepare("SELECT *
-                             FROM resources;
-                            ");
-    $sth->execute();
-    my @results;
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@results, $ref);
-    }
-    $sth->finish();
-    
-    return(@results);
-}
 
 
 ### METHODS ###
@@ -179,7 +163,8 @@ sub AUTOLOAD {
 # parameters : year, month, day, hours, minutes, secondes
 # return value : date string
 # side effects : /
-sub ymdhms_to_sql($$$$$$) {
+sub ymdhms_to_sql {
+	my $class = shift;
     my ($year,$mon,$mday,$hour,$min,$sec)=@_;
     return ($year+1900)."-".($mon+1)."-".$mday." $hour:$min:$sec";
 }
@@ -190,7 +175,8 @@ sub ymdhms_to_sql($$$$$$) {
 # parameters : date string
 # return value : year, month, day, hours, minutes, secondes
 # side effects : /
-sub sql_to_ymdhms($) {
+sub sql_to_ymdhms {
+	my $class = shift;
     my $date=shift;
     $date =~ tr/-:/  /;
     my ($year,$mon,$mday,$hour,$min,$sec) = split / /,$date;
@@ -206,7 +192,8 @@ sub sql_to_ymdhms($) {
 # parameters : year, month, day, hours, minutes, secondes
 # return value : date integer
 # side effects : /
-sub ymdhms_to_local($$$$$$) {
+sub ymdhms_to_local {
+	my $class = shift;
     my ($year,$mon,$mday,$hour,$min,$sec)=@_;
     return Time::Local::timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year);
 }
@@ -217,7 +204,8 @@ sub ymdhms_to_local($$$$$$) {
 # parameters : date integer
 # return value : year, month, day, hours, minutes, secondes
 # side effects : /
-sub local_to_ymdhms($) {
+sub local_to_ymdhms {
+	my $class = shift;
     my $date=shift;
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($date);
     $year += 1900;
@@ -231,7 +219,8 @@ sub local_to_ymdhms($) {
 # parameters : date string
 # return value : date integer
 # side effects : /
-sub sql_to_local($) {
+sub sql_to_local {
+	my $class = shift;
     my $date=shift;
     my ($year,$mon,$mday,$hour,$min,$sec)=sql_to_ymdhms($date);
     #if ($year <= 1971){
@@ -247,7 +236,8 @@ sub sql_to_local($) {
 # parameters : date integer
 # return value : date string
 # side effects : /
-sub local_to_sql($) {
+sub local_to_sql {
+	my $class = shift;
     my $local=shift;
     #my ($year,$mon,$mday,$hour,$min,$sec)=local_to_ymdhms($local);
     #return ymdhms_to_sql($year,$mon,$mday,$hour,$min,$sec);
@@ -261,7 +251,8 @@ sub local_to_sql($) {
 # parameters : date string
 # return value : hours, minutes, secondes
 # side effects : /
-sub sql_to_hms($) {
+sub sql_to_hms {
+	my $class = shift;
     my $date=shift;
     my ($hour,$min,$sec) = split /:/,$date;
     return ($hour,$min,$sec);
@@ -273,7 +264,8 @@ sub sql_to_hms($) {
 # parameters : hours, minutes, secondes
 # return value : duration
 # side effects : /
-sub hms_to_duration($$$) {
+sub hms_to_duration {
+	my $class = shift;
     my ($hour,$min,$sec) = @_;
     return $hour*3600 +$min*60 +$sec;
 }
@@ -284,7 +276,8 @@ sub hms_to_duration($$$) {
 # parameters : hours, minutes, secondes
 # return value : date string
 # side effects : /
-sub hms_to_sql($$$) {
+sub hms_to_sql {
+	my $class = shift;
     my ($hour,$min,$sec) = @_;
     return "$hour:$min:$sec";
 }
@@ -295,7 +288,8 @@ sub hms_to_sql($$$) {
 # parameters : duration
 # return value : hours, minutes, secondes
 # side effects : /
-sub duration_to_hms($) {
+sub duration_to_hms {
+	my $class = shift;
     my $date=shift;
     my $sec=$date%60;
     $date/=60;
@@ -311,7 +305,8 @@ sub duration_to_hms($) {
 # parameters : duration
 # return value : date string
 # side effects : /
-sub duration_to_sql($) {
+sub duration_to_sql {
+	my $class = shift;
     my $duration=shift;
     my ($hour,$min,$sec)=duration_to_hms($duration);
     return hms_to_sql($hour,$min,$sec);
@@ -323,7 +318,8 @@ sub duration_to_sql($) {
 # parameters : date string
 # return value : duration
 # side effects : /
-sub sql_to_duration($) {
+sub sql_to_duration {
+	my $class = shift;
     my $date=shift;
     my ($hour,$min,$sec)=sql_to_hms($date);
     return hms_to_duration($hour,$min,$sec);
@@ -334,7 +330,7 @@ sub sql_to_duration($) {
 # parameters : none
 # return value : hasref containing the date.
 # side effects : /
-sub get_date() {
+sub get_date {
     my $req = "SELECT UNIX_TIMESTAMP()";
     my $sth = $self->{connection}->prepare($req);
     $sth->execute();
@@ -350,7 +346,7 @@ sub get_date() {
 # get_active_queues
 # create the list of active queues sorted by descending priority.
 # return value : a hashtable with the queue names and their scheduling policies
-sub get_active_queues() {
+sub get_active_queues {
     my $sth = $self->{'connection'}->prepare("   SELECT queue_name,scheduler_policy
                                 FROM queues
                                 WHERE
@@ -371,7 +367,7 @@ sub get_active_queues() {
 
 # get_all_queue_informations
 # return a hashtable with all queues and their properties
-sub get_all_queues_information(){
+sub get_all_queues_information{
 
     my $sth = $self->{'connection'}->prepare(" SELECT *
                               FROM queues
@@ -388,21 +384,22 @@ sub get_all_queues_information(){
 
 
 # stop_all_queues
-sub stop_all_queues(){
+sub stop_all_queues {
     $self->{'connection'}->do("  UPDATE queues
                 SET state = \'notActive\'
              ");
 }
 
 # start_all_queues
-sub start_all_queues(){
+sub start_all_queues {
     $self->{'connection'}->do("  UPDATE queues
                 SET state = \'Active\'
              ");
 }
 
 # stop_a_queue
-sub stop_a_queue($){
+sub stop_a_queue {
+	my $class = shift;
     my $queue = shift;   
     $self->{'connection'}->do("  UPDATE queues
                 SET state = \'notActive\'
@@ -412,8 +409,9 @@ sub stop_a_queue($){
 }
 
 # start_a_queue
-sub start_a_queue($){
-    my $queue = shift;  
+sub start_a_queue {
+	my $class = shift;	
+    my $queue = shift;
     $self->{'connection'}->do("  UPDATE queues
                 SET state = \'Active\'
                 WHERE
@@ -422,13 +420,15 @@ sub start_a_queue($){
 }
 
 # delete a queue
-sub delete_a_queue($){
+sub delete_a_queue {
+	my $class = shift;
     my $queue = shift;   
     $self->{'connection'}->do("DELETE FROM queues WHERE queue_name = \'$queue\'");
 }
 
 # create a queue
-sub create_a_queue($$$){
+sub create_a_queue {
+	my $class = shift;
     my $queue = shift;
     my $policy = shift;
     my $priority = shift;
