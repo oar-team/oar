@@ -1370,7 +1370,7 @@ sub set_job_state($$$) {
 
 # log_job
 # sets the index fields to LOG on several tables
-# this will speed up futur queries
+# this will speed up future queries
 # parameters : base, jobid
 # return value : /
 sub log_job($$){
@@ -3161,24 +3161,14 @@ sub get_current_free_resources_of_node($$){
     my $dbh = shift;
     my $host = shift;
 
-    my @busy_resources = get_current_assigned_resources($dbh);
-    my $where_str;
-    if ($#busy_resources >= 0){
-        $where_str = "resource_id NOT IN (";
-        foreach my $r (@busy_resources){
-            $where_str .= "$r,";
-        }
-        chop($where_str);
-        $where_str .= ")";
-    }else{
-        $where_str = "\'1\'";
-    }
-    
     my $sth = $dbh->prepare("   SELECT resource_id
                                 FROM resources
                                 WHERE
                                     network_address = \'$host\'
-                                    AND $where_str
+                                    AND resource_id NOT IN (
+                                        SELECT resource_id from assigned_resources
+                                        where assigned_resource_index = \'CURRENT\'                                    
+                                    )
                             ");
     $sth->execute();
     my @result;
