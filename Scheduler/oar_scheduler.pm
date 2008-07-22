@@ -535,7 +535,7 @@ sub check_jobs_to_kill($){
     my %fragged_jobs = ();
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($besteffort_resource_occupation{$r})) {
-            oar_warn("[oar_scheduler] check_jobs_to_kill: besteffort job $besteffort_resource_occupation{$r} must be killed in favor of job $nodes_for_jobs_to_launch{$r}\n");
+            oar_debug("[oar_scheduler] check_jobs_to_kill: resource $r is needed for job $nodes_for_jobs_to_launch{$r}, besteffort job $besteffort_resource_occupation{$r} must be killed\n");
             unless (defined($fragged_jobs{$besteffort_resource_occupation{$r}})) {
                 iolib::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[oar_scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
                 iolib::lock_table($dbh,["frag_jobs","event_logs","jobs"]);
