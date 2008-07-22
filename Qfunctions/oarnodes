@@ -24,6 +24,9 @@ use oar_iolib;
 use Getopt::Long;
 use oarversion;
 
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
 #Try to load XML module
 my $XML_enabled = 1;
 unless (eval "use XML::Dumper qw(pl2xml);1"){
@@ -55,37 +58,41 @@ my $DUMPER_mode;
 my $Version;
 my $Old;
 my $smp;
+my $events;
 GetOptions ("state|s" => \$stateMode,
             "help|h"  => \$usage,
             "list|l"  => \$listall,
             "all|a"   => \$listallwithinfo,
+            "events|e:s"  => \$events,
             "resource|r=i" => \@resources,
             "sql=s" => \$sql_property,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
             "dumper|D" => \$DUMPER_mode,
-            "backward_compatible" => \$Old,
+            "backward-compatible|backward_compatible" => \$Old,
             "smp" => \$smp,
             "version|V" => \$Version
            );
 
 if ($usage){
     print <<EOS;
-Usage: $0 [[ -a | -r number | --sql sql_properties | -s | -l | -h | -V ]
-[list of nodes] [-X | -Y | -D] | --backward_compatible [--smp]]
+Usage: oarnodes [ -a | -r number | --sql sql_properties | -s | -l | -h | -V ]
+[list of nodes] [ -e [date] | -X | -Y | -D | --backward-compatible [--smp]]
 Display node informations
 Options:
  -a, --all          show all nodes with their properties
  -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
+ -e, --events       show events recorded for a node: either the last 20 if no 
+                    date is given or all events since the specified date
      --sql          display resources which matches this sql where clause
                     (ex: "state = 'Suspected'")
  -D, --dumper       print result in DUMPER format
  -X, --xml          print result in XML format
  -Y, --yaml         print result in YAML format
-     --backward_compatible print informations of the form of 1.* OAR version
-     --smp          backward_compatible suboption: prints one node per resource
+     --backward-compatible   print informations of the form of 1.* OAR version
+     --smp          backward-compatible suboption: prints one node per resource
                     (usefull for big smp systems) 
  -h, --help         show this help screen
  -V, --version      print OAR version number
@@ -100,6 +107,30 @@ if (defined($Version)){
 
 my $exitstatus = 0;
 my $base = iolib::connect_ro();
+
+sub print_event_logs($){
+    my $event_hashref = shift;
+    printf("%s| %s| %s: %s\n", 
+        iolib::local_to_sql($event_hashref->{'date'}),
+        $event_hashref->{'job_id'},
+        $event_hashref->{'type'},
+        $event_hashref->{'description'}
+    );
+}
+
+if (defined ($events)) {
+    my $hostname = $ARGV[0];
+    if (not defined($hostname)) {
+        die("No hostname specified\n");
+    }
+    # here $events can contain the date from which we have to display info.
+    my @events = iolib::get_events_for_hostname($base, $hostname, $events);    
+    foreach my $current_event (@events) {  
+        print_event_logs($current_event);
+    }
+    iolib::disconnect($base);
+    exit 0;
+}
 
 if (($#resources >= 0) or (defined($sql_property))){
     if (defined($sql_property)){
@@ -162,10 +193,12 @@ if (($#resources >= 0) or (defined($sql_property))){
                 if ($b eq "properties"){
                     my $str = "properties : ";
                     foreach my $prop (sort(keys(%{$a{$b}}))){
-                        if (defined($a{$b}->{$prop})){
-                            $str .= "$prop=$a{$b}->{$prop},";
-                        }else{
-                            $str .= "$prop=,";
+                        if (oar_Tools::check_resource_system_property($prop) == 0){
+                            if (defined($a{$b}->{$prop})){
+                                $str .= "$prop=$a{$b}->{$prop},";
+                            }else{
+                                $str .= "$prop=,";
+                            }
                         }
                     }
                     chop($str);
@@ -425,10 +458,12 @@ if (defined($stateMode)){
                     if ($cc eq "properties"){
                         my $str = "properties : ";
                         foreach my $prop (sort(keys(%{$data_to_display{$aa}->{$bb}->{$cc}}))){
-                            if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
-                                $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
-                            }else{
-                                $str .= "$prop=,";
+                            if (oar_Tools::check_resource_system_property($prop) == 0){
+                                if (defined($data_to_display{$aa}->{$bb}->{$cc}->{$prop})){
+                                    $str .= "$prop=$data_to_display{$aa}->{$bb}->{$cc}->{$prop},";
+                                }else{
+                                    $str .= "$prop=,";
+                                }
                             }
                         }
                         chop($str);
@@ -447,4 +482,3 @@ if (defined($stateMode)){
 iolib::disconnect($base);
 
 exit($exitstatus);
-

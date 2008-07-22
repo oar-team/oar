@@ -11,6 +11,8 @@ version 2.2.13:
     "$#{@{$array}}" by "$#{$array}"
   - Fix the scheduler_priority divergence bug in case of besteffort jobs in 
     error
+  - Add a --event option to oarnodes and oarstat to display events recorded for a job or node
+  - Display reserved resources for a validated waiting reservation, with a hint in their state
 
 version 2.2.12:
 ---------------
