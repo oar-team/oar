@@ -36,7 +36,6 @@ $Data::Dumper::Indent = 0;
 $Data::Dumper::Deepcopy = 1;
 
 my $Printed_jobs = 0;
-my $Printed_logs = 0;
 
 sub get_job_data($$);
 sub print_job_data($$);
@@ -57,13 +56,13 @@ my $YAML_mode;
 my $DUMPER_mode;
 my $Version;
 my $Old;
-my $logs;
+my $events;
 GetOptions ("help|h" => \$sos,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
             "user|u:s" => \$user,
             "gantt|g=s"   => \$gantt_query,
-            "events|E" => \$logs,
+            "events|e" => \$events,
             "accounting=s"   => \$accounting_query,
             "sql=s"   => \$sql_property,
             "xml|X" => \$XML_mode,
@@ -85,7 +84,7 @@ Options:
   -u, --user                show informations for this user only
   -g, --gantt               show job informations between two dates
                             like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
-  -E, --events              show events table
+  -e, --events              show job events
       --accounting          show accounting informations between two dates
                             like "2006-03-30, 2006-04-30"
       --sql                 restricts display with the SQL where clause on the
@@ -113,7 +112,7 @@ my @jobs;
 # JOBS STATS OUTPUT
 if (!defined($accounting_query)){
     if (!defined($gantt_query)){
-        if(!defined($logs)){
+        if(!defined($events)){
             if ($#job_ids < 0){
                 if (defined($sql_property)){
                     push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
@@ -138,27 +137,19 @@ if (!defined($accounting_query)){
                 $data_to_print{$g->{job_id}} = get_job_data($base,$g);
             }
             print_job_data(\%data_to_print,\@jobs);
-        }elsif(defined($logs)){
-
-            # One or multi jobs output
+        }else{
             if($#job_ids >= 0){
+                # One or multi jobs output
                 foreach my $current_job_id (@job_ids){
                     my @events = iolib::get_job_events($base, $current_job_id);
                     foreach my $current_event (@events){
                         print_event_logs($current_event);
                     }
                 }
-            }
-            
-            # All jobs output
-            else{
-                my @jobs = iolib::get_all_events_jobs($base);
-                foreach my $current_job (@jobs){
-                    my @events = iolib::get_job_events($base, $current_job);
-                    foreach my $current_event (@events){
-                        print_event_logs($current_event);
-                    }
-                }
+            } else {
+                warn("No job specified\n");
+                iolib::disconnect($base);
+                exit(1);
             }
         }
     }elsif ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
@@ -189,7 +180,7 @@ if (!defined($accounting_query)){
             print(Dumper($hist));
         }
     }else{
-        print("/!\\ Bad syntax with '-g' option\n");
+        warn("Bad syntax for '-g' option\n");
         iolib::disconnect($base);
         exit(1);
     }
@@ -247,8 +238,7 @@ EOS
         }
     }
     
-}
-else{
+}else{
     print("/!\\ Bad syntax with '--accounting' option\n");
     iolib::disconnect($base);
     exit(1);
@@ -258,24 +248,14 @@ iolib::disconnect($base);
 
 exit(0);
 
-
 sub print_event_logs($){
     my $event_hashref = shift;
-    if ($Printed_logs == 0){
-    #TODO: better display of the information
-    print <<EOS;
-Date                Job id     Event id   Type                           Description                                       
-------------------- ---------- ---------- ------------------------------ --------------------------------------------------
-EOS
-    }
-    printf("%-20.20s %-10.10s %-10.10s %-30.30s %50.50s\n",
+    printf("%s| %s| %s: %s\n",
         iolib::local_to_sql($event_hashref->{'date'}),
         $event_hashref->{'job_id'},
-        $event_hashref->{'event_id'},
         $event_hashref->{'type'},
         $event_hashref->{'description'}
     );
-    $Printed_logs++;
 }
 
 sub get_job_data($$){
@@ -296,6 +276,16 @@ sub get_job_data($$){
     $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
 
     my $resources_string = "";
+    my $reserved_resources;
+    if ($job_info->{assigned_moldable_job} ne ""){
+        @nodes = iolib::get_job_resources($dbh,$job_info->{assigned_moldable_job});
+        @node_hostnames = iolib::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
+        $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
+    }
+    if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
+        $reserved_resources = iolib::get_gantt_visu_resources_for_resa($dbh,$job_info->{job_id});
+    } 
+
     if (defined($full_view) or defined($Old)){
         @date_tmp = iolib::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
         @job_events = iolib::get_job_events($dbh,$job_info->{job_id});
@@ -330,11 +320,6 @@ sub get_job_data($$){
             $resources_string .= $tmp_str;
         }
         
-        if ($job_info->{assigned_moldable_job} ne ""){
-            @nodes = iolib::get_job_resources($dbh,$job_info->{assigned_moldable_job});
-            @node_hostnames = iolib::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
-            $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
-        }
         $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job_info->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
         $job_user = oar_Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$job_cpuset_uid);
         
@@ -370,7 +355,7 @@ sub get_job_data($$){
         );
         if (($ENV{OARDO_USER} eq $job_info->{job_user})
             or ($ENV{OARDO_USER} eq "oar")
-            or-($ENV{OARDO_USER} eq "root")){
+            or ($ENV{OARDO_USER} eq "root")){
             $data_to_display{initial_request} = $job_info->{initial_request};
         }
     }else{
@@ -379,6 +364,8 @@ sub get_job_data($$){
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             state => $job_info->{state},
+            assigned_resources => \@nodes,
+            assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
             launchingDirectory => $job_info->{launching_directory},
@@ -394,6 +381,9 @@ sub get_job_data($$){
             types => \@job_types,
             dependencies => \@job_dependencies
         );
+    }
+    if (defined($reserved_resources)) {
+        $data_to_display{'reserved_resources'}=$reserved_resources;
     }
 
     return(\%data_to_display);
@@ -470,7 +460,7 @@ sub print_job_data($$){
                     $data->{$job_info->{job_id}}->{scheduledStart} = iolib::local_to_sql($data->{$job_info->{job_id}}->{scheduledStart});
                 }
                 print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
-                print("    assigned_resources = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_resources}})."\n");
+                print("    assigned_resources = ".join("+",sort({ $a <=> $b } @{$data->{$job_info->{job_id}}->{assigned_resources}}))."\n");
                 print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_network_address}})."\n");
                 print("    nbNodes = ". ($#{$data->{$job_info->{job_id}}->{assigned_network_address}} +1) ."\n");
                 print("    weight = ". ($#{$data->{$job_info->{job_id}}->{assigned_resources}} + 1) ."\n");
@@ -503,6 +493,30 @@ sub print_job_data($$){
                 print("    jobType = $job_info->{job_type}\n");
                 print("    properties = $job_info->{properties}\n");
                 print("    reservation = $job_info->{reservation}\n");
+                if (defined $data->{$job_info->{job_id}}->{'reserved_resources'}) {
+                    print("    reserved_resources = ");
+                    my @tmp_array_ok;
+                    my @tmp_array_ko;
+                    for my $r (keys %{$data->{$job_info->{job_id}}->{'reserved_resources'}}) {
+                        if ($data->{$job_info->{job_id}}->{'reserved_resources'}->{$r}->{'current_state'} eq "Alive") {
+                            push (@tmp_array_ok,$r);
+                        } else {
+                            push (@tmp_array_ko,$r);
+                        }
+                    }
+                    my $tmp_str_ok = join("+",sort ({ $a <=> $b } @tmp_array_ok));
+                    my $tmp_str_ko = join("+",sort ({ $a <=> $b } @tmp_array_ko));
+                    if ( $tmp_str_ok ne "" ) {
+                        print $tmp_str_ok;
+                    } else {
+                        print("none\n");
+                    }
+                    if ( $tmp_str_ko ne "" ) {
+                        print "+($tmp_str_ko)";
+                    } else {
+                        print("\n");
+                    }
+                }
                 if (!defined($data->{$job_info->{job_id}}->{walltime})){
                     $data->{$job_info->{job_id}}->{walltime} = '';
                 }else{

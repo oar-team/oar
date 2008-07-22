@@ -1,11 +1,13 @@
 OAR CHANGELOG
 =============
 
-upstream development version:
------------------------------
+version 2.3.2:
+--------------
   - Change scheduler timeout implementation to schedule the maximum of jobs.
   - Bug #5879: do not show initial_request in oarstat when it is not a job of
     the user who launched the oarstat command (oar or root).
+  - Add a --event option to oarnodes and oarstat to display events recorded for a job or node
+  - Display reserved resources for a validated waiting reservation, with a hint in their state
 
 version 2.3.1:
 --------------

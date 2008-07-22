@@ -123,6 +123,7 @@ sub get_gantt_resources_for_jobs_to_launch($$);
 sub get_gantt_resources_for_job($$);
 sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
+sub get_gantt_visu_resources_for_resa($$);
 
 # TIME CONVERSION
 sub ymdhms_to_sql($$$$$$);
@@ -146,6 +147,7 @@ sub check_event($$$);
 sub get_to_check_events($);
 sub get_hostname_event($$);
 sub get_job_events($$);
+sub get_events_for_hostname($$$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -566,7 +568,7 @@ sub get_job_current_resources($$$) {
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
                         assigned_resources.moldable_job_id = $jobid";
-    }else{ 
+    }else{
         my $type_str;
         foreach my $t (@{$not_type_list}){
             $type_str .= $dbh->quote($t);
@@ -1459,7 +1461,7 @@ sub archive_some_moldable_job_nodes($$$){
     my $dbh = shift;
     my $mjob_id = shift;
     my $hosts = shift;
-    
+   
     my $value_str;
     foreach my $v (@{$hosts}){
         $value_str .= $dbh->quote($v);
@@ -3534,13 +3536,6 @@ sub list_resource_properties_fields($){
     
     my $req;
     if ($Db_type eq "Pg"){
-#        $req = "SELECT pg_attribute.attname AS field
-#                FROM pg_class, pg_attribute
-#                WHERE
-#                    pg_class.relname = \'resources\'
-#                    and pg_attribute.attnum > 0
-#                    and pg_attribute.attrelid = pg_class.oid
-#               ";
 
 				$req = "SELECT column_name AS field FROM information_schema.columns WHERE table_name = \'resources\'";
 
@@ -4474,7 +4469,7 @@ sub get_gantt_resources_for_jobs_to_launch($$){
 
 
 #Get resources for job in the gantt diagram
-#args : base, job id
+#args : base, moldable job id
 sub get_gantt_resources_for_job($$){
     my $dbh = shift;
     my $job = shift;
@@ -4496,7 +4491,7 @@ sub get_gantt_resources_for_job($$){
 
 
 #Get Alive resources for a job
-#args : base, job id
+#args : base, moldable job id
 sub get_gantt_Alive_resources_for_job($$){
     my $dbh = shift;
     my $job = shift;
@@ -4518,6 +4513,30 @@ sub get_gantt_Alive_resources_for_job($$){
     return(@res);
 }
 
+
+#Get network_address allocated to a (waiting) reservation
+#args : base, job id
+sub get_gantt_visu_resources_for_resa($$){
+    my $dbh = shift;
+    my $job = shift;
+
+    my $sth = $dbh->prepare("SELECT r.resource_id, r.network_address, r.state
+                             FROM gantt_jobs_resources_visu g, moldable_job_descriptions m, resources r
+                             WHERE
+                                m.moldable_job_id = $job
+                                AND m.moldable_id = g.moldable_job_id
+                                AND g.resource_id = r.resource_id
+                            ");
+    $sth->execute();
+    my %h;
+    while (my @ref = $sth->fetchrow_array()) {
+        $h{$ref[0]}->{'network_addess'}=$ref[1];
+        $h{$ref[0]}->{'current_state'}=$ref[2];
+    }
+    $sth->finish();
+
+    return \%h;
+}
 
 # TIME CONVERSION
 
@@ -5178,47 +5197,32 @@ sub get_hostname_event($$){
     return(@results);
 }
 
-# Get events corresponding to the hostname passed in parameter
-# args: database ref, network_address
-sub get_events_from_hostname($$){
-    my $dbh = shift;
-    my $host = shift;
-
-    my $sth = $dbh->prepare("   SELECT *
-                                FROM event_log_hostnames, event_logs
-                                WHERE
-                                    event_log_hostnames.event_id = event_logs.event_id
-                                    AND event_log_hostnames.hostname = '$host'
-                            ");
-    $sth->execute();
-
-     my @results;
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@results, $ref);
-    }
-    $sth->finish();
-
-    return(@results);
-}
-
-# Get events corresponding to the hostname passed in parameter since the date 
-# passed in parameter
+# Get events for the hostname given as parameter
+# If date is given, returns events since that date, else return the 30 last events.
 # args: database ref, network_address, date
-sub get_events_from_hostname_since_date($$$){
+sub get_events_for_hostname($$$){
     my $dbh = shift;
     my $host = shift;
-    my $date = sql_to_local(shift);
-
-    my $sth = $dbh->prepare("   SELECT *
-                                FROM event_log_hostnames, event_logs
-                                WHERE
-                                    event_log_hostnames.event_id = event_logs.event_id
-                                    AND event_log_hostnames.hostname = '$host'
-                                    AND event_logs.date >= $date
-                            ");
+    my $date = shift;
+    my $sth;
+    if ($date eq "") {
+        $sth = $dbh->prepare("SELECT *
+                              FROM event_log_hostnames, event_logs 
+                              WHERE
+                                  event_log_hostnames.event_id = event_logs.event_id
+                                  AND event_log_hostnames.hostname = '$host'
+                              LIMIT 0,30");
+    } else {
+        $sth = $dbh->prepare("SELECT *
+                              FROM event_log_hostnames, event_logs
+                              WHERE
+                                  event_log_hostnames.event_id = event_logs.event_id
+                                  AND event_log_hostnames.hostname = '$host'
+                                  AND event_logs.date >= " . sql_to_local($date));
+    }
     $sth->execute();
 
-     my @results;
+    my @results;
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@results, $ref);
     }
@@ -5249,25 +5253,6 @@ sub get_job_events($$){
     return(@results);
 }
 
-# Get all the jobs ids that created an event
-# args: database ref
-# returns an array with the job ids
-sub get_all_events_jobs($){
-    my $dbh =shift;
-    
-    my $sth = $dbh->prepare("   SELECT distinct job_id
-                                FROM event_logs
-                            ");
-    $sth->execute();
-
-    my @results;
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@results, $ref->{'job_id'});
-    }
-    $sth->finish();
-    
-    return(@results);
-}
 
 sub is_an_event_exists($$$){
     my $dbh =shift;
