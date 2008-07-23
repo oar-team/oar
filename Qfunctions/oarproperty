@@ -53,7 +53,9 @@ my $query;
 if (defined($List_properties)) {
     my %list = iolib::list_resource_properties_fields($base);
     foreach my $l (keys(%list)){
-        print("$l\n");
+        unless  (oar_Tools::check_resource_property($l) == 1){
+            print("$l\n");
+        }
     }
 }
 
@@ -162,7 +164,7 @@ EOS
 # MySQL
 sub check_property_name($) {
     my $propertyname = shift;
-    if (! $propertyname =~ /^[a-z0-9_]+$/) {
+    if (not $propertyname =~ /^[a-z0-9_]+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
     if (oar_Tools::check_resource_property($propertyname) == 1){
