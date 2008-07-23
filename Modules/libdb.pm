@@ -331,12 +331,8 @@ sub sql_to_duration {
 # return value : hasref containing the date.
 # side effects : /
 sub get_date {
-    my $req = "SELECT UNIX_TIMESTAMP()";
-    my $sth = $self->{connection}->prepare($req);
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
-    $sth->finish();
-    return({'date' => int($ref[0])});
+    my $result = $self->{connection}->selectall_arrayref("SELECT UNIX_TIMESTAMP()");
+    return({'date' => int($result->[0]->[0])});
 }
 
 ### END TIME CONVERSION ###
