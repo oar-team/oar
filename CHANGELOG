@@ -8,6 +8,8 @@ version 2.3.2:
     the user who launched the oarstat command (oar or root).
   - Add a --event option to oarnodes and oarstat to display events recorded for a job or node
   - Display reserved resources for a validated waiting reservation, with a hint in their state
+  - Fix oarproperty: property names are lowercase
+  - Fix OAR_JOB_PROPERTIES_FILE: do not display system properties
 
 version 2.3.1:
 --------------
