@@ -241,7 +241,9 @@ if (! open(FILE,">$Res_file")){
 foreach my $r (@{$Job->{resources}}){
     my $line = "";
     foreach my $p (keys(%{$r})){
-        $line .= " $p = '$r->{$p}' ,"
+        if(oar_Tools::check_resource_property($p) != 1){
+            $line .= " $p = '$r->{$p}' ,"
+        }
     }
     chop($line);
     print(FILE "$line\n") or exit(5);
