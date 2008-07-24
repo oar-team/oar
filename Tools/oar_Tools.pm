@@ -694,7 +694,7 @@ sub sentinelle($$$$$){
 sub check_resource_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availabity|walltime|nodes|type|suspended_jobs)$/){
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availability|walltime|nodes|type|suspended_jobs|scheduler_priority)$/){
         return(1);
     }else{
         return(0);
@@ -707,7 +707,7 @@ sub check_resource_property($){
 sub check_resource_system_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs)$/ ) {
+    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs|expiry_date|scheduler_priority|cm_availability|desktop_computing)$/ ) {
         return(1);
     }else{
         return(0);
