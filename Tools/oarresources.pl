@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 # $Id$
 # Simple Perl script to parse, sort and format a job resource properties file
 #
@@ -9,55 +9,73 @@ use Getopt::Long;
 
 ################################################################################
 ## Global variables (parameters)
-my $property;
+my $key;
 my $input=$ENV{OAR_RESOURCE_PROPERTIES_FILE};
-my $fmt="";
-my @output;
+my $fmt="%";
+my $properties;
 my $comma=",";
 my $replace="%";
 my $list;
+my @properties_list;
 
 ################################################################################
 ## Option parsing
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions(
-  "input-file|i=s" => \$input,
-  "output-format|f=s" => \$fmt,
-  "output-property|o=s" => \@output,
-  "output-array-comma|c=s" => \$comma,
-  "output-replace-string|r=s" => \$replace,
-  "list-properties|l" => \$list,
+  "file|f=s" => \$input,
+  "format|F=s" => \$fmt,
+  "properties|P=s" => \$properties,
+  "comma|C=s" => \$comma,
+  "token|T=s" => \$replace,
+  "list|l" => \$list,
   "help|h" => sub {usage(); exit(0);}
 );
-$property = shift;
 
 ################################################################################
 ## usage()
 sub usage() { 
-  print <<EOF;
-$0 [options] <key property>
-Print a job resources with regard to a key property, with a customisable output
+  print STDERR <<EOF;
+Usage: oarprint [options] <key property name>
+
+Print a sorted output of the resources of a job with regard to a key property,
+with a customisable format.
+
 Options:
-  -o <property>   property to display, this switch can be used several times
-  -f <format>     output format
-  -r <string>     joker string to replace in the format string
-  -c <separator>  separator to use to display lists of values
+  -f <file>       input file, default: \$OAR_RESOURCE_PROPERTIES_FILE
+  -P <properties> property to display separated by commas, default: key property
+  -F <format>     customised output format, default: "%"
+  -T <string>     substitution token in the format string, default: %
+  -C <separator>  separator when displaying lists, default: ,
   -l              list available properties and exit
-  -h              print this help
+  -h              print this help and exit
+
+Examples:
+ On the job connection node (where \$OAR_RESOURCE_PROPERTIES_FILE is defined):
+ > oarprint host -P host,cpu,core -F "host: % cpu: % core: %" -C+
+ On the submission frontend:
+ > oarstat -j 42 -p | oarprint core -P host,cpuset,mem -F "%[%] (%)" -f -
+
 EOF
 }
 
 ################################################################################
 ## init_resource()
 sub init_resources {
-  open(F, "< $input") or die "$!";
+  my $fh;
+  if ($input eq "-") {
+    $fh = \*STDIN;
+  } else {
+    open($fh, "< $input") or die "$0: $!\n";
+  }
   my @T;
-  while (<F>) {
+  while (<$fh>) {
     chomp;
     s/ = / => /g;
     push @T,"{ $_ }";
   }
-  close F;
+  if ($input ne "-") {
+    close $fh;
+  }
   my $res = eval("[".join(',',@T)."];");
   return $res;
 }
@@ -78,10 +96,10 @@ sub print_output {
   # build a hash tree sorted on unique values of the key property
   my $h = {}; 
   foreach my $r (@$resources) {;
-    exists ($r->{$property}) or die "Unknown property: $property\n";
+    exists ($r->{$property}) or die "$0: Unknown property '$property'\n";
     my $v = $r->{$property};
-    for my $o (@output) {
-      exists ($r->{$o}) or die "Unknown property: $o\n";
+    for my $o (@properties_list) {
+      exists ($r->{$o}) or die "$0: Unknown property '$o'\n";
       $h->{$v}->{$o}->{$r->{$o}} = undef; 
     }
   }
@@ -90,9 +108,10 @@ sub print_output {
   #print data using the specified format
   foreach my $v (values %$h) {
     my @f = split($replace,$fmt);
-    foreach my $o (@output) {
+    my $i=0;
+    foreach my $o (@properties_list) {
       if ($#f < 0) {
-        print " ";
+        $i++ and print " ";
       } else {
         print shift(@f);
       }
@@ -111,7 +130,15 @@ my $resources = init_resources();
 if (defined($list)) {
   list_properties($resources);
 } else {
-  if (not defined($property)) { usage(); die "Syntax error.\n"};
-  if ($#output < 0) { @output = ($property); }
-  print_output($resources,$property);
+  $key = shift;
+  if (not defined($key)) {
+    die "$0: Need a property name\n";
+  }
+  if (defined($properties)) {
+    @properties_list = split(/\s*,\s*/,$properties);
+  }
+  if ($#properties_list < 0) {
+    @properties_list = ($key);
+  }
+  print_output($resources,$key);
 }
