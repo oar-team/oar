@@ -133,6 +133,7 @@ common: man
 	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarcp.1
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarsh.1
+	install -m 0755 Qfunctions/oarprint $(BINDIR)
 	
 libs: man
 	install -d -m 0755 $(OARDIR)
