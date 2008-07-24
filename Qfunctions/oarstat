@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 # $Id$
 # print active job properties
 
@@ -13,6 +13,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
+# Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("CPUSET_RESOURCE_PROPERTY_DB_FIELD");
 
@@ -36,141 +37,176 @@ $Data::Dumper::Deepcopy = 1;
 
 my $Printed_jobs = 0;
 
-sub get_job_data($$);
-sub print_job_data($$);
-sub get_history($$$);
-sub duration($);
-sub print_event_logs($);
-
-Getopt::Long::Configure ("gnu_getopt");
-my $sos;
 my @job_ids;
 my $full_view;
-my $user;
-my $gantt_query;
-my $accounting_query;
 my $sql_property;
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
-my $Version;
 my $Old;
-my $events;
-GetOptions ("help|h" => \$sos,
+my $gantt_query;
+my $accounting_query;
+my $events_query;
+my $properties_query;
+
+my @jobs;
+my $user;
+my $base;
+
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions ("help|h" => \&show_usage,
+            "version|V" => \&show_version,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
             "user|u:s" => \$user,
             "gantt|g=s"   => \$gantt_query,
-            "events|e" => \$events,
+            "events|e" => \$events_query,
+            "properties|p" => \$properties_query,
             "accounting=s"   => \$accounting_query,
             "sql=s"   => \$sql_property,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
             "dumper|D" => \$DUMPER_mode,
-            "backward_compatible" => \$Old,
-            "version|V" => \$Version
+            "backward-compatible|backward_compatible" => \$Old
            );
 
-if ($sos){
-    print <<EOS;
-Usage: $0 [[-h] | [-j job_id | --sql sql_properties][-f] | [-g "date,date"] [--accounting "date,date"]]
-[-X | -Y | -D] [-V] [-u [user]]
-Display job informations
-Options:
-  -h, --help                show this help screen
-  -j, --job                 show informations only for the specified job
-  -f, --full                show full informations
-  -u, --user                show informations for this user only
-  -g, --gantt               show job informations between two dates
-                            like "2006-03-30 13:49:27, 2006-04-30 13:49:27"
-  -e, --events              show job events
-      --accounting          show accounting informations between two dates
-                            like "2006-03-30, 2006-04-30"
-      --sql                 restricts display with the SQL where clause on the
-                            table jobs (ex: "project = 'p1'")
-  -D, --dumper              print result in DUMPER format
-  -X, --xml                 print result in XML format
-  -Y, --yaml                print result in YAML format
-      --backward_compatible print informations of the form of 1.* OAR version
-  -V, --version             print OAR version number
-EOS
-    exit(0);
+if (defined($XML_mode) and $XML_enabled != 1){
+    warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+    exit(1)
 }
-
-if (defined($Version)){
-    print("OAR version : ".oarversion::get_version()."\n");
-    exit(0);
+if (defined($YAML_mode) and $YAML_enabled != 1){
+    warn("Yaml module not available on the system. Ask your administrator to install it if needed.\n");
+    exit(1);
 }
 
 $user = getpwuid($ENV{SUDO_UID}) if (defined($user) and ($user eq ''));
 
-my $base = iolib::connect_ro();
+$base = iolib::connect_ro();
 
-my @jobs;
 
-# JOBS STATS OUTPUT
-if (!defined($accounting_query)){
-    if (!defined($gantt_query)){
-        if(!defined($events)){
-            if ($#job_ids < 0){
-                if (defined($sql_property)){
-                    push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
-                }else{
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Finishing", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Running", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Resuming", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Suspended", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Launching", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "toLaunch", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Waiting", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "toAckReservation", $user));
-                    push(@jobs, iolib::get_jobs_in_state_for_user($base, "Hold", $user));
-                }
-            }elsif($#job_ids >= 0){
-                foreach my $j (@job_ids){
-                    push(@jobs, iolib::get_job($base,$j));
-                }
+if (defined ($gantt_query)) {
+    &show_gantt;
+} elsif (defined ($accounting_query)) {
+    &show_accounting;
+} elsif (defined ($events_query)) {
+    &show_events;
+} elsif (defined ($properties_query)) {
+    &show_properties;
+} else {
+    &show_job;
+}
+
+iolib::disconnect($base);
+exit(0);
+
+
+### sub routines ###
+sub show_usage {
+    print <<EOS;
+Usage: oarstat [-X|-Y|-D|-f] [-j jobid] [--sql SQL_properties] [-u user]
+       oarstat [-e|-p] [-j jobid]
+       oarstat [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
+       oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
+
+Print job information
+
+Options:
+  -j, --job                 show informations only for the specified job
+  -f, --full                show full informations
+  -u, --user                show informations for this user only
+  -g, --gantt               show job informations between two date-times
+  -e, --events              show job events
+  -p, --properties          show job properties
+      --accounting          show accounting informations between two dates
+      --sql                 restricts display by applying the SQL where clause 
+                            on the table jobs (ex: "project = 'p1'")
+  -D, --dumper              print result in DUMPER format
+  -X, --xml                 print result in XML format
+  -Y, --yaml                print result in YAML format
+      --backward-compatible OAR 1.* version like display
+  -V, --version             print OAR version number
+  -h, --help                show this help screen
+EOS
+    exit(1);
+}
+
+sub show_version {
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
+
+sub show_accounting {
+    if ($accounting_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*/m){
+        my ($date1,$date2) = ($1." 00:00:00",$2." 00:00:00");
+        my $login;
+        my $Consumptions=iolib::get_accounting_summary($base,iolib::sql_to_local($date1),iolib::sql_to_local($date2),$user);
+    
+        # One user output
+        if (defined($user)) {
+            my $asked;
+            my $used;
+            if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
+            else { $asked=0; }
+            if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
+            else { $used=0; }
+            if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
+            if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
+            print "Usage summary for user '$user' from $1 to $2:\n";
+            print "-------------------------------------------------------------\n";
+            printf ("%-28s %s\n","Start of the first window:",iolib::local_to_sql($Consumptions->{$user}->{begin}));
+            printf ("%-28s %s\n","End of the last window:",iolib::local_to_sql($Consumptions->{$user}->{end}));
+            printf ("%-28s %s ( %s)\n","Asked consumption:",$asked,duration($asked));
+            printf ("%-28s %s ( %s)\n","Used consumption:",$used,duration($used));
+            print "By project consumption:\n";
+            $Consumptions=iolib::get_accounting_summary_byproject($base,iolib::sql_to_local($date1),iolib::sql_to_local($date2),$user);
+            foreach my $project (keys %{$Consumptions}) {
+                 print "  $project:\n";
+                 $asked=$Consumptions->{$project}->{ASKED}->{$user};
+                 $used=$Consumptions->{$project}->{USED}->{$user};
+                 printf ("%-28s %s ( %s)\n","    Asked :",$asked,duration($asked));
+                 printf ("%-28s %s ( %s)\n","    Used :",$used,duration($used));
+                 if (my @last_karma=iolib::get_last_project_karma($base,$user,$project,iolib::sql_to_local($date2))) {
+                     printf ("%-28s %s\n","    Last Karma :",$last_karma[0]);
+                 }
             }
-            my %data_to_print;
-            foreach my $g (@jobs) {
-                $data_to_print{$g->{job_id}} = get_job_data($base,$g);
-            }
-            print_job_data(\%data_to_print,\@jobs);
+    
+        # All users array output
         }else{
-            if($#job_ids >= 0){
-                # One or multi jobs output
-                foreach my $current_job_id (@job_ids){
-                    my @events = iolib::get_job_events($base, $current_job_id);
-                    foreach my $current_event (@events){
-                        print_event_logs($current_event);
-                    }
-                }
-            } else {
-                warn("No job specified\n");
-                iolib::disconnect($base);
-                exit(1);
+            print <<EOS;
+    User       First window starts  Last window ends     Asked (seconds)  Used seconds)
+    ---------- -------------------- -------------------- ---------------- ----------------
+EOS
+            foreach $login (keys %{$Consumptions}) {
+                if (!defined($Consumptions->{$login}->{ASKED})) {$Consumptions->{$login}->{ASKED}=0;}
+                if (!defined($Consumptions->{$login}->{USED})) {$Consumptions->{$login}->{USED}=0;}
+                printf("%-10.10s %-19s  %-19s  %16s %16s\n",
+                       $login,
+                       iolib::local_to_sql($Consumptions->{$login}->{begin}),
+                       iolib::local_to_sql($Consumptions->{$login}->{end}),
+                       $Consumptions->{$login}->{ASKED},
+                       $Consumptions->{$login}->{USED}
+                );
             }
         }
-    }elsif ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
+        
+    }else{
+        print("Bad syntax for --accounting\n");
+        iolib::disconnect($base);
+        exit(1);
+    }
+}
+
+sub show_gantt {
+    if ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
         my $hist = get_history($base, "$1 $2", "$3 $4");
         if (defined($DUMPER_mode)){
             print(Dumper($hist));
         }elsif(defined($XML_mode)){
-            if ($XML_enabled == 1){
-                my $dump = new XML::Dumper;
-                $dump->dtd;
-                print($dump->pl2xml($hist));
-            }else{
-                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-                return(5);
-            }
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml($hist));
         }elsif(defined($YAML_mode)){
-            if ($YAML_enabled == 1){
-                print(YAML::Dump($hist));
-            }else{
-                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-                return(6);
-            }
+            print(YAML::Dump($hist));
         }else{
             $Data::Dumper::Purity = 1;
             $Data::Dumper::Terse = 1;
@@ -179,73 +215,49 @@ if (!defined($accounting_query)){
             print(Dumper($hist));
         }
     }else{
-        warn("Bad syntax for '-g' option\n");
+        warn("Bad syntax for --gantt\n");
         iolib::disconnect($base);
         exit(1);
     }
+}
 
-# ACCOUNTING OUTPUT
-}elsif ($accounting_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*/m){
-    my $login;
-    my $Consumptions=iolib::get_accounting_summary($base,iolib::sql_to_local($1),iolib::sql_to_local($2),$user);
-
-    # One user output
-    if (defined($user)) {
-        my $asked;
-        my $used;
-        if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
-        else { $asked=0; }
-        if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
-        else { $used=0; }
-        if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
-        if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
-        print "Usage summary for user '$user' from $1 to $2:\n";
-        print "-------------------------------------------------------------\n";
-        printf ("%-28s %s\n","Start of the first window:",iolib::local_to_sql($Consumptions->{$user}->{begin}));
-        printf ("%-28s %s\n","End of the last window:",iolib::local_to_sql($Consumptions->{$user}->{end}));
-        printf ("%-28s %s ( %s)\n","Asked consumption:",$asked,duration($asked));
-        printf ("%-28s %s ( %s)\n","Used consumption:",$used,duration($used));
-        print "By project consumption:\n";
-        $Consumptions=iolib::get_accounting_summary_byproject($base,iolib::sql_to_local($1),iolib::sql_to_local($2),$user);
-        foreach my $project (keys %{$Consumptions}) {
-             print "  $project:\n";
-             $asked=$Consumptions->{$project}->{ASKED}->{$user};
-             $used=$Consumptions->{$project}->{USED}->{$user};
-             printf ("%-28s %s ( %s)\n","    Asked :",$asked,duration($asked));
-             printf ("%-28s %s ( %s)\n","    Used :",$used,duration($used));
-             if (my @last_karma=iolib::get_last_project_karma($base,$user,$project,iolib::sql_to_local($2))) {
-                 printf ("%-28s %s\n","    Last Karma :",$last_karma[0]);
-             }
+sub show_properties {
+    if($#job_ids >= 0){
+        my @resources;
+        foreach my $j (@job_ids){
+            push  (@resources, iolib::get_job_resources_properties($base, $j));
         }
-
-    # All users array output
-    }else{
-        print <<EOS;
-User       First window starts  Last window ends     Asked (seconds)  Used seconds)
----------- -------------------- -------------------- ---------------- ----------------
-EOS
-        foreach $login (keys %{$Consumptions}) {
-            if (!defined($Consumptions->{$login}->{ASKED})) {$Consumptions->{$login}->{ASKED}=0;}
-            if (!defined($Consumptions->{$login}->{USED})) {$Consumptions->{$login}->{USED}=0;}
-            printf("%-10.10s %-19s  %-19s  %16s %16s\n",
-                   $login,
-                   iolib::local_to_sql($Consumptions->{$login}->{begin}),
-                   iolib::local_to_sql($Consumptions->{$login}->{end}),
-                   $Consumptions->{$login}->{ASKED},
-                   $Consumptions->{$login}->{USED}
-            );
+        foreach my $r (@resources){
+            my $line = "";
+            foreach my $p (keys(%{$r})){
+                if(oar_Tools::check_resource_system_property($p) != 1){
+                    $line .= " $p = '$r->{$p}' ,"
+                }
+            }
+            chop($line);
+            print("$line\n") or exit(5);
         }
+    } else {
+        warn("No job specified\n");
+        iolib::disconnect($base);
+        exit(1);
     }
-    
-}else{
-    print("/!\\ Bad syntax with '--accounting' option\n");
-    iolib::disconnect($base);
-    exit(1);
-}   
+}
 
-iolib::disconnect($base);
-
-exit(0);
+sub show_events {
+    if($#job_ids >= 0){
+        foreach my $j (@job_ids){
+            my @events = iolib::get_job_events($base, $j);
+            foreach my $e (@events){
+                print_event_logs($e);
+            }
+        }
+    } else {
+        warn("No job specified\n");
+        iolib::disconnect($base);
+        exit(1);
+    }
+}
 
 sub print_event_logs($){
     my $event_hashref = shift;
@@ -255,6 +267,33 @@ sub print_event_logs($){
         $event_hashref->{'type'},
         $event_hashref->{'description'}
     );
+}
+
+sub show_job {
+    if ($#job_ids < 0){
+        if (defined($sql_property)){
+            push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
+        }else{
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Finishing", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Running", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Resuming", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Suspended", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Launching", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "toLaunch", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Waiting", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "toAckReservation", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Hold", $user));
+        }
+    }elsif($#job_ids >= 0){
+        foreach my $j (@job_ids){
+            push(@jobs, iolib::get_job($base,$j));
+        }
+    }
+    my %data_to_print;
+    foreach my $g (@jobs) {
+        $data_to_print{$g->{job_id}} = get_job_data($base,$g);
+    }
+    print_job_data(\%data_to_print,\@jobs);
 }
 
 sub get_job_data($$){
@@ -386,21 +425,11 @@ sub print_job_data($$){
     if (defined($DUMPER_mode)){
         print(Dumper($data));
     }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml($data));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            return(5);
-        }
+        my $dump = new XML::Dumper;
+        $dump->dtd;
+        print($dump->pl2xml($data));
     }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump($data));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            return(6);
-        }
+        print(YAML::Dump($data));
     }else{
         my %hashestat = (
                 'Waiting' => 'W',

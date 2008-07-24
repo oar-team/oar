@@ -42,6 +42,8 @@ sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
 sub get_job_host_log($$);
+sub get_job_resources($$);
+sub get_job_resources_properties($$);
 sub get_to_kill_jobs($);
 sub is_tokill_job($$);
 sub get_timered_job($);
@@ -342,7 +344,7 @@ sub get_job_cpuset_name($$){
     $sth->execute();
     my @res = $sth->fetchrow_array();
     my $cpuset;
-    if ($res[0] eq ""){
+    if (not defined($res[0]) or $res[0] eq ""){
         $cpuset = $res[1]."_".$job_id;
     }else{
         $cpuset = $res[1]."_".$res[0];
@@ -431,7 +433,7 @@ sub get_jobs_in_state_for_user($$$) {
     my $user = shift;
     my $user_query="";
 
-    if ("$user" ne "" ) {
+    if (defined $user and "$user" ne "" ) {
       $user_query="and job_user =" . $dbh->quote($user);
     }
 
@@ -612,6 +614,30 @@ sub get_job_network_address($$) {
     return(@res);
 }
 
+# get_job_resource_properties
+# returns the list of resources properties associated to the job passed in
+# parameter
+# parameters : base, jobid
+# return value : list of hashs of each resource properties
+# side effects : /
+sub get_job_resources_properties($$) {
+    my $dbh = shift;
+    my $jobid= shift;
+
+    my $sth = $dbh->prepare("SELECT resources.*
+                             FROM resources, assigned_resources, jobs
+                             WHERE 
+                                jobs.job_id = $jobid AND
+                                jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+                                assigned_resources.resource_id = resources.resource_id
+                             ORDER BY resource_id ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return @res;
+}
 
 # get_job_host_log
 # returns the list of hosts associated to the moldable job passed in parameter
@@ -2817,14 +2843,14 @@ sub add_resource($$$) {
                 VALUES ($id,\'state\',\'$state\',\'$date\')
              ");
 
-    # Init cpu field with the id
-    eval{
-        $dbh->do("  UPDATE resources
-                    SET cpu = $id
-                    WHERE
-                        resource_id = $id
-                 ");
-    };
+#    # Init cpu field with the id
+#    eval{
+#        $dbh->do("  UPDATE resources
+#                    SET cpu = $id
+#                    WHERE
+#                        resource_id = $id
+#                 ");
+#    };
 
     return($id);
 }
