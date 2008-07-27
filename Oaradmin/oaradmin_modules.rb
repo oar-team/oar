@@ -9,6 +9,9 @@
 #
 
 
+require 'fileutils'
+
+
 ###########################
 # DEFINITIONS FOR RESOURCES
 ###########################
@@ -553,7 +556,8 @@ class Rule
       		    :no_rule_must_exist, 		# the no_rule must be exist or not : true/false
       		    :file_name,          		# temporary file name to store the admission rule
       		    :editor,             		# command to be used for the text editor 
-      		    :action                             # true : comment - false : delete comments
+      		    :action,                            # true : comment - false : delete comments
+      		    :silent_mode                        # silent mode for output y/n
 		    
       def initialize(bdd, no_rule)
 	  @bdd = bdd
@@ -566,6 +570,7 @@ class Rule
       	  @file_name=""
       	  @editor=""
 	  @action=false
+	  @silent_mode = false
 
 	  if !no_rule.nil?
 	     q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
@@ -575,6 +580,9 @@ class Rule
 	        @exist = true
 	     end
 	  end
+
+	  @repository = Repository.new
+
       end
 
       # Display rule
@@ -620,34 +628,76 @@ class Rule
       # Return :
       #    status : 0 : no error - > 0 : one error occurs
       def add
-	  status = 0
+	  status = status2 = 0
 	  msg = []
 	  msg[0] = "Admission rule added"
+	  id_tmp = 0
+	  @repository.create
 	  if @exist
 	     # no rule already exist in database : add +1 to the id rules
 	     q = "SELECT * FROM admission_rules WHERE id >= " + @no_rule.to_s + " ORDER BY id DESC"
   	     rows = @bdd.execute(q)
+	     
 	     rows.each do |r|
 	     	  q = "UPDATE admission_rules SET id = " + (r["id"] + 1).to_s + " WHERE id = " + r["id"].to_s
 	     	  status = Bdd.do(@bdd, q)
+		  if status==0 && @repository.active && status2==0
+		     @repository.file_name="admission_rule_"+(r["id"] + 1).to_s
+		     @repository.file_content=r["rule"]
+		     if File.exist?(@repository.path_working_copy+"/"+@repository.file_name)
+		     	status2 = @repository.write
+		     else
+		     	status2 = @repository.write
+		   	@repository.add if status2==0
+		     end
+		  end
 	     end
 	     rows.finish
 	
 	     # Add rule in database
              q = "INSERT INTO admission_rules (id, rule) VALUES(?, ?)"
 	     status = Bdd.do(@bdd, q, @no_rule, @script)
-	     puts msg[0] if status == 0
+	     if status == 0
+	        puts msg[0] 
+		if status2 == 0 && @repository.active
+		   @repository.file_name="admission_rule_"+@no_rule.to_s
+		   @repository.file_content=@script
+		   status2 = @repository.write
+		   @repository.log_commit = "Add new admission rule no " + @no_rule.to_s + "\nNumber that already existed"
+		   @repository.commit
+		end
+	     end
 	  else
 	     if !@no_rule.nil?
 	        # Add rule in database
                 q = "INSERT INTO admission_rules (id, rule) VALUES(?, ?)"
 	        status = Bdd.do(@bdd, q, @no_rule, @script)
-	        puts msg[0] if status == 0
+		if status == 0
+	           puts msg[0] 
+		   id_tmp=@no_rule
+		end
 	     else
 	        # add admission rule at the end of table
                 q = "INSERT INTO admission_rules (rule) VALUES(?)"
 	        status = Bdd.do(@bdd, q, @script)
-	        puts msg[0] if status == 0
+		if status==0
+	           puts msg[0]
+		   if @repository.active 
+		      # Retrieve id for versioning
+	     	      q = "SELECT max(id) FROM admission_rules" 
+	     	      rows = @bdd.select_one(q)
+		      id_tmp = rows[0]
+		   end
+		end
+	     end
+	     if status==0 && @repository.active
+		@repository.file_name="admission_rule_"+id_tmp.to_s
+		@repository.file_content=@script
+		if @repository.write == 0
+		   @repository.add
+		   @repository.log_commit = "Add new admission rule no " + id_tmp.to_s
+		   @repository.commit
+		end
 	     end
 	  end
 	  status
@@ -661,9 +711,20 @@ class Rule
 	  msg = []
 	  msg[0] = "Admission rule updated"
           if @exist
+	     @repository.create
 	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + @no_rule.to_s
 	     status = Bdd.do(@bdd, q, @script)
-	     puts msg[0] if status == 0
+	     if status == 0
+	        puts msg[0]
+		if @repository.active
+		   @repository.file_name="admission_rule_"+@no_rule.to_s
+		   @repository.file_content=@script
+		   if @repository.write == 0
+		      @repository.log_commit = "Update admission rule no " + @no_rule.to_s 
+		      @repository.commit
+		   end
+		end
+	     end
           else
 	      $stderr.puts "Error : the rule " + @no_rule.to_s + " does not exist"
 	      status = 1
@@ -692,7 +753,7 @@ class Rule
 
 	  f_name = @export_file_name 
 	  f_name += @no_rule.to_s if @export_file_name_with_no_rule
-          puts "Export admission rule " + @no_rule.to_s + " into file " + f_name
+          puts "Export admission rule " + @no_rule.to_s + " into file " + f_name if silent_mode==false
           f = File.new(f_name, "w")
           f.print @script
           f.close
@@ -826,13 +887,15 @@ end	# class Rule
 class Rules_set
 
       attr_accessor :export_file_name, 			# filename used to export	
-		    :export_file_name_with_no_rule	# filename must use number rule y/n
+		    :export_file_name_with_no_rule,	# filename must use number rule y/n
+		    :silent_mode			# silent mode for output y/n
 
       def initialize(bdd, rules_set_user)
 	  @bdd = bdd
 	  @rules_set_user = rules_set_user
       	  @export_file_name="" 
 	  @export_file_name_with_no_rule=false
+	  @silent_mode = false
 	
 	  # No rules specified by user 
 	  # => load all rules from database
@@ -874,9 +937,21 @@ class Rules_set
       #    status : 0 : no error - > 0 : one error occurs
       def delete
 	  status_1 = status_2 = 0
+	  no_rules_deleted=""
+	  repository = Repository.new
 	  @rules_set.each do |r|
+	      repository.create if r.exist
 	      status_2 = r.delete
 	      status_1 = 1 if status_2 != 0
+	      if status_2 == 0 && repository.active 
+		 repository.file_name = "admission_rule_" + r.no_rule.to_s
+		 no_rules_deleted += r.no_rule.to_s + " "
+		 repository.delete
+	      end 
+	  end
+	  if repository.active && no_rules_deleted != ""
+	     repository.log_commit = "Delete admission(s) rule(s) no "+no_rules_deleted
+	     repository.commit
 	  end
       	  status_1 
       end 	# def delete
@@ -920,6 +995,7 @@ class Rules_set
 	         if r.exist
       	  	    r.export_file_name = @export_file_name 
 	  	    r.export_file_name_with_no_rule = @export_file_name_with_no_rule
+		    r.silent_mode = @silent_mode
 	            r.export 
 	         else
 	    	    $stderr.puts "Error : the rule " + r.no_rule.to_s + " does not exist"
@@ -931,5 +1007,197 @@ class Rules_set
       end 	# def export
 
 end	# class Rules_set
+
+
+
+# Object Repository 
+# Methods : 
+#     - create 	: create repository and working copy
+#     - write   : write data in working copy
+#     - add	: execute svn add command
+#     - delete  : delete file(s) in working copy and execute svn delete command
+#     - commit  : execute svn commit command
+class Repository
+      attr_accessor :file_name,		# File name to write in working copy
+		    :file_content,	# Content of data to write in working copy
+		    :log_commit,	# Log for commit 
+		    :path_working_copy, # Path working copy
+		    :active, 		# Versioning feature is active or not
+		    :silent_mode	# Silent mode for output y/n
+
+      def initialize
+	  @file_name = ""
+	  @file_content = ""
+	  @log_commit = ""
+	  @active = false
+          @path_repository = ""		# Path of the repository
+          @path_working_copy = ""	# Path of the working copy
+	  @access_method = "file://"
+	  @exists = false		# Repository exists y/n
+	  @silent_mode=false
+
+	  conf = Oar.load_configuration
+          @active = true if !conf['OARADMIN_VERSIONING'].nil?  && conf['OARADMIN_VERSIONING'].upcase == "YES"
+
+          # Files already exists ?
+	  home_user_oar = ""
+	  s = `getent passwd oar`
+	  home_user_oar = s.split(":")[5].to_s
+	  @path_repository = home_user_oar + "/.oaradmin/rp/svn_repository"
+	  @path_working_copy = home_user_oar + "/.oaradmin/wc/svn_repository"
+	  @exists = true if File.exist?(@path_repository)  
+      end
+
+      # Write file in working copy
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def write
+      	  status=0
+	  begin
+	       f = File.new(@path_working_copy+"/"+@file_name,"w")
+	       f.print @file_content
+	       f.close
+	       rescue Exception => e
+	              $stderr.puts "[OARADMIN ERROR]: Error while writing data in working copy for versioning"
+		      $stderr.puts "[OARADMIN ERROR]: " + e.message
+		      status=1
+	  end
+	  status
+      end
+
+      # Execute svn add command
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def add
+	  status=0
+	  str = "svn add " + @path_working_copy+"/"+@file_name
+          `#{str}`
+	  r = $?.exitstatus
+	  if r > 0
+	     $stderr.puts "[OARADMIN ERROR]: Error while the svn add command"
+	     status=1
+	  end
+	  status
+      end
+
+      # Delete a file in working copy and execute svn delete command
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def delete 
+	  status=0
+	  begin
+	       File.delete(@path_working_copy+"/"+@file_name)
+	       rescue Exception => e
+	              $stderr.puts "[OARADMIN ERROR]: Error while deleting data in working copy for versioning"
+		      $stderr.puts "[OARADMIN ERROR]: " + e.message
+		      status=1
+	  end
+	  if status==0
+	     str = "svn delete " + @path_working_copy+"/"+@file_name 
+             `#{str}`
+	     r = $?.exitstatus
+	     if r > 0
+	        $stderr.puts "[OARADMIN ERROR]: Error while the svn delete command"
+	        status=1
+	     end
+	  end
+	  status
+      end
+
+      # Execute svn commit
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def commit
+	  status=0
+	  str = "svn commit " + @path_working_copy + " -m " + '"' + @log_commit + '"'  
+          `#{str}`
+	  r = $?.exitstatus
+	  if r > 0
+	     $stderr.puts "[OARADMIN ERROR]: Error while the svn commit command"
+	     status=1
+	  else
+	     puts "Versioning done" if !@silent_mode
+	  end
+	  status
+      end
+
+      
+      # Create repository and working copy
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def create
+	  status=0
+
+          if @active && !@exists
+	     puts "Initialization of repository" 
+	     paths = @path_repository.split("/")
+	     current_dir = ""
+	     (1..paths.length-2).each { |i| current_dir += "/" + paths[i] }
+	     begin
+	         FileUtils.mkdir_p current_dir
+	         rescue Exception => e
+	  	        $stderr.puts "[OARADMIN ERROR]: can't create " + current_dir + " directory for repository"
+	  	        $stderr.puts "[OARADMIN ERROR]: " + e.message
+	  	        status=1
+	     end
+	     if status==0
+	        str = "svnadmin create " + @path_repository
+                `#{str}`
+	        r = $?.exitstatus
+	        if r > 0
+		   $stderr.puts "[OARADMIN ERROR]: Error while creating repository"
+		   status=1
+	        end
+	     end 
+	     if status==0 
+	        paths = @path_working_copy.split("/")
+	        current_dir = ""
+	        (1..paths.length-2).each { |i| current_dir += "/" + paths[i] }
+	        begin
+	            FileUtils.mkdir_p current_dir
+	            rescue Exception => e
+		           $stderr.puts "[OARADMIN ERROR]: can't create " + current_dir + " directory for working copy."
+		           $stderr.puts "[OARADMIN ERROR]: " + e.message
+		           status=1
+	        end
+	     end
+	     if status==0
+	        str = "svn checkout " + @access_method + @path_repository + " " + @path_working_copy
+                `#{str}`
+	        r = $?.exitstatus
+	        if r > 0
+		   $stderr.puts "[OARADMIN ERROR]: Error while creating working copy"
+		   status=1
+	        end
+	     end
+	     if status==0
+	        # Add all admission rules in working copy
+	        list_rules = []
+                $config=Oar.load_configuration
+                dbh = Bdd.connect($config)
+	        rules = Rules_set.new(dbh, list_rules)
+                rules.export_file_name=@path_working_copy+"/"+"admission_rule_"
+                rules.export_file_name_with_no_rule=true
+	        rules.silent_mode=true
+                rules.export
+	        files = Dir[@path_working_copy+"/*"]
+	        files.sort!
+	        files.each do |f|
+		     @file_name = File.split(f)[1]
+		     self.add 
+	        end
+		@silent_mode=true
+	        @log_commit = "Initialization of repository"
+	        self.commit 
+		@silent_mode=false 
+	     end
+	     @exists=true if status==0
+          end 	# if @active && !@exists 
+	  status
+      end	# create
+
+end	# class Repository
+
+
 
 
