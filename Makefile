@@ -130,6 +130,7 @@ common:
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 	rm $(OARDIR)/sudowrapper.sh
 	install -m 0755 Qfunctions/oarprint $(BINDIR)
+	install -m 0644 man/man1/oarprint.1 $(MANDIR)/man1
 
 server:
 	install -d -m 0755 $(OARDIR)
