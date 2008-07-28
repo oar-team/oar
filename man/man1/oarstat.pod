@@ -5,10 +5,12 @@ oarstat - show information about jobs
 =head1 SYNOPSIS
 
 B<oarstat> [-X|-Y|-D|-f] [-j jobid] [--sql SQL_properties] [-u user]
-B<oarstat> [-e|-p] [-j jobid]
-B<oarstat> [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
-B<oarstat> --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
+B<oarstat> [-e|-p] [-j jobid]
+
+B<oarstat> [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
+
+B<oarstat> --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
 =head1 DESCRIPTION
 
