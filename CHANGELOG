@@ -13,8 +13,8 @@ version 2.2.13:
     error
   - Add a --event option to oarnodes and oarstat to display events recorded for
     a job or node
-  - Display reserved resources for a validated waiting reservation, with a hint
-    in their state
+  - Display reserved resources for a validated waiting reservation with their
+    current state given as a hint for their actual state at the start time
   - Fix oarproperty: property names are lowercase, do not list system properties
   - Fix OAR_JOB_PROPERTIES_FILE: do not display system properties
   - Add a new user command: oarprint which allow to pretty print resource 
