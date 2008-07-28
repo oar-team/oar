@@ -1,14 +1,14 @@
 =head1 NAME
 
-oarnodes - show occupation and state of compute nodes.
+oarnodes - show information about nodes managed by OAR.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ -a | -s | -r numbers | --sql sql_properties | -l | -h | -V ] [list of nodes] [-X | -Y | -D]
+B<oarnodes> [ -a | -s | -r <integer> | --sql <sql_properties> | -l | -h | -V ] [<list of nodes>] [ -e [<date>] | -X | -Y | -D ]
 
 =head1 DESCRIPTION
 
-This command is used to display the state and occupation of compute nodes in OAR batch scheduler.
+Display information about nodes managed by OAR.
 
 =head1 OPTION
 
@@ -30,13 +30,9 @@ Show only resource states.
      
 Show only node list.
 
-=item B<-E, --events>
+=item B<-e, --events>
 
-show the events of a resource (given as the first parameter).
-ie: oarnodes foo --events
-By default, display the 20 last events.
-You can also restrict the results by specifying the start date. 
-ie: oarnodes foo -E <date> will show only logs from this date.
+Print events related to a node: either the last 20 if no date is given or all events since the specified date.
 
 =item B<--sql>
 
@@ -62,11 +58,12 @@ Print OAR version number.
 
 Show help usage.
 
+=back
 
 =head1 SEE ALSO
 
-oarsub(1), oarde), oarstat(1), oarhold(1), oarresume(1)
+oarsub(1), oardel(1), oarstat(1), oarhold(1), oarresume(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2003 Laboratoire Id-Imag (http://www-id.imag.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2008 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
