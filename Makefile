@@ -108,7 +108,7 @@ sudowrapper: man
 	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1
 	ln -sf oarsh.1 $(MANDIR)/man1/oarcp.1
 	
-common:
+common: man
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(BINDIR)
 	install -d -m 0755 $(SBINDIR)
@@ -130,6 +130,7 @@ common:
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(DEB_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
 	rm $(OARDIR)/sudowrapper.sh
 	install -m 0755 Qfunctions/oarprint $(BINDIR)
+	install -d -m 0755 $(MANDIR)/man1
 	install -m 0644 man/man1/oarprint.1 $(MANDIR)/man1
 
 server:
