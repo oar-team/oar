@@ -377,12 +377,7 @@ sub get_job_cpuset_name($$){
                             ");
     $sth->execute();
     my @res = $sth->fetchrow_array();
-    my $cpuset;
-    if (not defined($res[0]) or $res[0] eq ""){
-        $cpuset = $res[1]."_".$job_id;
-    }else{
-        $cpuset = $res[1]."_".$res[0];
-    }
+    my $cpuset = $res[0]."_".$job_id;
     return($cpuset);
 }
 
