@@ -275,6 +275,9 @@ sub connect() {
 
         my $host = get_conf("DB_HOSTNAME");
         my $dbport = get_conf("DB_PORT");
+        if (not defined($dbport)) {
+            $dbport = "";
+        }
         my $name = get_conf("DB_BASE_NAME");
         my $user = get_conf("DB_BASE_LOGIN");
         my $pwd = get_conf("DB_BASE_PASSWD");
@@ -305,6 +308,9 @@ sub connect_ro() {
 
         my $host = get_conf("DB_HOSTNAME");
         my $dbport = get_conf("DB_PORT");
+        if (not defined($dbport)) {
+            $dbport = "";
+        }
         my $name = get_conf("DB_BASE_NAME");
         my $user = get_conf("DB_BASE_LOGIN_RO");
         $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
