@@ -5243,20 +5243,23 @@ sub get_events_for_hostname($$$){
                               WHERE
                                   event_log_hostnames.event_id = event_logs.event_id
                                   AND event_log_hostnames.hostname = '$host'
-                              LIMIT 0,30");
+                              ORDER BY event_logs.date DESC
+                              LIMIT 30");
     } else {
         $sth = $dbh->prepare("SELECT *
                               FROM event_log_hostnames, event_logs
                               WHERE
                                   event_log_hostnames.event_id = event_logs.event_id
                                   AND event_log_hostnames.hostname = '$host'
-                                  AND event_logs.date >= " . sql_to_local($date));
+                                  AND event_logs.date >= " . 
+                             sql_to_local($date) .
+                             " ORDER BY event_logs.date DESC");
     }
     $sth->execute();
 
     my @results;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@results, $ref);
+        unshift(@results, $ref);
     }
     $sth->finish();
 
