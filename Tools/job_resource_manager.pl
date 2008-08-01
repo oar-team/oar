@@ -78,12 +78,12 @@ if ($ARGV[0] eq "init"){
 
     if (defined($Cpuset->{job_uid})){
         my $prevuser = getpwuid($Cpuset->{job_uid});
-        system("oardodo deluser --quiet $prevuser") if (defined($prevuser));
+        system("oardodo /usr/sbin/userdel -f $prevuser") if (defined($prevuser));
         my @tmp = getpwnam($Cpuset->{user});
         if ($#tmp < 0){
             exit_myself(15,"Cannot get information from user '$Cpuset->{user}'");
         }
-        if (system("oardodo adduser --disabled-password --gecos 'OAR temporary user' --no-create-home --force-badname --quiet --home $tmp[7] --gid $tmp[3] --shell $tmp[8] --uid $Cpuset->{job_uid} $Cpuset->{job_user}")){
+        if (system("oardodo /usr/sbin/adduser --disabled-password --gecos 'OAR temporary user' --no-create-home --force-badname --quiet --home $tmp[7] --gid $tmp[3] --shell $tmp[8] --uid $Cpuset->{job_uid} $Cpuset->{job_user}")){
             exit_myself(15,"Failed to create $Cpuset->{job_user} with uid $Cpuset->{job_uid} and home $tmp[7] and group $tmp[3] and shell $tmp[8]");
         }
     }
@@ -269,7 +269,7 @@ if ($ARGV[0] eq "init"){
         print_log(3,"Purging /tmp...");
         #system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
         system("oardodo find /tmp/. -user $Cpuset->{job_user} -delete"); 
-        system("oardodo deluser --quiet $Cpuset->{job_user}");
+        system("oardodo /usr/sbin/userdel -f $Cpuset->{job_user}");
     }
 }else{
     exit_myself(3,"Bad command line argument $ARGV[0]");
