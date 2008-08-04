@@ -191,6 +191,39 @@ without drawback for the users.
 Take a look at your cluster occupation and your electricity bill to know if it
 could be interesting for you ;-)
 
+How to configure temporary UID for each job?
+--------------------------------------------
+For a better way to handle job processes we introduce the temporary user id
+feature.
+
+This feature creates a user for each job on assigned nodes. Hence it is
+possible to clean temporary files, IPC, every generated processes, ...
+Furthermore a lot of system features could be used like bandwidth management
+(iptables rules on the user id).
+
+To configure this feature, CPUSET must be activated and the tag
+JOB_RESOURCE_MANAGER_JOB_UID_TYPE_ has to be configured in the oar.conf file.
+The value is the content of the "type" field into the resources_ table. After
+that you have to add resources in the database with this type and fill the
+cpuset field with a unique UID (not used by real users). The maximum number of
+concurrent jobs is the number of resources of this type.
+
+For example, if you put this in your oar.onf::
+
+    JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD="cpuset"
+    JOB_RESOURCE_MANAGER_JOB_UID_TYPE="user"
+
+Then you can add temporary UID::
+
+    oarnodesetting -a -h fake -p cpuset=23000 -p type=user
+    oarnodesetting -a -h fake -p cpuset=23001 -p type=user
+    oarnodesetting -a -h fake -p cpuset=23002 -p type=user
+    ...
+
+You can put what you want in the place of the hostname (here "fake").
+
+The drawback of this feature is that users haven't their UID only their GID.
+
 How to enable jobs to connect to the frontales from the nodes using oarsh?
 --------------------------------------------------------------------------
 First you have to install the node part of OAR on the wanted nodes.

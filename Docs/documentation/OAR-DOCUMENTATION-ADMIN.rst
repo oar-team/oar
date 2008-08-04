@@ -1161,6 +1161,14 @@ Each configuration tag found in /etc/oar.conf is now described:
     
       JOB_RESOURCE_MANAGER_FILE="cpuset_manager.pl"
 
+.. _JOB_RESOURCE_MANAGER_JOB_UID_TYPE:
+
+  - Resource "type" DB field to use if you want to enable the job uid feature.
+    (create a unique user id per job on each nodes of the job)
+    ::
+
+      JOB_RESOURCE_MANAGER_JOB_UID_TYPE="userid"
+
 .. _TAKTUK_CMD:
 
   - If you have installed taktuk and want to use it to manage cpusets
@@ -1240,6 +1248,7 @@ Each configuration tag found in /etc/oar.conf is now described:
     This is used in oarmonitor command.
 
       OARMONITOR_SENSOR_FILE="/etc/oar/oarmonitor_sensor.pl"
+
       
 .. include:: doc_modules.rst
 

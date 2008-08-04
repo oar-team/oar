@@ -87,7 +87,7 @@ Submission using an inline command
 Sometimes it is very useful to run a little command in oarsub:
 ::
 
-	jdoe@paramount:~$ oarsub -l core=1 'echo $PATH;which ssh
+	jdoe@paramount:~$ oarsub -l core=1 'echo $PATH;which ssh'
 	Generate a job key...
 	[ADMISSION RULE] Set default walltime to 3600.
 	[ADMISSION RULE] Modify resource description with type constraints
