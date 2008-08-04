@@ -10,6 +10,8 @@
 
 
 require 'fileutils'
+require 'rexml/document'
+require 'time'
 
 
 ###########################
@@ -472,7 +474,7 @@ module Admission_rules
       r = []
       i = 0
       while i < ARGV.length 
-            if ARGV[i] == "-f"
+            if ARGV[i] == "-f" || ARGV[i] == "-n"
                i += 1
             else
                r.push(ARGV[i]) if !(ARGV[i] =~ /[^0-9]+/)
@@ -484,7 +486,8 @@ module Admission_rules
    end	# rule_list_from_command_line
 
    # Test params on command line
-   # Parameters allowed : options  -f file and numbers
+   # Parameters allowed : options  -f, -n, numbers or keyword ALL
+   # 			  for -n option : -n number|ALL
    # 			  others parameters are wrong
    # Return 
    # 	false : all params are ok, true : one parameter is wrong
@@ -492,10 +495,16 @@ module Admission_rules
        error = false
        i = 0
        while i < ARGV.length
-            if ARGV[i] == "-f" 
+            if ARGV[i] == "-f"
                i += 1
+	    elsif ARGV[i] == "-n"
+		  i+=1
+                  if ARGV[i].nil? || (ARGV[i] =~ /[^0-9]+/ && ARGV[i].upcase != "ALL")
+ 	             error=true
+		     break
+		  end
             elsif ARGV[i][0..0] != "-"
-                  if ARGV[i] =~ /[^0-9]+/
+                  if ARGV[i] =~ /[^0-9]+/ 
  	             error=true
 		     break
 		  end
@@ -1012,18 +1021,21 @@ end	# class Rules_set
 
 # Object Repository 
 # Methods : 
-#     - create 	: create repository and working copy
-#     - write   : write data in working copy
-#     - add	: execute svn add command
-#     - delete  : delete file(s) in working copy and execute svn delete command
-#     - commit  : execute svn commit command
+#     - create 	     : create repository and working copy
+#     - write        : write data in working copy
+#     - add	     : execute svn add command
+#     - delete       : delete file(s) in working copy and execute svn delete command
+#     - commit       : execute svn commit command
+#     - display_diff : display historical changes from repository
 class Repository
-      attr_accessor :file_name,		# File name to write in working copy
-		    :file_content,	# Content of data to write in working copy
-		    :log_commit,	# Log for commit 
-		    :path_working_copy, # Path working copy
-		    :active, 		# Versioning feature is active or not
-		    :silent_mode	# Silent mode for output y/n
+      attr_accessor :file_name,			# File name to write in working copy
+		    :file_content,		# Content of data to write in working copy
+		    :log_commit,		# Log for commit 
+		    :path_working_copy, 	# Path working copy
+		    :active, 			# Versioning feature is active or not
+		    :exists, 			# Repository exists y/n
+		    :silent_mode,		# Silent mode for output y/n
+		    :display_diff_changes	# Number changes to display
 
       def initialize
 	  @file_name = ""
@@ -1035,6 +1047,7 @@ class Repository
 	  @access_method = "file://"
 	  @exists = false		# Repository exists y/n
 	  @silent_mode=false
+	  @display_diff_changes=nil
 
 	  conf = Oar.load_configuration
           @active = true if !conf['OARADMIN_VERSIONING'].nil?  && conf['OARADMIN_VERSIONING'].upcase == "YES"
@@ -1195,6 +1208,120 @@ class Repository
           end 	# if @active && !@exists 
 	  status
       end	# create
+
+      # Display historical changes
+      #    Retrieve all log from repository
+      #    Select all revisions numbers where a file, or admission rule is mentioned
+      #    Execute diffs between two revisions for all selected revisions if needed 
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def display_diff
+	  status=0
+	  revisions=[]		# Contains revisions numbers and dates
+	  
+          str = "svn log " + @access_method + @path_repository + " -v --xml"
+          r = `#{str}`
+          status = $?.exitstatus
+	  if status > 0
+	     $stderr.puts "[OARADMIN ERROR]: Error while browsing the repository"
+	     status=1
+	  else
+	     xml_tags_not_found_paths = xml_tags_not_found_date = xml_tags_not_found_revision = false
+             xml = REXML::Document.new(r)
+             xml.root.each_element { |e|
+             	 if !e.elements["paths"].nil?
+             	    e.elements["paths"].each_element { |f|
+             	      if f.get_text == "/" + @file_name
+             	         d = nil
+             		 if !e.elements["date"].nil?
+             		    d = e.elements["date"].get_text.to_s
+			    # with svn xml output format date is 2008-08-03T17:50:57.759877Z
+			    d = Time.xmlschema(d).strftime("%Y-%m-%d %H:%M:%S")+" UTC"
+             		 else
+		    	    xml_tags_not_found_date = true 
+             		 end
+			 if !e.attributes["revision"].nil?
+             		    revisions.push({:rev=>e.attributes["revision"], :date=>d})
+			 else
+		    	    xml_tags_not_found_revision = true
+			 end
+             	      end
+             	    }
+		 else
+		    xml_tags_not_found_paths = true
+             	 end
+             }
+             revisions.push({:rev=>"0", :date=>""}) 	# For diff while add admission rules or files
+	     if xml_tags_not_found_paths || xml_tags_not_found_date || xml_tags_not_found_revision
+		str2="[OARADMIN ERROR]: Some xml attribute(s) or tag(s) not found : "
+		str2 += "paths " if xml_tags_not_found_paths
+		str2 += "date " if xml_tags_not_found_date
+		str2 += "revision " if xml_tags_not_found_revision
+		$stderr.puts str2
+		$stderr.puts "[OARADMIN ERROR]: Please check xml format with command "+str
+		status=1
+	     end
+             if revisions.length >= 2
+		# First index in revisions revisions[0] is the latest revision in repository: r #latest 
+		# Last index in revisions revisions[length-1] is the older revision in repository : r #1
+		# We display changes, so we must have at least 2 revisions for an admission rule or a file
+		i=0
+		k=1
+		if @display_diff_changes.nil?
+		   @display_diff_changes=1
+		else
+		   if @display_diff_changes.upcase=="ALL"
+		      @display_diff_changes=revisions.length-1 
+		   else
+		      @display_diff_changes=@display_diff_changes.to_i
+		   end
+		end
+		all_diffs = ""
+		while k <= @display_diff_changes && i <= revisions.length-2
+		      cmd_diff = "svn diff " + @access_method + @path_repository + " -r " + revisions[i+1][:rev] + ":" + revisions[i][:rev]
+		      r = `#{cmd_diff}`
+		      status = $?.exitstatus
+		      if status==0
+			 one_diff = ""
+			 file_found = false
+			 r.each do |line|
+			   if file_found
+			      if line[0..6]=="Index: "
+				 if line != "Index: "+file_name
+				    break
+				 end
+			      else
+				 one_diff += line
+			      end
+			   end
+			   if line.chomp == "Index: "+file_name
+			      file_found=true
+			   end
+			 end		# r.each do |line|
+			 all_diffs += "Change(s) between r"+revisions[i+1][:rev]+" "
+			 all_diffs += "("+revisions[i+1][:date].to_s+") " if revisions[i+1][:rev].to_s != "0" 
+			 all_diffs += "and r"+revisions[i][:rev]+" ("+revisions[i][:date].to_s+")\n"
+			 all_diffs += one_diff
+			 all_diffs += "\n"
+		      else
+	     		 $stderr.puts "[OARADMIN ERROR]: Error while browsing the repository"
+	     		 $stderr.puts "[OARADMIN ERROR]: Error while command : "+cmd_diff
+	     		 status=1
+		      end
+		      i+=1
+		      k+=1
+		end
+
+		# Display results
+		puts all_diffs
+
+             else
+		puts "No changes found in repository for " + @file_name
+             end	# if revisions.length >= 2
+	  end		# if status > 0
+
+	  status
+      end 	# display_diff
 
 end	# class Repository
 

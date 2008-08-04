@@ -456,10 +456,11 @@ case
         # Options for parsing
         $options = {}
         $options[:list] = $options[:add] = $options[:file] = $options[:edit] = $options[:export] = $options[:delete] = false
+        $options[:history] = $options[:history_no] = false
         $options[:comment] = nil
 
         opts = OptionParser.new do |opts|
-            opts.banner = "Usage: oaradmin rules [-l|-ll|-lll [no_rules]] [-a [no_rule] [-f file]] [-d no_rule [no_rules]] \n                      [-x [no_rules] [-f file]] [-e no_rule [-f file]] [-1 no_rule] [-0 no_rule]"
+            opts.banner = "Usage: oaradmin rules [-l|-ll|-lll [no_rules]] [-a [no_rule] [-f file]] [-d no_rule [no_rules]] \n                      [-x [no_rules] [-f file]] [-e no_rule [-f file]] [-1 no_rule] [-0 no_rule]\n                      [-H no_rule [-n <number>|ALL|all]]"
 
             # list admission rules
             opts.on("-l","--list","List admission rules") do 
@@ -501,6 +502,16 @@ case
                $options[:comment] = true
             end
 
+            # Show the changes made on the admission rule 
+            opts.on("-H","--history","Show the changes made on the admission rule") do 
+               $options[:history] = true
+            end
+
+            # Number of historical changes to display  
+            opts.on("-n","--number","Number of historical changes to display") do 
+               $options[:history_no] = true
+            end
+
             # help
             opts.on_tail("-h", "--help", "Show this message") do
                puts opts
@@ -523,15 +534,28 @@ case
            exit(1)
         end
 
-        if !( ( $options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -l 
-              (!$options[:list] &&  $options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -a 
-              (!$options[:list] &&  $options[:add] &&  $options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -a -f
-              (!$options[:list] && !$options[:add] && !$options[:file] &&  $options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -e 
-              (!$options[:list] && !$options[:add] &&  $options[:file] &&  $options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -e -f
-              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] &&  $options[:delete] && !$options[:export] &&  $options[:comment].nil? ) ||   # -d 
-              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? ) ||   # -e  
-              (!$options[:list] && !$options[:add] &&  $options[:file] && !$options[:edit] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? ) ||   # -e -f
-              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] && !$options[:comment].nil? )  )   # comment
+        if !( ( $options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
+	       !$options[:history] && !$options[:history_no] ) ||   # -l 
+              (!$options[:list] &&  $options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -a 
+              (!$options[:list] &&  $options[:add] &&  $options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -a -f
+              (!$options[:list] && !$options[:add] && !$options[:file] &&  $options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -e 
+              (!$options[:list] && !$options[:add] &&  $options[:file] &&  $options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -e -f
+              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] &&  $options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -d 
+              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -e  
+              (!$options[:list] && !$options[:add] &&  $options[:file] && !$options[:edit] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # -e -f
+              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] && !$options[:comment].nil? &&
+	       !$options[:history] && !$options[:history_no] ) ||   # comment
+              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
+	        $options[:history] && !$options[:history_no] ) ||   # -H 
+              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
+	        $options[:history] &&  $options[:history_no] ) )    # -H -n
 
               puts $msg[0]
               puts opts
@@ -738,6 +762,41 @@ case
       	         status = rule.comment
 	         exit(10) if status != 0
 
+
+            when $options[:history]
+		 # Show the changes made on the admission rule
+	         no_rule = nil 
+   	         list_rules = Admission_rules.rule_list_from_command_line
+   	         if list_rules.length > 1
+                    $stderr.puts $msg[4]
+		    puts opts
+                    exit(11)
+   	         end
+   	         if list_rules.length == 0 
+                    $stderr.puts $msg[3]
+		    puts opts
+                    exit(11)
+   	         end
+		 no_rule = list_rules[0].to_i 
+	         if no_rule == 0 
+	            $stderr.puts $msg[2]
+	            exit(11)
+	         end
+		 repository = Repository.new
+		 if repository.active && repository.exists
+		    repository.file_name = "admission_rule_"+no_rule.to_s
+   	            if $options[:history_no]
+      	               (0..ARGV.length-1).each do |i|
+          	           if ARGV[i] == "-n" 
+             	              repository.display_diff_changes = ARGV[i+1] if i < ARGV.length-1
+          	           end
+      	               end
+		    end
+		    status = repository.display_diff
+		 else
+		    $stderr.puts "[OARADMIN ERROR]: Versioning feature is not active or the repository does not exists or is unreadable"
+		    exit(11)
+		 end
         end
 
         # Disconnect from database
