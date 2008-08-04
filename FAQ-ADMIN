@@ -202,7 +202,7 @@ Furthermore a lot of system features could be used like bandwidth management
 (iptables rules on the user id).
 
 To configure this feature, CPUSET must be activated and the tag
-JOB_RESOURCE_MANAGER_JOB_UID_TYPE_ has to be configured in the oar.conf file.
+JOB_RESOURCE_MANAGER_JOB_UID_TYPE has to be configured in the oar.conf file.
 The value is the content of the "type" field into the resources_ table. After
 that you have to add resources in the database with this type and fill the
 cpuset field with a unique UID (not used by real users). The maximum number of
