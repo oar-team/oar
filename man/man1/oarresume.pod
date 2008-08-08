@@ -16,7 +16,7 @@ Ask OAR to change job_ids states into Waiting when it is Hold or in Running if i
 
 =item B<--sql>
 
-Hold jobs which repond to the SQL where clause on the table jobs (ex: "project = 'p1'")
+Resume jobs which repond to the SQL where clause on the table jobs (ex: "project = 'p1'")
 
 =item B<-V, --version>
 
