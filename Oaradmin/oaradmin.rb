@@ -783,7 +783,14 @@ case
 	            exit(11)
 	         end
 		 repository = Repository.new
-		 if repository.active && repository.exists
+		 if !repository.active
+		    $stderr.puts "[OARADMIN ERROR]: Versioning feature is not active"
+		    $stderr.puts "[OARADMIN ERROR]: You can activate this feature with the parameter OARADMIN_VERSIONING in the OAR conf file"
+		    exit(11)
+		 elsif !repository.exists
+		    $stderr.puts "[OARADMIN ERROR]: The repository does not exists or is unreadable"
+		    exit(11)
+		 else
 		    repository.file_name = "admission_rule_"+rule_id.to_s
    	            if $options[:history_no]
       	               (0..ARGV.length-1).each do |i|
@@ -793,10 +800,7 @@ case
       	               end
 		    end
 		    status = repository.display_diff
-		 else
-		    $stderr.puts "[OARADMIN ERROR]: Versioning feature is not active or the repository does not exists or is unreadable"
-		    exit(11)
-		 end
+ 		 end 
         end
 
         # Disconnect from database
