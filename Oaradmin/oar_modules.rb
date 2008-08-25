@@ -10,6 +10,38 @@
 
 module Oar
 
+       # Search a oar conf file in differents path
+       #        search also in the directory of oar.conf
+       # Return :
+       #    status : 0 file is readable / 1 otherwise
+       #    config_file : full path name of the file 
+       def Oar.conf_file_readable(config_file)
+	   status=1
+	   full_path=""
+
+	   # search config file 
+	   if File.readable?(config_file)
+	      full_path = config_file
+	      status=0
+	   elsif ENV['OARCONFFILE'] 
+		 path_tmp = File.split(ENV['OARCONFFILE'])[0]
+		 if File.readable?(path_tmp+"/"+config_file)
+	            full_path = path_tmp+"/"+config_file 
+		    status=0
+		 end
+           elsif File.readable?("/etc/" + config_file)
+	             full_path = "/etc/" + config_file
+		     status=0
+           elsif File.readable?("/etc/oar/" + config_file)
+	             full_path = "/etc/oar/" + config_file
+		     status=0
+	   end
+
+	   return status, full_path
+       end	# Oar.conf_file_readable	
+
+
+
        # Load configuration
        # Search config file :
        # 	1) in the current directory

@@ -557,32 +557,32 @@ end 	# module Admission_rules
 #    - export  : export the rule
 #    - comment : comment or delete comments in the rule
 class Rule
-      attr_accessor :no_rule,				# rule id 
+      attr_accessor :rule_id,
 		    :exist,				# rule exist y/n ?
 		    :script,				# content of the admission rule - script Perl
       		    :export_file_name, 			# filename used to export	
-		    :export_file_name_with_no_rule,	# filename must use number rule y/n
-      		    :no_rule_must_exist, 		# the no_rule must be exist or not : true/false
+		    :export_file_name_with_rule_id,	# filename must use number rule y/n
+      		    :rule_id_must_exist, 		# the rule_id must be exist or not : true/false
       		    :file_name,          		# temporary file name to store the admission rule
       		    :editor,             		# command to be used for the text editor 
       		    :action,                            # true : comment - false : delete comments
       		    :silent_mode                        # silent mode for output y/n
 		    
-      def initialize(bdd, no_rule)
+      def initialize(bdd, rule_id)
 	  @bdd = bdd
-	  @no_rule = no_rule
+	  @rule_id = rule_id
 	  @script=""
 	  @exist=false
       	  @export_file_name="" 
-	  @export_file_name_with_no_rule=false
-          @no_rule_must_exist=false
+	  @export_file_name_with_rule_id=false
+          @rule_id_must_exist=false
       	  @file_name=""
       	  @editor=""
 	  @action=false
 	  @silent_mode = false
 
-	  if !no_rule.nil?
-	     q = "SELECT * FROM admission_rules WHERE id = " + no_rule.to_s
+	  if !rule_id.nil?
+	     q = "SELECT * FROM admission_rules WHERE id = " + rule_id.to_s
 	     rows = @bdd.select_one(q) 
 	     if rows
 	        @script = rows["rule"] 
@@ -597,7 +597,7 @@ class Rule
       # Display rule
       def display(display_level)
     	  puts "------"
-    	  puts "Rule : " + @no_rule.to_s								# rule number
+    	  puts "Rule : " + @rule_id.to_s								# rule number
 
 	  no_char = 65
 	  mark_more_text = "..."
@@ -632,8 +632,8 @@ class Rule
 
       # Add rule 
       # if no number rule specified => add at the end of table
-      # if number specified => insert admission rule at the no_rule position
-      #    the numbers above or equal to no_rule are increased by 1 if necessary
+      # if number specified => insert admission rule at the rule_id position
+      #    the numbers above or equal to rule_id are increased by 1 if necessary
       # Return :
       #    status : 0 : no error - > 0 : one error occurs
       def add
@@ -644,7 +644,7 @@ class Rule
 	  @repository.create
 	  if @exist
 	     # no rule already exist in database : add +1 to the id rules
-	     q = "SELECT * FROM admission_rules WHERE id >= " + @no_rule.to_s + " ORDER BY id DESC"
+	     q = "SELECT * FROM admission_rules WHERE id >= " + @rule_id.to_s + " ORDER BY id DESC"
   	     rows = @bdd.execute(q)
 	     
 	     rows.each do |r|
@@ -665,25 +665,25 @@ class Rule
 	
 	     # Add rule in database
              q = "INSERT INTO admission_rules (id, rule) VALUES(?, ?)"
-	     status = Bdd.do(@bdd, q, @no_rule, @script)
+	     status = Bdd.do(@bdd, q, @rule_id, @script)
 	     if status == 0
 	        puts msg[0] 
 		if status2 == 0 && @repository.active
-		   @repository.file_name="admission_rule_"+@no_rule.to_s
+		   @repository.file_name="admission_rule_"+@rule_id.to_s
 		   @repository.file_content=@script
 		   status2 = @repository.write
-		   @repository.log_commit = "Add new admission rule no " + @no_rule.to_s + "\nNumber that already existed"
+		   @repository.log_commit = "Add new admission rule no " + @rule_id.to_s + "\nNumber that already existed"
 		   @repository.commit
 		end
 	     end
 	  else
-	     if !@no_rule.nil?
+	     if !@rule_id.nil?
 	        # Add rule in database
                 q = "INSERT INTO admission_rules (id, rule) VALUES(?, ?)"
-	        status = Bdd.do(@bdd, q, @no_rule, @script)
+	        status = Bdd.do(@bdd, q, @rule_id, @script)
 		if status == 0
 	           puts msg[0] 
-		   id_tmp=@no_rule
+		   id_tmp=@rule_id
 		end
 	     else
 	        # add admission rule at the end of table
@@ -721,21 +721,21 @@ class Rule
 	  msg[0] = "Admission rule updated"
           if @exist
 	     @repository.create
-	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + @no_rule.to_s
+	     q = "UPDATE admission_rules SET rule = ? WHERE id = " + @rule_id.to_s
 	     status = Bdd.do(@bdd, q, @script)
 	     if status == 0
 	        puts msg[0]
 		if @repository.active
-		   @repository.file_name="admission_rule_"+@no_rule.to_s
+		   @repository.file_name="admission_rule_"+@rule_id.to_s
 		   @repository.file_content=@script
 		   if @repository.write == 0
-		      @repository.log_commit = "Update admission rule no " + @no_rule.to_s 
+		      @repository.log_commit = "Update admission rule no " + @rule_id.to_s 
 		      @repository.commit
 		   end
 		end
 	     end
           else
-	      $stderr.puts "Error : the rule " + @no_rule.to_s + " does not exist"
+	      $stderr.puts "Error : the rule " + @rule_id.to_s + " does not exist"
 	      status = 1
           end
 	  status
@@ -747,11 +747,11 @@ class Rule
       def delete
 	  status_1 = status_2 = 0
           if @exist
-	     q = "DELETE FROM admission_rules WHERE id = " + @no_rule.to_s
+	     q = "DELETE FROM admission_rules WHERE id = " + @rule_id.to_s
 	     status_2 = Bdd.do(@bdd, q)
-	     puts "Admission rule " + @no_rule.to_s + " deleted" if status_2 == 0
+	     puts "Admission rule " + @rule_id.to_s + " deleted" if status_2 == 0
 	  else
-	     $stderr.puts "Error : the rule " + @no_rule.to_s + " does not exist"
+	     $stderr.puts "Error : the rule " + @rule_id.to_s + " does not exist"
 	     status_1 = 1
 	  end
       	  (status_1 != 0 || status_2 != 0) ? 1 : 0 
@@ -761,8 +761,8 @@ class Rule
       def export
 
 	  f_name = @export_file_name 
-	  f_name += @no_rule.to_s if @export_file_name_with_no_rule
-          puts "Export admission rule " + @no_rule.to_s + " into file " + f_name if silent_mode==false
+	  f_name += @rule_id.to_s if @export_file_name_with_rule_id
+          puts "Export admission rule " + @rule_id.to_s + " into file " + f_name if silent_mode==false
           f = File.new(f_name, "w")
           f.print @script
           f.close
@@ -777,8 +777,8 @@ class Rule
 	  status = 0
 	  user_choice = 1
 
-	  if @exist==false && @no_rule_must_exist
-	     $stderr.puts "Error : the rule " + @no_rule.to_s + " does not exist"
+	  if @exist==false && @rule_id_must_exist
+	     $stderr.puts "Error : the rule " + @rule_id.to_s + " does not exist"
 	     status = 1
 	  end	  
 
@@ -877,7 +877,7 @@ class Rule
 		end	
 	     end 
           else
-	      $stderr.puts "Error : the rule " + @no_rule.to_s + " does not exist"
+	      $stderr.puts "Error : the rule " + @rule_id.to_s + " does not exist"
 	      status = 1
           end
 	  status
@@ -896,14 +896,14 @@ end	# class Rule
 class Rules_set
 
       attr_accessor :export_file_name, 			# filename used to export	
-		    :export_file_name_with_no_rule,	# filename must use number rule y/n
+		    :export_file_name_with_rule_id,	# filename must use number rule y/n
 		    :silent_mode			# silent mode for output y/n
 
       def initialize(bdd, rules_set_user)
 	  @bdd = bdd
 	  @rules_set_user = rules_set_user
       	  @export_file_name="" 
-	  @export_file_name_with_no_rule=false
+	  @export_file_name_with_rule_id=false
 	  @silent_mode = false
 	
 	  # No rules specified by user 
@@ -934,7 +934,7 @@ class Rules_set
 	      if r.exist
 	         r.display(display_level) 
 	      else
-	    	 $stderr.puts "Error : the rule " + r.no_rule.to_s + " does not exist"
+	    	 $stderr.puts "Error : the rule " + r.rule_id.to_s + " does not exist"
 		 status = 1
 	      end
 	  end
@@ -946,20 +946,20 @@ class Rules_set
       #    status : 0 : no error - > 0 : one error occurs
       def delete
 	  status_1 = status_2 = 0
-	  no_rules_deleted=""
+	  rule_ids_deleted=""
 	  repository = Repository.new
 	  @rules_set.each do |r|
 	      repository.create if r.exist
 	      status_2 = r.delete
 	      status_1 = 1 if status_2 != 0
 	      if status_2 == 0 && repository.active 
-		 repository.file_name = "admission_rule_" + r.no_rule.to_s
-		 no_rules_deleted += r.no_rule.to_s + " "
+		 repository.file_name = "admission_rule_" + r.rule_id.to_s
+		 rule_ids_deleted += r.rule_id.to_s + " "
 		 repository.delete
 	      end 
 	  end
-	  if repository.active && no_rules_deleted != ""
-	     repository.log_commit = "Delete admission(s) rule(s) no "+no_rules_deleted
+	  if repository.active && rule_ids_deleted != ""
+	     repository.log_commit = "Delete admission(s) rule(s) no "+rule_ids_deleted
 	     repository.commit
 	  end
       	  status_1 
@@ -975,8 +975,8 @@ class Rules_set
 	  # Files already exists ? Question to user : Overwrite y/n ? 
    	  files_already_exists = []
        	  @rules_set.each do |r|
-		if @export_file_name_with_no_rule
-                   files_already_exists.push(@export_file_name + r.no_rule.to_s) if File.exist?(@export_file_name + r.no_rule.to_s)
+		if @export_file_name_with_rule_id
+                   files_already_exists.push(@export_file_name + r.rule_id.to_s) if File.exist?(@export_file_name + r.rule_id.to_s)
 		 else
                    files_already_exists.push(@export_file_name) if File.exist?(@export_file_name)
 		 end
@@ -1003,11 +1003,11 @@ class Rules_set
 	     @rules_set.each do |r|
 	         if r.exist
       	  	    r.export_file_name = @export_file_name 
-	  	    r.export_file_name_with_no_rule = @export_file_name_with_no_rule
+	  	    r.export_file_name_with_rule_id = @export_file_name_with_rule_id
 		    r.silent_mode = @silent_mode
 	            r.export 
 	         else
-	    	    $stderr.puts "Error : the rule " + r.no_rule.to_s + " does not exist"
+	    	    $stderr.puts "Error : the rule " + r.rule_id.to_s + " does not exist"
 		    status = 1
 	         end
 	     end
@@ -1190,7 +1190,7 @@ class Repository
                 dbh = Bdd.connect($config)
 	        rules = Rules_set.new(dbh, list_rules)
                 rules.export_file_name=@path_working_copy+"/"+"admission_rule_"
-                rules.export_file_name_with_no_rule=true
+                rules.export_file_name_with_rule_id=true
 	        rules.silent_mode=true
                 rules.export
 	        files = Dir[@path_working_copy+"/*"]
@@ -1200,6 +1200,21 @@ class Repository
 		     self.add 
 	        end
 		@silent_mode=true
+
+		# Add conf files 
+		all_conf_files=["oar.conf", "monika.conf", "drawgantt.conf"]
+		all_conf_files.each do |file|
+		    r, conf_file = Oar.conf_file_readable(file)
+		    if r==0
+		       f = IO::read(conf_file)
+                       @file_name=file 
+                       @file_content=f
+                       self.write
+                       self.add
+                    end
+		end
+
+		# Commit
 	        @log_commit = "Initialization of repository"
 	        self.commit 
 		@silent_mode=false 

@@ -460,7 +460,7 @@ case
         $options[:comment] = nil
 
         opts = OptionParser.new do |opts|
-            opts.banner = "Usage: oaradmin rules [-l|-ll|-lll [no_rules]] [-a [no_rule] [-f file]] [-d no_rule [no_rules]] \n                      [-x [no_rules] [-f file]] [-e no_rule [-f file]] [-1 no_rule] [-0 no_rule]\n                      [-H no_rule [-n <number>|ALL|all]]"
+            opts.banner = "Usage: oaradmin rules [-l|-ll|-lll [rule_ids]] [-a [rule_id] [-f file]] [-d rule_id [rule_ids]] \n                      [-x [rule_ids] [-f file]] [-e rule_id [-f file]] [-1 rule_id] [-0 rule_id]\n                      [-H rule_id [-n <number>|ALL|all]]"
 
             # list admission rules
             opts.on("-l","--list","List admission rules") do 
@@ -614,15 +614,15 @@ case
 
             when $options[:add]
 	         # Add admission rule
-	         no_rule = nil 
+	         rule_id = nil 
    	         list_rules = Admission_rules.rule_list_from_command_line
    	         if list_rules.length > 1
                     $stderr.puts $msg[4]
 		    puts opts
                     exit(6)
    	         end
-		 no_rule = list_rules[0].to_i if !list_rules.empty?
-	         if no_rule && no_rule == 0 
+		 rule_id = list_rules[0].to_i if !list_rules.empty?
+	         if rule_id && rule_id == 0 
 	            $stderr.puts $msg[2]
 	            exit(6)
 	         end
@@ -631,17 +631,17 @@ case
    	            # add admission rule from a file 
    	            status, $script = Admission_rules.load_rule_from_file
 	            exit(6) if status != 0
-		    rule = Rule.new(dbh, no_rule)
+		    rule = Rule.new(dbh, rule_id)
 		    rule.script = $script
 		    status = rule.add
 	            exit(6) if status != 0
 	         else
    	            # add admission rule using a text editor 
 	            file_name = directory + "OAR_tmp_" + filename_base
-	            file_name += no_rule.to_s if no_rule
-		    rule = Rule.new(dbh, no_rule)
+	            file_name += rule_id.to_s if rule_id
+		    rule = Rule.new(dbh, rule_id)
 		    rule.script = ""
-		    rule.no_rule_must_exist = false
+		    rule.rule_id_must_exist = false
 		    rule.file_name = file_name
 		    rule.editor = editor 
 	            status, user_choice = rule.edit
@@ -666,8 +666,8 @@ case
 		    puts opts
                     exit(7)
    	         end
-		 no_rule = list_rules[0].to_i
-	         if no_rule == 0 
+		 rule_id = list_rules[0].to_i
+	         if rule_id == 0 
 	            $stderr.puts $msg[2]
 	            exit(7)
 	         end
@@ -675,16 +675,16 @@ case
    	            # update admission rule from a file 
 	            status, $script = Admission_rules.load_rule_from_file
 	            exit(7) if status != 0
-		    rule = Rule.new(dbh, no_rule)
+		    rule = Rule.new(dbh, rule_id)
 		    rule.script = $script
 		    status = rule.update
 	            exit(7) if status != 0
 	         else
 	            # edit admission rule using a text editor
 	            file_name = directory + "OAR_tmp_" + filename_base
-	            file_name += no_rule.to_s if no_rule
-		    rule = Rule.new(dbh, no_rule)
-		    rule.no_rule_must_exist = true
+	            file_name += rule_id.to_s if rule_id
+		    rule = Rule.new(dbh, rule_id)
+		    rule.rule_id_must_exist = true
 		    rule.file_name = file_name
 		    rule.editor = editor 
 	            status, user_choice = rule.edit
@@ -734,10 +734,10 @@ case
           	        end
       	            end
 		    rules.export_file_name=user_file_name
-		    rules.export_file_name_with_no_rule=false
+		    rules.export_file_name_with_rule_id=false
    	         else
 		    rules.export_file_name=filename_base
-		    rules.export_file_name_with_no_rule=true
+		    rules.export_file_name_with_rule_id=true
    	         end
    	         status = rules.export
 	         exit(9) if status != 0
@@ -765,7 +765,7 @@ case
 
             when $options[:history]
 		 # Show the changes made on the admission rule
-	         no_rule = nil 
+	         rule_id = nil 
    	         list_rules = Admission_rules.rule_list_from_command_line
    	         if list_rules.length > 1
                     $stderr.puts $msg[4]
@@ -777,14 +777,14 @@ case
 		    puts opts
                     exit(11)
    	         end
-		 no_rule = list_rules[0].to_i 
-	         if no_rule == 0 
+		 rule_id = list_rules[0].to_i 
+	         if rule_id == 0 
 	            $stderr.puts $msg[2]
 	            exit(11)
 	         end
 		 repository = Repository.new
 		 if repository.active && repository.exists
-		    repository.file_name = "admission_rule_"+no_rule.to_s
+		    repository.file_name = "admission_rule_"+rule_id.to_s
    	            if $options[:history_no]
       	               (0..ARGV.length-1).each do |i|
           	           if ARGV[i] == "-n" 
