@@ -474,7 +474,7 @@ module Admission_rules
       r = []
       i = 0
       while i < ARGV.length 
-            if ARGV[i] == "-f" || ARGV[i] == "-n"
+            if ARGV[i] == "-f" || ARGV[i]== "--file" || ARGV[i] == "-n" || ARGV[i] == "--number"
                i += 1
             else
                r.push(ARGV[i]) if !(ARGV[i] =~ /[^0-9]+/)
@@ -486,8 +486,7 @@ module Admission_rules
    end	# rule_list_from_command_line
 
    # Test params on command line
-   # Parameters allowed : options  -f, -n, numbers or keyword ALL
-   # 			  for -n option : -n number|ALL
+   # Parameters allowed : options  -f, -n, numbers 
    # 			  others parameters are wrong
    # Return 
    # 	false : all params are ok, true : one parameter is wrong
@@ -497,9 +496,9 @@ module Admission_rules
        while i < ARGV.length
             if ARGV[i] == "-f"
                i += 1
-	    elsif ARGV[i] == "-n"
+	    elsif ARGV[i] == "-n" || ARGV[i] == "--number"
 		  i+=1
-                  if ARGV[i].nil? || (ARGV[i] =~ /[^0-9]+/ && ARGV[i].upcase != "ALL")
+                  if ARGV[i].nil? || (ARGV[i] =~ /[^0-9]+/)
  	             error=true
 		     break
 		  end
@@ -643,7 +642,7 @@ class Rule
 	  id_tmp = 0
 	  @repository.create
 	  if @exist
-	     # no rule already exist in database : add +1 to the id rules
+	     # rule id already exist in database : add +1 to the rule ids
 	     q = "SELECT * FROM admission_rules WHERE id >= " + @rule_id.to_s + " ORDER BY id DESC"
   	     rows = @bdd.execute(q)
 	     
@@ -672,7 +671,7 @@ class Rule
 		   @repository.file_name="admission_rule_"+@rule_id.to_s
 		   @repository.file_content=@script
 		   status2 = @repository.write
-		   @repository.log_commit = "Add new admission rule no " + @rule_id.to_s + "\nNumber that already existed"
+		   @repository.log_commit = "Add new admission rule #" + @rule_id.to_s + "\nNumber that already existed"
 		   @repository.commit
 		end
 	     end
@@ -704,7 +703,7 @@ class Rule
 		@repository.file_content=@script
 		if @repository.write == 0
 		   @repository.add
-		   @repository.log_commit = "Add new admission rule no " + id_tmp.to_s
+		   @repository.log_commit = "Add new admission rule #" + id_tmp.to_s
 		   @repository.commit
 		end
 	     end
@@ -729,7 +728,7 @@ class Rule
 		   @repository.file_name="admission_rule_"+@rule_id.to_s
 		   @repository.file_content=@script
 		   if @repository.write == 0
-		      @repository.log_commit = "Update admission rule no " + @rule_id.to_s 
+		      @repository.log_commit = "Update admission rule #" + @rule_id.to_s 
 		      @repository.commit
 		   end
 		end
@@ -954,12 +953,12 @@ class Rules_set
 	      status_1 = 1 if status_2 != 0
 	      if status_2 == 0 && repository.active 
 		 repository.file_name = "admission_rule_" + r.rule_id.to_s
-		 rule_ids_deleted += r.rule_id.to_s + " "
+		 rule_ids_deleted += "#" + r.rule_id.to_s + " "
 		 repository.delete
 	      end 
 	  end
 	  if repository.active && rule_ids_deleted != ""
-	     repository.log_commit = "Delete admission(s) rule(s) no "+rule_ids_deleted
+	     repository.log_commit = "Delete admission(s) rule(s) "+rule_ids_deleted
 	     repository.commit
 	  end
       	  status_1 
@@ -1021,12 +1020,12 @@ end	# class Rules_set
 
 # Object Repository 
 # Methods : 
-#     - create 	     : create repository and working copy
-#     - write        : write data in working copy
-#     - add	     : execute svn add command
-#     - delete       : delete file(s) in working copy and execute svn delete command
-#     - commit       : execute svn commit command
-#     - display_diff : display historical changes from repository
+#     - create 	       : create repository and working copy
+#     - write          : write data in working copy
+#     - add	       : execute svn add command
+#     - delete         : delete file(s) in working copy and execute svn delete command
+#     - commit         : execute svn commit command
+#     - display_status : display error messages if repository does not exists or is unreadable
 class Repository
       attr_accessor :file_name,			# File name to write in working copy
 		    :file_content,		# Content of data to write in working copy
@@ -1224,122 +1223,226 @@ class Repository
 	  status
       end	# create
 
+      # Display error messages if repository does not exists or is unreadable 
+      # Return :
+      #    status 0 : no error - 1 : one error occurs
+      def display_status
+	  status=0
+	  if !@active
+	     $stderr.puts "[OARADMIN ERROR]: Versioning feature is not active"
+	     $stderr.puts "[OARADMIN ERROR]: You can activate this feature with the parameter OARADMIN_VERSIONING in the OAR conf file"
+	     status=1
+	  elsif !@exists
+	        $stderr.puts "[OARADMIN ERROR]: The repository does not exists or is unreadable"
+	        status=1
+	  end
+	  status
+      end	# display_status
+
+end	# class Repository
+
+
+# Object Revisions : contains revisions of Repository
+# Methods :
+#     - display_diff : display diff between revisions
+class Revisions < Repository
+
+      attr_accessor	:rev_id		# rev_id given by user
+
+      # Load revisions
+      def initialize(file_name)
+	  super() 
+	  @rev=[]			# Contains revisions numbers and dates
+	  @file_name = file_name
+	  @rev_id=nil
+
+	  if !@active || !@exists
+	     display_status
+	  else
+             # Retrieve all log from repository
+             # Select all revisions numbers where a file, or admission rule is mentioned
+	     status=0
+             str = "svn log " + @access_method + @path_repository + " -v --xml"
+             r = `#{str}`
+             status = $?.exitstatus
+	     if status > 0
+	        $stderr.puts "[OARADMIN ERROR]: Error while browsing the repository"
+	        status=1
+	     else
+	        xml_tags_not_found_paths = xml_tags_not_found_date = xml_tags_not_found_revision = false
+                xml = REXML::Document.new(r)
+                xml.root.each_element { |e|
+             	    if !e.elements["paths"].nil?
+             	       e.elements["paths"].each_element { |f|
+             	         if f.get_text == "/" + @file_name
+             	            d = nil
+             		    if !e.elements["date"].nil?
+             		       d = e.elements["date"].get_text.to_s
+			       # with svn xml output format date is 2008-08-03T17:50:57.759877Z
+			       # convert to 2008-08-03 19:50:57 +0200 
+			       d1 = Time.xmlschema(d).localtime.strftime("%Y-%m-%d %H:%M:%S")
+			       d2 = Time.xmlschema(d).localtime.rfc822.to_s
+			       d = d1 + " " + d2[26,5] 
+             		    else
+		    	       xml_tags_not_found_date = true 
+             		    end
+			    if !e.attributes["revision"].nil?
+             		       @rev.push({:rev=>e.attributes["revision"], :date=>d, :action=>f.attributes["action"]})
+			    else
+		    	       xml_tags_not_found_revision = true
+			    end
+             	         end
+             	       }
+		    else
+		       xml_tags_not_found_paths = true
+             	    end
+                }
+                @rev.push({:rev=>"0", :date=>""}) 	# For diff while add admission rules or files
+	        if xml_tags_not_found_paths || xml_tags_not_found_date || xml_tags_not_found_revision
+		   str2="[OARADMIN ERROR]: Some xml attribute(s) or tag(s) not found : "
+		   str2 += "paths " if xml_tags_not_found_paths
+		   str2 += "date " if xml_tags_not_found_date
+		   str2 += "revision " if xml_tags_not_found_revision
+		   $stderr.puts str2
+		   $stderr.puts "[OARADMIN ERROR]: Please check xml format with command "+str
+		   status=1
+	        end
+	     end	# if status > 0
+	  end 	# if !@active || !@exists
+      end	# initialize
+
+
       # Display historical changes
-      #    Retrieve all log from repository
-      #    Select all revisions numbers where a file, or admission rule is mentioned
-      #    Execute diffs between two revisions for all selected revisions if needed 
+      # Execute diffs between revisions 
       # Return :
       #    status 0 : no error - 1 : one error occurs
       def display_diff
 	  status=0
-	  revisions=[]		# Contains revisions numbers and dates
-	  
-          str = "svn log " + @access_method + @path_repository + " -v --xml"
-          r = `#{str}`
-          status = $?.exitstatus
-	  if status > 0
-	     $stderr.puts "[OARADMIN ERROR]: Error while browsing the repository"
-	     status=1
-	  else
-	     xml_tags_not_found_paths = xml_tags_not_found_date = xml_tags_not_found_revision = false
-             xml = REXML::Document.new(r)
-             xml.root.each_element { |e|
-             	 if !e.elements["paths"].nil?
-             	    e.elements["paths"].each_element { |f|
-             	      if f.get_text == "/" + @file_name
-             	         d = nil
-             		 if !e.elements["date"].nil?
-             		    d = e.elements["date"].get_text.to_s
-			    # with svn xml output format date is 2008-08-03T17:50:57.759877Z
-			    d = Time.xmlschema(d).strftime("%Y-%m-%d %H:%M:%S")+" UTC"
-             		 else
-		    	    xml_tags_not_found_date = true 
-             		 end
-			 if !e.attributes["revision"].nil?
-             		    revisions.push({:rev=>e.attributes["revision"], :date=>d})
-			 else
-		    	    xml_tags_not_found_revision = true
-			 end
-             	      end
-             	    }
-		 else
-		    xml_tags_not_found_paths = true
-             	 end
-             }
-             revisions.push({:rev=>"0", :date=>""}) 	# For diff while add admission rules or files
-	     if xml_tags_not_found_paths || xml_tags_not_found_date || xml_tags_not_found_revision
-		str2="[OARADMIN ERROR]: Some xml attribute(s) or tag(s) not found : "
-		str2 += "paths " if xml_tags_not_found_paths
-		str2 += "date " if xml_tags_not_found_date
-		str2 += "revision " if xml_tags_not_found_revision
-		$stderr.puts str2
-		$stderr.puts "[OARADMIN ERROR]: Please check xml format with command "+str
-		status=1
+          if @rev.length >= 2
+	     # First index in revisions @rev[0] is the latest revision in repository: r #latest 
+	     # Last index in revisions @rev[length-1] is the older revision in repository : r #1
+	     # We display changes, so we must have at least 2 revisions for an admission rule or a file
+	     i=0
+	     k=1
+	     if @display_diff_changes.nil?
+	        @display_diff_changes=@rev.length-1
+	     else
+		@display_diff_changes=@display_diff_changes.to_i
 	     end
-             if revisions.length >= 2
-		# First index in revisions revisions[0] is the latest revision in repository: r #latest 
-		# Last index in revisions revisions[length-1] is the older revision in repository : r #1
-		# We display changes, so we must have at least 2 revisions for an admission rule or a file
-		i=0
-		k=1
-		if @display_diff_changes.nil?
-		   @display_diff_changes=1
-		else
-		   if @display_diff_changes.upcase=="ALL"
-		      @display_diff_changes=revisions.length-1 
-		   else
-		      @display_diff_changes=@display_diff_changes.to_i
-		   end
-		end
-		all_diffs = ""
-		while k <= @display_diff_changes && i <= revisions.length-2
-		      cmd_diff = "svn diff " + @access_method + @path_repository + " -r " + revisions[i+1][:rev] + ":" + revisions[i][:rev]
-		      r = `#{cmd_diff}`
-		      status = $?.exitstatus
-		      if status==0
-			 one_diff = ""
-			 file_found = false
-			 r.each do |line|
-			   if file_found
-			      if line[0..6]=="Index: "
-				 if line != "Index: "+file_name
-				    break
-				 end
-			      else
-				 one_diff += line
+	     all_diffs = ""
+	     while k <= @display_diff_changes && i <= @rev.length-2
+		   cmd_diff = "svn diff " + @access_method + @path_repository + " -r " + @rev[i+1][:rev] + ":" + @rev[i][:rev]
+		   r = `#{cmd_diff}`
+		   status = $?.exitstatus
+		   if status==0
+		      one_diff = ""
+		      file_found = false
+		      r.each do |line|
+			if file_found
+			   if line[0..6]=="Index: "
+			      if line != "Index: "+file_name
+			         break
 			      end
+			   else
+			      one_diff += line
 			   end
-			   if line.chomp == "Index: "+file_name
-			      file_found=true
-			   end
-			 end		# r.each do |line|
-			 all_diffs += "Change(s) between r"+revisions[i+1][:rev]+" "
-			 all_diffs += "("+revisions[i+1][:date].to_s+") " if revisions[i+1][:rev].to_s != "0" 
-			 all_diffs += "and r"+revisions[i][:rev]+" ("+revisions[i][:date].to_s+")\n"
-			 all_diffs += one_diff
-			 all_diffs += "\n"
-		      else
-	     		 $stderr.puts "[OARADMIN ERROR]: Error while browsing the repository"
-	     		 $stderr.puts "[OARADMIN ERROR]: Error while command : "+cmd_diff
-	     		 status=1
-		      end
-		      i+=1
-		      k+=1
-		end
+			end
+			if line.chomp == "Index: "+file_name
+			   file_found=true
+			end
+		      end		# r.each do |line|
+		      all_diffs += "Change(s) between r"+@rev[i+1][:rev]+" "
+		      all_diffs += "("+@rev[i+1][:date].to_s+") " if @rev[i+1][:rev].to_s != "0" 
+		      all_diffs += "and r"+@rev[i][:rev]+" ("+@rev[i][:date].to_s+")\n"
+		      all_diffs += one_diff
+		      all_diffs += "\n"
+		   else
+	     	      $stderr.puts "[OARADMIN ERROR]: Error while browsing the repository"
+	     	      $stderr.puts "[OARADMIN ERROR]: Error while command : "+cmd_diff
+	     	      status=1
+		   end
+		   i+=1
+		   k+=1
+	     end
 
-		# Display results
-		puts all_diffs
+	     # Display results
+	     puts all_diffs
 
-             else
-		puts "No changes found in repository for " + @file_name
-             end	# if revisions.length >= 2
-	  end		# if status > 0
+          else
+	     puts "[OARADMIN ERROR]: File " + @file_name + " not found in repository"
+          end	# if @rev.length >= 2
 
 	  status
       end 	# display_diff
 
-end	# class Repository
+      # Retrieve the content of a file as it existed in a revision number
+      # Return :
+      #    0 : no error
+      #    1 : The revision 0 exists but contains no file. 
+      #        There is no file at rev 0 in a svn repository
+      #    2 : The revision number specified by user is greater
+      #        than the revision number of repository
+      #    3 : svn cat repository/file@rev is impossible.
+      #        The #rev specified by user does not contains the file @file_name 
+      def retrieve_file_rev
+	  status=0
 
+	  # @rev contains always r0. So we must have at least 2 elements in @rev for the file
+	  if @rev.length < 2
+	     $stderr.puts "[OARADMIN ERROR]: File " + @file_name + " not found in repository"
+	     return 1
+	  end
+
+	  # Retrieve revision max from repository
+	  rev_max_repository=nil
+	  str = "svn info " + @access_method + @path_repository + " --xml"
+	  r = `#{str}` 
+	  xml = REXML::Document.new(r)
+	  xml.root.each_element { |e|
+	  rev_max_repository = e.attributes["revision"].to_i
+	  }
+	  if @rev_id > rev_max_repository
+	     $stderr.puts "[OARADMIN ERROR]: The revision #"+ @rev_id.to_s + " does not exist in repository"
+	     $stderr.puts "[OARADMIN ERROR]: The latest revision in repository is #" + rev_max_repository.to_s 
+	     return 2
+	  end
+
+	  # #rev given by user exists in repository
+	  # test if the #rev given by user exists for the file 
+	  str = "svn list " + @access_method + @path_repository + " -r " + @rev_id.to_s + " --xml" 
+	  r = `#{str}`
+	  xml = REXML::Document.new(r)
+	  file_exist_in_rev = false
+	  xml.root.each_element { |e|
+	      e.each_element { |f|
+		file_exist_in_rev = true if f.elements["name"].get_text == @file_name
+	      }
+          }
+	  if !file_exist_in_rev
+	     # test for more information to user
+	     # perhaps #rev given by user is a revision where the file was deleted
+	     file_deleted_in_rev=false
+	     (0..@rev.length-2).each do |i|
+		 file_deleted_in_rev=true if @rev[i][:rev].to_i == @rev_id && @rev[i][:action]=="D"
+	     end	# (0..@rev.length-2).each do |i|
+
+	     $stderr.puts "[OARADMIN ERROR]: Bad revision number. The file " + @file_name + " does not exist in revision #"+ @rev_id.to_s
+	     if file_deleted_in_rev
+	        $stderr.puts "[OARADMIN ERROR]: In #" + @rev_id.to_s + " the file was deleted. So it does not exist. To retrieve the content, try an older #rev"
+	     end
+
+	     return 3
+	  end
+
+	  # File @file_name exist in #rev
+          str = "svn cat " + @access_method + @path_repository + "/" + @file_name + "@" + @rev_id.to_s
+          @file_content = `#{str}`
+
+	  status
+      end 	# retrieve_file_rev
+
+
+end 	# class Revisions
 
 
 

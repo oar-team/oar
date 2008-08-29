@@ -450,17 +450,19 @@ case
         $msg[3] = "Error : no admission rule number given"
         $msg[4] = "Error : too many admission rule numbers"
         $msg[5] = "One parameter is bad"
+        $msg[6] = "Error : two parameters are required, rule_id and revision number"
+        $msg[7] = "Error : a revision number must be greater than zero"
 
         $script = ""
 
         # Options for parsing
         $options = {}
         $options[:list] = $options[:add] = $options[:file] = $options[:edit] = $options[:export] = $options[:delete] = false
-        $options[:history] = $options[:history_no] = false
+        $options[:history] = $options[:history_no] = $options[:revert] = false
         $options[:comment] = nil
 
         opts = OptionParser.new do |opts|
-            opts.banner = "Usage: oaradmin rules [-l|-ll|-lll [rule_ids]] [-a [rule_id] [-f file]] [-d rule_id [rule_ids]] \n                      [-x [rule_ids] [-f file]] [-e rule_id [-f file]] [-1 rule_id] [-0 rule_id]\n                      [-H rule_id [-n <number>|ALL|all]]"
+            opts.banner = "Usage: oaradmin rules [-l|-ll|-lll [rule_ids]] [-a [rule_id] [-f file]] [-d rule_id [rule_ids]] \n                      [-x [rule_ids] [-f file]] [-e rule_id [-f file]] [-1 rule_id] [-0 rule_id]\n                      [-H rule_id [-n number]] [-R rule_id rev]"
 
             # list admission rules
             opts.on("-l","--list","List admission rules") do 
@@ -503,13 +505,18 @@ case
             end
 
             # Show the changes made on the admission rule 
-            opts.on("-H","--history","Show the changes made on the admission rule") do 
+            opts.on("-H","--history","Show all changes made on the admission rule") do 
                $options[:history] = true
             end
 
-            # Number of historical changes to display  
-            opts.on("-n","--number","Number of historical changes to display") do 
+            # Number of latest changes to display  
+            opts.on("-n","--number","Number of latest changes to display") do 
                $options[:history_no] = true
+            end
+
+            # Revert to the admission rule as it existed in a revision number 
+            opts.on("-R","--revert","Revert to the admission rule as it existed in a revision number") do 
+               $options[:revert] = true
             end
 
             # help
@@ -535,27 +542,29 @@ case
         end
 
         if !( ( $options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
-	       !$options[:history] && !$options[:history_no] ) ||   # -l 
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -l 
               (!$options[:list] &&  $options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -a 
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -a 
               (!$options[:list] &&  $options[:add] &&  $options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -a -f
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -a -f
               (!$options[:list] && !$options[:add] && !$options[:file] &&  $options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -e 
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -e 
               (!$options[:list] && !$options[:add] &&  $options[:file] &&  $options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -e -f
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -e -f
               (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] &&  $options[:delete] && !$options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -d 
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -d 
               (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -e  
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -e  
               (!$options[:list] && !$options[:add] &&  $options[:file] && !$options[:edit] && !$options[:delete] &&  $options[:export] &&  $options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # -e -f
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -e -f
               (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] && !$options[:comment].nil? &&
-	       !$options[:history] && !$options[:history_no] ) ||   # comment
+	       !$options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # comment
               (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
-	        $options[:history] && !$options[:history_no] ) ||   # -H 
+	        $options[:history] && !$options[:history_no] && !$options[:revert] ) ||   # -H 
               (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
-	        $options[:history] &&  $options[:history_no] ) )    # -H -n
+	        $options[:history] &&  $options[:history_no] && !$options[:revert] ) ||   # -H -n
+              (!$options[:list] && !$options[:add] && !$options[:file] && !$options[:edit] && !$options[:delete] && !$options[:export] &&  $options[:comment].nil? && 
+	       !$options[:history] && !$options[:history_no] &&  $options[:revert] ) )    # -R 
 
               puts $msg[0]
               puts opts
@@ -782,26 +791,64 @@ case
 	            $stderr.puts $msg[2]
 	            exit(11)
 	         end
-		 repository = Repository.new
-		 if !repository.active
-		    $stderr.puts "[OARADMIN ERROR]: Versioning feature is not active"
-		    $stderr.puts "[OARADMIN ERROR]: You can activate this feature with the parameter OARADMIN_VERSIONING in the OAR conf file"
-		    exit(11)
-		 elsif !repository.exists
-		    $stderr.puts "[OARADMIN ERROR]: The repository does not exists or is unreadable"
-		    exit(11)
+
+		 revisions = Revisions.new("admission_rule_"+rule_id.to_s)
+		 exit(11) if !revisions.active || !revisions.exists
+   	         if $options[:history_no]
+      	            (0..ARGV.length-1).each do |i|
+          	        if ARGV[i] == "-n" || ARGV[i] == "--number" 
+		           if i < ARGV.length-1 && ARGV[i+1].to_i > 0
+             	              revisions.display_diff_changes = ARGV[i+1] 
+			   else
+		    	      $stderr.puts "The number of changes must be greater than zero"
+		    	      exit(11)
+			   end
+          	        end
+      	            end
+		 end
+		 status = revisions.display_diff
+
+
+            when $options[:revert]
+		 # Revert to the admission rule as it existed in a revision number 
+	         rule_id = nil 
+   	         list_rules = Admission_rules.rule_list_from_command_line
+   	         if list_rules.length != 2		# In this case, list_rules[0] is the rule_id 
+                    $stderr.puts $msg[6]		# and list_rules[1] is the revision number             
+		    puts opts
+                    exit(12)
+   	         end
+		 rule_id = list_rules[0].to_i 
+	         if rule_id == 0 
+	            $stderr.puts $msg[2]
+	            exit(12)
+	         end
+	         if list_rules[1].to_i == 0 
+	            $stderr.puts $msg[7]
+	            exit(12)
+	         end
+		 revisions = Revisions.new("admission_rule_"+rule_id.to_s)
+		 exit(12) if !revisions.active || !revisions.exists
+		 revisions.rev_id = list_rules[1].to_i
+		 status = revisions.retrieve_file_rev
+		 exit(12) if status != 0
+
+		 # Add or update in oar database
+		 rule = Rule.new(dbh, rule_id)
+		 if rule.exist
+		    # rule already exist in oar database => update
+		    rule.script = revisions.file_content
+                    status = rule.update
+		    exit(12) if status != 0
 		 else
-		    repository.file_name = "admission_rule_"+rule_id.to_s
-   	            if $options[:history_no]
-      	               (0..ARGV.length-1).each do |i|
-          	           if ARGV[i] == "-n" 
-             	              repository.display_diff_changes = ARGV[i+1] if i < ARGV.length-1
-          	           end
-      	               end
-		    end
-		    status = repository.display_diff
- 		 end 
-        end
+		    # rule does not exist in oar database and we have an old content
+		    # from repository. So, rule was deleted
+                    rule.script = revisions.file_content
+                    status = rule.add
+		    exit(12) if status != 0
+		 end
+
+        end	# case
 
         # Disconnect from database
         dbh.disconnect if dbh
