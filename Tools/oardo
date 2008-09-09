@@ -2,6 +2,8 @@
 # $Id$
 # This wrapper is used to execute user commands with oar privileges.
 
+use English '-no_match_vars';
+
 ###############################################################################
 # Static conf to edit #
 #######################
@@ -14,8 +16,8 @@ my $Oarxauthlocation = "/usr/bin/xauth";
 
 ###############################################################################
 
-$ENV{OARDO_USER} = getpwuid($<);
-$ENV{OARDO_UID} = $<;
+$ENV{OARDO_USER} = getpwuid($UID);
+$ENV{OARDO_UID} = $UID;
 $ENV{OARDIR} = $Oardir;
 $ENV{PERL5LIB} = $Oardir;
 $ENV{RUBYLIB} = $Oardir;
@@ -44,24 +46,24 @@ delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV','BASH_ENV','LD_LIBRARY_PATH'};
 # END CLEAN
 
 
-undef($!);
+undef($ERRNO);
 # GID = EGID
-$( = $);
-if ($!){
-    warn("$Cmd_wrapper: $!\n       Cannot set GID to '$)'.\n");
+$GID = $EGID;
+if ($ERRNO){
+    warn("$Cmd_wrapper: $ERRNO\n       Cannot set GID to '$EGID'.\n");
     exit(2);
 }
 # UID = EUID
-$< = $>;
-if ($!){
-    warn("$Cmd_wrapper: $!\n       Cannot set UID to '$>'.\n");
+$UID = $EUID;
+if ($ERRNO){
+    warn("$Cmd_wrapper: $ERRNO\n       Cannot set UID to '$EUID'.\n");
     exit(2);
 }
 
 # Get oar user info
-my @tmp = getpwuid($>);
+my @tmp = getpwuid($EUID);
 if ($#tmp < 0){
-    warn("oardo: Cannot get information from uid $>.\n");
+    warn("oardo: Cannot get information from uid $EUID.\n");
     exit(2);
 }
 
