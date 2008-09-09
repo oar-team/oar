@@ -68,7 +68,7 @@ system("tty &> /dev/null && stty echo");
 my $dbh = DBI->connect("DBI:mysql:database=mysql;host=$dbHost;port=$dbPort", $dbLogin, $dbPassword, {'RaiseError' => 0});
 my $query;
 # Database creation
-$dbh->do("CREATE DATABASE IF NOT EXISTS $dbName") or die $dbh->errstr;
+$dbh->do("CREATE DATABASE IF NOT EXISTS $dbName CHARACTER SET latin1") or die $dbh->errstr;
 
 # Grant user the basic privileges
 $dbh->do('GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON '.$dbName.'.* TO '.$dbUserName.'@localhost IDENTIFIED BY "'.$dbUserPassword.'"') or die $dbh->errstr;
