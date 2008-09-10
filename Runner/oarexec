@@ -256,11 +256,12 @@ if (defined($Job->{prologue})){
 # Launch prologue script
     my $script_error = -1;
     eval {
-        $SIG{ALRM} = sub { die "alarm\n" };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9,$pid); die "alarm\n" };
         print("[oarexec $Job_id] LAUNCH prologue : $Job->{prologue} $Job_id $Job->{job_user} $Node_file $Job->{walltime_seconds}\n");
         alarm($Job->{pro_epi_timeout});
         #$script_error = system("$Job->{prologue} $Job_id $Job->{user} $Node_file");
-        my $pid = fork();
+        $pid = fork();
         if($pid == 0){
             #CHILD
             $SIG{ALRM} = 'DEFAULT';
@@ -548,11 +549,12 @@ if (defined($Job->{epilogue})){
     # Launch epilogue script
     my $script_error = -1;
     eval {
-        $SIG{ALRM} = sub { die "alarm\n" };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9, $pid); die "alarm\n" };
         print("[oarexec $Job_id] LAUNCH epilogue : $Job->{epilogue} $Job_id $Job->{job_user} $Node_file $Job->{walltime_seconds}\n");
         alarm($Job->{pro_epi_timeout});
         #$script_error = system("$Job->{epilogue} $Job_id $Job->{user} $Node_file $Job->{command}");
-        my $pid = fork();
+        $pid = fork();
         if($pid == 0){
             #CHILD
             $SIG{ALRM} = 'DEFAULT';

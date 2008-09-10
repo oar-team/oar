@@ -113,9 +113,10 @@ sub taktuk_hosts(@){
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
-        $SIG{ALRM} = sub { die("alarm\n") };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9,$pid); die("alarm\n") };
         alarm(oar_Tools::get_taktuk_timeout());
-        my $pid = open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
+        $pid = open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
         foreach my $i (@hosts){
             print(WRITER "$i\n");
             $check_test_nodes{$i} = 1;
@@ -173,9 +174,10 @@ sub sentinelle_script_hosts(@){
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
-        $SIG{ALRM} = sub { die("alarm\n") };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9,$pid); die("alarm\n") };
         alarm($Timeout_script_sentinelle);
-        my $pid = open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
+        $pid = open3(\*WRITER, \*READER, \*ERROR, $sentinelle_cmd);
         foreach my $i (@hosts){
             print(WRITER "$i\n");
             $check_test_nodes{$i} = 1;
@@ -232,9 +234,10 @@ sub fping_hosts(@){
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
-        $SIG{ALRM} = sub { die("alarm\n") };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9,$pid); die("alarm\n") };
         alarm($Timeout_fping);
-        my $pid = open3(\*WRITER, \*READER, \*ERROR, $fping_cmd);
+        $pid = open3(\*WRITER, \*READER, \*ERROR, $fping_cmd);
         close(WRITER);
         foreach my $i (\*READER, \*ERROR){
             while(<$i>){
@@ -298,9 +301,10 @@ sub nmap_hosts(@){
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
-        $SIG{ALRM} = sub { die("alarm\n") };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9,$pid); die("alarm\n") };
         alarm($Timeout_nmap);
-        my $pid = open3(\*WRITER, \*READER, \*ERROR, $nmap_cmd);
+        $pid = open3(\*WRITER, \*READER, \*ERROR, $nmap_cmd);
         close(WRITER);
         while(<READER>){
             chomp($_);
@@ -364,9 +368,10 @@ sub generic_hosts(@){
     $ENV{IFS}="";
     $ENV{ENV}="";
     eval {
-        $SIG{ALRM} = sub { die("alarm\n") };
+        my $pid;
+        $SIG{ALRM} = sub { kill(9,$pid); die("alarm\n") };
         alarm($Default_timeout);
-        my $pid = open3(\*WRITER, \*READER, \*ERROR, $test_cmd);
+        $pid = open3(\*WRITER, \*READER, \*ERROR, $test_cmd);
         while(<ERROR>){
             chomp($_);
             $_ =~ m/^\s*([\w\.]+)\s*$/m;

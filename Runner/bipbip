@@ -399,7 +399,8 @@ my $error = 50;
 my $exit_script_value = 'N';
 my $init_done = 0;
 eval {
-    $SIG{ALRM} = sub { die "alarm\n" };
+    my $pid;
+    $SIG{ALRM} = sub { kill(9,$pid); die "alarm\n" };
     alarm($pro_epi_timeout + oar_Tools::get_bipbip_ssh_hashtable_send_timeout() + oar_Tools::get_ssh_timeout());
     my $ssh_option = "";
     if ((defined($Cpuset_full_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
@@ -409,7 +410,7 @@ eval {
     }else{
         $ENV{OAR_CPUSET} = "";
     }
-    my $pid = open2(\*READ, \*WRITE, "$Openssh_cmd $ssh_option -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
+    $pid = open2(\*READ, \*WRITE, "$Openssh_cmd $ssh_option -x -T $host_to_connect_via_ssh perl - $Job_id OAREXEC");
     foreach my $f (@oarexec_files){
         open(FILE, $f) or die("Cannot open $f\n");
         while(<FILE>){

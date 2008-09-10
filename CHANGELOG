@@ -12,6 +12,9 @@ version 2.3.2:
   - Fix OAR_JOB_PROPERTIES_FILE: do not display system properties
   - Add a new user command: oarprint which allow to pretty print resource 
     properties of a job
+  - Debug temporary job UID feature
+  - Add 'kill -9' on subprocesses that reached a timeout (avoid Perl to
+    wait something)
 
 version 2.3.1:
 --------------

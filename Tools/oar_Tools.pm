@@ -802,7 +802,7 @@ sub manage_remote_commands($$$$$$$){
         close(tak_node_write);
        
         eval{
-            $SIG{ALRM} = sub { die "alarm\n" };
+            $SIG{ALRM} = sub { kill(9,$pid); die "alarm\n" };
             alarm(oar_Tools::get_taktuk_timeout());     
             # Send data structure to all nodes
             print(tak_stdin_write $string_to_transfer);
