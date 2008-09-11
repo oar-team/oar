@@ -68,7 +68,7 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-admin
 Architecture: all
-Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8
+Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, libyaml-perl
 Suggests: oar-doc, oar-server
 Description: OAR batch scheduler administration tools package
  This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...)
