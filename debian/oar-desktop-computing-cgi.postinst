@@ -25,13 +25,15 @@ db_version 2.0
 adduser www-data oar || true
 
 # TODO what does this do?
-perl -i -pe "s#^OARDIR=.*#OARDIR=/usr/lib/oar#;;s#^OARUSER=.*#OARUSER=oar#" /usr/lib/cgi-bin/oar-cgi
+#perl -i -pe "s#^OARDIR=.*#OARDIR=/usr/lib/oar#;;s#^OARUSER=.*#OARUSER=oar#" /usr/lib/cgi-bin/oar-cgi
 
 # Manage setuid bits
 chown oar:oar /usr/sbin/oarcache
 chmod a+s /usr/sbin/oarcache
 chown oar:oar /usr/sbin/oarres
 chmod a+s /usr/sbin/oarres
+chown oar:oar /usr/lib/oar/oarres
+chmod a+s /usr/lib/oar/oarres
 chown oar:oar /usr/sbin/oar-cgi
 chmod a+s /usr/sbin/oar-cgi
 

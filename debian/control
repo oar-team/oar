@@ -46,19 +46,19 @@ Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
  This package install the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
 
-#Package: oar-desktop-computing-agent
-#Architecture: all
-#Depends: ${perl:Depends}, libwww-perl, liburi-perl
-#Suggests: oar-doc
-#Description: OAR desktop computing agent
-# This package install the OAR batch scheduler desktop computing agent
-#
-#Package: oar-desktop-computing-cgi
-#Architecture: all
-#Depends: oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, libcgi-perl, adduser
-#Suggests: oar-doc
-#Description: OAR desktop computing HTTP proxy CGI
-# This package install the OAR batch scheduler desktop computing HTTP proxy CGI
+Package: oar-desktop-computing-agent
+Architecture: all
+Depends: ${perl:Depends}, libwww-perl, liburi-perl
+Suggests: oar-doc
+Description: OAR desktop computing agent
+ This package install the OAR batch scheduler desktop computing agent
+
+Package: oar-desktop-computing-cgi
+Architecture: all
+Depends: oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, libcgi-perl, adduser
+Suggests: oar-doc
+Description: OAR desktop computing HTTP proxy CGI
+ This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
 Package: oar-doc
 Section: doc
