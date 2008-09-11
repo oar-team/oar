@@ -17,6 +17,5 @@ my $job = iolib::get_job($base,$jobid) or die "Failed to get job information\n";
 #system "sudo -u ".$job->{'user'}." tar xvfz $stageoutfile -C ".$job->{'launchingDirectory'}." && rm -v $stageoutfile" and die "Stageout delivery failed: $!\n";
 #system "sudo -u ".$job->{'job_user'}." tar xfz $stageoutfile -C ".$job->{'launching_directory'}.">& /dev/null && rm $stageoutfile" and die "Stageout delivery failed: $!\n";
 $ENV{OARDO_BECOME_USER} = $job->{job_user};
-system "oardodo id > /tmp/log.oar 2>&1";
 system "oardodo tar xfz $stageoutfile -C $job->{'launching_directory'} >& /dev/null && rm $stageoutfile" and die "Stageout delivery failed: $!\n";
 iolib::disconnect($base);
