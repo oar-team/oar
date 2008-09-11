@@ -65,10 +65,10 @@ my @resource;
 my $Queue_name;
 my $Job_sql_properties = "";
 my $Cmd_executor;
-#my $stagein = undef;
+my $stagein = undef;
 my $idFile = undef;
 my $md5sum = undef;
-#my $stageindir;
+my $stageindir;
 my $sos;
 my $Checkpoint=0;
 my $notify;
@@ -368,6 +368,8 @@ Options are:
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
+ -s, --stagein=<dir|tgz>       Set the stagein directory or archive
+     --stagein-md5sum=<md5sum> Set the stagein file md5sum
  -D, --dumper                  Print result in DUMPER format
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format
@@ -575,8 +577,8 @@ sub parse_resource_descriptions($){
         push(@result, \@resource_groups);
     }
     # Add resource constraints for JOB_RESOURCE_MANAGER_JOB_UID_TYPE for each resource groups
-    if (defined($Job_uid_resource_type) and defined($Cpuset_field)){
-        my %tmp = ( 
+    if (defined($Job_uid_resource_type) and defined($Cpuset_field) and !(grep(/^desktop_computing$/, @Type))){
+        my %tmp = (
                     property => "type = '$Job_uid_resource_type'",
                     resources => [ {resource => $Cpuset_field, value => 1} ]
                   );
@@ -595,7 +597,7 @@ sub parse_resource_descriptions($){
 init_conf($ENV{OARCONFFILE});
 $remote_host = get_conf("SERVER_HOSTNAME");
 $remote_port = get_conf("SERVER_PORT");
-#$stageindir = get_conf("STAGEIN_DIR");
+$stageindir = get_conf("STAGEIN_DIR");
 
 $Default_resources = get_conf("OARSUB_DEFAULT_RESOURCES");
 if (!defined($Default_resources)){
@@ -651,6 +653,8 @@ GetOptions ("resource|l=s" => \@resource,
             "property|p=s" => \$Job_sql_properties,
             "reservation|r=s" => \$Reservation,
             "connect|C=i" => \$connect_job,
+            "stagein|s=s" => \$stagein,
+            "stagein-md5sum=s" => \$md5sum,
             "checkpoint=i" => \$Checkpoint,
             "help|h" => \$sos,
             "notify=s" => \$notify,
@@ -736,43 +740,43 @@ if (($Interactive == 1) and ($Reservation ne "0")){
 }
 
 # stagein machinery
-#if (defined $stagein) {
-#    print "Setting up stagein...\n";
-#    if (-d $stagein) {
-#        print "Archiving the content of the directory \"$stagein\" for the job stagein...\n";
-#        my  (undef, $filename) = tempfile (SUFFIX=>".oar-stagein.tgz",OPEN => 0);
-#        system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
-#        print "Stagein archive = $filename\n";
-#        print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
-#        $stagein = $filename;
-#        $md5sum = undef;
-#    }
-#    ( -r $stagein ) or die "Stagein file not found: $stagein\n";
-#    unless (defined $md5sum) {
-#        print "Computing stagein md5sum...\n";
-#        ($md5sum) = split(" ",`md5sum $stagein`);
-#        print "md5sum = $md5sum\n";
-#        print "(You may use the -m option with this md5sum for other job submitions with the same stagein)\n";
-#    }
-#    $base = iolib::connect();
-#    iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
-#    $idFile = iolib::get_stagein_id($base,$md5sum);
-#    if (defined $idFile) {
-#        print "This stagein is already stored on the server.\n";
-#    } else {
-#        my $location = "$stageindir/$md5sum";
-#        my $method = "FILE";
-#        my $compression = "tar.gz";
-#        print "Uploading stagein...\n";
-#        system "scp $stagein $location" and die "Stagein upload failed\n";
-#        my @stats = stat $stagein;
-#        $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
-#        defined $idFile or die "Failed to setup stagein\n";
-#    }
-#    iolib::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";
-#    iolib::disconnect($base);
-#    print "Stagein completed.\n";
-#}
+if (defined $stagein) {
+    print "Setting up stagein...\n";
+    if (-d $stagein) {
+        print "Archiving the content of the directory \"$stagein\" for the job stagein...\n";
+        my  (undef, $filename) = tempfile (SUFFIX=>".oar-stagein.tgz",OPEN => 0);
+        system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
+        print "Stagein archive = $filename\n";
+        print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
+        $stagein = $filename;
+        $md5sum = undef;
+    }
+    ( -r $stagein ) or die "Stagein file not found: $stagein\n";
+    unless (defined $md5sum) {
+        print "Computing stagein md5sum...\n";
+        ($md5sum) = split(" ",`md5sum $stagein`);
+        print "md5sum = $md5sum\n";
+        print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
+    }
+    #$base = iolib::connect();
+    iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
+    $idFile = iolib::get_stagein_id($base,$md5sum);
+    if (defined $idFile) {
+        print "This stagein is already stored on the server.\n";
+    } else {
+        my $location = "$stageindir/$md5sum";
+        my $method = "FILE";
+        my $compression = "tar.gz";
+        print "Uploading stagein...\n";
+        system "scp $stagein $location" and die "Stagein upload failed\n";
+        my @stats = stat $stagein;
+        $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
+        defined $idFile or die "Failed to setup stagein\n";
+    }
+    iolib::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";
+    #iolib::disconnect($base);
+    print "Stagein completed.\n";
+}
 
 # Connect to a reservation
 if (defined($connect_job)){

@@ -2786,10 +2786,10 @@ sub get_desktop_computing_host_jobs($$) {
     my $dbh = shift;
     my $hostname = shift;
 
-    my $sth = $dbh->prepare("   SELECT jobs.job_id, jobs.state, jobs.command, jobs.launching_directory
+    my $sth = $dbh->prepare("   SELECT jobs.job_id, jobs.state, jobs.command, jobs.launching_directory, jobs.stdout_file, jobs.stderr_file
                                 FROM jobs, assigned_resources, resources
-                                WHERE	
-	                            resources.node = \'$hostname\' AND 
+                                WHERE
+                                    resources.network_address = \'$hostname\' AND
                                     resources.desktop_computing = \'YES\' AND
                                     resources.resource_id = assigned_resources.resource_id AND
                                     jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
@@ -2801,8 +2801,10 @@ sub get_desktop_computing_host_jobs($$) {
         $results->{$array[0]} = {
                                     state => $array[1],
                                     command => $array[2],
-                                    directory => $array[3]
-				};
+                                    directory => $array[3],
+                                    stdout_file => oar_Tools::replace_jobid_tag_in_string($array[4],$array[0]),
+                                    stderr_file => oar_Tools::replace_jobid_tag_in_string($array[5],$array[0])
+                                };
     }
     return($results);
 }
@@ -2842,12 +2844,8 @@ sub set_stagein($$$$$$) {
     my $idFile;
     lock_table($dbh, ["files"]);
     $dbh->do("INSERT INTO files (md5sum,location,method,compression,size)
-              VALUES (\"$md5sum\",\"$location\",\"$method\",\"$compression\",$size)");
-    my $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    ($idFile) = values(%$ref);
-    $sth->finish();
+              VALUES (\'$md5sum\',\'$location\',\'$method\',\'$compression\',$size)");
+    $idFile = get_last_insert_id($dbh,"files_file_id_seq");
     unlock_table($dbh);
     return $idFile;
 }
@@ -5322,7 +5320,9 @@ sub get_lock($$$) {
     my $timeout = shift;
 
     if ($Db_type eq "Pg"){
-        $dbh->begin_work();
+        #$dbh->begin_work();
+        #Cannot find the GET_LOCK function into postgres...
+        return 1;
     }else{
         my $sth = $dbh->prepare("SELECT GET_LOCK(\"$mutex\",$timeout)");
         $sth->execute();
@@ -5347,7 +5347,8 @@ sub release_lock($$) {
     my $mutex = shift;
 
     if ($Db_type eq "Pg"){
-        $dbh->commit();
+        #$dbh->commit();
+        return 1;
     }else{
         my $sth = $dbh->prepare("SELECT RELEASE_LOCK(\"$mutex\")");
         $sth->execute();

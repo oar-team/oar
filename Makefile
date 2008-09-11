@@ -60,20 +60,20 @@ desktop-computing-agent:
 desktop-computing-cgi:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
-	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache
+	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache.pl
 	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarcache
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarcache'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarcache.pl'\;#;;\
 				" $(SBINDIR)/oarcache
-	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarres
+	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres.pl
+	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarres
 	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarres'\;#;;\
-				" $(SBINDIR)/oares
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarres.pl'\;#;;\
+				" $(OARDIR)/oarres
 	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi.pl
 	install -d -m 0755 $(CGIDIR)
 	install -m 6750 -o $(OAROWNER) -g $(WWWUSER) Tools/oardo $(CGIDIR)/oar-cgi

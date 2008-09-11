@@ -516,8 +516,6 @@ sub runcmd($$) {
 	my $jobid = shift;
 	my $job = shift;
 	my $cmd =  $job->{'command'};
-	my $jobname = basename((split /\s/,$cmd)[0]);
-	$jobname =~ s#([\w.]+)#$1#;
 	my $directory = $job->{'directory'};
   $cmd =~ s#^$directory/?##;
 	$launch_job_pid = fork();
@@ -527,7 +525,7 @@ sub runcmd($$) {
 		$SIG{CHLD}='DEFAULT';
 		$SIG{TERM}='DEFAULT';
 		$ENV{'OAR_JOBID'} = $jobid;
-		my $execcmd = "$cmd > OAR.$jobname.$jobid.stdout 2> OAR.$jobname.$jobid.stderr";
+		my $execcmd = "$cmd > $job->{'stdout_file'} 2> $job->{'stderr_file'}";
 		message "($$)Executing '$execcmd'\n";
 		exec $execcmd;
 		die "($$)Exec Failed: $!\n";

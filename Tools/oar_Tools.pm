@@ -707,7 +707,7 @@ sub check_resource_property($){
 sub check_resource_system_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs|expiry_date|scheduler_priority|cm_availability|desktop_computing)$/ ) {
+    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs|expiry_date|scheduler_priority|cm_availability)$/ ) {
         return(1);
     }else{
         return(0);
