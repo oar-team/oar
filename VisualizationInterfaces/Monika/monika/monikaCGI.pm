@@ -3,7 +3,7 @@
 package monika::monikaCGI;
 use strict;
 use File::Basename;
-use monika::Sort::Naturally;
+use Sort::Naturally;
 #use warnings;
 use base qw(CGI);
 use Data::Dumper;
