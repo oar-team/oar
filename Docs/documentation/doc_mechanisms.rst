@@ -324,14 +324,12 @@ specify that this is a deploy job.
 Desktop computing
 -----------------
 
-*(for now this functionality is not working. So don't try to use it)*
-
 If you cannot contact the computers via SSH you can install the "desktop
 computing" OAR mode.
 This kind of installation is based on two programs:
- 
+
  - oar-cgi : this is a web CGI used by the nodes to communicate with
-   the OAR server.
+   the OAR server via a HTTP server on the OAR server node.
    
  - oar-agent.pl : This program asks periodically the server web CGI to know what it
    has to do.
@@ -339,6 +337,6 @@ This kind of installation is based on two programs:
 This method replaces the SSH command. Computers which want to register them into
 OAR just has to be able to contact OAR HTTP server.
 
-In this situation we don't have a NFS file system to share the same repertories
+In this situation we don't have a NFS file system to share the same directories
 over all nodes so we have to use a stagein/stageout solution. In this case you
 can use the oarsub_ option "stagein" to migrate your data.
