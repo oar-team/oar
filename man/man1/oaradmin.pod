@@ -5,7 +5,7 @@ oaradmin - OAR administration tool.
 =head1 SYNOPSIS
 
 B<oaradmin> resources OPTIONS
- 
+
 B<oaradmin> rules OPTIONS
 
 B<oaradmin> version

@@ -159,7 +159,7 @@ Name of the job as given using the B<-n> option.
 =item B<OAR_JOB_ID> aka B<OAR_JOBID>
 
 Id of the job. Each job get a unique job identifier. This identifier can be use to retrieve information about the job using B<oarstat>, or to connect to a running job using B<oarsub -C> or B<oarsh> for instance.
-  
+
 =item B<OAR_JOB_WALLTIME> resp. B<OAR_JOB_WALLTIME_SECONDS>
 
 Walltime of the job in the hh:mm:ss format resp. in seconds.

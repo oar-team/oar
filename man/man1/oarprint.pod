@@ -35,7 +35,7 @@ Substitution token to replace in the format string, default: % .
 Separator to use when displaying lists, default: , .
 
 =item B<-l, --list>
-     
+
 List available properties and exit.
 
 =item B<-h, --help>

@@ -27,7 +27,7 @@ Show only a resource with their properties.
 Show only resource states.
 
 =item B<-l, --list>
-     
+
 Show only node list.
 
 =item B<-e, --events>

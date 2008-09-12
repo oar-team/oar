@@ -34,6 +34,8 @@ Print OAR version number.
 
 Print help command message.
 
+=back
+
 =head1 SEE ALSO
 
 oarsub(1), oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
