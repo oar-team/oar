@@ -2537,8 +2537,8 @@ sub get_finaud_nodes($) {
       $sth = $dbh->prepare("   SELECT DISTINCT(network_address), *
                                   FROM resources
                                   WHERE
-                                    state = \'Alive\' OR
-                                    (state = \'Suspected\' AND finaud_decision = \'YES\') AND
+                                    (state = \'Alive\' OR
+                                    (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
                                     type = \'default\'
                               ");
     }
