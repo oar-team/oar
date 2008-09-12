@@ -86,7 +86,7 @@ This package installs some documentation for OAR batch scheduler
 %package admin
 Summary:	OAR batch scheduler administration tools package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, ruby, ruby-DBI
+Requires:       oar-common = %version-%release, ruby, ruby-DBI, perl(YAML)
 BuildArch: 	noarch
 %description admin
 This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
