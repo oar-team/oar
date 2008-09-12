@@ -67,7 +67,7 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:	OAR batch scheduler web-status package
 Group:          System/Servers
-Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally)
+Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally), httpd
  # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby)
 BuildArch: 	noarch
 Provides:       Monika, DrawGantt
@@ -90,6 +90,22 @@ Requires:       oar-common = %version-%release, ruby, ruby-DBI
 BuildArch: 	noarch
 %description admin
 This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
+
+%package desktop-computing-agent
+Summary:        OAR desktop computing agent
+Group:          System/Servers
+Requires:	perl-libwww-perl, perl-URI
+BuildArch:	noarch
+%description desktop-computing-agent
+This package install the OAR batch scheduler desktop computing agent
+
+%package desktop-computing-cgi
+Summary:	OAR desktop computing HTTP proxy CGI
+Group:          System/Servers
+Requires:	perl(CGI), oar-common = %version-%release, httpd
+BuildArch:      noarch
+%description    desktop-computing-cgi	
+This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
 %prep
 %setup -T -b 0
@@ -114,8 +130,9 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |bin/Almighty\$|bin/oarnotify\$|bin/oarremoveresource\$|bin/oaraccounting\$\
 |bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
-|bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$"
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin
+|bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
+|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$"
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | egrep -v "$EXCEPTS" > $package.files
@@ -131,6 +148,7 @@ install -D -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysc
 install -D -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
 install -D -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
 install -D -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
+install -D -m 644 %{_topdir}/SOURCES/oar-desktop-computing-cgi.cron.hourly $RPM_BUILD_ROOT/etc/cron.hourly/oar-desktop-computing-cgi
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
@@ -192,6 +210,15 @@ rm -rf tmp
 
 %files admin -f oar-admin.files
 %attr(6750,oar,oar) /usr/sbin/oaradmin
+
+%files desktop-computing-agent -f oar-desktop-computing-agent.files
+
+%files desktop-computing-cgi -f oar-desktop-computing-cgi.files
+%config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
+%attr(6750,oar,oar) /usr/sbin/oarcache
+%attr(6750,oar,oar) /usr/lib/oar/oarres
+%attr(6750,oar,apache) /var/www/cgi-bin/oar-cgi
+
 
 ###### oar-common scripts ######
 

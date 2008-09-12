@@ -106,3 +106,32 @@ pkginstall:
                 REAL_OARDIR=/usr/lib/oar \
                 REAL_SBINDIR=/usr/sbin \
                 REAL_BINDIR=/usr/bin
+	$(MAKE) desktop-computing-agent \
+		OARUSER=oar \
+		OAROWNER=$(USER) \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/sbin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+	$(MAKE) desktop-computing-cgi \
+		OARUSER=oar \
+		OAROWNER=$(USER) \
+		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/etc/oar \
+		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr \
+		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/share/man \
+		OARDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/lib/oar \
+		BINDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/bin \
+		SBINDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/sbin \
+		WWWDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/var/www/html \
+		CGIDIR=$(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/var/www/cgi-bin \
+		REAL_OARCONFDIR=/etc/oar \
+		REAL_OARDIR=/usr/lib/oar \
+		REAL_SBINDIR=/usr/sbin \
+		REAL_BINDIR=/usr/bin
+
