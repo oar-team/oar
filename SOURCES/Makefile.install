@@ -18,7 +18,7 @@ pkginstall:
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-common/var/lib/oar
 	$(MAKE) sanity-check common configuration libs \
 		OARUSER=oar \
-		OAROWNER=root \
+		OAROWNER=$(USER) \
 		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-common/etc/oar \
 		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-common/usr \
 		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-common/usr/share/man \
@@ -34,7 +34,7 @@ pkginstall:
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-server/var/lib/oar
 	$(MAKE) sanity-check server dbinit\
 		OARUSER=oar \
-		OAROWNER=root \
+		OAROWNER=$(USER) \
 		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-server/etc/oar \
 		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-server/usr \
 		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-server/usr/share/man \
@@ -49,7 +49,7 @@ pkginstall:
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-node/etc/init.d
 	$(MAKE) sanity-check node \
 		OARUSER=oar \
-		OAROWNER=root \
+		OAROWNER=$(USER) \
 		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-node/etc/oar \
 		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-node/usr \
 		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-node/usr/share/man \
@@ -63,7 +63,7 @@ pkginstall:
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-user/var/lib/oar
 	$(MAKE) sanity-check user \
 		OARUSER=oar \
-		OAROWNER=root \
+		OAROWNER=$(USER) \
 		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-user/etc/oar \
 		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-user/usr \
 		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-user/usr/share/man \
@@ -76,7 +76,7 @@ pkginstall:
 		REAL_BINDIR=/usr/bin
 	$(MAKE) draw-gantt monika www-conf \
 		OARUSER=oar \
-		OAROWNER=root \
+		OAROWNER=$(USER) \
 		OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/etc/oar \
 		PREFIX=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr \
 		MANDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/man \
@@ -95,7 +95,7 @@ pkginstall:
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-admin
 	$(MAKE) sanity-check tools \
                 OARUSER=oar \
-                OAROWNER=root \
+                OAROWNER=$(USER) \
                 OARCONFDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/etc/oar \
                 PREFIX=$(CURDIR)/$(BUILDDIR)/oar-admin/usr \
                 MANDIR=$(CURDIR)/$(BUILDDIR)/oar-admin/usr/share/man \

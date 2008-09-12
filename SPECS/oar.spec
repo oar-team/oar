@@ -95,9 +95,15 @@ This package installs some useful tools to help the administrator of a oar serve
 %setup -T -b 0
 cp %{_topdir}/SOURCES/Makefile.install .
 
+# Modify Makefile for chown commands to be non-fatal as the permissions
+# are set by the packaging
+perl -i -pe "s/chown/-chown/" Makefile
+perl -i -pe "s/-o root//" Makefile
+perl -i -pe "s/-g root//" Makefile
+
 %build
 # Install into separated directories using the provided makefile
-make -f Makefile.install pkginstall BUILDDIR=tmp WWWUSER=apache
+make -f Makefile.install pkginstall BUILDDIR=tmp WWWUSER=$USER
 # Reconstruct the whole system
 mkdir -p $RPM_BUILD_ROOT
 cp -a tmp/*/* $RPM_BUILD_ROOT/
@@ -115,16 +121,16 @@ do
     | egrep -v "$EXCEPTS" > $package.files
 done
 # Additional distribution dependent files
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.init.d $RPM_BUILD_ROOT/etc/init.d/oar-server
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc/init.d/oar-node
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin/oar-server
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
-install -D -o root -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
-install -D -o root -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
-install -D -o apache -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
+install -D -m 755 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
+install -D -m 755 %{_topdir}/SOURCES/oar-server.init.d $RPM_BUILD_ROOT/etc/init.d/oar-server
+install -D -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc/init.d/oar-node
+install -D -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin/oar-server
+install -D -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
+install -D -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
+install -D -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
+install -D -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
+install -D -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
+install -D -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
@@ -179,6 +185,7 @@ rm -rf tmp
 %files web-status -f oar-web-status.files
 %config %attr (0600,apache,root) /etc/oar/drawgantt.conf
 %config %attr (0600,apache,root) /etc/oar/monika.conf
+%config %attr (0600,apache,root) /etc/oar/apache.conf
 
 %files doc -f oar-doc.files
 %docdir /usr/share/doc/oar-doc 
