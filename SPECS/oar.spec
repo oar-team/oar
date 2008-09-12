@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.0+svn1427
+%define version 2.3.1+svn1619
 %define release 1
 
 Name: 		oar
@@ -67,10 +67,10 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:	OAR batch scheduler web-status package
 Group:          System/Servers
-Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD
+Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally)
  # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby)
 BuildArch: 	noarch
-Provides:	perl(monika::Sort::Naturally), Monika, DrawGantt
+Provides:       Monika, DrawGantt
 %description web-status
 This package installs the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
 
