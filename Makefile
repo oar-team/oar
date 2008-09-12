@@ -355,8 +355,6 @@ monika:
 	install -m 0644 VisualizationInterfaces/Monika/monika.css $(WWWDIR)
 	install -d -m 0755 $(CGIDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(CGIDIR)/monika
-	install -d -m 0755 $(CGIDIR)/monika/Sort
-	install -m 0755 VisualizationInterfaces/Monika/monika/Sort/Naturally.pm $(CGIDIR)/monika/Sort
 	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(CGIDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(CGIDIR)/monika
 
