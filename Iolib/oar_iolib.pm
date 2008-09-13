@@ -3351,6 +3351,23 @@ sub set_node_nextState($$$) {
 }
 
 
+# set_node_nextState_if_necessary
+sub set_node_nextState_if_necessary($$$) {
+    my $dbh = shift;
+    my $hostname = shift;
+    my $nextState = shift;
+
+    my $result = $dbh->do(" UPDATE resources
+                            SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
+                            WHERE
+                                network_address = \'$hostname\'
+                                AND state != \'$nextState\'
+                                AND next_state = \'UnChanged\'
+                          ");
+    return($result);
+}
+
+
 # update_resource_nextFinaudDecision
 # update nextFinaudDecision field
 # parameters : base, resource_id, "YES" or "NO"

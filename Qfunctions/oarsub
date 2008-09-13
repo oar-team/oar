@@ -184,6 +184,10 @@ sub scan_script($){
                         $result{importjobkeyfromfile} = $2;
                     }elsif ($line =~ m/^#OAR\s+(-e|--export-job-key-to-file)\s*(.+)\s*$/m) {
                         $result{exportjobkeytofile} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(-s|--stagein)\s*(.+)\s*$/m) {
+                        $result{stagein} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--stagein-md5sum)\s*(.+)\s*$/m) {
+                        $result{stageinmd5sum} = $2;
                     }else{
                         warn("/!\\ Not able to scan file line: $line");
                     }
@@ -739,46 +743,10 @@ if (($Interactive == 1) and ($Reservation ne "0")){
     exit(6);
 }
 
-# stagein machinery
-if (defined $stagein) {
-    #my $tempfile_to_delete;
-    print "Setting up stagein...\n";
-    if (-d $stagein) {
-        print "Archiving the content of the directory \"$stagein\" for the job stagein...\n";
-        my  (undef, $filename) = tempfile (SUFFIX=>".oar-stagein.tgz",OPEN => 0);
-        system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
-        print "Stagein archive = $filename\n";
-        print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
-        $stagein = $filename;
-        #$tempfile_to_delete = $filename;
-        $md5sum = undef;
-    }
-    ( -r $stagein ) or die "Stagein file not found: $stagein\n";
-    unless (defined $md5sum) {
-        print "Computing stagein md5sum...\n";
-        ($md5sum) = split(" ",`md5sum $stagein`);
-        print "md5sum = $md5sum\n";
-        print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
-    }
-    #$base = iolib::connect();
-    iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
-    $idFile = iolib::get_stagein_id($base,$md5sum);
-    if (defined $idFile) {
-        print "This stagein is already stored on the server.\n";
-    } else {
-        my $location = "$stageindir/$md5sum";
-        my $method = "FILE";
-        my $compression = "tar.gz";
-        print "Uploading stagein...\n";
-        system "scp $stagein $location" and die "Stagein upload failed\n";
-        my @stats = stat $stagein;
-        $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
-        defined $idFile or die "Failed to setup stagein\n";
-    }
-    iolib::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";
-    #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
-    #iolib::disconnect($base);
-    print "Stagein completed.\n";
+if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
+    warn("/!\\ A desktop computing job cannot be interactive.\n");
+    usage();
+    exit(6);
 }
 
 # Connect to a reservation
@@ -873,6 +841,16 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }elsif(defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")){
             warn("/!\\ Ignore script value for export-job-key-to-file parameter : $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
         }
+        if (defined($scan_result{stagein}) && (!defined($stagein))){
+            $stagein = $scan_result{stagein};
+        }elsif (defined($scan_result{stagein}) && (defined($stagein))){
+            warn("/!\\ Ignore script value for stagein parameter : $scan_result{stagein}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{stageinmd5sum}) && (!defined($md5sum))){
+            $md5sum = $scan_result{stageinmd5sum};
+        }elsif(defined($scan_result{stageinmd5sum}) && (defined($md5sum))){
+            warn("/!\\ Ignore script value for stagein-md5sum parameter : $scan_result{stageinmd5sum}; another value was given on the command line.\n");
+        }
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
@@ -901,6 +879,50 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }
         ($Server, $server_port) = init_tcp_server();
     }
+
+    # stagein machinery
+    if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
+        #my $tempfile_to_delete;
+        print "Setting up stagein...\n";
+        if (-d $stagein) {
+            print "Archiving the content of the directory \"$stagein\" for the job stagein...\n";
+            my  (undef, $filename) = tempfile (SUFFIX=>".oar-stagein.tgz",OPEN => 0);
+            system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
+            print "Stagein archive = $filename\n";
+            print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
+            $stagein = $filename;
+            #$tempfile_to_delete = $filename;
+            $md5sum = undef;
+        }
+        ( -r $stagein ) or die "Stagein file not found: $stagein\n";
+        unless (defined $md5sum) {
+            print "Computing stagein md5sum...\n";
+            ($md5sum) = split(" ",`md5sum $stagein`);
+            print "md5sum = $md5sum\n";
+            print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
+        }
+        #$base = iolib::connect();
+        iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
+        $idFile = iolib::get_stagein_id($base,$md5sum);
+        if (defined $idFile) {
+            print "This stagein is already stored on the server.\n";
+        } else {
+            my $location = "$stageindir/$md5sum";
+            my $method = "FILE";
+            my $compression = "tar.gz";
+            print "Uploading stagein...\n";
+            system "scp $stagein $location" and die "Stagein upload failed\n";
+            my @stats = stat $stagein;
+            $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
+            defined $idFile or die "Failed to setup stagein\n";
+        }
+        iolib::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";
+        #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
+        #iolib::disconnect($base);
+        print "Stagein completed.\n";
+    }
+
+
 
     $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
 }else{

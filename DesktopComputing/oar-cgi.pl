@@ -125,10 +125,11 @@ sub pull() {
         if (defined $is_desktop_computing) {
             if ($is_desktop_computing eq 'YES') {
                 iolib::lock_table($base,["resources"]);
-                iolib::set_node_nextState($base,$hostname,"Alive");
+                if (iolib::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
+                    $do_notify=1;
+                }
                 iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
                 iolib::unlock_table($base);
-                $do_notify=1;
 	    } else {
                 iolib::disconnect($base);
                 my $msg = "$hostname is not declared as a Desktop Computing node in OAR database.\n";
@@ -197,6 +198,7 @@ sub pull() {
     $do_notify=undef;
     foreach my $jobid (keys %$agentJobs) {
         if (defined $agentJobs->{$jobid}->{'terminated'}) {
+            $do_notify = 1;
             # TODO: As soon as BibBip becomes a library, replace this copy of BipBip code by a function call.
             #	my $base = iolib::connect() or die "cgi-job-end: cannot connect to the data base\n";
             message("Job $jobid terminated\n");
@@ -223,7 +225,7 @@ sub pull() {
     }
     iolib::disconnect($base);
     if ($do_notify) {
-        oar_Tools::notify_tcp_socket($remote_host,$remote_port,"BipBip");
+        oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
     }
     # End of BipBip code.
 

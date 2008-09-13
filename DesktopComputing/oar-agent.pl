@@ -245,7 +245,7 @@ sub request($$$) {
 	my $request = POST($cgiUrl, 'Content_type' => $content_type, 'Content' => $content);
 	my $result;
 	do {
-                $result = $userAgent->request($request, $tofile);
+            $result = $userAgent->request($request, $tofile);
 		unless ($result->is_success()) {
 			$retry and print "HTTP request failed, retrying ($retry)\n" or die "HTTP request failed\n";
 			$retry--;
