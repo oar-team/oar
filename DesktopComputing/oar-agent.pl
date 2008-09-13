@@ -525,9 +525,11 @@ sub runcmd($$) {
 		$SIG{CHLD}='DEFAULT';
 		$SIG{TERM}='DEFAULT';
 		$ENV{'OAR_JOBID'} = $jobid;
-		my $execcmd = "$cmd > $job->{'stdout_file'} 2> $job->{'stderr_file'}";
-		message "($$)Executing '$execcmd'\n";
-		exec $execcmd;
+		message "($$)Executing '$cmd'\n";
+        if ((!open(STDOUT, ">>$job->{'stdout_file'}")) or (!open(STDERR, ">>$job->{'stderr_file'}"))){
+            die("($$)Cannot write stdout and stderr files: $job->{'stdout_file'} $job->{'stderr_file'}\n");
+        }
+		exec $cmd;
 		die "($$)Exec Failed: $!\n";
 	}
 	message "\t($$)Forked process pid: $launch_job_pid\n";
