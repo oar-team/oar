@@ -162,7 +162,7 @@ sub sigQuitHandler();
 $SIG{QUIT} = \&sigQuitHandler;
 sub sigQuitHandler() {
 	$SIG{QUIT} = \&sigQuitHandler;
-	$quit++;
+	#$quit++;
 # we should not do system calls in a handler !:(
 	syswrite $writer,'QUIT',4;
 }
@@ -173,7 +173,7 @@ sub sigIntHandler();
 $SIG{INT} = \&sigIntHandler;
 sub sigIntHandler() {
 	$SIG{INT} = \&sigIntHandler;
-	$quit++;
+	#$quit++;
 # we should not do system calls in a handler !:(
 	syswrite $writer,'INT_',4;
 }
@@ -363,16 +363,17 @@ sub stagein_cleanup () {
 sub sleep_or_signals();
 # {{{
 sub sleep_or_signals() {
-	my $rin = '';
-  my $rout;
-  vec ($rin,fileno($reader),1) = 1;
+    my $buf;
+    my $rin = '';
+    my $rout;
+    vec ($rin,fileno($reader),1) = 1;
 	my ($n,$t) = select($rout=$rin, undef, undef, $sleep_next_pull);
 	if ($n) {
 		while (select($rout=$rin, undef, undef, 0)) {
-			my $buf;
 			sysread ($reader,$buf,4);
 		}
 	}
+    return($buf);
 }
 # }}}
 
@@ -702,8 +703,11 @@ sub main() {
 	$writer->autoflush(1);
 	message "CMD\tCHLD\tAGENT($$)\n";
 	print $writer "FirstLoop";
-	do {
-		sleep_or_signals();
+    do {
+		my $sig = sleep_or_signals();
+        if (defined($sig) and (($sig eq "QUIT") or ($sig eq "INT_"))){
+            $quit++;
+        }
 		checkChildsStatus();
 		my $jobs=pull();
 		process_jobs($jobs);
