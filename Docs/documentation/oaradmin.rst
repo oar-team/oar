@@ -12,6 +12,7 @@ For oaradmin, the following packages must be installed:
     - Ruby 1.8 or greater
     - Ruby-Yaml
     - Ruby-DBI
+    - Subversion for the optional admission rules versioning feature
 
 
 Options for resources subcommand are: :: 
@@ -40,6 +41,8 @@ Options for rules subcommand are: ::
   -e, --edit                       Edit an admission rule
   -1, --enable                     Enable the admission rule (removing comments)
   -0, --disable                    Disable the admission rule (commenting the code)
+  -H, --history                    Show all changes made on the admission rule
+  -R, --revert                     Revert to the admission rule as it existed in a revision number
 
 Examples: ::
 

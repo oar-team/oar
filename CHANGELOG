@@ -17,6 +17,7 @@ version 2.3.2:
     wait something)
   - desktop computing feature is now available again. (ex: oarsub -t
     desktop_computing date)
+  - Add versioning feature for admission rules with Subversion
 
 version 2.3.1:
 --------------
