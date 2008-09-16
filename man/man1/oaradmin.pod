@@ -156,7 +156,7 @@ Disable the rule_id admission rule. The # comments character is added at the beg
 
 =item B<-H, --history> rule_id [-n number]
 
-Show all changes made on the admission rule rule_id. Output is displayed in unified diff format. With -n number option, only the number latest changes are displayed. Versioning feature can be activated with the parameter OARADMIN_VERSIONING in the OAR conf file. The repository is created when a change is made in an admission rule. Ex :
+Show all changes made on the admission rule rule_id. Output is displayed in unified diff format. With -n number option, only the #number latest changes are displayed. Versioning feature can be activated with the parameter OARADMIN_VERSIONING in the OAR conf file. The repository is created when a change is made in an admission rule. Ex :
   oaradmin rules -H 10
 
 =item B<-R, --revert> rule_id rev
