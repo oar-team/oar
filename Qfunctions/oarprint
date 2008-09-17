@@ -62,6 +62,9 @@ EOF
 ## init_resource()
 sub init_resources {
   my $fh;
+  if (not defined($input)) {
+    die "$0: no input data available\n";
+  }
   if ($input eq "-") {
     $fh = \*STDIN;
   } else {
