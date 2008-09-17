@@ -288,7 +288,10 @@ sub show_job {
         }
     }elsif($#job_ids >= 0){
         foreach my $j (@job_ids){
-            push(@jobs, iolib::get_job($base,$j));
+            my $tmp = iolib::get_job($base,$j);
+            if (defined($tmp)){
+                push(@jobs, $tmp);
+            }
         }
     }
     my %data_to_print;
