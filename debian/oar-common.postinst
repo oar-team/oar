@@ -28,6 +28,7 @@ setup_oar_user_group() {
     fi
     if ! getent passwd oar > /dev/null 2>&1 ; then
         adduser --quiet --system --home /var/lib/oar --ingroup oar --shell /bin/bash oar > /dev/null 2>&1
+        passwd -u oar >/dev/null 2>&1
         cd /var/lib/oar
         echo '' >> .bash_profile
         echo 'export PATH="/usr/lib/oar/oardodo:$PATH"' >> .bash_profile
