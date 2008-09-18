@@ -81,6 +81,8 @@ case
         $msg[3] = "With -p option, in {...} expression only % character with optional numeric format and offset are allowed"
         $msg[4] = "With -d option, {...} expression is not allowed"
         $msg[5] = "[OARADMIN]: No resource selected"
+        $msg[6] = "[OARADMIN ERROR]: Oaradmin uses oarnodes -Y command. So perl-yaml package must be installed with oarnodes"
+        $msg[7] = "[OARADMIN ERROR]: Oaradmin uses oarnodes command. So oar-user package must be installed" 
 
         $cmd_user = []
         $oar_cmd = ""
@@ -249,6 +251,12 @@ case
 			   end 
 		      end
 		 end
+	      elsif $?.exitstatus == 6
+		    $stderr.puts $msg[6]
+		    exit(2)
+	      elsif $?.exitstatus == 127
+		    $stderr.puts $msg[7]
+		    exit(2)
               end	# if $?.exitstatus == 0
 
 	      resources_selected=false
@@ -397,6 +405,12 @@ case
 		          end
 		     end
 		 end
+	      elsif $?.exitstatus == 6
+		     $stderr.puts $msg[6]
+		     exit(3)
+	      elsif $?.exitstatus == 127
+		     $stderr.puts $msg[7]
+		     exit(3)
               end	# if $?.exitstatus == 0
            else
               # search all resources_id
@@ -410,6 +424,12 @@ case
 			   $list_resources_id.push(r_hash[n][r]['properties']['resource_id'].to_s) 
 		      end
 		 end
+	      elsif $?.exitstatus == 6
+		    $stderr.puts $msg[6]
+		    exit(3)
+	      elsif $?.exitstatus == 127
+		    $stderr.puts $msg[7]
+		    exit(3)
               end 
            end 
 

@@ -758,14 +758,20 @@ class Rule
 
       # Export one rule into a file
       def export
-
+	  status=0
 	  f_name = @export_file_name 
 	  f_name += @rule_id.to_s if @export_file_name_with_rule_id
-          puts "Export admission rule " + @rule_id.to_s + " into file " + f_name if silent_mode==false
-          f = File.new(f_name, "w")
-          f.print @script
-          f.close
-
+	  begin
+               f = File.new(f_name, "w")
+               f.print @script
+               f.close
+               puts "Export admission rule " + @rule_id.to_s + " into file " + f_name if silent_mode==false
+	       rescue Exception => e
+                      $stderr.puts "Error while creating file "+f_name
+                      $stderr.puts e.message
+                      status=1
+	  end
+	  status
       end	# def export
 
       # Edit an admission rule
