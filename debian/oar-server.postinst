@@ -32,7 +32,7 @@ setup_oar_ssh() {
 		cat /var/lib/oar/.ssh/id_rsa.pub > /var/lib/oar/.ssh/authorized_keys || true
 	  cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
-    ForwardX11 no 
+    ForwardX11 no
     StrictHostKeyChecking no
     PasswordAuthentication no
     AddressFamily inet
@@ -81,27 +81,27 @@ EOF
 #	chmod 600 /etc/oar/oar.conf
 #}
 
-setup_mysql_db() {
-	if [ ! -x /usr/sbin/oar_mysql_db_init ]; then
-		echo "Error: cannot execute OAR database initialization script"
-		exit 1
-	fi
-	db_get oar/db/doinit
-	if [ "x$RET" = "xtrue" ]; then
-		db_get oar/db/adminlogin
-		DB_ADMIN_LOGIN=$RET
-		db_get oar/db/adminpasswd
-		DB_ADMIN_PASSWD=$RET
-		/usr/sbin/oar_mysql_db_init <<EOF || DB_INIT_FAILED="true"
-$DB_ADMIN_LOGIN
-$DB_ADMIN_PASSWD
-EOF
-		if [ "x$DB_INIT_FAILED" = "xtrue" ]; then
-			db_input medium oar/db/initfailed || true
-			db_go || true
-		fi
-	fi
-}
+#setup_mysql_db() {
+#	if [ ! -x /usr/sbin/oar_mysql_db_init ]; then
+#		echo "Error: cannot execute OAR database initialization script"
+#		exit 1
+#	fi
+#	db_get oar/db/doinit
+#	if [ "x$RET" = "xtrue" ]; then
+#		db_get oar/db/adminlogin
+#		DB_ADMIN_LOGIN=$RET
+#		db_get oar/db/adminpasswd
+#		DB_ADMIN_PASSWD=$RET
+#		/usr/sbin/oar_mysql_db_init <<EOF || DB_INIT_FAILED="true"
+#$DB_ADMIN_LOGIN
+#$DB_ADMIN_PASSWD
+#EOF
+#		if [ "x$DB_INIT_FAILED" = "xtrue" ]; then
+#			db_input medium oar/db/initfailed || true
+#			db_go || true
+#		fi
+#	fi
+#}
 
 #setup_nodes() {
 #	db_get oar/node/dosetup
@@ -123,12 +123,12 @@ EOF
 setup_oar_ssh
 #setup_conf
 
-db_get oar/db/dbtype
-if [ "x$RET" = "xMysql" ]; then 
-    setup_mysql_db
+#db_get oar/db/dbtype
+#if [ "x$RET" = "xMysql" ]; then 
+#    setup_mysql_db
 #else
     #setup_pgsql_db
-fi
+#fi
 
 # Manage setuid bits
 chown oar:oar /usr/sbin/Almighty
