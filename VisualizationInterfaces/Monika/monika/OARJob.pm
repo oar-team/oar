@@ -115,17 +115,7 @@ sub htmlTableRow {
   my $submission_time = $self->get("submission_time");
   my $start_time = $self->get("start_time");
   my $scheduled_start = $self->get("scheduled_start");
-  my $initial_request = "";
-  
-  
-  if ( defined( $ENV{OARDO_USER} ) ) {
-        if (   ( $ENV{OARDO_USER} eq monika::Conf::myself()->user_infos().$self->get("job_user") )
-            or ( $ENV{OARDO_USER} eq "oar" )
-            or ( $ENV{OARDO_USER} eq "root" ) )
-        {
-            $initial_request = $self->get("initial_request");
-        }
-    }
+  my $initial_request = $self->get("initial_request");
   
   if($initial_request =~ /-t container/){
   	$type.=" - container";
@@ -161,7 +151,7 @@ sub htmlStatusTable {
   $output .= $cgi->end_Tr();
   my @keylist = keys %{$self};
   foreach my $key (sort @keylist) {
-    if($key eq "job_id"){
+    if(($key eq "job_id") or ($key eq "initial_request")){
       next;
     }
     $output .= $cgi->start_Tr();
