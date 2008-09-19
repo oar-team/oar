@@ -57,17 +57,27 @@ end
 # MAIN PROGRAM
 #####################
 
-$subcommand_choice=-1
-$subcommand.each_index do |i|
-    $subcommand_choice = i if !$subcommand[i].nil? && !ARGV[0].nil? && (ARGV[0]==$subcommand[i][:short_form] || ARGV[0]==$subcommand[i][:long_form])
-end
-if $subcommand_choice == -1
-   $stderr.puts "Incoherence in specified subcommand" if !ARGV[0].nil?
-   subcommand_usage
-end
+# Enable to execute a subcommand with an alias
+# Ex : oaradminresources instead of oaradmin re 
+#      oaradminrules     instead of oaradmin rules
+if File.basename($0) != "oaradminresources" && File.basename($0) != "oaradminrules"
 
-# New ARGV with options only
-ARGV.delete_at(0)
+   $subcommand_choice=-1
+   $subcommand.each_index do |i|
+       $subcommand_choice = i if !$subcommand[i].nil? && !ARGV[0].nil? && (ARGV[0]==$subcommand[i][:short_form] || ARGV[0]==$subcommand[i][:long_form])
+   end
+   if $subcommand_choice == -1
+      $stderr.puts "Incoherence in specified subcommand" if !ARGV[0].nil?
+      subcommand_usage
+   end
+
+   # New ARGV with options only
+   ARGV.delete_at(0)
+
+else
+   $subcommand_choice = 0 if File.basename($0) == "oaradminresources"
+   $subcommand_choice = 1 if File.basename($0) == "oaradminrules"
+end
 
 case
     when $subcommand_choice==0 	
