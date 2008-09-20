@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.1+svn1653
+%define version 2.3.2
 %define release 1
 
 Name: 		oar
