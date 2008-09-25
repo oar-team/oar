@@ -1,13 +1,20 @@
 OAR CHANGELOG
 =============
 
+version next:
+-------------
+  - Fix default admission rules: case unsensitive check for properties used in 
+    oarsub
+
 version 2.3.2:
 --------------
   - Change scheduler timeout implementation to schedule the maximum of jobs.
   - Bug #5879: do not show initial_request in oarstat when it is not a job of
     the user who launched the oarstat command (oar or root).
-  - Add a --event option to oarnodes and oarstat to display events recorded for a job or node
-  - Display reserved resources for a validated waiting reservation, with a hint in their state
+  - Add a --event option to oarnodes and oarstat to display events recorded for
+    a job or node
+  - Display reserved resources for a validated waiting reservation, with a hint
+    in their state
   - Fix oarproperty: property names are lowercase
   - Fix OAR_JOB_PROPERTIES_FILE: do not display system properties
   - Add a new user command: oarprint which allow to pretty print resource 
