@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version next:
+-------------
+  - Fix default admission rules: case unsensitive check for properties used in 
+    oarsub
+
 version 2.2.13:
 ---------------
   - Fix resource allocation order: sort by state first to allocate available
