@@ -459,6 +459,32 @@ end	# module Resources
 
 
 
+module Edit
+
+   # Define parameters for editing files 
+   # Parameter : hash table containing oar.conf parameters
+   # Return    : editor : vi or the editor defined in $EDITOR
+   #             directory : temporary directory used to edit files
+   def Edit.env(config)
+       
+       # Text editor to edit an admission rule 
+       editor = "vi"
+       editor = ENV['EDITOR'] if ENV['EDITOR']
+
+       # Directory to edit an admission rule
+       directory="/tmp/"
+       if config['OAR_RUNTIME_DIRECTORY']
+          directory = config['OAR_RUNTIME_DIRECTORY']
+          directory += "/" if directory[directory.length-1..directory.length-1]!="/" 
+       end
+
+       return editor, directory       
+       
+   end		# Edit.env 
+
+end	# module Edit
+
+
 
 #################################
 # DEFINITIONS FOR ADMISSION RULES
@@ -544,6 +570,78 @@ module Admission_rules
 end 	# module Admission_rules
 
 
+###########################
+# DEFINITIONS FOR CONF_FILE
+###########################
+
+module Conf_file 
+
+   # Retrieve files given by user
+   # Used with : -e --edit, -H --history, -n --number
+   # Return : 
+   # 	status == 0 : Only one file_name given by user
+   # 	status == 1 : No file_name given
+   # 	status == 2 : Too many parameters
+   # 	status == 3 : A number must be specified
+   # 	file_name   : file_name given by user
+   def Conf_file.test_params
+       status=0
+       file_name=nil
+       files = 0
+
+       i = 0
+       while i < ARGV.length
+	    if ARGV[i] == "-n" || ARGV[i] == "--number"
+		  i+=1
+                  if ARGV[i].nil? || (ARGV[i] =~ /[^0-9]+/)
+ 	             status=3
+		     break
+		  end
+            elsif ARGV[i][0..0] != "-"
+		  file_name = ARGV[i]
+		  files += 1
+	    end
+	    i+=1
+       end
+
+       status = 1 if files == 0
+       status = 2 if files > 1
+       return status, file_name
+   end	# Conf_file.test_params
+
+
+   # Test parameters 
+   # Used with : -R --revert
+   # In this case, only the form -R conf_file rev is possible. 
+   # Return : 
+   #    status == 0 : no error
+   #    status == 1 : one parameter is bad
+   #    p[0]        : file_name given by user
+   #    p[1]        : revision number
+   def Conf_file.test_params2
+       status=0
+       p = []
+       opt_found = false
+
+       i = 0
+       while i < ARGV.length
+	    if ARGV[i] == "-R" || ARGV[i] == "--revert"
+		  opt_found = !opt_found
+            elsif ARGV[i][0..0] != "-"
+		  if !opt_found		# Parameter before option ?
+		     status = 1
+		     break 
+		  end
+		  p.push(ARGV[i])
+	    end
+	    i+=1
+       end
+       status = 1 if p.length != 2 
+       status = 1 if !p[1].nil? && p[1] =~ /[^0-9]+/
+       return status, p[0], p[1]
+   end 	# Conf_file.test_params2
+
+end	# module Conf_file
 
 
 # Object Rule represent an admission rule
@@ -565,7 +663,8 @@ class Rule
       		    :file_name,          		# temporary file name to store the admission rule
       		    :editor,             		# command to be used for the text editor 
       		    :action,                            # true : comment - false : delete comments
-      		    :silent_mode                        # silent mode for output y/n
+      		    :silent_mode,                       # silent mode for output y/n
+      		    :context                            # work context : admission rule or file - useful for messages
 		    
       def initialize(bdd, rule_id)
 	  @bdd = bdd
@@ -579,6 +678,7 @@ class Rule
       	  @editor=""
 	  @action=false
 	  @silent_mode = false
+	  @context="rule"
 
 	  if !rule_id.nil?
 	     q = "SELECT * FROM admission_rules WHERE id = " + rule_id.to_s
@@ -781,6 +881,14 @@ class Rule
       def edit
 	  status = 0
 	  user_choice = 1
+	  msg = {
+       		 'rule' => [ "(e)dit admission rule again,",
+                             "(c)ommit changes in oar database and quit,",
+                             "(Q)uit and abort without changes in oar database :  " ],
+       		 'file' => [ "(e)dit file again,",
+ 			     "(c)ommit changes and quit,",
+                             "(Q)uit and abort without changes :  " ]
+		}
 
 	  if @exist==false && @rule_id_must_exist
 	     $stderr.puts "Error : the rule " + @rule_id.to_s + " does not exist"
@@ -789,12 +897,12 @@ class Rule
 
 	  if status == 0
 	     begin
-		  @script = "# Title :  \n# Description :  \n\n" if @script.length == 0
+		  @script = "# Title :  \n# Description :  \n\n" if @script.length == 0 && @context == "rule"
              	  f = File.new(file_name, "w")
              	  f.print @script 
              	  f.close
 		  rescue Exception => e
-			 $stderr.puts "Error while creating temporary file to edit admission rule" 
+			 $stderr.puts "Error while creating temporary file " 
 			 $stderr.puts e.message
 			 status=1
 	     end
@@ -815,12 +923,12 @@ class Rule
 	 	           end
 		           rescue Exception => e
 		       end
-		       # Ask question to user only if changes are made in admission rule content
+		       # Ask question to user only if changes are made in admission rule content or in file content
 		       if @script != old_script
 	   	          begin
-			      puts "(e)dit admission rule again,"
-			      puts "(c)ommit changes in oar database and quit,"
-			      print "(Q)uit and abort without changes in oar database :  "
+			      puts msg[@context][0]
+			      puts msg[@context][1]
+			      print msg[@context][2]
 			      user_choice = $stdin.gets.chomp
 	   	          end while(user_choice != "e" && user_choice != "c" && user_choice != "Q")
 		       else
@@ -1032,6 +1140,7 @@ end	# class Rules_set
 #     - delete         : delete file(s) in working copy and execute svn delete command
 #     - commit         : execute svn commit command
 #     - display_status : display error messages if repository does not exists or is unreadable
+#     - file_exist?    : file exist in repository y/n
 class Repository
       attr_accessor :file_name,			# File name to write in working copy
 		    :file_content,		# Content of data to write in working copy
@@ -1245,6 +1354,21 @@ class Repository
 	  status
       end	# display_status
 
+      # Test if a file exist in repository
+      # Return : true if file exists
+      def file_exist?
+	  f_found = false
+	  str = "svn list " + @access_method + @path_repository + " --xml"
+	  r = `#{str}`
+	  xml = REXML::Document.new(r)
+	  xml.root.each_element { |e|
+         	   e.each_element { |f|
+                 	f_found = true if f.elements["name"].get_text == @file_name
+	 	   }
+	  }
+	  f_found
+      end	# file_exist?
+
 end	# class Repository
 
 
@@ -1375,7 +1499,8 @@ class Revisions < Repository
 	     puts all_diffs
 
           else
-	     puts "[OARADMIN ERROR]: File " + @file_name + " not found in repository"
+	     $stderr.puts "[OARADMIN ERROR]: File " + @file_name + " not found in repository"
+	     status=1
           end	# if @rev.length >= 2
 
 	  status
