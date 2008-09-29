@@ -543,13 +543,12 @@ sub print_job_data($$){
                     if ( $tmp_str_ok ne "" ) {
                         print $tmp_str_ok;
                     } else {
-                        print("none\n");
+                        print("none");
                     }
                     if ( $tmp_str_ko ne "" ) {
                         print "+($tmp_str_ko)";
-                    } else {
-                        print("\n");
                     }
+                    print("\n");
                 }
                 if (!defined($data->{$job_info->{job_id}}->{walltime})){
                     $data->{$job_info->{job_id}}->{walltime} = '';
