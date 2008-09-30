@@ -2,7 +2,7 @@
 *oaradmin*
 ----------
 
-This command permits to create resources and manage admission rules easily.
+This command permits to create resources and manage admission rules easily. An optional feature permits versioning changes in admission rules and conf files.
 
 :Requirements:
 
@@ -12,7 +12,7 @@ For oaradmin, the following packages must be installed:
     - Ruby 1.8 or greater
     - Ruby-Yaml
     - Ruby-DBI
-    - Subversion for the optional admission rules versioning feature
+    - Subversion for the optional versioning feature
 
 
 Options for resources subcommand are: :: 
@@ -49,6 +49,18 @@ Examples: ::
   # oaradmin rules -l
   # oaradmin rules -lll 3
   # oaradmin rules -e 3
+
+
+Options for conf subcommand are: :: 
+
+  -e, --edit                       Edit the conf file
+  -H, --history                    Show all changes made on the conf file
+  -R, --revert                     Revert to the conf file as it existed in a revision number
+
+Examples: ::
+
+  # oaradmin conf -e /etc/oar/oar.conf
+  # oaradmin conf -R /etc/oar/oar.conf 3
 
 
 

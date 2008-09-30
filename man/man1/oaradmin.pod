@@ -8,6 +8,8 @@ B<oaradmin> resources OPTIONS
 
 B<oaradmin> rules OPTIONS
 
+B<oaradmin> conf OPTIONS
+
 B<oaradmin> version
 
 =head1 DESCRIPTION
@@ -17,6 +19,8 @@ This command is used to manage OAR configuration.
 The command B<oaradmin resources> manages resources in OAR database : add, update and delete many resources in a single command line.
 
 The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. A versioning feature, using Subversion, allows to keep all admission rules changes.
+
+The command B<oaradmin conf> is useful for modify OAR conf files, register changes in a Subversion repository and revert to a conf file at a particular revision if needed.
 
 The command B<oaradmin version> print the version of OAR. 
 
@@ -104,6 +108,9 @@ Examples :
 
  Execute commands specified with -a, -s -p... and commit changes in OAR database.
 
+=item B<-h, --help> 
+
+Print help message.
 
 =back
 
@@ -166,7 +173,32 @@ Revert to the admission rule rule_id as it existed in #rev revision. Ex :
 
 =item B<-h, --help> 
 
-Print this help message.
+Print help message.
+
+=back
+
+=head2 Options for conf subcommand
+
+=over
+
+=item B<-e, --edit> conf_file
+
+Edit the file conf_file using a text editor. $EDITOR variable environment is used to launch the preferred text editor. If $EDITOR is not defined, vi is used. If the versioning feature is enabled, after editing the file, changes are registered in a Subversion repository. Versioning feature can be activated with the parameter OARADMIN_VERSIONING in the OAR conf file. The repository is created when a change is made in the file. Ex :
+  oaradmin conf -e /etc/oar/oar.conf
+
+=item B<-H, --history> conf_file [-n number]
+
+Show all changes made on the file conf_file. Output is displayed in unified diff format. With -n number option, only the #number latest changes are displayed. Ex :
+  oaradmin conf -H oar.conf
+
+=item B<-R, --revert> conf_file rev
+
+Revert to the file conf_file as it existed in #rev revision. Ex :
+  oaradmin conf -R /etc/oar/oar.conf 3
+
+=item B<-h, --help> 
+
+Print help message.
 
 =back
 
