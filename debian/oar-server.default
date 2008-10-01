@@ -1,10 +1,15 @@
-# Defaults for oar initscript
-# sourced by /etc/init.d/oar
-# installed at /etc/default/oar by the maintainer scripts
+# Defaults for oar-server initscript
+# sourced by /etc/init.d/oar-server
 
-#
-# This is a POSIX shell fragment
-#
+# Uncomment the following lines if you don't want oar-server to be automatically
+# started at boot time
+#OAR_SERVER_NO_START_STOP=1
+
+# start/stop options check
+if [ -n "$OAR_SERVER_NO_START_STOP" -a -z "$OAR_SERVER_FORCE_START_STOP" ]; then
+	echo "oar-server disabled from /etc/default/oar-server"
+	exit 0
+fi 	
 
 # Additional options that are passed to the Daemon.
 DAEMON_OPTS=""
