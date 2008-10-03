@@ -148,11 +148,14 @@ certainly other ways to do that)::
     sudo vi /etc/postgresql/8.1/main/pg_hba.conf
         host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
         host    oar         oar               127.0.0.1          255.255.255.255    md5
+    # Be careful to put these two lines at the top of the file or it won't work
 
     sudo /etc/init.d/postgresql-8.1 reload
     
     psql -Uoar -h127.0.0.1 oar
-        \i /usr/lib/oar/oar_postgres.sql
+        \i /usr/lib/oar/pg_structure.sql
+        \i /usr/lib/oar/pg_default_admission_rules.sql
+        \i /usr/lib/oar/default_data.sql
         \q
     
     psql oar
