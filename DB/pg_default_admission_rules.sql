@@ -1,7 +1,7 @@
 -- Default admission rules for OAR 2
 -- $Id$
 
-DROP TABLE IF EXISTS admission_rules;
+DROP TABLE admission_rules;
 CREATE TABLE admission_rules (
   id bigserial,
   rule text NOT NULL,
