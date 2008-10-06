@@ -14,10 +14,10 @@
 
 /* fonction de la iolib utilisee dans sched_gantt_... */
 /*
-  connect_db()
-  connect()
-  connect_ro()
-  disconnect()
+  connect_db() - DONE
+  connect() - DONE
+  connect_ro() - DONE
+  disconnect() - DONE
   get_specific_resource_states($base,$Resources_to_always_add_type);
   list_resources($base)
   iolib::get_gantt_scheduled_jobs();
@@ -88,31 +88,49 @@ int connect_db(string dbhost, string dbport, string dbname, string dblogin, stri
   # side effects : opens a connection to the base specified in ConfLib
 */
 
-void connect() {
+
+bool connect() {
   //# Connect to the database.
-    my $dbh = undef;
-    while (!defined($dbh)){
-        reset_conf();
-        init_conf($ENV{OARCONFFILE});
+  init_conf(getenv("OARCONFFILE"));
+  
+  string dbhost = get_conf("DB_HOSTNAME");
+  string dbport = get_conf("DB_PORT");
+  string dbname = get_conf("DB_BASE_NAME");
+  string dblogin = get_conf("DB_BASE_LOGIN");
+  string dbpwd = get_conf("DB_BASE_PASSWD");
+  string Db_type = get_conf("DB_TYPE");
+  
+  string log_level = get_conf("LOG_LEVEL");
+  
+  string Remote_host = get_conf("SERVER_HOSTNAME");
+  string Remote_port = get_conf("SERVER_PORT");
 
-        my $host = get_conf("DB_HOSTNAME");
-        my $dbport = get_conf("DB_PORT");
-        if (not defined($dbport)) {
-            $dbport = "";
-        }
-        my $name = get_conf("DB_BASE_NAME");
-        my $user = get_conf("DB_BASE_LOGIN");
-        my $pwd = get_conf("DB_BASE_PASSWD");
-        $Db_type = get_conf("DB_TYPE");
-        
-        my $log_level = get_conf("LOG_LEVEL");
+  
 
-        $Remote_host = get_conf("SERVER_HOSTNAME");
-        $Remote_port = get_conf("SERVER_PORT");
+  return connect_db(dbhost, dbport, dbname, dblogin, dbpasswd, debug_level);
+}
 
-        $dbh = connect_db($host,$dbport,$name,$user,$pwd,$log_level);
-    }
-    return($dbh);
+/* 
+   # connect_ro
+   # Connects to database and returns the base identifier
+   # parameters : /
+   # return value : base
+   # side effects : opens a connection to the base specified in ConfLib
+*/
+bool connect_ro() {
+  return connect();
+}
+
+/*
+  # disconnect
+  # Disconnect from database
+  # parameters : base
+  # return value : /
+  # side effects : closes a previously opened connection to the specified base
+*/
+void disconnect() {
+  assert( db.isValid() );
+  db.close();
 }
 
 
