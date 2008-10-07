@@ -11,6 +11,10 @@
 
 #include <string>
 #include <QtSql>
+#include <QSqlQuery>
+#include <vector>
+
+using namespace std;
 
 /* fonction de la iolib utilisee dans sched_gantt_... */
 /*
@@ -131,6 +135,32 @@ bool connect_ro() {
 void disconnect() {
   assert( db.isValid() );
   db.close();
+}
+
+/*
+  # get_specific_resource_states
+  # returns a hashtable with each given resources and their states
+  # parameters : base, resource type
+*/
+vector< pair< string, string> > 
+get_specific_resource_states(string type) {
+  assert( db.isValid() );
+  QSqlQuery query;
+  string req = "   SELECT resource_id, state\
+                   FROM resources\
+                   WHERE\
+                    type = \'" +type+"\'\
+                ";
+  query.exec();
+  vector< pair< string, string> > result;
+  while( query.next() )
+    {
+      string resource_id = query.value(1).toString();
+      string state = query.value(0).toString();
+
+      result.push_back( pair<string, string>(resource_id, state) );
+    }
+  return result;
 }
 
 
