@@ -22,7 +22,7 @@ using namespace std;
   connect() - DONE
   connect_ro() - DONE
   disconnect() - DONE
-  get_specific_resource_states($base,$Resources_to_always_add_type);
+  get_specific_resource_states($base,$Resources_to_always_add_type); - DONE
   list_resources($base)
   iolib::get_gantt_scheduled_jobs();
   get_current_job_types($base,$i);
@@ -142,7 +142,7 @@ void disconnect() {
   # returns a hashtable with each given resources and their states
   # parameters : base, resource type
 */
-vector< pair< string, string> > 
+map< string, string > 
 get_specific_resource_states(string type) {
   assert( db.isValid() );
   QSqlQuery query;
@@ -151,15 +151,78 @@ get_specific_resource_states(string type) {
                    WHERE\
                     type = \'" +type+"\'\
                 ";
-  query.exec();
+  query.exec(req);
   vector< pair< string, string> > result;
   while( query.next() )
     {
       string resource_id = query.value(1).toString();
       string state = query.value(0).toString();
 
-      result.push_back( pair<string, string>(resource_id, state) );
+      result.insert( pair<string, string>(resource_id, state) );
     }
+  return result;
+}
+
+/*
+  # list_resources
+  # gets the list of all resources
+  # parameters : base
+  # return value : list of resources
+  # side effects : /
+*/
+
+static bool yesNo2Bool(string s)
+{
+  if ( s == "YES" )
+    return true;
+  if ( s == "NO" )
+    return false;
+  assert( s == "YES" || s == "NO" );
+}
+
+static struct resources_iolib fillResourcesStruct(QSqlQuery &req)
+{
+  /* the value of the structure must be given in the same order a
+     filled by the SELECT call.
+  */
+  resources_iolib result;
+
+  result.resource_id = req.value(0).toInt();
+  result.type = req.value(1).toString();
+  result.network_address = req.value(2).toString();
+  result.state = req.value(3).toString();
+  result.next_state = req.value(4).toString();
+  result.finaud_decision = yesNo2Bool(req.value(5).toString());
+  result.next_finaud_decision = yesNo2Bool(req.value(6).toString());
+  result.state_num = req.value(7).toInt();
+  result.suspended_jobs = yesNo2Bool(req.value(8).toString());
+  result.scheduler_priority = req.value(9).toInt();
+  result.switch_name = req.value(10).toString();
+  result.cpu = req.value(11).toInt();
+  result.cpuset = req.value(12).toInt();
+  result.besteffort = yesNo2Bool(req.value(13).toString());
+  result.deploy = yesNo2Bool(req.value(14).toString());
+  result.expiry_date = req.value(15).toInt(); 
+  result.desktop_computing = yesNo2Bool(req.value(16).toString());
+  result.last_job_date = req.value(17).toInt();
+  result.cm_availability = req.value(18).toInt();
+
+  return result;
+}
+
+vector <resources_iolib> list_resources() {
+  assert(db.isValid());
+  QSqlQuery query;
+  vector <resources_iolib> result;
+  string req = "SELECT resource_id, type, network_address, state, next_state, finaud_decision, next_finaud_decision, state_num, suspended_jobs, scheduler_priority, switch, cpu, cpuset, besteffort, deploy, expiry_date, desktop_computing, last_job_date, cm_availability\
+                FROM resources\
+               ";
+  query.exec(req);
+  while( query.next() )
+    {
+      result.push_back( fillResourcesStruct(req) );
+    }
+
   return result;
 }
 

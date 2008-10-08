@@ -35,7 +35,7 @@ struct resources_iolib {
 				  // 	given by the system to select
 				  // 	resources with more
 				  // 	intelligence
-  string switch; // 	VARCHAR(50) 	name of the switch
+  string switch_name; // 	VARCHAR(50) 	name of the switch
   unsigned int cpu; // 	INT UNSIGNED 	global cluster cpu number
   unsigned int cpuset; // 	INT UNSIGNED field used with the
 		       // 	JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD
