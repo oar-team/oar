@@ -20,10 +20,10 @@ struct resources_iolib {
   string next_state;// 	ENUM('UnChanged', 'Alive', 'Dead', 'Absent',
 		    // 	'Suspected') DEFAULT 'UnChanged' state for the
 		    // 	resource to switch
-  string finaud_decision; // 	ENUM('YES', 'NO') DEFAULT 'NO' tell if
+  bool finaud_decision; // 	ENUM('YES', 'NO') DEFAULT 'NO' tell if
 			  // 	the actual state results in a "finaud"
 			  // 	module decision
-  string next_finaud_decision; // ENUM('YES', 'NO') DEFAULT 'NO' tell
+  bool next_finaud_decision; // ENUM('YES', 'NO') DEFAULT 'NO' tell
 			       // if the next node state results in a
 			       // "finaud" module decision
   int state_num; // INT corresponding state number (useful with the
