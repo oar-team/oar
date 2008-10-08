@@ -429,8 +429,10 @@ sub htmlPropertyChooser {
   my %hashcheckboxes;
   foreach(keys %{$result}){
     foreach my $prop (keys %{$result->{$_}}){
-      my $str = $prop."=".$result->{$_}->{$prop};
-      $hashcheckboxes{$str} = '';
+      if(defined($result->{$_}->{$prop})){
+        my $str = $prop."=".$result->{$_}->{$prop};
+        $hashcheckboxes{$str} = '';
+      }
     }
   }
   foreach(keys %hashcheckboxes){
