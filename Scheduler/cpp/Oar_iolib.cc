@@ -23,7 +23,7 @@ using namespace std;
   connect_ro() - DONE
   disconnect() - DONE
   get_specific_resource_states($base,$Resources_to_always_add_type); - DONE
-  list_resources($base)
+  list_resources($base) - DONE
   iolib::get_gantt_scheduled_jobs();
   get_current_job_types($base,$i);
   get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
