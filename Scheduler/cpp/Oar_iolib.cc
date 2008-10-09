@@ -187,28 +187,31 @@ static struct resources_iolib fillResourcesStruct(QSqlQuery &req)
   */
   resources_iolib result;
 
-  result.resource_id = req.value(0).toInt();
+  result.resource_id = req.value(0).toUInt();
   result.type = req.value(1).toString();
   result.network_address = req.value(2).toString();
   result.state = req.value(3).toString();
   result.next_state = req.value(4).toString();
   result.finaud_decision = yesNo2Bool(req.value(5).toString());
   result.next_finaud_decision = yesNo2Bool(req.value(6).toString());
-  result.state_num = req.value(7).toInt();
+  result.state_num = req.value(7).toUInt();
   result.suspended_jobs = yesNo2Bool(req.value(8).toString());
-  result.scheduler_priority = req.value(9).toInt();
+  result.scheduler_priority = req.value(9).toUInt();
   result.switch_name = req.value(10).toString();
-  result.cpu = req.value(11).toInt();
-  result.cpuset = req.value(12).toInt();
+  result.cpu = req.value(11).toUInt();
+  result.cpuset = req.value(12).toUInt();
   result.besteffort = yesNo2Bool(req.value(13).toString());
   result.deploy = yesNo2Bool(req.value(14).toString());
-  result.expiry_date = req.value(15).toInt(); 
+  result.expiry_date = req.value(15).toUInt(); 
   result.desktop_computing = yesNo2Bool(req.value(16).toString());
-  result.last_job_date = req.value(17).toInt();
-  result.cm_availability = req.value(18).toInt();
+  result.last_job_date = req.value(17).toUInt();
+  result.cm_availability = req.value(18).toUInt();
 
   return result;
 }
+
+/** TODO SIMPLIFICATION : lusage de cette fonction est uniquement
+    d'obtenir la liste des ID pour remplir le vecteur de bit ! */
 
 vector <resources_iolib> list_resources() {
   assert(db.isValid());
@@ -224,6 +227,56 @@ vector <resources_iolib> list_resources() {
     }
 
   return result;
+}
+
+/*
+  # GANTT MANAGEMENT
+  
+  #get previous scheduler decisions
+  #args : base
+  #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
+  # TODO commentaire PERL faux: bien plus d'information et pas de resssource !
+*/
+pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs>  >
+get_gantt_scheduled_jobs(){
+  QSqlQuery query;
+  map<unsigned int, struct gantt_sched_jobs> result;
+  vector<unsigned int> order;
+  assert(db.isValid());
+  
+  string req("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended\
+                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j\
+                             WHERE\
+                                m.moldable_index = \'CURRENT\'\
+                                AND g1.moldable_job_id = g2.moldable_job_id\
+                                AND m.moldable_id = g2.moldable_job_id\
+                                AND j.job_id = m.moldable_job_id\
+                             ORDER BY j.start_time, j.job_id\
+                            ");
+  query.exec(req);
+  while( query.next() )
+    {
+      struct gantt_sched_jobs val;
+      unsigned int jid;
+
+      if (result.find(query.value(0).toUint()) != result.end()) {
+	jid = query.value(0).toUint();
+	val.job_id = jid;
+	val.start_time = query.value(1).toUint();
+	moldable_walltime = query.value(2).toUint();
+	queue_name = query.value(4).toString();
+	state = query.value(5).toString();
+	job_user = query.value(6).toString();
+	job_name = query.value(7).toString();
+	moldable_id = query.value(7).toUInt();
+	suspended = yesNo2Bool(req.value(8).toString());
+	order.push_back(jid);
+	result.insert( pair<unsigned int, struct gantt_sched_jobs>(jid, val) );
+      }
+      result[jid].resource_id_vec.push_back( query.value(3).toUint() );
+    };
+
+  return pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs>  >(order, result);
 }
 
 

@@ -51,6 +51,20 @@ struct resources_iolib {
 				//features to know if an Absent
 				//resource can be switch on
 
-}
+};
+
+
+struct gantt_sched_jobs {
+  unsigned int job_id;
+  unsigned int start_time;
+  unsigned int moldable_walltime;
+  vector<unsigned int> resource_id_vec;
+  string queue_name;
+  string state;
+  string job_user;
+  string job_name;
+  unsigned int moldable_id;
+  bool suspended;
+};
 
 #endif
