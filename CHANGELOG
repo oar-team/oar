@@ -1,12 +1,13 @@
 OAR CHANGELOG
 =============
 
-version next:
+next version:
 -------------
   - Fix default admission rules: case unsensitive check for properties used in 
     oarsub
   - Add new oaradmin subcommand : oaradmin conf. Useful to edit conf files and 
     keep changes in a Subversion repository.
+  - Kill correctly each taktuk command children in case of a timeout.
 
 version 2.3.2:
 --------------

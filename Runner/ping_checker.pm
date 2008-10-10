@@ -112,9 +112,9 @@ sub taktuk_hosts(@){
     oar_debug("[PingChecker] $taktuk_cmd\n");
     $ENV{IFS}="";
     $ENV{ENV}="";
+    my $pid;
     eval {
-        my $pid;
-        $SIG{ALRM} = sub { kill(9,$pid); die("alarm\n") };
+        $SIG{ALRM} = sub { kill(19,$pid); die("alarm\n") };
         alarm(oar_Tools::get_taktuk_timeout());
         $pid = open3(\*WRITER, \*READER, \*ERROR, $taktuk_cmd);
         foreach my $i (@hosts){
@@ -139,11 +139,16 @@ sub taktuk_hosts(@){
     oar_debug("[PingChecker] End of command; alarm=$@\n");
     if ($@){
         oar_error("[PingChecker] taktuk command times out : it is bad\n");
-        return(@hosts);
-    }else{
-        @bad_hosts = keys(%check_test_nodes);
-        return(@bad_hosts);
-    }
+        if (defined($pid)){
+            # Kill all taktuk children
+            my ($children,$cmd_name) = oar_Tools::get_one_process_children($pid);
+            kill(9,@{$children});
+        }
+#        return(@hosts);
+    }#else{
+    @bad_hosts = keys(%check_test_nodes);
+    return(@bad_hosts);
+#    }
 }
 
 
