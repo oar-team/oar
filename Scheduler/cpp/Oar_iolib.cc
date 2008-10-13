@@ -13,6 +13,7 @@
 #include <QtSql>
 #include <QSqlQuery>
 #include <vector>
+#include <regexp.h>
 
 using namespace std;
 
@@ -24,7 +25,7 @@ using namespace std;
   disconnect() - DONE
   get_specific_resource_states($base,$Resources_to_always_add_type); - DONE
   list_resources($base) - DONE
-  iolib::get_gantt_scheduled_jobs();
+  iolib::get_gantt_scheduled_jobs(); - DONE
   get_current_job_types($base,$i);
   get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
   get_job_suspended_sum_duration($base,$i,$current_time);
@@ -278,6 +279,47 @@ get_gantt_scheduled_jobs(){
 
   return pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs>  >(order, result);
 }
+
+/*
+  # get_current_job_types
+  # return a hash table with all types for the given job ID
+*/
+map<string, string>
+get_current_job_types(unsigend int jobId){
+  QSqlQuery query;
+  map<string, string> res;
+  regexp *rexp = regcomp("^\s*(\w+)\s*=\s*(.+)$")
+
+  string req = "   SELECT type\
+                   FROM job_types\
+                   WHERE\
+                        types_index = \'CURRENT\'\
+                        AND job_id = $jobId\
+                "
+  assert(db.isValid());
+
+  query.exec(req);
+
+  while( query.next() )
+    {
+      int valrec;
+      valres = regexec(rexp, query.value(0).toString() );
+
+      if (valres)
+	{
+	  res.insert( pair<string, string>( string(startp[1], endp[1]),
+					    string(startp[2], endp[1]) ) );
+	}
+      else
+	{
+	  res.insert(pair<string, string>( query.value(0).toString(),
+					   "true") );
+	}
+    }
+  free(rexp);
+  return res;
+}
+
 
 
 /**** *****/
