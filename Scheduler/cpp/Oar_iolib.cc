@@ -284,11 +284,15 @@ get_gantt_scheduled_jobs(){
   # get_current_job_types
   # return a hash table with all types for the given job ID
 */
+static regexp *rexp_get_current_job_types = 0;
+
 map<string, string>
 get_current_job_types(unsigend int jobId){
   QSqlQuery query;
   map<string, string> res;
-  regexp *rexp = regcomp("^\s*(\w+)\s*=\s*(.+)$")
+  
+  if (rexp == 0)
+    rexp_get_current_job_types = regcomp("^\s*(\w+)\s*=\s*(.+)$")
 
   string req = "   SELECT type\
                    FROM job_types\
@@ -303,7 +307,7 @@ get_current_job_types(unsigend int jobId){
   while( query.next() )
     {
       int valrec;
-      valres = regexec(rexp, query.value(0).toString() );
+      valres = regexec(rexp_get_current_job_types, query.value(0).toString() );
 
       if (valres)
 	{
@@ -316,7 +320,6 @@ get_current_job_types(unsigend int jobId){
 					   "true") );
 	}
     }
-  free(rexp);
   return res;
 }
 
