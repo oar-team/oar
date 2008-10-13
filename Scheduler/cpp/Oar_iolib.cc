@@ -26,7 +26,7 @@ using namespace std;
   get_specific_resource_states($base,$Resources_to_always_add_type); - DONE
   list_resources($base) - DONE
   iolib::get_gantt_scheduled_jobs(); - DONE
-  get_current_job_types($base,$i);
+  get_current_job_types($base,$i); - DONE
   get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
   get_job_suspended_sum_duration($base,$i,$current_time);
   iolib::get_resources_in_state($base,"Alive");
