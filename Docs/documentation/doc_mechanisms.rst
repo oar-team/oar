@@ -9,7 +9,7 @@ How does an interactive *oarsub* work?
 .. figure:: ../schemas/interactive_oarsub_scheme.png
    :width: 17cm
    :alt: interactive oarsub decomposition
-   :target: interactive_oarsub_scheme.png
+   :target: ../schemas/interactive_oarsub_scheme.png
 
    Interactive oarsub decomposition
 

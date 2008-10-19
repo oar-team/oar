@@ -189,7 +189,7 @@ possible resources we want to add 2 others which fit *sql2* and the hierarchy
 
 .. figure:: ../schemas/hierarchical_resources.png
    :width: 17cm
-   :target: hierarchical_resources.png
+   :target: ../schemas/hierarchical_resources.png
    :alt: Hierarchical resource example
 
    Example of a resource hierarchy and 2 different oarsub commands
