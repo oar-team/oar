@@ -147,6 +147,7 @@ map< string, string >
 get_specific_resource_states(string type) {
   assert( db.isValid() );
   QSqlQuery query;
+  query.setForwardOnly(true);
   string req = "   SELECT resource_id, state\
                    FROM resources\
                    WHERE\
@@ -211,12 +212,17 @@ static struct resources_iolib fillResourcesStruct(QSqlQuery &req)
   return result;
 }
 
-/** TODO SIMPLIFICATION : lusage de cette fonction est uniquement
-    d'obtenir la liste des ID pour remplir le vecteur de bit ! */
+/** TODO SIMPLIFICATION : l usage de cette fonction est uniquement
+    d'obtenir la liste des ID pour remplir le vecteur de bit !
+    
+    TODO RTFM: il est possible de faire semblable au caode perl avec
+    QtSQLModel ! readonly avec 
+ */
 
 vector <resources_iolib> list_resources() {
   assert(db.isValid());
   QSqlQuery query;
+  query.setForwardOnly(true);
   vector <resources_iolib> result;
   string req = "SELECT resource_id, type, network_address, state, next_state, finaud_decision, next_finaud_decision, state_num, suspended_jobs, scheduler_priority, switch, cpu, cpuset, besteffort, deploy, expiry_date, desktop_computing, last_job_date, cm_availability\
                 FROM resources\
@@ -241,6 +247,7 @@ vector <resources_iolib> list_resources() {
 pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs>  >
 get_gantt_scheduled_jobs(){
   QSqlQuery query;
+  query.setForwardOnly(true);
   map<unsigned int, struct gantt_sched_jobs> result;
   vector<unsigned int> order;
   assert(db.isValid());
@@ -289,6 +296,7 @@ static regexp *rexp_get_current_job_types = 0;
 map<string, string>
 get_current_job_types(unsigend int jobId){
   QSqlQuery query;
+  query.setForwardOnly(true);
   map<string, string> res;
   
   if (rexp == 0)
@@ -323,6 +331,54 @@ get_current_job_types(unsigend int jobId){
   return res;
 }
 
+/*
+  # get_job_current_resources
+  # returns the list of resources associated to the job passed in parameter
+  # parameters : base, jobid
+  # return value : list of resources
+  # side effects : /
+*/
+
+get_job_current_resources(unsigned int jobid, list<string> not_type_list) 
+{
+
+  assert(db.isValid());
+
+
+    my $dbh = shift;
+    my $jobid= shift;
+    my $not_type_list = shift;
+
+    my $tmp_str;
+    if (!defined($not_type_list)){
+        $tmp_str = "FROM assigned_resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resources.moldable_job_id = $jobid";
+    }else{
+        my $type_str;
+        foreach my $t (@{$not_type_list}){
+            $type_str .= $dbh->quote($t);
+            $type_str .= ',';
+        }
+        chop($type_str);
+        $tmp_str = "FROM assigned_resources,resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resources.moldable_job_id = $jobid AND
+                        resources.resource_id = assigned_resources.resource_id AND
+                        resources.type NOT IN (".$type_str.")";
+    }
+    my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
+                                $tmp_str
+                             ORDER BY assigned_resources.resource_id ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource});
+    }
+    return(@res);
+}
 
 
 /**** *****/
