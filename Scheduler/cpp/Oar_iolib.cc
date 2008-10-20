@@ -339,11 +339,27 @@ get_current_job_types(unsigend int jobId){
   # side effects : /
 */
 
+static 
+string quote_sql2(const string s)
+{
+  string res=s;
+  size_t value = std::string::npos;
+
+  value = res.find_first_of("'", 0);
+  while(value != std::string::npos)
+    {
+      res.replace(value, 1, "''");
+      value +=2;
+      value = res.find_first_of("'", value);
+    }
+  return res;
+} 
+
 get_job_current_resources(unsigned int jobid, list<string> not_type_list) 
 {
 
   assert(db.isValid());
-
+  
 
     my $dbh = shift;
     my $jobid= shift;
