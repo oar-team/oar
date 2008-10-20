@@ -27,7 +27,7 @@ using namespace std;
   list_resources($base) - DONE
   iolib::get_gantt_scheduled_jobs(); - DONE
   get_current_job_types($base,$i); - DONE
-  get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
+  get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type); - DONE
   get_job_suspended_sum_duration($base,$i,$current_time);
   iolib::get_resources_in_state($base,"Alive");
   get_resources_in_state($base,"Dead"));
@@ -50,6 +50,15 @@ using namespace std;
   set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
   disconnect($base_ro);
 */
+
+/**
+   Questions ouvertes:
+
+   - dans OAR perl, il y a dans des string double-cote avec " " il y a
+   plein de " \'CURRENT\' " qui sont equivalents a " 'CURRENT'
+   ". Etonnant non ? C'est idem en C++, donc je les laisse :-)
+*/
+
 
 QSqlDatabase db;
 
@@ -355,45 +364,54 @@ string quote_sql2(const string s)
   return res;
 } 
 
-get_job_current_resources(unsigned int jobid, list<string> not_type_list) 
+vector<unsigned int>
+get_job_current_resources(unsigned int jobid, vector<string> not_type_list) 
 {
-
+  vector <unsigned int> result;
+  QSql query;
+  string tmp_str;
   assert(db.isValid());
+  string req;
   
-
-    my $dbh = shift;
-    my $jobid= shift;
-    my $not_type_list = shift;
-
-    my $tmp_str;
-    if (!defined($not_type_list)){
-        $tmp_str = "FROM assigned_resources
-                    WHERE 
-                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid";
-    }else{
-        my $type_str;
-        foreach my $t (@{$not_type_list}){
-            $type_str .= $dbh->quote($t);
-            $type_str .= ',';
-        }
-        chop($type_str);
-        $tmp_str = "FROM assigned_resources,resources
-                    WHERE 
-                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid AND
-                        resources.resource_id = assigned_resources.resource_id AND
-                        resources.type NOT IN (".$type_str.")";
+  if (not_type_list.size() == 0)
+    {
+      tmp_str= "FROM assigned_resources\
+                WHERE\
+                  assigned_resources.assigned_resource_index = \'CURRENT\' AND\
+                  assigned_resources.moldable_job_id = ";
+      tmp_str << jobid;
     }
-    my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
-                                $tmp_str
-                             ORDER BY assigned_resources.resource_id ASC");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{resource});
+  else
+    {
+      string type_str;
+      for(i=0; i< not_type_list.size(); i++)
+	{
+	  if (i > 0)
+	    type_str << ",";
+	  type_str << quote_sql2( not_type_list[i] );
+	}
+      tmp_str = "FROM assigned_resources,resources\
+                 WHERE\
+                  assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                  assigned_resources.moldable_job_id =";
+      tmp_str << jobid << " AND\
+              resources.resource_id = assigned_resources.resource_id AND
+              resources.type NOT IN (" << type_str << ")";
+
+
     }
-    return(@res);
+  req = "SELECT assigned_resources.resource_id as resource ";
+  req << tmp_str << " ORDER BY assigned_resources.resource_id ASC";
+
+  
+  query.exec(req);
+  while( query.next() )
+    {
+      unsigned int resource_id = query.value(0).toUint();
+      result.push_back( resource_id );
+    }
+
+  return result;
 }
 
 
