@@ -278,8 +278,6 @@ CREATE TABLE resources (
   state_num integer NOT NULL default '0',
   suspended_jobs varchar(3) check (suspended_jobs in ('YES','NO')) NOT NULL default 'NO',
   scheduler_priority integer NOT NULL default '0',
-  switch varchar(50) NOT NULL default '0',
-  cpu integer NOT NULL default '0',
   cpuset integer NOT NULL default '0',
   besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
   deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
@@ -287,7 +285,6 @@ CREATE TABLE resources (
   desktop_computing varchar(3) check (desktop_computing in ('YES','NO')) NOT NULL default 'NO',
   last_job_date integer NOT NULL default '0',
   cm_availability integer NOT NULL default '0',
-  mem integer NOT NULL default '0',
   PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);
