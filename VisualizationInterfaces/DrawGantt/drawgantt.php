@@ -25,7 +25,7 @@ $CONF['right_margin'] = 10;
 $CONF['label_right_align'] = 105;
 $CONF['hierarchy_left_align'] = 110;
 $CONF['gantt_left_align'] = 160;
-$CONF['gantt_width'] = 800;
+$CONF['gantt_width'] = 1000;
 $CONF['gantt_min_job_width_for_label'] = 50;
 $CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
 $CONF['resource_labels'] = array('host','cpuset');
@@ -425,6 +425,8 @@ var infobox;
 function init(evt) {
 	if ( window.svgDocument == null ) {
 		svgDocument = evt.target.ownerDocument;
+	} else {
+		svgDocument = window.svgDocument;
 	}
 }
 function mouseOver(evt, text) {
