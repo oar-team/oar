@@ -30,7 +30,8 @@ $CONF['gantt_min_job_width_for_label'] = 50;
 $CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
 $CONF['resource_labels'] = array('host','cpuset');
 //$CONF['colors'] = array('Absent' => '#C62000', 'Suspected' => '#FF8080', 'Dead' => '#FF0000');
-$CONF['colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
+$CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
+$CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing' => 'url(#timesharingPattern)');
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions
@@ -86,7 +87,7 @@ class State {
 
 // Storage class for jobs
 class Job {
-	public $job_id,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses;
+	public $job_id,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
 	protected $color;
 	function __construct($job_id,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
 		$this->job_id = $job_id;
@@ -103,6 +104,7 @@ class Job {
 		$this->stop_time = $stop_time;
 		$this->resource_ids = array();
 		$this->network_addresses = array();
+		$this->types = array();
 		$this->color = NULL;
 	}
 
@@ -110,7 +112,15 @@ class Job {
 		$this->resource_ids[$resource_id->id] = $resource_id;
 	}
 
+	function add_type($type) {
+		if (! in_array($type, $this->types)) {
+			array_push($this->types, $type);
+		}
+	}
 	function add_network_address($network_address) {
+		if (! in_array($network_address, $this->network_addresses)) {
+			array_push($this->network_addresses, $network_address);
+		}
 	}
 	function group_resource_ids($resource_ids) {
 		$grp = NULL;
@@ -195,7 +205,7 @@ class ResourceId {
 	function svg_states($y) {
 		global $CONF;
 		foreach ($this->states as $state) {
-			$output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['colors'][$state->value].'" stroke="#00FF00" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->value.'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
+			$output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke="#00FF00" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->value.'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
 		}
 		return $output;
 	}
@@ -203,6 +213,11 @@ class ResourceId {
 		global $CONF;
 		foreach ($this->job_resource_id_groups as $grp) {
 			$width = (date2px($grp->job->stop_time) - date2px($grp->job->start_time));
+			foreach ($CONF['job_colors'] as $type => $color) {
+				if (in_array($type, $grp->job->types)) {
+					$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
+				}
+			}		
 			$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#008800" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->job_id.'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
 			if ($width > $CONF['gantt_min_job_width_for_label']) {
 				$output .= '<text x="'.(date2px($grp->job->start_time) + (date2px($grp->job->stop_time) - date2px($grp->job->start_time)) / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" >';
@@ -329,9 +344,10 @@ SELECT
 	gantt_jobs_predictions_visu.start_time,
 	(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime) AS stop_time,
 	gantt_jobs_resources_visu.resource_id,
-	resources.network_address
+	resources.network_address,
+	job_types.type
 FROM 
-	jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+	jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources, job_types
 WHERE
 	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
 	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
@@ -339,7 +355,8 @@ WHERE
 	gantt_jobs_predictions_visu.start_time < {$gantt_stop_date} AND
 	resources.resource_id = gantt_jobs_resources_visu.resource_id AND
 	gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= {$gantt_start_date} AND
-	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
+	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' ) AND
+	job_types.job_id = jobs.job_id
 ORDER BY 
 	jobs.job_id
 EOT;
@@ -350,6 +367,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	}
 	$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
+	$jobs[$line['job_id']]->add_type($line['type']);
 }
 mysql_free_result($result);
 
@@ -369,9 +387,10 @@ SELECT
 	jobs.start_time,
 	jobs.stop_time,
 	assigned_resources.resource_id,
-	resources.network_address
+	resources.network_address,
+	job_types.type
 FROM 
-	jobs, assigned_resources, moldable_job_descriptions, resources
+	jobs, assigned_resources, moldable_job_descriptions, resources, job_types
 WHERE
 	( jobs.stop_time >= {$gantt_start_date} OR
 		( jobs.stop_time = '0' AND 
@@ -384,7 +403,8 @@ WHERE
 	jobs.start_time < {$gantt_stop_date} AND
 	jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
 	moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-	resources.resource_id = assigned_resources.resource_id
+	resources.resource_id = assigned_resources.resource_id AND
+	job_types.job_id = jobs.job_id
 ORDER BY 
 	jobs.job_id
 EOT;
@@ -395,6 +415,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	}
 	$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
+	$jobs[$line['job_id']]->add_type($line['type']);
 }
 mysql_free_result($result);
 
@@ -417,16 +438,50 @@ $page_width = $CONF['gantt_left_align'] + $CONF['gantt_width'] + $CONF['right_ma
 // begin SVG doc + script + texture patterns
 $output = <<<EOT
 <?xml version="1.0" standalone="no"?>
-<svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" zoomAndPan="disable" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" >
+<svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousedown="zoomStart(evt)" onmouseup="zoomStop(evt)" onmousemove="zoomMove(evt)">
 
 <script type="text/ecmascript"><![CDATA[
 var svgDocument;
 var infobox;
+var zoom, zoom_do, zoom_x1, zoom_x2, zoom_y1, zoom_y2;
 function init(evt) {
 	if ( window.svgDocument == null ) {
 		svgDocument = evt.target.ownerDocument;
 	} else {
 		svgDocument = window.svgDocument;
+	}
+	zoom_x1 = 0;
+	zoom_x2 = 0;
+	zoom_y1 = 0;
+	zoom_y2 = 0;
+	zoom = svgDocument.getElementById("zoom");
+}
+function zoomDraw() {
+	zoom.setAttribute("x", Math.min(zoom_x1,zoom_x2));
+	zoom.setAttribute("y", Math.min(zoom_y1,zoom_y2));
+	zoom.setAttribute("width", Math.abs(zoom_x2 - zoom_x1));
+	zoom.setAttribute("height", Math.abs(zoom_y2 - zoom_y1));
+	zoom.setAttribute("visibility", "visible");
+}
+function zoomStart(evt) {
+	zoom_x1 = evt.pageX;
+	zoom_y1 = evt.pageY;
+	zoom_x2 = zoom_x1;
+	zoom_y2 = zoom_y1;
+	zoom_do = true;
+}
+function zoomStop(evt) {
+	zoom_do = false;
+	zoom.setAttribute("visibility", "hidden");
+	//svgDocument.rootElement.setAttribute("viewBox", Math.min(zoom_x1,zoom_x2) + " " + Math.min(zoom_y1,zoom_y2) + " " + Math.abs(zoom_x2 - zoom_x1) + " " + Math.abs(zoom_y2 - zoom_y1));
+	//svgDocument.rootElement.setAttribute("width", window.innerWidth);
+	//svgDocument.rootElement.setAttribute("height", window.innerHeight);
+}
+function zoomMove(evt) {
+	if (zoom_do) {
+		zoom_x2 = evt.pageX;
+		zoom_y2 = evt.pageY;
+		zoomDraw();
 	}
 }
 function mouseOver(evt, text) {
@@ -447,14 +502,26 @@ function mouseMove(evt) {
 ]]></script>
 
 <defs>
+<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<text x="0" y="10" fill="#888888">B</text>
+</pattern> 
+<pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<text x="0" y="10" fill="#888888">C</text>
+</pattern> 
+<pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<text x="0" y="10" fill="#888888">D</text>
+</pattern> 
+<pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<text x="0" y="10" fill="#888888">T</text>
+</pattern> 
 <pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="0" y1="0" x2="5" y2="5" stroke="#c62000" stroke-width="2" />
+<line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
 </pattern> 
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="0" y1="0" x2="5" y2="5" stroke="#ff8080" stroke-width="2" />
+<line x1="5" y1="0" x2="0" y2="5" stroke="#ff0000" stroke-width="2" />
 </pattern> 
 <pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="0" y1="0" x2="5" y2="5" stroke="#ff0000" stroke-width="2" />
+<line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
 </pattern> 
 </defs>
 EOT;
@@ -531,7 +598,8 @@ $output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'"
 
 // end SVG doc
 $output .=  <<<EOT
-<text x="0" y="10" id="infobox" fill="#008800" visibility="hidden" >infobox</text>
+<text x="0" y="10" id="infobox" fill="#008800" visibility="hidden" > </text>
+<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" visibility="hidden" />
 </svg>
 EOT;
 
