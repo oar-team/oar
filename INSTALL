@@ -79,7 +79,7 @@ The following steps have to be done, prior to installing OAR:
       this path by yours)::
 
             Defaults>oar    env_reset,env_keep += "PWD DISPLAY OAR_JOB_ID OAR_JOB_KEY_FILE", !requiretty
-            Defaults:oar env_reset,env_keep += "DISPLAY SSH_CLIENT SSH2CLIENT SHELL", !requiretty
+            Defaults:oar env_reset,env_keep += "DISPLAY SSH_CLIENT SSH2CLIENT SSH_CONNECTION SHELL", !requiretty
             
             Cmnd_Alias OARCMD = /usr/lib/oar/oarnodes, /usr/lib/oar/oarstat,\
             /usr/lib/oar/oarsub, /usr/lib/oar/oardel, /usr/lib/oar/oarhold,\
