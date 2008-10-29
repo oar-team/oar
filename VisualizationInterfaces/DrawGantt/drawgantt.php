@@ -228,9 +228,13 @@ class ResourceId {
 		return $output;
 	}
 	function svg_jobs($y) {
-		global $CONF;
+		global $CONF, $gantt_now;
 		foreach ($this->job_resource_id_groups as $grp) {
-			$width = (date2px($grp->job->stop_time) - date2px($grp->job->start_time));
+			if($grp->job->stop_time > 0) {
+				$width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
+			} else {
+				$width = date2px($gantt_now) - date2px($grp->job->start_time);
+			}
 			foreach ($CONF['job_colors'] as $type => $color) {
 				if (in_array($type, $grp->job->types)) {
 					$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
@@ -238,7 +242,7 @@ class ResourceId {
 			}		
 			$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#008800" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
 			if ($width > $CONF['gantt_min_job_width_for_label']) {
-				$output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + (date2px($grp->job->stop_time) - date2px($grp->job->start_time)) / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" >';
+				$output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" >';
 				$output .= $grp->job->job_id;
 				$output .= '</text>';
 			}
@@ -345,49 +349,8 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 }
 mysql_free_result($result);
 
-// Retrieve predicted jobs (future)
+// Array to store jobs
 $jobs = array();
-$query = <<<EOT
-SELECT 
-	jobs.job_id,
-	jobs.job_type,
-	jobs.state,
-	jobs.job_user,
-	jobs.command,
-	jobs.queue_name,
-	moldable_job_descriptions.moldable_walltime,
-	jobs.properties,
-	jobs.launching_directory,
-	jobs.submission_time,
-	gantt_jobs_predictions_visu.start_time,
-	(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime) AS stop_time,
-	gantt_jobs_resources_visu.resource_id,
-	resources.network_address,
-	job_types.type
-FROM 
-	jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources, job_types
-WHERE
-	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
-	jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-	gantt_jobs_predictions_visu.start_time < {$gantt_stop_date} AND
-	resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-	gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= {$gantt_start_date} AND
-	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' ) AND
-	job_types.job_id = jobs.job_id
-ORDER BY 
-	jobs.job_id
-EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
-	if (! array_key_exists($line['job_id'], $jobs)) {
-		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
-	}
-	$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
-	$jobs[$line['job_id']]->add_network_address($line['network_address']);
-	$jobs[$line['job_id']]->add_type($line['type']);
-}
-mysql_free_result($result);
 
 // Retrieve past and current jobs 
 $query = <<<EOT
@@ -422,6 +385,49 @@ WHERE
 	jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
 	moldable_job_descriptions.moldable_job_id = jobs.job_id AND
 	resources.resource_id = assigned_resources.resource_id AND
+	job_types.job_id = jobs.job_id
+ORDER BY 
+	jobs.job_id
+EOT;
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+	if (! array_key_exists($line['job_id'], $jobs)) {
+		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+	}
+	$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+	$jobs[$line['job_id']]->add_network_address($line['network_address']);
+	$jobs[$line['job_id']]->add_type($line['type']);
+}
+mysql_free_result($result);
+
+// Retrieve predicted jobs (future)
+$query = <<<EOT
+SELECT 
+	jobs.job_id,
+	jobs.job_type,
+	jobs.state,
+	jobs.job_user,
+	jobs.command,
+	jobs.queue_name,
+	moldable_job_descriptions.moldable_walltime,
+	jobs.properties,
+	jobs.launching_directory,
+	jobs.submission_time,
+	gantt_jobs_predictions_visu.start_time,
+	(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime) AS stop_time,
+	gantt_jobs_resources_visu.resource_id,
+	resources.network_address,
+	job_types.type
+FROM 
+	jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources, job_types
+WHERE
+	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+	jobs.job_id = moldable_job_descriptions.moldable_job_id AND
+	gantt_jobs_predictions_visu.start_time < {$gantt_stop_date} AND
+	resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+	gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= {$gantt_start_date} AND
+	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' ) AND
 	job_types.job_id = jobs.job_id
 ORDER BY 
 	jobs.job_id
