@@ -29,7 +29,7 @@ $CONF['gantt_left_align'] = 160;
 $CONF['gantt_width'] = 1000;
 $CONF['gantt_min_job_width_for_label'] = 50;
 $CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
-$CONF['resource_properties'] = array('ib10g', 'core', 'deploy', 'cpuset', 'besteffort', 'ip', 'ib10gmodel', 'disktype', 'nodemodel', 'memnode', 'memcore', 'ethnb', 'cluster', 'cpuarch', 'myri2gmodel', 'cpu', 'cpucore', 'myri10g', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'myri10gmodel', 'cpustepping', 'cputype', 'switch', 'cpufreq', 'type', 'chassis', 'myri2g');
+$CONF['resource_properties'] = array('ib10g', 'core', 'deploy', 'cpuset', 'besteffort', 'ip', 'ib10gmodel', 'disktype', 'nodemodel', 'memnode', 'memcore', 'ethnb', 'cluster', 'cpuarch', 'myri2gmodel', 'cpu', 'cpucore', 'myri10g', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'myri10gmodel', 'cputype', 'switch', 'cpufreq', 'type', 'myri2g');
 $CONF['resource_labels'] = array('host','cpuset');
 $CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
 $CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=.*' => 'url(#timesharingPattern)');
@@ -470,7 +470,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	if (array_key_exists($line['resource_id'], $resource_ids)) {
 		$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
 	} else {
-		// create new resource_id so than the job gets the right resource_id count, even if that resource_id is not diplayed in the grid... (filter)
+		// create new resource_id so than the job gets the right resource_id count, even if that resource_id is not displayed in the grid... (filter)
 		$jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
 	}	
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
@@ -554,9 +554,9 @@ function rootMouseMove(evt) {
 function drawTimeRuler(evt) {
 	if ({$page_height} > window.innerHeight) {
 		timeruler.setAttribute("transform","translate(0," + (window.scrollY + window.innerHeight - 45) + ")");
-		timeruler.setAttribute("diplay", "inline");
+		timeruler.setAttribute("display", "inline");
 	} else {
-		timeruler.setAttribute("diplay", "none");
+		timeruler.setAttribute("display", "none");
 	}
 }
 function mouseOver(evt, message) {
