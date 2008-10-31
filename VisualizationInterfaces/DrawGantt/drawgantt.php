@@ -10,6 +10,7 @@ $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
 $gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
 $gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
+$resource_filter = $_GET['filter'];
 
 ////////////////////////////////////////////////////////////////////////////////
 // Configuration
@@ -28,9 +29,10 @@ $CONF['gantt_left_align'] = 160;
 $CONF['gantt_width'] = 1000;
 $CONF['gantt_min_job_width_for_label'] = 50;
 $CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
+$CONF['resource_properties'] = array('ib10g', 'core', 'deploy', 'cpuset', 'besteffort', 'ip', 'ib10gmodel', 'disktype', 'nodemodel', 'memnode', 'memcore', 'ethnb', 'cluster', 'cpuarch', 'myri2gmodel', 'cpu', 'cpucore', 'myri10g', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'myri10gmodel', 'cpustepping', 'cputype', 'switch', 'cpufreq', 'type', 'chassis', 'myri2g');
 $CONF['resource_labels'] = array('host','cpuset');
 $CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
-$CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing' => 'url(#timesharingPattern)');
+$CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=.*' => 'url(#timesharingPattern)');
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions
@@ -149,7 +151,7 @@ class Job {
 		$output .= "|Machines: ".count($this->network_addresses);
 		$output .= "|Submission: ".date("r", $this->submission_time);
 		$output .= "|Start: ".date("r", $this->start_time);
-		$output .= "|Stop: ".date("r", $this->stop_time);
+		$output .= "|Stop: ".(($this->stop_time > 0)?(date("r", $this->start_time)):(date("r", $this->start_time + $this->moldable_walltime)));
 		$output .= "|State: {$this->state}";
 		//$output .= "|Properties: {$this->properties}";
 		return $output;
@@ -180,19 +182,24 @@ class JobResourceIdGroup {
 
 // Storage class for the resource_ids
 class ResourceId {
-	public $id, $cpuset, $states, $job_resource_id_groups, $resources;
+	public $id, $cpuset, $states, $job_resource_id_groups, $resources, $properties;
 	function __construct($id, $cpuset) {
 		$this->id = $id;
 		$this->cpuset = $cpuset;
 		$this->states = array();
 		$this->job_resource_id_groups = array();
 		$this->resources = array();
+		$this->properties = array();
 	}
 	function add_state($value, $start, $stop) {
 		array_push($this->states, new State($value, $start, $stop));
 	}
 	function add_resource($resource) {
 		$this->resources[$resource->type] = $resource;
+	}
+	function add_property($key, $value) {
+		$this->properties[$key] = $value;
+		ksort($this->properties);
 	}
 	function add_job_resource_id_group($job_resource_id_group) {
 		array_push($this->job_resource_id_groups, $job_resource_id_group);
@@ -204,9 +211,18 @@ class ResourceId {
 			return custom_resource_label($this->resources[$type]);
 		}
 	}
+	function svg_text() {
+		$sep = "";
+		$output = "";
+		foreach ($this->properties as $key => $value) {
+			$output .= $sep."{$key}: {$value}";
+			$sep = "|";
+		}
+		return $output;
+	}
 	function svg_label($y) {
 		global $CONF;
-		$output = '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end">';
+		$output = '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end" onmouseover="mouseOver(evt, \''.$this->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)">';
 		$labels = array();
 		foreach ($CONF['resource_labels'] as $type) {
 			array_push($labels, $this->resource_label($type));
@@ -233,10 +249,14 @@ class ResourceId {
 			if($grp->job->stop_time > 0) {
 				$width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
 			} else {
-				$width = date2px($gantt_now) - date2px($grp->job->start_time);
+				if (in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
+					$width = date2px($gantt_now) - date2px($grp->job->start_time);
+				} else {
+					$width = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
+				}
 			}
 			foreach ($CONF['job_colors'] as $type => $color) {
-				if (in_array($type, $grp->job->types)) {
+				if (preg_grep("/^{$type}$/", $grp->job->types)) {
 					$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
 				}
 			}		
@@ -308,11 +328,15 @@ if ($gantt_stop_date == 0) {
 $resource_root = new Resource($site, 'site', NULL);
 $resource_ids = array();
 
-$query = 'SELECT ' . join(',',$CONF['resource_hierarchy']) . ',cpuset, resource_id FROM resources';
+error_log('SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE '.stripslashes($resource_filter):''), 3, '/tmp/drawgantt.php.err');
+$query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE '.stripslashes($resource_filter):'');
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	$rid = new ResourceId($line['resource_id'], $line['cpuset']);
+	foreach ($CONF['resource_properties'] as $rp) {
+		$rid->add_property($rp, $line[$rp]);
+	}
 	$resource_ids[$line['resource_id']] = $rid;
 	$resource_root->add_resource_id($rid);
 	$r = $resource_root;
@@ -345,7 +369,9 @@ WHERE
 EOT;
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
-	$resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
+	if (array_key_exists($line['resource_id'], $resource_ids)) {
+		$resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
+	}
 }
 mysql_free_result($result);
 
@@ -371,7 +397,7 @@ SELECT
 	resources.network_address,
 	job_types.type
 FROM 
-	jobs, assigned_resources, moldable_job_descriptions, resources, job_types
+	(jobs, assigned_resources, moldable_job_descriptions, resources) LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)
 WHERE
 	( jobs.stop_time >= {$gantt_start_date} OR
 		( jobs.stop_time = '0' AND 
@@ -384,8 +410,7 @@ WHERE
 	jobs.start_time < {$gantt_stop_date} AND
 	jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
 	moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-	resources.resource_id = assigned_resources.resource_id AND
-	job_types.job_id = jobs.job_id
+	resources.resource_id = assigned_resources.resource_id
 ORDER BY 
 	jobs.job_id
 EOT;
@@ -394,7 +419,12 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	if (! array_key_exists($line['job_id'], $jobs)) {
 		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
 	}
-	$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+	if (array_key_exists($line['resource_id'], $resource_ids)) {
+		$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+	} else {
+		// create new resource_id so than the job gets the right resource_id count, even if that resource_id is not diplayed in the grid... (filter)
+		$jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
+	}
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
 	$jobs[$line['job_id']]->add_type($line['type']);
 }
@@ -414,12 +444,12 @@ SELECT
 	jobs.launching_directory,
 	jobs.submission_time,
 	gantt_jobs_predictions_visu.start_time,
-	(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime) AS stop_time,
+	jobs.stop_time,
 	gantt_jobs_resources_visu.resource_id,
 	resources.network_address,
 	job_types.type
 FROM 
-	jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources, job_types
+	(jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources) LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)
 WHERE
 	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
 	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
@@ -437,7 +467,12 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	if (! array_key_exists($line['job_id'], $jobs)) {
 		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
 	}
-	$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+	if (array_key_exists($line['resource_id'], $resource_ids)) {
+		$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+	} else {
+		// create new resource_id so than the job gets the right resource_id count, even if that resource_id is not diplayed in the grid... (filter)
+		$jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
+	}	
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
 	$jobs[$line['job_id']]->add_type($line['type']);
 }
@@ -517,7 +552,12 @@ function rootMouseMove(evt) {
 	}
 }
 function drawTimeRuler(evt) {
-	timeruler.setAttribute("transform","translate(0," + (window.scrollY + window.innerHeight - 45) + ")");
+	if ({$page_height} > window.innerHeight) {
+		timeruler.setAttribute("transform","translate(0," + (window.scrollY + window.innerHeight - 45) + ")");
+		timeruler.setAttribute("diplay", "inline");
+	} else {
+		timeruler.setAttribute("diplay", "none");
+	}
 }
 function mouseOver(evt, message) {
   var length = 0;
@@ -544,22 +584,35 @@ function mouseOut(evt) {
 	infobox.setAttribute("display", "none");
 }
 function mouseMove(evt) {
-	infobox.setAttribute("transform", "translate(" + (evt.pageX + 10) + "," + (evt.pageY + 20) + ")");
+	var width=parseInt(infoboxrect.getAttribute("width")); 
+	var height=parseInt(infoboxrect.getAttribute("height")); 
+	var x,y;
+	if ((evt.pageX + 10 + width) < {$page_width}) {
+		x = (evt.pageX + 10);
+	} else {
+		x = ({$page_width} - width);
+	}
+	if ((evt.pageY + 20 + height) < Math.min({$page_height}, window.scrollY + window.innerHeight)) {
+		y = (evt.pageY + 20);
+	} else {
+		y = (evt.pageY - height - 5 );
+	}
+	infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
 }
 ]]></script>
 
 <defs>
-<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="15" viewBox="0 0 15 15" >
-<text font-size="10" x="0" y="15" fill="#888888">B</text>
+<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="0" y="10" fill="#888888">B</text>
 </pattern> 
-<pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="15" viewBox="0 0 15 15" >
-<text font-size="10" x="0" y="15" fill="#888888">C</text>
+<pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="0" y="20" fill="#888888">C</text>
 </pattern> 
-<pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="15" viewBox="0 0 15 15" >
-<text font-size="10" x="0" y="15" fill="#888888">D</text>
+<pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="10" fill="#888888">D</text>
 </pattern> 
-<pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="15" viewBox="0 0 15 15" >
-<text font-size="10" x="0" y="15" fill="#888888">T</text>
+<pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="20" fill="#888888">T</text>
 </pattern> 
 <pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
@@ -589,15 +642,15 @@ for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
 }
 
 // print bottom time ruler
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 20).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 10).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 20).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 10).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
+$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
+$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
+$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
+$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
 
 for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
 	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
-	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 20).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
-	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 10).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
+	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
+	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 
 // print time grid lines
@@ -627,8 +680,10 @@ foreach ($CONF['resource_hierarchy'] as $rh) {
 		$r0 = $rid->resources[$rh]; 
 		$y += $CONF['scale'];
 	}
-	$output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
+	if ($r0) {
+		$output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
 	$x += $CONF['scale'];
+	}
 }
 
 // print resource_id lines
@@ -653,7 +708,7 @@ foreach ($resource_ids as $rid) {
 }
 
 // print mobile time ruler
-$output .= '<g id="timeruler">';
+$output .= '<g id="timeruler" display="none">';
 $output .= '<rect x="'.($CONF['gantt_left_align'] - 5).'" y="0" width="'.($CONF['gantt_width'] + 10).'" height="30" stroke="#000000" stroke-width="1" fill="#FFFFFF" style="opacity: 0.5"/>';
 $output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="25" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
 $output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="15" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
@@ -681,6 +736,7 @@ $output .=  <<<EOT
 EOT;
 
 header("Content-Type: image/svg+xml");
-print $output;
+header('Content-Encoding: gzip');
+print gzencode($output);
 
 ?>
