@@ -328,7 +328,6 @@ if ($gantt_stop_date == 0) {
 $resource_root = new Resource($site, 'site', NULL);
 $resource_ids = array();
 
-error_log('SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE '.stripslashes($resource_filter):''), 3, '/tmp/drawgantt.php.err');
 $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE '.stripslashes($resource_filter):'');
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
