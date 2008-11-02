@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 # $Id$
 #Sumbit job for execution
+package oarsub;
+require Exporter;
 
 use strict;
 use IO::Socket::INET;
@@ -397,121 +399,121 @@ EOS
 }
 
 
-# manage the job key is option is activated
-# read job key file if import from file 
-# generate a job key if no import.
-# function must exit with $job_key_priv and $job_key_pub set if $use_job_key is set.
-sub job_key_management() {
-		if (defined ($use_job_key) and !($import_job_key_inline ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
-        $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
-    }
-    if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne "") or ($export_job_key_file ne ""))){
-        warn("Error: You must set the --use-job-key (or -k) option in order to use other job key related options.\n");
-        exit(15);
-    }
-    if (defined($use_job_key)){
-        if (($import_job_key_inline ne "") and ($import_job_key_file ne "")){
-            warn("Error: You cannot import a job key both inline and from a file at the same time.\n");
-            exit(15);
-        }
-        my $tmp_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
-        if (($import_job_key_inline ne "") or ($import_job_key_file ne "")){
-            # job key is imported
-            if ($import_job_key_inline ne "") {
-                # inline import
-                print ("Import job key inline.\n");
-                unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
-                    warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
-                    exit(14);
-                }
-                syswrite(FH,$import_job_key_inline);
-                close(F);
-            } else {
-                # file import
-                print ("Import job key from file: $import_job_key_file\n");
-                my $lusr= $ENV{OARDO_USER};
-                # read key files: oardodo su - user needed in order to be able to read the file for sure
-                # safer way to do a `cmd`, see perl cookbook 
-                my $pid;
-                die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
-                if ($pid == 0) {
-                    $ENV{OARDO_BECOME_USER} = $lusr;
-                    unless (exec({"oardodo"} "oardodo","cat $import_job_key_file")) {
-                        warn ("Error: Cannot cannot read key file:$import_job_key_file\n");
-                        exit(14);
-                    }
-                }else{
-                    unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
-                        warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
-                        exit(14);
-                    }
-                    while (<SAFE_CHILD>) {
-                        syswrite(FH,$_);
-                    }
-                    close(FH);
-                }
-                close(SAFE_CHILD);
-            }
-            # extract the public key from the private one
-            system({"bash"} "bash","-c","SSH_ASKPASS=/bin/true ssh-keygen -y -f $tmp_job_key_file < /dev/null 2> /dev/null > $tmp_job_key_file.pub");
-            if ($? != 0){
-                warn ("Error: Fail to extract the public key. Please verify that the job key to import is valid.\n");
-                if (-e $tmp_job_key_file) { 
-                    unlink($tmp_job_key_file);
-                }
-                if (-e $tmp_job_key_file.".pub") { 
-                    unlink($tmp_job_key_file.".pub");
-                }
-                exit(14);
-            }
-        } else {
-            # we must generate the key
-            print("Generate a job key...\n");
-            # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
-            system({"bash"} "bash","-c",'ssh-keygen -b 1024 -N "" -t rsa -f "'.$tmp_job_key_file.'" > /dev/null');
-            if ($? != 0) {
-                warn ("Error: Job key generation failed ($?).\n");
-                exit(14);
-            }
-        }
-        # priv and pub key file must now exist.
-        unless (open(F, "< $tmp_job_key_file")){
-            warn ("Error: fail to read private key.\n");
-            exit(14);
-        }
-        while ($_ = <F>){
-            $job_key_priv .= $_;
-        }
-        close(F);
-        unless (open(F, "< $tmp_job_key_file.pub")){
-            warn ("Error: fail to read private key.\n");
-            exit(14);
-        }
-        while ($_ = <F>){
-            $job_key_pub .= $_;
-        }
-        close(F);
-        unlink($tmp_job_key_file,$tmp_job_key_file.".pub");
-    }
-    
-    # last checks
-    if (defined($use_job_key)){
-        if ($job_key_pub eq "") {
-            warn("Error: missing job public key (private key found).\n");
-            exit(15);
-        } 
-        if ($job_key_priv eq "") {
-            warn("Error: missing job private key (public key found).\n");
-            exit(15);
-        } 
-        if ($job_key_pub !~ /^(ssh-rsa|ssh-dss)\s.+\n*$/){
-            warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss' and is only 1 line.\n");
-            exit(14);
-        }
-        $job_key_pub =~ s/\n//g;
-    }
-}
-
+## manage the job key is option is activated
+## read job key file if import from file 
+## generate a job key if no import.
+## function must exit with $job_key_priv and $job_key_pub set if $use_job_key is set.
+#sub job_key_management() {
+#		if (defined ($use_job_key) and !($import_job_key_inline ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
+#        $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
+#    }
+#    if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne "") or ($export_job_key_file ne ""))){
+#        warn("Error: You must set the --use-job-key (or -k) option in order to use other job key related options.\n");
+#        exit(15);
+#    }
+#    if (defined($use_job_key)){
+#        if (($import_job_key_inline ne "") and ($import_job_key_file ne "")){
+#            warn("Error: You cannot import a job key both inline and from a file at the same time.\n");
+#            exit(15);
+#        }
+#        my $tmp_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
+#        if (($import_job_key_inline ne "") or ($import_job_key_file ne "")){
+#            # job key is imported
+#            if ($import_job_key_inline ne "") {
+#                # inline import
+#                print ("Import job key inline.\n");
+#                unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
+#                    warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
+#                    exit(14);
+#                }
+#                syswrite(FH,$import_job_key_inline);
+#                close(F);
+#            } else {
+#                # file import
+#                print ("Import job key from file: $import_job_key_file\n");
+#                my $lusr= $ENV{OARDO_USER};
+#                # read key files: oardodo su - user needed in order to be able to read the file for sure
+#                # safer way to do a `cmd`, see perl cookbook 
+#                my $pid;
+#                die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
+#                if ($pid == 0) {
+#                    $ENV{OARDO_BECOME_USER} = $lusr;
+#                    unless (exec({"oardodo"} "oardodo","cat $import_job_key_file")) {
+#                        warn ("Error: Cannot cannot read key file:$import_job_key_file\n");
+#                        exit(14);
+#                    }
+#                }else{
+#                    unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
+#                        warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
+#                        exit(14);
+#                    }
+#                    while (<SAFE_CHILD>) {
+#                        syswrite(FH,$_);
+#                    }
+#                    close(FH);
+#                }
+#                close(SAFE_CHILD);
+#            }
+#            # extract the public key from the private one
+#            system({"bash"} "bash","-c","SSH_ASKPASS=/bin/true ssh-keygen -y -f $tmp_job_key_file < /dev/null 2> /dev/null > $tmp_job_key_file.pub");
+#            if ($? != 0){
+#                warn ("Error: Fail to extract the public key. Please verify that the job key to import is valid.\n");
+#                if (-e $tmp_job_key_file) { 
+#                    unlink($tmp_job_key_file);
+#                }
+#                if (-e $tmp_job_key_file.".pub") { 
+#                    unlink($tmp_job_key_file.".pub");
+#                }
+#                exit(14);
+#            }
+#        } else {
+#            # we must generate the key
+#            print("Generate a job key...\n");
+#            # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
+#            system({"bash"} "bash","-c",'ssh-keygen -b 1024 -N "" -t rsa -f "'.$tmp_job_key_file.'" > /dev/null');
+#            if ($? != 0) {
+#                warn ("Error: Job key generation failed ($?).\n");
+#                exit(14);
+#            }
+#        }
+#        # priv and pub key file must now exist.
+#        unless (open(F, "< $tmp_job_key_file")){
+#            warn ("Error: fail to read private key.\n");
+#            exit(14);
+#        }
+#        while ($_ = <F>){
+#            $job_key_priv .= $_;
+#        }
+#        close(F);
+#        unless (open(F, "< $tmp_job_key_file.pub")){
+#            warn ("Error: fail to read private key.\n");
+#            exit(14);
+#        }
+#        while ($_ = <F>){
+#            $job_key_pub .= $_;
+#        }
+#        close(F);
+#        unlink($tmp_job_key_file,$tmp_job_key_file.".pub");
+#    }
+#    
+#    # last checks
+#    if (defined($use_job_key)){
+#        if ($job_key_pub eq "") {
+#            warn("Error: missing job public key (private key found).\n");
+#            exit(15);
+#        } 
+#        if ($job_key_priv eq "") {
+#            warn("Error: missing job private key (public key found).\n");
+#            exit(15);
+#        } 
+#        if ($job_key_pub !~ /^(ssh-rsa|ssh-dss)\s.+\n*$/){
+#            warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss' and is only 1 line.\n");
+#            exit(14);
+#        }
+#        $job_key_pub =~ s/\n//g;
+#    }
+#}
+#
 sub read_array_param_file($){
     my $array_param_file = shift;
     my @array_params;
@@ -922,7 +924,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my @resource_list = parse_resource_descriptions(\@resource);
     
-    job_key_management();
+#    job_key_management();
 
     #if (!($exec =~ m/^\/.+$/m)){
         # WARNING: we are not the real user, we are oar user!!!
@@ -991,7 +993,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
 
 
-     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -1000,7 +1002,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my @resource_list = parse_resource_descriptions(\@resource);
  
-    job_key_management();
+#    job_key_management();
 
     if ($Reservation ne "0"){
         #Test if this job is a reservation and the syntax is right
@@ -1016,7 +1018,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
 
 if(@{$Job_id_list_ref} > 1){
@@ -1059,41 +1061,6 @@ iolib::disconnect($base);
 if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
     warn("Oarsub failed: please verify your request syntax or ask for support to your admin.\n");
     exit(8);
-}
-
-if (defined($use_job_key) and ($export_job_key_file ne "")){
-    # we must copy the keys in the directory specified with the right name
-
-#    if(@{$Job_id_list_ref} == 1){
-        $export_job_key_file =~ s/%jobid%/$Job_id_list_ref->[0]/g;
-#    }
-#    else{
-#        $export_job_key_file =~ s/%jobid%/$Job_id_list_ref->[0]-$Job_id_list_ref->[-1]/g;
-#    }
-    
-    my $lusr= $ENV{OARDO_USER};
-    my $pid;
-    # write the private job key with the user ownership
-    unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
-        warn ("Error: Cannot open pipe ($?)");
-        exit(14);
-    }
-    if ($pid == 0) {
-        umask(oct("177"));
-        $ENV{OARDO_BECOME_USER} = $lusr;
-        open(STDERR, ">/dev/null");
-        unless (exec({"oardodo"} "oardodo","dd of=$export_job_key_file")) {
-            warn ("Error: Cannot exec user shell ($?)");
-            exit(14);
-        }
-    }else{
-        print SAFE_CHILD $job_key_priv;
-        unless (close(SAFE_CHILD)) { 
-            warn ("Error: Cannot close pipe {$?}");
-            exit(14);
-        }
-    }
-    print "Export job key to file: ".$export_job_key_file."\n";
 }
 
 #Signal Almigthy
