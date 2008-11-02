@@ -3,7 +3,7 @@
 CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.3.0+svn1369');
+INSERT INTO schema VALUES ('2.3.2+svn1740');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
