@@ -17,10 +17,11 @@ umask(oct("022"));
 
 sub usage {
     print <<EOS;
-Usage: $0 [job_ids][--sql "sql syntax"][-r][-V][-h]
+Usage: $0 [--array][job_ids][--sql "sql syntax"][-r][-V][-h]
 Ask OAR to not schedule job_id until oarresume command will be executed.
   -r, --running manage not only Waiting jobs but also Running one
                 (can suspend the job)
+      --array   hold array job(s) passed as parameter (all the sub-jobs)
       --sql     hold jobs which respond to the SQL where clause on the table
                 jobs (ex: "project = 'p1'")
   -h, --help    show this help screen
@@ -32,8 +33,10 @@ my $Help;
 my $Version;
 my $Suspend_running;
 my $Sql_property;
+my $array;
 GetOptions ("help|h" => \$Help,
             "version|V" => \$Version,
+            "array" => \$array,
             "sql=s"   => \$Sql_property,
             "running|r" => \$Suspend_running
            );
@@ -61,14 +64,36 @@ if ((@ARGV < 1) and (!defined($Sql_property))){
 
 my @job_ids;
 my $exit_code = 0;
+
 foreach my $j (@ARGV){
-    if ($j =~ /^\d+$/){
-        push(@job_ids, $j);
+    if ($j =~ m/^\d+$/m){
+        #if defined --array, delete all the sub-jobs
+        if(defined($array)){
+             my $db = iolib::connect_ro();
+             my @tmp_jobs = iolib::get_array_job_ids($db,$j);
+            if(scalar @tmp_jobs == 0){
+                warn("[ERROR] \"$j\" is not a valid array job\n");
+                $exit_code = 2;
+            }else{
+                foreach my $j (@tmp_jobs){
+                    push(@job_ids, $j);
+                 }
+            }
+            iolib::disconnect($db);
+        }else{
+            push(@job_ids, $j);
+        }
     }else{
-        warn("[ERROR] \"$j\" is not a valid job identifier\n");
-        $exit_code = 3;
+        if(defined($array)){
+            warn("[ERROR] \"$j\" is not a valid job array identifier\n");
+        }else{
+            warn("[ERROR] \"$j\" is not a valid job identifier\n");
+        }
+        $exit_code = 2;
     }
 }
+
+
 if (defined($Sql_property)){
     my $db = iolib::connect_ro();
     foreach my $j (iolib::get_jobs_with_given_properties($db,$Sql_property)){

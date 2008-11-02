@@ -8,6 +8,19 @@ next version:
   - Add new oaradmin subcommand : oaradmin conf. Useful to edit conf files and 
     keep changes in a Subversion repository.
   - Kill correctly each taktuk command children in case of a timeout.
+  - New feature: array jobs (option --array)  (on oarsub, oarstat oardel, 
+    oarhold and oarresume) and file-based parametric array jobs 
+    (oarsub --array-param-file)
+    /!\ in this version the DB scheme has changed. If you want to upgrade your
+    installation from a previous 2.3 release then you have to execute in your
+    database (stop OAR before):
+        mysql:
+            ALTER TABLE jobs ADD array_id INT UNSIGNED NOT NULL DEFAULT 0,
+            UPDATE jobs SET array_id = job_id ;
+
+        postgres:
+            ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
+            UPDATE jobs SET array_id = job_id ;
 
 version 2.3.2:
 --------------

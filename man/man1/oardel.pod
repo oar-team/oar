@@ -4,7 +4,7 @@ oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [-c|-b][job_ids][-h][-V]
+B<oardel> [-c|-b][--array][job_ids][-h][-V]
 
 =head1 DESCRIPTION
 
@@ -21,6 +21,10 @@ Send the checkpoint signal designed from the "--signal" oarsub command option (d
 =item B<-b, --besteffort>
 
 Tag specified jobs as besteffort (or remove it if they are already besteffort)
+
+=item B<--array> 
+
+Delete/checkpoint array job(s) passed as parameter (all the sub-jobs of the given array job(s))
 
 =item B<--sql>
 

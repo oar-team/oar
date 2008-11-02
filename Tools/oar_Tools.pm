@@ -423,9 +423,11 @@ sub launch_command($){
 
 # Create the perl script used to execute right command for the user
 # The resulting script can be launched with : perl -e 'script'
-sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$@){
+sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@){
     my ($node_file,
         $job_id,
+        $array_id,
+        $array_index,
         $user,
         $shell,
         $launching_directory,
@@ -458,6 +460,8 @@ $ENV{OAR_STDOUT} = "'.$stdout_file.'";
 $ENV{OAR_STDERR} = "'.$stderr_file.'";
 $ENV{OAR_FILE_NODES} = "'.$node_file.'";
 $ENV{OAR_JOBID} = '.$job_id.';
+$ENV{OAR_ARRAYID} = '.$array_id.';
+$ENV{OAR_ARRAYINDEX} = '.$array_index.';
 $ENV{OAR_USER} = "'.$user.'";
 $ENV{OAR_WORKDIR} = "'.$launching_directory.'";
 $ENV{OAR_RESOURCE_PROPERTIES_FILE} = "'.$resource_file.'";
@@ -472,6 +476,8 @@ $ENV{OAR_NODE_FILE} = $ENV{OAR_FILE_NODES};
 $ENV{OAR_RESOURCE_FILE} = $ENV{OAR_FILE_NODES};
 $ENV{OAR_WORKING_DIRECTORY} = $ENV{OAR_WORKDIR};
 $ENV{OAR_JOB_ID} = $ENV{OAR_JOBID};
+$ENV{OAR_ARRAY_ID} = $ENV{OAR_ARRAYID};
+$ENV{OAR_ARRAY_INDEX} = $ENV{OAR_ARRAYINDEX};
 
 $ENV{SUDO_COMMAND}="OAR";
 delete($ENV{SSH_CLIENT});
@@ -526,9 +532,11 @@ exit(0);
 
 # Create the shell script used to execute right command for the user
 # The resulting script can be launched with : bash -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$){
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$$){
     my ($node_file,
         $job_id,
+        $array_id,
+        $array_index,
         $user,
         $shell,
         $launching_directory,
@@ -555,6 +563,8 @@ fi;
 
 export OAR_FILE_NODES="'.$node_file.'";
 export OAR_JOBID='.$job_id.';
+export OAR_ARRAYID='.$array_id.';
+export OAR_ARRAYINDEX='.$array_index.';
 export OAR_USER="'.$user.'";
 export OAR_WORKDIR="'.$launching_directory.'";
 export OAR_RESOURCE_PROPERTIES_FILE="'.$resource_file.'";
@@ -565,6 +575,8 @@ export OAR_NODE_FILE=$OAR_FILE_NODES;
 export OAR_RESOURCE_FILE=$OAR_FILE_NODES;
 export OAR_WORKING_DIRECTORY=$OAR_WORKDIR;
 export OAR_JOB_ID=$OAR_JOBID;
+export OAR_ARRAY_ID=$OAR_ARRAYID;
+export OAR_ARRAY_INDEX=$OAR_ARRAYINDEX;
 export OAR_JOB_NAME="'.$job_name.'";
 export OAR_PROJECT_NAME="'.$job_project.'";
 export OAR_JOB_WALLTIME="'.$job_walltime.'";

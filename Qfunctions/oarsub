@@ -55,6 +55,7 @@ my $Host = hostname ;
 my $base;
 my $Server;
 my $Job_id;
+my $Job_id_list_ref;
 my $Interactive = 0;
 my $Reservation = "0";
 my $Default_resources;
@@ -95,6 +96,11 @@ my $export_job_key_file = "";
 my $Job_uid_resource_type;
 my $Initial_request_string = "oarsub @ARGV";
 
+# a non array-job is an array-job with 1 subjob
+my $array_job_nb = 1;
+my $array_param_file;
+
+
 #to catch ^C signal
 $SIG{INT} = 'qdel';
 $SIG{HUP} = 'qdel';
@@ -103,18 +109,21 @@ $SIG{PIPE} = 'qdel';
 # to address ^C in interactive submission
 sub qdel($) {
     my $Al_dead = shift;
-    
-    if (defined($Job_id)) {
+    if (defined($Job_id_list_ref)) {
         if ($Al_dead eq "INT" ) {
             print(STDERR "\n\nCaught Interrupt (^C),");
         }
-        warn("Deleting the job $Job_id ...\n");
+
         my $base = iolib::connect();
         iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
-        my $err = iolib::frag_job($base,$Job_id);
+        foreach my $Job_id (@{$Job_id_list_ref}) {
+            warn("Deleting the job $Job_id ...\n");
+            my $err = iolib::frag_job($base,$Job_id);
+        }
         iolib::unlock_table($base);
         iolib::disconnect($base);
-        warn("Job deleted\n");
+
+        warn("Job(s) deleted\n");
         #Signal Almigthy
         oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
         exit(1);
@@ -218,6 +227,8 @@ sub connect_job($$$){
     my $dbh = iolib::connect_ro();
     my $lusr= $ENV{OARDO_USER};
     my $job = iolib::get_job($dbh, $job_id);
+    my $array_index = iolib::get_job_array_index($dbh,$job_id);
+
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
         my @hosts = iolib::get_job_current_hostnames($dbh,$job_id);
         my $host_to_connect_via_ssh = $hosts[0];
@@ -254,7 +265,7 @@ sub connect_job($$$){
         my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
         my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$lusr,$shell,$job->{launching_directory},$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env});
+        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$job->{array_id},$array_index,$lusr,$shell,$job->{launching_directory},$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env});
         my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
         my @cmd;
         my $i = 0;
@@ -326,6 +337,9 @@ Options are:
                                automatically terminated if still running.
                                Walltime format is [hour:mn:sec|hour:mn|hour].
                                Ex: host=4/cpu=1,walltime=2:00:00
+     --array <number>          Specify an array job with 'number' subjobs
+     --array-param-file <file> Specify an array job on which each subjob will 
+                               receive one line of the file as parameter
  -S, --scanscript              Batch mode only: asks oarsub to scan the given
                                script for OAR directives (#OAR -l ...)
  -q, --queue=<queue>           Set the queue to submit the job to
@@ -498,6 +512,28 @@ sub job_key_management() {
     }
 }
 
+sub read_array_param_file($){
+    my $array_param_file = shift;
+    my @array_params;
+    if (open(PARAMETER_FILE, "oardodo cat $array_param_file |")){
+        while(<PARAMETER_FILE>) {
+            s/#.*//; # ignore comments by erasing them
+            next if /^\s*$/;  # skip blank lines
+            chomp;  # remove trailing newline characters
+            push (@array_params, $_);
+        }
+        if (!close(PARAMETER_FILE)){
+            warn("[ERROR] Cannot open the parameter file $array_param_file.\n");
+            exit(12);
+        }
+    }else{
+        warn("[ERROR] Cannot execute: oardodo cat $array_param_file\n");
+        exit(12);
+    }
+    return \@array_params;
+}
+
+
 # Parse -l options and return an array of hashtables with resources for a moldable job
 sub parse_resource_descriptions($){
     my $resource_ref = shift;
@@ -667,6 +703,8 @@ GetOptions ("resource|l=s" => \@resource,
             "name|n=s" => \$job_name,
             "project=s" => \$Project,
             "hold" => \$job_hold,
+            "array=i" => \$array_job_nb,
+            "array-param-file=s" => \$array_param_file,
             "anterior|a=i" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
             "stdout|O=s" => \$Stdout_file,
@@ -737,17 +775,46 @@ if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($c
     exit(5);
 }
 
-if (($Interactive == 1) and ($Reservation ne "0")){
-    warn("/!\\ A reservation cannot be interactive.\n");
+if($array_job_nb <= 0){
+    warn("/!\\ An array job must have a positive number of sub-jobs\n");
     usage();
     exit(6);
 }
 
+
+if (($Interactive == 1) and ($Reservation ne "0")){
+    warn("/!\\ A reservation cannot be interactive.\n");
+    usage();
+    exit(7);
+}
+
+if (($Interactive == 1) and ($array_job_nb !=1 )){
+        warn("/!\\ An array job cannot be interactive.\n");
+        usage();
+        exit(8);
+}
+
+if (($Interactive == 1) and (defined($array_param_file))){
+        warn("/!\\ A parameter file-based array job cannot be interactive.\n");
+# user defined array_ids, 0 if interactive and/or non-array job 
+        usage();
+        exit(9);
+}
+
+
 if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     warn("/!\\ A desktop computing job cannot be interactive.\n");
     usage();
-    exit(6);
+    exit(10);
 }
+
+my $array_params_ref;
+# array_ids are assigned automatically 
+if(defined($array_param_file)){
+    $array_params_ref = read_array_param_file($array_param_file);
+    $array_job_nb = scalar @{$array_params_ref};
+}
+
 
 # Connect to a reservation
 if (defined($connect_job)){
@@ -924,7 +991,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
 
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
+     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -949,28 +1016,38 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = init_tcp_server();
 
-    $Job_id = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string);
+     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$job_key_priv,$job_key_pub,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
-print("OAR_JOB_ID=$Job_id\n");
+
+if(@{$Job_id_list_ref} > 1){
+    for my $j (@{$Job_id_list_ref}){
+        print("OAR_JOB_ID=".$j."\n");
+    }
+    print ("OAR_ARRAY_ID=".iolib::get_job_array_id($base,$Job_id_list_ref->[0])."\n");
+}else{
+    print("OAR_JOB_ID=".$Job_id_list_ref->[0]."\n");
+}
 
 if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
     print("\n##########\n");
-    my $tmp = { job_id => $Job_id };
-    if (defined($DUMPER_mode)){
-        print(Dumper($tmp));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml($tmp));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump($tmp));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+    foreach my $Job_id  (@{$Job_id_list_ref}){
+        my $tmp = { job_id => $Job_id };
+        if (defined($DUMPER_mode)){
+            print(Dumper($tmp));
+        }elsif(defined($XML_mode)){
+            if ($XML_enabled == 1){
+                my $dump = new XML::Dumper;
+                $dump->dtd;
+                print($dump->pl2xml($tmp));
+            }else{
+                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+            }
+        }elsif(defined($YAML_mode)){
+            if ($YAML_enabled == 1){
+                print(YAML::Dump($tmp));
+            }else{
+                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+            }
         }
     }
     print("\n##########\n\n");
@@ -979,14 +1056,21 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
 iolib::disconnect($base_ro);
 iolib::disconnect($base);
 
-if ($Job_id < 0){
+if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
     warn("Oarsub failed: please verify your request syntax or ask for support to your admin.\n");
     exit(8);
 }
 
 if (defined($use_job_key) and ($export_job_key_file ne "")){
     # we must copy the keys in the directory specified with the right name
-    $export_job_key_file =~ s/%jobid%/$Job_id/g;
+
+#    if(@{$Job_id_list_ref} == 1){
+        $export_job_key_file =~ s/%jobid%/$Job_id_list_ref->[0]/g;
+#    }
+#    else{
+#        $export_job_key_file =~ s/%jobid%/$Job_id_list_ref->[0]-$Job_id_list_ref->[-1]/g;
+#    }
+    
     my $lusr= $ENV{OARDO_USER};
     my $pid;
     # write the private job key with the user ownership
@@ -1051,7 +1135,7 @@ if ($Reservation ne "0"){
     }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
     print("\n");
     if ($answer eq "GOOD JOB"){
-        exit(connect_job($Job_id,1,$Openssh_cmd));
+        exit(connect_job($Job_id_list_ref->[0],1,$Openssh_cmd));
     }else{
         exit(11);
     }

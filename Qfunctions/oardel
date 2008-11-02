@@ -21,13 +21,15 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-c|-b][job_ids][-h][-V]
+Usage: $0 [-c|-b][--array][job_ids][-h][-V]
 Delete or send checkpoint signal to jobs.
 Options:
   -h, --help              show this help screen
   -c, --checkpoint        send checkpoint signal to the job_ids
   -b, --besteffort        tag specified jobs as besteffort (or remove it
                           if they are already besteffort)
+      --array             delete/checkpoint array job(s) passed as parameter 
+                          (all the sub-jobs)
       --sql               delete/checkpoint jobs which respond to the SQL
                           where clause on the table jobs
                           (ex: "project = 'p1'")
@@ -59,9 +61,12 @@ my $sos;
 my $Version;
 my $Sql_property;
 my $Besteffort;
+my $array;
+
 GetOptions ("checkpoint|c" => \$Checkpoint,
             "besteffort|b" => \$Besteffort,
             "help|h" => \$sos,
+            "array" => \$array,
             "sql=s"   => \$Sql_property,
             "version|V" => \$Version
            );
@@ -82,14 +87,36 @@ if (($#ARGV < 0) and (!defined($Sql_property))){
 }
 
 my @job_ids;
-foreach my $j (@ARGV) {
+
+foreach my $j (@ARGV){
     if ($j =~ m/^\d+$/m){
-        push(@job_ids,$j);
+        #if defined --array, delete all the sub-jobs
+        if(defined($array)){
+             my $db = iolib::connect_ro();
+             my @tmp_jobs = iolib::get_array_job_ids($db,$j);
+            if(scalar @tmp_jobs == 0){
+                warn("[ERROR] \"$j\" is not a valid array job\n");
+                $exitValue = 4;
+            }else{
+                foreach my $j (@tmp_jobs){
+                    push(@job_ids, $j);
+                 }
+            }
+            iolib::disconnect($db);
+        }else{
+            push(@job_ids, $j);
+        }
     }else{
+        if(defined($array)){
+            warn("[ERROR] \"$j\" is not a valid job array identifier\n");
+        }else{
+            warn("[ERROR] \"$j\" is not a valid job identifier\n");
+        }
         $exitValue = 4;
-        warn("[ERROR] \"$j\" is not a valid OAR job identifier.\n");
     }
 }
+
+
 if (defined($Sql_property)){
     my $db = iolib::connect_ro();
     foreach my $j (iolib::get_jobs_with_given_properties($db,$Sql_property)){

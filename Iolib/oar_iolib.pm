@@ -54,7 +54,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
@@ -83,6 +83,15 @@ sub del_stagein($$);
 sub get_jobs_to_schedule($$$);
 sub get_current_job_types($$);
 sub set_moldable_job_max_time($$$);
+
+#ARRAY JOBS MANAGEMENT
+sub get_jobs_in_array($$);
+sub get_job_array_id($$);
+sub get_job_array_index($$);
+sub get_array_subjobs($$);
+sub get_array_job_ids($$);
+
+
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub get_resource_job($$);
 sub get_node_job($$);
@@ -469,7 +478,7 @@ sub get_jobs_in_state_for_user($$$) {
     my $user_query="";
 
     if (defined $user and "$user" ne "" ) {
-      $user_query="and job_user =" . $dbh->quote($user);
+      $user_query="AND job_user =" . $dbh->quote($user);
     }
 
     my $sth = $dbh->prepare("   SELECT *
@@ -1023,19 +1032,25 @@ sub get_possible_wanted_resources($$$$$$$){
 
 
 # add_micheline_job
-# adds a new job to the table Jobs applying the admission rules from the base
-# parameters : base, jobtype, nbnodes, weight, command, infotype, maxtime,
-#              queuename, jobproperties, startTimeReservation
-# return value : jobid
+# adds a new job(or multiple in case of array-job) to the table Jobs applying 
+# the admission rules from the base  parameters : base, jobtype, nbnodes, 
+# weight, command, infotype, maxtime, queuename, jobproperties, 
+# startTimeReservation
+# return value : ref. of array of created jobids
 # side effects : adds an entry to the table Jobs
-#                the jobid is found taking the maximal jobid from jobs in the
-#                table plus 1
+#                the first jobid is found taking the maximal jobid from 
+#                jobs in the table plus 1, the next (if any) takes the next 
+#                jobid. Array-job submission is atomic and array_index are 
+#                sequential
 #                the rules in the base are pieces of perl code directly
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string) = @_;
+
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$){
+   my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_job_nb,$array_params_ref) = @_;
+
+    my $array_id = 0;
 
     my $default_walltime = "3600";
     my $startTimeJob = "0";
@@ -1092,6 +1107,42 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
         warn("ERROR : The queue $queue_name does not exist\n");
         return(-8);
     }
+
+    my $array_index;
+    my @Job_id_list;
+
+    if(!defined($array_params_ref)){
+        for (my $i=0; $i<$array_job_nb; $i++){
+            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime));
+            if ($Job_id_list[-1] <= 0){
+                return(\@Job_id_list);
+            }else{
+                if ($array_id <= 0){
+                    $array_id = $Job_id_list[0];
+                }
+            }
+        }
+    }else{
+        $array_index=0;
+        foreach my $param (@{$array_params_ref}){
+            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command." $param", $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime));
+            if ($Job_id_list[-1] <= 0){
+                return(\@Job_id_list);
+            }else{
+                $array_index++;
+                if ($array_id <= 0){
+                    $array_id = $Job_id_list[0];
+                }
+            }
+        }
+    }
+
+   return(\@Job_id_list);
+}
+
+
+sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime) = @_;
 
     # Test if properties and resources are coherent
     my @dead_resources;
@@ -1156,13 +1207,21 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$){
     $project = $dbh->quote($project);
     $initial_request_string = $dbh->quote($initial_request_string);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id)
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
-    
+   
+    if ($array_id <= 0){
+        $dbh->do("  UPDATE jobs
+                    SET array_id = $job_id
+                    WHERE
+                        job_id = $job_id
+                 ");
+    }
+
     $ssh_priv_key = $dbh->quote($ssh_priv_key);
     $ssh_pub_key = $dbh->quote($ssh_pub_key);
     my $random_number = int(rand(1000000000000));
@@ -2442,6 +2501,137 @@ sub set_moldable_job_max_time($$$){
                 WHERE
                     moldable_id = $mol
              ");
+}
+
+
+#ARRAY JOBS MANAGEMENT
+
+# get_jobs_in_array
+# returns the jobs within a same array
+# parameters : base, array_id
+# return value : flatened list of hashref jobs ids
+sub get_jobs_in_array($$) {
+    my $dbh = shift;
+    my $array_id = $dbh->quote(shift);
+
+    my $sth = $dbh->prepare("   SELECT job_id
+                                FROM jobs
+                                WHERE
+                                    array_id = $array_id
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(@res);
+}
+
+
+# get_job_array_id($$)
+# get array_id of a job with given job_id
+# parameters : base,  job_id
+# return value : array_id of the job
+# side effects : / 
+sub get_job_array_id($$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $sth;
+
+    $sth = $dbh->prepare("  SELECT array_id
+                            FROM jobs
+                            WHERE
+                                job_id = $job_id
+                         ");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    my @tmp_array = values(%$ref);
+
+    my $array_id = $tmp_array[0];
+    $sth->finish();
+  
+    return($array_id);
+}
+ 
+
+# get_job_array_index($$)
+# Calculate the array_index based on a given job_id
+# parameters : base, job_id
+# return value : array_index of the given jobid
+# side effects : / 
+sub get_job_array_index($$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $sth;
+
+    my $array_id = get_job_array_id($dbh,$job_id);
+
+    $sth = $dbh->prepare("  SELECT COUNT(job_id)
+                            FROM jobs
+                            WHERE 
+                                array_id = $array_id
+                                and job_id < $job_id
+                         ");
+
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    my @tmp_array = values(%$ref);
+    $sth->finish();
+
+    return ($tmp_array[0]+1);
+}
+
+
+# get_array_subjobs($$)
+# Get all the jobs of a given array_job
+# parameters : base, array_id
+# return value : array of jobs of a given array_job
+# side effects : / 
+sub get_array_subjobs($$){
+    my $dbh = shift;
+    my $array_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    array_id = $array_id
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    
+    return(@res);
+}
+
+
+
+# get_array_job_ids($$)
+# Get all the job_ids of a given array_job
+# parameters : base, array_id
+# return value : array of jobids of a given array_job
+# side effects : / 
+sub get_array_job_ids($$){
+    my $dbh = shift;
+    my $array_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT job_id
+                                FROM jobs
+                                WHERE
+                                    array_id = $array_id
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my @tmp_array = values(%$ref);
+        push(@res,  $tmp_array[0]);
+    }
+
+    $sth->finish();
+    return(@res);
 }
 
 

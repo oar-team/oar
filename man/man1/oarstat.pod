@@ -4,9 +4,9 @@ oarstat - show information about jobs
 
 =head1 SYNOPSIS
 
-B<oarstat> [-X|-Y|-D|-f] [-j jobid] [--sql SQL_properties] [-u user]
+B<oarstat> [-X|-Y|-D|-f] [-j jobid|--array arrayid] [--sql SQL_properties] [-u user] [--array]
 
-B<oarstat> [-e|-p] [-j jobid]
+B<oarstat> [-e|-p] [-j jobid | --array arrayid]
 
 B<oarstat> [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
 
@@ -39,8 +39,12 @@ Print job properties in the same format as in the $OAR_RESOURCE_PROPERTIES_FILE 
 =item B<-u, --user> [login]
 
 Print informations for the current user or the one given.
- If used with --accounting, print a more detailed accounting report for the user.
+If used with --accounting, print a more detailed accounting report for the user.
 
+=item B<--array> [array_id]
+ 
+Toggle the visualization of array information on.  If an array_id is provided, print informations relative to the subjobs of the given array job.
+ 
 =item B<--sql>
 
 Restricts display with the SQL where clause on the table jobs (ex: "project = 'p1'")

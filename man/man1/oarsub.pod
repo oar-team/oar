@@ -35,6 +35,19 @@ Connect to a running job.
 Set the requested resources for the job. The different parameters are resource properties registered in OAR database, and `walltime' which specifies the duration before the job must be automatically terminated if still running. 
 Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: nodes=4/cpu=1,walltime=2:00:00
 
+=item B<--array> <NUMBER>
+
+Submit an array job containing "NUMBER" subjobs. All the subjobs share the same array_id but each subjob is independent and has its own job_id. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.
+
+Array jobs can neither be Interactive (-I) nor a reservation (-r).
+
+
+=item B<--array-param-file> <FILE>
+
+Submit a parametric array job. Each non-empty line of "FILE" defines the parameters for the submition of new subjob. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.   '#' is the comment sign.
+
+Parametric array jobs can neither be Interactive (-I) nor a reservation (-r).
+
 =item B<-S, --scanscript>
 
 Batch mode only: ask oarsub to scan the given script for OAR directives (#OAR -l ...)
@@ -160,6 +173,16 @@ Name of the job as given using the B<-n> option.
 
 Id of the job. Each job get a unique job identifier. This identifier can be use to retrieve information about the job using B<oarstat>, or to connect to a running job using B<oarsub -C> or B<oarsh> for instance.
 
+=item B<OAR_ARRAY_ID> aka B<OAR_ARRAYID>
+
+Array Id of the job. Each array job get an unique array identifier that is shared by all the subjobs of the array job. This identifier can be used to identify the different subjobs pertaining to a same array job. It can also be used to deal with all the subjobs of a given array at once (by means of the option --array in the case of oarstat, oarhold, oarresume and oardel). By definition, single jobs are considered array jobs with only one subjob.
+ 
+
+=item B<OAR_JOB_INDEX> aka B<OAR_JOBINDEX>
+
+Array Index of the job. On an array job, each job get an unique an unique (on a given array) job index. This identifier can be used to differ jobs on the context of a given array, for instance to give a different behaviour to each of the subjobs. By definition, single jobs are considered array jobs with only one subjob, having OAR_JOB_INDEX = 0.
+
+
 =item B<OAR_JOB_WALLTIME> resp. B<OAR_JOB_WALLTIME_SECONDS>
 
 Walltime of the job in the hh:mm:ss format resp. in seconds.
@@ -205,6 +228,33 @@ Job submission with arguments :
 =item oarsub -C 154
 
 =back
+
+Submit an array job with 10 identic subjobs: 
+
+=over
+
+=item oarsub -l /nodes=4 /home/users/toto/prog --array 10
+
+=back
+
+Submit a parametric array job (file params.txt):
+
+=over
+
+=item oarsub /home/users/toto/prog --array-param-file /home/users/toto/params.txt
+
+=back
+
+=item Parameter File example (params.txt): 
+
+=item # my param file
+=item #single param
+=item 100
+=item #a subjob without parameters
+=item ""
+=item #a subjob with a string containing spaces as parameter
+=item "arg1a arg1b arg1c" "arg2a arg2b"
+ 
 
 Script example (file /home/users/toto/script.sh):
 

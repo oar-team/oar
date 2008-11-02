@@ -184,6 +184,9 @@ certainly other ways to do that)::
     # You can test it with
     psql oar oar_ro -h127.0.0.1
 
+IMPORTANT: be sure to activate the "autovacuum" feature in the
+"postgresql.conf" file (OAR creates and deletes a lot of records and this
+setting cleans the postgres database from unneeded records).
 
 For more information about postgresql, go to http://www.postgresql.org/.
 
