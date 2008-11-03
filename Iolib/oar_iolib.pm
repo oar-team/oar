@@ -436,9 +436,9 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
                                     challenges.job_id = jobs.job_id AND
                                     challenges.ssh_private_key = $ssh_private_key AND
                                     challenges.ssh_public_key = $ssh_public_key AND
+                                    jobs.job_user != '$user' AND
                                     challenges.ssh_private_key != \'\'
                             ");
-                                    #jobs.job_user != '$user' AND
     $sth->execute();
     my @ref = $sth->fetchrow_array();
     $sth->finish();
