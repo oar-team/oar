@@ -297,7 +297,7 @@ sub add_command($){
     # as commands are just notifications that will
     # handle all the modifications in the base up to now, we should
     # avoid duplication in the command file
-    if (!grep /$command/,@internal_command_file){
+    if (!grep(/^$command$/,@internal_command_file)){
         push @internal_command_file, $command;
     }
 }
