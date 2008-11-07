@@ -28,7 +28,7 @@ using namespace std;
   iolib::get_gantt_scheduled_jobs(); - DONE
   get_current_job_types($base,$i); - DONE
   get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type); - DONE
-  get_job_suspended_sum_duration($base,$i,$current_time);
+  get_job_suspended_sum_duration($base,$i,$current_time); - DONE
   iolib::get_resources_in_state($base,"Alive");
   get_resources_in_state($base,"Dead"));
   get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
@@ -414,6 +414,43 @@ get_job_current_resources(unsigned int jobid, vector<string> not_type_list)
   return result;
 }
 
+/**
+# get the amount of time in the suspended state of a job
+# args : base, job id, time in seconds
+*/
+unsigned int get_job_suspended_sum_duration(unsigend int job_id,
+					    unsigned int current_time)
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+  unsigned int sum;
+
+  string req = "SELECT date_start, date_stop\
+                FROM job_state_logs\
+                WHERE\
+                 job_id = " << job_id<< " AND\
+                     (job_state = \'Suspended\' OR\
+                      job_state = \'Resuming\')";
+
+  query.exec(req);
+  sum =0;
+  while( query.next() )
+    {
+      unsigned int tmp_sum = 0;
+      unsigned int date_start =  query.value(0).toUInt();
+      unsigned int date_stop = query.value(0).toUInt();
+
+      if ( date_stop == 0 ) 
+	tmp_sum = current_time - date_start;
+      else
+	tmp_sum = date_stop - date_start;
+
+      sum += tmp_sum;
+    }
+
+  return sum;
+}
 
 /**** *****/
 
