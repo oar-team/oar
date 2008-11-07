@@ -204,6 +204,7 @@ if (defined($Checkpoint)){
             }
             iolib::unlock_table($base);
         }
+        iolib::disconnect($base);
         my $strError = oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         if (defined($strError)){
             warn("$strError\n");
@@ -233,6 +234,7 @@ if (defined($Checkpoint)){
         }
 
     }
+    iolib::disconnect($base);
     if (@jobRegistered){
         #Signal Almigthy
         my $strError = oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
@@ -246,6 +248,5 @@ if (defined($Checkpoint)){
     }
 }
 
-iolib::disconnect($base);
 
 exit($exitValue);

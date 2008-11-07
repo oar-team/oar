@@ -6129,6 +6129,11 @@ sub job_finishing_sequence($$$$$$){
             add_new_event($dbh,$e->{type},$job_id,$e->{string});
         }
     }
+
+    # Just to force commit
+    lock_table($dbh,["accounting"]);
+    unlock_table($dbh);
+
     oar_Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
 }
 

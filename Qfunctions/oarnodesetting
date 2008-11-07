@@ -18,6 +18,7 @@ umask(oct("022"));
 $| = 1;
 
 my $exit_code = 0;
+my @notify_server_tag_list;
 
 my @hostnames;
 my $base;
@@ -208,8 +209,8 @@ if (defined($new_resource)){
         print("$h added in the database\n");
         push(@resource,iolib::add_resource($base, $h, $state));
     }
-    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+    push(@notify_server_tag_list, "ChState");
+    push(@notify_server_tag_list, "Term");
 }else{
     if (($#resource >= 0) or (defined($Sql_property))){
         if (defined($state)){
@@ -225,7 +226,7 @@ if (defined($new_resource)){
                     $exit_code = 3;
                 }
             }
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            push(@notify_server_tag_list, "ChState");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if (!$nowaitMode){
                     foreach my $r (@resources_to_check){
@@ -253,7 +254,7 @@ if (defined($new_resource)){
                     $exit_code = 4;
                 }
             }
-            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            push(@notify_server_tag_list, "ChState");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if (!$nowaitMode){
                     foreach my $h (@nodes_to_check){
@@ -288,11 +289,14 @@ if (defined(@properties)){
             }
         }
     }
-    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+    push(@notify_server_tag_list, "Term");
 }
 
-
 iolib::disconnect($base);
+
+foreach my $t (@notify_server_tag_list){
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,$t);
+}
 
 exit($exit_code);
 

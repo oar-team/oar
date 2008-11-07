@@ -746,6 +746,7 @@ $base = iolib::connect();
 if (defined($Resubmit)){
     print("Resubmitting job $Resubmit ...");
     my $err = iolib::resubmit_job($base,$Resubmit);
+    iolib::disconnect($base);
     if ($err > 0){
         $Job_id = $err;
         print("DONE\n");

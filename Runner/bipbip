@@ -314,24 +314,24 @@ if (defined($Server_prologue)){
             my $str = "[bipbip $Job_id] Server prologue timeouted (cmd : $cmd)";
             oar_error("$str\n");
             iolib::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
+            iolib::disconnect($base);
             oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
             if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
                 my ($addr,$port) = split(/:/,$job->{info_type});
                 oar_Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE timeouted");
             }
-            iolib::disconnect($base);
             exit(2);
         }
     }elsif ($exit_value != 0){
         my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
         oar_error("$str\n");
         iolib::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Job_id,"$str");
+        iolib::disconnect($base);
         oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
             my ($addr,$port) = split(/:/,$job->{info_type});
             oar_Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE returned a bad value");
         }
-        iolib::disconnect($base);
         exit(2);
     }
 }

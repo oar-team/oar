@@ -187,6 +187,14 @@ certainly other ways to do that)::
 IMPORTANT: be sure to activate the "autovacuum" feature in the
 "postgresql.conf" file (OAR creates and deletes a lot of records and this
 setting cleans the postgres database from unneeded records).
+Better performances are achieved by adding the vacuum into the crontab of the
+postgres user like this ("crontab -e" to edit and add the line)
+::
+
+    postgres$ crontab -l
+    # m h  dom mon dow   command
+    02 02 * * * vacuumdb -a -f -z 
+
 
 For more information about postgresql, go to http://www.postgresql.org/.
 
