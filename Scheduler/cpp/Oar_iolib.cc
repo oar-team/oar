@@ -29,8 +29,8 @@ using namespace std;
   get_current_job_types($base,$i); - DONE
   get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type); - DONE
   get_job_suspended_sum_duration($base,$i,$current_time); - DONE
-  iolib::get_resources_in_state($base,"Alive");
-  get_resources_in_state($base,"Dead"));
+  iolib::get_resources_in_state($base,"Alive"); - DONE
+  get_resources_in_state($base,"Dead")); - DONE
   get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
   get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
   get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
@@ -228,14 +228,21 @@ static struct resources_iolib fillResourcesStruct(QSqlQuery &req)
     QtSQLModel ! readonly avec 
  */
 
-vector <resources_iolib> list_resources() {
+vector <resources_iolib> resources_extractor(bool withState, string state="") {
   assert(db.isValid());
   QSqlQuery query;
   query.setForwardOnly(true);
   vector <resources_iolib> result;
   string req = "SELECT resource_id, type, network_address, state, next_state, finaud_decision, next_finaud_decision, state_num, suspended_jobs, scheduler_priority, switch, cpu, cpuset, besteffort, deploy, expiry_date, desktop_computing, last_job_date, cm_availability\
                 FROM resources\
-               ";
+                ";
+  if (withState)
+    {
+      req += "WHERE\
+               state = \'" << state << "\'");
+    }
+
+
   query.exec(req);
   while( query.next() )
     {
@@ -243,6 +250,11 @@ vector <resources_iolib> list_resources() {
     }
 
   return result;
+}
+
+vector <resources_iolib> list_resources()
+{
+  return resources_extractor(false);
 }
 
 /*
@@ -451,6 +463,22 @@ unsigned int get_job_suspended_sum_duration(unsigend int job_id,
 
   return sum;
 }
+
+/**
+   # get_resources_in_state
+   # returns the list of resources in the state specified
+   # parameters : base, state
+   # return value : list of resource ref
+
+   c'est une quasi-copie de list_resources, j'ai mutualiser le code
+*/
+
+
+vector<resources_iolib> get_resources_in_state(string state) {
+{
+  return resources_extractor(true, state);
+}
+
 
 /**** *****/
 
