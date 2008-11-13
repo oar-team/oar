@@ -5,6 +5,10 @@ version next:
 -------------
   - Fix default admission rules: case unsensitive check for properties used in 
     oarsub
+  - oarprint: catching error when no input data is available 
+  - oarstat: fix typo when printing the resource list for a advance reservation  
+  - Update install doc wrt sudo configuration (SSH_CONNECTION env variable)
+  - Database schema: clean up non default resource definition (switch, cpu) 
 
 version 2.2.13:
 ---------------
