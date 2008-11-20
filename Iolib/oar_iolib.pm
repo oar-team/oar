@@ -5417,7 +5417,7 @@ sub get_accounting_summary($$$$){
     my $stop = shift;
     my $user = shift;
     my $user_query="";
-    if ("$user" ne "") {
+    if (defined($user) && "$user" ne "") {
         $user_query="AND accounting_user = ". $dbh->quote($user);
     }
 
