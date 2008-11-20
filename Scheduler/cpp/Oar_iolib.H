@@ -67,4 +67,22 @@ struct gantt_sched_jobs {
   bool suspended;
 };
 
+
+/*
+  Extraction de la table jobs (select * dans perl, limite ici)
+  usage de
+   - get_fairsharing_jobs_to_schedule limite a
+   (job_id, job_user, job_name, properties)
+      + appel a karma limite a
+      (project, job_user)
+*/
+
+struct jobs_iolib_restrict {
+  unsigned int job_id; // 	INT UNSIGNED 	job identifier
+  string job_name; // 	VARCHAR(100) 	name given by the user
+  string job_user; //	VARCHAR(255) 	user name
+  string properties; // TEXT 	properties that assigned nodes must match
+  string project; //  VARCHAR(255) 	arbitrary name given by the user or an admission rule
+}
+
 #endif

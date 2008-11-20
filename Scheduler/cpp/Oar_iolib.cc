@@ -31,7 +31,7 @@ using namespace std;
   get_job_suspended_sum_duration($base,$i,$current_time); - DONE
   iolib::get_resources_in_state($base,"Alive"); - DONE
   get_resources_in_state($base,"Dead")); - DONE
-  get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
+  get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user); - DONE
   get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
   get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
   get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
@@ -460,7 +460,7 @@ unsigned int get_job_suspended_sum_duration(unsigend int job_id,
 
       sum += tmp_sum;
     }
-
+  
   return sum;
 }
 
@@ -474,11 +474,80 @@ unsigned int get_job_suspended_sum_duration(unsigend int job_id,
 */
 
 
-vector<resources_iolib> get_resources_in_state(string state) {
+vector<resources_iolib> get_resources_in_state(string state)
 {
   return resources_extractor(true, state);
 }
 
+
+/** 
+    remplissage de la structure jobs restreinte 
+*/
+static struct jobs_iolib_restrict fillJobsStructRestrict(QSqlQuery &query)
+{
+  /* the value of the structure must be given in the same order a
+     filled by the SELECT call.
+  */
+  jobs_iolib_restrict result;
+
+  result.job_id = query.value(0).toUInt();
+  result.job_name = query.value(1).toString();
+  result.job_user = query.value(2).toString();
+  result.properties = query.value(3).toString();
+  result.project = query.value(4).toString();
+
+  return result;
+}
+ 
+/**
+  # get_fairsharing_jobs_to_schedule
+  # args : base ref, queue name
+*/
+vector<jobs_iolib_restrict> get_fairsharing_jobs_to_schedule(string queue, unsigned int limit)
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+  unsigned int sum;
+
+  string req = "SELECT distinct(job_user)\
+                FROM jobs\
+                WHERE\
+                   state = \'Waiting\'
+                   AND reservation = \'None\'
+                   AND queue_name = \'" << queue << "\'\
+               ";
+
+  vector<string> users;
+  query.exec(req);
+  while( query.next() )
+    {
+      users.insert( string(query.value(0).toString() ) );
+    }
+  
+  vector<jobs_iolib_restrict> res;
+  for(vector<string>::iterator u = users.begin();
+      u != users.end();
+      u++)
+    {
+      string req2 = "SELECT job_id,job_name,job_user,properties,project\
+                     FROM jobs\
+                     WHERE			\
+                        state = \'Waiting\'
+                        AND reservation = \'None\'
+                        AND queue_name = \'" << queue << "\'	\
+                        AND job_user = \'" << *u << "\'		\
+                     ORDER BY job_id				\
+                     LIMIT "<< limit <<"			\
+               ";
+      query.exec(req);
+      while( query.next() )
+	{
+	  res.insert( fillJobsStructRestrict(query) );
+	}
+    }
+  return res;
+}
 
 /**** *****/
 
