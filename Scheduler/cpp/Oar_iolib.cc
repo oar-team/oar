@@ -32,7 +32,7 @@ using namespace std;
   iolib::get_resources_in_state($base,"Alive"); - DONE
   get_resources_in_state($base,"Dead")); - DONE
   get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user); - DONE
-  get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
+  get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time); - DONE
   get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
   get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
   get_current_job_dependencies($base,$j->{job_id}))
@@ -451,7 +451,7 @@ unsigned int get_job_suspended_sum_duration(unsigend int job_id,
     {
       unsigned int tmp_sum = 0;
       unsigned int date_start =  query.value(0).toUInt();
-      unsigned int date_stop = query.value(0).toUInt();
+      unsigned int date_stop = query.value(1).toUInt();
 
       if ( date_stop == 0 ) 
 	tmp_sum = current_time - date_start;
@@ -547,6 +547,38 @@ vector<jobs_iolib_restrict> get_fairsharing_jobs_to_schedule(string queue, unsig
 	}
     }
   return res;
+}
+
+map<string, string> get_sum_accounting_window(string queue,
+					      unsigned int start_window,
+					      unsigned int stop_window)
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+  unsigned int sum;
+
+  string req = "SELECT consumption_type, SUM(consumption)\
+                                FROM accounting		 \
+                                WHERE					\
+                                    queue_name = \'" << queue << "\' AND \
+                                    window_start >= " << start_window << " AND \
+                                    window_start < " << stop_window << " \
+                                GROUP BY consumption_type		\
+                ";
+
+  query.exec(req);
+  sum =0;
+  map<string,string> results
+  while( query.next() )
+    {
+      string consumption_type =  query.value(0).toString();
+      string sum_consumption = query.value(1).toUInt();
+      
+      results.insert( pair<string,string>( consumption_type, sum_consumption));
+    }
+  
+  return results;
 }
 
 /**** *****/
