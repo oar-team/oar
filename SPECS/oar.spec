@@ -1,5 +1,5 @@
 # $Id$
-%define version 2.3.2
+%define version 2.3.3
 %define release 1
 
 Name: 		oar
@@ -246,6 +246,18 @@ install -o oar -m 755 -d /var/run/oar
 %post common
 # set OAR Shell
 chsh -s /usr/lib/oar/oarsh_shell oar
+if [ "$1" != "1" ]
+then
+  echo "WARNING! If you upgraded from 2.3.2 or earlier, you have to upgrade the database scheme (stop OAR before)!"
+  echo "  
+          mysql:
+            ALTER TABLE jobs ADD array_id INT UNSIGNED NOT NULL DEFAULT 0;
+            UPDATE jobs SET array_id = job_id ;
+
+          postgres:
+            ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
+            UPDATE jobs SET array_id = job_id ; "
+fi
 
 %postun common
 if [ "$1" = 0 ];
