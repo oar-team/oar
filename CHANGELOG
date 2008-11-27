@@ -1,7 +1,7 @@
 OAR CHANGELOG
 =============
 
-next version:
+version 2.3.3:
 -------------
   - Fix default admission rules: case unsensitive check for properties used in 
     oarsub
