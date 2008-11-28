@@ -36,12 +36,12 @@ using namespace std;
   get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time); - DONE
   get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time); - DONE
   get_current_job_dependencies($base,$j->{job_id})) - DONE
-  get_job($base,$d);
+  get_job($base,$d); - DONE
   get_gantt_job_start_time($base,$d);
   get_current_moldable_job($base,$date_tmp[1]);
   set_job_message($base,$j->{job_id},$message);
   set_job_message($base,$j->{job_id},$message);
-  get_current_job_types($base,$j->{job_id});
+  get_current_job_types($base,$j->{job_id}); - DONE
   get_resources_data_structure_current_job($base,$j->{job_id});
   get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration))
   get_resources_that_will_be_out($base, iolib::get_date($base) + $duration))
