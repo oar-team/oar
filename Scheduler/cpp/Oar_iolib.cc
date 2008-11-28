@@ -35,7 +35,7 @@ using namespace std;
   get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time); - DONE
   get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time); - DONE
   get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time); - DONE
-  get_current_job_dependencies($base,$j->{job_id}))
+  get_current_job_dependencies($base,$j->{job_id})) - DONE
   get_job($base,$d);
   get_gantt_job_start_time($base,$d);
   get_current_moldable_job($base,$date_tmp[1]);
@@ -581,6 +581,9 @@ map<string, unsigned int> get_sum_accounting_window(string queue,
   return results;
 }
 
+/**
+  TODO: no comment in perl !
+*/
 map<pair<string, string>, unsigned int> 
 get_sum_accounting_for_param(string queue, string param_name,
 			     unsigned int start_window, unsigned int stop_window)
@@ -614,6 +617,84 @@ get_sum_accounting_for_param(string queue, string param_name,
   
   return results;
 }
+
+/**
+   # get_current_job_dependencies
+   # return an array table with all dependencies for the given job ID
+*/
+vector<unsigned int> get_current_job_dependencies(unsigned int jobId)
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+
+  string req = "   SELECT job_id_required\
+                   FROM job_dependencies\
+                   WHERE\
+                        job_dependency_index = \'CURRENT\'\
+                        AND job_id = "<< jobId <<"\
+                ";
+
+  query.exec(req);
+  vector<unsigned int> results
+  while( query.next() )
+    {
+      unsigned int job_id_required =  query.value(0).toUInt();
+      
+      results.push_back( job_id_required );
+    }
+  
+  return results;
+}
+
+
+/**
+  # get_job
+  # returns a ref to some hash containing data for the job of id passed in
+  # parameter
+  # parameters : base, jobid
+  # return value : ref
+  # side effects : /
+
+  job extraction is restricted to 
+  - state 
+  - job_type
+  - exit_code
+*/
+
+
+struct jobs_get_job_iolib_restrict
+get_job_restrict(unsigned int idJob) 
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+
+  string req = "   SELECT state, job_type, exit_code\
+                   FROM jobs\
+                   WHERE\
+                       job_id = << " idJob << "\
+                ";
+
+  query.exec(req);
+
+  struct jobs_get_job_iolib_restrict results;
+  results.state = "ONE VALUE"
+  while( query.next() )
+    {
+      string state = query.value(0).toString();
+      string job_type = query.value(1).toString();
+      int exit_code =  query.value(2).toInt();
+      
+      assert(results.state == "ONE VALUE");
+      results.state = state;
+      results.job_type = job_type;
+      results.exit_code = exit_code;
+    }
+  
+  return results;
+}
+
 
 /**** *****/
 
