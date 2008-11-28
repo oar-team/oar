@@ -248,6 +248,7 @@ install -o oar -m 755 -d /var/run/oar
 chsh -s /usr/lib/oar/oarsh_shell oar
 if [ "$1" != "1" ]
 then
+  echo
   echo "WARNING! If you upgraded from 2.3.2 or earlier, you have to upgrade the database scheme (stop OAR before)!"
   echo "  
           mysql:
@@ -257,6 +258,7 @@ then
           postgres:
             ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
             UPDATE jobs SET array_id = job_id ; "
+  echo
 fi
 
 %postun common
