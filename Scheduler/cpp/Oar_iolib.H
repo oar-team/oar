@@ -68,13 +68,13 @@ struct gantt_sched_jobs {
 };
 
 
-/*
-  Extraction de la table jobs (select * dans perl, limite ici)
-  usage de
+/**
+   Extraction de la table jobs (select * dans perl, limite ici)
+   usage de
    - get_fairsharing_jobs_to_schedule limite a
    (job_id, job_user, job_name, properties)
-      + appel a karma limite a
-      (project, job_user)
+   + appel a karma limite a
+   (project, job_user)
 */
 
 struct jobs_iolib_restrict {
@@ -83,6 +83,19 @@ struct jobs_iolib_restrict {
   string job_user; //	VARCHAR(255) 	user name
   string properties; // TEXT 	properties that assigned nodes must match
   string project; //  VARCHAR(255) 	arbitrary name given by the user or an admission rule
-}
+};
+
+/**
+   Extraction de la table job dans get_job
+   limite a 
+   - state ENUM('Waiting','Hold', 'toLaunch', 'toError', 'toAckReservation', 'Launching', 'Running' 'Suspended', 'Resuming', , 'Finishing', 'Terminated', 'Error') 	job state
+   - job_type ENUM('INTERACTIVE', 'PASSIVE') DEFAULT 'PASSIVE' 	specify if the user wants to launch a program or get an interactive shell
+   - exit_code INT DEFAULT 0 	exit code for passive jobs
+*/
+struct jobs_get_job_iolib_restrict {
+  string state;
+  string job_type;
+  int exit_code;
+};
 
 #endif
