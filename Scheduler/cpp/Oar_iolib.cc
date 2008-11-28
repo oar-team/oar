@@ -33,8 +33,8 @@ using namespace std;
   get_resources_in_state($base,"Dead")); - DONE
   get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user); - DONE
   get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time); - DONE
-  get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
-  get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
+  get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time); - DONE
+  get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time); - DONE
   get_current_job_dependencies($base,$j->{job_id}))
   get_job($base,$d);
   get_gantt_job_start_time($base,$d);
@@ -549,7 +549,7 @@ vector<jobs_iolib_restrict> get_fairsharing_jobs_to_schedule(string queue, unsig
   return res;
 }
 
-map<string, string> get_sum_accounting_window(string queue,
+map<string, unsigned int> get_sum_accounting_window(string queue,
 					      unsigned int start_window,
 					      unsigned int stop_window)
 {
@@ -573,9 +573,43 @@ map<string, string> get_sum_accounting_window(string queue,
   while( query.next() )
     {
       string consumption_type =  query.value(0).toString();
-      string sum_consumption = query.value(1).toUInt();
+      unsigned int sum_consumption = query.value(1).toUInt();
       
-      results.insert( pair<string,string>( consumption_type, sum_consumption));
+      results.insert( pair<string, unsigned int>( consumption_type, sum_consumption));
+    }
+  
+  return results;
+}
+
+map<pair<string, string>, unsigned int> 
+get_sum_accounting_for_param(string queue, string param_name,
+			     unsigned int start_window, unsigned int stop_window)
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+  unsigned int sum;
+
+  string req = "   SELECT " << param_name<< ",consumption_type, SUM(consumption)\
+                   FROM accounting\
+                   WHERE\
+                      queue_name = \'" << queue<< "\' AND\
+                      window_start >= " << start_window<< " AND\
+                      window_start < "<< stop_window<< "\
+                   GROUP BY " << param_name<< ",consumption_type\
+
+              ";
+
+  query.exec(req);
+  sum =0;
+  map< pair<string,string>, unsigned int> results
+  while( query.next() )
+    {
+      string param =  query.value(0).toString();
+      string consumption_type = query.value(1).toString(); 
+      string sum_consumption = query.value(2).toUInt();
+      
+      results.insert( pair<pair<string,string>, unsigned int>( pair<string,string>( param, consumption_type ), sum_consumption));
     }
   
   return results;
