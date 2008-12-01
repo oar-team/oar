@@ -1,8 +1,9 @@
 OAR CHANGELOG
 =============
 
-version next:
--------------
+version 2.2.14:
+---------------
+  - Kill correctly each taktuk command children in case of a timeout.
   - Fix default admission rules: case unsensitive check for properties used in 
     oarsub
   - oarprint: catching error when no input data is available 

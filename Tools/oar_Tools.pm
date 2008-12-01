@@ -808,7 +808,7 @@ sub manage_remote_commands($$$$$$$){
         close(tak_node_write);
        
         eval{
-            $SIG{ALRM} = sub { die "alarm\n" };
+            $SIG{ALRM} = sub { kill(19,$pid); die "alarm\n" };
             alarm(oar_Tools::get_ssh_timeout());     
             # Send data structure to all nodes
             print(tak_stdin_write $string_to_transfer);
@@ -827,6 +827,13 @@ sub manage_remote_commands($$$$$$$){
             waitpid($pid,0);
             alarm(0);
         };
+        if ($@){
+            if (defined($pid)){
+                # Kill all taktuk children
+                my ($children,$cmd_name) = get_one_process_children($pid);
+                kill(9,@{$children});
+            }
+        }
         @bad = keys(%tmp_node_hash);
     }
 
