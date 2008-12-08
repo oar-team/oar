@@ -86,15 +86,17 @@ desktop-computing-cgi:
 dbinit:
 	install -d -m 0755 $(OARDIR)
 	install -d -m 0755 $(SBINDIR)
+	#install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
 	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
+	ln -fs $(OARDIR)/oar_mysql_db_init $(SBINDIR)/oar_mysql_db_init
 	install -m 0755 DB/oar_psql_db_init.pl $(OARDIR)/oar_psql_db_init
 	ln -fs $(OARDIR)/oar_psql_db_init $(SBINDIR)/oar_psql_db_init
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_mysql_db_init
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
-			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar_mysql_db_init'\;#;;\
-				" $(SBINDIR)/oar_mysql_db_init
+	#install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_mysql_db_init
+	#perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
+	#		     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	#		     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+	#			 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar_mysql_db_init'\;#;;\
+	#			" $(SBINDIR)/oar_mysql_db_init
 	install -m 0644 DB/default_data.sql $(OARDIR)
 	install -m 0644 DB/mysql_default_admission_rules.sql $(OARDIR)
 	install -m 0644 DB/mysql_structure.sql $(OARDIR)
