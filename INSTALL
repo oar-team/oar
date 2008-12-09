@@ -302,7 +302,7 @@ First, you must start OAR daemon on the server (its name is "Almighty").
 Then you have to insert new resources in the database via the command
 oarnodesetting_.
 If you want to have an idea how does it work then launch
-*$PREFIX/oar/detect_new_resources.sh*. It will print right commands execute with
+*$PREFIX/oar/detect_resources.sh*. It will print right commands execute with
 an appropriate value for the memory and the cpuset properties.
 
 If you want to initialize your whole cluster in 1 command you can use this one
@@ -311,9 +311,9 @@ oarnodesetting_ will be called and the sentinelle.pl will log onto all nodes
 stored in "node_list.txt" file without password:
 ::
 
-    export PREFIX=/var/lib
+    export PREFIX=/usr/local
     $PREFIX/oar/sentinelle.pl -f node_list.txt \
-    -p "$PREFIX/oar/detect_new_resources.sh" | sh
+    -p "$PREFIX/oar/detect_resources.sh" | sh
 
 Then you can launch the oarnodes command and see all new resources inserted.
 
