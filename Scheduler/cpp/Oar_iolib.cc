@@ -695,6 +695,93 @@ get_job_restrict(unsigned int idJob)
   return results;
 }
 
+/**
+   # Return a data structure with the resource description of the given job
+   # arg : database ref, job id
+   # return a data structure (an array of moldable jobs):
+   # example for the first moldable job of the list:
+   # $result = [
+   #               [
+   #                   {
+   #                       property  => SQL property
+   #                       resources => [
+   #                                       {
+   #                                           resource => resource name
+   #                                           value    => number of this wanted resource
+   #                                       }
+   #                                    ]
+   #                   }
+   #               ],
+   #               walltime,
+   #               moldable_job_id
+   #           ]
+*/
+vector<resources_data_moldable>
+get_resources_data_structure_current_job(unsigned int job_id)
+{
+
+#    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
+#                                FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+#                                WHERE
+#                                    moldable_job_descriptions.moldable_index = \'CURRENT\'
+#                                    AND job_resource_groups.res_group_index = \'CURRENT\'
+#                                    AND job_resource_descriptions.res_job_index = \'CURRENT\'
+#                                    AND jobs.job_id = $job_id
+#                                    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+#                                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+#                                    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+#                                ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
+#                            ");
+
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+
+  string req = "   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value\
+                   FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs\
+                   WHERE
+                        jobs.job_id = " << job_id << "\
+                        AND jobs.job_id = moldable_job_descriptions.moldable_job_id\
+                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id\
+                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id\
+                   ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC\
+                            ");
+ 
+
+  query.exec(req);
+
+    $sth->execute();
+    my $result;
+    my $group_index = -1;
+    my $moldable_index = -1;
+    my $previous_group = 0;
+    my $previous_moldable = 0;
+    while (my @ref = $sth->fetchrow_array()){
+        if ($previous_moldable != $ref[0]){
+            $moldable_index++;
+            $previous_moldable = $ref[0];
+            $group_index = 0;
+            $previous_group = $ref[1];
+        }elsif ($previous_group != $ref[1]){
+            $group_index++;
+            $previous_group = $ref[1];
+        }
+        # Store walltime
+        $result->[$moldable_index]->[1] = $ref[2];
+        $result->[$moldable_index]->[2] = $ref[0];
+        #Store properties group
+        $result->[$moldable_index]->[0]->[$group_index]->{property} = $ref[3];
+        my %tmp_hash =  (
+                resource    => $ref[4],
+                value       => $ref[5]
+                        );
+        push(@{$result->[$moldable_index]->[0]->[$group_index]->{resources}}, \%tmp_hash);
+        
+    }
+    $sth->finish();
+    
+    return($result);
+}
 
 /**** *****/
 

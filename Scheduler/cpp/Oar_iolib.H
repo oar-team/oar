@@ -98,4 +98,43 @@ struct jobs_get_job_iolib_restrict {
   int exit_code;
 };
 
+
+/**
+   # Return a data structure with the resource description of the given job
+   # arg : database ref, job id
+   # return a data structure (an array of moldable jobs):
+   # example for the first moldable job of the list:
+   # $result = [
+   #               [
+   #                   {
+   #                       property  => SQL property
+   #                       resources => [
+   #                                       {
+   #                                           resource => resource name
+   #                                           value    => number of this wanted resource
+   #                                       }
+   #                                    ]
+   #                   }
+   #               ],
+   #               walltime,
+   #               moldable_job_id
+   #           ]
+*/
+struct resources_per_job {
+  string resource;
+  string value;
+};
+
+struct property_resources_per_job {
+  string property;
+  vector<resources_per_job> resources;
+}
+
+
+struct resources_data_moldable {
+  vector<property_resources_per_job> prop_res;
+  unsigned int walltime;
+  unsigned int moldable_job_id;
+}
+
 #endif
