@@ -42,7 +42,7 @@ using namespace std;
   set_job_message($base,$j->{job_id},$message);
   set_job_message($base,$j->{job_id},$message);
   get_current_job_types($base,$j->{job_id}); - DONE
-  get_resources_data_structure_current_job($base,$j->{job_id});
+  get_resources_data_structure_current_job($base,$j->{job_id}); - DONE
   get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration))
   get_resources_that_will_be_out($base, iolib::get_date($base) + $duration))
   get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
