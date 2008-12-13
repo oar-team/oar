@@ -13,15 +13,13 @@ version 2.3.3:
     (oarsub --array-param-file)
     /!\ in this version the DB scheme has changed. If you want to upgrade your
     installation from a previous 2.3 release then you have to execute in your
-    database (stop OAR before)::
+    database one of these SQL script (stop OAR before)::
 
         mysql:
-            ALTER TABLE jobs ADD array_id INT UNSIGNED NOT NULL DEFAULT 0;
-            UPDATE jobs SET array_id = job_id ;
+            DB/mysql_structure_upgrade_2.3.1-2.3.3.sql
 
         postgres:
-            ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
-            UPDATE jobs SET array_id = job_id ;
+            DB/pg_structure_upgrade_2.3.1-2.3.3.sql
 
 version 2.3.2:
 --------------
