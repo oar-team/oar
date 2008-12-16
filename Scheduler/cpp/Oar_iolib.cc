@@ -43,7 +43,7 @@ using namespace std;
   set_job_message($base,$j->{job_id},$message);
   get_current_job_types($base,$j->{job_id}); - DONE
   get_resources_data_structure_current_job($base,$j->{job_id}); - DONE
-  get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration))
+  get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)) - DONE
   get_resources_that_will_be_out($base, iolib::get_date($base) + $duration))
   get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
   add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
@@ -789,6 +789,41 @@ get_resources_data_structure_current_job(unsigned int job_id)
     }
   return(result);
 }
+
+/**
+   restricted version to resource_id (the only used data in the scheduler)
+
+   # get_resources_that_can_be_waked_up
+   # returns a list of resources
+   # parameters : base, date max
+   # return value : list of resource ref
+*/
+vector<unsigned int> get_resources_that_can_be_waked_up(unsigned int max_date) 
+{  
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+
+  string req = "   SELECT resource_id\
+                   FROM resources\
+                   WHERE\
+                     state = \'Absent\' AND\
+                     resources.cm_availability > " << max_date << "\
+                ";
+                
+
+  query.exec(req);
+
+  vector <unsigned int> results;
+  while( query.next() )
+    {
+      unsigned int resource_id = query.value(0).toUInt();
+      results.push_back(resource_id);
+    }
+  
+  return results;
+}
+
 
 /**** *****/
 
