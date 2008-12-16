@@ -50,7 +50,7 @@ using namespace std;
   get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part); - DONE
   add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources}); - DONE
   set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j))); - DONE PREV
-  disconnect($base_ro);
+  disconnect($base_ro); - DONE PREV
 */
 
 /**
