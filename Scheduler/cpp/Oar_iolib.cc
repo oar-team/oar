@@ -44,7 +44,7 @@ using namespace std;
   get_current_job_types($base,$j->{job_id}); - DONE
   get_resources_data_structure_current_job($base,$j->{job_id}); - DONE
   get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)) - DONE
-  get_resources_that_will_be_out($base, iolib::get_date($base) + $duration))
+  get_resources_that_will_be_out($base, iolib::get_date($base) + $duration)) - DONE - MERGED WITH PRECEDENT
   get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
   add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
   set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
@@ -791,27 +791,46 @@ get_resources_data_structure_current_job(unsigned int job_id)
 }
 
 /**
-   restricted version to resource_id (the only used data in the scheduler)
-
    # get_resources_that_can_be_waked_up
    # returns a list of resources
    # parameters : base, date max
    # return value : list of resource ref
+
+   # get_resources_that_will_be_out
+   # returns a list of resources
+   # parameters : base, job max date
+   # return value : list of resource ref
+
+   restricted version to resource_id (the only used data in the scheduler)
 */
-vector<unsigned int> get_resources_that_can_be_waked_up(unsigned int max_date) 
+vector<unsigned int> get_resources_that_can_be_waked_up_or_will_be_out(unsigned int max_date, bool waked_up) 
 {  
   assert(db.isValid());
   QSqlQuery query;
   query.setForwardOnly(true);
 
+  string status;
+  string compar_oper;
+
+  switch(waked_up)
+    {
+    case true:
+      status = "Absent";
+      compare_oper = ">";
+      break;
+    case false:
+      status = "Alive";
+      compare_oper = "<";
+      break;
+    }
+
   string req = "   SELECT resource_id\
                    FROM resources\
                    WHERE\
-                     state = \'Absent\' AND\
-                     resources.cm_availability > " << max_date << "\
+                     state = \'" << status << "\' AND\
+                     resources.cm_availability " << compare_oper <<" " << max_date << "\
                 ";
                 
-
   query.exec(req);
 
   vector <unsigned int> results;
