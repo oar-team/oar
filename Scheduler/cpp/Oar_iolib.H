@@ -128,14 +128,14 @@ struct resources_per_job {
 struct property_resources_per_job {
   string property;
   vector<resources_per_job> resources;
-}
+};
 
 
 struct resources_data_moldable {
   vector<property_resources_per_job> prop_res;
   unsigned int walltime;
   unsigned int moldable_job_id;
-}
+};
 
 /**
    # Get start_time for a given job
