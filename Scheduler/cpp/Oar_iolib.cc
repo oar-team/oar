@@ -38,7 +38,7 @@ using namespace std;
   get_current_job_dependencies($base,$j->{job_id})) - DONE
   get_job($base,$d); - DONE
   get_gantt_job_start_time($base,$d); - DONE
-  get_current_moldable_job($base,$date_tmp[1]);
+  get_current_moldable_job($base,$date_tmp[1]); - DONE
   set_job_message($base,$j->{job_id},$message);
   set_job_message($base,$j->{job_id},$message);
   get_current_job_types($base,$j->{job_id}); - DONE
@@ -877,7 +877,43 @@ struct gantt_job_start_time get_gantt_job_start_time(unsigned int job)
   return results;
 }
 
+/**
+   # get_current_moldable_job_restrict_moldable_wall_time
+   # returns a ref to some hash containing data for the moldable job of id passed in
+   # parameter
+   # parameters : base, moldable job id
+   # return value : ref
+   # side effects : /
 
+   restricted to moldable_wall_time
+*/
+unsigned int 
+get_current_moldable_job_restrict_moldable_walltime(unsigned int moldableJobId) 
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+ 
+  string req = "   SELECT moldable_walltime\
+                   FROM moldable_job_descriptions\
+                   WHERE\
+                        moldable_index = \'CURRENT\'\
+                        AND moldable_id = " << moldableJobId << "\
+               ";
+                
+  query.exec(req);
+
+  unsigned int results=0;
+  if ( query.next() )
+    { 
+      results = query.value(0).toUInt();
+    }
+  else
+    assert(0);
+  
+  assert(! query.next()); /* only one answer ! */
+  return results;
+}
 /**** *****/
 
 # $Id: oar_iolib.pm 1632 2008-09-13 23:32:03Z capitn $
