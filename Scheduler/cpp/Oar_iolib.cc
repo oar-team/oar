@@ -37,7 +37,7 @@ using namespace std;
   get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time); - DONE
   get_current_job_dependencies($base,$j->{job_id})) - DONE
   get_job($base,$d); - DONE
-  get_gantt_job_start_time($base,$d);
+  get_gantt_job_start_time($base,$d); - DONE
   get_current_moldable_job($base,$date_tmp[1]);
   set_job_message($base,$j->{job_id},$message);
   set_job_message($base,$j->{job_id},$message);
@@ -840,6 +840,40 @@ vector<unsigned int> get_resources_that_can_be_waked_up_or_will_be_out(unsigned 
       results.push_back(resource_id);
     }
   
+  return results;
+}
+
+/**
+   # Get start_time for a given job
+   # args : base, job id
+
+   WARNING: no undef are returned in this version !
+*/
+struct gantt_job_start_time get_gantt_job_start_time(unsigned int job)
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+ 
+  string req = "   SELECT gantt_jobs_predictions.start_time, gantt_jobs_predictions.moldable_job_id
+                   FROM gantt_jobs_predictions,moldable_job_descriptions\
+                   WHERE\
+                      moldable_job_descriptions.moldable_job_id = " << job <<"\
+                      AND gantt_jobs_predictions.moldable_job_id = moldable_job_descriptions.moldable_id\
+";
+                
+  query.exec(req);
+
+  struct gantt_job_start_time results={};
+  if ( query.next() )
+    { 
+      results.start_time = query.value(0).toUInt();
+      results.moldable_job_id = query.value(1).toUInt();
+    }
+  else
+    assert(0);
+  
+  assert(! query.next()); /* only one answer ! */
   return results;
 }
 

@@ -137,4 +137,14 @@ struct resources_data_moldable {
   unsigned int moldable_job_id;
 }
 
+/**
+   # Get start_time for a given job
+   # args : base, job id
+*/
+struct gantt_job_start_time
+{
+  unsigned int start_time;
+  unsigned int moldable_job_id;
+};
+
 #endif
