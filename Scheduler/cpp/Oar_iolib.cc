@@ -15,6 +15,8 @@
 #include <vector>
 #include <regexp.h>
 
+#include "Oar_resource_tree.H"
+
 using namespace std;
 
 /* fonction de la iolib utilisee dans sched_gantt_... */
@@ -45,7 +47,7 @@ using namespace std;
   get_resources_data_structure_current_job($base,$j->{job_id}); - DONE
   get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)) - DONE
   get_resources_that_will_be_out($base, iolib::get_date($base) + $duration)) - DONE - MERGED WITH PRECEDENT
-  get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+  get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part); - DONE
   add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
   set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
   disconnect($base_ro);
@@ -940,9 +942,9 @@ int set_job_message(unsigned int idJob, string message)
    # get_possible_wanted_resources
    # return a tree ref : a data structure with corresponding resources with what is asked
 */
-sub get_possible_wanted_resources(
-				  vector<unsigned int> possible_resources_vector,
-				  vector<unsigned int> impossible_resources_vector,
+TreeNode *get_possible_wanted_resources(
+				  vector<bool> possible_resources_vector,
+				  vector<bool> impossible_resources_vector,
 				  vector<unsigned int> resources_to_ignore_array,
 				  
 				  string properties,
@@ -1024,41 +1026,52 @@ sub get_possible_wanted_resources(
   /* how to send back Undef ? why ? */
     
   /*  # Initialize root */
-    my $result ;
-    $result = oar_resource_tree::new();
-    my $wanted_children_number = $wanted_resources[0]->{value};
-    oar_resource_tree::set_needed_children_number($result,$wanted_children_number);
+  TreeNode *result;
+  result = new( TreeNode(0) );
+  int wanted_children_number = wanted_resources.resources[0].value;
+  result->set_needed_children_number(wanted_children_number);
+  
+  while( query.next() )
+    {
+      TreeNode *father_ref = result;
+      for(i=0; i < wanted_resources.resources.size(); i++)
+	{
+          /**  # Feed the tree for all resources */
+	  father_ref = father_ref->add_child(wanted_resources.resources[i].resource,
+					     query.value(i).toString() );
 
-    while (my @sql = $sth->fetchrow_array()){
-        my $father_ref = $result;
-        foreach (my $i = 0; $i <= $#wanted_resources; $i++){
-            # Feed the tree for all resources
-            $father_ref = oar_resource_tree::add_child($father_ref, $wanted_resources[$i]->{resource}, $sql[$i]);
+	  int wanted_children_number;
+	  if ( i < wanted_resources.resources.size() - 1)
+	    wanted_children_number = wanted_resources.resources[i+1].value;
+	  else
+	    wanted_children_number = 0;
 
-            if ($i < $#wanted_resources){
-                $wanted_children_number = $wanted_resources[$i+1]->{value};
-            }else{
-                $wanted_children_number = 0;
-            }
-            oar_resource_tree::set_needed_children_number($father_ref,$wanted_children_number);
-            # Verify if we must keep this child if this is resource_id resource name
-            if ($wanted_resources[$i]->{resource} eq "resource_id"){
-                if ((defined($impossible_resources_vector)) and (vec($impossible_resources_vector, $sql[$i], 1))){
-                    oar_resource_tree::delete_subtree($father_ref);
-                    $i = $#wanted_resources + 1;
-                }elsif ((defined($possible_resources_vector)) and (!vec($possible_resources_vector, $sql[$i], 1))){
-                    oar_resource_tree::delete_subtree($father_ref);
-                    $i = $#wanted_resources + 1;
-                }
-            }
-        }
+	  father_ref->set_needed_children_number(wanted_children_number);
+
+          /*  # Verify if we must keep this child if this is resource_id resource name */
+	  if ( wanted_resources.resources[i].resource == "resource_id" )
+	    {
+	      if (impossible_resources_vector.size() > 0 
+		  && impossible_resources_vector[ query.value(i).toInt() ] )
+		{
+		  father_ref->delete_subtree();
+		  i = wanted_resources.resources.size(); /* the end */
+		}
+	      else 
+		if ( possible_resources_vector.size() > 0 
+		  && ! possible_resources_vector[ query.value(i).toInt() ])
+		  {
+		    father_ref->delete_subtree();
+		    i = wanted_resources.resources.size(); /* the end */
+		  }
+	    }
+	}
     }
-    
-    $sth->finish();
-    $result = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($result);
+  result->delete_tree_nodes_with_not_enough_resources();
 
-    return($result);
+  return result;
 }
+
 
 
 /**** *****/
