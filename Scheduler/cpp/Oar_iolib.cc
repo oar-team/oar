@@ -39,8 +39,8 @@ using namespace std;
   get_job($base,$d); - DONE
   get_gantt_job_start_time($base,$d); - DONE
   get_current_moldable_job($base,$date_tmp[1]); - DONE
-  set_job_message($base,$j->{job_id},$message);
-  set_job_message($base,$j->{job_id},$message);
+  set_job_message($base,$j->{job_id},$message); - DONE
+  set_job_message($base,$j->{job_id},$message); - DONE IDEM PREC
   get_current_job_types($base,$j->{job_id}); - DONE
   get_resources_data_structure_current_job($base,$j->{job_id}); - DONE
   get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)) - DONE
@@ -914,6 +914,153 @@ get_current_moldable_job_restrict_moldable_walltime(unsigned int moldableJobId)
   assert(! query.next()); /* only one answer ! */
   return results;
 }
+
+/**
+   # set_job_message
+   # sets the message field of the job of id passed in parameter
+   # parameters : base, jobid, message
+   # return value : /
+   # side effects : changes the field message of the job in the table Jobs
+*/
+int set_job_message(unsigned int idJob, string message) 
+{
+  assert(db.isValid());
+  QSqlQuery query;
+  string req = "  UPDATE jobs\
+                  SET message = " << message << "\
+                  WHERE
+                     job_id = "<< idJob<<"\
+               ";
+                
+  query.exec(req);
+  return 0;
+}
+
+/**
+   # get_possible_wanted_resources
+   # return a tree ref : a data structure with corresponding resources with what is asked
+*/
+sub get_possible_wanted_resources(
+				  vector<unsigned int> possible_resources_vector,
+				  vector<unsigned int> impossible_resources_vector,
+				  vector<unsigned int> resources_to_ignore_array,
+				  
+				  string properties,
+				  vector<property_resources_per_job> wanted_resources_ref, /* TODO: verify type */
+				  string order_part)
+{
+  string sql_in_string= "\'1\'";
+
+  if (resources_to_ignore_array.size() > 0 )
+    {
+      sql_in_string = "resource_id NOT IN (";
+      for(vector<unsigned int>::iterator i
+	    = resources_to_ignore_array.begin();
+	  i != resources_to_ignore_array.end();
+	  i++)
+	{
+	  static bool debut=1;
+	  switch (debut)
+	    {
+	    case 0:
+	      sql_in_string += ",";
+	    case 1:
+	      debut = 0;
+	    }
+	  sql_in_string += "" << *i;
+	}
+      sql_in_string = ")";
+    }
+
+  if (order_part != "")
+    order_part =  "ORDER BY " << order_part;
+
+  /* copy !*/
+  wanted_resources = wanted_resources_ref;
+  int nb_res = wanted_resources.resources.size();
+  if (wanted_resources.resources[nb_res - 1]->resource != "resource_id")
+    wanted_resources.resources.push_back( resources_per_job("resource_id",
+							    "-1"));
+
+  string sql_where_string = "\'1\'";
+    
+  if (properties != "")
+    sql_where_string += " AND ( " << properties <<" )";
+
+    
+  /* #Get only wanted resources */
+  string resource_string;
+  for(vector<resources_per_job>::iterator i
+	    =  wanted_resources.resources.begin();
+	  i !=  wanted_resources.resources.end();
+	  i++)
+    {
+      static bool debut=1;
+      switch (debut)
+	{
+	case 0:
+	  resource_string += ",";
+	case 1:
+	  debut = 0;
+	  break;
+	}
+      resource_string += "" << i->resource;
+    }
+
+  assert(db.isValid());
+  QSqlQuery query;
+  query.setForwardOnly(true);
+ 
+  string req = "SELECT " << resource_string << "\
+                FROM resources\
+                WHERE\
+                   ("<< sql_where_string<< ") AND\
+                    " << sql_in_string << "\
+                " << order_part <<"\
+               ";
+                
+  query.exec(req);
+
+  /* how to send back Undef ? why ? */
+    
+  /*  # Initialize root */
+    my $result ;
+    $result = oar_resource_tree::new();
+    my $wanted_children_number = $wanted_resources[0]->{value};
+    oar_resource_tree::set_needed_children_number($result,$wanted_children_number);
+
+    while (my @sql = $sth->fetchrow_array()){
+        my $father_ref = $result;
+        foreach (my $i = 0; $i <= $#wanted_resources; $i++){
+            # Feed the tree for all resources
+            $father_ref = oar_resource_tree::add_child($father_ref, $wanted_resources[$i]->{resource}, $sql[$i]);
+
+            if ($i < $#wanted_resources){
+                $wanted_children_number = $wanted_resources[$i+1]->{value};
+            }else{
+                $wanted_children_number = 0;
+            }
+            oar_resource_tree::set_needed_children_number($father_ref,$wanted_children_number);
+            # Verify if we must keep this child if this is resource_id resource name
+            if ($wanted_resources[$i]->{resource} eq "resource_id"){
+                if ((defined($impossible_resources_vector)) and (vec($impossible_resources_vector, $sql[$i], 1))){
+                    oar_resource_tree::delete_subtree($father_ref);
+                    $i = $#wanted_resources + 1;
+                }elsif ((defined($possible_resources_vector)) and (!vec($possible_resources_vector, $sql[$i], 1))){
+                    oar_resource_tree::delete_subtree($father_ref);
+                    $i = $#wanted_resources + 1;
+                }
+            }
+        }
+    }
+    
+    $sth->finish();
+    $result = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($result);
+
+    return($result);
+}
+
+
 /**** *****/
 
 # $Id: oar_iolib.pm 1632 2008-09-13 23:32:03Z capitn $
