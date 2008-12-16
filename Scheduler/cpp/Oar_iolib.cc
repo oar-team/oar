@@ -48,8 +48,8 @@ using namespace std;
   get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)) - DONE
   get_resources_that_will_be_out($base, iolib::get_date($base) + $duration)) - DONE - MERGED WITH PRECEDENT
   get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part); - DONE
-  add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
-  set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
+  add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources}); - DONE
+  set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j))); - DONE PREV
   disconnect($base_ro);
 */
 
@@ -1072,7 +1072,38 @@ TreeNode *get_possible_wanted_resources(
   return result;
 }
 
+/*
+  #add scheduler decisions
+  #args : base,moldable_job_id,start_time,\@resources
+  #return nothing
+*/
+sub add_gantt_scheduled_jobs(unsigned int id_moldable_job,
+			     unsigned int start_time,
+			     vector<unsigned int> resource_list)
+{
+  assert(db.isValid());
+  QSqlQuery query;
 
+
+  string req = "    INSERT INTO gantt_jobs_predictions (moldable_job_id,start_time)\
+                    VALUES ("<< id_moldable_job<< ",\'"<< start_time<<"\')\
+             
+               ";
+
+  query.exec(req);
+
+  for(vector<unsigned int>::iterator i = resource_list.begin();
+      i !=  resource_list.end();
+      i++)
+    {
+      QSqlQuery query2;
+      string req2 = "   INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)\
+                        VALUES ("<<id_moldable_job<<","<<*i<<")\
+               ";
+
+      query.exec();
+    }
+}
 
 /**** *****/
 
