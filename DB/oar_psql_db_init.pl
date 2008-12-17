@@ -5,7 +5,8 @@ use strict;
 use warnings;
 use Getopt::Long;
 
-my $oardir = "/usr/local/oar";
+#my $oardir = "/usr/local/oar";
+my $oardir = $ENV{'OARDIR'};
 
 Getopt::Long::Configure ("gnu_getopt");
 my $usage;
@@ -58,7 +59,7 @@ print("\n");
 system("tty &> /dev/null && stty echo");
 system("sudo -u postgres psql -c \"CREATE ROLE $ro_userName LOGIN PASSWORD \'$ro_password\'\"");
 
-print "Please enter the path to the script that initiates the DB (default: /usr/local/oar/pg_structure.sql):\n";
+print "Please enter the path to the script that initiates the DB (default: $oardir/pg_structure.sql):\n";
 print "\tpath: ";
 my $sqlFile = <STDIN>;
 chomp $sqlFile;
