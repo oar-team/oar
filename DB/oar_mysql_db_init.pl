@@ -84,23 +84,23 @@ $dbh->disconnect();
 $dbh = DBI->connect("DBI:mysql:database=$dbName;host=$dbHost;port=$dbPort", $dbLogin, $dbPassword, {'RaiseError' => 1});
 
 if (-r $mysqlFile){
-	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $mysqlFile");
+	system("mysql -u$dbLogin -p\'$dbPassword\' -h$dbHost -P$dbPort -D$dbName < $mysqlFile");
 	if ($? != 0){
-		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $mysqlFile; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p\'$dbPassword\' -h$dbHost -P$dbPort -D$dbName < $mysqlFile; \$?=$?, $! \n");
 	}
 }else{
 	die("[ERROR] Database installation : can't open $mysqlFile \n");
 }
 if (-r $admission_rules_file){
-	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $admission_rules_file");
+	system("mysql -u$dbLogin -p\'$dbPassword\' -h$dbHost -P$dbPort -D$dbName < $admission_rules_file");
 	if ($? != 0){
-		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $admission_rules_file; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p\'$dbPassword\' -h$dbHost -P$dbPort -D$dbName < $admission_rules_file; \$?=$?, $! \n");
 	}
 }
 if (-r $default_data){
-	system("mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $default_data");
+	system("mysql -u$dbLogin -p\'$dbPassword\' -h$dbHost -P$dbPort -D$dbName < $default_data");
 	if ($? != 0){
-		die("[ERROR] this command aborted : mysql -u$dbLogin -p$dbPassword -h$dbHost -P$dbPort -D$dbName < $default_data; \$?=$?, $! \n");
+		die("[ERROR] this command aborted : mysql -u$dbLogin -p\'$dbPassword\' -h$dbHost -P$dbPort -D$dbName < $default_data; \$?=$?, $! \n");
 	}
 }
 $dbh->disconnect();
