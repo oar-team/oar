@@ -1,6 +1,6 @@
 # $Id$
 %define version 2.3.3
-%define release 1
+%define release 2
 
 Name: 		oar
 Version:        %{version}
