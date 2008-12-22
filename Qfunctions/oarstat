@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id$
+# $Id: oarstat 1740 2008-11-02 08:38:17Z capitn $
 # print active job properties
 
 use strict;
@@ -42,6 +42,7 @@ my $Printed_jobs = 0;
 my @job_ids;
 my $array_id;
 my $full_view;
+my $state;
 my $sql_property;
 my $XML_mode;
 my $YAML_mode;
@@ -61,6 +62,7 @@ GetOptions ("help|h" => \&show_usage,
             "version|V" => \&show_version,
             "job|j=i"  => \@job_ids,
             "full|f"  => \$full_view,
+            "state|s"  => \$state,
             "user|u:s" => \$user,
             "array:i" => \$array_id,
             "gantt|g=s"   => \$gantt_query,
@@ -102,6 +104,8 @@ if (defined ($gantt_query)) {
     &show_events;
 } elsif (defined ($properties_query)) {
     &show_properties;
+} elsif (defined ($state)) {
+    &show_state;
 } else {
     &show_job;
 }
@@ -113,7 +117,7 @@ exit(0);
 ### sub routines ###
 sub show_usage {
     print <<EOS;
-Usage: oarstat [-X|-Y|-D|-f] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array]
+Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array]
        oarstat [-e|-p] [-j jobid|--array array_id] 
        oarstat [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
@@ -123,6 +127,7 @@ Print job information
 Options:
   -j, --job                 show informations only for the specified job
   -f, --full                show full informations
+  -s, --state               show only the state of a job (optimized query)
   -u, --user                show informations for this user only
       --array               show informations for the specified array_job(s) and
                             toggle array view in
@@ -319,6 +324,22 @@ sub show_job {
         $data_to_print{$g->{job_id}} = get_job_data($base,$g);
     }
     print_job_data(\%data_to_print,\@jobs);
+}
+
+sub show_state {
+    my %job_state;
+    if ($#job_ids < 0){
+        warn("--state can only be used with an id\n");
+          exit(1);
+    }elsif($#job_ids >= 0){
+        foreach my $j (@job_ids){
+            my $state_string = iolib::get_job_state($base,$j);
+            if (defined($state_string)){
+                $job_state{$j}=$state_string;
+            }
+        }
+    }
+    print_job_state_data(\%job_state);
 }
 
 sub get_job_data($$){
@@ -661,6 +682,24 @@ EOS
                     $Printed_jobs ++;
                 }
             }
+        }
+    }
+}
+
+sub print_job_state_data($){
+    my $data = shift;
+
+    if (defined($DUMPER_mode)){
+        print(Dumper($data));
+    }elsif(defined($XML_mode)){
+        my $dump = new XML::Dumper;
+        $dump->dtd;
+        print($dump->pl2xml($data));
+    }elsif(defined($YAML_mode)){
+        print(YAML::Dump($data));
+    }else{
+        foreach my $j (keys %$data){
+           print "$j: ". $data->{$j} ."\n";
         }
     }
 }

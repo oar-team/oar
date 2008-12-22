@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+Next version:
+-------------
+  - Added a --state option to oarstat to only get the status of specified jobs 
+    (optimized query, to allow scripting)
+
+
 version 2.3.3:
 --------------
   - Fix default admission rules: case unsensitive check for properties used in 
