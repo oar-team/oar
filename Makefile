@@ -21,10 +21,6 @@ SBINDIR=$(PREFIX)/sbin
 DOCDIR=$(PREFIX)/doc/oar
 WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
-REAL_OARCONFDIR=$(OARCONFDIR)
-REAL_OARDIR=$(OARDIR)
-REAL_SBINDIR=$(SBINDIR)
-REAL_BINDIR=$(BINDIR)
 WWW_ROOTDIR=
 GANTT_WEB_ROOT=$(WWWDIR)
 GANTT_WEB_DIR=drawgantt
@@ -50,339 +46,383 @@ man:
 	@cd man/man1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
 
 configuration:
-	install -d -m 0755 $(OARCONFDIR)
-	@if [ -f $(OARCONFDIR)/oar.conf ]; then echo "Warning: $(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 -o $(OAROWNER) -g root Tools/oar.conf $(OARCONFDIR) ; fi
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/oar.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 Tools/oar.conf $(DESTDIR)$(OARCONFDIR) ; chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/oar.conf || /bin/true ; fi
 
 desktop-computing-agent:
-	install -d -m 0755 $(BINDIR)
-	install -m 0755 DesktopComputing/oar-agent.pl $(BINDIR)/oar-agent
+	install -d -m 0755 $(DESTDIR)$(BINDIR)
+	install -m 0755 DesktopComputing/oar-agent.pl $(DESTDIR)$(BINDIR)/oar-agent
 
 desktop-computing-cgi:
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0755 DesktopComputing/oarcache.pl $(OARDIR)/oarcache.pl
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarcache
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -m 0755 DesktopComputing/oarcache.pl $(DESTDIR)$(OARDIR)/oarcache.pl
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarcache
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarcache
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oarcache
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarcache.pl'\;#;;\
-				" $(SBINDIR)/oarcache
-	install -m 0755 DesktopComputing/oarres.pl $(OARDIR)/oarres.pl
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarres
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarcache.pl'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oarcache
+	install -m 0755 DesktopComputing/oarres.pl $(DESTDIR)$(OARDIR)/oarres.pl
+	install -m 6750 Tools/oardo $(DESTDIR)$(OARDIR)/oarres
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oarres
+	chmod 6750 $(DESTDIR)$(OARDIR)/oarres
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarres.pl'\;#;;\
-				" $(OARDIR)/oarres
-	install -m 0755 DesktopComputing/oar-cgi.pl $(OARDIR)/oar-cgi.pl
-	install -d -m 0755 $(CGIDIR)
-	install -m 6750 -o $(OAROWNER) -g $(WWWUSER) Tools/oardo $(CGIDIR)/oar-cgi
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarres.pl'\;#;;\
+				" $(DESTDIR)$(OARDIR)/oarres
+	install -m 0755 DesktopComputing/oar-cgi.pl $(DESTDIR)$(OARDIR)/oar-cgi.pl
+	install -d -m 0755 $(DESTDIR)$(CGIDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(CGIDIR)/oar-cgi
+	-chown $(OAROWNER).$(WWWUSER) $(DESTDIR)$(CGIDIR)/oar-cgi
+	chmod 6750 $(DESTDIR)$(CGIDIR)/oar-cgi
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar-cgi.pl'\;#;;\
-				" $(CGIDIR)/oar-cgi
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar-cgi.pl'\;#;;\
+				" $(DESTDIR)$(CGIDIR)/oar-cgi
 
 dbinit:
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0755 DB/oar_mysql_db_init.pl $(OARDIR)/oar_mysql_db_init
-	#ln -fs $(REAL_OARDIR)/oar_mysql_db_init $(SBINDIR)/oar_mysql_db_init
-	install -m 0755 DB/oar_psql_db_init.pl $(OARDIR)/oar_psql_db_init
-	#ln -fs $(REAL_OARDIR)/oar_psql_db_init $(SBINDIR)/oar_psql_db_init
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_mysql_db_init
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -m 0755 DB/oar_mysql_db_init.pl $(DESTDIR)$(OARDIR)/oar_mysql_db_init
+	#ln -fs $(OARDIR)/oar_mysql_db_init $(SBINDIR)/oar_mysql_db_init
+	install -m 0755 DB/oar_psql_db_init.pl $(DESTDIR)$(OARDIR)/oar_psql_db_init
+	#ln -fs $(OARDIR)/oar_psql_db_init $(SBINDIR)/oar_psql_db_init
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oar_mysql_db_init
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oar_mysql_db_init
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oar_mysql_db_init
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar_mysql_db_init'\;#;;\
-				" $(SBINDIR)/oar_mysql_db_init
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_psql_db_init
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar_mysql_db_init'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oar_mysql_db_init
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oar_psql_db_init
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oar_psql_db_init
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oar_psql_db_init
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oar_psql_db_init'\;#;;\
-				" $(SBINDIR)/oar_psql_db_init
-	install -m 0644 DB/default_data.sql $(OARDIR)
-	install -m 0644 DB/mysql_default_admission_rules.sql $(OARDIR)
-	install -m 0644 DB/mysql_structure.sql $(OARDIR)
-	install -m 0644 DB/pg_default_admission_rules.sql $(OARDIR)
-	install -m 0644 DB/pg_structure.sql $(OARDIR)
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar_psql_db_init'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oar_psql_db_init
+	install -m 0644 DB/default_data.sql $(DESTDIR)$(OARDIR)
+	install -m 0644 DB/mysql_default_admission_rules.sql $(DESTDIR)$(OARDIR)
+	install -m 0644 DB/mysql_structure.sql $(DESTDIR)$(OARDIR)
+	install -m 0644 DB/pg_default_admission_rules.sql $(DESTDIR)$(OARDIR)
+	install -m 0644 DB/pg_structure.sql $(DESTDIR)$(OARDIR)
 
 common: man
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(BINDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Tools/oarsh/oarsh $(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(BINDIR)
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -m 0755 Tools/oarsh/oarsh $(DESTDIR)$(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(OARDIR)/oarsh
-	install -d -m 0755 $(OARDIR)/oardodo
-	install -m 0755 Tools/oarsh/oarsh_shell $(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)/oardodo
+	install -m 0755 Tools/oarsh/oarsh_shell $(DESTDIR)$(OARDIR)
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
-				 s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;\
-				" $(OARDIR)/oarsh_shell
-	install -m 6750 -o root -g $(OAROWNERGROUP) Tools/oardodo $(OARDIR)/oardodo
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
+				 s#^OARDIR=.*#OARDIR=$(OARDIR)#;;\
+				" $(DESTDIR)$(OARDIR)/oarsh_shell
+	install -m 6750 Tools/oardodo $(DESTDIR)$(OARDIR)/oardodo
+	-chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
+	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				" $(OARDIR)/oardodo/oardodo
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(OARDIR)/oarsh_oardo
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				" $(DESTDIR)$(OARDIR)/oardodo/oardodo
+	install -m 6755 Tools/oardo $(DESTDIR)$(OARDIR)/oarsh_oardo
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oarsh_oardo
+	chmod 6755 $(DESTDIR)$(OARDIR)/oarsh_oardo
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarsh'\;#;;\
-				" $(OARDIR)/oarsh_oardo
-	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(BINDIR)/oarsh
-	perl -i -pe "s#^OARDIR=.*#OARDIR=$(REAL_OARDIR)#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarsh'\;#;;\
+				" $(DESTDIR)$(OARDIR)/oarsh_oardo
+	install -m 0755 Tools/oarsh/oarsh_sudowrapper.sh $(DESTDIR)$(BINDIR)/oarsh
+	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;\
 				 s#^OARSHCMD=.*#OARSHCMD=oarsh_oardo#\
-				" $(BINDIR)/oarsh
-	install -m 0755 Tools/oarsh/oarcp $(BINDIR)
-	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(REAL_BINDIR)/oarsh#" $(BINDIR)/oarcp
-	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarcp.1
-	install -m 0644 man/man1/oarsh.1 $(MANDIR)/man1/oarsh.1
-	install -m 0644 man/man1/oarprint.1 $(MANDIR)/man1/oarprint.1
-	install -m 0755 Qfunctions/oarprint $(BINDIR)
+				" $(DESTDIR)$(BINDIR)/oarsh
+	install -m 0755 Tools/oarsh/oarcp $(DESTDIR)$(BINDIR)
+	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(DESTDIR)$(BINDIR)/oarcp
+	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarsh.1 $(DESTDIR)$(MANDIR)/man1/oarcp.1
+	install -m 0644 man/man1/oarsh.1 $(DESTDIR)$(MANDIR)/man1/oarsh.1
+	install -m 0644 man/man1/oarprint.1 $(DESTDIR)$(MANDIR)/man1/oarprint.1
+	install -m 0755 Qfunctions/oarprint $(DESTDIR)$(BINDIR)
 	
 libs: man
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(BINDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0644 ConfLib/oar_conflib.pm $(OARDIR)
-	install -m 0644 Iolib/oar_iolib.pm $(OARDIR)
-	install -m 0644 Judas/oar_Judas.pm $(OARDIR)
-	install -m 0755 Qfunctions/oarnodesetting $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarnodesetting
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(BINDIR)
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -m 0644 ConfLib/oar_conflib.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Iolib/oar_iolib.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Judas/oar_Judas.pm $(DESTDIR)$(OARDIR)
+	install -m 0755 Qfunctions/oarnodesetting $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarnodesetting
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarnodesetting
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oarnodesetting
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnodesetting'\;#;;\
-				" $(SBINDIR)/oarnodesetting
-	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(OARDIR)
-	install -m 0644 Tools/oarversion.pm $(OARDIR)
-	install -m 0644 Tools/oar_Tools.pm $(OARDIR)
-	install -m 0755 Tools/sentinelle.pl $(OARDIR)
-	install -m 0755 Tools/oarnodesetting_ssh $(OARDIR)
-	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(REAL_SBINDIR)/oarnodesetting#" $(OARDIR)/oarnodesetting_ssh
-	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/man1/oarnodesetting.1 $(MANDIR)/man1/oarnodesetting.1
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarnodesetting'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oarnodesetting
+	install -m 0644 Scheduler/data_structures/oar_resource_tree.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Tools/oarversion.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Tools/oar_Tools.pm $(DESTDIR)$(OARDIR)
+	install -m 0755 Tools/sentinelle.pl $(DESTDIR)$(OARDIR)
+	install -m 0755 Tools/oarnodesetting_ssh $(DESTDIR)$(OARDIR)
+	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(DESTDIR)$(OARDIR)/oarnodesetting_ssh
+	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarnodesetting.1 $(DESTDIR)$(MANDIR)/man1/oarnodesetting.1
 
 server: man
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(OARDIR)/schedulers
-	install -d -m 0755 $(OARCONFDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Almighty/Almighty $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/Almighty
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)/schedulers
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -m 0755 Almighty/Almighty $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/Almighty
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/Almighty
+	chmod 6750 $(DESTDIR)$(SBINDIR)/Almighty
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/Almighty'\;#;;\
-				" $(SBINDIR)/Almighty
-	install -m 0755 Leon/Leon	$(OARDIR)
-	install -m 0755 Runner/runner $(OARDIR)
-	install -m 0755 Sarko/sarko $(OARDIR)
-	install -m 0755 Sarko/finaud $(OARDIR)
-	install -m 0644 Scheduler/data_structures/Gantt_hole_storage.pm $(OARDIR)
-	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing $(OARDIR)/schedulers/oar_sched_gantt_with_timesharing
-	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
-	install -m 0755 Scheduler/oar_meta_sched $(OARDIR)
-	install -m 0644 Scheduler/oar_scheduler.pm $(OARDIR)
-	install -m 0755 Qfunctions/oarnotify $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarnotify
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/Almighty'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/Almighty
+	install -m 0755 Leon/Leon	$(DESTDIR)$(OARDIR)
+	install -m 0755 Runner/runner $(DESTDIR)$(OARDIR)
+	install -m 0755 Sarko/sarko $(DESTDIR)$(OARDIR)
+	install -m 0755 Sarko/finaud $(DESTDIR)$(OARDIR)
+	install -m 0644 Scheduler/data_structures/Gantt_hole_storage.pm $(DESTDIR)$(OARDIR)
+	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing $(DESTDIR)$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing
+	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(DESTDIR)$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
+	install -m 0755 Scheduler/oar_meta_sched $(DESTDIR)$(OARDIR)
+	install -m 0644 Scheduler/oar_scheduler.pm $(DESTDIR)$(OARDIR)
+	install -m 0755 Qfunctions/oarnotify $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarnotify
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarnotify
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oarnotify
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnotify'\;#;;\
-				" $(SBINDIR)/oarnotify
-	install -m 0755 NodeChangeState/NodeChangeState $(OARDIR)
-	install -m 0755 Qfunctions/oarremoveresource $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarremoveresource
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarnotify'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oarnotify
+	install -m 0755 NodeChangeState/NodeChangeState $(DESTDIR)$(OARDIR)
+	install -m 0755 Qfunctions/oarremoveresource $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarremoveresource
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarremoveresource
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oarremoveresource
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarremoveresource'\;#;;\
-				" $(SBINDIR)/oarremoveresource
-	install -m 0755 Qfunctions/oaraccounting $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oaraccounting
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarremoveresource'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oarremoveresource
+	install -m 0755 Qfunctions/oaraccounting $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oaraccounting
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oaraccounting
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oaraccounting
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oaraccounting'\;#;;\
-				" $(SBINDIR)/oaraccounting
-	install -m 0755 Qfunctions/oarproperty $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarproperty
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oaraccounting'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oaraccounting
+	install -m 0755 Qfunctions/oarproperty $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarproperty
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarproperty
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oarproperty
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarproperty'\;#;;\
-				" $(SBINDIR)/oarproperty
-	install -m 0755 Qfunctions/oarmonitor $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oarmonitor
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarproperty'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oarproperty
+	install -m 0755 Qfunctions/oarmonitor $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarmonitor
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarmonitor
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oarmonitor
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarmonitor'\;#;;\
-				" $(SBINDIR)/oarmonitor
-	install -m 0755 Runner/bipbip $(OARDIR)
-	install -m 0644 Runner/ping_checker.pm $(OARDIR)
-	install -m 0644 Runner/oarexec $(OARDIR)
-	@if [ -f $(OARCONFDIR)/job_resource_manager.pl ]; then echo "Warning: $(OARCONFDIR)/job_resource_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/job_resource_manager.pl $(OARCONFDIR); fi
-	@if [ -f $(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(OARCONFDIR); fi
-	@if [ -f $(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(OARCONFDIR); fi
-	@if [ -f $(OARCONFDIR)/server_prologue ]; then echo "Warning: $(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(OARCONFDIR) ; fi
-	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/man1/Almighty.1 $(MANDIR)/man1/Almighty.1
-	install -m 0644 man/man1/oar_mysql_db_init.1 $(MANDIR)/man1/oar_mysql_db_init.1
-	install -m 0644 man/man1/oaraccounting.1 $(MANDIR)/man1/oaraccounting.1
-	install -m 0644 man/man1/oarmonitor.1 $(MANDIR)/man1/oarmonitor.1
-	install -m 0644 man/man1/oarnotify.1 $(MANDIR)/man1/oarnotify.1
-	install -m 0644 man/man1/oarproperty.1 $(MANDIR)/man1/oarproperty.1
-	install -m 0644 man/man1/oarremoveresource.1 $(MANDIR)/man1/oarremoveresource.1
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarmonitor'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oarmonitor
+	install -m 0755 Runner/bipbip $(DESTDIR)$(OARDIR)
+	install -m 0644 Runner/ping_checker.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Runner/oarexec $(DESTDIR)$(OARDIR)
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/job_resource_manager.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/job_resource_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/job_resource_manager.pl $(DESTDIR)$(OARCONFDIR); fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 Tools/suspend_resume_manager.pl $(DESTDIR)$(OARCONFDIR); fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 Tools/oarmonitor_sensor.pl $(DESTDIR)$(OARCONFDIR); fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_prologue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 Scripts/server_prologue $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/server_epilogue $(DESTDIR)$(OARCONFDIR) ; fi
+	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/Almighty.1 $(DESTDIR)$(MANDIR)/man1/Almighty.1
+	install -m 0644 man/man1/oar_mysql_db_init.1 $(DESTDIR)$(MANDIR)/man1/oar_mysql_db_init.1
+	install -m 0644 man/man1/oaraccounting.1 $(DESTDIR)$(MANDIR)/man1/oaraccounting.1
+	install -m 0644 man/man1/oarmonitor.1 $(DESTDIR)$(MANDIR)/man1/oarmonitor.1
+	install -m 0644 man/man1/oarnotify.1 $(DESTDIR)$(MANDIR)/man1/oarnotify.1
+	install -m 0644 man/man1/oarproperty.1 $(DESTDIR)$(MANDIR)/man1/oarproperty.1
+	install -m 0644 man/man1/oarremoveresource.1 $(DESTDIR)$(MANDIR)/man1/oarremoveresource.1
 
 user: man
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(BINDIR)
-	install -m 0755 Qfunctions/oarnodes $(OARDIR)
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarnodes
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(BINDIR)
+	install -m 0755 Qfunctions/oarnodes $(DESTDIR)$(OARDIR)
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarnodes
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarnodes
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarnodes
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarnodes'\;#;;\
-				" $(BINDIR)/oarnodes
-	install -m 0755 Qfunctions/oardel $(OARDIR)
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oardel
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarnodes'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oarnodes
+	install -m 0755 Qfunctions/oardel $(DESTDIR)$(OARDIR)
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oardel
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oardel
+	chmod 6755 $(DESTDIR)$(BINDIR)/oardel
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oardel'\;#;;\
-				" $(BINDIR)/oardel
-	install -m 0755 Qfunctions/oarstat $(OARDIR)
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarstat
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oardel'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oardel
+	install -m 0755 Qfunctions/oarstat $(DESTDIR)$(OARDIR)
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarstat
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarstat
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarstat
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarstat'\;#;;\
-				" $(BINDIR)/oarstat
-	install -m 0755 Qfunctions/oarsub $(OARDIR)
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarsub
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarstat'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oarstat
+	install -m 0755 Qfunctions/oarsub $(DESTDIR)$(OARDIR)
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarsub
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarsub
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarsub
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarsub'\;#;;\
-				" $(BINDIR)/oarsub
-	install -m 0755 Qfunctions/oarhold $(OARDIR)
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarhold
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarsub'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oarsub
+	install -m 0755 Qfunctions/oarhold $(DESTDIR)$(OARDIR)
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarhold
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarhold
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarhold
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarhold'\;#;;\
-				" $(BINDIR)/oarhold
-	install -m 0755 Qfunctions/oarresume $(OARDIR)
-	install -m 6755 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(BINDIR)/oarresume
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarhold'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oarhold
+	install -m 0755 Qfunctions/oarresume $(DESTDIR)$(OARDIR)
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarresume
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarresume
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarresume
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oarresume'\;#;;\
-				" $(BINDIR)/oarresume
-	install -m 0755 Tools/oarmonitor_graph_gen.pl $(BINDIR)/oarmonitor_graph_gen
-	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/man1/oardel.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarnodes.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarresume.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarstat.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarsub.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarhold.1 $(MANDIR)/man1
-	install -m 0644 man/man1/oarmonitor_graph_gen.1 $(MANDIR)/man1/oarmonitor_graph_gen.1
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarresume'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oarresume
+	install -m 0755 Tools/oarmonitor_graph_gen.pl $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen
+	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oardel.1 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarnodes.1 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarresume.1 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarstat.1 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarsub.1 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarhold.1 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oarmonitor_graph_gen.1 $(DESTDIR)$(MANDIR)/man1/oarmonitor_graph_gen.1
 
 node: man
-	install -d -m 0755 $(BINDIR)
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(OARCONFDIR)
-	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
-	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
-	install -m 0755 Tools/detect_resources $(OARDIR)
-	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
-	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
-	install -m 0755 Tools/oarnodecheck/oarnodechecklist $(BINDIR)
-	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(BINDIR)/oarnodechecklist
-	install -m 0755 Tools/oarnodecheck/oarnodecheckquery $(BINDIR)
-	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(BINDIR)/oarnodecheckquery
-	install -d -m 0755 $(OARCONFDIR)/check.d
-	install -m 0755 Tools/oarnodecheck/oarnodecheckrun $(OARDIR)
-	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*#CHECKSCRIPTDIR=$(REAL_OARCONFDIR)/check.d#" $(OARDIR)/oarnodecheckrun
+	install -d -m 0755 $(DESTDIR)$(BINDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
+	install -m 0600 Tools/sshd_config $(DESTDIR)$(OARCONFDIR)
+	-chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/sshd_config
+	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(DESTDIR)$(OARCONFDIR)/sshd_config
+	install -m 0755 Tools/detect_resources $(DESTDIR)$(OARDIR)
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/prologue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(DESTDIR)$(OARCONFDIR) ; fi
+	install -m 0755 Tools/oarnodecheck/oarnodechecklist $(DESTDIR)$(BINDIR)
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(DESTDIR)$(BINDIR)/oarnodechecklist
+	install -m 0755 Tools/oarnodecheck/oarnodecheckquery $(DESTDIR)$(BINDIR)
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#" $(DESTDIR)$(BINDIR)/oarnodecheckquery
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)/check.d
+	install -m 0755 Tools/oarnodecheck/oarnodecheckrun $(DESTDIR)$(OARDIR)
+	perl -i -pe "s#^OARUSER=.*#OARUSER=$(OARUSER)#;s#^CHECKSCRIPTDIR=.*#CHECKSCRIPTDIR=$(OARCONFDIR)/check.d#" $(DESTDIR)$(OARDIR)/oarnodecheckrun
 
 build-html-doc: Docs/documentation/
 	(cd Docs/documentation && $(MAKE) )
 
 doc: build-html-doc
-	install -d -m 0755 $(DOCDIR)
-	install -d -m 0755 $(DOCDIR)/html
-	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-USER.html $(DOCDIR)/html
-	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DOCDIR)/html
-	install -m 0644 Docs/schemas/oar_logo.png $(DOCDIR)/html
-	install -m 0644 Docs/schemas/db_scheme.png $(DOCDIR)/html
-	install -m 0644 Docs/schemas/interactive_oarsub_scheme.png $(DOCDIR)/html
-	install -m 0644 Docs/schemas/Almighty.fig $(DOCDIR)/html
-	install -m 0644 Docs/schemas/Almighty.ps $(DOCDIR)/html
-	install -d -m 0755 $(DOCDIR)/scripts
-	install -d -m 0755 $(DOCDIR)/scripts/job_resource_manager
-	install -m 0644 Tools/job_resource_manager.pl $(DOCDIR)/scripts/job_resource_manager/
-	install -d -m 0755 $(DOCDIR)/scripts/prologue_epilogue
-	install -m 0644 Scripts/oar_prologue $(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 Scripts/oar_epilogue $(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 Scripts/oar_prologue_local $(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 Scripts/oar_epilogue_local $(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 Scripts/oar_diffuse_script $(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 Scripts/lock_user.sh $(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 Scripts/oar_server_proepilogue.pl $(DOCDIR)/scripts/prologue_epilogue/
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-USER.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/schemas/oar_logo.png $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/schemas/db_scheme.png $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/schemas/interactive_oarsub_scheme.png $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/schemas/Almighty.fig $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/schemas/Almighty.ps $(DESTDIR)$(DOCDIR)/html
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/scripts
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager
+	install -m 0644 Tools/job_resource_manager.pl $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue
+	install -m 0644 Scripts/oar_prologue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_epilogue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_prologue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_epilogue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_diffuse_script $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/lock_user.sh $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 Scripts/oar_server_proepilogue.pl $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 
 draw-gantt:
-	install -d -m 0755 $(CGIDIR)
-	install -d -m 0755 $(WWWDIR)
-	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(CGIDIR)
-	install -d -m 0755 $(OARCONFDIR)
+	install -d -m 0755 $(DESTDIR)$(CGIDIR)
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)
+	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(DESTDIR)$(CGIDIR)
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	perl -i -pe "s#^web_root: .*#web_root: '$(GANTT_WEB_ROOT)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
 	perl -i -pe "s#^directory: .*#directory: '$(GANTT_WEB_DIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
-	@if [ -f $(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(OARCONFDIR) ; fi
-	install -d -m 0755 $(WWWDIR)/drawgantt/Icons
-	install -d -m 0755 $(WWWDIR)/drawgantt/js
-	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(WWWDIR)/drawgantt/Icons
-	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(WWWDIR)/drawgantt/js
-	install -d -o $(WWWUSER) -m 0755 $(WWWDIR)/drawgantt/cache
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/drawgantt.conf || /bin/true ; fi
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)/drawgantt/Icons
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)/drawgantt/js
+	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt/Icons
+	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(DESTDIR)$(WWWDIR)/drawgantt/js
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)/drawgantt/cache
+	-chown $(WWWUSER) $(DESTDIR)$(WWWDIR)/drawgantt/cache
 
 monika:
-	install -d -m 0755 $(CGIDIR)
-	install -d -m 0755 $(OARCONFDIR)
+	install -d -m 0755 $(DESTDIR)$(CGIDIR)
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	perl -i -pe "s#^css_path = .*#css_path = $(WWW_ROOTDIR)/monika.css#" VisualizationInterfaces/Monika/monika.conf
-	@if [ -f $(OARCONFDIR)/monika.conf ]; then echo "Warning: $(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/Monika/monika.conf $(OARCONFDIR) ; fi
-	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(CGIDIR)
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARCONFDIR)'\;#;;" $(CGIDIR)/monika.cgi
-	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(CGIDIR)
-	install -m 0644 VisualizationInterfaces/Monika/monika.css $(WWWDIR)
-	install -d -m 0755 $(CGIDIR)/monika
-	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(CGIDIR)/monika
-	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(CGIDIR)/monika
-	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(CGIDIR)/monika
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/monika.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/Monika/monika.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/monika.conf || /bin/true ; fi
+	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(DESTDIR)$(CGIDIR)
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARCONFDIR)'\;#;;" $(DESTDIR)$(CGIDIR)/monika.cgi
+	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(DESTDIR)$(CGIDIR)
+	install -m 0644 VisualizationInterfaces/Monika/monika.css $(DESTDIR)$(WWWDIR)
+	install -d -m 0755 $(DESTDIR)$(CGIDIR)/monika
+	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(DESTDIR)$(CGIDIR)/monika
+	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(DESTDIR)$(CGIDIR)/monika
+	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(DESTDIR)$(CGIDIR)/monika
 
 www-conf:
-	install -d -m 0755 $(OARCONFDIR)
-	@if [ -f $(OARCONFDIR)/apache.conf ]; then echo "Warning: $(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -o $(WWWUSER) -m 0600 VisualizationInterfaces/apache.conf $(OARCONFDIR) ; fi
+	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/apache.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache.conf || /bin/true ; fi
 
 tools:
-	install -d -m 0755 $(OARDIR)
-	install -d -m 0755 $(SBINDIR)
-	install -m 0755 Oaradmin/oaradmin.rb $(OARDIR)
-	install -m 0755 Oaradmin/oar_modules.rb $(OARDIR)
-	install -m 0755 Oaradmin/oaradmin_modules.rb $(OARDIR)
-	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oaradmin
-	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
-                     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -m 0755 Oaradmin/oaradmin.rb $(DESTDIR)$(OARDIR)
+	install -m 0755 Oaradmin/oar_modules.rb $(DESTDIR)$(OARDIR)
+	install -m 0755 Oaradmin/oaradmin_modules.rb $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oaradmin
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oaradmin
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oaradmin
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+                     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
                      s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-                     s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/oaradmin.rb'\;#;;\
-                    " $(SBINDIR)/oaradmin
-	install -d -m 0755 $(MANDIR)/man1
-	install -m 0644 man/man1/oaradmin.1 $(MANDIR)/man1/oaradmin.1
+                     s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oaradmin.rb'\;#;;\
+                    " $(DESTDIR)$(SBINDIR)/oaradmin
+	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/man1/oaradmin.1 $(DESTDIR)$(MANDIR)/man1/oaradmin.1
         
 common-install: common
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
