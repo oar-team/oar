@@ -35,7 +35,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install }"
+	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install }"
 	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -85,6 +85,19 @@ desktop-computing-cgi:
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar-cgi.pl'\;#;;\
 				" $(DESTDIR)$(CGIDIR)/oar-cgi
 
+api:
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -m 0755 API/oarapi.pl $(DESTDIR)$(OARDIR)/oarapi.pl
+	install -d -m 0755 $(DESTDIR)$(CGIDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(CGIDIR)/oarapi
+	-chown $(OAROWNER).$(WWWUSER) $(DESTDIR)$(CGIDIR)/oarapi
+	chmod 6750 $(DESTDIR)$(CGIDIR)/oarapi
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarapi.pl'\;#;;\
+				" $(DESTDIR)$(CGIDIR)/oarapi
+	
 dbinit:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
@@ -444,3 +457,5 @@ desktop-computing-cgi-install: sanity-check configuration common-install libs de
 desktop-computing-agent-install: desktop-computing-agent
 
 tools-install: sanity-check configuration common-install libs tools
+
+api-install: sanity-check configuration common-install libs api
