@@ -1,6 +1,7 @@
 OAR CHANGELOG
 =============
 
+
 version 2.2.14:
 ---------------
   - Kill correctly each taktuk command children in case of a timeout.
@@ -10,6 +11,8 @@ version 2.2.14:
   - oarstat: fix typo when printing the resource list for a advance reservation  
   - Update install doc wrt sudo configuration (SSH_CONNECTION env variable)
   - Database schema: clean up non default resource definition (switch, cpu) 
+  - Added a --state option to oarstat to only get the status of specified jobs 
+    (optimized query, to allow scripting)
 
 version 2.2.13:
 ---------------

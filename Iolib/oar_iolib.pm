@@ -56,6 +56,7 @@ sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
+sub get_job_state($$);
 sub get_current_moldable_job($$);
 sub set_job_state($$$);
 sub set_job_resa_state($$$);
@@ -1224,6 +1225,25 @@ sub get_job($$) {
     $sth->finish();
 
     return($ref);
+}
+
+
+# get_job_state
+# returns only the state of a job
+# parameter
+# parameters : base, jobid
+# return value : string
+# side effects : /
+sub get_job_state($$) {
+    my $dbh = shift;
+    my $idJob = shift;
+
+    my @res = $dbh->selectrow_array("   SELECT state
+                                FROM jobs
+                                WHERE
+                                    job_id = $idJob
+                            ");
+    return($res[0]);
 }
 
 
