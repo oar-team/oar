@@ -26,6 +26,11 @@ my $USER = "oar";
 # The ssh command to use to contact the frontends
 my $SSH_CMD = "/usr/bin/ssh";
 
+# Oar commands
+my $OARSTAT_CMD = "oarstat";
+my $OARSUB_CMD = "oarsub";
+my $OARDODO_CMD = "/usr/lib/oar/oardodo/oardodo";
+
 # Debug mode
 # This does not increase verbosity, but causes all errors to generate
 # the OK/200 status to force the client to output the human readable
@@ -42,7 +47,7 @@ my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
 # Tainted mode, we must clear the path
-$ENV{PATH} = "";
+#$ENV{PATH} = "";
 
 ### Only used whithout oardo:
 # Set the effective uid (or ssh will not use the suid)
@@ -164,7 +169,7 @@ SWITCH: for ($q) {
     my $output_opt;
     if   ( $ext eq "yaml" ) { $output_opt = "-Y" }
     else                    { $output_opt = "-X" }
-    my $cmd = "oarstat -fj $jobid $output_opt";
+    my $cmd = "$OARSTAT_CMD -fj $jobid $output_opt";
     my $cmdRes = `$cmd 2>&1`;
     my $err=$?;
     if ( $err != 0 ) {
@@ -206,15 +211,15 @@ SWITCH: for ($q) {
     my $job = check_job( $q->param('POSTDATA') );
 
     # Make the query (the hash is converted into a list of long options)
-    my $oarcmd = "oarsub ";
+    my $oarcmd = "$OARSUB_CMD ";
     foreach my $option ( keys( %{$job} ) ) {
       if ( $option ne "script_path" && $option ne "script" ) {
         $oarcmd .= " --$option";
-        $oarcmd .= "=\\\"$job->{$option}\\\"" if $job->{$option} ne "";
+        $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
     $oarcmd .= " $job->{script_path}" if defined( $job->{script_path} );
-    my $cmd ="cd ~$authenticated_user && sudo -u $authenticated_user $oarcmd";
+    my $cmd ="cd ~$authenticated_user && $OARDODO_CMD su - $authenticated_user -c '$oarcmd'";
     my $cmdRes = `$cmd 2>&1`;
     if ( $? != 0 ) {
       my $err = $? >> 8;
