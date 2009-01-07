@@ -1,90 +1,134 @@
-#!/usr/bin/perl
-# $Id$
-#-d:DProf
+/*
+  #!/usr/bin/perl
+  # $Id$
+  #-d:DProf
+  
+  use strict;
+  use DBI();
+  use oar_iolib;
+  use Data::Dumper;
+  use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+  use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+  use Gantt_hole_storage;
+  use Storable qw(dclone);
+  use Time::HiRes qw(gettimeofday);
 
-use strict;
-use DBI();
-use oar_iolib;
-use Data::Dumper;
-use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
-use oar_conflib qw(init_conf dump_conf get_conf is_conf);
-use Gantt_hole_storage;
-use Storable qw(dclone);
-use Time::HiRes qw(gettimeofday);
+  # Log category
+  set_current_log_category('scheduler');
+*/
 
-# Log category
-set_current_log_category('scheduler');
 
+#include "Oar_conflib.H"
+#include "Oar_iolib.H"
+#include "Oar_resource_tree.H" 
+
+using namespace std;
+
+/*
 ###############################################################################
 # Fairsharing parameters #
 ##########################
-# Avoid problems if there are too many waiting jobs
-my $Karma_max_number_of_jobs_treated_per_user = 30;
-# number of seconds to consider for the fairsharing
-my $Karma_window_size = 3600 * 30 * 24;
-# specify the target percentages for project names (0 if not specified)
-my $Karma_project_targets = {
-    first => 75,
-    default => 25
+*/
+/// # Avoid problems if there are too many waiting jobs
+const unsigned int Karma_max_number_of_jobs_treated_per_user = 30;
+///# number of seconds to consider for the fairsharing
+const unsigned int Karma_window_size = 3600 * 30 * 24;
+///# specify the target percentages for project names (0 if not specified)
+struct karma_proj_target_t {
+  unsigned int first;
+  unsigned int default;
 };
+const struct  karma_proj_target_t Karma_project_targets = { 75, 25 };
 
-# specify the target percentages for users (0 if not specified)
-my $Karma_user_targets = {
-    oar => 100
-};
-# weight given to each criteria
-my $Karma_coeff_project_consumption = 0;
-my $Karma_coeff_user_consumption = 2;
-my $Karma_coeff_user_asked_consumption = 1;
-###############################################################################
-my $initial_time = time();
-my $timeout = 10;
-my $Minimum_timeout_per_job = 2;
-init_conf($ENV{OARCONFFILE});
-if (is_conf("SCHEDULER_TIMEOUT")){
-    $timeout = get_conf("SCHEDULER_TIMEOUT");
+
+///# specify the target percentages for users (0 if not specified)
+map<string, unsigned int> Karma_user_targets = map(pair<string, unsigned int>("oar", 100));
+
+///# weight given to each criteria
+const unsigned int Karma_coeff_project_consumption = 0;
+const unsigend int Karma_coeff_user_consumption = 2;
+const unsigned int Karma_coeff_user_asked_consumption = 1;
+
+//###############################################################################
+
+static time_t initial_time;
+static unsigned int timeout = 10;
+static unsigned int Minimum_timeout_per_job = 2;
+//# Constant duration time of a besteffort job
+static const unsigned int besteffort_duration = 5*60;
+// # $security_time_overhead is the security time (second) used to be sure there
+// # are no problem with overlaping jobs
+static unsigned int security_time_overhead = 1;
+static unsigned int minimum_hole_time = 0;
+//# You can add an order preference on resources assigned by the
+//# system(SQL ORDER syntax)
+static string Order_part;
+static vector<string> Sched_available_suspended_resource_type;
+static string Resources_to_always_add_type;
+
+static vector<string> Resources_to_always_add;
+static unsigned int current_time;
+static string queue;
+
+void init_conf(int argc, char **argv)
+{
+  initial_time = time();
+
+  init_conf(getenv("OARCONFFILE"));
+
+  timeout = CONFDEFAULT_INT("SCHEDULER_TIMEOUT", "10");
+
+
+  // # $security_time_overhead is the security time (second) used to be sure there
+  // # are no problem with overlaping jobs
+  security_time_overhead = CONFDEFAULT_INT("SCHEDULER_JOB_SECURITY_TIME", "1");
+
+  minimum_hole_time = CONFDEFAULT_INT("SCHEDULER_GANTT_HOLE_MINIMUM_TIME", "0");
+  Order_part = get_conf("SCHEDULER_RESOURCE_ORDER");
+
+  string sched_available_suspended_resource_type_tmp = get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE");
+  if (sched_available_suspended_resource_type_tmp == "")
+    Sched_available_suspended_resource_type.push_back("default");
+  else
+    {
+      int cur_pos = 0;
+      int end_pos;
+      while(cur_pos < npos )
+	{
+	  end_pos = sched_available_suspended_resource_type_tmp.find_first_of(" ", cur_pos);
+	  if (endpos != npos)
+	    {
+	      Sched_available_suspended_resource_type.push_back(sched_available_suspended_resource_type_tmp.substr(cur_pos, end_pos-cur_pos));
+	      cur_pos = end_pos + 1;
+	    }
+	  else
+	    {
+	      Sched_available_suspended_resource_type.push_back(sched_available_suspended_resource_type_tmp.substr(cur_pos, npos));
+	      cur_pos = npos;
+	    }
+	}
+    }
+
+
+  // # Look at resources that we must add for each job
+  Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
+  Resources_to_always_add;
+
+
+  if (argc  < 3)
+    {
+      cerr << "[oar_sched_gantt_with_timesharing_and_fairsharing] no queue specified on command line" << endl;
+      exit(1);
+    }
+  else
+    {
+      queue = argv[1];
+      current_time = atoi( argv[2] );
+    }
 }
 
-# Constant duration time of a besteffort job
-my $besteffort_duration = 5*60;
-
-# $security_time_overhead is the security time (second) used to be sure there
-# are no problem with overlaping jobs
-my $security_time_overhead = 1;
-if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
-    $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
-}
-
-my $minimum_hole_time = 0;
-if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){
-    $minimum_hole_time = get_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME");
-}
-
-my $Order_part = get_conf("SCHEDULER_RESOURCE_ORDER");
-
-my @Sched_available_suspended_resource_type;
-my $sched_available_suspended_resource_type_tmp = get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE");
-if (!defined($sched_available_suspended_resource_type_tmp)){
-    push(@Sched_available_suspended_resource_type, "default");
-}else{
-    @Sched_available_suspended_resource_type = split(" ",$sched_available_suspended_resource_type_tmp);
-}
-
-# Look at resources that we must add for each job
-my $Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
-my @Resources_to_always_add = ();
-
-my $current_time ;
-
-my $queue;
-if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
-    $queue = $ARGV[0];
-    $current_time = $ARGV[1];
-}else{
-    oar_error("[oar_sched_gantt_with_timesharing_and_fairsharing] no queue specified on command line\n");
-    exit(1);
-}
-
+void init_sched()
+{
 # Init
 my $base = iolib::connect();
 my $base_ro = iolib::connect_ro();
@@ -193,6 +237,8 @@ foreach my $i (keys(%already_scheduled_jobs)){
 oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End gantt initialization\n");
 
 # End of the initialisation
+}
+
 # Begining of the real scheduling
 
 # Get list of Alive resources
