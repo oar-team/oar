@@ -96,7 +96,7 @@ int connect_db(string dbhost, string dbport, string dbname, string dblogin, stri
   return ok;
 }
 
-/*
+/**
   # connect
   # Connects to database and returns the base identifier
   # parameters : /
@@ -310,7 +310,7 @@ get_gantt_scheduled_jobs(){
   return pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs>  >(order, result);
 }
 
-/*
+/**
   # get_current_job_types
   # return a hash table with all types for the given job ID
 */
@@ -1072,7 +1072,7 @@ TreeNode *get_possible_wanted_resources(
   return result;
 }
 
-/*
+/**
   #add scheduler decisions
   #args : base,moldable_job_id,start_time,\@resources
   #return nothing
