@@ -2,6 +2,8 @@
 #include <QtSql>
 #include <QSqlDatabase>
 
+#include "../Oar_iolib.H"
+
 using namespace std;
 
 /** 
@@ -12,9 +14,9 @@ using namespace std;
 */
 
 
-int connect()
+int miniconnect()
 {
-  QSqlDatabase db = QSqlDatabase::addDatabase("sqlitedb");
+  QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
   db.setDatabaseName("mydb.db");
   bool ok = db.open();
 
@@ -24,5 +26,5 @@ int connect()
 int main(int argc, char **argv)
 {
 
-  connect();
+  miniconnect();
 }

@@ -2,6 +2,9 @@
 #define OAR_IOLIB_H
 
 #include <string>
+#include "Oar_resource_tree.H"
+
+using namespace std;
 
 /*
   Type utilisé pour l'extraction de des données (pas de hashref par query)
@@ -157,7 +160,8 @@ struct gantt_job_start_time
   # Connects to database and returns the base identifier
   # return value : base
 */
-int connect_db(string dbhost, string dbport, string dbname, string dblogin, string dbpasswd, int debug_level=0);
+extern int connect_db(string dbhost, int dbport, string dbname,
+		      string dblogin, string dbpasswd, int debug_level=0);
 
 /**
   # connect
@@ -168,7 +172,7 @@ int connect_db(string dbhost, string dbport, string dbname, string dblogin, stri
 */
 
 
-bool connect();
+extern bool connect();
 
 /** 
    # connect_ro
@@ -177,7 +181,7 @@ bool connect();
    # return value : base
    # side effects : opens a connection to the base specified in ConfLib
 */
-bool connect_ro();
+extern bool connect_ro();
 
 /**
   # disconnect
@@ -186,13 +190,13 @@ bool connect_ro();
   # return value : /
   # side effects : closes a previously opened connection to the specified base
 */
-void disconnect();
+extern void disconnect();
 /*
   # get_specific_resource_states
   # returns a hashtable with each given resources and their states
   # parameters : base, resource type
 */
-map< string, string > 
+extern map< string, string > 
 get_specific_resource_states(string type);
 /*
   # list_resources
@@ -202,7 +206,7 @@ get_specific_resource_states(string type);
   # side effects : /
 */
 
-vector <resources_iolib> list_resources();
+extern vector <resources_iolib> list_resources();
 /*
   # GANTT MANAGEMENT
   
@@ -211,14 +215,14 @@ vector <resources_iolib> list_resources();
   #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
   # TODO commentaire PERL faux: bien plus d'information et pas de resssource !
 */
-pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs> >
+extern pair< vector<unsigned int>, map<unsigned int, struct gantt_sched_jobs> >
 get_gantt_scheduled_jobs();
 /**
   # get_current_job_types
   # return a hash table with all types for the given job ID
 */
-map<string, string>
-get_current_job_types(unsigend int jobId);
+extern map<string, string>
+get_current_job_types(unsigned int jobId);
 
 /*
   # get_job_current_resources
@@ -227,14 +231,14 @@ get_current_job_types(unsigend int jobId);
   # return value : list of resources
   # side effects : /
 */
-vector<unsigned int>
+extern vector<unsigned int>
 get_job_current_resources(unsigned int jobid, vector<string> not_type_list);
 /**
 # get the amount of time in the suspended state of a job
 # args : base, job id, time in seconds
 */
-unsigned int get_job_suspended_sum_duration(unsigend int job_id,
-					    unsigned int current_time);
+extern unsigned int get_job_suspended_sum_duration(unsigned int job_id,
+						   unsigned int current_time);
 /**
    # get_resources_in_state
    # returns the list of resources in the state specified
@@ -245,23 +249,28 @@ unsigned int get_job_suspended_sum_duration(unsigend int job_id,
 */
 
 
-vector<resources_iolib> get_resources_in_state(string state);
+extern vector<resources_iolib> get_resources_in_state(string state);
 /**
   # get_fairsharing_jobs_to_schedule
   # args : base ref, queue name
 */
-vector<jobs_iolib_restrict> get_fairsharing_jobs_to_schedule(string queue, unsigned int limit);
-map<string, unsigned int> get_sum_accounting_window(string queue,
-					      unsigned int start_window,
-						    unsigned int stop_window);
-map<pair<string, string>, unsigned int> 
+extern vector<jobs_iolib_restrict> 
+get_fairsharing_jobs_to_schedule(string queue, unsigned int limit);
+
+extern map<string, unsigned int> 
+get_sum_accounting_window(string queue,
+			  unsigned int start_window,
+			  unsigned int stop_window);
+extern map<pair<string, string>, unsigned int> 
 get_sum_accounting_for_param(string queue, string param_name,
-			     unsigned int start_window, unsigned int stop_window);
+			     unsigned int start_window,
+			     unsigned int stop_window);
 /**
    # get_current_job_dependencies
    # return an array table with all dependencies for the given job ID
 */
-vector<unsigned int> get_current_job_dependencies(unsigned int jobId);
+extern vector<unsigned int>
+get_current_job_dependencies(unsigned int jobId);
 /**
   # get_job
   # returns a ref to some hash containing data for the job of id passed in
@@ -277,7 +286,7 @@ vector<unsigned int> get_current_job_dependencies(unsigned int jobId);
 */
 
 
-struct jobs_get_job_iolib_restrict
+extern struct jobs_get_job_iolib_restrict
 get_job_restrict(unsigned int idJob);
 /**
    # Return a data structure with the resource description of the given job
@@ -300,7 +309,7 @@ get_job_restrict(unsigned int idJob);
    #               moldable_job_id
    #           ]
 */
-vector<resources_data_moldable>
+extern vector<resources_data_moldable>
 get_resources_data_structure_current_job(unsigned int job_id);
 
 /**
@@ -316,14 +325,16 @@ get_resources_data_structure_current_job(unsigned int job_id);
 
    restricted version to resource_id (the only used data in the scheduler)
 */
-vector<unsigned int> get_resources_that_can_be_waked_up_or_will_be_out(unsigned int max_date, bool waked_up);
+extern vector<unsigned int>
+get_resources_that_can_be_waked_up_or_will_be_out(unsigned int max_date, bool waked_up);
 /**
    # Get start_time for a given job
    # args : base, job id
 
    WARNING: no undef are returned in this version !
 */
-struct gantt_job_start_time get_gantt_job_start_time(unsigned int job);
+extern struct gantt_job_start_time 
+get_gantt_job_start_time(unsigned int job);
 /**
    # get_current_moldable_job_restrict_moldable_wall_time
    # returns a ref to some hash containing data for the moldable job of id passed in
@@ -334,7 +345,7 @@ struct gantt_job_start_time get_gantt_job_start_time(unsigned int job);
 
    restricted to moldable_wall_time
 */
-unsigned int 
+extern unsigned int 
 get_current_moldable_job_restrict_moldable_walltime(unsigned int moldableJobId);
 /**
    # set_job_message
@@ -343,26 +354,26 @@ get_current_moldable_job_restrict_moldable_walltime(unsigned int moldableJobId);
    # return value : /
    # side effects : changes the field message of the job in the table Jobs
 */
-int set_job_message(unsigned int idJob, string message); 
+extern int set_job_message(unsigned int idJob, string message); 
 /**
    # get_possible_wanted_resources
    # return a tree ref : a data structure with corresponding resources with what is asked
 */
-TreeNode *get_possible_wanted_resources(
-				  vector<bool> possible_resources_vector,
-				  vector<bool> impossible_resources_vector,
-				  vector<unsigned int> resources_to_ignore_array,
-				  
-				  string properties,
-				  vector<property_resources_per_job> wanted_resources_ref, /* TODO: verify type */
-				  string order_part);
+extern oar_resource_tree::TreeNode *
+get_possible_wanted_resources(
+			      vector<bool> possible_resources_vector,
+			      vector<bool> impossible_resources_vector,
+			      vector<unsigned int> resources_to_ignore_array,
+			      string properties,
+			      vector<property_resources_per_job> wanted_resources_ref, /* TODO: verify type */
+			      string order_part);
 /*
   #add scheduler decisions
   #args : base,moldable_job_id,start_time,\@resources
   #return nothing
 */
-sub add_gantt_scheduled_jobs(unsigned int id_moldable_job,
-			     unsigned int start_time,
-			     vector<unsigned int> resource_list);
+extern void add_gantt_scheduled_jobs(unsigned int id_moldable_job,
+				     unsigned int start_time,
+				     vector<unsigned int> resource_list);
 
 #endif

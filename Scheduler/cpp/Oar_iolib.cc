@@ -13,7 +13,9 @@
 #include <QtSql>
 #include <QSqlQuery>
 #include <vector>
+extern "C" {
 #include <regexp.h>
+}
 
 #include "Oar_resource_tree.H"
 
@@ -70,14 +72,14 @@ QSqlDatabase db;
   # return value : base
 */
 
-int connect_db(string dbhost, string dbport, string dbname, string dblogin, string dbpasswd, int debug_level=0)
+int connect_db(string dbhost, int dbport, string dbname, string dblogin, string dbpasswd, int debug_level=0)
 {
   db = QSqlDatabase::addDatabase("oardb");
-  db.setHostName(dbhost);
+  db.setHostName(QString::fromStdString( dbhost ));
   db.setPort(dbport);
-  db.setDatabaseName(dbname);
-  db.setUsername(dblogin);
-  db.setpassword(dbpasswd);
+  db.setDatabaseName(QString::fromStdString( dbname ));
+  db.setUsername(QString::fromStdString( dblogin ));
+  db.setpassword(QString::fromStdString( dbpasswd ));
 
   bool ok = db.open();
 
@@ -317,7 +319,7 @@ get_gantt_scheduled_jobs(){
 static regexp *rexp_get_current_job_types = 0;
 
 map<string, string>
-get_current_job_types(unsigend int jobId){
+get_current_job_types(unsigned int jobId){
   QSqlQuery query;
   query.setForwardOnly(true);
   map<string, string> res;
@@ -406,10 +408,10 @@ get_job_current_resources(unsigned int jobid, vector<string> not_type_list)
 	}
       tmp_str = "FROM assigned_resources,resources\
                  WHERE\
-                  assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                  assigned_resources.assigned_resource_index = \'CURRENT\' AND\
                   assigned_resources.moldable_job_id =";
       tmp_str << jobid << " AND\
-              resources.resource_id = assigned_resources.resource_id AND
+              resources.resource_id = assigned_resources.resource_id AND\
               resources.type NOT IN (" << type_str << ")";
 
 
@@ -432,7 +434,7 @@ get_job_current_resources(unsigned int jobid, vector<string> not_type_list)
 # get the amount of time in the suspended state of a job
 # args : base, job id, time in seconds
 */
-unsigned int get_job_suspended_sum_duration(unsigend int job_id,
+unsigned int get_job_suspended_sum_duration(unsigned int job_id,
 					    unsigned int current_time)
 {
   assert(db.isValid());
@@ -515,8 +517,8 @@ vector<jobs_iolib_restrict> get_fairsharing_jobs_to_schedule(string queue, unsig
   string req = "SELECT distinct(job_user)\
                 FROM jobs\
                 WHERE\
-                   state = \'Waiting\'
-                   AND reservation = \'None\'
+                   state = \'Waiting\'\
+                   AND reservation = \'None\'\
                    AND queue_name = \'" << queue << "\'\
                ";
 
@@ -535,8 +537,8 @@ vector<jobs_iolib_restrict> get_fairsharing_jobs_to_schedule(string queue, unsig
       string req2 = "SELECT job_id,job_name,job_user,properties,project\
                      FROM jobs\
                      WHERE			\
-                        state = \'Waiting\'
-                        AND reservation = \'None\'
+                        state = \'Waiting\'\
+                        AND reservation = \'None\'\
                         AND queue_name = \'" << queue << "\'	\
                         AND job_user = \'" << *u << "\'		\
                      ORDER BY job_id				\
@@ -602,7 +604,6 @@ get_sum_accounting_for_param(string queue, string param_name,
                       window_start >= " << start_window<< " AND\
                       window_start < "<< stop_window<< "\
                    GROUP BY " << param_name<< ",consumption_type\
-
               ";
 
   query.exec(req);
@@ -727,7 +728,7 @@ get_resources_data_structure_current_job(unsigned int job_id)
 
   string req = "   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value\
                    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs\
-                   WHERE
+                   WHERE\
                         jobs.job_id = " << job_id << "\
                         AND jobs.job_id = moldable_job_descriptions.moldable_job_id\
                         AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id\
@@ -857,7 +858,7 @@ struct gantt_job_start_time get_gantt_job_start_time(unsigned int job)
   QSqlQuery query;
   query.setForwardOnly(true);
  
-  string req = "   SELECT gantt_jobs_predictions.start_time, gantt_jobs_predictions.moldable_job_id
+  string req = "   SELECT gantt_jobs_predictions.start_time, gantt_jobs_predictions.moldable_job_id\
                    FROM gantt_jobs_predictions,moldable_job_descriptions\
                    WHERE\
                       moldable_job_descriptions.moldable_job_id = " << job <<"\
@@ -930,7 +931,7 @@ int set_job_message(unsigned int idJob, string message)
   QSqlQuery query;
   string req = "  UPDATE jobs\
                   SET message = " << message << "\
-                  WHERE
+                  WHERE\
                      job_id = "<< idJob<<"\
                ";
                 
@@ -1077,7 +1078,7 @@ TreeNode *get_possible_wanted_resources(
   #args : base,moldable_job_id,start_time,\@resources
   #return nothing
 */
-sub add_gantt_scheduled_jobs(unsigned int id_moldable_job,
+void add_gantt_scheduled_jobs(unsigned int id_moldable_job,
 			     unsigned int start_time,
 			     vector<unsigned int> resource_list)
 {
@@ -1087,7 +1088,6 @@ sub add_gantt_scheduled_jobs(unsigned int id_moldable_job,
 
   string req = "    INSERT INTO gantt_jobs_predictions (moldable_job_id,start_time)\
                     VALUES ("<< id_moldable_job<< ",\'"<< start_time<<"\')\
-             
                ";
 
   query.exec(req);
