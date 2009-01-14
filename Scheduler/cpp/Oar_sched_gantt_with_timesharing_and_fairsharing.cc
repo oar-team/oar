@@ -21,6 +21,7 @@
 #include "Oar_conflib.H"
 #include "Oar_iolib.H"
 #include "Oar_resource_tree.H" 
+#include <boost/regex.h>
 
 using namespace std;
 
@@ -129,59 +130,116 @@ void init_conf(int argc, char **argv)
 
 void init_sched()
 {
-# Init
-my $base = iolib::connect();
-my $base_ro = iolib::connect_ro();
+  //# Init
+  // my $base = iolib::connect();
+  // my $base_ro = iolib::connect_ro();
+  
+  // why use two bd access ? performance ?
+  // I translate with only one access
+  iolib::connect();
 
-oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Begining of Gantt scheduler on queue $queue at time $current_time\n");
+  //oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Begining of Gantt scheduler on queue $queue at time $current_time\n");
 
-# First check states of resources that we must add for each job
-if (defined($Resources_to_always_add_type)){
-    my $tmp_result_state_resources = iolib::get_specific_resource_states($base,$Resources_to_always_add_type);
-    if ($#{@{$tmp_result_state_resources->{"Suspected"}}} >= 0){
-        oar_warn("[oar_sched_gantt_with_timesharing] There are resources that are specified in oar.conf (SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE) which are Suspected. So I cannot schedule any job now.\n");
-        exit(1);
-    }else{
-        if (defined($tmp_result_state_resources->{"Alive"})){
-            @Resources_to_always_add = @{$tmp_result_state_resources->{"Alive"}};
-            oar_debug("[oar_sched_gantt_with_timesharing] Assign these resources for each jobs: @Resources_to_always_add\n");
-        }
+  // # First check states of resources that we must add for each job
+  if ( Resources_to_always_add_type != "")
+    {
+      multimap<string, string> tmp_result_state_resources 
+	= iolib::get_specific_resource_states( Resources_to_always_add_type);
+      
+      if ( tmp_result_state_resources.count("Suspected") > 0 )
+	{
+	  cerr << "[oar_sched_gantt_with_timesharing] There are resources that are specified in oar.conf (SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE) which are Suspected. So I cannot schedule any job now." << endl;
+	  exit(1);
+	}
+      else
+	{
+	  if (tmp_result_state_resources.count("Alive") > 0)
+	      {
+		// copy alive resource_id
+		
+		multimap<string, string>::iterator it 
+		  = tmp_result_state_resources.lower_bound("Alive");
+		multimap<string, string>::iterator itend 
+		  = tmp_result_state_resources.upper_bound("Alive");
+		
+		vector<string> res_vec;
+		while(it != it.end)
+		  {
+		    res_vec.insert( it->second );
+		    it++;
+		  }
+		Resources_to_always_add = res_vec;
+
+		// oar_debug("[oar_sched_gantt_with_timesharing] Assign these resources for each jobs: @Resources_to_always_add\n");
+	      }
+	}
     }
 }
 
-
+// what are timesharing gantts ?
 my $timesharing_gantts;
-# Create the Gantt Diagrams
-#Init the gantt chart with all resources
-my $vec = '';
-my $max_resources = 1;
-foreach my $r (iolib::list_resources($base)){
-    vec($vec,$r->{resource_id},1) = 1;
-    $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
-}
 
-my $gantt = Gantt_hole_storage::new($max_resources, $minimum_hole_time);
-Gantt_hole_storage::add_new_resources($gantt, $vec);
+// # Create the Gantt Diagrams
+// #Init the gantt chart with all resources
+Gant_hole_storage::Gantt pgantt = 0;
 
-sub parse_timesharing($$$){
-    my $str = shift;
-    my $job_user = shift;
-    my $job_name = shift;
-            
-    my $user = "*";
-    my $name = "*";
-    foreach my $s (split(',', $str)){
-        if ($s =~ m/^\s*([\w\*]+)\s*$/m){
-            if ($1 eq "user"){
-                $user = $job_user;
-            }elsif (($1 eq "name") and ($job_name ne "")){
-                $name = $job_name;
-            }
-        }
+
+void init_gantt()
+{
+
+  // # Create the Gantt Diagrams
+  // #Init the gantt chart with all resources
+  vector<bool> vec;
+  vector<Gant_hole_storage::resources_iolib> res
+    = iolib::list_resources();
+  unsigned int max_resources;
+
+  for(vector<Gant_hole_storage::resources_iolib>::it = res.begin();
+      it != res.end();
+      it++)
+    {
+      vec[it->resource_id] = 1;
+      max_resources = max ( max_resources, it->resource_id );
     }
 
-    return($user,$name);
+  pgantt = Gantt_hole_storage::(max_resources, minimum_hole_time);
+  Gantt_hole_storage::add_new_resources(pgantt, vec);
 }
+
+static boost::regex re_plit_coma(",");
+static boost::regex re_user_name("^\\s*([\\w\\*]+)\\s*$");
+
+pair<string, string> parse_timesharing(string str,
+				       string job_user,
+				       string job_name )
+{
+  string user = "*";
+  string name = "*";
+
+  /* use boost regex instead of QtSQL (better c++ integration (string)) */
+  boost::sregex_token_iterator i(s.begin(), s.end(), re_split_coma, -1);
+  boost::sregex_token_iterator j;
+  
+  
+  while(i != j)
+    {
+      string &s =*i;
+      cmatch user_or_name;
+      if ( boost::regex_match(s, user_or_name, re_user_name) )
+	{
+	  if  ( user_or_name[1] == "user" )
+	    user = job_user;
+	  else
+	    if (  user_or_name[1] == "name" && job_name != "" )
+	      name = job_name;
+	}
+      i++;
+    }
+  return pair<string, string>(user, name);
+}
+
+void init_gantt_scheduled_job()
+{
 
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order, %already_scheduled_jobs) = iolib::get_gantt_scheduled_jobs($base);
