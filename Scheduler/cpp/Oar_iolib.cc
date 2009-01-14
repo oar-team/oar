@@ -157,7 +157,7 @@ void disconnect() {
   # returns a hashtable with each given resources and their states
   # parameters : base, resource type
 */
-map< string, string > 
+multimap< string, string > 
 get_specific_resource_states(string type) {
   assert( db.isValid() );
   QSqlQuery query;
@@ -168,13 +168,13 @@ get_specific_resource_states(string type) {
                     type = \'" +type+"\'\
                 ";
   query.exec(req);
-  vector< pair< string, string> > result;
+  multimap< pair< string, string> > result;
   while( query.next() )
     {
-      string resource_id = query.value(1).toString();
-      string state = query.value(0).toString();
+      string resource_id = query.value(0).toString();
+      string state = query.value(1).toString();
 
-      result.insert( pair<string, string>(resource_id, state) );
+      result.insert( pair<string, string>(state, resource_id) );
     }
   return result;
 }
