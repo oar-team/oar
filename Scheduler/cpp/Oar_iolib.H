@@ -12,6 +12,8 @@ using namespace std;
 
  */
 
+namespace iolib {
+
 struct resources_iolib {
   unsigned int resource_id; // INT UNSIGNED 	resource identifier
   string type; // VARCHAR(100) DEFAULT "default" resource type (used
@@ -376,4 +378,5 @@ extern void add_gantt_scheduled_jobs(unsigned int id_moldable_job,
 				     unsigned int start_time,
 				     vector<unsigned int> resource_list);
 
+}
 #endif

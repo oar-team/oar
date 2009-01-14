@@ -62,7 +62,8 @@ using namespace std;
    plein de " \'CURRENT\' " qui sont equivalents a " 'CURRENT'
    ". Etonnant non ? C'est idem en C++, donc je les laisse :-)
 */
-
+namespace iolib 
+{
 
 QSqlDatabase db;
 
@@ -1105,3 +1106,4 @@ void add_gantt_scheduled_jobs(unsigned int id_moldable_job,
     }
 }
 
+}
