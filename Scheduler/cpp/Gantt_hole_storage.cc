@@ -46,6 +46,8 @@
 // sub pretty_print($);
 // sub get_infinity_value();
 
+namespace Gantt_hole_storage 
+{
 
 unsigned int get_infinity_value()
 {
@@ -771,3 +773,5 @@ find_first_hole(Gantt *gantt, int initial_time, int duration,
 // }
 
 // return 1;
+
+}

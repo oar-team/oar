@@ -7,6 +7,7 @@
 
 #include "Oar_resource_tree.H"
 
+namespace Gant_hole_storage {
 
 class StopTime
 {
@@ -53,5 +54,7 @@ find_first_hole(Gantt *gantt, int initial_time, int duration,
 		std::vector<oar_resource_tree::TreeNode *> tree_description_list, int timeout);
 int pretty_print(Gantt *a);
 unsigned int get_infinity_value();
+
+}
 
 #endif
