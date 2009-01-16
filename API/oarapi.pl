@@ -15,6 +15,7 @@ use CGI qw/:standard/;
 # Oar commands
 my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
+my $OARNODES_CMD  = "oarnodes";
 my $OARDODO_CMD = "/usr/lib/oar/oardodo/oardodo";
 
 # Debug mode
@@ -110,7 +111,7 @@ sub check_json() {
 }
 
 # Load YAML data into a hashref
-sub load_yaml($) {
+sub import_yaml($) {
   my $data         = shift;
   check_yaml();
   # Try to load the data and exit if there's an error
@@ -123,7 +124,7 @@ sub load_yaml($) {
 }
 
 # Load JSON data into a hashref
-sub load_json($) {
+sub import_json($) {
   my $data         = shift;
   check_json();
   # Try to load the data and exit if there's an error
@@ -172,12 +173,12 @@ sub check_job($$) {
 
   # If the data comes in the YAML format
   if ( $content_type eq 'text/yaml' ) {
-    $job=load_yaml($data);
+    $job=import_yaml($data);
   }
 
   # If the data comes in the JSON format
   elsif ( $content_type eq 'text/json' ) {
-    $job=load_json($data);
+    $job=import_json($data);
   }
 
   # We expect the data to be in YAML or JSON format
@@ -196,6 +197,44 @@ sub check_job($$) {
   }
 
   return $job;
+}
+
+# Set oar output option and header depending on the format given
+sub set_output_format($) {
+  my $format=shift;
+  my $output_opt;
+  my $header;
+  if( $format eq "yaml" ) { 
+    $output_opt = "-Y";
+    $header=$q->header( -status => 200, -type => 'text/yaml' );
+  }
+  elsif ( $format eq "xml" ) { 
+    $output_opt = "-X";
+    $header=$q->header( -status => 200, -type => 'text/xml' );
+  }
+  else { 
+    $output_opt = "-J";
+    $header=$q->header( -status => 200, -type => 'text/json' );
+  }
+  return ($output_opt,$header);
+}
+
+# Send a command and returns the output or exit with an error
+sub send_cmd($$) {
+  my $cmd=shift;
+  my $error_name=shift;
+  my $cmdRes = `$cmd 2>&1`;
+  my $err    = $?;
+  if ( $err != 0 ) {
+    #$err = $err >> 8;
+    ERROR(
+      400,
+      "$error_name error",
+      "$error_name command exited with status $err: $cmdRes"
+    );
+    exit 0;
+  }
+  else { return $cmdRes; }
 }
 
 ##############################################################################
@@ -225,41 +264,75 @@ SWITCH: for ($q) {
   my $URI;
 
   #
+  # List of current jobs (oarstat wrapper)
+  #
+  $URI = qr{^/jobs\.(yaml|xml|json)$};
+  GET( $_, $URI ) && do {
+    (my $output_opt, my $header)=set_output_format($1);
+    my $cmd    = "$OARSTAT_CMD $output_opt";
+    my $cmdRes = send_cmd($cmd,"Oarstat");
+    print $header;
+    print $cmdRes;
+    last;
+  };
+
+  #
   # Details of a job (oarstat wrapper)
   #
-  $URI = qr{^/jobs/(\d+)\.(yaml|xml)$};
+  $URI = qr{^/jobs/(\d+)\.(yaml|xml|json)$};
   GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
-    my $ext   = $2;
-    my $output_opt;
-    if   ( $ext eq "yaml" ) { $output_opt = "-Y" }
-    else                    { $output_opt = "-X" }
+    (my $output_opt, my $header)=set_output_format($2);
     my $cmd    = "$OARSTAT_CMD -fj $jobid $output_opt";
-    my $cmdRes = `$cmd 2>&1`;
-    my $err    = $?;
-
-    if ( $err != 0 ) {
-
-      #$err = $err >> 8;
-      ERROR(
-        400,
-        "Oarstat error",
-        "Oarstat command exited with status $err: $cmdRes"
-      );
-    }
-    else {
-      if ( $ext eq "yaml" ) {
-        print $q->header( -status => 200, -type => 'text/yaml' );
-      }
-      else {
-        print $q->header( -status => 200, -type => 'text/xml' );
-      }
-      print $cmdRes;
-    }
-
+    my $cmdRes = send_cmd($cmd,"Oarstat");
+    print $header;
+    print $cmdRes;
     last;
   };
+
+  #
+  # List of resources (oarnodes wrapper)
+  #
+  $URI = qr{^/resources\.(yaml|xml|json)$};
+  GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    (my $output_opt, my $header)=set_output_format($1);
+    my $cmd    = "$OARNODES_CMD $output_opt";
+    my $cmdRes = send_cmd($cmd,"Oarnodes");
+    print $header;
+    print $cmdRes;
+    last;
+  }; 
+ 
+  #
+  # Details of a resource (oarnodes wrapper)
+  #
+  $URI = qr{^/resources/(\d+)\.(yaml|xml|json)$};  
+  GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    (my $output_opt, my $header)=set_output_format($2);
+    my $cmd    = "$OARNODES_CMD -r $1 $output_opt";  
+    my $cmdRes = send_cmd($cmd,"Oarnodes");
+    print $header;
+    print $cmdRes;
+    last;
+  };
+ 
+  #
+  # Details of a node (oarnodes wrapper)
+  #
+  $URI = qr{^/resources/nodes/([\w\-]+)\.(yaml|xml|json)$};  
+  GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    (my $output_opt, my $header)=set_output_format($2);
+    my $cmd    = "$OARNODES_CMD $1 $output_opt";  
+    my $cmdRes = send_cmd($cmd,"Oarnodes");
+    print $header;
+    print $cmdRes;
+    
+    last;
+  }; 
 
   #
   # A new job (oarsub wrapper)
@@ -286,6 +359,10 @@ SWITCH: for ($q) {
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
+    # !!!!!!!!
+    # TODO: inline provided script management (script parameter)
+    # !!!!!!!!
+
     $oarcmd .= " $job->{script_path}" if defined( $job->{script_path} );
     my $cmd =
 "cd ~$authenticated_user && $OARDODO_CMD su - $authenticated_user -c '$oarcmd'";
