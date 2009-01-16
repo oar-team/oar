@@ -25,7 +25,7 @@ Source7:	oar-node.cron.d
 Source8:	oar-node.sysconfig
 Source9:	oar-server.sysconfig
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
-BuildRequires:  perl sed make tar xauth
+#BuildRequires:  perl sed make tar xauth
 BuildArch: 	noarch
 %description
 OAR is a resource manager (or batch scheduler) for large computing clusters.
@@ -79,7 +79,7 @@ Summary:	OAR batch scheduler doc package
 Group:          System/Servers
 Requires:       man, httpd
 BuildArch: 	noarch
-BuildRequires:  python-docutils, httpd
+#BuildRequires:  python-docutils, httpd
 %description doc
 This package installs some documentation for OAR batch scheduler
 
@@ -230,6 +230,7 @@ fi
 if ! getent passwd oar > /dev/null 2>&1 ; then
     mkdir -p /var/lib/oar
     useradd -r -m -d /var/lib/oar -g oar -s /bin/bash oar
+    usermod -p"*" oar
     usermod -U oar
     cd /var/lib/oar
     echo '' >> .bash_profile
@@ -245,7 +246,11 @@ install -o oar -m 755 -d /var/run/oar
 
 %post common
 # set OAR Shell
-chsh -s /usr/lib/oar/oarsh_shell oar
+if [ "`getent passwd oar |cut -f7 -d:`" != "/usr/lib/oar/oarsh_shell" ]
+then
+  chsh -s /usr/lib/oar/oarsh_shell oar
+fi
+
 if [ "$1" != "1" ]
 then
   echo
