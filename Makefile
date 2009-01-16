@@ -97,6 +97,9 @@ api:
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarapi.pl'\;#;;\
 				" $(DESTDIR)$(CGIDIR)/oarapi
+	install -m 6750 $(DESTDIR)$(CGIDIR)/oarapi $(DESTDIR)$(CGIDIR)/oarapi-debug
+	-chown $(OAROWNER).$(WWWUSER) $(DESTDIR)$(CGIDIR)/oarapi-debug
+	chmod 6750 $(DESTDIR)$(CGIDIR)/oarapi-debug
 	
 dbinit:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)

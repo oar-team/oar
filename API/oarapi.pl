@@ -22,10 +22,12 @@ my $OARDODO_CMD = "/usr/lib/oar/oardodo/oardodo";
 # This does not increase verbosity, but causes all errors to generate
 # the OK/200 status to force the client to output the human readable
 # error message.
-my $DEBUG_MODE = 1;
+my $DEBUG_MODE = 0;
 
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
+# or in the case you fully trust the client hosts (with an apropriate
+# ip-based access control into apache for example) 
 my $TRUST_IDENT = 1;
 
 ##############################################################################
@@ -58,9 +60,13 @@ my $remote_port = get_conf("SERVER_PORT");
 # CGI handler
 my $q = new CGI;
 
+# Activate debug mode when the script name contains "debug" or when a 
+# debug parameter is found.
+if ( $q->url(-relative=>1) =~ /.*debug.*/ ) { $DEBUG_MODE = 1; };
 if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
   $DEBUG_MODE = 1;
 }
+
 
 ##############################################################################
 # REST Functions
