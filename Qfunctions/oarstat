@@ -31,6 +31,12 @@ unless (eval "use YAML;1"){
     $YAML_enabled = 0;
 }
 
+#Try to load JSON module
+my $JSON_enabled = 1;
+unless (eval "use JSON;1"){
+    $JSON_enabled = 0;
+}
+
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Terse = 1;
@@ -46,6 +52,7 @@ my $state;
 my $sql_property;
 my $XML_mode;
 my $YAML_mode;
+my $JSON_mode;
 my $DUMPER_mode;
 my $Old;
 my $gantt_query;
@@ -72,6 +79,7 @@ GetOptions ("help|h" => \&show_usage,
             "sql=s"   => \$sql_property,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
+            "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
             "backward-compatible|backward_compatible" => \$Old
            );
@@ -82,6 +90,10 @@ if (defined($XML_mode) and $XML_enabled != 1){
 }
 if (defined($YAML_mode) and $YAML_enabled != 1){
     warn("Yaml module not available on the system. Ask your administrator to install it if needed.\n");
+    exit(1);
+}
+if (defined($JSON_mode) and $JSON_enabled != 1){
+    warn("Json module not available on the system. Ask your administrator to install it if needed.\n");
     exit(1);
 }
 
@@ -119,7 +131,7 @@ sub show_usage {
     print <<EOS;
 Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array]
        oarstat [-e|-p] [-j jobid|--array array_id] 
-       oarstat [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
+       oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
 Print job information
@@ -140,6 +152,7 @@ Options:
   -D, --dumper              print result in DUMPER format
   -X, --xml                 print result in XML format
   -Y, --yaml                print result in YAML format
+  -J, --json                print result in JSON format
       --backward-compatible OAR 1.* version like display
   -V, --version             print OAR version number
   -h, --help                show this help screen
@@ -224,6 +237,8 @@ sub show_gantt {
             print($dump->pl2xml($hist));
         }elsif(defined($YAML_mode)){
             print(YAML::Dump($hist));
+        }elsif(defined($JSON_mode)){
+            print(JSON->new->pretty(1)->encode($hist));
         }else{
             $Data::Dumper::Purity = 1;
             $Data::Dumper::Terse = 1;
@@ -496,6 +511,8 @@ sub print_job_data($$){
         print($dump->pl2xml($data));
     }elsif(defined($YAML_mode)){
         print(YAML::Dump($data));
+    }elsif(defined($JSON_mode)){
+        print(JSON->new->pretty(1)->encode($data));
     }else{
         my %hashestat = (
                 'Waiting' => 'W',
@@ -697,6 +714,8 @@ sub print_job_state_data($){
         print($dump->pl2xml($data));
     }elsif(defined($YAML_mode)){
         print(YAML::Dump($data));
+    }elsif(defined($JSON_mode)){
+        print(JSON->new->pretty(1)->encode($data));
     }else{
         foreach my $j (keys %$data){
            print "$j: ". $data->{$j} ."\n";

@@ -5,7 +5,9 @@ Next version:
 -------------
   - Added a --state option to oarstat to only get the status of specified jobs 
     (optimized query, to allow scripting)
-
+  - Added a REST API. For the moment it's only wrapping oarsub, oarstat and
+    oarnodes commands.
+  - Added JSON support into oarnodes, oarstat and oarsub
 
 version 2.3.3:
 --------------

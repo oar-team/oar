@@ -39,6 +39,12 @@ unless (eval "use YAML;1"){
     $YAML_enabled = 0;
 }
 
+#Try to load JSON module
+my $JSON_enabled = 1;
+unless (eval "use JSON;1"){
+    $JSON_enabled = 0;
+}
+
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Terse = 1;
@@ -54,6 +60,7 @@ my @resources;
 my $sql_property;
 my $XML_mode;
 my $YAML_mode;
+my $JSON_mode;
 my $DUMPER_mode;
 my $Version;
 my $Old;
@@ -68,6 +75,7 @@ GetOptions ("state|s" => \$stateMode,
             "sql=s" => \$sql_property,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
+            "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
             "backward-compatible" => \$Old,
             "smp" => \$smp,
@@ -91,6 +99,7 @@ Options:
  -D, --dumper       print result in DUMPER format
  -X, --xml          print result in XML format
  -Y, --yaml         print result in YAML format
+ -J, --json         print result in JSON format
      --backward-compatible   print informations of the form of 1.* OAR version
      --smp          backward-compatible suboption: prints one node per resource
                     (usefull for big smp systems) 
@@ -181,6 +190,13 @@ if (($#resources >= 0) or (defined($sql_property))){
             warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 6;
         }
+   }elsif(defined($JSON_mode)){
+        if ($JSON_enabled == 1){
+            print(JSON->new->pretty(1)->encode($data_to_dump));
+        }else{
+            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 7;
+        } 
     }else{
         foreach my $h (@data_to_display){
             my %a = %{$h};
@@ -261,6 +277,13 @@ if (defined($stateMode)){
             warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 6;
         }
+   }elsif(defined($JSON_mode)){
+        if ($JSON_enabled == 1){
+            print(JSON->new->pretty(1)->encode(\%data_to_display));
+        }else{
+            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 7;
+        }
     }else{
         foreach my $d (sort(keys(%data_to_display))){
             print("$d\n");
@@ -289,6 +312,13 @@ if (defined($stateMode)){
         }else{
             warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 6;
+        }
+    }elsif(defined($JSON_mode)){
+        if ($JSON_enabled == 1){
+            print(JSON->new->pretty(1)->encode(\@nodes));
+        }else{
+            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 7;
         }
     }else{
         foreach my $node ( @nodes ) {
@@ -339,6 +369,13 @@ if (defined($stateMode)){
         }else{
             warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
             $exitstatus = 6;
+        }
+    }elsif(defined($JSON_mode)){
+        if ($JSON_enabled == 1){
+            print(JSON->new->pretty(1)->encode(\%data_to_display));
+        }else{
+            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 7;
         }
     }elsif($Old){
         my $Node_file_db_field_distinct_values = get_conf("NODE_FILE_DB_FIELD_DISTINCT_VALUES");

@@ -38,6 +38,12 @@ unless (eval "use YAML;1"){
     $YAML_enabled = 0;
 }
 
+#Try to load JSON module
+my $JSON_enabled = 1;
+unless (eval "use JSON;1"){
+    $JSON_enabled = 0;
+}
+
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Terse = 1;
@@ -88,6 +94,7 @@ my $Resubmit;
 my $Project = "default";
 my $XML_mode;
 my $YAML_mode;
+my $JSON_mode;
 my $DUMPER_mode;
 my $use_job_key;
 my $job_key_priv = "";
@@ -393,6 +400,7 @@ Options are:
  -D, --dumper                  Print result in DUMPER format
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format
+ -J, --json                    Print result in JSON format
  -h, --help                    Print this help message
  -V, --version                 Print OAR version number
 EOS
@@ -715,6 +723,7 @@ GetOptions ("resource|l=s" => \@resource,
             "scanscript|S" => \$Scan_script,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
+            "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
             "use-job-key|k" => \$use_job_key,
             "import-job-key-inline-priv=s" => \$import_job_key_inline,
@@ -1031,7 +1040,7 @@ if(@{$Job_id_list_ref} > 1){
     print("OAR_JOB_ID=".$Job_id_list_ref->[0]."\n");
 }
 
-if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
+if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mode))){
     print("\n##########\n");
     foreach my $Job_id  (@{$Job_id_list_ref}){
         my $tmp = { job_id => $Job_id };
@@ -1050,6 +1059,12 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode))){
                 print(YAML::Dump($tmp));
             }else{
                 warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+            }
+        }elsif(defined($JSON_mode)){
+            if ($JSON_enabled == 1){
+                print(JSON->new->pretty(1)->encode($tmp));
+            }else{
+                warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
             }
         }
     }
