@@ -45,7 +45,7 @@ public:
 };
 
 //int new_1_with_holes(a,b,c,d,e);
-  int add_new_resources(Gantt *a, std::vector<bool> b);
+int add_new_resources(Gantt *a, std::vector<bool> b);
 int set_occupation(Gantt *a, int b, int c, std::vector<bool> d);
 int get_free_resources(Gantt *gantt, int begin_date, int duration);
 int find_hole(Gantt *gantt, int begin_date, int duration);
