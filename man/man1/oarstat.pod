@@ -4,11 +4,13 @@ oarstat - show information about jobs
 
 =head1 SYNOPSIS
 
-B<oarstat> [-X|-Y|-D|-f] [-j jobid|--array arrayid] [--sql SQL_properties] [-u user] [--array]
+B<oarstat> [-X|-Y|-J|-D|-f] [-j jobid|--array arrayid] [--sql SQL_properties] [-u user] [--array]
 
 B<oarstat> [-e|-p] [-j jobid | --array arrayid]
 
-B<oarstat> [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
+B<oarstat> -s [-X|-Y|-J|-D] -j jobid
+
+B<oarstat> [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
 
 B<oarstat> --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
@@ -36,6 +38,10 @@ Print job events only.
 
 Print job properties in the same format as in the $OAR_RESOURCE_PROPERTIES_FILE file on the nodes.
 
+=item B<-s, --state>
+
+Print only the state of a job. It makes a minimal query to the database. Must be used with -j.
+
 =item B<-u, --user> [login]
 
 Print informations for the current user or the one given.
@@ -60,6 +66,10 @@ Print result in XML format.
 =item B<-Y, --YAML>
 
 Print result in YAML format.
+
+=item B<-J, --JSON>
+
+Print result in JSON format.
 
 =item B<-g, --gantt> "date_start,date_stop"
 

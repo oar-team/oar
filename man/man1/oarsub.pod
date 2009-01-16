@@ -147,6 +147,10 @@ Print result in XML format.
 
 Print result in YAML format.
 
+=item B<-J, --json>
+
+Print result in JSON format.
+
 =item B<-h, --help>
 
 Print this help message.

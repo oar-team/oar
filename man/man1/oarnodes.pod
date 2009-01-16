@@ -50,6 +50,10 @@ Print result in XML format.
 
 Print result in YAML format.
 
+=item B<-J, --JSON>
+
+Print result in JSON format.
+
 =item B<-V, --version>
 
 Print OAR version number.
