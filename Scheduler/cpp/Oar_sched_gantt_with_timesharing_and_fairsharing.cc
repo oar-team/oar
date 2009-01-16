@@ -71,6 +71,14 @@ static vector<string> Resources_to_always_add;
 static unsigned int current_time;
 static string queue;
 
+// what are timesharing gantts ?
+map<pair<string, string>, Gant_hole_storage::Gantt *> timesharing_gantts;
+
+// # Create the Gantt Diagrams
+// #Init the gantt chart with all resources
+Gant_hole_storage::Gantt *pgantt = 0;
+
+
 void init_conf(int argc, char **argv)
 {
   initial_time = time();
@@ -176,30 +184,29 @@ void init_sched()
     }
 }
 
-// what are timesharing gantts ?
-my $timesharing_gantts;
-
-// # Create the Gantt Diagrams
-// #Init the gantt chart with all resources
-Gant_hole_storage::Gantt pgantt = 0;
-
 
 void init_gantt()
 {
 
   // # Create the Gantt Diagrams
   // #Init the gantt chart with all resources
-  vector<bool> vec;
+  unsigned int max_resources=0
+  for(vector<Gant_hole_storage::resources_iolib>::it = res.begin();
+      it != res.end();
+      it++)
+    {
+      max_resources = max( max_resources, it->resource_id);
+    }
+  vector<bool> vec(max_resources, 0);
+
   vector<Gant_hole_storage::resources_iolib> res
     = iolib::list_resources();
-  unsigned int max_resources;
 
   for(vector<Gant_hole_storage::resources_iolib>::it = res.begin();
       it != res.end();
       it++)
     {
       vec[it->resource_id] = 1;
-      max_resources = max ( max_resources, it->resource_id );
     }
 
   pgantt = Gantt_hole_storage::(max_resources, minimum_hole_time);
@@ -241,61 +248,149 @@ pair<string, string> parse_timesharing(string str,
 void init_gantt_scheduled_job()
 {
 
-# Take care of currently scheduled jobs (gantt in the database)
-my ($order, %already_scheduled_jobs) = iolib::get_gantt_scheduled_jobs($base);
-foreach my $i (keys(%already_scheduled_jobs)){
-    my $types = iolib::get_current_job_types($base,$i);
-    # Do not take care of besteffort jobs
-    if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
-        my $user;
-        my $name;
-        if (defined($types->{timesharing})){
-            ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
-            if (!defined($timesharing_gantts->{$user}->{$name})){
-                $timesharing_gantts->{$user}->{$name} = dclone($gantt);
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt for ($user, $name)\n");
-            }
-        }
-        my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
-        my $job_duration = $already_scheduled_jobs{$i}->[1];
-        if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
-            # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-            @resource_list = iolib::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
-            next if ($#resource_list < 0);
-        }
-        if ($already_scheduled_jobs{$i}->[8] eq "YES"){
-            # This job was suspended so we must recalculate the walltime
-            $job_duration += iolib::get_job_suspended_sum_duration($base,$i,$current_time);
-        }
+  //# Take care of currently scheduled jobs (gantt in the database)
+  // TODO: la partie order ne sert a rien ?
+  pair< vector<unsigned int>, map<unsigned int, struct iolib::gantt_sched_jobs> >
+    order_and_already_scheduled = iolib::get_gantt_scheduled_jobs();
 
-        my $vec = '';
-        foreach my $r (@resource_list){
-            vec($vec,$r,1) = 1;
-        }
-        #Fill all other gantts
-        foreach my $u (keys(%{$timesharing_gantts})){
-            foreach my $n (keys(%{$timesharing_gantts->{$u}})){
-                if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
-                    Gantt_hole_storage::set_occupation($timesharing_gantts->{$u}->{$n},
-                                            $already_scheduled_jobs{$i}->[0],
-                                            $job_duration + $security_time_overhead,
-                                            $vec
-                                         );
-                }
-            }
-        }
-        Gantt_hole_storage::set_occupation(  $gantt,
-                                  $already_scheduled_jobs{$i}->[0],
-                                  $job_duration + $security_time_overhead,
-                                  $vec
-                             );
+  for( order_and_already_scheduled.second.iterator it
+	 = order_and_already_scheduled.second.begin();
+       it != order_and_already_scheduled.second.end();
+       it++)
+    {
+      i = it->first;
+      map<string, string> types = iolib::get_current_job_types(i);
+      // # Do not take care of besteffort jobs
+      if ( types.find("besteffort") == types.end() or
+	   queue == "besteffort" )
+	{
+	  string user;
+	  string name;
+
+	  if ( types.find("timesharing") != types.end() )
+	    {
+	      pair<string, string> user_name
+		=  parse_timesharing( types["timesharing"],
+				      it->second.job_user, it->second.job_name);
+	      string user = user_name.first;
+	      string name = user_name.second;
+
+	      if ( timesharing_gantts.find( pair<string,string>( user, name) ) == timesharing_gantts.end() )
+		{
+		  timesharing_gantts[pair<string,string>( user, name)] = dclone(pgantt);
+		  // oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt for ($user, $name)\n");
+		}
+	    }
+
+// foreach my $i (keys(%already_scheduled_jobs)){
+//     my $types = iolib::get_current_job_types($base,$i);
+//     # Do not take care of besteffort jobs
+//     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
+//         my $user;
+//         my $name;
+//         if (defined($types->{timesharing})){
+//             ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
+//             if (!defined($timesharing_gantts->{$user}->{$name})){
+//                 $timesharing_gantts->{$user}->{$name} = dclone($gantt);
+//                 oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt for ($user, $name)\n");
+//             }
+//         }
+
+	  
+	  vector<unsigned int> resource_list = it->second.resource_id_vec;
+	  job_duration = it->second.moldable_walltime; // TODO: est-ce bien moldable walltime ?
+	  
+	  if ( it->second.state == "Suspended" )
+            {
+	      //# Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+	      resource_list =  iolib::get_job_current_resources(it->second.moldable_id, Sched_available_suspended_resource_type);
+	      if (resource_list.size() == 0)
+		continue;
+	    }
+	  if ( it->second.state.suspended )
+	    {
+	      //# This job was suspended so we must recalculate the walltime
+	      job_duration += iolib::get_job_suspended_sum_duration(i, current_time); // TODO: i == jobid ?
+	      assert(i == it->second.job_id);
+	    }
+
+//         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
+//         my $job_duration = $already_scheduled_jobs{$i}->[1];
+//         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
+//             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+//             @resource_list = iolib::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
+//             next if ($#resource_list < 0);
+//         }
+//         if ($already_scheduled_jobs{$i}->[8] eq "YES"){
+//             # This job was suspended so we must recalculate the walltime
+//             $job_duration += iolib::get_job_suspended_sum_duration($base,$i,$current_time);
+//         }
+	  unsigned int max_resources = *max_element(resource_list.begin()
+						    resource_list.end());
+	  vector<bool> vec(max_resources, 0);
+	  for(resource_list.iterator r = resource_list.begin();
+	      r != resource_list.end();
+	      r++)
+	    vec[*r]=1;
+	  
+
+//         my $vec = '';
+//         foreach my $r (@resource_list){
+//             vec($vec,$r,1) = 1;
+//         }
+	  //#Fill all other gantts
+	  for( timesharing_gantts.iterator itts = timesharing_gantts.begin();
+	       itts != timesharing_gantts.end();
+	       itts++)
+	    {
+	      u = itts->first.first;
+	      n = itts->first.second;
+
+	      if (user == ""
+		  || name == ""
+		  || u != user
+		  || n != name)
+		{
+		  Gantt_hole_storage::set_occupation(itts->second,
+						     it->second.start_time,
+						     job_duration + security_time_overhead,
+						     vec
+						     );
+		}
+	    }
+
+	  Gantt_hole_storage::set_occupation( pgantt,
+					      it->second.start_time,
+					      job_duration + security_time_overhead,
+					      vec);
+	}
     }
 }
 
-oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End gantt initialization\n");
+//         #Fill all other gantts
+//         foreach my $u (keys(%{$timesharing_gantts})){
+//             foreach my $n (keys(%{$timesharing_gantts->{$u}})){
+//                 if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
+//                     Gantt_hole_storage::set_occupation($timesharing_gantts->{$u}->{$n},
+//                                             $already_scheduled_jobs{$i}->[0],
+//                                             $job_duration + $security_time_overhead,
+//                                             $vec
+//                                          );
+//                 }
+//             }
+//         }
+//         Gantt_hole_storage::set_occupation(  $gantt,
+//                                   $already_scheduled_jobs{$i}->[0],
+//                                   $job_duration + $security_time_overhead,
+//                                   $vec
+//                              );
+//     }
+// }
 
-# End of the initialisation
-}
+//oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End gantt initialization\n");
+
+/********** # End of the initialisation ************/
+
 
 # Begining of the real scheduling
 
