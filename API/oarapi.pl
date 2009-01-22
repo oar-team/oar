@@ -3,7 +3,6 @@ use strict;
 use lib qw(.);
 use Data::Dumper;
 use oar_iolib;
-use oargrid_lib;
 use DBI();
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use CGI qw/:standard/;
@@ -16,7 +15,7 @@ use CGI qw/:standard/;
 my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
 my $OARNODES_CMD  = "oarnodes";
-my $OARDODO_CMD = "/usr/lib/oar/oardodo/oardodo";
+my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # Debug mode
 # This does not increase verbosity, but causes all errors to generate
@@ -359,17 +358,24 @@ SWITCH: for ($q) {
 
     # Make the query (the hash is converted into a list of long options)
     my $oarcmd = "$OARSUB_CMD ";
+    my $script = "";
     foreach my $option ( keys( %{$job} ) ) {
       if ( $option ne "script_path" && $option ne "script" ) {
         $oarcmd .= " --$option";
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
+      elsif ($option eq "script_path") {
+        $oarcmd .= " $job->{script_path}";
+      }
+      elsif ($option eq "script") {
+        $script = $job->{script};
+      }
     }
-    # !!!!!!!!
-    # TODO: inline provided script management (script parameter)
-    # !!!!!!!!
+    if ($script ne "") {
+      $script =~ s/\"/\\\"/g;
+      $oarcmd .= " \"$script\"";
+    }
 
-    $oarcmd .= " $job->{script_path}" if defined( $job->{script_path} );
     my $cmd =
 "cd ~$authenticated_user && $OARDODO_CMD su - $authenticated_user -c '$oarcmd'";
     my $cmdRes = `$cmd 2>&1`;
@@ -378,7 +384,7 @@ SWITCH: for ($q) {
       ERROR(
         400,
         "Oar server error",
-        "Oarsub command exited with status $err: $cmdRes"
+        "Oarsub command exited with status $err: $cmdRes\nCmd:\n$oarcmd"
       );
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
