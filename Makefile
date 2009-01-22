@@ -89,17 +89,20 @@ api:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -m 0755 API/oarapi.pl $(DESTDIR)$(OARDIR)/oarapi.pl
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
-	install -m 6750 Tools/oardo $(DESTDIR)$(CGIDIR)/oarapi
+	mkdir -p $(DESTDIR)$(CGIDIR)/oarapi
 	-chown $(OAROWNER).$(WWWUSER) $(DESTDIR)$(CGIDIR)/oarapi
-	chmod 6750 $(DESTDIR)$(CGIDIR)/oarapi
+	-chmod 750 $(DESTDIR)$(CGIDIR)/oarapi
+	install -m 6755 Tools/oardo $(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
+	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarapi.pl'\;#;;\
-				" $(DESTDIR)$(CGIDIR)/oarapi
-	install -m 6750 $(DESTDIR)$(CGIDIR)/oarapi $(DESTDIR)$(CGIDIR)/oarapi-debug
-	-chown $(OAROWNER).$(WWWUSER) $(DESTDIR)$(CGIDIR)/oarapi-debug
-	chmod 6750 $(DESTDIR)$(CGIDIR)/oarapi-debug
+				" $(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
+	install -m 6750 $(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
+	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	
 dbinit:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
