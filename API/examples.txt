@@ -1,6 +1,6 @@
 > gem install rest-client
 > export PATH=$PATH:/var/lib/gems/1.8/gems/rest-client-0.8/bin
-> restclient http://localhost/cgi-bin/oarapi-debug
+> restclient http://localhost/oarapi-debug
 
 # Getting resources infos
 irb(main):004:0> puts get('/resources.json')
