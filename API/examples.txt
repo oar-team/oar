@@ -24,4 +24,10 @@ irb(main):035:0> puts get("/jobs/#{JSON.parse(job)['job_id']}.yaml")
 irb(main):037:0> job=post('/jobs' , j.to_yaml , :content_type => 'text/yaml')
 
 # Submitting a job with a provided inline script
-# TODO
+irb(main):024:0> script="#!/bin/bash
+irb(main):025:0" echo \"Hello world\"
+irb(main):026:0" whoami
+irb(main):027:0" sleep 300
+irb(main):028:0" "
+irb(main):029:0> j={ 'resource' => '/nodes=2/cpu=1', 'script' => script , 'workdir' => '~bzizou/tmp'}
+irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'text/json')
