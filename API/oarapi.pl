@@ -359,16 +359,20 @@ SWITCH: for ($q) {
     # Make the query (the hash is converted into a list of long options)
     my $oarcmd = "$OARSUB_CMD ";
     my $script = "";
+    my $workdir = "~$authenticated_user";
     foreach my $option ( keys( %{$job} ) ) {
-      if ( $option ne "script_path" && $option ne "script" ) {
-        $oarcmd .= " --$option";
-        $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
-      }
-      elsif ($option eq "script_path") {
+      if ($option eq "script_path") {
         $oarcmd .= " $job->{script_path}";
       }
       elsif ($option eq "script") {
         $script = $job->{script};
+      }
+      elsif ($option eq "workdir") {
+        $workdir = $job->{workdir};
+      }
+      else {
+        $oarcmd .= " --$option";
+        $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
     if ($script ne "") {
@@ -376,8 +380,7 @@ SWITCH: for ($q) {
       $oarcmd .= " \"$script\"";
     }
 
-    my $cmd =
-"cd ~$authenticated_user && $OARDODO_CMD su - $authenticated_user -c '$oarcmd'";
+    my $cmd = "cd $workdir && $OARDODO_CMD su - $authenticated_user -c 'cd $workdir && $oarcmd'";
     my $cmdRes = `$cmd 2>&1`;
     if ( $? != 0 ) {
       my $err = $? >> 8;
