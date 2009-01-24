@@ -103,6 +103,7 @@ api:
 	install -m 6750 $(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-api.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-api.conf already exists, not overwriting it." ; else install -m 0600 API/apache2.conf $(DESTDIR)$(OARCONFDIR)/apache-api.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-api.conf || /bin/true ; fi
 	
 dbinit:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
