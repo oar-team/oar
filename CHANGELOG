@@ -1,13 +1,14 @@
 OAR CHANGELOG
 =============
 
-Next version:
--------------
+version 2.4.0:
+--------------
   - Added a --state option to oarstat to only get the status of specified jobs 
     (optimized query, to allow scripting)
   - Added a REST API. For the moment it's only wrapping oarsub, oarstat and
     oarnodes commands.
   - Added JSON support into oarnodes, oarstat and oarsub
+  - New Makefile adapted to build packages as non-root user
 
 version 2.3.3:
 --------------
