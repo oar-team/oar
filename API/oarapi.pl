@@ -262,6 +262,15 @@ sub set_output_format($) {
   return ($output_opt,$header,$type);
 }
 
+# Get a suitable extension depending on the content-type
+sub get_ext($) {
+  my $content_type = shift;
+  if    ($content_type eq "text/yaml")  { return "yaml"; }
+  elsif ($content_type eq "text/xml")   { return "xml"; }
+  elsif ($content_type eq "text/json")  { return "json"; }
+  else                                  { return "UNKNOWN_TYPE"; }
+}
+
 # Send a command and returns the output or exit with an error
 sub send_cmd($$) {
   my $cmd=shift;
@@ -453,10 +462,10 @@ SWITCH: for ($q) {
       );
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
-      print $q->header( -status => 202, -type => 'text/ascii' );
-      print export( {'job_id' => "$1"} , $q->content_type );
-      # TODO: give the url of the newly created object
-      # TODO: set the type (text/ascii is not good!)
+      print $q->header( -status => 201, -type => $q->content_type );
+      print export( { 'job_id' => "$1",
+                      'uri' => make_uri("/jobs/$1.". get_ext($q->content_type),0)
+                    } , $q->content_type );
     }
     else {
       ERROR( 400, "Parse error",
