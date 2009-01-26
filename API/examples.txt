@@ -7,6 +7,7 @@ irb(main):004:0> puts get('/resources.json')
 irb(main):005:0> puts get('/resources.yaml')
 irb(main):008:0> puts get('/resources/1.yaml')
 irb(main):007:0> puts get('/resources/nodes/liza-1.yaml')
+irb(main):007:0> puts get('/resources/all.yaml')
 
 # Getting jobs infos
 irb(main):006:0> puts get('/jobs.yaml')

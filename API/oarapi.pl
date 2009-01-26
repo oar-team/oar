@@ -99,6 +99,18 @@ sub ERROR($$$) {
 # Other functions
 ##############################################################################
 
+# Return the url (absolute if second argument is 1)
+sub make_uri($$) {
+  my $path = shift;
+  my $absolute = shift;
+  if ($absolute == 1) {
+    return $q->url(-full => 1). $path;
+  }
+  else {
+    return $path;
+  }
+}
+
 # Check if YAML is enabled or exits with an error
 sub check_yaml() {
   unless ($YAMLenabled) {
@@ -139,6 +151,17 @@ sub import_json($) {
     exit 0;
   }
   return $hashref;
+}
+
+# Load data into a hashref
+sub import($$) {
+  (my $data, my $format) = @_;
+  if ($format eq "yaml") { import_yaml($data); }
+  elsif ($format eq "json") { import_json($data); }
+  else {
+    ERROR 400, "Unknown $format format", $@;
+    exit 0;
+  }
 }
 
 # Export a hash into YAML
@@ -297,9 +320,32 @@ SWITCH: for ($q) {
   };
 
   #
-  # List of resources (oarnodes wrapper)
+  # List of resources ("oarnodes -s" wrapper)
   #
-  $URI = qr{^/resources\.(yaml|xml|json)$};
+  $URI = qr{^/resources\.(yaml|json)$};
+  GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    (my $output_opt, my $header)=set_output_format($1);
+    my $cmd    = "$OARNODES_CMD $output_opt -s";
+    my $cmdRes = send_cmd($cmd,"Oarnodes");
+    my $resources = import($cmdRes,$1);
+    my $result;
+    foreach my $node ( keys( %{$resources} ) ) {
+        $result->{$node}->{uri}=make_uri("/resources/nodes/$node.$1",0);
+      foreach my $id ( keys( %{$resources->{$node}} ) ) {
+        $result->{$node}->{$id}->{status}=$resources->{$node}->{$id};
+        $result->{$node}->{$id}->{uri}=make_uri("/resources/$id.$1",0);
+      }
+    }
+    print $header;
+    print export_yaml($result);
+    last;
+  };
+
+  #
+  # List all the resources with details (oarnodes wrapper)
+  #
+  $URI = qr{^/resources/all\.(yaml|json)$};
   GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     (my $output_opt, my $header)=set_output_format($1);
@@ -309,9 +355,9 @@ SWITCH: for ($q) {
     print $cmdRes;
     last;
   }; 
- 
+
   #
-  # Details of a resource (oarnodes wrapper)
+  # Details of a resource ("oarnodes -r <id>" wrapper)
   #
   $URI = qr{^/resources/(\d+)\.(yaml|xml|json)$};  
   GET( $_, $URI ) && do {
@@ -393,6 +439,8 @@ SWITCH: for ($q) {
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
       print $q->header( -status => 202, -type => 'text/ascii' );
       print export( {'job_id' => "$1"} , $q->content_type );
+      # TODO: give the url of the newly created object
+      # TODO: set the type (text/ascii is not good!)
     }
     else {
       ERROR( 400, "Parse error",
@@ -400,6 +448,11 @@ SWITCH: for ($q) {
     }
     last;
   };
+
+  #
+  # Delete a job (oardel wrapper)
+  #
+  # TODO
 
   #
   # Anything else -> 404
