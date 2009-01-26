@@ -15,6 +15,7 @@ use CGI qw/:standard/;
 my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
 my $OARNODES_CMD  = "oarnodes";
+my $OARDEL_CMD  = "oardel";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # Debug mode
@@ -81,6 +82,18 @@ sub POST($$) {
   my ( $q, $path ) = @_;
   if   ( $q->request_method eq 'POST' && $q->path_info =~ $path ) { return 1; }
   else                                                            { return 0; }
+}
+
+sub DELETE($$) {
+  my ( $q, $path ) = @_;
+  if   ( $q->request_method eq 'DELETE' && $q->path_info =~ $path ) { return 1; }
+  else                                                              { return 0; }
+}
+
+sub PUT($$) {
+  my ( $q, $path ) = @_;
+  if   ( $q->request_method eq 'PUT' && $q->path_info =~ $path ) { return 1; }
+  else                                                           { return 0; }
 }
 
 sub ERROR($$$) {
@@ -232,19 +245,21 @@ sub set_output_format($) {
   my $format=shift;
   my $output_opt;
   my $header;
+  my $type;
   if( $format eq "yaml" ) { 
     $output_opt = "-Y";
-    $header=$q->header( -status => 200, -type => 'text/yaml' );
+    $type="text/yaml";
   }
   elsif ( $format eq "xml" ) { 
     $output_opt = "-X";
-    $header=$q->header( -status => 200, -type => 'text/xml' );
+    $type="text/xml";
   }
   else { 
     $output_opt = "-J";
-    $header=$q->header( -status => 200, -type => 'text/json' );
+    $type="text/json";
   }
-  return ($output_opt,$header);
+  $header=$q->header( -status => 200, -type => "$type" );
+  return ($output_opt,$header,$type);
 }
 
 # Send a command and returns the output or exit with an error
@@ -296,6 +311,7 @@ SWITCH: for ($q) {
   #
   $URI = qr{^/jobs\.(yaml|xml|json)$};
   GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
     (my $output_opt, my $header)=set_output_format($1);
     my $cmd    = "$OARSTAT_CMD $output_opt";
     my $cmdRes = send_cmd($cmd,"Oarstat");
@@ -452,7 +468,32 @@ SWITCH: for ($q) {
   #
   # Delete a job (oardel wrapper)
   #
-  # TODO
+  $URI = qr{^/jobs/(\d+)\.(yaml|json)$};
+  DELETE( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext = $2;
+    (my $output_opt, my $header, my $type)=set_output_format($2);
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      ERROR( 403, "Forbidden",
+       "A suitable authentication must be done before posting jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+
+    my $cmd    = "$OARDODO_CMD su - $authenticated_user -c '$OARDEL_CMD $jobid'";
+    my $cmdRes = send_cmd($cmd,"Oardel");
+    print $q->header( -status => 202, -type => "$type" );
+    print export( { 'job_id' => "$jobid",
+                    'message' => "Delete request registered",
+                    'oardel_output' => "$cmdRes",
+                    'uri' => make_uri("/jobs/$jobid.$ext",0)
+                  } , $type );
+    last;
+  };
+
 
   #
   # Anything else -> 404

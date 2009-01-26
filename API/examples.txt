@@ -32,3 +32,7 @@ irb(main):027:0" sleep 300
 irb(main):028:0" "
 irb(main):029:0> j={ 'resource' => '/nodes=2/cpu=1', 'script' => script , 'workdir' => '~bzizou/tmp'}
 irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'text/json')
+
+# Deleting a job
+irb(main):111:0> delete("/jobs/#{JSON.parse(job)['job_id']}.yaml")
+
