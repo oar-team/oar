@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: oarstat 1740 2008-11-02 08:38:17Z capitn $
+# $Id$
 # print active job properties
 
 use strict;
@@ -662,7 +662,7 @@ sub print_job_data($$){
                 if(defined($array_id)){
                     if ($Printed_jobs == 0){
                         print <<EOS;
-Job id    A. id     A. index  Name       User     Time Use            S Queue
+Job id    A. id     A. index  Name       User     Submission Date     S Queue
 --------- --------- --------- ---------- -------- ------------------- - --------
 EOS
                     }
@@ -681,7 +681,7 @@ EOS
                 }else{ 
                     if ($Printed_jobs == 0){
                     print <<EOS;
-Job id     Name           User           Time Use            S Queue
+Job id     Name           User           Submission Date     S Queue
 ---------- -------------- -------------- ------------------- - ----------
 EOS
                     }

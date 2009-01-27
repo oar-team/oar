@@ -222,7 +222,7 @@ CREATE TABLE jobs (
   stdout_file text ,
   stderr_file text ,
   resubmit_job_id integer NOT NULL default '0',
-  suspended varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
+  suspended varchar(3) check (suspended in ('YES','NO')) NOT NULL default 'NO',
   PRIMARY KEY  (job_id)
 );
 CREATE INDEX state ON jobs (state);
