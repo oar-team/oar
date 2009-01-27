@@ -188,7 +188,7 @@ sub export_yaml($) {
 sub export_json($) {
   my $hashref = shift;
   check_json();
-  return JSON::encode_json($hashref)
+  return JSON->new->pretty(1)->encode($hashref);
 } 
 
 # Export data to the specified content_type
@@ -321,13 +321,25 @@ SWITCH: for ($q) {
   $URI = qr{^/jobs\.(yaml|xml|json)$};
   GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    (my $output_opt, my $header)=set_output_format($1);
+    my $ext = $1;
+    (my $output_opt, my $header, my $type)=set_output_format($ext);
     my $cmd    = "$OARSTAT_CMD $output_opt";
     my $cmdRes = send_cmd($cmd,"Oarstat");
+    my $jobs = import($cmdRes,$ext);
+    my $result;
+    foreach my $job ( keys( %{$jobs} ) ) {
+      $result->{$job}->{state}=$jobs->{$job}->{state};
+      $result->{$job}->{owner}=$jobs->{$job}->{owner};
+      $result->{$job}->{name}=$jobs->{$job}->{name};
+      $result->{$job}->{queue}=$jobs->{$job}->{queue};
+      $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
+      $result->{$job}->{uri}=make_uri("/jobs/$job.$ext",0);
+    }
     print $header;
-    print $cmdRes;
+    print export($result,$type);
     last;
   };
+
 
   #
   # Details of a job (oarstat wrapper)
@@ -350,7 +362,7 @@ SWITCH: for ($q) {
   $URI = qr{^/resources\.(yaml|json)$};
   GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    (my $output_opt, my $header)=set_output_format($1);
+    (my $output_opt, my $header, my $type)=set_output_format($1);
     my $cmd    = "$OARNODES_CMD $output_opt -s";
     my $cmdRes = send_cmd($cmd,"Oarnodes");
     my $resources = import($cmdRes,$1);
@@ -363,7 +375,7 @@ SWITCH: for ($q) {
       }
     }
     print $header;
-    print export_yaml($result);
+    print export($result,$type);
     last;
   };
 
