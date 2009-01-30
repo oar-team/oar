@@ -31,9 +31,9 @@ using namespace std;
 ##########################
 */
 /// # Avoid problems if there are too many waiting jobs
-const unsigned int Karma_max_number_of_jobs_treated_per_user = 30;
+static const unsigned int Karma_max_number_of_jobs_treated_per_user = 30;
 ///# number of seconds to consider for the fairsharing
-const unsigned int Karma_window_size = 3600 * 30 * 24;
+static const unsigned int Karma_window_size = 3600 * 30 * 24;
 ///# specify the target percentages for project names (0 if not specified)
 struct karma_proj_target_t {
   unsigned int first;
@@ -46,9 +46,9 @@ const struct  karma_proj_target_t Karma_project_targets = { 75, 25 };
 map<string, unsigned int> Karma_user_targets = map(pair<string, unsigned int>("oar", 100));
 
 ///# weight given to each criteria
-const unsigned int Karma_coeff_project_consumption = 0;
-const unsigend int Karma_coeff_user_consumption = 2;
-const unsigned int Karma_coeff_user_asked_consumption = 1;
+static const unsigned int Karma_coeff_project_consumption = 0;
+static const unsigend int Karma_coeff_user_consumption = 2;
+static const unsigned int Karma_coeff_user_asked_consumption = 1;
 
 //###############################################################################
 
@@ -71,6 +71,7 @@ static vector<string> Resources_to_always_add;
 static unsigned int current_time;
 static string queue;
 
+
 // what are timesharing gantts ?
 map<pair<string, string>, Gant_hole_storage::Gantt *> timesharing_gantts;
 
@@ -78,6 +79,10 @@ map<pair<string, string>, Gant_hole_storage::Gantt *> timesharing_gantts;
 // #Init the gantt chart with all resources
 Gant_hole_storage::Gantt *pgantt = 0;
 
+// variables used in real scheduling
+vector<bool> alive_resources_vector;
+vector<unsigned int> Dead_resources;
+vector<iolib::jobs_iolib_restrict> jobs;
 
 void init_conf(int argc, char **argv)
 {
@@ -392,20 +397,33 @@ void init_gantt_scheduled_job()
 /********** # End of the initialisation ************/
 
 
-# Begining of the real scheduling
+void real_scheduling_begin()
+{
+  //# Begining of the real scheduling
 
-# Get list of Alive resources
-my $alive_resources_vector = '';
-foreach my $r (iolib::get_resources_in_state($base,"Alive")){
-    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
+  //# Get list of Alive resources
+  vector<iolib::resources_iolib> resource_list = iolib::get_resources_in_state($base,"Alive");
+  unsigned int max_resources=0;
+  for(resource_list.iterator r = resource_list.begin();
+      r != resource_list.end();
+      r++)
+    max_resources = max( max_resources, r->resource_id ); 
+
+  alive_resources_vector = vector<bool>(max_resources, 0);
+  for(resource_list.iterator r = resource_list.begin();
+      r != resource_list.end();
+      r++)
+    alive_resources_vector[r->resource_id]=1;
+
+   resource_list = iolib::get_resources_in_state($base,"Dead");
+   for(resource_list.iterator r = resource_list.begin();
+      r != resource_list.end();
+      r++)
+     Dead_resources.push_back(r->resource_id);
+
+   jobs = iolib::get_fairsharing_jobs_to_schedule(queue, Karma_max_number_of_jobs_treated_per_user);
 }
 
-my @Dead_resources;
-foreach my $r (iolib::get_resources_in_state($base,"Dead")){
-    push(@Dead_resources, $r->{resource_id});
-}
-
-my @jobs = iolib::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
 ###############################################################################
 # Sort jobs depending on their previous usage
 # Karma sort algorithm
