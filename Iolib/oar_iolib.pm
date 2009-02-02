@@ -201,7 +201,7 @@ my $Cm_security_duration = 600;
 # CONNECTION
 
 my $Timeout_db_connection = 0;
-my $Max_db_connection_timeout = 10;
+my $Max_db_connection_timeout = 30;
 # connect_db
 # Connects to database and returns the base identifier
 # return value : base
@@ -265,7 +265,10 @@ sub connect_db($$$$$$) {
         }
         oar_warn("[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
         send_log_by_email("OAR database connection failed","[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
-        sleep($Timeout_db_connection);
+        my $sleep_time = 0;
+        while ($sleep_time <= 1){
+            $sleep_time = sleep($Timeout_db_connection);
+        }
     }
     
     return($dbh);
