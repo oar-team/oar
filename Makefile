@@ -35,7 +35,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install }"
+	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install | gridapi-install}"
 	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -104,7 +104,27 @@ api:
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-api.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-api.conf already exists, not overwriting it." ; else install -m 0600 API/apache2.conf $(DESTDIR)$(OARCONFDIR)/apache-api.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-api.conf || /bin/true ; fi
-	
+
+gridapi:
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -m 0755 API/oargridapi.pl $(DESTDIR)$(OARDIR)/oargridapi.pl
+	install -d -m 0755 $(DESTDIR)$(CGIDIR)
+	mkdir -p $(DESTDIR)$(CGIDIR)/oarapi
+	-chown $(OAROWNER).$(WWWUSER) $(DESTDIR)$(CGIDIR)/oarapi
+	-chmod 750 $(DESTDIR)$(CGIDIR)/oarapi
+	install -m 6755 Tools/oardo $(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oargridapi.pl'\;#;;\
+				" $(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	install -m 6750 $(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
+	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf already exists, not overwriting it." ; else install -m 0600 API/apache2-grid.conf $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf || /bin/true ; fi
+
 dbinit:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
@@ -198,6 +218,7 @@ libs: man
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oarnodesetting.1 $(DESTDIR)$(MANDIR)/man1/oarnodesetting.1
 	install -m 0644 API/oar_apilib.pm $(DESTDIR)$(OARDIR)
+
 
 server: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
@@ -444,7 +465,13 @@ tools:
                     " $(DESTDIR)$(SBINDIR)/oaradmin
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oaradmin.1 $(DESTDIR)$(MANDIR)/man1/oaradmin.1
-        
+
+gridlibs:
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -m 0644 Oargrid/oargrid_lib.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Oargrid/oargrid_conflib.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Oargrid/oargrid_mailer.pm $(DESTDIR)$(OARDIR)
+
 common-install: common
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
@@ -467,3 +494,5 @@ desktop-computing-agent-install: desktop-computing-agent
 tools-install: sanity-check configuration common-install libs tools
 
 api-install: sanity-check configuration common-install libs api
+
+gridapi-install: sanity-check configuration common-install libs gridlibs gridapi
