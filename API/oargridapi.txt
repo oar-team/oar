@@ -1,0 +1,12 @@
+#### Transitional api for oargrid ###
+For now, oargridapi.pl is a wrapper to oargrid commands.
+Oargrid is going to be integrated into the oar code subtree, but this is
+a work still in progress.
+So, even if the oar code embeds a new version of the oargrid lib, it's only
+for the needs of oargridapi and you still need to install oargrid from the
+old subtree (or package) to be able to use the api.
+
+You need to adapt a bit your oargrid installation for this api to work:
+
+# chgrp oar /etc/oargrid.conf
+# chmod 640 /etc/oargrid.conf
