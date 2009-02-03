@@ -197,6 +197,7 @@ libs: man
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(DESTDIR)$(OARDIR)/oarnodesetting_ssh
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oarnodesetting.1 $(DESTDIR)$(MANDIR)/man1/oarnodesetting.1
+	install -m 0644 API/oar_apilib.pm $(DESTDIR)$(OARDIR)
 
 server: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
