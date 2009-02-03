@@ -1,0 +1,14 @@
+Source: oargrid
+Section: admin
+Priority: extra
+Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.7.3
+Homepage: http://oar.imag.fr/
+
+Package: oargrid
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, sudo, adduser
+Suggests: oar-server
+Description: Grid manager for oar
+ This is the tool to manage a grid of oar clusters
