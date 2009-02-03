@@ -175,6 +175,7 @@ SWITCH: for ($q) {
       last;
     }
     $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
     # Check the submited job
     my $job = apilib::check_job( $q->param('POSTDATA'), $q->content_type );
@@ -203,7 +204,7 @@ SWITCH: for ($q) {
       $oarcmd .= " \"$script\"";
     }
 
-    my $cmd = "cd $workdir && $OARDODO_CMD su - $authenticated_user -c 'cd $workdir && $oarcmd'";
+    my $cmd = "cd $workdir && $OARDODO_CMD 'cd $workdir && $oarcmd'";
     my $cmdRes = `$cmd 2>&1`;
     if ( $? != 0 ) {
       my $err = $? >> 8;
@@ -243,8 +244,9 @@ SWITCH: for ($q) {
       last;
     }
     $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD su - $authenticated_user -c '$OARDEL_CMD $jobid'";
+    my $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
     my $cmdRes = apilib::send_cmd($cmd,"Oardel");
     print $q->header( -status => 202, -type => "$type" );
     print apilib::export( { 'job_id' => "$jobid",
