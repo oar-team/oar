@@ -5,7 +5,7 @@ use Data::Dumper;
 use strict;
 use warnings;
 use IPC::Open3;
-use mailer;
+use oargrid_mailer;
 use oargrid_conflib;
 
 

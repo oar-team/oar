@@ -46,7 +46,7 @@ common:
 	perl -i -pe "s#^OARGRIDDIR=.*#OARGRIDDIR=/$(OARGRIDDIR)#;;s#^OARGRIDUSER=.*#OARGRIDUSER=$(OARGRIDUSER)#" $(DESTDIR)/$(OARGRIDDIR)/oargrid_sudowrapper.sh 
 	install -m 755 oargrid_conflib.pm $(DESTDIR)/$(OARGRIDDIR)
 	install -m 755 oargrid_lib.pm $(DESTDIR)/$(OARGRIDDIR)
-	install -m 755 mailer.pm $(DESTDIR)/$(OARGRIDDIR)
+	install -m 755 oargrid_mailer.pm $(DESTDIR)/$(OARGRIDDIR)
 	install -m 755 oargriddel $(DESTDIR)/$(OARGRIDDIR)
 	ln -sf /$(OARGRIDDIR)/configurator_wrapper.sh $(DESTDIR)/$(CONFIG_CMDS)/oargriddel
 	ln -sf /$(OARGRIDDIR)/oargrid_sudowrapper.sh $(DESTDIR)/$(BINDIR)/oargriddel
@@ -75,7 +75,7 @@ clean:
 	 $(DESTDIR)/$(OARGRIDDIR)/configurator_wrapper.sh \
 	 $(DESTDIR)/$(OARGRIDDIR)/oargrid_sudowrapper.sh \
 	 $(DESTDIR)/$(OARGRIDDIR)/oargrid_conflib.pm \
-	 $(DESTDIR)/$(OARGRIDDIR)/mailer.pm \
+	 $(DESTDIR)/$(OARGRIDDIR)/oargrid_mailer.pm \
 	 $(DESTDIR)/$(OARGRIDDIR)/oargrid_lib.pm \
 	 $(DESTDIR)/$(OARGRIDDIR)/oargriddel \
 	 $(DESTDIR)/$(OARGRIDDIR)/oargridsub \
