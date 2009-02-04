@@ -1,3 +1,12 @@
+oar (2.4.0-1~6.gbp64d10a) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @64d10a4c9ff134873eb18921a2138e4139076af4 **
+
+  * Added a FORCE_HTTPS variable to workaround the problem with https
+    proxy
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 04 Feb 2009 16:01:40 +0100
+
 oar (2.4.0-1~5.gbpadc6ae) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @adc6ae6c10157f8a02317ba7ca18a82e27b0437e **

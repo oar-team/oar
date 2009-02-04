@@ -25,6 +25,10 @@ my $SSH_CMD = "/usr/bin/ssh";
 # ip-based access control into apache for example)
 my $TRUST_IDENT = 1;
 
+# Force all html uris to start with "https://".
+# Useful if the api acts in a non-https server behind an https proxy
+my $FORCE_HTTPS = 0;
+
 # Oar commands
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
@@ -33,6 +37,7 @@ my $q = apilib::get_cgi_handler();
 
 # Header for html version
 my $apiuri= $q->url(-full => 1);
+$apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
 my $HTML_HEADER = "
 <HTML>
 <HEAD>
@@ -143,7 +148,7 @@ SWITCH: for ($q) {
     foreach my $s ( keys( %{ $sites{sites} } ) ) {
       $compact_sites->{$s}->{uri} = apilib::htmlize_uri(
                               apilib::make_uri("/sites/$s.$ext",0),
-                              $ext);
+                              $ext,$FORCE_HTTPS);
     }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -165,7 +170,7 @@ SWITCH: for ($q) {
       $s{$1} = $sites{sites}{$1};
       $s{$1}{jobs} = apilib::htmlize_uri(
                               apilib::make_uri("/sites/$1/jobs.$ext",0),
-                              $ext);
+                              $ext,$FORCE_HTTPS);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export(\%s,$type);
@@ -202,7 +207,7 @@ SWITCH: for ($q) {
         $result->{$job}->{queue}=$jobs->{$job}->{queue};
         $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
         $result->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job.$ext",0);
-        $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext);
+        $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
       }
       print $header;
       print $HTML_HEADER if ($ext eq "html");
@@ -305,7 +310,7 @@ SWITCH: for ($q) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext,$FORCE_HTTPS)
                     } , $type );
     }
     else {

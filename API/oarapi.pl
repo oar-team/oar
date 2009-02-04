@@ -27,11 +27,16 @@ my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 # ip-based access control into apache for example) 
 my $TRUST_IDENT = 1;
 
+# Force all html uris to start with "https://".
+# Useful if the api acts in a non-https server behind an https proxy
+my $FORCE_HTTPS = 0;
+
 # CGI handler
 my $q=apilib::get_cgi_handler();
 
 # Header for html version
 my $apiuri= $q->url(-full => 1);
+$apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
 my $HTML_HEADER = "
 <HTML>
 <HEAD>
@@ -100,7 +105,7 @@ SWITCH: for ($q) {
       $result->{$job}->{queue}=$jobs->{$job}->{queue};
       $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
       $result->{$job}->{uri}=apilib::make_uri("/jobs/$job.$ext",0);
-      $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext);
+      $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
     }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -142,11 +147,11 @@ SWITCH: for ($q) {
     my $result;
     foreach my $node ( keys( %{$resources} ) ) {
         $result->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$ext",0);
-        $result->{$node}->{uri}=apilib::htmlize_uri($result->{$node}->{uri},$ext);
+        $result->{$node}->{uri}=apilib::htmlize_uri($result->{$node}->{uri},$ext,$FORCE_HTTPS);
       foreach my $id ( keys( %{$resources->{$node}} ) ) {
         $result->{$node}->{$id}->{status}=$resources->{$node}->{$id};
         $result->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id.$ext",0);
-        $result->{$node}->{$id}->{uri}=apilib::htmlize_uri($result->{$node}->{$id}->{uri},$ext);
+        $result->{$node}->{$id}->{uri}=apilib::htmlize_uri($result->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
       }
     }
     print $header;
@@ -268,7 +273,7 @@ SWITCH: for ($q) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1.". $ext,0),$ext)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS)
                     } , $type );
     }
     else {
@@ -304,7 +309,7 @@ SWITCH: for ($q) {
     print apilib::export( { 'job_id' => "$jobid",
                     'message' => "Delete request registered",
                     'oardel_output' => "$cmdRes",
-                    'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid.$ext",0),$ext)
+                    'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid.$ext",0),$ext,$FORCE_HTTPS)
                   } , $type );
     last;
   };

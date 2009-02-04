@@ -107,11 +107,14 @@ sub make_uri($$) {
 }
 
 # Return an html href of an uri if the type is "html"
-sub htmlize_uri($$) {
+sub htmlize_uri($$$) {
   my $uri=shift;
   my $type=shift;
-  if ($type eq "html") { 
-    return "<A HREF=".$q->url(-full => 1)."$uri>$uri</A>";
+  my $force_https=shift;
+  if ($type eq "html") {
+    my $base_uri=$q->url(-full => 1);
+    $base_uri=~s/^http:/https:/ if $force_https;
+    return "<A HREF=".$base_uri."$uri>$uri</A>";
   }
   else { return $uri; }
 }
