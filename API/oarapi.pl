@@ -58,14 +58,14 @@ SWITCH: for ($q) {
   #
   # List of current jobs (oarstat wrapper)
   #
-  $URI = qr{^/jobs\.(yaml|xml|json)$};
+  $URI = qr{^/jobs\.*(yaml|xml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $ext = $1;
+    my $ext=apilib::set_ext($q,$1);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARSTAT_CMD $output_opt";
+    my $cmd    = "$OARSTAT_CMD -Y";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
-    my $jobs = apilib::import($cmdRes,$ext);
+    my $jobs = apilib::import($cmdRes,"yaml");
     my $result;
     foreach my $job ( keys( %{$jobs} ) ) {
       $result->{$job}->{state}=$jobs->{$job}->{state};
@@ -84,34 +84,38 @@ SWITCH: for ($q) {
   #
   # Details of a job (oarstat wrapper)
   #
-  $URI = qr{^/jobs/(\d+)\.(yaml|xml|json)$};
+  $URI = qr{^/jobs/(\d+)\.*(yaml|xml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
-    (my $output_opt, my $header)=apilib::set_output_format($2);
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header)=apilib::set_output_format($ext);
     my $cmd    = "$OARSTAT_CMD -fj $jobid $output_opt";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
     print $header;
+    if ($ext eq "html") { print "<PRE>\n"; }
     print $cmdRes;
+    if ($ext eq "html") { print "</PRE>\n"; }
     last;
   };
 
   #
   # List of resources ("oarnodes -s" wrapper)
   #
-  $URI = qr{^/resources\.(yaml|json)$};
+  $URI = qr{^/resources\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($1);
-    my $cmd    = "$OARNODES_CMD $output_opt -s";
+    my $ext=apilib::set_ext($q,$1);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    my $cmd    = "$OARNODES_CMD -Y -s";
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
-    my $resources = apilib::import($cmdRes,$1);
+    my $resources = apilib::import($cmdRes,"yaml");
     my $result;
     foreach my $node ( keys( %{$resources} ) ) {
-        $result->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$1",0);
+        $result->{$node}->{uri}=apilib::make_uri("resources/nodes/$node.$ext",0);
       foreach my $id ( keys( %{$resources->{$node}} ) ) {
         $result->{$node}->{$id}->{status}=$resources->{$node}->{$id};
-        $result->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id.$1",0);
+        $result->{$node}->{$id}->{uri}=apilib::make_uri("resources/$id.$ext",0);
       }
     }
     print $header;
@@ -122,43 +126,51 @@ SWITCH: for ($q) {
   #
   # List all the resources with details (oarnodes wrapper)
   #
-  $URI = qr{^/resources/all\.(yaml|json)$};
+  $URI = qr{^/resources/all\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    (my $output_opt, my $header)=apilib::set_output_format($1);
+    my $ext=apilib::set_ext($q,$1);
+    (my $output_opt, my $header)=apilib::set_output_format($ext);
     my $cmd    = "$OARNODES_CMD $output_opt";
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     print $header;
+    if ($ext eq "html") { print "<PRE>\n"; }
     print $cmdRes;
+    if ($ext eq "html") { print "</PRE>\n"; }
     last;
   }; 
 
   #
   # Details of a resource ("oarnodes -r <id>" wrapper)
   #
-  $URI = qr{^/resources/(\d+)\.(yaml|xml|json)$};  
+  $URI = qr{^/resources/(\d+)\.*(yaml|xml|json|html)*$};  
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    (my $output_opt, my $header)=apilib::set_output_format($2);
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header)=apilib::set_output_format($ext);
     my $cmd    = "$OARNODES_CMD -r $1 $output_opt";  
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     print $header;
+    if ($ext eq "html") { print "<PRE>\n"; }
     print $cmdRes;
+    if ($ext eq "html") { print "</PRE>\n"; }
     last;
   };
  
   #
   # Details of a node (oarnodes wrapper)
   #
-  $URI = qr{^/resources/nodes/([\w\-]+)\.(yaml|xml|json)$};  
+  $URI = qr{^/resources/nodes/([\w\-]+)\.*(yaml|xml|json|html)*$};  
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    (my $output_opt, my $header)=apilib::set_output_format($2);
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header)=apilib::set_output_format($ext);
     my $cmd    = "$OARNODES_CMD $1 $output_opt";  
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     print $header;
+    if ($ext eq "html") { print "<PRE>\n"; }
     print $cmdRes;
-    
+    if ($ext eq "html") { print "</PRE>\n"; }
     last;
   }; 
 
@@ -230,12 +242,12 @@ SWITCH: for ($q) {
   #
   # Delete a job (oardel wrapper)
   #
-  $URI = qr{^/jobs/(\d+)\.(yaml|json)$};
+  $URI = qr{^/jobs/(\d+)\.*(yaml|json|html)*$};
   apilib::DELETE( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
-    my $ext = $2;
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($2);
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {

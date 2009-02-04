@@ -171,7 +171,14 @@ sub export_json($) {
   my $hashref = shift;
   check_json();
   return JSON->new->pretty(1)->encode($hashref);
-} 
+}
+
+# Export a hash into HTML (YAML in fact, as it is human readable)
+sub export_html($) {
+  my $hashref = shift;
+  check_yaml();
+  return "<PRE>\n". YAML::Dump($hashref) ."\n</PRE>";
+}
 
 # Export data to the specified content_type
 sub export($$) {
@@ -181,6 +188,8 @@ sub export($$) {
     export_yaml($data);
   }elsif ( $content_type eq 'text/json' ) {
     export_json($data);
+  }elsif ( $content_type eq 'text/html' ) {
+    export_html($data);
   }else {
     ERROR 415, "Unknown $content_type format",
       "The $content_type format is not known.";
@@ -236,6 +245,10 @@ sub set_output_format($) {
     $output_opt = "-X";
     $type="text/xml";
   }
+  elsif ( $format eq "html" ) { 
+    $output_opt = "";
+    $type="text/html";
+  }
   else { 
     $output_opt = "-J";
     $type="text/json";
@@ -249,8 +262,24 @@ sub get_ext($) {
   my $content_type = shift;
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/xml")   { return "xml"; }
+  elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "text/json")  { return "json"; }
   else                                  { return "UNKNOWN_TYPE"; }
+}
+
+# Return the extension (second parameter) if defined, or the
+# corresponding one if the content_type if set. "json" is the default.
+sub set_ext($$) {
+  my $q=shift;
+  my $ext=shift;
+  if (defined($ext) && $ext ne "") { return $ext; }
+  else {
+    if (defined($q->content_type) 
+          && get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
+      return get_ext($q->content_type); 
+    }
+    else { return "json"; }
+  }
 }
 
 # Send a command and returns the output or exit with an error

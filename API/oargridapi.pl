@@ -108,15 +108,15 @@ SWITCH: for ($q) {
   #
   # The sites list
   #
-  $URI = qr{^/sites\.(yaml|xml|json)$};
+  $URI = qr{^/sites\.*(yaml|xml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $ext = $1;
+    my $ext = apilib::set_ext($q,$1);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
     my %sites = get_sites($dbh);
     my $compact_sites;
     foreach my $s ( keys( %{ $sites{sites} } ) ) {
-      $compact_sites->{$s}->{uri} = apilib::make_uri("/sites/$s.$ext",0);
+      $compact_sites->{$s}->{uri} = apilib::make_uri("sites/$s.$ext",0);
     }
     print $header;
     print apilib::export($compact_sites,$type);
@@ -126,10 +126,10 @@ SWITCH: for ($q) {
   #
   # Site details
   #
-  $URI = qr{^/sites/([a-z,0-9,-]+)\.(yaml|xml|json)$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)\.*(yaml|xml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $ext = $2;
+    my $ext = apilib::set_ext($q,$2);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
     my %sites = get_sites($dbh);
     if ( defined( $sites{sites}{$1} ) ) {
@@ -147,12 +147,12 @@ SWITCH: for ($q) {
   #
   # Details of a job running on a site (oarstat wrapper)
   #
-  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)\.(yaml|json)$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $site  = $1;
     my $jobid = $2;
-    my $ext   = $3;
+    my $ext = apilib::set_ext($q,$3);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
     my %sites = get_sites($dbh);
     if ( not defined( $sites{sites}{$site} ) ) {
@@ -163,7 +163,9 @@ SWITCH: for ($q) {
       my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat -fj $jobid $output_opt\"'";
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
       print $header;
+      if ($ext eq "html") { print "<PRE>\n"; }
       print $cmdRes;
+      if ($ext eq "html") { print "</PRE>\n"; }
     }
     last;
   };
@@ -232,7 +234,7 @@ SWITCH: for ($q) {
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
       print $q->header( -status => 201, -type => $q->content_type );
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::make_uri("/sites/$site/jobs/$1.". apilib::get_ext($q->content_type),0)
+                      'uri' => apilib::make_uri("sites/$site/jobs/$1.". apilib::get_ext($q->content_type),0)
                     } , $q->content_type );
     }
     else {
