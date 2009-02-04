@@ -28,6 +28,22 @@ my $TRUST_IDENT = 1;
 # Oar commands
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
+# CGI handler
+my $q = apilib::get_cgi_handler();
+
+# Header for html version
+my $apiuri= $q->url(-full => 1);
+my $HTML_HEADER = "
+<HTML>
+<HEAD>
+<TITLE>OARGRID REST API</TITLE>
+</HEAD>
+<BODY>
+<HR>
+<A HREF=$apiuri/sites.html>SITES</A>&nbsp;&nbsp;&nbsp;
+<A HREF=$apiuri/grid/jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
+<HR>
+";
 
 ##############################################################################
 # INIT
@@ -43,8 +59,6 @@ my $DB_BASE_PASSWD = oargrid_conflib::get_conf("DB_BASE_PASSWD");
 my $dbh = oargrid_lib::connect( $DB_SERVER, $DB_BASE_NAME, $DB_BASE_LOGIN,
   $DB_BASE_PASSWD );
 
-# CGI handler
-my $q = apilib::get_cgi_handler();
 
 # In this script, oar becomes oargrid
 $ENV{OARDO_BECOME_USER} = "oargrid";
@@ -106,6 +120,17 @@ SWITCH: for ($q) {
   my $URI;
 
   #
+  # Welcome page
+  #
+  $URI = qr{^$};
+  apilib::GET( $_, $URI ) && do {
+    print $q->header( -status => 200, -type => "text/html" );
+    print $HTML_HEADER;
+    print "Welcome on the oargrid API\n";
+    last;
+  };
+
+  #
   # The sites list
   #
   $URI = qr{^/sites\.*(yaml|xml|json|html)*$};
@@ -121,6 +146,7 @@ SWITCH: for ($q) {
                               $ext);
     }
     print $header;
+    print $HTML_HEADER if ($ext eq "html");
     print apilib::export($compact_sites,$type);
     last;
   };
@@ -137,7 +163,11 @@ SWITCH: for ($q) {
     if ( defined( $sites{sites}{$1} ) ) {
       my %s;
       $s{$1} = $sites{sites}{$1};
+      $s{$1}{jobs} = apilib::htmlize_uri(
+                              apilib::make_uri("/sites/$1/jobs.$ext",0),
+                              $ext);
       print $header;
+      print $HTML_HEADER if ($ext eq "html");
       print apilib::export(\%s,$type);
     }
     else {
@@ -175,6 +205,7 @@ SWITCH: for ($q) {
         $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext);
       }
       print $header;
+      print $HTML_HEADER if ($ext eq "html");
       print apilib::export($result,$type);
     }
     last;
@@ -199,6 +230,7 @@ SWITCH: for ($q) {
       my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat -fj $jobid $output_opt\"'";
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
       print $header;
+      print $HTML_HEADER if ($ext eq "html");
       if ($ext eq "html") { print "<PRE>\n"; }
       print $cmdRes;
       if ($ext eq "html") { print "</PRE>\n"; }
@@ -271,6 +303,7 @@ SWITCH: for ($q) {
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
       print $header;
+      print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'job_id' => "$1",
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext)
                     } , $type );
