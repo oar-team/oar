@@ -46,7 +46,7 @@ my $HTML_HEADER = "
 <BODY>
 <HR>
 <A HREF=$apiuri/sites.html>SITES</A>&nbsp;&nbsp;&nbsp;
-<A HREF=$apiuri/grid/jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
+<A HREF=$apiuri/grid/jobs.html>GRID_JOBS</A>&nbsp;&nbsp;&nbsp;
 <HR>
 ";
 
@@ -279,9 +279,40 @@ SWITCH: for ($q) {
   #
   # List of resources inside a grid job
   #
-  # TODO
-
+  $URI = qr{^/grid/jobs/(\d+)/resources\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $gridjob=$1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat -l $gridjob -Y";
+    my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
+    my $resources = apilib::import($cmdRes,"yaml");
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($resources,$type);
+    last;
+  };
+   
   #
+  # Details of a grid job
+  #
+  $URI = qr{^/grid/jobs/(\d+)\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $gridjob=$1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat $gridjob -Y";
+    my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
+    my $job = apilib::import($cmdRes,"yaml");
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($job,$type);
+    last;
+  };
+ 
+  #   
   # A new job on a cluster (oarsub wrapper)
   #
   $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|json|html)*$};
