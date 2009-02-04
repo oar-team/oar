@@ -1,0 +1,74 @@
+Source: oar
+Section: admin
+Priority: extra
+Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
+Build-Depends: debhelper (>= 4.0.0)
+Build-Depends-Indep: python-docutils, perl
+Standards-Version: 3.7.3
+Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/Debian/trunk/
+Vcs-Browser: https://gforge.inria.fr/plugins/scmsvn/viewcvs.php/Debian/trunk/?root=oar
+Homepage: http://oar.imag.fr/
+
+Package: oar-common
+Architecture: all
+Depends: perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
+Suggests: oar-server, oar-user, oar-node, oar-doc
+Description: OAR batch scheduler common package
+ This package installs the common part of the OAR batch scheduler
+
+Package: oar-server
+Architecture: all
+Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, openssh-client | ssh, cron
+Recommends: libxml-dumper-perl, libyaml-perl
+Suggests: taktuk, mysql-client | postgresql-client, mysql-server | postgresql, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh
+Description: OAR batch scheduler server package
+ This package installs the server part of the OAR batch scheduler
+
+Package: oar-node
+Architecture: all
+Depends: oar-common (= ${binary:Version}), openssh-client | ssh, openssh-server | ssh
+Suggests: oar-doc, xbase-clients
+Description: OAR batch scheduler node package
+ This package installs the execution node part of the OAR batch scheduler
+
+Package: oar-user
+Architecture: all
+Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}
+Recommends: libxml-dumper-perl, libyaml-perl
+Suggests: oar-doc, openssh-client | ssh, xbase-clients
+Description: OAR batch scheduler user package
+ This package install the submission and query part of the OAR batch scheduler
+
+Package: oar-web-status
+Architecture: all
+Depends: httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
+Suggests: oar-doc
+Description: OAR batch scheduler Gantt reservation diagram
+ This package install the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
+
+Package: oar-desktop-computing-agent
+Architecture: all
+Depends: ${perl:Depends}, libwww-perl, liburi-perl
+Suggests: oar-doc
+Description: OAR desktop computing agent
+ This package install the OAR batch scheduler desktop computing agent
+
+Package: oar-desktop-computing-cgi
+Architecture: all
+Depends: oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, adduser
+Suggests: oar-doc
+Description: OAR desktop computing HTTP proxy CGI
+ This package install the OAR batch scheduler desktop computing HTTP proxy CGI
+
+Package: oar-doc
+Section: doc
+Architecture: all
+Description: OAR batch scheduler documentation package
+ This package install some documentation for OAR batch scheduler
+
+Package: oar-admin
+Architecture: all
+Depends: oar-user (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl
+Suggests: oar-doc, oar-server
+Description: OAR batch scheduler administration tools package
+ This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...)
