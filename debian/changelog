@@ -1,3 +1,11 @@
+oar (2.4.0-1~5.gbpadc6ae) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @adc6ae6c10157f8a02317ba7ca18a82e27b0437e **
+
+  * Added oar-gridapi debian package
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 04 Feb 2009 08:28:31 +0100
+
 oar (2.4.0-1~4.gbpf530ee) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @f530eee7d1fdb50ac0020921600c0b236a31e96e **
