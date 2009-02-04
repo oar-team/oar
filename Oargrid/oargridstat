@@ -183,6 +183,7 @@ if ($listNodes > 0 || $listKeys > 0){
                                 alarm(0);
                                 return;
                             }
+
                         }
                     }
                     $sth->finish();
@@ -203,9 +204,13 @@ if ($listNodes > 0 || $listKeys > 0){
                     while (my @ref = $sth->fetchrow_array()) {
                         ##for (my $w = 0; $w < $weights{$ref[1]}; $w++){
                         if (defined($resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name}) and ($resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name} ne "")){
-                            push(@{$readyNodes{$i}{$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name}}{$ref[1]}}, $ref[0]);
+                            #push(@{$readyNodes{$i}{$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name}}{$ref[1]}}, $ref[0]);
+                            $readyNodes{$i}{$ref[1]}{name}=$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name};
+                            push(@{$readyNodes{$i}{$ref[1]}{nodes}}, $ref[0]);
                         }else{
-                            push(@{$readyNodes{$i}{$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{batchId}}{$ref[1]}}, $ref[0]);
+                            #push(@{$readyNodes{$i}{$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{batchId}}{$ref[1]}}, $ref[0]);
+                            $readyNodes{$i}{$ref[1]}{name}="";
+                            push(@{$readyNodes{$i}{$ref[1]}{nodes}}, $ref[0]);
                         }
                         ##}
                     }
