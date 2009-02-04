@@ -41,7 +41,7 @@ chmod a+s /usr/lib/cgi-bin/oarapi/oarapi-debug.cgi
 
 # Installation of the apache configuration
 ln -s /etc/oar/apache-api.conf /etc/apache2/conf.d/oar-api.conf
-reload_apache
+#reload_apache
 echo "
 
  You may have to enable some modules into apache if you want
