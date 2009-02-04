@@ -1,0 +1,176 @@
+---
+title: Soc
+inMenu: true
+directoryName: Offers 
+---
+h1. Google Summer of Code 2008  
+
+Student application "*%{color:red}deadline extended to April 7th%*".
+
+We've been officially accepted by Google to participate to the "Google SoC 2008":http://code.google.com/soc/2008/. You can see our Organization infos "here":http://code.google.com/soc/2008/oar/about.html.
+Here are the internship offers, be aware that the interns application deadline has been extended to "April 7th":http://code.google.com/opensource/gsoc/2008/faqs.html#0.1_timeline
+If you are interested by one or more of our offers, please contact us as soon as possible.
+Mentor contact:
+* Olivier Richard: Olivier.Richard@nospam@imag.fr
+* Yiannis Georgiou: Yiannis.Georgiou@nospam@imag.fr
+* Joseph Emeras: Joseph.Emeras@nospam@imag.fr
+
+h2. GSoC 2008 student proposal Template
+
+This is a suggestion for the kind of information we'll find useful from students on their project proposal.
+
+* Name
+* Email: and google email
+* Background: technical skills, experience, etc. Who are you? What makes you the best person to work on this project?
+* Project Title
+* Synopsis: a short description.
+* Benefits to OAR.
+* Deliverables: quantifiable results and goals.
+* Project Details: a more detailed description.
+* Project Schedule: how long will the project take? When can you begin work?
+
+h1. GSoC 2008 Project Ideas
+
+h2. Interoperability with DRMAA
+
+In the High Performance Computing and Cluster context, several research groups put forward tools for managing cluster resources distributed jobs.
+Some efforts have been recently made by the "OGF group":http://www.ogf.org to merge research results and standardize grid software interoperability.
+Among this standards, "DRMAA":https://forge.gridforum.org/sf/projects/drmaa-wg and "SAGA":http://forge.ogf.org/sf/projects/saga-rg are available ( see "this document":http://www.michal.ejdys.pl/nauka/apis-and-endusers-report.pdf for more info).
+DRMAA is an abstraction of the job management interface of the DRMS (Distributed Resource Management System). Its goal is to limit the user's application / DRMS coupling. Until now, DRMAA is supported by the following DRMS: SunGridEngine, Condor, GridWay and Torque/PBS. Our main competitor, PBS, has recently implemented a "DRMAA plugin":http://sourceforge.net/project/showfiles.php?group_id=175762 .
+As PBS is the DRMS that is the closest from us by its mechanisms, it can be very interesting for us to analyze this implementation and to adapt for our DRMS.
+As for SAGA, it has been created for a more standardized API. It can be thought of as a grand unification of the previous efforts and systems. The user should get a high level API with bindings for most popular languages.
+
+Thus, analysing how OAR could implement SAGA and DRMAA and programming the interface layer would made our product much more interoperable and usable by more users.
+
+The intern will be in constant relation with the team and will regularly discuss the work progression by audioconference and by email.
+
+Classification: Hard
+
+Intern required skills:
+* Perl
+* C
+* Distributed computing
+* Linux
+
+
+
+h2. Fault Tolerance
+
+We would like to make OAR fault tolerant.
+For implanting such a solution, two nerve centers have to be taken in account and be reinforced:
+* the database
+* the OAR server
+
+One part of the solution could be to set a monitoring system between the OAR server and an other spare server (by heartbeat system or any other watch method, see "this page":http://www.linuxvirtualserver.org ).
+For the database fault tolerance, replication mono master / mono slave seems to be  a good solution in our context (see "MySQL replication":http://dev.mysql.com/doc/refman/5.0/en/replication.html and "PostGres replication":http://slony.info ).
+The system has to work with both Postgres and Mysql databases.
+However this solution is not necessary the best regarding the overload if the database is much solicited.
+
+The work of the intern will be to set benchmarks to test if database (Postgres and Mysql) replication is acceptable and to suggest other solutions.
+At the end of this study, the intern will have to choose and implement a solution for both server and database fault tolerance.
+
+The intern will be in constant relation with the team and will regularly discuss the work progression by audioconference and by mail.
+
+Classification: Medium
+
+Intern required skills:
+* Perl
+* Fault tolerance on linux servers
+* Databases: Postgres, Mysql
+* Linux
+
+
+h2. Web portal for job submission
+
+A web portal is an important feature to help the user to get used with sophisticated supercomputing infrastructures, by hiding from them the complexities of the computational environment.
+In OAR we use Monika and Gantt for monitoring jobs and visualization functionalities. What we need is a web portal for job submissions. The web portal should be able to provide all the possible options provided when command line (ex. batch/interactive jobs, reservations, checkpoint/restart feature, besteffort/deploy type of jobs ...etc).
+
+Difficulty: Medium
+
+Skills:
+* Web portal technologies (GWT,GWT-EXT,php, ...)
+* Perl/Ruby on Rails, Java
+* Mysql/Postgresql
+
+References:
+"Moab portal":http://www.clusterresources.com/pages/products/moab-cluster-suite.php
+"OSCAR Portal":http://ieeexplore.ieee.org/Xplore/login.jsp?url=/iel5/10840/34158/01628235.pdf?tp=&isnumber=&arnumber=1628235
+"PBSWeb":http://www.cs.ualberta.ca/~pinchak/PBSWeb/
+"Sun Grid Engine":http://gridengine.sunsource.net/gep/GEP_Intro.html
+
+
+h2. Array jobs
+
+An important feature that currently lacks from OAR is the Array jobs and the array jobs with dependency.
+
+With job arrays, one invokes the same executable to run many related tasks or sub-jobs with a range of input parameters. This is highly useful for throughput-oriented job streams in disciplines such as image rendering, financial risk and security modeling, bioinformatics and cluster benchmarking studies. While the algorithms in each of these cases are different, ranging from searching and scoring to Monte Carlo to computing an objective function, each of these application areas can benefit by creating a set of tasks that are then run in parallel.
+
+Sometimes users want to submit large numbers of jobs based on the same job script. Rather than using a script to repeatedly call oarsub, the user could use the feature known as job arrays to allow the creation of multiple jobs with one oarsub command.
+
+With job arrays, a subset of related jobs is sent to each processing node. Each subset may represent a range of one or more parameters for a model computation, or a range of search sequences, for example. Such job streams are typically run on clusters or Grids of varying size since there is limited communication between the tasks until the final stages of the workload, when the results are aggregated.
+
+The work of the student will be to implement the feature of array jobs upon OAR and provide benchmarks to show that the feature functions as desired.
+
+Difficulty: Medium
+
+Skills:
+* Linux
+* Perl/Ruby/Bash
+* Mysql/PostgresQL
+
+References:
+
+"Array jobs with dependency on Sun Grid Engine":http://open.rsp.com.au/?page_id=11
+
+"Array jobs in Torque Resource Manager":http://www.clusterresources.com/torquedocs21/2.1jobsubmission.shtml
+
+
+
+h2. OAR TestSuite
+
+A Suite of tests is needed to verify that the installation was succesfull and that the system functions as desired.
+
+* Installation verification tests:
+
+User should provide some descriptive values for the cluster and its function (number of nodes/cpus/cores used, jobs submitted, etc) and the program(OAR Test Suite) should execute tests for the given values.
+
+* Performance tests according to desired function:
+
+User could provide a specific trace and desired function and let the program(OAR Test Suite) decide which options result to a better performance.
+
+The work of the student is to implement tests that will experiment with all the functionalities of the system through various initial parameters.
+
+Difficulty: Medium
+
+Skills:
+* Linux
+* Perl/Ruby/Bash/Expect
+* Mysql/PostgreSQL
+
+References:
+
+"testsuite in SLURM resource management system":https://computing.llnl.gov/linux/slurm/programmer_guide.html
+
+
+
+h2. Energy Saving Feature
+
+The goal of this project is to enhance OAR resource management system with a energy saving feature. Nodes that remain idle for an configurable period of time can be placed in a power saving mode (or even swith off) . The nodes will be restored to normal operation once work is assigned to them.
+
+How can we guarantee that Power saving will have no or almost no impact on the performance of the job scheduler?
+
+
+Difficulty:Medium
+
+Skills:
+* Perl
+* Databases: Postgres, Mysql
+* Linux
+
+
+References:
+* "Power saving on Sun Grid Engine":http://wiki.gridengine.info/wiki/index.php/PowerSaving
+
+* "Rocks Solid":http://code.google.com/p/rocks-solid/
+
+* "Energy saving on SLURM":https://computing.llnl.gov/linux/slurm/power_save.html

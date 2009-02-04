@@ -1,0 +1,19 @@
+---
+title: Screenshots 
+inMenu: true
+directoryName: oar
+orderInfo: 2
+---
+h2. Screenshots and Live Systems
+
+h3. Screenshots
+
+|=."!images/small_monika_ita.png!":images/monika_ita.png|=. "!images/small_gantt_ita.png!":images/gantt_ita.png|
+|=. *Current job visualization on a cluster* |=. *Gantt visualization* |
+|=. (Click image to enlarge) |=. (Click image to enlarge) |
+
+h3. Live systems
+
+* "Icluster2":http://i-cluster2.inrialpes.fr (104 bi Itanuim): "Gantt Chart":http://ita.imag.fr/cgi-bin/DrawOARGantt.pl, "Monika":http://ita.imag.fr/cgi-bin/monika.cgi
+* "Grid'5000":http://www.grid5000.fr
+* ...

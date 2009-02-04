@@ -1,0 +1,6 @@
+---
+title: BOAR 
+inMenu: true
+orderInfo: 2
+---
+<notextile>{rstconverter: {rstfile: BOAR.rst}}<notextile>

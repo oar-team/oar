@@ -1,0 +1,6 @@
+---
+title: Use cases
+inMenu: true
+orderInfo: 4
+---
+<notextile>{rstconverter: {rstfile: doc_usecases.rst}}<notextile>

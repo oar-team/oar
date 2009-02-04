@@ -1,0 +1,38 @@
+---
+title: Downloads 
+inMenu: false
+orderInfo: 4
+---
+h2. Download
+
+
+h3. Installation
+
+See the "documentation page":admins/admin_documentation.html#installing-the-oar-batch-system for installation requirements and instructions.
+
+h3. Debian packages
+
+You can use the debian repository in your sources.list
+
+ For the 2.2 version:
+ deb http://oar.imag.fr/debian_stable_2.2 ./
+
+ For the 2.3 version:
+ deb http://oar.imag.fr/debian_stable_2.3 ./
+
+
+or
+
+ Download sources and debian packages and RPM packages on
+ https://gforge.inria.fr/frs/?group_id=125
+
+The system is licensed under the *GNU Library General Public License*.
+
+h3. Optional Software
+
+    * "Taktuk":http://taktuk.gforge.inria.fr/ is a parallel and scalable remote execution tool for cluster.
+
+h3. ComputeMode virtual cluster solution
+
+"ComputeMode":http://www.computemode.org uses OAR internally for the jobs management.
+

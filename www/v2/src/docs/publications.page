@@ -1,0 +1,10 @@
+---
+title: Publications
+inMenu: true
+directoryName: Documentations 
+orderInfo: 3
+---
+h2. Publications
+
+<notextile>{bibliotex: {bibFile: oar}}</notextile>
+.

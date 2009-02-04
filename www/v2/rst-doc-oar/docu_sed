@@ -1,0 +1,3 @@
+sed 's/\&amp\;quot\;/\&quot\;/g' ../output/docs/manual.html > /tmp/tmp.html
+cat /tmp/tmp.html > ../output/docs/manual.html
+
