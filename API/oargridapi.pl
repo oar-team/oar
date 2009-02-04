@@ -116,7 +116,9 @@ SWITCH: for ($q) {
     my %sites = get_sites($dbh);
     my $compact_sites;
     foreach my $s ( keys( %{ $sites{sites} } ) ) {
-      $compact_sites->{$s}->{uri} = apilib::make_uri("sites/$s.$ext",0);
+      $compact_sites->{$s}->{uri} = apilib::htmlize_uri(
+                              apilib::make_uri("/sites/$s.$ext",0),
+                              $ext);
     }
     print $header;
     print apilib::export($compact_sites,$type);
@@ -140,6 +142,40 @@ SWITCH: for ($q) {
     }
     else {
       apilib::ERROR( 404, "Not found", "Resource not found" );
+    }
+    last;
+  };
+
+  #
+  # List of current jobs on a site (oarstat wrapper)
+  #
+  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|xml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $site  = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    my %sites = get_sites($dbh);
+    if ( not defined( $sites{sites}{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site resource not found" );
+    }
+    else {
+      my $frontend = $sites{sites}{$site}{frontend};
+      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarstat -Y\"";
+      my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
+      my $jobs = apilib::import($cmdRes,"yaml");
+      my $result;
+      foreach my $job ( keys( %{$jobs} ) ) {
+        $result->{$job}->{state}=$jobs->{$job}->{state};
+        $result->{$job}->{owner}=$jobs->{$job}->{owner};
+        $result->{$job}->{name}=$jobs->{$job}->{name};
+        $result->{$job}->{queue}=$jobs->{$job}->{queue};
+        $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
+        $result->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job.$ext",0);
+        $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext);
+      }
+      print $header;
+      print apilib::export($result,$type);
     }
     last;
   };
@@ -173,7 +209,7 @@ SWITCH: for ($q) {
   #
   # A new job on a cluster (oarsub wrapper)
   #
-  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|json|html)*$};
   apilib::POST( $_, $URI ) && do {
 
     # Must be authenticated
@@ -187,6 +223,8 @@ SWITCH: for ($q) {
     # Check the site resource
     $_->path_info =~ m/$URI/;
     my $site  = $1;
+    my $ext = apilib::set_ext($q,$2);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
     my %sites = get_sites($dbh);
     if ( not defined( $sites{sites}{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
@@ -232,10 +270,10 @@ SWITCH: for ($q) {
       );
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
-      print $q->header( -status => 201, -type => $q->content_type );
+      print $header;
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::make_uri("sites/$site/jobs/$1.". apilib::get_ext($q->content_type),0)
-                    } , $q->content_type );
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext)
+                    } , $type );
     }
     else {
       apilib::ERROR( 400, "Parse error",

@@ -106,6 +106,16 @@ sub make_uri($$) {
   }
 }
 
+# Return an html href of an uri if the type is "html"
+sub htmlize_uri($$) {
+  my $uri=shift;
+  my $type=shift;
+  if ($type eq "html") { 
+    return "<A HREF=".$q->url(-full => 1)."$uri>$uri</A>";
+  }
+  else { return $uri; }
+}
+
 # Check if YAML is enabled or exits with an error
 sub check_yaml() {
   unless ($YAMLenabled) {

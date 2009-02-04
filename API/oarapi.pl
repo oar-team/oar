@@ -74,6 +74,7 @@ SWITCH: for ($q) {
       $result->{$job}->{queue}=$jobs->{$job}->{queue};
       $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
       $result->{$job}->{uri}=apilib::make_uri("/jobs/$job.$ext",0);
+      $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext);
     }
     print $header;
     print apilib::export($result,$type);
@@ -112,10 +113,12 @@ SWITCH: for ($q) {
     my $resources = apilib::import($cmdRes,"yaml");
     my $result;
     foreach my $node ( keys( %{$resources} ) ) {
-        $result->{$node}->{uri}=apilib::make_uri("resources/nodes/$node.$ext",0);
+        $result->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$ext",0);
+        $result->{$node}->{uri}=apilib::htmlize_uri($result->{$node}->{uri},$ext);
       foreach my $id ( keys( %{$resources->{$node}} ) ) {
         $result->{$node}->{$id}->{status}=$resources->{$node}->{$id};
-        $result->{$node}->{$id}->{uri}=apilib::make_uri("resources/$id.$ext",0);
+        $result->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id.$ext",0);
+        $result->{$node}->{$id}->{uri}=apilib::htmlize_uri($result->{$node}->{$id}->{uri},$ext);
       }
     }
     print $header;
@@ -177,8 +180,11 @@ SWITCH: for ($q) {
   #
   # A new job (oarsub wrapper)
   #
-  $URI = qr{^/jobs$};
+  $URI = qr{^/jobs\.*(yaml|xml|json|html)*$};
   apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$1);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -227,10 +233,10 @@ SWITCH: for ($q) {
       );
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
-      print $q->header( -status => 201, -type => $q->content_type );
+      print $header;
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::make_uri("/jobs/$1.". apilib::get_ext($q->content_type),0)
-                    } , $q->content_type );
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1.". $ext,0),$ext)
+                    } , $type );
     }
     else {
       apilib::ERROR( 400, "Parse error",
