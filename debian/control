@@ -82,7 +82,7 @@ Description: OAR RESTful API
 
 Package: oar-gridapi
 Architecture: all
-Depends: oargrid-client | oar-grid, oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules
+Depends: oargrid-client | oar-grid, oar-common (= ${binary:Version}), oar-api (= ${binary:Version}) , ${perl:Depends}, httpd-cgi, perl-modules
 Suggests: oar-doc
 Description: OAR RESTful grid api
  This package installs a RESTful API for oargrid users. It works as a cgi into apache.
