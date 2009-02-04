@@ -244,6 +244,44 @@ SWITCH: for ($q) {
   };
 
   #
+  # List of grid jobs
+  #
+  $URI = qr{^/grid/jobs\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 403, "Forbidden",
+        "A suitable authentication must be done before posting jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+
+    $_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$1);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat -Y";
+    my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
+    my $jobs = apilib::import($cmdRes,"yaml");
+    my $result;
+    foreach my $job ( keys( %{$jobs} ) ) {
+      $result->{$job}->{uri}=apilib::make_uri("/grid/jobs/$job.$ext",0);
+      $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
+      $result->{$job}->{resources}=apilib::make_uri("/grid/jobs/$job/resources.$ext",0);
+      $result->{$job}->{resources}=apilib::htmlize_uri($result->{$job}->{resources},$ext,$FORCE_HTTPS);
+    }
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($result,$type);
+    last;
+  };
+
+  #
+  # List of resources inside a grid job
+  #
+  # TODO
+
+  #
   # A new job on a cluster (oarsub wrapper)
   #
   $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|json|html)*$};
