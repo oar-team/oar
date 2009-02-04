@@ -1,6 +1,0 @@
----
-title: FAQ User 
-inMenu: true
-orderInfo: 3
----
-<notextile>{rstconverter: {rstfile: FAQ-HEADER,FAQ-USER,FAQ-USER-missing-links}}<notextile>

@@ -1,1 +1,0 @@
-../../../../trunk/Docs/documentation/doc_oar-presentation.rst
