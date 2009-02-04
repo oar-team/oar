@@ -1,0 +1,28 @@
+
+	OAR site README
+
+Requirements :
+	- ruby
+	- webgen >= 0.4.5 (A template based static website generator)
+	- python-docutils (rst format)
+
+To generate and updade site
+	- make html 
+	- make rsync SITE=intra-id.imag.fr:/www-id/sites/oar/www/ or
+	  scp -r output/* intra-id.imag.fr:/www-id/sites/oar/www/
+
+    Then, set again the rights: chmod -R 775 /www-id/sites/oar/www/
+
+To add page
+	- For example see index.page in src directory.
+	- See metainfo.yaml to control page's position and display in menu. 
+	- By default page use the Textile simple markup language (see http://hobix.com/textile/quick.html).
+	- A little plugin is use to integrate rst file (rst files must are in rst_files directory, you can use symlink)
+	
+
+To add a news
+	- just put the news in new.yaml file (in respect of the format of previous newes)
+
+Todo:
+ - add rss flux generator
+ - bibtex support

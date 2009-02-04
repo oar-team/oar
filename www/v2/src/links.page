@@ -1,0 +1,35 @@
+---
+title: Links 
+inMenu: true
+directoryName: oar
+orderInfo: 5
+---
+h2. Links
+
+    * "Laboratoire Id-Imag":http://www-id.imag.fr , "Mescal Project":http://mescal.imag.fr/, "Moais Project":http://moais.imag.fr/  
+    * "CiGri":http://cigri.ujf-grenoble.fr (or "here":http://cigri.imag.fr) is grid middleware which federates several clusters under OAR.
+    * "Ka-tools":http://ka-tools.imag.fr is a set of operating tools for cluster expploitation and administration.
+    * "Taktuk":http://taktuk.gforge.inria.fr/ is a tool for deploying remote execution commands to a potentially large set of remote nodes in an very efficient manner.
+    * "ComputeMode(tm)":http://www.computemode.org is a virtual cluster solution
+    * "IGGI":http://iggi.imag.fr a virtual grid solution (based upon OAR + CiGri + ComputeMode). 
+
+h2. Users
+
+   * "Ciment":http://ciment.ujf-grenoble.fr/ Partneers (our first users :)
+   ** "SCCI":http://www.obs.ujf-grenoble.fr/scci/ Service Commun de Calcul Intensif.
+   ** "CECIC":http://cecic.cermav.cnrs.fr/ Centre d'Expérimentation du Calcul Intensif en Chimie
+   ** "PHYNUM":http://lpm2c.grenoble.cnrs.fr/PHYNUM/ PHYsique NUMérique.
+   * "Grid'5000":http://www.grid5000.fr (our big users :)
+   * "BRGM":http://www.brgm.fr/ Bureau de recherches géologiques et minières.
+   * "UFR IMA":http://www-ufrima.imag.fr/ UFR Informatique et Mathématiques Appliquées de l'université Joseph Fourier.
+   * "IUT de Belfort-Montbéliard":http://cluster.iut-bm.univ-fcomte.fr Cluster de L'équipe de recherche AND(Algorithmique Numérique Distribuée) du laboratoire d'informatique de l'université de Franche-Comté LIFC.
+   * "LIP Laboratoire de l'informatique du Parallélisme":http://graal.ens-lyon.fr/~ecaron/gdsdmi.html Cluster is dedicated for teaching and research.
+ 
+   * "ICATIS":http://www.icatis.com
+   * "Mandriva Linux":http://www.mandrivalinux.com/
+   
+If you want to be listed above as OAR users, please "contact us":contact.html.
+
+|"!images/logo_id.gif!":http:/www-id.imag.fr|
+|"!images/cnrs.gif!":http://www.cnrs.fr|"!images/inpg.gif!":http://www.inpg.fr|
+|"!images/inria.gif!":http://www.inrialpes.fr|"!images/ujf.gif!":http://www.ujf-grenoble.fr|

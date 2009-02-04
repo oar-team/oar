@@ -1,0 +1,5 @@
+DOCUFILE=../src/docs/manual.page
+
+cat manual_head.page > $DOCUFILE
+
+cat ../../branches/2.2/Docs/html/OAR-DOCUMENTATION.html | egrep -v '^<\/body>|^<body>|^<!DOCTYPE|^<html xmlns|^<head>|^<\/head>|^<meta|^<title>|^<link|^</\html>' >> $DOCUFILE

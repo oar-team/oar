@@ -1,0 +1,6 @@
+DOCUFILE=../src/docs/TODO.page
+
+
+cat TODO_head.page > $DOCUFILE
+
+cat TODO.html | egrep -v '^<\/body>|^<body>|^<!DOCTYPE|^<html xmlns|^<head>|^<\/head>|^<meta|^<title>|^<link|^</\html>' >> $DOCUFILE

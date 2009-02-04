@@ -1,0 +1,6 @@
+---
+title: News
+---
+h2. News
+
+<notextile>{news: }</notextile>

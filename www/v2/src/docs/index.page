@@ -1,0 +1,11 @@
+---
+title: Documentations 
+inMenu: false 
+directoryName: Documentations 
+orderInfo: 1
+---
+h2. Documentations
+
+* "Manual":manual.html
+* "Publications":publications.html
+* "TODO (in french)":TODO.html
