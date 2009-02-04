@@ -65,7 +65,11 @@ manual:
 	install -m 644 man/oargridsub.1 $(DESTDIR)/$(MANDIR)/man1
 	install -m 644 man/oargridstat.1 $(DESTDIR)/$(MANDIR)/man1
 
-install: sanity-check configuration common manual
+disco:
+	mkdir -p $(DESTDIR)/$(BINDIR)
+	install -m 755 misc/disco $(DESTDIR)/$(BINDIR)
+
+install: sanity-check configuration common manual disco
 
 clean:
 	-rm -f $(DESTDIR)/$(CONFIG_CMDS)/oargriddel \

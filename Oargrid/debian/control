@@ -6,9 +6,16 @@ Build-Depends: debhelper (>= 7)
 Standards-Version: 3.7.3
 Homepage: http://oar.imag.fr/
 
-Package: oargrid
+Package: oargrid-client
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, sudo, adduser
 Suggests: oar-server
+Replaces: oargrid
 Description: Grid manager for oar
  This is the tool to manage a grid of oar clusters
+
+Package: oargrid-disco
+Architecture: all
+Depends: oargrid-client, ruby, libyaml-ruby, libyaml-perl
+Description: Discovery tool for oargrid
+ A simple resource discovery tool for oargrid to find the maximum available resources on a given time range for specifed alias(s) of resources.

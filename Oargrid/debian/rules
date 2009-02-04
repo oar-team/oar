@@ -65,7 +65,8 @@ install-indep:
 
 	# Add here commands to install the indep part of the package into
 	# debian/<package>-doc.
-	$(MAKE) DESTDIR=$(CURDIR)/debian/oargrid PREFIX=usr MANDIR=usr/share/man install 
+	$(MAKE) DESTDIR=$(CURDIR)/debian/oargrid-client PREFIX=usr MANDIR=usr/share/man sanity-check configuration common manual
+	$(MAKE) DESTDIR=$(CURDIR)/debian/oargrid-disco PREFIX=usr MANDIR=usr/share/man sanity-check disco
 
 	dh_install -i
 

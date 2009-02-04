@@ -300,11 +300,13 @@ if ($listNodes > 0 || $listKeys > 0){
         foreach my $i (keys(%readyNodes)){
             foreach my $j (keys(%{$readyNodes{$i}})){
                 foreach my $n (keys(%{$readyNodes{$i}{$j}})){
+                  if ($n ne "name") {
                     foreach my $k (@{$readyNodes{$i}{$j}{$n}}){
                     #for (my $weight=0; $weight < $resaInfo{clusterJobs}->{$i}->{$j}->{weight};$weight++){
                         print("$k\n");
                     #}
                     }
+                  }
                 }
             }
         }
