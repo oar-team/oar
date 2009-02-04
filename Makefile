@@ -167,7 +167,9 @@ common: man
 				" $(DESTDIR)$(OARDIR)/oarsh_shell
 	install -m 6750 Tools/oardodo $(DESTDIR)$(OARDIR)/oardodo
 	-chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
+	-chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo
+	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
