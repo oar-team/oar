@@ -1,1 +1,1 @@
-link ../../../Docs/documentation/BOAR.rst
+../../../Docs/documentation/BOAR.rst
