@@ -82,7 +82,7 @@ sub ERROR($$$) {
   print $q->header( -status => $status, -type => 'text/html' );
   print $q->title( "ERROR: " . $title );
   print $q->h1($title);
-  print $q->p($message);
+  print $q->p("<PRE>\n". $message ."\n</PRE>");
 }
 
 ##############################################################################
@@ -238,6 +238,40 @@ sub check_job($$) {
   unless ( $job->{script} or $job->{script_path} ) {
     ERROR 400, 'Missing Required Field',
       'A job must have a script or a script_path!';
+    exit 0;
+  }
+
+  return $job;
+}
+
+# Check the consistency of a posted grid job and load it into a hashref
+sub check_grid_job($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $job;
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $job=import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'text/json' ) {
+    $job=import_json($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 415, 'Job description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or text/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Job must have a "script" or script_path field
+  unless ( $job->{resources} or $job->{file} ) {
+    ERROR 400, 'Missing Required Field',
+      'A grid job must have a resources or file field!';
     exit 0;
   }
 

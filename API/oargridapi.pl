@@ -31,6 +31,7 @@ my $FORCE_HTTPS = 0;
 
 # Oar commands
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
+my $OARGRIDSUB_CMD = "oargridsub";
 
 # CGI handler
 my $q = apilib::get_cgi_handler();
@@ -365,22 +366,18 @@ SWITCH: for ($q) {
       $oarcmd .= " \"$script\"";
     }
 
+    # Submit the query
     my $cmd = "$OARDODO_CMD $SSH_CMD $frontend 'cd ~$authenticated_user && sudo -u $authenticated_user $oarcmd'";
-    my $cmdRes = `$cmd 2>&1`;
-    if ( $? != 0 ) {
-      my $err = $? >> 8;
-      apilib::ERROR(
-        400,
-        "Oar server error",
-        "Oarsub command exited with status $err: $cmdRes\nCmd:\n$oarcmd"
-      );
-    }
-    elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
+    my $cmdRes = apilib::send_cmd($cmd,"Oardel");
+    if ($cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext,$FORCE_HTTPS)
-                    } , $type );
+      print apilib::export( 
+            { 
+               'status' => "ok",
+               'job_id' => "$1",
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext,$FORCE_HTTPS)
+            } , $type );
     }
     else {
       apilib::ERROR( 400, "Parse error",
@@ -392,11 +389,75 @@ SWITCH: for ($q) {
   #
   # A new grid job
   #
-  $URI = qr{^/grid/job$};
+  $URI = qr{^/grid/jobs\.*(yaml|xml|json|html)*$};
   apilib::POST( $_, $URI ) && do {
-    ############### TODO ############### 
-    print $q->header;
-    print "New gridjob status goes here...\n";
+    $_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$1);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 403, "Forbidden",
+        "A suitable authentication must be done before posting jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Check the submited job
+    my $job = apilib::check_grid_job( $q->param('POSTDATA'), $q->content_type );
+   
+    # Make the query (the hash is converted into a list of long options)
+    my $oargridcmd = "$OARGRIDSUB_CMD ";
+    my $workdir = "~$authenticated_user";
+    my $resources;
+    foreach my $option ( keys( %{$job} ) ) {
+      if ($option eq "resources") {
+        $resources = $job->{resources};
+      }
+      elsif ($option eq "workdir") {
+        $workdir = $job->{workdir};
+      }
+      else {
+        $oargridcmd .= " --$option";
+        $oargridcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
+      }
+    }
+    if ($resources ne "") { $oargridcmd .= " $resources"; }
+
+    my $cmd = "cd $workdir && $OARDODO_CMD 'cd $workdir && $oargridcmd'"; 
+    my $cmdRes = `$cmd 2>&1`;
+    my $err = $? >> 8;
+    if ( $err == 3 ) {
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export( { 'status' => "rejected",
+                              'output' => $cmdRes
+                            } , $type );
+    }
+    elsif ( $err != 0 ) {
+      apilib::ERROR(
+        400,
+        "Oargrid server error",
+        "Oargridsub command exited with status $err: $cmdRes\nCmd:\n$oargridcmd"
+      );
+    }
+    elsif ( $cmdRes =~ m/.*Grid reservation id\s*=\s*(\d+).*/m ) {
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export(
+            {
+               'status' => "ok",
+               'job_id' => "$1",
+               'key' => "",
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS)
+                    } , $type );
+    }
+    else {
+      apilib::ERROR( 400, "Parse error",
+        "Job submited but the id could not be parsed" );
+    }
+
     last;
   };
 
