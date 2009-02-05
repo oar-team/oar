@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/BOAR.rst
+link ../../../Docs/documentation/BOAR.rst
