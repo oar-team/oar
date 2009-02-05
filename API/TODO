@@ -2,3 +2,5 @@
 - Implémenter le paramètre "depth" permettant de développer les uri qui sont dans les résultats
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
+- Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
+- Reformater les status (jobs, resources) pour y ajouter les uris (par exemple: batchId -> pointer vers /sites/<site>/jobs/BatchId)

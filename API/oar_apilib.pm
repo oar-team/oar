@@ -216,12 +216,24 @@ sub export($$) {
   }
 }
 
-# Clean a hash from a key having an empty value
-sub clean_hash($$) {
+# Clean a hash from a key having an empty value (for options with parameter)
+sub parameter_option($$) {
   my $hash = shift;
   my $key = shift;
   if ( defined($hash->{"$key"}) && $hash->{"$key"} eq "" ) {
     delete($hash->{"$key"})
+  }
+}
+
+# Remove a toggle option if value is 0
+sub toggle_option($$) {
+  my $job = shift;
+  my $option = shift;
+  if (defined($job->{$option})) {
+    if ($job->{$option} eq "0" ) {
+      delete($job->{$option});
+    }
+    else { $job->{$option}="" ; };
   }
 }
 
@@ -296,15 +308,16 @@ sub check_grid_job($$) {
   }
 
   # Clean options with an empty parameter that is normaly required
-  clean_hash($job,"walltime");
-  clean_hash($job,"program");
-  clean_hash($job,"program");
+  parameter_option($job,"walltime");
+  parameter_option($job,"program");
+  parameter_option($job,"program");
+  parameter_option($job,"type");
+  parameter_option($job,"start_date");
+  parameter_option($job,"directory");
 
-  # Empty options that have no parameter
-  if (defined($job->{"FORCE"}) && $job->{"FORCE"} eq "0" ) {
-    delete($job->{"FORCE"});
-  }
-  else { $job->{"FORCE"}="" ; }
+  # Manage toggle options (no parameter)
+  toggle_option($job,"FORCE");
+  toggle_option($job,"verbose");
 
   return $job;
 }

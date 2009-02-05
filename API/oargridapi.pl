@@ -437,13 +437,14 @@ SWITCH: for ($q) {
     my $cmd = "cd $workdir && $OARDODO_CMD 'cd $workdir && $oargridcmd'"; 
     my $cmdRes = `$cmd 2>&1`;
     my $err = $? >> 8;
-    if ( $err == 3 ) {
+    if ( "$err" eq "3" ) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'status' => "rejected",
                               'output' => $cmdRes,
-                              'command' => $cmd
+                              'command' => $oargridcmd
                             } , $type );
+      last;
     }
     elsif ( $err != 0 ) {
       apilib::ERROR(
@@ -462,12 +463,12 @@ SWITCH: for ($q) {
                'key' => "",
                'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS),
                'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources.". $ext,0),$ext,$FORCE_HTTPS),
-               'command' => $cmd
+               'command' => $oargridcmd
                     } , $type );
     }
     else {
       apilib::ERROR( 400, "Parse error",
-        "Job submited but the id could not be parsed" );
+        "Job submited but the id could not be parsed.\n\nCmd output:\n$cmdRes" );
     }
 
     last;
@@ -488,7 +489,7 @@ SWITCH: for ($q) {
 <CAPTION>Grid job submission</CAPTION>
 <TR>
   <TD>Resources</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=resources VALUE=\"simpsons:rdef='/nodes=2',bart:rdef='/cpu=1'\"></TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=resources VALUE=\"grenoble:rdef='/nodes=2',rennes:rdef='/cpu=1'\"></TD>
 </TR><TR>
   <TD>Walltime</TD>
   <TD><INPUT TYPE=text SIZE=40 NAME=walltime VALUE=\"01:00:00\"></TD>
@@ -496,15 +497,26 @@ SWITCH: for ($q) {
   <TD>Program to run</TD>
   <TD><INPUT TYPE=text SIZE=40 NAME=program VALUE=\"/bin/sleep 300\"></TD>
 </TR><TR>
+  <TD>Continue if rejected</TD>
+  <TD><INPUT TYPE=checkbox NAME=FORCE></TD>
+</TR><TR>
+  <TD>Types</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>
+</TR><TR>
+  <TD>Start date</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=start_date></TD>
+</TR><TR>
+  <TD>Directory</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=directory></TD>
+</TR><TR>
+  <TD>Verbose output</TD>
+  <TD><INPUT TYPE=checkbox NAME=verbose></TD>
+</TR><TR>
   <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
 </TR>
 </TABLE>
 </FORM>
 ";
- # TODO: debug:
- #</TR><TR>
- # <TD>Continue if rejected</TD>
- # <TD><INPUT TYPE=checkbox NAME=FORCE></TD>
     last;
   };
 
