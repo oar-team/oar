@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/doc_security.rst
+../../../Docs/documentation/doc_security.rst

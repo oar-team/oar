@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/oaradmin.rst
+../../../Docs/documentation/oaradmin.rst

@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/doc_oar-presentation.rst
+../../../Docs/documentation/doc_oar-presentation.rst

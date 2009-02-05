@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/GSOC_array_jobs.rst
+../../../Docs/documentation/GSOC_array_jobs.rst

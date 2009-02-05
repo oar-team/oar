@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/doc_usecases.rst
+../../../Docs/documentation/doc_usecases.rst

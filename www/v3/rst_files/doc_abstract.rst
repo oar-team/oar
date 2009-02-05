@@ -1,1 +1,1 @@
-../../../../trunk/Docs/documentation/doc_abstract.rst
+../../../Docs/documentation/doc_abstract.rst
