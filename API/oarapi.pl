@@ -124,7 +124,17 @@ SWITCH: for ($q) {
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
     (my $output_opt, my $header)=apilib::set_output_format($ext);
-    my $cmd    = "$OARSTAT_CMD -fj $jobid $output_opt";
+    
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 403, "Forbidden",
+        "A suitable authentication must be done before posting jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    my $cmd    = "$OARDODO_CMD $OARSTAT_CMD -fj $jobid $output_opt";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
     print $header;
     print $HTML_HEADER if ($ext eq "html");
