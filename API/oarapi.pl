@@ -46,6 +46,7 @@ my $HTML_HEADER = "
 <HR>
 <A HREF=$apiuri/resources.html>RESOURCES</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
+<A HREF=$apiuri/jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
 <HR>
 ";
 
@@ -232,8 +233,16 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Check the submited job
-    my $job = apilib::check_job( $q->param('POSTDATA'), $q->content_type );
+    # Check and get the submitted job
+    # From encoded data
+    my $job;
+    if ($q->param('POSTDATA')) {
+      $job = apilib::check_job( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $job = apilib::check_job( $q->Vars, $q->content_type );
+    }
 
     # Make the query (the hash is converted into a list of long options)
     my $oarcmd = "$OARSUB_CMD ";
@@ -273,12 +282,13 @@ SWITCH: for ($q) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS),
+                      'state' => "submitted"
                     } , $type );
     }
     else {
       apilib::ERROR( 400, "Parse error",
-        "Job submited but the id could not be parsed" );
+        "Job submitted but the id could not be parsed.\nCmd:\n$oarcmd" );
     }
     last;
   };
@@ -314,6 +324,47 @@ SWITCH: for ($q) {
     last;
   };
 
+  #
+  # Html form for job posting
+  #
+  $URI = qr{^/jobs/form.html$};
+  apilib::GET( $_, $URI ) && do {
+    (my $output_opt, my $header, my $type)=apilib::set_output_format("html");
+    print $header;
+    print $HTML_HEADER;
+    print "
+<FORM METHOD=post ACTION=$apiuri/jobs.html>
+<TABLE>
+<CAPTION>Job submission</CAPTION>
+<TR>
+  <TD>Resources</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=resource VALUE=\"/nodes=1/cpu=1,walltime=00:30:00\"></TD>
+</TR><TR>
+  <TD>Name</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=name VALUE=\"Test_job\"></TD>
+</TR><TR>
+  <TD>Properties</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=property VALUE=\"\"></TD>
+</TR><TR>
+  <TD>Program to run</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=script_path VALUE='\"/bin/sleep 300\"'></TD>
+</TR><TR>
+  <TD>Types</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>
+</TR><TR>
+  <TD>Reservation dates</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=reservation></TD>
+</TR><TR>
+  <TD>Directory</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=directory></TD>
+</TR><TR>
+  <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
+</TR>
+</TABLE>
+</FORM>
+";
+    last;
+  };
 
   #
   # Anything else -> 404

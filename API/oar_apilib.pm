@@ -253,6 +253,11 @@ sub check_job($$) {
     $job=import_json($data);
   }
 
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $job=import_html_form($data);
+  }
+
   # We expect the data to be in YAML or JSON format
   else {
     ERROR 415, 'Job description must be in YAML or JSON',
@@ -267,6 +272,14 @@ sub check_job($$) {
       'A job must have a script or a script_path!';
     exit 0;
   }
+
+  # Clean options with an empty parameter that is normaly required
+  foreach my $option ("resources",   "name",
+                      "property",    "script",
+                      "script_path", "type",
+                      "reservation", "directory"
+                     ) { parameter_option($job,$option) }
+    
 
   return $job;
 }

@@ -4,3 +4,4 @@
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
 - Reformater les status (jobs, resources) pour y ajouter les uris (par exemple: batchId -> pointer vers /sites/<site>/jobs/BatchId)
+- oargridapi: gérer les clés ssh (voir <not yet implemented>)

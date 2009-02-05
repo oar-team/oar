@@ -340,7 +340,7 @@ SWITCH: for ($q) {
     }
     my $frontend = $sites{sites}{$site}{frontend};
 
-    # Check the submited job
+    # Check the submitted job
     my $job = apilib::check_job( $q->param('POSTDATA'), $q->content_type );
 
     # Make the query (the hash is converted into a list of long options)
@@ -375,14 +375,14 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( 
             { 
-               'status' => "ok",
+               'state' => "submitted",
                'job_id' => "$1",
                'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext,$FORCE_HTTPS)
             } , $type );
     }
     else {
       apilib::ERROR( 400, "Parse error",
-        "Job submited but the id could not be parsed" );
+        "Job submitted but the id could not be parsed" );
     }
     last;
   };
@@ -405,7 +405,7 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Check and get the submited job
+    # Check and get the submitted job
     # From encoded data
     my $job;
     if ($q->param('POSTDATA')) {
@@ -440,7 +440,7 @@ SWITCH: for ($q) {
     if ( "$err" eq "3" ) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export( { 'status' => "rejected",
+      print apilib::export( { 'state' => "rejected",
                               'output' => $cmdRes,
                               'command' => $oargridcmd
                             } , $type );
@@ -458,9 +458,9 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export(
             {
-               'status' => "ok",
+               'state' => "submitted",
                'job_id' => "$1",
-               'key' => "",
+               'key' => "<not yet implemented>",
                'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS),
                'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources.". $ext,0),$ext,$FORCE_HTTPS),
                'command' => $oargridcmd
@@ -468,7 +468,7 @@ SWITCH: for ($q) {
     }
     else {
       apilib::ERROR( 400, "Parse error",
-        "Job submited but the id could not be parsed.\n\nCmd output:\n$cmdRes" );
+        "Job submitted but the id could not be parsed.\n\nCmd output:\n$cmdRes" );
     }
 
     last;
