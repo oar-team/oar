@@ -1,3 +1,11 @@
+oar (2.4.0-1~8.gbp0a8d11) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @0a8d112ec6c1e8bc6060f4e92dd90b177e4b1b19 **
+
+  * Removed bad link
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 05 Feb 2009 21:46:12 +0100
+
 oar (2.4.0-1~7.gbp47ac1f) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @47ac1f0d260a8e0bcd7e13342629c3a8c0cc3afa **
