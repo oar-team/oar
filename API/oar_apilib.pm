@@ -161,6 +161,12 @@ sub import_json($) {
   return $hashref;
 }
 
+# Load HTML data into a hashref
+sub import_html_form($) {
+  my $data         = shift;
+  return $data;
+}
+
 # Load data into a hashref
 sub import($$) {
   (my $data, my $format) = @_;
@@ -207,6 +213,15 @@ sub export($$) {
     ERROR 415, "Unknown $content_type format",
       "The $content_type format is not known.";
     exit 0;
+  }
+}
+
+# Clean a hash from a key having an empty value
+sub clean_hash($$) {
+  my $hash = shift;
+  my $key = shift;
+  if ( defined($hash->{"$key"}) && $hash->{"$key"} eq "" ) {
+    delete($hash->{"$key"})
   }
 }
 
@@ -260,6 +275,11 @@ sub check_grid_job($$) {
     $job=import_json($data);
   }
 
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $job=import_html_form($data);
+  }
+
   # We expect the data to be in YAML or JSON format
   else {
     ERROR 415, 'Job description must be in YAML or JSON',
@@ -268,12 +288,23 @@ sub check_grid_job($$) {
     exit 0;
   }
 
-  # Job must have a "script" or script_path field
+  # Job must have a "resources" or "file" field
   unless ( $job->{resources} or $job->{file} ) {
     ERROR 400, 'Missing Required Field',
       'A grid job must have a resources or file field!';
     exit 0;
   }
+
+  # Clean options with an empty parameter that is normaly required
+  clean_hash($job,"walltime");
+  clean_hash($job,"program");
+  clean_hash($job,"program");
+
+  # Empty options that have no parameter
+  if (defined($job->{"FORCE"}) && $job->{"FORCE"} eq "0" ) {
+    delete($job->{"FORCE"});
+  }
+  else { $job->{"FORCE"}="" ; }
 
   return $job;
 }

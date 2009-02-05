@@ -48,6 +48,7 @@ my $HTML_HEADER = "
 <HR>
 <A HREF=$apiuri/sites.html>SITES</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/grid/jobs.html>GRID_JOBS</A>&nbsp;&nbsp;&nbsp;
+<A HREF=$apiuri/grid/jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
 <HR>
 ";
 
@@ -404,8 +405,16 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Check the submited job
-    my $job = apilib::check_grid_job( $q->param('POSTDATA'), $q->content_type );
+    # Check and get the submited job
+    # From encoded data
+    my $job;
+    if ($q->param('POSTDATA')) {
+      $job = apilib::check_grid_job( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $job = apilib::check_grid_job( $q->Vars, $q->content_type );
+    }
    
     # Make the query (the hash is converted into a list of long options)
     my $oargridcmd = "$OARGRIDSUB_CMD ";
@@ -432,14 +441,15 @@ SWITCH: for ($q) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'status' => "rejected",
-                              'output' => $cmdRes
+                              'output' => $cmdRes,
+                              'command' => $cmd
                             } , $type );
     }
     elsif ( $err != 0 ) {
       apilib::ERROR(
         400,
         "Oargrid server error",
-        "Oargridsub command exited with status $err: $cmdRes\nCmd:\n$oargridcmd"
+        "Oargridsub command exited with status $err: $cmdRes\nCmd:\n$oargridcmd\n"
       );
     }
     elsif ( $cmdRes =~ m/.*Grid reservation id\s*=\s*(\d+).*/m ) {
@@ -450,7 +460,9 @@ SWITCH: for ($q) {
                'status' => "ok",
                'job_id' => "$1",
                'key' => "",
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS)
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS),
+               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources.". $ext,0),$ext,$FORCE_HTTPS),
+               'command' => $cmd
                     } , $type );
     }
     else {
@@ -458,6 +470,41 @@ SWITCH: for ($q) {
         "Job submited but the id could not be parsed" );
     }
 
+    last;
+  };
+
+
+  #
+  # Html form for job posting
+  # 
+  $URI = qr{^/grid/jobs/form.html$};
+  apilib::GET( $_, $URI ) && do {
+    (my $output_opt, my $header, my $type)=apilib::set_output_format("html");
+    print $header;
+    print $HTML_HEADER;
+    print "
+<FORM METHOD=post ACTION=$apiuri/grid/jobs.html>
+<TABLE>
+<CAPTION>Grid job submission</CAPTION>
+<TR>
+  <TD>Resources</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=resources VALUE=\"simpsons:rdef='/nodes=2',bart:rdef='/cpu=1'\"></TD>
+</TR><TR>
+  <TD>Walltime</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=walltime VALUE=\"01:00:00\"></TD>
+</TR><TR>
+  <TD>Program to run</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=program VALUE=\"/bin/sleep 300\"></TD>
+</TR><TR>
+  <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
+</TR>
+</TABLE>
+</FORM>
+";
+ # TODO: debug:
+ #</TR><TR>
+ # <TD>Continue if rejected</TD>
+ # <TD><INPUT TYPE=checkbox NAME=FORCE></TD>
     last;
   };
 
