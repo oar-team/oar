@@ -28,7 +28,7 @@ Test
 ----
 You may test the API with a simple wget:
 
- wget -O - http://localhost:/oarapi/resources.yaml
+ wget -O - http://localhost:/oarapi/resources.html
 
-It should give you the list of resources in the yaml format.
+It should give you the list of resources in the yaml format but enclosed in an html page.
 To test if the authentication works, you need to post a new job. See the example.txt file that gives you example queries with a ruby rest client.

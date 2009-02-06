@@ -1,0 +1,59 @@
+# Install the ruby rest client:
+> gem install rest-client
+> export PATH=$PATH:/var/lib/gems/1.8/bin
+# Eventualy make a tunnel to the API
+> ssh -fNL 8080:www:80 <login>@access.grenoble.grid5000.fr
+# Connect to the API
+> restclient http://localhost:8080/oargridapi-debug
+
+# Getting sites infos
+  # in JSON
+irb(main):004:0> puts get('/sites.json')
+  # Same thing (JSON by default)
+irb(main):004:0> puts get('/sites')
+  # in YAML
+irb(main):005:0> puts get('/sites.yaml')
+  # Same thing but using the content_type variable
+irb(main):050:0> puts get('/sites', :content_type=>"text/yaml")
+  # Details about a site
+irb(main):008:0> puts get('/sites/grenoble.yaml')
+
+# Getting jobs infos of a site
+irb(main):006:0> puts get('/sites/grenoble/jobs.yaml')
+irb(main):009:0> puts get('/sites/grenoble/jobs/12.yaml')
+
+# Submiting a job on a given site (using YAML format)
+irb(main):010:0> require 'yaml'
+irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'script_path' => '/usr/bin/id' }
+irb(main):015:0> job=post('/sites/grenoble/jobs' , j.to_yaml , :content_type => 'text/yaml')
+irb(main):016:0> puts job
+
+# Getting details about the previously submited job
+irb(main):035:0> puts get(YAML::load(job)['uri'])
+
+# Submitting a job using JSON format, but requiring the result in YAML
+irb(main):010:0> require 'json'
+irb(main):037:0> job=post('/sites/grenoble/jobs.yaml' , j.to_json , :content_type => 'text/json')
+
+# Submitting a grid job
+irb(main):029:0> j={ 'resources' => 'grenoble:rdef=/cpu=2,lille:rdef=/cpu=2' }
+irb(main):030:0> job=post('/grid/jobs.yaml' , j.to_json , :content_type => 'text/json')
+irb(main):031:0> puts job
+
+# List the resources I obtained (if the state is ok)
+irb(main):061:0> job=YAML::load(job)
+irb(main):062:0> if job['state'] == 'submitted'
+irb(main):063:1>   puts get(job['resources'])
+irb(main):064:1> else
+irb(main):065:1*   puts "Job was rejected"
+irb(main):066:1> end
+
+# List my running grid jobs, in HTML
+irb(main):067:0> puts get('/grid/jobs.html')
+
+# Show details about a grid job, in JSON
+irb(main):069:0> puts get('/grid/jobs/18611.json')
+
+# Deleting a grid job
+irb(main):111:0> delete("/grid/jobs/18611.yaml")
+

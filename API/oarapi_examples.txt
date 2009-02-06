@@ -1,12 +1,19 @@
 > gem install rest-client
-> export PATH=$PATH:/var/lib/gems/1.8/gems/rest-client-0.8/bin
+> export PATH=$PATH:/var/lib/gems/1.8/bin
 > restclient http://localhost/oarapi-debug
 
 # Getting resources infos
+  # in JSON
 irb(main):004:0> puts get('/resources.json')
+  # in YAML
 irb(main):005:0> puts get('/resources.yaml')
+  # Same thing
+irb(main):050:0> puts get('/resources', :content_type=>"text/yaml")
+  # Details about a resource
 irb(main):008:0> puts get('/resources/1.yaml')
+  # Details and resources of a node
 irb(main):007:0> puts get('/resources/nodes/liza-1.yaml')
+  # Details of all the resources (expansion)
 irb(main):007:0> puts get('/resources/all.yaml')
 
 # Getting jobs infos
@@ -19,10 +26,11 @@ irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'script_path' => '/usr/bin/
 irb(main):015:0> job=post('/jobs' , j.to_json , :content_type => 'text/json')
 
 # Getting details about the previously submited job
+
 irb(main):035:0> puts get(JSON.parse(job)['uri'])
 
-# Submitting a job (using YAML format)
-irb(main):037:0> job=post('/jobs' , j.to_yaml , :content_type => 'text/yaml')
+# Submitting a job using JSON format, but requiring the result in YAML
+irb(main):037:0> job=post('/jobs.yaml' , j.to_json , :content_type => 'text/json')
 
 # Submitting a job with a provided inline script
 irb(main):024:0> script="#!/bin/bash

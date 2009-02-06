@@ -75,14 +75,14 @@ Description: OAR batch scheduler administration tools package
 
 Package: oar-api
 Architecture: all
-Depends: oar-common (= ${binary:Version}), oar-user (=${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules
+Depends: oar-common (= ${binary:Version}), oar-user (=${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, libyaml-perl
 Suggests: oar-doc
 Description: OAR RESTful API
  This package installs a RESTful API for oar users. It works as a cgi into apache.
 
 Package: oar-gridapi
 Architecture: all
-Depends: oargrid-client | oar-grid, oar-common (= ${binary:Version}), oar-api (= ${binary:Version}) , ${perl:Depends}, httpd-cgi, perl-modules
+Depends: oargrid-client | oar-grid, oar-common (= ${binary:Version}), oar-api (= ${binary:Version}) , ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libyaml-perl
 Suggests: oar-doc
 Description: OAR RESTful grid api
  This package installs a RESTful API for oargrid users. It works as a cgi into apache.
