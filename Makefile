@@ -104,6 +104,10 @@ api:
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-api.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-api.conf already exists, not overwriting it." ; else install -m 0600 API/apache2.conf $(DESTDIR)$(OARCONFDIR)/apache-api.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-api.conf || /bin/true ; fi
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)
+	install -m 0644 API/oarapi_examples.txt $(DESTDIR)$(DOCDIR)
+	install -m 0644 API/INSTALL $(DESTDIR)$(DOCDIR)/API_INSTALL
+	install -m 0644 API/TODO $(DESTDIR)$(DOCDIR)/API_TODO
 
 gridapi:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
@@ -124,6 +128,11 @@ gridapi:
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf already exists, not overwriting it." ; else install -m 0600 API/apache2-grid.conf $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf || /bin/true ; fi
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)
+	install -m 0644 API/oargridapi_examples.txt $(DESTDIR)$(DOCDIR)
+	install -m 0644 API/oargridapi.txt $(DESTDIR)$(DOCDIR)
+	install -m 0644 API/INSTALL $(DESTDIR)$(DOCDIR)/API_INSTALL
+	install -m 0644 API/TODO $(DESTDIR)$(DOCDIR)/API_TODO
 
 dbinit:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)

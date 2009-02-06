@@ -165,6 +165,7 @@ install-indep:
 		CGIDIR=/usr/lib/cgi-bin
 	$(MAKE) api \
                 DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-api \
+		DOCDIR=/usr/share/doc/oar-api \
 		OARUSER=oar \
 		OAROWNER=root \
                 OARCONFDIR=/etc/oar \
@@ -177,6 +178,7 @@ install-indep:
 		CGIDIR=/usr/lib/cgi-bin
 	$(MAKE) gridapi \
                 DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-gridapi \
+		DOCDIR=/usr/share/doc/oar-gridapi \
 		OARUSER=oar \
 		OAROWNER=root \
                 OARCONFDIR=/etc/oar \
