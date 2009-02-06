@@ -9,3 +9,11 @@
   version installed on the remote site queried.
   We could parse in YAML and give the result in JSON (like we did for some functions)
 
+
+Bugs:
+
+- Mauvaise regex (à cause des .?):
+  No way to handle your request /resources/nodes/genepi-1.grenoble.grid5000.fr.html
+
+- https://helpdesk.grid5000.fr/oarapi/Grenoble/jobs.html
+  YAML data not understood
