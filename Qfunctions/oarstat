@@ -147,7 +147,7 @@ Options:
   -e, --events              show job events
   -p, --properties          show job properties
       --accounting          show accounting informations between two dates
-      --sql                 restricts display by applying the SQL where clause 
+      --sql                 restricts display by applying the SQL where clause
                             on the table jobs (ex: "project = 'p1'")
   -D, --dumper              print result in DUMPER format
   -X, --xml                 print result in XML format
