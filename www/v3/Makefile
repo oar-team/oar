@@ -15,6 +15,9 @@ output/%.html: $(MANUALPAGE)
 	cd output/admins; ln -s ../images; cd -
 	cd output/about; ln -s ../images; cd -
 	cd output/works; ln -s ../images; cd -
+	cd output/works/gsoc; ln -s ../../images; cd -
+	cd output/works/gsoc/2008; ln -s ../../../images; cd -
+	cd output/works/gsoc/2009; ln -s ../../../images; cd -
 	cd output/users; ln -s ../images; cd -
 	
 upload: all
