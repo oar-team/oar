@@ -30,14 +30,7 @@ the tasks until the final stages of the workload, when the results are aggregate
 Status: 
 _______
 
-The feature is now implemented and fully functionnal in a branch of the svn 
-repository.
-
-Future work:
-____________
-
-We still need to merge the array jobs branch with the trunk to integrate Elton's
-work in the current OAR version.
+The feature is now implemented, fully functionnal and integrated in the current releases.
 
 Developers: 
 ___________
