@@ -1,1 +1,1 @@
-../../../Docs/documentation/BOAR.rst
+../../../Docs/works/BOAR.rst
