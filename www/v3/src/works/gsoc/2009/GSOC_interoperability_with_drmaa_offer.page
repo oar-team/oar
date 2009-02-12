@@ -1,6 +1,6 @@
 ---
-title: Interoperability with DRMAA 
+title: DRMAA Interoperability
 inMenu: true
-orderInfo: 1
+orderInfo: 4
 ---
 <notextile>{rstconverter: {rstfile: GSOC_interoperability_with_drmaa_offer.rst}}<notextile>

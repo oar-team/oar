@@ -1,0 +1,6 @@
+---
+title: Web Portal 
+inMenu: true
+orderInfo: 1
+---
+<notextile>{rstconverter: {rstfile: GSOC_web_portal_offer.rst}}<notextile>

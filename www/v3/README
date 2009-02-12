@@ -21,7 +21,7 @@ To add page
 	
 
 To add a news
-	- just put the news in new.yaml file (in respect of the format of previous newes)
+	- just put the news in new.yaml file (in respect of the format of previous news)
 
 Todo:
  - add rss flux generator
