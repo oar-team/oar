@@ -7,7 +7,7 @@
 # - the list of the return values
 # - the list of the side effects
 
-# $Id: oar_iolib.pm 1757 2008-11-20 10:17:06Z bzizou $
+# $Id$
 package iolib;
 require Exporter;
 
@@ -501,7 +501,7 @@ sub get_jobs_in_state_for_user($$$) {
 
 # get_jobs_with_given_properties
 # returns the jobs with specified properties
-# parameters : base, job state, where SQL constraints
+# parameters : base, where SQL constraints
 # return value : flatened list of hashref jobs
 # side effects : /
 sub get_jobs_with_given_properties($$) {
