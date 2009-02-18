@@ -1,0 +1,32 @@
+Format: 1.8
+Date: Tue, 26 Aug 2008 14:37:38 -0400
+Source: faketime
+Binary: faketime
+Architecture: source i386
+Version: 0.8-1
+Distribution: unstable
+Urgency: low
+Maintainer: Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+Changed-By: Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+Description: 
+ faketime   - report faked system time to programs
+Closes: 495630
+Changes: 
+ faketime (0.8-1) unstable; urgency=low
+ .
+   * Initial release (Closes: #495630)
+Checksums-Sha1: 
+ 5fa6c2438fa39ca4978153f80ea0ca3683d9c897 904 faketime_0.8-1.dsc
+ 7053ba5984a94d24cbe63bb7f285a9d1c5418e31 21188 faketime_0.8.orig.tar.gz
+ f407570b0a4254c0b1346f8209b5bd0fcb3ca067 2146 faketime_0.8-1.diff.gz
+ 7a8cc5ceb7365b159b9bb5d7971038ce7d8c2606 20070 faketime_0.8-1_i386.deb
+Checksums-Sha256: 
+ 6052e0e8e22afbb68643bf5c363d5885c1f0e9f98ff1b903b7a6f9689aad8da1 904 faketime_0.8-1.dsc
+ e115120ab4d199f7fd2ecdb87ae2963523d6e8a5314c2e914573afd7d5c704c3 21188 faketime_0.8.orig.tar.gz
+ d6e786c972d78d74df295816bbe5a65820b647123415d3284ca03c5a375a1be6 2146 faketime_0.8-1.diff.gz
+ d3b7c60bd14544359753ac200482954c803e4a013df0053e909202078bc4ce5e 20070 faketime_0.8-1_i386.deb
+Files: 
+ 687ca0c4a995bde6bccb67a366e5c91e 904 utils extra faketime_0.8-1.dsc
+ c83e12a80ca85486bc904905d325d01e 21188 utils extra faketime_0.8.orig.tar.gz
+ 759ba5d4faa482893112c4b214be657e 2146 utils extra faketime_0.8-1.diff.gz
+ 1e3dd85fce11ecb1dbde68b6200f4a51 20070 utils extra faketime_0.8-1_i386.deb

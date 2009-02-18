@@ -1,0 +1,31 @@
+Format: 1.8
+Date: Sat, 6 Sep 2008 00:20:00 +0200
+Source: libsort-naturally-perl
+Binary: libsort-naturally-perl
+Architecture: source all
+Version: 1.02-1
+Distribution: unstable
+Urgency: low
+Maintainer: Pierre Neyron <pierre.neyron@free.fr>
+Changed-By: Pierre Neyron <pierre.neyron@free.fr>
+Description: 
+ libsort-naturally-perl - Sort::Naturally -- sort lexically, but sort numeral parts numeric
+Changes: 
+ libsort-naturally-perl (1.02-1) unstable; urgency=low
+ .
+   * Initial Release.
+Checksums-Sha1: 
+ cbff2e23d80ebefa27a2fb562469bb3d687946d6 905 libsort-naturally-perl_1.02-1.dsc
+ da7b21e222c8c0e8f9a8cf5587410cc57a836f31 10357 libsort-naturally-perl_1.02.orig.tar.gz
+ 83f775c5aba5b86502cef5abcc551dfdfd2a08d9 1294 libsort-naturally-perl_1.02-1.diff.gz
+ d57519d6b0f694793ca0e118f74d7d7769abb4f2 15286 libsort-naturally-perl_1.02-1_all.deb
+Checksums-Sha256: 
+ a758ad114a2fb02d9f4b8b560ed0b3e107597591b27c9e35f0b01069b6aed101 905 libsort-naturally-perl_1.02-1.dsc
+ b8320a18e32d0a15541d95ffae3ba18e64bfca2478b8c74b80947ad2aa6874b1 10357 libsort-naturally-perl_1.02.orig.tar.gz
+ 9a5dbe0bd341f9257a99875b866da4c36fa4279b3552a7893bbeaaa8728064d6 1294 libsort-naturally-perl_1.02-1.diff.gz
+ 2426187d0164804677bf3010c00dfe96c0019c28defb8cc7f65fbace9727a4ab 15286 libsort-naturally-perl_1.02-1_all.deb
+Files: 
+ f9382e95f00f7e808a833f5061254ad0 905 perl optional libsort-naturally-perl_1.02-1.dsc
+ a173f3f8f519ebae6e5e578e843f6e1c 10357 perl optional libsort-naturally-perl_1.02.orig.tar.gz
+ d416d1838902644d339711b0d8a783ba 1294 perl optional libsort-naturally-perl_1.02-1.diff.gz
+ 75eca3f58bcb359f409abcdf9ad8fdc4 15286 perl optional libsort-naturally-perl_1.02-1_all.deb
