@@ -4,8 +4,6 @@
 Description:
 ____________
 
-During the summer 2008, the OAR team took part of the Google Summer of Code event
-(see http://code.google.com/soc/2008/ for further details).
 One of the OAR projects was implementing array jobs and improving the job 
 dependencies mechanism (including array dependencies). With job arrays, one 
 invokes the same executable to run many related tasks or sub-jobs with a range 
@@ -31,6 +29,12 @@ Status:
 _______
 
 The feature is now implemented, fully functionnal and integrated in the current releases.
+
+References-Code:
+--------
+
+http://code.google.com/soc/2008/oar/appinfo.html?csaid=4ABDAF8F8CD4B420
+http://google-summer-of-code-2008-oar.googlecode.com/files/EltonNicoletti_Mathias.tar.gz
 
 Developers: 
 ___________

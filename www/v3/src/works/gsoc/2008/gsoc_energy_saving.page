@@ -1,0 +1,6 @@
+---
+title: Energy Saving 
+inMenu: true
+orderInfo: 1
+---
+<notextile>{rstconverter: {rstfile: GSOC_energy_saving.rst}}<notextile>
