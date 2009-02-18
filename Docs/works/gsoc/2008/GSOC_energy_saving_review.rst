@@ -1,5 +1,5 @@
 *Implementing energy saving upon OAR Resource Management System*
----------------------------------------------------------------
+----------------------------------------------------------------
 
 Description:
 ____________
@@ -18,8 +18,7 @@ are going to be in use during the computation. Hence,
 OAR provides a way to specify the usage of specific node
 devices per job, so as to consume less energy.
 
-1)Prediction based energy energy efficient
-scheduling
+1)Prediction based energy energy efficient scheduling
 
 Energy demand in cluster environment is directly proportional
 to the size of the cluster. The typical usage of

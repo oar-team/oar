@@ -31,7 +31,7 @@ _______
 The feature is now implemented, fully functionnal and integrated in the current releases.
 
 References-Code:
---------
+----------------
 
 http://code.google.com/soc/2008/oar/appinfo.html?csaid=4ABDAF8F8CD4B420
 http://google-summer-of-code-2008-oar.googlecode.com/files/EltonNicoletti_Mathias.tar.gz
