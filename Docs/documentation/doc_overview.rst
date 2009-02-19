@@ -14,7 +14,7 @@ Main features :
     * Multi-queues with priority
     * Best-effort queues (for exploiting idle resources)
     * Check compute nodes before launching
-    * Epilogue/Prologue scriptsi
+    * Epilogue/Prologue scripts
     * Activity visualization tools (Monika)
     * No Daemon on compute nodes
     * rsh and ssh as remote execution protocols (managed by Taktuk)
