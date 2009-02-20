@@ -1,5 +1,5 @@
 - Formater les erreurs dans le bon type (html, json, yaml)
-- Implémenter le paramètre "depth" permettant de développer les uri qui sont dans les résultats
+- NON! Implémenter le paramètre "depth" permettant de développer les uri qui sont dans les résultats
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
@@ -9,6 +9,18 @@
   version installed on the remote site queried.
   We could parse in YAML and give the result in JSON (like we did for some functions)
 
+##### discussion avec Cyril 20/02/2009 ####
+- Codes erreur 406 au lieu de 415 lorsque le format demandé n'est pas supporté par l'API
+- Codes erreur 401 au lieu de 403 lorsque problème d'authentif
+- Structure des codes d'erreur: hash(code,title,message)
+- paramètre depth: en fait pas forcément une bonne idée car les utilisateurs risquent de trop l'utiliser systématiquement. L'idée du /resources/all est bonne car elle est plus restrictive (on autorise ce genre de choses à des points bien précis, là où on sait que ça peut etre utile, voire indispensable)
+- Format application/json au lieu de text/json
+- Implementer put/delete sur les resources de oar (oarapi) (ce qui implique un mode de fonctionnement "administrateur" avec l'authentif adéquate, une clé partagée?)
+   --> Problème des id des ressources: le referentiel ne pourra pas adresser les ressources par les id (workflow normal: nouveau cluster -> script qui les ajoute dans oar -> oar génère des id autoincrément). En cas de modif ou supression d'une ressource, il faudrait pouvoir l'adresser par network_address+cpuset et non par l'id car le référentiel ne les connait pas
+- Chainage d'APIs: ident pour la première puis certificats SSL entre serveurs d'API et X_REMOTE_IDENT fixé par mod_header (cyril m'envoie les exemples de config)
+#########
+
+
 
 Bugs:
 
@@ -16,4 +28,7 @@ Bugs:
   No way to handle your request /resources/nodes/genepi-1.grenoble.grid5000.fr.html
 
 - https://helpdesk.grid5000.fr/oarapi/Grenoble/jobs.html
+
   YAML data not understood
+
+
