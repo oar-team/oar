@@ -70,6 +70,21 @@ else {
 }
 
 ##############################################################################
+# Data structure variants
+##############################################################################
+
+my $structure="oar";
+if (defined $q->param('structure')) {
+  $structure=$q->param('structure');
+}
+if ($structure ne "oar" && $structure ne "simple") {
+  apilib::ERROR 400, "Unknown $structure format",
+        "Unknown $structure format for data structure";
+  exit 0;
+}
+
+
+##############################################################################
 # URI management
 ##############################################################################
 
@@ -95,19 +110,11 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARSTAT_CMD -Y";
+    my $cmd    = "$OARSTAT_CMD -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
-    my $jobs = apilib::import($cmdRes,"yaml");
-    my $result;
-    foreach my $job ( keys( %{$jobs} ) ) {
-      $result->{$job}->{state}=$jobs->{$job}->{state};
-      $result->{$job}->{owner}=$jobs->{$job}->{owner};
-      $result->{$job}->{name}=$jobs->{$job}->{name};
-      $result->{$job}->{queue}=$jobs->{$job}->{queue};
-      $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
-      $result->{$job}->{uri}=apilib::make_uri("/jobs/$job.$ext",0);
-      $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
-    }
+    my $jobs = apilib::import($cmdRes,"dumper");
+    apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
+    my $result = apilib::struct_job_list($jobs,$structure);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($result,$type);
@@ -152,9 +159,9 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD -Y -s";
+    my $cmd    = "$OARNODES_CMD -D -s";
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
-    my $resources = apilib::import($cmdRes,"yaml");
+    my $resources = apilib::import($cmdRes,"dumper");
     my $result;
     foreach my $node ( keys( %{$resources} ) ) {
         $result->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$ext",0);

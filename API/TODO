@@ -7,7 +7,8 @@
 - oargridapi: gérer les clés ssh (voir <not yet implemented>)
 - Json is not always available in oargridapi depending on the oar
   version installed on the remote site queried.
-  We could parse in YAML and give the result in JSON (like we did for some functions)
+  We could parse in DUMPER and give the result in JSON (like we did for some functions)
+- Mise en forme des résultats (liste des jobs/resources sous forme d'array et pas de hash avec l'id en key)
 
 ##### discussion avec Cyril 20/02/2009 ####
 - Codes erreur 406 au lieu de 415 lorsque le format demandé n'est pas supporté par l'API

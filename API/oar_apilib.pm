@@ -86,6 +86,139 @@ sub ERROR($$$) {
 }
 
 ##############################################################################
+# Data conversion functions
+##############################################################################
+
+# Load YAML data into a hashref
+sub import_yaml($) {
+  my $data         = shift;
+  check_yaml();
+  # Try to load the data and exit if there's an error
+  my $hashref = eval { YAML::Load($data) };
+  if ($@) {
+    ERROR 400, 'YAML data not understood', $@;
+    exit 0;
+  }
+  return $hashref;
+}
+
+# Load JSON data into a hashref
+sub import_json($) {
+  my $data         = shift;
+  check_json();
+  # Try to load the data and exit if there's an error
+  my $hashref = eval { JSON::decode_json($data) };
+  if ($@) {
+    ERROR 400, 'JSON data not understood', $@;
+    exit 0;
+  }
+  return $hashref;
+}
+
+# Load Dumper data into a hashref
+sub import_dumper($) {
+  my $data         = shift;
+  my $hash = eval($data);
+  if ($@) {
+    ERROR 400, 'Dumper data not understood', $@;
+    exit 0;
+  }
+  return $hash;
+}
+
+# Load HTML data into a hashref
+sub import_html_form($) {
+  my $data         = shift;
+  return $data;
+}
+
+# Load data into a hashref
+sub import($$) {
+  (my $data, my $format) = @_;
+  if ($format eq "yaml") { import_yaml($data); }
+  elsif ($format eq "dumper") { import_dumper($data); }
+  elsif ($format eq "json") { import_json($data); }
+  else {
+    ERROR 400, "Unknown $format format", $@;
+    exit 0;
+  }
+}
+
+# Export a hash into YAML
+sub export_yaml($) {
+  my $hashref = shift;
+  check_yaml();
+  return YAML::Dump($hashref)
+} 
+  
+# Export a hash into JSON
+sub export_json($) {
+  my $hashref = shift;
+  check_json();
+  return JSON->new->pretty(1)->encode($hashref);
+}
+
+# Export a hash into HTML (YAML in fact, as it is human readable)
+sub export_html($) {
+  my $hashref = shift;
+  check_yaml();
+  return "<PRE>\n". YAML::Dump($hashref) ."\n</PRE>";
+}
+
+# Export data to the specified content_type
+sub export($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  if ( $content_type eq 'text/yaml' ) {
+    export_yaml($data);
+  }elsif ( $content_type eq 'text/json' ) {
+    export_json($data);
+  }elsif ( $content_type eq 'text/html' ) {
+    export_html($data);
+  }else {
+    ERROR 415, "Unknown $content_type format",
+      "The $content_type format is not known.";
+    exit 0;
+  }
+}
+
+# Shape a oar jobs hash into the given structure
+sub struct_job_list($$) {
+  my $jobs = shift;
+  my $structure = shift;
+  my $result;
+  foreach my $job ( keys( %{$jobs} ) ) {
+    my $hashref = {
+                  state => $jobs->{$job}->{state},
+                  owner => $jobs->{$job}->{owner},
+                  name => $jobs->{$job}->{name},
+                  queue => $jobs->{$job}->{queue},
+                  submission => $jobs->{$job}->{submissionTime},
+                  uri => $jobs->{$job}->{uri}
+    };
+    if ($structure eq 'oar') {
+      $result->{$job} = $hashref;
+    }
+    elsif ($structure eq 'simple') {
+      $hashref->{id}=$job;
+      push (@$result,$hashref);
+    } 
+  }
+  return $result;
+}
+
+# Add uris to a oar job list
+sub add_joblist_uris($$$) {
+  my $jobs = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+    foreach my $job ( keys( %{$jobs} ) ) {
+      $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job.$ext",0);
+      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
+  }
+}
+
+##############################################################################
 # Other functions
 ##############################################################################
 
@@ -131,87 +264,6 @@ sub check_yaml() {
 sub check_json() {
   unless ($JSONenabled) {
     ERROR 400, 'JSON not enabled', 'JSON perl module not loaded!';
-    exit 0;
-  }
-}
-
-# Load YAML data into a hashref
-sub import_yaml($) {
-  my $data         = shift;
-  check_yaml();
-  # Try to load the data and exit if there's an error
-  my $hashref = eval { YAML::Load($data) };
-  if ($@) {
-    ERROR 400, 'YAML data not understood', $@;
-    exit 0;
-  }
-  return $hashref;
-}
-
-# Load JSON data into a hashref
-sub import_json($) {
-  my $data         = shift;
-  check_json();
-  # Try to load the data and exit if there's an error
-  my $hashref = eval { JSON::decode_json($data) };
-  if ($@) {
-    ERROR 400, 'JSON data not understood', $@;
-    exit 0;
-  }
-  return $hashref;
-}
-
-# Load HTML data into a hashref
-sub import_html_form($) {
-  my $data         = shift;
-  return $data;
-}
-
-# Load data into a hashref
-sub import($$) {
-  (my $data, my $format) = @_;
-  if ($format eq "yaml") { import_yaml($data); }
-  elsif ($format eq "json") { import_json($data); }
-  else {
-    ERROR 400, "Unknown $format format", $@;
-    exit 0;
-  }
-}
-
-# Export a hash into YAML
-sub export_yaml($) {
-  my $hashref = shift;
-  check_yaml();
-  return YAML::Dump($hashref)
-} 
-  
-# Export a hash into JSON
-sub export_json($) {
-  my $hashref = shift;
-  check_json();
-  return JSON->new->pretty(1)->encode($hashref);
-}
-
-# Export a hash into HTML (YAML in fact, as it is human readable)
-sub export_html($) {
-  my $hashref = shift;
-  check_yaml();
-  return "<PRE>\n". YAML::Dump($hashref) ."\n</PRE>";
-}
-
-# Export data to the specified content_type
-sub export($$) {
-  my $data         = shift;
-  my $content_type = shift;
-  if ( $content_type eq 'text/yaml' ) {
-    export_yaml($data);
-  }elsif ( $content_type eq 'text/json' ) {
-    export_json($data);
-  }elsif ( $content_type eq 'text/html' ) {
-    export_html($data);
-  }else {
-    ERROR 415, "Unknown $content_type format",
-      "The $content_type format is not known.";
     exit 0;
   }
 }
@@ -403,6 +455,8 @@ sub send_cmd($$) {
   }
   else { return $cmdRes; }
 }
+
+
 
 return 1;
 
