@@ -58,6 +58,8 @@ static map<string, string> params;
 /// full conf file name
 static string filename;
 
+namespace conflib {
+
 /**
    ## Initialization of the configuration
    # param: configuration file pathname
@@ -181,3 +183,5 @@ int reset_conf ()
   params = map<string,string>();
   return 1;
 }
+
+};
