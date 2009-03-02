@@ -84,6 +84,11 @@ vector<bool> alive_resources_vector;
 vector<unsigned int> Dead_resources;
 vector<iolib::jobs_iolib_restrict> jobs;
 
+// variables used in karma sorting
+map<string, unsigned int> Karma_sum_time;
+map<pair<string, string>, unsigned int> Karma_projects;
+map<pair<string, string>, unsigned int> Karma_users
+
 void init_conf(int argc, char **argv)
 {
   initial_time = time();
@@ -424,25 +429,33 @@ void real_scheduling_begin()
    jobs = iolib::get_fairsharing_jobs_to_schedule(queue, Karma_max_number_of_jobs_treated_per_user);
 }
 
+/*
 ###############################################################################
 # Sort jobs depending on their previous usage
 # Karma sort algorithm
-my $Karma_sum_time = iolib::get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
-$Karma_sum_time->{ASKED} = 1 if (!defined($Karma_sum_time->{ASKED}));
-$Karma_sum_time->{USED} = 1 if (!defined($Karma_sum_time->{USED}));
+*/
 
-my $Karma_projects = iolib::get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
-my $Karma_users = iolib::get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
+void karma_sort()
+{
+  Karma_sum_time = iolib::get_sum_accounting_window(queue, current_time - Karma_window_size, current_time);
+  if (Karma_sum_time.find("ASKED") == Karma_sum_time.end() )
+    Karma_sum_time["ASKED"] = 1;
+  if (Karma_sum_time.find("ASKED") == Karma_sum_time.end() )
+    Karma_sum_time["ASKED"] = 1;
+  
 
-sub karma($){
-    my $j = shift;
+  Karma_projects = iolib::get_sum_accounting_for_param(queue,"accounting_project", current_time - Karma_window_size, current_time);
+  Karma_users = iolib::get_sum_accounting_for_param(queue,"accounting_user", current_time - Karma_window_size, current_time);
+}
 
-    my $note = 0;
-    $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{project}} / 100));
+int karma(iolib::jobs_iolib_restrict j)
+{
+  int note = 0;
+  note = Karma_coeff_project_consumption * (( Karma_projects[pair<string,string>(j.project,"USED")] / Karma_sum_time["USED"]) - ( Karma_project_targets[j.project] / 100));
+  note += Karma_coeff_user_consumption * (( Karma_users[pair<string, string>(j.job_user, "USED")] / Karma_sum_time["USED"]) - (Karma_user_targets[j.project] / 100));
+  note += Karma_coeff_user_asked_consumption * ((Karma_users[pair<string,string>(j.job_user,"ASKED")] / Karma_sum_time["ASKED"]) - (Karma_user_targets[j.project] / 100));
 
-    return($note);
+  return(note);
 }
 
 ###############################################################################
