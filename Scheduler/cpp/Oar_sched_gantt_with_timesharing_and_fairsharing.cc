@@ -87,7 +87,7 @@ vector<iolib::jobs_iolib_restrict> jobs;
 // variables used in karma sorting
 map<string, unsigned int> Karma_sum_time;
 map<pair<string, string>, unsigned int> Karma_projects;
-map<pair<string, string>, unsigned int> Karma_users
+map<pair<string, string>, unsigned int> Karma_users;
 
 void init_conf(int argc, char **argv)
 {
@@ -458,80 +458,126 @@ int karma(iolib::jobs_iolib_restrict j)
   return(note);
 }
 
-###############################################################################
+struct less_jobs_iolib_restrict : public binary_function<iolib::jobs_iolib_restrict, iolib::jobs_iolib_restrict, bool> {
+  bool operator()(iolib::jobs_iolib_restrict a, iolib::jobs_iolib_restrict b)
+  {
+    return karma(a) < karma(b);
+  }
+}
 
-@jobs = sort({karma($a) <=> karma($b)} @jobs);
-my $job_index = 0;
-while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
-    my $j = $jobs[$job_index];
-    $job_index ++;
+//###############################################################################
+
+void real_scheduler_main()
+{
+  // sort jobs by karma
+  sort(jobs.begin(), jobs.end(), less_jobs_iolib_restrict());
+
+  int job_index = 0;
+  
+  while ((job_index <= jobs.size() ) and ((time() - initial_time) < timeout))
+    {
+      iolib::jobs_iolib_restrict j = jobs[job_index];
+      job_index ++;
     
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Start scheduling (Karma note = ".karma($j).")\n");
-    
-    my $scheduler_init_date = $current_time;
-    # Search for dependencies
-    my $skip_job = 0;
-    foreach my $d (iolib::get_current_job_dependencies($base,$j->{job_id})){
-        next if ($skip_job == 1);
-        my $dep_job = iolib::get_job($base,$d);
-        if (($dep_job->{state} ne "Terminated")){
-            my @date_tmp = iolib::get_gantt_job_start_time($base,$d);
-            if (defined($date_tmp[0])){
-                my $mold_dep = iolib::get_current_moldable_job($base,$date_tmp[1]);
-                my $sched_tmp = $date_tmp[0] + $mold_dep->{moldable_walltime};
-                if ($scheduler_init_date < $sched_tmp){
-                    $scheduler_init_date = $sched_tmp;
-                }
-            }else{
-                my $message = "Cannot determine scheduling time due to dependency with the job $d";
-                iolib::set_job_message($base,$j->{job_id},$message);
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
-                $skip_job = 1;
-                next;
-            }
-        }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
-            my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
-            iolib::set_job_message($base,$j->{job_id},$message);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] $message\n");
-            $skip_job = 1;
-            next;
-        }
-    }
-    next if ($skip_job == 1);
+      oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [" + j.job_id + "] Start scheduling (Karma note = " + karma($j) + ")\n");
+
+      unsigned int scheduler_init_date = current_time;
+      //# Search for dependencies
+      int skip_job = 0;
+
+      // skip jobs if it is not ready
+      vector<unsigned int> vjobdep = iolib::get_current_job_dependencies(j.job_id);
+      for(unisgend int d = vjobdep.begin();
+	  d != vjobdep.end(); vjobdep++)
+	{
+	  if (skip_job)
+	    break;
+
+	  jobs_get_job_iolib_restrict dep_job =  iolib::get_job_restrict(d);
+	  if (dep_job.state != "Terminated")
+	    {
+	      gantt_job_start_time date_tmp = iolib::get_gantt_job_start_time(d);
+	      if (date_tmp.start_time != 0 || date_tmp.moldable_job_id != 0)
+		{
+		  unsigned int mold_dep_moldable_walltime = iolib::get_current_moldable_job(date_tmp.moldable_job_id);
+		  unsigned int sched_tmp = date_tmp.start_time +  mold_dep_moldable_walltime;
+		  if ( scheduler_init_date < sched_tmp)
+		    {
+		      scheduler_init_date = sched_tmp;
+		    }
+		}
+	      else
+		{
+		  string message = "Cannot determine scheduling time due to dependency with the job "<< d;
+		  iolib::set_job_message(j.job_id, message);
+		  oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] ["+j.job_id+"] "+message+"\n");
+		  skip_job = 1;
+		  break;
+		}
+	    } 
+	  else
+	    if ((dep_job.job_type == "PASSIVE") && (dep_job.exit_code != 0))
+	      {
+		string message = "Cannot determine scheduling time due to dependency with the job "+ d +<< "(exit code != 0)";
+		iolib::set_job_message(j.job_id, message);
+		oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] ["+j.job_id+"] "+message+"\n");
+		skip_job = 1;
+		break;
+	      }
+	}
+
+    if (skip_job == 1)
+      continue;
      
-    my $gantt_to_use = $gantt;
-    my $types = iolib::get_current_job_types($base,$j->{job_id});
-    if (defined($types->{timesharing})){
-        my ($user, $name) = parse_timesharing($types->{timesharing}, $j->{job_user}, $j->{job_name});
-        if (!defined($timesharing_gantts->{$user}->{$name})){
-            $timesharing_gantts->{$user}->{$name} = dclone($gantt);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt in phase II for ($user, $name)\n");
-        }
-        $gantt_to_use = $timesharing_gantts->{$user}->{$name};
-        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Use gantt for ($user,$name)\n");
-    }
-    #oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
+    Gant_hole_storage::Gantt *gantt_to_use = pgantt;
+    map<string, string> types = iolib::get_current_job_types(j.job_id);
+    if ( types.find("timesharing") != types.end() )
+      {
+        pair<string, string> user_name = parse_timesharing(types["timesharing"], j.job_user, j.job_name);
+	
+	if ( timesharing_gantts.find(user_name) == timesharing_gantts.end() )
+	  {
+	    timesharing_gantts[user_name] = oar_resource_tree::dclone(gantt);
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create new gantt in phase II for ("+user_name.first+" "+user_name.second+")\n");
+	  }
+        gantt_to_use = timesharing_gantts[user_name];
+        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Use gantt for ("+user_name.first+" "+user_name.second+"\n");
+      }
+    //#oar_debug("[oar_sched_gantt_with_timesharing] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
 
-    my $job_properties = "\'1\'";
-    if ((defined($j->{properties})) and ($j->{properties} ne "")){
-        $job_properties = $j->{properties};
-    }
+    string job_properties = "'1'";
+    if (j.properties != "")
+      {
+	job_properties = j.properties;
+      }
     
-    # Choose the moldable job to schedule
+    //# Choose the moldable job to schedule
+    // TODO: type ???
     my @moldable_results;
-    my $job_descriptions = iolib::get_resources_data_structure_current_job($base,$j->{job_id});
-    foreach my $moldable (@{$job_descriptions}){
-    #my $moldable = $job_descriptions->[0];
-        my $duration;
-        if (defined($types->{besteffort})){
-            $duration = $besteffort_duration;
-        }else{
-            $duration = $moldable->[1] + $security_time_overhead;
-        }
 
-        # CM part
-        my $alive_resources_vector_store = $alive_resources_vector;
-        if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+    vector<resources_data_moldable> job_descriptions = iolib::get_resources_data_structure_current_job(j.job_id);
+    for(vector<property_resources_per_job>::iterator moldable = job_descriptions[0].prop_res.begin();
+	moldable != job_descriptions[0].prop_res.end();
+	moldable++)
+      {
+	//#my $moldable = $job_descriptions->[0];
+        unsigned int duration;
+
+        if (types.find("besteffort") != types.end() )
+	  {
+            duration = besteffort_duration;
+	  }
+	else
+	  {
+            duration = moldable->walltime + security_time_overhead;
+	  }
+
+        //# CM part
+	  vector<bool> alive_resources_vector_store = alive_resources_vector;
+	  if ( conflib::is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") )
+	    {
+	      /**** TODO TO DO ****/
+
             foreach my $r (iolib::get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)){
                 vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
             }
