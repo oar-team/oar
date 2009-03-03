@@ -161,12 +161,13 @@ SWITCH: for ($q) {
   #
   # List of resources ("oarnodes -s" wrapper)
   #
-  $URI = qr{^/resources\.*(yaml|json|html)*$};
+  $URI = qr{^/resources(/all)*\.(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$1);
+    my $ext=apilib::set_ext($q,$2);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD -D -s";
+    my $cmd    = "$OARNODES_CMD -D";
+    if ($1 ne "/all") { $cmd .= " -s"; }
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
     apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
@@ -176,24 +177,6 @@ SWITCH: for ($q) {
     print apilib::export($result,$type);
     last;
   };
-
-  #
-  # List all the resources with details (oarnodes wrapper)
-  #
-  $URI = qr{^/resources/all\.*(yaml|json|html)*$};
-  apilib::GET( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$1);
-    (my $output_opt, my $header)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD $output_opt";
-    my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-    if ($ext eq "html") { print "<PRE>\n"; }
-    print $cmdRes;
-    if ($ext eq "html") { print "</PRE>\n"; }
-    last;
-  }; 
 
   #
   # Details of a resource ("oarnodes -r <id>" wrapper)
