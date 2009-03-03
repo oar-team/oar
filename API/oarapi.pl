@@ -42,6 +42,10 @@ if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 my $FORCE_HTTPS = 0;
 if (is_conf("API_FORCE_HTTPS")){ $FORCE_HTTPS = get_conf("API_FORCE_HTTPS"); }
 
+# Default data structure variant
+my $STRUCTURE="simple";
+if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
+
 # Header for html version
 my $apiuri= $q->url(-full => 1);
 $apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
@@ -77,13 +81,12 @@ else {
 # Data structure variants
 ##############################################################################
 
-my $structure="oar";
 if (defined $q->param('structure')) {
-  $structure=$q->param('structure');
+  $STRUCTURE=$q->param('structure');
 }
-if ($structure ne "oar" && $structure ne "simple") {
-  apilib::ERROR 400, "Unknown $structure format",
-        "Unknown $structure format for data structure";
+if ($STRUCTURE ne "oar" && $STRUCTURE ne "simple") {
+  apilib::ERROR 400, "Unknown $STRUCTURE format",
+        "Unknown $STRUCTURE format for data structure";
   exit 0;
 }
 
@@ -118,7 +121,7 @@ SWITCH: for ($q) {
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
     my $jobs = apilib::import($cmdRes,"dumper");
     apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
-    my $result = apilib::struct_job_list($jobs,$structure);
+    my $result = apilib::struct_job_list($jobs,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($result,$type);
@@ -148,7 +151,7 @@ SWITCH: for ($q) {
     my $cmd    = "$OARDODO_CMD $OARSTAT_CMD -fj $jobid -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
     my $job = apilib::import($cmdRes,"dumper");
-    my $result = apilib::struct_job($job,$structure);
+    my $result = apilib::struct_job($job,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($result,$type);
@@ -167,7 +170,7 @@ SWITCH: for ($q) {
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
     apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
-    my $result = apilib::struct_resource_list($resources,$structure);
+    my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($result,$type);
