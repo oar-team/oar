@@ -108,6 +108,8 @@ api:
 	install -m 0644 API/oarapi_examples.txt $(DESTDIR)$(DOCDIR)
 	install -m 0644 API/INSTALL $(DESTDIR)$(DOCDIR)/API_INSTALL
 	install -m 0644 API/TODO $(DESTDIR)$(DOCDIR)/API_TODO
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_header.pl already exists, not overwriting it." ; else install -m 0600 API/api_html_header.pl $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_header.pl || /bin/true ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl already exists, not overwriting it." ; else install -m 0644 API/api_html_postform.pl $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl || /bin/true ; fi
 
 gridapi:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)

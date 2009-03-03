@@ -1,10 +1,24 @@
 #!/usr/bin/perl -w
 use strict;
 use oar_apilib;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
 ##############################################################################
-# CUSTOM VARIABLES
+# CONFIGURATION
 ##############################################################################
+
+# Load config
+my $oardir;
+if (defined($ENV{OARDIR})){
+    $oardir = $ENV{OARDIR}."/";
+}else{
+    die("ERROR: OARDIR env variable must be defined.\n");
+}
+if (defined($ENV{OARCONFFILE})){
+  init_conf($ENV{OARCONFFILE});
+}else{
+  init_conf("/etc/oar/oar.conf");
+}
 
 # Oar commands
 my $OARSTAT_CMD = "oarstat";
@@ -13,42 +27,32 @@ my $OARNODES_CMD  = "oarnodes";
 my $OARDEL_CMD  = "oardel";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
-# Debug mode
-# This does not increase verbosity, but causes all errors to generate
-# the OK/200 status to force the client to output the human readable
-# error message. 
-# Uncomment to bypass the setting of this variable by the apilib
-# (set to 1 if the name of the cgi script contains "debug")
-# $DEBUG_MODE = 0;
-
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
 # or in the case you fully trust the client hosts (with an apropriate
-# ip-based access control into apache for example) 
+# ip-based access control into apache for example)
 my $TRUST_IDENT = 1;
+if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 
 # Force all html uris to start with "https://".
 # Useful if the api acts in a non-https server behind an https proxy
 my $FORCE_HTTPS = 0;
-
-# CGI handler
-my $q=apilib::get_cgi_handler();
+if (is_conf("API_FORCE_HTTPS")){ $FORCE_HTTPS = get_conf("API_FORCE_HTTPS"); }
 
 # Header for html version
 my $apiuri= $q->url(-full => 1);
 $apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
-my $HTML_HEADER = "
-<HTML>
-<HEAD>
-<TITLE>OAR REST API</TITLE>
-</HEAD>
-<BODY>
-<HR>
-<A HREF=$apiuri/resources.html>RESOURCES</A>&nbsp;&nbsp;&nbsp;
-<A HREF=$apiuri/jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
-<A HREF=$apiuri/jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
-<HR>
-";
+my $HTML_HEADER="";
+my $file;
+if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
+else { $file="/etc/oar/api_html_header.pl"; }
+open(FILE,$file);
+my(@lines) = <FILE>;
+eval join("\n",@lines);
+close(FILE);
+
+# CGI handler
+my $q=apilib::get_cgi_handler();
 
 ##############################################################################
 # Authentication
@@ -349,37 +353,15 @@ SWITCH: for ($q) {
     (my $output_opt, my $header, my $type)=apilib::set_output_format("html");
     print $header;
     print $HTML_HEADER;
-    print "
-<FORM METHOD=post ACTION=$apiuri/jobs.html>
-<TABLE>
-<CAPTION>Job submission</CAPTION>
-<TR>
-  <TD>Resources</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=resource VALUE=\"/nodes=1/cpu=1,walltime=00:30:00\"></TD>
-</TR><TR>
-  <TD>Name</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=name VALUE=\"Test_job\"></TD>
-</TR><TR>
-  <TD>Properties</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=property VALUE=\"\"></TD>
-</TR><TR>
-  <TD>Program to run</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=script_path VALUE='\"/bin/sleep 300\"'></TD>
-</TR><TR>
-  <TD>Types</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>
-</TR><TR>
-  <TD>Reservation dates</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=reservation></TD>
-</TR><TR>
-  <TD>Directory</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=directory></TD>
-</TR><TR>
-  <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
-</TR>
-</TABLE>
-</FORM>
-";
+    my $POSTFORM="";
+    my $file;
+    if (is_conf("API_HTML_POSTFORM")){ $file=get_conf("API_HTML_POSTFORM"); }
+    else { $file="/etc/oar/api_html_postform.pl"; }
+    open(FILE,$file);
+    my(@lines) = <FILE>;
+    eval join("\n",@lines);
+    close(FILE);
+    print $POSTFORM;
     last;
   };
 
