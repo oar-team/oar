@@ -159,40 +159,30 @@ SWITCH: for ($q) {
   };
 
   #
-  # List of resources ("oarnodes -s" wrapper)
+  # List of resources or details of a resource (oarnodes wrapper)
   #
-  $URI = qr{^/resources(/all)*\.(yaml|json|html)*$};
+  $URI = qr{^/resources(/all|/[0-9]+)*\.(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD -D";
-    if ($1 ne "/all") { $cmd .= " -s"; }
+    my $cmd;
+    if (defined($1)) {
+      if    ($1 eq "/all")        { $cmd = "$OARNODES_CMD -D"; }
+      elsif ($1 =~ /\/([0-9]+)/)  { $cmd = "$OARNODES_CMD -D -r $1"; }
+      else                        { $cmd = "$OARNODES_CMD -D -s"; }
+    }
+    else                          { $cmd = "$OARNODES_CMD -D -s"; }
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
+    if ($1 =~ /\/([0-9]+)/) { $resources = { @$resources[0]->{properties}->{network_address} 
+                                               => { @$resources[0]->{resource_id} => @$resources[0] }} 
+                            }
     apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($result,$type);
-    last;
-  };
-
-  #
-  # Details of a resource ("oarnodes -r <id>" wrapper)
-  #
-  $URI = qr{^/resources/(\d+)\.*(yaml|xml|json|html)*$};  
-  apilib::GET( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD -r $1 $output_opt";  
-    my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-    if ($ext eq "html") { print "<PRE>\n"; }
-    print $cmdRes;
-    if ($ext eq "html") { print "</PRE>\n"; }
     last;
   };
  
