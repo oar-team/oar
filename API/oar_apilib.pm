@@ -182,6 +182,15 @@ sub export($$) {
   }
 }
 
+# Shape a oar job into the given structure
+sub struct_job($$) {
+  my $job = shift;
+  my $structure = shift;
+  my $result;
+  if    ($structure eq 'oar')    { return $job; }
+  elsif ($structure eq 'simple') { return $job->{(keys(%{$job}))[0]}; }
+}
+
 # Shape a oar jobs hash into the given structure
 sub struct_job_list($$) {
   my $jobs = shift;
@@ -217,6 +226,52 @@ sub add_joblist_uris($$$) {
       $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
   }
 }
+
+# Shape a resources hash into the given structure
+sub struct_resource_list($$) {
+  my $resources = shift;
+  my $structure = shift;
+  my $result;
+  if ($structure eq 'oar') {
+    return $resources ;
+  }
+  elsif ($structure eq 'simple') {
+    foreach my $node ( keys( %{$resources} ) ) {
+      foreach my $id ( keys( %{$resources->{$node}} ) ) {
+        if ($id ne "uri") {
+          $resources->{$node}->{$id}->{id}=$id;
+          $resources->{$node}->{$id}->{node}=$node;
+          $resources->{$node}->{$id}->{node_uri}=$resources->{$node}->{uri};
+          push(@$result,$resources->{$node}->{$id});
+        }
+      }
+    }
+    return $result; 
+  }
+}
+
+# Add uris to a resources list
+sub add_resources_uris($$$) {
+  my $resources = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+  foreach my $node ( keys( %{$resources} ) ) {
+    foreach my $id ( keys( %{$resources->{$node}} ) ) {
+      # This test should make this function work for "oarstat -s"
+      if (ref($resources->{$node}->{$id}) ne "HASH") {
+        my $state = $resources->{$node}->{$id};
+        $resources->{$node}->{$id}={};
+        $resources->{$node}->{$id}->{state}=$state;
+      }
+      $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id.$ext",0);
+      $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
+    }
+    $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$ext",0);
+    $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext,$FORCE_HTTPS);
+  }
+}
+
+
 
 ##############################################################################
 # Other functions

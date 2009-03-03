@@ -20,6 +20,9 @@ if (defined($ENV{OARCONFFILE})){
   init_conf("/etc/oar/oar.conf");
 }
 
+# CGI handler
+my $q=apilib::get_cgi_handler();
+
 # Oar commands
 my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
@@ -50,9 +53,6 @@ open(FILE,$file);
 my(@lines) = <FILE>;
 eval join("\n",@lines);
 close(FILE);
-
-# CGI handler
-my $q=apilib::get_cgi_handler();
 
 ##############################################################################
 # Authentication
@@ -134,7 +134,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header)=apilib::set_output_format($ext);
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -145,13 +145,13 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD $OARSTAT_CMD -fj $jobid $output_opt";
+    my $cmd    = "$OARDODO_CMD $OARSTAT_CMD -fj $jobid -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
+    my $job = apilib::import($cmdRes,"dumper");
+    my $result = apilib::struct_job($job,$structure);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    if ($ext eq "html") { print "<PRE>\n"; }
-    print $cmdRes;
-    if ($ext eq "html") { print "</PRE>\n"; }
+    print apilib::export($result,$type);
     last;
   };
 
@@ -166,16 +166,8 @@ SWITCH: for ($q) {
     my $cmd    = "$OARNODES_CMD -D -s";
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
-    my $result;
-    foreach my $node ( keys( %{$resources} ) ) {
-        $result->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$ext",0);
-        $result->{$node}->{uri}=apilib::htmlize_uri($result->{$node}->{uri},$ext,$FORCE_HTTPS);
-      foreach my $id ( keys( %{$resources->{$node}} ) ) {
-        $result->{$node}->{$id}->{status}=$resources->{$node}->{$id};
-        $result->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id.$ext",0);
-        $result->{$node}->{$id}->{uri}=apilib::htmlize_uri($result->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
-      }
-    }
+    apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
+    my $result = apilib::struct_resource_list($resources,$structure);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($result,$type);
