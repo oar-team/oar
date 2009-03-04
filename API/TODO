@@ -10,7 +10,6 @@
   We could parse in DUMPER and give the result in JSON (like we did for some functions)
 - Mise en forme des résultats (liste des jobs/resources sous forme d'array et pas de hash avec l'id en key)
 - Code cleaning: 
-  - set_output_format n'a plus besoin de output_opt (une fois que oargridapi utilisera aussi -D partout)
   - fonction export à modifier partout (baser sur extension et non content_type)
 
 ##### discussion avec Cyril 20/02/2009 ####

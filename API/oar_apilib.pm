@@ -432,20 +432,9 @@ sub get_content_type($) {
 # Set oar output option and header depending on the format given
 sub set_output_format($) {
   my $format=shift;
-  my $output_opt;
-  my $header;
   my $type = get_content_type($format);
-  if ( $format eq "yaml" ) { 
-    $output_opt = "-Y";
-  }
-  elsif ( $format eq "html" ) { 
-    $output_opt = "";
-  }
-  else { 
-    $output_opt = "-J";
-  }
-  $header=$q->header( -status => 200, -type => "$type" );
-  return ($output_opt,$header,$type);
+  my $header=$q->header( -status => 200, -type => "$type" );
+  return ($header,$type);
 }
 
 # Return the extension (second parameter) if defined, or the

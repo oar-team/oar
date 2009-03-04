@@ -162,7 +162,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $sites = get_sites($dbh);
     apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
     $sites = apilib::struct_sites_list($sites,$STRUCTURE);
@@ -179,7 +179,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $sites = get_sites($dbh);
     if ( defined( $sites->{$1} ) ) {
       $sites={ $1 =>  $sites->{$1} };
@@ -203,7 +203,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $site  = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $sites = get_sites($dbh);
     if ( not defined( $sites->{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
@@ -240,7 +240,7 @@ SWITCH: for ($q) {
     my $site  = $1;
     my $jobid = $2;
     my $ext = apilib::set_ext($q,$3);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $sites = get_sites($dbh);
     if ( not defined( $sites->{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
@@ -274,7 +274,7 @@ SWITCH: for ($q) {
 
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my %jobs = oargrid_lib::get_user_informations($dbh,$authenticated_user);
     apilib::add_gridjobs_uris(\%jobs,$ext,$FORCE_HTTPS);
     print $header;
@@ -291,7 +291,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $gridjob=$1;
     my $ext=apilib::set_ext($q,$3);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat -l $gridjob -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
     my $resources = apilib::import($cmdRes,"dumper");
@@ -315,7 +315,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $gridjob=$1;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat $gridjob -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
     my $job = apilib::import($cmdRes,"dumper");
@@ -345,7 +345,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $site  = $1;
     my $ext = apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my %sites = get_sites($dbh);
     if ( not defined( $sites{sites}{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
@@ -407,7 +407,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -494,7 +494,7 @@ SWITCH: for ($q) {
   # 
   $URI = qr{^/grid/jobs/form.html$};
   apilib::GET( $_, $URI ) && do {
-    (my $output_opt, my $header, my $type)=apilib::set_output_format("html");
+    (my $header, my $type)=apilib::set_output_format("html");
     print $header;
     print $HTML_HEADER;
     my $POSTFORM="";

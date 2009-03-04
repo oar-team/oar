@@ -116,7 +116,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $cmd    = "$OARSTAT_CMD -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
     my $jobs = apilib::import($cmdRes,"dumper");
@@ -137,7 +137,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -165,7 +165,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $cmd;
     if (defined($1)) {
       if    ($1 eq "/all")        { $cmd = "$OARNODES_CMD -D"; }
@@ -194,7 +194,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
     my $cmd    = "$OARNODES_CMD $1 -D";  
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
@@ -213,7 +213,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -292,7 +292,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext);
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -320,7 +320,7 @@ SWITCH: for ($q) {
   #
   $URI = qr{^/jobs/form.html$};
   apilib::GET( $_, $URI ) && do {
-    (my $output_opt, my $header, my $type)=apilib::set_output_format("html");
+    (my $header, my $type)=apilib::set_output_format("html");
     print $header;
     print $HTML_HEADER;
     my $POSTFORM="";
