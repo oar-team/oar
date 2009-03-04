@@ -193,14 +193,15 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $output_opt, my $header)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD $1 $output_opt";  
+    (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
+    my $cmd    = "$OARNODES_CMD $1 -D";  
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
+    my $resources = apilib::import($cmdRes,"dumper");
+    apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
+    my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    if ($ext eq "html") { print "<PRE>\n"; }
-    print $cmdRes;
-    if ($ext eq "html") { print "</PRE>\n"; }
+    print apilib::export($result,$type);
     last;
   }; 
 
