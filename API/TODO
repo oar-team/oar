@@ -1,23 +1,10 @@
-- Formater les erreurs dans le bon type (html, json, yaml)
-- NON! Implémenter le paramètre "depth" permettant de développer les uri qui sont dans les résultats
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
 - Reformater les status (jobs, resources) pour y ajouter les uris (par exemple: batchId -> pointer vers /sites/<site>/jobs/BatchId)
 - oargridapi: gérer les clés ssh (voir <not yet implemented>)
-- Json is not always available in oargridapi depending on the oar
-  version installed on the remote site queried.
-  We could parse in DUMPER and give the result in JSON (like we did for some functions)
-- Mise en forme des résultats (liste des jobs/resources sous forme d'array et pas de hash avec l'id en key)
-- Code cleaning: 
-  - fonction export à modifier partout (baser sur extension et non content_type)
 
 ##### discussion avec Cyril 20/02/2009 ####
-- Codes erreur 406 au lieu de 415 lorsque le format demandé n'est pas supporté par l'API
-- Codes erreur 401 au lieu de 403 lorsque problème d'authentif
-- Structure des codes d'erreur: hash(code,title,message)
-- paramètre depth: en fait pas forcément une bonne idée car les utilisateurs risquent de trop l'utiliser systématiquement. L'idée du /resources/all est bonne car elle est plus restrictive (on autorise ce genre de choses à des points bien précis, là où on sait que ça peut etre utile, voire indispensable)
-- Format application/json au lieu de text/json
 - Implementer put/delete sur les resources de oar (oarapi) (ce qui implique un mode de fonctionnement "administrateur" avec l'authentif adéquate, une clé partagée?)
    --> Problème des id des ressources: le referentiel ne pourra pas adresser les ressources par les id (workflow normal: nouveau cluster -> script qui les ajoute dans oar -> oar génère des id autoincrément). En cas de modif ou supression d'une ressource, il faudrait pouvoir l'adresser par network_address+cpuset et non par l'id car le référentiel ne les connait pas
 - Chainage d'APIs: ident pour la première puis certificats SSL entre serveurs d'API et X_REMOTE_IDENT fixé par mod_header (cyril m'envoie les exemples de config)

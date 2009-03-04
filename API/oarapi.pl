@@ -124,7 +124,7 @@ SWITCH: for ($q) {
     my $result = apilib::struct_job_list($jobs,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$type);
+    print apilib::export($result,$ext);
     last;
   };
 
@@ -154,7 +154,7 @@ SWITCH: for ($q) {
     my $result = apilib::struct_job($job,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$type);
+    print apilib::export($result,$ext);
     last;
   };
 
@@ -183,7 +183,7 @@ SWITCH: for ($q) {
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$type);
+    print apilib::export($result,$ext);
     last;
   };
  
@@ -202,7 +202,7 @@ SWITCH: for ($q) {
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$type);
+    print apilib::export($result,$ext);
     last;
   }; 
 
@@ -275,7 +275,7 @@ SWITCH: for ($q) {
       print apilib::export( { 'job_id' => "$1",
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
                       'state' => "submitted"
-                    } , $type );
+                    } , $ext );
     }
     else {
       apilib::ERROR( 400, "Parse error",
@@ -311,7 +311,7 @@ SWITCH: for ($q) {
                     'message' => "Delete request registered",
                     'oardel_output' => "$cmdRes",
                     'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext,$FORCE_HTTPS)
-                  } , $type );
+                  } , $ext );
     last;
   };
 

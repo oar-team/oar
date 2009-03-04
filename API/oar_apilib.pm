@@ -131,16 +131,16 @@ sub export_html($) {
 # Export data to the specified content_type
 sub export($$) {
   my $data         = shift;
-  my $content_type = shift;
-  if ( $content_type eq 'text/yaml' ) {
+  my $format = shift;
+  if ( $format eq 'yaml' ) {
     export_yaml($data);
-  }elsif ( $content_type eq 'application/json' ) {
+  }elsif ( $format eq 'json' ) {
     export_json($data);
-  }elsif ( $content_type eq 'text/html' ) {
+  }elsif ( $format eq 'html' ) {
     export_html($data);
   }else {
-    ERROR 406, "Unknown $content_type format",
-      "The $content_type format is not known.";
+    ERROR 406, "Unknown $format format",
+      "The $format format is not known.";
     exit 0;
   }
 }
@@ -417,6 +417,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
+  elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
   else                                  { return "UNKNOWN_TYPE"; }
 }
 
@@ -444,9 +445,14 @@ sub set_ext($$) {
   my $ext=shift;
   if (defined($ext) && $ext ne "") { return $ext; }
   else {
-    if (defined($q->content_type) 
-          && get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
-      return get_ext($q->content_type); 
+    if (defined($q->content_type)) {
+      if (get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
+         return get_ext($q->content_type);
+      }
+      else { 
+        ERROR 406, 'Invalid content type ' .$q->content_type,
+        "Valid types are text/yaml, application/json or text/html";
+      }
     }
     else { return "json"; }
   }
@@ -489,9 +495,13 @@ sub PUT($$) {
 sub ERROR($$$) {
   ( my $status, my $title, my $message ) = @_;
   if ($DEBUG_MODE) {
-    $title  = "ERROR $status - " . $title;
+    $title  = "ERROR $status - " . $title
     $status = "200";
   }
+
+  # This is to prevent a loop as the export function may call ERROR!
+  if (!defined($extension) || get_content_type($extension) eq "UNKNOW_TYPE") {  $extension = "json"; }
+
   print $q->header( -status => $status, -type => get_content_type($extension) );
   if ($extension eq "html") {
     print $q->title($title) ."\n";
@@ -503,7 +513,9 @@ sub ERROR($$$) {
                   message => $message,
                   title => $title
                 };
-    print export($error,get_content_type($extension));
+
+    print export($error,$extension);
+    exit 0;
   }
 }
 

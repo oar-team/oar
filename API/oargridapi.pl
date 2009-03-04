@@ -168,7 +168,7 @@ SWITCH: for ($q) {
     $sites = apilib::struct_sites_list($sites,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($sites,$type);
+    print apilib::export($sites,$ext);
     last;
   };
 
@@ -187,7 +187,7 @@ SWITCH: for ($q) {
       $sites = apilib::struct_site($sites,$STRUCTURE);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export($sites,$type);
+      print apilib::export($sites,$ext);
     }
     else {
       apilib::ERROR( 404, "Not found", "Site not found" );
@@ -217,7 +217,7 @@ SWITCH: for ($q) {
       my $result = apilib::struct_job_list($jobs,$STRUCTURE);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export($result,$type);
+      print apilib::export($result,$ext);
     }
     last;
   };
@@ -253,7 +253,7 @@ SWITCH: for ($q) {
       my $result = apilib::struct_job($job,$STRUCTURE); 
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export($result,$type);
+      print apilib::export($result,$ext);
     }
     last;
   };
@@ -279,7 +279,7 @@ SWITCH: for ($q) {
     apilib::add_gridjobs_uris(\%jobs,$ext,$FORCE_HTTPS);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export(apilib::struct_gridjobs_list(\%jobs,$STRUCTURE),$type);
+    print apilib::export(apilib::struct_gridjobs_list(\%jobs,$STRUCTURE),$ext);
     last;
   };
 
@@ -303,7 +303,7 @@ SWITCH: for ($q) {
     }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($resources,$type);
+    print apilib::export($resources,$ext);
     last;
   };
    
@@ -323,7 +323,7 @@ SWITCH: for ($q) {
     apilib::add_gridjob_uris($job,$ext,$FORCE_HTTPS);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($job,$type);
+    print apilib::export($job,$ext);
     last;
   };
  
@@ -391,7 +391,7 @@ SWITCH: for ($q) {
                'state' => "submitted",
                'id' => "$1",
                'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1",$ext,0),$ext,$FORCE_HTTPS)
-            } , $type );
+            } , $ext );
     }
     else {
       apilib::ERROR( 400, "Parse error",
@@ -456,7 +456,7 @@ SWITCH: for ($q) {
       print apilib::export( { 'state' => "rejected",
                               'output' => $cmdRes,
                               'command' => $oargridcmd
-                            } , $type );
+                            } , $ext );
       last;
     }
     elsif ( $err != 0 ) {
@@ -478,7 +478,7 @@ SWITCH: for ($q) {
                'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources",$ext,0),$ext,$FORCE_HTTPS),
                'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources/nodes",$ext,0),$ext,$FORCE_HTTPS),
                'command' => $oargridcmd
-                    } , $type );
+                    } , $ext );
     }
     else {
       apilib::ERROR( 400, "Parse error",
