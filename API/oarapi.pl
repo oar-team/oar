@@ -112,7 +112,7 @@ SWITCH: for ($q) {
   #
   # List of current jobs (oarstat wrapper)
   #
-  $URI = qr{^/jobs\.*(yaml|xml|json|html)*$};
+  $URI = qr{^/jobs\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
@@ -132,7 +132,7 @@ SWITCH: for ($q) {
   #
   # Details of a job (oarstat wrapper)
   #
-  $URI = qr{^/jobs/(\d+)\.*(yaml|xml|json|html)*$};
+  $URI = qr{^/jobs/(\d+)\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
@@ -161,7 +161,7 @@ SWITCH: for ($q) {
   #
   # List of resources or details of a resource (oarnodes wrapper)
   #
-  $URI = qr{^/resources(/all|/[0-9]+)*\.(yaml|json|html)*$};
+  $URI = qr{^/resources(/all|/[0-9]+)*\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
@@ -175,9 +175,10 @@ SWITCH: for ($q) {
     else                          { $cmd = "$OARNODES_CMD -D -s"; }
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
-    if ($1 =~ /\/([0-9]+)/) { $resources = { @$resources[0]->{properties}->{network_address} 
-                                               => { @$resources[0]->{resource_id} => @$resources[0] }} 
-                            }
+    if (defined($1) && $1 =~ /\/([0-9]+)/) { 
+                       $resources = { @$resources[0]->{properties}->{network_address} 
+                           => { @$resources[0]->{resource_id} => @$resources[0] }} 
+                       }
     apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
@@ -189,7 +190,7 @@ SWITCH: for ($q) {
   #
   # Details of a node (oarnodes wrapper)
   #
-  $URI = qr{^/resources/nodes/([\w\-]+)\.*(yaml|xml|json|html)*$};  
+  $URI = qr{^/resources/nodes/([\w\-]+)\.*(yaml|json|html)*$};  
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
@@ -208,7 +209,7 @@ SWITCH: for ($q) {
   #
   # A new job (oarsub wrapper)
   #
-  $URI = qr{^/jobs\.*(yaml|xml|json|html)*$};
+  $URI = qr{^/jobs\.*(yaml|json|html)*$};
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);

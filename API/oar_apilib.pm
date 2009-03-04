@@ -39,51 +39,14 @@ if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
   $DEBUG_MODE = 1;
 }
 
-##############################################################################
-# REST Functions
-##############################################################################
+# Check a possible extension
+sub set_ext($$); # defined later
+my $extension;
+if ( $q->path_info =~ /.*\.(yaml|json|html)$/ ) { $extension = $1; };
+$extension=set_ext($q,$extension);
 
-sub GET($$);
-sub POST($$);
-sub DELETE($$);
-sub PUT($$);
+# Declared later with REST functions
 sub ERROR($$$);
-
-sub GET($$) {
-  ( my $q, my $path ) = @_;
-  if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
-  else                                                             { return 0; }
-}
-
-sub POST($$) {
-  my ( $q, $path ) = @_;
-  if   ( $q->request_method eq 'POST' && $q->path_info =~ $path ) { return 1; }
-  else                                                            { return 0; }
-}
-
-sub DELETE($$) {
-  my ( $q, $path ) = @_;
-  if   ( $q->request_method eq 'DELETE' && $q->path_info =~ $path ) { return 1; }
-  else                                                              { return 0; }
-}
-
-sub PUT($$) {
-  my ( $q, $path ) = @_;
-  if   ( $q->request_method eq 'PUT' && $q->path_info =~ $path ) { return 1; }
-  else                                                           { return 0; }
-}
-
-sub ERROR($$$) {
-  ( my $status, my $title, my $message ) = @_;
-  if ($DEBUG_MODE) {
-    $title  = "ERROR $status\n" . $title;
-    $status = "200";
-  }
-  print $q->header( -status => $status, -type => 'text/html' );
-  print $q->title( "ERROR: " . $title );
-  print $q->h1($title);
-  print $q->p("<PRE>\n". $message ."\n</PRE>");
-}
 
 ##############################################################################
 # Data conversion functions
@@ -271,7 +234,121 @@ sub add_resources_uris($$$) {
   }
 }
 
+##############################################################################
+# Content type functions
+##############################################################################
 
+# Get a suitable extension depending on the content-type
+sub get_ext($) {
+  my $content_type = shift;
+  if    ($content_type eq "text/yaml")  { return "yaml"; }
+  elsif ($content_type eq "text/xml")   { return "xml"; }
+  elsif ($content_type eq "text/html")  { return "html"; }
+  elsif ($content_type eq "text/json")  { return "json"; }
+  else                                  { return "UNKNOWN_TYPE"; }
+}
+
+# Get a suitable content-type depending on the extension
+sub get_content_type($) {
+  my $format = shift;
+  if    ( $format eq "yaml" ) { return "text/yaml"; } 
+  elsif ( $format eq "xml" )  { return "text/xml"; }
+  elsif ( $format eq "html" ) { return "text/html"; } 
+  elsif ( $format eq "json" ) { return "text/json"; } 
+  else                        { return "UNKNOWN_TYPE"; }
+}
+
+# Set oar output option and header depending on the format given
+sub set_output_format($) {
+  my $format=shift;
+  my $output_opt;
+  my $header;
+  my $type = get_content_type($format);
+  if ( $format eq "yaml" ) { 
+    $output_opt = "-Y";
+  }
+  elsif ( $format eq "xml" ) { 
+    $output_opt = "-X";
+  }
+  elsif ( $format eq "html" ) { 
+    $output_opt = "";
+  }
+  else { 
+    $output_opt = "-J";
+  }
+  $header=$q->header( -status => 200, -type => "$type" );
+  return ($output_opt,$header,$type);
+}
+
+# Return the extension (second parameter) if defined, or the
+# corresponding one if the content_type if set. "json" is the default.
+sub set_ext($$) {
+  my $q=shift;
+  my $ext=shift;
+  if (defined($ext) && $ext ne "") { return $ext; }
+  else {
+    if (defined($q->content_type) 
+          && get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
+      return get_ext($q->content_type); 
+    }
+    else { return "json"; }
+  }
+}
+
+##############################################################################
+# REST Functions
+##############################################################################
+
+sub GET($$);
+sub POST($$);
+sub DELETE($$);
+sub PUT($$);
+sub ERROR($$$);
+
+sub GET($$) {
+  ( my $q, my $path ) = @_;
+  if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
+  else                                                             { return 0; }
+}
+
+sub POST($$) {
+  my ( $q, $path ) = @_;
+  if   ( $q->request_method eq 'POST' && $q->path_info =~ $path ) { return 1; }
+  else                                                            { return 0; }
+}
+
+sub DELETE($$) {
+  my ( $q, $path ) = @_;
+  if   ( $q->request_method eq 'DELETE' && $q->path_info =~ $path ) { return 1; }
+  else                                                              { return 0; }
+}
+
+sub PUT($$) {
+  my ( $q, $path ) = @_;
+  if   ( $q->request_method eq 'PUT' && $q->path_info =~ $path ) { return 1; }
+  else                                                           { return 0; }
+}
+
+sub ERROR($$$) {
+  ( my $status, my $title, my $message ) = @_;
+  if ($DEBUG_MODE) {
+    $title  = "ERROR $status - " . $title;
+    $status = "200";
+  }
+  print $q->header( -status => $status, -type => get_content_type($extension) );
+  if ($extension eq "html") {
+    print $q->title($title) ."\n";
+    print $q->h1($title) ."\n";
+    print $q->p("<PRE>\n". $message ."\n</PRE>");
+  }
+  else {
+    my $error = { code => $status,
+                  message => $message,
+                  title => $title
+                };
+    print export($error,get_content_type($extension));
+  }
+}
 
 ##############################################################################
 # Other functions
@@ -442,56 +519,7 @@ sub check_grid_job($$) {
   return $job;
 }
 
-# Set oar output option and header depending on the format given
-sub set_output_format($) {
-  my $format=shift;
-  my $output_opt;
-  my $header;
-  my $type;
-  if( $format eq "yaml" ) { 
-    $output_opt = "-Y";
-    $type="text/yaml";
-  }
-  elsif ( $format eq "xml" ) { 
-    $output_opt = "-X";
-    $type="text/xml";
-  }
-  elsif ( $format eq "html" ) { 
-    $output_opt = "";
-    $type="text/html";
-  }
-  else { 
-    $output_opt = "-J";
-    $type="text/json";
-  }
-  $header=$q->header( -status => 200, -type => "$type" );
-  return ($output_opt,$header,$type);
-}
 
-# Get a suitable extension depending on the content-type
-sub get_ext($) {
-  my $content_type = shift;
-  if    ($content_type eq "text/yaml")  { return "yaml"; }
-  elsif ($content_type eq "text/xml")   { return "xml"; }
-  elsif ($content_type eq "text/html")  { return "html"; }
-  elsif ($content_type eq "text/json")  { return "json"; }
-  else                                  { return "UNKNOWN_TYPE"; }
-}
-
-# Return the extension (second parameter) if defined, or the
-# corresponding one if the content_type if set. "json" is the default.
-sub set_ext($$) {
-  my $q=shift;
-  my $ext=shift;
-  if (defined($ext) && $ext ne "") { return $ext; }
-  else {
-    if (defined($q->content_type) 
-          && get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
-      return get_ext($q->content_type); 
-    }
-    else { return "json"; }
-  }
-}
 
 # Send a command and returns the output or exit with an error
 sub send_cmd($$) {
