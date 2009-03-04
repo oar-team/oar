@@ -3,31 +3,43 @@ use strict;
 use oargrid_lib;
 use oargrid_conflib;
 use oar_apilib;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
 ##############################################################################
-# CUSTOM VARIABLES
+# CONFIGURATION
 ##############################################################################
+
+# Load config
+my $oardir;
+if (defined($ENV{OARDIR})){
+    $oardir = $ENV{OARDIR}."/";
+}else{
+    die("ERROR: OARDIR env variable must be defined.\n");
+}
+if (defined($ENV{OARCONFFILE})){
+  init_conf($ENV{OARCONFFILE});
+}else{
+  init_conf("/etc/oar/oar.conf");
+}
 
 # The ssh command to use to contact the frontends
 my $SSH_CMD = "/usr/bin/ssh";
-
-# Debug mode
-# This does not increase verbosity, but causes all errors to generate
-# the OK/200 status to force the client to output the human readable
-# error message.
-# Uncomment to bypass the setting of this variable by the apilib
-# (set to 1 if the name of the cgi script contains "debug")
-# $DEBUG_MODE = 0;
 
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
 # or in the case you fully trust the client hosts (with an apropriate
 # ip-based access control into apache for example)
 my $TRUST_IDENT = 1;
+if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 
 # Force all html uris to start with "https://".
 # Useful if the api acts in a non-https server behind an https proxy
 my $FORCE_HTTPS = 0;
+if (is_conf("API_FORCE_HTTPS")){ $FORCE_HTTPS = get_conf("API_FORCE_HTTPS"); }
+
+# Default data structure variant
+my $STRUCTURE="simple";
+if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
 
 # Oar commands
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
@@ -39,18 +51,14 @@ my $q = apilib::get_cgi_handler();
 # Header for html version
 my $apiuri= $q->url(-full => 1);
 $apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
-my $HTML_HEADER = "
-<HTML>
-<HEAD>
-<TITLE>OARGRID REST API</TITLE>
-</HEAD>
-<BODY>
-<HR>
-<A HREF=$apiuri/sites.html>SITES</A>&nbsp;&nbsp;&nbsp;
-<A HREF=$apiuri/grid/jobs.html>GRID_JOBS</A>&nbsp;&nbsp;&nbsp;
-<A HREF=$apiuri/grid/jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
-<HR>
-";
+my $HTML_HEADER="";
+my $file;
+if (is_conf("GRIDAPI_HTML_HEADER")){ $file=get_conf("GRIDAPI_HTML_HEADER"); }
+else { $file="/etc/oar/gridapi_html_header.pl"; }
+open(FILE,$file);
+my(@lines) = <FILE>;
+eval join("\n",@lines);
+close(FILE);
 
 ##############################################################################
 # INIT
@@ -119,10 +127,6 @@ else {
 # URI management
 ##############################################################################
 
-#
-# Switch on debug mode if the URI starts with /debug
-#
-
 SWITCH: for ($q) {
   my $URI;
 
@@ -140,7 +144,7 @@ SWITCH: for ($q) {
   #
   # The sites list
   #
-  $URI = qr{^/sites\.*(yaml|xml|json|html)*$};
+  $URI = qr{^/sites\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
@@ -186,7 +190,7 @@ SWITCH: for ($q) {
   #
   # List of current jobs on a site (oarstat wrapper)
   #
-  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|xml|json|html)*$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $site  = $1;
@@ -199,6 +203,8 @@ SWITCH: for ($q) {
     else {
       my $frontend = $sites{sites}{$site}{frontend};
       my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarstat -Y\"";
+
+`echo '$cmd' > /tmp/cmd`;
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
       my $jobs = apilib::import($cmdRes,"yaml");
       my $result;
@@ -483,40 +489,15 @@ SWITCH: for ($q) {
     (my $output_opt, my $header, my $type)=apilib::set_output_format("html");
     print $header;
     print $HTML_HEADER;
-    print "
-<FORM METHOD=post ACTION=$apiuri/grid/jobs.html>
-<TABLE>
-<CAPTION>Grid job submission</CAPTION>
-<TR>
-  <TD>Resources</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=resources VALUE=\"grenoble:rdef='/nodes=2',rennes:rdef='/cpu=1'\"></TD>
-</TR><TR>
-  <TD>Walltime</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=walltime VALUE=\"01:00:00\"></TD>
-</TR><TR>
-  <TD>Program to run</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=program VALUE=\"/bin/sleep 300\"></TD>
-</TR><TR>
-  <TD>Continue if rejected</TD>
-  <TD><INPUT TYPE=checkbox NAME=FORCE></TD>
-</TR><TR>
-  <TD>Types</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>
-</TR><TR>
-  <TD>Start date</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=start_date></TD>
-</TR><TR>
-  <TD>Directory</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=directory></TD>
-</TR><TR>
-  <TD>Verbose output</TD>
-  <TD><INPUT TYPE=checkbox NAME=verbose></TD>
-</TR><TR>
-  <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
-</TR>
-</TABLE>
-</FORM>
-";
+    my $POSTFORM="";
+    my $file;
+    if (is_conf("GRIDAPI_HTML_POSTFORM")){ $file=get_conf("GRIDAPI_HTML_POSTFORM"); }
+    else { $file="/etc/oar/gridapi_html_postform.pl"; }
+    open(FILE,$file);
+    my(@lines) = <FILE>;
+    eval join("\n",@lines);
+    close(FILE);
+    print $POSTFORM;
     last;
   };
 

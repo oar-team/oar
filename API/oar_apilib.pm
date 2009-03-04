@@ -242,7 +242,6 @@ sub add_resources_uris($$$) {
 sub get_ext($) {
   my $content_type = shift;
   if    ($content_type eq "text/yaml")  { return "yaml"; }
-  elsif ($content_type eq "text/xml")   { return "xml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
   else                                  { return "UNKNOWN_TYPE"; }
@@ -252,7 +251,6 @@ sub get_ext($) {
 sub get_content_type($) {
   my $format = shift;
   if    ( $format eq "yaml" ) { return "text/yaml"; } 
-  elsif ( $format eq "xml" )  { return "text/xml"; }
   elsif ( $format eq "html" ) { return "text/html"; } 
   elsif ( $format eq "json" ) { return "application/json"; } 
   else                        { return "UNKNOWN_TYPE"; }
@@ -266,9 +264,6 @@ sub set_output_format($) {
   my $type = get_content_type($format);
   if ( $format eq "yaml" ) { 
     $output_opt = "-Y";
-  }
-  elsif ( $format eq "xml" ) { 
-    $output_opt = "-X";
   }
   elsif ( $format eq "html" ) { 
     $output_opt = "";
