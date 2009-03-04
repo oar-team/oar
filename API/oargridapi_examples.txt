@@ -11,6 +11,10 @@
 irb(main):004:0> puts get('/sites.json')
   # Same thing (JSON by default)
 irb(main):004:0> puts get('/sites')
+  # Same thing, asking for the "oar" data structure
+irb(main):004:0> puts get('/sites?structure=oar')
+  # Same thing, asking for the "simple" data structure
+irb(main):004:0> puts get('/sites?structure=simple')
   # in YAML
 irb(main):005:0> puts get('/sites.yaml')
   # Same thing but using the content_type variable
