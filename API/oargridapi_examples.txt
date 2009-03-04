@@ -48,6 +48,9 @@ irb(main):064:1> else
 irb(main):065:1*   puts "Job was rejected"
 irb(main):066:1> end
 
+# Get an array of node names inside a grid job
+irb(main):063:1>   puts get('/grid/jobs/18611/resources/nodes.json')
+
 # List my running grid jobs, in HTML
 irb(main):067:0> puts get('/grid/jobs.html')
 

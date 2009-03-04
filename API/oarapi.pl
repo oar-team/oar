@@ -142,7 +142,7 @@ SWITCH: for ($q) {
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       apilib::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before posting jobs" );
+        "A suitable authentication must be done before looking at jobs" );
       last;
     }
     $authenticated_user = $1;

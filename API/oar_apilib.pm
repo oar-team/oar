@@ -145,7 +145,133 @@ sub export($$) {
   }
 }
 
-# Shape a oar job into the given structure
+##############################################################################
+# URI generation functions
+##############################################################################
+
+# Return the url (absolute if the third argument is 1). The .html
+# extension is added if the second argument is equal to "html".
+sub make_uri($$$) {
+  my $path = shift;
+  my $ext = shift;
+  my $absolute = shift;
+  if ($ext eq "html") { $path.=".html"; }
+  if ($absolute == 1) {
+    return $q->url(-full => 1). $path;
+  }
+  else {
+    return $path;
+  }
+}
+
+# Return an html href of an uri if the type is "html"
+sub htmlize_uri($$$) {
+  my $uri=shift;
+  my $type=shift;
+  my $force_https=shift;
+  if ($type eq "html") {
+    my $base_uri=$q->url(-full => 1);
+    $base_uri=~s/^http:/https:/ if $force_https;
+    return "<A HREF=".$base_uri."$uri>$uri</A>";
+  }
+  else { return $uri; }
+}
+
+# Add uris to a oar job list
+sub add_joblist_uris($$$) {
+  my $jobs = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+    foreach my $job ( keys( %{$jobs} ) ) {
+      $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job",$ext,0);
+      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
+  }
+}
+
+# Add uris to a resources list
+sub add_resources_uris($$$) {
+  my $resources = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+  foreach my $node ( keys( %{$resources} ) ) {
+    foreach my $id ( keys( %{$resources->{$node}} ) ) {
+      # This test should make this function work for "oarstat -s"
+      if (ref($resources->{$node}->{$id}) ne "HASH") {
+        my $state = $resources->{$node}->{$id};
+        $resources->{$node}->{$id}={};
+        $resources->{$node}->{$id}->{state}=$state;
+      }
+      $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id",$ext,0);
+      $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
+    }
+    $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node",$ext,0);
+    $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext,$FORCE_HTTPS);
+  }
+}
+
+# Add uris to a grid sites list
+sub add_sites_uris($$$) {
+  my $sites = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+  foreach my $site ( keys( %{$sites} ) ) {
+      $sites->{$site}->{uri}=apilib::htmlize_uri(
+                               apilib::make_uri("/sites/$site",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+  }
+}
+
+# Add uris to a grid job list
+sub add_gridjobs_uris($$$) {
+  my $jobs = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+  foreach my $job ( keys( %{$jobs} ) ) {
+      $jobs->{$job}->{uri}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/$job",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+      $jobs->{$job}->{resources}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/$job/resources",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+      $jobs->{$job}->{nodes}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/$job/resources/nodes",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+ 
+  }
+}
+
+# Add uris to a grid job
+sub add_gridjob_uris($$$) {
+  my $job = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+  $job->{resources}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/". $job->{id} ."/resources",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+  $job->{nodes}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+ 
+}
+
+##############################################################################
+# Data structure functions
+# (functions for shaping data depending on $STRUCTURE)
+##############################################################################
+
+# OAR JOB
 sub struct_job($$) {
   my $job = shift;
   my $structure = shift;
@@ -154,7 +280,7 @@ sub struct_job($$) {
   elsif ($structure eq 'simple') { return $job->{(keys(%{$job}))[0]}; }
 }
 
-# Shape a oar jobs hash into the given structure
+# OAR JOB LIST
 sub struct_job_list($$) {
   my $jobs = shift;
   my $structure = shift;
@@ -179,18 +305,7 @@ sub struct_job_list($$) {
   return $result;
 }
 
-# Add uris to a oar job list
-sub add_joblist_uris($$$) {
-  my $jobs = shift;
-  my $ext = shift;
-  my $FORCE_HTTPS = shift;
-    foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job",$ext,0);
-      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
-  }
-}
-
-# Shape a resources hash into the given structure
+# OAR RESOURCES
 sub struct_resource_list($$) {
   my $resources = shift;
   my $structure = shift;
@@ -213,25 +328,83 @@ sub struct_resource_list($$) {
   }
 }
 
-# Add uris to a resources list
-sub add_resources_uris($$$) {
-  my $resources = shift;
-  my $ext = shift;
-  my $FORCE_HTTPS = shift;
-  foreach my $node ( keys( %{$resources} ) ) {
-    foreach my $id ( keys( %{$resources->{$node}} ) ) {
-      # This test should make this function work for "oarstat -s"
-      if (ref($resources->{$node}->{$id}) ne "HASH") {
-        my $state = $resources->{$node}->{$id};
-        $resources->{$node}->{$id}={};
-        $resources->{$node}->{$id}->{state}=$state;
-      }
-      $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id",$ext,0);
-      $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
-    }
-    $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node",$ext,0);
-    $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext,$FORCE_HTTPS);
+# GRID SITE LIST
+sub struct_sites_list($$) {
+  my $sites = shift;
+  my $structure = shift;
+  my $result;
+  my $uri;
+  foreach my $s ( keys( %{$sites} ) ) {
+    if ($structure eq "simple") { push(@$result,{ site => $s, uri => $sites->{$s}->{uri} });}
+    else                        { $result->{$s}->{uri} =$sites->{$s}->{uri}; }
   }
+  return $result; 
+}
+
+# GRID SITE
+sub struct_site($$) {
+  my $site = shift;
+  my $structure = shift;
+  if ($structure eq "simple") { 
+    my $s=(keys( %{$site}))[0];
+    $site->{$s}->{site}=$s; 
+    return $site->{$s}; 
+  }
+  else { return $site; }
+}
+
+# GRID JOB LIST
+sub struct_gridjobs_list($$) {
+  my $jobs = shift;
+  my $structure = shift;
+  my $result;
+  foreach my $job ( keys( %{$jobs} ) ) {
+    my $hashref = {
+                  resources => $jobs->{$job}->{resources},
+                  nodes => $jobs->{$job}->{nodes},
+                  uri => $jobs->{$job}->{uri}
+    };
+    if ($structure eq 'oar') {
+      $result->{$job} = $hashref;
+    }
+    elsif ($structure eq 'simple') {
+      $hashref->{id}=$job;
+      push (@$result,$hashref);
+    }
+  }
+  return $result;
+}
+
+# GRID JOB RESOURCES
+sub struct_gridjob_resources($$) {
+  my $resources = shift;
+  my $structure = shift;
+  my $result;
+  if ($structure eq "simple") {
+    foreach my $resource ( keys( %{$resources} ) ) {
+      push (@$result,{ site => $resource, jobs => $resources->{$resource} });
+    }
+    return $result;
+  }
+  else {
+    return $resources;
+  } 
+}
+
+# LIST OF NODES FOR A GRID JOB
+sub struct_gridjob_nodes($$) {
+  my $resources = shift;
+  my $structure = shift;
+  my @result;
+  foreach my $site ( keys( %{$resources} ) ) {
+    foreach my $job ( keys( %{$resources->{$site}} ) ) {
+      my $nodes=$resources->{$site}->{$job}->{nodes};
+      foreach my $node (@$nodes) {
+        @result=(@result,$node);
+      }
+    }
+  }
+  return \@result;
 }
 
 ##############################################################################
@@ -352,34 +525,6 @@ sub ERROR($$$) {
 # Return the cgi handler
 sub get_cgi_handler() {
   return $q;
-}
-
-# Return the url (absolute if the third argument is 1). The .html
-# extension is added if the second argument is equal to "html".
-sub make_uri($$$) {
-  my $path = shift;
-  my $ext = shift;
-  my $absolute = shift;
-  if ($ext eq "html") { $path.=".html"; }
-  if ($absolute == 1) {
-    return $q->url(-full => 1). $path;
-  }
-  else {
-    return $path;
-  }
-}
-
-# Return an html href of an uri if the type is "html"
-sub htmlize_uri($$$) {
-  my $uri=shift;
-  my $type=shift;
-  my $force_https=shift;
-  if ($type eq "html") {
-    my $base_uri=$q->url(-full => 1);
-    $base_uri=~s/^http:/https:/ if $force_https;
-    return "<A HREF=".$base_uri."$uri>$uri</A>";
-  }
-  else { return $uri; }
 }
 
 # Check if YAML is enabled or exits with an error
@@ -517,8 +662,6 @@ sub check_grid_job($$) {
   return $job;
 }
 
-
-
 # Send a command and returns the output or exit with an error
 sub send_cmd($$) {
   my $cmd=shift;
@@ -536,8 +679,6 @@ sub send_cmd($$) {
   }
   else { return $cmdRes; }
 }
-
-
 
 return 1;
 

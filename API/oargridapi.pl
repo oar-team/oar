@@ -79,6 +79,19 @@ my $dbh = oargrid_lib::connect( $DB_SERVER, $DB_BASE_NAME, $DB_BASE_LOGIN,
 $ENV{OARDO_BECOME_USER} = "oargrid";
 
 ##############################################################################
+# Data structure variants
+##############################################################################
+
+if (defined $q->param('structure')) {
+  $STRUCTURE=$q->param('structure');
+}
+if ($STRUCTURE ne "oar" && $STRUCTURE ne "simple") {
+  apilib::ERROR 406, "Unknown $STRUCTURE format",
+        "Unknown $STRUCTURE format for data structure";
+  exit 0;
+}
+
+##############################################################################
 # Functions
 ##############################################################################
 
@@ -86,15 +99,16 @@ $ENV{OARDO_BECOME_USER} = "oargrid";
 sub get_sites($) {
   my $dbh      = shift;
   my %clusters = oargrid_lib::get_cluster_names($dbh);
-  my %sites;
+  my $sites;
+  my $site;
   foreach my $i ( keys(%clusters) ) {
     if ( defined( $clusters{$i}{parent} ) ) {
-      push @{ $sites{sites}{ $clusters{$i}{parent} }{clusters} }, $i;
-      $sites{sites}{ $clusters{$i}{parent} }{frontend} =
-        $clusters{$i}{hostname};
+      $site=$clusters{$i}{parent};
+      $sites->{$site}->{frontend}=$clusters{$i}{hostname};
+      push @{ $sites->{$site}->{clusters} }, $i;
     }
   }
-  return %sites;
+  return $sites;
 }
 
 # Get all the infos about the clusters (oargridlib)
@@ -149,40 +163,34 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my %sites = get_sites($dbh);
-    my $compact_sites;
-    foreach my $s ( keys( %{ $sites{sites} } ) ) {
-      $compact_sites->{$s}->{uri} = apilib::htmlize_uri(
-                              apilib::make_uri("/sites/$s",$ext,0),
-                              $ext,$FORCE_HTTPS);
-    }
+    my $sites = get_sites($dbh);
+    apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
+    $sites = apilib::struct_sites_list($sites,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($compact_sites,$type);
+    print apilib::export($sites,$type);
     last;
   };
 
   #
   # Site details
   #
-  $URI = qr{^/sites/([a-z,0-9,-]+)\.*(yaml|xml|json|html)*$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my %sites = get_sites($dbh);
-    if ( defined( $sites{sites}{$1} ) ) {
-      my %s;
-      $s{$1} = $sites{sites}{$1};
-      $s{$1}{jobs} = apilib::htmlize_uri(
-                              apilib::make_uri("/sites/$1/jobs",$ext,0),
-                              $ext,$FORCE_HTTPS);
+    my $sites = get_sites($dbh);
+    if ( defined( $sites->{$1} ) ) {
+      $sites={ $1 =>  $sites->{$1} };
+      apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
+      $sites = apilib::struct_site($sites,$STRUCTURE);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export(\%s,$type);
+      print apilib::export($sites,$type);
     }
     else {
-      apilib::ERROR( 404, "Not found", "Resource not found" );
+      apilib::ERROR( 404, "Not found", "Site not found" );
     }
     last;
   };
@@ -196,27 +204,17 @@ SWITCH: for ($q) {
     my $site  = $1;
     my $ext=apilib::set_ext($q,$2);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my %sites = get_sites($dbh);
-    if ( not defined( $sites{sites}{$site} ) ) {
+    my $sites = get_sites($dbh);
+    if ( not defined( $sites->{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
     }
     else {
-      my $frontend = $sites{sites}{$site}{frontend};
-      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarstat -Y\"";
-
-`echo '$cmd' > /tmp/cmd`;
-      my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
-      my $jobs = apilib::import($cmdRes,"yaml");
-      my $result;
-      foreach my $job ( keys( %{$jobs} ) ) {
-        $result->{$job}->{state}=$jobs->{$job}->{state};
-        $result->{$job}->{owner}=$jobs->{$job}->{owner};
-        $result->{$job}->{name}=$jobs->{$job}->{name};
-        $result->{$job}->{queue}=$jobs->{$job}->{queue};
-        $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
-        $result->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job",$ext,0);
-        $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
-      }
+      my $frontend = $sites->{$site}->{frontend};
+      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarstat -D\"";
+      my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
+      my $jobs = apilib::import($cmdRes,"dumper");
+      apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
+      my $result = apilib::struct_job_list($jobs,$STRUCTURE);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export($result,$type);
@@ -229,24 +227,33 @@ SWITCH: for ($q) {
   #
   $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
+ 
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before looking at jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+
+   $_->path_info =~ m/$URI/;
     my $site  = $1;
     my $jobid = $2;
     my $ext = apilib::set_ext($q,$3);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my %sites = get_sites($dbh);
-    if ( not defined( $sites{sites}{$site} ) ) {
+    my $sites = get_sites($dbh);
+    if ( not defined( $sites->{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
     }
     else {
-      my $frontend = $sites{sites}{$site}{frontend};
-      my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat -fj $jobid $output_opt\"'";
+      my $frontend = $sites->{$site}->{frontend};
+      my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat -fj $jobid -D\"'";
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
+      my $job = apilib::import($cmdRes,"dumper");
+      my $result = apilib::struct_job($job,$STRUCTURE); 
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      if ($ext eq "html") { print "<PRE>\n"; }
-      print $cmdRes;
-      if ($ext eq "html") { print "</PRE>\n"; }
+      print apilib::export($result,$type);
     }
     last;
   };
@@ -259,8 +266,8 @@ SWITCH: for ($q) {
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 403, "Forbidden",
-        "A suitable authentication must be done before posting jobs" );
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before looking at jobs" );
       last;
     }
     $authenticated_user = $1;
@@ -268,34 +275,32 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat -Y";
-    my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
-    my $jobs = apilib::import($cmdRes,"yaml");
-    my $result;
-    foreach my $job ( keys( %{$jobs} ) ) {
-      $result->{$job}->{uri}=apilib::make_uri("/grid/jobs/$job",$ext,0);
-      $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
-      $result->{$job}->{resources}=apilib::make_uri("/grid/jobs/$job/resources",$ext,0);
-      $result->{$job}->{resources}=apilib::htmlize_uri($result->{$job}->{resources},$ext,$FORCE_HTTPS);
-    }
+    my %jobs = oargrid_lib::get_user_informations($dbh,$authenticated_user);
+    apilib::add_gridjobs_uris(\%jobs,$ext,$FORCE_HTTPS);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$type);
+    print apilib::export(apilib::struct_gridjobs_list(\%jobs,$STRUCTURE),$type);
     last;
   };
 
   #
   # List of resources inside a grid job
   #
-  $URI = qr{^/grid/jobs/(\d+)/resources\.*(yaml|json|html)*$};
+  $URI = qr{^/grid/jobs/(\d+)/resources(/nodes)*\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $gridjob=$1;
-    my $ext=apilib::set_ext($q,$2);
+    my $ext=apilib::set_ext($q,$3);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat -l $gridjob -Y";
+    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat -l $gridjob -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
-    my $resources = apilib::import($cmdRes,"yaml");
+    my $resources = apilib::import($cmdRes,"dumper");
+    if (defined($2)) { 
+      $resources = apilib::struct_gridjob_nodes($resources,$STRUCTURE);
+    }
+    else {
+      $resources = apilib::struct_gridjob_resources($resources,$STRUCTURE);
+    }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($resources,$type);
@@ -311,9 +316,11 @@ SWITCH: for ($q) {
     my $gridjob=$1;
     my $ext=apilib::set_ext($q,$2);
     (my $output_opt, my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat $gridjob -Y";
+    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat $gridjob -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
-    my $job = apilib::import($cmdRes,"yaml");
+    my $job = apilib::import($cmdRes,"dumper");
+    $job->{id}=$gridjob;
+    apilib::add_gridjob_uris($job,$ext,$FORCE_HTTPS);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($job,$type);
@@ -328,7 +335,7 @@ SWITCH: for ($q) {
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 403, "Forbidden",
+      apilib::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before posting jobs" );
       last;
     }
@@ -382,7 +389,7 @@ SWITCH: for ($q) {
       print apilib::export( 
             { 
                'state' => "submitted",
-               'job_id' => "$1",
+               'id' => "$1",
                'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1",$ext,0),$ext,$FORCE_HTTPS)
             } , $type );
     }
@@ -404,7 +411,7 @@ SWITCH: for ($q) {
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 403, "Forbidden",
+      apilib::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before posting jobs" );
       last;
     }
@@ -465,10 +472,11 @@ SWITCH: for ($q) {
       print apilib::export(
             {
                'state' => "submitted",
-               'job_id' => "$1",
+               'id' => "$1",
                'key' => "<not yet implemented>",
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.",$ext,0),$ext,$FORCE_HTTPS),
-               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources.",$ext,0),$ext,$FORCE_HTTPS),
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
+               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources",$ext,0),$ext,$FORCE_HTTPS),
+               'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources/nodes",$ext,0),$ext,$FORCE_HTTPS),
                'command' => $oargridcmd
                     } , $type );
     }
