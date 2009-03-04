@@ -33,11 +33,11 @@ irb(main):035:0> puts get(YAML::load(job)['uri'])
 
 # Submitting a job using JSON format, but requiring the result in YAML
 irb(main):010:0> require 'json'
-irb(main):037:0> job=post('/sites/grenoble/jobs.yaml' , j.to_json , :content_type => 'text/json')
+irb(main):037:0> job=post('/sites/grenoble/jobs.yaml' , j.to_json , :content_type => 'application/json')
 
 # Submitting a grid job
 irb(main):029:0> j={ 'resources' => 'grenoble:rdef=/cpu=2,lille:rdef=/cpu=2' }
-irb(main):030:0> job=post('/grid/jobs.yaml' , j.to_json , :content_type => 'text/json')
+irb(main):030:0> job=post('/grid/jobs.yaml' , j.to_json , :content_type => 'application/json')
 irb(main):031:0> puts job
 
 # List the resources I obtained (if the state is ok)

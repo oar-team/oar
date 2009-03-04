@@ -23,14 +23,14 @@ irb(main):009:0> puts get('/jobs/12.yaml')
 # Submiting a job (using JSON format)
 irb(main):010:0> require 'json'
 irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'script_path' => '/usr/bin/id' }
-irb(main):015:0> job=post('/jobs' , j.to_json , :content_type => 'text/json')
+irb(main):015:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
 
 # Getting details about the previously submited job
 
 irb(main):035:0> puts get(JSON.parse(job)['uri'])
 
 # Submitting a job using JSON format, but requiring the result in YAML
-irb(main):037:0> job=post('/jobs.yaml' , j.to_json , :content_type => 'text/json')
+irb(main):037:0> job=post('/jobs.yaml' , j.to_json , :content_type => 'application/json')
 
 # Submitting a job with a provided inline script
 irb(main):024:0> script="#!/bin/bash
@@ -39,7 +39,7 @@ irb(main):026:0" whoami
 irb(main):027:0" sleep 300
 irb(main):028:0" "
 irb(main):029:0> j={ 'resource' => '/nodes=2/cpu=1', 'script' => script , 'workdir' => '~bzizou/tmp'}
-irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'text/json')
+irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
 
 # Deleting a job
 irb(main):111:0> delete("/jobs/#{JSON.parse(job)['job_id']}.yaml")

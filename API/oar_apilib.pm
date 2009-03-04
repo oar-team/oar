@@ -134,7 +134,7 @@ sub export($$) {
   my $content_type = shift;
   if ( $content_type eq 'text/yaml' ) {
     export_yaml($data);
-  }elsif ( $content_type eq 'text/json' ) {
+  }elsif ( $content_type eq 'application/json' ) {
     export_json($data);
   }elsif ( $content_type eq 'text/html' ) {
     export_html($data);
@@ -244,7 +244,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/xml")   { return "xml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
-  elsif ($content_type eq "text/json")  { return "json"; }
+  elsif ($content_type eq "application/json")  { return "json"; }
   else                                  { return "UNKNOWN_TYPE"; }
 }
 
@@ -254,7 +254,7 @@ sub get_content_type($) {
   if    ( $format eq "yaml" ) { return "text/yaml"; } 
   elsif ( $format eq "xml" )  { return "text/xml"; }
   elsif ( $format eq "html" ) { return "text/html"; } 
-  elsif ( $format eq "json" ) { return "text/json"; } 
+  elsif ( $format eq "json" ) { return "application/json"; } 
   else                        { return "UNKNOWN_TYPE"; }
 }
 
@@ -436,7 +436,7 @@ sub check_job($$) {
   }
 
   # If the data comes in the JSON format
-  elsif ( $content_type eq 'text/json' ) {
+  elsif ( $content_type eq 'application/json' ) {
     $job=import_json($data);
   }
 
@@ -448,7 +448,7 @@ sub check_job($$) {
   # We expect the data to be in YAML or JSON format
   else {
     ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or text/json. "
+      "The correct format for a job request is text/yaml or application/json. "
       . $content_type;
     exit 0;
   }
@@ -483,7 +483,7 @@ sub check_grid_job($$) {
   }
 
   # If the data comes in the JSON format
-  elsif ( $content_type eq 'text/json' ) {
+  elsif ( $content_type eq 'application/json' ) {
     $job=import_json($data);
   }
 
@@ -495,7 +495,7 @@ sub check_grid_job($$) {
   # We expect the data to be in YAML or JSON format
   else {
     ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or text/json. "
+      "The correct format for a job request is text/yaml or application/json. "
       . $content_type;
     exit 0;
   }
