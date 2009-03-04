@@ -176,7 +176,7 @@ sub export($$) {
   }elsif ( $content_type eq 'text/html' ) {
     export_html($data);
   }else {
-    ERROR 415, "Unknown $content_type format",
+    ERROR 406, "Unknown $content_type format",
       "The $content_type format is not known.";
     exit 0;
   }
@@ -367,7 +367,7 @@ sub check_job($$) {
 
   # We expect the data to be in YAML or JSON format
   else {
-    ERROR 415, 'Job description must be in YAML or JSON',
+    ERROR 406, 'Job description must be in YAML or JSON',
       "The correct format for a job request is text/yaml or text/json. "
       . $content_type;
     exit 0;
@@ -414,7 +414,7 @@ sub check_grid_job($$) {
 
   # We expect the data to be in YAML or JSON format
   else {
-    ERROR 415, 'Job description must be in YAML or JSON',
+    ERROR 406, 'Job description must be in YAML or JSON',
       "The correct format for a job request is text/yaml or text/json. "
       . $content_type;
     exit 0;

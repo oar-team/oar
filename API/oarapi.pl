@@ -85,7 +85,7 @@ if (defined $q->param('structure')) {
   $STRUCTURE=$q->param('structure');
 }
 if ($STRUCTURE ne "oar" && $STRUCTURE ne "simple") {
-  apilib::ERROR 400, "Unknown $STRUCTURE format",
+  apilib::ERROR 406, "Unknown $STRUCTURE format",
         "Unknown $STRUCTURE format for data structure";
   exit 0;
 }
@@ -141,7 +141,7 @@ SWITCH: for ($q) {
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 403, "Forbidden",
+      apilib::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before posting jobs" );
       last;
     }
@@ -216,7 +216,7 @@ SWITCH: for ($q) {
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 403, "Forbidden",
+      apilib::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before posting jobs" );
       last;
     }
@@ -295,7 +295,7 @@ SWITCH: for ($q) {
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 403, "Forbidden",
+      apilib::ERROR( 401, "Permission denied",
        "A suitable authentication must be done before posting jobs" );
       last;
     }
