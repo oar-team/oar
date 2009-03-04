@@ -495,7 +495,7 @@ sub PUT($$) {
 sub ERROR($$$) {
   ( my $status, my $title, my $message ) = @_;
   if ($DEBUG_MODE) {
-    $title  = "ERROR $status - " . $title
+    $title  = "ERROR $status - " . $title ;
     $status = "200";
   }
 
