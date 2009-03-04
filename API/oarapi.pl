@@ -273,7 +273,7 @@ SWITCH: for ($q) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'job_id' => "$1",
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS),
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
                       'state' => "submitted"
                     } , $type );
     }
@@ -310,7 +310,7 @@ SWITCH: for ($q) {
     print apilib::export( { 'job_id' => "$jobid",
                     'message' => "Delete request registered",
                     'oardel_output' => "$cmdRes",
-                    'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid.$ext",0),$ext,$FORCE_HTTPS)
+                    'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext,$FORCE_HTTPS)
                   } , $type );
     last;
   };

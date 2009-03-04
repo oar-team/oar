@@ -185,7 +185,7 @@ sub add_joblist_uris($$$) {
   my $ext = shift;
   my $FORCE_HTTPS = shift;
     foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job.$ext",0);
+      $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job",$ext,0);
       $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
   }
 }
@@ -226,10 +226,10 @@ sub add_resources_uris($$$) {
         $resources->{$node}->{$id}={};
         $resources->{$node}->{$id}->{state}=$state;
       }
-      $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id.$ext",0);
+      $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id",$ext,0);
       $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
     }
-    $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node.$ext",0);
+    $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node",$ext,0);
     $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext,$FORCE_HTTPS);
   }
 }
@@ -359,10 +359,13 @@ sub get_cgi_handler() {
   return $q;
 }
 
-# Return the url (absolute if second argument is 1)
-sub make_uri($$) {
+# Return the url (absolute if the third argument is 1). The .html
+# extension is added if the second argument is equal to "html".
+sub make_uri($$$) {
   my $path = shift;
+  my $ext = shift;
   my $absolute = shift;
+  if ($ext eq "html") { $path.=".html"; }
   if ($absolute == 1) {
     return $q->url(-full => 1). $path;
   }

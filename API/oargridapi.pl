@@ -149,7 +149,7 @@ SWITCH: for ($q) {
     my $compact_sites;
     foreach my $s ( keys( %{ $sites{sites} } ) ) {
       $compact_sites->{$s}->{uri} = apilib::htmlize_uri(
-                              apilib::make_uri("/sites/$s.$ext",0),
+                              apilib::make_uri("/sites/$s",$ext,0),
                               $ext,$FORCE_HTTPS);
     }
     print $header;
@@ -171,7 +171,7 @@ SWITCH: for ($q) {
       my %s;
       $s{$1} = $sites{sites}{$1};
       $s{$1}{jobs} = apilib::htmlize_uri(
-                              apilib::make_uri("/sites/$1/jobs.$ext",0),
+                              apilib::make_uri("/sites/$1/jobs",$ext,0),
                               $ext,$FORCE_HTTPS);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
@@ -208,7 +208,7 @@ SWITCH: for ($q) {
         $result->{$job}->{name}=$jobs->{$job}->{name};
         $result->{$job}->{queue}=$jobs->{$job}->{queue};
         $result->{$job}->{submission}=$jobs->{$job}->{submissionTime};
-        $result->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job.$ext",0);
+        $result->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job",$ext,0);
         $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
       }
       print $header;
@@ -267,9 +267,9 @@ SWITCH: for ($q) {
     my $jobs = apilib::import($cmdRes,"yaml");
     my $result;
     foreach my $job ( keys( %{$jobs} ) ) {
-      $result->{$job}->{uri}=apilib::make_uri("/grid/jobs/$job.$ext",0);
+      $result->{$job}->{uri}=apilib::make_uri("/grid/jobs/$job",$ext,0);
       $result->{$job}->{uri}=apilib::htmlize_uri($result->{$job}->{uri},$ext,$FORCE_HTTPS);
-      $result->{$job}->{resources}=apilib::make_uri("/grid/jobs/$job/resources.$ext",0);
+      $result->{$job}->{resources}=apilib::make_uri("/grid/jobs/$job/resources",$ext,0);
       $result->{$job}->{resources}=apilib::htmlize_uri($result->{$job}->{resources},$ext,$FORCE_HTTPS);
     }
     print $header;
@@ -377,7 +377,7 @@ SWITCH: for ($q) {
             { 
                'state' => "submitted",
                'job_id' => "$1",
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1.".$ext,0),$ext,$FORCE_HTTPS)
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1",$ext,0),$ext,$FORCE_HTTPS)
             } , $type );
     }
     else {
@@ -461,8 +461,8 @@ SWITCH: for ($q) {
                'state' => "submitted",
                'job_id' => "$1",
                'key' => "<not yet implemented>",
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.". $ext,0),$ext,$FORCE_HTTPS),
-               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources.". $ext,0),$ext,$FORCE_HTTPS),
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1.",$ext,0),$ext,$FORCE_HTTPS),
+               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources.",$ext,0),$ext,$FORCE_HTTPS),
                'command' => $oargridcmd
                     } , $type );
     }
