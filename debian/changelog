@@ -1,3 +1,11 @@
+oar (2.4.0-1~10.gbpf03e72) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @f03e726f0ddb74d8fecce673c5378a65a8aef005 **
+
+  * Fix of a bug introduced on the last commit
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 04 Mar 2009 20:48:32 +0100
+
 oar (2.4.0-1~9.gbp6bffb9) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @6bffb91ac7b4d4bd3a96912330f5e76ab5fa07a5 **
