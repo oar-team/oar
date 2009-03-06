@@ -190,7 +190,7 @@ SWITCH: for ($q) {
   #
   # Details of a node (oarnodes wrapper)
   #
-  $URI = qr{^/resources/nodes/([\w\-]+)\.*(yaml|json|html)*$};  
+  $URI = qr{^/resources/nodes/([\w\.-]+?)(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);

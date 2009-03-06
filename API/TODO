@@ -14,11 +14,7 @@
 
 Bugs:
 
-- Mauvaise regex (à cause des .?):
-  No way to handle your request /resources/nodes/genepi-1.grenoble.grid5000.fr.html
-
 - https://helpdesk.grid5000.fr/oarapi/Grenoble/jobs.html
-
-  YAML data not understood
-
+   YAML data not understood
+ -> not a bug: oar 2.2 sur genepi, hors l'api utilise oarnodes de oar 2.4 (array jobs en plus)
 

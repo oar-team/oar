@@ -443,7 +443,7 @@ sub set_output_format($) {
 sub set_ext($$) {
   my $q=shift;
   my $ext=shift;
-  if (defined($ext) && $ext ne "") { return $ext; }
+  if (defined($ext) && $ext ne "") { $ext =~ s/^\.*//; return $ext; }
   else {
     if (defined($q->content_type)) {
       if (get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
