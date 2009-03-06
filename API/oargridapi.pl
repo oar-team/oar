@@ -313,11 +313,53 @@ SWITCH: for ($q) {
     my $job = apilib::import($cmdRes,"dumper");
     $job->{id}=$gridjob;
     apilib::add_gridjob_uris($job,$ext,$FORCE_HTTPS);
+    $job = apilib::struct_gridjob($job,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($job,$ext);
     last;
   };
+
+
+  #
+  # Keys of a grid job
+  #
+  $URI = qr{^/grid/jobs/(\d+)/keys/(private|public)(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $gridjob=$1;
+    my $key_type=$2;
+    my $ext=apilib::set_ext($q,$3);
+    (my $header, my $type)=apilib::set_output_format($ext);
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting keys" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    my $key=[];
+    my $keyext="";
+    if ($key_type ne "private") { $keyext = ".pub"; }
+    my $keyfile = "/tmp/oargrid/oargrid_ssh_key_".$authenticated_user."_".$gridjob.$keyext;
+    my $cmd = "$OARDODO_CMD cat $keyfile";
+    my $cmdRes = apilib::send_cmd($cmd,"Cat keyfile");
+    if ($key_type eq "private" && ! $cmdRes =~ m/.*BEGIN.*KEY/ ) {
+      apilib::ERROR( 400, "Error reading file",
+         "The keyfile is unreadable or incorrect" );
+    }
+    else {
+      push(@$key,$cmdRes);
+    }
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($key,$ext);
+    last;
+  };
+
  
   #   
   # A new job on a cluster (oarsub wrapper)
@@ -459,16 +501,24 @@ SWITCH: for ($q) {
       );
     }
     elsif ( $cmdRes =~ m/.*Grid reservation id\s*=\s*(\d+).*/m ) {
+      my $id=$1;
+      my $ssh_key;
+      if ( $cmdRes =~ m/.* SSH KEY : (.*)/m ) {
+        $ssh_key=$1;
+      }
+      else { $ssh_key="ERROR GETTING SSH KEY!"; }
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export(
             {
                'state' => "submitted",
-               'id' => "$1",
-               'key' => "<not yet implemented>",
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
-               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources",$ext,0),$ext,$FORCE_HTTPS),
-               'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$1/resources/nodes",$ext,0),$ext,$FORCE_HTTPS),
+               'id' => $id,
+               'ssh_key_path' => $ssh_key,
+               'ssh_private_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/private",$ext,0),$ext,$FORCE_HTTPS),
+               'ssh_public_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/public",$ext,0),$ext,$FORCE_HTTPS),
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id",$ext,0),$ext,$FORCE_HTTPS),
+               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext,$FORCE_HTTPS),
+               'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext,$FORCE_HTTPS),
                'command' => $oargridcmd
                     } , $ext );
     }

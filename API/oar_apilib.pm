@@ -273,17 +273,11 @@ sub add_gridjobs_uris($$$) {
                                $ext,
                                $FORCE_HTTPS
                              );
-      $jobs->{$job}->{resources}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/$job/resources",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
-                             );
       $jobs->{$job}->{nodes}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/$job/resources/nodes",$ext,0),
                                $ext,
                                $FORCE_HTTPS
                              );
- 
   }
 }
 
@@ -315,6 +309,18 @@ sub add_gridjob_uris($$$) {
               );
     }
   }
+  # Ssh keys
+  $job->{ssh_private_key_uri}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/".$job->{id}."/keys/private",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+  $job->{ssh_public_key_uri}=apilib::htmlize_uri(
+                               apilib::make_uri("/grid/jobs/".$job->{id}."/keys/public",$ext,0),
+                               $ext,
+                               $FORCE_HTTPS
+                             );
+ 
 }
 
 ##############################################################################
@@ -411,6 +417,24 @@ sub struct_site($$) {
   else { return $site; }
 }
 
+# GRID JOB
+sub struct_gridjob($$) {
+  my $job = shift;
+  my $structure = shift;
+  # No structuration necessary. But a little cleaning:
+  foreach my $cluster (keys %{$job->{clusterJobs}}) {
+    foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
+      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{weight};
+      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{nodes};
+      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{env};
+      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{name};
+      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{queue};
+      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{part};
+    }
+  }
+  return $job;
+}
+
 # GRID JOB LIST
 sub struct_gridjobs_list($$) {
   my $jobs = shift;
@@ -418,7 +442,6 @@ sub struct_gridjobs_list($$) {
   my $result;
   foreach my $job ( keys( %{$jobs} ) ) {
     my $hashref = {
-                  resources => $jobs->{$job}->{resources},
                   nodes => $jobs->{$job}->{nodes},
                   uri => $jobs->{$job}->{uri}
     };

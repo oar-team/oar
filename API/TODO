@@ -1,8 +1,6 @@
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
-- Reformater les status (jobs, resources) pour y ajouter les uris (par exemple: batchId -> pointer vers /sites/<site>/jobs/BatchId)
-- oargridapi: gérer les clés ssh (voir <not yet implemented>)
 
 ##### discussion avec Cyril 20/02/2009 ####
 - Implementer put/delete sur les resources de oar (oarapi) (ce qui implique un mode de fonctionnement "administrateur" avec l'authentif adéquate, une clé partagée?)
