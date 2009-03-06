@@ -92,33 +92,6 @@ if ($STRUCTURE ne "oar" && $STRUCTURE ne "simple") {
 }
 
 ##############################################################################
-# Functions
-##############################################################################
-
-# Get infos of clusters, by site hierarchy
-sub get_sites($) {
-  my $dbh      = shift;
-  my %clusters = oargrid_lib::get_cluster_names($dbh);
-  my $sites;
-  my $site;
-  foreach my $i ( keys(%clusters) ) {
-    if ( defined( $clusters{$i}{parent} ) ) {
-      $site=$clusters{$i}{parent};
-      $sites->{$site}->{frontend}=$clusters{$i}{hostname};
-      push @{ $sites->{$site}->{clusters} }, $i;
-    }
-  }
-  return $sites;
-}
-
-# Get all the infos about the clusters (oargridlib)
-sub get_clusters($) {
-  my $dbh = shift;
-  return oargrid_lib::get_cluster_names($dbh);
-}
-
-
-##############################################################################
 # Authentication
 ##############################################################################
 
@@ -163,7 +136,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $sites = get_sites($dbh);
+    my $sites = apilib::get_sites($dbh);
     apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
     $sites = apilib::struct_sites_list($sites,$STRUCTURE);
     print $header;
@@ -180,7 +153,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $sites = get_sites($dbh);
+    my $sites = apilib::get_sites($dbh);
     if ( defined( $sites->{$1} ) ) {
       $sites={ $1 =>  $sites->{$1} };
       apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
@@ -196,7 +169,7 @@ SWITCH: for ($q) {
   };
 
   #
-  # List of current jobs on a site (oarstat wrapper)
+  # List of current jobs on a site or a cluster (oarstat wrapper)
   #
   $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
@@ -204,26 +177,32 @@ SWITCH: for ($q) {
     my $site  = $1;
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $sites = get_sites($dbh);
-    if ( not defined( $sites->{$site} ) ) {
-      apilib::ERROR( 404, "Not found", "Site resource not found" );
+    my $clusters = {};
+    $clusters = apilib::get_clusters($dbh);
+    if ( not defined( $clusters->{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site or cluster resource not found" );
     }
     else {
-      my $frontend = $sites->{$site}->{frontend};
+      my $frontend = $clusters->{$site}->{hostname};
       my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarstat -D\"";
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
       my $jobs = apilib::import($cmdRes,"dumper");
-      apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
-      my $result = apilib::struct_job_list($jobs,$STRUCTURE);
+      if ( !defined %{$jobs} || !defined(keys(%{$jobs})) ) {
+        $jobs = apilib::struct_empty($STRUCTURE);
+      }
+      else {
+        apilib::add_joblist_griduris($jobs,$ext,$FORCE_HTTPS,$1);
+        $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
+      }
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export($result,$ext);
+      print apilib::export($jobs,$ext);
     }
     last;
   };
 
   #
-  # Details of a job running on a site (oarstat wrapper)
+  # Details of a job running on a site or a cluster (oarstat wrapper)
   #
   $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
@@ -241,15 +220,20 @@ SWITCH: for ($q) {
     my $jobid = $2;
     my $ext = apilib::set_ext($q,$3);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $sites = get_sites($dbh);
-    if ( not defined( $sites->{$site} ) ) {
-      apilib::ERROR( 404, "Not found", "Site resource not found" );
+    my $clusters = {};
+    $clusters = apilib::get_clusters($dbh);
+    if ( not defined( $clusters->{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site or cluster resource not found" );
     }
     else {
-      my $frontend = $sites->{$site}->{frontend};
+      my $frontend = $clusters->{$site}->{hostname};
       my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat -fj $jobid -D\"'";
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
       my $job = apilib::import($cmdRes,"dumper");
+      if ( !defined %{$job} || !defined(keys(%{$job})) ) {
+        apilib::ERROR( 404, "Not found", "Job not found on $frontend" );
+        exit 0;
+      }
       my $result = apilib::struct_job($job,$STRUCTURE); 
       print $header;
       print $HTML_HEADER if ($ext eq "html");
@@ -276,10 +260,18 @@ SWITCH: for ($q) {
     my $ext=apilib::set_ext($q,$1);
     (my $header, my $type)=apilib::set_output_format($ext);
     my %jobs = oargrid_lib::get_user_informations($dbh,$authenticated_user);
-    apilib::add_gridjobs_uris(\%jobs,$ext,$FORCE_HTTPS);
+    my $jobs;
+    if ( !%jobs || !defined(keys(%jobs)) ) {
+      $jobs=apilib::struct_empty($STRUCTURE);
+    }
+    else {
+      $jobs = \%jobs;
+      apilib::add_gridjobs_uris($jobs,$ext,$FORCE_HTTPS);
+      $jobs = apilib::struct_gridjobs_list($jobs,$STRUCTURE);
+    }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export(apilib::struct_gridjobs_list(\%jobs,$STRUCTURE),$ext);
+    print apilib::export($jobs,$ext);
     last;
   };
 
@@ -346,7 +338,7 @@ SWITCH: for ($q) {
     my $site  = $1;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my %sites = get_sites($dbh);
+    my %sites = apilib::get_sites($dbh);
     if ( not defined( $sites{sites}{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
       last;

@@ -146,6 +146,33 @@ sub export($$) {
 }
 
 ##############################################################################
+# Oargrid functions
+##############################################################################
+
+# Get infos of clusters, by site hierarchy
+sub get_sites($) {
+  my $dbh      = shift;
+  my %clusters = oargrid_lib::get_cluster_names($dbh);
+  my $sites;
+  my $site;
+  foreach my $i ( keys(%clusters) ) {
+    if ( defined( $clusters{$i}{parent} ) ) {
+      $site=$clusters{$i}{parent};
+      $sites->{$site}->{frontend}=$clusters{$i}{hostname};
+      push @{ $sites->{$site}->{clusters} }, $i;
+    }
+  }
+  return $sites;
+}
+
+# Get all the infos about the clusters (oargridlib)
+sub get_clusters($) {
+  my $dbh = shift;
+  my %clusters = oargrid_lib::get_cluster_names($dbh);
+  return(\%clusters);
+}
+
+##############################################################################
 # URI generation functions
 ##############################################################################
 
@@ -184,6 +211,18 @@ sub add_joblist_uris($$$) {
   my $FORCE_HTTPS = shift;
     foreach my $job ( keys( %{$jobs} ) ) {
       $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job",$ext,0);
+      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
+  }
+}
+
+# Add uris to a oar job list for oargrid
+sub add_joblist_griduris($$$$) {
+  my $jobs = shift;
+  my $ext = shift;
+  my $FORCE_HTTPS = shift;
+  my $site = shift;
+    foreach my $job ( keys( %{$jobs} ) ) {
+      $jobs->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job",$ext,0);
       $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
   }
 }
@@ -253,23 +292,42 @@ sub add_gridjob_uris($$$) {
   my $job = shift;
   my $ext = shift;
   my $FORCE_HTTPS = shift;
+  # List of resources
   $job->{resources}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/". $job->{id} ."/resources",$ext,0),
                                $ext,
                                $FORCE_HTTPS
                              );
+  # List of resources without details (nodes only)
   $job->{nodes}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
                                $ext,
                                $FORCE_HTTPS
                              );
- 
+  # Link to the batch job on the corresponding cluster
+  foreach my $cluster (keys %{$job->{clusterJobs}}) {
+    foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
+      $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri}=apilib::htmlize_uri(
+              apilib::make_uri("/sites/$cluster/jobs/" 
+                 .$job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},$ext,0),
+              $ext,
+              $FORCE_HTTPS
+              );
+    }
+  }
 }
 
 ##############################################################################
 # Data structure functions
 # (functions for shaping data depending on $STRUCTURE)
 ##############################################################################
+
+# EMPTY DATA
+sub struct_empty($) {
+  my $structure = shift;
+  if    ($structure eq 'oar')    { return {}; }
+  elsif ($structure eq 'simple') { return []; }
+}
 
 # OAR JOB
 sub struct_job($$) {
