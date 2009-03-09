@@ -31,7 +31,6 @@ my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
 my $OARNODES_CMD  = "oarnodes";
 my $OARDEL_CMD  = "oardel";
-my $OARNODESETTING_CMD  = "oarnodesetting";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # OAR server
@@ -272,7 +271,7 @@ SWITCH: for ($q) {
     if ( $? != 0 ) {
       my $err = $? >> 8;
       apilib::ERROR(
-        400,
+        500,
         "Oar server error",
         "Oarsub command exited with status $err: $cmdRes\nCmd:\n$oarcmd"
       );
@@ -286,7 +285,7 @@ SWITCH: for ($q) {
                     } , $ext );
     }
     else {
-      apilib::ERROR( 400, "Parse error",
+      apilib::ERROR( 500, "Parse error",
         "Job submitted but the id could not be parsed.\nCmd:\n$oarcmd" );
     }
     last;
@@ -356,7 +355,7 @@ SWITCH: for ($q) {
       $resource = apilib::check_resource( $q->Vars, $q->content_type );
     }
 
-    my $dbh = iolib::connect() or apilib::ERROR(400, 
+    my $dbh = iolib::connect() or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -382,7 +381,8 @@ SWITCH: for ($q) {
       print apilib::export( { 
                       'status' => "$status",
                       'id' => "$id",
-                      'warnings' => \@warnings
+                      'warnings' => \@warnings,
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext,$FORCE_HTTPS)
                     } , $ext );
       oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
       oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
@@ -390,13 +390,100 @@ SWITCH: for ($q) {
     }
     else {
       apilib::ERROR(
-        400,
+        500,
         "Resource not created",
         "Could not create the new resource or get the new id"
       );
     }
     last;
   }; 
+
+  #
+  # Delete a resource
+  #
+  $URI = qr{^/resources/([\w\.-]+?)(/\d)*(\.yaml|\.json|\.html)*$};
+  apilib::DELETE( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $id;
+    my $node;
+    my $cpuset;
+    if ($2) { $node=$1; $id=0; $cpuset=$2; $cpuset =~ s,^/,, ;}
+    else    { $node=""; $id=$1; $cpuset=""; } ;
+    my $ext=apilib::set_ext($q,$3);
+    (my $header)=apilib::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before deleting new resources" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can delete resources" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+
+    my $base = iolib::connect() or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+ 
+    # Check if the resource exists
+    my $query;
+    my $Resource;
+    if ($id == 0) {
+      $query="WHERE network_address = \"$node\" AND cpuset = $cpuset";
+    }
+    else {
+      $query="WHERE resource_id=$id";
+    }
+    my $sth = $base->prepare("SELECT resource_id FROM resources $query");
+    $sth->execute();
+    my @res = $sth->fetchrow_array();
+    if ($res[0]) { $Resource=$res[0];}
+    else { 
+      apilib::ERROR(404,"Not found","Corresponding resource could not be found ($id,$node,$cpuset)");
+      last;
+    }
+
+    # Resource deletion
+    # !!! This is a dirty cut/paste of oarremoveresource code !!!
+    my $resource_ref = iolib::get_resource_info($base,$Resource);
+    if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
+      my $sth = $base->prepare("  SELECT jobs.job_id, jobs.assigned_moldable_job
+                                  FROM assigned_resources, jobs
+                                  WHERE
+                                      assigned_resources.resource_id = $Resource
+                                      AND assigned_resources.moldable_job_id = jobs.assigned_moldable_job
+                               ");
+      $sth->execute();
+      my @jobList;
+      while (my @ref = $sth->fetchrow_array()) {
+          push(@jobList, [$ref[0], $ref[1]]);
+      }
+      $sth->finish();
+      foreach my $i (@jobList){
+        print("\tRemove the job $i->[0], it was run on the resource $Resource\n");
+        $base->do("DELETE from event_logs         WHERE job_id = $i->[0]");
+        $base->do("DELETE from frag_jobs          WHERE frag_id_job = $i->[0]");
+        $base->do("DELETE from jobs               WHERE job_id = $i->[0]");
+        $base->do("DELETE from assigned_resources WHERE moldable_job_id = $i->[1]");
+      }
+      $base->do("DELETE from assigned_resources     WHERE resource_id = $Resource");
+      $base->do("DELETE from resource_logs          WHERE resource_id = $Resource");
+      $base->do("DELETE from resources              WHERE resource_id = $Resource");
+      #print("Resource $Resource removed.\n");
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export( { 'status' => "deleted" } , $ext );
+    }else{
+      apilib::ERROR(403,"Forbidden","The resource $Resource must be in the Dead status"); 
+      last;
+    }
+    last;
+  };
 
 
   #
