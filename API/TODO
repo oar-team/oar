@@ -3,8 +3,6 @@
 - Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
 
 ##### discussion avec Cyril 20/02/2009 ####
-- Implementer put/delete sur les resources de oar (oarapi) (ce qui implique un mode de fonctionnement "administrateur" avec l'authentif adéquate, une clé partagée?)
-   --> Problème des id des ressources: le referentiel ne pourra pas adresser les ressources par les id (workflow normal: nouveau cluster -> script qui les ajoute dans oar -> oar génère des id autoincrément). En cas de modif ou supression d'une ressource, il faudrait pouvoir l'adresser par network_address+cpuset et non par l'id car le référentiel ne les connait pas
 - Chainage d'APIs: ident pour la première puis certificats SSL entre serveurs d'API et X_REMOTE_IDENT fixé par mod_header (cyril m'envoie les exemples de config)
 #########
 

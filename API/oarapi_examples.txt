@@ -48,3 +48,12 @@ irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'application/js
 # Deleting a job
 irb(main):111:0> delete("/jobs/#{JSON.parse(job)['job_id']}.yaml")
 
+# Adding a new resource (oar user only)
+irb(main):078:0> r={ 'hostname'=>'test2', 'properties'=> { 'besteffort'=>'NO' , 'cpu' => '10' } }
+irb(main):078:0> puts post('/resources', r.to_json , :content_type => 'application/json')
+
+# Deleting a resource by id (oar user only)
+irb(main):079:0> puts delete('/resources/8')
+
+# Deleting a resource by node/cpuset (oar user only)
+irb(main):080:0> puts delete('/resources/test2-p/1')
