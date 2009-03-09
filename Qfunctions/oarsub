@@ -104,9 +104,9 @@ my $array_param_file;
 
 
 #to catch ^C signal
-$SIG{INT} = 'qdel';
-$SIG{HUP} = 'qdel';
-$SIG{PIPE} = 'qdel';
+$SIG{INT} = \&qdel;
+$SIG{HUP} = \&qdel;
+$SIG{PIPE} = \&qdel;
 
 # to address ^C in interactive submission
 sub qdel($) {

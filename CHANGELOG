@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+version 2.3.4:
+--------------
+  - Ctrl-C was not working anymore in oarsub.
+    It seems that the signal handler does not handle the previous syntax
+    ($SIG = 'qdel')
+
 version 2.3.3:
 --------------
   - Fix default admission rules: case unsensitive check for properties used in 
