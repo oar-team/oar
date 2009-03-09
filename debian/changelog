@@ -1,3 +1,12 @@
+oar (2.4.0-1~11.gbpa29018) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @a2901873abf6d21506c8e61517965858edbd8e8d **
+
+  * Added keys management into oargridapi
+    (/grid/jobs/<id>/keys/<private|public>)
+
+ -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Fri, 06 Mar 2009 18:06:12 +0100
+
 oar (2.4.0-1~10.gbpf03e72) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @f03e726f0ddb74d8fecce673c5378a65a8aef005 **
