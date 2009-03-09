@@ -1,6 +1,6 @@
 ---
 title: Tests with Virtualization 
 inMenu: true
-orderInfo: 6
+orderInfo: 7
 ---
 <notextile>{rstconverter: {rstfile: GSOC_tests_virtu_offer.rst}}<notextile>
