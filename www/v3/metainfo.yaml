@@ -57,3 +57,9 @@ partners.html:
   inMenu: true
   orderInfo: 8
   url: /partners.page
+
+wiki.html:
+  title: wiki
+  inMenu: true
+  orderInfo: 9
+  url: http://wiki-oar.imag.fr
