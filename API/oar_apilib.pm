@@ -601,50 +601,8 @@ sub ERROR($$$) {
 }
 
 ##############################################################################
-# Other functions
+# Posted resources
 ##############################################################################
-
-# Return the cgi handler
-sub get_cgi_handler() {
-  return $q;
-}
-
-# Check if YAML is enabled or exits with an error
-sub check_yaml() {
-  unless ($YAMLenabled) {
-    ERROR 400, 'YAML not enabled', 'YAML perl module not loaded!';
-    exit 0;
-  }
-}
-
-# Check if JSON is enabled or exits with an error
-sub check_json() {
-  unless ($JSONenabled) {
-    ERROR 400, 'JSON not enabled', 'JSON perl module not loaded!';
-    exit 0;
-  }
-}
-
-# Clean a hash from a key having an empty value (for options with parameter)
-sub parameter_option($$) {
-  my $hash = shift;
-  my $key = shift;
-  if ( defined($hash->{"$key"}) && $hash->{"$key"} eq "" ) {
-    delete($hash->{"$key"})
-  }
-}
-
-# Remove a toggle option if value is 0
-sub toggle_option($$) {
-  my $job = shift;
-  my $option = shift;
-  if (defined($job->{$option})) {
-    if ($job->{$option} eq "0" ) {
-      delete($job->{$option});
-    }
-    else { $job->{$option}="" ; };
-  }
-}
 
 # Check the consistency of a posted job and load it into a hashref
 sub check_job($$) {
@@ -692,6 +650,51 @@ sub check_job($$) {
 
   return $job;
 }
+
+# Check the consistency of a posted oar resource and load it into a hashref
+sub check_resource($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $resource;
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $resource=import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $resource=import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $resource=import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Job description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Resource must have a "hostname" or "network_address" field
+  unless ( $resource->{hostname} or $resource->{properties}->{network_address} ) {
+    ERROR 400, 'Missing Required Field',
+      'A resource must have a hosname field or a network_address property!';
+    exit 0;
+  }
+
+  # Fill hostname with network_address if provided
+  if ( ! $resource->{hostname} && $resource->{properties}->{network_address} ) {
+    $resource->{hostname}=$resource->{properties}->{network_address};
+  }
+
+  return $resource;
+}
+
 
 # Check the consistency of a posted grid job and load it into a hashref
 sub check_grid_job($$) {
@@ -742,6 +745,52 @@ sub check_grid_job($$) {
   toggle_option($job,"verbose");
 
   return $job;
+}
+
+##############################################################################
+# Other functions
+##############################################################################
+
+# Return the cgi handler
+sub get_cgi_handler() {
+  return $q;
+}
+
+# Check if YAML is enabled or exits with an error
+sub check_yaml() {
+  unless ($YAMLenabled) {
+    ERROR 400, 'YAML not enabled', 'YAML perl module not loaded!';
+    exit 0;
+  }
+}
+
+# Check if JSON is enabled or exits with an error
+sub check_json() {
+  unless ($JSONenabled) {
+    ERROR 400, 'JSON not enabled', 'JSON perl module not loaded!';
+    exit 0;
+  }
+}
+
+# Clean a hash from a key having an empty value (for options with parameter)
+sub parameter_option($$) {
+  my $hash = shift;
+  my $key = shift;
+  if ( defined($hash->{"$key"}) && $hash->{"$key"} eq "" ) {
+    delete($hash->{"$key"})
+  }
+}
+
+# Remove a toggle option if value is 0
+sub toggle_option($$) {
+  my $job = shift;
+  my $option = shift;
+  if (defined($job->{$option})) {
+    if ($job->{$option} eq "0" ) {
+      delete($job->{$option});
+    }
+    else { $job->{$option}="" ; };
+  }
 }
 
 # Send a command and returns the output or exit with an error

@@ -1,7 +1,10 @@
 #!/usr/bin/perl -w
 use strict;
+use DBI();
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_iolib;
+use oar_Tools;
 
 ##############################################################################
 # CONFIGURATION
@@ -28,7 +31,12 @@ my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
 my $OARNODES_CMD  = "oarnodes";
 my $OARDEL_CMD  = "oardel";
+my $OARNODESETTING_CMD  = "oarnodesetting";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
+
+# OAR server
+my $remote_host = get_conf("SERVER_HOSTNAME");
+my $remote_port = get_conf("SERVER_PORT");
 
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
@@ -274,7 +282,7 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'job_id' => "$1",
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
-                      'state' => "submitted"
+                      'status' => "submitted"
                     } , $ext );
     }
     else {
@@ -314,6 +322,82 @@ SWITCH: for ($q) {
                   } , $ext );
     last;
   };
+
+  #
+  # Create a new resource
+  # 
+  $URI = qr{^/resources(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$1);
+    (my $header)=apilib::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before creating new resources" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can create new resources" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+  
+    # Check and get the submited resource
+    # From encoded data
+    my $resource;
+    if ($q->param('POSTDATA')) {
+      $resource = apilib::check_resource( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $resource = apilib::check_resource( $q->Vars, $q->content_type );
+    }
+
+    my $dbh = iolib::connect() or apilib::ERROR(400, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $id=iolib::add_resource($dbh,$resource->{hostname},"Alive");
+    my $status="ok";
+    my @warnings;
+    if ( $id && $id > 0) {
+      if ( $resource->{properties} ) {
+        foreach my $property ( keys %{$resource->{properties}} ) {
+           if (oar_Tools::check_resource_system_property($property) == 1){
+             $status = "warning";
+             push(@warnings,"Cannot update property $property because it is a system field.");
+           }
+           my $ret = iolib::set_resource_property($dbh,$id,$property,$resource->{properties}->{$property});
+           if($ret != 2 && $ret != 0){
+             $status = "warning";
+             push(@warnings,"wrong property $property or wrong value");
+           }
+        }
+      }
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export( { 
+                      'status' => "$status",
+                      'id' => "$id",
+                      'warnings' => \@warnings
+                    } , $ext );
+      oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+      oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+      iolib::disconnect($dbh);
+    }
+    else {
+      apilib::ERROR(
+        400,
+        "Resource not created",
+        "Could not create the new resource or get the new id"
+      );
+    }
+    last;
+  }; 
+
 
   #
   # Html form for job posting
