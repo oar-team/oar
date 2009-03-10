@@ -31,6 +31,8 @@ my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
 my $OARNODES_CMD  = "oarnodes";
 my $OARDEL_CMD  = "oardel";
+my $OARHOLD_CMD  = "oarhold";
+my $OARRESUME_CMD  = "oarresume";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # OAR server
@@ -139,7 +141,7 @@ SWITCH: for ($q) {
   #
   # Details of a job (oarstat wrapper)
   #
-  $URI = qr{^/jobs/(\d+)\.*(yaml|json|html)*$};
+  $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
@@ -160,8 +162,94 @@ SWITCH: for ($q) {
     my $job = apilib::import($cmdRes,"dumper");
     my $result = apilib::struct_job($job,$STRUCTURE);
     print $header;
-    print $HTML_HEADER if ($ext eq "html");
+    if ($ext eq "html") {
+       print $HTML_HEADER;
+       print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
+       print "</TD></TR><TR><TD>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=action VALUE=delete>\n";
+       print "<INPUT TYPE=Submit VALUE=DELETE>\n";
+       print "</FORM></TD><TD>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=action VALUE=hold>\n";
+       print "<INPUT TYPE=Submit VALUE=HOLD>\n";
+       print "</FORM></TD><TD>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=action VALUE=resume>\n";
+       print "<INPUT TYPE=Submit VALUE=RESUME>\n";
+       print "</FORM></TD><TD>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=action VALUE=checkpoint>\n";
+       print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
+       print "</FORM></TD>\n";
+       print "</TR></TABLE>\n";
+    }
     print apilib::export($result,$ext);
+    last;
+  };
+
+  #
+  # Update of a job (delete, checkpoint, ...)
+  #
+  $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+ 
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before modifying jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Check and get the submitted data
+    # From encoded data
+    my $job;
+    if ($q->param('POSTDATA')) {
+      $job = apilib::check_job_update( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $job = apilib::check_job_update( $q->Vars, $q->content_type );
+    }
+    
+    # Delete (alternative way to DELETE request, for html forms)
+    my $cmd; my $status;
+    if ( $job->{action} eq "delete" ) {
+      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
+      $status = "Delete request registered"; 
+    }
+    # Checkpoint
+    elsif ( $job->{action} eq "checkpoint" ) {
+      $cmd    = "$OARDODO_CMD '$OARDEL_CMD -c $jobid'";
+      $status = "Checkpoint request registered"; 
+    }
+    # Hold
+    elsif ( $job->{action} eq "hold" ) {
+      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $jobid'";
+      $status = "Hold request registered";
+    }
+    # Resume
+    elsif ( $job->{action} eq "resume" ) {
+      $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $jobid'";
+      $status = "Resume request registered";
+    }
+    else {
+      apilib::ERROR(400,"Bad query","Could not understand ". $job->{action} ." action"); 
+    }
+
+    my $cmdRes = apilib::send_cmd($cmd,"Oar");
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export( { 'id' => "$jobid",
+                    'status' => "$status",
+                    'cmd_output' => "$cmdRes",
+                  } , $ext );
     last;
   };
 
@@ -279,7 +367,7 @@ SWITCH: for ($q) {
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export( { 'job_id' => "$1",
+      print apilib::export( { 'id' => "$1",
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
                       'status' => "submitted"
                     } , $ext );
@@ -294,7 +382,7 @@ SWITCH: for ($q) {
   #
   # Delete a job (oardel wrapper)
   #
-  $URI = qr{^/jobs/(\d+)\.*(yaml|json|html)*$};
+  $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
   apilib::DELETE( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
@@ -314,10 +402,9 @@ SWITCH: for ($q) {
     my $cmdRes = apilib::send_cmd($cmd,"Oardel");
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export( { 'job_id' => "$jobid",
-                    'message' => "Delete request registered",
-                    'oardel_output' => "$cmdRes",
-                    'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext,$FORCE_HTTPS)
+    print apilib::export( { 'id' => "$jobid",
+                    'status' => "Delete request registered",
+                    'oardel_output' => "$cmdRes"
                   } , $ext );
     last;
   };

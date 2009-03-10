@@ -651,6 +651,45 @@ sub check_job($$) {
   return $job;
 }
 
+# Check the consistency of a job update and load it into a hashref
+sub check_job_update($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $job;
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $job=import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $job=import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $job=import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Job description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Job must have a "action" field
+  unless ( $job->{action} ) {
+    ERROR 400, 'Missing Required Field',
+      'A job update must have a "action" field!';
+    exit 0;
+  }
+
+  return $job;
+}
+
 # Check the consistency of a posted oar resource and load it into a hashref
 sub check_resource($$) {
   my $data         = shift;
