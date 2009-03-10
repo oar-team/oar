@@ -9,6 +9,9 @@ version 2.4.0:
     oarnodes commands.
   - Added JSON support into oarnodes, oarstat and oarsub
   - New Makefile adapted to build packages as non-root user
+  - Ctrl-C was not working anymore in oarsub.
+    It seems that the signal handler does not handle the previous syntax
+    ($SIG = 'qdel')
 
 version 2.3.3:
 --------------
