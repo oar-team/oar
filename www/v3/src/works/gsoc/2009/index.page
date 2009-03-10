@@ -4,12 +4,7 @@ title: Google Summer Of code
 h2. 2009 Edition
 
 Since the former success of OAR's participation to GSOC 2008, we apply again this year to be a GSOC 2009 mentoring organization.
-We offer the following subjects:
 
-* "Web portal for job submission":GSOC_web_portal_offer.html
-* "OAR TestSuite":GSOC_testsuite_offer.html
-* "Fault tolerance":GSOC_fault_tolerance_offer.html
-* "Interoperability with DRMAA":GSOC_interoperability_with_drmaa_offer.html
-* "Advanced scheduler for CiGri":GSOC_cigri_offer.html
-* "Tests infrastructure with Emulation and Virtualization":GSOC_tests_virtu_offer.html
-* "Detailed Cluster Monitoring/Reporting for Greener Computing":GSOC_monitoring_reporting_offer.html
+The list of our ideas is available in our Wiki at:
+http://wiki-oar.imag.fr/index.php/GSOC_2009_Proposals
+
