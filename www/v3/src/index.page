@@ -17,8 +17,6 @@ You can find at this URL:
     * bug reports
     * mailing lists
     * source repository
-    * documentation
-    * ...
 
 
 <notextile>{rstconverter: {rstfile: doc_overview.rst}}<notextile>

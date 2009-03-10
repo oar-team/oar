@@ -10,6 +10,6 @@ We offer the following subjects:
 * "OAR TestSuite":GSOC_testsuite_offer.html
 * "Fault tolerance":GSOC_fault_tolerance_offer.html
 * "Interoperability with DRMAA":GSOC_interoperability_with_drmaa_offer.html
-* "Advanced scheduler for the CiGri grid":GSOC_cigri_offer.html
+* "Advanced scheduler for CiGri":GSOC_cigri_offer.html
 * "Tests infrastructure with Emulation and Virtualization":GSOC_tests_virtu_offer.html
 * "Detailed Cluster Monitoring/Reporting for Greener Computing":GSOC_monitoring_reporting_offer.html
