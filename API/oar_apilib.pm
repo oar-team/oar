@@ -28,6 +28,12 @@ unless ( eval "use JSON;1" ) {
   $JSONenabled = 0;
 }
 
+# Try to load URI (LWP) module
+my $URIenabled = 1;
+unless ( eval "use URI;1" ) {
+  $URIenabled = 0;
+}
+
 # CGI handler
 my $q = new CGI;
 
@@ -197,9 +203,22 @@ sub htmlize_uri($$$) {
   my $type=shift;
   my $force_https=shift;
   if ($type eq "html") {
-    my $base_uri=$q->url(-full => 1);
-    $base_uri=~s/^http:/https:/ if $force_https;
-    return "<A HREF=".$base_uri."$uri>$uri</A>";
+  #  my $base_uri=$q->url(-full => 1);
+  #  $base_uri=~s/^http:/https:/ if $force_https;
+  #  return "<A HREF=".$base_uri."$uri>$uri</A>";
+    if ($URIenabled) {
+      my $base = $q->path_info;
+      $base =~ s/\.html$// ;
+      $base = "http://bidon".$base;
+      my $goal = "http://bidon".$uri;
+      return "<A HREF=".URI->new($goal)->rel($base).">$uri</A>";
+    }
+    else { 
+      ERROR (500,
+             "LWP URI module not enabled",
+             "I cannot make uris without LWP URI module!" );
+      exit 0;
+    }
   }
   else { return $uri; }
 }
