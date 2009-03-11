@@ -1,3 +1,12 @@
+oar (2.4.0-1~13.gbp428822) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @4288221af0342f4e571fdbf8eb4efb4fbdf98b30 **
+
+  * REMOTE_IDENT is now X_REMOTE_IDENT from the http header so that it
+    can be passed by another API
+
+ -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Wed, 11 Mar 2009 17:54:45 +0100
+
 oar (2.4.0-1~12.gbpbb7070) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @bb7070b67088156e58ba9d25a2a85fd719693f21 **
