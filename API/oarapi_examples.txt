@@ -46,7 +46,7 @@ irb(main):029:0> j={ 'resource' => '/nodes=2/cpu=1', 'script' => script , 'workd
 irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
 
 # Deleting a job
-irb(main):111:0> delete("/jobs/#{JSON.parse(job)['job_id']}.yaml")
+irb(main):111:0> delete("/jobs/#{JSON.parse(job)['id']}.yaml")
 
 # Send the checkpoint signal to a job
 irb(main):102:0> puts post('/jobs/292','{"action":"checkpoint"}',:content_type => "application/json")
