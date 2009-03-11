@@ -46,7 +46,7 @@ echo "
 
  You may have to enable some modules into apache if you want
  oar-api to be fully operational (authentication). At least
- 'a2enmod ident' and maybe 'a2enmod authnz_ldap'.
+ 'a2enmod ident;a2enmod headers' and maybe 'a2enmod authnz_ldap'.
  For 'ident' to work, you'll also need 'pidentd' to be installed
  and activated into your system (generally through xinetd).
 
