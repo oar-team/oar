@@ -102,11 +102,12 @@ if ( defined( $ENV{AUTHENTICATE_UID} ) && $ENV{AUTHENTICATE_UID} ne "" ) {
 }
 else {
   if ( $TRUST_IDENT
-    && defined( $ENV{REMOTE_IDENT} )
-    && $ENV{REMOTE_IDENT} ne ""
-    && $ENV{REMOTE_IDENT} ne "unknown" )
+    && defined( $q->http('X_REMOTE_IDENT') )
+    && $q->http('X_REMOTE_IDENT') ne ""
+    && $q->http('X_REMOTE_IDENT') ne "unknown"
+    && $q->http('X_REMOTE_IDENT') ne "(null)" )
   {
-    $authenticated_user = $ENV{REMOTE_IDENT};
+    $authenticated_user = $q->http('X_REMOTE_IDENT');
   }
 }
 

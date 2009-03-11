@@ -1,11 +1,13 @@
-- Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
-- Trouver un moyen d'envoyer les commandes DELETE pour la supression des jobs en mode html
-
-##### discussion avec Cyril 20/02/2009 ####
-- Chainage d'APIs: ident pour la première puis certificats SSL entre serveurs d'API et X_REMOTE_IDENT fixé par mod_header (cyril m'envoie les exemples de config)
-#########
-
+- Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
+- 406 au lieu de Json par defaut? et 404 si format non existant?
+- Accepted/Created au lieu de 200 pour les réponses aux posts
+- method= au lieu de action= dans le post qui simule le delete
+- jobs/<id>/checkpoints
+  jobs/<id>/holds
+  jobs/<id>/resume 
+ au lieu des actuels post avec action=
+- Enlever l'option FORCE_HTTPS! Inutile depuis qu'on utilise LWP
 
 
 Bugs:

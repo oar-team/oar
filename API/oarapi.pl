@@ -78,11 +78,12 @@ if ( defined( $ENV{AUTHENTICATE_UID} ) && $ENV{AUTHENTICATE_UID} ne "" ) {
 }
 else {
   if ( $TRUST_IDENT
-    && defined( $ENV{REMOTE_IDENT} )
-    && $ENV{REMOTE_IDENT} ne ""
-    && $ENV{REMOTE_IDENT} ne "unknown" )
+    && defined( $q->http('X_REMOTE_IDENT') )
+    && $q->http('X_REMOTE_IDENT') ne ""
+    && $q->http('X_REMOTE_IDENT') ne "unknown" 
+    && $q->http('X_REMOTE_IDENT') ne "(null)" )
   {
-    $authenticated_user = $ENV{REMOTE_IDENT};
+    $authenticated_user = $q->http('X_REMOTE_IDENT');
   }
 }
 
@@ -129,14 +130,18 @@ SWITCH: for ($q) {
     my $cmd    = "$OARSTAT_CMD -D";
     my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
     my $jobs = apilib::import($cmdRes,"dumper");
-    apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
-    my $result = apilib::struct_job_list($jobs,$STRUCTURE);
+    if ( !defined %{$jobs} || !defined(keys(%{$jobs})) ) {
+      $jobs = apilib::struct_empty($STRUCTURE);
+    }
+    else {
+      apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
+      $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
+    }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$ext);
+    print apilib::export($jobs,$ext);
     last;
   };
-
 
   #
   # Details of a job (oarstat wrapper)
