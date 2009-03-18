@@ -48,7 +48,8 @@ if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
 # Check a possible extension
 sub set_ext($$); # defined later
 my $extension;
-if ( $q->path_info =~ /.*\.(yaml|json|html)$/ ) { $extension = $1; };
+if ( $q->path_info =~ /^$/ ) { $extension = "html"; }
+elsif ( $q->path_info =~ /.*\.(yaml|json|html)$/ ) { $extension = $1; };
 $extension=set_ext($q,$extension);
 
 # Declared later with REST functions
@@ -517,7 +518,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
-  elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
+  #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
   else                                  { return "UNKNOWN_TYPE"; }
 }
 
@@ -539,7 +540,7 @@ sub set_output_format($) {
 }
 
 # Return the extension (second parameter) if defined, or the
-# corresponding one if the content_type if set. "json" is the default.
+# corresponding one if the content_type if set.
 sub set_ext($$) {
   my $q=shift;
   my $ext=shift;
@@ -554,7 +555,10 @@ sub set_ext($$) {
         "Valid types are text/yaml, application/json or text/html";
       }
     }
-    else { return "json"; }
+    else { 
+      ERROR 406, 'Invalid content type ',
+      "Valid types are text/yaml, application/json or text/html";
+    }
   }
 }
 
