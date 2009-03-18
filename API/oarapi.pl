@@ -243,7 +243,7 @@ SWITCH: for ($q) {
     }
 
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
-    print $header;
+    print $q->header( -status => 202, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export( { 'id' => "$jobid",
                     'status' => "$status",
@@ -364,7 +364,7 @@ SWITCH: for ($q) {
       );
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
-      print $header;
+      print $q->header( -status => 201, -type => "$type" );
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'id' => "$1",
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext),
@@ -399,7 +399,7 @@ SWITCH: for ($q) {
 
     my $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
     my $cmdRes = apilib::send_cmd($cmd,"Oardel");
-    print $header;
+    print $q->header( -status => 202, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export( { 'id' => "$jobid",
                     'status' => "Delete request registered",
