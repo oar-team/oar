@@ -32,11 +32,6 @@ my $SSH_CMD = "/usr/bin/ssh";
 my $TRUST_IDENT = 1;
 if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 
-# Force all html uris to start with "https://".
-# Useful if the api acts in a non-https server behind an https proxy
-my $FORCE_HTTPS = 0;
-if (is_conf("API_FORCE_HTTPS")){ $FORCE_HTTPS = get_conf("API_FORCE_HTTPS"); }
-
 # Default data structure variant
 my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
@@ -137,7 +132,7 @@ SWITCH: for ($q) {
     my $ext = apilib::set_ext($q,$1);
     (my $header, my $type)=apilib::set_output_format($ext);
     my $sites = apilib::get_sites($dbh);
-    apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
+    apilib::add_sites_uris($sites,$ext);
     $sites = apilib::struct_sites_list($sites,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -156,7 +151,7 @@ SWITCH: for ($q) {
     my $sites = apilib::get_sites($dbh);
     if ( defined( $sites->{$1} ) ) {
       $sites={ $1 =>  $sites->{$1} };
-      apilib::add_sites_uris($sites,$ext,$FORCE_HTTPS);
+      apilib::add_sites_uris($sites,$ext);
       $sites = apilib::struct_site($sites,$STRUCTURE);
       print $header;
       print $HTML_HEADER if ($ext eq "html");
@@ -191,7 +186,7 @@ SWITCH: for ($q) {
         $jobs = apilib::struct_empty($STRUCTURE);
       }
       else {
-        apilib::add_joblist_griduris($jobs,$ext,$FORCE_HTTPS,$1);
+        apilib::add_joblist_griduris($jobs,$ext,$1);
         $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
       }
       print $header;
@@ -266,7 +261,7 @@ SWITCH: for ($q) {
     }
     else {
       $jobs = \%jobs;
-      apilib::add_gridjobs_uris($jobs,$ext,$FORCE_HTTPS);
+      apilib::add_gridjobs_uris($jobs,$ext);
       $jobs = apilib::struct_gridjobs_list($jobs,$STRUCTURE);
     }
     print $header;
@@ -312,7 +307,7 @@ SWITCH: for ($q) {
     my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
     my $job = apilib::import($cmdRes,"dumper");
     $job->{id}=$gridjob;
-    apilib::add_gridjob_uris($job,$ext,$FORCE_HTTPS);
+    apilib::add_gridjob_uris($job,$ext);
     $job = apilib::struct_gridjob($job,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -424,7 +419,7 @@ SWITCH: for ($q) {
             { 
                'state' => "submitted",
                'id' => "$1",
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1",$ext,0),$ext,$FORCE_HTTPS)
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site/jobs/$1",$ext,0),$ext)
             } , $ext );
     }
     else {
@@ -514,11 +509,11 @@ SWITCH: for ($q) {
                'state' => "submitted",
                'id' => $id,
                'ssh_key_path' => $ssh_key,
-               'ssh_private_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/private",$ext,0),$ext,$FORCE_HTTPS),
-               'ssh_public_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/public",$ext,0),$ext,$FORCE_HTTPS),
-               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id",$ext,0),$ext,$FORCE_HTTPS),
-               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext,$FORCE_HTTPS),
-               'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext,$FORCE_HTTPS),
+               'ssh_private_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/private",$ext,0),$ext),
+               'ssh_public_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/public",$ext,0),$ext),
+               'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id",$ext,0),$ext),
+               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext),
+               'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext),
                'command' => $oargridcmd
                     } , $ext );
     }

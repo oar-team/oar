@@ -46,11 +46,6 @@ my $remote_port = get_conf("SERVER_PORT");
 my $TRUST_IDENT = 1;
 if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 
-# Force all html uris to start with "https://".
-# Useful if the api acts in a non-https server behind an https proxy
-my $FORCE_HTTPS = 0;
-if (is_conf("API_FORCE_HTTPS")){ $FORCE_HTTPS = get_conf("API_FORCE_HTTPS"); }
-
 # Default data structure variant
 my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
@@ -133,7 +128,7 @@ SWITCH: for ($q) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
     else {
-      apilib::add_joblist_uris($jobs,$ext,$FORCE_HTTPS);
+      apilib::add_joblist_uris($jobs,$ext);
       $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
     }
     print $header;
@@ -278,7 +273,7 @@ SWITCH: for ($q) {
                        $resources = { @$resources[0]->{properties}->{network_address} 
                            => { @$resources[0]->{resource_id} => @$resources[0] }} 
                        }
-    apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
+    apilib::add_resources_uris($resources,$ext);
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -297,7 +292,7 @@ SWITCH: for ($q) {
     my $cmd    = "$OARNODES_CMD $1 -D";  
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
-    apilib::add_resources_uris($resources,$ext,$FORCE_HTTPS);
+    apilib::add_resources_uris($resources,$ext);
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -372,7 +367,7 @@ SWITCH: for ($q) {
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'id' => "$1",
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext,$FORCE_HTTPS),
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext),
                       'status' => "submitted"
                     } , $ext );
     }
@@ -473,7 +468,7 @@ SWITCH: for ($q) {
                       'status' => "$status",
                       'id' => "$id",
                       'warnings' => \@warnings,
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext,$FORCE_HTTPS)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext)
                     } , $ext );
       oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
       oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");

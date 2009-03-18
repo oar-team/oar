@@ -199,14 +199,10 @@ sub make_uri($$$) {
 }
 
 # Return an html href of an uri if the type is "html"
-sub htmlize_uri($$$) {
+sub htmlize_uri($$) {
   my $uri=shift;
   my $type=shift;
-  my $force_https=shift;
   if ($type eq "html") {
-  #  my $base_uri=$q->url(-full => 1);
-  #  $base_uri=~s/^http:/https:/ if $force_https;
-  #  return "<A HREF=".$base_uri."$uri>$uri</A>";
     if ($URIenabled) {
       my $base = $q->path_info;
       $base =~ s/\.html$// ;
@@ -225,33 +221,30 @@ sub htmlize_uri($$$) {
 }
 
 # Add uris to a oar job list
-sub add_joblist_uris($$$) {
+sub add_joblist_uris($$) {
   my $jobs = shift;
   my $ext = shift;
-  my $FORCE_HTTPS = shift;
     foreach my $job ( keys( %{$jobs} ) ) {
       $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job",$ext,0);
-      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
+      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext);
   }
 }
 
 # Add uris to a oar job list for oargrid
-sub add_joblist_griduris($$$$) {
+sub add_joblist_griduris($$$) {
   my $jobs = shift;
   my $ext = shift;
-  my $FORCE_HTTPS = shift;
   my $site = shift;
     foreach my $job ( keys( %{$jobs} ) ) {
       $jobs->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job",$ext,0);
-      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext,$FORCE_HTTPS);
+      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext);
   }
 }
 
 # Add uris to a resources list
-sub add_resources_uris($$$) {
+sub add_resources_uris($$) {
   my $resources = shift;
   my $ext = shift;
-  my $FORCE_HTTPS = shift;
   foreach my $node ( keys( %{$resources} ) ) {
     foreach my $id ( keys( %{$resources->{$node}} ) ) {
       # This test should make this function work for "oarstat -s"
@@ -261,62 +254,54 @@ sub add_resources_uris($$$) {
         $resources->{$node}->{$id}->{state}=$state;
       }
       $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id",$ext,0);
-      $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext,$FORCE_HTTPS);
+      $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext);
     }
     $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node",$ext,0);
-    $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext,$FORCE_HTTPS);
+    $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext);
   }
 }
 
 # Add uris to a grid sites list
-sub add_sites_uris($$$) {
+sub add_sites_uris($$) {
   my $sites = shift;
   my $ext = shift;
-  my $FORCE_HTTPS = shift;
   foreach my $site ( keys( %{$sites} ) ) {
       $sites->{$site}->{uri}=apilib::htmlize_uri(
                                apilib::make_uri("/sites/$site",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
   }
 }
 
 # Add uris to a grid job list
-sub add_gridjobs_uris($$$) {
+sub add_gridjobs_uris($$) {
   my $jobs = shift;
   my $ext = shift;
-  my $FORCE_HTTPS = shift;
   foreach my $job ( keys( %{$jobs} ) ) {
       $jobs->{$job}->{uri}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/$job",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
       $jobs->{$job}->{nodes}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/$job/resources/nodes",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
   }
 }
 
 # Add uris to a grid job
-sub add_gridjob_uris($$$) {
+sub add_gridjob_uris($$) {
   my $job = shift;
   my $ext = shift;
-  my $FORCE_HTTPS = shift;
   # List of resources
   $job->{resources}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/". $job->{id} ."/resources",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
   # List of resources without details (nodes only)
   $job->{nodes}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
   # Link to the batch job on the corresponding cluster
   foreach my $cluster (keys %{$job->{clusterJobs}}) {
@@ -324,21 +309,18 @@ sub add_gridjob_uris($$$) {
       $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri}=apilib::htmlize_uri(
               apilib::make_uri("/sites/$cluster/jobs/" 
                  .$job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},$ext,0),
-              $ext,
-              $FORCE_HTTPS
+              $ext
               );
     }
   }
   # Ssh keys
   $job->{ssh_private_key_uri}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/".$job->{id}."/keys/private",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
   $job->{ssh_public_key_uri}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/".$job->{id}."/keys/public",$ext,0),
-                               $ext,
-                               $FORCE_HTTPS
+                               $ext
                              );
  
 }

@@ -6,7 +6,6 @@
   jobs/<id>/holds
   jobs/<id>/resume 
  au lieu des actuels post avec action=
-- Enlever l'option FORCE_HTTPS! Inutile depuis qu'on utilise LWP
 
 
 Bugs:
