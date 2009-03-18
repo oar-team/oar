@@ -49,8 +49,7 @@ my $OARGRIDSUB_CMD = "oargridsub";
 my $q = apilib::get_cgi_handler();
 
 # Header for html version
-my $apiuri= $q->url(-full => 1);
-$apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
+my $apiuri="/".$q->url(-relative => 1);
 my $HTML_HEADER="";
 my $file;
 if (is_conf("GRIDAPI_HTML_HEADER")){ $file=get_conf("GRIDAPI_HTML_HEADER"); }

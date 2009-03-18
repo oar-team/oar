@@ -56,8 +56,7 @@ my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
 
 # Header for html version
-my $apiuri= $q->url(-full => 1);
-$apiuri=~s/^http:/https:/ if $FORCE_HTTPS;
+my $apiuri="/".$q->url(-relative => 1);
 my $HTML_HEADER="";
 my $file;
 if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
