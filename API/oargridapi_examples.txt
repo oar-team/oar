@@ -21,6 +21,8 @@ irb(main):005:0> puts get('/sites.yaml')
 irb(main):050:0> puts get('/sites', :content_type=>"text/yaml")
   # Details about a site
 irb(main):008:0> puts get('/sites/grenoble.yaml')
+  # Resources details on a site or a cluster
+irb(main):022:0> puts get('/sites/simpsons/resources.yaml')
 
 # Getting jobs infos of a site
 irb(main):006:0> puts get('/sites/grenoble/jobs.yaml')
@@ -47,7 +49,7 @@ irb(main):031:0> puts job
 # List the resources I obtained (if the state is ok)
 irb(main):061:0> job=YAML::load(job)
 irb(main):062:0> if job['state'] == 'submitted'
-irb(main):063:1>   puts get(job['resources'])
+irb(main):063:1>   puts get(job['resources'],:content_type => 'text/yaml')
 irb(main):064:1> else
 irb(main):065:1*   puts "Job was rejected"
 irb(main):066:1> end

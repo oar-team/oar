@@ -164,6 +164,40 @@ SWITCH: for ($q) {
   };
 
   #
+  # Site resources (oarnodes wrapper)
+  #  
+  $URI = qr{^/sites/([a-z,0-9,-]+)/resources(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $site  = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $clusters = {};
+    $clusters = apilib::get_clusters($dbh);
+    if ( not defined( $clusters->{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site or cluster resource not found" );
+    }
+    else {
+      my $frontend = $clusters->{$site}->{hostname};
+      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D\"";
+      my $cmdRes = apilib::send_cmd($cmd,"Oarnodes on $frontend");
+      my $resources = apilib::import($cmdRes,"dumper");
+      if ( !defined %{$resources} || !defined(keys(%{$resources})) ) {
+        $resources = apilib::struct_empty($STRUCTURE);
+      }
+      else {
+        #apilib::add_resources_uris($jobs,$ext,$1);
+        $resources = apilib::struct_resource_list($resources,$STRUCTURE);
+      }
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export($resources,$ext);
+    }
+    last;
+  };
+ 
+
+  #
   # List of current jobs on a site or a cluster (oarstat wrapper)
   #
   $URI = qr{^/sites/([a-z,0-9,-]+)/jobs\.*(yaml|json|html)*$};
