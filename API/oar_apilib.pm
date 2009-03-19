@@ -90,7 +90,7 @@ sub import_dumper($) {
   my $data         = shift;
   my $hash = eval($data);
   if ($@) {
-    ERROR 400, 'Dumper data not understood', $@;
+    ERROR 400, 'Dumper data not understood', $@ . $data;
     exit 0;
   }
   return $hash;
