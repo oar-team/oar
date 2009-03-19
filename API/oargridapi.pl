@@ -525,6 +525,88 @@ SWITCH: for ($q) {
     last;
   };
 
+  #
+  # Delete of a grid job
+  #
+
+  $URI = qr{^/grid/jobs/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::DELETE( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+       "A suitable authentication must be done before deleting jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargriddel $jobid";
+    my $cmdRes = apilib::send_cmd($cmd,"Oargriddel");
+    print $q->header( -status => 202, -type => "$type" );
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export( { 'id' => "$jobid",
+                    'status' => "Delete request registered",
+                    'oardel_output' => "$cmdRes"
+                  } , $ext );
+    last;
+  };
+
+  #
+  # Delete of a grid job (alternative way, with POST)
+  #
+
+  $URI = qr{^/grid/jobs/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before modifying jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Check and get the submitted data
+    # From encoded data
+    my $job;
+    if ($q->param('POSTDATA')) {
+      $job = apilib::check_job_update( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $job = apilib::check_job_update( $q->Vars, $q->content_type );
+    }
+
+    my $cmd; my $status;
+    if ( $job->{method} eq "delete" ) {
+      $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargriddel $jobid";
+      $status = "Delete request registered";
+    }
+    else {
+      apilib::ERROR(400,"Bad query","Could not understand ". $job->{method} ." method");
+      last;
+    }
+    
+    my $cmdRes = apilib::send_cmd($cmd,"Oar");
+    print $q->header( -status => 202, -type => "$type" );
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export( { 'id' => "$jobid",
+                    'status' => "$status",
+                    'cmd_output' => "$cmdRes",
+                  } , $ext );
+    last;
+  };
+
 
   #
   # Html form for job posting

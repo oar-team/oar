@@ -685,10 +685,10 @@ sub check_job_update($$) {
     exit 0;
   }
 
-  # Job must have a "action" field
-  unless ( $job->{action} ) {
+  # Job must have a "method" field
+  unless ( $job->{method} ) {
     ERROR 400, 'Missing Required Field',
-      'A job update must have a "action" field!';
+      'A job update must have a "method" field!';
     exit 0;
   }
 

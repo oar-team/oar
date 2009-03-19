@@ -165,20 +165,20 @@ SWITCH: for ($q) {
        print $HTML_HEADER;
        print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
        print "</TD></TR><TR><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
-       print "<INPUT TYPE=Hidden NAME=action VALUE=delete>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
        print "<INPUT TYPE=Submit VALUE=DELETE>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
-       print "<INPUT TYPE=Hidden NAME=action VALUE=hold>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
        print "<INPUT TYPE=Submit VALUE=HOLD>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
-       print "<INPUT TYPE=Hidden NAME=action VALUE=resume>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
        print "<INPUT TYPE=Submit VALUE=RESUME>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid.html>\n";
-       print "<INPUT TYPE=Hidden NAME=action VALUE=checkpoint>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
        print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
        print "</FORM></TD>\n";
        print "</TR></TABLE>\n";
@@ -219,27 +219,28 @@ SWITCH: for ($q) {
     
     # Delete (alternative way to DELETE request, for html forms)
     my $cmd; my $status;
-    if ( $job->{action} eq "delete" ) {
+    if ( $job->{method} eq "delete" ) {
       $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
       $status = "Delete request registered"; 
     }
     # Checkpoint
-    elsif ( $job->{action} eq "checkpoint" ) {
+    elsif ( $job->{method} eq "checkpoint" ) {
       $cmd    = "$OARDODO_CMD '$OARDEL_CMD -c $jobid'";
       $status = "Checkpoint request registered"; 
     }
     # Hold
-    elsif ( $job->{action} eq "hold" ) {
+    elsif ( $job->{method} eq "hold" ) {
       $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $jobid'";
       $status = "Hold request registered";
     }
     # Resume
-    elsif ( $job->{action} eq "resume" ) {
+    elsif ( $job->{method} eq "resume" ) {
       $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $jobid'";
       $status = "Resume request registered";
     }
     else {
-      apilib::ERROR(400,"Bad query","Could not understand ". $job->{action} ." action"); 
+      apilib::ERROR(400,"Bad query","Could not understand ". $job->{method} ." method"); 
+      last;
     }
 
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
@@ -391,7 +392,7 @@ SWITCH: for ($q) {
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       apilib::ERROR( 401, "Permission denied",
-       "A suitable authentication must be done before posting jobs" );
+       "A suitable authentication must be done before deleting jobs" );
       last;
     }
     $authenticated_user = $1;
