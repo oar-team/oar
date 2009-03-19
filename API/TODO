@@ -1,4 +1,3 @@
-- Implémenter le delete dans oargridapi!!
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
 - method= au lieu de action= dans le post qui simule le delete

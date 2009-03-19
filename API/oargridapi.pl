@@ -310,7 +310,16 @@ SWITCH: for ($q) {
     apilib::add_gridjob_uris($job,$ext);
     $job = apilib::struct_gridjob($job,$STRUCTURE);
     print $header;
-    print $HTML_HEADER if ($ext eq "html");
+    if ($ext eq "html") {
+      print $HTML_HEADER;
+      print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $gridjob actions:</B>\n";
+      print "</TD></TR><TR><TD>\n";
+      print "<FORM METHOD=POST method=$apiuri/jobs/$gridjob.html>\n";
+      print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
+      print "<INPUT TYPE=Submit VALUE=DELETE>\n";
+      print "</FORM></TD><TD>\n";
+      print "</TR></TABLE>\n";
+    }
     print apilib::export($job,$ext);
     last;
   };
@@ -551,7 +560,8 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export( { 'id' => "$jobid",
                     'status' => "Delete request registered",
-                    'oardel_output' => "$cmdRes"
+                    'oardel_output' => "$cmdRes",
+                    'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$jobid",$ext,0),$ext)
                   } , $ext );
     last;
   };
@@ -603,6 +613,7 @@ SWITCH: for ($q) {
     print apilib::export( { 'id' => "$jobid",
                     'status' => "$status",
                     'cmd_output' => "$cmdRes",
+                    'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$jobid",$ext,0),$ext)
                   } , $ext );
     last;
   };
