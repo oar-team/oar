@@ -528,7 +528,25 @@ sub set_ext($$) {
   my $ext=shift;
   if (defined($ext) && $ext ne "") { $ext =~ s/^\.*//; return $ext; }
   else {
-    if (defined($q->content_type)) {
+    if (defined($q->http('Accept'))) {
+      if (get_ext($q->http('Accept')) ne "UNKNOWN_TYPE") {
+         return get_ext($q->http('Accept'));
+      }
+      elsif (defined($q->content_type)) {
+        if (get_ext($q->content_type) ne "UNKNOWN_TYPE") {
+          return get_ext($q->content_type);
+        }
+        else {
+          ERROR 406, 'Invalid content type ',
+          "Valid types are text/yaml, application/json or text/html";
+        }
+      }
+      else {
+        ERROR 406, 'Invalid content type required ' .$q->http('Accept'),
+        "Valid types are text/yaml, application/json or text/html";
+      }
+    }
+    elsif (defined($q->content_type)) {
       if (get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
          return get_ext($q->content_type);
       }

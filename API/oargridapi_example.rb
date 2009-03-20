@@ -13,7 +13,7 @@ APIURI="http://localhost/oargridapi"
 # We use the JSON format and the 'simple' data structure
 def get(api,uri)
   begin
-    return JSON::load(api[uri+'?structure=simple'].get(:content_type => 'application/json'))
+    return JSON.parse(api[uri+'?structure=simple'].get(:accept => 'application/json'))
   rescue => e
     puts "ERROR #{e.http_code}:\n #{e.response.body}"
     exit 1
