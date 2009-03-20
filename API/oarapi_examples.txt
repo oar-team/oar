@@ -8,7 +8,7 @@ irb(main):004:0> puts get('/resources.json')
   # in YAML
 irb(main):005:0> puts get('/resources.yaml')
   # Same thing
-irb(main):050:0> puts get('/resources', :content_type=>"text/yaml")
+irb(main):050:0> puts get('/resources', :accept=>"text/yaml")
   # Specifying the "oar" data structure
 irb(main):050:0> puts get('/resources.json?structure=oar')
   # Specifying the "simple" data structure
