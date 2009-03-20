@@ -418,12 +418,12 @@ SWITCH: for ($q) {
     my $site  = $1;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my %sites = apilib::get_sites($dbh);
-    if ( not defined( $sites{sites}{$site} ) ) {
+    my $sites = apilib::get_sites($dbh);
+    if ( not defined( $sites->{$site} ) ) {
       apilib::ERROR( 404, "Not found", "Site resource not found" );
       last;
     }
-    my $frontend = $sites{sites}{$site}{frontend};
+    my $frontend = $sites->{$site}->{frontend};
 
     # Check the submitted job
     my $job = apilib::check_job( $q->param('POSTDATA'), $q->content_type );
