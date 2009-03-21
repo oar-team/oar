@@ -48,7 +48,7 @@ if (is_conf("SCHEDULER_FAIRSHARING_USER_TARGETS")) {
         exit (1);
     }
 }
-print Dumper($Karma_user_targets);
+#print Dumper($Karma_user_targets);
 # weight given to each criteria
 my $Karma_coeff_project_consumption = 0;
 if (is_conf("SCHEDULER_FAIRSHARING_COEF_PROJECT")) {
@@ -136,16 +136,16 @@ if (defined($Resources_to_always_add_type)){
 my $timesharing_gantts;
 # Create the Gantt Diagrams
 #Init the gantt chart with all resources
-my $vec = '';
+my $All_resource_list_vec = '';
 my $max_resources = 1;
 foreach my $r (iolib::list_resources($base)){
-    vec($vec,$r->{resource_id},1) = 1;
+    vec($All_resource_list_vec,$r->{resource_id},1) = 1;
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
 
 my %Container_gantt_hash;
 $Container_gantt_hash{0} = Gantt_hole_storage::new($max_resources, $minimum_hole_time);
-Gantt_hole_storage::add_new_resources($Container_gantt_hash{0}, $vec);
+Gantt_hole_storage::add_new_resources($Container_gantt_hash{0}, $All_resource_list_vec);
 
 sub parse_timesharing($$$){
     my $str = shift;
@@ -194,7 +194,7 @@ foreach my $i (@{$order}){
         my $container_num = 0;
         if (defined($types->{container})){
             oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Create gantt for the container $i\n");
-            $Container_gantt_hash{$i} = Gantt_hole_storage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec);
+            $Container_gantt_hash{$i} = Gantt_hole_storage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
             $gantt_to_use = $Container_gantt_hash{$i};
             $container_num = $i;
         }
@@ -219,6 +219,8 @@ foreach my $i (@{$order}){
                                                      $vec
                                                   );
             }
+            #print("\nOOOOOOOOOO $i - $g $current_time\n");
+            #Gantt_hole_storage::pretty_print($Container_gantt_hash{$g});
         }
         foreach my $c (keys(%{$timesharing_gantts})){
             foreach my $u (keys(%{$timesharing_gantts->{$c}})){
@@ -460,7 +462,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }
         }
         if (defined($types->{container})){
-            $Container_gantt_hash{$j->{job_id}} = Gantt_hole_storage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec);
+            $Container_gantt_hash{$j->{job_id}} = Gantt_hole_storage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $All_resource_list_vec);
         }
 
         foreach my $c (keys(%{$timesharing_gantts})){

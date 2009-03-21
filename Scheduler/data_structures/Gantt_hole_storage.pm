@@ -18,7 +18,7 @@ my $Infinity = 4294967296;
 # Prototypes
 # gantt chart management
 sub new($$);
-sub new_with_1_hole($$$$$);
+sub new_with_1_hole($$$$$$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
@@ -77,20 +77,27 @@ sub new($$){
 
 # Creates a Gantt with 1 hole
 # arg : number of the max resource id
-sub new_with_1_hole($$$$$){
+sub new_with_1_hole($$$$$$){
     my $max_resource_number = shift;
     my $minimum_hole_duration = shift;
     my $date = shift;
     my $duration = shift;
     my $resources_vec = shift;
+    my $all_resources_vec = shift;
 
     my $gantt = Gantt_hole_storage::new($max_resource_number, $minimum_hole_duration);
 
+    # initiate the first hole with a fake date (ensure to keep it intact with all the configuration)
+    $gantt->[0]->[1]->[0]->[0] = 86400;
+   
+    # Init the whole resource list directly
+    $gantt->[0]->[2] = $all_resources_vec;
     # Feed vector with enough 0
     $resources_vec |= $gantt->[0]->[3];
 
-    $gantt->[0]->[0] = $date;
-    $gantt->[0]->[1] = [[($date + $duration), $resources_vec]];
+    # Create the only hole
+    $gantt->[1]->[0] = $date;
+    $gantt->[1]->[1] = [[($date + $duration), $resources_vec]];
 
     return($gantt);
 }
