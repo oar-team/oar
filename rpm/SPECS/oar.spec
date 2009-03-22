@@ -14,7 +14,7 @@ Url:            http://oar.imag.fr
 # %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 # %define _unpackaged_files_terminate_build 0
 
-Source0: 	oar_%version.tar.gz
+Source0: 	oar-%version.tar.gz
 Source1:	Makefile.install
 Source2:	oar-common.logrotate
 Source3:	oar-server.init.d
