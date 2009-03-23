@@ -166,6 +166,7 @@ sub get_sites($) {
     if ( defined( $clusters{$i}{parent} ) ) {
       $site=$clusters{$i}{parent};
       $sites->{$site}->{frontend}=$clusters{$i}{hostname};
+      push @{ $sites->{$site}->{deprecated} }, $i if (defined($clusters{$i}{deprecated}));;
       push @{ $sites->{$site}->{clusters} }, $i;
     }
   }
