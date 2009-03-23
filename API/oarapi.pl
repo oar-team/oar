@@ -51,7 +51,8 @@ my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
 
 # Header for html version
-my $apiuri="/".$q->url(-relative => 1);
+my $apiuri=apilib::get_api_uri_relative_base();
+$apiuri =~ s/\/$//;
 my $HTML_HEADER="";
 my $file;
 if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
@@ -105,7 +106,7 @@ SWITCH: for ($q) {
   #
   # Welcome page (html only)
   #
-  $URI = qr{^$};
+  $URI = qr{^/index\.html$};
   apilib::GET( $_, $URI ) && do {
     print $q->header( -status => 200, -type => "text/html" );
     print $HTML_HEADER;

@@ -220,6 +220,24 @@ sub htmlize_uri($$) {
   else { return $uri; }
 }
 
+# Get the api uri base in relative
+sub get_api_uri_relative_base() {
+  if ($URIenabled) {
+    my $base = $q->path_info;
+    $base =~ s/\.html$// ;
+    $base =~ s/\/$// ;
+    $base = "http://bidon".$base;
+    my $goal = "http://bidon";
+    return URI->new($goal)->rel($base);
+  }
+  else {
+    ERROR (500,
+           "LWP URI module not enabled",
+           "I cannot make uris without LWP URI module!" );
+    exit 0;
+  }
+}
+
 # Add uris to a oar job list
 sub add_joblist_uris($$) {
   my $jobs = shift;
