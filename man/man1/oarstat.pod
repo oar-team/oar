@@ -40,7 +40,7 @@ Print job properties in the same format as in the $OAR_RESOURCE_PROPERTIES_FILE 
 
 =item B<-s, --state>
 
-Print only the state of a job. It makes a minimal query to the database. Must be used with -j.
+Print only the state of a specified job. It makes a minimal query to the database. It is optimized to allow scripting for example. Must be used with -j.
 
 =item B<-u, --user> [login]
 
