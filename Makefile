@@ -68,7 +68,7 @@ desktop-computing-cgi:
 	install -m 0755 DesktopComputing/oarres.pl $(DESTDIR)$(OARDIR)/oarres.pl
 	install -m 6750 Tools/oardo $(DESTDIR)$(OARDIR)/oarres
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oarres
-	chmod 6750 $(DESTDIR)$(OARDIR)/oarres
+	chmod 6755 $(DESTDIR)$(OARDIR)/oarres
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
