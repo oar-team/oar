@@ -1,3 +1,12 @@
+oar (2.4.0-1~15.gbpe6d8f7) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @e6d8f7ff2915d59ef151bb748efc3438e59ef784 **
+
+  * Fixed problem with links into header and changed welcome page from .
+    to index.html
+
+ -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Mon, 23 Mar 2009 14:21:48 +0100
+
 oar (2.4.0-1~14.gbpa49df8) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @a49df86057c82af6bb14d436f0a2d47ad1e33074 **
