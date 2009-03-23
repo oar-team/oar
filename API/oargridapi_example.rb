@@ -8,7 +8,10 @@ require 'rubygems'
 require 'rest_client'
 require 'json'
 
-APIURI="http://localhost/oargridapi"
+# Custom variables
+APIURI="http://www.grenoble.grid5000.fr/oargridapi"
+IGNORE_SITES=['grenoble-obs','grenoble-exp','grenoble-ext','sophia','lille']
+N_RESOURCES=3
 
 # Function to get objects from the api
 # We use the JSON format and the 'simple' data structure
@@ -32,26 +35,33 @@ end
 # Instanciate an api connection
 api = RestClient::Resource.new APIURI
 
-# Parse the sites and find at least 3 free resources
+# Parse the sites and find at least N_RESOURCES free resources
+puts "Getting sites..."
 sites = get(api,'/sites')
+puts "Got #{sites.length} sites"
 ok_sites=[]
 sites.each do |site|
   site_name = site['site']
-  resources = get(api,"/sites/#{site_name}/resources")
-  resources.each do |resource|
-    if resource['state'] == "Alive" && resource['jobs'].nil?
-      ok_sites << site_name 
-      break
+  unless IGNORE_SITES.index(site_name) 
+    puts "Checking #{site_name}..."
+    resources = get(api,"/sites/#{site_name}/resources")
+    resources.each do |resource|
+      if resource['state'] == "Alive" && resource['jobs'].nil?
+        ok_sites << site_name
+	puts "   got 1 resource!"
+        break
+      end
     end
   end
-  break if ok_sites.length >= 3
+  break if ok_sites.length >= N_RESOURCES
 end
 
-# If we got 3 sites, submit the job
-if ok_sites.length < 3
+# If we got N_RESOURCES sites, submit the job
+if ok_sites.length < N_RESOURCES
   puts "Not enough resources found on the grid!"
   exit 1
 end
+puts "OK, we got #{N_RESOURCES} free resources, let's submit a job..."
 j={ 'resources' => ok_sites.join(':rdef=/resource_id=1,')+':rdef=/resource_id=1' }
 #j={ 'resources' => ok_sites.join(':rdef=/resource_id=1,')+':rdef=/resource_id=1' , 'verbose' => 1 }
 begin
@@ -97,7 +107,7 @@ if job['state'] == "submitted"
 
 # Delete the job
   begin
-    puts "Deleting job..."
+    puts "Deleting job because it was just for fun..."
     api["/grid/jobs/#{job['id']}.json"].delete
     puts "Job deleted"
   rescue => e
