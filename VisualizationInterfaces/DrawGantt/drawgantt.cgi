@@ -803,7 +803,7 @@ def cgi_html(cgi)
 #	cgi = CGI.new("html3") # add HTML generation methods
 
 #	now = Time.now
-	now = Time.at(get_date($dbh))
+	now = Time.at(Float(get_date($dbh)))
 	range = $conf['default_range']
 	month, day, hour, year = now.strftime("%b %e %H:00 %Y").split(" ")
 	popup_year = [(year.to_i-1).to_s, year, (year.to_i+1).to_s ]
