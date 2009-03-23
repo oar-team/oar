@@ -12,6 +12,7 @@ version 2.4.0:
   - Ctrl-C was not working anymore in oarsub.
     It seems that the signal handler does not handle the previous syntax
     ($SIG = 'qdel')
+  - Fix bug in oarsh with the "-l" option
 
 version 2.3.3:
 --------------
