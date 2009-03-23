@@ -7,6 +7,7 @@ version 2.3.4:
     It seems that the signal handler does not handle the previous syntax
     ($SIG = 'qdel')
   - Bug #7487: bad initialisation of the gnatt for the container jobs.
+  - Fix bug in oarsh with the "-l" option
 
 version 2.3.3:
 --------------
