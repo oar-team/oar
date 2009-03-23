@@ -4,6 +4,7 @@ OAR CHANGELOG
 next version:
 -------------
   - Update default OAR configuration file to be complying with database scheme
+  - Fix bug in oarsh with the "-l" option
 
 version 2.2.14:
 ---------------
