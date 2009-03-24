@@ -1,7 +1,8 @@
 Source: oar
 Section: contrib/misc
 Priority: optional
-Maintainer: Pierre Neyron <pierre.neyron@imag.fr>
+Maintainer: Bruno Bzeznik <bruno.bzeznik@imag.fr>
+Uploaders: Romain Cavagna <romain.cavagna@imag.fr>
 Build-Depends: debhelper (>= 4.0.0), python-docutils, perl
 Standards-Version: 3.6.0
 
