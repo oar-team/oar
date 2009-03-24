@@ -27,39 +27,45 @@ users/:
   title: users 
   orderInfo: 4
   url: /admins/index.page
+
+tools/:
+  inMenu: true
+  title: tools 
+  orderInfo: 5
+  url: /tools/index.page
   
 works/:
   inMenu: true
   title: works 
-  orderInfo: 5
+  orderInfo: 6
   url: /works/index.page
 
 downloads.html:
   inMenu: true
   title: downloads
-  orderInfo: 6
+  orderInfo: 7
   url: /downloads.page
 
 research.html:
   title: research
   inMenu: true
-  orderInfo: 7
+  orderInfo: 8
   url: /research.page
 
-#support.html:
-#  title: support
-#  inMenu: true
-#  orderInfo: 7
-#  url: /support.page
+support.html:
+  title: support
+  inMenu: true
+  orderInfo: 9
+  url: /support.page
 
 partners.html:
   title: partners
   inMenu: true
-  orderInfo: 8
+  orderInfo: 10
   url: /partners.page
 
 wiki.html:
   title: wiki
   inMenu: true
-  orderInfo: 9
+  orderInfo: 11
   url: http://wiki-oar.imag.fr
