@@ -1480,9 +1480,9 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     foreach my $t (@{$type_list}){
-        $t = $dbh->quote($t);
+        my $quoted_t = $dbh->quote($t);
         $dbh->do("  INSERT INTO job_types (job_id,type)
-                    VALUES ($job_id,$t)
+                    VALUES ($job_id,$quoted_t)
                  ");
     }
 
