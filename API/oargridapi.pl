@@ -273,6 +273,45 @@ SWITCH: for ($q) {
   };
 
   #
+  # Delete of a job running on a site or a cluster (oardel wrapper)
+  #
+  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)\.*(yaml|json|html)*$};
+  apilib::DELETE( $_, $URI ) && do {
+ 
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before deleting jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+
+   $_->path_info =~ m/$URI/;
+    my $site  = $1;
+    my $jobid = $2;
+    my $ext = apilib::set_ext($q,$3);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $clusters = {};
+    $clusters = apilib::get_clusters($dbh);
+    if ( not defined( $clusters->{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site or cluster resource not found" );
+    }
+    else {
+      my $frontend = $clusters->{$site}->{hostname};
+      my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend sudo -u $authenticated_user \"oardel $jobid\"'";
+      my $cmdRes = apilib::send_cmd($cmd,"Oardel on $frontend");
+      print $q->header( -status => 202, -type => "$type" );
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export( { 'id' => "$jobid",
+                      'status' => "Delete request registered",
+                      'oardel_output' => "$cmdRes"
+                    } , $ext );
+    }
+    last;
+  };
+
+
+  #
   # List of grid jobs
   #
   $URI = qr{^/grid/jobs\.*(yaml|json|html)*$};
