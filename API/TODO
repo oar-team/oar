@@ -5,6 +5,8 @@
   jobs/<id>/holds
   jobs/<id>/resume 
  au lieu des actuels post avec action=
+- implémenter /sites/<site>/resources/<id>
+- implémenter /sites/<site>/nodes/<node> et les liens correspondant dans /grid/jobs/<id>/resources
 
 
 Bugs:

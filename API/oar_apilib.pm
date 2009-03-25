@@ -289,6 +289,10 @@ sub add_sites_uris($$) {
                                apilib::make_uri("/sites/$site",$ext,0),
                                $ext
                              );
+      $sites->{$site}->{resources}=apilib::htmlize_uri(
+                               apilib::make_uri("/sites/$site/resources",$ext,0),
+                               $ext
+                             );
   }
 }
 
