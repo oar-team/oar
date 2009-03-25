@@ -10,11 +10,9 @@
   # in JSON
 irb(main):004:0> puts get('/sites.json')
   # Same thing (JSON by default)
-irb(main):004:0> puts get('/sites')
-  # Same thing, asking for the "oar" data structure
-irb(main):004:0> puts get('/sites?structure=oar')
+irb(main):004:0> puts get('/sites.json?structure=oar')
   # Same thing, asking for the "simple" data structure
-irb(main):004:0> puts get('/sites?structure=simple')
+irb(main):004:0> puts get('/sites.json?structure=simple')
   # in YAML
 irb(main):005:0> puts get('/sites.yaml')
   # Same thing but using the Accept header

@@ -19,7 +19,12 @@ def get(api,uri)
   begin
     return JSON.parse(api[uri+'?structure=simple'].get(:accept => 'application/json'))
   rescue => e
-    puts "ERROR #{e.http_code}:\n #{e.response.body}"
+    if e.respond_to?('http_code')
+      puts "ERROR #{e.http_code}:\n #{e.response.body}"
+    else
+      puts "Parse error:"
+      puts e.inspect
+    end
     exit 1
   end
 end
