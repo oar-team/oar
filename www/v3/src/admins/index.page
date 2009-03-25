@@ -4,6 +4,7 @@ inMenu: false
 ---
 h2. For Adminstrators
 
+* "Tools":tools/index.html
 * "Admin Quickstart":admin_quickstart.html
 * "Admin Documentation":admin_documentation.html
 * "FAQ Admin":faq_admin.html

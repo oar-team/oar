@@ -10,11 +10,13 @@ output/%.html: $(MANUALPAGE)
 	sed s/\<title\>Home/\<title\>OAR/ output/index.html > /tmp/index.html.tmp
 	mv /tmp/index.html.tmp  output/index.html 
 	cp -r ../../Docs/schemas output/
+	cp -r ../../Docs/captures output/
 	cp ../../Docs/documentation/OAR-DOCUMENTATION-ADMIN.pdf output/admins/
 	cp ../../Docs/documentation/OAR-DOCUMENTATION-USER.pdf output/users/
 	cd output/admins; ln -s ../images; cd -
 	cd output/about; ln -s ../images; cd -
 	cd output/users/tools; ln -s ../images; cd -
+	cd output/admins/tools; ln -s ../images; cd -
 	cd output/works; ln -s ../images; cd -
 	cd output/works/gsoc; ln -s ../../images; cd -
 	cd output/works/gsoc/2008; ln -s ../../../images; cd -

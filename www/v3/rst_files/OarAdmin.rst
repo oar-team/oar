@@ -1,1 +1,1 @@
-../../../Docs/tools/OarAdmin.rst
+../../../Docs/tools/admins/OarAdmin.rst

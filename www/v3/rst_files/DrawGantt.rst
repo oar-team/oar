@@ -1,1 +1,1 @@
-../../../Docs/tools/DrawGantt.rst
+../../../Docs/tools/users/DrawGantt.rst

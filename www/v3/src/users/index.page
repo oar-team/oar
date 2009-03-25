@@ -4,8 +4,8 @@ inMenu: false
 ---
 h2. For Users
 
+* "Tools":tools/index.html
 * "User Quickstart":user_quickstart.html
 * "User Documentation":user_documentation.html
 * "FAQ User":faq_user.html
 * "Use cases":user_usecases.html
-* "Tools":tools/index.html
