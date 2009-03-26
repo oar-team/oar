@@ -494,7 +494,7 @@ SWITCH: for ($q) {
 
     # Submit the query
     my $cmd = "$OARDODO_CMD $SSH_CMD $frontend 'cd ~$authenticated_user && sudo -u $authenticated_user $oarcmd'";
-    my $cmdRes = apilib::send_cmd($cmd,"Oardel");
+    my $cmdRes = apilib::send_cmd($cmd,"Oar cmd");
     if ($cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
       print $q->header( -status => 201, -type => "$type" );
       print $HTML_HEADER if ($ext eq "html");
