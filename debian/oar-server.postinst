@@ -124,7 +124,7 @@ setup_oar_ssh
 #setup_conf
 
 db_get oar/db/dbtype
-if [ "x$RET" = "xMysql" ]; then 
+if [ "x$RET" = "xMysql" -a "$1" = "install" ]; then 
     setup_mysql_db
 #else
     #setup_pgsql_db
