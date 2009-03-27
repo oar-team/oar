@@ -99,7 +99,7 @@ module Oar
 	   if dbh
 	      table = "schema"	     
 	      table = "`" + table + "`" if conf['DB_TYPE'].upcase == "MYSQL" 
-	      q = "SELECT * FROM " + table 
+	      q = "SELECT * FROM " + table + " ORDER BY version DESC"
 	      rows = dbh.select_one(q) 
 	      version += rows["version"] if rows
 	      dbh.disconnect 
