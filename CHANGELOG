@@ -3,6 +3,8 @@ OAR CHANGELOG
 
 version 2.3.4:
 --------------
+  - add the command "oar_resources_init" to easily detect and initialize the
+    whole resources of a cluster.
   - "oaradmin version" : now retrieve the most recent database schema number
   - Fix rights on the "schema" table in postgresql.
   - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes 

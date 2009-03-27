@@ -239,6 +239,13 @@ server: man
 	install -m 0644 man/man1/oarnotify.1 $(MANDIR)/man1/oarnotify.1
 	install -m 0644 man/man1/oarproperty.1 $(MANDIR)/man1/oarproperty.1
 	install -m 0644 man/man1/oarremoveresource.1 $(MANDIR)/man1/oarremoveresource.1
+	install -m 0755 Tools/detect_resources $(OARDIR)
+	install -m 6750 -o $(OAROWNER) -g $(OAROWNERGROUP) Tools/oardo $(SBINDIR)/oar_resources_init
+	perl -i -pe "s#Oardir = .*#Oardir = '$(REAL_OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(REAL_OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(REAL_OARDIR)/detect_resources'\;#;;\
+				" $(SBINDIR)/oar_resources_init
 
 user: man
 	install -d -m 0755 $(OARDIR)
@@ -301,7 +308,6 @@ node: man
 	install -d -m 0755 $(OARCONFDIR)
 	install -m 0600 -o $(OAROWNER) -g root Tools/sshd_config $(OARCONFDIR)
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(OARCONFDIR)/sshd_config
-	install -m 0755 Tools/detect_resources $(OARDIR)
 	@if [ -f $(OARCONFDIR)/prologue ]; then echo "Warning: $(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(OARCONFDIR) ; fi
 	@if [ -f $(OARCONFDIR)/epilogue ]; then echo "Warning: $(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(OARCONFDIR) ; fi
 	install -m 0755 Tools/oarnodecheck/oarnodechecklist $(BINDIR)

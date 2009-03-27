@@ -131,7 +131,7 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
 |bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
-|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$"
+|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init"
 for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
@@ -180,6 +180,7 @@ rm -rf tmp
 %attr (6750,oar,oar) /usr/sbin/oarproperty
 %attr (6750,oar,oar) /usr/sbin/oarmonitor
 %attr (0750,oar,oar) /usr/sbin/oar-server
+%attr (6750,oar,oar) /usr/sbin/oar_resources_init
 %config /etc/sysconfig/oar-server
 
 %files node -f oar-node.files

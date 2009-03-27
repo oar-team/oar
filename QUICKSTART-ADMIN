@@ -88,7 +88,12 @@ In order to use this feature, you have to uncomment the line with the
 6°) Adding resources to the system
 ----------------------------------
 
-A tool is available to help you in the administrative tasks of a OAR server.
+If you want to automatically detect and insert corresponding resources into OAR then you just need to launch::
+
+    oar_resources_init
+
+Otherwise you can use the oaradmin command. This tool is available to help you
+in the administrative tasks of a OAR server.
 You can install it with ::
 
   make tools-install

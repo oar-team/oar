@@ -1,15 +1,92 @@
 #!/bin/sh
 # $Id$
-# Detect resources on the node and print corresponding OAR commands
+# Detect resources on a list of nodes and print corresponding OAR commands
+#set -x
 
-CPUS=$(cat /proc/cpuinfo  | grep ^processor | awk '{print $3}')
-MEM=$(cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
+OPENSSH_CMD=/usr/bin/ssh
+source "$OARCONFFILE" || exit 20
 
-HOST=$(hostname)
+OARNODES="oarnodesetting"
+OARPROPERTY="oarproperty"
+FILE_WITH_OAR_COMMANDS_GENERATED="/tmp/oar_resources_init.txt"
 
-((MEM = $MEM / 1024))
+# check the file with the nodes to add
+if [ -z "$1" ] || [ ! -r "$1" ]
+then
+    echo "Specify a file containing the list of nodes to add into OAR in argument of this command (must be readable by oar user)"
+    exit 1
+fi
 
-for i in $CPUS
+echo "Did you configured the OAR SSH key on the whole nodes? [yes/NO] "
+read l ; [ "$l" != "yes" ] && exit 2
+
+# Check output file
+if [ -e "$FILE_WITH_OAR_COMMANDS_GENERATED" ]
+then
+    echo "Commands to run will be written into "$FILE_WITH_OAR_COMMANDS_GENERATED". Do you want to override it? [yes/NO] "
+    read l ; [ "$l" != "yes" ] && exit 3
+    rm $FILE_WITH_OAR_COMMANDS_GENERATED || exit 4
+fi
+
+# Add properties
+echo "$OARPROPERTY -a cpu" > $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -a core" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -c -a host" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -a cpuset" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+
+# Init CPU id
+CPU=$(oarnodes --sql true | grep 'cpu=' | awk -F ",cpu=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+[ -z "$CPU" ] && CPU=0
+# Init CORE id
+CORE=$(oarnodes --sql true | grep 'core=' | awk -F ",core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+[ -z "$CORE" ] && CORE=0
+
+echo
+for host in $(< $1)
 do
-    echo "oarnodesetting -a -h $HOST -p cpuset=$i -p mem=$MEM"
+    echo -n "Checking $host ... "
+
+    # Store stderr and redirect it to /dev/null
+    exec 3>&2
+    exec 2> /dev/null
+
+    mem=$($OPENSSH_CMD $host cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
+
+    # Get CORE info in the form
+    # core cpu,core cpu,core cpu,core cpu
+    DATA=$($OPENSSH_CMD $host CORE=0 cat /proc/cpuinfo  | while read l; do if echo $l | grep '^processor' > /dev/null ; then CORE=$(echo $l | awk '{print $3}'); elif echo $l | grep '^physical id' > /dev/null; then  CPU=$(echo $l | awk '{print $4}'); echo -n "$CORE $CPU,";  fi; done)
+    # Restore stderr
+    exec 2>&3
+
+    if [ -z "$mem" ] || [ -z "$DATA" ]
+    then
+        echo "*** KO ***"
+        rm $FILE_WITH_OAR_COMMANDS_GENERATED
+        echo 
+        echo "ERREUR with node $host. Please check the ssh connection with oar user ($OPENSSH_CMD $host)..."
+        exit 5
+    fi
+
+    ((mem = $mem / 1024))
+    prev_cpu="-1"
+    PREV_IFS=$IFS
+    IFS=','
+    for i in $DATA
+    do
+        core=$(echo $i|awk '{print $1}')
+        cpu=$(echo $i|awk '{print $2}')
+        [ "$cpu" != "$prev_cpu" ] && ((CPU++))
+        ((CORE++))
+        prev_cpu=$cpu
+        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -m mem=$mem" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+    done
+    IFS=$PREV_IFS
+    echo "OK"
 done
+
+
+
+echo
+echo "If the content of '$FILE_WITH_OAR_COMMANDS_GENERATED' is OK for you then you just need to execute:"
+echo "  source $FILE_WITH_OAR_COMMANDS_GENERATED"
+
