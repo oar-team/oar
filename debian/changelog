@@ -1,3 +1,11 @@
+oar (2.4.0-1~17.gbp40c3c5) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @40c3c5314c0089c660e441b28278224ca396b1dd **
+
+  * Added /resources/(all|<id>|nodes/<node>) support
+
+ -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Tue, 31 Mar 2009 20:11:29 +0200
+
 oar (2.4.0-1~16.gbp0855cf) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @0855cf396142e2035daad63a5f82f82878d91ed1 **
