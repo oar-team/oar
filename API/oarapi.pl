@@ -7,7 +7,7 @@ use oar_iolib;
 use oar_Tools;
 use oarversion;
 
-my $VERSION="0.1.1";
+my $VERSION="0.1.2";
 
 ##############################################################################
 # CONFIGURATION
@@ -295,7 +295,7 @@ SWITCH: for ($q) {
                        $resources = { @$resources[0]->{properties}->{network_address} 
                            => { @$resources[0]->{resource_id} => @$resources[0] }} 
                        }
-    apilib::add_resources_uris($resources,$ext);
+    apilib::add_resources_uris($resources,$ext,'');
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -314,7 +314,7 @@ SWITCH: for ($q) {
     my $cmd    = "$OARNODES_CMD $1 -D";  
     my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
     my $resources = apilib::import($cmdRes,"dumper");
-    apilib::add_resources_uris($resources,$ext);
+    apilib::add_resources_uris($resources,$ext,'');
     my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");

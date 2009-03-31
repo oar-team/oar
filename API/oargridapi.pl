@@ -5,7 +5,7 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-my $VERSION="0.1.1";
+my $VERSION="0.1.2";
 
 ##############################################################################
 # CONFIGURATION
@@ -186,11 +186,11 @@ SWITCH: for ($q) {
   #
   # Site resources (oarnodes wrapper)
   #  
-  $URI = qr{^/sites/([a-z,0-9,-]+)/resources(\.yaml|\.json|\.html)*$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)/resources(/all|/[0-9]+)*\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $site  = $1;
-    my $ext=apilib::set_ext($q,$2);
+    my $ext=apilib::set_ext($q,$3);
     (my $header, my $type)=apilib::set_output_format($ext);
     my $clusters = {};
     $clusters = apilib::get_clusters($dbh);
@@ -199,14 +199,24 @@ SWITCH: for ($q) {
     }
     else {
       my $frontend = $clusters->{$site}->{hostname};
-      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D\"";
+      my $cmd;
+      if (defined($2)) {
+        if    ($2 eq "/all")        { $cmd = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D\""; }
+        elsif ($2 =~ /\/([0-9]+)/)  { $cmd = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D -r $1\""; }
+        else                        { $cmd = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D -s\""; }
+      }
+      else                          { $cmd = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D -s\""; }
       my $cmdRes = apilib::send_cmd($cmd,"Oarnodes on $frontend");
       my $resources = apilib::import($cmdRes,"dumper");
+      if (defined($2) && $2 =~ /\/([0-9]+)/) {
+        $resources = { @$resources[0]->{properties}->{network_address}
+           => { @$resources[0]->{resource_id} => @$resources[0] }}
+        }
       if ( !defined %{$resources} || !defined(keys(%{$resources})) ) {
         $resources = apilib::struct_empty($STRUCTURE);
       }
       else {
-        #apilib::add_resources_uris($jobs,$ext,$1);
+        apilib::add_resources_uris($resources,$ext,"/sites/$1");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE);
       }
       print $header;
@@ -215,7 +225,42 @@ SWITCH: for ($q) {
     }
     last;
   };
- 
+
+  #
+  # Node resources (oarnodes wrapper)
+  #  
+  $URI = qr{^/sites/([a-z,0-9,-]+)/resources/nodes/([\w\.-]+?)(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $site  = $1;
+    my $ext=apilib::set_ext($q,$3);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $clusters = {};
+    $clusters = apilib::get_clusters($dbh);
+    if ( not defined( $clusters->{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site or cluster resource not found" );
+    }
+    else {
+      my $frontend = $clusters->{$site}->{hostname};
+      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes $2 -D\"";
+      my $cmdRes = apilib::send_cmd($cmd,"Oarnodes on $frontend");
+      my $resources = apilib::import($cmdRes,"dumper");
+      if ( !defined %{$resources} || !defined(keys(%{$resources})) ) {
+        $resources = apilib::struct_empty($STRUCTURE);
+      }
+      else {
+        apilib::add_resources_uris($resources,$ext,"/sites/$1");
+        $resources = apilib::struct_resource_list($resources,$STRUCTURE);
+      }
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export($resources,$ext);
+    }
+    last;
+  };
+
+
+
 
   #
   # List of current jobs on a site or a cluster (oarstat wrapper)

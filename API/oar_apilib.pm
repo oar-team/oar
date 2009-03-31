@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.1.1";
+my $VERSION="0.1.2";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -264,9 +264,10 @@ sub add_joblist_griduris($$$) {
 }
 
 # Add uris to a resources list
-sub add_resources_uris($$) {
+sub add_resources_uris($$$) {
   my $resources = shift;
   my $ext = shift;
+  my $prefix = shift;
   foreach my $node ( keys( %{$resources} ) ) {
     foreach my $id ( keys( %{$resources->{$node}} ) ) {
       # This test should make this function work for "oarstat -s"
@@ -275,10 +276,10 @@ sub add_resources_uris($$) {
         $resources->{$node}->{$id}={};
         $resources->{$node}->{$id}->{state}=$state;
       }
-      $resources->{$node}->{$id}->{uri}=apilib::make_uri("/resources/$id",$ext,0);
+      $resources->{$node}->{$id}->{uri}=apilib::make_uri("$prefix/resources/$id",$ext,0);
       $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext);
     }
-    $resources->{$node}->{uri}=apilib::make_uri("/resources/nodes/$node",$ext,0);
+    $resources->{$node}->{uri}=apilib::make_uri("$prefix/resources/nodes/$node",$ext,0);
     $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext);
   }
 }
