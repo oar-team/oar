@@ -49,7 +49,7 @@ sites.each do |site|
   site_name = site['site']
   unless IGNORE_SITES.index(site_name) 
     puts "Checking #{site_name}..."
-    resources = get(api,"/sites/#{site_name}/resources")
+    resources = get(api,"/sites/#{site_name}/resources/all")
     resources.each do |resource|
       if resource['state'] == "Alive" && resource['jobs'].nil?
         ok_sites << site_name
