@@ -1,3 +1,11 @@
+oar (2.4.0-1~18.gbpa4d473) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @a4d473dad08e0090daffe9bca10cdc4048e54226 **
+
+  * Fixed again a quoting problem
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 31 Mar 2009 21:09:10 +0200
+
 oar (2.4.0-1~17.gbp40c3c5) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @40c3c5314c0089c660e441b28278224ca396b1dd **

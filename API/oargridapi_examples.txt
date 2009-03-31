@@ -21,6 +21,12 @@ irb(main):050:0> puts get('/sites', :accept=>"text/yaml")
 irb(main):008:0> puts get('/sites/grenoble.yaml')
   # Resources details on a site or a cluster
 irb(main):022:0> puts get('/sites/simpsons/resources.yaml')
+  # Resources details of a node on a cluster
+irb(main):022:0> puts get('/sites/simpsons/resources/nodes/bart-1.yaml')
+  # Resource details
+irb(main):022:0> puts get('/sites/simpsons/resources/1.yaml')
+  # Details about all resources
+irb(main):022:0> puts get('/sites/simpsons/resources/all.yaml')
 
 # Getting jobs infos of a site
 irb(main):006:0> puts get('/sites/grenoble/jobs.yaml')
