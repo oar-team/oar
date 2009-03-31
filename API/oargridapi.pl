@@ -5,7 +5,7 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-my $VERSION="0.1.2";
+my $VERSION="0.1.3";
 
 ##############################################################################
 # CONFIGURATION
@@ -612,7 +612,7 @@ SWITCH: for ($q) {
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "resources") {
         $resources = $job->{resources};
-        $resources =~ s/\"/\\\"/g ;
+        #$resources =~ s/\"/\\\"/g ;
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
@@ -624,7 +624,7 @@ SWITCH: for ($q) {
     }
     if ($resources ne "") { $oargridcmd .= " $resources"; }
 
-    my $cmd = "cd $workdir && $OARDODO_CMD \"cd $workdir && $oargridcmd\""; 
+    my $cmd = "cd $workdir && $OARDODO_CMD $oargridcmd"; 
     my $cmdRes = `$cmd 2>&1`;
     my $err = $? >> 8;
     if ( "$err" eq "3" ) {
