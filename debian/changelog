@@ -1,3 +1,11 @@
+oar (2.4.0-1~16.gbp0855cf) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @0855cf396142e2035daad63a5f82f82878d91ed1 **
+
+  * Added /version
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 31 Mar 2009 18:52:49 +0200
+
 oar (2.4.0-1~15.gbpe6d8f7) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @e6d8f7ff2915d59ef151bb748efc3438e59ef784 **
