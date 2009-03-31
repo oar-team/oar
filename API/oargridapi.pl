@@ -5,6 +5,8 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
+my $VERSION="0.1.1";
+
 ##############################################################################
 # CONFIGURATION
 ##############################################################################
@@ -121,6 +123,23 @@ SWITCH: for ($q) {
     print $q->header( -status => 200, -type => "text/html" );
     print $HTML_HEADER;
     print "Welcome on the oargrid API\n";
+    last;
+  };
+
+  #
+  # Version
+  #
+  $URI = qr{^/version\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$1);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $version={ "oargrid" => oargrid_lib::get_version(),
+                  "apilib" => apilib::get_version(),
+                  "api" => $VERSION };
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($version,$ext);
     last;
   };
 

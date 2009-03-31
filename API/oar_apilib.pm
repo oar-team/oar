@@ -2,9 +2,12 @@
 package apilib;
 require Exporter;
 
+my $VERSION="0.1.1";
+
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use CGI qw/:standard/;
+
 
 ##############################################################################
 # INIT
@@ -835,6 +838,11 @@ sub check_grid_job($$) {
 ##############################################################################
 # Other functions
 ##############################################################################
+
+# APILIB Version
+sub get_version() {
+  return $VERSION;
+}
 
 # Return the cgi handler
 sub get_cgi_handler() {
