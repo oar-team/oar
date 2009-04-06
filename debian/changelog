@@ -1,3 +1,12 @@
+oar (2.4.0-1~19.gbpd75baa) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @d75baac1a856db4d6ec49d59782965a7f89d3bdc **
+
+  * Better management of keys; both public and private keys are reported
+    with a simple GET /grid/jobs/<id>/keys.json
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 06 Apr 2009 14:11:55 +0200
+
 oar (2.4.0-1~18.gbpa4d473) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @a4d473dad08e0090daffe9bca10cdc4048e54226 **
