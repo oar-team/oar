@@ -651,13 +651,15 @@ SWITCH: for ($q) {
         $ssh_key=$1;
       }
       else { $ssh_key="ERROR GETTING SSH KEY!"; }
-      # Getting the list of batch_ids
-      # TODO
-      #my %infos=oargrid_lib::get_reservation_informations($dbh,$id);
-      #my %cluster_jobs;
-      #foreach my $cluster (keys($infos{"clusterJobs"}) {
-      #  $cluster_jobs{$cluster}=1;
-      #}
+      # Get the list of batch_ids
+      my %infos=oargrid_lib::get_reservation_informations($dbh,$id);
+      my %cluster_jobs;
+      foreach my $cluster (keys(%{$infos{clusterJobs}})) {
+        $cluster_jobs{$cluster}=[];
+        foreach my $job (values(%{$infos{clusterJobs}->{$cluster}})){
+          push (@{$cluster_jobs{$cluster}},$job->{batchId}); 
+        }
+      }
       # Output infos
       print $q->header( -status => 201, -type => "$type" );
       print $HTML_HEADER if ($ext eq "html");
@@ -671,7 +673,7 @@ SWITCH: for ($q) {
                'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id",$ext,0),$ext),
                'resources_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext),
                'nodes_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext),
-           #    'jobs' => %cluster_jobs,
+               'jobs' => \%cluster_jobs,
                'command' => $oargridcmd
                     } , $ext );
     }
