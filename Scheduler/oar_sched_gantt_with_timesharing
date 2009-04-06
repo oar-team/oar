@@ -309,22 +309,22 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         # CM part
         
-        my $resource_id_used_list_vector = '';
+        #my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
             my $tmp_properties = "\'1\'";
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,$alive_resources_vector,$resource_id_used_list_vector,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+            my $tmp_tree = iolib::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
             push(@tree_list, $tmp_tree);
-            my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
-            foreach my $l (@leafs){
-                vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
-            }
+            #my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
+            #foreach my $l (@leafs){
+            #    vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
+            #}
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
-        $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout < ($timeout / 8));
+        $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
         oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] find_first_hole with a timeout of $gantt_timeout\n");
         my @hole;
         if ($Max_nb_processes <= 1){
@@ -338,10 +338,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         my @resources;
         foreach my $t (@{$hole[1]}){
 #        print("[GANTT] 11 ".gettimeofday."\n");
-            my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+            #my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
 #        print("[GANTT] 12 ".gettimeofday."\n");
-            push(@res_trees, $minimal_tree);
-            foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+            push(@res_trees, $t);
+            foreach my $r (oar_resource_tree::get_tree_leafs($t)){
                 push(@resources, oar_resource_tree::get_current_resource_value($r));
             }
 #        print("[GANTT] 13 ".gettimeofday."\n");

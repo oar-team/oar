@@ -14,6 +14,12 @@ version 2.4.0:
     ($SIG = 'qdel')
   - Fix bug in oarsh with the "-l" option
   - Bug #7487: bad initialisation of the gnatt for the container jobs.
+  - Scheduler: move the "delete_unnecessary_subtrees" directly into
+    "find_first_hole". Thus this is possible to query a job like:
+        oarsub -I -l nodes=1/core=1+nodes=4/core=2
+        (no hard separation between each group)
+    For the same behaviour as before, you can query:
+        oarsub -I -l {prop=1}/nodes=1/core=1+{prop=2}/nodes=4/core=2
 
 version 2.3.3:
 --------------

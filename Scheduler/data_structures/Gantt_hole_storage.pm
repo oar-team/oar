@@ -328,17 +328,25 @@ sub find_first_hole($$$$$){
             #Check all trees
             my $tree_clone;
             my $i = 0;
+            # Initiate already used resources with the empty vector
+            my $already_occupied_resources_vec = $gantt->[0]->[3]; 
             do{
+                foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
+                    vec($already_occupied_resources_vec, oar_resource_tree::get_current_resource_value($l), 1) = 1;
+                }
                 # clone the tree, so we can work on it without damage
                 $tree_clone = oar_resource_tree::clone($tree_description_list->[$i]);
                 #Remove tree leafs that are not free
                 foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                    if (!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],oar_resource_tree::get_current_resource_value($l),1)){
+                    if ((!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],oar_resource_tree::get_current_resource_value($l),1)) or
+                        (vec($already_occupied_resources_vec,oar_resource_tree::get_current_resource_value($l),1))
+                       ){
                         oar_resource_tree::delete_subtree($l);
                     }
                 }
                 #print(Dumper($tree_clone));
                 $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+                $tree_clone = oar_resource_tree::delete_unnecessary_subtrees($tree_clone);
                 
 #$Data::Dumper::Purity = 0;
 #$Data::Dumper::Terse = 0;
@@ -450,16 +458,25 @@ sub find_first_hole_parallel($$$$$$){
                     my $tree_clone;
                     my $tree_list;
                     my $i = 0;
+                    # Initiate already used resources with the empty vector
+                    my $already_occupied_resources_vec = $gantt->[0]->[3]; 
                     do{
+                        foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
+                            vec($already_occupied_resources_vec, oar_resource_tree::get_current_resource_value($l), 1) = 1;
+                        }
                         $tree_clone = $tree_description_list->[$i];
                         #Remove tree leafs that are not free
                         foreach my $l (oar_resource_tree::get_tree_leafs($tree_clone)){
-                            if (!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],oar_resource_tree::get_current_resource_value($l),1)){
+                            if ((!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],oar_resource_tree::get_current_resource_value($l),1)) or
+                                (vec($already_occupied_resources_vec,oar_resource_tree::get_current_resource_value($l),1))
+                               ){
                                 oar_resource_tree::delete_subtree($l);
                             }
                         }
                         #print(Dumper($tree_clone));
                         $tree_clone = oar_resource_tree::delete_tree_nodes_with_not_enough_resources($tree_clone);
+                        $tree_clone = oar_resource_tree::delete_unnecessary_subtrees($tree_clone);
+
                         $tree_list->[$i] = $tree_clone;
                         $i ++;
                     }while(defined($tree_clone) && ($i <= $#$tree_description_list));

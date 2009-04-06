@@ -259,19 +259,21 @@ sub init_scheduler($$$$$$){
             #if (!defined($tmp_tree)){
             $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$order_part);
             #}
+            $tmp_tree = oar_resource_tree::delete_unnecessary_subtrees($tmp_tree);
             push(@tree_list, $tmp_tree);
             my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
             foreach my $l (@leafs){
                 vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
             }
         }
-        
+       
+        # A SUPPRIMER????
         my @res_trees;
         my @resources;
         foreach my $t (@tree_list){
-            my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
-            push(@res_trees, $minimal_tree);
-            foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+            #my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+            push(@res_trees, $t);
+            foreach my $r (oar_resource_tree::get_tree_leafs($t)){
                 push(@resources, oar_resource_tree::get_current_resource_value($r));
             }
         }
@@ -464,19 +466,19 @@ sub check_reservation_jobs($$$$){
                 $job_properties = $job->{properties};
             }
 
-            my $resource_id_used_list_vector = '';
+            #my $resource_id_used_list_vector = '';
             my @tree_list;
             foreach my $m (@{$moldable->[0]}){
                 my $tmp_properties = "\'1\'";
                 if ((defined($m->{property})) and ($m->{property} ne "")){
                     $tmp_properties = $m->{property};
                 }
-                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                my $tmp_tree = iolib::get_possible_wanted_resources($dbh_ro,$available_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
                 push(@tree_list, $tmp_tree);
-                my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
-                }
+                #my @leafs = oar_resource_tree::get_tree_leafs($tmp_tree);
+                #foreach my $l (@leafs){
+                #    vec($resource_id_used_list_vector, oar_resource_tree::get_current_resource_value($l), 1) = 1;
+                #}
             }
             my @hole = Gantt_hole_storage::find_first_hole($gantt,$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
             if ($hole[0] == $job->{start_time}){
@@ -484,9 +486,9 @@ sub check_reservation_jobs($$$$){
                 my @res_trees;
                 my @resources;
                 foreach my $t (@{$hole[1]}){
-                    my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
-                    push(@res_trees, $minimal_tree);
-                    foreach my $r (oar_resource_tree::get_tree_leafs($minimal_tree)){
+                    #my $minimal_tree = oar_resource_tree::delete_unnecessary_subtrees($t);
+                    push(@res_trees, $t);
+                    foreach my $r (oar_resource_tree::get_tree_leafs($t)){
                         push(@resources, oar_resource_tree::get_current_resource_value($r));
                     }
                 }

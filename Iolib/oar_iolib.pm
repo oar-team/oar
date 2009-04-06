@@ -1365,6 +1365,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$){
                 }
             }
             my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
+            $tree = oar_resource_tree::delete_unnecessary_subtrees($tree);
             if (!defined($tree)){
                 # Resource description does not match with the content of the database
                 if ($DBI::errstr ne ""){
