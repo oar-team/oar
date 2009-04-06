@@ -5,7 +5,7 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-my $VERSION="0.1.4";
+my $VERSION="0.1.5";
 
 ##############################################################################
 # CONFIGURATION
@@ -441,9 +441,8 @@ SWITCH: for ($q) {
     my $gridjob=$1;
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "OARDO_BECOME_USER=$authenticated_user $OARDODO_CMD oargridstat $gridjob -D";
-    my $cmdRes = apilib::send_cmd($cmd,"Oargridstat");
-    my $job = apilib::import($cmdRes,"dumper");
+    my %job=oargrid_lib::get_reservation_informations($dbh,$gridjob);
+    my $job=\%job;
     $job->{id}=$gridjob;
     apilib::add_gridjob_uris($job,$ext);
     $job = apilib::struct_gridjob($job,$STRUCTURE);
