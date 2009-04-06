@@ -465,11 +465,12 @@ SWITCH: for ($q) {
   #
   # Keys of a grid job
   #
-  $URI = qr{^/grid/jobs/(\d+)/keys/(private|public)(\.yaml|\.json|\.html)*$};
+  $URI = qr{^/grid/jobs/(\d+)/keys(\/private|\/public)*(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $gridjob=$1;
-    my $key_type=$2;
+    my $key_type="";
+    if (defined($2)) { $key_type=$2; }
     my $ext=apilib::set_ext($q,$3);
     (my $header, my $type)=apilib::set_output_format($ext);
 
@@ -482,22 +483,22 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $key=[];
-    my $keyext="";
-    if ($key_type ne "private") { $keyext = ".pub"; }
-    my $keyfile = "/tmp/oargrid/oargrid_ssh_key_".$authenticated_user."_".$gridjob.$keyext;
-    my $cmd = "$OARDODO_CMD cat $keyfile";
-    my $cmdRes = apilib::send_cmd($cmd,"Cat keyfile");
-    if ($key_type eq "private" && ! $cmdRes =~ m/.*BEGIN.*KEY/ ) {
-      apilib::ERROR( 400, "Error reading file",
-         "The keyfile is unreadable or incorrect" );
+    my $keys={};
+    if ($key_type ne "") {
+       $key_type =~ s,^/,, ;
+       my $file= "/tmp/oargrid/oargrid_ssh_key_".$authenticated_user."_".$gridjob;
+       $keys={ $key_type."_key" => apilib::get_key($file,$key_type,$OARDODO_CMD) };
     }
     else {
-      push(@$key,$cmdRes);
+       my $file= "/tmp/oargrid/oargrid_ssh_key_".$authenticated_user."_".$gridjob;
+       $keys={ 
+               "public_key" => apilib::get_key($file,"public",$OARDODO_CMD) ,
+               "private_key" => apilib::get_key($file,"private",$OARDODO_CMD) 
+            };
     }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($key,$ext);
+    print apilib::export($keys,$ext);
     last;
   };
 

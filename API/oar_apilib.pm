@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.1.3";
+my $VERSION="0.1.4";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -904,6 +904,24 @@ sub send_cmd($$) {
     exit 0;
   }
   else { return $cmdRes; }
+}
+
+# Get a ssh key file
+sub get_key($$$) {
+  my $file=shift;
+  my $key_type=shift;
+  my $OARDODO_CMD=shift;
+  if ($key_type ne "private") { 
+    $file = $file.".pub";
+  }
+  my $cmdRes = apilib::send_cmd("$OARDODO_CMD cat $file","Cat keyfile");
+  if ($key_type eq "private" && ! $cmdRes =~ m/.*BEGIN.*KEY/ ) {
+    apilib::ERROR( 400, "Error reading file",
+      "The keyfile is unreadable or incorrect" );
+  }
+  else {
+    return $cmdRes;
+  }
 }
 
 return 1;
