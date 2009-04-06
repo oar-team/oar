@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.1.2";
+my $VERSION="0.1.3";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -293,7 +293,7 @@ sub add_sites_uris($$) {
                                apilib::make_uri("/sites/$site",$ext,0),
                                $ext
                              );
-      $sites->{$site}->{resources}=apilib::htmlize_uri(
+      $sites->{$site}->{resources_uri}=apilib::htmlize_uri(
                                apilib::make_uri("/sites/$site/resources",$ext,0),
                                $ext
                              );
@@ -309,7 +309,7 @@ sub add_gridjobs_uris($$) {
                                apilib::make_uri("/grid/jobs/$job",$ext,0),
                                $ext
                              );
-      $jobs->{$job}->{nodes}=apilib::htmlize_uri(
+      $jobs->{$job}->{nodes_uri}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/$job/resources/nodes",$ext,0),
                                $ext
                              );
@@ -321,12 +321,12 @@ sub add_gridjob_uris($$) {
   my $job = shift;
   my $ext = shift;
   # List of resources
-  $job->{resources}=apilib::htmlize_uri(
+  $job->{resources_uri}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/". $job->{id} ."/resources",$ext,0),
                                $ext
                              );
   # List of resources without details (nodes only)
-  $job->{nodes}=apilib::htmlize_uri(
+  $job->{nodes_uri}=apilib::htmlize_uri(
                                apilib::make_uri("/grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
                                $ext
                              );

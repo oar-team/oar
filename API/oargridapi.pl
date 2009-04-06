@@ -5,7 +5,7 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-my $VERSION="0.1.3";
+my $VERSION="0.1.4";
 
 ##############################################################################
 # CONFIGURATION
@@ -644,24 +644,34 @@ SWITCH: for ($q) {
       );
     }
     elsif ( $cmdRes =~ m/.*Grid reservation id\s*=\s*(\d+).*/m ) {
+      # Get the id of the submitted job
       my $id=$1;
       my $ssh_key;
       if ( $cmdRes =~ m/.* SSH KEY : (.*)/m ) {
         $ssh_key=$1;
       }
       else { $ssh_key="ERROR GETTING SSH KEY!"; }
+      # Getting the list of batch_ids
+      # TODO
+      #my %infos=oargrid_lib::get_reservation_informations($dbh,$id);
+      #my %cluster_jobs;
+      #foreach my $cluster (keys($infos{"clusterJobs"}) {
+      #  $cluster_jobs{$cluster}=1;
+      #}
+      # Output infos
       print $q->header( -status => 201, -type => "$type" );
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export(
             {
                'state' => "submitted",
-               'id' => $id,
+               'id' => "$id",
                'ssh_key_path' => $ssh_key,
                'ssh_private_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/private",$ext,0),$ext),
                'ssh_public_key_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/keys/public",$ext,0),$ext),
                'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id",$ext,0),$ext),
-               'resources' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext),
-               'nodes' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext),
+               'resources_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext),
+               'nodes_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext),
+           #    'jobs' => %cluster_jobs,
                'command' => $oargridcmd
                     } , $ext );
     }
