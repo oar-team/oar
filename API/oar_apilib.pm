@@ -633,6 +633,7 @@ sub ERROR($$$) {
   # This is to prevent a loop as the export function may call ERROR!
   if (!defined($extension) || get_content_type($extension) eq "UNKNOW_TYPE") {  $extension = "json"; }
 
+  $status=$status+0; # To convert the status to an integer
   print $q->header( -status => $status, -type => get_content_type($extension) );
   if ($extension eq "html") {
     print $q->title($title) ."\n";

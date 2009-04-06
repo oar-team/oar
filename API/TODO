@@ -7,6 +7,7 @@
  au lieu des actuels post avec action=
 - implémenter /sites/<site>/resources/<id>
 - implémenter /sites/<site>/nodes/<node> et les liens correspondant dans /grid/jobs/<id>/resources
+- Il faut pouvoir facilement récuperer l'état d'un job cluster pour pouvoir programmer l'équivalent de "-w" -> ajouter uri des infos sur les jobs dans /grid/jobs/<id>
 
 
 Bugs:
