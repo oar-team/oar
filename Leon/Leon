@@ -95,6 +95,7 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
 
 #I treate jobs in state EXTERMINATED in the table fragJobs
 foreach my $j (iolib::get_to_exterminate_jobs($base)){
+    oar_debug("[Leon] EXTERMINATE the job $j->{job_id}\n");
     iolib::set_job_state($base,$j->{job_id},"Finishing");
     if ($j->{start_time} == 0){
         iolib::set_running_date($base,$j->{job_id});
