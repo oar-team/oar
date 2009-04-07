@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.1.4";
+my $VERSION="0.1.5";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -143,11 +143,11 @@ sub export($$) {
   my $data         = shift;
   my $format = shift;
   if ( $format eq 'yaml' ) {
-    export_yaml($data);
+    return export_yaml($data);
   }elsif ( $format eq 'json' ) {
-    export_json($data);
+    return export_json($data)."\n";
   }elsif ( $format eq 'html' ) {
-    export_html($data);
+    return export_html($data)."\n";
   }else {
     ERROR 406, "Unknown $format format",
       "The $format format is not known.";
