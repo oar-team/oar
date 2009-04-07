@@ -5,7 +5,7 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-my $VERSION="0.1.5";
+my $VERSION="0.1.6";
 
 ##############################################################################
 # CONFIGURATION
@@ -653,11 +653,14 @@ SWITCH: for ($q) {
       else { $ssh_key="ERROR GETTING SSH KEY!"; }
       # Get the list of batch_ids
       my %infos=oargrid_lib::get_reservation_informations($dbh,$id);
-      my %cluster_jobs;
+      my @cluster_jobs;
       foreach my $cluster (keys(%{$infos{clusterJobs}})) {
-        $cluster_jobs{$cluster}=[];
         foreach my $job (values(%{$infos{clusterJobs}->{$cluster}})){
-          push (@{$cluster_jobs{$cluster}},$job->{batchId}); 
+          my $uri=apilib::htmlize_uri(apilib::make_uri("/sites/$cluster/jobs/".$job->{batchId},$ext,0),$ext);
+          push (@cluster_jobs, { 'cluster' => $cluster,
+                                 'id' => $job->{batchId},
+                                 'uri' => $uri
+                               });
         }
       }
       # Output infos
@@ -673,7 +676,7 @@ SWITCH: for ($q) {
                'uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id",$ext,0),$ext),
                'resources_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources",$ext,0),$ext),
                'nodes_uri' => apilib::htmlize_uri(apilib::make_uri("/grid/jobs/$id/resources/nodes",$ext,0),$ext),
-               'jobs' => \%cluster_jobs,
+               'cluster_jobs' => \@cluster_jobs,
                'command' => $oargridcmd
                     } , $ext );
     }

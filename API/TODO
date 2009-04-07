@@ -5,9 +5,11 @@
   jobs/<id>/holds
   jobs/<id>/resume 
  au lieu des actuels post avec action=
-- implémenter /sites/<site>/resources/<id>
-- implémenter /sites/<site>/nodes/<node> et les liens correspondant dans /grid/jobs/<id>/resources
 - Il faut pouvoir facilement récuperer l'état d'un job cluster pour pouvoir programmer l'équivalent de "-w" -> ajouter uri des infos sur les jobs dans /grid/jobs/<id>
+- cluster_jobs au lieu de jobs et tableau de hash
+- structure simple dans les details des jobs grille avec des choses plus "clean" (reprendre pour la partie cluster_jobs, la meme chose que nouveau grid job)
+- ajouter la timezone dans les sorties avec des dates (parser l'heure et la reformater correctement?)
+
 
 
 Bugs:
@@ -16,3 +18,10 @@ Bugs:
    YAML data not understood
  -> not a bug: oar 2.2 sur genepi, hors l'api utilise oarnodes de oar 2.4 (array jobs en plus)
 
+- irb(main):012:0> puts get('/sites/simpsons/resources/1.json')
+[
+   {
+      "node" : "bart-1",
+   !!!!   "uri" : "/sites/1/resources/1", !!!!
+     ...
+- probleme de synchro de date (jobs soumis avec date de début 5s dans le futur par rapport à l'api de cyril)
