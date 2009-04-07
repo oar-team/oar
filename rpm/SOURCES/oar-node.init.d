@@ -35,7 +35,7 @@ stop_oar_node() {
 start() {
         echo -n "Starting $DESC: "
         if [ -f "$OAR_SSHD_CONF" ] ; then
-            daemon --force /usr/sbin/sshd $SSHD_OPTS && success || failure
+            daemon -20 --force /usr/sbin/sshd $SSHD_OPTS && success || failure
             RETVAL=$?
             echo
         else 
