@@ -13,6 +13,8 @@ version 2.3.4:
     ($SIG = 'qdel')
   - Bug #7487: bad initialisation of the gnatt for the container jobs.
   - Fix bug in oarsh with the "-l" option
+  - Bug #7634: test if the resource property value is effectively defined
+    otherwise print a ''
 
 version 2.3.3:
 --------------
