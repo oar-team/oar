@@ -1,3 +1,11 @@
+oar (2.4.0-1~20.gbpc98090) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @c98090ddcbb261cf16989c03571fa4004f4ea7b6 **
+
+  * Better data structure in the output of a new grid job query
+
+ -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Tue, 07 Apr 2009 18:23:23 +0200
+
 oar (2.4.0-1~19.gbpd75baa) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @d75baac1a856db4d6ec49d59782965a7f89d3bdc **
