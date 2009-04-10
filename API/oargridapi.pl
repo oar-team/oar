@@ -216,7 +216,7 @@ SWITCH: for ($q) {
         $resources = apilib::struct_empty($STRUCTURE);
       }
       else {
-        apilib::add_resources_uris($resources,$ext,"/sites/$1");
+        apilib::add_resources_uris($resources,$ext,"/sites/$site");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE);
       }
       print $header;
@@ -249,7 +249,7 @@ SWITCH: for ($q) {
         $resources = apilib::struct_empty($STRUCTURE);
       }
       else {
-        apilib::add_resources_uris($resources,$ext,"/sites/$1");
+        apilib::add_resources_uris($resources,$ext,"/sites/$site");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE);
       }
       print $header;
