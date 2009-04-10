@@ -41,6 +41,9 @@ irb(main):016:0> puts job
 # Getting details about the previously submited job
 irb(main):035:0> puts get(YAML::load(job)['uri'])
 
+# Getting the status of a job
+irb(main):054:0> puts get '/sites/local/jobs/434/state.yaml'
+
 # Submitting a job using JSON format, but requiring the result in YAML
 irb(main):010:0> require 'json'
 irb(main):037:0> job=post('/sites/grenoble/jobs.yaml' , j.to_json , :content_type => 'application/json')

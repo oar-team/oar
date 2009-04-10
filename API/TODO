@@ -5,7 +5,6 @@
   jobs/<id>/holds
   jobs/<id>/resume 
  au lieu des actuels post avec action=
-- Il faut pouvoir facilement récuperer l'état d'un job cluster pour pouvoir programmer l'équivalent de "-w" -> ajouter uri des infos sur les jobs dans /grid/jobs/<id>
 - ajouter la timezone dans les sorties avec des dates (parser l'heure et la reformater correctement?)
 
 

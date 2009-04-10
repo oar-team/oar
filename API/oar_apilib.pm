@@ -370,7 +370,12 @@ sub struct_job($$) {
   my $structure = shift;
   my $result;
   if    ($structure eq 'oar')    { return $job; }
-  elsif ($structure eq 'simple') { return $job->{(keys(%{$job}))[0]}; }
+  elsif ($structure eq 'simple') { 
+    if ($job->{(keys(%{$job}))[0]} ne "HASH") {
+      return $job;
+    }else {
+      return $job->{(keys(%{$job}))[0]}; 
+    }}
 }
 
 # OAR JOB LIST

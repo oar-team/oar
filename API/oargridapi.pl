@@ -298,7 +298,7 @@ SWITCH: for ($q) {
   #
   # Details of a job running on a site or a cluster (oarstat wrapper)
   #
-  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)\.*(yaml|json|html)*$};
+  $URI = qr{^/sites/([a-z,0-9,-]+)/jobs/(\d+)(/state)*(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {
  
     # Must be authenticated
@@ -312,7 +312,12 @@ SWITCH: for ($q) {
    $_->path_info =~ m/$URI/;
     my $site  = $1;
     my $jobid = $2;
-    my $ext = apilib::set_ext($q,$3);
+    my $ext = apilib::set_ext($q,$4);
+    my $status = $3;
+    if (defined($status) && $status eq "/state") {
+      $status = " --state";
+    }
+    else { $status = ""; }
     (my $header, my $type)=apilib::set_output_format($ext);
     my $clusters = {};
     $clusters = apilib::get_clusters($dbh);
@@ -321,7 +326,7 @@ SWITCH: for ($q) {
     }
     else {
       my $frontend = $clusters->{$site}->{hostname};
-      my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat -fj $jobid -D\"'";
+      my $cmd = "$OARDODO_CMD '$SSH_CMD $frontend \"oarstat $status -fj $jobid -D\"'";
       my $cmdRes = apilib::send_cmd($cmd,"Oarstat on $frontend");
       my $job = apilib::import($cmdRes,"dumper");
       if ( !defined %{$job} || !defined(keys(%{$job})) ) {
