@@ -5,7 +5,7 @@ use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-my $VERSION="0.1.6";
+my $VERSION="0.1.7";
 
 ##############################################################################
 # CONFIGURATION

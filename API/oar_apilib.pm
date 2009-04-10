@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.1.5";
+my $VERSION="0.1.6";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -450,16 +450,29 @@ sub struct_site($$) {
 sub struct_gridjob($$) {
   my $job = shift;
   my $structure = shift;
-  # No structuration necessary. But a little cleaning:
+  my @cluster_jobs;
   foreach my $cluster (keys %{$job->{clusterJobs}}) {
     foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
+      # Cleaning
       delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{weight};
       delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{nodes};
       delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{env};
       delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{name};
       delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{queue};
       delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{part};
+      # For the simple data structure
+      push (@cluster_jobs, 
+         { 'cluster' => $cluster,
+           'id' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},
+           'properties' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{properties},
+           'rdef' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{rdef},
+           'uri' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri}
+          })
     }
+  }
+  if ($structure eq "simple") {
+    delete $job->{clusterJobs};
+    $job->{cluster_jobs}=\@cluster_jobs;
   }
   return $job;
 }
