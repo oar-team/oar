@@ -7,6 +7,7 @@
 require 'rubygems'
 require 'rest_client'
 require 'json'
+require 'pp'
 
 # Custom variables
 APIURI="http://www.grenoble.grid5000.fr/oargridapi"
@@ -26,14 +27,6 @@ def get(api,uri)
       puts e.inspect
     end
     exit 1
-  end
-end
-
-# Function to get the properties of a node, given a node
-# and a resources array
-def get_properties(resources,node)
-  resources.each do |r|
-    return r['properties'] if r['network_address'] == node
   end
 end
 
@@ -94,18 +87,16 @@ if job['state'] == "submitted"
   puts "Ok, all nodes are there:"
   puts nodes.join(',')
 
-# Fetching properties of the resources
+# Fetching properties of the nodes
   puts "Properties:"
   resources=get(api,"/grid/jobs/#{job['id']}/resources")
   resources.each do |r|
     site=r['site']
-    # Fetching all resource properties of this site
-    resources_properties=get(api,"/sites/#{site}/resources")
     r['jobs'].each_value do |j|
       j['nodes'].each do |node|
-        puts node + " : "
-        prop=get_properties(resources_properties,node)
-        puts prop.inspect
+        puts "\n" + node + " : "
+        prop=get(api,"/sites/#{site}/resources/nodes/#{node}")
+        pp prop
       end
     end
   end
