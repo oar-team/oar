@@ -320,6 +320,14 @@ server: man
 	install -m 0644 man/man1/oarnotify.1 $(DESTDIR)$(MANDIR)/man1/oarnotify.1
 	install -m 0644 man/man1/oarproperty.1 $(DESTDIR)$(MANDIR)/man1/oarproperty.1
 	install -m 0644 man/man1/oarremoveresource.1 $(DESTDIR)$(MANDIR)/man1/oarremoveresource.1
+	install -m 0755 Tools/detect_resources $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oar_resources_init
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oar_resources_init
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/detect_resources'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oar_resources_init
 
 user: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
@@ -395,7 +403,6 @@ node: man
 	install -m 0600 Tools/sshd_config $(DESTDIR)$(OARCONFDIR)
 	-chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/sshd_config
 	perl -i -pe "s#^XAuthLocation.*#XAuthLocation $(XAUTHCMDPATH)#" $(DESTDIR)$(OARCONFDIR)/sshd_config
-	install -m 0755 Tools/detect_resources $(DESTDIR)$(OARDIR)
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/prologue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/prologue already exists, not overwriting it." ; else install -m 0755 Scripts/prologue $(DESTDIR)$(OARCONFDIR) ; fi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 Scripts/epilogue $(DESTDIR)$(OARCONFDIR) ; fi
 	install -m 0755 Tools/oarnodecheck/oarnodechecklist $(DESTDIR)$(BINDIR)
