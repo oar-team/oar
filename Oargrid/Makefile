@@ -34,7 +34,7 @@ sanity-check:
 configuration:
 	mkdir -p $(DESTDIR)/$(OARGRIDCONFDIR)
 	@if [ -e $(DESTDIR)/$(OARGRIDCONFDIR)/oargrid.conf ]; then echo "Warning: $(DESTDIR)/$(OARGRIDCONFDIR)/oargrid.conf already exists, not overwritting it." ; else install -m 600 oargrid.conf $(DESTDIR)/$(OARGRIDCONFDIR) ;	fi
-	-chown $(OARGRIDUSER).$(OARGRIDGROUP) $(DESTDIR)/$(OARGRIDCONFDIR)
+	-chown $(OARGRIDUSER).$(OARGRIDGROUP) $(DESTDIR)/$(OARGRIDCONFDIR)/oargrid.conf
 
 common:
 	mkdir -p $(DESTDIR)/$(OARGRIDDIR)
