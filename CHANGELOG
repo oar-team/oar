@@ -9,6 +9,8 @@ version 2.4.0:
   - Added JSON support into oarnodes, oarstat and oarsub
   - New Makefile adapted to build packages as non-root user
   - "oaradmin version" : now retrieve the most recent database schema number
+  - Fix rights on the "schema" table in postgresql.
+  - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes 
   - Ctrl-C was not working anymore in oarsub.
     It seems that the signal handler does not handle the previous syntax
     ($SIG = 'qdel')

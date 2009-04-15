@@ -159,7 +159,7 @@ certainly other ways to do that)::
         \q
     
     psql oar
-        GRANT ALL PRIVILEGES ON accounting,admission_rules,assigned_resources,
+        GRANT ALL PRIVILEGES ON schema,accounting,admission_rules,assigned_resources,
         challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,
         gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,
         job_dependencies,job_resource_descriptions,job_resource_groups,
@@ -170,7 +170,7 @@ certainly other ways to do that)::
         moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,
         resources_resource_id_seq,jobs_job_id_seq TO oar;
         
-        GRANT SELECT ON accounting,admission_rules,assigned_resources,event_log_hostnames,
+        GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,
         event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,
         gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,
         job_resource_descriptions,job_resource_groups,job_state_logs,job_types,
