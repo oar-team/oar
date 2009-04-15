@@ -8,6 +8,7 @@ version 2.4.0:
   - Added a REST API for OAR and OARGRID
   - Added JSON support into oarnodes, oarstat and oarsub
   - New Makefile adapted to build packages as non-root user
+  - "oaradmin version" : now retrieve the most recent database schema number
   - Ctrl-C was not working anymore in oarsub.
     It seems that the signal handler does not handle the previous syntax
     ($SIG = 'qdel')
