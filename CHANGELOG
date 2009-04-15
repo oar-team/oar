@@ -5,8 +5,7 @@ version 2.4.0:
 --------------
   - Added a --state option to oarstat to only get the status of specified jobs 
     (optimized query, to allow scripting)
-  - Added a REST API. For the moment it's only wrapping oarsub, oarstat and
-    oarnodes commands.
+  - Added a REST API for OAR and OARGRID
   - Added JSON support into oarnodes, oarstat and oarsub
   - New Makefile adapted to build packages as non-root user
   - Ctrl-C was not working anymore in oarsub.
@@ -20,6 +19,8 @@ version 2.4.0:
         (no hard separation between each group)
     For the same behaviour as before, you can query:
         oarsub -I -l {prop=1}/nodes=1/core=1+{prop=2}/nodes=4/core=2
+  - Bug #7634: test if the resource property value is effectively defined
+    otherwise print a ''
 
 version 2.3.3:
 --------------
