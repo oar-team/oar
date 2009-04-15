@@ -1143,10 +1143,13 @@ Each configuration tag found in /etc/oar.conf is now described:
       SUSPEND_RESUME_SCRIPT_TIMEOUT=60
 
 .. _JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD:
-
-  - Indicate the name of the database field that contains the cpu number of
-    the node. If this option is set then users must use `OARSH`_ instead of
-    ssh to walk on each nodes that they have reserved via oarsub.
+  
+  - Specify the name of the database field that will be passed to the
+    JOB_RESOURCE_MANAGER script.  If this option is set then users must use
+    OARSH_ instead of ssh to walk on the nodes they reserve using oarsub.
+    (if defined, this option turns on the execution of
+    JOB_RESOURCE_MANAGER script execution on each job nodes: initialize cpuset,
+    job keys, clean nodes, ...)
     ::
 
       JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD=cpuset

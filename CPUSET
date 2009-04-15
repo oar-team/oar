@@ -8,8 +8,8 @@ This feature is very usefull to restrict processor consumption on
 multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
-If you want to configure this feature into OAR then take a look also in CPUSET
-and resources_.
+If you want to configure this feature into OAR then take a look at the
+JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD_ tag in oar.conf.
 
 CPUSET definition
 ~~~~~~~~~~~~~~~~~
