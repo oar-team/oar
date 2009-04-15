@@ -120,6 +120,13 @@ foreach my $i (@events_to_check){
                 ($i->{type} ne "CPUSET_CLEAN_ERROR")
             ){
                 @hosts = ($hosts[0]);
+            }else{
+                # If we exterminate a job and the cpuset feature is configured
+                # then the CPUSET clean will tell us which nodes are dead
+                my $cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+                if (defined($cpuset_field) && ($i->{type} eq "EXTERMINATE_JOB")){
+                    @hosts = ($hosts[0]);
+                }
             }
         }
 
