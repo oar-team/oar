@@ -322,7 +322,8 @@ server: man
 	install -m 0644 man/man1/oarremoveresource.1 $(DESTDIR)$(MANDIR)/man1/oarremoveresource.1
 	install -m 0755 Tools/detect_resources $(DESTDIR)$(OARDIR)
 	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oar_resources_init
-	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oar_resources_init
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oar_resources_init
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oar_resources_init
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
