@@ -54,13 +54,14 @@ do
 
     # Get CORE info in the form
     # core cpu,core cpu,core cpu,core cpu
-    # Restore stderr
     if [ "`grep 'physical id' /proc/cpuinfo`" != "" ]
     then
       DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk -v ORS=, '{if ($1 == "processor") cpu=$3; if ($1 == "physical" && $2 =="id") print cpu " " $4}')
     else
       DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk -v ORS=, '{if ($1 == "processor") print $3 " " $3}')
     fi
+
+    # Restore stderr
     exec 2>&3
 
     if [ -z "$mem" ] || [ -z "$DATA" ]
