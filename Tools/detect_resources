@@ -54,7 +54,7 @@ do
 
     # Get CORE info in the form
     # core cpu,core cpu,core cpu,core cpu
-    if [ "`grep 'physical id' /proc/cpuinfo`" != "" ]
+    if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]
     then
       DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk -v ORS=, '{if ($1 == "processor") cpu=$3; if ($1 == "physical" && $2 =="id") print cpu " " $4}')
     else
