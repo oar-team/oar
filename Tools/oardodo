@@ -58,7 +58,8 @@ for (my $i=0; $i <= $#ARGV; $i++){
 }
 #warn("@clean_argv\n");
 
-# clean PATH
+# clean PATH (needed for tainted perl)
+$ENV{PATH} =~ s,(^\./:)*(:\.)*,,g; # Remove ./ from PATH
 $ENV{PATH} =~ m/^(.*)$/m;
 $ENV{PATH} = $1;
 
