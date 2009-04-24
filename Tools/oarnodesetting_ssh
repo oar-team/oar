@@ -20,7 +20,7 @@ IP=$(echo $SSH_CONNECTION | cut -d " " -f 1 )
 OARNODESETTINGCMD=/usr/local/sbin/oarnodesetting
 [ -n "$IP" ] || exit 1
 # Uncomment if you think that you need core/cpuset matching based on /proc/cpuinfo
-#/usr/local/oar/update_cpuset_id.sh $IP
+#/etc/oar/update_cpuset_id.sh $IP
 exec $OARNODESETTINGCMD -s Alive --sql "ip = '$IP' AND state != 'Dead'"
 exit 1
 

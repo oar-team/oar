@@ -8,7 +8,7 @@ set -e
 # script that makes a node alive at boot time.
  
 OARNODESETTINGCMD=/usr/sbin/oarnodesetting
-OARNODES=/usr/bin/oarnodes
+OARNODESCMD=/usr/bin/oarnodes
 
 if [ $# != 1 ]
 then
@@ -18,7 +18,7 @@ fi
 
 CORE_MATHING=`ssh -p 6667 $1 cat /proc/cpuinfo |awk -F"\t*: *" '{if ($1 == "processor") proc=$2; if ($1 == "physical id") phys=$2; if ($1 == "core id") print phys ":" $2 ":" proc}'|sort`
 
-CURRENT_CORES=`$OARNODES -Y --sql "ip='$1'"|awk -F" *: *" '{if (match($1," +core$")) core=$2; if (match($1," +cpu$")) print $2 ":" core}'|sort`
+CURRENT_CORES=`$OARNODESCMD -Y --sql "ip='$1'"|awk -F" *: *" '{if (match($1," +core$")) core=$2; if (match($1," +cpu$")) print $2 ":" core}'|sort`
 
 if [ "`echo $CURRENT_CORES |wc -w`" != "`echo $CORE_MATHING |wc -w`" ]
 then

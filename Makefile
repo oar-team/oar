@@ -228,9 +228,11 @@ libs: man
 	install -m 0644 Tools/oarversion.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 Tools/oar_Tools.pm $(DESTDIR)$(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(DESTDIR)$(OARDIR)
-	install -m 0755 Tools/oarnodesetting_ssh $(DESTDIR)$(OARDIR)
-	install -m 0755 Tools/update_cpuset_id.sh $(DESTDIR)$(OARDIR)
-	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(DESTDIR)$(OARDIR)/oarnodesetting_ssh
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/oarnodesetting_ssh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oarnodesetting_ssh already exists, not overwriting it." ; else install -m 0644 Tools/oarnodesetting_ssh $(DESTDIR)$(OARCONFDIR); fi
+	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(DESTDIR)$(OARCONFDIR)/oarnodesetting_ssh
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/update_cpuset_id.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/update_cpuset_id.sh already exists, not overwriting it." ; else install -m 0644 Tools/update_cpuset_id.sh $(DESTDIR)$(OARCONFDIR); fi
+	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(DESTDIR)$(OARCONFDIR)/update_cpuset_id.sh
+	perl -i -pe "s#^OARNODESCMD=.*#OARNODESCMD=$(BINDIR)/oarnodes#" $(DESTDIR)$(OARCONFDIR)/update_cpuset_id.sh
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oarnodesetting.1 $(DESTDIR)$(MANDIR)/man1/oarnodesetting.1
 	install -m 0644 API/oar_apilib.pm $(DESTDIR)$(OARDIR)
