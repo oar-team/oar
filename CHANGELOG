@@ -26,6 +26,8 @@ version 2.4.0:
         oarsub -I -l {prop=1}/nodes=1/core=1+{prop=2}/nodes=4/core=2
   - Bug #7634: test if the resource property value is effectively defined
     otherwise print a ''
+  - Optional script to take into account cpu/core topology of the nodes at boot 
+    time (to activate inside oarnodesetting_ssh)
 
 version 2.3.3:
 --------------

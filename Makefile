@@ -229,6 +229,7 @@ libs: man
 	install -m 0644 Tools/oar_Tools.pm $(DESTDIR)$(OARDIR)
 	install -m 0755 Tools/sentinelle.pl $(DESTDIR)$(OARDIR)
 	install -m 0755 Tools/oarnodesetting_ssh $(DESTDIR)$(OARDIR)
+	install -m 0755 Tools/update_cpuset_id.sh $(DESTDIR)$(OARDIR)
 	perl -i -pe "s#^OARNODESETTINGCMD=.*#OARNODESETTINGCMD=$(SBINDIR)/oarnodesetting#" $(DESTDIR)$(OARDIR)/oarnodesetting_ssh
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oarnodesetting.1 $(DESTDIR)$(MANDIR)/man1/oarnodesetting.1
