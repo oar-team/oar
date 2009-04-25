@@ -15,6 +15,9 @@ version 2.3.4:
   - Fix bug in oarsh with the "-l" option
   - Bug #7634: test if the resource property value is effectively defined
     otherwise print a ''
+  - Bug #7674: remove the computation of the scheduler_priority field for
+    besteffort jobs from the asynchronous OAR part. Now the value is set when
+    the jobs are turned into toLaunch state and in Error/Terminated.
 
 version 2.3.3:
 --------------

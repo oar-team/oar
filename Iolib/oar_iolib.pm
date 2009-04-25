@@ -1601,7 +1601,8 @@ sub set_job_state($$$) {
                     WHERE
                         job_id = $job_id AND
                         state != \'Error\' AND
-                        state != \'Terminated\'
+                        state != \'Terminated\' AND
+                        state != \'$state\'
                  ") > 0){
         my $date = get_date($dbh);
         $dbh->do("  UPDATE job_state_logs
@@ -1615,7 +1616,7 @@ sub set_job_state($$$) {
                     VALUES ($job_id,\'$state\',\'$date\')
                  ");
 
-        if (($state eq "Terminated") or ($state eq "Error") or ($state eq "Running") or ($state eq "Suspended") or ($state eq "Resuming")){
+        if (($state eq "Terminated") or ($state eq "Error") or ($state eq "toLaunch") or ($state eq "Running") or ($state eq "Suspended") or ($state eq "Resuming")){
             my $job = get_job($dbh,$job_id);
             my ($addr,$port) = split(/:/,$job->{info_type});
             if ($state eq "Suspended"){
@@ -1623,8 +1624,9 @@ sub set_job_state($$$) {
             }elsif ($state eq "Resuming"){
                 oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RESUMING","Job is resuming.");
             }elsif ($state eq "Running"){
-                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+2","START");
                 oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"RUNNING","Job is running.");
+            }elsif ($state eq "toLaunch"){
+                update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"+2","START");
             }elsif (($state eq "Terminated") or ($state eq "Error")){
                 #$dbh->do("  DELETE FROM challenges
                 #            WHERE job_id = $job_id
