@@ -78,14 +78,17 @@ my $notify;
 my $job_name;
 my $job_env;
 my $job_hold;
-my $Directory = $ENV{PWD};
+my $Directory;
+my $Directory_default = $ENV{PWD};
 my @Type;
 my @Anterior_job;
-my $Checkpoint_signal = 12; # SIGUSR2
+my $Checkpoint_signal;
+my $Checkpoint_signal_default = 12; # SIGUSR2
 my $Stdout_file;
 my $Stderr_file;
 my $Resubmit;
-my $Project = "default";
+my $Project;
+my $Project_default = "default";
 my $XML_mode;
 my $YAML_mode;
 my $DUMPER_mode;
@@ -99,8 +102,9 @@ my $Job_uid_resource_type;
 my $Initial_request_string = "oarsub @ARGV";
 
 # a non array-job is an array-job with 1 subjob
-my $array_job_nb = 1;
+my $array_job_nb;
 my $array_param_file;
+my $array_params_ref;
 
 
 #to catch ^C signal
@@ -148,6 +152,7 @@ sub scan_script($){
     my $file = shift;
 
     my %result;
+    my $error = 0;
     
     ($file) = split(" ",$file);
     my $lusr= $ENV{OARDO_USER};
@@ -199,8 +204,13 @@ sub scan_script($){
                         $result{stagein} = $2;
                     }elsif ($line =~ m/^#OAR\s+(--stagein-md5sum)\s*(.+)\s*$/m) {
                         $result{stageinmd5sum} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--array)\s*(\d+)\s*$/m) {
+                        $result{array} = $2;
+                    }elsif ($line =~ m/^#OAR\s+(--array-param-file)\s*(.+)\s*$/m) {
+                        $result{arrayparamfile} = $2;
                     }else{
                         warn("/!\\ Not able to scan file line: $line");
+                        $error++;
                     }
                     chop($line);
                     $Initial_request_string .= "; $line";
@@ -213,6 +223,10 @@ sub scan_script($){
         }
     }else{
         warn("[ERROR] Cannot execute: oardodo cat $file\n");
+        exit(12);
+    }
+    if ($error > 0){
+        warn("[ERROR] $error error(s) encountered while parsing the file $file.\n");
         exit(12);
     }
 
@@ -778,30 +792,11 @@ if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($c
     exit(5);
 }
 
-if($array_job_nb <= 0){
-    warn("/!\\ An array job must have a positive number of sub-jobs\n");
-    usage();
-    exit(6);
-}
-
 
 if (($Interactive == 1) and ($Reservation ne "0")){
     warn("/!\\ A reservation cannot be interactive.\n");
     usage();
     exit(7);
-}
-
-if (($Interactive == 1) and ($array_job_nb !=1 )){
-        warn("/!\\ An array job cannot be interactive.\n");
-        usage();
-        exit(8);
-}
-
-if (($Interactive == 1) and (defined($array_param_file))){
-        warn("/!\\ A parameter file-based array job cannot be interactive.\n");
-# user defined array_ids, 0 if interactive and/or non-array job 
-        usage();
-        exit(9);
 }
 
 
@@ -810,14 +805,6 @@ if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     usage();
     exit(10);
 }
-
-my $array_params_ref;
-# array_ids are assigned automatically 
-if(defined($array_param_file)){
-    $array_params_ref = read_array_param_file($array_param_file);
-    $array_job_nb = scalar @{$array_params_ref};
-}
-
 
 # Connect to a reservation
 if (defined($connect_job)){
@@ -865,21 +852,30 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if (defined($scan_result{directory})){
             $Directory = $scan_result{directory};
         }
+        if (defined($scan_result{directory}) && (!defined($Directory))){
+            $Directory = $scan_result{directory};
+        }elsif(defined($scan_result{directory}) && (defined($Directory))){
+            warn("/!\\ Ignore script value for name parameter : $scan_result{directory}; another value was given on the command line.\n");
+        }
         if (defined($scan_result{name}) && (!defined($job_name))){
             $job_name = $scan_result{name};
         }elsif(defined($scan_result{name}) && (defined($job_name))){
             warn("/!\\ Ignore script value for name parameter : $scan_result{name}; another value was given on the command line.\n");
         }
-        if (defined($scan_result{project})){
+        if (defined($scan_result{project}) && (!defined($Project))){
             $Project = $scan_result{project};
+        }elsif(defined($scan_result{project}) && (defined($Project))){
+            warn("/!\\ Ignore script value for name parameter : $scan_result{project}; another value was given on the command line.\n");
         }
         if (defined($scan_result{hold}) && (!defined($job_hold))){
             $job_hold = $scan_result{hold};
         }elsif(defined($scan_result{hold}) && (defined($job_hold))){
             warn("/!\\ Ignore script value for hold parameter : $scan_result{hold}; another value was given on the command line.\n");
         }
-        if (defined($scan_result{signal})){
+        if (defined($scan_result{signal}) && (!defined($Checkpoint_signal))){
             $Checkpoint_signal = $scan_result{signal};
+        }elsif(defined($scan_result{signal}) && (defined($Checkpoint_signal))){
+            warn("/!\\ Ignore script value for hold parameter : $scan_result{signal}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stdout}) && (!defined($Stdout_file))){
             $Stdout_file = $scan_result{stdout};
@@ -921,10 +917,39 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }elsif(defined($scan_result{stageinmd5sum}) && (defined($md5sum))){
             warn("/!\\ Ignore script value for stagein-md5sum parameter : $scan_result{stageinmd5sum}; another value was given on the command line.\n");
         }
+        if (defined($scan_result{array}) && (!defined($array_job_nb))){
+            $array_job_nb = $scan_result{array};
+        }elsif(defined($scan_result{array}) && (defined($array_job_nb))){
+            warn("/!\\ Ignore script value for array parameter : $scan_result{array}; another value was given on the command line.\n");
+        }
+        if (defined($scan_result{arrayparamfile}) && (!defined($array_param_file))){
+            $array_param_file = $scan_result{arrayparamfile};
+        }elsif(defined($scan_result{arrayparamfile}) && (defined($array_param_file))){
+            warn("/!\\ Ignore script value for array-param-file parameter : $scan_result{arrayparamfile}; another value was given on the command line.\n");
+        }
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
-    
+ 
+    $Project = $Project_default if (!defined($Project));
+    $Checkpoint_signal = $Checkpoint_signal_default if (!defined($Checkpoint_signal));
+    $Directory = $Directory_default if (!defined($Directory));
+
+    # array_ids are assigned automatically 
+    if(defined($array_param_file)){
+        $array_params_ref = read_array_param_file($array_param_file);
+        $array_job_nb = scalar @{$array_params_ref};
+    }
+
+    $array_job_nb = 1 if (!defined($array_job_nb));
+    if($array_job_nb <= 0){
+        warn("/!\\ An array job must have a positive number of sub-jobs\n");
+        usage();
+        exit(6);
+    }
+
+
+   
 #    job_key_management();
 
     #if (!($exec =~ m/^\/.+$/m)){
@@ -992,8 +1017,6 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         print "Stagein completed.\n";
     }
 
-
-
      $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
@@ -1003,6 +1026,24 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     my @resource_list = parse_resource_descriptions(\@resource);
  
+    if (defined($array_param_file)){
+        warn("/!\\ A parameter file-based array job cannot be interactive.\n");
+# user defined array_ids, 0 if interactive and/or non-array job 
+        usage();
+        exit(9);
+    }
+    
+    $Project = $Project_default if (!defined($Project));
+    $Checkpoint_signal = $Checkpoint_signal_default if (!defined($Checkpoint_signal));
+    $Directory = $Directory_default if (!defined($Directory));
+
+    $array_job_nb = 1 if (!defined($array_job_nb));
+    if ($array_job_nb != 1){
+        warn("/!\\ An array job cannot be interactive.\n");
+        usage();
+        exit(8);
+    }
+
 #    job_key_management();
 
     if ($Reservation ne "0"){
