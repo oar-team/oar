@@ -53,7 +53,10 @@ do
     mem=$($OPENSSH_CMD $host cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
 
     # Get CORE info in the form
-    # cpu core,cpu core,cpu core,...
+    # cpu core
+    # cpu core
+    # cpu core
+    # ...
     if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]
     then
       DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") cpu=$3; if ($1 == "physical" && $2 =="id") print $4 " " cpu}')
