@@ -83,7 +83,6 @@ do
 '
     for i in $(echo "$DATA" | sort -g)
     do
-        echo "$i"
         cpu=$(echo $i|awk '{print $1}')
         core=$(echo $i|awk '{print $2}')
         [ "$cpu" != "$prev_cpu" ] && ((CPU++))
