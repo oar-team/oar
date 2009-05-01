@@ -53,12 +53,12 @@ do
     mem=$($OPENSSH_CMD $host cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
 
     # Get CORE info in the form
-    # core cpu,core cpu,core cpu,core cpu
+    # cpu core,cpu core,cpu core,...
     if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]
     then
-      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk -v ORS=, '{if ($1 == "processor") cpu=$3; if ($1 == "physical" && $2 =="id") print cpu " " $4}')
+      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") cpu=$3; if ($1 == "physical" && $2 =="id") print $4 " " cpu}')
     else
-      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk -v ORS=, '{if ($1 == "processor") print $3 " " $3}')
+      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") print $3 " " $3}')
     fi
 
     # Restore stderr
@@ -76,11 +76,13 @@ do
     ((mem = $mem / 1024))
     prev_cpu="-1"
     PREV_IFS=$IFS
-    IFS=','
-    for i in $DATA
+    IFS='
+'
+    for i in $(echo "$DATA" | sort -g)
     do
-        core=$(echo $i|awk '{print $1}')
-        cpu=$(echo $i|awk '{print $2}')
+        echo "$i"
+        cpu=$(echo $i|awk '{print $1}')
+        core=$(echo $i|awk '{print $2}')
         [ "$cpu" != "$prev_cpu" ] && ((CPU++))
         ((CORE++))
         prev_cpu=$cpu
