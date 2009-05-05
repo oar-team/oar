@@ -1,3 +1,12 @@
+oar (2.4.0-1~21.gbpb49107) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @b49107591c01c9fa2f580824016da4bc86f1b89f **
+
+  * Bug fix: as /proc/cpuinfo lists physical cores in a non natural
+    order way, we need to sort by physical id before matching cores
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 29 Apr 2009 18:10:26 +0200
+
 oar (2.4.0-1~20.gbpc98090) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @c98090ddcbb261cf16989c03571fa4004f4ea7b6 **
