@@ -29,6 +29,9 @@ version 2.4.0:
   - Optional script to take into account cpu/core topology of the nodes at boot 
     time (to activate inside oarnodesetting_ssh)
   - Bug #7174: Cleaned default PATH from "./" into oardodo
+  - Bug #7674: remove the computation of the scheduler_priority field for
+    besteffort jobs from the asynchronous OAR part. Now the value is set when
+    the jobs are turned into toLaunch state and in Error/Terminated.
 
 version 2.3.3:
 --------------
