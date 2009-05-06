@@ -2,7 +2,7 @@
 set -e
 
 DEFAULT_DISTRO_BASE="oar-live-cd_base.tgz"
-DOWNLOAD_URL="http://oar.imag.fr/debian/live_cd"
+DOWNLOAD_URL="http://oar.imag.fr/live"
 
 usage() {
   cat <<EOF
