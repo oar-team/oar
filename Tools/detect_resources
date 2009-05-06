@@ -59,9 +59,9 @@ do
     # ...
     if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]
     then
-      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") cpu=$3; if ($1 == "physical" && $2 =="id") print $4 ":" cpu}'|sort)
+      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") core=$3; if ($1 == "physical" && $2 =="id") print $4 ":" core}'|sort -n)
     else
-      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") print $3 ":" $3}'|sort)
+      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") print $3 ":" $3}'|sort -n)
     fi
 
     # Restore stderr
