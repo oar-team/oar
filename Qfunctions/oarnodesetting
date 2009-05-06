@@ -226,7 +226,7 @@ if (defined($new_resource)){
                     $exit_code = 3;
                 }
             }
-            push(@notify_server_tag_list, "ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if (!$nowaitMode){
                     foreach my $r (@resources_to_check){
@@ -254,7 +254,7 @@ if (defined($new_resource)){
                     $exit_code = 4;
                 }
             }
-            push(@notify_server_tag_list, "ChState");
+            oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if (!$nowaitMode){
                     foreach my $h (@nodes_to_check){
