@@ -1,8 +1,14 @@
 OAR CHANGELOG
 =============
 
+version 2.2.16:
+--------------
+   - Bug #7674: remove the computation of the scheduler_priority field for
+     besteffort jobs from the asynchronous OAR part. Now the value is set when
+     the jobs are turned into toLaunch state and in Error/Terminated.
+
 version 2.2.15:
--------------
+--------------
   - Update default OAR configuration file to be complying with database scheme
   - Fix bug in oarsh with the "-l" option
 

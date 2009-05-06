@@ -571,12 +571,12 @@ sub check_jobs_to_launch($){
             oar_warn("[oar_scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             iolib::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
         }
-        iolib::set_job_state($dbh, $i, "toLaunch");
         iolib::set_running_date_arbitrary($dbh,$i,$current_time_sec);
         iolib::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
         foreach my $r (@{$jobs_to_launch{$i}->[1]}){
             iolib::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
         }
+        iolib::set_job_state($dbh, $i, "toLaunch");
         $return_code = 1;
     }
 
