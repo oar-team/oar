@@ -32,6 +32,8 @@ version 2.4.0:
   - Bug #7674: remove the computation of the scheduler_priority field for
     besteffort jobs from the asynchronous OAR part. Now the value is set when
     the jobs are turned into toLaunch state and in Error/Terminated.
+  - Bug #7691: add --array and --array-param-file options parsing into the
+    submitted script. Fix also some parsing errors.
 
 version 2.3.3:
 --------------
