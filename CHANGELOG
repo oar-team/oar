@@ -28,6 +28,7 @@ version 2.4.0:
     otherwise print a ''
   - Optional script to take into account cpu/core topology of the nodes at boot 
     time (to activate inside oarnodesetting_ssh)
+  - Bug #7174: Cleaned default PATH from "./" into oardodo
 
 version 2.3.3:
 --------------
