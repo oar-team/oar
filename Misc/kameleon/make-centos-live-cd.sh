@@ -2,7 +2,9 @@
 set -e
 
 DEFAULT_DISTRO_BASE="/var/guest/centos-oar-base-image.tgz"
-DOWNLOAD_URL="http://oar.imag.fr/live_cd"
+DOWNLOAD_URL="http://oar.imag.fr/live"
+#KERNEL=ftp://ftp.slax.org/Linux-Live/kernels/2.6.27.7/linux-2.6.27.7-i486-1.tgz
+KERNEL=$DOWNLOAD_URL/linux-2.6.27.7-i486-1.tgz
 
 usage() {
   cat <<EOF
@@ -138,8 +140,12 @@ gpgcheck=0
 enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
 
     echo 
+    echo "**** Downloading kernel...****"
+    wget -q -c $KERNEL
+    echo 
     echo "**** Installing kernel...****"
-    chroot $DISTRO_DIR bash -c "yum install -q -y kernel"
+    #chroot $DISTRO_DIR bash -c "yum install -q -y kernel"
+    tar zxf `basename $KERNEL` -C $DISTRO_DIR
 
     echo     
     echo "**** INSTALLING OAR... ****"
@@ -247,10 +253,12 @@ EOF
     chroot $DISTRO_DIR yum clean all
     umount $DISTRO_DIR/proc
     rm -rf $DISTRO_DIR/tmp/*
-    chroot $DISTRO_DIR bash -c "cd /boot && ln -s vmlinuz-* ./vmlinuz"
-    chroot $DISTRO_DIR bash -c "cd /boot && ln -s initrd-* ./initrd"
-    K_VERSION=`chroot $DISTRO_DIR bash -c "rpm -q kernel --qf '%{VERSION}-%{RELEASE}'"`
+    #chroot $DISTRO_DIR bash -c "cd /boot && ln -s vmlinuz-* ./vmlinuz"
+    #chroot $DISTRO_DIR bash -c "cd /boot && ln -s initrd-* ./initrd"
+    #K_VERSION=`chroot $DISTRO_DIR bash -c "rpm -q kernel --qf '%{VERSION}-%{RELEASE}'"`
+    K_VERSION=`/bin/ls $DISTRO_DIR/lib/modules|sort -n|tail -1`
     perl -pi -e "s/^KERNEL=.*/KERNEL=$K_VERSION/" $DISTRO_DIR/root/linux-live/.config
+    chroot $DISTRO_DIR depmod -a $K_VERSION
     chroot $DISTRO_DIR /root/linux-live/build
 
     echo
