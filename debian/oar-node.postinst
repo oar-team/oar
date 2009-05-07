@@ -23,7 +23,10 @@ set -e
 db_version 2.0
 
 # set OAR Shell
-chsh -s /usr/lib/oar/oarsh_shell oar
+if [ "`getent passwd oar |cut -f7 -d:`" != "/usr/lib/oar/oarsh_shell" ]
+then
+  chsh -s /usr/lib/oar/oarsh_shell oar
+fi
 
 # create oar sshd keys
 if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
