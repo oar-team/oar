@@ -1,10 +1,24 @@
 #!/bin/bash
 set -e
 
-DEFAULT_DISTRO_BASE="/var/guest/centos-oar-base-image.tgz"
+DEFAULT_DISTRO_BASE="/var/guests/centos-oar-base-image.tgz"
 DOWNLOAD_URL="http://oar.imag.fr/live"
 #KERNEL=ftp://ftp.slax.org/Linux-Live/kernels/2.6.27.7/linux-2.6.27.7-i486-1.tgz
 KERNEL=$DOWNLOAD_URL/linux-2.6.27.7-i486-1.tgz
+HOME_URL=$DOWNLOAD_URL/home-config.tgz
+
+function kill_handle {
+  umount $DISTRO_DIR/proc
+}
+
+function err_handle {
+  echo "An error occured. You may have to manually clean $DISTRO_DIR."
+  echo "Exiting..."
+  umount $DISTRO_DIR/proc
+}
+
+trap kill_handle SIGINT SIGTERM SIGQUIT
+trap err_handle ERR
 
 usage() {
   cat <<EOF
@@ -97,22 +111,23 @@ then
 
   echo "**** EXTRACTING BASE $DISTRO_BASE... ****"
   tar zxf $DISTRO_BASE -C $TMPDIR
-  DISTRO_DIR=$TMPDIR/oar-live-cd
-  if [ -d $DISTRO_DIR/var/rpms ]
+  DISTRO_DIR=$TMPDIR/centos-oar-appliance-32
+  if [ -e $DISTRO_DIR/etc/redhat-release ]
   then
 
     echo
     echo "**** MAKING LOCAL REPOSITORY... ****"
     cp -a $REPOSITORY/* $DISTRO_DIR/var/rpms
     cd $DISTRO_DIR/var/rpms
+    wget -q -c $DOWNLOAD_URL/windowmaker-0.91.0-1.2.el4.rf.i386.rpm
     createrepo .
     cd ../../..
 
     echo 
-    echo "**** Mounting /proc, creating devices and init ssh...****"
+    echo "**** Mounting /proc, creating devices...****"
     chroot $DISTRO_DIR bash -c "mount -t proc none /proc"
     chroot $DISTRO_DIR bash -c "MAKEDEV /dev"
-    chroot $DISTRO_DIR bash -c "/etc/init.d/sshd start; /etc/init.d/sshd stop >/dev/null 2>&1"
+    cp /etc/resolv.conf $DISTRO_DIR/etc/
 
     echo 
     echo "**** Configuring yum...****"
@@ -147,16 +162,39 @@ enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
     #chroot $DISTRO_DIR bash -c "yum install -q -y kernel"
     tar zxf `basename $KERNEL` -C $DISTRO_DIR
 
+    echo
+    echo "**** Installing ssh...****"
+    chroot $DISTRO_DIR bash -c "yum install -q -y openssh-server"
+    chroot $DISTRO_DIR bash -c "/etc/init.d/sshd start; /etc/init.d/sshd stop >/dev/null 2>&1" || true
+
+    echo "**** Installing libs required by linux-live... ****"
+    echo
+    chroot $DISTRO_DIR bash -c "yum install -q -y glibc.i686 zlib.i386 libstdc++.i386 mkisofs"
+
+    echo     
+    echo "**** INSTALLING dependency tools... ****"
+    # Installing oar packages
+    chroot $DISTRO_DIR bash -c "yum install -q -y perl-DBI.i386"
+    chroot $DISTRO_DIR bash -c "yum install -q -y kbd"
+    chroot $DISTRO_DIR bash -c "yum install -q -y httpd"
+    chroot $DISTRO_DIR bash -c "yum install -q -y mysql-server.i386 perl-DBD-MySQL.i386 --exclude=perl-DBD-mysql"
+    chroot $DISTRO_DIR bash -c "yum install -q -y xorg-x11-server-Xorg xorg-x11-xinit"
+    chroot $DISTRO_DIR bash -c "yum install -q -y windowmaker"
+    #chroot $DISTRO_DIR bash -c "yum install -q -y selinux-policy"
+    chroot $DISTRO_DIR bash -c "chkconfig mysqld on"
+     # I don't know why ruby-GD i386 is not seen by yum :-(
+    chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-GD-*i386*"
+    perl -pi -e "s/SELINUX=.*/SELINUX=disabled/" $DISTRO_DIR/etc/selinux/config
     echo     
     echo "**** INSTALLING OAR... ****"
-    # Installing oar packages
     chroot $DISTRO_DIR bash -c "yum install -q -y oar-server oar-user oar-node oar-doc oar-admin oar-web-status"
+    
     chroot $DISTRO_DIR bash -c "yum install -q -y oar-api" || true
     echo
 
     echo "**** CUSTOMIZING THE SYSTEM... ****"
      # If a mysql server is already running, it will fail, so we
-     # must stop it.
+     # must stop it. We suppose here that we are under Debian...
     RC=0
     /etc/init.d/mysql status > /dev/null || RC=$?
     if [ "$RC" = "0" ]
@@ -167,14 +205,16 @@ enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
     # Network config
     echo "127.0.0.1 localhost oar node1 node2" > $DISTRO_DIR/etc/hosts
     echo "oar" > $DISTRO_DIR/etc/hostname
-    echo "auto lo" > $DISTRO_DIR/etc/network/interfaces
-    echo "iface lo inet loopback" >> $DISTRO_DIR/etc/network/interfaces
-    echo "auto eth0" >> $DISTRO_DIR/etc/network/interfaces
-    echo "iface eth0 inet dhcp" >> $DISTRO_DIR/etc/network/interfaces
-    echo "ServerName localhost" > $DISTRO_DIR/etc/apache2/conf.d/servername
-    chroot $DISTRO_DIR bash -c "a2enmod ident" 
+    echo "DEVICE=eth0" > $DISTRO_DIR/etc/sysconfig/network-scripts/ifcfg-eth0
+    echo "ONBOOT=yes" >> $DISTRO_DIR/etc/sysconfig/network-scripts/ifcfg-eth0
+    echo "BOOTPROTO=dhcp" >> $DISTRO_DIR/etc/sysconfig/network-scripts/ifcfg-eth0
+    echo "NETWORKING=yes" > $DISTRO_DIR/etc/sysconfig/network
+    echo "HOSTNAME=oar" >> $DISTRO_DIR/etc/sysconfig/network
+    # Apache Config
+    echo "ServerName localhost" > $DISTRO_DIR/etc/httpd/conf.d/servername
+    echo "LoadModule ident_module /etc/httpd/modules/mod_ident.so" > $DISTRO_DIR/etc/httpd/conf.d/ident.conf
     # Keyboard config
-    cat > $DISTRO_DIR/etc/rc2.d/S99ask_keyboard <<EOS
+    cat > $DISTRO_DIR/etc/rc3.d/S99ask_keyboard <<EOS
 echo "***"
 echo
 echo -n 'Please, give the 2 letters code of your keyboard (us, fr,...): '
@@ -188,14 +228,14 @@ then
   echo "startx" > /home/baygon/.profile
 fi
 EOS
-    chmod 755 $DISTRO_DIR/etc/rc2.d/S99ask_keyboard
+    chmod 755 $DISTRO_DIR/etc/rc3.d/S99ask_keyboard
     # Path for the ruby rest client
     echo "export PATH=/var/lib/gems/1.8/bin:\$PATH" >> $DISTRO_DIR/etc/profile
     # Creation of the "baygon" user automaticaly logged in on tty1
     chroot $DISTRO_DIR bash -c "useradd -m baygon"
-    perl -pi -e 's/getty.*tty1/mingetty --noclear --autologin baygon tty1/' $DISTRO_DIR/etc/inittab
+    perl -pi -e 's/mingetty.*tty1/mingetty --noclear --autologin baygon tty1/' $DISTRO_DIR/etc/inittab
     # Allow baygon to become root with "su"
-    chroot $DISTRO_DIR bash -c "groupadd wheel"
+    chroot $DISTRO_DIR bash -c "groupadd wheel" || true
     chroot $DISTRO_DIR bash -c "usermod -a -G wheel baygon"
     chroot $DISTRO_DIR bash -c "usermod -p\\\$1\\\$c0MqzZRB\\\$4DtoKo75Jy0fLm3jGlDTg0 baygon"
     echo "auth       sufficient pam_wheel.so trust" > $DISTRO_DIR/etc/pam.d/su.new
@@ -206,12 +246,10 @@ EOS
     echo "setxkbmap \`cat /etc/keymap\`" >> $DISTRO_DIR/home/baygon/.xinitrc
     echo "wmaker" >> $DISTRO_DIR/home/baygon/.xinitrc
     # Home configuration for baygon user
-    if [ -f $DISTRO_DIR/root/home-config.tgz ]
-    then
-      tar zxf $DISTRO_DIR/root/home-config.tgz -C $DISTRO_DIR/home/baygon
-      chroot $DISTRO_DIR bash -c "chown -R baygon /home/baygon"
-      rm -f $DISTRO_DIR/home/baygon/.mozilla/*/*/sessionstore.js
-    fi
+    wget -q -c $HOME_URL
+    tar zxf `basename $HOME_URL` -C $DISTRO_DIR/home/baygon
+    chroot $DISTRO_DIR bash -c "chown -R baygon /home/baygon"
+    rm -f $DISTRO_DIR/home/baygon/.mozilla/*/*/sessionstore.js
     # Xorg config
     #echo "xrandr --output default --mode 1024x768" > $DISTRO_DIR/home/baygon/.xinitrc # It makes X crash... weird :-(
     perl -pi -e 's/Section "Screen"/Section "Screen"\n\tSubsection "Display"\n\t\tModes "1024x768"\n\tEndsubsection/' $DISTRO_DIR/etc/X11/xorg.conf
@@ -222,7 +260,7 @@ EOS
     perl -pi -e 's/^/environment="OAR_KEY=1" /' $DISTRO_DIR/var/lib/oar/.ssh/authorized_keys
     # Database init
     chroot $DISTRO_DIR bash << EOF
-/etc/init.d/mysql start
+/etc/init.d/mysqld start
 /etc/init.d/oar-server stop || true
 /etc/init.d/oar-node stop || true
 mysql < /root/init.sql
@@ -240,13 +278,12 @@ oarnodesetting -a -h node2 -p cpu=0 =p core=1
 oarnodesetting -a -h node2 -p cpu=1 =p core=0
 oarnodesetting -a -h node2 -p cpu=1 =p core=1
 sleep 2
-/etc/init.d/mysql stop
+/etc/init.d/mysqld stop
 EOF
     if [ "$MYSQL_STARTED" = "1" ]
     then
        /etc/init.d/mysql start
     fi
-
 
     echo
     echo "**** MAKING ISO IMAGE...****"
@@ -263,8 +300,8 @@ EOF
 
     echo
     echo "**** MOVING ISO IMAGE...****"
-    VERSION=`chroot $DISTRO_DIR dpkg -l oar-common|grep oar-common|awk '{print $3}'`
-    mv -f $DISTRO_DIR/tmp/OARDebiantestimage.iso /var/tmp/OAR_Debian_Live-$VERSION.iso
+    VERSION=`chroot $DISTRO_DIR rpm -q oar-common|sed "s/^oar-common-//"`
+    mv -f $DISTRO_DIR/tmp/OARDebiantestimage.iso /var/tmp/OAR_Centos_Live-$VERSION.iso
 
     echo
     echo "**** CLEANING... ****"
@@ -272,11 +309,11 @@ EOF
 
     echo 
     echo "DONE! HAVE FUN WITH:" 
-    echo "**** /var/tmp/OAR_Debian_Live-$VERSION.iso ****"
+    echo "**** /var/tmp/OAR_Centos_Live-$VERSION.iso ****"
     echo
     exit 0
   else
-    echo "$DISTRO_DIR/var/debs not found!"
+    echo "$DISTRO_DIR/etc/redhat-release not found!"
     exit 1
   fi
 else
