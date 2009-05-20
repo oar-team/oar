@@ -135,6 +135,7 @@ then
     echo "iface eth0 inet dhcp" >> $DISTRO_DIR/etc/network/interfaces
     echo "ServerName localhost" > $DISTRO_DIR/etc/apache2/conf.d/servername
     chroot $DISTRO_DIR bash -c "a2enmod ident" 
+    chroot $DISTRO_DIR bash -c "a2enmod headers" 
     # Keyboard config
     cat > $DISTRO_DIR/etc/rc2.d/S99ask_keyboard <<EOS
 echo "***"
