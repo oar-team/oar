@@ -1,3 +1,12 @@
+oar (2.4.0-1~22.gbp34e14e) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @34e14e3519c4ed8dd4deacf38b571dc49c34634e **
+
+  * Misc fixes (still need to customize firefox and gantt is not
+    working)
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 20 May 2009 23:10:59 +0200
+
 oar (2.4.0-1~21.gbpb49107) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @b49107591c01c9fa2f580824016da4bc86f1b89f **
