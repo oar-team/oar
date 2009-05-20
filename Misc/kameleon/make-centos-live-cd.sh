@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DEFAULT_DISTRO_BASE="/var/guests/centos-oar-base-image.tgz"
+DEFAULT_DISTRO_BASE="centos-oar-base-image.tgz"
 DOWNLOAD_URL="http://oar.imag.fr/live"
 #KERNEL=ftp://ftp.slax.org/Linux-Live/kernels/2.6.27.7/linux-2.6.27.7-i486-1.tgz
 KERNEL=$DOWNLOAD_URL/linux-2.6.27.7-i486-1.tgz
@@ -30,7 +30,7 @@ Example workflow:
   rm -rf build-area
   ./git-build-package.sh -s rpm trunk-work
   sudo $0 ./build-area/rpm/RPMS
-  sudo kvm -m 512 -boot d -cdrom /var/tmp/OAR_RPM_Live-2.4.0-1\~3.gbp842e67.iso
+  sudo kvm -m 512 -boot d -cdrom /var/tmp/OAR_Centos_Live-2.4.0-1\~3.gbp842e67.iso
 EOF
 exit 1
 }
@@ -117,9 +117,16 @@ then
 
     echo
     echo "**** MAKING LOCAL REPOSITORY... ****"
-    cp -a $REPOSITORY/* $DISTRO_DIR/var/rpms
-    cd $DISTRO_DIR/var/rpms
     wget -q -c $DOWNLOAD_URL/windowmaker-0.91.0-1.2.el4.rf.i386.rpm
+    wget -q -c $DOWNLOAD_URL/webcore-fonts-3.0-1.noarch.rpm
+    wget -q -c $DOWNLOAD_URL/ruby-DBI-0.2.0-1.i386.rpm
+    wget -q -c $DOWNLOAD_URL/ruby-GD-0.7.4-1.i386.rpm
+    cp -a $REPOSITORY/* $DISTRO_DIR/var/rpms
+    cp -a windowmaker-*rpm $DISTRO_DIR/var/rpms
+    cp -a webcore-fonts-*rpm $DISTRO_DIR/var/rpms
+    cp -a ruby-DBI-*rpm $DISTRO_DIR/var/rpms
+    cp -a ruby-GD-*rpm $DISTRO_DIR/var/rpms
+    cd $DISTRO_DIR/var/rpms
     createrepo .
     cd ../../..
 
@@ -147,12 +154,6 @@ enabled = 1
 protect = 0
 gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmforge-dag
 gpgcheck = 0" > $DISTRO_DIR/etc/yum.repos.d/rpmforge.repo
-    # Configuring yum for OAR online repository
-    echo "[oar]
-name=OAR
-baseurl=http://oar.imag.fr/RPMS/unstable/2.4
-gpgcheck=0
-enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
 
     echo 
     echo "**** Downloading kernel...****"
@@ -172,18 +173,22 @@ enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
     chroot $DISTRO_DIR bash -c "yum install -q -y glibc.i686 zlib.i386 libstdc++.i386 mkisofs"
 
     echo     
-    echo "**** INSTALLING dependency tools... ****"
-    # Installing oar packages
+    echo "**** INSTALLING dependencies... ****"
     chroot $DISTRO_DIR bash -c "yum install -q -y perl-DBI.i386"
     chroot $DISTRO_DIR bash -c "yum install -q -y kbd"
     chroot $DISTRO_DIR bash -c "yum install -q -y httpd"
+    chroot $DISTRO_DIR bash -c "chkconfig httpd on"
     chroot $DISTRO_DIR bash -c "yum install -q -y mysql-server.i386 perl-DBD-MySQL.i386 --exclude=perl-DBD-mysql"
-    chroot $DISTRO_DIR bash -c "yum install -q -y xorg-x11-server-Xorg xorg-x11-xinit"
-    chroot $DISTRO_DIR bash -c "yum install -q -y windowmaker"
-    #chroot $DISTRO_DIR bash -c "yum install -q -y selinux-policy"
     chroot $DISTRO_DIR bash -c "chkconfig mysqld on"
+    chroot $DISTRO_DIR bash -c "yum install -q -y xorg-x11-server-Xorg xorg-x11-xinit xterm"
+    chroot $DISTRO_DIR bash -c "ln -s /usr/bin/xterm /usr/bin/x-terminal-emulator"
+    chroot $DISTRO_DIR bash -c "yum install -q -y windowmaker firefox"
+    chroot $DISTRO_DIR bash -c "yum install -q -y webcore-fonts"
+    #chroot $DISTRO_DIR bash -c "yum install -q -y selinux-policy"
+    chroot $DISTRO_DIR bash -c "yum install -q -y ruby"
      # I don't know why ruby-GD i386 is not seen by yum :-(
     chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-GD-*i386*"
+    chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-DBI-*i386* --nodeps"
     perl -pi -e "s/SELINUX=.*/SELINUX=disabled/" $DISTRO_DIR/etc/selinux/config
     echo     
     echo "**** INSTALLING OAR... ****"
@@ -193,7 +198,13 @@ enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
     echo
 
     echo "**** CUSTOMIZING THE SYSTEM... ****"
-     # If a mysql server is already running, it will fail, so we
+     # Configuring yum for OAR online repository
+    echo "[oar]
+name=OAR
+baseurl=http://oar.imag.fr/RPMS/unstable/2.4
+gpgcheck=0
+enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
+    # If a mysql server is already running, it will fail, so we
      # must stop it. We suppose here that we are under Debian...
     RC=0
     /etc/init.d/mysql status > /dev/null || RC=$?
@@ -225,7 +236,7 @@ echo -n 'Start an X server? ([y]/n): '
 read i
 if [ "\$i" = "o" -o "\$i" = "O" -o "\$i" = "y" -o "\$i" = "Y" -o "\$i" = "" ]
 then
-  echo "startx" > /home/baygon/.profile
+  echo "startx" >> /home/baygon/.bash_profile
 fi
 EOS
     chmod 755 $DISTRO_DIR/etc/rc3.d/S99ask_keyboard
