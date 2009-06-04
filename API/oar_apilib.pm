@@ -842,7 +842,9 @@ sub check_grid_job($$) {
 
   # Clean options with an empty parameter that is normaly required
   parameter_option($job,"walltime");
-  parameter_option($job,"program");
+  parameter_option($job,"queue");
+  parameter_option($job,"identity_file");
+  parameter_option($job,"timeout");
   parameter_option($job,"program");
   parameter_option($job,"type");
   parameter_option($job,"start_date");
