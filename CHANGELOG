@@ -34,6 +34,8 @@ version 2.4.0:
     the jobs are turned into toLaunch state and in Error/Terminated.
   - Bug #7691: add --array and --array-param-file options parsing into the
     submitted script. Fix also some parsing errors.
+  - Bug #7962: enable resource property "cm_availability" to be manipulated by
+    the oarnodesetting command
 
 version 2.3.3:
 --------------
