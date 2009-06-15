@@ -6,7 +6,6 @@
   jobs/<id>/resume 
  au lieu des actuels post avec action=
 - ajouter la timezone dans les sorties avec des dates (parser l'heure et la reformater correctement?)
-- quand on check les content-type, on peux avoir autre chose après le text/yaml ou application/json , genre "application/json; charset=UTF-8
 - options multivaleurs, tester si on a un tableau dans la valeur (exemple: soumission de job avec plusieurs types) --> bug OARGRID: on ne peut pas soumettre de jobs à plusieurs types!
 
 

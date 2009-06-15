@@ -542,6 +542,8 @@ sub struct_gridjob_nodes($$) {
 # Get a suitable extension depending on the content-type
 sub get_ext($) {
   my $content_type = shift;
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
@@ -678,6 +680,9 @@ sub check_job($$) {
   my $data         = shift;
   my $content_type = shift;
   my $job;
+  
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
 
   # If the data comes in the YAML format
   if ( $content_type eq 'text/yaml' ) {
@@ -685,7 +690,7 @@ sub check_job($$) {
   }
 
   # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
+  elsif ( $content_type eq 'application/json') {
     $job=import_json($data);
   }
 
@@ -726,6 +731,9 @@ sub check_job_update($$) {
   my $content_type = shift;
   my $job;
 
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
   # If the data comes in the YAML format
   if ( $content_type eq 'text/yaml' ) {
     $job=import_yaml($data);
@@ -764,6 +772,9 @@ sub check_resource($$) {
   my $data         = shift;
   my $content_type = shift;
   my $resource;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
 
   # If the data comes in the YAML format
   if ( $content_type eq 'text/yaml' ) {
@@ -809,6 +820,9 @@ sub check_grid_job($$) {
   my $data         = shift;
   my $content_type = shift;
   my $job;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
 
   # If the data comes in the YAML format
   if ( $content_type eq 'text/yaml' ) {
