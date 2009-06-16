@@ -7,6 +7,7 @@
  au lieu des actuels post avec action=
 - ajouter la timezone dans les sorties avec des dates (parser l'heure et la reformater correctement?)
 - options multivaleurs, tester si on a un tableau dans la valeur (exemple: soumission de job avec plusieurs types) --> bug OARGRID: on ne peut pas soumettre de jobs à plusieurs types!
+- il reste des resources sans restructuration et donc sans uri/timestamp (par ex: GET /jobs/526.yaml, GET /sites/simpsons/jobs/527.yaml)
 
 
 Bugs:

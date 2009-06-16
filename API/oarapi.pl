@@ -6,6 +6,7 @@ use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_iolib;
 use oar_Tools;
 use oarversion;
+use POSIX;
 
 my $VERSION="0.1.2";
 
@@ -127,12 +128,33 @@ SWITCH: for ($q) {
     (my $header, my $type)=apilib::set_output_format($ext);
     my $version={ "oar" => oarversion::get_version(),
                   "apilib" => apilib::get_version(),
+                  "api_timestamp" => time(),
+                  "api_timezone" => strftime("%Z", localtime()),
                   "api" => $VERSION };
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($version,$ext);
     last;
   };
+
+  #
+  # Timezone
+  #
+  $URI = qr{^/timezone\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$1);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $version={ 
+                  "api_timestamp" => time(),
+                  "timezone" => strftime("%Z", localtime())
+                };
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($version,$ext);
+    last;
+  };
+
 
   #
   # List of current jobs (oarstat wrapper)
@@ -270,6 +292,7 @@ SWITCH: for ($q) {
     print apilib::export( { 'id' => "$jobid",
                     'status' => "$status",
                     'cmd_output' => "$cmdRes",
+                    'api_timestamp' => time()
                   } , $ext );
     last;
   };
@@ -390,7 +413,8 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'id' => "$1",
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext),
-                      'status' => "submitted"
+                      'status' => "submitted",
+                      'api_timestamp' => time()
                     } , $ext );
     }
     else {
@@ -425,7 +449,8 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export( { 'id' => "$jobid",
                     'status' => "Delete request registered",
-                    'oardel_output' => "$cmdRes"
+                    'oardel_output' => "$cmdRes",
+                    'api_timestamp' => time()
                   } , $ext );
     last;
   };
@@ -490,6 +515,7 @@ SWITCH: for ($q) {
                       'status' => "$status",
                       'id' => "$id",
                       'warnings' => \@warnings,
+                      'api_timestamp' => time(),
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext)
                     } , $ext );
       oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
@@ -585,7 +611,7 @@ SWITCH: for ($q) {
       #print("Resource $Resource removed.\n");
       print $header;
       print $HTML_HEADER if ($ext eq "html");
-      print apilib::export( { 'status' => "deleted" } , $ext );
+      print apilib::export( { 'status' => "deleted",'api_timestamp' => time() } , $ext );
     }else{
       apilib::ERROR(403,"Forbidden","The resource $Resource must be in the Dead status"); 
       last;

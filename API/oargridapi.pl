@@ -4,6 +4,7 @@ use oargrid_lib;
 use oargrid_conflib;
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use POSIX;
 
 my $VERSION="0.1.7";
 
@@ -136,7 +137,27 @@ SWITCH: for ($q) {
     (my $header, my $type)=apilib::set_output_format($ext);
     my $version={ "oargrid" => oargrid_lib::get_version(),
                   "apilib" => apilib::get_version(),
+                  "api_timestamp" => time(),
+                  "api_timezone" => strftime("%Z", localtime()),
                   "api" => $VERSION };
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($version,$ext);
+    last;
+  };
+
+  #
+  # Timezone
+  #
+  $URI = qr{^/grid/timezone\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$1);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $version={ 
+                  "api_timestamp" => time(),
+                  "timezone" => strftime("%Z", localtime()),
+                };
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($version,$ext);
@@ -259,8 +280,36 @@ SWITCH: for ($q) {
     last;
   };
 
-
-
+  #
+  # Get the timezone of a site frontend
+  #
+  $URI = qr{^/sites/([a-z,0-9,-]+)/timezone(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $site  = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $clusters = {};
+    $clusters = apilib::get_clusters($dbh);
+    if ( not defined( $clusters->{$site} ) ) {
+      apilib::ERROR( 404, "Not found", "Site or cluster resource not found" );
+    }
+    else {
+      my $frontend = $clusters->{$site}->{hostname};
+      my $cmd    = "$OARDODO_CMD $SSH_CMD $frontend \"date +%Z\"";
+      my $cmdRes = apilib::send_cmd($cmd,"Date on $frontend");
+      chomp($cmdRes);
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export({
+                             'timezone' => $cmdRes,
+                             'uri' => apilib::htmlize_uri(apilib::make_uri("/sites/$site",$ext,0),$ext),
+                             'site' => $site,
+                             'api_timestamp' => time()
+                           },$ext);
+    }
+    last;
+  };
 
   #
   # List of current jobs on a site or a cluster (oarstat wrapper)
@@ -373,7 +422,8 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'id' => "$jobid",
                       'status' => "Delete request registered",
-                      'oardel_output' => "$cmdRes"
+                      'oardel_output' => "$cmdRes",
+                      'api_timestamp' => time()
                     } , $ext );
     }
     last;
