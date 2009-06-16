@@ -302,6 +302,10 @@ sub add_sites_uris($$) {
                                apilib::make_uri("/sites/$site/resources",$ext,0),
                                $ext
                              );
+      $sites->{$site}->{timezone_uri}=apilib::htmlize_uri(
+                               apilib::make_uri("/sites/$site/timezone",$ext,0),
+                               $ext
+                             );
       $sites->{$site}->{api_timestamp}=time();
   }
 }
