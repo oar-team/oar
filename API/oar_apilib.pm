@@ -424,10 +424,11 @@ sub struct_resource_list($$) {
   elsif ($structure eq 'simple') {
     foreach my $node ( keys( %{$resources} ) ) {
       foreach my $id ( keys( %{$resources->{$node}} ) ) {
-        if ($id ne "uri") {
+        if ($id ne "uri" && $id ne "api_timestamp") {
           $resources->{$node}->{$id}->{id}=$id;
           $resources->{$node}->{$id}->{node}=$node;
           $resources->{$node}->{$id}->{node_uri}=$resources->{$node}->{uri};
+          $resources->{$node}->{$id}->{api_timestamp}=$resources->{$node}->{api_timestamp};
           push(@$result,$resources->{$node}->{$id});
         }
       }
