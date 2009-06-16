@@ -601,6 +601,12 @@ SWITCH: for ($q) {
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
       }
+      elsif (ref($job->{$option}) eq "ARRAY") {
+        foreach my $elem (@{$job->{$option}}) {
+          $oarcmd .= " --$option";
+          $oarcmd .= "=\"$elem\"" if $elem ne "";
+         }
+      }
       else {
         $oarcmd .= " --$option";
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
@@ -671,6 +677,12 @@ SWITCH: for ($q) {
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
+      }
+      elsif (ref($job->{$option}) eq "ARRAY") {
+        foreach my $elem (@{$job->{$option}}) {
+          $oargridcmd .= " --$option";
+          $oargridcmd .= "=\"$elem\"" if $elem ne "";
+         }
       }
       else {
         $oargridcmd .= " --$option";

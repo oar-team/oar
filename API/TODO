@@ -5,8 +5,6 @@
   jobs/<id>/holds
   jobs/<id>/resume 
  au lieu des actuels post avec action=
-- ajouter la timezone dans les sorties avec des dates (parser l'heure et la reformater correctement?)
-- options multivaleurs, tester si on a un tableau dans la valeur (exemple: soumission de job avec plusieurs types) --> bug OARGRID: on ne peut pas soumettre de jobs à plusieurs types!
 - il reste des resources sans restructuration et donc sans uri/timestamp (par ex: GET /jobs/526.yaml, GET /sites/simpsons/jobs/527.yaml)
 
 
@@ -17,3 +15,5 @@ Bugs:
  -> not a bug: oar 2.2 sur genepi, hors l'api utilise oarnodes de oar 2.4 (array jobs en plus)
 
 - probleme de synchro de date (jobs soumis avec date de début 5s dans le futur par rapport à l'api de cyril)
+
+- Oargrid ne prends pas en compte les options multiples (exemple: -t besteffort -t timesharing), même si l'API le gère ("type"=>["timesharing", "besteffort"])
