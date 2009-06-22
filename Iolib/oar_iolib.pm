@@ -4864,11 +4864,11 @@ sub get_gantt_jobs_to_launch($$){
 
 
 #Get hostname that we must wake up to launch jobs
-#args : base, date in sql format
-sub get_gantt_hostname_to_wake_up($$){
+#args : base, date in sql format, time to wait for the node to wake up
+sub get_gantt_hostname_to_wake_up($$$){
     my $dbh = shift;
     my $date = shift;
-
+	my $wakeup_time = shift;
     my $req = "SELECT resources.network_address
                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
                WHERE
@@ -4876,7 +4876,7 @@ sub get_gantt_hostname_to_wake_up($$){
                    AND g1.moldable_job_id= g2.moldable_job_id
                    AND m.moldable_id = g1.moldable_job_id
                    AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= $date + 1
+                   AND g2.start_time <= $date + $wakeup_time
                    AND j.state = \'Waiting\'
                    AND resources.resource_id = g1.resource_id
                    AND resources.state = \'Absent\'

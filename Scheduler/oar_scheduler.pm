@@ -7,7 +7,7 @@ use warnings;
 use oar_iolib;
 use Gantt_hole_storage;
 use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
-use oar_conflib qw(init_conf get_conf is_conf);
+use oar_conflib qw(init_conf get_conf is_conf get_conf_with_default_param);
 
 # Log category
 set_current_log_category('scheduler');
@@ -621,8 +621,8 @@ sub get_idle_nodes($$$){
 # Absent state
 sub get_nodes_to_wake_up($){
     my $dbh = shift;
-    
-    return(iolib::get_gantt_hostname_to_wake_up($dbh, $current_time_sec));
+    my $wakeup_time = get_conf_with_default_param("SCHEDULER_NODE_MANAGER_WAKEUP_TIME", 1);
+    return(iolib::get_gantt_hostname_to_wake_up($dbh, $current_time_sec, $wakeup_time));
 }
 
 return(1);
