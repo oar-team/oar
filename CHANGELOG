@@ -19,9 +19,11 @@ version 2.4.0:
   - Fix bug in oarsh with the "-l" option
   - Bug #7487: bad initialisation of the gnatt for the container jobs.
   - Scheduler: move the "delete_unnecessary_subtrees" directly into
-    "find_first_hole". Thus this is possible to query a job like:
+    "find_first_hole". Thus this is possible to query a job like::
+
         oarsub -I -l nodes=1/core=1+nodes=4/core=2
         (no hard separation between each group)
+
     For the same behaviour as before, you can query:
         oarsub -I -l {prop=1}/nodes=1/core=1+{prop=2}/nodes=4/core=2
   - Bug #7634: test if the resource property value is effectively defined
@@ -29,6 +31,28 @@ version 2.4.0:
   - Optional script to take into account cpu/core topology of the nodes at boot 
     time (to activate inside oarnodesetting_ssh)
   - Bug #7174: Cleaned default PATH from "./" into oardodo
+  - Bug #7674: remove the computation of the scheduler_priority field for
+    besteffort jobs from the asynchronous OAR part. Now the value is set when
+    the jobs are turned into toLaunch state and in Error/Terminated.
+  - Bug #7691: add --array and --array-param-file options parsing into the
+    submitted script. Fix also some parsing errors.
+  - Bug #7962: enable resource property "cm_availability" to be manipulated by
+    the oarnodesetting command
+
+version 2.3.4:
+--------------
+  - add the command "oar_resources_init" to easily detect and initialize the
+    whole resources of a cluster.
+  - "oaradmin version" : now retrieve the most recent database schema number
+  - Fix rights on the "schema" table in postgresql.
+  - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes 
+  - Ctrl-C was not working anymore in oarsub.
+    It seems that the signal handler does not handle the previous syntax
+    ($SIG = 'qdel')
+  - Bug #7487: bad initialisation of the gnatt for the container jobs.
+  - Fix bug in oarsh with the "-l" option
+  - Bug #7634: test if the resource property value is effectively defined
+    otherwise print a ''
   - Bug #7674: remove the computation of the scheduler_priority field for
     besteffort jobs from the asynchronous OAR part. Now the value is set when
     the jobs are turned into toLaunch state and in Error/Terminated.
