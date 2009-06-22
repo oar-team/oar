@@ -12,27 +12,29 @@ h3. Debian packages
 
 You can use the debian repository in your sources.list
 
- For the 2.2 version:
- deb http://oar.imag.fr/debian_stable_2.2 ./
+bq.  For the 2.2 version:
+     deb http://oar.imag.fr/debian_stable_2.2 ./
 
- For the 2.3 version:
- deb http://oar.imag.fr/debian_stable_2.3 ./
+bq.  For the 2.3 version:
+     deb http://oar.imag.fr/debian_stable_2.3 ./
 
 h3. RPM packages
 
 You can use the Yum RPM repository:
 
- Create a /etc/yum.repos.d/oar.repo file containing:
- [oar]
- name=OAR
- baseurl=http://oar.imag.fr/RPMS/stable/2.3
- enabled=1
- gpgcheck=0
+Create a /etc/yum.repos.d/oar.repo file containing:
+
+bq.  [oar]
+     name=OAR
+     baseurl=http://oar.imag.fr/RPMS/stable/2.3
+     enabled=1
+     gpgcheck=0
 
 h3. Sources
 
  Download sources and packages on:
- https://gforge.inria.fr/frs/?group_id=125
+
+bq.  "https://gforge.inria.fr/frs/?group_id=125":https://gforge.inria.fr/frs/?group_id=125
 
 The system is licensed under the *GNU Library General Public License*.
 
@@ -41,7 +43,7 @@ h3. Live CD / Virtual appliance
 An iso image of a Debian live system with all oar packages installed is availaible for testing. 
 You can download the latest version here:
 
- http://oar.imag.fr/debian/live_cd
+bq. "http://oar.imag.fr/debian/live_cd":http://oar.imag.fr/debian/live_cd
 
 h3. Optional Software
 
