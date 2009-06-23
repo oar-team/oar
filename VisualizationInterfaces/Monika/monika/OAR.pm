@@ -52,6 +52,7 @@ sub oarnodes {
   my $dbh = monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
   my @nodeNames= monika::db_io::list_nodes($dbh);
   foreach my $currentNode (@nodeNames){
+	next unless $currentNode;
     my @currentNodeRessources= monika::db_io::get_all_resources_on_node($dbh, $currentNode);
     my %hashInfoCurrentNodeRessources;
     foreach my $currentRessource (@currentNodeRessources){
