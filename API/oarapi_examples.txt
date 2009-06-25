@@ -49,11 +49,11 @@ irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'application/js
 irb(main):111:0> delete("/jobs/#{JSON.parse(job)['id']}.yaml")
 
 # Send the checkpoint signal to a job
-irb(main):102:0> puts post('/jobs/292','{"action":"checkpoint"}',:content_type => "application/json")
+irb(main):102:0> puts post('/jobs/292','{"method":"checkpoint"}',:content_type => "application/json")
 
 # Suspending/resuming a job
-irb(main):102:0> puts post('/jobs/292','{"action":"hold"}',:content_type => "application/json")
-irb(main):103:0> puts post('/jobs/292','{"action":"resume"}',:content_type => "application/json")
+irb(main):102:0> puts post('/jobs/292','{"method":"hold"}',:content_type => "application/json")
+irb(main):103:0> puts post('/jobs/292','{"method":"resume"}',:content_type => "application/json")
 
 # Adding a new resource (oar user only)
 irb(main):078:0> r={ 'hostname'=>'test2', 'properties'=> { 'besteffort'=>'NO' , 'cpu' => '10' } }

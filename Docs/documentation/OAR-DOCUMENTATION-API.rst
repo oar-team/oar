@@ -45,7 +45,7 @@ Examples are given in the YAML format because we think that it is the more human
 
 GET /version
 ------------
-:description: 
+:description:
   Gives version informations about OAR and OAR API. Also gives the timezone of the API server.
 
 :formats:
@@ -55,10 +55,10 @@ GET /version
   public
 
 :output:
-  *structure*: 
+  *structure*:
     hash
 
-  *yaml example*: 
+  *yaml example*:
     ::
 
      ---
@@ -87,7 +87,7 @@ GET /timezone
 :output:
   *structure*: hash
 
-  *yaml example*: 
+  *yaml example*:
     ::
 
      ---
@@ -111,7 +111,7 @@ GET /jobs
   public
 
 :output:
-  *structure*: array of hash (a job is an array element described by a hash)
+  *structure*: array of hashes (a job is an array element described by a hash)
 
   *yaml example*:
     ::
@@ -258,3 +258,449 @@ POST /jobs
    irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'script_path' => '/usr/bin/id' }
    irb(main):015:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
 
+POST /jobs/<id>
+---------------
+:description:
+  Updates a job.
+  In fact, as some clients (www browsers) doesn't support the DELETE method, this POST resource has been created mainly to workaround this and provide another way to delete a job. It also provides *checkpoint*, *hold* and *resume* methods, but one should preferably use the /checkpoints, /holds and /resumes resources.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:input:
+  *structure*: hash {"action" => "delete"}
+
+  *yaml example*:
+   ::
+
+    ---
+    method: delete
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+   ::
+
+    ---
+    api_timestamp: 1245944206
+    cmd_output: |
+      Deleting the job = 554 ...REGISTERED.
+      The job(s) [ 554 ] will be deleted in a near future.
+    id: 554
+    status: Delete request registered
+
+:usage example:
+  ::
+
+   # Deleting a job in the ruby rest client
+   puts post('/jobs/554.yaml','{"method":"delete"}',:content_type => "application/json")
+
+DELETE /jobs/<id>
+-----------------
+:description:
+  Delete or kill a job.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+  *structure*: hash returning the status
+
+  *yaml example*:
+   ::
+
+    ---
+    api_timestamp: 1245944206
+    cmd_output: |
+      Deleting the job = 554 ...REGISTERED.
+      The job(s) [ 554 ] will be deleted in a near future.
+    id: 554
+    status: Delete request registered
+
+:usage example:
+  ::
+
+   # Deleting a job in the ruby rest client
+   puts delete('/jobs/554.yaml')
+
+:note:
+  Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /jobs/<id> resource.
+
+
+GET /resources
+--------------
+:description:
+  Get the list of resources and their state
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: array of hashes
+
+  *yaml example*:
+    ::
+
+     ---
+     - api_timestamp: 1245861829
+       id: 6
+       node: liza-2
+       node_uri: /resources/nodes/liza-2
+       state: Suspected
+       uri: /resources/6
+     - api_timestamp: 1245861829
+       id: 7
+       node: liza-2
+       node_uri: /resources/nodes/liza-2
+       state: Suspected
+       uri: /resources/7
+     - api_timestamp: 1245861829
+       id: 4
+       node: liza-1
+       node_uri: /resources/nodes/liza-1
+       state: Suspected
+       uri: /resources/4
+     - api_timestamp: 1245861829
+       id: 5
+       node: liza-1
+       node_uri: /resources/nodes/liza-1
+       state: Suspected
+       uri: /resources/5
+
+
+  *note*: More details about a resource can be obtained with a GET on the provided *uri*. Details about all the resources of the same node may be obtained with a GET on *node_uri*.
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/resources.yaml
+
+GET /resources/all
+------------------
+:description:
+  Get the list of resources and all the details about them
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: array of hashes
+
+  *yaml example*:
+    ::
+
+     ---
+     - api_timestamp: 1245862386
+       id: 3
+       network_address: bart-3
+       node: bart-3
+       node_uri: /resources/nodes/bart-3
+       properties:
+         besteffort: YES
+         cluster: 0
+         cm_availability: 0
+         cpu: 2
+         cpuset: 0
+         deploy: NO
+         desktop_computing: NO
+         expiry_date: 0
+         finaud_decision: YES
+         last_job_date: 1245825515
+         licence: ~
+         network_address: bart-3
+         next_finaud_decision: NO
+         next_state: UnChanged
+         resource_id: 3
+         scheduler_priority: 0
+         state: Alive
+         state_num: 1
+         suspended_jobs: NO
+         type: default
+       state: Alive
+       uri: /resources/3
+     - api_timestamp: 1245862386
+       id: 1
+       network_address: bart-1
+       node: bart-1
+       node_uri: /resources/nodes/bart-1
+       properties:
+         besteffort: YES
+         cluster: 0
+         cm_availability: 0
+         cpu: 20
+         cpuset: 0
+         deploy: NO
+         desktop_computing: NO
+         expiry_date: 0
+         finaud_decision: NO
+         last_job_date: 1245671400
+         licence: ~
+         network_address: bart-1
+         next_finaud_decision: NO
+         next_state: UnChanged
+         resource_id: 1
+         scheduler_priority: 0
+         state: Suspected
+         state_num: 3
+         suspended_jobs: NO
+         type: default
+       state: Suspected
+       uri: /resources/1
+     - api_timestamp: 1245862386
+       id: 26
+       network_address: test2
+       node: test2
+       node_uri: /resources/nodes/test2
+       properties:
+         besteffort: YES
+         cluster: ~
+         cm_availability: 0
+         cpu: 10
+         cpuset: 0
+         deploy: NO
+         desktop_computing: NO
+         expiry_date: 0
+         finaud_decision: YES
+         last_job_date: 1239978322
+         licence: ~
+         network_address: test2
+         next_finaud_decision: NO
+         next_state: UnChanged
+         resource_id: 26
+         scheduler_priority: 0
+         state: Suspected
+         state_num: 3
+         suspended_jobs: NO
+         type: default
+       state: Suspected
+       uri: /resources/26
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/resources/all.yaml
+
+GET /resources/<id>
+-------------------
+:description:
+  Get details about the resource identified by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: 1 element array of hash
+
+  *yaml example*:
+    ::
+
+     ---
+     - api_timestamp: 1245862386
+       id: 3
+       network_address: bart-3
+       node: bart-3
+       node_uri: /resources/nodes/bart-3
+       properties:
+         besteffort: YES
+         cluster: 0
+         cm_availability: 0
+         cpu: 2
+         cpuset: 0
+         deploy: NO
+         desktop_computing: NO
+         expiry_date: 0
+         finaud_decision: YES
+         last_job_date: 1245825515
+         licence: ~
+         network_address: bart-3
+         next_finaud_decision: NO
+         next_state: UnChanged
+         resource_id: 3
+         scheduler_priority: 0
+         state: Alive
+         state_num: 1
+         suspended_jobs: NO
+         type: default
+       state: Alive
+       uri: /resources/3
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/resources/3.yaml
+
+GET /resources/nodes/<network_address>
+--------------------------------------
+:description:
+  Get details about the resources belonging to the node identified by *network_address*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: array of hashes
+
+  *yaml example*:
+    ::
+
+     ---
+     - api_timestamp: 1245945275
+       id: 4
+       network_address: liza-1
+       node: liza-1
+       node_uri: /resources/nodes/liza-1
+       properties:
+         besteffort: YES
+         cluster: 0
+         cm_availability: 0
+         cpu: 3
+         cpuset: 0
+         deploy: YES
+         desktop_computing: NO
+         expiry_date: 0
+         finaud_decision: NO
+         last_job_date: 1245825515
+         licence: ~
+         network_address: liza-1
+         next_finaud_decision: NO
+         next_state: UnChanged
+         resource_id: 4
+         scheduler_priority: 4294967289
+         state: Suspected
+         state_num: 3
+         suspended_jobs: NO
+         type: default
+       state: Suspected
+       uri: /resources/4
+     - api_timestamp: 1245945275
+       id: 5
+       network_address: liza-1
+       node: liza-1
+       node_uri: /resources/nodes/liza-1
+       properties:
+         besteffort: YES
+         cluster: 0
+         cm_availability: 0
+         cpu: 4
+         cpuset: 1
+         deploy: YES
+         desktop_computing: NO
+         expiry_date: 0
+         finaud_decision: NO
+         last_job_date: 1240244422
+         licence: ~
+         network_address: liza-1
+         next_finaud_decision: NO
+         next_state: UnChanged
+         resource_id: 5
+         scheduler_priority: 4294967293
+         state: Suspected
+         state_num: 3
+         suspended_jobs: NO
+         type: default
+       state: Suspected
+       uri: /resources/5
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/resources/nodes/liza-1.yaml
+
+
+POST /resources
+---------------
+:description:
+  Creates a new resource
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  A [hostname] or [network_address] entry is mandatory 
+
+  *structure*: hash describing the resource to be created
+
+  *fields*:
+     - **hostname** alias **network_address** (*string*): the network address given to the resource
+     - **properties** (*hash*): an optional hash defining some properties for this new resource
+
+  *yaml example*:
+    ::
+
+     ---
+     hostname: test2
+     properties:
+       besteffort: "NO"
+       cpu: "10"
+
+:output:
+  *structure*: hash returning the id of the newly created resource and status
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1245946199
+     id: 32
+     status: ok
+     uri: /resources/32
+     warnings: []
+
+:usage example:
+  ::
+
+   # Adding a new resource with the ruby rest client (oar user only)
+   irb(main):078:0> r={ 'hostname'=>'test2', 'properties'=> { 'besteffort'=>'NO' , 'cpu' => '10' } }
+   irb(main):078:0> puts post('/resources', r.to_json , :content_type => 'application/json')
+
+DELETE /resources/<id>
+----------------------
+:description:
+  Delete the resource identified by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash returning the status
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1245946801
+     status: deleted
+
+:usage example:
+  ::
+
+   # Deleting a resource with the ruby rest client
+   puts delete('/resources/32.yaml')
+
+:note:
+  If the resource could not be deleted, returns a 403 and the reason into the message body.
