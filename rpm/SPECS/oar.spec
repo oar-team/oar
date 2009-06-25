@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.4.0
-%define release 1test
+%define release 2test
 
 Name: 		oar
 Version:        %{version}
@@ -345,9 +345,10 @@ ln -s /etc/oar/apache.conf /etc/httpd/conf.d/oar-web-status.conf || true
 service httpd reload || true
 
 %postun web-status
-rm -f /etc/httpd/conf.d/oar-web-status.conf || true
-rm -rf /var/www/html/oar-web-status-files/drawgantt/cache
-
+if [ "$1" = "0" ] ; then # last uninstall
+  rm -f /etc/httpd/conf.d/oar-web-status.conf || true
+  rm -rf /var/www/html/oar-web-status-files/drawgantt/cache
+fi
 
 ###### oar-api scripts ######
 
@@ -356,14 +357,20 @@ ln -s /etc/oar/apache-api.conf /etc/httpd/conf.d/oar-api.conf || true
 service httpd reload || true
 
 %postun api
-rm -f /etc/httpd/conf.d/oar-api.conf || true
-service httpd reload || true
+if [ "$1" = "0" ] ; then # last uninstall
+  rm -f /etc/httpd/conf.d/oar-api.conf || true
+  service httpd reload || true
+fi
 
 %changelog
 
-* Mon Jan 26 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-1
+* Thu Jun 25 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-2test
+- Bug fix: upgrade of oar-web-status and oar-api packages removed some files
+
+* Mon Jan 26 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-1test
 - First RPM packaging for 2.4 branch.
 - Added oar-api package
 
 * Sun Mar 23 2008 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.3.0-1
 - First RPM packaging for 2.3 branch. Inspired from 1.6 RPM packaging and 2.3 Debian packaging.
+
