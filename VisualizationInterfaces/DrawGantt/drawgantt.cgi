@@ -623,7 +623,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 
 			if (second_field_index != nil)
 				$resources[r][second_field_index].to_s =~ second_displaying_regex
-				displayed_label = displayed_label + $1
+				displayed_label = displayed_label + $1 if ($1!=nil)
 			end
 		
 			resource_labels << displayed_label
