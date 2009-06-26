@@ -28,6 +28,10 @@ A simple GET query to the API using wget may look like this::
     # Get the list of resources
     wget -O - http://www.mydomain.org/oarapi/resources.yaml?structure=simple
 
+You can also access to the API using a browser. Make it point to http://www.myoarcluster.local/oarapi/index.html and you'll see a very simple HTML interface allowing you to browse the cluster resources and even post a job using a form. (of course, replace www.myoarcluster.local by a valid name allowing you to join the http service of the host where you installed the oar api)
+
+But generally, you'll use a REST client or a REST library provided for your favorite language. You'll see examples using a ruby rest library in the next parts of this document. 
+
 Authentication
 --------------
 
@@ -42,6 +46,36 @@ REST requests description
 =========================
 
 Examples are given in the YAML format because we think that it is the more human readable and so very suitable for this kind of documentation. But you can also use the JSON format for your input/output data. Each resource uri may be postfixed by .yaml, .jso of .html.
+
+GET /index
+----------
+:description:
+  Home page for the HTML browsing
+
+:formats:
+  html
+
+:authentication:
+  public
+
+:output:
+  *example*:
+   ::
+
+    <HTML>
+    <HEAD>
+    <TITLE>OAR REST API</TITLE>
+    </HEAD>
+    <BODY>
+    <HR>
+    <A HREF=./resources.html>RESOURCES</A>&nbsp;&nbsp;&nbsp;
+    <A HREF=./jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
+    <A HREF=./jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
+    <HR>
+    Welcome on the oar API
+
+:note:
+  Header of the HTML resources may be customized into the **/etc/oar/api_html_header.pl** file.
 
 GET /version
 ------------
@@ -333,6 +367,64 @@ DELETE /jobs/<id>
 :note:
   Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /jobs/<id> resource.
 
+GET /jobs/form
+--------------
+:description:
+  HTML form for posting (submiting) new jobs from a browser
+
+:formats:
+  html
+
+:authentication:
+  user
+
+:output:
+  *example*:
+   ::
+
+    <HTML>
+     <HEAD>
+     <TITLE>OAR REST API</TITLE>
+     </HEAD>
+     <BODY>
+     <HR>
+     <A HREF=../resources.html>RESOURCES</A>&nbsp;&nbsp;&nbsp;
+     <A HREF=../jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
+     <A HREF=../jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
+     <HR>
+     
+     <FORM METHOD=post ACTION=../jobs.html>
+     <TABLE>
+     <CAPTION>Job submission</CAPTION>
+     <TR>
+       <TD>Resources</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=resource VALUE="/nodes=1/cpu=1,walltime=00:30:00"></TD>
+     </TR><TR>
+       <TD>Name</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=name VALUE="Test_job"></TD>
+     </TR><TR>
+       <TD>Properties</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=property VALUE=""></TD>
+     </TR><TR>
+       <TD>Program to run</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=script_path VALUE='"/bin/sleep 300"'></TD>
+     </TR><TR>
+       <TD>Types</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>
+     </TR><TR>
+       <TD>Reservation dates</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=reservation></TD>
+     </TR><TR>
+       <TD>Directory</TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=directory></TD>
+     </TR><TR>
+       <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
+     </TR>
+     </TABLE>
+     </FORM>
+     
+:note:
+  This form may be customized in the **/etc/oar/api_html_postform.pl** file
 
 GET /resources
 --------------
