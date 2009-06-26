@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version 2.3.5:
+--------------
+  - Bug #8139: Drawgantt nil error (Add condition to test the presence of nil
+    value in resources table.)
+
 version 2.3.4:
 --------------
   - add the command "oar_resources_init" to easily detect and initialize the
