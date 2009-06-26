@@ -1,3 +1,11 @@
+oar (2.4.0-1~23.gbp7c9127) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @7c91273b78ece642ee90ae839bfe2d4e6a98f37b **
+
+  * API doc: resources description ok. Writing the concepts part.
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 26 Jun 2009 11:17:55 +0200
+
 oar (2.4.0-1~22.gbp34e14e) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @34e14e3519c4ed8dd4deacf38b571dc49c34634e **
