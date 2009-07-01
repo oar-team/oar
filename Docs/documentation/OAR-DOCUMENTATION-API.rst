@@ -18,6 +18,8 @@ PDF version : `<OAR-DOCUMENTATION-API.pdf>`_
 Introduction
 ============
 
+The OAR REST API is currently a cgi script being served by an http server (we recommend Apache) that allows the programming of interfaces to OAR using a REST library. Most of the operations usually done with the oar Unix commands may be done using this API from your favourite language.
+
 Concepts
 ========
 
@@ -35,17 +37,133 @@ But generally, you'll use a REST client or a REST library provided for your favo
 Authentication
 --------------
 
+* **Set-up**:
+ 
+  The API authentication relies on the authentication mechanism of the http server used to serve the CGI script.
+  The API may be configured to use the IDENT protocol for authentication from trusted hosts, like a cluster frontend. In this case, a unix login is automatically used by the API. This only works for hosts that have been correctly configured (for which the security rules are trusted by the admistrator). If IDENT is not used or not trusted, the API can use the basic HTTP authentication. You may also want to set-up https certificates. In summary, the API authentication is based on the http server's configuration. The API uses the **X_REMOTE_IDENT** http header variable, so the administrator has to set up this variable inside the http server configuration. Look at the provided apache sample configuration files (API/apache2.conf of the OAR sources) for more details.
+
+* **Usage**:
+
+  Most of the time, you'll make requests that needs you to be authenticated.
+  If the IDENT method is used, your unix login is automatically used. But as only a few hosts may be trusted, you'll probably have to open a tunnel to one of this host. You may use ssh to do this. For example, supposing access.mycluster.fr is a gateway host trusted by the api host::
+
+  $ ssh -NL 8080:api.mycluster.fr:80 login@access.mycluster.fr
+
+  Then, point your REST client to::
+
+  # http://localhost:8080
+
+
 Data structures and formats
 ---------------------------
 
+The API currently can serve data into *YAML*, *JSON* or *HTML*. Posted data can also be coded into *YAML*, *JSON* or *x-www-form-urlencoded* (for HTML from posts). You may specify the requested format by 2 ways:
+
+    * giving an extension to resources: **.yaml**, **.json** or **.html**
+    * setting the **HTTP_ACCEPT** header variable to **text/yaml**, **application/json** or **text/html**
+
+For the posted data, you have to correctly set the **HTTP_CONTENT_TYPE** variable to **text/yaml**, **application/json** or **application/x-www-form-urlencoded**.
+
+Sometimes, the data structures returned (not the coding format, but the contents: array, hashes, array of hashes,...) may be changed. Currently, we have 2 available data structures: *simple* and *oar*. The structure is passed through the variable *structure* that you may pass in the url, for example: ?structure=simple
+
+    * The **simple** data structure tries to be as simple as possible, using simple arrays in place of hashes wherever it is possible
+    * The **oar** data structure serves data in the way oar does with the oarnodes/oarstat export options (-Y, -D, -J,...) 
+
+By default, we use the *simple* data structure. 
+
+Here are some examples, using the ruby restclient (see next section)::
+  
+  # Getting resources infos
+    # in JSON
+  irb(main):004:0> puts get('/resources.json')
+    # in YAML
+  irb(main):005:0> puts get('/resources.yaml')
+    # Same thing
+  irb(main):050:0> puts get('/resources', :accept=>"text/yaml")
+    # Specifying the "oar" data structure
+  irb(main):050:0> puts get('/resources.json?structure=oar')
+    # Specifying the "simple" data structure
+  irb(main):050:0> puts get('/resources.json?structure=simple')
+
+
 Errors and debug
 ----------------
+
+When the API returns an error, it generally uses a standard HTTP return status (404 NOT FOUND, 406 NOT ACCEPTABLE, ...). But it also returns a body containing a hash like the following::
+
+ {
+  "title" : "ERROR 406 - Invalid content type required */*",
+  "message" : "Valid types are text/yaml, application/json or text/html",
+  "code" : "200"
+ }
+
+This error body is formated in the requested format. But if this format was not given, it uses JSON by default.
+
+To allow you to see the error body, you may find it useful to activate the **debug=1** variable. It will force the API to always return a 200 OK status, even if there's an error so that you can see the body with a simple browser or a rest client without having to manage the errors. For example::
+
+ wget -nv -O - "http://localhost:8080/oargridapi/sites/grenoble?debug=1"
+
+Here is an example of error catching in ruby::
+
+  # Function to get objects from the api
+  # We use the JSON format 
+  def get(api,uri)
+    begin
+      return JSON.parse(api[uri].get(:accept => 'application/json'))
+    rescue => e
+      if e.respond_to?('http_code')
+        puts "ERROR #{e.http_code}:\n #{e.response.body}"
+      else
+        puts "Parse error:" 
+        puts e.inspect
+      end
+      exit 1
+    end
+  end 
+
+
+Ruby REST client
+================
+
+One of the easiest way for testing this API is to use the rest-client ruby module:
+
+http://rest-client.heroku.com/rdoc/
+
+It may be used from ruby scripts (http://www.ruby.org/) or interactively.
+It is available as a rubygem, so to install it, simply install rubygems and do "gem install rest-client". Then, you can run the interactive client which is nothing else than irb with shortcuts. Here is an example irb session::
+
+  $ export PATH=$PATH:/var/lib/gems/1.8/bin 
+  $ restclient http://localhost/oarapi
+  irb(main):001:0> puts get('/jobs.yaml')
+  ---
+  - api_timestamp: 1246457384
+    id: 551
+    name: ~
+    owner: bzizou
+    queue: besteffort
+    state: Waiting
+    submission: 1245858042
+    uri: /jobs/551
+  => nil
+  irb(main):002:0>
+
+
+or, if an http basic auth is required::
+
+  restclient http://localhost/api <login> <password>
+  ...
+
 
 
 REST requests description
 =========================
 
 Examples are given in the YAML format because we think that it is the more human readable and so very suitable for this kind of documentation. But you can also use the JSON format for your input/output data. Each resource uri may be postfixed by .yaml, .jso of .html.
+
+In this section, we describe every REST resources of the OAR API. The authentication may be:
+ - public: everybody can query this resource
+ - user: only authenticated and valid users can query this resource
+ - oar: only the oar user can query this resource (administration usage)
 
 GET /index
 ----------
@@ -291,6 +409,15 @@ POST /jobs
    irb(main):010:0> require 'json'
    irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'script_path' => '/usr/bin/id' }
    irb(main):015:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
+
+   # Submitting a job with a provided inline script
+   irb(main):024:0> script="#!/bin/bash
+   irb(main):025:0" echo \"Hello world\"
+   irb(main):026:0" whoami
+   irb(main):027:0" sleep 300
+   irb(main):028:0" "
+   irb(main):029:0> j={ 'resource' => '/nodes=2/cpu=1', 'script' => script , 'workdir' => '~bzizou/tmp'}
+   irb(main):030:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
 
 POST /jobs/<id>
 ---------------
@@ -796,3 +923,36 @@ DELETE /resources/<id>
 
 :note:
   If the resource could not be deleted, returns a 403 and the reason into the message body.
+
+DELETE /resources/<node>/<cpuset_id>
+------------------------------------
+:description:
+  Delete the resource corresponding to *cpuset_id* on node *node*. It is useful when you don't know about the ids, but only the number of cpus on physical nodes.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash returning the status
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1246459253
+     status: deleted
+     => nil
+
+:usage example:
+  ::
+
+   # Deleting a resource with the ruby rest client
+   puts delete('/resources/test/0.yaml')
+
+:note:
+  If the resource could not be deleted, returns a 403 and the reason into the message body.
+
+
