@@ -605,7 +605,6 @@ SWITCH: for ($q) {
       }
       $sth->finish();
       foreach my $i (@jobList){
-        print("\tRemove the job $i->[0], it was run on the resource $Resource\n");
         $base->do("DELETE from event_logs         WHERE job_id = $i->[0]");
         $base->do("DELETE from frag_jobs          WHERE frag_id_job = $i->[0]");
         $base->do("DELETE from jobs               WHERE job_id = $i->[0]");
