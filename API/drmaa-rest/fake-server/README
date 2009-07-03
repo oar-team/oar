@@ -1,5 +1,0 @@
-  Fake DRMAA-REST server
-  ======================
-
-Code of fake-server is in app.rb
-Launch fake-server by: shoes ./shoes-and-a-shotgun.rb
