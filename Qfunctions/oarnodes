@@ -165,6 +165,9 @@ if (($#resources >= 0) or (defined($sql_property))){
                 $tmp_hash{jobs} = \@jobs;
             }
         #}
+        if ($tmp_hash{state} eq "Absent" && $resource_info->{cm_availability} != 0) {
+            $tmp_hash{state} .= " (standby)";
+        }
         $tmp_hash{resource_id} = $r;
         push(@data_to_display, \%tmp_hash);
     }
@@ -253,6 +256,10 @@ if (defined($stateMode)){
             my %tmp_data;
             foreach my $n (@node_info){
                 $tmp_data{$n->{resource_id}} = $n->{state};
+                my $properties = iolib::get_resource_info($base,$n->{resource_id});
+                if ($n->{state} eq "Absent" && $properties->{cm_availability} != 0) {
+                    $tmp_data{$n->{resource_id}} .= " (standby)";
+                }
             }
             $data_to_display{$node} = \%tmp_data;
         }else{
@@ -347,6 +354,9 @@ if (defined($stateMode)){
             #}
             $tmp_hash2{network_address} = $r->{network_address};
             my $properties = iolib::get_resource_info($base,$r->{resource_id});
+            if ($tmp_hash2{state} eq "Absent" && $properties->{cm_availability} != 0) {
+                $tmp_hash2{state} .= " (standby)";
+            }
             $tmp_hash2{properties} = $properties;
             $tmp_hash1{$r->{resource_id}} = \%tmp_hash2;
         }
