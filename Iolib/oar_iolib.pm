@@ -195,7 +195,7 @@ sub get_database_type(){
     return($Db_type);
 }
 
-# Duration to add to all jobs when matching the cm_availability resource property field
+# Duration to add to all jobs when matching the available_upto resource property field
 my $Cm_security_duration = 600;
 
 # CONNECTION
@@ -2997,7 +2997,7 @@ sub get_resources_that_can_be_waked_up($$) {
                                 FROM resources
                                 WHERE
                                     state = \'Absent\' AND
-                                    resources.cm_availability > $max_date
+                                    resources.available_upto > $max_date
                             ");
     $sth->execute();
     my @res = ();
@@ -3021,7 +3021,7 @@ sub get_resources_that_will_be_out($$) {
                                 FROM resources
                                 WHERE
                                     state = \'Alive\' AND
-                                    resources.cm_availability < $max_date
+                                    resources.available_upto < $max_date
                             ");
     $sth->execute();
     my @res = ();
@@ -4773,7 +4773,7 @@ sub search_idle_nodes($$){
                 resources.state = \'Suspected\') AND
                 resources.network_address != \'\' AND
                 resources.type = \'default\' AND
-                resources.cm_availability < 2147483647
+                resources.available_upto < 2147483647
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();

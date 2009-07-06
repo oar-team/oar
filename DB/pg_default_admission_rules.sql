@@ -31,7 +31,7 @@ if ($queue_name eq "admin") {
 
 -- Prevent the use of system properties
 INSERT INTO admission_rules (rule) VALUES ('
-my @bad_resources = ("type","state","next_state","finaud_decision","next_finaud_decision","state_num","suspended_jobs","besteffort","deploy","expiry_date","desktop_computing","last_job_date","cm_availability","scheduler_priority");
+my @bad_resources = ("type","state","next_state","finaud_decision","next_finaud_decision","state_num","suspended_jobs","besteffort","deploy","expiry_date","desktop_computing","last_job_date","available_upto","scheduler_priority");
 foreach my $mold (@{$ref_resource_list}){
     foreach my $r (@{$mold->[0]}){
         my $i = 0;

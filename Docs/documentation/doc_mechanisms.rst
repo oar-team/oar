@@ -196,7 +196,7 @@ composed by Intranet computers. These nodes can be switch in computing mode
 only at specific times. So we have implemented a functionality that can
 request to power on some hardware if they can be in the cluster.
 
-We are using the field *cm_availability* from the table resources
+We are using the field *available_upto* from the table resources
 to know when a node will be inaccessible in the cluster mode (easily settable
 with oarnodesetting command). So when the OAR scheduler wants some potential
 available computers to launch the jobs then it executes the command

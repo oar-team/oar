@@ -184,7 +184,7 @@ sub init_scheduler($$$$$$){
     #Add in Gantt reserved jobs already scheduled
     my $str_tmp = "state_num ASC";
     if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-        $str_tmp .= ", cm_availability DESC";
+        $str_tmp .= ", available_upto DESC";
     }
     if (!defined($order_part) or ($order_part eq "")){
         $order_part = $str_tmp;
@@ -453,7 +453,7 @@ sub check_reservation_jobs($$$$){
             
             my $str_tmp = "state_num ASC";
             if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-                $str_tmp .= ", cm_availability DESC";
+                $str_tmp .= ", available_upto DESC";
             }
             if (!defined($order_part) or ($order_part eq "")){
                 $order_part = $str_tmp;

@@ -168,15 +168,15 @@ Linux Ethernet driver; see "ethtool").
 If you want to enable a node to be woke up the next 12 hours::
 
     ((DATE=$(date +%s)+3600*12))
-    oarnodesetting -h host_name -p cm_availability=$DATE
+    oarnodesetting -h host_name -p available_upto=$DATE
 
 Otherwise you can disable the wake up of nodes (but not the halt) by::
 
-    oarnodesetting -h host_name -p cm_availability=0
+    oarnodesetting -h host_name -p available_upto=0
 
 If you want to disable the halt on a node::
 
-    oarnodesetting -h host_name -p cm_availability=2147483647
+    oarnodesetting -h host_name -p available_upto=2147483647
 
 2147483647 = 2^31 - 1 : we take this value as infinite and it is used to
 disable the halt mechanism.

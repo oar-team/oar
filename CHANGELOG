@@ -38,6 +38,9 @@ version 2.4.0:
     submitted script. Fix also some parsing errors.
   - Bug #7962: enable resource property "cm_availability" to be manipulated by
     the oarnodesetting command
+  - Added the (standby) information to a node state in oarnodes when it's state 
+	is Absent and cm_availability != 0
+  - Changed the name of cm_availability to available_upto which is more relevant
 
 version 2.3.4:
 --------------

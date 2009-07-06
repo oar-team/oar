@@ -706,7 +706,7 @@ sub sentinelle($$$$$){
 sub check_resource_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|cm_availability|walltime|nodes|type|suspended_jobs|scheduler_priority)$/){
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|available_upto|walltime|nodes|type|suspended_jobs|scheduler_priority)$/){
         return(1);
     }else{
         return(0);

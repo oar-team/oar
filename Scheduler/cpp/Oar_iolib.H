@@ -52,7 +52,7 @@ struct resources_iolib {
 			  // computing resource (with an agent)
   unsigned int last_job_date; // INT UNSIGNED store the date when the
 			      // resource was used for the last time
-  unsigned int cm_availability; //INT UNSIGNED used with compute mode
+  unsigned int available_upto; //INT UNSIGNED used with compute mode
 				//features to know if an Absent
 				//resource can be switch on
 

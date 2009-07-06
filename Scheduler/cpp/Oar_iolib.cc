@@ -221,7 +221,7 @@ static struct resources_iolib fillResourcesStruct(QSqlQuery &req)
   result.expiry_date = req.value(15).toUInt(); 
   result.desktop_computing = yesNo2Bool(req.value(16).toString());
   result.last_job_date = req.value(17).toUInt();
-  result.cm_availability = req.value(18).toUInt();
+  result.available_upto = req.value(18).toUInt();
 
   return result;
 }
@@ -238,7 +238,7 @@ vector <resources_iolib> resources_extractor(bool withState, string state="") {
   QSqlQuery query;
   query.setForwardOnly(true);
   vector <resources_iolib> result;
-  string req = "SELECT resource_id, type, network_address, state, next_state, finaud_decision, next_finaud_decision, state_num, suspended_jobs, scheduler_priority, switch, cpu, cpuset, besteffort, deploy, expiry_date, desktop_computing, last_job_date, cm_availability\
+  string req = "SELECT resource_id, type, network_address, state, next_state, finaud_decision, next_finaud_decision, state_num, suspended_jobs, scheduler_priority, switch, cpu, cpuset, besteffort, deploy, expiry_date, desktop_computing, last_job_date, available_upto\
                 FROM resources\
                 ";
   if (withState)
@@ -832,7 +832,7 @@ vector<unsigned int> get_resources_that_can_be_waked_up_or_will_be_out(unsigned 
                    FROM resources\
                    WHERE\
                      state = \'" << status << "\' AND\
-                     resources.cm_availability " << compare_oper <<" " << max_date << "\
+                     resources.available_upto " << compare_oper <<" " << max_date << "\
                 ";
                 
   query.exec(req);

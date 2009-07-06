@@ -630,7 +630,7 @@ GET /resources/all
        properties:
          besteffort: YES
          cluster: 0
-         cm_availability: 0
+         available_upto: 0
          cpu: 2
          cpuset: 0
          deploy: NO
@@ -658,7 +658,7 @@ GET /resources/all
        properties:
          besteffort: YES
          cluster: 0
-         cm_availability: 0
+         available_upto: 0
          cpu: 20
          cpuset: 0
          deploy: NO
@@ -686,7 +686,7 @@ GET /resources/all
        properties:
          besteffort: YES
          cluster: ~
-         cm_availability: 0
+         available_upto: 0
          cpu: 10
          cpuset: 0
          deploy: NO
@@ -738,7 +738,7 @@ GET /resources/<id>
        properties:
          besteffort: YES
          cluster: 0
-         cm_availability: 0
+         available_upto: 0
          cpu: 2
          cpuset: 0
          deploy: NO
@@ -790,7 +790,7 @@ GET /resources/nodes/<network_address>
        properties:
          besteffort: YES
          cluster: 0
-         cm_availability: 0
+         available_upto: 0
          cpu: 3
          cpuset: 0
          deploy: YES
@@ -818,7 +818,7 @@ GET /resources/nodes/<network_address>
        properties:
          besteffort: YES
          cluster: 0
-         cm_availability: 0
+         available_upto: 0
          cpu: 4
          cpuset: 1
          deploy: YES

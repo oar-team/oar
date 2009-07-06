@@ -761,7 +761,7 @@ desktop_computing     ENUM('YES','NO')      tell if it is a desktop computing
                                             resource (with an agent)
 last_job_date         INT UNSIGNED          store the date when the resource
                                             was used for the last time
-cm_availability       INT UNSIGNED          used with compute mode features to
+available_upto        INT UNSIGNED          used with compute mode features to
                                             know if an Absent resource can be
                                             switch on
 ====================  ====================  =======================================
@@ -1187,7 +1187,7 @@ Each configuration tag found in /etc/oar.conf is now described:
 
     * When OAR scheduler wants some nodes to wake up then it launches this
       command and puts on its STDIN the list of nodes to wake up (one hostname
-      by line).The scheduler looks at *cm_availability* field in the resources_
+      by line).The scheduler looks at *available_upto* field in the resources_
       table to know if the node will be started for enough time::
 
         SCHEDULER_NODE_MANAGER_WAKE_UP_CMD="/path/to/the/command with your args"

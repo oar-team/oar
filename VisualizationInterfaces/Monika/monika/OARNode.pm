@@ -185,10 +185,10 @@ sub htmlTable {
     }
     elsif ($ressourceState eq "Absent") {
 
-      my $cm_availability = $self->{Ressources}->{$currentRessource}->{infos}->{cm_availability};
-      if(defined($cm_availability) && $cm_availability ne '0'){
+      my $available_upto = $self->{Ressources}->{$currentRessource}->{infos}->{available_upto};
+      if(defined($available_upto) && $available_upto ne '0'){
         my $now= `date +%s`;
-        if($now < $cm_availability){
+        if($now < $available_upto){
           $output .= $cgi->colorTd("StandBy",100/$self->cpus."%");
         }else{
           $output .= $cgi->colorTd("Absent",100/$self->cpus."%");
@@ -258,7 +258,7 @@ sub htmlStatusTable {
       if($prop eq $nodes_synonym){
         $value= $self->displayHTMLname();
       }
-      if($prop eq 'cm_availability'){
+      if($prop eq 'available_upto'){
         $value= strftime("%F %T",localtime($value));
       }
       $output .= $cgi->td({-valign => "top", bgcolor => "^c0c0c0"}, $cgi->i($value));

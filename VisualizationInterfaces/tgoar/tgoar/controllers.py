@@ -43,7 +43,7 @@ resources_properties_fields={ 'resource_id': "Resource Id",
                        'deploy': 'Deployable resource',
                        'desktop_computing': 'Desktop computing resource',
                        'last_job_date': 'Last job date',
-                       'cm_availability': 'Foo'
+                       'available_upto': 'Foo'
                        }
 
 ### store fields order

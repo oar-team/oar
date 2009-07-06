@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `resources` (
   `expiry_date` int(10) unsigned NOT NULL,
   `desktop_computing` enum('YES','NO') NOT NULL default 'NO',
   `last_job_date` int(10) unsigned default '0',
-  `cm_availability` int(10) unsigned NOT NULL default '0',
+  `available_upto` int(10) unsigned NOT NULL default '0',
   `mem` int(10) unsigned NOT NULL default '0',
   `model` tinytext NOT NULL,
   `serial` tinytext NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `resources` (
 -- Dumping data for table `resources`
 --
 
-INSERT INTO `resources` (`resource_id`, `type`, `network_address`, `state`, `next_state`, `finaud_decision`, `next_finaud_decision`, `state_num`, `suspended_jobs`, `scheduler_priority`, `switch`, `cpu`, `cpuset`, `besteffort`, `deploy`, `expiry_date`, `desktop_computing`, `last_job_date`, `cm_availability`, `mem`, `model`, `serial`, `eth0`, `eth1`, `eth2`, `eth3`, `IP_public`, `IP_private`, `managedBy`, `city`, `isp`, `box`, `atype`, `person`, `wakeup_1`, `wakeup_2`, `wakeup_3`, `wakeup_4`) VALUES
+INSERT INTO `resources` (`resource_id`, `type`, `network_address`, `state`, `next_state`, `finaud_decision`, `next_finaud_decision`, `state_num`, `suspended_jobs`, `scheduler_priority`, `switch`, `cpu`, `cpuset`, `besteffort`, `deploy`, `expiry_date`, `desktop_computing`, `last_job_date`, `available_upto`, `mem`, `model`, `serial`, `eth0`, `eth1`, `eth2`, `eth3`, `IP_public`, `IP_private`, `managedBy`, `city`, `isp`, `box`, `atype`, `person`, `wakeup_1`, `wakeup_2`, `wakeup_3`, `wakeup_4`) VALUES
 (1, 'default', 'dsl00', 'Alive', 'UnChanged', 'YES', 'NO', 3, 'NO', 0, '0', 1, 0, 'YES', 'YES', 0, 'NO', 1230018558, 0, 0, 'NE2208-9670', '708000007', '00:30:18:4A:63:5F', '00:30:18:4A:63:5E', '00:30:18:4A:63:5D', '00:30:18:4A:63:5C', '82.228.144.32', '0.0.0.0', 1, '', '', '', 'adsl', 1, 'alway', NULL, NULL, NULL),
 (2, 'default', 'dsl01', 'Alive', 'UnChanged', 'YES', 'NO', 3, 'NO', 0, '0', 2, 0, 'YES', 'YES', 0, 'NO', 1230018558, 0, 0, 'NE2208-9670', '708000008', '00:30:18:4A:63:63', '00:30:18:4A:63:62', '00:30:18:4A:63:61', '00:30:18:4A:63:60', '82.236.229.116', '0.0.0.0', 1, '', '', '', 'adsl', 8, '9:00', NULL, 'alway', NULL),
 (3, 'default', 'dsl02', 'Alive', 'UnChanged', 'YES', 'NO', 3, 'NO', 0, '0', 3, 0, 'YES', 'YES', 0, 'NO', 1230018558, 0, 0, 'NE2208-9670', '705000027', '00:30:18:4A:25:A1', '00:30:18:4A:25:A0', '00:30:18:4A:25:9F', '00:30:18:4A:25:9E', '193.55.47.3', '0.0.0.0', 3, '', '', '', 'adsl', 0, '10:25', '12:00', '13:00', NULL),
