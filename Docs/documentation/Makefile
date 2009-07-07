@@ -26,5 +26,5 @@ pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf OAR-DOCUMENTATION-AP
 	pdflatex $< $@
 
 clean:
-	rm *.pdf *.html *.tex
+	rm *.pdf *.html *.tex *.aux *.log *.out
 
