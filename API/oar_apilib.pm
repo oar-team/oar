@@ -740,7 +740,10 @@ sub check_job($$) {
                       "script_path", "type",
                       "reservation", "directory"
                      ) { parameter_option($job,$option) }
-    
+
+  # Manage toggle options (no parameter)
+  toggle_option($job,"use-job-key");
+  toggle_option($job,"scanscript");
 
   return $job;
 }
