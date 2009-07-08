@@ -21,9 +21,13 @@
 
 
 (* TODO need   can't scheduled job ->  to error state ??? *)
+(* remove nb_res job *)
+(* remove nb_res constraints *)
+(* modify inter_interval !!! *)
+
 
 open Types 
-(*open Interval*)
+open Interval 
 open Int64
 
 (*
@@ -77,8 +81,8 @@ let s2 =  {time_s = 12; time_e = 10; nb_free_res = 2; set_of_res = []};;
 let s3 =  {time_s = 20; time_e = 50; nb_free_res = 3; set_of_res = []};;
 let s5 =  {time_s = 60; time_e = 70; nb_free_res = 3; set_of_res = []};;
 
-let j1 = { time_b = 0; walltime = 3; nb_res = 5; set_of_rs = []};;
-let j2 = { time_b = 0; walltime = 5; nb_res = 5; set_of_rs = []};;
+let j1 = { time_b = 0; walltime = 3; nb_res = 5; set_of_rs = []; };;
+let j2 = { time_b = 0; walltime = 5; nb_res = 5; set_of_rs = [] };;
 let j3 = { time_b = 0; walltime = 6; nb_res = 5; set_of_rs = []};;
 let j4 = { time_b = 0; walltime = 8; nb_res = 5; set_of_rs = []};;
 let j5 = { time_b = 0; walltime = 20; nb_res = 5; set_of_rs = []};;
@@ -94,6 +98,8 @@ find_contiguous_slots_time [s0;s1;s3;s5] j5 ;; [s3] [s0;s1] [s5]
 find_contiguous_slots_time [s0;s1;s2] [] []  (s0.time_s-1) j1;;
 find_contiguous_slots_time [s0;s1;s2;s3;s5] [] []  (s0.time_s-1) j5;;(*Exception: Failure "hd". TODO ??? *)
 *)
+
+
 
 
 (*
@@ -112,8 +118,11 @@ let find_resource_hierarchies itv_res_l itv_h_l_l n_l =
                      extract_n_block_itv itv_res itv_h_l n
     | (y,n::m) ->  let itv_h_l = List.hd itv_h_l2 in
                    let itv_r = extract_n_min_block_itv itv_res itv_h_l n in
-                   find_res_h itv_r (List.tl itv_h_l2) m
-    | (_,[]) -> raise (Failure "We must not be here !")
+                    find_res_h itv_r (List.tl itv_h_l2) m
+(*    | (_,[]) -> raise (Failure "We must not be here !")*) 
+    | (_,[]) -> failwith (Failure "We must not be here !") 
+
+
   in find_res_h itv_res_l itv_h_l_l n_l ;;
 
 (*
@@ -131,7 +140,7 @@ let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e = 12}; {b = 13; e = 16}; {b 
 let h = [h1;h2];;
 let r = [1;2];;
 
-find_ressource_hierarchies a, h, r;;
+find_resource_hierarchies a h r;;
 
 *)
 
@@ -162,14 +171,25 @@ let find_first_suitable_contiguous_slots slots j =
 
 (*
 
-let s0 =  {time_s = 0; time_e = 4; nb_free_res = 40; set_of_res = [{b = 1; e = 40}]};;
-let s1 =  {time_s = 5; time_e = 10; nb_free_res = 20; set_of_res = [{b = 11; e = 20};{b = 31; e = 40}]};;
-let s4 =  {time_s = 11; time_e = 14; nb_free_res = 25; set_of_res = [{b = 11; e = 35}]};;
-let s5 =   {time_s = 21; time_e = 30; nb_free_res = 15; set_of_res = [{b = 21; e = 35}]};;
+let s0 =  {time_s = 0L; time_e = 4L; nb_free_res = 40; set_of_res = [{b = 1; e = 40}]};;
+let s1 =  {time_s = 5L; time_e = 10L; nb_free_res = 20; set_of_res = [{b = 11; e = 20};{b = 31; e = 40}]};;
+let s4 =  {time_s = 11L; time_e = 14L; nb_free_res = 25; set_of_res = [{b = 11; e = 35}]};;
+let s5 =   {time_s = 21L; time_e = 30L; nb_free_res = 15; set_of_res = [{b = 21; e = 35}]};;
 
-let j1 = { time_b = 0; walltime = 3; nb_res = 5; set_of_rs = []};;
-let j2  = { time_b = 0; walltime = 12; nb_res = 5; set_of_rs = []};;
-let j3  =  { time_b = 0; walltime = 3; nb_res = 22; set_of_rs = []};;
+
+let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e = 12}; {b = 13; e = 16}; {b = 17; e = 20}; {b = 21; e = 24}; {b = 25; e = 28}; {b = 29; e = 32}];;
+let h = [h1;h2];;
+let r = [1;2];;
+
+let c0 = ( [{b = 1; e = 40}], 40) ;; 
+let c1 = ([{b = 21; e = 32}], 13) ;; 
+
+
+let j1 = { time_b = 0L; walltime = 3L; nb_res = 5; hy_level_rqt = h; hy_nb_rqt = r; constraints =c0; set_of_rs = []};;
+ 
+let j2  = { time_b = 0; walltime = 12; nb_res = 5; constraints =c0; set_of_rs = []};;
+let j3  =  { time_b = 0; walltime = 3; nb_res = 22; constraints =c0; set_of_rs = []};;
 
 
 find_first_suitable_contiguous_slots [s0;s1;s4] j1 ;; (* [{b = 1; e = 40}], [s0], [], [s1;s4] *) 

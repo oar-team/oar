@@ -174,6 +174,8 @@ sub_intervals [y5] [x1];;  [{b = 5; e = 10}]
 (* return [] *)
 (* itv_l_a itv_l_reference  MUST BE ORDERED by ascending resource id *)
 
+(* Is it use ?*)
+
 let extract_n_block_itv itv_l_a itv_l_reference n =
   let itv_l_seg = (fst (inter_intervals itv_l_a itv_l_reference [] 0)) in
   let rec extract_n_itv itv_l_1 itv_l_ref itv_l_result nb_itv = match (itv_l_1,itv_l_ref) with
@@ -210,6 +212,9 @@ let y = [{b = 5; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}]
 
 *)
 
+
+(* Is it use ?*)
+
 let extract_block_itv itv_l_a itv_l_reference =
   let itv_l_seg = (fst (inter_intervals itv_l_a itv_l_reference [] 0)) in
   let rec extract_itv itv_l_1 itv_l_ref itv_l_result = match (itv_l_1,itv_l_ref) with
@@ -226,7 +231,7 @@ let extract_block_itv itv_l_a itv_l_reference =
     |(_,_) -> List.rev itv_l_result
   in extract_itv itv_l_seg itv_l_reference [];;
 
-
+(* Is it use ?*)
 let extract_n_min_block_itv itv_l_a itv_l_reference n =
   let itv_l_seg = (fst (inter_intervals itv_l_a itv_l_reference [] 0)) in
   let rec extract_n_min_itv itv_l_1 itv_l_ref itv_l_result nb_itv = match (itv_l_1,itv_l_ref) with
@@ -242,3 +247,26 @@ let extract_n_min_block_itv itv_l_a itv_l_reference n =
                            extract_n_min_itv n m itv_l_result nb_itv
     | (_,_) -> if (nb_itv < 1) then List.rev itv_l_result else []
   in extract_n_min_itv itv_l_seg itv_l_reference [] n;;
+
+
+(* extract interval list intersect for each reference intervals, also give the nb of non empty intersection*)
+
+let extract_itv_by_itv_nb_inter itv_l_a itv_l_reference =
+  let rec extract_itv itv_l_ref result nb_inter = match itv_l_ref with
+    | [] -> (List.rev result,nb_inter)
+    | (x::n) -> let inter_itvs =  (fst (inter_intervals itv_l_a [x] [] 0)) in 
+                     match inter_itvs with 
+                       | [] -> extract_itv n result nb_inter 
+                       | y -> extract_itv n (y::result) (nb_inter + 1) 
+  in extract_itv itv_l_reference [] 0;;
+
+let a = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b2 = [{b = 1; e = 8}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b3 = [{b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b4 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}];;
+let b4 = [{b = 10; e = 12}; {b = 13; e = 14};];;
+
+
+
+
