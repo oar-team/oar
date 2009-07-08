@@ -110,6 +110,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANA
         if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@node_halt))){
             oar_error("[MetaSched] Try to launch the command $cmd to stop some nodes but the command timeouted($timeout_cmd s).\n");
         }
+        oar_debug("[MetaSched] @node_halt should be shutting down now.\n");
     }
 }
 
