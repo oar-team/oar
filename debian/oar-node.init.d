@@ -50,6 +50,7 @@ case "$1" in
     ;;
   stop)
     echo "Stopping $DESC: "
+    stop_oar_node
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start-stop-daemon --stop --quiet --pidfile /var/lib/oar/oar_sshd.pid; then
             echo " * OAR dedicated SSH server stopped."
@@ -57,7 +58,6 @@ case "$1" in
             echo " * Failed to stop OAR dedicated SSH server."
         fi
     fi
-    stop_oar_node
     ;;
   reload|force-reload|restart)
         $0 stop

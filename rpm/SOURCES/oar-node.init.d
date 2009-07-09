@@ -70,8 +70,8 @@ case "$1" in
         start_oar_node
         ;;
   stop)
-        stop
         stop_oar_node
+        stop
         ;;
   reload)
         reload
