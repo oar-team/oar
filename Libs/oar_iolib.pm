@@ -3602,22 +3602,22 @@ sub get_specific_resource_states($$){
 # parameters : base, resource_id
 # return value : string
 # side effects : /
-sub get_resource_state($$){
-  my $dbh = shift;
-  my $resource_id = shift;
-  my $result;
-  my $sth = $dbh->prepare("     SELECT state
-                                FROM resources
-                                WHERE
-                                    resource_id = $resource_id
-                            ")
-    $sth->execute();
-    while (my @ref = $sth->fetchrow_array()){
-        $result = $ref[0];
-    }
-    $sth->finish();
-    return($result);
-}
+# sub get_resource_state($$){
+#   my $dbh = shift;
+#   my $resource_id = shift;
+#   my $result;
+#   my $sth = $dbh->prepare("     SELECT state
+#                                 FROM resources
+#                                 WHERE
+#                                     resource_id = $resource_id
+#                             ")
+#     $sth->execute();
+#     while (my @ref = $sth->fetchrow_array()){
+#         $result = $ref[0];
+#     }
+#     $sth->finish();
+#     return($result);
+# }
 
 
 # get_current_free_resources_of_node
