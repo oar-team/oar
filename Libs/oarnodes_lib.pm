@@ -7,6 +7,7 @@ use oar_iolib;
 package oarnodeslib;
 
 my $base;
+
 sub open_db_connection(){
 	$base  = iolib::connect_ro();
 }
@@ -18,15 +19,18 @@ sub encode_result($$){
 	my $result = shift or die("[oarnodes_lib] encode_result: no result to encode");
 	my $encoding = shift or die("[oarnodes_lib] encode_result: no format to encode to");
     if($encoding eq "XML"){
+		eval "use XML::Dumper qw(pl2xml);1" or die ("XML module not available");
 		my $dump = new XML::Dumper;
 		$dump->dtd;
-		my $return = $dump->pl2xml($result) or die("XML conversion failed, maybe the module is not available.");
+		my $return = $dump->pl2xml($result) or die("XML conversion failed");
 		return $return;
 	}elsif($encoding eq "YAML"){
-		my $return YAML::Dump($result) or die("YAML conversion failed, maybe the module is not available.");
+		eval "use YAML;1" or die ("YAML module not available");
+		my $return = YAML::Dump($result) or die("YAML conversion failed");
 		return $return;
 	}elsif($encoding eq "JSON"){
-		my $return JSON->new->pretty(1)->encode($result) or die("JSON conversion failed, maybe the module is not available.");
+		eval "use JSON;1"  or die ("JSON module not available");
+		my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
 		return $return;
     }
 }
@@ -49,7 +53,7 @@ sub get_events($$){
 
 sub get_resources_with_given_sql($){
 	my $sql_clause = shift;
-	my @sql_resources = iolib::get_resources_with_given_sql($base,$sql_clause));
+	my @sql_resources = iolib::get_resources_with_given_sql($base,$sql_clause);
 	return \@sql_resources;
 }
 

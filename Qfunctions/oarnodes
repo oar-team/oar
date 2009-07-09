@@ -34,23 +34,6 @@ $Data::Dumper::Terse = 1;
 $Data::Dumper::Indent = 0;
 $Data::Dumper::Deepcopy = 1;
 
-#Try to load XML module
-my $XML_enabled = 1;
-unless (eval "use XML::Dumper qw(pl2xml);1"){
-    $XML_enabled = 0;
-}
-
-#Try to load YAML module
-my $YAML_enabled = 1;
-unless (eval "use YAML;1"){
-    $YAML_enabled = 0;
-}
-
-#Try to load JSON module
-my $JSON_enabled = 1;
-unless (eval "use JSON;1"){
-    $JSON_enabled = 0;
-}
 ### END CONFIG STUFF ###
 
 
@@ -129,26 +112,11 @@ sub format_result($){
     if (defined($DUMPER_mode)){
         print(Dumper($result));
     }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            print(oarnodeslib::encode_result($result, "XML"));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
+        print(oarnodeslib::encode_result($result, "XML"));
     }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(oarnodeslib::encode_result($result, "YAML"));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-   }elsif(defined($JSON_mode)){
-        if ($JSON_enabled == 1){
-            print(oarnodeslib::encode_result($result, "JSON"));
-        }else{
-            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 7;
-        } 
+        print(oarnodeslib::encode_result($result, "YAML"));
+    }elsif(defined($JSON_mode)){
+        print(oarnodeslib::encode_result($result, "JSON"));
     }
 }
 
