@@ -6,7 +6,30 @@ use oar_iolib;
 
 package oarnodeslib;
 
-my $base = iolib::connect_ro();
+my $base;
+sub open_db_connection(){
+	$base  = iolib::connect_ro();
+}
+sub close_db_connection(){
+	iolib::disconnect($base);
+}
+
+sub encode_result($$){
+	my $result = shift or die("[oarnodes_lib] encode_result: no result to encode");
+	my $encoding = shift or die("[oarnodes_lib] encode_result: no format to encode to");
+    if($encoding eq "XML"){
+		my $dump = new XML::Dumper;
+		$dump->dtd;
+		my $return = $dump->pl2xml($result) or die("XML conversion failed, maybe the module is not available.");
+		return $return;
+	}elsif($encoding eq "YAML"){
+		my $return YAML::Dump($result) or die("YAML conversion failed, maybe the module is not available.");
+		return $return;
+	}elsif($encoding eq "JSON"){
+		my $return JSON->new->pretty(1)->encode($result) or die("JSON conversion failed, maybe the module is not available.");
+		return $return;
+    }
+}
 
 sub get_oar_version(){
     return oarversion::get_version();
@@ -20,7 +43,19 @@ sub format_date($){
 sub get_events($$){
 	my $hostname = shift;
 	my $date_from = shift;
-	return iolib::get_events_for_hostname($base, $hostname, $date_from);
+	my @events = iolib::get_events_for_hostname($base, $hostname, $date_from);
+	return \@events;
+}
+
+sub get_resources_with_given_sql($){
+	my $sql_clause = shift;
+	my @sql_resources = iolib::get_resources_with_given_sql($base,$sql_clause));
+	return \@sql_resources;
+}
+
+sub get_resource_state($){
+	my $resource_id = shift;
+	return iolib::get_resource_state($base, $resource_id);
 }
 
 1;

@@ -107,8 +107,8 @@ sub print_oar_version(){
 sub print_events($){
 	my $date_from = shift;
 	my $hostname = $ARGV[0] or die("\/!\\ No hostname specified for the --events option\n");
-	my @events = oarnodeslib::get_events($hostname, $date_from);
-	foreach my $current_event (@events) {
+	my $events = oarnodeslib::get_events($hostname, $date_from);
+	foreach my $current_event (@$events) {
         printf("%s| %s| %s: %s\n", 
 		  oarnodeslib::format_date($current_event->{'date'}),
 		  $current_event->{'job_id'},
@@ -116,6 +116,49 @@ sub print_events($){
 		  $current_event->{'description'}
 		);
     }
+}
+
+sub add_sql_resources($){
+	my $sql_clause = shift;
+	my $sql_resources = oarnodeslib::get_resources_with_given_sql($sql_clause);
+	push @resources, @$sql_resources;
+}
+
+sub format_result($){
+	my $result = shift;
+    if (defined($DUMPER_mode)){
+        print(Dumper($result));
+    }elsif(defined($XML_mode)){
+        if ($XML_enabled == 1){
+            print(oarnodeslib::encode_result($result, "XML"));
+        }else{
+            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 5;
+        }
+    }elsif(defined($YAML_mode)){
+        if ($YAML_enabled == 1){
+            print(oarnodeslib::encode_result($result, "YAML"));
+        }else{
+            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 6;
+        }
+   }elsif(defined($JSON_mode)){
+        if ($JSON_enabled == 1){
+            print(oarnodeslib::encode_result($result, "JSON"));
+        }else{
+            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+            $exitstatus = 7;
+        } 
+    }
+}
+
+sub print_resource_state($){
+	my $resource_state_to_print = shift;
+	my $state = oarnodeslib::get_resource_state($resource_state_to_print);
+}
+
+sub print_resources($){
+	my $resources_to_print = shift;
 }
 
 ### END Print Methods ###
@@ -149,12 +192,28 @@ if ($Version){
     print_oar_version();
     exit(0);
 }
+
+oarnodeslib::open_db_connection();
+
 if (defined($events)) {
     print_events($events);
     exit(0);
 }
+if (defined($sql_property)) {
+	add_sql_resources($sql_property);
+}
+if (defined(@resources)) {
+	if ($state){
+		foreach my $current_resource (@resources){
+		  print_resource_state($current_resource);
+		}
+	}
+	else{
+		print_resources(\@resources);
+	}
+}
 
-
+oarnodeslib::close_db_connection();
 
 ### quit program, TODO: a enlever
 exit(0);
@@ -166,9 +225,7 @@ my $exitstatus;
 
 
 if (($#resources >= 0) or (defined($sql_property))){
-    if (defined($sql_property)){
-        push(@resources, iolib::get_resources_with_given_sql($base,$sql_property));
-    }
+
     my @data_to_display;
     my %state_hash;
     foreach my $r (@resources) {
@@ -199,32 +256,7 @@ if (($#resources >= 0) or (defined($sql_property))){
     if (defined($stateMode)){
         $data_to_dump = \%state_hash;
     }
-    if (defined($DUMPER_mode)){
-        print(Dumper($data_to_dump));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml($data_to_dump));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump($data_to_dump));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-   }elsif(defined($JSON_mode)){
-        if ($JSON_enabled == 1){
-            print(JSON->new->pretty(1)->encode($data_to_dump));
-        }else{
-            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 7;
-        } 
-    }else{
+	else{
         foreach my $h (@data_to_display){
             my %a = %{$h};
             if (defined($stateMode)){
@@ -290,32 +322,7 @@ if (defined($stateMode)){
             $data_to_display{$node} = undef;
         }
     }
-    if (defined($DUMPER_mode)){
-        print(Dumper(\%data_to_display));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml(\%data_to_display));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump(\%data_to_display));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-   }elsif(defined($JSON_mode)){
-        if ($JSON_enabled == 1){
-            print(JSON->new->pretty(1)->encode(\%data_to_display));
-        }else{
-            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 7;
-        }
-    }else{
+ else{
         foreach my $d (sort(keys(%data_to_display))){
             print("$d\n");
             foreach my $e (sort({$a <=> $b} keys(%{$data_to_display{$d}}))){
@@ -326,36 +333,15 @@ if (defined($stateMode)){
     }
 }elsif(defined($listall)){
     # Simple list handling
-    if (defined($DUMPER_mode)){
-        print(Dumper(\@nodes));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml(\@nodes));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump(\@nodes));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-    }elsif(defined($JSON_mode)){
-        if ($JSON_enabled == 1){
-            print(JSON->new->pretty(1)->encode(\@nodes));
-        }else{
-            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 7;
-        }
-    }else{
+
         foreach my $node ( @nodes ) {
             print($node,"\n");
         }
-    }
+
+
+
+
+
 }else{
     # Default display of oarnodes
     my %data_to_display;
@@ -386,32 +372,9 @@ if (defined($stateMode)){
         }
         $data_to_display{$node} = \%tmp_hash1;
     }
-    if (defined($DUMPER_mode)){
-        print(Dumper(\%data_to_display));
-    }elsif(defined($XML_mode)){
-        if ($XML_enabled == 1){
-            my $dump = new XML::Dumper;
-            $dump->dtd;
-            print($dump->pl2xml(\%data_to_display));
-        }else{
-            warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 5;
-        }
-    }elsif(defined($YAML_mode)){
-        if ($YAML_enabled == 1){
-            print(YAML::Dump(\%data_to_display));
-        }else{
-            warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 6;
-        }
-    }elsif(defined($JSON_mode)){
-        if ($JSON_enabled == 1){
-            print(JSON->new->pretty(1)->encode(\%data_to_display));
-        }else{
-            warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
-            $exitstatus = 7;
-        }
-    }elsif($Old){
+
+
+	if($Old){
         my $Node_file_db_field_distinct_values = get_conf("NODE_FILE_DB_FIELD_DISTINCT_VALUES");
         $Node_file_db_field_distinct_values = oar_Tools::get_default_node_file_db_field_distinct_values() if (!defined($Node_file_db_field_distinct_values));
         foreach my $aa (sort(keys(%data_to_display))){
