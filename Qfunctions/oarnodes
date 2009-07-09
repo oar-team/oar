@@ -23,9 +23,16 @@ use Data::Dumper;
 use oar_iolib;
 use Getopt::Long;
 use oarversion;
+use oarnodes_lib;
 
-my $Old_umask = sprintf("%lo",umask());
-umask(oct("022"));
+### CONFIG STUFF ###
+Getopt::Long::Configure ("gnu_getopt");
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
 
 #Try to load XML module
 my $XML_enabled = 1;
@@ -44,19 +51,14 @@ my $JSON_enabled = 1;
 unless (eval "use JSON;1"){
     $JSON_enabled = 0;
 }
+### END CONFIG STUFF ###
 
-# suitable Data::Dumper configuration for serialization
-$Data::Dumper::Purity = 1;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Indent = 0;
-$Data::Dumper::Deepcopy = 1;
 
-Getopt::Long::Configure ("gnu_getopt");
+### Variables declaration ###
 my $stateMode;
 my $usage;
 my $listall;
 my $listallwithinfo;
-my @resources;
 my $sql_property;
 my $XML_mode;
 my $YAML_mode;
@@ -66,23 +68,13 @@ my $Version;
 my $Old;
 my $smp;
 my $events;
-GetOptions ("state|s" => \$stateMode,
-            "help|h"  => \$usage,
-            "list|l"  => \$listall,
-            "all|a"   => \$listallwithinfo,
-            "events|e:s"  => \$events,
-            "resource|r=i" => \@resources,
-            "sql=s" => \$sql_property,
-            "xml|X" => \$XML_mode,
-            "yaml|Y" => \$YAML_mode,
-            "json|J" => \$JSON_mode,
-            "dumper|D" => \$DUMPER_mode,
-            "backward-compatible" => \$Old,
-            "smp" => \$smp,
-            "version|V" => \$Version
-           );
+my @resources;
+### END Variables declaration ###
 
-if ($usage){
+
+### Print Methods ###
+
+sub print_usage(){
     print <<EOS;
 Usage: oarnodes [ -a | -r number | --sql sql_properties | -s | -l | -h | -V ]
 [list of nodes] [ -e [date] | -X | -Y | -D | --backward-compatible [--smp]]
@@ -106,40 +98,72 @@ Options:
  -h, --help         show this help screen
  -V, --version      print OAR version number
 EOS
+}
+
+sub print_oar_version(){
+    print "OAR version : ".oarnodeslib::get_oar_version()."\n";
+}
+
+sub print_events($){
+	my $date_from = shift;
+	my $hostname = $ARGV[0] or die("\/!\\ No hostname specified for the --events option\n");
+	my @events = oarnodeslib::get_events($hostname, $date_from);
+	foreach my $current_event (@events) {
+        printf("%s| %s| %s: %s\n", 
+		  oarnodeslib::format_date($current_event->{'date'}),
+		  $current_event->{'job_id'},
+		  $current_event->{'type'},
+		  $current_event->{'description'}
+		);
+    }
+}
+
+### END Print Methods ###
+
+
+
+### Main ###
+
+# parse command line option
+GetOptions ("state|s" => \$stateMode,
+            "help|h"  => \$usage,
+            "list|l"  => \$listall,
+            "all|a"   => \$listallwithinfo,
+            "events|e:s"  => \$events,
+            "resource|r=i" => \@resources,
+            "sql=s" => \$sql_property,
+            "xml|X" => \$XML_mode,
+            "yaml|Y" => \$YAML_mode,
+            "json|J" => \$JSON_mode,
+            "dumper|D" => \$DUMPER_mode,
+            "backward-compatible" => \$Old,
+            "smp" => \$smp,
+            "version|V" => \$Version
+           );
+
+if ($usage){
+    print_usage();
+    exit(0);
+}
+if ($Version){
+    print_oar_version();
+    exit(0);
+}
+if (defined($events)) {
+    print_events($events);
     exit(0);
 }
 
-if (defined($Version)){
-    print("OAR version : ".oarversion::get_version()."\n");
-    exit(0);
-}
 
-my $exitstatus = 0;
-my $base = iolib::connect_ro();
 
-sub print_event_logs($){
-    my $event_hashref = shift;
-    printf("%s| %s| %s: %s\n", 
-        iolib::local_to_sql($event_hashref->{'date'}),
-        $event_hashref->{'job_id'},
-        $event_hashref->{'type'},
-        $event_hashref->{'description'}
-    );
-}
+### quit program, TODO: a enlever
+exit(0);
 
-if (defined ($events)) {
-    my $hostname = $ARGV[0];
-    if (not defined($hostname)) {
-        die("No hostname specified\n");
-    }
-    # here $events can contain the date from which we have to display info.
-    my @events = iolib::get_events_for_hostname($base, $hostname, $events);    
-    foreach my $current_event (@events) {  
-        print_event_logs($current_event);
-    }
-    iolib::disconnect($base);
-    exit 0;
-}
+### END Main ###
+
+my $base;
+my $exitstatus;
+
 
 if (($#resources >= 0) or (defined($sql_property))){
     if (defined($sql_property)){
