@@ -20,18 +20,14 @@
 
 static char *username, *password;
 
-/*
-void toUpperCase(char *sPtr)
+
+void toUpperCase(char *instruction)
 {
-      while(*sPtr != '\0')
-      {
-	 
-         if (islower(sPtr[0]))
-              sPtr[0] = toupper(sPtr[0]);
-       }
-       *sPtr++;
+      	for (; *instruction !='\0'; instruction++){
+      		*instruction = toupper(*instruction);
+	}	
 }
-*/
+
 
 int envoyer(char *URL, char* OPERATION, char* DATA)
 {
@@ -40,6 +36,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   char *ipstr=NULL;
   char curl_errorstr[CURL_ERROR_SIZE];
   static struct curl_slist *pragma_header;
+
 
 
 
@@ -69,15 +66,40 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 
   curl_easy_setopt(curl, CURLOPT_URL, URL);
 
-  curl_easy_setopt(curl, CURLOPT_HEADER, 1L); //Est ce qu'on le laisse quand on fait PUT, POST, GET, DELETE ??
+  //curl_easy_setopt(curl, CURLOPT_HEADER, 1L); //Est ce qu'on le laisse quand on fait PUT, POST, GET, DELETE ??
 
   if (!strcmp("POST", OPERATION)) {
 
-		curl_easy_setopt(curl, CURLOPT_POST, TRUE);
-		curl_easy_setopt(curl, CURLOPT_HEADER, 0); 
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, DATA);
-		//curl_easy_setopt(curl,CURLOPT_CUSTOMREQUEST,"POST");
+		struct curl_slist *headers = NULL;
+		char content_type[]="Content-Type: application/json";
+		
+		/* set content type header */
+                headers = curl_slist_append(headers, content_type);
+		/* set options */
+                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+                curl_easy_setopt(curl, CURLOPT_URL, URL);
+                //curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_buffer);
+                //curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&curl_response);
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, DATA);
+                //curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, sizeof(DATA));
+		
+                curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &curl_errorstr);
+                //curl_easy_setopt(curl, CURLOPT_FAILONERROR, TRUE);
+                curl_easy_setopt(curl, CURLOPT_NOSIGNAL, TRUE);
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
+
+		
+		/*
+		//curl_easy_setopt(curl, CURLOPT_POST, TRUE);
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+		curl_easy_setopt(curl, CURLOPT_HEADER, 0); 
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, DATA);
+		//curl_easy_setopt(curl, CURLOPT_READDATA,&DATA);
+		//curl_easy_setopt(curl,CURLOPT_CUSTOMREQUEST,"POST");
+		*/
   } else if (!strcmp("PUT", OPERATION)) {        
 	//curl_easy_setopt(curl, CURLOPT_HTTPHEADER, pragma_header);
         //curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errorstr);
@@ -105,7 +127,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   res = curl_easy_perform(curl);
   
   if (res!=0){
-	fprintf(stderr, "\n... curl error: %s (%d)\n",curl_errorstr, res);
+	fprintf(stderr, "\n !! error %d !!\n %s \n",res, curl_errorstr);
   }
 
  /* if(!res) {
@@ -116,7 +138,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return (int)res;
+  return (int)res; //return the error number (0 = OK)
 }
 
 
@@ -127,14 +149,15 @@ int main(int argc, char **argv)
   char *METHOD;
   METHOD = argv[1]; 
 
-//  toUpperCase(METHOD); // conversion du nom de l'operation en majuscule
+  toUpperCase(METHOD); // conversion du nom de l'operation en majuscule
 
   char full_url[MAX_OAR_URL_LENGTH];
 
   char *DONNES_PAR_DEFAUT;
-  DONNES_PAR_DEFAUT = "{\"resource\":\"\\/nodes=2\\/cpu=1\",\"script_path\":\"\\/usr\\/bin\\/id\"}";
+  DONNES_PAR_DEFAUT = "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}"; // le C enlève des " et des \ ce qui engendre des modifications des flux JSON
+  //DONNES_PAR_DEFAUT = "{\"script\":\"\",\"resource\":\"\\/nodes=2\\/cpu=1\", \"workdir\":\".\"}";
   
-  strncpy(full_url, "http://192.168.0.1/oarapi", sizeof(full_url));
+  strncpy(full_url, "http://192.168.0.1/oarapi", sizeof(full_url)); // Pour l'instant on teste avec Virtualbox + OAR Live CD
   strncat(full_url, URL, sizeof(full_url));
 
   fprintf(stderr, "\n-----------------------------------------------------------------\n");
@@ -142,9 +165,12 @@ int main(int argc, char **argv)
   if (argc>3) {fprintf(stderr, "DONNEES_RENTRES_AU_CLAVIER\n");} else {fprintf(stderr, "DONNEES_PAR_DEFAUT : %s\n",DONNES_PAR_DEFAUT);}
   fprintf(stderr, "-----------------------------------------------------------------\n\n");
 
-  if (argc>3){ //Si l'utilisateur veut rentrer des paramètres pour le POST ou le DELETE
+  if (argc>3){ //Si l'utilisateur veut rentrer des paramètres pour le POST, PUT ou le DELETE
+	fprintf(stderr, "\n!! MODE MANUEL !!\n");
 	return envoyer(full_url,METHOD,argv[3]);
   }
+
+  fprintf(stderr, "\n!! MODE AUTOMATIQUE !!\n");
   
   return envoyer(full_url,METHOD,DONNES_PAR_DEFAUT);
 }
