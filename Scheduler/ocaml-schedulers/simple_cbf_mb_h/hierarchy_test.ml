@@ -1,5 +1,5 @@
 
-(* open Interval *)
+open Interval
 
 (* 10 noeud 8 cpu bi-core *)
 (* h =  {step=16; s=1 ; e = 160},    {step=16; s=1 ; e = 160}, {step=2; s=1 ; e = 160}; *)
@@ -256,7 +256,7 @@ let test_find_hierarchies test_list =
   List.iter (fun x -> test x) test_list;;
 
 
-
+(*
 let _=
   let h0 = [{b = 1; e = 16};{b = 17; e = 32};] in
   let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}] in
@@ -264,9 +264,7 @@ let _=
   let h =  [|h0;h1|] in
   let r =  [|2;1|] in
   find_resource_hierarchies2  [{b = 16; e = 23}] h r;;
-
-
-
+*)
 
 let find_resource_hierarchies itv_l hy r_rqt_l =
 
