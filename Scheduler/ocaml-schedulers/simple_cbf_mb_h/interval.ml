@@ -115,13 +115,13 @@ let y6 =  {b = 5; e = 25};;
 let yl1 = [{b = 5; e = 13};{b = 15; e = 16 };{b = 19; e = 19}];;
 
 
-inter_intervals_0 [x1] [y1] [];; (* [] *)
-inter_intervals_0 [x1] [y2] [];; (* [] *)
-inter_intervals_0 [x1] [y3] [];; (* [{b = 12; e = 15}] *)
-inter_intervals_0 [x1] [y4] [];; (* [{b = 12; e = 20}] *)
-inter_intervals_0 [x1] [y5] [];; (* [{b = 11; e = 15}] *)
-inter_intervals_0 [x1] [y6] [];; (* [{b = 11; e = 20}] *)
-inter_intervals_0 [x1] [y7] [];; (* [{b = 11; e = 20}] *)
+inter_intervals [x1] [y1] [];; (* [] *)
+inter_intervals [x1] [y2] [];; (* [] *)
+inter_intervals [x1] [y3] [];; (* [{b = 12; e = 15}] *)
+inter_intervals [x1] [y4] [];; (* [{b = 12; e = 20}] *)
+inter_intervals [x1] [y5] [];; (* [{b = 11; e = 15}] *)
+inter_intervals [x1] [y6] [];; (* [{b = 11; e = 20}] *)
+inter_intervals [x1] [y7] [];; (* [{b = 11; e = 20}] *)
 
 inter_intervals_0 [x1] yl1 [];;(* *)
 
@@ -135,6 +135,11 @@ inter_intervals [x1] [y7] [] 0;; (* [{b = 11; e = 20}] *)
 
 inter_intervals [x1] yl1 [] 0;;(* ([{b = 11; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}], 6) *)
 *)
+
+(* some converter to string *)
+let itv2str itv = Printf.sprintf "{%d,%d}" itv.b itv.e ;; 
+let itvs2str itvs = "["^(String.concat ", " (List.map itv2str itvs))^"]" ;;
+let itva2str itva = "[|"^(String.concat ", " (List.map itv2str (Array.to_list itva)))^"|]" ;;
 
 
 (* compute substraction of 2 resource intervals *)
@@ -248,6 +253,27 @@ let extract_n_min_block_itv itv_l_a itv_l_reference n =
     | (_,_) -> if (nb_itv < 1) then List.rev itv_l_result else []
   in extract_n_min_itv itv_l_seg itv_l_reference [] n;;
 
+(* extract_no_empty_bk : keep reference intervals where intersection with  itv_l *)
+let extract_no_empty_bk itv_l_a itv_l_reference =
+ let rec extract_itv itv_l_ref result  = match itv_l_ref with
+  | [] -> List.rev result
+  | (x::n) -> let inter_itvs = (fst (inter_intervals itv_l_a [x] [] 0)) in 
+              match inter_itvs with 
+                | [] -> extract_itv n result 
+                | y -> extract_itv n (x::result)
+  in extract_itv itv_l_reference [];;
+(*
+let a = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b2 = [{b = 1; e = 8}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b3 = [{b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let b4 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}];;
+let b5 = [{b = 10; e = 12}; {b = 13; e = 14};];;
+let b6 = [{b = 3; e = 4}; {b = 19; e = 20};];;
+
+*)
+
+
 
 (* extract interval list intersect for each reference intervals, also give the nb of non empty intersection*)
 
@@ -255,18 +281,36 @@ let extract_itv_by_itv_nb_inter itv_l_a itv_l_reference =
   let rec extract_itv itv_l_ref result nb_inter = match itv_l_ref with
     | [] -> (List.rev result,nb_inter)
     | (x::n) -> let inter_itvs =  (fst (inter_intervals itv_l_a [x] [] 0)) in 
-                     match inter_itvs with 
-                       | [] -> extract_itv n result nb_inter 
-                       | y -> extract_itv n (y::result) (nb_inter + 1) 
+                match inter_itvs with 
+                  | [] -> extract_itv n result nb_inter 
+                  | y -> extract_itv n (y::result) (nb_inter + 1) 
   in extract_itv itv_l_reference [] 0;;
 
+(*
 let a = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
 let b1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
 let b2 = [{b = 1; e = 8}; {b = 17; e = 24}; {b = 25; e = 32}];;
 let b3 = [{b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
 let b4 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}];;
-let b4 = [{b = 10; e = 12}; {b = 13; e = 14};];;
+let b5 = [{b = 10; e = 12}; {b = 13; e = 14};];;
 
+# extract_itv_by_itv_nb_inter b1 a;;
+- : interval list list * int =
+([[{b = 1; e = 8}]; [{b = 9; e = 16}]; [{b = 17; e = 24}];
+  [{b = 25; e = 32}]],
+ 4)
+# extract_itv_by_itv_nb_inter b2 a;;
+- : interval list list * int =
+([[{b = 1; e = 8}]; [{b = 17; e = 24}]; [{b = 25; e = 32}]], 3)
+# extract_itv_by_itv_nb_inter b3 a;;
+- : interval list list * int =
+([[{b = 9; e = 16}]; [{b = 17; e = 24}]; [{b = 25; e = 32}]], 3)
+# extract_itv_by_itv_nb_inter b4 a;;
+- : interval list list * int =
+([[{b = 1; e = 8}]; [{b = 9; e = 16}]; [{b = 17; e = 24}]], 3)
 
+# extract_itv_by_itv_nb_inter b5 a;;
+- : interval list list * int = ([[{b = 10; e = 12}; {b = 13; e = 14}]], 1)
+*)
 
 
