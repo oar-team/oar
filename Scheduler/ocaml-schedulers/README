@@ -1,0 +1,66 @@
+
+Simple schedulers in ocaml
+---------------------------------
+
+ocaml-schedulers have several goals
+
+* provide scheduler examples
+* provide schedulers with incremental features between each version
+* test alternative design choice (by example use of resource intervals)
+* provide scheduler in native binary code for performance concerns
+* and to exercice author to code with a functional language (ocaml)
+
+This work borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). Sorry for the ugly ocaml code it's my first code.
+
+Directories details
+/schoolar:
+Contains two classic schedulers : next-fit and first-fit. There are just examples. There are not suitable for oar.
+Codes come from: http://books.google.fr/books?id=vpDmaVUC6QIC&pg=PA110&lpg=PA110&dq=first-fit+ocaml+next-fit&source=bl&ots=xXK6POXo7b&sig=Lp6sKyODT6afhlAQzZ-ZFfDd_Pg&hl=fr&sa=X&oi=book_result&resnum=1&ct=result#PPA115,M1
+
+/test:
+Some codes to simplify testing (up to now only sql requests to initialize database 2.2.x properly)
+Hum will not support 2.2.x
+
+/simple_cbf:
+Contains a simple conservative backfilling scheduler. Can't be use directly in oar.
+
+/simple_cbf_oar:
+Uses simple_cbf scheduler and adds necessary oar database interactions to provide an usable simple scheduler
+
+features:
+ * conservative backfilling
+ * respect of reservation
+limitations:
+ * all advances features are not implemented:
+ - no resources properties matching
+ - no besteffort
+ - no hierarchies
+ - no multiple resource type
+ - no multiple resource requests ( + )
+ - no time constant guards, timesharing, suspend/resume, job depencies, job arrays, desktop computing, job container, fairesharing...
+
+/simple_cbf_mb:
+Based on simple_cbf add job's resource constraints and filtering step to support resources matching 
+
+/simple_cbf_mb_oar:
+Uses simple_cbf_mb, and provides besteffort support (need deeper test) and resource matching 
+
+
+/simple_cbf_mb_h:
+Take simple_cb_mb add hierarchy support, remove nb_res in sevral structure
+
+
+
+Next:
+ 
+ * Need deeper test (testing infrastructure / OUNIT ?)
+ * test on trunk DB version
+ * 2.3.x serie and previous are NOT SUPPORTED
+ * Scalability performance testing
+ * Add more features , reach perl scheduler's feature set :)
+ * General and source documentation
+ * Support of postgresql
+ * multi-resources-request (for simple_cbf_mb_h >= series )
+ * remove nb_res and int from constaint in job type (see Type.ml file , for simple_cbf_mb_h >= series )
+ * Code restructuration (Interval un common)
+ * modify itv_intersect in Interval / remove itv2str, itvs2str (now in interval)
