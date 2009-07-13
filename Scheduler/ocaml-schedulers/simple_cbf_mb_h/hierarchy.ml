@@ -1,43 +1,32 @@
 
-open Interval
+open Interval 
 
-(* 10 noeud 8 cpu bi-core *)
-(* h =  {step=16; s=1 ; e = 160},    {step=16; s=1 ; e = 160}, {step=2; s=1 ; e = 160}; *)
-
-(* h = {s_bk_set = 1; bk_size = 16; nb_bk = 10}, (* node *)
-       {s_bk_set = 1; bk_size = 2; nb_bk = 80}, (* cpu *)
-       {s_bk_set = 1; bk_size = 1; nb_kb = 160} (* core *) 
-*)
-
-(* 10 noeud 8 cpu bi-core + 10 4 cpu quad-core*)
-(* h =  {step=16; s=1 ; e = 160},    ({step=16; s=1 ; e = 320}) , ({step=2; s=1 ; e = 160}, {step=4; s=161 ; e = 320}; *)
-(*
-(* types to structure hierarchy levels *)
-type blocks_property = {orig : int; bk_size : int; nb_bk : int}
-type set_of_blocks_property = blocks_property list
-
-*)
 
 (*
-# let f x = () ;;
-val f : 'a -> unit = <fun>
-# let f x = x ;;
-val f : 'a -> 'a = <fun>
+vim regular / replace expression to manage comment around Printf debug fonctions
+#add ocaml comments
+:%s/\(.*Printf\.printf.*\)/(* \1 *)/
+#remove ocaml comments
+
+(*
+:%s/^(\*\(.*Printf\.printf.*\)\*)/\1/ 
+
 *)
 
-(* 
-  itv_h_n_l   interval list * int list what is requested
-*)                                              
 
 (* need to be optimzed ??? *)
 (* need a special case for unitary resource hierarchy *)
 (* itv list MUST BE ORDERED by ascending resource id*)
+
+
+
+
 let rec drop n = function
 	| (_ :: l) when n > 0 -> drop (n-1) l
-	| l -> l 
+	| l -> l;; 
 
 
-let find_resource_hierarchies2 itv_l hy r_rqt_l =
+let find_resource_hierarchies itv_l hy r_rqt_l =
 
   let master_bk = [{b=1;e=100}] in
   let nb_h = Array.length r_rqt_l in  
@@ -110,7 +99,7 @@ let find_resource_hierarchies2 itv_l hy r_rqt_l =
 
                       (* c'est tout bon miam-miam les resources*)       
                       | x ->  let new_result = sub_result :: result in
-                              Printf.printf "Miam OK\n" ; 
+                              Printf.printf  "Miam OK\n"; 
                               if idx_h = 0 then (* win *)
                                 begin
                                   Printf.printf "win" ; 
@@ -129,13 +118,9 @@ let find_resource_hierarchies2 itv_l hy r_rqt_l =
                                   else
                                     begin
                                       (* on remonte ce coin est termine*)
-                                      (*
-                                       Printf.printf "on passe au prochain top block %d\n" idx_h  ;
-                                       *)
                                        Printf.printf "on passe au prochain top block ou on monte %d\n" idx_h  ;
 
 
-(***********)
                                       let r = List.hd tl_rs in
                                       match next_bks_top with
                                         | [] -> begin
@@ -165,19 +150,6 @@ let find_resource_hierarchies2 itv_l hy r_rqt_l =
                                                       end
                                                end
 
-                                      (*
-                                      Printf.printf "on remonte %d\n" idx_h  ;
-                                      (* bug sur le next block *)
-                                      let r = List.hd tl_rs in
-                                      let next_up_top_bks = List.tl (List.hd tl_h_top_bks) in
-                                      match  next_up_top_bks with
-                                        | [] -> begin
-                                                  Printf.printf "Boum\n";
-                                                  new_result
-                                                end
-                                        | x ->
-                                                find_res_h new_result ( next_up_top_bks :: (List.tl tl_h_top_bks)) (idx_h-1) ((r-1)::(List.tl tl_rs))
-                                      *)
                                     end
                                 end
                   end
@@ -213,9 +185,6 @@ let find_resource_hierarchies2 itv_l hy r_rqt_l =
 
 
 
-
-
-
 (*
 - : interval list array =
 [|[{b = 1; e = 16}; {b = 17; e = 32}];
@@ -247,7 +216,7 @@ let t = [
 let test_find_hierarchies test_list =
  let test = fun x ->
   let (input, hys, r_reqts, result) = x in 
-  let r = find_resource_hierarchies2 input hys r_reqts in 
+  let r = find_resource_hierarchies input hys r_reqts in 
     if r = [result] then
       Printf.printf "****** OK ******\n"
     else
@@ -266,7 +235,7 @@ let _=
   find_resource_hierarchies2  [{b = 16; e = 23}] h r;;
 *)
 
-let find_resource_hierarchies itv_l hy r_rqt_l =
+let find_resource_hierarchies_old itv_l hy r_rqt_l =
 
   (* result = resultat cumulatif *)
   (* itv_l_hy_top = list interval top *)

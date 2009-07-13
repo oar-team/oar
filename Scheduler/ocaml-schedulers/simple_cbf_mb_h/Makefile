@@ -5,17 +5,15 @@ export OCAMLMAKEFILE = ./OCamlMakefile
 
 # Export some common variable settings
 
-# Define project "ex1"
 define PROJ_simple_cbf_mb_h
-  SOURCES= interval.ml types.ml simple_cbf_mb_h.ml
+  SOURCES= interval.ml types.ml hierarchy.ml simple_cbf_mb_h.ml
   RESULT= simple_cbf_mb_h
 endef
 export PROJ_simple_cbf_mb_h
 
-# Define project "ex2"
 define PROJ_test_unit
   export PACKS = oUnit 
-  SOURCES = interval.ml hierarchy_test.ml test_unit.ml
+  SOURCES = interval.ml hierarchy.ml test_unit.ml
   RESULT = test_unit
 endef
 export PROJ_test_unit
@@ -27,7 +25,8 @@ ifndef SUBPROJS
 endif
 
 # Default target to use
-all:	nc
+#all:	nc
+all: bc
 
 # Catch-all target will be applied to all subprojects automatically
 %:
