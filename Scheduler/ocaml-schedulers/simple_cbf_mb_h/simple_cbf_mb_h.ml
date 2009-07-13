@@ -25,10 +25,10 @@
 (* remove nb_res constraints *)
 (* modify inter_interval !!! *)
 
-
-open Types 
-open Interval 
 open Int64
+open Interval
+open Types
+open Hierarchy
 
 (*
 type time_t = int64
@@ -53,6 +53,9 @@ let slot_to_string slot = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e
   (Printf.sprintf "time_s %s, time_e: %s, nb_free_res: %d\n" 
     (to_string slot.time_s) (to_string slot.time_e) slot.nb_free_res) ^
   (String.concat ", " (List.map itv2str slot.set_of_res))
+
+
+
 
 (*******************************************************)
 (* find_first_contiguous_slots_time *)
@@ -111,19 +114,11 @@ let a = [{b = 1; e = 40}];; (* 40 *)
 let b = [{b = 21; e = 32}];; (* 13 *)
 *)
 
-let find_resource_hierarchies itv_res_l itv_h_l_l n_l =
-  let rec find_res_h itv_res itv_h_l2 h_n_l = match (itv_res,h_n_l) with  
-    | ([],m) -> []
-    | (y,n::[]) -> let itv_h_l = List.hd itv_h_l2 in
-                     extract_n_block_itv itv_res itv_h_l n
-    | (y,n::m) ->  let itv_h_l = List.hd itv_h_l2 in
-                   let itv_r = extract_n_min_block_itv itv_res itv_h_l n in
-                    find_res_h itv_r (List.tl itv_h_l2) m
-(*    | (_,[]) -> raise (Failure "We must not be here !")*) 
-    | (_,[]) -> failwith (Failure "We must not be here !") 
-
-
-  in find_res_h itv_res_l itv_h_l_l n_l ;;
+let find_resource_hierarchies_job itv_cts_slot job =
+(* mono request *) 
+  let hy_a = Array.of_list (List.map (fun x -> List.assoc x hierarchy_levels) job.hy_level_rqt) in
+  let r_rqt_a = Array.of_list job.hy_nb_rqt in
+    List.rev (List. flatten (find_resource_hierarchies itv_cts_slot hy_a r_rqt_a)) ;;
 
 (*
 val y : interval list = [{b = 5; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}]
@@ -160,7 +155,7 @@ let find_first_suitable_contiguous_slots slots j =
       let (cts_itv,nb_res_cts) = job.constraints in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
       let itv_cts_slot = (fst (inter_intervals cts_itv itv_inter_slots [] 0)) in
-      let itv_res_assignement = find_resource_hierarchies itv_cts_slot job.hy_level_rqt job.hy_nb_rqt in
+      let itv_res_assignement = find_resource_hierarchies_job itv_cts_slot job in
 
       match  itv_res_assignement with
 

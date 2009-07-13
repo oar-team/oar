@@ -19,6 +19,16 @@ vim regular / replace expression to manage comment around Printf debug fonctions
 (* itv list MUST BE ORDERED by ascending resource id*)
 
 
+(* for test : hiearchies must set accordingly to configuration file*)
+let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
+let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e =12}; {b = 13; e = 16};
+          {b = 17; e = 20}; {b = 21; e = 24}; {b = 25; e = 28}; {b = 29; e = 32}];;
+
+let hierarchy_levels = [ ("node",h0);("cpu",h1);("core",h2) ];;
+
+
+
 
 
 let rec drop n = function

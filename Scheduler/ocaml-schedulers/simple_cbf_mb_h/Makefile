@@ -13,7 +13,7 @@ export PROJ_simple_cbf_mb_h
 
 define PROJ_test_unit
   export PACKS = oUnit 
-  SOURCES = interval.ml hierarchy.ml test_unit.ml
+  SOURCES = interval.ml hierarchy.ml simple_cbf_mb_h.ml test_unit.ml
   RESULT = test_unit
 endef
 export PROJ_test_unit
@@ -21,7 +21,7 @@ export PROJ_test_unit
 # If the environment does not define subprojects to handle,
 # then use "ex1 ex2" as default
 ifndef SUBPROJS
-  export SUBPROJS = test_unit
+  export SUBPROJS = simple_cbf_mb_h test_unit
 endif
 
 # Default target to use
