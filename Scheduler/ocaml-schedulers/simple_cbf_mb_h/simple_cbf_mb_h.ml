@@ -141,7 +141,7 @@ find_resource_hierarchies a h r;;
 
 let inter_slots slots =
   let rec iter_slots sls itv = match sls with
-    | x::n -> let itv1 = (fst (inter_intervals itv x.set_of_res  [] 0)) in iter_slots n itv1 
+    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots n itv1 
     | [] -> itv
   in  iter_slots (List.tl slots) (List.hd slots).set_of_res;; 
 
@@ -154,7 +154,7 @@ let find_first_suitable_contiguous_slots slots j =
 	   	let (next_ctg_time_slot, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job in
       let (cts_itv,nb_res_cts) = job.constraints in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
-      let itv_cts_slot = (fst (inter_intervals cts_itv itv_inter_slots [] 0)) in
+      let itv_cts_slot = inter_intervals cts_itv itv_inter_slots in
       let itv_res_assignement = find_resource_hierarchies_job itv_cts_slot job in
 
       match  itv_res_assignement with

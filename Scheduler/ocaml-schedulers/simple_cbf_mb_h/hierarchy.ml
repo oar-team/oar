@@ -69,7 +69,7 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
        | bk_top::next_bks_top ->
              (*  on sélectionne  les blocks de la hierarchie courante couvert par le top block*)
                   Printf.printf "intersect h_bks with cur_top_bk  \n";
-                  let h_cur = hy.(idx_h) in let h_cur_bk = (fst (inter_intervals h_cur [bk_top] [] 0)) in
+                  let h_cur = hy.(idx_h) in let h_cur_bk = inter_intervals h_cur [bk_top] in
                   if idx_h = (nb_h-1) then (* bottom - miam-miam - ressources*)
                     begin
                     (*        *)
@@ -294,7 +294,7 @@ let find_resource_hierarchies_old itv_l hy r_rqt_l =
                     (*  on sélectionne  les blocks de la hierarchie courante couvert par le top block*)
 
                   Printf.printf "yop\n";
-                  let h_cur = hy.(idx_h) in let h_cur_bk = (fst (inter_intervals h_cur [bk_top] [] 0)) in
+                  let h_cur = hy.(idx_h) in let h_cur_bk = inter_intervals h_cur [bk_top] in
 
                   if idx_h = (nb_h-1) then (* bottom - miam-miam - ressources*)
                   begin

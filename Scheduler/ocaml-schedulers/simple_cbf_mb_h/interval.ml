@@ -65,42 +65,51 @@ let intervals2ints itv_l =
 *)
 
 (* compute intersection of 2 resource intervals *)
-let rec inter_intervals itv_l_1 itv_l_2 itv_l_inter = 
-	match (itv_l_1,itv_l_2) with
-	| (x::n,y::m) ->
-			if (y.e < x.b) then inter_intervals (x::n) m itv_l_inter else (* y before x w/ no overlap *)
-			if (y.b > x.e) then inter_intervals n (y::m) itv_l_inter else (* x before y w/ no overlap *)
-			if (y.b >= x.b) then 
-				if (y.e <=  x.e) then  (* y before y w/ no overlap *)
-					inter_intervals ({b=y.e+1;e=x.e}::n) m ({b=y.b;e=y.e}::itv_l_inter)
-				else 
-					inter_intervals n ({b=x.e+1;e=y.e}::m) ({b=y.b;e=x.e}::itv_l_inter)
-			else
-				if (y.e <=  x.e) then
-					inter_intervals ({b=y.e+1;e=x.e}::n) m ({b=x.b;e=y.e}::itv_l_inter)
-				else
-					inter_intervals n ({b=x.e+1;e=y.e}::m) ({b=x.b;e=x.e}::itv_l_inter)
-	| (_,_) -> List.rev itv_l_inter;;
+
+
+let inter_intervals itv1s itv2s =
+  let rec inter_itvs itv_l_1 itv_l_2 itv_l_inter = 
+	  match (itv_l_1,itv_l_2) with
+	    | (x::n,y::m) ->
+			  if (y.e < x.b) then inter_itvs (x::n) m itv_l_inter else (* y before x w/ no overlap *)
+			  if (y.b > x.e) then inter_itvs n (y::m) itv_l_inter else (* x before y w/ no overlap *)
+			  if (y.b >= x.b) then 
+				  if (y.e <=  x.e) then  (* y before y w/ no overlap *)
+					  inter_itvs ({b=y.e+1;e=x.e}::n) m ({b=y.b;e=y.e}::itv_l_inter)
+				  else 
+					  inter_itvs n ({b=x.e+1;e=y.e}::m) ({b=y.b;e=x.e}::itv_l_inter)
+			  else
+				  if (y.e <=  x.e) then
+					  inter_itvs ({b=y.e+1;e=x.e}::n) m ({b=x.b;e=y.e}::itv_l_inter)
+				  else
+					  inter_itvs n ({b=x.e+1;e=y.e}::m) ({b=x.b;e=x.e}::itv_l_inter)
+	  | (_,_) -> List.rev itv_l_inter
+    in
+      inter_itvs itv1s itv2s [];;
 
 
 (* compute intersection of 2 intervals resources*)
 (* with resources counter nb_res *)
-let rec inter_intervals itv_l_1 itv_l_2 itv_l_inter nb_res = 
-	match (itv_l_1,itv_l_2) with
-	| (x::n,y::m) ->
-			if (y.e < x.b) then inter_intervals (x::n) m itv_l_inter nb_res else (* y before x w/ no overlap *)
-			if (y.b > x.e) then inter_intervals n (y::m) itv_l_inter nb_res else (* x before y w/ no overlap *)
-			if (y.b >= x.b) then
-				if (y.e <=  x.e) then  (* y before y w/ no overlap *)
-					inter_intervals ({b=y.e+1;e=x.e}::n) m ({b=y.b;e=y.e}::itv_l_inter) (nb_res + y.e - y.b + 1)
-				else 
-					inter_intervals n ({b=x.e+1;e=y.e}::m) ({b=y.b;e=x.e}::itv_l_inter) (nb_res + x.e - y.b + 1)
-			else
-				if (y.e <=  x.e) then
-					inter_intervals ({b=y.e+1;e=x.e}::n) m ({b=x.b;e=y.e}::itv_l_inter) (nb_res + y.e - x.b + 1)
-				else
-					inter_intervals n ({b=x.e+1;e=y.e}::m) ({b=x.b;e=x.e}::itv_l_inter) (nb_res + x.e - x.b + 1)
-	| (_,_) -> (List.rev itv_l_inter,nb_res);;
+let inter_intervals_n itv1s itv2s = 
+
+  let rec inter_itvs_n itv_l_1 itv_l_2 itv_l_inter nb_res = 
+	  match (itv_l_1,itv_l_2) with
+	  | (x::n,y::m) ->
+		  	if (y.e < x.b) then inter_itvs_n (x::n) m itv_l_inter nb_res else (* y before x w/ no overlap *)
+			  if (y.b > x.e) then inter_itvs_n n (y::m) itv_l_inter nb_res else (* x before y w/ no overlap *)
+			  if (y.b >= x.b) then
+				  if (y.e <=  x.e) then  (* y before y w/ no overlap *)
+					  inter_itvs_n ({b=y.e+1;e=x.e}::n) m ({b=y.b;e=y.e}::itv_l_inter) (nb_res + y.e - y.b + 1)
+				  else 
+					  inter_itvs_n n ({b=x.e+1;e=y.e}::m) ({b=y.b;e=x.e}::itv_l_inter) (nb_res + x.e - y.b + 1)
+			  else
+				  if (y.e <=  x.e) then
+					  inter_itvs_n ({b=y.e+1;e=x.e}::n) m ({b=x.b;e=y.e}::itv_l_inter) (nb_res + y.e - x.b + 1)
+				  else
+					  inter_itvs_n n ({b=x.e+1;e=y.e}::m) ({b=x.b;e=x.e}::itv_l_inter) (nb_res + x.e - x.b + 1)
+	  | (_,_) -> (List.rev itv_l_inter,nb_res)
+  in
+    inter_itvs_n itv1s itv2s [] 0;;
 
 (*
 let x1 = {b = 11; e = 20};; 
@@ -182,7 +191,7 @@ sub_intervals [y5] [x1];;  [{b = 5; e = 10}]
 (* Is it use ?*)
 
 let extract_n_block_itv itv_l_a itv_l_reference n =
-  let itv_l_seg = (fst (inter_intervals itv_l_a itv_l_reference [] 0)) in
+  let itv_l_seg = inter_intervals itv_l_a itv_l_reference in
   let rec extract_n_itv itv_l_1 itv_l_ref itv_l_result nb_itv = match (itv_l_1,itv_l_ref) with
     | ([],_) | (_,[]) -> [] 
     | (x::n,y::m) -> if x=y then
@@ -221,7 +230,7 @@ let y = [{b = 5; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}]
 (* Is it use ?*)
 
 let extract_block_itv itv_l_a itv_l_reference =
-  let itv_l_seg = (fst (inter_intervals itv_l_a itv_l_reference [] 0)) in
+  let itv_l_seg = inter_intervals itv_l_a itv_l_reference  in
   let rec extract_itv itv_l_1 itv_l_ref itv_l_result = match (itv_l_1,itv_l_ref) with
     | (x::n,y::m) -> if x=y then
                        extract_itv n m (x::itv_l_result)
@@ -238,7 +247,7 @@ let extract_block_itv itv_l_a itv_l_reference =
 
 (* Is it use ?*)
 let extract_n_min_block_itv itv_l_a itv_l_reference n =
-  let itv_l_seg = (fst (inter_intervals itv_l_a itv_l_reference [] 0)) in
+  let itv_l_seg = inter_intervals itv_l_a itv_l_reference in
   let rec extract_n_min_itv itv_l_1 itv_l_ref itv_l_result nb_itv = match (itv_l_1,itv_l_ref) with
     | (x::n,y::m) -> if x=y then
                        extract_n_min_itv n m (x::itv_l_result) (nb_itv -1)  
@@ -257,7 +266,7 @@ let extract_n_min_block_itv itv_l_a itv_l_reference n =
 let extract_no_empty_bk itv_l_a itv_l_reference =
  let rec extract_itv itv_l_ref result  = match itv_l_ref with
   | [] -> List.rev result
-  | (x::n) -> let inter_itvs = (fst (inter_intervals itv_l_a [x] [] 0)) in 
+  | (x::n) -> let inter_itvs = inter_intervals itv_l_a [x] in 
               match inter_itvs with 
                 | [] -> extract_itv n result 
                 | y -> extract_itv n (x::result)
@@ -280,7 +289,7 @@ let b6 = [{b = 3; e = 4}; {b = 19; e = 20};];;
 let extract_itv_by_itv_nb_inter itv_l_a itv_l_reference =
   let rec extract_itv itv_l_ref result nb_inter = match itv_l_ref with
     | [] -> (List.rev result,nb_inter)
-    | (x::n) -> let inter_itvs =  (fst (inter_intervals itv_l_a [x] [] 0)) in 
+    | (x::n) -> let inter_itvs =  inter_intervals itv_l_a [x] in 
                 match inter_itvs with 
                   | [] -> extract_itv n result nb_inter 
                   | y -> extract_itv n (y::result) (nb_inter + 1) 
