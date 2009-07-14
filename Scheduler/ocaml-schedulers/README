@@ -61,6 +61,5 @@ Next:
  * General and source documentation
  * Support of postgresql
  * multi-resources-request (for simple_cbf_mb_h >= series )
- * remove nb_res and int from constaint in job type (see Type.ml file , for simple_cbf_mb_h >= series )
  * Code restructuration (Interval un common)
  * modify itv_intersect in Interval / remove itv2str, itvs2str (now in interval)
