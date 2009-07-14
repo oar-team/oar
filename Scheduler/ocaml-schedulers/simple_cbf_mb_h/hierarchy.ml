@@ -13,13 +13,7 @@ vim regular / replace expression to manage comment around Printf debug fonctions
 
 *)
 
-
-(* need to be optimzed ??? *)
-(* need a special case for unitary resource hierarchy *)
-(* itv list MUST BE ORDERED by ascending resource id*)
-
-
-(* for test : hiearchies must set accordingly to configuration file*)
+(* some default values *) 
 let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
 let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
 let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e =12}; {b = 13; e = 16};
@@ -29,7 +23,9 @@ let hierarchy_levels = [ ("node",h0);("cpu",h1);("core",h2) ];;
 
 
 
-
+(* need to be optimzed ??? *)
+(* need a special case for unitary resource hierarchy *)
+(* itv list MUST BE ORDERED by ascending resource id*)
 
 let rec drop n = function
 	| (_ :: l) when n > 0 -> drop (n-1) l
@@ -53,6 +49,7 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
    | ((top_bks::tl_h_top_bks), (res::tl_rs)) when res = 0 ->
             if idx_h = 0 then
               begin
+
                 Printf.printf "Win idx_h=0 (List.hd r_rqts_remain) = 0 :)";
                 result
               end
@@ -205,7 +202,7 @@ find_resource_hierarchies2  [{b = 16; e = 23}] h r;;
 
 
 *)
-
+(*
 let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
 let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
 
@@ -222,7 +219,7 @@ let t = [
   (e2,h,r,res1);
   (e3,h,r,res1);
 ];;
-
+*)
 let test_find_hierarchies test_list =
  let test = fun x ->
   let (input, hys, r_reqts, result) = x in 
