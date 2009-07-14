@@ -45,15 +45,23 @@ type job = {
 type slot = {
 	time_s : time_t;
 	time_e : time_t;
+(*	TOREMOVE
 	nb_free_res : int;
+*)
 	set_of_res : set_of_resources;
 }
 
 let slot_to_string slot = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in 
+  (Printf.sprintf "time_s %s, time_e: %s \n" 
+    (to_string slot.time_s) (to_string slot.time_e) ) ^
+  (String.concat ", " (List.map itv2str slot.set_of_res))
+
+(* TOREMOVE 
+let slot_to_string slot = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in 
   (Printf.sprintf "time_s %s, time_e: %s, nb_free_res: %d\n" 
     (to_string slot.time_s) (to_string slot.time_e) slot.nb_free_res) ^
   (String.concat ", " (List.map itv2str slot.set_of_res))
-
+*)
 
 
 
@@ -152,7 +160,7 @@ let find_first_suitable_contiguous_slots slots j =
 	let rec find_suitable_contiguous_slots slot_l pre_slots job =
  
 	   	let (next_ctg_time_slot, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job in
-      let (cts_itv,nb_res_cts) = job.constraints in
+      let cts_itv = job.constraints in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
       let itv_cts_slot = inter_intervals cts_itv itv_inter_slots in
       let itv_res_assignement = find_resource_hierarchies_job itv_cts_slot job in
@@ -212,7 +220,7 @@ find_first_suitable_contiguous_slots [s1;s4;s5] j3 ;; (* [{b = 11; e = 35}], [s4
 let slot_before_job_begin slot job = {
 	time_s = slot.time_s;
 	time_e = add job.time_b minus_one;
-	nb_free_res = slot.nb_free_res;
+	(* nb_free_res = slot.nb_free_res; TOREMOVE*)
 	set_of_res = slot.set_of_res;
 };;
 
@@ -220,7 +228,7 @@ let slot_before_job_begin slot job = {
 let slot_during_job slot job = {
 		time_s = max job.time_b slot.time_s;
 		time_e = min (add (add job.time_b  job.walltime) minus_one) slot.time_e ;
-		nb_free_res = slot.nb_free_res-job.nb_res; 
+		(*nb_free_res = slot.nb_free_res-job.nb_res; TOREMOVE *) 
 		set_of_res = sub_intervals slot.set_of_res job.set_of_rs;
 	}
 ;;
@@ -230,7 +238,8 @@ let slot_during_job slot job = {
 let slot_after_job_end slot job = {
 	time_s = add job.time_b job.walltime;
 	time_e = slot.time_e  ;
-	nb_free_res = slot.nb_free_res;
+	(* nb_free_res = slot.nb_free_res; TOREMOVE *) 
+
 	set_of_res = slot.set_of_res;
 };;
 
@@ -239,31 +248,49 @@ let split_slots slots job =
 	let split_slot slt = 
 		if job.time_b > slt.time_s then (* AAA *)
 			if  (add (add job.time_b job.walltime) minus_one) > slt.time_e then
+(*
 					if slt.nb_free_res > job.nb_res then
+  TOREMOVE
+*)
 					 (* A+B *)
 						(slot_before_job_begin slt job) :: [(slot_during_job slt job)]
+(*
+ TOREMOVE
 					else
 					 (* A *)
 						[slot_before_job_begin slt job]
+*)
 			else
-					if slt.nb_free_res > job.nb_res then
+(* TOREMOVE					if slt.nb_free_res > job.nb_res then *)
+
 				 		(* A+B+C *)
 						(slot_before_job_begin slt job) :: (slot_during_job slt job) :: [(slot_after_job_end slt job)]
+
+(* TOREMOVE
 					else
 						(slot_before_job_begin slt job) :: [(slot_after_job_end slt job)]
+*)
 		else
 			if (add (add job.time_b  job.walltime) minus_one) >= slt.time_e then
+(* TOREMOVE
 				if slt.nb_free_res > job.nb_res then
+*)
 				 (* B *)
 					[slot_during_job slt job]
+(* TOREMOVE
 				else
 					[]
-			else	
+*)
+			else
+(*	TOREMOVE
 				if slt.nb_free_res > job.nb_res then
+*)
 				 	(* B+C *) 
 					( slot_during_job slt job) :: [(slot_after_job_end slt job )]
+(*	TOREMOVE
 				else
-					[slot_after_job_end slt job]	
+					[slot_after_job_end slt job]
+*)
 	in List.flatten (List.map (fun slot -> split_slot slot ) slots) ;;
 
 
@@ -343,7 +370,7 @@ let rec schedule_jobs jobs slots =
 		| j::n -> let (job, updated_slots ) = assign_resources_job_split_slots j slot_list in assign_res_jobs n  (job::scheduled_jobs) updated_slots
 	in assign_res_jobs jobs [] slots;;
 	 
-let slot_max nb_res = {time_s = zero; time_e = max_int; nb_free_res = nb_res; set_of_res = [{b = 1; e = nb_res}]};;
+let slot_max nb_res = {time_s = zero; time_e = max_int; set_of_res = [{b = 1; e = nb_res}]};;
 
 (* function insert previously scheduled job in slots *)
 (* job must be sorted by start_time *)

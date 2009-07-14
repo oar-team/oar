@@ -25,8 +25,10 @@ type job = {
 	hy_level_rqt : string list;  (*Mono request *) (* need of list of list of string *)
   hy_nb_rqt : int  list;  (*Mono request *) (* need of int of list of string *)
 
-  constraints : set_of_resources * int; (* int Must be remove *)
-  nb_res : int; (* Must be remove *)
+  constraints : set_of_resources;
+
+  (* constraints : set_of_resources * int; int Must be remove *)
+  (*nb_res : int; Must be remove *)
 	mutable set_of_rs : set_of_resources;
 }
 

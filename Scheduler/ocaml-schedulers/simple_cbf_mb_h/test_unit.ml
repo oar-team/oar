@@ -11,8 +11,8 @@ let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e =12}; {b = 13; e = 16};
 
 let hierarchy_levels = [ ("node",h0);("cpu",h1);("core",h2) ];;
 
-let c0 = ( [{b = 1; e = 40}], 40) ;;  
-let j1 = { time_b = 0L; walltime = 3L; nb_res = 5; hy_level_rqt = ["cpu"]; hy_nb_rqt = [4]; constraints =c0; set_of_rs = []};;
+let c0 = [{b = 1; e = 40}] ;;  
+let j1 = { time_b = 0L; walltime = 3L; hy_level_rqt = ["cpu"]; hy_nb_rqt = [4]; constraints =c0; set_of_rs = []};;
 
 
 let test_find_hierarchy_homogenous_h1_0 _ =
@@ -44,10 +44,10 @@ let test_find_hierarchy_homogenous_h2 _ =
 
 
 let test_schedule_jobs_0 _ =
-  let c0 = ( [{b = 1; e = 40}], 40) in  
-  let j0 = { time_b = 0L; walltime = 3L; nb_res = 5; hy_level_rqt = ["cpu"]; hy_nb_rqt = [4]; constraints =c0; set_of_rs = []} in
+  let c0 = [{b = 1; e = 40}] in  
+  let j0 = { time_b = 0L; walltime = 3L; hy_level_rqt = ["cpu"]; hy_nb_rqt = [4]; constraints =c0; set_of_rs = []} in
   let assign_j0 = [{time_b = 0L; walltime = 3L; hy_level_rqt = ["cpu"]; hy_nb_rqt = [4];
-    constraints = ([{b = 1; e = 40}], 40); nb_res = 5; set_of_rs = [{b = 25; e = 32}; {b = 17; e = 24}; {b = 9; e = 16}; {b = 1; e = 8}]}] in
+    constraints = [{b = 1; e = 40}]; set_of_rs = [{b = 25; e = 32}; {b = 17; e = 24}; {b = 9; e = 16}; {b = 1; e = 8}]}] in
     
     assert_equal assign_j0 (schedule_jobs [j0] [slot_max 100])
 
