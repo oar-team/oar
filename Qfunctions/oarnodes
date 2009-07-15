@@ -52,6 +52,7 @@ my $Old;
 my $smp;
 my $events;
 my @resources;
+my @nodes;
 ### END Variables declaration ###
 
 
@@ -120,9 +121,23 @@ sub format_result($){
     }
 }
 
-sub print_resource_state($){
-	my $resource_state_to_print = shift;
-	my $state = oarnodeslib::get_resource_state($resource_state_to_print);
+sub print_resources_states_for_hosts($){
+	my $nodes = shift;
+	foreach my $current_host (@$nodes){
+	  my $resources_states = oarnodeslib::get_resources_states_for_host($current_host);
+	  print "$current_host\n";
+	  while ( my ($k,$v) = each %$resources_states ){
+		print "    $k : $v\n";
+	  }
+	}
+}
+
+sub print_resources_states($){
+	my $resources = shift;
+	my $resources_states = oarnodeslib::get_resources_states($resources);
+	while ( my ($k,$v) = each %$resources_states ){
+		print "$k : $v\n";
+	}
 }
 
 sub print_resources($){
@@ -130,7 +145,6 @@ sub print_resources($){
 }
 
 ### END Print Methods ###
-
 
 
 ### Main ###
@@ -162,6 +176,13 @@ if ($Version){
 }
 
 oarnodeslib::open_db_connection();
+# Nodes list handling (set @nodes to what has been requested)
+if($ARGV[0]){
+    @nodes = @ARGV;
+}else{
+     my $nodes = oarnodeslib::get_all_nodes();
+	@nodes = @$nodes;
+}
 
 if (defined($events)) {
     print_events($events);
@@ -170,21 +191,19 @@ if (defined($events)) {
 if (defined($sql_property)) {
 	add_sql_resources($sql_property);
 }
-if ($#resources >= 0) {
-	if ($stateMode){
-		foreach my $current_resource (@resources){
-		  print_resource_state($current_resource);
-		}
+if ($stateMode){
+	if ($#resources >= 0){
+		print_resources_states(\@resources);
 	}
 	else{
-		print_resources(\@resources);
+		print_resources_states_for_hosts(\@nodes);
 	}
 }
 
+
+
 oarnodeslib::close_db_connection();
 
-### quit program, TODO: a enlever
-exit(0);
 
 ### END Main ###
 

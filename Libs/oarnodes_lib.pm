@@ -44,6 +44,11 @@ sub format_date($){
     return iolib::local_to_sql($date);
 }
 
+sub get_all_nodes(){
+    my @nodes = iolib::list_nodes($base);
+	return \@nodes;
+}
+
 sub get_events($$){
 	my $hostname = shift;
 	my $date_from = shift;
@@ -57,9 +62,27 @@ sub get_resources_with_given_sql($){
 	return \@sql_resources;
 }
 
-sub get_resource_state($){
-	my $resource_id = shift;
-	return iolib::get_resource_state($base, $resource_id);
+sub get_resources_states($){
+	my $resources = shift;
+	my %resources_states;
+	foreach my $current_resource (@$resources){
+		my $properties = iolib::get_resource_info($base, $current_resource);
+		$resources_states{$current_resource} = $properties->{state};
+		if ($properties->{state} eq "Absent" && $properties->{available_upto} != 0) {
+			$resources_states{$current_resource} .= " (standby)";
+		}
+	}
+	return \%resources_states;
+}
+
+sub get_resources_states_for_host($){
+	my $hostname = shift;
+	my @node_info = iolib::get_node_info($base, $hostname);
+	my @resources;
+	foreach my $info (@node_info){
+		push @resources, $info->{resource_id};
+	}
+	return get_resources_states(\@resources);
 }
 
 1;
