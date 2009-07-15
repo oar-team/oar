@@ -127,7 +127,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   res = curl_easy_perform(curl);
   
   if (res!=0){
-	fprintf(stderr, "\n !! error %d !!\n %s \n",res, curl_errorstr);
+	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
   }
 
  /* if(!res) {
