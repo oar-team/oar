@@ -44,7 +44,7 @@ sub format_date($){
     return iolib::local_to_sql($date);
 }
 
-sub get_all_nodes(){
+sub get_all_hosts(){
     my @nodes = iolib::list_nodes($base);
 	return \@nodes;
 }
@@ -83,6 +83,50 @@ sub get_resources_states_for_host($){
 		push @resources, $info->{resource_id};
 	}
 	return get_resources_states(\@resources);
+}
+
+sub get_resources_infos($){
+	my $resources = shift;
+	my %resources_infos;
+	foreach my $current_resource (@$resources){
+		my $properties = iolib::get_resource_info($base, $current_resource);
+		if ($properties->{state} eq "Absent" && $properties->{available_upto} != 0) {
+			$properties->{state} .= " (standby)";
+		}
+		add_running_jobs_to_resource_properties($properties);
+		$resources_infos{$current_resource} = $properties
+	}
+	return \%resources_infos;
+}
+
+sub get_resources_infos_for_host($){
+	my $hostname = shift;
+	my @node_info = iolib::get_node_info($base, $hostname);
+	my @resources;
+	foreach my $info (@node_info){
+		push @resources, $info->{resource_id};
+	}
+	return get_resources_infos(\@resources);
+}
+
+sub get_jobs_running_on_resource($){
+	my $resource_id = shift;
+	my @jobs = iolib::get_resource_job($base, $resource_id);
+	return \@jobs;
+}
+
+sub add_running_jobs_to_resource_properties($){
+	use Data::Dumper;
+	my $info = shift;
+	if ($info->{state} eq "Alive"){
+		my $jobs = get_jobs_running_on_resource($info->{resource_id});
+		if (@$jobs > 0){
+			my $jobs_string = Dumper($jobs); #TODO: not proud of it...
+			$jobs = join(', ', split(/,/, $jobs_string));
+			$jobs =~ s/[\[\]\']//g;
+			$info->{jobs} = $jobs;
+		}
+	}
 }
 
 1;

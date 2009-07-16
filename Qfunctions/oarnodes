@@ -64,7 +64,7 @@ Usage: oarnodes [ -a | -r number | --sql sql_properties | -s | -l | -h | -V ]
 [list of nodes] [ -e [date] | -X | -Y | -D | --backward-compatible [--smp]]
 Display node informations
 Options:
- -a, --all          show all nodes with their properties
+ -a, --all          show all nodes with their properties (default oarnodes output)
  -r, --resource     show only a resource properties
  -s, --state        show only node states
  -l, --list         show only node list
@@ -140,9 +140,30 @@ sub print_resources_states($){
 	}
 }
 
-sub print_resources($){
-	my $resources_to_print = shift;
+sub print_hosts_infos($){
+	my $nodes = shift;
+	foreach my $current_node (@$nodes){
+		my $infos = oarnodeslib::get_resources_infos_for_host($current_node);
+		print "$current_node\n";
+		while ( my ($resource_id,$properties) = each %$infos ){
+			print_resource($properties);
+		}
+	}
 }
+
+sub print_resources_infos($){
+	my $resources = shift;
+	my $res_infos = oarnodeslib::get_resources_infos($resources);
+	while ( my ($k,$v) = each %$res_infos ){
+		print_resource($v);
+	}
+}
+
+sub print_resource($){
+	my $info = shift;
+	print Dumper($info)."\n";
+}
+
 
 ### END Print Methods ###
 
@@ -180,8 +201,8 @@ oarnodeslib::open_db_connection();
 if($ARGV[0]){
     @nodes = @ARGV;
 }else{
-     my $nodes = oarnodeslib::get_all_nodes();
-	@nodes = @$nodes;
+    my $nodes_tmp = oarnodeslib::get_all_hosts();
+	@nodes = @$nodes_tmp;
 }
 
 if (defined($events)) {
@@ -199,11 +220,25 @@ if ($stateMode){
 		print_resources_states_for_hosts(\@nodes);
 	}
 }
-
+if ($listall){
+	my $nodes_tmp = oarnodeslib::get_all_hosts();
+	@nodes = @$nodes_tmp;
+	foreach my $current_node (@nodes) {
+		print "$current_node\n";
+	}
+}
+# if ($listallwithinfo){
+# 
+# }
+if ($#resources >= 0){
+	print_resources_infos(\@resources);
+}
+elsif ($#nodes >= 0){
+	print_hosts_infos(\@nodes);
+}
 
 
 oarnodeslib::close_db_connection();
-
 
 ### END Main ###
 
@@ -281,55 +316,8 @@ oarnodeslib::close_db_connection();
 #     exit($exitstatus);
 # }
 # 
-# 
-# # Nodes list handling (set @nodes to what has been requested)
-# my @nodes;
-# if($ARGV[0]){
-#     @nodes = @ARGV;
-# }else{
-#     @nodes = iolib::list_nodes($base);
-# }
-# 
-# if (defined($stateMode)){
-#     # Display the state of each resources
-#     my %data_to_display;
-#     foreach my $node ( @nodes ) {
-#         my @node_info = iolib::get_node_info($base,$node);
-#         if ($#node_info >= 0){
-#             my %tmp_data;
-#             foreach my $n (@node_info){
-#                 $tmp_data{$n->{resource_id}} = $n->{state};
-#                 my $properties = iolib::get_resource_info($base,$n->{resource_id});
-#                 if ($n->{state} eq "Absent" && $properties->{available_upto} != 0) {
-#                     $tmp_data{$n->{resource_id}} .= " (standby)";
-#                 }
-#             }
-#             $data_to_display{$node} = \%tmp_data;
-#         }else{
-#             $data_to_display{$node} = undef;
-#         }
-#     }
-#  else{
-#         foreach my $d (sort(keys(%data_to_display))){
-#             print("$d\n");
-#             foreach my $e (sort({$a <=> $b} keys(%{$data_to_display{$d}}))){
-#                 print("    $e : $data_to_display{$d}->{$e}\n");
-#             }
-#             print("\n");
-#         }
-#     }
-# }elsif(defined($listall)){
-#     # Simple list handling
-# 
-#         foreach my $node ( @nodes ) {
-#             print($node,"\n");
-#         }
-# 
-# 
-# 
-# 
-# 
-# }else{
+# ...........
+#else{
 #     # Default display of oarnodes
 #     my %data_to_display;
 #     foreach my $node ( @nodes ) {
