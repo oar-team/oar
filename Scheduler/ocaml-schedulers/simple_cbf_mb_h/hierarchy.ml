@@ -36,7 +36,19 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
   let top_master = [{b=1;e=32}] in (* TODO parameter ??? *) 
   let rec find result h idx r = match (h,r) with
 
-    | (_, [])|([], _::_) -> 
+
+    |([], res::_) -> if (res=0) && (idx= -1) then
+        begin
+          Printf.printf "Win \n";
+          result
+        end
+       else
+        begin
+          Printf.printf "Bug ??- need to raise exception ???\n"; (* TODO *)
+          [] 
+        end
+
+    | (_, []) -> 
         begin
           Printf.printf "Bug ??- need to raise exception ???\n"; (* TODO *)
           [] 
@@ -47,7 +59,7 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
           Printf.printf "res = 0\n";
           if idx = 0 then
             begin
-              Printf.printf "Win \n";
+              Printf.printf "Win \n";  (* TODO  to verify perhaps this is section is not needed *)
               result
             end
           else
@@ -92,9 +104,9 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
                                   find result (tl_tops::tl_h) idx r
                                 end
                         | x -> begin
-                                  Printf.printf "Cont: eating OK - go up\n" ;
+                                  Printf.printf "Cont: eating OK - go up - next top\n" ;
                                   let new_result = sub_result :: result in
-                                  find new_result (tl_tops::tl_h) idx ((res-1)::tl_r) 
+                                  find new_result tl_h (idx-1) (((List.hd tl_r)-1)::(List.tl tl_r)) 
                                 end
                     end
                   else
@@ -119,7 +131,7 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
                     end 
                 end
 
-    in find [] (hy.(0)::[top_master]) 0 [r_rqt_l.(0)];; 
+    in find [] ([top_master]) 0 (r_rqt_l.(0)::[1]);; 
 
    
 
@@ -322,7 +334,12 @@ let test_find_hierarchies test_list =
   List.iter (fun x -> test x) test_list;;
 
 let _=
-
+(*
   let h =  [|h0;h1;h2|] in
   let r =  [|2;1;1|] in
+*)
+  let h =  [|h0;|] in
+  let r =  [|2;|] in
+
+
     find_resource_hierarchies [{b = 1; e = 32}] h r;;
