@@ -42,6 +42,14 @@ let test_find_hierarchy_homogenous_h2 _ =
     assert_equal [] (find_resource_hierarchies [{b= 7;e=20}] h r);
     assert_equal [[{b = 17; e = 24}]; [{b = 9; e = 16}]] (find_resource_hierarchies [{b= 7;e=30}]  h r)
 
+let test_find_hierarchy_homogenous_h3_0 _ =
+  let h =  [|h0;h1;h2|] in 
+  let r =  [|1;1;1|] in
+
+    assert_equal [[{b = 9; e = 12}]] (find_resource_hierarchies [{b = 7; e = 23}] h r);
+    assert_equal [[{b = 17; e = 20}]] (find_resource_hierarchies [{b = 16; e = 23}] h r);
+    assert_equal [] (find_resource_hierarchies [{b = 18; e = 23}] h r) (* BUG ??? *)
+(* BUG en 222, 221, 211 *)
 
 let test_schedule_jobs_0 _ =
   let c0 = [{b = 1; e = 40}] in  
@@ -56,6 +64,7 @@ let suite = "Unit test for simple_cbf_mb_h" >::: [
           "test_find_hierarchy_homogenous_h1_0" >:: test_find_hierarchy_homogenous_h1_0;
           "test_find_hierarchy_homogenous_h1_0" >:: test_find_hierarchy_homogenous_h1_1;
 				  "test_find_hierarchy_homogenous_h2" >:: test_find_hierarchy_homogenous_h2; 
+          "test_find_hierarchy_homogenous_h3_0" >:: test_find_hierarchy_homogenous_h3_0; 
           "test_schedule_jobs_0" >:: test_schedule_jobs_0
         ]
 
