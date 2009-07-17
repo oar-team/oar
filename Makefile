@@ -215,6 +215,7 @@ libs: man
 	install -m 0644 Libs/oar_conflib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 Libs/oar_iolib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 Libs/oarnodes_lib.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Libs/oarsub_lib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 Judas/oar_Judas.pm $(DESTDIR)$(OARDIR)
 	install -m 0755 Qfunctions/oarnodesetting $(DESTDIR)$(OARDIR)
 	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarnodesetting

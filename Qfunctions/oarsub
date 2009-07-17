@@ -19,6 +19,7 @@ use File::Temp qw/ tempfile /;
 use oar_Tools;
 use oarversion;
 
+use oarsub_lib;
 
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
