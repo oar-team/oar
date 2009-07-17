@@ -143,7 +143,7 @@ sub print_hosts_infos($){
 		my $infos = oarnodeslib::get_resources_infos_for_host($current_node);
 		#print "$current_node\n\n";
 		while ( my ($resource_id,$properties) = each %$infos ){
-			print_resource($properties);
+			print_resource_flat_way($properties); # do treatment here to add depth to the output
 		}
 	}
 }
@@ -152,16 +152,21 @@ sub print_resources_infos($){
 	my $resources = shift;
 	my $res_infos = oarnodeslib::get_resources_infos($resources);
 	while ( my ($k,$v) = each %$res_infos ){
-		print_resource($v);
+		print_resource_flat_way($v); # do treatment here to add depth to the output
 	}
 }
 
-sub print_resource($){
+# INFO: function to change if you want to change the output
+sub print_resource_flat_way($){
 	my $info = shift;
 	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+		# To change Dumper, XML, YAML and JSON output, just modify the $info hash 
+		# here and call format_result($info), everything needed is in the hash
 		format_result($info);
 	}
 	else{
+		# If you want to modify the regular oarnodes output, change here
+		# Everything needed is in $info
 		print "network_address : $info->{network_address}\n";
 		print "state : $info->{state}\n";
 		if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
