@@ -14,6 +14,20 @@ let hierarchy_levels = [ ("node",h0);("cpu",h1);("core",h2) ];;
 let c0 = [{b = 1; e = 40}] ;;  
 let j1 = { time_b = 0L; walltime = 3L; hy_level_rqt = ["cpu"]; hy_nb_rqt = [4]; constraints =c0; set_of_rs = []};;
 
+let test_find_resource_1_h =
+  assert_equal [{b = 17; e = 32}] (find_resource_1_h [{b = 8; e = 32}] [|h0|] [|1|]);
+  assert_equal [] (find_resource_1_h [{b = 8; e = 20}] [|h0|] [|1|])
+
+let test_find_resource_2_h =
+  assert_equal [[{b = 1; e = 8}; {b = 9; e = 16}]] (find_resource_2_h [{b = 1; e = 32}] [|h0;h1|] [|1;2|]);
+  assert_equal [[{b = 1; e = 8}]] (find_resource_2_h [{b = 1; e = 32}] [|h0;h1|] [|1;1|]);
+  assert_equal [[{b = 9; e = 16}]] (find_resource_2_h [{b = 8; e = 32}] [|h0;h1|] [|1;1|]);
+  assert_equal [[{b = 17; e = 24}; {b = 25; e = 32}]] (find_resource_2_h [{b = 8; e = 32}] [|h0;h1|] [|1;2|]);
+  assert_equal [] (find_resource_2_h [{b = 8; e = 32}] [|h0;h1|] [|2;2|]);
+  assert_equal [[{b = 9; e = 16}]; [{b = 17; e = 24}]] (find_resource_2_h [{b = 8; e = 32}] [|h0;h1|] [|2;1|]);
+  assert_equal [[{b = 17; e = 24}; {b = 25; e = 32}]] (find_resource_2_h [{b = 8; e = 32}] [|h0;h1|] [|1;2|])
+
+
 
 let test_find_hierarchy_homogenous_h1_0 _ =
  (* let h =  [|h0|] in  *)
@@ -59,8 +73,9 @@ let test_schedule_jobs_0 _ =
     
     assert_equal assign_j0 (schedule_jobs [j0] [slot_max 100])
 
-
 let suite = "Unit test for simple_cbf_mb_h" >::: [
+          "test_find_resource_1_h"  >:: test_find_resource_1_h;
+          "test_find_resource_2_h"  >:: test_find_resource_2_h;
           "test_find_hierarchy_homogenous_h1_0" >:: test_find_hierarchy_homogenous_h1_0;
           "test_find_hierarchy_homogenous_h1_0" >:: test_find_hierarchy_homogenous_h1_1;
 				  "test_find_hierarchy_homogenous_h2" >:: test_find_hierarchy_homogenous_h2; 
@@ -70,5 +85,4 @@ let suite = "Unit test for simple_cbf_mb_h" >::: [
 
 let _ =
   run_test_tt ~verbose:true suite
-
 

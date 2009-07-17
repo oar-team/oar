@@ -133,7 +133,29 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
 
     in find [] ([top_master]) 0 (r_rqt_l.(0)::[1]);; 
 
-   
+  
+
+let find_resource_1_h  itv_l hy r_rqt_l = 
+   extract_n_block_itv itv_l hy.(0) r_rqt_l.(0);;
+  
+let find_resource_2_h  itv_l hy r_rqt_l = 
+  let n0 = r_rqt_l.(0) in
+  let available_bk = extract_no_empty_bk itv_l hy.(0) in
+  if (List.length available_bk) < n0 then
+    []
+  else
+    let rec find result bks n = match (bks,n) with
+      | (_,0) -> List.rev result
+      | (x::m,_) -> begin
+                      let h_itv =  inter_intervals [x] (hy.(1)) in
+                      let sub_result =  extract_n_block_itv itv_l h_itv r_rqt_l.(1) in
+                      match sub_result with
+                        | [] ->  find result m n
+                        | y -> find (sub_result::result) m (n-1)
+                    end
+      | ([],_) -> [] 
+    in find [] available_bk n0;;
+
 
 let find_resource_hierarchies_old itv_l hy r_rqt_l =
   
@@ -338,8 +360,10 @@ let _=
   let h =  [|h0;h1;h2|] in
   let r =  [|2;1;1|] in
 *)
-  let h =  [|h0;|] in
-  let r =  [|2;|] in
+  let h =  [|h0;h1|] in
+  let r =  [|2;1|] in
 
-
-    find_resource_hierarchies [{b = 1; e = 32}] h r;;
+ find_resource_2_h  [{b = 1; e = 32}] h r;;
+(*
+    find_resource_hierarchies [{b = 1; e = 32}] h r;; 
+*)
