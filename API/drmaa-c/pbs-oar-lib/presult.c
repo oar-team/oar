@@ -4,23 +4,25 @@
 #include <stdio.h>
 #include "presult.h"
 
-// Les entrées/sorties sur la liste chainée presult (contenant le résultat d'un GET par exemple)
+// needed functions to use the presult structure
 
 
 
 
 void UpCase(char *string);
 
-// Pour l'instant, on ajoute l'element a la fin (consomme plus de CPU que l'ajout en tete mais concerve l'ordre)
+
+// Adds a new element to the presult list (in the end)
 presult *addElement(presult **list, char* key) { 
-    // On crée un nouvel element
+
+    // We create a new presult element
     presult *newElement = malloc(sizeof(presult));
 
-    if(!newElement) exit(EXIT_FAILURE); // En cas ou on n'arrive pas à reserver d l'espace mem. pour cet element     
+    if(!newElement) exit(EXIT_FAILURE); // If we don't have enough memory     
 
-    // On définie les valeurs du nouvel élément
-    newElement->key = key;
-    newElement->type = UNKNOWN;		// A changer lors de l'instanciation de "Value" (imm. ou comp.)
+    // We initialize the new created element
+    newElement->key = key;		// It can be NULL (useful for some "twisted" values like "events", ...)
+    newElement->type = UNKNOWN;		// TO BE CHANGED after calling the addElement function
     newElement->compValue = NULL;
  //   newElement->immValue.f = NULL;
     // C'est le dernier element
@@ -30,14 +32,14 @@ presult *addElement(presult **list, char* key) {
 //    printf("More Info: list = %p\n", list);    
     
 
-    if(*list == NULL) { // Si la liste ne contient aucun élement
+    if(*list == NULL) { // If list is already empty
 	
 //	printf("CHKPT ADDELEMENT 2 : %p\n", newElement);           
 	
-	*list = newElement;	// !!!  A voir si laisse comme ça ou non ?! si ça pose des problèmes ou pas  !!!
+	*list = newElement;	// !!!  IS IT REAALLY NECESSARY TO KEEP THIS COMMAND
         return newElement;
 
-    } else { // Sinon, on l'ajoute à la fin
+    } else { // We are adding the new element in the end of the list
         
 //	printf("CHKPT ADDELEMENT 3\n");      
 
@@ -56,6 +58,7 @@ presult *addElement(presult **list, char* key) {
     }
 }
 
+// Prints the content of the presult list using showResult_
 void showResult(presult *list) {
 	printf("\n\n---------------------------------------------------------------\n");
 	printf("-----------------------  SHOW RESULT  -------------------------\n");
@@ -67,7 +70,8 @@ void showResult(presult *list) {
 
 }
 
-void showResult_(presult *list) { // Affiche une liste chainée contenant le résultat
+// Prints the content of the presult list
+void showResult_(presult *list) { 
 
     presult *tmp;
     tmp = list;	
@@ -102,7 +106,7 @@ void showResult_(presult *list) { // Affiche une liste chainée contenant le ré
 			}
 		break;
 
-		case COMPLEX:	// Si la valeur est de type complexe (contient plusieurs elements)
+		case COMPLEX:	// if it's a JSON object or a JSON array
 			printf("	[");
 			showResult_(tmp->compValue);
 			printf("	] }  ");
@@ -124,7 +128,7 @@ void showResult_(presult *list) { // Affiche une liste chainée contenant le ré
 
 
 
-
+// Sees if the presult list is empty or not
 int isEmpty (presult *list) {
     return (list == NULL)? 1 : 0;
 }
@@ -213,6 +217,8 @@ void removeResult(presult list) {
 */
 
 
+
+// Puts all the characters into upper case
 void UpCase(char *string)
 {
   register int t;
@@ -224,10 +230,11 @@ void UpCase(char *string)
 
 
 
-// !!!   A TESTER POUR VOIR SI ON ARRIVE A AVOIR TOUS LES ETATS OU PAS !!!!!
+// !!!  SOME MORE TESTS ARE REQUIRED HERE TO SEE IF WE CAN GET ALL THE STATES OR NOT !!!!!
 
 
-void getDrmaaState(presult *list){ // Affiche l'état DRMAA correspondant à cet état OAR
+// Prints the DRMAA state of the job (conversion of OAR states)
+void getDrmaaState(presult *list){ 
 
     presult *tmp;
     tmp = list;	
@@ -238,7 +245,7 @@ void getDrmaaState(presult *list){ // Affiche l'état DRMAA correspondant à cet
 
         tmp = tmp->next;
     }
-    if (tmp != NULL){	// On a pu récuperer l'état OAR du Job
+    if (tmp != NULL){	// We were able to get the job state
 
 //	printf("CHK PT 1\n");		
 
@@ -256,7 +263,7 @@ void getDrmaaState(presult *list){ // Affiche l'état DRMAA correspondant à cet
 		printf("DRMAA STATE = %s\n","DRMAA_PS_QUEUED_ACTIVE ");
 
 	} else if (!strcmp("HOLD", state)) {
-		printf("DRMAA STATE = %s\n","DRMAA_PS_USER_ON_HOLD"); // !! expression régulière requise !!
+		printf("DRMAA STATE = %s\n","DRMAA_PS_USER_ON_HOLD"); // !! for the moment, only the user can request a HOLD in OAR !!
 
 	} else if (!strcmp("TOLAUNCH", state)) {
 		printf("DRMAA STATE = %s\n","DRMAA_PS_QUEUED_ACTIVE ");
@@ -277,23 +284,23 @@ void getDrmaaState(presult *list){ // Affiche l'état DRMAA correspondant à cet
 		printf("DRMAA STATE = %s\n","DRMAA_PS_RUNNING");
 
 	} else if (!strcmp("SUSPENDED", state)) {
-		printf("DRMAA STATE = %s\n","DRMAA_PS_USER_SUSPENDED"); // !!  expression régulière requise !!
+		printf("DRMAA STATE = %s\n","DRMAA_PS_USER_SUSPENDED"); // !! for the moment, only the user can request a SUSPEND in OAR !!
 
 	} else if (!strcmp("RESUMING", state)) {
-		printf("DRMAA STATE = %s\n","DRMAA_PS_USER_SUSPENDED"); // !!  expression régulière requise !!
+		printf("DRMAA STATE = %s\n","DRMAA_PS_USER_SUSPENDED"); // !! for the moment, only the user can request a RESUME in OAR !!
 
 	} else if (!strcmp("TERMINATED", state)) {
 		printf("DRMAA STATE = %s\n","DRMAA_PS_DONE");
 
 	} else if (!strcmp("ERROR", state)) {
-		printf("DRMAA STATE = %s\n","DRMAA_PS_FAILED");	// Il faut récupérer le code d'erreur (il faut vior si la structure récupéré quand on a "ERROR" contient une clé appelé "state" ?)
+		printf("DRMAA STATE = %s\n","DRMAA_PS_FAILED");	// Here, we should parse the message to get the error number
 
 	} else {
 		printf("DRMAA STATE = %s\n","DRMAA_PS_UNDETERMINED"); 
 	}
 
 
-    } else {	// On n'a pas réussi à récuperer l'état OAR du système
+    } else {	// We were not able to get the OAR state of the job !!
 
 	printf("NO OAR STATE FOUND\n"); 
 	printf("DRMAA STATE = %s\n","DRMAA_PS_UNDETERMINED"); 

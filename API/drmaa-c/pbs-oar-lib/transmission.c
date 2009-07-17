@@ -10,7 +10,7 @@
 #define TRUE 1
 #define FALSE 0
 
-// Pour pouvoir recuperer le code d'erreur avec des anciennes versions de libcurl
+// In order to get back the error number with old versions of libcurl
 #if LIBCURL_VERSION_NUM < 0x070a03
 #define CURLE_HTTP_RETURNED_ERROR CURLE_HTTP_NOT_FOUND
 #endif
@@ -66,7 +66,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 
   curl_easy_setopt(curl, CURLOPT_URL, URL);
 
-  //curl_easy_setopt(curl, CURLOPT_HEADER, 1L); //Est ce qu'on le laisse quand on fait PUT, POST, GET, DELETE ??
+  //curl_easy_setopt(curl, CURLOPT_HEADER, 1L); // should we keep it for the 4 operations: PUT, POST, GET, DELETE ??
 
   if (!strcmp("POST", OPERATION)) {
 
@@ -108,7 +108,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 		curl_easy_setopt(curl, CURLOPT_READDATA, DATA);
                 curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, sizeof(DATA));
 		
-		// Pour l'instant on teste en local sur Virtualbox + OAR Live CD avec l'utilisateur baygon => pas besoin de mot de passe 
+		// For the moment, we are using Virtualbox + OAR Live CD with the user baygon => we don't need a password 
 		/*                 
 		curl_easy_setopt(curl, CURLOPT_USERPWD, password);
                 curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST); 
@@ -118,7 +118,7 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 		curl_easy_setopt(curl, CURLOPT_HTTPGET, TRUE);
   } else if (!strcmp("DELETE", OPERATION)) {
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
-		/*Il manque le champ de données à spécifier*/
+		
   }else{
 	fprintf(stderr, "\nOperation inconnue : %s\n",OPERATION);
 	return 1;
@@ -145,19 +145,19 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 int main(int argc, char **argv)
 {
   char *URL;
-  URL = argv[2]; /* provide this to the rest */
+  URL = argv[2]; // provide this to the rest
   char *METHOD;
   METHOD = argv[1]; 
 
-  toUpperCase(METHOD); // conversion du nom de l'operation en majuscule
+  toUpperCase(METHOD); // Puts the HTTP method name into uppercase so we can make tests easier
 
   char full_url[MAX_OAR_URL_LENGTH];
 
   char *DONNES_PAR_DEFAUT;
-  DONNES_PAR_DEFAUT = "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}"; // le C enlève des " et des \ ce qui engendre des modifications des flux JSON
+  DONNES_PAR_DEFAUT = "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}";
   //DONNES_PAR_DEFAUT = "{\"script\":\"\",\"resource\":\"\\/nodes=2\\/cpu=1\", \"workdir\":\".\"}";
   
-  strncpy(full_url, "http://192.168.0.1/oarapi", sizeof(full_url)); // Pour l'instant on teste avec Virtualbox + OAR Live CD
+  strncpy(full_url, "http://192.168.0.1/oarapi", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
   strncat(full_url, URL, sizeof(full_url));
 
   fprintf(stderr, "\n-----------------------------------------------------------------\n");
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
   if (argc>3) {fprintf(stderr, "DONNEES_RENTRES_AU_CLAVIER\n");} else {fprintf(stderr, "DONNEES_PAR_DEFAUT : %s\n",DONNES_PAR_DEFAUT);}
   fprintf(stderr, "-----------------------------------------------------------------\n\n");
 
-  if (argc>3){ //Si l'utilisateur veut rentrer des paramètres pour le POST, PUT ou le DELETE
+  if (argc>3){ // If wa want to use customized data fields with POST and PUT
 	fprintf(stderr, "\n!! MODE MANUEL !!\n");
 	return envoyer(full_url,METHOD,argv[3]);
   }

@@ -18,12 +18,8 @@ typedef struct _JobObject              JobObject;
 typedef struct _JobObjectClass         JobObjectClass;
 
 
-//
-//	REVOIR LA CONVERSION DES STRINGS (Si les strings sont bien convertis ou non)
-//
 
-
-struct _JobObject	// Pour l'instant tous les paramètres de la OAR-API sont de type String
+struct _JobObject
 {
   GObject parent_instance;
   gchar *resource;
@@ -52,14 +48,14 @@ enum
   PROP_SCRIPT_PATH,
   PROP_SCRIPT,
   PROP_WORKDIR,
-  PROP_OTHER_OPTIONS,	// voir oarsub --help
+  PROP_OTHER_OPTIONS,	// see:  "oarsub --help"
   PROP_ACTION
 };
 
 G_DEFINE_TYPE (JobObject, job_object, G_TYPE_OBJECT);
 
 static void
-job_object_finalize (GObject *gobject)	//liberer la mémoire (tous les pointeurs)
+job_object_finalize (GObject *gobject)	// to free the used memory
 {
   g_free (JOB_OBJECT (gobject)->resource);
   g_free (JOB_OBJECT (gobject)->script_path);
@@ -68,7 +64,7 @@ job_object_finalize (GObject *gobject)	//liberer la mémoire (tous les pointeurs
   g_free (JOB_OBJECT (gobject)->other_options);
   g_free (JOB_OBJECT (gobject)->action);
 
-  G_OBJECT_CLASS (job_object_parent_class)->finalize (gobject); //?
+  G_OBJECT_CLASS (job_object_parent_class)->finalize (gobject); 
 }
 
 static void
@@ -190,7 +186,6 @@ static gchar*
 json_strescape (const gchar *source)
 {
 
- 	// IL FAUT PEUT ETRE AJOUTER DES "\"" avant et après pour que la sortie soit un String
 
 if (source==NULL){
 	return NULL;
@@ -209,7 +204,7 @@ if (source==NULL){
   ucs4 = g_utf8_to_ucs4_fast (source, -1, NULL);
 
 /* 
- // Pour les strings, on leurs ajoute des '"' au début et à la fin
+ // For the strings, we add '"' in the beginning and in the end
   *q++ = '\\';
   *q++ = '"';
 */
@@ -251,8 +246,8 @@ if (source==NULL){
 	break;
       default:
         if ((ucs4 [i] >= (gunichar)0x7F) || (ucs4 [i] <= (gunichar)0x1F)) 
-	// d'après la documentation de JSON (et non pas de Glib qui ne considère pas le SLASH comme un caractère à "envelopper"),
-	// the range 0x01-0x1F (everything below SPACE) and in the range 0x7F-0xFF (all non-ASCII chars)
+	// characters in the range of 0x01-0x1F (everything below SPACE) and in the range 0x7F-0xFF (all non-ASCII chars) should not be escaped (see the JSON website for more information)
+	// !!! Glib don't escape the SLASH character (which should be escaped when we serialize a JSON stream )
           {
             g_sprintf (q, "\\u%04x", ucs4 [i]);
             q += 6;
@@ -263,7 +258,7 @@ if (source==NULL){
     }
 
 /*  
-  // Pour les strings, on leurs ajoute des '"' au début et à la fin
+  // For the strings, we add '"' in the beginning and in the end
   *q++ = '\\';
   *q++ = '"';	
 */
@@ -281,10 +276,8 @@ job_object_init (JobObject *object)
 {
 
   object->resource = g_strdup (json_strescape("/nodes=2/cpu=1"));
-  //object->resource = g_strdup ("/nodes=2/cpu=1");
 						
   object->script_path = g_strdup (json_strescape("/usr/bin/id"));
-  //object->script_path = g_strdup ("/usr/bin/id");
 
   object->script = g_strdup (NULL);
   object->workdir = g_strdup (NULL);
@@ -342,11 +335,7 @@ main (int   argc,
   g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
-  
-  // Je dois modifier les valeurs "par défaut" ou passer des valeurs à ce niveau !!! (ce n'est pas encore le cas, vu que job_object_init() le fait par magie !!)
-
-  //g_test_add_func ("/serialize/gobject", job_serialize(""));
-g_print(job_serialize("/nodes=2/cpu=1","/usr/bin/id",NULL,NULL,NULL,"delete"));
+g_print(job_serialize("/nodes=2/cpu=1","/usr/bin/id",NULL,NULL,NULL,NULL));
 return 0;
- // return g_test_run ();
+
 }

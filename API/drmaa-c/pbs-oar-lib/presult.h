@@ -1,38 +1,34 @@
 
 
-// La liste des types possibles pour les variables qui seront stockés dans la structure "presult"
+// POSSIBLE TYPES FOR A "presult" VARIABLE
 enum{
    UNKNOWN,
    INTEGER,
    FLOAT,
    STRING,
-   COMPLEX	// Pour dire qu'il s'agit d'un "Object" ou d'un "Array"
+   COMPLEX	// If it is an object or an array
 };
 
  
-// Element de base
+// Structure of presult
 struct element_
 {
     char* key;
-    int type;			// Le type de la variable  (il est égal à UNKNOWN à la création)
+    int type;			// TYPE of the variable  (UNKNOWN when created)
     union {
        int i;
        float f;
        char* s;
-    } immValue; 		// Pour les valeurs immédiates (type != UNKNOWN)
-    struct element_ *compValue; // Pour les valeurs contenant plusieurs elements (comme la liste des evènements ou la liste des noeuds occupés dans le cas d'un job)
-    struct element_ *next;	// Il est égal à NULL à la création vu qu'on ajoute les nouveaux elements en queue de liste
+    } immValue; 		// If it is not a complex value)
+    struct element_ *compValue; // If it is a JSON object or a JSON array : for the moment it is also a presult 
+    struct element_ *next;	// next presult element
 };
 
-// Pour ne pas mettre les struct
+// In order to avoid the "struct element_"
 typedef struct element_ presult;
 
 
-
-// La liste chainée contenant les résultats du parsing
-//typedef element* presult;
-
-// Les fonctions
+// The list of functions
 presult* addElement();
 void showResult();
 void showResult_();
