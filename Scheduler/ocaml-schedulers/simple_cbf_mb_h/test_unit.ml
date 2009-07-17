@@ -74,8 +74,10 @@ let test_schedule_jobs_0 _ =
     assert_equal assign_j0 (schedule_jobs [j0] [slot_max 100])
 
 let suite = "Unit test for simple_cbf_mb_h" >::: [
+(*
           "test_find_resource_1_h"  >:: test_find_resource_1_h;
           "test_find_resource_2_h"  >:: test_find_resource_2_h;
+*)
           "test_find_hierarchy_homogenous_h1_0" >:: test_find_hierarchy_homogenous_h1_0;
           "test_find_hierarchy_homogenous_h1_0" >:: test_find_hierarchy_homogenous_h1_1;
 				  "test_find_hierarchy_homogenous_h2" >:: test_find_hierarchy_homogenous_h2; 

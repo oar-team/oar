@@ -31,7 +31,7 @@ let rec drop n = function
 	| (_ :: l) when n > 0 -> drop (n-1) l
 	| l -> l;; 
 
-let find_resource_hierarchies itv_l hy r_rqt_l =
+let find_resource_n_hierarchies itv_l hy r_rqt_l =
   let nb_h = Array.length r_rqt_l in 
   let top_master = [{b=1;e=32}] in (* TODO parameter ??? *) 
   let rec find result h idx r = match (h,r) with
@@ -65,8 +65,18 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
           else
            begin
              Printf.printf "Cont: subtree is OK - Go up - next top \n";
+             let rh = List.hd tl_r in
+             if rh = 1 then
+               (* go up *)
+               find result tl_h (idx-1) ((rh-1)::(List.tl tl_r))
+                else
+               (* go next branch same level *)
+               find result ((List.tl tops)::tl_h) idx (r_rqt_l.(idx)::((rh-1)::(List.tl tl_r)))
+
+             (*
              let hd_tl_h = List.hd tl_h in let tl_tl_h = List.tl tl_h in
              find result ((List.tl hd_tl_h)::tl_tl_h) (idx-1) (((List.hd tl_r)-1)::(List.tl tl_r)) 
+              *)
            end 
         end
 
@@ -106,7 +116,16 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
                         | x -> begin
                                   Printf.printf "Cont: eating OK - go up - next top\n" ;
                                   let new_result = sub_result :: result in
-                                  find new_result tl_h (idx-1) (((List.hd tl_r)-1)::(List.tl tl_r)) 
+                                  (*
+                                    find new_result tl_h (idx-1) (((List.hd tl_r)-1)::(List.tl tl_r))
+                                  *)
+                                  let rh = List.hd tl_r in
+                                  if rh = 1 then
+                                    (* go up *)
+                                    find new_result tl_h (idx-1) ((rh-1)::(List.tl tl_r))
+                                  else
+                                    (* go next branch same level *)
+                                    find new_result (tl_tops::tl_h) idx (r_rqt_l.(idx)::((rh-1)::(List.tl tl_r)))
                                 end
                     end
                   else
@@ -126,7 +145,7 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
                       else
                         begin
                            Printf.printf "Cont go down\n";
-                           find result (available_bk::h) (idx+1) (r_rqt_l.(0)::r)
+                           find result (available_bk::h) (idx+1) (r_rqt_l.(idx+1)::r)
                         end
                     end 
                 end
@@ -155,6 +174,17 @@ let find_resource_2_h  itv_l hy r_rqt_l =
                     end
       | ([],_) -> [] 
     in find [] available_bk n0;;
+
+(*
+let find_resource_n_h  itv_l hy r_rqt_l = 
+ let nb_h = Array.length r_rqt_l in 
+  *)
+let find_resource_hierarchies itv_l hy r_rqt_l =
+  let nb_h = Array.length r_rqt_l in
+  match nb_h with
+    | 1 -> [find_resource_1_h  itv_l hy r_rqt_l]
+    | 2 -> find_resource_2_h  itv_l hy r_rqt_l
+    | _ -> find_resource_n_hierarchies itv_l hy r_rqt_l;;
 
 
 let find_resource_hierarchies_old itv_l hy r_rqt_l =
@@ -356,14 +386,25 @@ let test_find_hierarchies test_list =
   List.iter (fun x -> test x) test_list;;
 
 let _=
+
+  let h =  [|h0;h1|] in
+  let r =  [|2;1|] in
+  find_resource_hierarchies [{b = 1; e = 32}] [|h0;h1;h2|] [|2; 1; 1|];;
+(*  find_resource_hierarchies [{b = 1; e = 32}] h r;; *)
 (*
-  let h =  [|h0;h1;h2|] in
-  let r =  [|2;1;1|] in
+find_resource_hierarchies [{b = 10; e = 32}] [|h0;h1|] [|2; 2|]; bug
+find_resource_hierarchies [{b = 1; e = 32}] [|h0;h1;h2|] [|1; 1; 1|];
+
+find_resource_hierarchies [{b = 1; e = 32}] [|h0;h1;h2|] [|1; 1; 1|];; (OK)
+
+find_resource_hierarchies [{b = 1; e = 32}] [|h0;h1;h2|] [|2; 1; 1|];; (Failed)
+
 *)
+
+
+(*
   let h =  [|h0;h1|] in
   let r =  [|2;1|] in
 
  find_resource_2_h  [{b = 1; e = 32}] h r;;
-(*
-    find_resource_hierarchies [{b = 1; e = 32}] h r;; 
 *)
