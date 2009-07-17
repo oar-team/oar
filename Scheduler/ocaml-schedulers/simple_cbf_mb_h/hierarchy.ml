@@ -175,16 +175,56 @@ let find_resource_2_h  itv_l hy r_rqt_l =
       | ([],_) -> [] 
     in find [] available_bk n0;;
 
-(*
-let find_resource_n_h  itv_l hy r_rqt_l = 
- let nb_h = Array.length r_rqt_l in 
-  *)
+
+
+(* supprimer itv l *)
+let rec find_resource_n_h (top: Interval.interval) itv_l h r = match (h, r) with
+  | ([],_) | (_,[]) -> failwith "Bug ??- need to raise exception ???\n"; (* TODO *)
+  | (tops::tl_h, n0::m) ->
+      let h_itv = inter_intervals tops [top] in
+      let available_bk = extract_no_empty_bk itv_l h_itv in
+      if (List.length available_bk) < n0 then
+        []
+      else
+        if List.length m = 1 then
+          (* iter sur top *)
+          let rec iter_n_no_empty result n bks = match (bks,n) with
+            | (_,0) -> List.rev result (* win *)
+            | (bk::tl_bks, nn) -> 
+              begin
+                let h_itv = inter_intervals (List.hd tl_h)  [bk] in
+                let sub_result = extract_n_block_itv itv_l h_itv (List.hd m) in
+                match sub_result with 
+                  | [] -> iter_n_no_empty result nn tl_bks
+                  | x  -> iter_n_no_empty (sub_result::result) (nn-1) tl_bks
+              end 
+            | ([],_) -> [] (* failed*)
+            
+          in iter_n_no_empty [] n0 available_bk 
+        else
+          let rec iter_n_find (result: Interval.interval list list) n (bks: Interval.interval list)  = match (bks,n) with
+            | (_,0) -> List.rev result (* win *)
+            | (bk::tl_bks, nn) -> 
+              begin
+                let sub_result = find_resource_n_h bk itv_l tl_h m in
+                match sub_result with 
+                  | [] -> iter_n_find result nn tl_bks
+                  | x  -> iter_n_find ((List.flatten x)::result) (nn-1) tl_bks
+              end 
+            | ([],_) -> [] (* failed*)
+          in iter_n_find [] n0 available_bk
+;;
+ 
+
+
+
 let find_resource_hierarchies itv_l hy r_rqt_l =
   let nb_h = Array.length r_rqt_l in
   match nb_h with
     | 1 -> [find_resource_1_h  itv_l hy r_rqt_l]
     | 2 -> find_resource_2_h  itv_l hy r_rqt_l
-    | _ -> find_resource_n_hierarchies itv_l hy r_rqt_l;;
+  (*  | _ -> find_resource_n_hierarchies itv_l hy r_rqt_l;; *)
+    | _ -> find_resource_2_h  itv_l hy r_rqt_l;;
 
 
 let find_resource_hierarchies_old itv_l hy r_rqt_l =
@@ -387,9 +427,13 @@ let test_find_hierarchies test_list =
 
 let _=
 
+ find_resource_n_h {b = 1; e = 32} [{b = 1; e = 32}] [h0;h1;h2] [2;1;1];;
+
+(*
   let h =  [|h0;h1|] in
   let r =  [|2;1|] in
   find_resource_hierarchies [{b = 1; e = 32}] [|h0;h1;h2|] [|2; 1; 1|];;
+*)
 (*  find_resource_hierarchies [{b = 1; e = 32}] h r;; *)
 (*
 find_resource_hierarchies [{b = 10; e = 32}] [|h0;h1|] [|2; 2|]; bug
