@@ -1,10 +1,13 @@
 #include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
+#include "parser2.h"
 
 
 #define TRUE 1
@@ -15,7 +18,8 @@
 #define CURLE_HTTP_RETURNED_ERROR CURLE_HTTP_NOT_FOUND
 #endif
 
-#define MAX_OAR_URL_LENGTH 150
+#define MAX_OAR_URL_LENGTH 200
+#define MAX_BODY_SIZE      20000
 
 
 static char *username, *password;
@@ -29,6 +33,54 @@ void toUpperCase(char *instruction)
 }
 
 
+size_t headerHandler(void *buffer, size_t size, size_t nmemb, int *output) {
+ // int *rq = (int *)output;
+  size_t bytes = size * nmemb;
+  float version;			// It can be helpful in the future if some OAR-API instructions are not supported by some HTTP versions
+  int status = 0;			// The HTTP return status
+  u_char *ptr;
+
+  if(bytes > 7 && strncmp(buffer,"HTTP/",5) == 0) {
+    version = atof(buffer+5);
+
+    for(ptr=buffer+8;ptr < (u_char *)(buffer+bytes) && !isdigit(*ptr);++ptr);
+    status = strtol(ptr,(char **)&ptr,10);
+    
+    //*rq = status;
+    *output = status;    
+
+//    printf("status = %d\n",status);
+
+//  } else {
+//	printf("UNKNOWN HTTP HEADER FORM, bytes = %d\n",bytes);
+//	printf("BUFFER = %s\n",(char *)buffer);
+  }
+  
+
+  return bytes;
+}
+
+
+size_t bodyHandler(void *buffer, size_t size, size_t nmemb, char *output) {
+//  char *stream = (char *)output;
+//  char *stream;
+
+
+
+// *output = *((char *) buffer);
+
+  size_t bytes = size * nmemb;
+//  printf("DATA BUFFER1 = %s\n",(char *)buffer);
+//  stream = strcat(stream,buffer);
+  strcat(output, (char *)buffer);
+//  printf("DATA BUFFER2\n");
+//  printf("DATA BUFFER2 = %s\n",stream);
+
+  return bytes;
+}
+
+
+
 int envoyer(char *URL, char* OPERATION, char* DATA)
 {
   CURLcode res;
@@ -37,6 +89,9 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   char curl_errorstr[CURL_ERROR_SIZE];
   static struct curl_slist *pragma_header;
 
+  int headerStatus;
+  char stream[MAX_BODY_SIZE];	// Perhaps we should instead use malloc, ... 
+  strcpy(stream, "");
 
 
 
@@ -65,6 +120,14 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   /*  curl_global_init(CURL_GLOBAL_ALL); */
 
   curl_easy_setopt(curl, CURLOPT_URL, URL);
+
+  // send header and all data to these functions
+  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, headerHandler);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, bodyHandler);
+
+  // we want to store the HTTP status and the JSON stream in these variables
+  curl_easy_setopt(curl,   CURLOPT_WRITEHEADER, &headerStatus);
+  curl_easy_setopt(curl,   CURLOPT_WRITEDATA, stream);
 
   //curl_easy_setopt(curl, CURLOPT_HEADER, 1L); // should we keep it for the 4 operations: PUT, POST, GET, DELETE ??
 
@@ -126,6 +189,16 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 
   res = curl_easy_perform(curl);
   
+  fprintf(stderr, "\n-----------------------------------------------------------------\n");
+  fprintf(stderr,"\nHEADER STATUS : %d\n",headerStatus);
+  fprintf(stderr, "\n-----------------------------------------------------------------\n");
+  fprintf(stderr, "\n-----------------------------------------------------------------\n");
+//  fprintf(stderr,"BODY : \n%s\n",stream);
+  fprintf(stderr,"BODY : \n");
+  load_json_from_stream(stream);
+  fprintf(stderr, "\n-----------------------------------------------------------------\n");
+
+
   if (res!=0){
 	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
   }
@@ -136,6 +209,8 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
   }*/
 
   curl_easy_cleanup(curl);
+//  curl_slist_free_all(headers); // free the header list
+
   curl_global_cleanup();
 
   return (int)res; //return the error number (0 = OK)
@@ -159,6 +234,7 @@ int main(int argc, char **argv)
   
   strncpy(full_url, "http://192.168.0.1/oarapi", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
   strncat(full_url, URL, sizeof(full_url));
+//  strncpy(full_url, URL, sizeof(full_url));
 
   fprintf(stderr, "\n-----------------------------------------------------------------\n");
   fprintf(stderr, "URL    : %s\nMETHODE: %s\n", full_url, METHOD);

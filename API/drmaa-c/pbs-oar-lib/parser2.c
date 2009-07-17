@@ -17,19 +17,22 @@ static int load_json(const gchar *file);
 
 
 // A temporary main for tests
+/*
 int main(int argc, char **argv) {
 
   if( argc < 2 ) {
     g_print ("Usage: test <filename.json>\n");
     return EXIT_FAILURE;
   }
-  g_type_init();
+  
   return load_json(argv[1]);
 }
-
+*/
 
 // Loads a JSON stream from a file, parses it and give back the result
 static int load_json(const gchar *file) {
+
+  g_type_init();
 
   JsonParser *parser = NULL;				// The JSON parser
   JsonNode *root = NULL;
@@ -38,11 +41,66 @@ static int load_json(const gchar *file) {
   error = NULL;
   json_parser_load_from_file (parser, file, &error);	//We load a JSON stream from the file "file"
 
+//  TO READ FROM A BUFFER AND NOT FROM A FILE
+//  gchar *data;
+//  json_parser_load_from_data (parser, data, sizeof(data), &error); //strlen() ??
+
   presult *result = NULL;				// The linked list which will contain the result
   result = addElement(&result, NULL);
 
   if( error ) {		// If the JSON stream is corrupted, we return an EXIT_FAILURE state
     g_print ("Unable to parse `%s': %s\n", file, error->message);
+    g_error_free (error);
+    g_object_unref (parser);
+    return EXIT_FAILURE;
+  }
+
+  root = json_parser_get_root (parser);
+  
+//  g_print("Checkpoint 1\n");
+
+//  g_print("Result before : %p\n",&result);
+
+  
+  // We fill result with the stream data
+  putIntoResultList(root, &result);     //print_json(root);
+  result = result->compValue;		// We delete the fictional first element      !! SHOULD WE FREE SOME SPACE ??!!
+
+//  g_print("Checkpoint 2\n");
+
+  // Give back the result
+  showResult(result);
+
+//  g_print("Checkpoint 3\n"); 
+
+  getDrmaaState(result); 
+
+  // manipulate the object tree and then exit
+  g_object_unref (parser);
+
+  return EXIT_SUCCESS;
+}
+
+// Loads a JSON stream from a file, parses it and give back the result
+int load_json_from_stream(const gchar *stream) {
+
+  g_type_init();
+
+  JsonParser *parser = NULL;				// The JSON parser
+  JsonNode *root = NULL;
+  GError *error = NULL;
+  parser = json_parser_new ();
+  error = NULL;
+//  json_parser_load_from_file (parser, file, &error);	//We load a JSON stream from the file "file"
+
+//  TO READ FROM A BUFFER AND NOT FROM A FILE
+  json_parser_load_from_data (parser, stream, strlen(stream), &error); //strlen() ??
+
+  presult *result = NULL;				// The linked list which will contain the result
+  result = addElement(&result, NULL);
+
+  if( error ) {		// If the JSON stream is corrupted, we return an EXIT_FAILURE state
+    g_print ("Unable to parse the stream: %s\n", error->message);
     g_error_free (error);
     g_object_unref (parser);
     return EXIT_FAILURE;
