@@ -141,7 +141,7 @@ sub print_hosts_infos($){
 	my $nodes = shift;
 	foreach my $current_node (@$nodes){
 		my $infos = oarnodeslib::get_resources_infos_for_host($current_node);
-		print "$current_node\n\n";
+		#print "$current_node\n\n";
 		while ( my ($resource_id,$properties) = each %$infos ){
 			print_resource($properties);
 		}
@@ -158,20 +158,23 @@ sub print_resources_infos($){
 
 sub print_resource($){
 	my $info = shift;
-	print "network_address : $info->{network_address}\n";
-	print "state : $info->{state}\n";
-	if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
-	my $properties_to_display='';
-	while ( my ($k,$v) = each %$info ){
-		if (oar_Tools::check_resource_system_property($k) == 0){
-			$properties_to_display .= "$k=$v, ";
-		}
+	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+		format_result($info);
 	}
-	chop($properties_to_display); # remove last space
-	chop($properties_to_display); # remove last ,
-	print "properties : $properties_to_display\n\n";
-
-	format_result($info);
+	else{
+		print "network_address : $info->{network_address}\n";
+		print "state : $info->{state}\n";
+		if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
+		my $properties_to_display='';
+		while ( my ($k,$v) = each %$info ){
+			if (oar_Tools::check_resource_system_property($k) == 0){
+				$properties_to_display .= "$k=$v, ";
+			}
+		}
+		chop($properties_to_display); # remove last space
+		chop($properties_to_display); # remove last ,
+		print "properties : $properties_to_display\n\n";
+	}
 }
 
 ### END Print Methods ###
