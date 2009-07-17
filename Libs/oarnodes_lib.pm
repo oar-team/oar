@@ -1,6 +1,5 @@
 use strict;
 use warnings;
-use Data::Dumper;
 use oarversion;
 use oar_iolib;
 
@@ -116,15 +115,20 @@ sub get_jobs_running_on_resource($){
 }
 
 sub add_running_jobs_to_resource_properties($){
-	use Data::Dumper;
 	my $info = shift;
 	if ($info->{state} eq "Alive"){
 		my $jobs = get_jobs_running_on_resource($info->{resource_id});
 		if (@$jobs > 0){
-			my $jobs_string = Dumper($jobs); #TODO: not proud of it...
-			$jobs = join(', ', split(/,/, $jobs_string));
-			$jobs =~ s/[\[\]\']//g;
-			$info->{jobs} = $jobs;
+# 			my $jobs_string = Dumper($jobs); # not proud of it...
+# 			$jobs = join(', ', split(/,/, $jobs_string));
+# 			$jobs =~ s/[\[\]\']//g;
+			my $jobs_string = '';
+			foreach my $current_job (@$jobs){
+				$jobs_string .= $current_job.", ";
+			}
+			chop($jobs_string); # remove last space
+			chop($jobs_string); # remove last ,
+			$info->{jobs} = $jobs_string;
 		}
 	}
 }

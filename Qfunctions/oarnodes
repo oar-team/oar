@@ -15,11 +15,10 @@
 
 use strict;
 use warnings;
-use oar_Tools;
 use Data::Dumper;
 use Getopt::Long;
-use oarversion;
 use oarnodes_lib;
+use oar_Tools;
 
 ### CONFIG STUFF ###
 Getopt::Long::Configure ("gnu_getopt");
@@ -77,18 +76,20 @@ sub print_oar_version(){
     print "OAR version : ".oarnodeslib::get_oar_version()."\n";
 }
 
-sub print_events($){
+sub print_events($$){
 	my $date_from = shift;
-	my $hostname = $ARGV[0] or die("\/!\\ No hostname specified for the --events option\n");
-	my $events = oarnodeslib::get_events($hostname, $date_from);
-	foreach my $current_event (@$events) {
-        printf("%s| %s| %s: %s\n", 
-		  oarnodeslib::format_date($current_event->{'date'}),
-		  $current_event->{'job_id'},
-		  $current_event->{'type'},
-		  $current_event->{'description'}
-		);
-    }
+	my $hostnames = shift;
+	foreach my $current_hostname (@$hostnames){
+	  my $events = oarnodeslib::get_events($current_hostname, $date_from);
+	  foreach my $current_event (@$events) {
+		  printf("%s| %s| %s: %s\n", 
+			oarnodeslib::format_date($current_event->{'date'}),
+			$current_event->{'job_id'},
+			$current_event->{'type'},
+			$current_event->{'description'}
+		  );
+	  }
+	}
 }
 
 sub add_sql_resources($){
@@ -100,13 +101,13 @@ sub add_sql_resources($){
 sub format_result($){
 	my $result = shift;
     if (defined($DUMPER_mode)){
-        print(Dumper($result));
+        print(Dumper($result)."\n");
     }elsif(defined($XML_mode)){
-        print(oarnodeslib::encode_result($result, "XML"));
+        print(oarnodeslib::encode_result($result, "XML")."\n");
     }elsif(defined($YAML_mode)){
-        print(oarnodeslib::encode_result($result, "YAML"));
+        print(oarnodeslib::encode_result($result, "YAML")."\n");
     }elsif(defined($JSON_mode)){
-        print(oarnodeslib::encode_result($result, "JSON"));
+        print(oarnodeslib::encode_result($result, "JSON")."\n");
     }
 }
 
@@ -126,6 +127,13 @@ sub print_resources_states($){
 	my $resources_states = oarnodeslib::get_resources_states($resources);
 	while ( my ($k,$v) = each %$resources_states ){
 		print "$k : $v\n";
+	}
+}
+
+sub print_all_hostnames(){
+  	my $nodes_to_print = oarnodeslib::get_all_hosts();
+	foreach my $current_node (@$nodes_to_print) {
+		print "$current_node\n";
 	}
 }
 
@@ -162,8 +170,9 @@ sub print_resource($){
 	chop($properties_to_display); # remove last space
 	chop($properties_to_display); # remove last ,
 	print "properties : $properties_to_display\n\n";
-}
 
+	format_result($info);
+}
 
 ### END Print Methods ###
 
@@ -207,7 +216,7 @@ if (defined($sql_property)) {
 }
 
 if (defined($events)) {
-    print_events($events);
+    print_events($events, \@nodes);
 }
 elsif ($stateMode){
 	if ($#resources >= 0){
@@ -218,11 +227,7 @@ elsif ($stateMode){
 	}
 }
 elsif ($listall){
-	my $nodes_tmp = oarnodeslib::get_all_hosts();
-	@nodes = @$nodes_tmp;
-	foreach my $current_node (@nodes) {
-		print "$current_node\n";
-	}
+	print_all_hostnames();
 }
 elsif ($#resources >= 0){ # -r or --sql where called
 	print_resources_infos(\@resources);
