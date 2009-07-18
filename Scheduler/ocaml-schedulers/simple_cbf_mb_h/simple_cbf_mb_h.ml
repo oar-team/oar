@@ -124,9 +124,8 @@ let b = [{b = 21; e = 32}];; (* 13 *)
 
 let find_resource_hierarchies_job itv_cts_slot job =
 (* mono request *) 
-  let hy_a = Array.of_list (List.map (fun x -> List.assoc x hierarchy_levels) job.hy_level_rqt) in
-  let r_rqt_a = Array.of_list job.hy_nb_rqt in
-    List.rev (List. flatten (find_resource_hierarchies itv_cts_slot hy_a r_rqt_a)) ;;
+  let hy_a = List.map (fun x -> List.assoc x hierarchy_levels) job.hy_level_rqt in
+    find_resource_hierarchies master_top itv_cts_slot hy_a job.hy_nb_rqt;;
 
 (*
 val y : interval list = [{b = 5; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}]
