@@ -237,7 +237,7 @@ elsif ($stateMode){
 elsif ($listall){
 	print_all_hostnames();
 }
-elsif ($#resources >= 0){ # -r or --sql where called
+elsif ($#resources >= 0 || defined($sql_property)){ # -r or --sql where called
 	print_resources_infos(\@resources);
 }
 elsif ($#nodes >= 0){ # a hostname was given or not (in this case all hostnames)
