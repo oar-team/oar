@@ -186,7 +186,7 @@ let get_job_list db queue default_resources =
 
   in let result = map res get_one_row in
 
-  let rec scan_res res_query prev_job r_o r_t r_v cts = match res_query with
+  let rec scan_res res_query prev_job r_o r_t r_v cts jids = match res_query with
       [] -> begin
               (* complete previous job *)
               prev_job.hy_level_rqt <- r_t;
@@ -194,7 +194,7 @@ let get_job_list db queue default_resources =
               prev_job.constraints <- cts;
               (* add job to hashtable *)
               Hashtbl.add jobs prev_job.jobid prev_job;
-              jobs (* return jobs' hashtable *)
+              (List.rev jids, jobs) (* return list of job_ids jobs' hashtable *)
             end 
       | row::m ->
                 let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties) = row in
@@ -221,22 +221,23 @@ let get_job_list db queue default_resources =
                           hy_nb_rqt = [];
                           set_of_rs = [];
                       } in
-                    scan_res m j r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)]
+                    scan_res m j r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)] (j_id::jids)
                   end                    
                 else
                   begin (* same job *)
                     if r_order = 0 then  (*new resource request*)
-                      scan_res m prev_job r_order ([r_type]::r_t) ([r_value]::r_v) ((get_constraints properties r_properties)::cts)
+                      scan_res m prev_job r_order ([r_type]::r_t) ([r_value]::r_v) ((get_constraints properties r_properties)::cts) jids
     
                     else (*one hierarchy requirement to resource request*)
                       scan_res m prev_job r_order (((List.hd r_t) @ [r_type])::(List.tl r_t))
                                            (((List.hd r_v) @ [r_value])::(List.tl r_v))
                                            cts
+                                           jids
                   end
   in  scan_res result {jobid=0;moldable_id =0;time_b=Int64.zero;walltime=Int64.zero;
                       types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[];
                       set_of_rs =[];} 
-               0 [] [] [] ;; 
+               0 [] [] [] [];; 
 
  
 (*
@@ -352,8 +353,8 @@ let get_scheduled_jobs dbh =
 	                walltime = j_walltime;
                   types = [];
                   constraints = []; (* constraints irrelevant for already scheduled job *)
-                  hy_level_rqt = [];(* TODO *)
-                  hy_nb_rqt = []; (* TODO *)
+                  hy_level_rqt = [];(* // *)
+                  hy_nb_rqt = []; (* // *)
                   set_of_rs = []; (* will be set when all resource_id are fetched *)
                 }, 
                   [j_nb_res]) 
@@ -435,7 +436,21 @@ let save_assigns conn jobs = (* TODO *)
       ignore (execQuery conn query_pred);
       ignore (execQuery conn query_job_resources)
 
-let get_job_types dbh jobs =
+(** retreive job_type for all jobs in the hashtable*)
+let get_job_types dbh job_ids h_jobs =  
+  let job_ids_str = Helpers.concatene_sep "," string_of_int job_ids in
+  let query = "SELECT job_id, type FROM job_types WHERE types_index = 'CURRENT' AND job_id IN (" ^ job_ids_str ^ ");" in
+  
+  let res = execQuery dbh query in
+   let add_id_types a = 
+    let get s = column res s a in 
+      let job = try Hashtbl.find h_jobs (not_null int2ml (get "job_id"))
+      with Not_found -> failwith "get_job_type error can't find job_id" in
+        job.types <- (not_null  str2ml (get "type"))::job.types in
+          ignore (map res add_id_types);;
+
+(* TODO factorize with get_job_types ?? change simple_cbf**.ml ??? *)
+let get_job_types_hash dbh jobs =
   let h_jobs =  Hashtbl.create 1000 in
   let job_ids = List.map (fun n -> Hashtbl.add h_jobs n.jobid n; n.jobid) jobs in 
   let job_ids_str = Helpers.concatene_sep "," string_of_int job_ids in
@@ -449,5 +464,6 @@ let get_job_types dbh jobs =
       with Not_found -> failwith "get_job_type error can't find job_id" in
         job.types <- (not_null  str2ml (get "type"))::job.types in
           ignore (map res add_id_types);
-          h_jobs
+          h_jobs;;
+
 

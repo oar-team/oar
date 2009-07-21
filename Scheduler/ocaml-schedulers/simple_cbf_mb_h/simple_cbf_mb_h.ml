@@ -381,12 +381,21 @@ let assign_resources_job_split_slots job slots =
 	  job.set_of_rs <- resource_assigned;
 		(job, prev_slots @ (split_slots ctg_slots job) @ remain_slots);;
 
-let rec schedule_jobs jobs slots = 
+let schedule_jobs jobs slots = 
 	let rec assign_res_jobs jobs scheduled_jobs slot_list = match jobs with
 		| [] -> List.rev scheduled_jobs
 		| j::n -> let (job, updated_slots ) = assign_resources_job_split_slots j slot_list in assign_res_jobs n  (job::scheduled_jobs) updated_slots
 	in assign_res_jobs jobs [] slots;;
-	 
+
+
+let schedule_jobs_hash jids h_jobs slots = 
+	let rec assign_res_jobs j_ids scheduled_jobs slot_list = match j_ids with
+		| [] -> List.rev scheduled_jobs
+		| j_id::n -> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find job" in
+                 let (job, updated_slots ) = assign_resources_job_split_slots j slot_list in assign_res_jobs n  (job::scheduled_jobs) updated_slots
+	in assign_res_jobs jids [] slots;;
+
+ 
 let slot_max nb_res = {time_s = zero; time_e = max_int; set_of_res = [{b = 1; e = nb_res}]};;
 
 (* function insert previously scheduled job in slots *)

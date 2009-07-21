@@ -28,20 +28,25 @@ let _ =
     	let alive_resources = List.filter (fun n -> n.state = Alive) resources in
       let alive_resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) alive_resources) in
       let slot_init = {time_s = now; time_e = Int64.max_int; set_of_res = alive_resource_intervals} in
-  		let waiting_jobs = Iolib.get_job_list conn alive_resource_intervals in
-      
+
+  		let (waiting_jobs,h_waiting_jobs) = Iolib.get_job_list conn queue alive_resource_intervals in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!! *)
+
+      let hash_order f l h =  List.iter (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find job" in
+        f j) l in
  (*        Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string (Iolib.get_scheduled_jobs conn)) ); *)
 
-        if not (waiting_jobs = []) then 
-          let h_waiting_jobs =  Iolib.get_job_types conn waiting_jobs in (* job hastable not use upto now ???? *)
+        if not ((List.length waiting_job_idx) > 0) then
+ 
+          let  v = Iolib.get_job_types conn waiting_jobs h_waiting_jobs in (* TODO how to avoid 'Warning Y: unused variable v' *) 
           
           (* set specific walltime for waiting besteffort jobs *)
-          List.iter (fun n-> if ( List.mem "besteffort" n.types) then n.walltime <- besteffort_duration else ()) waiting_jobs;
+          (* TODO only if queue = besteffort ??? *)
+          hash_order (fun n-> if ( List.mem "besteffort" n.types) then n.walltime <- besteffort_duration else ()) waiting_jobs h_waiting_jobs;
 
           (* take into account previously scheduled jobs *)
           let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn in
           let slots_with_scheduled_jobs = if not ( prev_scheduled_jobs = []) then
-            let h_prev_scheduled_jobs_types = Iolib.get_job_types conn prev_scheduled_jobs in
+            let h_prev_scheduled_jobs_types = Iolib.get_job_types_hash conn prev_scheduled_jobs in
             (* exclude besteffort jobs *)
             (* test if job have besteffort type *)
             let besteffort_mem job_test = 
@@ -54,7 +59,7 @@ let _ =
 
           in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
-          let assignement_jobs = schedule_jobs waiting_jobs slots_with_scheduled_jobs in
+          let assignement_jobs = schedule_jobs waiting_jobs ,h_waiting_jobs slots_with_scheduled_jobs in
 
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (ml642int now)));
             Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);
