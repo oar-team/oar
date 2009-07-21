@@ -47,19 +47,20 @@ Uses simple_cbf_mb, and provides besteffort support (need deeper test) and resou
 
 
 /simple_cbf_mb_h:
-Take simple_cb_mb add hierarchy support, remove nb_res in sevral structure
-
-
+Take simple_cb_mb add hierarchy support, remove nb_res in several structure
 
 Next:
- 
- * Need deeper test (testing infrastructure / OUNIT ?)
+ * multi-resource-type (cbf_mh_h and above)
+ * multi-request with exclusive and non exclusive behaviour resource selection (cbf_mh_h and above)
  * test on trunk DB version
- * 2.3.x serie and previous are NOT SUPPORTED
  * Scalability performance testing
  * Add more features , reach perl scheduler's feature set :)
  * General and source documentation
  * Support of postgresql
- * multi-resources-request (for simple_cbf_mb_h >= series )
- * Code restructuration (Interval un common)
+ * Code restructuration (Interval in common)
  * modify itv_intersect in Interval / remove itv2str, itvs2str (now in interval)
+ * Multi-resource, timesharing, container, faireshare, ComputeMode, Postgresql...
+
+Remarks:
+ * 2.3.x serie and previous are NOT SUPPORTE
+ * Use of OUNIT for unit testing (cbf_mh_h and above)

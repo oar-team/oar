@@ -30,18 +30,21 @@ type job =  {
 	mutable time_b : time_t;
 	mutable walltime : time_t; (* mutable need to reset besteffort's one*)
   mutable types : string list;
-  (*Mono request *)
-	hy_level_rqt : string list;  (*Mono request *) (* need of list of list of string *)
-  hy_nb_rqt : int  list;  (*Mono request *) (* need of int of list of string *)
-  constraints : set_of_resources; 
+	mutable hy_level_rqt : string list list;  
+  mutable hy_nb_rqt : int list list;
+  mutable constraints : set_of_resources list; 
 	mutable set_of_rs : set_of_resources;
 }
 
 (* Pretty - printing ** TO MOVE in helpers ??? **)
 
-let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in 
+let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in
+                      
   (Printf.sprintf "(%d) start_time %s; walltime %s:" t.jobid (ml642int t.time_b) (ml642int t.walltime)) ^
-  (String.concat ", " (List.map itv2str t.set_of_rs)) ^ (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," Helpers.id t.types))
+  (String.concat ", " (List.map itv2str t.set_of_rs)) ^ (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," Helpers.id t.types)) ^
+  
+  (Printf.sprintf "\nh_type: "^ (String.concat "*" (List.flatten t.hy_level_rqt))) 
+
 
 let resource_to_string n = 
   Printf.sprintf "(%d) -%s- %s" 

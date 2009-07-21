@@ -48,8 +48,14 @@ let get_resource_list db =
 (* get_job_list *) 
 (* get jobid,walltime, nb_res *) 
 (* WARNING !!! only one occurence must be allowed, it doesn't support moldable and multiple resources requirement or hierachy*)
-let get_job_list db initial_resources =
+
+(*
+let get_job_list db queue initial_resources =
   
+
+  let 
+
+
   let get_resources_for_job  constraints = 
     if constraints = "" then 
       initial_resources 
@@ -64,11 +70,15 @@ let get_job_list db initial_resources =
 	        ints2intervals matching_resources
     end in
 
-  let query = "
+    let resource_requested = get_resource_requested in
+
+
+  let query = Printf.sprintf "
     SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties, 
            moldable_job_descriptions.moldable_id, job_resource_descriptions.res_job_value
     FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
     WHERE jobs.state = 'Waiting'
+    AND jobs.queue_name =  '%s'
     AND jobs.reservation = 'None'
     AND jobs.job_id = moldable_job_descriptions.moldable_job_id
     AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
@@ -81,8 +91,8 @@ let get_job_list db initial_resources =
       and j_walltime = not_null int642ml (get "moldable_walltime")
       and j_moldable_id = not_null int2ml (get "moldable_id")
       and j_properties = not_null str2ml (get "properties")
-      and j_nb_res = not_null int2ml (get "res_job_value") in (* TODO *)
       let j_constraints = get_resources_for_job j_properties in
+      let (j_hy_level_rqt, j_hy_nb_rqt) = get_resource_requested db j_id in
         { 
           jobid = j_id;
           moldable_id = j_moldable_id;
@@ -90,12 +100,223 @@ let get_job_list db initial_resources =
           walltime = j_walltime;
           types = [];
           constraints = j_constraints;
-(*          nb_res = j_nb_res; TOREMOVE *)
-          hy_level_rqt = ["cpu"];(* TODO *)
-          hy_nb_rqt = [j_nb_res]; (* TODO *)
+          hy_level_rqt = j_hy_level_rqt;
+          hy_nb_rqt = j_hy_nb_rqt;
+(*
+          hy_level_rqt = [["cpu"]];(* TODO  fst (resource_requested *)
+          hy_nb_rqt = [[j_nb_res]]; (* TODO  snd resource_requested *)
+*)
           set_of_rs = [];
         } in
-      map res get_one_job 
+      map res get_one_job
+*)
+
+
+let get_one_job_row res a = 
+    let get s = column res s a in (
+      not_null int2ml (get "job_id"),
+      not_null int642ml (get "moldable_walltime"),
+      not_null str2ml (get "properties"),
+      not_null str2ml (get "res_job_resource_type"),
+      not_null int2ml (get "res_job_value"),
+      not_null int2ml (get "res_job_order"),
+      not_null str2ml (get "res_group_property")
+    );;
+
+let get_job_list db queue default_resources =
+  let jobs = Hashtbl.create 1000 in (* Hashtbl.add jobs jid ( blabla *)
+  let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
+
+  let get_constraints j_ppt r_ppt = 
+    if (j_ppt = "") && ( r_ppt = "type = 'default'" || r_ppt = "" ) then
+      default_resources
+    else
+      let and_sql = if ((j_ppt = "") || (r_ppt = "")) then "" else " AND " in 
+      let sql_cts = j_ppt ^ and_sql^ r_ppt in 
+        try Hashtbl.find constraints sql_cts
+        with Not_found ->
+          begin  
+            let query = Printf.sprintf "SELECT resource_id FROM resources WHERE state = 'Alive'  AND ( %s )"  sql_cts in
+            let res = execQuery db query in 
+            let get_one_resource a = 
+              let get s = column res s a in 
+	              (not_null int2ml (get "resource_id"))
+            in
+            let matching_resources = (map res get_one_resource) in 
+            let itv_cts = ints2intervals matching_resources in
+              Hashtbl.add constraints sql_cts itv_cts;
+              itv_cts
+          end  
+  in 
+  let query = Printf.sprintf "
+    SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties,
+        moldable_job_descriptions.moldable_id,  
+        job_resource_descriptions.res_job_resource_type,
+        job_resource_descriptions.res_job_value,
+        job_resource_descriptions.res_job_order, 	
+        job_resource_groups.res_group_property  
+    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+    WHERE
+      moldable_job_descriptions.moldable_index = 'CURRENT'
+      AND job_resource_groups.res_group_index = 'CURRENT'
+      AND job_resource_descriptions.res_job_index = 'CURRENT'
+      AND jobs.state = 'Waiting'
+      AND jobs.queue_name =  '%s'
+      AND jobs.reservation = 'None'
+      AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+      AND job_resource_groups.res_group_index = 'CURRENT'
+      AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+      AND job_resource_descriptions.res_job_index = 'CURRENT'
+      AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+      ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
+    queue in
+  let res = execQuery db query in 
+
+  let get_one_row a = 
+    let get s = column res s a in (
+      not_null int2ml (get "job_id"),
+      not_null int642ml (get "moldable_walltime"),
+      not_null int2ml (get "moldable_id"),
+      not_null str2ml (get "properties"),
+      not_null str2ml (get "res_job_resource_type"),
+      not_null int2ml (get "res_job_value"),
+      not_null int2ml (get "res_job_order"),
+      not_null str2ml (get "res_group_property")
+    )
+
+  in let result = map res get_one_row in
+
+  let rec scan_res res_query prev_job r_o r_t r_v cts = match res_query with
+      [] -> begin
+              (* complete previous job *)
+              prev_job.hy_level_rqt <- r_t;
+              prev_job.hy_nb_rqt <- r_v;
+              prev_job.constraints <- cts;
+              (* add job to hashtable *)
+              Hashtbl.add jobs prev_job.jobid prev_job;
+              jobs (* return jobs' hashtable *)
+            end 
+      | row::m ->
+                let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties) = row in
+                if (prev_job.jobid != j_id) then (* next job *)
+                  begin
+                    (* complete prev job *)
+                    if (prev_job.jobid !=0) then 
+                      begin
+                        prev_job.hy_level_rqt <- List.rev r_t;
+                        prev_job.hy_nb_rqt <- List.rev r_v;
+                        prev_job.constraints <- List.rev cts;
+                        
+                        Hashtbl.add jobs prev_job.jobid prev_job
+                      end;
+                    (* prepare next job *)
+                    let j = {
+                          jobid = j_id;
+                          moldable_id = j_moldable_id;
+                          time_b = Int64.zero;
+                          walltime = j_walltime;
+                          types = [];
+                          constraints = [];
+                          hy_level_rqt = [];
+                          hy_nb_rqt = [];
+                          set_of_rs = [];
+                      } in
+                    scan_res m j r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)]
+                  end                    
+                else
+                  begin (* same job *)
+                    if r_order = 0 then  (*new resource request*)
+                      scan_res m prev_job r_order ([r_type]::r_t) ([r_value]::r_v) ((get_constraints properties r_properties)::cts)
+    
+                    else (*one hierarchy requirement to resource request*)
+                      scan_res m prev_job r_order (((List.hd r_t) @ [r_type])::(List.tl r_t))
+                                           (((List.hd r_v) @ [r_value])::(List.tl r_v))
+                                           cts
+                  end
+  in  scan_res result {jobid=0;moldable_id =0;time_b=Int64.zero;walltime=Int64.zero;
+                      types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[];
+                      set_of_rs =[];} 
+               0 [] [] [] ;; 
+
+ 
+(*
+(* use index CURRENT ....job_resource_groups , moldable_job_descriptions, job_resource_descriptions,*)
+ 
+ SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties, 
+        moldable_job_descriptions.moldable_id, 
+        job_resource_descriptions.res_job_resource_type,
+        job_resource_descriptions.res_job_value,
+        job_resource_descriptions.res_job_order, 	
+        job_resource_groups.res_group_property  
+    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+    WHERE
+      moldable_job_descriptions.moldable_index = 'CURRENT'
+      AND job_resource_groups.res_group_index = 'CURRENT'
+      AND job_resource_descriptions.res_job_index = 'CURRENT'
+      AND jobs.state = 'Waiting'
+      AND jobs.queue_name =  'default'
+      AND jobs.reservation = 'None'
+      AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+      AND job_resource_groups.res_group_index = 'CURRENT'
+      AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+      AND job_resource_descriptions.res_job_index = 'CURRENT'
+      AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+      ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC; 
+*)
+
+(* iolib::get_resources_data_structure_current_job($$) *)
+(*
+
+ SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
+                                FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+                                WHERE
+                                    jobs.job_id = $job_id
+                                    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+                                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                                    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+                                ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
+
+*)
+
+(* iolib::get_jobs_to_schedule *)
+(*
+let get_jobs_to_schedule db queue =
+  let query =  Printf.sprintf  "SELECT * FROM jobs
+                                WHERE
+                                    state = 'Waiting'
+                                    AND reservation = 'None'
+                                    AND queue_name =  '%s'
+                                ORDER BY job_id" queue in 
+  let res = execQuery db query in
+  let get_one a = 
+    let get s = column res s a in 
+
+ 
+  map res get_one_job
+*)
+(*
+    my $dbh = shift;
+    my $queue = shift;
+    my $limit = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state = \'Waiting\'
+                                    AND reservation = \'None\'
+                                    AND queue_name = \'$queue\'
+                                ORDER BY job_id
+                                LIMIT $limit
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
+i*)
 
 (* iolib::get_gantt_scheduled_jobs *)
 let get_scheduled_jobs dbh =

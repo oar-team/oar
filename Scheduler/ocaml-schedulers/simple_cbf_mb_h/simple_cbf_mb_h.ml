@@ -122,10 +122,27 @@ let a = [{b = 1; e = 40}];; (* 40 *)
 let b = [{b = 21; e = 32}];; (* 13 *)
 *)
 
+(* No exclusive hierarchy assignement *)
 let find_resource_hierarchies_job itv_cts_slot job =
-(* mono request *) 
+  let rec requests_iter result hys r_rqts = match (hys, r_rqts) with
+    | ([],[]) -> List.flatten (List.rev result) (* TODO to optimze ??? *)
+    | (x::n,y::m) -> 
+      begin 
+        let h = List.map (fun k -> List.assoc k hierarchy_levels) x in 
+        let sub_result = find_resource_hierarchies master_top itv_cts_slot h y in
+        match sub_result with
+          | [] -> []
+          | res -> requests_iter (res::result) n m
+      end
+    | (_,_) -> failwith "Not possible to be here"
+  in requests_iter [] job.hy_level_rqt job.hy_nb_rqt;;
+
+(* Mono request
+let find_resource_hierarchies_job itv_cts_slot job =
+(* mono request *)
   let hy_a = List.map (fun x -> List.assoc x hierarchy_levels) job.hy_level_rqt in
     find_resource_hierarchies master_top itv_cts_slot hy_a job.hy_nb_rqt;;
+*)
 
 (*
 val y : interval list = [{b = 5; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}]
@@ -166,7 +183,8 @@ let find_first_suitable_contiguous_slots slots j =
 
       match  itv_res_assignement with
 
-        | [] -> find_suitable_contiguous_slots (List.tl next_ctg_time_slot @ remain_slots) (pre_slots @ prev_slots @ [List.hd next_ctg_time_slot]) job
+        | [] -> find_suitable_contiguous_slots (List.tl next_ctg_time_slot @ remain_slots) 
+                                               (pre_slots @ prev_slots @ [List.hd next_ctg_time_slot]) job
         | itv -> (itv, next_ctg_time_slot, (pre_slots @ prev_slots), remain_slots)
 		in
 			find_suitable_contiguous_slots slots [] j ;;
