@@ -309,6 +309,8 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
     	return xr; 
   }
 
+fprintf(stderr, "\n!! CHKPT	0 !!\n");
+
   res = curl_easy_perform(curl);
 
 fprintf(stderr, "\n!! CHKPT	1 !!\n");
@@ -347,6 +349,7 @@ fprintf(stderr, "\n!! CHKPT	3 !!\n");
 } 
 
 
+/*
 int main(int argc, char **argv)
 {
   char *URL;
@@ -383,4 +386,5 @@ int main(int argc, char **argv)
   oar_request_transmission(full_url,METHOD,DONNES_PAR_DEFAUT);
   return 0;
 }
+*/
 

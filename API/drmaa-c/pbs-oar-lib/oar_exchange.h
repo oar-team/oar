@@ -10,3 +10,5 @@ struct exchange_result_		// Results of the OAR request
 typedef struct exchange_result_ exchange_result;
 
 exchange_result* oar_request_transmission();
+
+MAX_OAR_URL_LENGTH;

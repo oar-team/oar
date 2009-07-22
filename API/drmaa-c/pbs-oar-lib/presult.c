@@ -71,7 +71,7 @@ char* extractStringAttribute(presult *list, char* key){
 
 	if (tmp->type == STRING){
 		if (!strcmp(key, tmp->key)){	// If the key is found
-			return tmp->value.s;
+			return tmp->immValue.s;
 		}  
 	}		 	
  	

@@ -28,9 +28,10 @@ pbse_to_txt
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "oar_pbs.h"
 
-
-#define PBS_DEFAULT = "192.168.0.1";		// Default PBS/OAR Server Name
+#define PBS_DEFAULT "192.168.0.1";		// Default PBS/OAR Server Name
 
 
 char * pbs_server;		// server attempted to connect | connected to
@@ -106,23 +107,30 @@ int isAnAttributeOf(char* name, struct attrl *pattern) {
 // if pattern == NULL the all the immediat values (integer, float, string) will be saved in the attrl format, otherwise, only the attributes listed in the pattern shall be converted
 struct attrl *presult2attrl(presult *source, struct attrl *pattern){
 	
-	struct attrl *result;
+	struct attrl *result = NULL;
 	presult *iterator;	
 	char *value;		// char value[200]; // Should we initialize it as a table of char, big enough to hold all converted characters ??
+
+	printf(":: PRESULT2ATTRL : CHKPT 1\n");
 
 	if (source == NULL) {
 		return NULL;
 	}
 
+	printf(":: PRESULT2ATTRL : CHKPT 2\n");
+
 	iterator = source;
+
+	printf(":: PRESULT2ATTRL : CHKPT 3\n");
+
 	while (iterator != NULL){
 	
 		if (iterator->type != UNKNOWN && iterator->type != COMPLEX){	// if the value is not complex
 			if (pattern == NULL || isAnAttributeOf(iterator->key,pattern)==1){	// this element should be added to the generated attrl
 				switch (iterator->type){
-					case INTEGER 	:	sprintf(value, "%d", (iterator)->value.i); break;
-   					case FLOAT 	:	sprintf(value, "%f", (iterator)->value.f); break;	// typically for the attribute "array index" which is an integer
-   					case STRING 	:	value = (iterator)->value.s; break;
+					case INTEGER 	:	sprintf(value, "%d", (iterator)->immValue.i); break;
+   					case FLOAT 	:	sprintf(value, "%f", (iterator)->immValue.f); break;	// typically for the attribute "array index" which is an integer
+   					case STRING 	:	value = (iterator)->immValue.s; break;
 					default 	: 	printf("We should not be in this case\n"); break;
 				}
 				addElement(&result, iterator->key, NULL, value); // the only type that can be associated to value in attrl(PBS) is string 
@@ -131,6 +139,12 @@ struct attrl *presult2attrl(presult *source, struct attrl *pattern){
 	iterator = iterator->next;
 
 	}
+	
+	printf(":: PRESULT2ATTRL : CHKPT 4\n");
+
+	
+	return result;
+
 }
 
 
@@ -260,7 +274,7 @@ int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend){
 	int retcode;
 	exchange_result *res;
 	char full_url[MAX_OAR_URL_LENGTH];
-	char* HOLD_REQ;
+	char* RESUME_REQ;
 	RESUME_REQ = "{\"method\":\"resume\"}";	// JSON
 
 	strncpy(full_url, "http://", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
@@ -353,29 +367,45 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 	}
 
 
-	strncpy(full_url, "http://", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
-	strncat(full_url, pbs_server, sizeof(full_url));
-	strncat(full_url, "/oarapi/jobs/", sizeof(full_url));
-  	strncat(full_url, id, sizeof(full_url));
+	strncpy(full_url, "http://", strlen("http://")+1); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
 
+	// PBS_DEFAULT should be changed into pbs_server
+
+	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+
+	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));
+
+  	strncat(full_url, id, strlen(id));
+
+	printf("STAT JOB FULL URL = %s\n", full_url);
 	
 	res = oar_request_transmission (full_url, "GET", NULL);
-	
+
+	printf("STAT JOB CHKPT 1\n");	
+
 	if (res->code != 200){	// If we have encountered a problem
 		return NULL;
 	}
 	// Everything is OK
+
+	printf("STAT JOB CHKPT 2\n");
 	
 	// convert the res->code from presult to the attrl format (ONLY THE IMMEDIAT VALUES WILL BE CONVERTED because attrl does not support complex values (objects and arrays)) 
 	attributes = presult2attrl(res->code,attrib);
+
+	printf("STAT JOB CHKPT 3\n");
 	
 	// We create a new batch_status element
    	struct batch_status *bs = malloc(sizeof(struct batch_status));	
+
+	printf("STAT JOB CHKPT 4\n");
 
 	bs->next = NULL;
 	bs->name = id;
 	bs->attribs = attributes;
 	bs->text = "OAR : NO COMMENTS";
+
+	printf("STAT JOB CHKPT 5\n");
 	
 	return bs;
 }
@@ -415,11 +445,19 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	char* job_id;	// returned value
 	char* JOB_DETAILS;
 	JOB_DETAILS = "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}";	// JSON --> It should be adapted to the user request
+	
+			
+	
+	strncpy(full_url, "http://", strlen("http://")+1); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
 
-	strncpy(full_url, "http://", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
-	strncat(full_url, pbs_server, sizeof(full_url));
-	strncat(full_url, "/oarapi/jobs/", sizeof(full_url));
+	// PBS_DEFAULT should be changed into pbs_server
 
+	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+
+	strncat(full_url, "/oarapi/jobs", strlen("/oarapi/jobs"));
+	
+	printf("SUBMISSION FULL URL = %s\n", full_url);
+	
 	res = oar_request_transmission (full_url, "POST", JOB_DETAILS);
 
 	// 0 if everything is OK, otherwise the error number (see pbs_error.h)
