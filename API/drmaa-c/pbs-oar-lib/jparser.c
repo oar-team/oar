@@ -8,7 +8,8 @@
 #include <json-glib/json-glib.h>
 
 // In order to use the presult structure which will contain the parsing-result
-#include "presult.h"
+//#include "presult.h"
+#include "jparser.h"
 
 
 static void putIntoResultList(JsonNode *node, presult **result);
@@ -81,8 +82,8 @@ static int load_json(const gchar *file) {
   return EXIT_SUCCESS;
 }
 
-// Loads a JSON stream from a file, parses it and give back the result
-int load_json_from_stream(const gchar *stream) {
+// Loads a JSON stream from "stream" and give back the result
+jresult *load_json_from_stream(const gchar *stream) {
 
   g_type_init();
 
@@ -94,16 +95,20 @@ int load_json_from_stream(const gchar *stream) {
 //  json_parser_load_from_file (parser, file, &error);	//We load a JSON stream from the file "file"
 
 //  TO READ FROM A BUFFER AND NOT FROM A FILE
-  json_parser_load_from_data (parser, stream, strlen(stream), &error); //strlen() ??
+  json_parser_load_from_data (parser, stream, strlen(stream), &error);
 
   presult *result = NULL;				// The linked list which will contain the result
   result = addElement(&result, NULL);
+
+  jresult *res = malloc(sizeof(jresult));		// The JSON parsing result
 
   if( error ) {		// If the JSON stream is corrupted, we return an EXIT_FAILURE state
     g_print ("Unable to parse the stream: %s\n", error->message);
     g_error_free (error);
     g_object_unref (parser);
-    return EXIT_FAILURE;
+    res->status = EXIT_FAILURE;
+    res->data = NULL;
+    return res;
   }
 
   root = json_parser_get_root (parser);
@@ -120,16 +125,27 @@ int load_json_from_stream(const gchar *stream) {
 //  g_print("Checkpoint 2\n");
 
   // Give back the result
+  g_print ("Before puttting into structure\n");
   showResult(result);
-
+  
 //  g_print("Checkpoint 3\n"); 
 
-  getDrmaaState(result); 
+//  getDrmaaState(result); 
+
+
+	// I have to find a solution to this problem (duplicate??): I have to do a  "g_object_unref (parser);"
+
 
   // manipulate the object tree and then exit
-  g_object_unref (parser);
+//  g_object_unref (parser);
 
-  return EXIT_SUCCESS;
+  res->status = EXIT_SUCCESS;
+  res->data = result;
+  
+  g_print ("After puttting into structure\n");
+  showResult(res->data);
+
+  return res;
 }
 
 

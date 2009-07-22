@@ -1,19 +1,17 @@
 cmake_minimum_required(VERSION 2.6)
 
-project (DRMAA-C-test)
+project (OAR-DRMAA-C)
 
 include_directories (/usr/include/glib-2.0 /usr/lib/glib-2.0/include /usr/include/json-glib-1.0 /usr/include/curl)
 
 
-add_executable (parser parser.c)
-#add_executable (parser2 parser2.c presult.c)
+#add_executable (jparser jparser.c presult.c)
 add_executable (generator generator.c)
-add_executable (transmission transmission.c parser2.c presult.c)
-add_executable (sepheaders sepheaders.c)
+add_executable (oar_exchange oar_exchange.c jparser.c presult.c)
+#add_executable (oar_pbs oar_pbs.c oar_exchange.c jparser.c presult.c)
 
 
-target_link_libraries (parser json-glib-1.0 glib-2.0 gobject-2.0)
-#target_link_libraries (parser2 json-glib-1.0 glib-2.0 gobject-2.0)
+#target_link_libraries (jparser json-glib-1.0 glib-2.0 gobject-2.0)
 target_link_libraries (generator json-glib-1.0)
-target_link_libraries (transmission curl json-glib-1.0 glib-2.0 gobject-2.0)
-target_link_libraries (sepheaders curl)
+target_link_libraries (oar_exchange curl json-glib-1.0 glib-2.0 gobject-2.0)
+#target_link_libraries (oar_pbs curl json-glib-1.0 glib-2.0 gobject-2.0)

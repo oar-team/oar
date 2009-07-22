@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
-#include <string.h>
-#include "parser2.h"
+
+//#include "jparser.h"
+#include "oar_exchange.h"
 
 
 #define TRUE 1
@@ -217,6 +218,135 @@ int envoyer(char *URL, char* OPERATION, char* DATA)
 }
 
 
+exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DATA) {
+
+  CURLcode res;
+  CURL *curl;
+  char *ipstr=NULL;
+  char curl_errorstr[CURL_ERROR_SIZE];
+
+// We create a new exchange_result element
+   exchange_result *xr = malloc(sizeof(exchange_result));
+
+  int headerStatus;
+  char stream[MAX_BODY_SIZE];	// Perhaps we should use malloc instead  of a char table, ... 
+  strcpy(stream, "");
+
+
+
+
+  if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+    fprintf(stderr, "curl_global_init() failed\n");
+    xr->code = 500; // Internal error
+    xr->data = NULL;
+    return xr; 
+  }
+
+  if ((curl = curl_easy_init()) == NULL) {
+    fprintf(stderr, "curl_easy_init() failed\n");
+    curl_global_cleanup();
+    xr->code = 500; // Internal error
+    xr->data = NULL;
+    return xr; 
+  }
+  
+  // Pour le SSL et les certificats de OAR-API
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+	
+  // Pour la récupération des codes d'erreur
+  curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errorstr);
+
+  //  curl_global_init(CURL_GLOBAL_ALL);
+
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
+
+  // send header and all data to these functions
+  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, headerHandler);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, bodyHandler);
+
+  // we want to store the HTTP status and the JSON stream in these variables
+  curl_easy_setopt(curl,   CURLOPT_WRITEHEADER, &headerStatus);
+  curl_easy_setopt(curl,   CURLOPT_WRITEDATA, stream);
+
+  if (!strcmp("POST", OPERATION)) {
+
+		struct curl_slist *headers = NULL;
+		char content_type[]="Content-Type: application/json";
+		
+		// set content type header
+                headers = curl_slist_append(headers, content_type);
+		// set options 
+                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+                curl_easy_setopt(curl, CURLOPT_URL, URL);
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, DATA);
+                curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &curl_errorstr);
+                curl_easy_setopt(curl, CURLOPT_NOSIGNAL, TRUE);
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+
+  } else if (!strcmp("PUT", OPERATION)) {        
+
+		curl_easy_setopt(curl, CURLOPT_PUT, TRUE);
+		curl_easy_setopt(curl, CURLOPT_READDATA, DATA);
+                curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, sizeof(DATA));
+		
+		// For the moment, we are using Virtualbox + OAR Live CD with the user baygon => we don't need a password 
+		                 
+		// curl_easy_setopt(curl, CURLOPT_USERPWD, password);
+                // curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST); 
+		
+
+  } else if (!strcmp("GET", OPERATION)) {
+		curl_easy_setopt(curl, CURLOPT_HTTPGET, TRUE);
+  } else if (!strcmp("DELETE", OPERATION)) {
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
+		
+  }else{
+	fprintf(stderr, "\nOperation inconnue : %s\n",OPERATION);
+	xr->code = 500; // Internal error
+    	xr->data = NULL;
+    	return xr; 
+  }
+
+  res = curl_easy_perform(curl);
+
+fprintf(stderr, "\n!! CHKPT	1 !!\n");
+	
+	// We load the json parsing result from the stream 
+	jresult *jr;
+	jr = load_json_from_stream(stream);	
+
+fprintf(stderr, "\n!! CHKPT	2 !!\n");
+
+	// We fill it with the received information
+	xr->code = headerStatus;	
+	xr->data = jr->data;
+
+fprintf(stderr, "\n!! CHKPT	3 !!\n");
+
+
+  if (res!=0){
+	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
+  }
+
+  curl_easy_cleanup(curl);
+
+  curl_global_cleanup();
+
+	// TEST
+  fprintf(stderr, "\n----------------OAR_REQUEST_TRANSMISSION----START-----------------\n");
+  fprintf(stderr,"\nHEADER STATUS : %d\n",xr->code);
+  fprintf(stderr,"BODY : \n");
+  showResult(xr->data);
+  fprintf(stderr, "\n----------------OAR_REQUEST_TRANSMISSION---END--------------------\n");
+
+  fprintf(stderr, "\n!! CHKPT	4 !!\n");
+
+  return xr;
+} 
+
+
 int main(int argc, char **argv)
 {
   char *URL;
@@ -248,6 +378,9 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "\n!! MODE AUTOMATIQUE !!\n");
   
-  return envoyer(full_url,METHOD,DONNES_PAR_DEFAUT);
+  //return envoyer(full_url,METHOD,DONNES_PAR_DEFAUT);
+  fprintf(stderr, "\n!! YOOOHOOOO !!\n");
+  oar_request_transmission(full_url,METHOD,DONNES_PAR_DEFAUT);
+  return 0;
 }
 

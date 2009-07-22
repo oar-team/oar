@@ -38,3 +38,4 @@ presult findElement();
 presult findElementNumber();
 void removeResult();
 void getDrmaaState();
+char* extractStringAttribute();
