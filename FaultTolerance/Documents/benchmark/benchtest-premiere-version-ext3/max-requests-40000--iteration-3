@@ -1,0 +1,40 @@
+sysbench 0.4.12:  multi-threaded system evaluation benchmark
+
+No DB drivers specified, using mysql
+Running the test with following options:
+Number of threads: 16
+
+Doing OLTP test.
+Running mixed OLTP test
+Using Special distribution (12 iterations,  1 pct of values are returned in 75 pct cases)
+Using "BEGIN" for starting transactions
+Using auto_inc on the id column
+Maximum number of requests for OLTP test is limited to 40000
+Threads started!
+Done.
+
+OLTP test statistics:
+    queries performed:
+        read:                            560490
+        write:                           200156
+        other:                           80063
+        total:                           840709
+    transactions:                        40028  (1318.11 per sec.)
+    deadlocks:                           7      (0.23 per sec.)
+    read/write requests:                 760646 (25047.85 per sec.)
+    other operations:                    80063  (2636.45 per sec.)
+
+Test execution summary:
+    total time:                          30.3677s
+    total number of events:              40028
+    total time taken by event execution: 485.2486
+    per-request statistics:
+         min:                                  2.48ms
+         avg:                                 12.12ms
+         max:                                867.44ms
+         approx.  95 percentile:              31.44ms
+
+Threads fairness:
+    events (avg/stddev):           2501.7500/58.52
+    execution time (avg/stddev):   30.3280/0.00
+

@@ -1,0 +1,10 @@
+#!/bin/bash
+#@Author: Joris Bremond
+
+BD="postgresql"
+PGVERSION="8.3"
+
+
+echo "<primitive id=\"Postgres\" class=\"lsb\" type=\"$BD-"$PGVERSION"ha\" provider=\"heartbeat\""
+
+
