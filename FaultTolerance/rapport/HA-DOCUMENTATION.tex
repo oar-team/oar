@@ -435,9 +435,21 @@ net {
   #rr-conflict violently;
 }
 \end{lstlisting}
-
-
-
+In the net directive, you can specifie different policie when you detect split brain.\\
+\textbf{after-sb-0pri} : Split brain has just been detected, but at this time the resource is not in the Primary role on any host.
+\begin{itemize}
+\item disconnect : Do not recover automatically, call split-brain handler script, drop the connection and continue in disconnected mode.
+\item discard-younger-primary. Discard and roll back the modifications made on the host which assumed the Primary role last.
+\item discard-least-changes. Discard and roll back the modifications on the host where fewer changes occurred.
+\item discard-zero-changes. If there is any host on which no changes occurred at all, simply apply all modifications made on the other and continue.
+\end{itemize}
+\textbf{after-sb-1pri} : Split brain has just been detected, and at this time the resource is in the Primary role on one host.
+\begin{itemize}
+\item disconnect 
+\item consensus : Apply the same recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, automatically resolve. Otherwise, behave exactly as if disconnect were specified.
+\item call-pri-lost-after-sb. Apply the recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, invoke the pri-lost-after-sb handler on the victim node.
+\item discard-secondary. Whichever host is currently in the Secondary role, make that host the split brain victim.
+\end{itemize}
 
 \section{Database Configuration}
 
