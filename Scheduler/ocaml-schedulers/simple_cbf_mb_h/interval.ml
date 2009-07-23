@@ -11,6 +11,13 @@ type interval = {b : int; e : int}
 type set_of_resources = interval list
 
 
+(** Convert interval to string*)
+let itv2str itv = Printf.sprintf "{b:%d,e:%d}" itv.b itv.e;;
+
+(** Convert list of interval to string*)
+let itvs2str itvs = "["^(String.concat ", " (List.map itv2str itvs))^"]";; 
+
+
 (* generate list of intervals for list of unordered ints with greedy approach *)
 (* must be quicker with a dichotomic approach in most cases *)
 let ints2intervals ints =

@@ -123,19 +123,20 @@ let b = [{b = 21; e = 32}];; (* 13 *)
 *)
 
 (* No exclusive hierarchy assignement *)
-let find_resource_hierarchies_job itv_cts_slot job =
-  let rec requests_iter result hys r_rqts = match (hys, r_rqts) with
-    | ([],[]) -> List.flatten (List.rev result) (* TODO to optimze ??? *)
-    | (x::n,y::m) -> 
+let find_resource_hierarchies_job itv_slot job =
+  let rec requests_iter result hys r_rqts cts = match (hys, r_rqts, cts) with
+    | ([],[],[]) -> List.flatten (List.rev result) (* TODO to optimze ??? *)
+    | (x::n,y::m,z::o) -> 
       begin 
-        let h = List.map (fun k -> List.assoc k hierarchy_levels) x in 
+        let h = List.map (fun k -> try List.assoc k !hierarchy_levels with  Not_found -> failwith ("Can't find coresponding hierarchy level: "^k)) x in
+        let itv_cts_slot = inter_intervals itv_slot z in
         let sub_result = find_resource_hierarchies master_top itv_cts_slot h y in
         match sub_result with
           | [] -> []
-          | res -> requests_iter (res::result) n m
+          | res -> requests_iter (res::result) n m o
       end
-    | (_,_) -> failwith "Not possible to be here"
-  in requests_iter [] job.hy_level_rqt job.hy_nb_rqt;;
+    | (_,_,_) -> failwith "Not possible to be here"
+  in requests_iter [] job.hy_level_rqt job.hy_nb_rqt job.constraints;;
 
 (* Mono request
 let find_resource_hierarchies_job itv_cts_slot job =
@@ -176,10 +177,8 @@ let find_first_suitable_contiguous_slots slots j =
 	let rec find_suitable_contiguous_slots slot_l pre_slots job =
  
 	   	let (next_ctg_time_slot, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job in
-      let cts_itv = job.constraints in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
-      let itv_cts_slot = inter_intervals cts_itv itv_inter_slots in
-      let itv_res_assignement = find_resource_hierarchies_job itv_cts_slot job in
+      let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots job in
 
       match  itv_res_assignement with
 
@@ -339,7 +338,6 @@ split_slots [s0] j1;;
 split_slots [s0] j2;;
 [{time_s = 0; time_e = 20; nb_free_res = 34; set_of_res = [{b = 1; e = 14}; {b = 21; e = 40}]}]
 
-
 split_slots [s0;s1;s2] j3;;
 [{time_s = 0; time_e = 4; nb_free_res = 40; set_of_res = [{b = 1; e = 40}]};
  {time_s = 5; time_e = 20; nb_free_res = 34; set_of_res = [{b = 1; e = 14}; {b = 21; e = 40}]};
@@ -356,7 +354,6 @@ split_slots [s0;s11;s2] j3;;
  {time_s = 31; time_e = 39; nb_free_res = 19; set_of_res = [{b = 11; e = 14}; {b = 21; e = 35}]};
  {time_s = 40; time_e = 40; nb_free_res = 25;
 *)
-
 
 let resources_assign_job nb_res itv_l = 
 	let rec res_assign_job r itv_l res_itv_l = match itv_l with
@@ -388,10 +385,11 @@ let schedule_jobs jobs slots =
 	in assign_res_jobs jobs [] slots;;
 
 
-let schedule_jobs_hash jids h_jobs slots = 
+let schedule_id_jobs jids h_jobs slots = 
 	let rec assign_res_jobs j_ids scheduled_jobs slot_list = match j_ids with
 		| [] -> List.rev scheduled_jobs
-		| j_id::n -> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find job" in
+		| j_id::n -> let j = try Hashtbl.find h_jobs j_id with  Not_found -> failwith "Can't Hashtbl.find job" in 
+                (* Printf.printf "Job:\n%s\n" (job_to_string j); *)
                  let (job, updated_slots ) = assign_resources_job_split_slots j slot_list in assign_res_jobs n  (job::scheduled_jobs) updated_slots
 	in assign_res_jobs jids [] slots;;
 

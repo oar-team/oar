@@ -43,8 +43,8 @@ let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in
   (Printf.sprintf "(%d) start_time %s; walltime %s:" t.jobid (ml642int t.time_b) (ml642int t.walltime)) ^
   (String.concat ", " (List.map itv2str t.set_of_rs)) ^ (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," Helpers.id t.types)) ^
   
-  (Printf.sprintf "\nh_type: "^ (String.concat "*" (List.flatten t.hy_level_rqt))) 
-
+  (Printf.sprintf "h_type: "^ (String.concat "*" (List.flatten t.hy_level_rqt)))^
+  (Printf.sprintf "\nh_type: "^ (String.concat "*" (List.map string_of_int (List.flatten t.hy_nb_rqt)))) 
 
 let resource_to_string n = 
   Printf.sprintf "(%d) -%s- %s" 

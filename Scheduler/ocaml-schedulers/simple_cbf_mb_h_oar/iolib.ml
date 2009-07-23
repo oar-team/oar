@@ -206,7 +206,8 @@ let get_job_list db queue default_resources =
                         prev_job.hy_level_rqt <- List.rev r_t;
                         prev_job.hy_nb_rqt <- List.rev r_v;
                         prev_job.constraints <- List.rev cts;
-                        
+                       
+         (*               Printf.printf "jobs: %s\n" (job_to_string prev_job);   *)
                         Hashtbl.add jobs prev_job.jobid prev_job
                       end;
                     (* prepare next job *)
@@ -238,86 +239,6 @@ let get_job_list db queue default_resources =
                       types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[];
                       set_of_rs =[];} 
                0 [] [] [] [];; 
-
- 
-(*
-(* use index CURRENT ....job_resource_groups , moldable_job_descriptions, job_resource_descriptions,*)
- 
- SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties, 
-        moldable_job_descriptions.moldable_id, 
-        job_resource_descriptions.res_job_resource_type,
-        job_resource_descriptions.res_job_value,
-        job_resource_descriptions.res_job_order, 	
-        job_resource_groups.res_group_property  
-    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
-    WHERE
-      moldable_job_descriptions.moldable_index = 'CURRENT'
-      AND job_resource_groups.res_group_index = 'CURRENT'
-      AND job_resource_descriptions.res_job_index = 'CURRENT'
-      AND jobs.state = 'Waiting'
-      AND jobs.queue_name =  'default'
-      AND jobs.reservation = 'None'
-      AND jobs.job_id = moldable_job_descriptions.moldable_job_id
-      AND job_resource_groups.res_group_index = 'CURRENT'
-      AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-      AND job_resource_descriptions.res_job_index = 'CURRENT'
-      AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-      ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC; 
-*)
-
-(* iolib::get_resources_data_structure_current_job($$) *)
-(*
-
- SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
-                                FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
-                                WHERE
-                                    jobs.job_id = $job_id
-                                    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
-                                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                                    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                                ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
-
-*)
-
-(* iolib::get_jobs_to_schedule *)
-(*
-let get_jobs_to_schedule db queue =
-  let query =  Printf.sprintf  "SELECT * FROM jobs
-                                WHERE
-                                    state = 'Waiting'
-                                    AND reservation = 'None'
-                                    AND queue_name =  '%s'
-                                ORDER BY job_id" queue in 
-  let res = execQuery db query in
-  let get_one a = 
-    let get s = column res s a in 
-
- 
-  map res get_one_job
-*)
-(*
-    my $dbh = shift;
-    my $queue = shift;
-    my $limit = shift;
-
-    my $sth = $dbh->prepare("   SELECT *
-                                FROM jobs
-                                WHERE
-                                    state = \'Waiting\'
-                                    AND reservation = \'None\'
-                                    AND queue_name = \'$queue\'
-                                ORDER BY job_id
-                                LIMIT $limit
-                            ");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref);
-    }
-    $sth->finish();
-    return(@res);
-}
-i*)
 
 (* iolib::get_gantt_scheduled_jobs *)
 let get_scheduled_jobs dbh =

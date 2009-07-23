@@ -172,4 +172,12 @@ let time f arg =
   let deb = Sys.time () in 
   let res = f arg in 
   let fin = Sys.time () in 
-    (fin -. deb, res) 
+    (fin -. deb, res)
+
+open Str
+let replace input output = Str.global_replace (Str.regexp_string input) output
+let replace_regexp input output = Str.global_replace (Str.regexp input) output
+let split a = Str.split (Str.regexp_string a);;
+
+
+(* *) 

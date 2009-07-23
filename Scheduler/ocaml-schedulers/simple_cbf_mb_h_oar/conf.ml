@@ -119,3 +119,23 @@ let get_optional_value s =
     ( warn (Printf.sprintf "Value %s not found in confFile %s\n" s conf_file); 
       None )
 
+
+let get_hierarchy_info = 
+  let hierarchy_labels = Helpers.split "," (Helpers.replace " " "" (get_value "HIERARCHY_LABELS")) in
+    let str_to_triplet y = let z = List.map (fun x-> int_of_string x ) (Helpers.split "," y) in 
+      (List.nth z 0,List.nth z 1,List.nth z 2) 
+
+    in
+
+    let extract_triplet str_ts = 
+      let b  =  Helpers.replace "),(" ";" str_ts in 
+      let c =  Helpers.replace_regexp "(\\|)\\| " "" b in
+      let str_triplets =  Helpers.split ";" c in
+      
+(*      Printf.printf "yop: %s\n" c; *)
+      List.map (fun x-> str_to_triplet x) str_triplets
+        
+    in
+
+      List.map (fun x-> (x, extract_triplet (get_value x))) hierarchy_labels
+  ;;

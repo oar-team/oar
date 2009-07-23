@@ -1,4 +1,3 @@
-
 open Interval 
 
 (*
@@ -12,45 +11,28 @@ vim regular / replace expression to manage comment around Printf debug fonctions
 
 *)
 
-(* some default values *) 
-let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
-let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
-let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e =12}; {b = 13; e = 16};
-          {b = 17; e = 20}; {b = 21; e = 24}; {b = 25; e = 28}; {b = 29; e = 32}];;
 
-let hierarchy_levels = [ ("node",h0);("cpu",h1);("core",h2) ];;
-let master_top = {b = 1; e = 32} ;; 
+let master_top = {b = 1; e = 32} ;; (* TODO to modify *) 
 
+let h_triplets_to_itvs h_triplets =
+  let rec h_t_itvs ht itvs = match ht with
+    | [] -> itvs
+    | (x::n) -> let (orig, bk_size,nb_bk) = x in
+                let rec loop_bk i l_itv =
+                  if i = 0 then
+                    h_t_itvs n l_itv
+                  else
+                    loop_bk (i-1) ({b = orig + bk_size * (i-1);  e = orig + bk_size * i -1;}::l_itv)
+                in loop_bk nb_bk itvs
+  in h_t_itvs  (List.rev h_triplets) [] ;;
 
-type resource_block = {
-  orig : int; 
-  bk_size : int; 
-  nb_bk : int
-}
+let h_desc_to_h_levels h_desc = 
+  let rec desc_to_itvs h_d h_l = match h_d with
+    | [] -> h_l
+    | (x::n) -> let (label,triplets) = x in desc_to_itvs n ((label, (h_triplets_to_itvs triplets))::h_l)
+  in desc_to_itvs h_desc [];;
 
-type set_of_res_block = resource_block list
-
-let set_res_bk2itv res_bk_l = 
-  let rec res_bks2itv r_bk_l itv = match r_bk_l with 
-    | [] -> itv
-    | (x::n) -> let rec loop_bk i itv1 = 
-                  if i = 0 then 
-                    res_bks2itv n itv1 
-                  else 
-                    loop_bk (i-1) ({b = x.orig + x.bk_size * (i-1);  e = x.orig + x.bk_size * i -1;}::itv1)
-                in loop_bk x.nb_bk itv
-  in res_bks2itv (List.rev res_bk_l) [] ;;
-
-
-(*
-  let r_bk1 = {orig=1 ;bk_size=8 ; nb_bk=8 };;
-  set_res_bk2itv [r_bk1]
-
-  let r_bk10 = {orig=1 ;bk_size=2 ; nb_bk=8 };;
-  let r_bk11 = {orig=17 ;bk_size=4 ; nb_bk=2 };;
-*)
-
-
+let hierarchy_levels = ref (h_desc_to_h_levels [ ("resource_id",[(1,1,40)]) ] ) ;;
 
 let find_resource_hierarchies master_top itv_l hy r_rqt_l =
  let rec find_resource_n_h (top: Interval.interval) h r = match (h, r) with
