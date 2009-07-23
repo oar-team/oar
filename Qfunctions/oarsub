@@ -1,23 +1,18 @@
 #!/usr/bin/perl
-# $Id$
 #Sumbit job for execution
 package oarsub;
 require Exporter;
 
 use strict;
-use DBI();
+#use warnings;
 use POSIX qw(strftime);
 use Fcntl;
 use Data::Dumper;
 use Sys::Hostname;
 use Getopt::Long;
 use File::Basename;
-use oar_iolib;
-use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use File::Temp qw/ tempfile /;
-use oar_Tools;
-use oarversion;
-
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oarsub_lib;
 
 my $Old_umask = sprintf("%lo",umask());
@@ -60,7 +55,6 @@ my $Cpuset_field;
 my $Cpuset_path;
 my $Host = hostname ;
 
-my $base;
 my $Server;
 my $Job_id;
 my $Job_id_list_ref;
@@ -127,18 +121,18 @@ sub qdel($) {
             print(STDERR "\n\nCaught Interrupt (^C),");
         }
 
-        my $base = iolib::connect();
-        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        oarsublib::open_db_connection();
+        oarsublib::lock_tables(["frag_jobs","event_logs","jobs"]);
         foreach my $Job_id (@{$Job_id_list_ref}) {
             warn("Deleting the job $Job_id ...\n");
-            my $err = iolib::frag_job($base,$Job_id);
+            my $err = oarsublib::delete_job($Job_id);
         }
-        iolib::unlock_table($base);
-        iolib::disconnect($base);
+        oarsublib::unlock_tables();
+        oarsublib::close_db_connection();
 
         warn("Job(s) deleted\n");
         #Signal Almigthy
-        oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
+        oarsublib::signal_almighty($remote_host,$remote_port,"Qdel");
         exit(1);
     }
 }
@@ -150,16 +144,17 @@ sub connect_job($$$){
     my $openssh_cmd = shift;
    
     my $xauth_path = $ENV{OARXAUTHLOCATION};
-    my $dbh = iolib::connect_ro();
+    oarsublib::open_ro_db_connection();
     my $lusr= $ENV{OARDO_USER};
-    my $job = iolib::get_job($dbh, $job_id);
-    my $array_index = iolib::get_job_array_index($dbh,$job_id);
+    my $job = oarsublib::get_job($job_id);
+    my $array_index = oarsublib::get_job_array_index($job_id);
 
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
-        my @hosts = iolib::get_job_current_hostnames($dbh,$job_id);
+        my $hosts_tmp = oarsublib::get_job_current_hostnames($job_id);
+		my @hosts = @$hosts_tmp;
         my $host_to_connect_via_ssh = $hosts[0];
         #deploy, cosystem and no host part
-        my $types = iolib::get_current_job_types($dbh,$job_id);
+        my $types = oarsublib::get_current_job_types($job_id);
         if ((defined($types->{cosystem})) or ($#hosts < 0)){
             $host_to_connect_via_ssh = $Cosystem_hostname;
         }elsif (defined($types->{deploy})){
@@ -167,15 +162,15 @@ sub connect_job($$$){
         }
         #cpuset part
         if ((defined($Cpuset_field) and defined($Cpuset_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
-            $ENV{OAR_CPUSET} = $Cpuset_path.'/'.iolib::get_job_cpuset_name($dbh,$job_id);
+            $ENV{OAR_CPUSET} = $Cpuset_path.'/'.oarsublib::get_job_cpuset_name($job_id);
         }else{
             $ENV{OAR_CPUSET} = "";
         }
-        my $moldable = iolib::get_current_moldable_job($dbh,$job->{assigned_moldable_job});
+        my $moldable = oarsublib::get_current_moldable_job($job->{assigned_moldable_job});
         my $job_cpuset_uid;
-        $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
-        my $job_user = oar_Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
-        iolib::disconnect($dbh);
+        $job_cpuset_uid = oarsublib::get_job_cpuset_uid($job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
+        my $job_user = oarsublib::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
+        oarsublib::close_db_connection();
         my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
         unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
@@ -188,10 +183,25 @@ sub connect_job($$$){
             $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority.$$";
             system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardodo bash --noprofile --norc -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2>/dev/null');
         }
-        my $node_file = oar_Tools::get_default_oarexec_directory()."/$job_id";
-        my $res_file = oar_Tools::get_default_oarexec_directory()."/$job_id"."_resources";
-        my $oarsub_pids = oar_Tools::get_oarsub_connections_file_name($job_id);
-        my $str = oar_Tools::get_oarexecuser_script_for_oarsub($node_file,$job_id,$job->{array_id},$array_index,$lusr,$shell,$job->{launching_directory},$res_file,$job->{job_name},$job->{project},iolib::duration_to_sql($moldable->{moldable_walltime}), $moldable->{moldable_walltime}, $job->{job_env});
+        my $node_file = oarsublib::get_default_oarexec_directory()."/$job_id";
+        my $res_file = oarsublib::get_default_oarexec_directory()."/$job_id"."_resources";
+        my $oarsub_pids = oarsublib::get_oarsub_connections_file_name($job_id);
+		my %params = (
+					  "node_file" => $node_file,
+					  "job_id" => $job_id,
+					  "array_id" => $job->{array_id},
+					  "array_index" => $array_index,
+					  "user" => $lusr,
+					  "shell" => $shell,
+					  "launching_directory" => $job->{launching_directory},
+					  "resource_file" => $res_file,
+					  "job_name" => $job->{job_name},
+					  "job_project" => $job->{project},
+					  "job_walltime" => oarsublib::duration_to_sql($moldable->{moldable_walltime}),
+					  "job_walltime_sec" => $moldable->{moldable_walltime},
+					  "job_env" => $job->{job_env}
+					  );
+        my $str = oarsublib::get_oarexecuser_script_for_oarsub(\%params);
         my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
         my @cmd;
         my $i = 0;
@@ -230,7 +240,14 @@ sub connect_job($$$){
             warn("[ERROR] An unknown error occured : $?\n");
         }
         if ($stop_oarexec > 0){
-            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $job_id, "USR1", 0, undef, $openssh_cmd);
+			my %params = (
+						  "host" => $host_to_connect_via_ssh,
+						  "job_id" => $job_id,
+						  "signal" => "USR1",
+						  "time_to_wait" => 0,
+						  "ssh_cmd" => $openssh_cmd
+						  );
+            oarsublib::signal_oarexec(\%params);
         }
         print("Disconnected from OAR job $job_id\n");
     }else{
@@ -240,7 +257,7 @@ sub connect_job($$$){
         if (($lusr ne $job->{job_user}) and ($lusr ne "oar")){
             warn("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
         }
-        iolib::disconnect($dbh);
+        oarsublib::close_db_connection();
         return(20);
     }
     return(0);
@@ -341,7 +358,7 @@ EOS
 #            warn("Error: You cannot import a job key both inline and from a file at the same time.\n");
 #            exit(15);
 #        }
-#        my $tmp_job_key_file = oar_Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
+#        my $tmp_job_key_file = oarsublib::get_default_oarexec_directory()."/oarsub_$$.jobkey";
 #        if (($import_job_key_inline ne "") or ($import_job_key_file ne "")){
 #            # job key is imported
 #            if ($import_job_key_inline ne "") {
@@ -505,7 +522,7 @@ sub parse_resource_descriptions($){
                     }else{
                         $resource_groups[1] = "$w_h:$w_mn:$w_sec";
                     }
-                    $resource_groups[1] = iolib::sql_to_duration("$resource_groups[1]");
+                    $resource_groups[1] = oarsublib::sql_to_duration("$resource_groups[1]");
                 }else{
                     die("/!\\ Cannot recognize walltime resource value\n");
                 }
@@ -570,9 +587,9 @@ $Cpuset_path = get_conf("CPUSET_PATH");
 $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
-    oar_Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
+    oarsublib::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
 }
-my $default_oar_dir = oar_Tools::get_default_oarexec_directory();
+my $default_oar_dir = oarsublib::get_default_oarexec_directory();
 if (!(((-d $default_oar_dir) and (-O $default_oar_dir)) or (mkdir($default_oar_dir)))){
     die("ERROR: Cannot create the OAR directory $default_oar_dir or bad permissions.\n");
 }
@@ -585,10 +602,10 @@ if (defined($ENV{OARDIR})){
 }
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
-$Openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+$Openssh_cmd = oarsublib::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
 if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
-    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+    oarsublib::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
 Getopt::Long::Configure ("gnu_getopt");
@@ -630,7 +647,7 @@ GetOptions ("resource|l=s" => \@resource,
 
 
 if (defined($Version)){
-    print("OAR version : ".oarversion::get_version()."\n");
+    print("OAR version : ".oarsublib::get_oar_version()."\n");
     exit(0);
 }
 
@@ -646,17 +663,17 @@ if (is_conf("OARSUB_FORCE_JOB_KEY")){
     }
 }
 
-$base = iolib::connect();
+oarsublib::open_db_connection();
 
 if (defined($Resubmit)){
     print("Resubmitting job $Resubmit ...");
-    my $err = iolib::resubmit_job($base,$Resubmit);
-    iolib::disconnect($base);
+    my $err = oarsublib::resubmit_job($Resubmit);
+    oarsublib::close_db_connection();
     if ($err > 0){
         $Job_id = $err;
         print("DONE\n");
         print("OAR_JOB_ID=$Job_id\n");
-        if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qsub"))){
+        if (defined(oarsublib::signal_almighty($remote_host,$remote_port,"Qsub"))){
             warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
             exit(3);
         }
@@ -704,8 +721,6 @@ if (defined($connect_job)){
     exit(connect_job($connect_job,0,$Openssh_cmd));
 }
 # End connection to a reservation
-
-my $base_ro = iolib::connect_ro();
 
 if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
@@ -859,10 +874,10 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     if ($Reservation ne "0"){
         #Test if this job is a reservation and the syntax is right
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
-            $Reservation = iolib::sql_to_local("$1 $2");
+            $Reservation = oarsublib::sql_to_local("$1 $2");
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
-            iolib::disconnect($base);
+            oarsublib::close_db_connection;
             exit(7);
         }
         ($Server, $server_port) = oarsublib::init_tcp_server();
@@ -889,9 +904,8 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "md5sum = $md5sum\n";
             print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
         }
-        #$base = iolib::connect();
-        iolib::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
-        $idFile = iolib::get_stagein_id($base,$md5sum);
+		oarsublib::get_lock($md5sum,3600) or die "Failed to lock stagein\n";
+        $idFile = oarsublib::get_stagein_id($md5sum);
         if (defined $idFile) {
             print "This stagein is already stored on the server.\n";
         } else {
@@ -901,16 +915,22 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "Uploading stagein...\n";
             system "scp $stagein $location" and die "Stagein upload failed\n";
             my @stats = stat $stagein;
-            $idFile=iolib::set_stagein($base,$md5sum,$location,$method,$compression,$stats[7]);
+			my %params = (
+						  "md5sum" => $md5sum,
+						  "location" => $location,
+						  "method" => $method,
+						  "compression" => $compression,
+						  "size" => $stats[7]
+			);
+            $idFile=oarsublib::set_stagein(\%params);
             defined $idFile or die "Failed to setup stagein\n";
         }
-        iolib::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";
+        oarsublib::release_lock($md5sum) or die "Failed to unlock stagein\n";
         #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
-        #iolib::disconnect($base);
         print "Stagein completed.\n";
     }
 
-     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = oarsublib::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -942,10 +962,10 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     if ($Reservation ne "0"){
         #Test if this job is a reservation and the syntax is right
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
-            $Reservation = iolib::sql_to_local("$1 $2");
+            $Reservation = oarsublib::sql_to_local("$1 $2");
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
-            iolib::disconnect($base);
+            oarsublib::close_db_connection();
             exit(7);
         }
     }
@@ -953,14 +973,14 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $server_port;
     ($Server, $server_port) = oarsublib::init_tcp_server();
 
-     $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = oarsublib::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
 
 if(@{$Job_id_list_ref} > 1){
     for my $j (@{$Job_id_list_ref}){
         print("OAR_JOB_ID=".$j."\n");
     }
-    print ("OAR_ARRAY_ID=".iolib::get_job_array_id($base,$Job_id_list_ref->[0])."\n");
+    print ("OAR_ARRAY_ID=".oarsublib::get_job_array_id($Job_id_list_ref->[0])."\n");
 }else{
     print("OAR_JOB_ID=".$Job_id_list_ref->[0]."\n");
 }
@@ -996,8 +1016,7 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mod
     print("\n##########\n\n");
 }
 
-iolib::disconnect($base_ro);
-iolib::disconnect($base);
+oarsublib::close_db_connection();
 
 if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
     warn("Oarsub failed: please verify your request syntax or ask for support to your admin.\n");
@@ -1005,7 +1024,7 @@ if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
 }
 
 #Signal Almigthy
-if (defined(oar_Tools::notify_tcp_socket($remote_host,$remote_port,"$Cmd_executor"))){
+if (defined(oarsublib::signal_almighty($remote_host,$remote_port,"$Cmd_executor"))){
     #qdel(1);
     warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
     exit(9);
