@@ -10,12 +10,13 @@
 
 
 
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,pdfstartview=FitH]{hyperref} 
 
 
 
 % Title Page
 \title{High Availability Documentation on OAR - Admin Guide\\
-\includegraphics[scale=0.7]{schema/oar_logo.png}}
+\includegraphics[scale=0.7]{schema/oar_logo_detoure.png}}
 \author{Joris Brémond - \texttt{joris.bremond@gmail.com}\\
 \\
 Laboratoire d'Informatique de Grenoble\\
@@ -64,7 +65,10 @@ This documentation explain how to configure a high availability cluster with OAR
 
 
 \section{Require}
-This documentation don't describe how to configure and install OAR. So before install OAR High Availability solution, install OAR with the database of your choice (mysql or postgresql). OAR-server and database must be also installed on the backup(s) server(s), with the same daemon configuration (oar.conf, my.conf or pg.conf). Nevertheless, it's not necessary that we configure OAR (oarnodesetting, etc.) because it's data incorporated in database and DRBD will share it. So we will have the same configurations in both nodes.
+This documentation don't describe how to configure and install OAR. So before install OAR High Availability solution, 
+install OAR with the database of your choice (mysql or postgresql). OAR-server and database must be also installed on the backup(s) server(s), 
+with the same daemon configuration (oar.conf, my.conf or pg.conf). 
+Nevertheless, it's not necessary that we configure OAR (oarnodesetting, etc.) because it's data incorporated in database and DRBD will share it. So we will have the same configurations in both nodes.
 Before continue, please stop oar-server and database daemon.
 
 
@@ -162,9 +166,9 @@ For illustrate example, the nodes names are :
 
 \section{System configuration}
 It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbour. With two networks, we can for example avoid split-brain problem. We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easyly cut the Ethernet network without interfere with heartbeat functioning.\\
-For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. This virtual IP must be free and accessible on the network.\\
+For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. Two Virtual IP for access to oar-server and databse. This virtual IP must be free and accessible on the network.\\
 DRBD need a low-level storage for write data. It could be an entire disk, a partition, or a virtual partition (in a file). So before configure DRBD, create a free partition.\\
-If you want create a partition in a file (/image.img), you can follow this commands
+If you want create a partition in a file (/image.img), you can follow this commands :
 \begin{lstlisting}
 SIZE=200	#Size in Mega-bytes
 dd if=/dev/zero of=/image.img bs=1M count=$SIZE
@@ -172,7 +176,30 @@ losetup /dev/loop/0 /image.img
 mkfs -t ext3 /dev/loop/0
 shred -zvf -n 1 /dev/loop/0	
 \end{lstlisting}
+Furthermore, we need to create a script for auto associate loopback device with the image file at startup, and before DRBD launching.
+\begin{lstlisting}
+#!/bin/sh
+case "$1" in
+  start|"") 
+        losetup /dev/loop0 /image.img
+	echo "Start OK"
+        ;;
+  stop)
+	losetup -d /dev/loop0
+	echo "Stop OK"
+	;;
+  *)
+        echo "Usage: active-loop [start|stop]" >&2
+        exit 3
+        ;;
+esac
+\end{lstlisting}
+Change right and add to startup (60 is before DRBD) :
+\begin{lstlisting}
+chmod +x /etc/init.d/active-loop
 
+update-rc.d active-loop defaults 60
+\end{lstlisting}
 
 
 \section{Heartbeat Configuration}
@@ -482,7 +509,6 @@ mount /dev/drbd0 /dev/drbddata
 \end{lstlisting}
 The ``all'' option mean that node1 is the master of all resources defined in drbd.conf.\\
 The mkfs command prepare file system on drbd partition, and mount this partition.\\
-
 Now DRBD is operational, all data put in \textbf{/dev/drbddata} will be synchronized.
 
 
@@ -509,15 +535,121 @@ It is almost the same in Postgres. Open the file \textit{/etc/postgres/8.3/main/
 \begin{lstlisting}
 data_directory = 'mnt/drbddata/main'
 \end{lstlisting}
-Like mysql, if you want remote access, change \textbf{listen\_addresses = 'localhost'} in \textbf{listen\_addresses = '*'}
+Like mysql, if you want remote access, change \textbf{listen\_addresses = 'localhost'} in \textbf{listen\_addresses = '*'}. Don't forget to add rule for your network in the hba.conf file.\\
+You must copy all old postgres data in new datadir, and change owner :
+\begin{lstlisting}
+cp -r OLDDIRECTORY /mnt/drbddata
+chown -R postgres:postgres /mnt/drbddata/main
+\end{lstlisting}
 
 
 
 \section{OAR Configuration}
+\subsection{Server configuration}
+OAR server must be configured to work fine with High Availability. The first step is to configure database hostname and server hostname on oar-server.
+\begin{itemize}
+ \item In 2 nodes configurations, one virtual IP is necessary. With this IP, client can acess to oar-server and databse because it is on the same server.
+So in \textit{/etc/oar/oar.conf}, modify :
+\begin{lstlisting}
+SERVER_HOSTNAME=VIRTUALIP
+DB_HOSTNAME=VIRTUALIP
+\end{lstlisting}
+\item In 4 nodes configurations, two virtual IP is necessary. The first one is for oar-server, and the second is for database.
+So in \textit{/etc/oar/oar.conf}, modify :
+\begin{lstlisting}
+SERVER_HOSTNAME=VIRTUALIP_1
+DB_HOSTNAME=VIRTUALIP_2
+\end{lstlisting}
+
+\end{itemize}
 
 
-\section{monitoring utils}
+The second step is to configure the \textbf{DETACH\_JOB\_FROM\_SERVER} option. Indeed, with this option, oar don't keep connection between oar-server and nodes.
+So when the oar-server crash, the backup oar-server is contacted when the job is ended, because oarexec reconnect to the new server, thanks to VIRTUALIP\_1.\\
+In /etc/oar/oar.conf, you must enter :
+\begin{lstlisting}
+DETACH_JOB_FROM_SERVER="1"
+\end{lstlisting}
 
+\textbf{insert schema !!!}
+
+\subsection{Frontend configuration}
+It is approximatly the same configuration on frontend :\\
+\begin{itemize}
+ \item In 2 nodes configurations :
+\begin{lstlisting}
+SERVER_HOSTNAME=VIRTUALIP
+DB_HOSTNAME=VIRTUALIP
+\end{lstlisting}
+\item In 4 nodes configurations :
+\begin{lstlisting}
+SERVER_HOSTNAME=VIRTUALIP_1
+DB_HOSTNAME=VIRTUALIP_2
+\end{lstlisting}
+\end{itemize}
+
+\subsection{Node configuration}
+If you use Start/Stop of nodes using ssh keys (see http://wiki-oar.imag.fr/index.php/Configuration\_tips section 1.5) adn you want to do oarnodesetting form oar-server, 
+you have just to add the virtual IP from OAR-server in \textit{/etc/default/oar-nodes} file.
+\begin{lstlisting}
+OARREMOTE=VIRTUALIP
+\end{lstlisting}
+
+\section{Administration commands}
+
+\subsection{Heartbeat administration}
+Before read more, heartbeat and drbd must be configured and started. For launch heartbeat, execute :
+\begin{lstlisting}
+/etc/init.d/heartbeat start
+\end{lstlisting}
+Heartbeat provide a graphic interface for configure resources. You can install the package heartbeat2-gui on a remote computer, with the command(on debian) :
+\begin{lstlisting}
+apt-get install heartbeat2-gui
+\end{lstlisting}
+When you launch it, it demands login and password. On the heartbeat server, defined a new password for \textbf{hacluster} user :
+\begin{lstlisting}
+passwd hacluster
+\end{lstlisting}
+Now you can connect with user hacluster and his password.
+
+
+\subsection{DRBD administration}
+
+\section{Monitoring utils}
+
+\subsection{Heartbeat monitoring}
+Heartbeat-2 provide different solutions for monitor resources and konw nodes status.
+\begin{itemize}
+ \item Command line solution : On any heartbeat nodes, you can enter :
+\begin{lstlisting}
+crm_mon -i 1
+\end{lstlisting}
+You can see nodes status, and where resources are launched, follow failed actions.
+\item Web solution : you can monitor resource with a cgi script. For install it, create a file in \textbf{cgi-bin} path, \textit{/usr/lib/cgi-bin/ha-status.cgi} :
+\begin{lstlisting}
+#!/bin/bash
+sudo /usr/sbin/crm_mon -w
+\end{lstlisting}
+Add apache (www-data) in the sudoers file :
+\begin{lstlisting}
+echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
+\end{lstlisting}
+Set right :
+\begin{lstlisting}
+chmod 755 /usr/lib/cgi-bin/ha-status.cgi
+\end{lstlisting}
+Now you can access to heartbeat status with http://x.x.x.x/cgi-bin/ha-status.cgi
+\item Logs : you can access to heartbeat log in \textit{/var/log/ha-log}
+
+\end{itemize}
+
+
+\subsection{DRBD monitoring}
+For know DRBD status, you can type :
+\begin{lstlisting}
+cat /proc/drbd
+\end{lstlisting}
+You can kown who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain.
 
 \chapter{known problems}
 \section{Split brain}
