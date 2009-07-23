@@ -1,7 +1,0 @@
-#!/bin/bash
-#killall acroread
-rst2latex HA-DOCUMENTATION.rst HA-DOCUMENTATION.tex
-pdflatex HA-DOCUMENTATION.tex
-acroread HA-DOCUMENTATION.pdf &
-
-#pygmentize -S native -f html > native.css
