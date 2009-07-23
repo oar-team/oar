@@ -372,6 +372,7 @@ With have three synchronization type in DRBD :
 \item \textbf{Protocol B} : write ACK (on master) is send when data was transmitted on master disk and received by slave.
 \item \textbf{Protocol C} : write ACK (on master) is send when data was transmitted on master disk and slave disk.\\
 \textbf{Very recommanded !}
+\end{itemize}
 
 \subsection{Startup action}
 When DRBD is launched, we can do actions. For example, inform it to wait x seconds :
@@ -388,25 +389,140 @@ disk {
   on-io-error detach;
 }
 \end{lstlisting}
+With the detach option, the node drops its backing device on I/O error, and continues in diskless mode.
 
 \subsection{Synchronization settings}
+You can precise the rate of synchronization, the hot-area size :
+\begin{lstlisting}
+syncer {
+  rate 700000K;
+  al-extents 257;
+}
+\end{lstlisting}
+700000K is the maximum value accepted by DRBD.\\
+1 extend correponds to 4 Mbytes, so with 257, we have 1 GBytes.
 
+\subsection{Host section}
+\label{hostsection} 
+One resrouce must have two host section. A host section describe on each node which DRBD partition and disk is use. You must also specify neigboor ip and port :
+\begin{lstlisting}
+on node1 
+  device DRBDPARTITION;
+  disk DISKPARTITION;
+  address node2:DBRDPORT;
+  meta-disk internal;
+}
 
+on node2 
+  device DRBDPARTITION;
+  disk DISKPARTITION;
+  address node1:DBRDPORT;
+  meta-disk internal;
+}
+\end{lstlisting}
+
+\subsection{Handlers}
+DRBD provide an handler which can execute actions on evenements. For the problem of split brain (see \ref{splitbrain}),we can for exmaple write in log :
+\begin{lstlisting}
+handlers {
+  split-brain "echo Splitbraindetected >> /var/log/drbd-log"
+  pri-lost-after-sb "echo pri-lost-after-sb >> /var/log/drbd-log"
+}
+
+net {
+  #cram-hmac-alg \"sha1\";
+  #shared-secret \"123456\";
+  after-sb-0pri discard-younger-primary;
+  after-sb-1pri consensus;
+  after-sb-2pri call-pri-lost-after-sb;
+  #rr-conflict violently;
+}
+\end{lstlisting}
+In the net directive, you can specifie different policie when you detect split brain.\\
+\textbf{after-sb-0pri} : Split brain has just been detected, but at this time the resource is not in the Primary role on any host.
+\begin{itemize}
+\item disconnect : Do not recover automatically, call split-brain handler script, drop the connection and continue in disconnected mode.
+\item discard-younger-primary. Discard and roll back the modifications made on the host which assumed the Primary role last.
+\item discard-least-changes. Discard and roll back the modifications on the host where fewer changes occurred.
+\item discard-zero-changes. If there is any host on which no changes occurred at all, simply apply all modifications made on the other and continue.
 \end{itemize}
+\textbf{after-sb-1pri} : Split brain has just been detected, and at this time the resource is in the Primary role on one host.
+\begin{itemize}
+\item disconnect 
+\item consensus : Apply the same recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, automatically resolve. Otherwise, behave exactly as if disconnect were specified.
+\item call-pri-lost-after-sb. Apply the recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, invoke the pri-lost-after-sb handler on the victim node.
+\item discard-secondary. Whichever host is currently in the Secondary role, make that host the split brain victim.
+\end{itemize}
+\textbf{after-sb-2pri} : Split brain has just been detected, and at this time the resource is in the Primary role on both hosts. This option accepts the same keywords as after-sb-1pri except discard-secondary and consensus.
+
+\subsection{Launch DRBD}
+Before launch DRBD between the two host, you can prepare the device. The fisrt things to do, is to load DRBD module :
+\begin{lstlisting}
+ modprobe drbd
+\end{lstlisting}
+After that, you must verify if the drbd device exist. Look at /dev/drbd0. If this device don't exist, create it with :
+\begin{lstlisting}
+mknod /dev/drbd0 b 147 0
+\end{lstlisting}
+Now, it is the time to create meta data and launch DRBD :
+\begin{lstlisting}
+drbdadm create-md all
+drbdadm up all
+\end{lstlisting}
+For mount DRBD device, you must create a folder, /mnt/drbdata for example :
+\begin{lstlisting}
+mkdir /mnt/drbddata
+\end{lstlisting}
+DRBD is pratically operational. You have to difined a master, node1 in our example, so enter this command onmy on this node :
+\begin{lstlisting}
+drbdadm -- --overwrite-data-of-peer primary all
+
+mkfs -t ext3 /dev/drbd0
+mount /dev/drbd0 /dev/drbddata
+\end{lstlisting}
+The ``all'' option mean that node1 is the master of all resources defined in drbd.conf.\\
+The mkfs command prepare file system on drbd partition, and mount this partition.\\
+
+Now DRBD is operational, all data put in \textbf{/dev/drbddata} will be synchronized.
 
 
 
 
 \section{Database Configuration}
+Now, it is the time to configure database. The datadir will be changed into the disk partition defined in DRBD (see  \ref{hostsection}).
 
 \subsection{Mysql}
+For change datadir in mysql, open the file \textit{/etc/mysql/my.cnf}, search the primitive \textbf{datadir}, and replace the value by the partition defined in DRBD.
+For example, we can enter :
+\begin{lstlisting}
+datadir = /mnt/drbddata
+\end{lstlisting}
+You must copy all old mysql data in new datadir, and change owner :
+\begin{lstlisting}
+cp -r /var/lib/mysql /mnt/drbddata
+chown -R mysql:mysql /mnt/drbddata/mysql
+\end{lstlisting}
+If you want remove mysql access, don't forget to comment the \textbf{bind-address} in the my.cnf.
+
 \subsection{Postgresql}
+It is almost the same in Postgres. Open the file \textit{/etc/postgres/8.3/main/postgresql.conf}, and search data_directory and change value in :
+\begin{lstlisting}
+data_directory = "mnt/drbddata/main"
+\end{lstlisting}
+
+
 
 \section{OAR Configuration}
 
 
 \section{monitoring utils}
 
+
+\chapter{known problems}
+\section{Split brain}
+\section{check disk}
+tune2fs -c 0 DISKPARTITION
+\label{splitbrain} 
 
 \chapter{Test}
 

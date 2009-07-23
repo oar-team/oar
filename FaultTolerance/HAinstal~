@@ -720,6 +720,7 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 		#Save mysql old configuration
 		cp /etc/$BD/$PGVERSION/main/postgresql.conf /etc/$BD/$PGVERSION/main/postgresql.conf.backup
 		sed -e "s/$postgresdiroldn/\/mnt\/drbddata\/main/g" /etc/$BD/$PGVERSION/main/postgresql.conf > /etc/$BD/$PGVERSION/main/postgresql.conf.tmp && mv -f /etc/$BD/$PGVERSION/main/postgresql.conf.tmp /etc/$BD/$PGVERSION/main/postgresql.conf
+
 		#to be deleted in the future
 		sed -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/$BD/$PGVERSION/main/postgresql.conf > /etc/$BD/$PGVERSION/main/postgresql.conf.tmp && mv -f /etc/$BD/$PGVERSION/main/postgresql.conf.tmp /etc/$BD/$PGVERSION/main/postgresql.conf
 	else
@@ -798,7 +799,7 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 
 	echo '	handlers {' >> /etc/drbd.conf
 	echo '		split-brain "echo Splitbraindetected >> /var/log/drbd-log";' >> /etc/drbd.conf
-	echo '		pri-lost-after-sb "echo pri-lost-after-sb >> /var/log/drbd-log ; drbdadm invalidate all; drbdadm connect all";' >> /etc/drbd.conf
+	echo '		pri-lost-after-sb "echo pri-lost-after-sb >> /var/log/drbd-log";' >> /etc/drbd.conf
 	echo '	}' >> /etc/drbd.conf
 
 
@@ -812,7 +813,7 @@ fi
 
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 
-	modprobe drbd	##a faire au demragge de la machine
+	modprobe drbd
 
 	if [ "$USEFILEPARTITION" = "y" ]; then
 		#Create Virtual partition

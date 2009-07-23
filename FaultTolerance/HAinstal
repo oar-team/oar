@@ -720,8 +720,10 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 		#Save mysql old configuration
 		cp /etc/$BD/$PGVERSION/main/postgresql.conf /etc/$BD/$PGVERSION/main/postgresql.conf.backup
 		sed -e "s/$postgresdiroldn/\/mnt\/drbddata\/main/g" /etc/$BD/$PGVERSION/main/postgresql.conf > /etc/$BD/$PGVERSION/main/postgresql.conf.tmp && mv -f /etc/$BD/$PGVERSION/main/postgresql.conf.tmp /etc/$BD/$PGVERSION/main/postgresql.conf
+
 		#to be deleted in the future
 		sed -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/$BD/$PGVERSION/main/postgresql.conf > /etc/$BD/$PGVERSION/main/postgresql.conf.tmp && mv -f /etc/$BD/$PGVERSION/main/postgresql.conf.tmp /etc/$BD/$PGVERSION/main/postgresql.conf
+
 	else
 		exit 1
 	fi
@@ -812,7 +814,7 @@ fi
 
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 
-	modprobe drbd	##a faire au demragge de la machine
+	modprobe drbd
 
 	if [ "$USEFILEPARTITION" = "y" ]; then
 		#Create Virtual partition
