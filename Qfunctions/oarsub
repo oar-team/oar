@@ -5,7 +5,6 @@ package oarsub;
 require Exporter;
 
 use strict;
-use IO::Socket::INET;
 use DBI();
 use POSIX qw(strftime);
 use Fcntl;
@@ -142,103 +141,6 @@ sub qdel($) {
         oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel");
         exit(1);
     }
-}
-
-#Used when we must have a response from the server
-sub init_tcp_server(){
-    my $server = IO::Socket::INET->new( Type => SOCK_STREAM,
-                                        Reuse => 1,
-                                        Listen => 1
-                                      ) or die("/!\\ Cannot initialize a TCP socket server.\n");
-    my $server_port = $server->sockport();
-
-    return($server,$server_port);
-}
-
-#Read user script and extract OAR submition options
-sub scan_script($){
-    my $file = shift;
-
-    my %result;
-    my $error = 0;
-    
-    ($file) = split(" ",$file);
-    my $lusr= $ENV{OARDO_USER};
-    $ENV{OARDO_BECOME_USER} = $lusr;
-    if (open(FILE, "oardodo cat $file |")){
-    
-#    if (open(FILE, $file)){
-        if (<FILE> =~ /^#/){
-            while (<FILE>) {
-                if ( /^#OAR\s+/ ){
-                    my $line = $_;
-                    if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
-                        push(@{$result{resources}}, $2);
-                    }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {
-                        $result{queue} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-p|--property)\s*(.+)\s*$/m) {
-                        $result{property} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--checkpoint)\s*(\d+)\s*$/m) {
-                        $result{checkpoint} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--notify)\s*(.+)\s*$/m) {
-                        $result{notify} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-t|--type)\s*(.+)\s*$/m) {
-                        push(@{$result{types}}, $2);
-                    }elsif ($line =~ m/^#OAR\s+(-d|--directory)\s*(.+)\s*$/m) {
-                        $result{directory} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-n|--name)\s*(.+)\s*$/m) {
-                        $result{name} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--project)\s*(.+)\s*$/m) {
-                        $result{project} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--hold)\s*$/m) {
-                        $result{hold} = 1;
-                    }elsif ($line =~ m/^#OAR\s+(-a|--anterior)\s*(\d+)\s*$/m) {
-                        push(@{$result{anterior}}, $2);
-                    }elsif ($line =~ m/^#OAR\s+(--signal)\s*(\d+)\s*$/m) {
-                        $result{signal} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-O|--stdout)\s*(.+)\s*$/m) {
-                        $result{stdout} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-E|--stderr)\s*(.+)\s*$/m) {
-                        $result{stderr} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-k|--use-job-key)\s*$/m) {
-                        $result{usejobkey} = 1;
-                    }elsif ($line =~ m/^#OAR\s+(--import-job-key-inline-priv)\s*(.+)\s*$/m) {
-                        $result{importjobkeyinlinepriv} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-i|--import-job-key-from-file)\s*(.+)\s*$/m) {
-                        $result{importjobkeyfromfile} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-e|--export-job-key-to-file)\s*(.+)\s*$/m) {
-                        $result{exportjobkeytofile} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(-s|--stagein)\s*(.+)\s*$/m) {
-                        $result{stagein} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--stagein-md5sum)\s*(.+)\s*$/m) {
-                        $result{stageinmd5sum} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--array)\s*(\d+)\s*$/m) {
-                        $result{array} = $2;
-                    }elsif ($line =~ m/^#OAR\s+(--array-param-file)\s*(.+)\s*$/m) {
-                        $result{arrayparamfile} = $2;
-                    }else{
-                        warn("/!\\ Not able to scan file line: $line");
-                        $error++;
-                    }
-                    chop($line);
-                    $Initial_request_string .= "; $line";
-                }
-            }
-        }
-        if (!close(FILE)){
-            warn("[ERROR] Cannot open the file $file. Check if it is readable by everybody (744).\n");
-            exit(12);
-        }
-    }else{
-        warn("[ERROR] Cannot execute: oardodo cat $file\n");
-        exit(12);
-    }
-    if ($error > 0){
-        warn("[ERROR] $error error(s) encountered while parsing the file $file.\n");
-        exit(12);
-    }
-
-    return(%result);
 }
 
 # Connect to a job and give the shell of the user on the remote host
@@ -537,27 +439,6 @@ EOS
 #    }
 #}
 #
-sub read_array_param_file($){
-    my $array_param_file = shift;
-    my @array_params;
-    if (open(PARAMETER_FILE, "oardodo cat $array_param_file |")){
-        while(<PARAMETER_FILE>) {
-            s/#.*//; # ignore comments by erasing them
-            next if /^\s*$/;  # skip blank lines
-            chomp;  # remove trailing newline characters
-            push (@array_params, $_);
-        }
-        if (!close(PARAMETER_FILE)){
-            warn("[ERROR] Cannot open the parameter file $array_param_file.\n");
-            exit(12);
-        }
-    }else{
-        warn("[ERROR] Cannot execute: oardodo cat $array_param_file\n");
-        exit(12);
-    }
-    return \@array_params;
-}
-
 
 # Parse -l options and return an array of hashtables with resources for a moldable job
 sub parse_resource_descriptions($){
@@ -829,7 +710,9 @@ my $base_ro = iolib::connect_ro();
 if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
     if (defined($Scan_script)){
-        my %scan_result = scan_script($exec) if ($exec ne "");
+		my $scan_result_tmp = scan_script($exec, $Initial_request_string) if ($exec ne "");
+		my %scan_result = %$scan_result_tmp;
+		$Initial_request_string = $scan_result{initial_request};
         if (defined($scan_result{queue}) && !defined($Queue_name)){
             $Queue_name = $scan_result{queue}
         }elsif(defined($scan_result{queue}) && defined($Queue_name)){
@@ -947,7 +830,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     # array_ids are assigned automatically 
     if(defined($array_param_file)){
-        $array_params_ref = read_array_param_file($array_param_file);
+        $array_params_ref = oarsublib::read_array_param_file($array_param_file);
         $array_job_nb = scalar @{$array_params_ref};
     }
 
@@ -982,7 +865,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             iolib::disconnect($base);
             exit(7);
         }
-        ($Server, $server_port) = init_tcp_server();
+        ($Server, $server_port) = oarsublib::init_tcp_server();
     }
 
     # stagein machinery
@@ -1068,7 +951,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     }
     
     my $server_port;
-    ($Server, $server_port) = init_tcp_server();
+    ($Server, $server_port) = oarsublib::init_tcp_server();
 
      $Job_id_list_ref = iolib::add_micheline_job($base, $base_ro, "INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
