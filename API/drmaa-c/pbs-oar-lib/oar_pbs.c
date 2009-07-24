@@ -42,6 +42,14 @@ int pbs_errno;			// PBS error number
 
 
 /*
+struct batch_status {
+        struct batch_status *next;
+        char                *name;
+        struct attrl        *attribs;
+        char                *text;
+};
+*/
+/*
 
 struct attrl {
         struct attrl *next;
@@ -53,39 +61,108 @@ struct attrl {
 
 */
 
+
+// Prints the content of the presult list
+void showAttributes(attrl *attributes) { 
+
+    attrl *attr;
+    attr = attributes;	 
+
+    while(attr != NULL) {
+	
+	printf("attr_name = %s, attr_resource = %s, attr_value = %s", attr->name, attr->resource, attr->value);
+		 	
+        attr = attr->next;
+	if (attr) printf(", \n");       
+    }
+
+    printf("\n");       	
+}
+
+
+void showBatchStatus(batch_status *status) {
+	printf("\n\n---------------------------------------------------------------\n");
+	printf("-----------------------  SHOW BATCH STATUS  -----------------------\n");
+	printf("---------------------------------------------------------------\n\n");
+	showBatchStatus_(status);
+	printf("\n\n---------------------------------------------------------------\n");
+	printf("----------------------------  END BATCH STATUS --------------------\n");
+	printf("---------------------------------------------------------------\n\n");
+
+}
+
+// Prints the content of the presult list
+void showBatchStatus_(batch_status *status) { 
+
+    batch_status *tmp;
+    tmp = status;	 
+
+    while(tmp != NULL) {
+	
+	printf("JOB NAME = %s, JOB DESCRIPTION = %s\n", tmp->name, tmp->text);
+	showAttributes(tmp->attribs);
+		 	
+        tmp = tmp->next;
+	if (tmp) printf("__________________________\n");
+    }
+    printf("\n");       	
+}
+
+
 // Adds a new element to the attrl list (in the end) and returns the added element address
-struct attrl *addNewAttribute(struct attrl **list, char* name, char* resource, char* value) { 
+struct attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value) { 
 
     // We create a new presult element
-    struct attrl *newElement = malloc(sizeof(struct attrl));
+    attrl *newElement = malloc(sizeof(attrl));
+	
+//    printf("1\n");
 
     if(!newElement) exit(EXIT_FAILURE); // If we don't have enough memory     
 
+//    printf("2\n");
+
     // We initialize the newly created element
     newElement->name = name;		
-    newElement->resource = NULL;
-    newElement->value = value;
+    newElement->resource = g_strdup(resource);	
+    newElement->value = g_strdup(value); // Thanks glib ;-)
     newElement->next = NULL;
+
+//    printf("3\n");
 
     if(*list == NULL) {           
 	
 	*list = newElement;
+
+//        printf("4\n");
+
         return newElement;
 
     } else { // We are adding the new element in the end of the list
 
-        presult *temp = *list;
+        attrl *temp = *list;
+
+//    	printf("5\n");
 
         while(temp->next != NULL) {
+	    
+//  	    printf(".");
 
             temp = temp->next;
-        }      
+        }  
+	
+//	printf("\n");    
+
+//	printf("6\n");
 
         temp->next = newElement;
+
+//	printf("7\n");
 
         return newElement;
     }
 }
+
+
 
 // returns 1 if the attribute is found in pattern, otherwise it returns 0
 int isAnAttributeOf(char* name, struct attrl *pattern) {
@@ -107,42 +184,61 @@ int isAnAttributeOf(char* name, struct attrl *pattern) {
 // if pattern == NULL the all the immediat values (integer, float, string) will be saved in the attrl format, otherwise, only the attributes listed in the pattern shall be converted
 struct attrl *presult2attrl(presult *source, struct attrl *pattern){
 	
-	struct attrl *result = NULL;
+	attrl *result = NULL;
 	presult *iterator;	
 	char *value;		// char value[200]; // Should we initialize it as a table of char, big enough to hold all converted characters ??
 
-	printf(":: PRESULT2ATTRL : CHKPT 1\n");
+//	printf(":: PRESULT2ATTRL : CHKPT 1\n");
 
 	if (source == NULL) {
 		return NULL;
 	}
 
-	printf(":: PRESULT2ATTRL : CHKPT 2\n");
+//	printf(":: PRESULT2ATTRL : CHKPT 2\n");
 
 	iterator = source;
 
-	printf(":: PRESULT2ATTRL : CHKPT 3\n");
+//	printf(":: PRESULT2ATTRL : CHKPT 3\n");
+	
+//	int i = 0;	
+
+	// Test
+//	printf("The presult source :\n\n");
+//	printf("ATTRIBUTES BEFORE CONVERSION :\n");
+//	showResult(source);
+//	printf("----------------------\n\n");
 
 	while (iterator != NULL){
 	
+//		printf("ROUND %d :\n",i);
 		if (iterator->type != UNKNOWN && iterator->type != COMPLEX){	// if the value is not complex
+//			printf("ROUND %d - 1:\n",i);
 			if (pattern == NULL || isAnAttributeOf(iterator->key,pattern)==1){	// this element should be added to the generated attrl
+//				printf("ROUND %d - 2:\n",i);
 				switch (iterator->type){
 					case INTEGER 	:	sprintf(value, "%d", (iterator)->immValue.i); break;
-   					case FLOAT 	:	sprintf(value, "%f", (iterator)->immValue.f); break;	// typically for the attribute "array index" which is an integer
-   					case STRING 	:	value = (iterator)->immValue.s; break;
-					default 	: 	printf("We should not be in this case\n"); break;
+   					case FLOAT 	:	// typically for the attribute "array_index" which is an integer
+								sprintf(value, "%f", (iterator)->immValue.f); break;	
+   					case STRING 	:	sprintf(value, "%s", (iterator)->immValue.s); break;
+					default 	: 	value = NULL; printf(" \n!!!We should not be in this case !!!\n"); break;
 				}
-				addElement(&result, iterator->key, NULL, value); // the only type that can be associated to value in attrl(PBS) is string 
+//				printf("ROUND %d - 3:\n",i);
+//				printf("::presult2attrl1: key : %s, value : %s\n", iterator->key, value);
+				addNewAttribute(&result, iterator->key, NULL, value); // the only type that can be associated to value in attrl(PBS) is string 
+//				printf("::presult2attrl2: key : %s, value : %s\n", iterator->key, value);
+//				printf("ROUND %d - 4:\n",i);
 			}
+//			printf("ROUND %d - 5:\n",i);		
 		} 
-	iterator = iterator->next;
+//		printf("ROUND %d - 6:\n",i);
+//		i++;
+		iterator = iterator->next;
 
 	}
 	
-	printf(":: PRESULT2ATTRL : CHKPT 4\n");
-
+//	printf(":: PRESULT2ATTRL : CHKPT 4\n");
 	
+
 	return result;
 
 }
@@ -155,7 +251,7 @@ int pbs_connect(char *server){
 	
 	if (server == NULL){
 		pbs_server = pbs_default();
-	} else if (*server == ""){
+	} else if (!strcmp("", server)){
 		pbs_server = pbs_default();
 	} else {
 		pbs_server = server;
@@ -345,10 +441,18 @@ struct attrl {
 // Get job information from batch system
 struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend){
 
+	char *id2 = g_strdup(id);	// Il ne faut pas faire ça dans cette méthode mais plutot dans pbs_submit, ...
 
 	exchange_result *res;
 	char full_url[MAX_OAR_URL_LENGTH];
 	struct attrl *attributes;
+	// We create a new batch_status element
+   	batch_status *bstatus = malloc(sizeof(batch_status));
+
+	if(!bstatus) {
+		printf("NO ENOUGH MEMORY");
+		exit(EXIT_FAILURE); // If we don't have enough memory 
+	}
 
 	// if id == NULL -> return the status of all jobs	<- not implemented yet
 	// if id == queue Identifier ->  return the status of all jobs in the queue  <- not implemented yet
@@ -375,11 +479,19 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 
 	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));
 
+	printf("CHKPT 0 : ID = %s\n", id);	
+
   	strncat(full_url, id, strlen(id));
 
+	printf("CHKPT 1 : ID = %s\n", id);	
+
 	printf("STAT JOB FULL URL = %s\n", full_url);
+
+	printf("CHKPT 2 : ID = %s\n", id);	
 	
 	res = oar_request_transmission (full_url, "GET", NULL);
+
+	printf("CHKPT 3 : ID = %s\n", id);
 
 	printf("STAT JOB CHKPT 1\n");	
 
@@ -388,26 +500,44 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 	}
 	// Everything is OK
 
+	printf("CHKPT 4 : ID = %s\n", id);
+
 	printf("STAT JOB CHKPT 2\n");
 	
 	// convert the res->code from presult to the attrl format (ONLY THE IMMEDIAT VALUES WILL BE CONVERTED because attrl does not support complex values (objects and arrays)) 
-	attributes = presult2attrl(res->code,attrib);
+	//showResult(res->data);
+	attributes = presult2attrl(res->data,attrib);
 
-	printf("STAT JOB CHKPT 3\n");
+	id = id2;
+	bstatus->name = id;
+	bstatus->next = NULL;
+	bstatus->attribs = attributes;
+	bstatus->text = "OAR : NO COMMENTS";
+
+	printf("CHKPT 5 : ID = %s\n", id);
+
+
 	
-	// We create a new batch_status element
-   	struct batch_status *bs = malloc(sizeof(struct batch_status));	
+/*	
+	
+	printf("\n\nBEFORE RETURNING STATUS \n\n");
+
+	printf("STAT JOB CHKPT 3\n");	
+	printf("text: %s\n", bstatus->text);
+	printf("local id = %s", id);
 
 	printf("STAT JOB CHKPT 4\n");
+	printf("name: %s\n", bstatus->name);
 
-	bs->next = NULL;
-	bs->name = id;
-	bs->attribs = attributes;
-	bs->text = "OAR : NO COMMENTS";
 
-	printf("STAT JOB CHKPT 5\n");
+	printf("ATTRIBUTES AFTER CONVERSION :\n");
+	showAttributes(attributes);
 	
-	return bs;
+	printf("STAT JOB CHKPT 5\n");
+
+	showBatchStatus(bstatus);
+*/
+	return bstatus;
 }
 
 
@@ -442,7 +572,7 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	exchange_result *res;
 	presult *iterator;
 	char full_url[MAX_OAR_URL_LENGTH];
-	char* job_id;	// returned value
+	char* jobId;	// returned value
 	char* JOB_DETAILS;
 	JOB_DETAILS = "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}";	// JSON --> It should be adapted to the user request
 	
@@ -464,13 +594,13 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	switch (res->code) {	// Est ce qu'il y a une possibilité de remonter directement le code OAR ??
 				// Sinon, il vaut mieux implementer un convertisseur de code code d'erreur OAR2PBS
 	
-	  case 200 : 	job_id = extractStringAttribute(res->data,"id");	// get the value (job_id) of the id field
+	  case 200 : 	jobId = extractStringAttribute(res->data,"id");	// get the value (job_id) of the id field
 			break;
 	  default  :	return NULL;	// We couldn't submit the Job
 			break;
 	}
 	
-	return job_id;
+	return jobId;
 
 }
 

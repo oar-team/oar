@@ -125,8 +125,8 @@ jresult *load_json_from_stream(const gchar *stream) {
 //  g_print("Checkpoint 2\n");
 
   // Give back the result
-  g_print ("Before puttting into structure\n");
-  showResult(result);
+//  g_print ("Before puttting into structure\n");
+//  showResult(result);
   
 //  g_print("Checkpoint 3\n"); 
 
@@ -142,8 +142,8 @@ jresult *load_json_from_stream(const gchar *stream) {
   res->status = EXIT_SUCCESS;
   res->data = result;
   
-  g_print ("After puttting into structure\n");
-  showResult(res->data);
+//  g_print ("After puttting into structure\n");
+// showResult(res->data);
 
   return res;
 }

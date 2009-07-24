@@ -59,26 +59,28 @@ presult *addElement(presult **list, char* key) {
 }
 
 // extract the value of the 
-char* extractStringAttribute(presult *list, char* key){
+char *extractStringAttribute(presult *list, char* key){
 	presult *tmp;
     	tmp = list;	
+	char *attribute;
     
  //   printf("ShowResult, more Info: list = %p\n", list);     
 
+    attribute = NULL;
 
     while(tmp != NULL) {
         
 
 	if (tmp->type == STRING){
 		if (!strcmp(key, tmp->key)){	// If the key is found
-			return tmp->immValue.s;
+			attribute = (tmp->immValue).s;
 		}  
 	}		 	
  	
         tmp = tmp->next;    
     }
 
-	return NULL;
+	return g_strdup(attribute);
 }
 
 // Prints the content of the presult list using showResult_

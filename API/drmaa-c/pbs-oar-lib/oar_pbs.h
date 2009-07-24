@@ -37,6 +37,9 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script,
 	
 int pbs_terminate(int connect, int manner, char *extend);
 
+void show_BatchStatus(batch_status *status);	// This is not a part of PBS functions >> a test function
+struct attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value); // This is not a part of PBS functions >> a test function
+
 char * pbs_server;		/* server attempted to connect | connected to */
 				/* see pbs_connect(3B)			      */
 
