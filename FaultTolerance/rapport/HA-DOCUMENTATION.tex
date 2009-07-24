@@ -55,12 +55,34 @@ This documentation explain how to configure High Availability on OAR. This solut
 
   
 \chapter{Introduction}
+%schema
+\begin{figure}
+\includegraphics[scale=0.5]{schema/architecture-schema-2-node.png}
+\caption{Architecture schema 2 nodes} 
+\label{2nodesschema} 
+\end{figure} 
+\begin{figure}
+\includegraphics[scale=0.5]{schema/architecture-schema-4-node.png}
+\caption{Architecture schema 4 nodes} 
+\label{4nodesschema} 
+\end{figure} 
+\begin{figure}
+\centering
+\includegraphics[scale=0.5]{schema/DRBD.png}
+\caption{DRBD Architecture} 
+\label{drbd} 
+\end{figure} 
+
+
+
 This documentation explain how to configure a high availability cluster with OAR. We will see to different configurations :
 \begin{description}
-\item[]- OAR-server daemon and database on the same server. So we have two servers, the master OAR-server and the backup.
-(insert schema)
+\item[]- OAR-server daemon and database on the same server. So we have two servers, the master OAR-server and the backup. See Figure \ref{2nodesschema}.
+
+
 \item[]- OAR-server daemon and database on different server. We have four servers, the master OAR-server, the master database, the backup OAR-server, and the backup database.
-(insert schema)
+See Figure \ref{4nodesschema}.
+
 \end{description}
 
 
@@ -76,10 +98,15 @@ Before continue, please stop oar-server and database daemon.
 \section{General functioning}
 For provide OAR High Availability, we use different produces :
 \begin{description}
-\item[]- The first one is \textbf{Heartbeat} version 2. Heartbeat is a daemon that provides fault tolerance. It manage and monitor services, like Virtual IP, filesystem, etc. When Heartbeat detect problems in resource, it can migrate this one on other server. It can manage groups of resources and define rules and priority on each server.
+\item[]- The first one is \textbf{Heartbeat} version 2. Heartbeat is a daemon th
+at provides fault tolerance. It manage and monitor services, like Virtual IP, filesystem, etc. When Heartbeat detect problems in resource, it can migrate this one on other server. It can manage groups of resources and define rules and priority on each server.
 \item[]- \textbf{DRBD}. DRBD refers to block devices designed as a building block to form high availability clusters. This is done by mirroring a whole block device via an assigned network. DRBD can be understood as network based raid-1. In OAR high availability solution, we will use DRBD for duplicate database.\\
-(insert schema)
+See Figure \ref{drbd}.
 \item[]- \textbf{VirtualIP} : This package is installed with heartbeat, and managed by it. It provide a virtual IP address. Thereby, client permanently know the elected server.
+When heartbeat active resources on the node, the virtualIP package send a gratitious ARP. After that, any nodes on the network have in ARP table an entry with :
+\begin{lstlisting}
+IP address		MAC address primary node
+\end{lstlisting}
 
 \end{description}
 
