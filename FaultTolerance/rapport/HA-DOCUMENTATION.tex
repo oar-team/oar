@@ -57,18 +57,23 @@ This documentation explain how to configure High Availability on OAR. This solut
 \chapter{Introduction}
 %schema
 \begin{figure}
+\begin{center}
 \includegraphics[scale=0.5]{schema/architecture-schema-2-node.png}
+\end{center}
 \caption{Architecture schema 2 nodes} 
 \label{2nodesschema} 
 \end{figure} 
 \begin{figure}
+\begin{center}
 \includegraphics[scale=0.5]{schema/architecture-schema-4-node.png}
+\end{center}
 \caption{Architecture schema 4 nodes} 
 \label{4nodesschema} 
 \end{figure} 
 \begin{figure}
-\centering
+\begin{center}
 \includegraphics[scale=0.5]{schema/DRBD.png}
+\end{center}
 \caption{DRBD Architecture} 
 \label{drbd} 
 \end{figure} 
@@ -677,6 +682,7 @@ For test your configurations, you can standby one node, and see if resource migr
 The figure \ref{hb-gui-2nodes} is an example with 2 nodes configurations and mysql.
 
 \subsubsection{Heartbeat command-line}
+\label{hb-command}
 Different commands are avaible : 
 \begin{enumerate}
  \item crmadmin - provide node related details 
@@ -708,11 +714,31 @@ Different commands are avaible :
 
 
 \subsection{DRBD administration}
-
+\label{drbd-admn}
 \begin{itemize}
- \item attachh and connect all DRBD resources :
+ \item attach and connect all DRBD resources :
     \begin{lstlisting}
     drbdadm up all
+    \end{lstlisting}
+\item detach and disconnect all DRBD resources :
+    \begin{lstlisting}
+    drbdadm down all
+    \end{lstlisting}
+
+\item Put node in primary mode :
+    \begin{lstlisting}
+    drbdadm primary all
+    \end{lstlisting}
+
+\item Put node in secondary mode :
+    \begin{lstlisting}
+    drbdadm secondary all
+    \end{lstlisting}
+
+\item After a slipt-brain (see \ref{splitbrain}), you must invalidate data on one node, and reconnect it. The command \textit{cat /proc/drbd} indicates standalone mode.
+    \begin{lstlisting}
+    drbdadm invalidate all
+    drbdadm connect all
     \end{lstlisting}
 
 \end{itemize}
@@ -757,21 +783,121 @@ cat /proc/drbd
 \end{lstlisting}
 You can kown who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain. If you have a running configuration, you may have :
 \begin{figure}[!h]
+\begin{center}
 \includegraphics[scale=0.5]{schema/drbd-s-p.png}
+\end{center}
 \caption{DRBD seondary primary} 
 \label{hb-gui-2nodes} 
 \end{figure}
 
 \chapter{known problems}
+\section{Quorum}
+The quorum calculation process is required to select no more than one primary subcluster at a time. You can enable or disable this option in heartbeat, it depand to the configuration.\\
+A common method for defining quorum is to say that a subcluster of size n in a cluster of m total nodes has quorum if it has a plurality of nodes in its partition. That is, it has n members where n > INT(m/2).\\
+But this solution in heartbeat create problems in 4 nodes configurations. Indeed, when 2 nodes are down, the two other not can't launch resources because they hav'ent quorum. In this case, you
+can disable quorum in heartbeat, in the cib.xml file :
+\begin{lstlisting}[language=xml]
+<nvpair id="cib-bootstrap-options-no-quorum-policy" name="no-quorum-policy" value="ignore"/>
+\end{lstlisting}
+
+
 \section{Split brain}
-\section{check disk}
-tune2fs -c 0 DISKPARTITION
 \label{splitbrain} 
+When a cluster thinks the other is unavailable, and vice versa, heartbeat launchs resources on two nodes. In our configurations, DRBD becomes primary on two nodes, and has two version of data. This problem may appear when the commmunication between the two hearrtbeat server is loosed.
+For limit this problem, you can connect two links between each heartbeat server.
+
+
+
+\section{File System Check}
+A fail over must be fastest as possible. So it could be very embarrassing if we have a file system check during the fail-over. You can desactivate it with :
+\begin{lstlisting}
+tune2fs -c 0 DISKPARTITION
+\end{lstlisting}
 
 \chapter{Test}
 
+\section{2 nodes - Postgres}
+\begin{itemize}
+ \item Migrate resources by set nodes in standby mode : Test ok, heartbeat launchs resources on the backup, and when the primary come back, resources are migrate on the primary.
+ \item Power off/power on the master server (with IPMI, kareboot) : Test OK, ressources migrate after a time, about 60s, which corresposd at cluster delay. When the master node is anew alive, ressources migrate on the master node.
+ \item Power off/power on the backup server (with IPMI, kareboot), without ressources : Test OK, the server is down. Heartbeat let its ressources on the master.
+ \item \textit{Killall -9 Almighty} on primary : Test OK, the master relaunch oar-server.
+ \item \textit{killall -9 postgres} : Test OK, the master stop oar-server, launch postgres and after oar-server.
+ \item \textit{Killall -9 Almighty} and comment the line in /etc/init.d/oar-server for start the daemon : Test ok, heartbeat don't arrive to restart oar-server, so it migrate ressources on the backup.
+But after uncomment the line on master, you must cleanup resource otherwise heartbeat don't want restart resource. See \ref{hb-command}.
+ \item Add rule in iptable for drop all communications : heartbeat and DRBD (iptables -A OUTPUT -p tcp --dport 7788 -j DROP, ...). Heartbeat launch ressources on the two nodes. DRBD are primary on the two nodes and work with standalone mode. When the network come bask, heartbeat launch ressources on the master, but DRBD stay in standalone mode. It is the problem of slipt brain. It can be solve manualy (See \ref{drbd-admn}).
+Admin can enter his mail in the drbd split brain handler for know when drbd is in standalone mode. Test Ok, but heartbeat need admin intervention.
+ \item Heartbeat, in my configuration, have two links. The test now is two disconnect one of the two links : Test ok, heartbeat continue to run. In the log (\textit{/var/log/ha-log}), wa can see Link node eth1 dead.
+\end{itemize}
+
+\textbf{Software test} : 2 servers (with postgres), 1 frontend, 1 node (resource). All commands are typed from the frontend.
+\begin{itemize}
+ \item execute \textit{oarnodes}, standby the master, and retry oarnodes : Test OK
+ \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITHOUT detach : Test failed, the job is not ended, and stay alive.
+ \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITH detach : Test OK ! The job continue to run, and when the user quit, the new oar-server arrives to kill the job, properly !
+If the job is ended before the backup is up, the job is not deleted imediately, but after a few time. In the job events, we  can see : SWITCH\_INTO\_TERMINATE\_STATE:[bipbip 4] Ask to change the job state. After that, the job is killed.
+In oarexec code, function quit\_oarexec : loop until the daemon has inform server.
+ \item Reserve ressource (oarsub -I), reserve a new ressource again. The second user wait because there is just one ressource. Standby the server. The first job continue to run, the second always waiting. When the firts job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server.
+ \item Execute oarstat, stanby the master node, and execute oarstat : Test OK
+\end{itemize}
 
 
+\section{2 nodes - Mysql}
+
+\begin{itemize}
+ \item Migrate resources by set nodes in standby mode : Test ok, heartbeat launchs resources on the backup, and when the primary come back, resources are migrate on the primary.
+ \item Power off/power on the master server (with IPMI, kareboot) : Test OK.
+ \item Power off/power on the backup server (with IPMI, kareboot), without ressources : Test OK.
+ \item \textit{Killall -9 Almighty} on primary : Test OK.
+ \item \textit{/etc/init.d/mysql stop} : Test OK.
+ \item \textit{Killall -9 Almighty} and comment the line in /etc/init.d/oar-server for start the daemon : Test ok, but admin have to cleanup ressource before it can't be migrate on the failed node. See \ref{hb-command}.
+ \item Add rule in iptable for drop all communications : heartbeat and DRBD (iptables -A OUTPUT -p tcp --dport 7788 -j DROP, ...). Heartbeat launch ressources on the two nodes. DRBD are primary on the two nodes and work with standalone mode. When the network come bask, heartbeat launch ressources on the master, but DRBD stay in standalone mode. It is the problem of slipt brain. It can be solve manualy (See \ref{drbd-admn}).
+Admin can enter his mail in the drbd split brain handler for know when drbd is in standalone mode. Test Ok, but heartbeat need admin intervention.
+ \item Heartbeat, in my configuration, have two links. The test now is two disconnect one of the two links : Test ok, heartbeat continue to run. In the log (\textit{/var/log/ha-log}), wa can see Link node eth1 dead.
+\end{itemize}
+
+\textbf{Software test} : 2 servers (with mysql), 1 frontend, 1 node (resource). All commands are typed from the frontend.
+\begin{itemize}
+ \item execute \textit{oarnodes}, standby the master, and retry oarnodes : Test OK, oarnodes say : try to connect... until the backup is alive.
+ \item Reserve ressource (oarsub -I), and after first node connection, standyby the server, and disconnect, WITHOUT detach : Test failed, the job is still running...
+ \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITH detach : Test OK ! The job continue to run, and when the user quit, the new oar-server arrives to kill the job, properly !
+If the job is ended before the backup is up, the job is not deleted imediately, but after a few time. In the job events, we  can see : SWITCH\_INTO\_TERMINATE\_STATE:[bipbip 4] Ask to change the job state. After that, the job is killed.
+In oarexec code, function quit\_oarexec : loop until the daemon has inform server.
+ \item Reserve ressource (oarsub -I), reserve a new ressource again. The second user wait because there is just one ressource. Standby the server. The first job continue to run, the second always waiting. When the firts job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server.
+ \item Execute oarstat, stanby the master node, and execute oarstat : Test OK, the commands work, it print the same results. If we launch the command during the fail-over, the command inform users that it can't connect to the databse, wait few seconds...
+\end{itemize}
+
+
+\section{4 nodes - Postgres}
+\begin{itemize}
+ \item Migration test (master oar-server) : Test OK
+ \item Migration test (master Postgres) : Test OK
+ \item Power off/power on the master postgres server (IPMI kareboot) : Test OK, migration after a timer
+ \item Power off/power on the master oar server (IPMI kareboot) : Test OK
+ \item Power off/power on the backup oar server (IPMI kareboot), with ressources : Test OK
+ \item Power off/power on the backup postgres server (IPMI kareboot), without ressources : Test OK
+ \item \textit{killall -9 Almighty} on oar-server : Test OK
+ \item \textit{killall -9 postgres} : Test OK
+\end{itemize}
+
+\textbf{Software test} : 4 servers (with postgres), 1 frontend, 1 node (resource). All commands are typed from the frontend.
+\begin{itemize}
+ \item execute oarnodes, standby the oar master, and retry oarnodes : Test Ok
+ \item execute oarnodes, standby the postgresql master, and retry oarnodes : Test Ok
+ \item execute oarstat, standby the oar master, and retry oarnodes : Test Ok
+ \item execute oarstat, standby the postgres master, and retry oarnodes : Test Ok
+ \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITHOUT detach : 
+ \item Reserve ressource (oarsub -I), and after first node connection, standby the oar-server, and disconnect, WITH detach : Test OK, the job is deleted when the user exit.
+ \item Reserve ressource (oarsub -I), and after first node connection, standby the postgres server, and disconnect, WITH detach : Test OK, the job is deleted when the user exit.
+ \item Reserve ressource (oarsub -I), reserve a new ressource again. The second user wait because there is just one ressource. Standby the oar-server. The first job continue to run, the second always waiting. When the firts job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server. Test OK.
+\end{itemize}
+
+
+\section{4 nodes - Mysql}
+
+\begin{itemize}
+ \item 
+\end{itemize}
 
 
 
