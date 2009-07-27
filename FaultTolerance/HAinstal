@@ -21,9 +21,9 @@ PGVERSION="8.3"
 
 ###----Nodes name-----------####
 
-master_oar="genepi-26.grenoble.grid5000.fr"
-master_db="genepi-8.grenoble.grid5000.fr"
-backup_oar="genepi-3.grenoble.grid5000.fr"
+master_oar="genepi-7.grenoble.grid5000.fr"
+master_db="genepi-7.grenoble.grid5000.fr"
+backup_oar="genepi-9.grenoble.grid5000.fr"
 backup_db="genepi-9.grenoble.grid5000.fr"
 
 #-----Nodes properties-----####

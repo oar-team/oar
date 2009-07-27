@@ -625,26 +625,105 @@ OARREMOTE=VIRTUALIP
 \section{Administration commands}
 
 \subsection{Heartbeat administration}
-Before read more, heartbeat and drbd must be configured and started. For launch heartbeat, execute :
+
+Before read more, heartbeat and drbd must be configured and started. For launch heartbeat, run :
 \begin{lstlisting}
 /etc/init.d/heartbeat start
 \end{lstlisting}
+
+
+\subsubsection{Heartbeat-gui}
+
+\begin{figure}
+\includegraphics[scale=0.5]{schema/hb_gui-2nodes-connect.png}
+\caption{heartbeat-gui connection} 
+\label{hb-gui-connect} 
+\end{figure}
+
+\begin{figure}
+\includegraphics[scale=0.5]{schema/hb_gui-2nodes.png}
+\caption{heartbeat-gui 2 nodes example} 
+\label{hb-gui-2nodes} 
+\end{figure}
+
+
 Heartbeat provide a graphic interface for configure resources. You can install the package heartbeat2-gui on a remote computer, with the command(on debian) :
 \begin{lstlisting}
 apt-get install heartbeat2-gui
 \end{lstlisting}
-When you launch it, it demands login and password. On the heartbeat server, defined a new password for \textbf{hacluster} user :
+If you work on grid5000, you must create a ssh tunnel on port 5560. Example :
+\begin{lstlisting}
+ssh -L 5560:machine.grid5000.fr:5560 login@access.site.grid5000.fr
+\end{lstlisting}
+When you launch heartbeat-gui, it demands login and password. On the heartbeat server, defined a new password for \textbf{hacluster} user :
 \begin{lstlisting}
 passwd hacluster
 \end{lstlisting}
-Now you can connect with user hacluster and his password.
+Now you can connect with user hacluster and his password.\\
+
+When you are connected, you can see your configured nodes, and resources if you defined them in the cib.xml file. The figure \ref{hb-gui-connect} show a heartbeat cluster without resources.\\
+
+For add resource, right click on \textbf{Resources}, and choose \textbf{Add New Item}, \textbf{Native}. Now select the resource, add parameter if you want, and click \textbf{Add}.\\
+You can add group with the same operations, but select \textbf{Group} in place of \textbf{Native}. Select \textbf{Ordered} for launched resources with order.\\
+
+It is also possbile to add location contrainst with heartbeat-gui. Select \textbf{Location}, and the group or resource for apply this constraint.\\
+
+For launched resources, click right on the resource, and select \textbf{start}.\\
+
+If a resource failed to start for example, you must cleanup the resource. You can do this by righ click on the resource, and select \textbf{Cleanup resource}.\\
+
+For test your configurations, you can standby one node, and see if resource migrate. For Standy a node, righ click on it and select \textbf{Standby}.
+
+The figure \ref{hb-gui-2nodes} is an example with 2 nodes configurations and mysql.
+
+\subsubsection{Heartbeat command-line}
+Different commands are avaible : 
+\begin{enumerate}
+ \item crmadmin - provide node related details 
+ \item cibadmin - allows the current configuration to be queried and modified \\
+    You can change the cib.xml file with these commands :
+    \begin{lstlisting}
+    cibadmin -Q > cibbackup.xml 
+    \end{lstlisting}
+  Apport change on cibbackup.xml and apply it with :
+    \begin{lstlisting}
+    cibadmin -R -x cibbackup.xml 
+    \end{lstlisting}
+
+ \item crm\_verify - checks a configuration is valid 
+ \item crm\_mon - provides the current cluster status in text or HTML , see \ref{hb-monitor}
+ \item crm\_resource - query and modify all things related to cluster resources/services\\
+    Scenario : The resources OAR is crashed and don't restart. Heartbeat migrate on the second node. When you have corrected the problem on the first node, you must cleanup the resource with the command :
+    \begin{lstlisting}
+    crm_resource -C -r oar-server -H host
+    \end{lstlisting}
+ \item crm\_standby - control a node's standby status (ability to run resources) \\
+    Set node in standby :
+    \begin{lstlisting}
+    crm_standby -U host -v true 
+    \end{lstlisting}
+ \item cl\_status - provides low-level node-centric connectivity information. 
+\end{enumerate}
+
 
 
 \subsection{DRBD administration}
 
+\begin{itemize}
+ \item attachh and connect all DRBD resources :
+    \begin{lstlisting}
+    drbdadm up all
+    \end{lstlisting}
+
+\end{itemize}
+
+
+
+
 \section{Monitoring utils}
 
 \subsection{Heartbeat monitoring}
+\label{hb-monitor}
 Heartbeat-2 provide different solutions for monitor resources and konw nodes status.
 \begin{itemize}
  \item Command line solution : On any heartbeat nodes, you can enter :
@@ -676,7 +755,12 @@ For know DRBD status, you can type :
 \begin{lstlisting}
 cat /proc/drbd
 \end{lstlisting}
-You can kown who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain.
+You can kown who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain. If you have a running configuration, you may have :
+\begin{figure}[!h]
+\includegraphics[scale=0.5]{schema/drbd-s-p.png}
+\caption{DRBD seondary primary} 
+\label{hb-gui-2nodes} 
+\end{figure}
 
 \chapter{known problems}
 \section{Split brain}
