@@ -8,10 +8,8 @@
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{frame=single, breaklines=true, backgroundcolor=\color{lbcolor}, basicstyle=\ttfamily,basicstyle=\scriptsize, keywordstyle=\color{red}, commentstyle=\color{vert}, stringstyle=\color{blue}, identifierstyle=\ttfamily}
 
-
-
 \usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,pdfstartview=FitH]{hyperref} 
-
+\usepackage{float}
 
 
 % Title Page
@@ -40,6 +38,7 @@ Copyright: licenced under the GNU GENERAL PUBLIC LICENSE\\
 
 \begin{abstract}
 This documentation explain how to configure High Availability on OAR. This solution provide fault tolerance on both OAR server and database (mysql or postgresql).
+With this High Availability solution, OAR is protected by computer crash, services crash, network failure, etc.
 \end{abstract}
 
 
@@ -108,7 +107,7 @@ at provides fault tolerance. It manage and monitor services, like Virtual IP, fi
 \item[]- \textbf{DRBD}. DRBD refers to block devices designed as a building block to form high availability clusters. This is done by mirroring a whole block device via an assigned network. DRBD can be understood as network based raid-1. In OAR high availability solution, we will use DRBD for duplicate database.\\
 See Figure \ref{drbd}.
 \item[]- \textbf{VirtualIP} : This package is installed with heartbeat, and managed by it. It provide a virtual IP address. Thereby, client permanently know the elected server.
-When heartbeat active resources on the node, the virtualIP package send a gratitious ARP. After that, any nodes on the network have in ARP table an entry with :
+When heartbeat active resources on the node, the virtualIP package send a gratuitous ARP. After that, any nodes on the network have in ARP table an entry with :
 \begin{lstlisting}
 IP address		MAC address primary node
 \end{lstlisting}
@@ -133,7 +132,7 @@ In this guide, we use DRBD-8.
 \begin{description}
 \item[]- On debian :
 
-The package name is drbd8-utils. It's easier to use module-assitant for install it:
+The package name is drbd8-utils. It's easier to use module-assistant for install it:
 \begin{lstlisting}
 apt-get install drbd8-utils module-assistant
 module-assistant auto-install drbd8
@@ -141,7 +140,7 @@ module-assistant auto-install drbd8
 
 
 
-Module Assitant require kernel header. You can install it with :
+Module Assistant require kernel header. You can install it with :
 \begin{lstlisting}
 apt-get install linux-headers-`uname -r`
 \end{lstlisting}
@@ -160,7 +159,7 @@ The package name is heartbeat-2.
 \begin{lstlisting}
 apt-get install heartbeat-2
 \end{lstlisting}
-You can also install the GUI pakage on the your computer for heartbeat remote configuration.
+You can also install the GUI package on the your computer for heartbeat remote configuration.
 \begin{lstlisting}
 apt-get install heartbeat-2-gui
 \end{lstlisting}
@@ -197,8 +196,16 @@ For illustrate example, the nodes names are :
 
 
 \section{System configuration}
-It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbour. With two networks, we can for example avoid split-brain problem. We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easyly cut the Ethernet network without interfere with heartbeat functioning.\\
-For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. Two Virtual IP for access to oar-server and databse. This virtual IP must be free and accessible on the network.\\
+It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbor. With two networks, we can for example avoid split-brain problem. We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easily cut the Ethernet network without interfere with heartbeat functioning.\\
+For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. Two Virtual IP for access to oar-server and database. This virtual IP must be free and accessible on the network.\\
+
+Now, it is heartbeat which launches services like oar, mysql. So you must remove auto launch :
+\begin{lstlisting}
+update-rc.d -f oar-server remove
+update-rc.d -f $BD remove
+\end{lstlisting}
+\$BD correspond to mysql or postgres.\\
+
 DRBD need a low-level storage for write data. It could be an entire disk, a partition, or a virtual partition (in a file). So before configure DRBD, create a free partition.\\
 If you want create a partition in a file (/image.img), you can follow this commands :
 \begin{lstlisting}
@@ -238,7 +245,7 @@ update-rc.d active-loop defaults 60
 
 There are three files to configure heartbeat-2 :
 \subsection{Authentication file : \textit{/etc/ha.d/authkeys}}
-The authkeys configuration file contains information for Heartbeat to use when authenticating cluster members. It cannot be readable or writable by anyone other than root. For sha authentification, write ::
+The authkeys configuration file contains information for Heartbeat to use when authenticating cluster members. It cannot be readable or writable by anyone other than root. For sha authentication, write ::
 \begin{lstlisting}
 auth 1
 1 sha1 MyPassword
@@ -253,7 +260,7 @@ chmod 0600 /etc/ha.d/authkeys
 
 The ha.cf file is one of the more important files. It lists the cluster nodes, the communications topology, and which features of the configuration are enabled. 
 \begin{itemize}
-\item - An example with 2 nodes configuration and two Ethernet interfaces ::
+\item - An example with 2 nodes configuration and two Ethernet interfaces :
 \begin{lstlisting}
 logfile /var/log/ha-log
 debugfile /var/log/ha-debug
@@ -271,7 +278,7 @@ node node2
 crm yes
 \end{lstlisting}
 
-\item - For 4 nodes configurations ::
+\item - For 4 nodes configurations :
 \begin{lstlisting}
 logfile /var/log/ha-log
 debugfile /var/log/ha-debug
@@ -306,20 +313,20 @@ crm yes
 
 
 \subsection{Ressource description file : \textit{/var/lib/heartbeat/crm/cib.xml}}
-This file specifie the services manage by heartbeat. We can find three sections :
+This file specifies the services manage by heartbeat. We can find three sections :
 \begin{itemize}
-\item The first one is the cluster property. It describe general cluster behavoir. We can specify different options :
+\item The first one is the cluster property. It describe general cluster behavior. We can specify different options :
 
 \begin{itemize}
 \item \textbf{symmetric-cluster} : Is resource can run on any node by default ?
 \item \textbf{no-quorum-policy} : Action to do when cluster detect quorum
-\item \textbf{default-resource-stickiness} : How much does ressource prefer to stay where it is
+\item \textbf{default-resource-stickiness} : How much does resource prefer to stay where it is
 \item \textbf{default-resource-failure-stickiness} : How many failure before migration
 \item \textbf{stonith-enabled} : If true, heartbeat kill the node which have resource failure. You must create a STONITH device before active it.
-\item \textbf{tonith-action} : Action to do : reboot or poweroff
+\item \textbf{tonith-action} : Action to do : reboot or power off
 \item \textbf{startup-fencing} : STONITH unseen nodes if true (default)
-\item \textbf{stop-orphan-resources} : If true, heartbeat should deleted resource be stoped
-\item \textbf{stop-orphan-actions} : If true, should deleted action be cancelled
+\item \textbf{stop-orphan-resources} : If true, heartbeat should deleted resource be stopped
+\item \textbf{stop-orphan-actions} : If true, should deleted action be canceled
 \item \textbf{remove-after-stop} : Remove resources from heartbeat after they are stopped, default = false
 \item \textbf{short-resource-names} : true
 \item \textbf{transition-idle-timeout} : Provides the default global timeout for actions. Any action which has a defined timeout automatically
@@ -327,8 +334,8 @@ uses the action-specific timeout
 \item \textbf{default-action-timeout} : How long heartbeat wait for actions to compete
 \item \textbf{is-managed-default} : Heartbeat can start or stop resources as required
 \item \textbf{cluster-delay} : Round trip delay over the network
-\item \textbf{pe-error-series-max} : The number of PE inputs resulting in ERRORs to save. -1 = unlimited
-\item \textbf{pe-warn-series-max} : The number of PE inputs resulting in WARNINGs to save
+\item \textbf{pe-error-series-max} : The number of PE inputs resulting in errors to save. -1 = unlimited
+\item \textbf{pe-warn-series-max} : The number of PE inputs resulting in Warnings to save
 \item \textbf{pe-input-series-max} : The number of other PE inputs to save
 \end{itemize}
 
@@ -340,7 +347,7 @@ uses the action-specific timeout
 <group id="group1">
 \end{lstlisting}
 Now, you can add resources in this group.
-\item \textbf{Resource definition} : There is two different type of ressource : OCF or LSB.\\
+\item \textbf{Resource definition} : There is two different type of resource : OCF or LSB.\\
 OCF example : 
 \begin{lstlisting}[language=xml]
 <primitive class="ocf" id="resource name" provider="heartbeat" type="resource-name">
@@ -350,7 +357,7 @@ LSB example :
 <primitive class="lsb" id="oar-server" provider="heartbeat" type="oar-server">
 \end{lstlisting}
 OCF (Open Cluster Framework) Resource Agents is provided by heartbeat. You can find resource like IPaddr2 (for virtual IP), DRBDdisk for DRBD,etc.
-You can also add ressource with LSB standard (Linux Standards Base). Generaly, it is the main type of resource. The location of the resource we can add is on \textit{/etc/ha.d/resource.d} and \textit{/etc/init.d/}.
+You can also add resource with LSB standard (Linux Standards Base). Generally, it is the main type of resource. The location of the resource we can add is on \textit{/etc/ha.d/resource.d} and \textit{/etc/init.d/}.
 When you defined the resource, the type is the name of the resource. Example, if you want to add mysql (/etc/init.d/mysql), you must write : type="mysql". For "id", you can enter the name of your choice.
 \item \textbf{Resource operations} : Some operations can be added on resources. In our case, you can add resource monitoring. Example :
 \begin{lstlisting}[language=xml]
@@ -372,7 +379,7 @@ When the timeout is attained, heartbeat detect resource crash.
 
 \end{itemize}
 
-\item The last part is resources constaint. You can add contrainst on resource or resource group, like location constraint.
+\item The last part is resources constraint. You can add constraint on resource or resource group, like location constraint.
 In our case, you can specify node priority, for example if you want resources run in priority on master.
 \begin{lstlisting}[language=xml]
 <constraints>
@@ -384,8 +391,12 @@ In our case, you can specify node priority, for example if you want resources ru
 </constraints>
 \end{lstlisting}
 
-\item Example of heartbeat configuration cib.xml file : see appendix \ref{cibexample}
+\item Example of heartbeat configuration cib.xml file : see appendix \ref{cibexample}\\
 
+Tips : The mysql OCF script integrated in heartbeat doesn't work for me, so for avoid to use it, rename the mysql script in mysqlha for example :
+\begin{lstlisting}
+cp /etc/init.d/mysql /etc/init.d/mysqlha
+\end{lstlisting}
 
 \end{itemize}
 
@@ -423,14 +434,14 @@ status)
 
 
 \section{DRBD Configuration}
-In DRBD configuration file, we can specifie a lots of parameters, which describe resources, synchronization type, synchronization rate, etc.
+In DRBD configuration file, we can specifies a lots of parameters, which describe resources, synchronization type, synchronization rate, etc.
 \subsection{synchronization type}
 With have three synchronization type in DRBD :
 \begin{itemize}
 \item \textbf{Protocol A} : write ACK (on master) is send when data was transmitted on master disk and sent to slave.
 \item \textbf{Protocol B} : write ACK (on master) is send when data was transmitted on master disk and received by slave.
 \item \textbf{Protocol C} : write ACK (on master) is send when data was transmitted on master disk and slave disk.\\
-\textbf{Very recommanded !}
+\textbf{Very recommended !}
 \end{itemize}
 
 \subsection{Startup action}
@@ -442,7 +453,7 @@ startup {
 \end{lstlisting}
 
 \subsection{Disk action}
-The directive ``disk'' can add action to do for disk. It's recommanded to add this one :
+The directive ``disk'' can add action to do for disk. It's recommended to add this one :
 \begin{lstlisting}
 disk {
   on-io-error detach;
@@ -459,11 +470,11 @@ syncer {
 }
 \end{lstlisting}
 700000K is the maximum value accepted by DRBD.\\
-1 extend correponds to 4 Mbytes, so with 257, we have 1 GBytes.
+a1-extend corresponds to 4 Mbytes, so with 257, we have 1 GBytes.
 
 \subsection{Host section}
 \label{hostsection} 
-One resrouce must have two host section. A host section describe on each node which DRBD partition and disk is use. You must also specify neigboor ip and port :
+One resource must have two host section. A host section describe on each node which DRBD partition and disk is use. You must also specify neighbor ip and port :
 \begin{lstlisting}
 on node1 
   device DRBDPARTITION;
@@ -481,7 +492,7 @@ on node2
 \end{lstlisting}
 
 \subsection{Handlers}
-DRBD provide an handler which can execute actions on evenements. For the problem of split brain (see \ref{splitbrain}),we can for exmaple write in log :
+DRBD provide an handler which can execute actions on events. For the problem of split brain (see \ref{splitbrain}),we can for example write in log :
 \begin{lstlisting}
 handlers {
   split-brain "echo Splitbraindetected >> /var/log/drbd-log"
@@ -497,7 +508,7 @@ net {
   #rr-conflict violently;
 }
 \end{lstlisting}
-In the net directive, you can specifie different policie when you detect split brain.\\
+In the net directive, you can specifies different policies when you detect split brain.\\
 \textbf{after-sb-0pri} : Split brain has just been detected, but at this time the resource is not in the Primary role on any host.
 \begin{itemize}
 \item disconnect : Do not recover automatically, call split-brain handler script, drop the connection and continue in disconnected mode.
@@ -515,7 +526,7 @@ In the net directive, you can specifie different policie when you detect split b
 \textbf{after-sb-2pri} : Split brain has just been detected, and at this time the resource is in the Primary role on both hosts. This option accepts the same keywords as after-sb-1pri except discard-secondary and consensus.
 
 \subsection{Launch DRBD}
-Before launch DRBD between the two host, you can prepare the device. The fisrt things to do, is to load DRBD module :
+Before launch DRBD between the two host, you can prepare the device. The first things to do, is to load DRBD module :
 \begin{lstlisting}
  modprobe drbd
 \end{lstlisting}
@@ -532,7 +543,7 @@ For mount DRBD device, you must create a folder, /mnt/drbdata for example :
 \begin{lstlisting}
 mkdir /mnt/drbddata
 \end{lstlisting}
-DRBD is pratically operational. You have to difined a master, node1 in our example, so enter this command onmy on this node :
+DRBD is practically operational. You have to defined a master, node1 in our example, so enter this command only on this node :
 \begin{lstlisting}
 drbdadm -- --overwrite-data-of-peer primary all
 
@@ -580,7 +591,7 @@ chown -R postgres:postgres /mnt/drbddata/main
 \subsection{Server configuration}
 OAR server must be configured to work fine with High Availability. The first step is to configure database hostname and server hostname on oar-server.
 \begin{itemize}
- \item In 2 nodes configurations, one virtual IP is necessary. With this IP, client can acess to oar-server and databse because it is on the same server.
+ \item In 2 nodes configurations, one virtual IP is necessary. With this IP, client can access to oar-server and database because it is on the same server.
 So in \textit{/etc/oar/oar.conf}, modify :
 \begin{lstlisting}
 SERVER_HOSTNAME=VIRTUALIP
@@ -606,7 +617,7 @@ DETACH_JOB_FROM_SERVER="1"
 \textbf{insert schema !!!}
 
 \subsection{Frontend configuration}
-It is approximatly the same configuration on frontend :\\
+It is approximately the same configuration on frontend :\\
 \begin{itemize}
  \item In 2 nodes configurations :
 \begin{lstlisting}
@@ -621,7 +632,7 @@ DB_HOSTNAME=VIRTUALIP_2
 \end{itemize}
 
 \subsection{Node configuration}
-If you use Start/Stop of nodes using ssh keys (see http://wiki-oar.imag.fr/index.php/Configuration\_tips section 1.5) adn you want to do oarnodesetting form oar-server, 
+If you use Start/Stop of nodes using ssh keys (see http://wiki-oar.imag.fr/index.php/Configuration\_tips section 1.5) and you want to do oarnodesetting form oar-server, 
 you have just to add the virtual IP from OAR-server in \textit{/etc/default/oar-nodes} file.
 \begin{lstlisting}
 OARREMOTE=VIRTUALIP
@@ -671,19 +682,19 @@ When you are connected, you can see your configured nodes, and resources if you 
 For add resource, right click on \textbf{Resources}, and choose \textbf{Add New Item}, \textbf{Native}. Now select the resource, add parameter if you want, and click \textbf{Add}.\\
 You can add group with the same operations, but select \textbf{Group} in place of \textbf{Native}. Select \textbf{Ordered} for launched resources with order.\\
 
-It is also possbile to add location contrainst with heartbeat-gui. Select \textbf{Location}, and the group or resource for apply this constraint.\\
+It is also possible to add location constraint with heartbeat-gui. Select \textbf{Location}, and the group or resource for apply this constraint.\\
 
 For launched resources, click right on the resource, and select \textbf{start}.\\
 
-If a resource failed to start for example, you must cleanup the resource. You can do this by righ click on the resource, and select \textbf{Cleanup resource}.\\
+If a resource failed to start for example, you must cleanup the resource. You can do this by right click on the resource, and select \textbf{Cleanup resource}.\\
 
-For test your configurations, you can standby one node, and see if resource migrate. For Standy a node, righ click on it and select \textbf{Standby}.
+For test your configurations, you can standby one node, and see if resource migrate. For Standby a node, right click on it and select \textbf{Standby}.
 
 The figure \ref{hb-gui-2nodes} is an example with 2 nodes configurations and mysql.
 
 \subsubsection{Heartbeat command-line}
 \label{hb-command}
-Different commands are avaible : 
+Different commands are available : 
 \begin{enumerate}
  \item crmadmin - provide node related details 
  \item cibadmin - allows the current configuration to be queried and modified \\
@@ -691,7 +702,7 @@ Different commands are avaible :
     \begin{lstlisting}
     cibadmin -Q > cibbackup.xml 
     \end{lstlisting}
-  Apport change on cibbackup.xml and apply it with :
+  Apply change on cibbackup.xml and apply it with :
     \begin{lstlisting}
     cibadmin -R -x cibbackup.xml 
     \end{lstlisting}
@@ -750,7 +761,7 @@ Different commands are avaible :
 
 \subsection{Heartbeat monitoring}
 \label{hb-monitor}
-Heartbeat-2 provide different solutions for monitor resources and konw nodes status.
+Heartbeat-2 provide different solutions for monitor resources and know nodes status.
 \begin{itemize}
  \item Command line solution : On any heartbeat nodes, you can enter :
 \begin{lstlisting}
@@ -781,20 +792,20 @@ For know DRBD status, you can type :
 \begin{lstlisting}
 cat /proc/drbd
 \end{lstlisting}
-You can kown who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain. If you have a running configuration, you may have :
+You can know who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain. If you have a running configuration, you may have :
 \begin{figure}[!h]
 \begin{center}
 \includegraphics[scale=0.5]{schema/drbd-s-p.png}
 \end{center}
-\caption{DRBD seondary primary} 
+\caption{DRBD secondary primary} 
 \label{hb-gui-2nodes} 
 \end{figure}
 
 \chapter{known problems}
 \section{Quorum}
-The quorum calculation process is required to select no more than one primary subcluster at a time. You can enable or disable this option in heartbeat, it depand to the configuration.\\
+The quorum calculation process is required to select no more than one primary subcluster at a time. You can enable or disable this option in heartbeat, it depend to the configuration.\\
 A common method for defining quorum is to say that a subcluster of size n in a cluster of m total nodes has quorum if it has a plurality of nodes in its partition. That is, it has n members where n > INT(m/2).\\
-But this solution in heartbeat create problems in 4 nodes configurations. Indeed, when 2 nodes are down, the two other not can't launch resources because they hav'ent quorum. In this case, you
+But this solution in heartbeat create problems in 4 nodes configurations. Indeed, when 2 nodes are down, the two other not can't launch resources because they haven't quorum. In this case, you
 can disable quorum in heartbeat, in the cib.xml file :
 \begin{lstlisting}[language=xml]
 <nvpair id="cib-bootstrap-options-no-quorum-policy" name="no-quorum-policy" value="ignore"/>
@@ -803,101 +814,185 @@ can disable quorum in heartbeat, in the cib.xml file :
 
 \section{Split brain}
 \label{splitbrain} 
-When a cluster thinks the other is unavailable, and vice versa, heartbeat launchs resources on two nodes. In our configurations, DRBD becomes primary on two nodes, and has two version of data. This problem may appear when the commmunication between the two hearrtbeat server is loosed.
+When a cluster thinks the other is unavailable, and vice versa, heartbeat launches resources on two nodes. In our configurations, DRBD becomes primary on two nodes, and has two version of data. This problem may appear when the communication between the two heartbeat server is loosed.
 For limit this problem, you can connect two links between each heartbeat server.
 
 
 
 \section{File System Check}
-A fail over must be fastest as possible. So it could be very embarrassing if we have a file system check during the fail-over. You can desactivate it with :
+A fail over must be fastest as possible. So it could be very embarrassing if we have a file system check during the fail-over. You can deactivate it with :
 \begin{lstlisting}
 tune2fs -c 0 DISKPARTITION
 \end{lstlisting}
 
+\chapter{High Availability auto installation}
+
+
 \chapter{Test}
 
-\section{2 nodes - Postgres}
+\section{DRBD performance test}
+
+For know DRBD performance, I have realized different benchmark with mysql for test DRBD performance. This test uses DRBD in synchronous mode (protocol C in drbd.conf).\\
+\textbf{Test environments :}
+\begin{enumerate}
+ \item Master DRBD was genepi-31.grenoble.grid5000.fr. The test without DRBD was also on this node.
+ \item The secondary DRBD server was genepi-32.grenoble.grid5000.fr 
+ \item Filesystem with and without DRBD was ext2
+ \item The synchronization rate (in drbd.conf) between this two node was 740Mo/s (Max)
+ \item Network bandwidth : 940 Mbytes/s between genepi-31 and genepi-32
+\end{enumerate}
+The tests is done with mysql-bench, with 16 threads.
+
+Three different scenario was tested :
+\begin{enumerate}
+ \item without DRBD, mysql data mounted on the local system filesystem 
+ \item with DRBD, mysql data mounted on DRBD filesystem 
+ \item with DRBD and saturated network 
+\end{enumerate}
+
+\bigskip 
+
+\underline{\textbf{Measured value :}}\\
+
+\begin{tabular}{|c|c|c|c|}
+\hline
+Number of queries&Time without DRBD(s)&Time With DRBD(s)&With DRBD-saturated network (s)\\
+\hline
+5000 & 3.67 & 3.66 & 8.75 (+138.69\%)\\
+\hline
+10000 & 7.51 & 7.8 (+3.94\%)& 18.95 (+152.38\%)\\
+\hline
+20000 & 14.95 & 16.23 (+8.55\%)& 41.37 (+176.67\%)\\
+\hline
+40000 & 31.43 & 32.82 (+4.4\%) & 82.86 (+163.61\%)\\
+\hline
+80000 & 61.62 & 66.77 (+8.35\%)& 169.64 (+175.28\%)\\
+\hline
+160000 & 124.32 & 134.04 (+7.81\%)& 342.23 (+175.28\%)\\
+\hline
+320000 & 247.99 & 264.56 (+6.68\%)& 682.21 (+175.1\%)\\
+\hline
+640000 & 496.6 & 536.77 (+8.09\%)& 1375.12 (+176.91\%)\\
+\hline
+\end{tabular}
+
+
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[scale=0.5]{schema/drbd-test.png}
+\end{center}
+\caption{DRBD benchmark} 
+\label{hb-gui-2nodes} 
+\end{figure}
+
+You can see that DRBD offer good performance in general. It can be use with OAR without hesitation.
+
+
+
+\section{Global system test}
+\subsection{2 nodes - Postgres}
 \begin{itemize}
- \item Migrate resources by set nodes in standby mode : Test ok, heartbeat launchs resources on the backup, and when the primary come back, resources are migrate on the primary.
- \item Power off/power on the master server (with IPMI, kareboot) : Test OK, ressources migrate after a time, about 60s, which corresposd at cluster delay. When the master node is anew alive, ressources migrate on the master node.
- \item Power off/power on the backup server (with IPMI, kareboot), without ressources : Test OK, the server is down. Heartbeat let its ressources on the master.
+ \item Migrate resources by set nodes in standby mode : Test OK, heartbeat launches resources on the backup, and when the primary come back, resources are migrate on the primary.
+ \item Power off/power on the master server (with IPMI, kareboot) : Test OK, resources migrate after a time, about 60s, which correspond at cluster delay. When the master node is anew alive, resources migrate on the master node.
+ \item Power off/power on the backup server (with IPMI, kareboot), without resources : Test OK, the server is down. Heartbeat let its resources on the master.
  \item \textit{Killall -9 Almighty} on primary : Test OK, the master relaunch oar-server.
  \item \textit{killall -9 postgres} : Test OK, the master stop oar-server, launch postgres and after oar-server.
- \item \textit{Killall -9 Almighty} and comment the line in /etc/init.d/oar-server for start the daemon : Test ok, heartbeat don't arrive to restart oar-server, so it migrate ressources on the backup.
+ \item \textit{Killall -9 Almighty} and comment the line in /etc/init.d/oar-server for start the daemon : Test OK, heartbeat don't arrive to restart oar-server, so it migrate resources on the backup.
 But after uncomment the line on master, you must cleanup resource otherwise heartbeat don't want restart resource. See \ref{hb-command}.
- \item Add rule in iptable for drop all communications : heartbeat and DRBD (iptables -A OUTPUT -p tcp --dport 7788 -j DROP, ...). Heartbeat launch ressources on the two nodes. DRBD are primary on the two nodes and work with standalone mode. When the network come bask, heartbeat launch ressources on the master, but DRBD stay in standalone mode. It is the problem of slipt brain. It can be solve manualy (See \ref{drbd-admn}).
-Admin can enter his mail in the drbd split brain handler for know when drbd is in standalone mode. Test Ok, but heartbeat need admin intervention.
- \item Heartbeat, in my configuration, have two links. The test now is two disconnect one of the two links : Test ok, heartbeat continue to run. In the log (\textit{/var/log/ha-log}), wa can see Link node eth1 dead.
+ \item Add rule in iptable for drop all communications : heartbeat and DRBD (iptables -A OUTPUT -p tcp --dport 7788 -j DROP, ...). Heartbeat launch resources on the two nodes. DRBD are primary on the two nodes and work with standalone mode. When the network come bask, heartbeat launch resources on the master, but DRBD stay in standalone mode. It is the problem of split brain. It can be solve manually (See \ref{drbd-admn}).
+Admin can enter his mail in the drbd split brain handler for know when drbd is in standalone mode. Test OK, but heartbeat need admin intervention.
+ \item Heartbeat, in my configuration, have two links. The test now is two disconnect one of the two links : Test OK, heartbeat continue to run. In the log (\textit{/var/log/ha-log}), you can see Link node eth1 dead.
 \end{itemize}
 
 \textbf{Software test} : 2 servers (with postgres), 1 frontend, 1 node (resource). All commands are typed from the frontend.
 \begin{itemize}
  \item execute \textit{oarnodes}, standby the master, and retry oarnodes : Test OK
- \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITHOUT detach : Test failed, the job is not ended, and stay alive.
- \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITH detach : Test OK ! The job continue to run, and when the user quit, the new oar-server arrives to kill the job, properly !
-If the job is ended before the backup is up, the job is not deleted imediately, but after a few time. In the job events, we  can see : SWITCH\_INTO\_TERMINATE\_STATE:[bipbip 4] Ask to change the job state. After that, the job is killed.
+ \item Reserve resource (oarsub -I), and after first node connection, standby the server, and disconnect, WITHOUT detach : Test failed, the job is not ended, and stay alive.
+ \item Reserve resource (oarsub -I), and after first node connection, standby the server, and disconnect, WITH detach : Test OK ! The job continue to run, and when the user quit, the new oar-server arrives to kill the job, properly !
+If the job is ended before the backup is up, the job is not deleted immediately, but after a few time. In the job events, we  can see : SWITCH\_INTO\_TERMINATE\_STATE:[bipbip 4] Ask to change the job state. After that, the job is killed.
 In oarexec code, function quit\_oarexec : loop until the daemon has inform server.
- \item Reserve ressource (oarsub -I), reserve a new ressource again. The second user wait because there is just one ressource. Standby the server. The first job continue to run, the second always waiting. When the firts job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server.
- \item Execute oarstat, stanby the master node, and execute oarstat : Test OK
+ \item Reserve resource (oarsub -I), reserve a new resource again. The second user wait because there is just one resource. Standby the server. The first job continue to run, the second always waiting. When the first job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server.
+ \item Execute oarstat, standby the master node, and execute oarstat : Test OK
 \end{itemize}
 
 
-\section{2 nodes - Mysql}
+\subsection{2 nodes - Mysql}
 
 \begin{itemize}
- \item Migrate resources by set nodes in standby mode : Test ok, heartbeat launchs resources on the backup, and when the primary come back, resources are migrate on the primary.
+ \item Migrate resources by set nodes in standby mode : Test OK, heartbeat launches resources on the backup, and when the primary come back, resources are migrate on the primary.
  \item Power off/power on the master server (with IPMI, kareboot) : Test OK.
- \item Power off/power on the backup server (with IPMI, kareboot), without ressources : Test OK.
+ \item Power off/power on the backup server (with IPMI, kareboot), without resources : Test OK.
  \item \textit{Killall -9 Almighty} on primary : Test OK.
  \item \textit{/etc/init.d/mysql stop} : Test OK.
- \item \textit{Killall -9 Almighty} and comment the line in /etc/init.d/oar-server for start the daemon : Test ok, but admin have to cleanup ressource before it can't be migrate on the failed node. See \ref{hb-command}.
- \item Add rule in iptable for drop all communications : heartbeat and DRBD (iptables -A OUTPUT -p tcp --dport 7788 -j DROP, ...). Heartbeat launch ressources on the two nodes. DRBD are primary on the two nodes and work with standalone mode. When the network come bask, heartbeat launch ressources on the master, but DRBD stay in standalone mode. It is the problem of slipt brain. It can be solve manualy (See \ref{drbd-admn}).
-Admin can enter his mail in the drbd split brain handler for know when drbd is in standalone mode. Test Ok, but heartbeat need admin intervention.
- \item Heartbeat, in my configuration, have two links. The test now is two disconnect one of the two links : Test ok, heartbeat continue to run. In the log (\textit{/var/log/ha-log}), wa can see Link node eth1 dead.
+ \item \textit{Killall -9 Almighty} and comment the line in /etc/init.d/oar-server for start the daemon : Test OK, but admin have to cleanup resource before it can't be migrate on the failed node. See \ref{hb-command}.
+ \item Add rule in iptable for drop all communications : heartbeat and DRBD (iptables -A OUTPUT -p tcp --dport 7788 -j DROP, ...). Heartbeat launch resources on the two nodes. DRBD are primary on the two nodes and work with standalone mode. When the network come bask, heartbeat launch resources on the master, but DRBD stay in standalone mode. It is the problem of split brain. It can be solve manually (See \ref{drbd-admn}).
+Admin can enter his mail in the drbd split brain handler for know when drbd is in standalone mode. Test OK, but heartbeat need admin intervention.
+ \item Heartbeat, in my configuration, have two links. The test now is two disconnect one of the two links : Test OK, heartbeat continue to run. In the log (\textit{/var/log/ha-log}), you can see Link node eth1 dead.
 \end{itemize}
 
 \textbf{Software test} : 2 servers (with mysql), 1 frontend, 1 node (resource). All commands are typed from the frontend.
 \begin{itemize}
  \item execute \textit{oarnodes}, standby the master, and retry oarnodes : Test OK, oarnodes say : try to connect... until the backup is alive.
- \item Reserve ressource (oarsub -I), and after first node connection, standyby the server, and disconnect, WITHOUT detach : Test failed, the job is still running...
- \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITH detach : Test OK ! The job continue to run, and when the user quit, the new oar-server arrives to kill the job, properly !
-If the job is ended before the backup is up, the job is not deleted imediately, but after a few time. In the job events, we  can see : SWITCH\_INTO\_TERMINATE\_STATE:[bipbip 4] Ask to change the job state. After that, the job is killed.
+ \item Reserve resource (oarsub -I), and after first node connection, standby the server, and disconnect, WITHOUT detach : Test failed, the job is still running...
+ \item Reserve resource (oarsub -I), and after first node connection, standby the server, and disconnect, WITH detach : Test OK ! The job continue to run, and when the user quit, the new oar-server arrives to kill the job, properly !
+If the job is ended before the backup is up, the job is not deleted immediately, but after a few time. In the job events, we  can see : SWITCH\_INTO\_TERMINATE\_STATE:[bipbip 4] Ask to change the job state. After that, the job is killed.
 In oarexec code, function quit\_oarexec : loop until the daemon has inform server.
- \item Reserve ressource (oarsub -I), reserve a new ressource again. The second user wait because there is just one ressource. Standby the server. The first job continue to run, the second always waiting. When the firts job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server.
- \item Execute oarstat, stanby the master node, and execute oarstat : Test OK, the commands work, it print the same results. If we launch the command during the fail-over, the command inform users that it can't connect to the databse, wait few seconds...
+ \item Reserve resource (oarsub -I), reserve a new resource again. The second user wait because there is just one resource. Standby the server. The first job continue to run, the second always waiting. When the first job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server.
+ \item Execute oarstat, standby the master node, and execute oarstat : Test OK, the commands work, it print the same results. If we launch the command during the fail-over, the command inform users that it can't connect to the database, wait few seconds...
 \end{itemize}
 
 
-\section{4 nodes - Postgres}
+\subsection{4 nodes - Postgres}
 \begin{itemize}
  \item Migration test (master oar-server) : Test OK
  \item Migration test (master Postgres) : Test OK
  \item Power off/power on the master postgres server (IPMI kareboot) : Test OK, migration after a timer
  \item Power off/power on the master oar server (IPMI kareboot) : Test OK
- \item Power off/power on the backup oar server (IPMI kareboot), with ressources : Test OK
- \item Power off/power on the backup postgres server (IPMI kareboot), without ressources : Test OK
+ \item Power off/power on the backup oar server (IPMI kareboot), with resources : Test OK
+ \item Power off/power on the backup postgres server (IPMI kareboot), without resources : Test OK
  \item \textit{killall -9 Almighty} on oar-server : Test OK
  \item \textit{killall -9 postgres} : Test OK
 \end{itemize}
 
 \textbf{Software test} : 4 servers (with postgres), 1 frontend, 1 node (resource). All commands are typed from the frontend.
 \begin{itemize}
- \item execute oarnodes, standby the oar master, and retry oarnodes : Test Ok
- \item execute oarnodes, standby the postgresql master, and retry oarnodes : Test Ok
- \item execute oarstat, standby the oar master, and retry oarnodes : Test Ok
- \item execute oarstat, standby the postgres master, and retry oarnodes : Test Ok
- \item Reserve ressource (oarsub -I), and after first node connection, standby the server, and disconnect, WITHOUT detach : 
- \item Reserve ressource (oarsub -I), and after first node connection, standby the oar-server, and disconnect, WITH detach : Test OK, the job is deleted when the user exit.
- \item Reserve ressource (oarsub -I), and after first node connection, standby the postgres server, and disconnect, WITH detach : Test OK, the job is deleted when the user exit.
- \item Reserve ressource (oarsub -I), reserve a new ressource again. The second user wait because there is just one ressource. Standby the oar-server. The first job continue to run, the second always waiting. When the firts job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server. Test OK.
+ \item execute oarnodes, standby the oar master, and retry oarnodes : Test OK
+ \item execute oarnodes, standby the postgresql master, and retry oarnodes : Test OK
+ \item execute oarstat, standby the oar master, and retry oarnodes : Test OK
+ \item execute oarstat, standby the postgres master, and retry oarnodes : Test OK
+ \item Reserve resource (oarsub -I), and after first node connection, standby the oar-server, and disconnect, WITHOUT detach : Test failed. The job is not ended.
+ \item Reserve resource (oarsub -I), and after first node connection, standby the oar-server, and disconnect, WITH detach : Test OK, the job is deleted when the user exit.
+ \item Reserve resource (oarsub -I), and after first node connection, standby the postgres server, and disconnect, WITH detach : Test OK, the job is deleted when the user exit.
+ \item Reserve resource (oarsub -I), reserve a new resource again. The second user wait because there is just one resource. Standby the oar-server. The first job continue to run, the second always waiting. When the first job is ended, the second job begin ! It's very interesting, the job start it's scheduling on the master oar server, and is authorized  by the backup oar server. Test OK.
 \end{itemize}
 
 
-\section{4 nodes - Mysql}
+\subsection{4 nodes - Mysql}
 
 \begin{itemize}
- \item 
+ \item Migration test (master oar-server) : Test OK
+ \item Migration test (master Mysql) : Test OK
+ \item Power off/power on the master oar server (IPMI kareboot) : Test OK. After node reboot, resources returns on the master.
+ \item Power off/power on the master mysql server (IPMI kareboot) : Test OK.
+ \item Power off/power on both master mysql and oar server (IPMI kareboot) : Test OK. Don't forget to disable quorum policy !
+ \item Power off/power on both master mysql and oar server + backup DB (IPMI kareboot) : Test OK, oar services continue to run to backup. the database is launched when the first DB node come back.
+ \item Power off/power on backup mysql (IPMI kareboot) : Test OK. After node reboot, standby the primary to check if everything is OK.
+ \item Power off/power on 4 nodes : Test OK.
+ \item \textit{killall -9 Almighty} on oar-server : Test OK, resources is relaunched on the same server.
+ \item \textit{killall -9 mysqld} : Test OK
+ \item \textit{killall -9 mysqld} + unmount mysql partition (/mnt/drbddata) : Test OK, heartbeat detect filesystem error, relaunch it, and restart mysql.
+ \item \textit{drbdadmn disconnect all} : Test failed, heartbeat don't detect problems.
 \end{itemize}
+
+\textbf{Software test} : 4 servers (with mysql), 1 frontend, 1 node (resource). All commands are typed from the frontend.\\
+Same results as Postgres with 4 nodes configurations.
+
+
+
+
+
 
 
 
