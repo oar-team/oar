@@ -1,16 +1,53 @@
-Installing OAR in six steps
-===========================
+Installing OAR (almost) without pain
+====================================
 
-Warning, the goal of this document is to explain how to install a typical OAR
-system. To fine down the process, we will only treat the case where we install
-all the OAR modules on an unique local machine. 
-Of course an install of OAR in a real cluster environment is a bit more difficult
-than that, but the principle is the same.
-If you want more information about installing OAR in a cluster environment you
-can refer to the INSTALL document.
+There are currently 3 methods to install OAR.
+
+* with debian packages
+* with rpm packages
+* with the sources
+
+The first thing you have to know is about the OAR architecture.
+
+A common OAR installation is composed of: 
+
+* the OAR server
+* the DataBase server
+* the job submission frontale
+* several machines that are computing nodes
+
+
+Installation from debian packages
+---------------------------------
+
+If you want to install oar from the debian packages, you will have to install the 
+oar-server package on the OAR server, the oar-user package on the submission frontale
+and the oar-node package on the computing nodes.
+
+* add to your apt.conf file the line given in http://oar.imag.fr/downloads.html depending on which release you want to install.
+* install the oar-* packages on the different machines like explained above.
+* install postgresql or mysql-server depending which database you want to use.
+* add::
+  
+    environment="OAR_KEY=1"
+ 
+ at the beginning of the public key in the 
+ **~oar/.ssh/authorized_keys** file.
+
+
+
+Installation from rpm packages
+------------------------------
+
+To complete...
+
+
+
+Installation from the sources
+-----------------------------
 
 Prerequisites: Install the libs
--------------------------------
+_______________________________
 
 First of all you have to install the following packages:
 
@@ -26,14 +63,14 @@ First of all you have to install the following packages:
 You also have to install a >= 2.6 kernel in order to use cpuset feature.
 
 1°) Pave the way for install
-----------------------------
+____________________________
 
 * add a user named "oar" in the group "oar"
 * create a set of ssh keys for the user "oar" with ssh-keygen 
   (for instance 'id_dsa.pub' and 'id_dsa')
 * copy these keys in the ".ssh" folder of the user "oar"
 * append the contents of 'id_dsa.pub' to the file **~oar/.ssh/authorized_keys**
-* in **~/.ssh/config** add the lines::
+* in **~/.ssh/config** (create the file if it doesn't exists) add the lines::
 
     Host *
         ForwardX11 no
@@ -52,7 +89,7 @@ You also have to install a >= 2.6 kernel in order to use cpuset feature.
   
     environment="OAR_KEY=1"
  
- at the beginning of the 'id_dsa.pub' public key in the 
+ at the beginning of the public key in the 
  **~oar/.ssh/authorized_keys** file.
   
 * add in your **~oar/.bashrc** file::
@@ -60,33 +97,37 @@ You also have to install a >= 2.6 kernel in order to use cpuset feature.
     export PATH=/usr/local/oar/oardodo:$PATH
     
 2°) Install the OAR modules
----------------------------
+___________________________
 
 Just go into the OAR source directory and as root type::
 
   make server-install user-install node-install
   
-3°) Initiate the database
--------------------------
+Initiate the database
+---------------------
 
-A script is available to do this, just launch as root: 
-**/usr/local/sbin/oar_mysql_db_init**
+As root run oar_mysql_db_init or oar_psql_db_init depending your DataBase type.
 
-4°) Configuration file
-----------------------
 
-The last thing you have to do is to configure your oar server. Its config file
-is **/etc/oar/oar.conf**. Just edit it and take a look at the different sections
-and customize it if you want to.
+Configuration file
+------------------
 
-5°) Cpuset
-----------
+To configure your oar server, edit its config file
+**/etc/oar/oar.conf**. Take a look at the different sections and customize it if you want to.
+
+
+Cpusets
+-------
 
 In order to use this feature, you have to uncomment the line with the 
 **JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD** field in your oar.conf file.
+Then, for each computing resource in your database, set the cpuset field to the 
+cpu id you want your resource to be restricted on.
 
-6°) Adding resources to the system
-----------------------------------
+
+
+Adding resources to the system
+------------------------------
 
 If you want to automatically detect and insert corresponding resources into OAR then you just need to launch::
 
@@ -99,6 +140,12 @@ You can install it with ::
   make tools-install
 
 or by installing the oar-admin package.
+Its dependencies are: 
+
+* ruby1.8 (or greater)
+* libdbi-ruby 
+* libdbd-mysql-ruby or libdbd-pg-ruby
+* libyaml-ruby
 
 Then, you can launch as root, a command like the following::
 
@@ -108,5 +155,8 @@ This will create a cluster of 12 nodes called **mycluster01** to **mycluster12**
 
 A script is also available to help detecting resources on a local machine:
 **/usr/local/oar/detect_resources**. You can use it to have an idea of how
-works oarnodesetting. You may also type **oarnodesetting --help** as root for more options.
+works oarnodesetting. 
 
+You may also type **oarnodesetting --help** as root for more options.
+
+At the end, if you have installed OAR by the sources, you will have to launch as oar the Almighty daemon (the oar server).
