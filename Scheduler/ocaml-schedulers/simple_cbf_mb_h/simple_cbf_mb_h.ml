@@ -252,7 +252,7 @@ let slot_during_job slot job = {
 (* generate C slot *) (* slot after job's end *)
 
 let slot_after_job_end slot job = {
-	time_s = add job.time_b job.walltime;
+	time_s = add job.time_b job.walltime ;
 	time_e = slot.time_e  ;
 	(* nb_free_res = slot.nb_free_res; TOREMOVE *) 
 
