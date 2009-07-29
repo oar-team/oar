@@ -79,12 +79,12 @@ With this High Availability solution, OAR is protected by computer crash, servic
 
 
 
-This documentation explain how to configure a high availability cluster with OAR. We will see to different configurations :
+This documentation explain how to configure a high availability cluster with OAR. We will see two different configurations :
 \begin{description}
-\item[]- OAR-server daemon and database on the same server. So we have two servers, the master OAR-server and the backup. See Figure \ref{2nodesschema}.
+\item[]- OAR-server daemon and database on the same server. So you have two servers, the master (oar-server + database) and the backup. See Figure \ref{2nodesschema}.
 
 
-\item[]- OAR-server daemon and database on different server. We have four servers, the master OAR-server, the master database, the backup OAR-server, and the backup database.
+\item[]- OAR-server daemon and database on different server. You have four servers, the master OAR-server, the master database, the backup OAR-server, and the backup database.
 See Figure \ref{4nodesschema}.
 
 \end{description}
@@ -94,7 +94,7 @@ See Figure \ref{4nodesschema}.
 This documentation don't describe how to configure and install OAR. So before install OAR High Availability solution, 
 install OAR with the database of your choice (mysql or postgresql). OAR-server and database must be also installed on the backup(s) server(s), 
 with the same daemon configuration (oar.conf, my.conf or pg.conf). 
-Nevertheless, it's not necessary that we configure OAR (oarnodesetting, etc.) because it's data incorporated in database and DRBD will share it. So we will have the same configurations in both nodes.
+Nevertheless, it's not necessary that we configure OAR (oarnodesetting, etc.) because its data are incorporated in database and DRBD will share it. So we will have the same configurations in both nodes.
 Before continue, please stop oar-server and database daemon.
 
 
@@ -102,8 +102,7 @@ Before continue, please stop oar-server and database daemon.
 \section{General functioning}
 For provide OAR High Availability, we use different produces :
 \begin{description}
-\item[]- The first one is \textbf{Heartbeat} version 2. Heartbeat is a daemon th
-at provides fault tolerance. It manage and monitor services, like Virtual IP, filesystem, etc. When Heartbeat detect problems in resource, it can migrate this one on other server. It can manage groups of resources and define rules and priority on each server.
+\item[]- The first one is \textbf{Heartbeat} version 2. Heartbeat is a daemon that provides fault tolerance. It manage and monitor services, like Virtual IP, filesystem, etc. When Heartbeat detect problems in resource, it can migrate this one on other server. It can manage groups of resources and define rules and priority on each server.
 \item[]- \textbf{DRBD}. DRBD refers to block devices designed as a building block to form high availability clusters. This is done by mirroring a whole block device via an assigned network. DRBD can be understood as network based raid-1. In OAR high availability solution, we will use DRBD for duplicate database.\\
 See Figure \ref{drbd}.
 \item[]- \textbf{VirtualIP} : This package is installed with heartbeat, and managed by it. It provide a virtual IP address. Thereby, client permanently know the elected server.
@@ -196,7 +195,7 @@ For illustrate example, the nodes names are :
 
 
 \section{System configuration}
-It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbor. With two networks, we can for example avoid split-brain problem. We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easily cut the Ethernet network without interfere with heartbeat functioning.\\
+It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbor. With two networks, we can for example avoid split-brain problem (See \ref{splitbrain}). We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easily cut the Ethernet network without interfere with heartbeat functioning.\\
 For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. Two Virtual IP for access to oar-server and database. This virtual IP must be free and accessible on the network.\\
 
 Now, it is heartbeat which launches services like oar, mysql. So you must remove auto launch :
@@ -245,7 +244,7 @@ update-rc.d active-loop defaults 60
 
 There are three files to configure heartbeat-2 :
 \subsection{Authentication file : \textit{/etc/ha.d/authkeys}}
-The authkeys configuration file contains information for Heartbeat to use when authenticating cluster members. It cannot be readable or writable by anyone other than root. For sha authentication, write ::
+The authkeys configuration file contains informations for Heartbeat to use when authenticating cluster members. It cannot be readable or writable by anyone other than root. For sha authentication, write :
 \begin{lstlisting}
 auth 1
 1 sha1 MyPassword
@@ -260,7 +259,7 @@ chmod 0600 /etc/ha.d/authkeys
 
 The ha.cf file is one of the more important files. It lists the cluster nodes, the communications topology, and which features of the configuration are enabled. 
 \begin{itemize}
-\item - An example with 2 nodes configuration and two Ethernet interfaces :
+\item An example with 2 nodes configuration and two Ethernet interfaces :
 \begin{lstlisting}
 logfile /var/log/ha-log
 debugfile /var/log/ha-debug
@@ -278,7 +277,7 @@ node node2
 crm yes
 \end{lstlisting}
 
-\item - For 4 nodes configurations :
+\item For 4 nodes configurations :
 \begin{lstlisting}
 logfile /var/log/ha-log
 debugfile /var/log/ha-debug
@@ -309,7 +308,7 @@ crm yes
 \textbf{initdead} : set the time that it takes to declare a cluster node dead when Heartbeat is first started\\
 \textbf{ucast}: [interface] [ip node1] network for send/receive heartbeat. You can also use multicast(mcast) or broadcast(bcast) address\\
 \textbf{node} : the node names\\
-\textbf{crm} : yes for use heartbeat version 2\\
+\textbf{crm} : yes for use heartbeat version 2 (very recommended)\\
 
 
 \subsection{Ressource description file : \textit{/var/lib/heartbeat/crm/cib.xml}}
@@ -323,7 +322,7 @@ This file specifies the services manage by heartbeat. We can find three sections
 \item \textbf{default-resource-stickiness} : How much does resource prefer to stay where it is
 \item \textbf{default-resource-failure-stickiness} : How many failure before migration
 \item \textbf{stonith-enabled} : If true, heartbeat kill the node which have resource failure. You must create a STONITH device before active it.
-\item \textbf{tonith-action} : Action to do : reboot or power off
+\item \textbf{stonith-action} : Action to do : reboot or power off
 \item \textbf{startup-fencing} : STONITH unseen nodes if true (default)
 \item \textbf{stop-orphan-resources} : If true, heartbeat should deleted resource be stopped
 \item \textbf{stop-orphan-actions} : If true, should deleted action be canceled
@@ -331,7 +330,7 @@ This file specifies the services manage by heartbeat. We can find three sections
 \item \textbf{short-resource-names} : true
 \item \textbf{transition-idle-timeout} : Provides the default global timeout for actions. Any action which has a defined timeout automatically
 uses the action-specific timeout
-\item \textbf{default-action-timeout} : How long heartbeat wait for actions to compete
+\item \textbf{default-action-timeout} : How long heartbeat wait for actions to complete
 \item \textbf{is-managed-default} : Heartbeat can start or stop resources as required
 \item \textbf{cluster-delay} : Round trip delay over the network
 \item \textbf{pe-error-series-max} : The number of PE inputs resulting in errors to save. -1 = unlimited
@@ -354,10 +353,10 @@ OCF example :
 \end{lstlisting}
 LSB example : 
 \begin{lstlisting}[language=xml]
-<primitive class="lsb" id="oar-server" provider="heartbeat" type="oar-server">
+<primitive class="lsb" id="resource name" provider="heartbeat" type="resource-name">
 \end{lstlisting}
 OCF (Open Cluster Framework) Resource Agents is provided by heartbeat. You can find resource like IPaddr2 (for virtual IP), DRBDdisk for DRBD,etc.
-You can also add resource with LSB standard (Linux Standards Base). Generally, it is the main type of resource. The location of the resource we can add is on \textit{/etc/ha.d/resource.d} and \textit{/etc/init.d/}.
+You can also add resource with LSB standard (Linux Standards Base). Generally, it is the main type of resource. The location of the resource you can add is on \textit{/etc/ha.d/resource.d} and \textit{/etc/init.d/}.
 When you defined the resource, the type is the name of the resource. Example, if you want to add mysql (/etc/init.d/mysql), you must write : type="mysql". For "id", you can enter the name of your choice.
 \item \textbf{Resource operations} : Some operations can be added on resources. In our case, you can add resource monitoring. Example :
 \begin{lstlisting}[language=xml]
@@ -379,7 +378,7 @@ When the timeout is attained, heartbeat detect resource crash.
 
 \end{itemize}
 
-\item The last part is resources constraint. You can add constraint on resource or resource group, like location constraint.
+\item The last part is resources constraint. You can add constraints on resource or resource group, like location constraint.
 In our case, you can specify node priority, for example if you want resources run in priority on master.
 \begin{lstlisting}[language=xml]
 <constraints>
@@ -434,9 +433,9 @@ status)
 
 
 \section{DRBD Configuration}
-In DRBD configuration file, we can specifies a lots of parameters, which describe resources, synchronization type, synchronization rate, etc.
+In DRBD configuration file, we can specifies a lots of parameters, which describe resources, synchronization type, synchronization rate, etc. For a complete example, see \ref{drbdexample}.
 \subsection{synchronization type}
-With have three synchronization type in DRBD :
+DRBD has three synchronization type :
 \begin{itemize}
 \item \textbf{Protocol A} : write ACK (on master) is send when data was transmitted on master disk and sent to slave.
 \item \textbf{Protocol B} : write ACK (on master) is send when data was transmitted on master disk and received by slave.
@@ -470,29 +469,31 @@ syncer {
 }
 \end{lstlisting}
 700000K is the maximum value accepted by DRBD.\\
-a1-extend corresponds to 4 Mbytes, so with 257, we have 1 GBytes.
+al-extend corresponds to 4 Mbytes, so with 257, we have 1 GBytes.
 
 \subsection{Host section}
 \label{hostsection} 
-One resource must have two host section. A host section describe on each node which DRBD partition and disk is use. You must also specify neighbor ip and port :
+One resource must have two host section. A host section describe on each node which DRBD partition and disk is used. You must also specify neighbor ip and port :
 \begin{lstlisting}
-on node1 
-  device DRBDPARTITION;
-  disk DISKPARTITION;
-  address node2:DBRDPORT;
-  meta-disk internal;
-}
+resource mysql {
+  on node1 {
+    device DRBDPARTITION;
+    disk DISKPARTITION;
+    address node2:DBRDPORT;
+    meta-disk internal;
+  }
 
-on node2 
-  device DRBDPARTITION;
-  disk DISKPARTITION;
-  address node1:DBRDPORT;
-  meta-disk internal;
+  on node2 {
+    device DRBDPARTITION;
+    disk DISKPARTITION;
+    address node1:DBRDPORT;
+    meta-disk internal;
+  }
 }
 \end{lstlisting}
 
 \subsection{Handlers}
-DRBD provide an handler which can execute actions on events. For the problem of split brain (see \ref{splitbrain}),we can for example write in log :
+DRBD provide an handler which can execute actions on events. For the problem of split brain (see \ref{splitbrain}), you can for example write in log :
 \begin{lstlisting}
 handlers {
   split-brain "echo Splitbraindetected >> /var/log/drbd-log"
@@ -512,16 +513,16 @@ In the net directive, you can specifies different policies when you detect split
 \textbf{after-sb-0pri} : Split brain has just been detected, but at this time the resource is not in the Primary role on any host.
 \begin{itemize}
 \item disconnect : Do not recover automatically, call split-brain handler script, drop the connection and continue in disconnected mode.
-\item discard-younger-primary. Discard and roll back the modifications made on the host which assumed the Primary role last.
-\item discard-least-changes. Discard and roll back the modifications on the host where fewer changes occurred.
-\item discard-zero-changes. If there is any host on which no changes occurred at all, simply apply all modifications made on the other and continue.
+\item discard-younger-primary : Discard and roll back the modifications made on the host which assumed the Primary role last.
+\item discard-least-changes : Discard and roll back the modifications on the host where fewer changes occurred.
+\item discard-zero-changes : If there is any host on which no changes occurred at all, simply apply all modifications made on the other and continue.
 \end{itemize}
 \textbf{after-sb-1pri} : Split brain has just been detected, and at this time the resource is in the Primary role on one host.
 \begin{itemize}
 \item disconnect 
 \item consensus : Apply the same recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, automatically resolve. Otherwise, behave exactly as if disconnect were specified.
-\item call-pri-lost-after-sb. Apply the recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, invoke the pri-lost-after-sb handler on the victim node.
-\item discard-secondary. Whichever host is currently in the Secondary role, make that host the split brain victim.
+\item call-pri-lost-after-sb : Apply the recovery policies as specified in after-sb-0pri. If a split brain victim can be selected after applying these policies, invoke the pri-lost-after-sb handler on the victim node.
+\item discard-secondary : Whichever host is currently in the Secondary role, make that host the split brain victim.
 \end{itemize}
 \textbf{after-sb-2pri} : Split brain has just been detected, and at this time the resource is in the Primary role on both hosts. This option accepts the same keywords as after-sb-1pri except discard-secondary and consensus.
 
@@ -558,7 +559,7 @@ Now DRBD is operational, all data put in \textbf{/dev/drbddata} will be synchron
 
 
 \section{Database Configuration}
-Now, it is the time to configure database. The datadir will be changed into the disk partition defined in DRBD (see  \ref{hostsection}).
+Now, it is the time to configure database. The datadir will be changed into the  mount point of disk partition defined in DRBD (see  \ref{hostsection}).
 
 \subsection{Mysql}
 For change datadir in mysql, open the file \textit{/etc/mysql/my.cnf}, search the primitive \textbf{datadir}, and replace the value by the partition defined in DRBD.
@@ -571,17 +572,17 @@ You must copy all old mysql data in new datadir, and change owner :
 cp -r /var/lib/mysql /mnt/drbddata
 chown -R mysql:mysql /mnt/drbddata/mysql
 \end{lstlisting}
-If you want remove mysql access, don't forget to comment the \textbf{bind-address} in the my.cnf.
+If you want remote mysql access, don't forget to comment the \textbf{bind-address} in the my.cnf.
 
 \subsection{Postgresql}
-It is almost the same in Postgres. Open the file \textit{/etc/postgres/8.3/main/postgresql.conf}, and search data\_directory and change value in :
+It is almost the same in Postgres. Open the file \textit{/etc/postgres/'version'/main/postgresql.conf}, and search data\_directory and change value in :
 \begin{lstlisting}
 data_directory = 'mnt/drbddata/main'
 \end{lstlisting}
 Like mysql, if you want remote access, change \textbf{listen\_addresses = 'localhost'} in \textbf{listen\_addresses = '*'}. Don't forget to add rule for your network in the hba.conf file.\\
 You must copy all old postgres data in new datadir, and change owner :
 \begin{lstlisting}
-cp -r OLDDIRECTORY /mnt/drbddata
+cp -r /var/lib/postgresql/'version'/main /mnt/drbddata
 chown -R postgres:postgres /mnt/drbddata/main
 \end{lstlisting}
 
@@ -707,7 +708,7 @@ Different commands are available :
     cibadmin -R -x cibbackup.xml 
     \end{lstlisting}
 
- \item crm\_verify - checks a configuration is valid 
+ \item crm\_verify - checks if configuration is valid 
  \item crm\_mon - provides the current cluster status in text or HTML , see \ref{hb-monitor}
  \item crm\_resource - query and modify all things related to cluster resources/services\\
     Scenario : The resources OAR is crashed and don't restart. Heartbeat migrate on the second node. When you have corrected the problem on the first node, you must cleanup the resource with the command :
@@ -715,7 +716,7 @@ Different commands are available :
     crm_resource -C -r oar-server -H host
     \end{lstlisting}
  \item crm\_standby - control a node's standby status (ability to run resources) \\
-    Set node in standby :
+    Set node in standby mode :
     \begin{lstlisting}
     crm_standby -U host -v true 
     \end{lstlisting}
@@ -804,7 +805,7 @@ You can know who is the primary/secondary, if DRBD is connected, uptodate, have 
 \chapter{known problems}
 \section{Quorum}
 The quorum calculation process is required to select no more than one primary subcluster at a time. You can enable or disable this option in heartbeat, it depend to the configuration.\\
-A common method for defining quorum is to say that a subcluster of size n in a cluster of m total nodes has quorum if it has a plurality of nodes in its partition. That is, it has n members where n > INT(m/2).\\
+A common method for defining quorum is to say that a subcluster of size n in a cluster of m total nodes has quorum if it has a plurality of nodes in its partition. That is, it has n members where n \textgreater INT(m/2).\\
 But this solution in heartbeat create problems in 4 nodes configurations. Indeed, when 2 nodes are down, the two other not can't launch resources because they haven't quorum. In this case, you
 can disable quorum in heartbeat, in the cib.xml file :
 \begin{lstlisting}[language=xml]
@@ -841,7 +842,7 @@ For know DRBD performance, I have realized different benchmark with mysql for te
  \item The synchronization rate (in drbd.conf) between this two node was 740Mo/s (Max)
  \item Network bandwidth : 940 Mbytes/s between genepi-31 and genepi-32
 \end{enumerate}
-The tests is done with mysql-bench, with 16 threads.
+The tests is done with mysql-bench, with 16 threads.\\
 
 Three different scenario was tested :
 \begin{enumerate}
@@ -887,7 +888,7 @@ Number of queries&Time without DRBD(s)&Time With DRBD(s)&With DRBD-saturated net
 \label{hb-gui-2nodes} 
 \end{figure}
 
-You can see that DRBD offer good performance in general. It can be use with OAR without hesitation.
+You can see that DRBD offer good performance in general. It can be use on OAR without hesitation.
 
 
 
@@ -1007,6 +1008,50 @@ Same results as Postgres with 4 nodes configurations.
 
 
 \appendix
+\chapter{DRBD example configuration}
+\label{drbdexample}
+\begin{lstlisting}
+global { usage-count no; }
+resource mysql {
+	protocol C;
+	startup {
+		wfc-timeout 120;
+	}
+	disk {
+		on-io-error detach;
+	}
+	syncer {
+		rate 700000K;
+		al-extents 257;
+	}
+	on node1{
+		device DRBDPARTITION;
+		disk DISKPARTITION;
+		address node2:DBRDPORT;
+		meta-disk internal;
+	}
+	on node2{
+		device DRBDPARTITION;
+		disk DISKPARTITION;
+		address node1:DBRDPORT;
+		meta-disk internal;
+	}
+	net {
+		after-sb-0pri discard-younger-primary;
+		after-sb-1pri consensus;
+ 		after-sb-2pri call-pri-lost-after-sb;
+	}
+	handlers {
+		split-brain "echo Splitbraindetected >> /var/log/drbd-log";
+		pri-lost-after-sb "echo pri-lost-after-sb >> /var/log/drbd-log";
+	}
+}
+\end{lstlisting}
+
+
+
+
+
 \chapter{Heartbeat example configuration}
 \label{cibexample}
 \section {High Availability on OAR with 2 nodes configuration, postgresql database}
