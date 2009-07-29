@@ -17,8 +17,21 @@ A common OAR installation is composed of:
 * several machines that are computing nodes
 
 
+To ease the first installation, you might consider using the same machine for 
+the OAR server, the DataBase, the frontale and to create some virtual resources
+too on the machine. This might be done by using 127.0.*.* IP addresses for
+your resources.
+
+Otherwise, you will have to copy the oar user keys on each machine to allow 
+passwordless connections between them for the user oar.
+
+
+I) Installation
+---------------
+
+
 Installation from debian packages
----------------------------------
+_________________________________
 
 If you want to install oar from the debian packages, you will have to install the 
 oar-server package on the OAR server, the oar-user package on the submission frontale
@@ -35,19 +48,18 @@ and the oar-node package on the computing nodes.
  **~oar/.ssh/authorized_keys** file.
 
 
-
 Installation from rpm packages
-------------------------------
+______________________________
 
 To complete...
 
 
 
 Installation from the sources
------------------------------
+_____________________________
 
 Prerequisites: Install the libs
-_______________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First of all you have to install the following packages:
 
@@ -63,7 +75,7 @@ First of all you have to install the following packages:
 You also have to install a >= 2.6 kernel in order to use cpuset feature.
 
 1°) Pave the way for install
-____________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * add a user named "oar" in the group "oar"
 * create a set of ssh keys for the user "oar" with ssh-keygen 
@@ -97,27 +109,46 @@ ____________________________
     export PATH=/usr/local/oar/oardodo:$PATH
     
 2°) Install the OAR modules
-___________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Just go into the OAR source directory and as root type::
 
   make server-install user-install node-install
-  
-Initiate the database
----------------------
+
+
+3°) Launch the OAR server
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Finally, you will have to launch as oar the **Almighty** daemon (the oar server).
+
+
+
+II) Initiate the database
+-------------------------
 
 As root run oar_mysql_db_init or oar_psql_db_init depending your DataBase type.
 
 
-Configuration file
-------------------
+III) Configuration file
+-----------------------
+
+This part is optionnal for now. You can come back to it later.
 
 To configure your oar server, edit its config file
 **/etc/oar/oar.conf**. Take a look at the different sections and customize it if you want to.
 
 
-Cpusets
--------
+IV) Cpusets
+-----------
+
+This part is optionnal too right now if you're installing OAR for the first time.
+It is easier to begin using OAR without this feature.
+Once everything's ok and your jobs are running on your resources, you can activate 
+this feature.
+
+The cpuset feature will allow OAR to restrict the use of one (or a group) of cpu
+for a job. Each computing resource has a **cpuset** field that will refer to
+the cpu id that will run the job for this resource.
 
 In order to use this feature, you have to uncomment the line with the 
 **JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD** field in your oar.conf file.
@@ -126,37 +157,25 @@ cpu id you want your resource to be restricted on.
 
 
 
-Adding resources to the system
-------------------------------
+V) Adding resources to the system
+---------------------------------
 
-If you want to automatically detect and insert corresponding resources into OAR then you just need to launch::
+To add resources to your system, you can use (as root) the command oarnodesetting.
+For a complete comprehension of what does this command, type man oarnodesetting.
 
-    oar_resources_init
+For now, the two options you will need will be **-a** (means add a resource) and 
+**-h** (defines the resource hostname or ip adress).
 
-Otherwise you can use the oaradmin command. This tool is available to help you
-in the administrative tasks of a OAR server.
-You can install it with ::
+For example, to add a computing resource locally to test OAR installation type::
 
-  make tools-install
+	oarnodesetting -a -h 127.0.10.1
 
-or by installing the oar-admin package.
-Its dependencies are: 
+This will add a resource with 127.0.10.1 as host IP address.
 
-* ruby1.8 (or greater)
-* libdbi-ruby 
-* libdbd-mysql-ruby or libdbd-pg-ruby
-* libyaml-ruby
 
-Then, you can launch as root, a command like the following::
+You also can modify resources properties with **-p** option, for example::
 
-  oaradmin resources -a /nodes=mycluster{%2d12}.local/cpu={4}/core={2} -c
+	oarnodesetting -r 1 -p "deploy=YES"
 
-This will create a cluster of 12 nodes called **mycluster01** to **mycluster12** with 4 cpus per node and 2 cores per cpu.
-
-A script is also available to help detecting resources on a local machine:
-**/usr/local/oar/detect_resources**. You can use it to have an idea of how
-works oarnodesetting. 
-
-You may also type **oarnodesetting --help** as root for more options.
-
-At the end, if you have installed OAR by the sources, you will have to launch as oar the Almighty daemon (the oar server).
+will allow the resource #1 to accept jobs of the type deploy.
+	
