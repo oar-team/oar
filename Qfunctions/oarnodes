@@ -168,12 +168,17 @@ sub print_resource_flat_way($){
 		# If you want to modify the regular oarnodes output, change here
 		# Everything needed is in $info
 		print "network_address : $info->{network_address}\n";
+		print "resource_id : $info->{resource_id}\n";
 		print "state : $info->{state}\n";
 		if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
 		my $properties_to_display='';
 		while ( my ($k,$v) = each %$info ){
 			if (oar_Tools::check_resource_system_property($k) == 0){
-				$properties_to_display .= "$k=$v, ";
+				if(defined($v)){
+					$properties_to_display .= "$k=$v, ";
+				}else{
+					$properties_to_display .= "$k=, ";
+				}
 			}
 		}
 		chop($properties_to_display); # remove last space
