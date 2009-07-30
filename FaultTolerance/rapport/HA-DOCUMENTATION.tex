@@ -195,6 +195,7 @@ For illustrate example, the nodes names are :
 
 
 \section{System configuration}
+\label{sysconf}
 It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbor. With two networks, we can for example avoid split-brain problem (See \ref{splitbrain}). We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easily cut the Ethernet network without interfere with heartbeat functioning.\\
 For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. Two Virtual IP for access to oar-server and database. This virtual IP must be free and accessible on the network.\\
 
@@ -618,6 +619,7 @@ DETACH_JOB_FROM_SERVER="1"
 \textbf{insert schema !!!}
 
 \subsection{Frontend configuration}
+\label{frontendconf}
 It is approximately the same configuration on frontend :\\
 \begin{itemize}
  \item In 2 nodes configurations :
@@ -633,6 +635,7 @@ DB_HOSTNAME=VIRTUALIP_2
 \end{itemize}
 
 \subsection{Node configuration}
+\label{nodeconf}
 If you use Start/Stop of nodes using ssh keys (see http://wiki-oar.imag.fr/index.php/Configuration\_tips section 1.5) and you want to do oarnodesetting form oar-server, 
 you have just to add the virtual IP from OAR-server in \textit{/etc/default/oar-nodes} file.
 \begin{lstlisting}
@@ -826,7 +829,122 @@ A fail over must be fastest as possible. So it could be very embarrassing if we 
 tune2fs -c 0 DISKPARTITION
 \end{lstlisting}
 
-\chapter{High Availability auto installation}
+\chapter{High Availability auto installation on Debian}
+
+You can install High Availability on OAR with HAinstal bash script. This script must be launched on each node you want to make faul tolerant, with root rights. Example, 2 nodes for oar-server and database on the same server (the master with oar-server and database, and the backup), and 4 nodes (master oar-server, master database, backup oar-server, backup database) if it different.
+Like previously, you must have a working installation (oar, database) : oar must access to database, etc.. This script don't configure frontend and nodes, so you must to refer to \ref{frontendconf} and \ref{nodeconf}.
+
+\section{Prerequisites}
+\begin{itemize}
+ \item Root rights
+ \item Oar and database already installed and ready to work (without High availability)
+ \item Linux-hearders : 
+    \begin{lstlisting}
+    apt-get install linux-headers-`uname -r`
+    \end{lstlisting}
+ \item One or two free IP address (for virtual IP)
+ \item A free partition, or selected option USEFILEPARTITION
+\end{itemize}
+
+
+\section{Parameters}
+
+\begin{itemize}
+ \item Package name :\\
+    \begin{lstlisting}
+    DRBD="drbd8-utils"
+    HEARTBEAT2="heartbeat-2"
+    MODULEASSITANT="module-assistant"
+    \end{lstlisting}
+  This variable contains debian package name of DRBD, heartbeat-2, and module assistant.
+
+ \item BDD :\\
+  \begin{lstlisting}
+  # "mysql" or "postgresql"
+  BD="postgresql" or BD="mysql"
+  ##only for postgres
+  PGVERSION="8.3"
+  \end{lstlisting}
+The BD variable must be mysql or postgresql. If we choose postgresql, you must enter the version, for script access into service directory, like \textit{/etc/postgresql/8.3/main/postgresql.conf}.
+
+ \item Nodes name :\\
+  \begin{lstlisting}
+  MASTER_OAR="genepi-7.grenoble.grid5000.fr"
+  MASTER_DB="genepi-7.grenoble.grid5000.fr"
+  BACKUP_OAR="genepi-9.grenoble.grid5000.fr"
+  BACKUP_DB="genepi-9.grenoble.grid5000.fr"
+  \end{lstlisting}
+The name must be the result of \textbf{uname -n} command, for each node.
+
+  \item Nodes properties :\\
+  \begin{lstlisting}
+  #Interface
+  ETH="eth1"
+  #OAR-server Virtual IP (ex : )
+  IP="172.16.16.220"
+  #Database Virtual IP (ex : 172.16.16.221)
+  IP_DB="172.16.16.221"
+  #enter CIDR netmask (ex : 24)
+  MASK="24"
+  \end{lstlisting}
+The ETH variable is the network interface uses for heartbeat. IP and IP\_DB are the two virtual IP. If you are in 2 nodes configurations, IP\_DB is ignored.
+
+  \item Heartbeat configuration :\\
+  \begin{lstlisting}
+  ##Password sha
+  PASSWORD="oarteam"
+  ##UDP Port
+  HBPORT="694"
+  \end{lstlisting}
+The password is used for heartbeat connection. The default heartbeat port is UDP 694.
+
+ \item DRBD configuration
+\begin{enumerate}
+ \item PARTITION :\\
+  \begin{lstlisting}
+    #--low-level storage for the drbd data (partition)---#
+    #It could be a loopback device, like /dev/loop0
+    DISKPARTITION=/dev/loop0
+
+    #Do you want create a partition in a file ?  ("y" or "n") --> The DISKPARTTION Must be a loopback interface
+    USEFILEPARTITION="y"
+  \end{lstlisting}
+If you want use partition in a file (like describe in \ref{sysconf}), write "y". If you have choose "y" :
+  \begin{lstlisting}
+    #-PATH File image-#
+    IMAGE=/image.img
+    #Size in MegaBytes
+    SIZE="200"
+  \end{lstlisting}
+  
+  \item DRBD device :\\
+  \begin{lstlisting}
+    #----DRBD partition alias---#
+    DRBDPARTITION=/dev/drbd0
+
+    #----DRBD mount point---#
+    DRBDDATA=/mnt/drbddata
+
+    #---FileSystem type (ext2,ext3)---#
+    FSTYPE="ext3"
+  \end{lstlisting}
+The mount point is where you want mount shared data with DRBD.
+
+  \item DRBD port :\\
+  \begin{lstlisting}
+    ##DRBD communication Port
+    DBRDPORT="7788"
+  \end{lstlisting}
+\end{enumerate}
+
+\end{itemize}
+
+
+
+\section{How does it work}
+
+
+
 
 
 \chapter{Test}

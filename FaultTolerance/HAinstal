@@ -21,20 +21,20 @@ PGVERSION="8.3"
 
 ###----Nodes name-----------####
 
-master_oar="genepi-7.grenoble.grid5000.fr"
-master_db="genepi-7.grenoble.grid5000.fr"
-backup_oar="genepi-9.grenoble.grid5000.fr"
-backup_db="genepi-9.grenoble.grid5000.fr"
+MASTER_OAR="genepi-7.grenoble.grid5000.fr"
+MASTER_DB="genepi-7.grenoble.grid5000.fr"
+BACKUP_OAR="genepi-9.grenoble.grid5000.fr"
+BACKUP_DB="genepi-9.grenoble.grid5000.fr"
 
 #-----Nodes properties-----####
 #Interface
-eth="eth1"
+ETH="eth1"
 #OAR-server Virtual IP (ex : )
-ip="172.16.16.220"
+IP="172.16.16.220"
 #Database Virtual IP (ex : 172.16.16.221)
-ip_db="172.16.16.221"
+IP_DB="172.16.16.221"
 #enter CIDR netmask (ex : 24)
-mask="24"
+MASK="24"
 
 ####------------------Heartbeat----------------#####
 ##Password sha
@@ -90,19 +90,19 @@ DBRDPORT="7788"
 HOSTNAME=$(uname -n)
 
 case $HOSTNAME in
-$master_oar)
+$MASTER_OAR)
 	ISOAR="y"
 	ISDATABASE="n"
 	;;
-$master_db)
+$MASTER_DB)
 	ISOAR="y"
 	ISDATABASE="y"
 	;;
-$backup_oar)
+$BACKUP_OAR)
 	ISOAR="n"
 	ISDATABASE="n"
 	;;
-$backup_db)
+$BACKUP_DB)
 	ISOAR="n"
 	ISDATABASE="y"
 	;;
@@ -115,7 +115,7 @@ esac
 
 
 #High Availability configuration : "2nodes" or "4nodes"
-if [ "$master_oar" = "$master_db" ]; then
+if [ "$MASTER_OAR" = "$MASTER_DB" ]; then
 	CONF="2nodes"
 else
 	CONF="4nodes"
@@ -216,52 +216,52 @@ echo 'initdead 80' >> /etc/ha.d/ha.cf
 
 if [ "$ISOAR" = "y" ]; then
 	if [ "$ISDATABASE" = "y" ]; then
-		ipmaster_oar=$(host $master_oar | cut -f3)
+		ipmaster_oar=$(host $MASTER_OAR | cut -f3)
 		ipmaster_db=$(host `uname -n` | cut -f3)	#don't use ifconfig beacause can beug if it is a non english system
-		ipbackup_oar=$(host $backup_oar | cut -f3)
-		ipbackup_db=$(host $backup_db | cut -f3)		
+		ipbackup_oar=$(host $BACKUP_OAR | cut -f3)
+		ipbackup_db=$(host $BACKUP_DB | cut -f3)		
 	elif [ "$ISDATABASE" = "n" ]; then
 		ipmaster_oar=$(host `uname -n` | cut -f3)
-		ipmaster_db=$(host $master_db | cut -f3)
-		ipbackup_oar=$(host $backup_oar | cut -f3)
-		ipbackup_db=$(host $backup_db | cut -f3)
+		ipmaster_db=$(host $MASTER_DB | cut -f3)
+		ipbackup_oar=$(host $BACKUP_OAR | cut -f3)
+		ipbackup_db=$(host $BACKUP_DB | cut -f3)
 	fi	
 elif [ "$ISOAR" = "n" ]; then
 	if [ "$ISDATABASE" = "y" ]; then
-		ipmaster_oar=$(host $master_oar | cut -f3)
-		ipmaster_db=$(host $master_db | cut -f3)
-		ipbackup_oar=$(host $backup_oar | cut -f3)
+		ipmaster_oar=$(host $MASTER_OAR | cut -f3)
+		ipmaster_db=$(host $MASTER_DB | cut -f3)
+		ipbackup_oar=$(host $BACKUP_OAR | cut -f3)
 		ipbackup_db=$(host `uname -n` | cut -f3)	
 	elif [ "$ISDATABASE" = "n" ]; then
-		ipmaster_oar=$(host $master_oar | cut -f3)
-		ipmaster_db=$(host $master_db | cut -f3)
+		ipmaster_oar=$(host $MASTER_OAR | cut -f3)
+		ipmaster_db=$(host $MASTER_DB | cut -f3)
 		ipbackup_oar=$(host `uname -n` | cut -f3)
-		ipbackup_db=$(host $backup_db | cut -f3)
+		ipbackup_db=$(host $BACKUP_DB | cut -f3)
 	fi
 else
 	exit 1
 fi
 
 if [ "$CONF" = "2nodes" ]; then
-	echo "ucast $eth $ipmaster_oar" >> /etc/ha.d/ha.cf
-	echo "ucast $eth $ipbackup_oar" >> /etc/ha.d/ha.cf
+	echo "ucast $ETH $ipmaster_oar" >> /etc/ha.d/ha.cf
+	echo "ucast $ETH $ipbackup_oar" >> /etc/ha.d/ha.cf
 
 	#experimental
 	echo "ucast eth0_rename 192.168.0.1" >> /etc/ha.d/ha.cf
 	echo "ucast eth0_rename 192.168.0.2" >> /etc/ha.d/ha.cf
 
-	echo "node $master_oar" >> /etc/ha.d/ha.cf
-	echo "node $backup_oar" >> /etc/ha.d/ha.cf
+	echo "node $MASTER_OAR" >> /etc/ha.d/ha.cf
+	echo "node $BACKUP_OAR" >> /etc/ha.d/ha.cf
 else
-	echo "ucast $eth $ipmaster_oar" >> /etc/ha.d/ha.cf
-	echo "ucast $eth $ipmaster_db" >> /etc/ha.d/ha.cf
-	echo "ucast $eth $ipbackup_oar" >> /etc/ha.d/ha.cf
-	echo "ucast $eth $ipbackup_db" >> /etc/ha.d/ha.cf
+	echo "ucast $ETH $ipmaster_oar" >> /etc/ha.d/ha.cf
+	echo "ucast $ETH $ipmaster_db" >> /etc/ha.d/ha.cf
+	echo "ucast $ETH $ipbackup_oar" >> /etc/ha.d/ha.cf
+	echo "ucast $ETH $ipbackup_db" >> /etc/ha.d/ha.cf
 
-	echo "node $master_oar" >> /etc/ha.d/ha.cf
-	echo "node $master_db" >> /etc/ha.d/ha.cf
-	echo "node $backup_oar" >> /etc/ha.d/ha.cf
-	echo "node $backup_db" >> /etc/ha.d/ha.cf
+	echo "node $MASTER_OAR" >> /etc/ha.d/ha.cf
+	echo "node $MASTER_DB" >> /etc/ha.d/ha.cf
+	echo "node $BACKUP_OAR" >> /etc/ha.d/ha.cf
+	echo "node $BACKUP_DB" >> /etc/ha.d/ha.cf
 fi
 
 
@@ -336,9 +336,9 @@ if [ "$CONF" = "4nodes" ]; then
 	echo '		 </operations>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           <instance_attributes id="VirtualIP-database_instance_attrs">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '             <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"89b87cae-b271-4d55-8881-c89508ad8451\" name=\"ip\" value=\"$ip_db\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"bff53b6b-a11d-4cb0-8db3-24ef1b82fbb0\" name=\"nic\" value=\"$eth\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"d6dc4cd1-b057-48be-91c7-3b733e066269\" name=\"cidr_netmask\" value=\"$mask\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"89b87cae-b271-4d55-8881-c89508ad8451\" name=\"ip\" value=\"$IP_DB\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"bff53b6b-a11d-4cb0-8db3-24ef1b82fbb0\" name=\"nic\" value=\"$ETH\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"d6dc4cd1-b057-48be-91c7-3b733e066269\" name=\"cidr_netMASK\" value=\"$MASK\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '             </attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           </instance_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           <meta_attributes id="VirtualIP-database_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
@@ -419,9 +419,9 @@ if [ "$CONF" = "4nodes" ]; then
 	echo '	   	 </operations>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           <instance_attributes id="VirtualIP-OAR-server_instance_attrs">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '             <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"bb615f47-387e-46cb-945f-8757d494791b\" name=\"ip\" value=\"$ip\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"6fe16a0e-c414-4a5b-8e5f-f0c48b369770\" name=\"nic\" value=\"$eth\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"b25acc28-5186-4a22-9433-5347017cdc71\" name=\"cidr_netmask\" value=\"$mask\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"bb615f47-387e-46cb-945f-8757d494791b\" name=\"ip\" value=\"$IP\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"6fe16a0e-c414-4a5b-8e5f-f0c48b369770\" name=\"nic\" value=\"$ETH\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"b25acc28-5186-4a22-9433-5347017cdc71\" name=\"cidr_netMASK\" value=\"$MASK\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '             </attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           </instance_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           <meta_attributes id="VirtualIP-OAR-server_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
@@ -449,24 +449,24 @@ if [ "$CONF" = "4nodes" ]; then
 	#echo '       <rsc_order type="before" id="Order" from="Database-servers" to="OAR-servers"/>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       <rsc_location id="location-Database" rsc="Database-servers">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         <rule id="prefered_location-Database" score="0">' >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"f968a0dd-59dd-4d02-b54a-36c7139afa13\" operation=\"ne\" value=\"$master_oar\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"0ef6e38b-6a34-4e23-bc22-9dccfacc95b6\" operation=\"ne\" value=\"$backup_oar\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"f968a0dd-59dd-4d02-b54a-36c7139afa13\" operation=\"ne\" value=\"$MASTER_OAR\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"0ef6e38b-6a34-4e23-bc22-9dccfacc95b6\" operation=\"ne\" value=\"$BACKUP_OAR\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </rule>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       </rsc_location>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       <rsc_location id="location-OAR" rsc="OAR-servers">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         <rule id="prefered_location-OAR" score="0">' >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"4d2c21d8-aea7-460b-bfeb-cd6d22e4a17e\" operation=\"ne\" value=\"$master_db\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"3292b1b4-04cb-4650-b6e0-2e4428c837a8\" operation=\"ne\" value=\"$backup_db\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"4d2c21d8-aea7-460b-bfeb-cd6d22e4a17e\" operation=\"ne\" value=\"$MASTER_DB\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"3292b1b4-04cb-4650-b6e0-2e4428c837a8\" operation=\"ne\" value=\"$BACKUP_DB\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </rule>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '      </rsc_location>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '	    <rsc_location id="location_Master-OAR" rsc="OAR-servers">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         <rule id="prefered_location_Master-OAR" score="INFINITY">' >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"37a60f84-c7ed-4e4a-835a-55382961c990\" operation=\"eq\" value=\"$master_oar\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"37a60f84-c7ed-4e4a-835a-55382961c990\" operation=\"eq\" value=\"$MASTER_OAR\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </rule>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       </rsc_location>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '		<rsc_location id="location_Master-Database" rsc="Database-servers">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         <rule id="prefered_location_Master-Database" score="INFINITY">' >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"37a78f84-c7ed-4e4a-835a-54382451c990\" operation=\"eq\" value=\"$master_db\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"37a78f84-c7ed-4e4a-835a-54382451c990\" operation=\"eq\" value=\"$MASTER_DB\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </rule>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       </rsc_location>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '     </constraints>' >> /var/lib/heartbeat/crm/cib.xml
@@ -522,9 +522,9 @@ else #2 nodes hearbeat configuration
 	echo '           </operations>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           <instance_attributes id="VirtualIP_inst_attr">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '             <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"VirtualIP_attr_0\" name=\"ip\" value=\"$ip\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"VirtualIP_attr_1\" name=\"nic\" value=\"$eth\"/>" >> /var/lib/heartbeat/crm/cib.xml
-	echo "               <nvpair id=\"VirtualIP_attr_2\" name=\"cidr_netmask\" value=\"$mask\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"VirtualIP_attr_0\" name=\"ip\" value=\"$IP\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"VirtualIP_attr_1\" name=\"nic\" value=\"$ETH\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "               <nvpair id=\"VirtualIP_attr_2\" name=\"cidr_netmask\" value=\"$MASK\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '             </attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           </instance_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
@@ -589,7 +589,7 @@ else #2 nodes hearbeat configuration
 	echo '     <constraints>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       <rsc_location id="rsc_location_group_1" rsc="group_1">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '        <rule id="prefered_location_group_1" score="100">' >> /var/lib/heartbeat/crm/cib.xml
-	echo "           <expression attribute=\"#uname\" id=\"prefered_location_group_1_expr\" operation=\"eq\" value=\"$master_oar\"/>" >> /var/lib/heartbeat/crm/cib.xml
+	echo "           <expression attribute=\"#uname\" id=\"prefered_location_group_1_expr\" operation=\"eq\" value=\"$MASTER_OAR\"/>" >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </rule>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       </rsc_location>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '     </constraints>' >> /var/lib/heartbeat/crm/cib.xml
@@ -693,15 +693,15 @@ detach_job=$(cat /etc/oar/oar.conf | grep DETACH_JOB_FROM_SERVER=)
 sed -e "s/$detach_job/DETACH_JOB_FROM_SERVER=\"1\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
 
 serveur_hostname=$(cat /etc/oar/oar.conf | grep SERVER_HOSTNAME=)
-sed -e "s/$serveur_hostname/SERVER_HOSTNAME=\"$ip\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
+sed -e "s/$serveur_hostname/SERVER_HOSTNAME=\"$IP\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
 
 if [ "$CONF" = "4nodes" ]; then
 	db_hostname=$(cat /etc/oar/oar.conf | grep DB_HOSTNAME=)
-	sed -e "s/$db_hostname/DB_HOSTNAME=\"$ip_db\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
+	sed -e "s/$db_hostname/DB_HOSTNAME=\"$IP_DB\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
 
 elif [ "$CONF" = "2nodes" ]; then 	#2nodes configuration, very important, because oarexec must contact oar-server after fail-over
 	db_hostname=$(cat /etc/oar/oar.conf | grep DB_HOSTNAME=)
-	sed -e "s/$db_hostname/DB_HOSTNAME=\"$ip\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
+	sed -e "s/$db_hostname/DB_HOSTNAME=\"$IP\"/g" /etc/oar/oar.conf > /etc/oar/oar.conf.tmp && mv -f /etc/oar/oar.conf.tmp /etc/oar/oar.conf
 
 fi
 
@@ -774,7 +774,7 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 	echo '		# Avec 257 on a donc 1giga de « hot aera ».' >> /etc/drbd.conf
 	echo '	}' >> /etc/drbd.conf
 
-	echo "	on $master_db {" >> /etc/drbd.conf
+	echo "	on $MASTER_DB {" >> /etc/drbd.conf
 	echo "		device $DRBDPARTITION;" >> /etc/drbd.conf
 	echo "		disk $DISKPARTITION;" >> /etc/drbd.conf
 	echo "		address $ipmaster_db:$DBRDPORT;" >> /etc/drbd.conf
@@ -782,7 +782,7 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 	echo '	}' >> /etc/drbd.conf
 
 
-	echo "	on $backup_db {" >> /etc/drbd.conf
+	echo "	on $BACKUP_DB {" >> /etc/drbd.conf
 	echo "		device $DRBDPARTITION;" >> /etc/drbd.conf
 	echo "		disk $DISKPARTITION;" >> /etc/drbd.conf
 	echo "		address $ipbackup_db:$DBRDPORT;" >> /etc/drbd.conf
