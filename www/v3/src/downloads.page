@@ -20,19 +20,20 @@ bq.  For the 2.3 version:
 
 h3. RPM packages
 
-You can use the Yum RPM repository:
+You can use the Yum RPM repository
 
 Create a /etc/yum.repos.d/oar.repo file containing:
 
-bq.  [oar]
+	 [oar]
      name=OAR
      baseurl=http://oar.imag.fr/RPMS/stable/2.3
      enabled=1
      gpgcheck=0
 
+
 h3. Sources
 
- Download sources and packages on:
+Download sources and packages on:
 
 bq.  "https://gforge.inria.fr/frs/?group_id=125":https://gforge.inria.fr/frs/?group_id=125
 
