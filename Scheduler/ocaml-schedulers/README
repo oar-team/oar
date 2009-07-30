@@ -52,12 +52,20 @@ Take simple_cbf_mb add hierarchy support, remove nb_res in several structure
 /simple_cbf_mb_h_oar:
 Uses simple_cbf_mb_h, usable with oar's DB to perform some simple test performance (not suitable for production use) 
 
-/simple_cbf_mb_h_ts:
-Based on simple_cbf_mb_h will provide container and timesharing features
+/simple_cbf_mb_h_ct:
+The next natural step is to support container features
+Based on simple_cbf_mb_h it will provide container feature.
 
+/simple_cbf_mb_h_ct_oar:
+Uses simple_cbf_mb_h_ct will be usable with oar's DB to perform some simple test performance (and perhaps it will
+be develop up for production usage after test)
+
+/simple_cbf_mb_h_ts:
+Based on simple_cbf_mb_h it will provide timesharing feature
 
 /simple_cbf_mb_h_ts_oar:
 Uses simple_cbf_mb_h_ts will be usable with oar's DB to perform some simple test performance (not suitable for production use)  
+
 Next:
  * need to test multi-resource-type (since >= cbf_mb_h)
  * need to tes multi-request with non exclusive resource selection (since >= cbf_mb_h)
