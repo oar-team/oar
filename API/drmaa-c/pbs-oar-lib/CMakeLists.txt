@@ -1,19 +1,89 @@
 cmake_minimum_required(VERSION 2.6)
 
-project (OAR-DRMAA-C)
+PROJECT(torque) # The OAR-PBS Library (THE DRMAA-C FOR OAR PROJECT)
 
 include_directories (/usr/include/glib-2.0 /usr/lib/glib-2.0/include /usr/include/json-glib-1.0 /usr/include/curl)
 
 
-#add_executable (jparser jparser.c presult.c)
-add_executable (generator generator.c)
-#add_executable (oar_exchange oar_exchange.c jparser.c presult.c)
-add_executable (oar_pbs_test1 oar_pbs_test1.c oar_pbs.c oar_exchange.c jparser.c presult.c)
-add_executable (oar_pbs_test2 oar_pbs_test2.c oar_pbs.c oar_exchange.c jparser.c presult.c)
+# Sources List
+SET(PROJECT_SRCS
+
+  presult.c
+  presult.h
+  jparser.c
+  jparser.h
+  oar_exchange.c
+  oar_exchange.h
+  oar_pbs.c
+  oar_pbs.h
+)
 
 
-#target_link_libraries (jparser json-glib-1.0 glib-2.0 gobject-2.0)
-target_link_libraries (generator json-glib-1.0)
-#target_link_libraries (oar_exchange curl json-glib-1.0 glib-2.0 gobject-2.0)
-target_link_libraries (oar_pbs_test1 curl json-glib-1.0 glib-2.0 gobject-2.0)
-target_link_libraries (oar_pbs_test2 curl json-glib-1.0 glib-2.0 gobject-2.0)
+# Required Libraries List
+SET(PROJECT_LIBS
+
+  curl 
+  json-glib-1.0
+  glib-2.0
+  gobject-2.0  
+) 
+
+
+# Output Library Path
+SET (OUT "/usr/local")	# Should be fixed later so that it can be adapted to the PBS-DRMAA OUPUT PATH
+SET (OUTPUT_PATH "${OUT}/lib")
+
+
+# Version
+SET(VERSION_MAJOR 2)
+SET(VERSION_MINOR 0)
+SET(VERSION_BUILD 0)
+SET(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
+
+
+# Create the library.
+IF(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+   MESSAGE(STATUS "LINUX SYSTEM   	: YES")
+   MESSAGE(STATUS "GNUCC COMPILER 	: YES")
+   ADD_LIBRARY("${PROJECT_NAME}-static" STATIC ${PROJECT_SRCS})
+   ADD_LIBRARY(${PROJECT_NAME} SHARED ${PROJECT_SRCS})
+   
+  include ( CheckCCompilerFlag )
+   CHECK_C_COMPILER_FLAG("-fPIC" FPIC_FLAG_SUPPORT)
+   if( FPIC_FLAG_SUPPORT )
+   	MESSAGE(STATUS "FPIC FLAG SUPPORT 	: YES")
+    	SET_TARGET_PROPERTIES("${PROJECT_NAME}-static" PROPERTIES COMPILE_FLAGS -fPIC)
+   else()
+    	MESSAGE(STATUS " -fPIC FLAG NOT SUPPORTED.")
+	MESSAGE(STATUS "SOME ERRORS MAY OCCUR !!")
+   endif(FPIC_FLAG_SUPPORT)
+
+ELSE(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_COMPILER_IS_GNUCC)
+   MESSAGE(STATUS "LINUX SYSTEM   	: YES")
+   MESSAGE(STATUS "GNUCC COMPILER 	: NO")
+   MESSAGE(STATUS "FPIC FLAG SUPPORT 	: NO")
+   MESSAGE(STATUS "SOME ERRORS MAY OCCUR !!")
+   ADD_LIBRARY(${PROJECT_NAME} SHARED ${PROJECT_SRCS})
+   ADD_LIBRARY("${PROJECT_NAME}-static" STATIC ${PROJECT_SRCS})
+
+ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+
+
+
+SET_TARGET_PROPERTIES("${PROJECT_NAME}-static" PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES
+			 	      CLEAN_DIRECT_OUTPUT 1
+				      LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_PATH}" 
+				      VERSION ${VERSION}
+       				      SOVERSION ${VERSION_MAJOR} )
+
+SET_TARGET_PROPERTIES("${PROJECT_NAME}-static" PROPERTIES
+			 	      CLEAN_DIRECT_OUTPUT 1
+				      ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_PATH}" 
+				      VERSION ${VERSION}
+       				      SOVERSION ${VERSION_MAJOR} )
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${PROJECT_LIBS})	
+TARGET_LINK_LIBRARIES("${PROJECT_NAME}-static" ${PROJECT_LIBS})	
+#TARGET_LINK_LIBRARIES(${PROJECT_NAME} -Wl,-whole-archive "${PROJECT_NAME}-static" -Wl,-no-whole-archive ${PROJECT_LIBS})
