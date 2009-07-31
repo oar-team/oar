@@ -1,3 +1,5 @@
+#ifndef _P_RESULT_H
+#define _P_RESULT_H 
 
 
 // POSSIBLE TYPES FOR A "presult" VARIABLE
@@ -39,3 +41,5 @@ presult findElementNumber();
 void removeResult();
 void getDrmaaState();
 char* extractStringAttribute();
+
+#endif

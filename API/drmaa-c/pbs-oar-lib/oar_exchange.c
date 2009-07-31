@@ -309,23 +309,23 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
     	return xr; 
   }
 
-fprintf(stderr, "\n!! CHKPT	0 !!\n");
+//fprintf(stderr, "\n!! CHKPT	0 !!\n");
 
   res = curl_easy_perform(curl);
 
-fprintf(stderr, "\n!! CHKPT	1 !!\n");
+//fprintf(stderr, "\n!! CHKPT	1 !!\n");
 	
 	// We load the json parsing result from the stream 
 	jresult *jr;
 	jr = load_json_from_stream(stream);	
 
-fprintf(stderr, "\n!! CHKPT	2 !!\n");
+//fprintf(stderr, "\n!! CHKPT	2 !!\n");
 
 	// We fill it with the received information
 	xr->code = headerStatus;	
 	xr->data = jr->data;
 
-fprintf(stderr, "\n!! CHKPT	3 !!\n");
+//fprintf(stderr, "\n!! CHKPT	3 !!\n");
 
 
   if (res!=0){
@@ -335,7 +335,7 @@ fprintf(stderr, "\n!! CHKPT	3 !!\n");
   curl_easy_cleanup(curl);
 
   curl_global_cleanup();
-
+/*
 	// TEST
   fprintf(stderr, "\n----------------OAR_REQUEST_TRANSMISSION----START-----------------\n");
   fprintf(stderr,"\nHEADER STATUS : %d\n",xr->code);
@@ -344,7 +344,7 @@ fprintf(stderr, "\n!! CHKPT	3 !!\n");
   fprintf(stderr, "\n----------------OAR_REQUEST_TRANSMISSION---END--------------------\n");
 
   fprintf(stderr, "\n!! CHKPT	4 !!\n");
-
+*/
   return xr;
 } 
 

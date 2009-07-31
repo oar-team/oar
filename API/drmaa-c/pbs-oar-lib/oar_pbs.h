@@ -1,7 +1,10 @@
+#ifndef _OAR_PBS_H
+#define _OAR_PBS_H 
+
 
 # include "oar_exchange.h" 	// A JSON parser for OAR-API responses
-# include "pbs_ifl.h"
-# include "pbs_error.h"
+# include <pbs_ifl.h>
+# include <pbs_error.h>
 
 
 typedef struct batch_status batch_status;
@@ -46,3 +49,5 @@ char * pbs_server;		/* server attempted to connect | connected to */
 int pbs_errno;			/* error number */
 
 extern int MAX_OAR_URL_LENGTH;
+
+#endif

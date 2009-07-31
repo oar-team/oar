@@ -276,10 +276,15 @@ int pbs_deljob(int connect, char *job_id, char *extend){
 
 	char full_url[MAX_OAR_URL_LENGTH];
 
-	strncpy(full_url, "http://", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
-	strncat(full_url, pbs_server, sizeof(full_url));
-	strncat(full_url, "/oarapi/jobs/", sizeof(full_url));
-  	strncat(full_url, job_id, sizeof(full_url));
+	strncpy(full_url, "http://", strlen("http://")+1); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
+
+	// PBS_DEFAULT should be changed into pbs_server
+
+	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+
+	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));	
+
+  	strncat(full_url, job_id, strlen(job_id));
 
 	exchange_result *res;
 	res = oar_request_transmission (full_url, "DELETE", NULL);
@@ -302,6 +307,13 @@ int pbs_deljob(int connect, char *job_id, char *extend){
 			break;
 	}
 	
+	printf("______________________DELETING__________________________\n");
+	printf(" DELETING CODE : %d\n",res->code);
+	printf(" DELETING RESPONSE : \n");
+	showResult(res->data);
+	printf("____________________DELETING DONE_______________________\n");
+
+
 	return retcode;	
 }
 
@@ -330,12 +342,19 @@ int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend){
 
 	char full_url[MAX_OAR_URL_LENGTH];
 	char* HOLD_REQ;
-	HOLD_REQ = "{\"method\":\"hold\"}";	// JSON
+	HOLD_REQ = "{\"action\":\"hold\"}";	// JSON
 
-	strncpy(full_url, "http://", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
-	strncat(full_url, pbs_server, sizeof(full_url));
-	strncat(full_url, "/oarapi/jobs/", sizeof(full_url));
-  	strncat(full_url, job_id, sizeof(full_url));
+	strncpy(full_url, "http://", strlen("http://")+1); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
+
+	// PBS_DEFAULT should be changed into pbs_server
+
+	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+
+	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));	
+
+  	strncat(full_url, job_id, strlen(job_id));
+	
+	printf("HOLDING FULL URL = %s\n", full_url);
 
 	exchange_result *res;
 	res = oar_request_transmission (full_url, "POST", HOLD_REQ);
@@ -358,6 +377,14 @@ int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend){
 			break;
 	}
 	
+
+	printf("______________________HOLDING__________________________\n");
+	printf(" HOLDING CODE : %d\n",res->code);
+	printf(" HOLDING RESPONSE : \n");
+	showResult(res->data);
+	printf("____________________HOLDING DONE_______________________\n");
+
+
 	return retcode;	
 	
 
@@ -371,12 +398,19 @@ int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend){
 	exchange_result *res;
 	char full_url[MAX_OAR_URL_LENGTH];
 	char* RESUME_REQ;
-	RESUME_REQ = "{\"method\":\"resume\"}";	// JSON
+	RESUME_REQ = "{\"action\":\"resume\"}";	// JSON   
 
-	strncpy(full_url, "http://", sizeof(full_url)); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
-	strncat(full_url, pbs_server, sizeof(full_url));
-	strncat(full_url, "/oarapi/jobs/", sizeof(full_url));
-  	strncat(full_url, job_id, sizeof(full_url));
+	strncpy(full_url, "http://", strlen("http://")+1); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
+
+	// PBS_DEFAULT should be changed into pbs_server
+
+	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+
+	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));	
+
+  	strncat(full_url, job_id, strlen(job_id));
+	
+	printf("RELEASING FULL URL = %s\n", full_url);
 
 	res = oar_request_transmission (full_url, "POST", RESUME_REQ);
 
@@ -403,6 +437,11 @@ int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend){
 	// We should free non-used memory here !!
 
 
+	printf("______________________RELEASING__________________________\n");
+	printf(" RELEASING CODE : %d\n",res->code);
+	printf(" RELEASING RESPONSE : \n");
+	showResult(res->data);
+	printf("____________________RELEASING DONE_______________________\n");
 
 
 	return retcode;
@@ -479,19 +518,19 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 
 	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));
 
-	printf("CHKPT 0 : ID = %s\n", id);	
+//	printf("CHKPT 0 : ID = %s\n", id);	
 
   	strncat(full_url, id, strlen(id));
 
-	printf("CHKPT 1 : ID = %s\n", id);	
+//	printf("CHKPT 1 : ID = %s\n", id);	
 
 	printf("STAT JOB FULL URL = %s\n", full_url);
 
-	printf("CHKPT 2 : ID = %s\n", id);	
+//	printf("CHKPT 2 : ID = %s\n", id);	
 	
 	res = oar_request_transmission (full_url, "GET", NULL);
 
-	printf("CHKPT 3 : ID = %s\n", id);
+//	printf("CHKPT 3 : ID = %s\n", id);
 
 	printf("STAT JOB CHKPT 1\n");	
 
@@ -500,7 +539,7 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 	}
 	// Everything is OK
 
-	printf("CHKPT 4 : ID = %s\n", id);
+//	printf("CHKPT 4 : ID = %s\n", id);
 
 	printf("STAT JOB CHKPT 2\n");
 	
@@ -514,7 +553,7 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 	bstatus->attribs = attributes;
 	bstatus->text = "OAR : NO COMMENTS";
 
-	printf("CHKPT 5 : ID = %s\n", id);
+//	printf("CHKPT 5 : ID = %s\n", id);
 
 
 	

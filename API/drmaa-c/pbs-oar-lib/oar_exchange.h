@@ -1,3 +1,6 @@
+#ifndef _OAR_EXCHANGE_H
+#define _OAR_EXCHANGE_H 
+
 //#include "presult.h"
 #include "jparser.h"
 
@@ -12,3 +15,5 @@ typedef struct exchange_result_ exchange_result;
 exchange_result* oar_request_transmission();
 
 MAX_OAR_URL_LENGTH;
+
+#endif
