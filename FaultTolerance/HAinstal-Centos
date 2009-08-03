@@ -9,6 +9,7 @@
 ####--Package---#####
 
 DRBD="drbd82"
+DRBDKMOD="kmod-drbd82"
 HEARTBEAT2="heartbeat"
 
 ####--BDD---#####
@@ -19,18 +20,18 @@ PGVERSION="8.3"
 
 ###----Nodes name-----------####
 
-MASTER_OAR="genepi-7.grenoble.grid5000.fr"
-MASTER_DB="genepi-7.grenoble.grid5000.fr"
-BACKUP_OAR="genepi-9.grenoble.grid5000.fr"
-BACKUP_DB="genepi-9.grenoble.grid5000.fr"
+MASTER_OAR="griffon-8"
+MASTER_DB="griffon-8"
+BACKUP_OAR="griffon-9"
+BACKUP_DB="griffon-9"
 
 #-----Nodes properties-----####
 #Interface
 ETH="eth1"
 #OAR-server Virtual IP (ex : )
-IP="172.16.16.220"
+IP="172.28.54.220"
 #Database Virtual IP (ex : 172.16.16.221)
-IP_DB="172.16.16.221"
+IP_DB="172.28.54.221"
 #enter CIDR netmask (ex : 24)
 MASK="24"
 
@@ -160,10 +161,15 @@ exists host
 #-----------------------Installation on debian---------------------------------------------------
 
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
-	yum install $DRBD
+	yum install $DRBD $DRBDKMOD
 fi
 
-apt-get -y install $HEARTBEAT2
+yum install $HEARTBEAT2
+
+#-----Installation tests-----#
+
+exists crmadmin		#Heartbeat test
+exists drbdadm		#DRBD test
 
 
 #-----------------------Stop services---------------------------------------------------
@@ -619,12 +625,14 @@ fi
 #-----------------------Get database data path for DRBD configuration, and change this path---------------------------------------------------
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 	if [ "$BD" = "mysql" ]; then
-		mysqldirold=$(cat /etc/$BD/my.cnf | grep datadir | cut -d "=" -f2)
+		datadirold=$(cat /etc/my.cnf | grep datadir)
+		datadiroldn=$(echo $datadirold | sed 's/\//\\\//g')
+		mysqldirold=$(echo $datadirold | cut -d "=" -f2)
 		mysqldiroldn=$(echo $mysqldirold | sed 's/\//\\\//g')
 		#Save mysql old configuration
-		cp /etc/mysql/my.cnf /etc/mysql/my.cnf.backup
-		sed -e "s/$mysqldiroldn/\/mnt\/drbddata\/mysql/g" /etc/mysql/my.cnf > /etc/mysql/my.cnf.tmp && mv -f /etc/mysql/my.cnf.tmp /etc/mysql/my.cnf 
-		sed -e "s/bind-address/# bind-address/g" /etc/mysql/my.cnf > /etc/mysql/my.cnf.tmp && mv -f /etc/mysql/my.cnf.tmp /etc/mysql/my.cnf
+		cp /etc/my.cnf /etc/my.cnf.backup
+		sed -e "s/$datadiroldn/datadir=\/mnt\/drbddata\/mysql/g" /etc/my.cnf > /etc/my.cnf.tmp && mv -f /etc/my.cnf.tmp /etc/my.cnf 
+		sed -e "s/bind-address/# bind-address/g" /etc/my.cnf > /etc/my.cnf.tmp && mv -f /etc/my.cnf.tmp /etc/my.cnf
 	elif [ "$BD" = "postgresql" ]; then
 		postgresdirold=$(cat /etc/$BD/$PGVERSION/main/postgresql.conf | grep data_directory | cut -d "'" -f2)
 		postgresdiroldn=$(echo $postgresdirold | sed 's/\//\\\//g')
@@ -742,7 +750,9 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 	#Create metadata
 	drbdadm create-md all
 
-	drbdadm up all
+	service drbd start
+
+	#drbdadm up all
 
 	if [ ! -e $DRBDDATA ]; then
 		mkdir $DRBDDATA
@@ -780,12 +790,13 @@ fi
 
 #-----------------------Remove auto launch---------------------------------------------------
 
-update-rc.d -f oar-server remove
+chkconfig oar-server off
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 	if [ "$BD" = "mysql" ]; then
-		update-rc.d -f $BD remove
+		chkconfig $BD"d" off
 	elif [ "$BD" = "postgresql" ]; then
-		update-rc.d -f $BD"-"$PGVERSION remove
+		#update-rc.d -f $BD"-"$PGVERSION remove
+		echo "not implemented"
 	else
 		exit 1
 	fi
@@ -813,7 +824,8 @@ echo 'esac' >> /etc/init.d/active-loop
 chmod +x /etc/init.d/active-loop
 
 #Auto start, before DRBD --> 60
-update-rc.d active-loop defaults 60
+chkconfig add active-loop
+chkconfig --level 2345 active-loop on
 
 
 
@@ -824,13 +836,13 @@ update-rc.d active-loop defaults 60
 
 #-----------------------Add cgi script for monitor heartbeat---------------------------------------------------
 
-echo '#!/bin/bash' > /usr/lib/cgi-bin/ha-status.cgi
-echo 'sudo /usr/sbin/crm_mon -w' >> /usr/lib/cgi-bin/ha-status.cgi
+#echo '#!/bin/bash' > /usr/lib/cgi-bin/ha-status.cgi
+#echo 'sudo /usr/sbin/crm_mon -w' >> /usr/lib/cgi-bin/ha-status.cgi
 
 
-echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
+#echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
 
-chmod 755 /usr/lib/cgi-bin/ha-status.cgi
+#chmod 755 /usr/lib/cgi-bin/ha-status.cgi
 
 
 #-----------------------End of script---------------------------------------------------
