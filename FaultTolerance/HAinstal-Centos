@@ -7,6 +7,16 @@
 
 #-----------------------Variables---------------------------------------------------
 
+#########to be deleted in the future##############
+
+service iptables stop
+
+###############################################
+
+
+
+
+
 ####--Package---#####
 
 DRBD="drbd82"
@@ -21,14 +31,14 @@ PGVERSION="8.3"
 
 ###----Nodes name-----------####
 
-MASTER_OAR="grelon-40"
-MASTER_DB="grelon-40"
-BACKUP_OAR="grelon-41"
-BACKUP_DB="grelon-41"
+MASTER_OAR="grelon-38"
+MASTER_DB="grelon-38"
+BACKUP_OAR="grelon-39"
+BACKUP_DB="grelon-39"
 
 #-----Nodes properties-----####
 #Interface
-ETH="eth1"
+ETH="eth0"
 #OAR-server Virtual IP (ex : )
 IP="172.28.54.220"
 #Database Virtual IP (ex : 172.16.16.221)
@@ -162,10 +172,10 @@ exists host
 #-----------------------Installation on debian---------------------------------------------------
 
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
-	yum install $DRBD $DRBDKMOD
+	yum -y install $DRBD $DRBDKMOD
 fi
 
-yum install $HEARTBEAT2
+yum -y install $HEARTBEAT2
 
 #-----Installation tests-----#
 
@@ -513,6 +523,13 @@ else #2 nodes hearbeat configuration
 
 	echo '     <resources>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       <group id="group_1">' >> /var/lib/heartbeat/crm/cib.xml
+	echo '         <meta_attributes id="group_1_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
+	echo '           <attributes>' >> /var/lib/heartbeat/crm/cib.xml
+	echo '		   <nvpair id="group__metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
+        echo '     	   <nvpair id="group__metaattr_collocated" name="collocated" value="true"/>' >> /var/lib/heartbeat/crm/cib.xml
+	echo '             <nvpair id="group_1_metaattr_ordered" name="ordered" value="true"/>' >> /var/lib/heartbeat/crm/cib.xml
+	echo '           </attributes>' >> /var/lib/heartbeat/crm/cib.xml
+	echo '         </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         <primitive class="ocf" id="VirtualIP" provider="heartbeat" type="IPaddr2">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           <operations>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '             <op id="VirtualIP_mon" interval="5s" name="monitor" timeout="5s"/>' >> /var/lib/heartbeat/crm/cib.xml
@@ -548,7 +565,7 @@ else #2 nodes hearbeat configuration
 	echo '           </instance_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	if [ "$BD" = "mysql" ]; then
-		echo '         <primitive class="lsb" id="database" provider="heartbeat" type="mysqlha">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '         <primitive id="database" class="lsb" type="mysqlha" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           <operations>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           </operations>' >> /var/lib/heartbeat/crm/cib.xml
@@ -572,11 +589,6 @@ else #2 nodes hearbeat configuration
 	echo '             <op id="oar-server_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '           </operations>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
-	echo '         <meta_attributes id="group_1_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
-	echo '           <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-	echo '             <nvpair id="group_1_metaattr_ordered" name="ordered" value="true"/>' >> /var/lib/heartbeat/crm/cib.xml
-	echo '           </attributes>' >> /var/lib/heartbeat/crm/cib.xml
-	echo '         </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       </group>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '     </resources>' >> /var/lib/heartbeat/crm/cib.xml
 
