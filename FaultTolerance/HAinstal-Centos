@@ -1,8 +1,9 @@
 #!/bin/bash
 #@Author: Joris Bremond
 
+#Script for CentOs
+
 #Requirements : this script must be started with admin (root) right
-#Require kernel headers (linux-headers)
 
 #-----------------------Variables---------------------------------------------------
 
@@ -20,10 +21,10 @@ PGVERSION="8.3"
 
 ###----Nodes name-----------####
 
-MASTER_OAR="griffon-8"
-MASTER_DB="griffon-8"
-BACKUP_OAR="griffon-9"
-BACKUP_DB="griffon-9"
+MASTER_OAR="grelon-40"
+MASTER_DB="grelon-40"
+BACKUP_OAR="grelon-41"
+BACKUP_DB="grelon-41"
 
 #-----Nodes properties-----####
 #Interface
@@ -376,24 +377,24 @@ if [ "$CONF" = "4nodes" ]; then
 	echo '           </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	if [ "$BD" = "mysql" ]; then
-		echo '         <primitive id="MysqlHA" class="lsb" type="mysqlha" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '         <primitive id="database" class="lsb" type="mysqlha" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 <operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '		   <op id="MysqlHA_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '		   <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 </operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '           <meta_attributes id="MysqlHA_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '           <meta_attributes id="database_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '               <nvpair id="MysqlHA_metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '               <nvpair id="database_metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             </attributes>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	elif [ "$BD" = "postgresql" ]; then
-		echo "		<primitive id=\"Postgres\" class=\"lsb\" type=\"$BD-"$PGVERSION"ha\" provider=\"heartbeat\"" >> /var/lib/heartbeat/crm/cib.xml
+		echo "		<primitive id=\"database\" class=\"lsb\" type=\"$BD-"$PGVERSION"ha\" provider=\"heartbeat\"" >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 <operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '		   <op id="Postgres_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '		   <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 </operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '           <meta_attributes id="Postgres_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '           <meta_attributes id="database_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '               <nvpair id="Postgres_metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '               <nvpair id="database_metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             </attributes>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
@@ -547,19 +548,19 @@ else #2 nodes hearbeat configuration
 	echo '           </instance_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	if [ "$BD" = "mysql" ]; then
-		echo '         <primitive class="lsb" id="mysqlha" provider="heartbeat" type="mysqlha">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '         <primitive class="lsb" id="database" provider="heartbeat" type="mysqlha">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           <operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '             <op id="mysqlha_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '             <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           </operations>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	elif [ "$BD" = "postgresql" ]; then
-		echo "		<primitive id=\"Postgres\" class=\"lsb\" type=\"$BD-"$PGVERSION"ha\" provider=\"heartbeat\"" >> /var/lib/heartbeat/crm/cib.xml
+		echo "		<primitive id=\"database\" class=\"lsb\" type=\"$BD-"$PGVERSION"ha\" provider=\"heartbeat\"" >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 <operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '		   <op id="Postgres_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '		   <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 </operations>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '           <meta_attributes id="Postgres_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '           <meta_attributes id="database_meta_attrs">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             <attributes>' >> /var/lib/heartbeat/crm/cib.xml
-		echo '               <nvpair id="Postgres_metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
+		echo '               <nvpair id="database_metaattr_target_role" name="target_role" value="started"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             </attributes>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
@@ -601,6 +602,118 @@ fi
 
 chown hacluster:haclient /var/lib/heartbeat/crm/cib.xml
 chmod 0600 /var/lib/heartbeat/crm/cib.xml
+
+
+#-----------------------Modify OAR service, LSB compatible---------------------------------------------------
+
+if [ "$ISDATABASE" = "n" ]||[ "$CONF" = "2nodes" ]; then
+	
+	echo '#!/bin/bash' > /etc/init.d/oar-server
+	echo '#' >> /etc/init.d/oar-server
+	echo '# oar-server          Start/Stop the oar server daemon.' >> /etc/init.d/oar-server
+	echo '#' >> /etc/init.d/oar-server
+	echo '# chkconfig: 2345 99 01' >> /etc/init.d/oar-server
+	echo '# description: OAR is a resource manager (or batch scheduler) for large computing clusters.' >> /etc/init.d/oar-server
+	echo '# processname: Almighty' >> /etc/init.d/oar-server
+	echo '# config: /etc/oar/oar.conf' >> /etc/init.d/oar-server
+	echo '# pidfile: /var/run/oar-server.pid' >> /etc/init.d/oar-server
+
+	echo 'RETVAL=0' >> /etc/init.d/oar-server
+	echo 'DAEMON=/usr/sbin/oar-server' >> /etc/init.d/oar-server
+	echo 'DESC=oar-server' >> /etc/init.d/oar-server
+	echo 'PIDFILE=/var/run/oar-server.pid' >> /etc/init.d/oar-server
+	echo 'CONFIG=/etc/oar/oar.conf' >> /etc/init.d/oar-server
+
+	echo 'test -x $DAEMON || exit 0' >> /etc/init.d/oar-server
+
+	echo '# Source function library.' >> /etc/init.d/oar-server
+	echo '. /etc/init.d/functions' >> /etc/init.d/oar-server
+
+	echo '# Set sysconfig settings' >> /etc/init.d/oar-server
+	echo '[ -f /etc/sysconfig/oar-server ] && . /etc/sysconfig/oar-server' >> /etc/init.d/oar-server
+
+	echo 'check_sql() {' >> /etc/init.d/oar-server
+	echo '        echo -n "Checking oar SQL base: "' >> /etc/init.d/oar-server
+	echo '	if [ -f $CONFIG ] && . $CONFIG ; then' >> /etc/init.d/oar-server
+	echo '           :' >> /etc/init.d/oar-server
+	echo '        else' >> /etc/init.d/oar-server
+	echo '          echo -n "Error loading $CONFIG"' >> /etc/init.d/oar-server
+	echo '          failure' >> /etc/init.d/oar-server
+	echo '          exit 1' >> /etc/init.d/oar-server
+	echo '        fi' >> /etc/init.d/oar-server
+	echo '        if [ "$DB_TYPE" = "mysql" -o "$DB_TYPE" = "Pg" ] ; then' >> /etc/init.d/oar-server
+	echo '          export PERL5LIB="/usr/lib/oar"' >> /etc/init.d/oar-server
+	echo '          export OARCONFFILE="$CONFIG"' >> /etc/init.d/oar-server
+	echo '          perl <<EOS && success || failure ' >> /etc/init.d/oar-server
+	echo '          use oar_iolib;' >> /etc/init.d/oar-server
+	echo '	  \$Db_type="$DB_TYPE";' >> /etc/init.d/oar-server
+	echo '          if (iolib::connect_db("$DB_HOSTNAME","$DB_PORT","$DB_BASE_NAME","$DB_BASE_LOGIN","$DB_BASE_PASSWD",0)) { exit 0;echo ok; }' >> /etc/init.d/oar-server
+	echo '          else { exit 1; }' >> /etc/init.d/oar-server
+	echo 'EOS' >> /etc/init.d/oar-server
+	echo '        else' >> /etc/init.d/oar-server
+	echo '          echo -n "Unknown $DB_TYPE database type"' >> /etc/init.d/oar-server
+	echo '          failure' >> /etc/init.d/oar-server
+	echo '          exit 1' >> /etc/init.d/oar-server
+	echo '        fi' >> /etc/init.d/oar-server
+	echo '}' >> /etc/init.d/oar-server
+
+	echo 'sql_init_error_msg (){' >> /etc/init.d/oar-server
+	echo '  echo' >> /etc/init.d/oar-server
+	echo '  echo "OAR database seems to be unreachable." ' >> /etc/init.d/oar-server
+	echo '  echo "Did you forget to initialize it or to configure the oar.conf file?"' >> /etc/init.d/oar-server
+	echo '  echo "See http://oar.imag.fr/docs/manual.html#configuration-of-the-cluster for more infos"' >> /etc/init.d/oar-server
+	echo '  exit 1' >> /etc/init.d/oar-server
+	echo '}' >> /etc/init.d/oar-server
+
+	echo 'start() {' >> /etc/init.d/oar-server
+	echo '        echo -n "Starting $DESC: "' >> /etc/init.d/oar-server
+	echo '        daemon $DAEMON $DAEMON_OPTS && success || failure' >> /etc/init.d/oar-server
+	echo '        RETVAL=$?' >> /etc/init.d/oar-server
+	echo '	echo ' >> /etc/init.d/oar-server
+	echo '}' >> /etc/init.d/oar-server
+
+	echo 'stop() {' >> /etc/init.d/oar-server
+	echo '        echo -n "Stopping $DESC: "' >> /etc/init.d/oar-server
+	echo '        if [ -n "`pidfileofproc $DAEMON`" ]; then' >> /etc/init.d/oar-server
+	echo '            killproc $DAEMON' >> /etc/init.d/oar-server
+	echo '            sleep 1' >> /etc/init.d/oar-server
+	echo '            killall Almighty 2>/dev/null' >> /etc/init.d/oar-server
+	echo '            sleep 1' >> /etc/init.d/oar-server
+	echo '            killall -9 Almighty 2>/dev/null' >> /etc/init.d/oar-server
+	echo '            RETVAL=3' >> /etc/init.d/oar-server
+	echo '        else' >> /etc/init.d/oar-server
+	echo '            failure $"Stopping $DESC"' >> /etc/init.d/oar-server
+	echo '        fi' >> /etc/init.d/oar-server
+	echo '        RETVAL=$?' >> /etc/init.d/oar-server
+	echo '        echo ' >> /etc/init.d/oar-server
+	echo '}' >> /etc/init.d/oar-server
+
+	echo 'case "$1" in' >> /etc/init.d/oar-server
+	echo '  start)' >> /etc/init.d/oar-server
+	echo '        check_sql || sql_init_error_msg' >> /etc/init.d/oar-server
+	echo '        start' >> /etc/init.d/oar-server
+	echo '        ;;' >> /etc/init.d/oar-server
+	echo '  stop)' >> /etc/init.d/oar-server
+	echo '        stop' >> /etc/init.d/oar-server
+	echo '        ;;' >> /etc/init.d/oar-server
+	echo '  restart|force-reload|restart)' >> /etc/init.d/oar-server
+	echo '        stop' >> /etc/init.d/oar-server
+	echo '        sleep 1' >> /etc/init.d/oar-server
+	echo '        start' >> /etc/init.d/oar-server
+	echo '        ;;' >> /etc/init.d/oar-server
+	echo '  status)' >> /etc/init.d/oar-server
+	echo '        status $DAEMON' >> /etc/init.d/oar-server
+	echo '	RETVAL=$?' >> /etc/init.d/oar-server
+	echo '        ;;' >> /etc/init.d/oar-server
+	echo '  *)' >> /etc/init.d/oar-server
+	echo '        echo $"Usage: $0 {start|stop|status|restart}"' >> /etc/init.d/oar-server
+	echo '        RETVAL=3' >> /etc/init.d/oar-server
+	echo 'esac' >> /etc/init.d/oar-server
+	echo 'exit $RETVAL' >> /etc/init.d/oar-server
+
+
+	chmod 755 /etc/init.d/oar-server
+fi
 
 
 #-----------------------OAR configuration with remote database (Virtual IP) ---------------------------------------------------
@@ -801,6 +914,7 @@ if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 		exit 1
 	fi
 fi
+
 
 #-----------------------Create service for auto associate $LOOPBACK with $IMAGE-----------------------------
 

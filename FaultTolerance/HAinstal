@@ -1,6 +1,8 @@
 #!/bin/bash
 #@Author: Joris Bremond
 
+#Script for Debian
+
 #Requirements : this script must be started with admin (root) right
 #Require kernel headers (linux-headers)
 
