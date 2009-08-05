@@ -1,7 +1,7 @@
 #!/bin/bash
 #@Author: Joris Bremond
 
-#Script for CentOs
+#Script for CentOs, tested with heartbeat 2.1.3
 
 #Requirements : this script must be started with admin (root) right
 
@@ -31,10 +31,10 @@ PGVERSION="8.3"
 
 ###----Nodes name-----------####
 
-MASTER_OAR="grelon-38"
-MASTER_DB="grelon-38"
-BACKUP_OAR="grelon-39"
-BACKUP_DB="grelon-39"
+MASTER_OAR="grelon-57"
+MASTER_DB="grelon-57"
+BACKUP_OAR="grelon-58"
+BACKUP_DB="grelon-58"
 
 #-----Nodes properties-----####
 #Interface
@@ -278,16 +278,6 @@ echo 'crm yes' >> /etc/ha.d/ha.cf
 #echo 'auto_failback on' >> /etc/ha.d/ha.cf
 
 
-#-----------------------Rename Database service for HA ----------------------------
-
-if [ "$BD" = "mysql" ]; then
-	cp /etc/init.d/$BD"d" /etc/init.d/"$BD"dha
-elif [ "$BD" = "postgresql" ]; then
-	cp /etc/init.d/$BD"-"$PGVERSION /etc/init.d/$BD"-""$PGVERSION"ha
-else
-	exit 1
-fi
-
 #-----------------------Create file cib.xml, configure ressources for Heartbeat---------------------------------------------------
 
 if [ "$CONF" = "4nodes" ]; then
@@ -387,7 +377,7 @@ if [ "$CONF" = "4nodes" ]; then
 	echo '           </meta_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	if [ "$BD" = "mysql" ]; then
-		echo '         <primitive id="database" class="lsb" type="mysqlha" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '         <primitive id="database" class="lsb" type="mysqld" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 <operations>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		   <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '		 </operations>' >> /var/lib/heartbeat/crm/cib.xml
@@ -565,7 +555,7 @@ else #2 nodes hearbeat configuration
 	echo '           </instance_attributes>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         </primitive>' >> /var/lib/heartbeat/crm/cib.xml
 	if [ "$BD" = "mysql" ]; then
-		echo '         <primitive id="database" class="lsb" type="mysqlha" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
+		echo '         <primitive id="database" class="lsb" type="mysqld" provider="heartbeat">' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           <operations>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '             <op id="database_mon" interval="120s" name="monitor" timeout="60s"/>' >> /var/lib/heartbeat/crm/cib.xml
 		echo '           </operations>' >> /var/lib/heartbeat/crm/cib.xml
@@ -692,11 +682,14 @@ if [ "$ISDATABASE" = "n" ]||[ "$CONF" = "2nodes" ]; then
 	echo '            killall Almighty 2>/dev/null' >> /etc/init.d/oar-server
 	echo '            sleep 1' >> /etc/init.d/oar-server
 	echo '            killall -9 Almighty 2>/dev/null' >> /etc/init.d/oar-server
-	echo '            RETVAL=3' >> /etc/init.d/oar-server
+	echo '            RETVAL=0' >> /etc/init.d/oar-server
 	echo '        else' >> /etc/init.d/oar-server
 	echo '            failure $"Stopping $DESC"' >> /etc/init.d/oar-server
+	echo '            RETVAL=$?' >> /etc/init.d/oar-server
+	echo '            if [ `ps -ef | grep -v "grep" | grep Almighty | wc -l` -eq 0 ]; then' >> /etc/init.d/oar-server
+	echo '                RETVAL=0' >> /etc/init.d/oar-server
+	echo '            fi' >> /etc/init.d/oar-server
 	echo '        fi' >> /etc/init.d/oar-server
-	echo '        RETVAL=$?' >> /etc/init.d/oar-server
 	echo '        echo ' >> /etc/init.d/oar-server
 	echo '}' >> /etc/init.d/oar-server
 
@@ -727,6 +720,16 @@ if [ "$ISDATABASE" = "n" ]||[ "$CONF" = "2nodes" ]; then
 	chmod 755 /etc/init.d/oar-server
 fi
 
+
+#-----------------------Modify mysql service, for return 0 if mysql is stopped and you try to stop it---------------------------------------------------
+
+if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
+
+	sed -e "s/stop(){/stop(){\n\tstatus mysqld\n\tif [ \$? -eq 3 ]; then\n\t\taction \$\"Stopping \$prog: \" \/bin\/true\n\t\texit 0\n\tfi\n/g" /etc/init.d/mysqld > /etc/init.d/mysqld.tmp && mv -f /etc/init.d/mysqld.tmp /etc/init.d/mysqld
+
+	chmod 755 /etc/init.d/mysqld
+
+fi
 
 #-----------------------OAR configuration with remote database (Virtual IP) ---------------------------------------------------
 
@@ -915,6 +918,7 @@ fi
 
 #-----------------------Remove auto launch---------------------------------------------------
 
+chkconfig --add heartbeat
 chkconfig oar-server off
 if [ "$ISDATABASE" = "y" ]||[ "$CONF" = "2nodes" ]; then
 	if [ "$BD" = "mysql" ]; then
@@ -931,6 +935,8 @@ fi
 #-----------------------Create service for auto associate $LOOPBACK with $IMAGE-----------------------------
 
 echo '#!/bin/sh' > /etc/init.d/active-loop
+echo '# chkconfig: 2345 60 01' >> /etc/init.d/active-loop
+echo '# description: Auto associate loopback with the file image.img' >> /etc/init.d/active-loop
 echo 'case "$1" in' >> /etc/init.d/active-loop
 echo '  start|"") ' >> /etc/init.d/active-loop
 echo '        losetup /dev/loop0 /image.img' >> /etc/init.d/active-loop
@@ -950,7 +956,7 @@ echo 'esac' >> /etc/init.d/active-loop
 chmod +x /etc/init.d/active-loop
 
 #Auto start, before DRBD --> 60
-chkconfig add active-loop
+chkconfig --add active-loop
 chkconfig --level 2345 active-loop on
 
 
