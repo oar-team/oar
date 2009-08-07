@@ -126,6 +126,8 @@ IP address		MAC address primary node
 
 
 \chapter{Installation}
+
+Before begin installation on CentOS, verify if the depot "extra" is uncommented, in \textit{/etc/yum.repo.d/CentOS-Base.repo}.
 \section{DRBD}
 In this guide, we use DRBD-8.
 \begin{description}
@@ -143,6 +145,13 @@ Module Assistant require kernel header. You can install it with :
 \begin{lstlisting}
 apt-get install linux-headers-`uname -r`
 \end{lstlisting}
+
+\item[]- On CentOS :
+
+The package name is drbd82 and kmod-drbd82 for kernel module :
+\begin{lstlisting}
+yum -y install drbd82 kmod-drbd82
+\end{lstlisting} 
 
 \end{description}
 
@@ -162,6 +171,15 @@ You can also install the GUI package on the your computer for heartbeat remote c
 \begin{lstlisting}
 apt-get install heartbeat-2-gui
 \end{lstlisting}
+
+\item[]- On CentOS:
+
+The package name is heartbeat.
+\begin{lstlisting}
+yum -y install heartbeat
+\end{lstlisting}
+Verify if heartbeat is completly installed. If not, retry the previous command.
+
 \end{description}
 
 
@@ -197,13 +215,22 @@ For illustrate example, the nodes names are :
 \section{System configuration}
 \label{sysconf}
 It's really recommended that we have two different network between each Heartbeat server. Indeed, heartbeat use the network for check its neighbor. With two networks, we can for example avoid split-brain problem (See \ref{splitbrain}). We can use one Ethernet network and one serial network, ore two Ethernet network. With a solution like this, we can easily cut the Ethernet network without interfere with heartbeat functioning.\\
+
 For Heartbeat configuration, we need one or two network address (Virtual IP). If we are in configuration 2 nodes (OAR-server and database on the same nodes), we need one IP address, and two IP if we are in 4 nodes configurations. Two Virtual IP for access to oar-server and database. This virtual IP must be free and accessible on the network.\\
 
 Now, it is heartbeat which launches services like oar, mysql. So you must remove auto launch :
+\begin{description}
+\item[]- On debian:
 \begin{lstlisting}
 update-rc.d -f oar-server remove
 update-rc.d -f $BD remove
 \end{lstlisting}
+\item[]- On CentOS:
+\begin{lstlisting}
+chkconfig oar-server off
+chkconfig $BD off
+\end{lstlisting}
+\end{description}
 \$BD correspond to mysql or postgres.\\
 
 DRBD need a low-level storage for write data. It could be an entire disk, a partition, or a virtual partition (in a file). So before configure DRBD, create a free partition.\\
@@ -216,6 +243,8 @@ mkfs -t ext3 /dev/loop/0
 shred -zvf -n 1 /dev/loop/0	
 \end{lstlisting}
 Furthermore, we need to create a script for auto associate loopback device with the image file at startup, and before DRBD launching.
+\begin{description}
+\item[]- On debian:
 \begin{lstlisting}
 #!/bin/sh
 case "$1" in
@@ -236,10 +265,38 @@ esac
 Change right and add to startup (60 is before DRBD) :
 \begin{lstlisting}
 chmod +x /etc/init.d/active-loop
-
 update-rc.d active-loop defaults 60
 \end{lstlisting}
 
+\item[]- On CentOS:
+\begin{lstlisting}
+#!/bin/sh
+# chkconfig: 2345 60 01
+# description: Auto associate loopback with the file image.img
+case "$1" in
+  start|"") 
+        losetup /dev/loop0 /image.img
+	echo "Start OK"
+        ;;
+  stop)
+	losetup -d /dev/loop0
+	echo "Stop OK"
+	;;
+  *)
+        echo "Usage: active-loop [start|stop]" >&2
+        exit 3
+        ;;
+esac
+\end{lstlisting}
+Change right and add to startup (60 is before DRBD) :
+\begin{lstlisting}
+chmod +x /etc/init.d/active-loop
+chkconfig --add active-loop
+chkconfig --level 2345 active-loop on
+\end{lstlisting}
+\end{description}
+
+\textbf{Important} : You must verify if the port UDP 694(heartbeat) and TCP 7788(DRBD) is open.
 
 \section{Heartbeat Configuration}
 
@@ -393,10 +450,11 @@ In our case, you can specify node priority, for example if you want resources ru
 
 \item Example of heartbeat configuration cib.xml file : see appendix \ref{cibexample}\\
 
-Tips : The mysql OCF script integrated in heartbeat doesn't work for me, so for avoid to use it, rename the mysql script in mysqlha for example :
+Tips : The mysql OCF script integrated in heartbeat doesn't work for me, so for avoid to use it, rename the mysql script (just for Debian) in mysqlha for example, and precise it's a LSB script for heartbeat :
 \begin{lstlisting}
 cp /etc/init.d/mysql /etc/init.d/mysqlha
 \end{lstlisting}
+
 
 \end{itemize}
 
@@ -409,7 +467,10 @@ chmod 0600 /var/lib/heartbeat/crm/cib.xml
 
 
 
-\subsection{Make OAR Service LSB compatible}
+\subsection{OAR Service modifications}
+\begin{description}
+\item[]- On debian:\\
+
 The OAR service (/etc/init.d/oar-server) is currently not compatible with LSB standard. It haven't the status function. So heartbeat can't monitor it.
 For add status function on oar-server, edit \textit{/etc/init.d/oar-server} file, and add :
 \begin{lstlisting}[language=bash]
@@ -432,6 +493,31 @@ status)
 	;;
 \end{lstlisting}
 
+\item[]- On CentOS:\\
+
+The return value in CentOS is different that Debian. For example, if you stop oar-server which runs, and action success, oar service return 0. But if it is already stopped, Debian return 0 but not CentOS. So heartbeat failed in monitor mode, because if don't have the right return value.
+You must modify the "stop" option :
+\begin{lstlisting}[language=bash]
+stop() {
+        echo -n "Stopping $DESC: "
+        if [ -n "`pidfileofproc $DAEMON`" ]; then
+            killproc $DAEMON
+            sleep 1
+            killall Almighty 2>/dev/null
+            sleep 1
+            killall -9 Almighty 2>/dev/null
+            RETVAL=0
+        else
+            failure $"Stopping $DESC"
+            RETVAL=$?
+            if [ `ps -ef | grep -v "grep" | grep Almighty | wc -l` -eq 0 ]; then
+                RETVAL=0
+            fi
+        fi
+        echo 
+}
+\end{lstlisting}
+\end{description}
 
 \section{DRBD Configuration}
 In DRBD configuration file, we can specifies a lots of parameters, which describe resources, synchronization type, synchronization rate, etc. For a complete example, see \ref{drbdexample}.
@@ -563,7 +649,7 @@ Now DRBD is operational, all data put in \textbf{/dev/drbddata} will be synchron
 Now, it is the time to configure database. The datadir will be changed into the  mount point of disk partition defined in DRBD (see  \ref{hostsection}).
 
 \subsection{Mysql}
-For change datadir in mysql, open the file \textit{/etc/mysql/my.cnf}, search the primitive \textbf{datadir}, and replace the value by the partition defined in DRBD.
+For change datadir in mysql, open the file \textit{/etc/mysql/my.cnf} for Debian or \textit{/etc/my.cnf} for CentOS, search the primitive \textbf{datadir}, and replace the value by the partition defined in DRBD.
 For example, we can enter :
 \begin{lstlisting}
 datadir = /mnt/drbddata
@@ -573,7 +659,18 @@ You must copy all old mysql data in new datadir, and change owner :
 cp -r /var/lib/mysql /mnt/drbddata
 chown -R mysql:mysql /mnt/drbddata/mysql
 \end{lstlisting}
-If you want remote mysql access, don't forget to comment the \textbf{bind-address} in the my.cnf.
+If you want remote mysql access, don't forget to comment the \textbf{bind-address} in the my.cnf.\\
+
+In CentOS, you must correct a problem, like for oar-server, with the return value. At the begining of the "stop" option in \textit{/etc/init.d/mysqld}, add :
+\begin{lstlisting}
+stop(){
+  status mysqld
+  if [ $? -eq 3 ]; then
+      action $"Stopping $prog: " /bin/true
+      exit 0
+  fi
+  ...
+\end{lstlisting}
 
 \subsection{Postgresql}
 It is almost the same in Postgres. Open the file \textit{/etc/postgres/'version'/main/postgresql.conf}, and search data\_directory and change value in :
@@ -670,6 +767,10 @@ Before read more, heartbeat and drbd must be configured and started. For launch 
 Heartbeat provide a graphic interface for configure resources. You can install the package heartbeat2-gui on a remote computer, with the command(on debian) :
 \begin{lstlisting}
 apt-get install heartbeat2-gui
+\end{lstlisting}
+on CentOS :
+\begin{lstlisting}
+yum install heartbeat-gui
 \end{lstlisting}
 If you work on grid5000, you must create a ssh tunnel on port 5560. Example :
 \begin{lstlisting}
@@ -772,18 +873,22 @@ Heartbeat-2 provide different solutions for monitor resources and know nodes sta
 crm_mon -i 1
 \end{lstlisting}
 You can see nodes status, and where resources are launched, follow failed actions.
-\item Web solution : you can monitor resource with a cgi script. For install it, create a file in \textbf{cgi-bin} path, \textit{/usr/lib/cgi-bin/ha-status.cgi} :
+\item Web solution : you can monitor resource with a cgi script. For install it, create a file in \textbf{cgi-bin} path, \textit{/usr/lib/cgi-bin/ha-status.cgi} on Debian or \textit{/var/www/cgi-bin/ha-status.cgi} on CentOS:
 \begin{lstlisting}
 #!/bin/bash
 sudo /usr/sbin/crm_mon -w
 \end{lstlisting}
-Add apache (www-data) in the sudoers file :
+Add apache (www-data) in the sudoers file (for Debian) :
 \begin{lstlisting}
 echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
 \end{lstlisting}
+For CentOS, add the user apache in the sudoers file and comment the line  \textit{Defaults  requiretty} for enable sudo in tty mode:
+\begin{lstlisting}
+echo 'apache ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
+\end{lstlisting}
 Set right :
 \begin{lstlisting}
-chmod 755 /usr/lib/cgi-bin/ha-status.cgi
+chmod 755 .../ha-status.cgi
 \end{lstlisting}
 Now you can access to heartbeat status with http://x.x.x.x/cgi-bin/ha-status.cgi
 \item Logs : you can access to heartbeat log in \textit{/var/log/ha-log}
@@ -935,7 +1040,14 @@ The mount point is where you want mount shared data with DRBD.
     ##DRBD communication Port
     DBRDPORT="7788"
   \end{lstlisting}
+  
 \end{enumerate}
+
+\item CGI script :\\
+  If you want to use CGI script for monitor heartbeat, say "y", else "n"
+  \begin{lstlisting}
+    CGI="y"
+  \end{lstlisting}
 
 \end{itemize}
 
@@ -1010,7 +1122,7 @@ You can see that DRBD offer good performance in general. It can be use on OAR wi
 
 
 
-\section{Global system test}
+\section{Global system test on Debian}
 \subsection{2 nodes - Postgres}
 \begin{itemize}
  \item Migrate resources by set nodes in standby mode : Test OK, heartbeat launches resources on the backup, and when the primary come back, resources are migrate on the primary.
@@ -1170,7 +1282,7 @@ resource mysql {
 
 
 
-\chapter{Heartbeat example configuration}
+\chapter{Heartbeat example configuration on Debian}
 \label{cibexample}
 \section {High Availability on OAR with 2 nodes configuration, postgresql database}
 \begin{lstlisting}[language=xml]

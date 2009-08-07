@@ -91,9 +91,14 @@ FSTYPE="ext3"
 
 
 
-
 ##DRBD communication Port
 DBRDPORT="7788"
+
+
+####-------------------CGI script--------------------#####
+#enable cgi script for monitor heartbeat ? require httpd (apache)
+#"y" or "n"
+CGI="y"
 
 #---------------------------Initialisation--------------------------------------------------------------------#
 
@@ -922,6 +927,7 @@ fi
 #-----------------------Remove auto launch---------------------------------------------------
 
 chkconfig --add heartbeat
+
 if [ "$ISDATABASE" = "y" ]; then
 	if [ "$BD" = "mysql" ]; then
 		chkconfig $BD"d" off
@@ -973,13 +979,24 @@ chkconfig --level 2345 active-loop on
 
 #-----------------------Add cgi script for monitor heartbeat---------------------------------------------------
 
-#echo '#!/bin/bash' > /usr/lib/cgi-bin/ha-status.cgi
-#echo 'sudo /usr/sbin/crm_mon -w' >> /usr/lib/cgi-bin/ha-status.cgi
+if [ "$CGI" = "y" ]; then	
 
+	yum -y install httpd
 
-#echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
+	echo '#!/bin/bash' > /var/www/cgi-bin/ha-status.cgi
+	echo 'sudo /usr/sbin/crm_mon -w' >> /var/www/cgi-bin/ha-status.cgi
 
-#chmod 755 /usr/lib/cgi-bin/ha-status.cgi
+	chmod 755 /var/www/cgi-bin/ha-status.cgi
+
+	echo 'apache ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
+
+	#enable sudo in tty mode
+	tempo=$(cat /etc/sudoers | grep requiretty)
+	sed -e "s/$tempo/#$tempo/g" /etc/sudoers > /etc/sudoers.tmp && mv -f /etc/sudoers.tmp /etc/sudoers
+
+	service httpd start
+
+fi
 
 
 #-----------------------End of script---------------------------------------------------

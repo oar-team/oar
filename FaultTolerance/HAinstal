@@ -83,9 +83,16 @@ FSTYPE="ext3"
 
 
 
-
 ##DRBD communication Port
 DBRDPORT="7788"
+
+
+
+####-------------------CGI script--------------------#####
+#enable cgi script for monitor heartbeat ? require Apache
+#"y" or "n"
+CGI="y"
+
 
 #---------------------------Initialisation--------------------------------------------------------------------#
 
@@ -916,13 +923,17 @@ update-rc.d active-loop defaults 60
 
 #-----------------------Add cgi script for monitor heartbeat---------------------------------------------------
 
-echo '#!/bin/bash' > /usr/lib/cgi-bin/ha-status.cgi
-echo 'sudo /usr/sbin/crm_mon -w' >> /usr/lib/cgi-bin/ha-status.cgi
+if [ "$CGI" = "y" ]; then
+
+	echo '#!/bin/bash' > /usr/lib/cgi-bin/ha-status.cgi
+	echo 'sudo /usr/sbin/crm_mon -w' >> /usr/lib/cgi-bin/ha-status.cgi
 
 
-echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
+	echo 'www-data ALL=NOPASSWD:/usr/sbin/crm_mon' >> /etc/sudoers
 
-chmod 755 /usr/lib/cgi-bin/ha-status.cgi
+	chmod 755 /usr/lib/cgi-bin/ha-status.cgi
+
+fi
 
 
 #-----------------------End of script---------------------------------------------------
