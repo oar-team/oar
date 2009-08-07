@@ -6,7 +6,6 @@
 # include <pbs_ifl.h>
 # include <pbs_error.h>
 
-
 typedef struct batch_status batch_status;
 typedef struct attrl attrl;
 
@@ -42,6 +41,8 @@ int pbs_terminate(int connect, int manner, char *extend);
 
 void show_BatchStatus(batch_status *status);	// This is not a part of PBS functions >> a test function
 struct attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value); // This is not a part of PBS functions >> a test function
+
+char *pbse_to_txt(int err);
 
 char * pbs_server;		/* server attempted to connect | connected to */
 				/* see pbs_connect(3B)			      */

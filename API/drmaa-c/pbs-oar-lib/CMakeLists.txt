@@ -30,7 +30,8 @@ SET(PROJECT_LIBS
 
 
 # Output Library Path
-SET (OUT "/usr/local")	# Should be fixed later so that it can be adapted to the PBS-DRMAA OUPUT PATH
+#SET (OUT "/usr/local")	# Should be fixed later so that it can be adapted to the PBS-DRMAA OUPUT PATH
+SET (OUT "/home/baygon/CONFIGURATION") 
 SET (OUTPUT_PATH "${OUT}/lib")
 
 
