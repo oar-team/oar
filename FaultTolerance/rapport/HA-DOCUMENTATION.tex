@@ -6,7 +6,7 @@
 \usepackage{listings} 
 \usepackage{color}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
-\lstset{frame=single, breaklines=true, backgroundcolor=\color{lbcolor}, basicstyle=\ttfamily,basicstyle=\scriptsize, keywordstyle=\color{red}, commentstyle=\color{vert}, stringstyle=\color{blue}, identifierstyle=\ttfamily}
+\lstset{frame=single, breaklines=true,showspaces=false,showstringspaces=false,breakautoindent=true, flexiblecolumns=true, keepspaces=true, backgroundcolor=\color{lbcolor}, basicstyle=\ttfamily,basicstyle=\scriptsize, keywordstyle=\color{red}, commentstyle=\color{vert}, stringstyle=\color{blue}, identifierstyle=\ttfamily}
 
 \usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,pdfstartview=FitH]{hyperref} 
 \usepackage{float}
@@ -897,10 +897,12 @@ Now you can access to heartbeat status with http://x.x.x.x/cgi-bin/ha-status.cgi
 
 
 \subsection{DRBD monitoring}
-For know DRBD status, you can type :
+For know DRBD status, you can type :\\
 \begin{lstlisting}
 cat /proc/drbd
 \end{lstlisting}
+
+
 You can know who is the primary/secondary, if DRBD is connected, uptodate, have detect split-brain. If you have a running configuration, you may have :
 \begin{figure}[!h]
 \begin{center}
@@ -934,7 +936,7 @@ A fail over must be fastest as possible. So it could be very embarrassing if we 
 tune2fs -c 0 DISKPARTITION
 \end{lstlisting}
 
-\chapter{High Availability auto installation on Debian}
+\chapter{High Availability auto installation}
 
 You can install High Availability on OAR with HAinstal bash script. This script must be launched on each node you want to make faul tolerant, with root rights. Example, 2 nodes for oar-server and database on the same server (the master with oar-server and database, and the backup), and 4 nodes (master oar-server, master database, backup oar-server, backup database) if it different.
 Like previously, you must have a working installation (oar, database) : oar must access to database, etc.. This script don't configure frontend and nodes, so you must to refer to \ref{frontendconf} and \ref{nodeconf}.
@@ -943,10 +945,11 @@ Like previously, you must have a working installation (oar, database) : oar must
 \begin{itemize}
  \item Root rights
  \item Oar and database already installed and ready to work (without High availability)
- \item Linux-hearders : 
+ \item Linux-hearders (only on Debian): 
     \begin{lstlisting}
     apt-get install linux-headers-`uname -r`
     \end{lstlisting}
+ \item For CentOS : access to the depot "extra"
  \item One or two free IP address (for virtual IP)
  \item A free partition, or selected option USEFILEPARTITION
 \end{itemize}
@@ -961,7 +964,7 @@ Like previously, you must have a working installation (oar, database) : oar must
     HEARTBEAT2="heartbeat-2"
     MODULEASSITANT="module-assistant"
     \end{lstlisting}
-  This variable contains debian package name of DRBD, heartbeat-2, and module assistant.
+  This variable contains debian package name of DRBD, heartbeat-2, and module assistant. MODULEASSISTANT is only used on the Debian script.
 
  \item BDD :\\
   \begin{lstlisting}
@@ -1054,6 +1057,34 @@ The mount point is where you want mount shared data with DRBD.
 
 
 \section{How does it work}
+\begin{itemize}
+ \item Initialization: \\
+Thanks to "uname -n" command, script checks if you are in 2 nodes configurations or not, if the node is the master, backup, etc.
+ \item Functions:\\
+This part contains useful function. The function exists is used for verify if any commands used by the script is present. For example, the script tests if the command "losetup" is available.
+ \item Prerequisites test:\\
+Test with the function exists, view above.
+ \item Installation:\\
+The installation part installs heartbeat version 2 and DRBD 8 if the node must run database.
+ \item Stop service:\\
+Before modify service configuration, it is recommended to stop it.
+ \item Heartbeat configuration:\\
+In this part the script configures heartbeat. It copies configurations in three files : \textit{/etc/ha.d/authkeys}, \textit{/etc/ha.d/ha.cf}, \textit{/var/lib/heartbeat/crm/cib.xml}. The configuration is different if you are in 2 or 4 nodes configuration. So the script contains different scenario.
+ \item OAR service modification:\\
+There are different modifications to do for OAR service. For Debian, the init script don't have the status function. For CentOS, the script must change the return value for better heartbeat compatibility.
+ \item OAR configuration:\\
+Now, the script configures OAR with the detach mode, put the virtual IP address for database and par-server hostname.
+ \item Database configuration:\\
+For database, the script defines the data directory.
+ \item DRBD configuration:\\
+Copy DRBD configuration file \textit{/etc/drbd.conf}. After that, it loads drbd module, creates the image file if you have set USEFILEPARTITION to "y", copies old mysql data into the DRBD device, and puts the two nodes in secondary mode.
+ \item Remove auto-launch services:\\
+After installation, only heartbeat must manage services like oar-server, database, etc. So the system mustn't start services automatically.
+ \item Automatic association of loopback device with image:\\
+If you have set USEFILEPARTITION to "y", the system must associate the file image.img to the loopback interface, before DRBD start. So the script creates a startup script which realizes this action automatically.
+ \item Add cgi script:\\
+If you want monitor heartbeat over HTTP, the script creates a CGI script, accessible via http//x.x.x.x/cgi-bin/ha-status.cgi
+\end{itemize}
 
 
 

@@ -892,27 +892,31 @@ fi
 
 #-----------------------Create service for auto associate $LOOPBACK with $IMAGE-----------------------------
 
-echo '#!/bin/sh' > /etc/init.d/active-loop
-echo 'case "$1" in' >> /etc/init.d/active-loop
-echo '  start|"") ' >> /etc/init.d/active-loop
-echo '        losetup /dev/loop0 /image.img' >> /etc/init.d/active-loop
-echo '	echo "Start OK"' >> /etc/init.d/active-loop
-echo '        ;;' >> /etc/init.d/active-loop
-echo '  stop)' >> /etc/init.d/active-loop
-echo '	losetup -d /dev/loop0' >> /etc/init.d/active-loop 
-echo '	echo "Stop OK"' >> /etc/init.d/active-loop
-echo '	;;' >> /etc/init.d/active-loop
-echo '  *)' >> /etc/init.d/active-loop
-echo '        echo "Usage: active-loop [start|stop]" >&2' >> /etc/init.d/active-loop
-echo '        exit 3' >> /etc/init.d/active-loop
-echo '        ;;' >> /etc/init.d/active-loop
-echo 'esac' >> /etc/init.d/active-loop
+if [ "$USEFILEPARTITION" = "y" ]; then
 
-#change rights
-chmod +x /etc/init.d/active-loop
+	echo '#!/bin/sh' > /etc/init.d/active-loop
+	echo 'case "$1" in' >> /etc/init.d/active-loop
+	echo '  start|"") ' >> /etc/init.d/active-loop
+	echo '        losetup /dev/loop0 /image.img' >> /etc/init.d/active-loop
+	echo '	echo "Start OK"' >> /etc/init.d/active-loop
+	echo '        ;;' >> /etc/init.d/active-loop
+	echo '  stop)' >> /etc/init.d/active-loop
+	echo '	losetup -d /dev/loop0' >> /etc/init.d/active-loop 
+	echo '	echo "Stop OK"' >> /etc/init.d/active-loop
+	echo '	;;' >> /etc/init.d/active-loop
+	echo '  *)' >> /etc/init.d/active-loop
+	echo '        echo "Usage: active-loop [start|stop]" >&2' >> /etc/init.d/active-loop
+	echo '        exit 3' >> /etc/init.d/active-loop
+	echo '        ;;' >> /etc/init.d/active-loop
+	echo 'esac' >> /etc/init.d/active-loop
 
-#Auto start, before DRBD --> 60
-update-rc.d active-loop defaults 60
+	#change rights
+	chmod +x /etc/init.d/active-loop
+
+	#Auto start, before DRBD --> 60
+	update-rc.d active-loop defaults 60
+
+fi
 
 
 
