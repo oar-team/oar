@@ -1,5 +1,5 @@
 # $Id: oar-server.init.d 1419 2008-05-26 11:03:31Z bzizou $
-#! /bin/bash
+#!/bin/bash
 #
 # oar-server          Start/Stop the oar server daemon.
 #
