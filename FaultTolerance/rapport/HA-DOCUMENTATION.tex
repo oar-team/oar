@@ -11,6 +11,8 @@
 \usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,pdfstartview=FitH]{hyperref} 
 \usepackage{float}
 
+\usepackage{subfigure}
+
 
 % Title Page
 \title{High Availability Documentation on OAR - Admin Guide\\
@@ -713,7 +715,18 @@ In /etc/oar/oar.conf, you must enter :
 DETACH_JOB_FROM_SERVER="1"
 \end{lstlisting}
 
-\textbf{insert schema !!!}
+
+
+
+
+\begin{figure}[!h]
+  \centering
+  \subfigure[Scenario with DETACH=0]{\label{fig:withoutdetach}\includegraphics[scale=0.5]{schema/sequence-diagram-without-detach.png}}
+  \subfigure[Scenario with DETACH=1]{\label{fig:withdetach}\includegraphics[scale=0.5]{schema/sequence-diagram-with-detach.png}}
+  \caption{Detail of DETACH option}
+  \label{fig:detach}
+\end{figure}
+
 
 \subsection{Frontend configuration}
 \label{frontendconf}
