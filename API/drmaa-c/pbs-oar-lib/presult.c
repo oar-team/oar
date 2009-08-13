@@ -58,7 +58,7 @@ presult *addElement(presult **list, char* key) {
     }
 }
 
-// extract the value of the 
+// extract the value of the given attribute identifier
 char *extractStringAttribute(presult *list, char* key){
 	presult *tmp;
     	tmp = list;	
@@ -255,10 +255,10 @@ void UpCase(char *string)
 
 
 
-// !!!  SOME MORE TESTS ARE REQUIRED HERE TO SEE IF WE CAN GET ALL THE STATES OR NOT !!!!!
+// !!! A NON-USED FUNCTION (not for the time being, but maybe in the next OAR DRMAA version) !!!
 
 
-// Prints the DRMAA state of the job (conversion of OAR states)
+// Prints the DRMAA state of the job (conversion of OAR states) 
 void getDrmaaState(presult *list){ 
 
     presult *tmp;

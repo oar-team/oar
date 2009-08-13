@@ -8,6 +8,7 @@
 
 typedef struct batch_status batch_status;
 typedef struct attrl attrl;
+typedef struct attropl attropl;
 
 int pbs_connect(char *server);
 

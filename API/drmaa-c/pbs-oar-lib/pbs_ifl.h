@@ -66,7 +66,6 @@
  *              the header file syntax
 */
 
-
 #ifndef _PBS_IFL_DEF
 #define _PBS_IFL_DEF
 
@@ -75,7 +74,7 @@
 #define ATTR_a "Execution_Time"
 #define ATTR_c "Checkpoint"
 #define ATTR_e "Error_Path"
-#define ATTR_g	"group_list"
+#define ATTR_g "group_list"
 #define ATTR_h "Hold_Types"
 #define ATTR_j "Join_Path"
 #define ATTR_k "Keep_Files"
@@ -123,6 +122,10 @@
 #define ATTR_qrank	"queue_rank"
 #define ATTR_altid	"alt_id"
 #define ATTR_etime	"etime"
+#define ATTR_exitstat   "exit_status"
+#define ATTR_forwardx11 "forward_x11"
+#define ATTR_submit_args "submit_args"
+#define ATTR_umask    "umask"
 
 /* additional queue attributes names */
 
@@ -156,43 +159,59 @@
 #define ATTR_start	"started"
 #define ATTR_count	"state_count"
 #define ATTR_number	"number_jobs"
-
-/* HvB
- * Used by fifo_improv.patch
-*/
-#define ATTR_reqprop    "required_property"
+#define ATTR_acllogic   "acl_logic_or"
+#define ATTR_aclgrpslpy "acl_group_sloppy"
+#define ATTR_keepcompleted "keep_completed"
+#define ATTR_disallowedtypes "disallowed_types"
 
 /* additional server attributes names */
 
-#define ATTR_aclroot	"acl_roots"
-#define ATTR_managers	"managers"
-#define ATTR_dfltque	"default_queue"
-#define ATTR_defnode	"default_node"
-#define ATTR_locsvrs	"location_servers"
-#define ATTR_logevents	"log_events"
-#define ATTR_logfile	"log_file"
-#define ATTR_mailfrom	"mail_from"
-#define ATTR_nodepack	"node_pack"
-#define ATTR_operators	"operators"
-#define ATTR_queryother	"query_other_jobs"
-#define ATTR_resccost	"resources_cost"
-#define ATTR_rescavail	"resources_available"
-#define ATTR_schedit	"scheduler_iteration"
-#define ATTR_scheduling	"scheduling"
-#define ATTR_status	"server_state"
-#define ATTR_syscost	"system_cost"
-
-/* HvB
- * Used by TORQUE 
+/* NOTE: steps for adding new attribute described in ??? */
+/*  - create #define ATTR_* in include/pbs_ifl.h
+    - insert SRV_ATR_* in include/server.h
+    - add SRV_ATR_* in include/qmgr_svr_public.h
+    - insert structure in server/svr_attr_def.c
+        NOTE:  structure must be in same relative position as SRV_ATR_*
+    - insert usage code in proper location
 */
-#define ATTR_pingrate	"node_ping_rate"
-#define ATTR_ndchkrate	"node_check_rate"
 
-/* HvB
- * Used by fifo_improv.patch
-*/
-#define ATTR_procpack	"proc_pack"
-
+#define ATTR_aclroot     "acl_roots"
+#define ATTR_managers    "managers"
+#define ATTR_dfltque     "default_queue"
+#define ATTR_defnode     "default_node"
+#define ATTR_locsvrs     "location_servers"
+#define ATTR_logevents   "log_events"
+#define ATTR_logfile     "log_file"
+#define ATTR_loglevel    "log_level"
+#define ATTR_mailfrom    "mail_from"
+#define ATTR_nodepack    "node_pack"
+#define ATTR_operators   "operators"
+#define ATTR_queryother  "query_other_jobs"
+#define ATTR_resccost    "resources_cost"
+#define ATTR_rescavail   "resources_available"
+#define ATTR_schedit     "scheduler_iteration"
+#define ATTR_scheduling  "scheduling"
+#define ATTR_status      "server_state"
+#define ATTR_syscost     "system_cost"
+#define ATTR_pingrate    "node_ping_rate"
+#define ATTR_ndchkrate   "node_check_rate"
+#define ATTR_tcptimeout  "tcp_timeout"
+#define ATTR_jobstatrate "job_stat_rate"
+#define ATTR_polljobs    "poll_jobs"
+#define ATTR_downonerror "down_on_error"
+#define ATTR_jobnanny    "job_nanny"
+#define ATTR_ownerpurge  "owner_purge"
+#define ATTR_qcqlimits   "queue_centric_limits"
+#define ATTR_momjobsync  "mom_job_sync"
+#define ATTR_maildomain  "mail_domain"
+#define ATTR_pbsversion  "pbs_version"
+#define ATTR_submithosts  "submit_hosts"
+#define ATTR_allownodesubmit  "allow_node_submit"
+#define ATTR_autonodenp  "auto_node_np"
+#define ATTR_servername  "server_name"
+#define ATTR_logfilemaxsize "log_file_max_size"
+#define ATTR_logfilerolldepth "log_file_roll_depth"
+#define ATTR_nextjobnum "next_job_number"
 
 /* additional node "attributes" names */
 
@@ -201,8 +220,8 @@
 #define ATTR_NODE_properties	"properties"
 #define ATTR_NODE_ntype         "ntype"
 #define ATTR_NODE_jobs          "jobs"
-#define ATTR_NODE_status	"status"
-#define ATTR_NODE_note		"note"
+#define ATTR_NODE_status        "status"
+#define ATTR_NODE_note          "note"
 
 /* various attribute values */
 
@@ -214,6 +233,9 @@
 
 
 #define DELDELAY  "deldelay="	/* see qdel.c */
+#define DELPURGE  "delpurge="   /* see qdel.c */
+#define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
+
 #define USER_HOLD "u"
 #define OTHER_HOLD "o"
 #define SYSTEM_HOLD "s"
@@ -230,6 +252,12 @@
 #define ND_state_unknown	"state-unknown"
 #define ND_timeshared		"time-shared"
 #define ND_cluster		"cluster"
+
+/* queue disallowed types */
+#define Q_DT_batch              "batch"
+#define Q_DT_interactive        "interactive"
+#define Q_DT_rerunable          "rerunable"
+#define Q_DT_nonrerunable       "nonrerunable"
 
 /*constant related to sum of string lengths for above strings*/
 #define	MAX_ENCODE_BFR		100
@@ -268,6 +296,8 @@
 #ifndef MAXNAMLEN
 #define MAXNAMLEN		255
 #endif
+#define MAX_NOTE                256     /* max node note length */
+#define MAX_NOTE_STR            "256"   /* max node note length as a string literal (this MUST match MAX_NOTE) */
 
 #define PBS_MAXUSER		16	/* max user name length */
 #define PBS_MAXGRPN		16	/* max group name length */
@@ -277,12 +307,7 @@
 #define PBS_MAXPORTNUM		5	/* udp/tcp port numbers max=16 bits */
 #define PBS_MAXSVRJOBID		(PBS_MAXSEQNUM + PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2) /* server job id size */
 #define PBS_MAXCLTJOBID		(PBS_MAXSVRJOBID + PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2) /* client job id size */
-
-/* HvB
- * TORQUE change used to be 256
-*/
 #define PBS_MAXDEST           1024	/* destination size -- increased from 256*/
-
 #define PBS_MAXROUTEDEST	(PBS_MAXQUEUENAME + PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2) /* destination size */
 #define PBS_USE_IFF		1	/* pbs_connect() to call pbs_iff */
 #define PBS_INTERACTIVE		1	/* Support of Interactive jobs */
@@ -304,9 +329,7 @@
 #define PBS_SCHEDULER_SERVICE_NAME	"pbs_sched"
 #define PBS_SCHEDULER_SERVICE_PORT	15004
 
-enum batch_op {	SET, UNSET, INCR, DECR,
-		EQ, NE, GE, GT, LE, LT, DFLT
-};
+enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT };
 
 /*
 ** This structure is identical to attropl so they can be used
@@ -357,7 +380,7 @@ extern int pbs_alterjob(int connect, char *job_id, struct attrl *attrib,
 
 extern int pbs_connect(char *server);
 
-extern int pbs_query_max_connections();
+extern int pbs_query_max_connections(void);
 
 extern char * pbs_default(void);
 

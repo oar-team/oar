@@ -3,6 +3,7 @@
 
 //#include "presult.h"
 #include "jparser.h"
+#include "jgenerator.h"
 
 struct exchange_result_		// Results of the OAR request
 {

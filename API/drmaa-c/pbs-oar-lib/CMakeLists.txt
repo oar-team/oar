@@ -12,6 +12,8 @@ SET(PROJECT_SRCS
   presult.h
   jparser.c
   jparser.h
+  jgenerator.c
+  jgenerator.h
   oar_exchange.c
   oar_exchange.h
   oar_pbs.c

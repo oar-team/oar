@@ -1,0 +1,53 @@
+   ____________________________________________________________________________________________________________
+  
+					OAR DRMAA-C (85%)
+   ____________________________________________________________________________________________________________
+
+	ST_EMPTY_SESSION_CONTROL			: success
+	ST_MULT_INIT					: success
+	ST_MULT_EXIT					: success
+	ST_SUBMIT_WAIT					: success
+	ST_SUBMIT_POLLING_WAIT_TIMEOUT			: success
+	ST_SUBMIT_POLLING_WAIT_ZEROTIMEOUT		: success
+	ST_SUBMIT_POLLING_SYNCHRONIZE_TIMEOUT		: success
+	ST_SUBMIT_POLLING_SYNCHRONIZE_ZEROTIMEOUT	: success
+	ST_BULK_SUBMIT_WAIT				: success
+	ST_BULK_SINGLESUBMIT_WAIT_INDIVIDUAL		: success
+	ST_SUBMITMIXTURE_SYNC_ALL_DISPOSE		: success
+	ST_SUBMITMIXTURE_SYNC_ALL_NODISPOSE		: success
+	ST_SUBMITMIXTURE_SYNC_ALLIDS_DISPOSE		: success
+	ST_SUBMITMIXTURE_SYNC_ALLIDS_NODISPOSE		: success
+	ST_VERSION					: success
+	ST_CONTACT					: success
+	ST_DRM_SYSTEM					: success
+	ST_DRMAA_IMPL					: success
+	ST_EMPTY_SESSION_WAIT				: success
+	ST_EMPTY_SESSION_SYNCHRONIZE_DISPOSE		: success
+	ST_EMPTY_SESSION_SYNCHRONIZE_NODISPOSE		: success
+	ST_ATTRIBUTE_CHANGE				: success
+	ST_USAGE_CHECK					: success
+	ST_SUPPORTED_ATTR				: success  (To be checked)
+	ST_SUPPORTED_VATTR				: success  (To be checked)
+	ST_BULK_SUBMIT_IN_HOLD_SESSION_RELEASE		: success
+	ST_BULK_SUBMIT_IN_HOLD_SINGLE_RELEASE		: success
+	ST_BULK_SUBMIT_IN_HOLD_SINGLE_DELETE		: success
+	ST_BULK_SUBMIT_IN_HOLD_SESSION_DELETE		: success  (It can fail when OAR doesn't frag the job quickly)
+	ST_SUBMIT_IN_HOLD_RELEASE			: success
+	ST_ERROR_FILE_FAILURE				: success	
+	ST_OUTPUT_FILE_FAILURE				: success	
+	ST_SUBMIT_IN_HOLD_DELETE			: success
+	MT_SUBMIT_WAIT					: success
+	MT_SUBMIT_BEFORE_INIT_WAIT			: success
+	MT_SUBMIT_MT_WAIT				: success
+	MT_EXIT_DURING_SUBMIT_OR_WAIT			: success
+   ______________________________________________________________________________________________________________
+
+	ST_INPUT_FILE_FAILURE				: failure  (STAGEIN may be helpful)
+	ST_SUBMIT_KILL_SIG				: failure  (Failed also in PBS but not in torque)
+	ST_EXIT_STATUS					: failure
+	MT_EXIT_DURING_SUBMIT				: failure
+   _______________________________________________________________________________________________________________
+
+	ST_UNSUPPORTED_ATTR				: error
+	ST_UNSUPPORTED_VATTR				: error
+	ST_SUBMIT_SUSPEND_RESUME_WAIT			: error	   (Probably because of the "suspend" state)

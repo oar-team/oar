@@ -32,6 +32,26 @@ pbse_to_txt
 #include "oar_pbs.h"
 
 #define PBS_DEFAULT "192.168.0.1";		// Default PBS/OAR Server Name
+#define MAX_OAR_JOB_LENGTH 300
+
+// EVENTS LIST
+#define UNKNOWN_EVENT 		0
+#define OUTPUT_FILES 		1
+#define FRAG_JOB_REQUEST 	2
+
+
+// PBS EXIT_STATUS LIST
+#define JOB_EXEC_OK		"0"
+#define JOB_EXEC_FAIL1		"-1"
+#define JOB_EXEC_FAIL2		"-2"
+#define JOB_EXEC_RETRY		"-3"
+#define JOB_EXEC_INITABT	"-4"
+#define JOB_EXEC_INITRST	"-5"
+#define JOB_EXEC_INITRMG	"-6"
+#define JOB_EXEC_BADRESRT	"-7"
+#define JOB_EXEC_CMDFAIL	"-8"
+
+
 
 
 char * pbs_server;		// server attempted to connect | connected to
@@ -189,38 +209,63 @@ int isAnAttributeOf(char* name, struct attrl *pattern) {
 	return 0;
 }
 
-char *oar_toPbsStatus(char *name){	// Only the first character of the returned result will be user !!
+void oar_toPbsStatus(int lastEvent, char **state, char **exit_status){	// Only the first character of the returned result will be user !!
 
 	char *value = NULL;
 	
-	if (!strcmp(name, "Terminated")){	/*OK*/
-			value = g_strdup("C(Terminated)");	
-	} else if (!strcmp(name, "Hold")){	/*OK*/
-			value = g_strdup("H(Hold)");	
-	} else if (!strcmp(name, "Waiting")){	/*OK*/
-			value = g_strdup("W(Waiting)");	
-	} else if (!strcmp(name, "toLaunch")){	/*OK*/
-			value = g_strdup("Q(toLaunch)");
-	} else if (!strcmp(name, "toError")){ /*OK??	It should be changed somehow to 'E' with exit_status != 0*/
-			value = g_strdup("E(toError)");
-	} else if (!strcmp(name, "toAckReservation")){/*OK*/
-			value = g_strdup("");
-	} else if (!strcmp(name, "Launching")){	/*OK*/
-			value = g_strdup("R(Launching)");
-	} else if (!strcmp(name, "Finishing")){	/*See job->exit_status*/
-			value = g_strdup("E(Finishing)");
-	} else if (!strcmp(name, "Running")){	/*See job->flags*/
-			value = g_strdup("R(Running)");
-	} else if (!strcmp(name, "Suspended")){	/*S ???*/
-			value = g_strdup("T(Suspended)");
-	} else if (!strcmp(name, "Resuming")){  /*S ???*/
-			value = g_strdup("T(Resuming)");
+		
+
+	if (!strcmp(*state, "Terminated")){	/*OK*/
+			*state = g_strdup("C(Terminated)");	
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "Hold")){	/*OK*/
+			*state = g_strdup("H(Hold)");
+
+			*exit_status = g_strdup(JOB_EXEC_OK);	
+	} else if (!strcmp(*state, "Waiting")){	/*OK*/
+			*state = g_strdup("W(Waiting)");
+			*exit_status = g_strdup(JOB_EXEC_OK);	
+	} else if (!strcmp(*state, "toLaunch")){	/*OK*/
+			*state = g_strdup("Q(toLaunch)");
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "toError")){ /*OK??	It should be changed somehow to 'E' with exit_status != 0*/
+			*state = g_strdup("E(toError)");
+			*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
+	} else if (!strcmp(*state, "toAckReservation")){/*OK*/
+			*state = g_strdup("");
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "Launching")){	/*OK*/
+			*state = g_strdup("R(Launching)");
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "Finishing")){	/*See job->exit_status*/ ////  !!!!!!!!! /////
+			*state = g_strdup("E(Finishing)");
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "Running")){	/*See job->flags*/
+			*state = g_strdup("R(Running)");
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "Suspended")){	/*S ???*/
+			*state = g_strdup("T(Suspended)");
+			*exit_status = g_strdup(JOB_EXEC_OK);
+	} else if (!strcmp(*state, "Resuming")){  /*S ???*/
+			*state = g_strdup("T(Resuming)");
+			*exit_status = g_strdup(JOB_EXEC_OK);
 	} else {	/*OAR job state == Error*/
-			value = g_strdup("E(Error)");	/*OK??	It should be changed somehow to 'E' with exit_status != 0*/
+
+			if (lastEvent == FRAG_JOB_REQUEST) {	// A small trick to overcome the fact that OAR return the state "Error" after a FRAG JOB REQUEST // DRMAA_PS_FAILED
+				*state = g_strdup("C(Error : FRAG_JOB_REQUEST)");
+				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
+			} else if (lastEvent == OUTPUT_FILES) {
+				*state = g_strdup("E(Error : OUTPUT_FILES)");	
+				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
+			} else {
+				*state = g_strdup("E(Error)");	/*OK??	It should be changed somehow to 'E' with exit_status != 0*/
+				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
+			}
+			
 	}
 
 /*
-case 'C': // Job is completed after having run. 
+		case 'C': // Job is completed after having run. 
 		case 'E': // Job is exiting after having run.
 			job->flags &= DRMAA_JOB_TERMINATED_MASK;
 			job->flags |= DRMAA_JOB_TERMINATED;
@@ -256,11 +301,11 @@ case 'C': // Job is completed after having run.
 */
 
 
-	return value;
+	//return value;
 }
 
 
-attrl *oar_toPbsAttributes(attrl *oar_attr_list){
+attrl *oar_toPbsAttributes(int lastEvent, attrl *oar_attr_list){
 
 	attrl *iterator;
 	iterator = oar_attr_list;
@@ -268,6 +313,8 @@ attrl *oar_toPbsAttributes(attrl *oar_attr_list){
 	char* resource;
 	char* value;
 	attrl *next;
+	char** state;
+	char** exit_code;
 
 	while (iterator != NULL){
 	
@@ -277,21 +324,108 @@ attrl *oar_toPbsAttributes(attrl *oar_attr_list){
 		next = iterator->next;
 
 
-		if (!strcmp(name, "state")){	// If the attribute name is found
+		if (!strcmp(name, "state")){	
 			iterator->name = g_strdup(ATTR_state);
-			iterator->value = oar_toPbsStatus(value);
+			state = &(iterator->value);
+			//iterator->value = oar_toPbsStatus(lastEvent, value);
+		} else if (!strcmp(name, "exit_code")){	
+			iterator->name = g_strdup(ATTR_exitstat);
+			exit_code = &(iterator->value);
 		} 
-
-
-
-
 
 
 
 	iterator = iterator->next;
 
 	}
+
+	oar_toPbsStatus(lastEvent, state, exit_code);
+
 	return oar_attr_list;
+}
+
+int string2event(char *eventName){
+
+	int value;
+
+	if (!strcmp(eventName, "OUTPUT_FILES")){	
+		value = OUTPUT_FILES;	
+	} else if (!strcmp(eventName, "FRAG_JOB_REQUEST")){	
+		value = FRAG_JOB_REQUEST;	
+	} else {
+		value = UNKNOWN_EVENT;	
+	} 
+	
+	return value;
+}
+
+char *event2string(int event){
+
+	char* value;
+
+	switch(event){
+
+	   case OUTPUT_FILES : 
+		value = g_strdup("OUTPUT_FILES");
+		break;
+
+	   case FRAG_JOB_REQUEST : 
+		value = g_strdup("FRAG_JOB_REQUEST");
+		break;	
+
+	   default : 
+		value = g_strdup("UNKNOWN_EVENT");
+		break;
+	}
+
+	return value;	
+}
+
+/* Get the last event in the job presult */
+int oar_getLastEvent(presult *source){
+
+	presult *iterator;
+	presult *lastEvent;
+	presult *lastEventDetails;
+
+	iterator = source;
+	
+	if (source == NULL) return UNKNOWN_EVENT;
+
+	while (iterator != NULL){
+		
+		if (!strcmp(iterator->key, "events")){
+			lastEvent = iterator->compValue;
+
+			if (lastEvent == NULL) return UNKNOWN_EVENT;
+
+			// If there is at least one event, we search for the last one
+			while (lastEvent->next != NULL) lastEvent = lastEvent->next;
+			
+			lastEventDetails = lastEvent->compValue;
+			
+			if (lastEventDetails == NULL) return UNKNOWN_EVENT;
+
+			while (lastEventDetails != NULL){
+		
+				if (!strcmp(lastEventDetails->key, "type")){
+					return string2event((lastEventDetails)->immValue.s);
+				}
+		
+				lastEventDetails = lastEventDetails->next;
+			}
+			
+			// If we haven't found a field named "type"
+			return UNKNOWN_EVENT;
+			
+		}
+		
+		iterator = iterator->next;
+	}
+
+	// If we haven't found a field named "events"
+	return UNKNOWN_EVENT;
+
 }
 
 
@@ -592,6 +726,8 @@ int pbs_sigjob(int connect, char *job_id, char *signal, char *extend){
 	printf("***extend : %s\n",extend);
 	printf("***SIGJOB INFORMATION END:\n");
 
+	printf("!! JOB SIGNAL IMMEDIATE TRANSMISSION (without checkpoint and delay) are not available in current OAR version !! \n");
+
 	printf("**PBS_SIGJOB END\n");
 	
 //	"SIGSTOP" -> job suspend	oarhold -r ??? but how do we get this in OAR-API ??
@@ -711,9 +847,10 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 //	printf("STAT JOB CHKPT 2\n");
 	
 	// convert the res->code from presult to the attrl format (ONLY THE IMMEDIAT VALUES WILL BE CONVERTED because attrl does not support complex values (objects and arrays)) 
-	//showResult(res->data);
+	printf("JOB INFORMATION IN PRESULT FORMAT :\n");
+	showResult(res->data);
 	//attributes = presult2attrl(res->data,attrib);
-	attributes = oar_toPbsAttributes(presult2attrl(res->data,attrib));
+	attributes = oar_toPbsAttributes(oar_getLastEvent(res->data), presult2attrl(res->data,attrib));
 //	printf("STAT JOB CHKPT 3\n");
 	
 	id = id2;
@@ -738,15 +875,15 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 
 	printf("STAT JOB CHKPT 4\n");
 	printf("name: %s\n", bstatus->name);
-
+*/
 
 	printf("ATTRIBUTES AFTER CONVERSION :\n");
 	showAttributes(attributes);
 	
-	printf("STAT JOB CHKPT 5\n");
+//	printf("STAT JOB CHKPT 5\n");
 
-	showBatchStatus(bstatus);
-*/
+//	showBatchStatus(bstatus);
+
 
 	printf("**PBS_STATJOB END\n");
 
@@ -759,6 +896,7 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 struct batch_status *pbs_statque(int connect, char *id, struct attrl *attrib, char *extend){
 
 	printf("**PBS_STATQUE BEGIN\n");
+	printf("!! no queue information are available in OAR, for the time being !! \n");
 	printf("**PBS_STATQUE END\n");
 	
 	return NULL;	// Ce n'est pas possible en ce moment via la OAR-API à moins de faire un parcours des infos de toutes les jobs et construire la liste des files à partir de ça
@@ -771,6 +909,7 @@ struct batch_status *pbs_statque(int connect, char *id, struct attrl *attrib, ch
 // obtain status of a pbs batch server
 struct batch_status *pbs_statserver(int connect, struct attrl *attrib, char *extend){
 	printf("**PBS_STATSERVER BEGIN\n");
+	printf("!! no server information are available in OAR, for the time being !! \n");
 	printf("**PBS_STATSERVER END\n");
 	return NULL;
 }
@@ -828,6 +967,220 @@ void pbs_statfree(struct batch_status *stat){
 }
 
 
+// Converts a PBS submission context to a JSON OAR job
+// It returns NULL if an error occurs
+char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, char *destination, char *extend, int *offlag){
+
+	// connect and extend are ignored for the time being
+	// script = script_path
+	// destination = queue
+	// attrib = "the list of attributes (if resource was not specified then the default resource will be reserved(nodes=1&&cpu=1))"
+	
+	attropl *iterator;
+	iterator = attrib;
+	char* name;
+	char resourceBuffer[MAX_OAR_JOB_LENGTH];	// Perhaps we have to replace this by a malloc
+	char jobBuffer[MAX_OAR_JOB_LENGTH];		// Perhaps we have to replace this by a malloc
+	char* value;
+	attrl *next;
+	int resource_ok = 0;				// We asked for some resource
+	int script_or_scriptpath_ok = 0;
+	int separator = 0;
+	char* walltime = NULL;
+	char* resource;
+
+
+	strncpy(jobBuffer, "{", strlen("{")+1);	// Job buffer initialization
+
+
+	if (script != NULL && strcmp(script, "")){ 	/* If we have a script path */
+		script_or_scriptpath_ok = 1;
+		strncat(jobBuffer, "\"script_path\":\"" , strlen("\"script_path\":\""));
+		strncat(jobBuffer, json_strescape(script) , strlen(json_strescape(script)));
+		strncat(jobBuffer, "\"", strlen("\""));
+		separator = 1;				/* We need to add a comma before adding a new element */
+	}
+
+	while (iterator != NULL){
+	
+		name = iterator->name;
+		resource = iterator->resource;
+		value = iterator->value;
+		next = iterator->next;
+
+		if (!strcmp(name, ATTR_a)){		/* Execution time : "reservation" */
+			
+			if (separator != 0){
+				strncat(jobBuffer, "," , strlen(","));
+			} else {
+				separator = 1;
+			}
+
+			strncat(jobBuffer, "\"reservation\":\"" , strlen("\"reservation\":\""));
+			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));	
+			strncat(jobBuffer, "\"", strlen("\""));		
+
+		} /*else if (!strcmp(name, ATTR_c)){	// Checkpoint : "checkpoint"	<- not the same format as OAR !!
+		
+			if (separator != 0){
+				strncat(jobBuffer, "," , strlen(","));
+			} else {
+				separator = 1;
+			}
+
+			strncat(jobBuffer, "\"checkpoint\":\"" , strlen("\"checkpoint\":\""));
+			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));
+			strncat(jobBuffer, "\"", strlen("\""));	
+			
+		}*/ else if (!strcmp(name, ATTR_e)){	/* Error output file : "stderr" */
+		
+			if (separator != 0){
+				strncat(jobBuffer, "," , strlen(","));
+			} else {
+				separator = 1;
+			}
+
+			strncat(jobBuffer, "\"stderr\":\"" , strlen("\"stderr\":\""));
+			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));
+			strncat(jobBuffer, "\"", strlen("\""));	
+
+			*offlag = 1;
+			
+		} else if (!strcmp(name, ATTR_o)){	/* Output file : "stdout" */
+
+			if (separator != 0){
+				strncat(jobBuffer, "," , strlen(","));
+			} else {
+				separator = 1;
+			}
+
+			strncat(jobBuffer, "\"stdout\":\"" , strlen("\"stdout\":\""));
+			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));
+			strncat(jobBuffer, "\"", strlen("\""));	
+
+			*offlag = 1;
+			
+		} else if (!strcmp(name, ATTR_l)){	/* The wanted resources : "resource" */
+
+			
+
+			
+
+
+			if (!strcmp(resource, "walltime")){		/* Execution time : "reservation" */
+			
+				walltime = value;	// To be checked if it is working correctly or not !!			
+
+			} else {	// We have a resource
+
+				if (resource_ok == 0){
+					resource_ok = 1;
+					strncpy(resourceBuffer, "\\/", strlen("\\/")+1);	// Resource buffer initialization
+				} else {
+					strncat(resourceBuffer, "\\/" , strlen("\\/"));
+				}
+				
+				strncat(resourceBuffer, json_strescape(resource) , strlen(json_strescape(resource)));
+				strncat(resourceBuffer, "=" , strlen("="));
+				strncat(resourceBuffer, json_strescape(value) , strlen(json_strescape(value)));
+
+			}
+
+
+
+
+			
+		} else if (!strcmp(name, ATTR_M)){	/* The notification e-mail : "notify" */
+
+			if (separator != 0){
+				strncat(jobBuffer, "," , strlen(","));
+			} else {
+				separator = 1;
+			}
+
+			strncat(jobBuffer, "\"notify\":\"" , strlen("\"notify\":\""));
+			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));
+			strncat(jobBuffer, "\"", strlen("\""));	
+			
+		} else if (!strcmp(name, ATTR_N)){	/* Job name : "name" */
+
+			if (separator != 0){
+				strncat(jobBuffer, "," , strlen(","));
+			} else {
+				separator = 1;
+			}
+
+			strncat(jobBuffer, "\"name\":\"" , strlen("\"name\":\""));
+			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));
+			strncat(jobBuffer, "\"", strlen("\""));	
+			
+		} else if (!strcmp(name, ATTR_h)){	/* Submission state = HOLD : "hold" */
+			if (value[0]=='u'){	// If we have asked for a Hold (User Hold)
+				if (separator != 0){
+					strncat(jobBuffer, "," , strlen(","));
+				} else {
+					separator = 1;
+				}
+
+				strncat(jobBuffer, "\"hold\":\"" , strlen("\"hold\":\""));
+				strncat(jobBuffer, "" , strlen(""));	// Should be replaced later by "1" (when the bug in OARAPI is fixed)
+				strncat(jobBuffer, "\"", strlen("\""));	
+			}
+
+		} else {
+			/* We ignore it */
+			printf(" !! OARJOB_FROM_PBSCONTEXT : The attribute %s was ignored !!\n", name);
+		}
+
+	iterator = iterator->next;
+
+	}
+
+
+	/* Special treatment of the resource attribute */	
+
+	if (resource_ok == 0){	// If we haven't asked for a resource, we take the default job (nodes=2,cpu=1)
+		strncpy(resourceBuffer, "\\/nodes=2\\/cpu=1", strlen("\\/nodes=2\\/cpu=1")+1);
+		resource_ok = 1;
+	}
+	
+	if (walltime != NULL){	// If we have given a walltime
+		strncat(resourceBuffer, ",walltime=", strlen(",walltime="));
+		strncat(resourceBuffer, json_strescape(walltime), strlen(json_strescape(walltime)));	// To be checked : was the walltime given in the correct format ??
+	}
+
+	if (separator != 0){
+		strncat(jobBuffer, "," , strlen(","));
+	} else {
+		// We have a problem here, we haven't found a script nor a script path
+	}
+
+	strncat(jobBuffer, "\"resource\":\"" , strlen("\"resource\":\""));
+	strncat(jobBuffer, resourceBuffer , strlen(resourceBuffer));	
+	strncat(jobBuffer, "\"", strlen("\""));
+	
+	/* Closing the job string */
+	strncat(jobBuffer, "}", strlen("}"));
+
+	/* Printing the result */
+	printf("\n**** OAR FULL JOB : %s\n\n", jobBuffer);
+
+	
+	if (script_or_scriptpath_ok != 1 || resource_ok != 1){
+		return NULL;
+	}
+	
+
+
+	
+	return jobBuffer;
+	
+
+	// JSON JOB REQUEST --> It should be adapted to the user request
+	//return "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}";	
+
+}
+
 // Issue a batch request to submit a new batch job.
 // The returned value is the job ID
 char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destination, char *extend){
@@ -842,13 +1195,21 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	showAttributes(attrib);
 	printf("\n***SUBMISSION INFORMATION END:\n");
 
-	exchange_result *res;
+	exchange_result *res;	// JOB POST RESULT
+	
+	exchange_result *res2;  // JOB STATUS CHECK RESULT (if we have customized output files)
+
 	presult *iterator;
 	char full_url[MAX_OAR_URL_LENGTH];
 	char* jobId;	// returned value
 	char* JOB_DETAILS;
-	JOB_DETAILS = "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}";	// JSON --> It should be adapted to the user request
-	
+	int offlag = 0;	// OUTPUT FILES FLAG, Set to 1 if we have chosen to use our own output files (stdout, stderr) 
+	JOB_DETAILS = oarjob_from_pbscontext(connect, attrib, script, destination, extend, &offlag);
+
+	if (JOB_DETAILS == NULL){	// We have encountered a problem in attributes parsing phase
+		printf("\n\n!!! PBS_SUBMIT ERROR : ATTRIBUTES PARSING PROBLEM !!!, \n!!! MAKE SURE YOU HAVE ASKED FOR A RESOURCE AND THAT YOU HAVE AT LEAST A SCRIPT OR A SCRIPT PATH !!!\n\n");
+		return NULL;
+	}
 			
 	
 	strncpy(full_url, "http://", strlen("http://")+1); // for the moment, we are using Virtualbox + OAR Live CD with the IP : 192.168.0.1
@@ -860,7 +1221,8 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	strncat(full_url, "/oarapi/jobs", strlen("/oarapi/jobs"));
 	
 	printf("SUBMISSION FULL URL = %s\n", full_url);
-	
+	printf("SUBMITTED JOB = %s\n", JOB_DETAILS);
+
 	res = oar_request_transmission (full_url, "POST", JOB_DETAILS);
 
 	if (res == NULL){
@@ -869,22 +1231,43 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 		return NULL;
 	}else{
 
-	// 0 if everything is OK, otherwise the error number (see pbs_error.h)
-	switch (res->code) {	// Est ce qu'il y a une possibilité de remonter directement le code OAR ??
-				// Sinon, il vaut mieux implementer un convertisseur de code code d'erreur OAR2PBS
+		// 0 if everything is OK, otherwise the error number (see pbs_error.h)
+		switch (res->code) {	// Est ce qu'il y a une possibilité de remonter directement le code OAR ??
+				// Sinon, il vaut mieux implementer un convertisseur de code d'erreur OAR2PBS
 	
-	  case 200 : 	jobId = extractStringAttribute(res->data,"id");	// get the value (job_id) of the id field
-			break;
-	  default  :
-			printf("SUBMISSION RESULT = %d\n", res->code);
-			showResult(res->data);
-			return NULL;	// We couldn't submit the Job
-			break;
-	}
+	  	case 200 : 	jobId = extractStringAttribute(res->data,"id");	// get the value (job_id) of the id field
+				break;
+	  	default  :
+				printf("SUBMISSION RESULT = %d\n", res->code);
+				showResult(res->data);
+				return NULL;	// We couldn't submit the Job
+				break;
+		}
+	
 
-	printf("**PBS_SUBMIT END\n");	
 
-	return jobId;
+/*	
+		if (offlag == 1){	// If we have chosen non standard output files, then we MUST check with an oarstat if there is a permission problem
+					// -> oarsub return the OK state even we haven't the permission to write in these files
+			strncat(full_url, "/", strlen("/"));
+			strncat(full_url, jobId, strlen(jobId));
+
+			res2 = oar_request_transmission (full_url, "GET", NULL);
+
+			if (res2->code != 200){	// If we have encountered a problem
+				printf("**PBS_SUBMIT END (checking status error after OFFLAG = %d)\n", res2->code);
+				return NULL;
+			}
+			if (oar_getLastEvent(res2->data) == OUTPUT_FILES)
+			{	// If we don't have the permission to write in these files
+				return NULL;
+			}
+		}
+
+*/
+		printf("**PBS_SUBMIT END\n");	
+
+		return jobId;
 	}
 }
 
