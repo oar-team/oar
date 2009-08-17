@@ -5,6 +5,8 @@ version 2.3.5:
 --------------
   - Bug #8139: Drawgantt nil error (Add condition to test the presence of nil
     value in resources table.)
+  - Bug #8416: When a the automatic halt/wakeup feature is enabled then there
+    was a problem to determine idle nodes.
 
 version 2.3.4:
 --------------

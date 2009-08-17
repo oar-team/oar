@@ -4733,7 +4733,8 @@ sub search_idle_nodes($$){
                    resources.resource_id = gantt_jobs_resources.resource_id AND
                    gantt_jobs_predictions.start_time <= $date AND
                    resources.network_address != \'\' AND
-                   resources.type = \'default\'
+                   resources.type = \'default\' AND
+                   gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
                GROUP BY resources.network_address
               ";
               
