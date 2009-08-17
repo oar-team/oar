@@ -61,7 +61,7 @@ HBPORT="694"
 #It could be a loopback device, like /dev/loop0
 DISKPARTITION=/dev/loop0
 
-#Do you want create a partition in a file ?  ("y" or "n") --> The DISKPARTTION Must be a loopback interface
+#Do you want create a partition in a file ?  ("y" or "n") --> The DISKPARTITION Must be a loopback interface
 #Non tested with real partition ("n")
 USEFILEPARTITION="y"
 
@@ -462,7 +462,7 @@ if [ "$CONF" = "4nodes" ]; then
 
 
 	echo '     <constraints>' >> /var/lib/heartbeat/crm/cib.xml
-	#echo '       <rsc_order type="before" id="Order" from="Database-servers" to="OAR-servers"/>' >> /var/lib/heartbeat/crm/cib.xml
+	echo '       <rsc_order type="before" id="Order" from="Database-servers" to="OAR-servers"/>' >> /var/lib/heartbeat/crm/cib.xml
 	echo '       <rsc_location id="location-Database" rsc="Database-servers">' >> /var/lib/heartbeat/crm/cib.xml
 	echo '         <rule id="prefered_location-Database" score="0">' >> /var/lib/heartbeat/crm/cib.xml
 	echo "           <expression attribute=\"#uname\" id=\"f968a0dd-59dd-4d02-b54a-36c7139afa13\" operation=\"ne\" value=\"$MASTER_OAR\"/>" >> /var/lib/heartbeat/crm/cib.xml
