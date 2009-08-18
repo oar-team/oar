@@ -499,7 +499,11 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	$background =  img.colorAllocate($conf['background'])
 	$gridcolor =  img.colorAllocate($conf['gridcolor'])
 
-	$cosystem_color =  img.colorAllocate($conf['cosystem_color']) if !$conf['cosystem_color'].nil?
+	if !$conf['cosystem_color'].nil?
+		$cosystem_color =  img.colorAllocate($conf['cosystem_color']) 
+	else
+		$cosystem_color = img.colorAllocate(0xD0,0xD0,0xD0)
+	end
 
 	$white = img.colorAllocate(255,255,255)
 	$black = img.colorAllocate(0,0,0)       
