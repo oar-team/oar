@@ -59,12 +59,19 @@ end
 # database operations
 #
 def base_connect
-  db_type = $conf['DB_TYPE']
+    db_type = $conf['DB_TYPE']
 	if db_type == "mysql"
 		db_type == "Mysql"
 	end
-	return DBI.connect("dbi:#{db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
-										 "#{$conf['DB_BASE_LOGIN_RO']}","#{$conf['DB_BASE_PASSWD_RO']}")
+	if !($conf['DB_PORT'].nil?)
+		db_port = $conf['DB_PORT']
+	elsif db_type == "Mysql"
+		db_port = 3306
+	else
+		db_port = 5432
+	end
+	connection_string = "DBI:#{db_type}:database=#{$conf['DB_BASE_NAME']};host=#{$conf['DB_HOSTNAME']};port=#{db_port}"
+	return DBI.connect(connection_string, "#{$conf['DB_BASE_LOGIN_RO']}", "#{$conf['DB_BASE_PASSWD_RO']}")
 end
 
 # list_resources
