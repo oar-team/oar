@@ -35,11 +35,11 @@ my %log_categories;
 if (is_conf("LOG_CATEGORIES")){
     my @prelogs = split(/,/, get_conf("LOG_CATEGORIES"));
     foreach(@prelogs){
-      $log_categories{$_} = ();
+      $log_categories{$_} = 1;
     }
 }
 else{
-  $log_categories{"all"} = ();
+  $log_categories{"all"} = 1;
 }
 
 
@@ -89,6 +89,7 @@ sub set_current_log_category($){
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;
+	$CURRENT_LOG_CAT = "all" if !defined $CURRENT_LOG_CAT;
     if(exists($log_categories{$CURRENT_LOG_CAT}) || exists($log_categories{"all"})){
       if (open(LOG,">>$log_file")){
           print(LOG "$str");
