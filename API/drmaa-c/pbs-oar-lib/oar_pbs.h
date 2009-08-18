@@ -1,15 +1,44 @@
+/******************************************************************
+
+
+OAR DRMAA-C : A C library for using the OAR DRMS
+Copyright (C) 2009  LIG <http://www.liglab.fr/>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+<http://www.gnu.org/licenses/>
+
+**********************************************************************/
+
+
 #ifndef _OAR_PBS_H
 #define _OAR_PBS_H 
 
-
-# include "oar_exchange.h" 	// A JSON parser for OAR-API responses
 # include <pbs_ifl.h>
 # include <pbs_error.h>
+# include "oar_exchange.h" 	// A JSON parser for OAR-API responses
 
+
+// A set of type definition in order to make their use easier
 typedef struct batch_status batch_status;
 typedef struct attrl attrl;
 typedef struct attropl attropl;
 
+
+
+
+// List of PBS functions used in the PBS DRMAA
 int pbs_connect(char *server);
 
 char * pbs_default(void);
@@ -40,15 +69,20 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script,
 	
 int pbs_terminate(int connect, int manner, char *extend);
 
-void show_BatchStatus(batch_status *status);	// This is not a part of PBS functions >> a test function
-struct attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value); // This is not a part of PBS functions >> a test function
-
 char *pbse_to_txt(int err);
 
-char * pbs_server;		/* server attempted to connect | connected to */
-				/* see pbs_connect(3B)			      */
 
-int pbs_errno;			/* error number */
+// Global variables
+char * pbs_server;		
+int pbs_errno;			
+
+
+// List of additional functions used in PBS/OAR conversion
+void show_BatchStatus(batch_status *status);					// A test function to show the content of a batch_status structure
+
+attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value); 	// Add a new attribute to a PBS ATTRIBUTE LIST
+
+
 
 extern int MAX_OAR_URL_LENGTH;
 

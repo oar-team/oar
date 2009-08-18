@@ -1,30 +1,30 @@
+/******************************************************************
+
+
+OAR DRMAA-C : A C library for using the OAR DRMS
+Copyright (C) 2009  LIG <http://www.liglab.fr/>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+<http://www.gnu.org/licenses/>
+
+**********************************************************************/
 
 
 	/*	PBS to/from OAR		*/
 
 
-/*
-
-pbs_connect
-pbs_default (just change variable)
-pbs_deljob
-pbs_disconnect
-pbs_geterrmsg (??)
-pbs_holdjob
-pbs_rlsjob
-pbs_sigjob (it seems that this function has a bug ??)
-pbs_statfree
-pbs_statjob
-pbs_statque
-pbs_statserver
-pbs_submit (qsub ?? qsub_parse_attr, ... ??)
-pbs_submit_reserv (??)
-pbs_terminate ??
-
-
-pbse_to_txt
-
-*/
 
 #include <stdio.h>
 #include <string.h>
@@ -57,32 +57,10 @@ pbse_to_txt
 char * pbs_server;		// server attempted to connect | connected to
 				// see pbs_connect(3B)
 
-
 int pbs_errno;			// PBS error number
 
 
-/*
-struct batch_status {
-        struct batch_status *next;
-        char                *name;
-        struct attrl        *attribs;
-        char                *text;
-};
-*/
-/*
-
-struct attrl {
-        struct attrl *next;
-        char         *name;
-        char         *resource;
-        char         *value;
-        enum batch_op    op;    // not used
-};
-
-*/
-
-
-// Prints the content of the presult list
+// Prints the content of the attribute list
 void showAttributes(attrl *attributes) { 
 
     attrl *attr;
@@ -219,9 +197,13 @@ void oar_toPbsStatus(int lastEvent, char **state, char **exit_status){	// Only t
 			*state = g_strdup("C(Terminated)");	
 			*exit_status = g_strdup(JOB_EXEC_OK);
 	} else if (!strcmp(*state, "Hold")){	/*OK*/
-			*state = g_strdup("H(Hold)");
-
-			*exit_status = g_strdup(JOB_EXEC_OK);	
+			if (lastEvent == FRAG_JOB_REQUEST) {	// A small trick to overcome the fact that OAR return the state "Error" after a FRAG JOB REQUEST but not always quickly
+				*state = g_strdup("E(Error : FRAG_JOB_REQUEST)");
+				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
+			} else {
+				*state = g_strdup("H(Hold)");
+				*exit_status = g_strdup(JOB_EXEC_OK);
+			}
 	} else if (!strcmp(*state, "Waiting")){	/*OK*/
 			*state = g_strdup("W(Waiting)");
 			*exit_status = g_strdup(JOB_EXEC_OK);	
@@ -250,13 +232,9 @@ void oar_toPbsStatus(int lastEvent, char **state, char **exit_status){	// Only t
 			*state = g_strdup("T(Resuming)");
 			*exit_status = g_strdup(JOB_EXEC_OK);
 	} else {	/*OAR job state == Error*/
-
-			if (lastEvent == FRAG_JOB_REQUEST) {	// A small trick to overcome the fact that OAR return the state "Error" after a FRAG JOB REQUEST // DRMAA_PS_FAILED
-				*state = g_strdup("C(Error : FRAG_JOB_REQUEST)");
-				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
-			} else if (lastEvent == OUTPUT_FILES) {
+			if (lastEvent == OUTPUT_FILES) {
 				*state = g_strdup("E(Error : OUTPUT_FILES)");	
-				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
+				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);	// Shouldn't we change this error number to JOB_EXEC_FAIL2 or JOB_EXEC_RETRY ??
 			} else {
 				*state = g_strdup("E(Error)");	/*OK??	It should be changed somehow to 'E' with exit_status != 0*/
 				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
@@ -717,6 +695,8 @@ int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend){
 // send a signal to a pbs batch job  
 int pbs_sigjob(int connect, char *job_id, char *signal, char *extend){
 
+	int retcode = PBSE_INTERNAL;  // PBSE_NONE ??
+
 	printf("**PBS_SIGJOB BEGIN\n");	
 
 	printf("***SIGJOB INFORMATION BEGIN:\n");
@@ -726,30 +706,34 @@ int pbs_sigjob(int connect, char *job_id, char *signal, char *extend){
 	printf("***extend : %s\n",extend);
 	printf("***SIGJOB INFORMATION END:\n");
 
+
+	if (signal != NULL){
+		if (!strcmp(signal, "SIGKILL")){	// An exception : if we receive a SIGKILL then we execute a pbs_deljob
+			retcode = pbs_deljob(connect, job_id, extend);
+		}
+	} 	
+
 	printf("!! JOB SIGNAL IMMEDIATE TRANSMISSION (without checkpoint and delay) are not available in current OAR version !! \n");
 
 	printf("**PBS_SIGJOB END\n");
 	
-//	"SIGSTOP" -> job suspend	oarhold -r ??? but how do we get this in OAR-API ??
-//	"SIGCONT" -> job resume
-//	"SIGKILL"	
-//	"SIGINT"
-/*
-		 {"SIGUSR1", SIGUSR1},
-		 {"SIGTERM", SIGTERM},
-		 {"SIGALRM", SIGALRM},
-		 {"SIGUSR2", SIGUSR2},
-		 {"SIGSEGV", SIGSEGV},
-		 {"SIGHUP",  SIGHUP},
-		 {"SIGQUIT", SIGQUIT},
-		 {"SIGILL", SIGILL},
-		 {"SIGABRT", SIGABRT},
-		 {"SIGFPE", SIGFPE},
-		 {"SIGKILL", SIGKILL}
+
+/*		SIGNAL LIST :
+		 SIGUSR1
+		 SIGTERM
+		 SIGALRM
+		 SIGUSR2
+		 SIGSEGV
+		 SIGHUP
+		 SIGQUIT
+		 SIGILL
+		 SIGABRT
+		 SIGFPE
+		 SIGKILL
 
 */
 
-	return PBSE_INTERNAL; // PBSE_NONE ??
+	return retcode;
 }
 
 /*
@@ -1020,7 +1004,7 @@ char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, 
 			strncat(jobBuffer, json_strescape(value) , strlen(json_strescape(value)));	
 			strncat(jobBuffer, "\"", strlen("\""));		
 
-		} /*else if (!strcmp(name, ATTR_c)){	// Checkpoint : "checkpoint"	<- not the same format as OAR !!
+		} /*else if (!strcmp(name, ATTR_c)){	// Checkpoint : "checkpoint"	<- the value has not the same format as OAR !!
 		
 			if (separator != 0){
 				strncat(jobBuffer, "," , strlen(","));
@@ -1139,8 +1123,8 @@ char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, 
 
 	/* Special treatment of the resource attribute */	
 
-	if (resource_ok == 0){	// If we haven't asked for a resource, we take the default job (nodes=2,cpu=1)
-		strncpy(resourceBuffer, "\\/nodes=2\\/cpu=1", strlen("\\/nodes=2\\/cpu=1")+1);
+	if (resource_ok == 0){	// If we haven't asked for a resource, we take the default job (nodes=1,cpu=1)
+		strncpy(resourceBuffer, "\\/nodes=1\\/cpu=1", strlen("\\/nodes=1\\/cpu=1")+1);
 		resource_ok = 1;
 	}
 	

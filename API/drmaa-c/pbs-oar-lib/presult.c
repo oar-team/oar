@@ -1,10 +1,35 @@
+/******************************************************************
+
+
+OAR DRMAA-C : A C library for using the OAR DRMS
+Copyright (C) 2009  LIG <http://www.liglab.fr/>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+<http://www.gnu.org/licenses/>
+
+**********************************************************************/
+
+// needed functions to manipulate the presult structure
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 #include "presult.h"
 
-// needed functions to use the presult structure
+
 
 
 
@@ -24,33 +49,28 @@ presult *addElement(presult **list, char* key) {
     newElement->key = key;		// It can be NULL (useful for some "twisted" values like "events", ...)
     newElement->type = UNKNOWN;		// TO BE CHANGED after calling the addElement function
     newElement->compValue = NULL;
- //   newElement->immValue.f = NULL;
+
     // C'est le dernier element
     newElement->next = NULL;
-
-//    printf("CHKPT ADDELEMENT 1 : %s\n", key);    
-//    printf("More Info: list = %p\n", list);    
     
 
     if(*list == NULL) { // If list is already empty
 	
-//	printf("CHKPT ADDELEMENT 2 : %p\n", newElement);           
+         
 	
 	*list = newElement;	// !!!  IS IT REAALLY NECESSARY TO KEEP THIS COMMAND
         return newElement;
 
     } else { // We are adding the new element in the end of the list
         
-//	printf("CHKPT ADDELEMENT 3\n");      
+    
 
-        presult *temp = *list;	// !!!
+        presult *temp = *list;	
 
         while(temp->next != NULL) {
 
             temp = temp->next;
-        }
-	
-//	printf("CHKPT ADDELEMENT 4 : %p\n", newElement);      
+        }    
 
         temp->next = newElement;
 

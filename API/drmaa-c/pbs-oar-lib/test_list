@@ -31,7 +31,7 @@
 	ST_BULK_SUBMIT_IN_HOLD_SESSION_RELEASE		: success
 	ST_BULK_SUBMIT_IN_HOLD_SINGLE_RELEASE		: success
 	ST_BULK_SUBMIT_IN_HOLD_SINGLE_DELETE		: success
-	ST_BULK_SUBMIT_IN_HOLD_SESSION_DELETE		: success  (It can fail when OAR doesn't frag the job quickly)
+	ST_BULK_SUBMIT_IN_HOLD_SESSION_DELETE		: success  
 	ST_SUBMIT_IN_HOLD_RELEASE			: success
 	ST_ERROR_FILE_FAILURE				: success	
 	ST_OUTPUT_FILE_FAILURE				: success	
@@ -43,11 +43,11 @@
    ______________________________________________________________________________________________________________
 
 	ST_INPUT_FILE_FAILURE				: failure  (STAGEIN may be helpful)
-	ST_SUBMIT_KILL_SIG				: failure  (Failed also in PBS but not in torque)
+	ST_SUBMIT_KILL_SIG				: failure  (Failed also in PBS but not in TORQUE, There is no SIGNAL SENDING mechanism in OAR)
 	ST_EXIT_STATUS					: failure
 	MT_EXIT_DURING_SUBMIT				: failure
    _______________________________________________________________________________________________________________
 
-	ST_UNSUPPORTED_ATTR				: error
-	ST_UNSUPPORTED_VATTR				: error
-	ST_SUBMIT_SUSPEND_RESUME_WAIT			: error	   (Probably because of the "suspend" state)
+	ST_UNSUPPORTED_ATTR				: error	   (NOT TESTED IN PBS/TORQUE)
+	ST_UNSUPPORTED_VATTR				: error	   (NOT TESTED IN PBS/TORQUE)
+	ST_SUBMIT_SUSPEND_RESUME_WAIT			: error	   (There is no SUSPEND command in OAR API)

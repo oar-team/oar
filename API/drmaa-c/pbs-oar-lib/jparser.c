@@ -1,3 +1,28 @@
+/******************************************************************
+
+
+OAR DRMAA-C : A C library for using the OAR DRMS
+Copyright (C) 2009  LIG <http://www.liglab.fr/>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+<http://www.gnu.org/licenses/>
+
+**********************************************************************/
+
+
+
 /**
 	JSON parser v2 : we create a Linked list for the received JSON stream 
 */
@@ -6,9 +31,6 @@
 #include <stdlib.h>
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
-
-// In order to use the presult structure which will contain the parsing-result
-//#include "presult.h"
 #include "jparser.h"
 
 
@@ -16,19 +38,6 @@ static void putIntoResultList(JsonNode *node, presult **result);
 static int load_json(const gchar *file);
 
 
-
-// A temporary main for tests
-/*
-int main(int argc, char **argv) {
-
-  if( argc < 2 ) {
-    g_print ("Usage: test <filename.json>\n");
-    return EXIT_FAILURE;
-  }
-  
-  return load_json(argv[1]);
-}
-*/
 
 // Loads a JSON stream from a file, parses it and give back the result
 static int load_json(const gchar *file) {
@@ -57,22 +66,15 @@ static int load_json(const gchar *file) {
   }
 
   root = json_parser_get_root (parser);
-  
-//  g_print("Checkpoint 1\n");
-
-//  g_print("Result before : %p\n",&result);
 
   
   // We fill result with the stream data
   putIntoResultList(root, &result);     //print_json(root);
   result = result->compValue;		// We delete the fictional first element      !! SHOULD WE FREE SOME SPACE ??!!
 
-//  g_print("Checkpoint 2\n");
 
   // Give back the result
   showResult(result);
-
-//  g_print("Checkpoint 3\n"); 
 
   getDrmaaState(result); 
 
@@ -112,31 +114,13 @@ jresult *load_json_from_stream(const gchar *stream) {
   }
 
   root = json_parser_get_root (parser);
-  
-//  g_print("Checkpoint 1\n");
-
-//  g_print("Result before : %p\n",&result);
 
   
   // We fill result with the stream data
   putIntoResultList(root, &result);     //print_json(root);
   result = result->compValue;		// We delete the fictional first element      !! SHOULD WE FREE SOME SPACE ??!!
 
-//  g_print("Checkpoint 2\n");
-
-  // Give back the result
-//  g_print ("Before puttting into structure\n");
-//  showResult(result);
-  
-//  g_print("Checkpoint 3\n"); 
-
-//  getDrmaaState(result); 
-
-
-	// I have to find a solution to this problem (duplicate??): I have to do a  "g_object_unref (parser);"
-
-
-  // manipulate the object tree and then exit
+ // manipulate the object tree and then exit
 //  g_object_unref (parser);
 
   res->status = EXIT_SUCCESS;
@@ -151,45 +135,21 @@ jresult *load_json_from_stream(const gchar *stream) {
 
 static void putObjectIntoResultList(JsonObject *object, presult **result) {
 	
-//	g_print("Checkpoint NODE_OBJECT -2\n");	
-	
 
   GList *next = NULL;
   GList *members = NULL;
-
-//	g_print("Checkpoint NODE_OBJECT -1\n");	
-
-  next = members = json_object_get_members(object);
-	
-//	g_print("Checkpoint NODE_OBJECT 0\n");  
-
   presult *currentElement;
 
-//	g_print("Checkpoint NODE_OBJECT 1\n");
+  next = members = json_object_get_members(object);
 
-
-  //g_print("{");
-
-//	g_print("Checkpoint NODE_OBJECT 2\n");
 
   while( next ) {
 
-	//g_print("%s: ", (const gchar*)next->data );
-//	printf("Parser, more Info: list = %p\n", *result); 
 	currentElement = addElement(result, (const gchar*)next->data);
 	JsonNode *node = json_object_get_member(object,(const gchar*)next->data);
 	putIntoResultList(node, &currentElement);
 	next = next->next;
-	if( next ) {  
-//		g_print(", \n"); 
-	}
   }
-
-//	g_print("Checkpoint NODE_OBJECT 3\n");  
-
-  //g_print("}\n");
-
-//	g_print("Checkpoint NODE_OBJECT 4\n");	
 
   g_list_free(members);		// We free some space
 }
@@ -203,19 +163,12 @@ static void putArrayIntoResultList(JsonArray *array, presult **result) {
 
   elements = json_array_get_elements (array);
 
-  //g_print("[\n");	
 
   for (l = elements; l != NULL; l = l->next) {
 	JsonNode *element = l->data;
 	currentElement = addElement(result, NULL);
-	putIntoResultList(element, &currentElement);
-
-	if (l!=NULL){
-	//	g_print(",\n");
-      	}     
+	putIntoResultList(element, &currentElement);    
   }  
-
-  //g_print("]");
 
   g_list_free(elements);	/// We free some space
 }
@@ -227,31 +180,23 @@ static void putIntoResultList(JsonNode *node, presult **result) {
   switch( JSON_NODE_TYPE(node) ) {
 
   	case JSON_NODE_OBJECT:
-    	//print_json_object(json_node_get_object(node));
-//	g_print("Checkpoint NODE_OBJECT\n");
-//  	g_print("Result2 after : %p\n",*result);
-//  	g_print("result->compValue : %p\n",(*result)->compValue);
 	(*result)->type = COMPLEX;	// TYPE = COMPLEX
 	putObjectIntoResultList(json_node_get_object(node), &((*result)->compValue));	
     	break;
 
  	case JSON_NODE_ARRAY:
-    	//print_json_array(json_node_get_array(node));
-//	g_print("Checkpoint NODE_ARRAY\n");
 	(*result)->type = COMPLEX;	// TYPE = COMPLEX
 	putArrayIntoResultList(json_node_get_array(node), &((*result)->compValue));   
 	break;
 
   	case JSON_NODE_VALUE:
-    	switch(json_node_get_value_type(node)) {		// For the moment, the only used type in the OAR-API is String (char*) with the exception of "array_index" which is an Integer
+    	switch(json_node_get_value_type(node)) {	// For the moment, the only used type in the OAR-API is String (char*) with the exception of "array_index" which is an Integer
 
     		case G_TYPE_BOOLEAN:{
-//		g_print("Checkpoint NODE_BOOLEAN\n");
       		gboolean value = json_node_get_boolean(node);
-
-      		//g_print("%s\n", value ? "true" : "false" );			
+		
 			if (value){
-				(*result)->type = INTEGER;	// It becomes a Integer
+				(*result)->type = INTEGER;	// Boolean will be converted to Integer
 				(*result)->immValue.i = 1;	
 			} else {
 				(*result)->type = INTEGER;
@@ -260,30 +205,21 @@ static void putIntoResultList(JsonNode *node, presult **result) {
       		}break;
 
    		case G_TYPE_INT:
-//		g_print("Checkpoint NODE_INT\n");
-
 		(*result)->type = INTEGER;
 		(*result)->immValue.i = json_node_get_int(node);
-		//char tmp_buffer[7];
-		//sprintf(tmp_buffer, "%d", json_node_get_int(node));	
-		//(*result)->immValue = tmp_buffer;
-     		//g_print("%d", json_node_get_int(node));
 		break;
 
     		case G_TYPE_LONG:
-//     		g_print("%d", json_node_get_int(node));
 		(*result)->type = INTEGER;
 		(*result)->immValue.i = json_node_get_int(node);
       		break;
 
     		case G_TYPE_UINT:
-//     		g_print("%d", json_node_get_int(node));
 		(*result)->type = INTEGER;
 		(*result)->immValue.i = json_node_get_int(node);
 		break;
 
     		case G_TYPE_ULONG:
-//     		g_print("%d", json_node_get_int(node));
 		(*result)->type = INTEGER;
 		(*result)->immValue.i = json_node_get_int(node);
       		break;
@@ -292,20 +228,16 @@ static void putIntoResultList(JsonNode *node, presult **result) {
       		break;
 
     		case G_TYPE_STRING:
-//		g_print("Checkpoint NODE_STRING\n");
 		(*result)->type = STRING;
-		(*result)->immValue.s = json_node_get_string(node);			
-      		// g_print("\"%s\"", json_node_get_string(node));
+		(*result)->immValue.s = json_node_get_string(node);
       		break;
 
     		case G_TYPE_FLOAT:	
-//     		g_print("%f", json_node_get_double(node));
 		(*result)->type = FLOAT;
 		(*result)->immValue.f = json_node_get_double(node);
       		break;
 
     		case G_TYPE_DOUBLE:
- //    		g_print("%f", json_node_get_double(node));
 		(*result)->type = FLOAT;
 		(*result)->immValue.f = json_node_get_double(node);
       		break;
@@ -329,10 +261,8 @@ static void putIntoResultList(JsonNode *node, presult **result) {
     	break;
 
   	case JSON_NODE_NULL:
-//	g_print("Checkpoint NODE_NULL\n");
 	(*result)->type = STRING;
 	(*result)->immValue.s = "NULL";	
-    	//g_print("null\n");
     	break;
 
   	default:
