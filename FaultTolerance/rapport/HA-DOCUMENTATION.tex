@@ -81,7 +81,7 @@ With this High Availability solution, OAR is protected from computer crash, serv
 
 
 
-This documentation explains how to configure a high availability cluster with OAR. We will see two different configurations :
+This documentation explains how to configure a high availability cluster with OAR. You can do this configuration automatically with the batch script (see \ref{script}). We will see two different configurations :
 \begin{description}
 \item[]- oar-server daemon and database on the same machine. So you have two servers, the master (oar-server, database) and the backup. See Figure \ref{2nodesschema}.
 
@@ -961,6 +961,7 @@ tune2fs -c 0 DISKPARTITION
 
 
 \chapter{High Availability auto installation}
+\label{script}
 
 You can install High Availability on OAR with the HAinstal bash script. This script must be launched on each node you want to make fault tolerant, with root rights. For example, on 2 nodes if oar-server and database are on the same server (the master with oar-server and database, and the backup), and on 4 nodes (master oar-server, master database, backup oar-server, backup database) if it different.
 Like previously, you must have a working installation (oar, database) : OAR must access the database, etc.. This script doesn't configure frontend and nodes, so you must refer to \ref{frontendconf} and \ref{nodeconf}. After script, you must start heartbeat : \textit{/etc/init.d/heartbeat start}
