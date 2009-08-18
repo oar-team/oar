@@ -90,12 +90,10 @@ sub scan_script($$){
 	my $Initial_request_string = shift;
     my %result;
     my $error = 0;
-    
     ($file) = split(" ",$file);
     my $lusr= $ENV{OARDO_USER};
     $ENV{OARDO_BECOME_USER} = $lusr;
     if (open(FILE, "oardodo cat $file |")){
-
         if (<FILE> =~ /^#/){
             while (<FILE>) {
                 if ( /^#OAR\s+/ ){
