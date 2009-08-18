@@ -341,7 +341,7 @@ EOS
 }
 
 
-## manage the job key is option is activated
+## manage the job key if option is activated
 ## read job key file if import from file 
 ## generate a job key if no import.
 ## function must exit with $job_key_priv and $job_key_pub set if $use_job_key is set.
@@ -725,7 +725,7 @@ if (defined($connect_job)){
 if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
     if (defined($Scan_script)){
-		my $scan_result_tmp = scan_script($exec, $Initial_request_string) if ($exec ne "");
+		my $scan_result_tmp = oarsublib::scan_script($exec, $Initial_request_string) if ($exec ne "");
 		my %scan_result = %$scan_result_tmp;
 		$Initial_request_string = $scan_result{initial_request};
         if (defined($scan_result{queue}) && !defined($Queue_name)){
