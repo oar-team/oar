@@ -1,26 +1,26 @@
 
 
 # Set OCamlMakefile to use
-export OCAMLMAKEFILE = ./OCamlMakefile
+export OCAMLMAKEFILE = ../common/OCamlMakefile
 
 # Export some common variable settings
 
 define PROJ_simple_cbf_mb_h
-  SOURCES= interval.ml types.ml hierarchy.ml simple_cbf_mb_h.ml
+  SOURCES= ../common/interval.ml types.ml ../common/hierarchy.ml simple_cbf_mb_h.ml
   RESULT= simple_cbf_mb_h
 endef
 export PROJ_simple_cbf_mb_h
 
 define PROJ_test_unit
   export PACKS = oUnit 
-  SOURCES = interval.ml hierarchy.ml simple_cbf_mb_h.ml test_unit.ml
+  SOURCES = ../common/interval.ml ../common/hierarchy.ml simple_cbf_mb_h.ml test_unit.ml
   RESULT = test_unit
 endef
 export PROJ_test_unit
 
 define PROJ_test_unit0
   export PACKS = oUnit 
-  SOURCES = interval.ml hierarchy.ml simple_cbf_mb_h.ml test_unit0.ml
+  SOURCES = ../common/interval.ml ../common/hierarchy.ml simple_cbf_mb_h.ml test_unit0.ml
   RESULT = test_unit0
 endef
 export PROJ_test_unit0

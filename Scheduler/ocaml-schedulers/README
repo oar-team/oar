@@ -80,6 +80,7 @@ Next:
  * suspended jobs (
  * add security_time_overhead (beetween jobs)
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
+ * errors logging (at least same error support as provide in perl scheduler)
 
  * how to emulate resource order ?, need of specifique scheduler for besteffort or use perl scheduler for besteffort ???
  * Do we need global scheduling timeout ??? (at timeout expiration we can save succesfully scheduled job, can also be the way for incremental assignement saving...)

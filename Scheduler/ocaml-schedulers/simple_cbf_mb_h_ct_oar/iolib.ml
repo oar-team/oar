@@ -367,11 +367,12 @@ let get_job_types dbh job_ids h_jobs =
     let get s = column res s a in 
       let job = try Hashtbl.find h_jobs (not_null int2ml (get "job_id"))
       with Not_found -> failwith "get_job_type error can't find job_id" in
-        job.types <- (Helpers.split "=" (not_null  str2ml (get "type")))::job.types in
+        let jt = Helpers.split "=" (not_null  str2ml (get "type")) in
+        job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
           ignore (map res add_id_types);;
 
-(* TODO factorize with get_job_types ?? change simple_cbf**.ml ??? REMOVE ???
-let get_job_types_hash dbh jobs =
+(* TODO factorize with get_job_types ?? change simple_cbf**.ml ??? REMOVE ???*)
+let get_job_types_hash_ids dbh jobs =
   let h_jobs =  Hashtbl.create 1000 in
   let job_ids = List.map (fun n -> Hashtbl.add h_jobs n.jobid n; n.jobid) jobs in 
   let job_ids_str = Helpers.concatene_sep "," string_of_int job_ids in
@@ -383,7 +384,7 @@ let get_job_types_hash dbh jobs =
     let get s = column res s a in 
       let job = try Hashtbl.find h_jobs (not_null int2ml (get "job_id"))
       with Not_found -> failwith "get_job_type error can't find job_id" in
-        job.types <- (Helpers.split "=" (not_null  str2ml (get "type")))::job.types in
+        let jt = Helpers.split "=" (not_null  str2ml (get "type")) in
+        job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
           ignore (map res add_id_types);
-          h_jobs;;
-*)
+          (h_jobs, job_ids);;

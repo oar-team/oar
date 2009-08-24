@@ -29,7 +29,7 @@ type job =  {
   moldable_id : int;
 	mutable time_b : time_t;
 	mutable walltime : time_t; (* mutable need to reset besteffort's one*)
-  mutable types : string list;
+  mutable types : (string * string) list;
 	mutable hy_level_rqt : string list list;  
   mutable hy_nb_rqt : int list list;
   mutable constraints : set_of_resources list; 
@@ -39,13 +39,11 @@ type job =  {
 (* Pretty - printing ** TO MOVE in helpers ??? **)
 
 let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in
-                      
   (Printf.sprintf "(%d) start_time %s; walltime %s:" t.jobid (ml642int t.time_b) (ml642int t.walltime)) ^
-  (String.concat ", " (List.map itv2str t.set_of_rs)) ^ (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," Helpers.id t.types)) ^
-  
+  (String.concat ", " (List.map itv2str t.set_of_rs)) ^ 
+  (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," (fun n -> String.concat "*" [fst(n);snd(n)]) t.types)) ^
   (Printf.sprintf "h_type: "^ (String.concat "*" (List.flatten t.hy_level_rqt)))^
   (Printf.sprintf "\nh_type: "^ (String.concat "*" (List.map string_of_int (List.flatten t.hy_nb_rqt)))) 
 
 let resource_to_string n = 
-  Printf.sprintf "(%d) -%s- %s" 
-    n.resource_id (rstate_to_string n.state) n.network_address
+  Printf.sprintf "(%d) -%s- %s" n.resource_id (rstate_to_string n.state) n.network_address
