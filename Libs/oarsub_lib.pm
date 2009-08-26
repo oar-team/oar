@@ -69,7 +69,7 @@ sub get_job_array_index($){
 	return iolib::get_job_array_index($base,$job_id);
 }
 
-sub delete_job($){
+sub frag_job($){
 	my $job = shift;
 	return iolib::frag_job($base,$job);
 }
@@ -332,5 +332,21 @@ sub add_micheline_job{
 	return iolib::add_micheline_job($base, $base_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref);
 }
 
+sub delete_jobs($$$){
+	my $job_ids = shift;
+	my $remote_host = shift;
+	my $remote_port = shift;
+	open_db_connection();
+	lock_tables(["frag_jobs","event_logs","jobs"]);
+	foreach my $Job_id (@{$job_ids}) {
+		warn("Deleting the job $Job_id ...\n");
+		my $err = frag_job($Job_id);
+	}
+	unlock_tables();
+	close_db_connection();
+	warn("Job(s) deleted\n");
+	#Signal Almigthy
+	signal_almighty($remote_host,$remote_port,"Qdel");
+}
 
 1;

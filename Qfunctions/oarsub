@@ -118,21 +118,9 @@ sub qdel($) {
     my $Al_dead = shift;
     if (defined($Job_id_list_ref)) {
         if ($Al_dead eq "INT" ) {
-            print(STDERR "\n\nCaught Interrupt (^C),");
+            print(STDERR "\n\nCaught Interrupt (^C), ");
         }
-
-        oarsublib::open_db_connection();
-        oarsublib::lock_tables(["frag_jobs","event_logs","jobs"]);
-        foreach my $Job_id (@{$Job_id_list_ref}) {
-            warn("Deleting the job $Job_id ...\n");
-            my $err = oarsublib::delete_job($Job_id);
-        }
-        oarsublib::unlock_tables();
-        oarsublib::close_db_connection();
-
-        warn("Job(s) deleted\n");
-        #Signal Almigthy
-        oarsublib::signal_almighty($remote_host,$remote_port,"Qdel");
+        oarsublib::delete_jobs($Job_id_list_ref, $remote_host, $remote_port);
         exit(1);
     }
 }
