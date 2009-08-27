@@ -868,7 +868,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }
         ($Server, $server_port) = oarsublib::init_tcp_server();
     }
-
+	# TODO: put in lib
     # stagein machinery
     if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
         #my $tempfile_to_delete;
