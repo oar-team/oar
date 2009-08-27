@@ -688,13 +688,11 @@ if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($c
     exit(5);
 }
 
-
 if (($Interactive == 1) and ($Reservation ne "0")){
     warn("/!\\ A reservation cannot be interactive.\n");
     usage();
     exit(7);
 }
-
 
 if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     warn("/!\\ A desktop computing job cannot be interactive.\n");
