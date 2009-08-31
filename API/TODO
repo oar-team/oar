@@ -7,6 +7,21 @@
 - il reste des resources sans restructuration et donc sans uri/timestamp (par ex: GET /jobs/526.yaml, GET /sites/simpsons/jobs/527.yaml)
 - job keys dans OAR API (pouvoir importer la cle depuis l'api)
 - Implementer POST /resources/<id>/status (equiv oarnodesetting -s) -> necessaire pour DELETE /resources/<id> puisqu'il faut mettre Dead une resource avant de la supprimer.
+- Implémenter une strcuture "backward_oar" qui sorte exatement les memes choses que les commandes (exemple: "get('/resources/1.yaml?structure=backward_oar')" <=> "oarnodes -Y -r 1")
+
+- Blacklister les options suivantes de POST /jobs :
+-D, --dumper                  Print result in DUMPER format
+-X, --xml                     Print result in XML format
+-Y, --yaml                    Print result in YAML format
+-J, --json                    Print result in JSON format
+-h, --help                    Print this help message
+-V, --version
+
+- Gérer le oarhold ** -r **
+
+- Implémenter "--resubmit"
+
+- For a later release, thing about --stagein (and stageout?)
 
 Bugs:
 

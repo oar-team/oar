@@ -744,6 +744,7 @@ sub check_job($$) {
   # Manage toggle options (no parameter)
   toggle_option($job,"use-job-key");
   toggle_option($job,"scanscript");
+  toggle_option($job,"hold");
 
   return $job;
 }
