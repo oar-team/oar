@@ -205,6 +205,8 @@ if [ "$ISDATABASE" = "y" ]; then
 	if [ "$BD" = "mysql" ]; then
 		/etc/init.d/$BD"d" stop
 	elif [ "$BD" = "postgresql" ]; then
+		echo "not emplemented with postgres"
+		exit 1
 		/etc/init.d/$BD"-"$PGVERSION stop
 	else
 		exit 1
