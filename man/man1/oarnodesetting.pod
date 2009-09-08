@@ -22,6 +22,10 @@ Add a new resource.
 
 Set the new state of the node.
 
+=item B<-m, --maintenance> on/off
+
+Set the maintenance mode on/off (resource state will be set to absent and available_upto field set to 0).
+
 =item B<-h, --hostname> HOSTNAME
 
 Set the node hostname.
