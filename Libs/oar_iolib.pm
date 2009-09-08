@@ -3673,6 +3673,29 @@ sub get_resources_on_node($$) {
 }
 
 
+# get_all_resources_on_node
+# returns the current resources on node whose hostname is passed in parameter
+# parameters : base, hostname
+# return value : resources ids
+# side effects : /
+sub get_all_resources_on_node($$) {
+    my $dbh = shift;
+    my $hostname = shift;
+
+    my $sth = $dbh->prepare("   SELECT resource_id
+                                FROM resources
+                                WHERE
+                                    network_address = \'$hostname\'
+                            ");
+    $sth->execute();
+    my @result;
+    while (my $ref = $sth->fetchrow_hashref()){
+        push(@result, $ref->{resource_id});
+    }
+    $sth->finish();
+    return @result;
+}
+
 # set_node_state
 # sets the state field of some node identified by its hostname in the base.
 # parameters : base, hostname, state, finaudDecision

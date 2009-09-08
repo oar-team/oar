@@ -22,7 +22,8 @@ my @notify_server_tag_list;
 
 my @hostnames;
 my $base;
-my $state ;
+my $state;
+my $maintenance;
 my $nowaitMode;
 my @properties;
 my $new_resource;
@@ -119,17 +120,73 @@ sub wait_end_of_running_jobs($$){
     print("Check done\n");
 }
 
+sub set_maintenance_on($$$$$){
+    my $base = shift;
+    my $resources_list = shift;
+    my $remote_host = shift;
+    my $remote_port = shift;
+    my $nowaitMode = shift;
+
+    foreach my $res (@{$resources_list}){
+	my $res_info = iolib::get_resource_info($base,$res);
+	if (!defined($res_info)){
+	    warn("/!\\ The resource $res does not exist in OAR database.\n");
+	    $exit_code = 1;
+	}else{
+	    print "maintenance mode set to \"ON\" on resource $res\n";
+	    my @prop_to_set;
+	    my $last_available_upto = $res_info->{'available_upto'};
+	    push @prop_to_set, "available_upto=0";
+	    push @prop_to_set, "last_available_upto=$last_available_upto" if $last_available_upto != 0;
+	    set_resource_properties($base, $res, \@prop_to_set);
+	    iolib::set_resource_nextState($base,$res,"Absent");
+	    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+	    if (!$nowaitMode){
+		print("Check jobs to delete on resource $res :\n");
+		my @jobs = iolib::get_resource_job($base,$res);
+		wait_end_of_running_jobs($base,\@jobs);
+	    }
+	}
+    }   
+}
+
+sub set_maintenance_off($$$$$){
+    my $base = shift;    my $resources_list = shift;
+    my $remote_host = shift;
+    my $remote_port = shift;
+    my $nowaitMode = shift;
+
+    foreach my $res (@{$resources_list}){
+
+	my $res_info = iolib::get_resource_info($base,$res);
+	if (!defined($res_info)){
+	    warn("/!\\ The resource $res does not exist in OAR database.\n");
+	    $exit_code = 1;
+	}else{
+	    print "maintenance mode set to \"OFF\" on resource $res\n";
+	    my @prop_to_set;
+	    my $available_upto = $res_info->{'last_available_upto'};
+	    push @prop_to_set, "available_upto=$available_upto" if $available_upto != 0;;
+	    set_resource_properties($base, $res, \@prop_to_set);
+	    iolib::set_resource_nextState($base,$res,"Alive");
+	    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+	}
+    }   
+}
 
 # print explanations for the user and exit
 sub usage {
     print <<EOS;
-Usage: $0 [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_number] || 
-[--sql "sql syntax"] [-s state] [-p "property=value"]]
+Usage: $0 [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_number] ||
+[--sql "sql syntax"] || [-h hostname]] [[-s state] || [-p "property=value"] || [-m on/off]]
 Change the state and properties of a node in OAR.
 You can also create a new resource.
 Options:
  -a, --add                       add a new resource
  -s, --state=STATE               set the new state of the node
+ -m, --maintenance [on, off]	 set the maintenance mode on/off for the resource
+				 this means setting its state to Absent
+				 and its available_upto value to 0
  -h, --hostname=HOSTNAME         set the node hostname
  -r, --resource                  set the resource
      --sql                       get resource identifiers which respond to the
@@ -155,6 +212,8 @@ my $Version;
 # Options on arg command line
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
+	    "maintenance|m=s" => \$maintenance,
+	    "care=s" => \$maintenance, # care is an alias for maintenance
             "hostname|h=s"   => \@hostnames,
             "no-wait|n" => \$nowaitMode,
             "property|p=s" => \@properties,
@@ -172,9 +231,13 @@ if (defined($Version)){
     exit(0);
 }
 
-defined(@properties) || defined($state) || defined($new_resource) or usage();
+defined(@properties) || defined($state) || defined($new_resource) || defined($maintenance) or usage();
 if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){
     warn("/!\\ Bad state value. Possibilities are : Alive | Absent | Dead \n");
+    usage();
+}
+if (defined($maintenance) && !(($maintenance eq 'on') || ($maintenance eq 'off'))){
+    warn("/!\\ Bad maintenance mode value. Possibilities are : on | off\n");
     usage();
 }
 
@@ -239,8 +302,28 @@ if (defined($new_resource)){
                 print("Done\n");
             }
         }
+	if (defined($maintenance)){
+	    if ($maintenance eq 'on'){
+		set_maintenance_on($base, \@resource, $remote_host, $remote_port, $nowaitMode);
+	    }
+	    if ($maintenance eq 'off'){
+		set_maintenance_off($base, \@resource, $remote_host, $remote_port, $nowaitMode);
+	    }
+	}
     }else{
         # update all resources with netwokAdress = $hostname
+	if (defined($maintenance)){
+	    my @res_to_maintain;
+	    foreach my $h (@hostnames){
+		push @res_to_maintain, iolib::get_all_resources_on_node($base, $h);
+	    }
+	    if ($maintenance eq 'on'){
+		set_maintenance_on($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
+	    }
+	    if ($maintenance eq 'off'){
+		set_maintenance_off($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
+	    }
+	}
         if (defined($state)){
             my @nodes_to_check;
             foreach my $h (@hostnames){
