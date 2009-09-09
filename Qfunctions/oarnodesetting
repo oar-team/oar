@@ -134,6 +134,7 @@ sub set_maintenance_on($$$$$){
 	    $exit_code = 1;
 	}else{
 	    print "maintenance mode set to \"ON\" on resource $res\n";
+	    iolib::add_event_maintenance_on($base, $res, iolib::get_date($base));
 	    my @prop_to_set;
 	    my $last_available_upto = $res_info->{'available_upto'};
 	    push @prop_to_set, "available_upto=0";
@@ -164,6 +165,7 @@ sub set_maintenance_off($$$$$){
 	    $exit_code = 1;
 	}else{
 	    print "maintenance mode set to \"OFF\" on resource $res\n";
+	    iolib::add_event_maintenance_off($base, $res, iolib::get_date($base));
 	    my @prop_to_set;
 	    my $available_upto = $res_info->{'last_available_upto'};
 	    push @prop_to_set, "available_upto=$available_upto" if $available_upto != 0;;

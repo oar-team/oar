@@ -3999,6 +3999,46 @@ sub set_resource_property($$$$){
 }
 
 
+# add_event_maintenance_on
+# add an event in the table resource_logs indicating that this 
+# resource is in maintenance (state = Absent, available_upto = 0)
+# params: base, resource_id, date_start
+sub add_event_maintenance_on($$$){
+    my $dbh = shift;
+    my $resource_id = shift;
+    my $date_start = shift;
+
+    $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
+                    VALUES ($resource_id, \'maintenance\', \'on\', \'$date_start\')
+    ");
+
+    return(0);
+
+}
+
+# add_event_maintenance_off
+# update the event in the table resource_logs indicating that this 
+# resource is in maintenance (state = Absent, available_upto = 0) 
+# set the date_stop
+# params: base, resource_id, date_stop
+sub add_event_maintenance_off($$$){
+    my $dbh = shift;
+    my $resource_id = shift;
+    my $date_stop = shift;
+
+    $dbh->do("  UPDATE resource_logs
+		SET date_stop = \'$date_stop\'
+		WHERE
+		    date_stop = 0
+		    AND resource_id = \'$resource_id\'
+		    AND attribute = \'maintenance\'
+	      ");
+
+    return(0);
+
+}
+
+
 # get_resources_with_given_sql
 # gets the resource list with the given sql properties
 # parameters : base, $sql where clause
