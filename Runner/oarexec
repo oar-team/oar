@@ -18,7 +18,8 @@
 #     - 33 : oarexec was stopped normally via USR1 signal but there was an epilogue error
 #     - 34 : all worked normally and this is the result of an USR1 signal
 #     - 40 : all worked normally and the user process received the checkpoint signal
-#     - 41 : oarexec has sent the checkpoint signal but there were an epilogue error
+#     - 41 : oarexec has sent the checkpoint signal but there was an epilogue error
+#     - 42 : oarexec has sent the user defined signal (oardel -s)
 #
 # The exit code is sent to the Almighty via its TCP socket
 #
@@ -342,12 +343,26 @@ pipe(pipe_kill_read,pipe_kill_write);
 autoflush pipe_kill_write 1;
 autoflush pipe_kill_read 1;
 
+sub user_defined_signal_handler {
+    $SIG{URG} = \&user_defined_signal_handler;
+
+    print("[oarexec $Job_id] In user defined signal handler of @_\n");
+    my $signal;
+    open(FILE, "/tmp/USER_SIGNAL");
+    while (<FILE>) {
+	$signal = $_;
+    }
+    close(FILE);
+    print(pipe_kill_write "SIGNAL_$signal\n");
+}
+$SIG{URG} = \&user_defined_signal_handler;
+
 sub kill_signal_handler {
     $SIG{TERM} = \&kill_signal_handler;
     $SIG{INT} = \&kill_signal_handler;
     $SIG{QUIT} = \&kill_signal_handler;
 
-    print("[oarexec $Job_id] In signal handler of @_\n");
+    print("[oarexec $Job_id] In kill signal handler of @_\n");
     print(pipe_kill_write "KILL\n");
 }
 
@@ -469,6 +484,7 @@ $rin = $rin_sig | $rin_pipe | $rin_script;
 my $rin_tmp;
 my $Stop_signal = 0;
 my $Checkpoint_signal = 0;
+my $user_signal = 0;
 my $stop_loop = 0;
 # wait end of the child process or KILL notification
 while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
@@ -527,22 +543,21 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                 print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
                 send_kill_signal_to_myself();
             }
-            $Checkpoint_signal = 1;
-	  }
-#         }elsif ($line_read =~ m/^SIGNAL_(.*)/){
-# 	    my $signal = $1;
-# 	    #We must send $signal to the child of $pid
-#             my ($tmp_hash, $tmp_cmd_hash) = oar_Tools::get_all_process_children();
-#             my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
-#             if (defined($pid_to_send_kill)){
-#                 print("[oarexec $Job_id] Signal received, send signal $signal to the pid $pid_to_send_kill\n");
-#                 system({"oardodo"} "oardodo","kill","-s",$signal,$pid_to_send_kill);
-#             }else{
-#                 print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
-#                 send_kill_signal_to_myself();
-#             }
-#             $Checkpoint_signal = 1;
-# 	}
+            $Checkpoint_signal = 1;	  
+        }elsif ($line_read =~ m/^SIGNAL_(.*)/){
+	    my $signal = $1;
+	    #We must send $signal to the child of $pid
+            my ($tmp_hash, $tmp_cmd_hash) = oar_Tools::get_all_process_children();
+            my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
+            if (defined($pid_to_send_kill)){
+                print("[oarexec $Job_id] Signal received, send signal $signal to the pid $pid_to_send_kill\n");
+                system({"oardodo"} "oardodo","kill","-s",$signal,$pid_to_send_kill);
+            }else{
+                print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
+                send_kill_signal_to_myself();
+            }
+            $user_signal = 1;
+	}
     }    
 }
 
@@ -609,6 +624,8 @@ if ($kill_myself == 1){
     quit_oarexec(34,$Job);
 }elsif($Checkpoint_signal == 1){
     quit_oarexec(40,$Job);
+}elsif($user_signal == 1){
+    quit_oarexec(42,$Job);
 }else{
     quit_oarexec(0+$Oarexec_exit_code,$Job);
 }

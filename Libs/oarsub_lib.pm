@@ -272,7 +272,7 @@ sub signal_oarexec($){
     my $wait = $params->{time_to_wait};
     my $base = undef;
     my $ssh_cmd = $params->{ssh_cmd};
-	return oar_Tools::signal_oarexec($host, $job_id, $signal, $wait, $base, $ssh_cmd);
+	return oar_Tools::signal_oarexec($host, $job_id, $signal, $wait, $base, $ssh_cmd, '');
 }
 
 sub duration_to_sql($){

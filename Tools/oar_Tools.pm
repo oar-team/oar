@@ -34,7 +34,7 @@ my $Default_node_file_db_field_distinct_values = "resource_id";
 sub get_all_process_children();
 sub get_one_process_children($);
 sub notify_tcp_socket($$$);
-sub signal_oarexec($$$$$$);
+sub signal_oarexec($$$$$$$);
 sub get_default_oarexec_directory();
 sub set_default_oarexec_directory($);
 sub get_default_openssh_cmd();
@@ -275,15 +275,18 @@ sub replace_jobid_tag_in_string($$){
 }
 
 # Send the given signal to the right oarexec process
-# args : host name, job id, signal, wait or not (0 or 1), DB ref (to close it in the child process)
+# args : host name, job id, signal, wait or not (0 or 1), 
+# DB ref (to close it in the child process), ssh cmd, user defined signal 
+# for oardel -s (null by default if not used)
 # return an array with exit values
-sub signal_oarexec($$$$$$){
+sub signal_oarexec($$$$$$$){
     my $host = shift;
     my $job_id = shift;
     my $signal = shift;
     my $wait = shift;
     my $base = shift;
     my $ssh_cmd = shift;
+    my $user_signal = shift;
 
     my $file = get_oar_pid_file_name($job_id);
     #my $cmd = "$ssh_cmd -x -T $host \"test -e $file && cat $file | xargs kill -s $signal\"";
@@ -298,8 +301,12 @@ sub signal_oarexec($$$$$$){
     $cmd[$c] = "-x";$c++;
     $cmd[$c] = "-T";$c++;
     $cmd[$c] = $host;$c++;
-    $cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
-    
+    if (defined($user_signal) && $user_signal ne ''){
+	$cmd[$c] = "bash -c 'echo $user_signal > /tmp/USER_SIGNAL && test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+    }
+    else {
+	$cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+    }
     $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();
     if($pid == 0){

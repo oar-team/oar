@@ -114,7 +114,7 @@ foreach my $job (iolib::get_jobs_in_state($base, "Running")){
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm(oar_Tools::get_ssh_timeout());
-            @exit_codes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1,$base, $Openssh_cmd);
+            @exit_codes = oar_Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1,$base, $Openssh_cmd, '');
             alarm(0);
         };
         if ($@){

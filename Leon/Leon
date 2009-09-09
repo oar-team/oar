@@ -87,7 +87,7 @@ foreach my $j (iolib::get_to_kill_jobs($base)){
         #deploy, cosystem and no host part
         if (defined($host_to_connect_via_ssh)){
             iolib::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send kill signal to oarexec on $host_to_connect_via_ssh for the job $j->{job_id}");
-            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base, $Openssh_cmd);
+            oar_Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base, $Openssh_cmd, '');
         }
     }
     iolib::job_arm_leon_timer($base,$j->{job_id});

@@ -156,7 +156,7 @@ if (defined($Checkpoint)){
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base, $Openssh_cmd);
+                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base, $Openssh_cmd, '');
                 alarm(0);
             };
             if ($@){
@@ -205,7 +205,7 @@ if (defined($Checkpoint)){
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signal_oarexec($hosts[0],$idJob,$signal,1, $base, $Openssh_cmd);
+                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGURG",1, $base, $Openssh_cmd, $signal);
                 alarm(0);
             };
             if ($@){
