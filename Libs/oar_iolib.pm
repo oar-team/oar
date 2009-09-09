@@ -65,6 +65,7 @@ sub set_job_message($$$);
 sub set_job_autoCheckpointed($$);
 sub frag_job($$);
 sub ask_checkpoint_job($$);
+sub ask_signal_job($$$);
 sub hold_job($$$);
 sub resume_job($$);
 sub job_fragged($$);
@@ -2140,6 +2141,34 @@ sub ask_checkpoint_job($$){
     }   
 }
 
+# ask_signal_job
+# Verify if the user is able to signal the job
+# args : database ref, job id, signal
+# returns : 0 if all is good, 1 if the user cannot do this, 2 if the job is not running, 3 if the job is Interactive
+sub ask_signal_job($$$){
+    my $dbh = shift;
+    my $idJob = shift;
+    my $signal = shift;
+
+    my $lusr= $ENV{OARDO_USER};
+
+    my $job = get_job($dbh, $idJob);
+
+    return(3) if ((defined($job)) and ($job->{job_type} eq "INTERACTIVE"));
+    if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
+        if ($job->{state} eq "Running"){
+            #$dbh->do("LOCK TABLE event_log WRITE");
+            add_new_event($dbh,"SIGNAL_$signal",$idJob,"User $lusr requested the signal $signal on the job $idJob");
+            #$dbh->do("UNLOCK TABLES");
+	    oar_debug("[oar_iolib] added an event of type SIGNAL_$signal for job $idJob\n");
+            return(0);
+        }else{
+            return(2);
+        }
+    }else{
+        return(1);
+    }   
+}
 
 # hold_job
 # sets the state field of a job to 'Hold'

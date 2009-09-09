@@ -209,23 +209,22 @@ sub get_last_project_karma($$$) {
 #}
 
 sub get_specific_jobs {
-  my $job_ids = shift;
-  my @jobs;
-  foreach my $j (@$job_ids) {
-    my $tmp = iolib::get_job($base, $j);
-    if (defined($tmp)){
-      push(@jobs, $tmp);
+    my $job_ids = shift;
+    my @jobs;
+    foreach my $j (@$job_ids) {
+      my $tmp = iolib::get_job($base, $j);
+      if (defined($tmp)){
+	push(@jobs, $tmp);
+      }
     }
-  }
-  return \@jobs;
+    return \@jobs;
 }
 
 sub get_job_data($$){
     my $job_info = shift;
-	my $full_view = shift;
-	
-	my $dbh = $base;
-
+    my $full_view = shift;
+    
+    my $dbh = $base;
     my @nodes;
     my @node_hostnames;
     my $mold;
@@ -370,7 +369,7 @@ sub get_job_resources_properties($) {
 }
 
 sub get_job_state($) {
-    my $idJob = shift;
+	my $idJob = shift;
 	my $state_string = iolib::get_job_state($base,$idJob);
 	return $state_string;
 }

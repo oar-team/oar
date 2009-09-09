@@ -18,6 +18,10 @@ This command is used to delete or checkpoint job(s). Jobs are designed by their 
 
 Send the checkpoint signal designed from the "--signal" oarsub command option (default is SIGUSR2) to the process launched by the job "job_id".
 
+=item B<-s, --signal>
+
+Send the signal given as parameter to the process launched by the job "job_id".
+
 =item B<-b, --besteffort>
 
 Tag specified jobs as besteffort (or remove it if they are already besteffort)

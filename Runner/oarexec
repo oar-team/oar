@@ -521,14 +521,28 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             my ($tmp_hash, $tmp_cmd_hash) = oar_Tools::get_all_process_children();
             my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
             if (defined($pid_to_send_kill)){
-                print("[oarexec $Job_id] Send signal SIGUSR2 to the pid $pid_to_send_kill\n");
+                print("[oarexec $Job_id] Checkpoint received, send signal $Job->{checkpoint_signal} to the pid $pid_to_send_kill\n");
                 system({"oardodo"} "oardodo","kill","-s",$Job->{checkpoint_signal},$pid_to_send_kill);
             }else{
                 print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
                 send_kill_signal_to_myself();
             }
             $Checkpoint_signal = 1;
-        }
+	  }
+#         }elsif ($line_read =~ m/^SIGNAL_(.*)/){
+# 	    my $signal = $1;
+# 	    #We must send $signal to the child of $pid
+#             my ($tmp_hash, $tmp_cmd_hash) = oar_Tools::get_all_process_children();
+#             my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
+#             if (defined($pid_to_send_kill)){
+#                 print("[oarexec $Job_id] Signal received, send signal $signal to the pid $pid_to_send_kill\n");
+#                 system({"oardodo"} "oardodo","kill","-s",$signal,$pid_to_send_kill);
+#             }else{
+#                 print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
+#                 send_kill_signal_to_myself();
+#             }
+#             $Checkpoint_signal = 1;
+# 	}
     }    
 }
 

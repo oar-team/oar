@@ -21,11 +21,12 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-c|-b][--array][job_ids][-h][-V]
+Usage: $0 [-c|-b|-s][--array][job_ids][-h][-V]
 Delete or send checkpoint signal to jobs.
 Options:
   -h, --help              show this help screen
   -c, --checkpoint        send checkpoint signal to the job_ids
+  -s, --signal		  send the signal given as parameter to the job_ids
   -b, --besteffort        tag specified jobs as besteffort (or remove it
                           if they are already besteffort)
       --array             delete/checkpoint array job(s) passed as parameter 
@@ -57,6 +58,7 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
 my $Checkpoint;
+my $signal;
 my $sos;
 my $Version;
 my $Sql_property;
@@ -64,6 +66,7 @@ my $Besteffort;
 my $array;
 
 GetOptions ("checkpoint|c" => \$Checkpoint,
+	    "signal|s:s" => \$signal,
             "besteffort|b" => \$Besteffort,
             "help|h" => \$sos,
             "array" => \$array,
@@ -130,7 +133,7 @@ my $base = iolib::connect();
 if (defined($Checkpoint)){
     foreach my $idJob (@job_ids){
         print("Checkpointing the job $idJob ...");
-        # Try to insert checkpoint informations in the database
+        # Try to insert checkpoint information in the database
         my $err = iolib::ask_checkpoint_job($base,$idJob); 
         if ($err > 0) {
             print("ERROR.\n");
@@ -173,6 +176,55 @@ if (defined($Checkpoint)){
                 $strComment = "The job $idJob was notified to checkpoint itself.";
                 print("$strComment\n");
                 iolib::add_new_event($base,"CHECKPOINT_SUCCESS",$idJob,$strComment);
+            }
+        }
+    }
+}elsif (defined($signal)){
+    foreach my $idJob (@job_ids){
+        print("Signaling the job $idJob with $signal signal.\n");
+        # Try to insert signal information in the database
+        my $err = iolib::ask_signal_job($base,$idJob,$signal);
+        if ($err > 0) {
+            print("ERROR.\n");
+            if ($err == 1){
+                warn("Cannot signal $idJob ; You are not the right user.\n");
+                $exitValue = 1;
+            }elsif ($err == 3){
+                warn("Cannot signal $idJob ; The job is Interactive.\n");
+                $exitValue = 7;
+            }else{
+                warn("Cannot signal $idJob ; This job is not running.\n");
+                $exitValue = 5;
+            }
+        }else{
+            my $strComment;
+            # Retrieve node names used by the job
+            my @hosts = iolib::get_job_current_hostnames($base,$idJob);
+            my $timeoutSSH = oar_Tools::get_ssh_timeout();
+            # Timeout the ssh command
+            eval {
+                $SIG{ALRM} = sub { die "alarm\n" };
+                alarm($timeoutSSH);
+                oar_Tools::signal_oarexec($hosts[0],$idJob,$signal,1, $base, $Openssh_cmd);
+                alarm(0);
+            };
+            if ($@){
+                print("ERROR.\n");
+                if ($@ eq "alarm\n"){
+                    $exitValue = 3;
+                    $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
+                    warn("$strComment\n");
+                    iolib::add_new_event($base,"SIG_ERROR",$idJob,$strComment);
+                }else{
+                    $strComment = "An unknown error occured.";
+                    warn("$strComment\n");
+                    iolib::add_new_event($base,"SIG_ERROR",$idJob,$strComment);
+                }
+            }else{
+                print("DONE.\n");
+                $strComment = "The job $idJob was notified to signal itself with $signal.";
+                print("$strComment\n");
+                iolib::add_new_event($base,"SIG_SUCCESS",$idJob,$strComment);
             }
         }
     }
