@@ -2160,7 +2160,7 @@ sub ask_signal_job($$$){
             #$dbh->do("LOCK TABLE event_log WRITE");
             add_new_event($dbh,"SIGNAL_$signal",$idJob,"User $lusr requested the signal $signal on the job $idJob");
             #$dbh->do("UNLOCK TABLES");
-	    oar_debug("[oar_iolib] added an event of type SIGNAL_$signal for job $idJob\n");
+	    #oar_debug("[oar_iolib] added an event of type SIGNAL_$signal for job $idJob\n");
             return(0);
         }else{
             return(2);
