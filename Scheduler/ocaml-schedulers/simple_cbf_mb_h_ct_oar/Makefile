@@ -9,23 +9,14 @@ define PROJ_simple_cbf_mb_h_ct_oar
   export LIBS = unix str
   export PACKS = mysql
   SOURCES= ../common/interval.ml ../common/helpers.ml ../common/conf.ml types.ml iolib.ml \
-           ../common/hierarchy.ml ../simple_cbf_mb_h_ct/simple_cbf_mb_h_ct.ml simple_cbf_mb_h_ct_oar.ml
+           ../common/hierarchy.ml simple_cbf_mb_h_ct.ml simple_cbf_mb_h_ct_oar.ml
   RESULT= simple_cbf_mb_h_ct_oar
 endef
 export PROJ_simple_cbf_mb_h_ct_oar
 
-define PROJ_test_unit
-  export PACKS = oUnit 
-  SOURCES = ../common/interval.ml ../common/hierarchy.ml simple_cbf_mb_h.ml test_unit.ml
-  RESULT = test_unit
-endef
-export PROJ_test_unit
-
-
 # If the environment does not define subprojects to handle,
 # then use "ex1 ex2" as default
 ifndef SUBPROJS
-#  export SUBPROJS = simple_cbf_mb_h_ct test_unit 
   export SUBPROJS = simple_cbf_mb_h_ct_oar
 endif
 

@@ -71,7 +71,7 @@ let _ =
           let assignement_jobs = 
             begin
               slots_with_scheduled_jobs; (* fill slots with prev scheduled jobs *)  
-              schedule_id_jobs_ct waiting_j_ids h_waiting_jobs h_slots
+              schedule_id_jobs_ct h_slots h_waiting_jobs waiting_j_ids
             end 
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (ml642int now)));
