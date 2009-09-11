@@ -9,36 +9,39 @@ DB = Sequel.mysql(
  )
 DEFAULT_QUEUE = "default"
 DEFAULT_WALLTIME = 7200
-DEFAUlT_RES = "resource_id=1"
-DEFAUlT_PROPERTIES = ""
+DEFAULT_RES = "resource_id=1"
+DEFAULT_PROPERTIES = ""
+DEFAULT_TYPES = nil
 
 $jobs = DB[:jobs]
 $moldable = DB[:moldable_job_descriptions]
 $job_resource_groups = DB[:job_resource_groups]
 $job_resource_description = DB[:job_resource_descriptions]
+$job_types = DB[:job_types]
+
 
 def oar_job_insert(args={})
-  res = DEFAUlT_RES
+  res = DEFAULT_RES
   walltime = DEFAULT_WALLTIME
 	queue = DEFAULT_QUEUE
-  properties = DEFAUlT_PROPERTIES
+  properties = DEFAULT_PROPERTIES
+  types = DEFAULT_TYPES
 
   if !args[:res].nil?
     res = args[:res]
   end
-
   if !args[:walltime].nil?
     walltime = args[:walltime]
   end
-
   if !args[:queue].nil?
     queue = args[:queue]
   end
   if !args[:properties].nil?
     properties = args[:properties]
   end
-
-
+  if !args[:types].nil?
+    types = args[:types]
+  end
 
 
   job_id = $jobs.insert(:job_name=>"yop", :state => "Waiting", :queue_name => queue, :properties => properties)
@@ -52,6 +55,14 @@ def oar_job_insert(args={})
       $job_resource_description.insert(:res_job_group_id => res_group_id, :res_job_resource_type => type, :res_job_value => value.to_i, :res_job_order => order.to_i)
     end  
   end
+
+  #job's types insertion
+  if !types.nil?
+    types.split(',').each do |type|
+      $job_types.insert(:job_id => job_id, :type => type)
+    end
+  end
+
   return job_id
 end
 

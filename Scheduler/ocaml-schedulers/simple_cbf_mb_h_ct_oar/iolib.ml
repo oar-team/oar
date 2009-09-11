@@ -311,7 +311,7 @@ let get_scheduled_jobs dbh =
 
  
 
-(* NOT USE only ONE job see save_assignS to job list assignement*)
+(* NOT USED only ONE job see save_assignS to job list assignement*)
 let save_assign conn job =
   let moldable_job_id = ml2int job.moldable_id in 
     let  moldable_job_id_start_time j = 
@@ -367,7 +367,8 @@ let get_job_types dbh job_ids h_jobs =
     let get s = column res s a in 
       let job = try Hashtbl.find h_jobs (not_null int2ml (get "job_id"))
       with Not_found -> failwith "get_job_type error can't find job_id" in
-        let jt = Helpers.split "=" (not_null  str2ml (get "type")) in
+        let jt0 = Helpers.split "=" (not_null  str2ml (get "type")) in
+        let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in  
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
           ignore (map res add_id_types);;
 
@@ -384,7 +385,26 @@ let get_job_types_hash_ids dbh jobs =
     let get s = column res s a in 
       let job = try Hashtbl.find h_jobs (not_null int2ml (get "job_id"))
       with Not_found -> failwith "get_job_type error can't find job_id" in
-        let jt = Helpers.split "=" (not_null  str2ml (get "type")) in
+        let jt0 = Helpers.split "=" (not_null  str2ml (get "type")) in
+        let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in 
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
           ignore (map res add_id_types);
           (h_jobs, job_ids);;
+
+(* retrieve jobs dependencies *)
+(* return an hashtable, key = job_id, value = list of required jobs *)
+let get_current_jobs_dependencies dbh =
+  let h_jobs_dependencies =  Hashtbl.create 100 in
+  let query = "SELECT job_id_required FROM job_dependencies WHERE job_dependency_index = 'CURRENT'" in
+  let res = execQuery dbh query in
+  let get_one a =
+    let get s = column res s a in
+    let job_id = not_null int2ml (get "job_id") in
+    let job_id_required = not_null int2ml (get "job_id_required") in
+    let dependencies = try Hashtbl.find h_jobs_dependencies job_id with Not_found -> (Hashtbl.add h_jobs_dependencies job_id []; []) in
+    Hashtbl.replace h_jobs_dependencies job_id (job_id_required::dependencies) in
+      ignore (map res get_one);
+      h_jobs_dependencies;;    
+    
+
+

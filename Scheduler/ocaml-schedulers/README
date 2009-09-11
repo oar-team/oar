@@ -67,8 +67,14 @@ Based on simple_cbf_mb_h it will provide timesharing feature
 Uses simple_cbf_mb_h_ts will be usable with oar's DB to perform some simple test performance (not suitable for production use)  
 
 Next:
+ * scheduler message (see perl version *)
+ * job_error
+ * dependencies
+ * suspend job
+ * besteffort
+
  * need to test multi-resource-type (since >= cbf_mb_h)
- * need to tes multi-request with non exclusive resource selection (since >= cbf_mb_h)
+ * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
  * test on trunk DB version
  * Scalability performance testing
  * Add more features to reach perl scheduler's feature set :)
