@@ -404,7 +404,36 @@ let get_current_jobs_dependencies dbh =
     let dependencies = try Hashtbl.find h_jobs_dependencies job_id with Not_found -> (Hashtbl.add h_jobs_dependencies job_id []; []) in
     Hashtbl.replace h_jobs_dependencies job_id (job_id_required::dependencies) in
       ignore (map res get_one);
-      h_jobs_dependencies;;    
-    
+      h_jobs_dependencies;;
 
+(* retrieve status of required jobs of jobs with dependencies *)
+(* return an hashtable, key = job_id, value = list of required jobs_status *)
+let get_current_jobs_required_status dbh =
+  let h_jobs_required_status =  Hashtbl.create 100 in
+  let query = " SELECT jobs.job_id, jobs.state, jobs.exit_code, jobs.start_time, moldable_job_descriptions.moldable_walltime
+                FROM jobs,job_dependencies, moldable_job_descriptions
+                WHERE job_dependencies.job_dependency_index = 'CURRENT' 
+                AND jobs.job_id = job_dependencies.job_id_required
+                AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+                GROUP BY jobs.job_id;" in
+  let res = execQuery dbh query in
+  let get_one a =
+    let get s = column res s a in
+    let j_id = not_null int2ml (get "job_id")
+    and j_state = not_null str2ml (get "state")
+    and j_exit_code = not_null int2ml (get "exit_code")
+    and j_start_time = not_null int642ml (get "start_time")
+    and j_walltime = not_null int642ml (get "moldable_walltime")
+      in (j_id, {
+                  jr_id = j_id;
+                  jr_state = j_state;
+                  jr_exit_code = j_exit_code;
+                  jr_start_time = j_start_time;
+                  jr_walltime = j_walltime;
+                })
+    in 
+    let results = map res get_one in
+      ignore ( List.iter (fun x -> Hashtbl.add h_jobs_required_status (fst x) (snd x) ) results);
+      h_jobs_required_status;;
+    
 

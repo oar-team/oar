@@ -60,6 +60,7 @@ let slot_max nb_res = {time_s = zero; time_e = max_int; set_of_res = [{b = 1; e 
 (* provides contiguous_slots which fit job_walltime and retrieve slots list *)
 
 let find_contiguous_slots_time slot_l job =
+  (*  take into account time_b *)
 
 	let rec find_ctg_slots slots ctg_slots prev_slots = match slots with
 		| s::n when (s.time_e >= (add (add job.time_b job.walltime) minus_one)) -> (ctg_slots @ [s], prev_slots , n)
@@ -70,7 +71,7 @@ let find_contiguous_slots_time slot_l job =
  		| _ -> failwith "Not contiguous job is too long (BUG??)";
 
 		in let next_slot_time_s = (List.hd slot_l).time_s in
-			job.time_b <- next_slot_time_s;
+			if job.time_b < next_slot_time_s then job.time_b <- next_slot_time_s;
 	  	find_ctg_slots slot_l [] [];;
 
 (* No exclusive hierarchy assignement *)
