@@ -38,11 +38,14 @@ type job =  {
 
 (* job_required_status is used for job dependencies *)
 type job_required_status = {
-   jr_id : jobid_t;
-   jr_state : string;
-   jr_exit_code : int;
-   jr_start_time : time_t;
-   jr_walltime : time_t;
+  jr_id : jobid_t;
+  jr_state : string;
+  jr_jtype : string; 
+  jr_exit_code : int;
+(*
+  jr_start_time : time_t; (* remove ? *)
+  jr_walltime : time_t; (* remove ? *)
+ *)
 }
 
 (* Pretty - printing ** TO MOVE in helpers ??? **)

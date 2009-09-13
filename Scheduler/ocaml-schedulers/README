@@ -68,9 +68,10 @@ Uses simple_cbf_mb_h_ts will be usable with oar's DB to perform some simple test
 
 Next:
  * scheduler message (see perl version *)
- * job_error
+ * job_error / job_message / scheduler message
  * dependencies
  * suspend job
+ * available_upto (???)
  * besteffort
 
  * need to test multi-resource-type (since >= cbf_mb_h)

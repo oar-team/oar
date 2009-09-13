@@ -237,9 +237,9 @@ let schedule_id_jobs jids h_jobs slots =
 	in assign_res_jobs jids [] slots;;
 
 
-(*                                                                  *)
-(* Schedule loop with support for jobs container - can be recursive *)
-(*                                                                  *)
+(*                                                                                                  *)
+(* Schedule loop with support for jobs container - can be recursive (recursivity has not be tested) *)
+(*                                                                                                  *)
 (* let schedule_id_jobs_ct jids h_jobs h_slots = *)
  let schedule_id_jobs_ct h_slots h_jobs jids =
 
@@ -264,6 +264,91 @@ let schedule_id_jobs jids h_jobs slots =
                   end 
   in
     assign_res_jobs jids []
+
+(*                                                                                                  *)
+(* Schedule loop with support for jobs container - can be recursive (recursivity has not be tested) *)
+(* plus dependencies support                                                                        *)
+(* let schedule_id_jobs_ct jids h_jobs h_slots = *)
+
+ let schedule_id_jobs_ct_dep h_slots h_jobs jids h_jobs_dependencies h_req_jobs_status =
+
+  let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
+  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
+  let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"") in
+
+  (* dependencies evaluation *)
+  let test_no_dep j =  try (false, (Hashtbl.find h_jobs_dependencies j)) with Not_found -> (true,[]) in
+
+(*
+  let test_job_scheduled = try (Hashtbl.find h_jobs j)  with Not_found -> failwith "Can't Hashtbl.find h_jobs (test_job_scheduled )" in
+*)
+    
+  let dependencies_evaluation job_init =
+    (* are there denpendencies*)
+    let (tst_no_dep, deps) = test_no_dep job_init in
+    if tst_no_dep then
+      (false, job_init) (* don't skip, no dep *)
+    else
+      let rec jobs_required_iter dependencies = match dependencies with
+        | [] -> (false, job_init)
+        | jr_id::n -> let jrs =  try (Hashtbl.find h_req_jobs_status jr_id) with Not_found -> failwith "Can't Hashtbl.find jr in h_req_jobs_status" in
+                      if (jrs.jr_state != "Terminated") then
+                        let jsched = find_job jr_id in
+                          (* test is job scheduled*)
+                          if (jsched.set_of_rs != []) then
+                            begin
+                              if (add jsched.time_b jsched.walltime) > job_init.time_b then job_init.time_b <- (add jsched.time_b jsched.walltime);
+                              jobs_required_iter n
+                            end
+                          else
+                            (* job message: "Cannot determine scheduling time due to dependency with the job $d"; *)
+                            (* oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n"); *)
+                            (true, job_init) (* skip *)
+                      else (* job is Terminated *)
+                        if (jrs.jr_jtype = "PASSIVE") && (jrs.jr_exit_code != 0) then
+                          (* my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
+                             iolib::set_job_message($base,$j->{job_id},$message);
+                             iolib::set_job_scheduler_info($base,$j->{job_id},$message);
+                             oar_debug("[oar_sched_gantt_with_timesharing] [$j->{job_id}] $message\n");
+                          *)
+                          (true, job_init) (* skip *)
+                        else
+                          jobs_required_iter n
+      in
+        jobs_required_iter deps
+ 
+  in
+  (* assign ressource for all waiting jobs *)
+  let rec assign_res_jobs j_ids scheduled_jobs = match j_ids with
+		| [] -> List.rev scheduled_jobs
+		| jid::n -> let j_init = find_job jid in
+                let (test_skip, j) = dependencies_evaluation j_init in
+                let (test_inner, value_in) = test_type j "inner" in
+                  let num_set_slots = if test_inner then (int_of_string value_in) else 0 in
+(*                let num_set_slots = if test_inner then (try int_of_string value with _ -> 0) else 0 in *)(* job_error *)
+                  begin
+                    let (test_container, value) = test_type j "container" in
+                      let (job, updated_slots ) = assign_resources_job_split_slots j (find_slots num_set_slots) in 
+                        Hashtbl.replace h_slots num_set_slots updated_slots;
+                      if test_container then
+                        (* create new slot / container *)
+                        Hashtbl.add h_slots jid [{time_s = job.time_b; time_e = (add job.time_b job.walltime) ; set_of_res = job.set_of_rs}];
+
+                      (* replace updated/assgined job in job hashtable *) 
+                      Hashtbl.replace h_jobs jid job; 
+
+                      assign_res_jobs n  (job::scheduled_jobs)
+                  end 
+  in
+    assign_res_jobs jids []
+
+
+
+
+
+
+
+
 
 (* function insert previously scheduled job in slots *)
 (* job must be sorted by start_time *)
