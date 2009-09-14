@@ -48,6 +48,7 @@ version 2.4.0:
     values if maintenance is off.
   - added a --signal option to oardel that allow a user to send a signal to one of
     his jobs
+  - added a name field in the schema table that will refer to the OAR version name
 
 
 version 2.3.4:

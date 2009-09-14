@@ -1,9 +1,10 @@
 -- $Id$
 -- info version, change here if you have updated the db schema
 CREATE TABLE schema (
-  version VARCHAR( 255 ) NOT NULL
+  version VARCHAR( 255 ) NOT NULL,
+  name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.3.2+svn1743');
+INSERT INTO schema VALUES ('2.4.0','Thriller');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
