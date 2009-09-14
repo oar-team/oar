@@ -253,6 +253,12 @@ CREATE TABLE queues (
   PRIMARY KEY  (queue_name)
 );
 
+CREATE TABLE scheduler (
+  name VARCHAR(100) NOT NULL,
+  script VARCHAR(100) NOT NULL,
+  description VARCHAR(255) NOT NULL,
+  PRIMARY KEY (name)
+);
 
 CREATE TABLE resource_logs (
   resource_log_id bigserial,

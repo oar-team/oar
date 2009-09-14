@@ -212,6 +212,13 @@ state ENUM('Active','notActive')  NOT NULL DEFAULT 'Active',
 PRIMARY KEY (queue_name)
 );
 
+CREATE TABLE IF NOT EXISTS scheduler (
+name VARCHAR( 100 ) NOT NULL,
+script VARCHAR( 100 ) NOT NULL,
+description VARCHAR( 255 ) NOT NULL,
+PRIMARY KEY (name)
+);
+
 #DROP TABLE IF EXISTS admission_rules;
 CREATE TABLE IF NOT EXISTS admission_rules (
 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
