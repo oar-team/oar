@@ -33,7 +33,6 @@ if (defined($ENV{OARCONFFILE})){
 my $q=apilib::get_cgi_handler();
 
 # Oar commands
-my $OARSTAT_CMD = "oarstat";
 my $OARSUB_CMD  = "oarsub";
 my $OARNODES_CMD  = "oarnodes";
 my $OARDEL_CMD  = "oardel";
@@ -172,9 +171,6 @@ SWITCH: for ($q) {
                                                  );
     my $jobs = oarstatlib::get_all_jobs_for_user("");
     oarstatlib::close_db_connection();
-    #my $cmd    = "$OARSTAT_CMD -D";
-    #my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
-    #my $jobs = apilib::import($cmdRes,"dumper");
     if ( !defined @$jobs || scalar(@$jobs) == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
@@ -189,7 +185,7 @@ SWITCH: for ($q) {
   };
 
   #
-  # Details of a job (oarstat wrapper)
+  # Details of a job
   #
   $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {
@@ -207,10 +203,15 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD $OARSTAT_CMD -fj $jobid -D";
-    my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
-    my $job = apilib::import($cmdRes,"dumper");
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $job = oarstatlib::get_specific_jobs([$jobid]);
+    $job=oarstatlib::get_job_data(@$job[0],1);
+    apilib::add_job_uri($job,$ext);
     my $result = apilib::struct_job($job,$STRUCTURE);
+    oarstatlib::close_db_connection; 
     print $header;
     if ($ext eq "html") {
        print $HTML_HEADER;

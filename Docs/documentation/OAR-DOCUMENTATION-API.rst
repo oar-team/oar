@@ -314,39 +314,65 @@ GET /jobs/<id>
     ::
 
      ---
-     547:
-       Job_Id: 547
-       array_id: 547
-       array_index: 1
-       assigned_network_address:
-         - liza-2
-       assigned_resources:
-         - 6
-       command: ''
-       cpuset_name: bzizou_547
-       dependencies: []
-       events: []
-       exit_code: ~
-       initial_request: oarsub -I
-       jobType: INTERACTIVE
-       job_uid: ~
-       job_user: bzizou
-       launchingDirectory: /home/bzizou
-       message: FIFO scheduling OK
-       name: ~
-       owner: bzizou
-       project: default
-       properties: desktop_computing = 'NO'
-       queue: default
-       reservation: None
-       resubmit_job_id: 0
-       scheduledStart: 1245768251
-       startTime: 1245768251
-       state: Running
-       submissionTime: 1245768249
-       types: []
-       walltime: 7200
-       wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
+     Job_Id: 547
+     id: 547
+     uri: /jobs/547
+     array_id: 547
+     array_index: 1
+     assigned_network_address:
+       - liza-2
+     assigned_resources:
+       - 6
+     command: ''
+     cpuset_name: bzizou_547
+     dependencies: []
+     events:
+       - date: 1245775464
+         description: User root requested to frag the job 547
+         event_id: 1315
+         job_id: 547
+         to_check: NO
+         type: FRAG_JOB_REQUEST
+       - date: 1245775464
+         description: '[sarko] Job [547] from 1245768251 with 7200; current time=1245775463 (Elapsed)'
+         event_id: 1316
+         job_id: 547
+         to_check: NO
+         type: WALLTIME
+       - date: 1245775464
+         description: '[Leon] Send kill signal to oarexec on liza-2 for the job 547'
+         event_id: 1318
+         job_id: 547
+         to_check: NO
+         type: SEND_KILL_JOB
+       - date: 1245775469
+         description: '[bipbip 547] Ask to change the job state'
+         event_id: 1320
+         job_id: 547
+         to_check: NO
+         type: SWITCH_INTO_ERROR_STATE
+     exit_code: ~
+     initial_request: ''
+     jobType: INTERACTIVE
+     job_uid: ~
+     job_user: bzizou
+     launchingDirectory: /home/bzizou
+     message: FIFO scheduling OK
+     name: ~
+     owner: bzizou
+     project: default
+     properties: desktop_computing = 'NO'
+     queue: default
+     reservation: None
+     resubmit_job_id: 0
+     scheduledStart: ~
+     startTime: 1245768251
+     state: Error
+     submissionTime: 1245768249
+     types: []
+     walltime: 7200
+     wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
+
 
 :usage example:
   ::

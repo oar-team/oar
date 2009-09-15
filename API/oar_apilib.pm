@@ -244,6 +244,15 @@ sub get_api_uri_relative_base() {
   }
 }
 
+# Add uri to a job
+sub add_job_uri($$) {
+  my $job = shift;
+  my $ext = shift;
+  $job->{uri}=apilib::make_uri("/jobs/".$job->{Job_Id},$ext,0);
+  $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
+  $job->{api_timestamp}=time();
+}
+
 # Add uris to a oar job list
 sub add_joblist_uris($$) {
   my $jobs = shift;
@@ -385,6 +394,7 @@ sub struct_job($$) {
   if    ($structure eq 'oar')    { return $job; }
   elsif ($structure eq 'simple') { 
     if ($job->{(keys(%{$job}))[0]} ne "HASH") {
+      $job->{id}=$job->{Job_Id};
       return $job;
     }else {
       return $job->{(keys(%{$job}))[0]}; 
