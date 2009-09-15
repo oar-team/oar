@@ -270,22 +270,22 @@ let schedule_id_jobs jids h_jobs slots =
 (* plus dependencies support                                                                        *)
 (* let schedule_id_jobs_ct jids h_jobs h_slots = *)
 
- let schedule_id_jobs_ct_dep h_slots h_jobs jids h_jobs_dependencies h_req_jobs_status =
+ let schedule_id_jobs_ct_dep h_slots h_jobs h_jobs_dependencies h_req_jobs_status jids =
 
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
   let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
   let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"") in
 
   (* dependencies evaluation *)
-  let test_no_dep j =  try (false, (Hashtbl.find h_jobs_dependencies j)) with Not_found -> (true,[]) in
+  let test_no_dep jid =  try (false, (Hashtbl.find h_jobs_dependencies jid)) with Not_found -> (true,[]) in
 
 (*
   let test_job_scheduled = try (Hashtbl.find h_jobs j)  with Not_found -> failwith "Can't Hashtbl.find h_jobs (test_job_scheduled )" in
 *)
     
-  let dependencies_evaluation job_init =
+  let dependencies_evaluation j_id job_init =
     (* are there denpendencies*)
-    let (tst_no_dep, deps) = test_no_dep job_init in
+    let (tst_no_dep, deps) = test_no_dep j_id in
     if tst_no_dep then
       (false, job_init) (* don't skip, no dep *)
     else
@@ -322,7 +322,7 @@ let schedule_id_jobs jids h_jobs slots =
   let rec assign_res_jobs j_ids scheduled_jobs = match j_ids with
 		| [] -> List.rev scheduled_jobs
 		| jid::n -> let j_init = find_job jid in
-                let (test_skip, j) = dependencies_evaluation j_init in
+                let (test_skip, j) = dependencies_evaluation jid j_init in
                 let (test_inner, value_in) = test_type j "inner" in
                   let num_set_slots = if test_inner then (int_of_string value_in) else 0 in
 (*                let num_set_slots = if test_inner then (try int_of_string value with _ -> 0) else 0 in *)(* job_error *)
