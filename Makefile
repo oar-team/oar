@@ -428,6 +428,7 @@ doc: build-html-doc
 	install -d -m 0755 $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-USER.html $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 Docs/documentation/OAR-DOCUMENTATION-API.html $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 Docs/schemas/oar_logo.png $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 Docs/schemas/db_scheme.png $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 Docs/schemas/interactive_oarsub_scheme.png $(DESTDIR)$(DOCDIR)/html
@@ -525,3 +526,8 @@ tools-install: sanity-check configuration common-install libs tools
 api-install: sanity-check configuration common-install libs api
 
 gridapi-install: sanity-check configuration common-install libs gridlibs gridapi
+
+clean:
+	rm -f Docs/documentation/OAR-DOCUMENTATION*html
+	rm -f Docs/documentation/doc_usecases.html
+	rm -f man/man1/*.1
