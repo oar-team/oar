@@ -4,11 +4,13 @@ use DBI();
 use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_iolib;
+use oarstat_lib;
 use oar_Tools;
 use oarversion;
 use POSIX;
+#use Data::Dumper;
 
-my $VERSION="0.1.2";
+my $VERSION="0.1.3";
 
 ##############################################################################
 # CONFIGURATION
@@ -157,17 +159,23 @@ SWITCH: for ($q) {
 
 
   #
-  # List of current jobs (oarstat wrapper)
+  # List of current jobs
   #
   $URI = qr{^/jobs\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARSTAT_CMD -D";
-    my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
-    my $jobs = apilib::import($cmdRes,"dumper");
-    if ( !defined %{$jobs} || !defined(keys(%{$jobs})) ) {
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $jobs = oarstatlib::get_all_jobs_for_user("");
+    oarstatlib::close_db_connection();
+    #my $cmd    = "$OARSTAT_CMD -D";
+    #my $cmdRes = apilib::send_cmd($cmd,"Oarstat");
+    #my $jobs = apilib::import($cmdRes,"dumper");
+    if ( !defined @$jobs || scalar(@$jobs) == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
     else {

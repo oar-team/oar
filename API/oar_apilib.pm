@@ -248,10 +248,10 @@ sub get_api_uri_relative_base() {
 sub add_joblist_uris($$) {
   my $jobs = shift;
   my $ext = shift;
-    foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=apilib::make_uri("/jobs/$job",$ext,0);
-      $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext);
-      $jobs->{$job}->{api_timestamp}=time();
+    foreach my $job (@$jobs) {
+      $job->{uri}=apilib::make_uri("/jobs/".$job->{job_id},$ext,0);
+      $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
+      $job->{api_timestamp}=time();
   }
 }
 
@@ -396,21 +396,21 @@ sub struct_job_list($$) {
   my $jobs = shift;
   my $structure = shift;
   my $result;
-  foreach my $job ( keys( %{$jobs} ) ) {
+  foreach my $job (@$jobs) {
     my $hashref = {
-                  state => $jobs->{$job}->{state},
-                  owner => $jobs->{$job}->{owner},
-                  name => $jobs->{$job}->{name},
-                  queue => $jobs->{$job}->{queue},
-                  submission => $jobs->{$job}->{submissionTime},
-                  uri => $jobs->{$job}->{uri},
-                  api_timestamp => $jobs->{$job}->{api_timestamp}
+                  state => $job->{state},
+                  owner => $job->{job_user},
+                  name => $job->{job_name},
+                  queue => $job->{queue_name},
+                  submission => $job->{submission_time},
+                  uri => $job->{uri},
+                  api_timestamp => $job->{api_timestamp}
     };
     if ($structure eq 'oar') {
-      $result->{$job} = $hashref;
+      $result->{$job->{job_id}} = $hashref;
     }
     elsif ($structure eq 'simple') {
-      $hashref->{id}=$job;
+      $hashref->{id}=$job->{job_id};
       push (@$result,$hashref);
     } 
   }

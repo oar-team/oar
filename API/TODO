@@ -23,6 +23,8 @@
 
 - For a later release, thing about --stagein (and stageout?)
 
+- Database connection failures should not result in a loop waiting for the database, but an instantaneous error (should we use another db_connect function?) 
+
 Bugs:
 
 - https://helpdesk.grid5000.fr/oarapi/Grenoble/jobs.html
