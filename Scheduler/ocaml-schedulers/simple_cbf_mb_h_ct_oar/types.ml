@@ -22,6 +22,7 @@ type resource = {
 	resource_id: int;
 	network_address: string;
   state: resource_state_t;
+  available_upto: time_t;
 }
 
 type job =  {
@@ -38,7 +39,7 @@ type job =  {
 
 (* job_required_status is used for job dependencies *)
 type job_required_status = {
-  jr_id : jobid_t;
+(*  jr_id : jobid_t; *)
   jr_state : string;
   jr_jtype : string; 
   jr_exit_code : int;

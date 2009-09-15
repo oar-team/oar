@@ -35,15 +35,26 @@ let execQuery db q =
 		              failwith "execQuery"
 
 (* iolib::list_resources *)
-let get_resource_list db = 
+let get_resource_list dbh = 
   let query = "SELECT * FROM resources" in
-  let res = execQuery db query in 
+  let res = execQuery dbh query in 
   let get_one a = 
     let get s = column res s a in 
       { resource_id = not_null int2ml (get "resource_id");
 				network_address = not_null str2ml (get "network_address"); 
-				state = not_null (fun x -> let s = str2ml x in rstate_of_string s) (get "state") ;} in
+				state = not_null (fun x -> let s = str2ml x in rstate_of_string s) (get "state"); 
+        available_upto = not_null int642ml (get "available_upto");} 
+     in
     			map res get_one
+
+let get_available_uptos dbh =
+  let query = "SELECT available_upto * FROM resources GROUP BY available_upto" in
+  let res = execQuery dbh query in 
+  let get_one a = 
+    let get s = column res s a in
+      not_null int642ml (get "available_upto") 
+    in
+      map res get_one
 
 (* get_job_list *) 
 (* get jobid,walltime, nb_res *) 
@@ -123,7 +134,7 @@ let get_one_job_row res a =
       not_null str2ml (get "res_group_property")
     );;
 
-let get_job_list db queue default_resources =
+let get_job_list dbh queue default_resources =
   let jobs = Hashtbl.create 1000 in (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
 
@@ -137,7 +148,7 @@ let get_job_list db queue default_resources =
         with Not_found ->
           begin  
             let query = Printf.sprintf "SELECT resource_id FROM resources WHERE state = 'Alive'  AND ( %s )"  sql_cts in
-            let res = execQuery db query in 
+            let res = execQuery dbh query in 
             let get_one_resource a = 
               let get s = column res s a in 
 	              (not_null int2ml (get "resource_id"))
@@ -170,7 +181,7 @@ let get_job_list db queue default_resources =
       AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
       ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
     queue in
-  let res = execQuery db query in 
+  let res = execQuery dbh query in 
 
   let get_one_row a = 
     let get s = column res s a in (

@@ -11,6 +11,14 @@ TODO
 
 let besteffort_duration = Int64.of_int (5*60)
 
+(*
+>> 2**31 => 2147483648
+>> 2**31 -1 => 2147483647
+*)
+let max_time = 2147483648L
+let max_time_minus_one = 2147483647L
+
+
 let argv = if (Array.length(Sys.argv) > 2) then
       (Sys.argv.(1), (Int64.of_string Sys.argv.(2)))
     else
@@ -25,17 +33,26 @@ let _ =
     let (queue,now) = argv in
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
 
-			let resources = Iolib.get_resource_list conn in
-    	let alive_resources = List.filter (fun n -> n.state = Alive) resources in
-      let alive_resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) alive_resources) in
+			let potential_resources = Iolib.get_resource_list conn in
 
+      (* TODO add condition test if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){ *)
+    	let resources = List.filter (fun n -> ((n.state = Alive) || (n.state = Absent))) potential_resources in
+      let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in (* TODO to remove *)
+
+      let available_uptos = Iolib.get_available_uptos conn in
+
+      (* create corresponding job from available_up parameter of resource *) 
+      (* TODO *)
+      let filter_a_upto a = List.filter (fun n -> ((n.available_upto = a) && (n.available_upto < max_time_minus_one)) resources) in
+      let no_res a_upto =  ints2intervals (List.map (fun n -> n.resource_id) filter_a_upto) in
+      let pseudo_jobs_no_res = List.map (fun n -> no_res n) available_uptos in
 
       (* create intial slots and hashtable of slots to manage containers *)
       let h_slots = Hashtbl.create 10 in
-      let slot_init = {time_s = now; time_e = Int64.max_int; set_of_res = alive_resource_intervals} in
+      let slot_init = {time_s = now; time_e = Int64.max_int; set_of_res = resource_intervals} in
       Hashtbl.add h_slots 0 [slot_init];
 
-  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn queue alive_resource_intervals in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
+  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn queue resource_intervals in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
         
       Conf.log ("Job waiting ids"^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
