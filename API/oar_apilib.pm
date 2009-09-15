@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.1.6";
+my $VERSION="0.2.1";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -258,6 +258,9 @@ sub add_joblist_uris($$) {
   my $jobs = shift;
   my $ext = shift;
     foreach my $job (@$jobs) {
+      if (defined($job->{Job_Id}) && !defined($job->{job_id})) {
+        $job->{job_id}=$job->{Job_Id};
+      }
       $job->{uri}=apilib::make_uri("/jobs/".$job->{job_id},$ext,0);
       $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
       $job->{api_timestamp}=time();

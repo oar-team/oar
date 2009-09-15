@@ -10,7 +10,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.1.3";
+my $VERSION="0.2.1";
 
 ##############################################################################
 # CONFIGURATION
@@ -160,24 +160,43 @@ SWITCH: for ($q) {
   #
   # List of current jobs
   #
-  $URI = qr{^/jobs\.*(yaml|json|html)*$};
+  $URI = qr{^/jobs(/details|/table)*\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$1);
+    my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
+    my $more_infos=$1;
+
+    # Get the id of the user as more details may be obtained for her jobs
+    if ( $authenticated_user =~ /(\w+)/ ) {
+      $authenticated_user = $1;
+      $ENV{OARDO_USER} = $authenticated_user;
+    }
+
     oarstatlib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
     my $jobs = oarstatlib::get_all_jobs_for_user("");
-    oarstatlib::close_db_connection();
     if ( !defined @$jobs || scalar(@$jobs) == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
     else {
       apilib::add_joblist_uris($jobs,$ext);
-      $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
+      if (defined($more_infos)) {
+        if ($more_infos eq "/details") {
+           # will be useful for cigri and behaves exactly as a oarstat -D
+           foreach my $j (@$jobs) {
+              $j = oarstatlib::get_job_data($j,0);
+           }
+           apilib::add_joblist_uris($jobs,$ext);
+        }
+      }
+      else {  
+          $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
+      }
     }
+    oarstatlib::close_db_connection();
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($jobs,$ext);
@@ -201,7 +220,7 @@ SWITCH: for ($q) {
       last;
     }
     $authenticated_user = $1;
-    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+    $ENV{OARDO_USER} = $authenticated_user;
 
     oarstatlib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
@@ -241,6 +260,8 @@ SWITCH: for ($q) {
 
   #
   # Update of a job (delete, checkpoint, ...)
+  # Should not be used unless for delete from an http browser
+  # (for checkpoints, should use /jobs/checkpoints, etc.)
   #
   $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
   apilib::POST( $_, $URI ) && do {

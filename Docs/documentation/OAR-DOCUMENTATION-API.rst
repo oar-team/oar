@@ -32,13 +32,13 @@ A simple GET query to the API using wget may look like this::
 
 You can also access to the API using a browser. Make it point to http://www.myoarcluster.local/oarapi/index.html and you'll see a very simple HTML interface allowing you to browse the cluster resources and even post a job using a form. (of course, replace www.myoarcluster.local by a valid name allowing you to join the http service of the host where you installed the oar api)
 
-But generally, you'll use a REST client or a REST library provided for your favorite language. You'll see examples using a ruby rest library in the next parts of this document. 
+But generally, you'll use a REST client or a REST library provided for your favorite language. You'll see examples using a ruby rest library in the next parts of this document.
 
 Authentication
 --------------
 
 * **Set-up**:
- 
+
   The API authentication relies on the authentication mechanism of the http server used to serve the CGI script.
   The API may be configured to use the IDENT protocol for authentication from trusted hosts, like a cluster frontend. In this case, a unix login is automatically used by the API. This only works for hosts that have been correctly configured (for which the security rules are trusted by the admistrator). If IDENT is not used or not trusted, the API can use the basic HTTP authentication. You may also want to set-up https certificates. In summary, the API authentication is based on the http server's configuration. The API uses the **X_REMOTE_IDENT** http header variable, so the administrator has to set up this variable inside the http server configuration. Look at the provided apache sample configuration files (API/apache2.conf of the OAR sources) for more details.
 
@@ -67,12 +67,12 @@ For the posted data, you have to correctly set the **HTTP_CONTENT_TYPE** variabl
 Sometimes, the data structures returned (not the coding format, but the contents: array, hashes, array of hashes,...) may be changed. Currently, we have 2 available data structures: *simple* and *oar*. The structure is passed through the variable *structure* that you may pass in the url, for example: ?structure=simple
 
     * The **simple** data structure tries to be as simple as possible, using simple arrays in place of hashes wherever it is possible
-    * The **oar** data structure serves data in the way oar does with the oarnodes/oarstat export options (-Y, -D, -J,...) 
+    * The **oar** data structure serves data in the way oar does with the oarnodes/oarstat export options (-Y, -D, -J,...)
 
-By default, we use the *simple* data structure. 
+By default, we use the *simple* data structure.
 
 Here are some examples, using the ruby restclient (see next section)::
-  
+
   # Getting resources infos
     # in JSON
   irb(main):004:0> puts get('/resources.json')
@@ -106,7 +106,7 @@ To allow you to see the error body, you may find it useful to activate the **deb
 Here is an example of error catching in ruby::
 
   # Function to get objects from the api
-  # We use the JSON format 
+  # We use the JSON format
   def get(api,uri)
     begin
       return JSON.parse(api[uri].get(:accept => 'application/json'))
@@ -114,12 +114,12 @@ Here is an example of error catching in ruby::
       if e.respond_to?('http_code')
         puts "ERROR #{e.http_code}:\n #{e.response.body}"
       else
-        puts "Parse error:" 
+        puts "Parse error:"
         puts e.inspect
       end
       exit 1
     end
-  end 
+  end
 
 
 Ruby REST client
@@ -132,7 +132,7 @@ http://rest-client.heroku.com/rdoc/
 It may be used from ruby scripts (http://www.ruby.org/) or interactively.
 It is available as a rubygem, so to install it, simply install rubygems and do "gem install rest-client". Then, you can run the interactive client which is nothing else than irb with shortcuts. Here is an example irb session::
 
-  $ export PATH=$PATH:/var/lib/gems/1.8/bin 
+  $ export PATH=$PATH:/var/lib/gems/1.8/bin
   $ restclient http://localhost/oarapi
   irb(main):001:0> puts get('/jobs.yaml')
   ---
@@ -292,6 +292,197 @@ GET /jobs
   ::
 
    wget -q -O - http://localhost/oarapi/jobs.yaml
+
+GET /jobs/details
+-----------------
+:description:
+  List the current jobs and some details like assigned resources (behaves like "oarstat -D")
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: array of hashes (a job is an array element described by a hash)
+
+  *yaml example*:
+    ::
+
+     ---
+     - Job_Id: 566
+       api_timestamp: 1253019596
+       array_id: 566
+       array_index: 1
+       assigned_network_address:
+         - bart-3
+       assigned_resources:
+         - 3
+       command: ''
+       cpuset_name: bzizou_566
+       dependencies: []
+       events: []
+       exit_code: ~
+       initial_request: ''
+       jobType: INTERACTIVE
+       job_id: 566
+       job_uid: ~
+       job_user: bzizou
+       launchingDirectory: /home/bzizou/git/oar/git
+       message: FIFO scheduling OK
+       name: ~
+       owner: bzizou
+       project: default
+       properties: desktop_computing = 'NO'
+       queue: default
+       reservation: None
+       resubmit_job_id: 0
+       scheduledStart: 1253017553
+       startTime: 1253017553
+       state: Running
+       submissionTime: 1253017551
+       types: []
+       uri: /jobs/566
+       walltime: 7200
+       wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
+     - Job_Id: 560
+       api_timestamp: 1253019596
+       array_id: 560
+       array_index: 1
+       assigned_network_address: []
+       assigned_resources: []
+       command: /usr/bin/id
+       cpuset_name: bzizou_560
+       dependencies: []
+       events: []
+       exit_code: ~
+       initial_request: ''
+       jobType: PASSIVE
+       job_id: 560
+       job_uid: ~
+       job_user: bzizou
+       launchingDirectory: /home/bzizou
+       message: Cannot find enough resources which fit for the job 560
+       name: ~
+       owner: bzizou
+       project: default
+       properties: desktop_computing = 'NO'
+       queue: default
+       reservation: None
+       resubmit_job_id: 0
+       scheduledStart: ~
+       startTime: 0
+       state: Waiting
+       submissionTime: 1246948570
+       types: []
+       uri: /jobs/560
+       walltime: ~
+       wanted_resources: "-l \"{type = 'default'}/network_address=2/cpu=1,walltime=2:0:0\" "
+
+     
+  *note*: You can make a GET on the *uri* value for more details about a given job.
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/jobs/details.yaml
+
+GET /jobs/table
+---------------
+:description:
+  Dump the jobs table (only current jobs)
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: array of hashes (a job is an array element described by a hash)
+
+  *yaml example*:
+    ::
+
+     ---
+     - accounted: NO
+       api_timestamp: 1253017554
+       array_id: 566
+       assigned_moldable_job: 566
+       checkpoint: 0
+       checkpoint_signal: 12
+       command: ''
+       exit_code: ~
+       file_id: ~
+       info_type: bart:33033
+       initial_request: oarsub -I
+       job_env: ~
+       job_group: ''
+       job_id: 566
+       job_name: ~
+       job_type: INTERACTIVE
+       job_user: bzizou
+       launching_directory: /home/bzizou/git/oar/git
+       message: FIFO scheduling OK
+       notify: ~
+       project: default
+       properties: desktop_computing = 'NO'
+       queue_name: default
+       reservation: None
+       resubmit_job_id: 0
+       scheduler_info: FIFO scheduling OK
+       start_time: 1253017553
+       state: Launching
+       stderr_file: OAR.%jobid%.stderr
+       stdout_file: OAR.%jobid%.stdout
+       stop_time: 0
+       submission_time: 1253017551
+       suspended: NO
+       uri: /jobs/566
+     - accounted: NO
+       api_timestamp: 1253017554
+       array_id: 560
+       assigned_moldable_job: 0
+       checkpoint: 0
+       checkpoint_signal: 12
+       command: /usr/bin/id
+       exit_code: ~
+       file_id: ~
+       info_type: 'bart:'
+       initial_request: oarsub --resource=/nodes=2/cpu=1 --use_job_key=1 /usr/bin/id
+       job_env: ~
+       job_group: ''
+       job_id: 560
+       job_name: ~
+       job_type: PASSIVE
+       job_user: bzizou
+       launching_directory: /home/bzizou
+       message: Cannot find enough resources which fit for the job 560
+       notify: ~
+       project: default
+       properties: desktop_computing = 'NO'
+       queue_name: default
+       reservation: None
+       resubmit_job_id: 0
+       scheduler_info: Cannot find enough resources which fit for the job 560
+       start_time: 0
+       state: Waiting
+       stderr_file: OAR.%jobid%.stderr
+       stdout_file: OAR.%jobid%.stdout
+       stop_time: 0
+       submission_time: 1246948570
+       suspended: NO
+       uri: /jobs/560
+
+  *note*: You can make a GET on the *uri* value for more details about a given job.
+
+  *note*: Field names may vary from the other job lists because this query results more like a dump of the jobs table.
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/jobs/table.yaml
 
 GET /jobs/<id>
 --------------
@@ -545,7 +736,7 @@ GET /jobs/form
      <A HREF=../jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
      <A HREF=../jobs/form.html>SUBMISSION</A>&nbsp;&nbsp;&nbsp;
      <HR>
-     
+
      <FORM METHOD=post ACTION=../jobs.html>
      <TABLE>
      <CAPTION>Job submission</CAPTION>
@@ -575,7 +766,7 @@ GET /jobs/form
      </TR>
      </TABLE>
      </FORM>
-     
+
 :note:
   This form may be customized in the **/etc/oar/api_html_postform.pl** file
 
@@ -883,7 +1074,7 @@ POST /resources
   oar
 
 :input:
-  A [hostname] or [network_address] entry is mandatory 
+  A [hostname] or [network_address] entry is mandatory
 
   *structure*: hash describing the resource to be created
 
@@ -982,3 +1173,12 @@ DELETE /resources/<node>/<cpuset_id>
   If the resource could not be deleted, returns a 403 and the reason into the message body.
 
 
+Some equivalences with oar command line
+=======================================
+
+======================== ====================================
+      OAR command                   REST request
+======================== ====================================
+oarstat -Y               GET /jobs/details.yaml
+oarstat -Y -fj <id>      GET /jobs/<id>.yaml
+======================== ====================================
