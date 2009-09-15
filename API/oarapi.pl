@@ -259,9 +259,73 @@ SWITCH: for ($q) {
   };
 
   #
+  # Actions on a job (checkpoint, hold, resume,...)
+  #
+  $URI = qr{^/jobs/(checkpoints|deletions|holds|rholds|resumptions)+/(\d+)/new(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $2;
+    my $action = $1;
+    my $ext=apilib::set_ext($q,$3);
+    (my $header, my $type)=apilib::set_output_format($ext);
+ 
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before modifying jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Delete (alternative way to DELETE request, for html forms)
+    my $cmd; my $status;
+    if ($action eq "deletions" ) {
+      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
+      $status = "Delete request registered"; 
+    }
+    # Checkpoint
+    elsif ( $action eq "checkpoints" ) {
+      $cmd    = "$OARDODO_CMD '$OARDEL_CMD -c $jobid'";
+      $status = "Checkpoint request registered"; 
+    }
+    # Hold
+    elsif ( $action eq "holds" ) {
+      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $jobid'";
+      $status = "Hold request registered";
+    }
+    # Hold a running job
+    elsif ( $action eq "rholds" ) {
+      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD -r $jobid'";
+      $status = "Hold request registered";
+    }
+    # Resume
+    elsif ( $action eq "resumptions" ) {
+      $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $jobid'";
+      $status = "Resume request registered";
+    }
+    # Impossible to get here!
+    else {
+      apilib::ERROR(400,"Bad query","Could not understand ". $action ." method"); 
+      last;
+    }
+
+    my $cmdRes = apilib::send_cmd($cmd,"Oar");
+    print $q->header( -status => 202, -type => "$type" );
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export( { 'id' => "$jobid",
+                    'status' => "$status",
+                    'cmd_output' => "$cmdRes",
+                    'api_timestamp' => time()
+                  } , $ext );
+    last;
+  };
+
+
+  #
   # Update of a job (delete, checkpoint, ...)
   # Should not be used unless for delete from an http browser
-  # (for checkpoints, should use /jobs/checkpoints, etc.)
+  # (better to use the URI above)
   #
   $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
   apilib::POST( $_, $URI ) && do {

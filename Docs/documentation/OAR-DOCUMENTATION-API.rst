@@ -570,6 +570,165 @@ GET /jobs/<id>
 
    wget --user test --password test -q -O - http://localhost/oarapi/jobs/547.yaml
 
+POST /jobs/deletions/<id>/new
+-----------------------------
+:description:
+  Deletes a job
+
+:parameters:
+  -**id**: the id of a job
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1253025331
+     cmd_output: |
+       Deleting the job = 567 ...REGISTERED.
+       The job(s) [ 567 ] will be deleted in a near future.
+     id: 567
+     status: Delete request registered
+
+:usage example:
+  ::
+  
+   irb(main):148:0> puts post('/jobs/deletions/567/new.yaml','')
+
+POST /jobs/checkpoints/<id>/new
+-------------------------------
+:description:
+  Send the checkpoint signal to a job
+
+:parameters:
+  -**id**: the id of a job
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+     ::
+
+      ---
+      api_timestamp: 1253025555
+      cmd_output: |
+        Checkpointing the job 568 ...DONE.
+        The job 568 was notified to checkpoint itself.
+      id: 568
+      status: Checkpoint request registered
+
+:usage example:
+  ::
+  
+   irb(main):148:0> puts post('/jobs/checkpoints/568/new.yaml','')
+
+POST /jobs/holds/<id>/new
+-------------------------
+:description:
+  Asks to hold a waiting job
+
+:parameters:
+  -**id**: the id of a job
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+     ::
+
+      ---
+      api_timestamp: 1253025718
+      cmd_output: "[560] Hold request was sent to the OAR server.\n"
+      id: 560
+      status: Hold request registered
+
+:usage example:
+  ::
+  
+   irb(main):148:0> puts post('/jobs/holds/560/new.yaml','')
+
+POST /jobs/rholds/<id>/new
+--------------------------
+:description:
+  Asks to hold a running job
+
+:parameters:
+  -**id**: the id of a job
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+     ::
+
+      ---
+      api_timestamp: 1253025868
+      cmd_output: "[569] Hold request was sent to the OAR server.\n"
+      id: 569
+      status: Hold request registered
+ 
+:usage example:
+  ::
+  
+   irb(main):148:0> puts post('/jobs/rholds/560/new.yaml','')
+
+POST /jobs/resumptions/<id>/new
+-------------------------------
+:description:
+  Asks to resume a holded job
+
+:parameters:
+  -**id**: the id of a job
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+     ::
+
+      ---
+      api_timestamp: 1253026081
+      cmd_output: "[569] Resume request was sent to the OAR server.\n"
+      id: 569
+      status: Resume request registered
+
+:usage example:
+  ::
+  
+   irb(main):148:0> puts post('/jobs/resumptions/560/new.yaml','')
+
 POST /jobs
 ----------
 :description:
@@ -640,7 +799,7 @@ POST /jobs/<id>
 ---------------
 :description:
   Updates a job.
-  In fact, as some clients (www browsers) doesn't support the DELETE method, this POST resource has been created mainly to workaround this and provide another way to delete a job. It also provides *checkpoint*, *hold* and *resume* methods, but one should preferably use the /checkpoints, /holds and /resumes resources.
+  In fact, as some clients (www browsers) doesn't support the DELETE method, this POST resource has been created mainly to workaround this and provide another way to delete a job. It also provides *checkpoint*, *hold* and *resume* methods, but one should preferably use the /checkpoints, /holds and /resumptions resources.
 
 :formats:
   html , yaml , json
@@ -1176,9 +1335,12 @@ DELETE /resources/<node>/<cpuset_id>
 Some equivalences with oar command line
 =======================================
 
-======================== ====================================
+=============================== ====================================
       OAR command                   REST request
-======================== ====================================
-oarstat -Y               GET /jobs/details.yaml
-oarstat -Y -fj <id>      GET /jobs/<id>.yaml
-======================== ====================================
+=============================== ====================================
+oarstat                         GET /jobs.html
+oarstat -Y                      GET /jobs/details.yaml
+oarstat -Y -fj <id>             GET /jobs/<id>.yaml
+oardel <id>                     DELETE /jobs/<id>.yaml
+oardel <id> *(alternative way)* POST /jobs/deletions/<id>/new.yaml
+=============================== ====================================
