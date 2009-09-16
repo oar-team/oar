@@ -79,17 +79,24 @@ sub print_oar_version(){
 sub print_events($$){
 	my $date_from = shift;
 	my $hostnames = shift;
+        my $dump_mode=0;
+        my %result;
+        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+
 	foreach my $current_hostname (@$hostnames){
-	  my $events = oarnodeslib::get_events($current_hostname, $date_from);
-	  foreach my $current_event (@$events) {
+          $result{$current_hostname}=oarnodeslib::get_events($current_hostname, $date_from);
+          if (!$dump_mode) {
+	    foreach my $current_event (@{$result{$current_hostname}}) {
 		  printf("%s| %s| %s: %s\n", 
 			oarnodeslib::format_date($current_event->{'date'}),
 			$current_event->{'job_id'},
 			$current_event->{'type'},
 			$current_event->{'description'}
 		  );
-	  }
+	    }
+          }
 	}
+        format_result(\%result) if $dump_mode;
 }
 
 sub add_sql_resources($){
