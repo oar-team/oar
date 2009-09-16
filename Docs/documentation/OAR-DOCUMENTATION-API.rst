@@ -311,76 +311,59 @@ GET /jobs/details
     ::
 
      ---
-     - Job_Id: 566
-       api_timestamp: 1253019596
-       array_id: 566
+     - Job_Id: 575
+       api_timestamp: 1253103710
+       array_id: 575
        array_index: 1
        assigned_network_address:
          - bart-3
        assigned_resources:
          - 3
-       command: ''
-       cpuset_name: bzizou_566
+       command: /bin/sleep 300
+       cpuset_name: bzizou_575
        dependencies: []
-       events: []
-       exit_code: ~
-       initial_request: ''
-       jobType: INTERACTIVE
-       job_id: 566
-       job_uid: ~
-       job_user: bzizou
-       launchingDirectory: /home/bzizou/git/oar/git
+       jobType: PASSIVE
+       job_id: 575
+       launchingDirectory: /home/bzizou
        message: FIFO scheduling OK
-       name: ~
+       name: Test_job
        owner: bzizou
        project: default
        properties: desktop_computing = 'NO'
        queue: default
        reservation: None
        resubmit_job_id: 0
-       scheduledStart: 1253017553
-       startTime: 1253017553
+       startTime: 1253103705
        state: Running
-       submissionTime: 1253017551
+       submissionTime: 1253103704
        types: []
-       uri: /jobs/566
-       walltime: 7200
-       wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
-     - Job_Id: 560
-       api_timestamp: 1253019596
-       array_id: 560
+       uri: /jobs/575
+     - Job_Id: 576
+       api_timestamp: 1253103710
+       array_id: 576
        array_index: 1
        assigned_network_address: []
        assigned_resources: []
-       command: /usr/bin/id
-       cpuset_name: bzizou_560
+       command: /bin/sleep 300
+       cpuset_name: bzizou_576
        dependencies: []
-       events: []
-       exit_code: ~
-       initial_request: ''
        jobType: PASSIVE
-       job_id: 560
-       job_uid: ~
-       job_user: bzizou
+       job_id: 576
        launchingDirectory: /home/bzizou
-       message: Cannot find enough resources which fit for the job 560
-       name: ~
+       message: FIFO scheduling OK
+       name: Test_job
        owner: bzizou
        project: default
        properties: desktop_computing = 'NO'
        queue: default
        reservation: None
        resubmit_job_id: 0
-       scheduledStart: ~
        startTime: 0
        state: Waiting
-       submissionTime: 1246948570
+       submissionTime: 1253103707
        types: []
-       uri: /jobs/560
-       walltime: ~
-       wanted_resources: "-l \"{type = 'default'}/network_address=2/cpu=1,walltime=2:0:0\" "
+       uri: /jobs/576
 
-     
   *note*: You can make a GET on the *uri* value for more details about a given job.
 
 :usage example:
@@ -490,7 +473,7 @@ GET /jobs/<id>
   Get details about the given job
 
 :parameters:
-  -**id**: the id of a job
+  - **id**: the id of a job
 
 :formats:
   html , yaml , json
@@ -570,13 +553,13 @@ GET /jobs/<id>
 
    wget --user test --password test -q -O - http://localhost/oarapi/jobs/547.yaml
 
-POST /jobs/deletions/<id>/new
+POST /jobs/<id>/deletions/new
 -----------------------------
 :description:
   Deletes a job
 
 :parameters:
-  -**id**: the id of a job
+  - **id**: the id of a job
 
 :formats:
   html , yaml , json
@@ -601,15 +584,15 @@ POST /jobs/deletions/<id>/new
 :usage example:
   ::
   
-   irb(main):148:0> puts post('/jobs/deletions/567/new.yaml','')
+   irb(main):148:0> puts post('/jobs/567/deletions/new.yaml','')
 
-POST /jobs/checkpoints/<id>/new
+POST /jobs/<id>/checkpoints/new
 -------------------------------
 :description:
   Send the checkpoint signal to a job
 
 :parameters:
-  -**id**: the id of a job
+  - **id**: the id of a job
 
 :formats:
   html , yaml , json
@@ -634,15 +617,15 @@ POST /jobs/checkpoints/<id>/new
 :usage example:
   ::
   
-   irb(main):148:0> puts post('/jobs/checkpoints/568/new.yaml','')
+   irb(main):148:0> puts post('/jobs/568/checkpoints/new.yaml','')
 
-POST /jobs/holds/<id>/new
+POST /jobs/<id>/holds/new
 -------------------------
 :description:
   Asks to hold a waiting job
 
 :parameters:
-  -**id**: the id of a job
+  - **id**: the id of a job
 
 :formats:
   html , yaml , json
@@ -665,15 +648,15 @@ POST /jobs/holds/<id>/new
 :usage example:
   ::
   
-   irb(main):148:0> puts post('/jobs/holds/560/new.yaml','')
+   irb(main):148:0> puts post('/jobs/560/holds/new.yaml','')
 
-POST /jobs/rholds/<id>/new
+POST /jobs/<id>/rholds/new
 --------------------------
 :description:
   Asks to hold a running job
 
 :parameters:
-  -**id**: the id of a job
+  - **id**: the id of a job
 
 :formats:
   html , yaml , json
@@ -696,15 +679,15 @@ POST /jobs/rholds/<id>/new
 :usage example:
   ::
   
-   irb(main):148:0> puts post('/jobs/rholds/560/new.yaml','')
+   irb(main):148:0> puts post('/jobs/560/rholds/new.yaml','')
 
-POST /jobs/resumptions/<id>/new
+POST /jobs/<id>/resumptions/new
 -------------------------------
 :description:
   Asks to resume a holded job
 
 :parameters:
-  -**id**: the id of a job
+  - **id**: the id of a job
 
 :formats:
   html , yaml , json
@@ -727,7 +710,44 @@ POST /jobs/resumptions/<id>/new
 :usage example:
   ::
   
-   irb(main):148:0> puts post('/jobs/resumptions/560/new.yaml','')
+   irb(main):148:0> puts post('/jobs/560/resumptions/new.yaml','')
+
+POST /jobs/<id>/signals/<signal>
+--------------------------------
+:description:
+  Asks to resume a holded job
+
+:parameters:
+  - **id**: the id of a job
+  - **signal**: the number of a signal (see kill -l)
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+     ::
+
+      ---
+      api_timestamp: 1253102493
+      cmd_output: |
+        Signaling the job 574 with 12 signal.
+        DONE.
+        The job 574 was notified to signal itself with 12.
+      id: 574
+      status: Signal sending request registered
+
+:usage example:
+  ::
+  
+   irb(main):148:0> puts post('/jobs/560/signals/12.yaml','')
+
+
 
 POST /jobs
 ----------

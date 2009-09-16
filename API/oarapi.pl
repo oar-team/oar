@@ -10,7 +10,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.1";
+my $VERSION="0.2.2";
 
 ##############################################################################
 # CONFIGURATION
@@ -187,7 +187,7 @@ SWITCH: for ($q) {
         if ($more_infos eq "/details") {
            # will be useful for cigri and behaves exactly as a oarstat -D
            foreach my $j (@$jobs) {
-              $j = oarstatlib::get_job_data($j,0);
+              $j = oarstatlib::get_job_data($j,undef);
            }
            apilib::add_joblist_uris($jobs,$ext);
         }
@@ -236,19 +236,19 @@ SWITCH: for ($q) {
        print $HTML_HEADER;
        print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
        print "</TD></TR><TR><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/deletions/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
        print "<INPUT TYPE=Submit VALUE=DELETE>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/holds/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
        print "<INPUT TYPE=Submit VALUE=HOLD>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/resumptions/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
        print "<INPUT TYPE=Submit VALUE=RESUME>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid.html>\n";
+       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
        print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
        print "</FORM></TD>\n";
@@ -261,7 +261,7 @@ SWITCH: for ($q) {
   #
   # Actions on a job (checkpoint, hold, resume,...)
   #
-  $URI = qr{^/jobs/(checkpoints|deletions|holds|rholds|resumptions)+/(\d+)/new(\.yaml|\.json|\.html)*$};
+  $URI = qr{^/jobs/(\d+)/(checkpoints|deletions|holds|rholds|resumptions)+/new(\.yaml|\.json|\.html)*$};
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $2;
@@ -390,6 +390,41 @@ SWITCH: for ($q) {
                   } , $ext );
     last;
   };
+
+  #
+  # Signal sending
+  #
+  $URI = qr{^/jobs/(\d+)/signals/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $signal = $2;
+    my $ext=apilib::set_ext($q,$3);
+    (my $header, my $type)=apilib::set_output_format($ext);
+ 
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before modifying jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    my $cmd    = "$OARDODO_CMD '$OARDEL_CMD -s $signal $jobid'";
+    my $status = "Signal sending request registered"; 
+
+    my $cmdRes = apilib::send_cmd($cmd,"Oar");
+    print $q->header( -status => 202, -type => "$type" );
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export( { 'id' => "$jobid",
+                    'status' => "$status",
+                    'cmd_output' => "$cmdRes",
+                    'api_timestamp' => time()
+                  } , $ext );
+    last;
+  };
+
 
   #
   # List of resources or details of a resource (oarnodes wrapper)

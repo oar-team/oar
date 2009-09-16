@@ -1,9 +1,5 @@
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
-- jobs/<id>/checkpoints
-  jobs/<id>/holds
-  jobs/<id>/resume 
- au lieu des actuels post avec action=
 - il reste des resources sans restructuration et donc sans uri/timestamp (par ex: GET /jobs/526.yaml, GET /sites/simpsons/jobs/527.yaml)
 - job keys dans OAR API (pouvoir importer la cle depuis l'api)
 - Implementer POST /resources/<id>/status (equiv oarnodesetting -s) -> necessaire pour DELETE /resources/<id> puisqu'il faut mettre Dead une resource avant de la supprimer.
@@ -16,8 +12,6 @@
 -J, --json                    Print result in JSON format
 -h, --help                    Print this help message
 -V, --version
-
-- Gérer le oarhold ** -r **
 
 - Implémenter "--resubmit"
 
