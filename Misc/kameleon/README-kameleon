@@ -1,0 +1,38 @@
+Kameleon 0.01b :)
+
+1. Install
+
+   Checkout everything into one dir:
+   https://scm.gforge.inria.fr/svn/oar/branches/gsoc-2009-kameleon/Misc/kameleon
+
+   The only non-standard ruby module that's needes is "session" -- installation tarball can be found in:
+   https://scm.gforge.inria.fr/svn/oar/branches/gsoc-2009-kameleon/Misc/kameleon/redist
+
+   Upon extracting, session module can be installed by invoking "ruby install.rb" script.
+
+2. Running kameleon
+
+   Kameleon requires one command line argument: path to the recipe file.
+
+   Example:
+   $ sudo ./kameleon.rb recipes/debian-lenny-oar-2.4.yaml
+
+   In order to be able to use "chroot", kameleon needs to be started as root (or with sudo).
+
+3. Dir structure
+
+   --/recipes
+    |
+    |/redist
+    |
+    |/steps/common
+          |
+          |/include
+          |
+          |/debian-lenny
+
+   Since you pass path to the recipe file as a command line arg, recipes can be stored anywhere. Macrostep definitions, however, have to be stored in the dir structure under the "steps" dir.
+
+   In the recipe file, under global->distrib, one defines distribution name. Kameleon uses that info to look for macrostep definition files under "<kameleon_root>/steps/$distrib/". If the file can't be found there, kameleon looks into "common" dir (one such example is /steps/common/clean.yaml).
+
+
