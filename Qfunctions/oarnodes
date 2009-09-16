@@ -113,21 +113,33 @@ sub format_result($){
 
 sub print_resources_states_for_hosts($){
 	my $nodes = shift;
-	foreach my $current_host (@$nodes){
-	  my $resources_states = oarnodeslib::get_resources_states_for_host($current_host);
-	  print "$current_host\n";
-	  while ( my ($k,$v) = each %$resources_states ){
-		print "    $k : $v\n";
-	  }
-	}
+        my %result;
+        my $dump_mode=0;
+        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+
+        foreach my $current_host (@$nodes){
+          $result{$current_host}=oarnodeslib::get_resources_states_for_host($current_host);
+          if (!$dump_mode) {
+            print "$current_host\n";
+            while ( my ($k,$v) = each %{$result{$current_host}} ){
+	   	print "    $k : $v\n";
+            }
+          }
+        }
+        format_result(\%result) if $dump_mode;
 }
 
 sub print_resources_states($){
 	my $resources = shift;
 	my $resources_states = oarnodeslib::get_resources_states($resources);
-	while ( my ($k,$v) = each %$resources_states ){
+        if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+          format_result($resources_states);
+        }
+        else {
+	  while ( my ($k,$v) = each %$resources_states ){
 		print "$k : $v\n";
-	}
+	  }
+        }
 }
 
 sub print_all_hostnames(){
