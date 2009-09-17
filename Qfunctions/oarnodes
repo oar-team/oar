@@ -158,54 +158,63 @@ sub print_all_hostnames(){
 
 sub print_hosts_infos($){
 	my $nodes = shift;
+	my $infos;
 	foreach my $current_node (@$nodes){
-		my $infos = oarnodeslib::get_resources_infos_for_host($current_node);
-		#print "$current_node\n\n";
-		while ( my ($resource_id,$properties) = each %$infos ){
-			print_resource_flat_way($properties); # do treatment here to add depth to the output
+		my $infos_for_host = oarnodeslib::get_resources_infos_for_host($current_node);
+		while ( my ($id,$info) = each %$infos_for_host ){
+		    $infos->{$id} = $info; # modify here to add depth (sorted by network_address)
 		}
+	}
+	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+	# To change Dumper, XML, YAML and JSON output, just modify the $resources_info hash 
+	# here and call format_result($resources_info), everything needed is in the hash
+	    format_result($infos);
+	}
+	else{
+	    print_resources_flat_way($infos);
 	}
 }
 
 sub print_resources_infos($){
 	my $resources = shift;
 	my $res_infos = oarnodeslib::get_resources_infos($resources);
-	while ( my ($k,$v) = each %$res_infos ){
-		print_resource_flat_way($v); # do treatment here to add depth to the output
+	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+	# To change Dumper, XML, YAML and JSON output, just modify the $resources_info hash 
+	# here and call format_result($resources_info), everything needed is in the hash
+	    format_result($res_infos);
+	}
+	else{
+	    print_resources_flat_way($res_infos);
 	}
 }
 
 # INFO: function to change if you want to change the output
-sub print_resource_flat_way($){
-	my $info = shift;
-	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-		# To change Dumper, XML, YAML and JSON output, just modify the $info hash 
-		# here and call format_result($info), everything needed is in the hash
-		format_result($info);
-	}
-	else{
-		# If you want to modify the regular oarnodes output, change here
-		# Everything needed is in $info
-		print "network_address : $info->{network_address}\n";
-		print "resource_id : $info->{resource_id}\n";
-                if ($info->{state} eq "Absent" && $info->{available_upto} != 0) {
-                        $info->{state} .= " (standby)";
-                }
-		print "state : $info->{state}\n";
-		if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
-		my $properties_to_display='';
-		while ( my ($k,$v) = each %$info ){
-			if (oar_Tools::check_resource_system_property($k) == 0){
-				if(defined($v)){
-					$properties_to_display .= "$k=$v, ";
-				}else{
-					$properties_to_display .= "$k=, ";
-				}
-			}
-		}
-		chop($properties_to_display); # remove last space
-		chop($properties_to_display); # remove last ,
-		print "properties : $properties_to_display\n\n";
+sub print_resources_flat_way($){
+	my $resources_info = shift;
+	foreach my $id ( sort keys %$resources_info ){
+	    my $info = $resources_info->{$id};
+	    # If you want to modify the regular oarnodes output, change here
+	    # Everything needed is in $info
+	    print "network_address : $info->{network_address}\n";
+	    print "resource_id : $info->{resource_id}\n";
+	    if ($info->{state} eq "Absent" && $info->{available_upto} != 0) {
+		$info->{state} .= " (standby)";
+	    }
+	    print "state : $info->{state}\n";
+	    if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
+	    my $properties_to_display='';
+	    while ( my ($k,$v) = each %$info ){
+		    if (oar_Tools::check_resource_system_property($k) == 0){
+			    if(defined($v)){
+				    $properties_to_display .= "$k=$v, ";
+			    }else{
+				    $properties_to_display .= "$k=, ";
+			    }
+		    }
+	    }
+	    chop($properties_to_display); # remove last space
+	    chop($properties_to_display); # remove last ,
+	    print "properties : $properties_to_display\n\n";
 	}
 }
 
