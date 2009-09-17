@@ -430,7 +430,7 @@ SWITCH: for ($q) {
   #
   # List of resources or details of a resource
   #
-  $URI = qr{^/resources(/all|/[0-9]+)*\.*(yaml|json|html)*$};
+  $URI = qr{^/resources(/full|/[0-9]+)*\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
@@ -441,7 +441,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                                  );
     if (defined($1)) {
-      if    ($1 eq "/all")        { $resources = oarnodeslib::get_all_resources();         }
+      if    ($1 eq "/full")        { $resources = oarnodeslib::get_all_resources();         }
       elsif ($1 =~ /\/([0-9]+)/)  { $resources = [oarnodeslib::get_resource_infos($1)];   }
       else                        { apilib::ERROR(500,"Error 666!","Error 666");           }
     }
