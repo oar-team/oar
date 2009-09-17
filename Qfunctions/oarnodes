@@ -166,8 +166,6 @@ sub print_hosts_infos($){
 		}
 	}
 	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-	# To change Dumper, XML, YAML and JSON output, just modify the $resources_info hash 
-	# here and call format_result($resources_info), everything needed is in the hash
 	    format_result($infos);
 	}
 	else{
@@ -179,8 +177,6 @@ sub print_resources_infos($){
 	my $resources = shift;
 	my $res_infos = oarnodeslib::get_resources_infos($resources);
 	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-	# To change Dumper, XML, YAML and JSON output, just modify the $resources_info hash 
-	# here and call format_result($resources_info), everything needed is in the hash
 	    format_result($res_infos);
 	}
 	else{
@@ -188,13 +184,11 @@ sub print_resources_infos($){
 	}
 }
 
-# INFO: function to change if you want to change the output
+# INFO: function to change if you want to change the user std output
 sub print_resources_flat_way($){
 	my $resources_info = shift;
 	foreach my $id ( sort keys %$resources_info ){
 	    my $info = $resources_info->{$id};
-	    # If you want to modify the regular oarnodes output, change here
-	    # Everything needed is in $info
 	    print "network_address : $info->{network_address}\n";
 	    print "resource_id : $info->{resource_id}\n";
 	    if ($info->{state} eq "Absent" && $info->{available_upto} != 0) {
