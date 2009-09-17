@@ -480,6 +480,39 @@ SWITCH: for ($q) {
   }; 
 
   #
+  # Jobs running on a resource
+  #
+  $URI = qr{^/resources(/all|/[0-9]+)+/jobs(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    oarnodeslib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $jobs;
+    if ($1 eq "/all") { 
+        # Not implemented yet
+        # should give an array of all resources plus a job array per resource
+        $jobs = [];
+    }
+    elsif ($1 =~ /\/([0-9]+)/)  { 
+        my $job_array=oarnodeslib::get_jobs_running_on_resource($1);
+        foreach my $job_id (@$job_array) {
+          #push(@$jobs,{id =>$job_id,resource_id=>$1});
+          push(@$jobs,{id =>$job_id});
+        }
+        apilib::add_jobs_on_resource_uris($jobs,$ext); 
+    }
+    oarnodeslib::close_db_connection;
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($jobs,$ext);
+    last;
+  }; 
+
+  #
   # A new job (oarsub wrapper)
   #
   $URI = qr{^/jobs\.*(yaml|json|html)*$};

@@ -279,6 +279,17 @@ sub add_joblist_griduris($$$) {
   }
 }
 
+# Add uris to a list of jobs of a resource
+sub add_jobs_on_resource_uris($$) {
+  my $jobs = shift,
+  my $ext = shift;
+  foreach my $job (@$jobs) {
+    $job->{uri}=apilib::make_uri("/jobs/".$job->{id},$ext,0);
+    $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
+    $job->{api_timestamp}=time();
+  }
+}
+
 # Add uris to a resources list
 sub add_resources_uris($$$) {
   my $resources = shift;
@@ -450,7 +461,7 @@ sub struct_resource_list($$$) {
   }
   elsif ($structure eq 'oar') {
     foreach my $resource (@$resources)  {
-      $result->{$resource->{network_address}}->{$resource->{resource_id}}=$resource;
+      $result->{$resource->{resource_id}}=$resource;
     }
     return $result; 
   }
