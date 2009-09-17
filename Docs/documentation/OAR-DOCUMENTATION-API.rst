@@ -967,40 +967,44 @@ GET /resources
     ::
 
      ---
-     - api_timestamp: 1245861829
-       id: 6
-       node: liza-2
-       node_uri: /resources/nodes/liza-2
-       state: Suspected
-       uri: /resources/6
-     - api_timestamp: 1245861829
-       id: 7
-       node: liza-2
-       node_uri: /resources/nodes/liza-2
-       state: Suspected
-       uri: /resources/7
-     - api_timestamp: 1245861829
-       id: 4
-       node: liza-1
+     - api_timestamp: 1253201950
+       jobs_uri: /resources/4/jobs
+       network_address: liza-1 
        node_uri: /resources/nodes/liza-1
-       state: Suspected
+       resource_id: 4
+       state: Alive
        uri: /resources/4
-     - api_timestamp: 1245861829
-       id: 5
-       node: liza-1
+     - api_timestamp: 1253201950
+       jobs_uri: /resources/5/jobs
+       network_address: liza-1
        node_uri: /resources/nodes/liza-1
-       state: Suspected
+       resource_id: 5
+       state: Alive
        uri: /resources/5
+     - api_timestamp: 1253201950
+       jobs_uri: /resources/6/jobs
+       network_address: liza-2
+       node_uri: /resources/nodes/liza-2
+       resource_id: 6
+       state: Alive
+       uri: /resources/6
+     - api_timestamp: 1253201950
+       jobs_uri: /resources/7/jobs
+       network_address: liza-2
+       node_uri: /resources/nodes/liza-2
+       resource_id: 7
+       state: Alive
+       uri: /resources/7
+     
 
-
-  *note*: More details about a resource can be obtained with a GET on the provided *uri*. Details about all the resources of the same node may be obtained with a GET on *node_uri*.
+  *note*: More details about a resource can be obtained with a GET on the provided *uri*. The list of all the resources of the same node may be obtained with a GET on *node_uri*. The list of running jobs on a resource can be obtained with a GET on the jobs_uri resource.
 
 :usage example:
   ::
 
    wget -q -O - http://localhost/oarapi/resources.yaml
 
-GET /resources/all
+GET /resources/full
 ------------------
 :description:
   Get the list of resources and all the details about them
@@ -1018,95 +1022,115 @@ GET /resources/all
     ::
 
      ---
-     - api_timestamp: 1245862386
-       id: 3
-       network_address: bart-3
-       node: bart-3
-       node_uri: /resources/nodes/bart-3
-       properties:
-         besteffort: YES
-         cluster: 0
-         available_upto: 0
-         cpu: 2
-         cpuset: 0
-         deploy: NO
-         desktop_computing: NO
-         expiry_date: 0
-         finaud_decision: YES
-         last_job_date: 1245825515
-         licence: ~
-         network_address: bart-3
-         next_finaud_decision: NO
-         next_state: UnChanged
-         resource_id: 3
-         scheduler_priority: 0
-         state: Alive
-         state_num: 1
-         suspended_jobs: NO
-         type: default
+     - api_timestamp: 1253202216
+       available_upto: 0
+       besteffort: YES
+       cluster: 0
+       cpu: 3
+       cpuset: 0
+       deploy: YES
+       desktop_computing: NO
+       expiry_date: 0
+       finaud_decision: NO
+       jobs_uri: /resources/4/jobs
+       last_available_upto: 0
+       last_job_date: 1245825515
+       licence: ~
+       network_address: liza-1
+       next_finaud_decision: NO
+       next_state: UnChanged
+       node_uri: /resources/nodes/liza-1
+       resource_id: 4
+       scheduler_priority: 4294967289
        state: Alive
-       uri: /resources/3
-     - api_timestamp: 1245862386
-       id: 1
-       network_address: bart-1
-       node: bart-1
-       node_uri: /resources/nodes/bart-1
-       properties:
-         besteffort: YES
-         cluster: 0
-         available_upto: 0
-         cpu: 20
-         cpuset: 0
-         deploy: NO
-         desktop_computing: NO
-         expiry_date: 0
-         finaud_decision: NO
-         last_job_date: 1245671400
-         licence: ~
-         network_address: bart-1
-         next_finaud_decision: NO
-         next_state: UnChanged
-         resource_id: 1
-         scheduler_priority: 0
-         state: Suspected
-         state_num: 3
-         suspended_jobs: NO
-         type: default
-       state: Suspected
-       uri: /resources/1
-     - api_timestamp: 1245862386
-       id: 26
-       network_address: test2
-       node: test2
-       node_uri: /resources/nodes/test2
-       properties:
-         besteffort: YES
-         cluster: ~
-         available_upto: 0
-         cpu: 10
-         cpuset: 0
-         deploy: NO
-         desktop_computing: NO
-         expiry_date: 0
-         finaud_decision: YES
-         last_job_date: 1239978322
-         licence: ~
-         network_address: test2
-         next_finaud_decision: NO
-         next_state: UnChanged
-         resource_id: 26
-         scheduler_priority: 0
-         state: Suspected
-         state_num: 3
-         suspended_jobs: NO
-         type: default
-       state: Suspected
-       uri: /resources/26
-
+       state_num: 1
+       suspended_jobs: NO
+       test: ~
+       type: default
+       uri: /resources/4
+     - api_timestamp: 1253202216
+       available_upto: 0
+       besteffort: YES
+       cluster: 0
+       cpu: 4
+       cpuset: 1
+       deploy: YES
+       desktop_computing: NO
+       expiry_date: 0
+       finaud_decision: NO
+       jobs_uri: /resources/5/jobs
+       last_available_upto: 0
+       last_job_date: 1240244422
+       licence: ~
+       network_address: liza-1
+       next_finaud_decision: NO
+       next_state: UnChanged
+       node_uri: /resources/nodes/liza-1
+       resource_id: 5
+       scheduler_priority: 4294967293
+       state: Alive
+       state_num: 1
+       suspended_jobs: NO
+       test: ~
+       type: default
+       uri: /resources/5
+     - api_timestamp: 1253202216
+       available_upto: 0
+       besteffort: YES
+       cluster: 0
+       cpu: 5
+       cpuset: 0
+       deploy: NO
+       desktop_computing: NO
+       expiry_date: 0
+       finaud_decision: NO
+       jobs_uri: /resources/6/jobs
+       last_available_upto: 0
+       last_job_date: 1253198104
+       licence: ~
+       network_address: liza-2
+       next_finaud_decision: NO
+       next_state: UnChanged
+       node_uri: /resources/nodes/liza-2
+       resource_id: 6
+       scheduler_priority: 0
+       state: Alive
+       state_num: 1
+       suspended_jobs: NO
+       test: ~
+       type: default
+       uri: /resources/6
+     - api_timestamp: 1253202216
+       available_upto: 0
+       besteffort: YES
+       cluster: 0
+       cpu: 6
+       cpuset: 1
+       deploy: NO
+       desktop_computing: NO
+       expiry_date: 0
+       finaud_decision: NO
+       jobs_uri: /resources/7/jobs
+       last_available_upto: 0
+       last_job_date: 1245671780
+       licence: ~
+       network_address: liza-2
+       next_finaud_decision: NO
+       next_state: UnChanged
+       node_uri: /resources/nodes/liza-2
+       resource_id: 7
+       scheduler_priority: 0
+       state: Alive
+       state_num: 1
+       suspended_jobs: NO
+       test: ~
+       type: default
+       uri: /resources/7
+     
 :usage example:
   ::
 
-   wget -q -O - http://localhost/oarapi/resources/all.yaml
+   wget -q -O - http://localhost/oarapi/resources/full.yaml
 
 GET /resources/<id>
 -------------------
@@ -1126,39 +1150,37 @@ GET /resources/<id>
     ::
 
      ---
-     - api_timestamp: 1245862386
-       id: 3
-       network_address: bart-3
-       node: bart-3
-       node_uri: /resources/nodes/bart-3
-       properties:
-         besteffort: YES
-         cluster: 0
-         available_upto: 0
-         cpu: 2
-         cpuset: 0
-         deploy: NO
-         desktop_computing: NO
-         expiry_date: 0
-         finaud_decision: YES
-         last_job_date: 1245825515
-         licence: ~
-         network_address: bart-3
-         next_finaud_decision: NO
-         next_state: UnChanged
-         resource_id: 3
-         scheduler_priority: 0
-         state: Alive
-         state_num: 1
-         suspended_jobs: NO
-         type: default
-       state: Alive
-       uri: /resources/3
-
+     api_timestamp: 1253202322
+     available_upto: 0
+     besteffort: YES
+     cluster: 0
+     cpu: 20
+     cpuset: 0
+     deploy: NO
+     desktop_computing: NO
+     expiry_date: 0
+     finaud_decision: NO
+     jobs_uri: /resources/1/jobs
+     last_available_upto: 0
+     last_job_date: 1253201845
+     licence: ~
+     network_address: bart-1
+     next_finaud_decision: NO
+     next_state: UnChanged
+     node_uri: /resources/nodes/bart-1
+     resource_id: 1
+     scheduler_priority: 0
+     state: Alive
+     state_num: 1
+     suspended_jobs: NO
+     test: ~
+     type: default
+     uri: /resources/1
+     
 :usage example:
   ::
 
-   wget -q -O - http://localhost/oarapi/resources/3.yaml
+   wget -q -O - http://localhost/oarapi/resources/1.yaml
 
 GET /resources/nodes/<network_address>
 --------------------------------------
@@ -1178,63 +1200,21 @@ GET /resources/nodes/<network_address>
     ::
 
      ---
-     - api_timestamp: 1245945275
-       id: 4
+     - api_timestamp: 1253202379
+       jobs_uri: /resources/4/jobs
        network_address: liza-1
-       node: liza-1
        node_uri: /resources/nodes/liza-1
-       properties:
-         besteffort: YES
-         cluster: 0
-         available_upto: 0
-         cpu: 3
-         cpuset: 0
-         deploy: YES
-         desktop_computing: NO
-         expiry_date: 0
-         finaud_decision: NO
-         last_job_date: 1245825515
-         licence: ~
-         network_address: liza-1
-         next_finaud_decision: NO
-         next_state: UnChanged
-         resource_id: 4
-         scheduler_priority: 4294967289
-         state: Suspected
-         state_num: 3
-         suspended_jobs: NO
-         type: default
-       state: Suspected
+       resource_id: 4
+       state: Alive
        uri: /resources/4
-     - api_timestamp: 1245945275
-       id: 5
+     - api_timestamp: 1253202379
+       jobs_uri: /resources/5/jobs
        network_address: liza-1
-       node: liza-1
        node_uri: /resources/nodes/liza-1
-       properties:
-         besteffort: YES
-         cluster: 0
-         available_upto: 0
-         cpu: 4
-         cpuset: 1
-         deploy: YES
-         desktop_computing: NO
-         expiry_date: 0
-         finaud_decision: NO
-         last_job_date: 1240244422
-         licence: ~
-         network_address: liza-1
-         next_finaud_decision: NO
-         next_state: UnChanged
-         resource_id: 5
-         scheduler_priority: 4294967293
-         state: Suspected
-         state_num: 3
-         suspended_jobs: NO
-         type: default
-       state: Suspected
+       resource_id: 5
+       state: Alive
        uri: /resources/5
-
+     
 :usage example:
   ::
 
