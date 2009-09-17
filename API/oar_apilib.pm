@@ -284,20 +284,14 @@ sub add_resources_uris($$$) {
   my $resources = shift;
   my $ext = shift;
   my $prefix = shift;
-  foreach my $node ( keys( %{$resources} ) ) {
-    foreach my $id ( keys( %{$resources->{$node}} ) ) {
-      # This test should make this function work for "oarstat -s"
-      if (ref($resources->{$node}->{$id}) ne "HASH") {
-        my $state = $resources->{$node}->{$id};
-        $resources->{$node}->{$id}={};
-        $resources->{$node}->{$id}->{state}=$state;
-      }
-      $resources->{$node}->{$id}->{uri}=apilib::make_uri("$prefix/resources/$id",$ext,0);
-      $resources->{$node}->{$id}->{uri}=apilib::htmlize_uri($resources->{$node}->{$id}->{uri},$ext);
-    }
-    $resources->{$node}->{uri}=apilib::make_uri("$prefix/resources/nodes/$node",$ext,0);
-    $resources->{$node}->{uri}=apilib::htmlize_uri($resources->{$node}->{uri},$ext);
-    $resources->{$node}->{api_timestamp}=time();
+  foreach my $resource (@$resources) {
+    $resource->{uri}=apilib::make_uri("$prefix/resources/".$resource->{resource_id},$ext,0);
+    $resource->{uri}=htmlize_uri($resource->{uri},$ext);
+    $resource->{node_uri}=apilib::make_uri("$prefix/resources/nodes/".$resource->{network_address},$ext,0);
+    $resource->{node_uri}=htmlize_uri($resource->{node_uri},$ext);
+    $resource->{jobs_uri}=apilib::make_uri("$prefix/resources/".$resource->{resource_id}."/jobs",$ext,0);
+    $resource->{jobs_uri}=htmlize_uri($resource->{jobs_uri},$ext);
+    $resource->{api_timestamp}=time();
   }
 }
 
@@ -431,6 +425,18 @@ sub struct_job_list($$) {
 }
 
 # OAR RESOURCES
+sub filter_resource_list($) {
+  my $resources = shift;
+  my $filtered_resources;
+  foreach my $resource (@$resources) {
+    push(@$filtered_resources,{ resource_id => $resource->{resource_id},
+                                state => $resource->{state},
+                                network_address => $resource->{network_address}
+                              });
+  }
+  return $filtered_resources;
+}
+
 sub struct_resource_list($$) {
   my $resources = shift;
   my $structure = shift;

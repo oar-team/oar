@@ -76,15 +76,6 @@ sub get_resources_states($){
 	return \%resources_states;
 }
 
-sub get_all_resources_states(){
-        my($states,$hosts) = iolib::get_hosts_state($base);
-        my $res;
-        foreach my $resource ( keys(%$hosts) ) {
-          $res->{$hosts->{$resource}}->{$resource}=$states->{$resource};
-        }
-        return $res;
-}
-
 sub get_resources_states_for_host($){
 	my $hostname = shift;
 	my @node_info = iolib::get_node_info($base, $hostname);
@@ -93,6 +84,11 @@ sub get_resources_states_for_host($){
 		push @resources, $info->{resource_id};
 	}
 	return get_resources_states(\@resources);
+}
+
+sub get_resource_infos($){
+  my $id=shift;
+  my $resource = iolib::get_resource_info($base,$id);
 }
 
 sub get_resources_infos($){

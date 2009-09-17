@@ -104,6 +104,7 @@ sub add_resource_job_pair($$$);
 # RESOURCES MANAGEMENT
 sub add_resource($$$);
 sub list_nodes($);
+sub list_resources($);
 sub get_resource_info($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
@@ -119,6 +120,7 @@ sub get_resource_dead_range_date($$$);
 sub get_expired_resources($);
 sub is_node_desktop_computing($$);
 sub get_resources_data_structure_current_job($$);
+sub get_hosts_state($);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);

@@ -5,6 +5,7 @@ use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_iolib;
 use oarstat_lib;
+use oarnodes_lib;
 use oar_Tools;
 use oarversion;
 use POSIX;
@@ -427,7 +428,7 @@ SWITCH: for ($q) {
 
 
   #
-  # List of resources or details of a resource (oarnodes wrapper)
+  # List of resources or details of a resource
   #
   $URI = qr{^/resources(/all|/[0-9]+)*\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
@@ -435,23 +436,25 @@ SWITCH: for ($q) {
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
     my $cmd;
+    my $resources;
+    oarnodeslib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
     if (defined($1)) {
-      if    ($1 eq "/all")        { $cmd = "$OARNODES_CMD -D"; }
-      elsif ($1 =~ /\/([0-9]+)/)  { $cmd = "$OARNODES_CMD -D -r $1"; }
-      else                        { $cmd = "$OARNODES_CMD -D -s"; }
+      if    ($1 eq "/all")        { $resources = oarnodeslib::get_all_resources();         }
+      elsif ($1 =~ /\/([0-9]+)/)  { $resources = [oarnodeslib::get_resource_infos($1)];   }
+      else                        { apilib::ERROR(500,"Error 666!","Error 666");           }
     }
-    else                          { $cmd = "$OARNODES_CMD -D -s"; }
-    my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
-    my $resources = apilib::import($cmdRes,"dumper");
-    if (defined($1) && $1 =~ /\/([0-9]+)/) { 
-                       $resources = { @$resources[0]->{properties}->{network_address} 
-                           => { @$resources[0]->{resource_id} => @$resources[0] }} 
-                       }
+    else                          { $resources = oarnodeslib::get_all_resources(); 
+                                    $resources = apilib::filter_resource_list($resources); }
+    oarnodeslib::close_db_connection;
     apilib::add_resources_uris($resources,$ext,'');
-    my $result = apilib::struct_resource_list($resources,$STRUCTURE);
+    #my $result = apilib::struct_resource_list($resources,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$ext);
+    #print apilib::export($result,$ext);
+    print apilib::export($resources,$ext);
     last;
   };
  
