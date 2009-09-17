@@ -1,9 +1,12 @@
+- Supporter le rhold if job a running dans /jobs/<id>.html
+- Creer /jobs/<id>/resources  (à l'instar de /resources/<id>/jobs) et ajouter les uri correspondantes dans /jobs
+- Database connection failures should not result in a loop waiting for the database, but an instantaneous error (should we use another db_connect function?) 
+- /jobs/details?structure=oar devrait sortir la même structure que "oarstat -Y"
+
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
-- il reste des resources sans restructuration et donc sans uri/timestamp (par ex: GET /jobs/526.yaml, GET /sites/simpsons/jobs/527.yaml)
 - job keys dans OAR API (pouvoir importer la cle depuis l'api)
 - Implementer POST /resources/<id>/status (equiv oarnodesetting -s) -> necessaire pour DELETE /resources/<id> puisqu'il faut mettre Dead une resource avant de la supprimer.
-- Implémenter une strcuture "backward_oar" qui sorte exatement les memes choses que les commandes (exemple: "get('/resources/1.yaml?structure=backward_oar')" <=> "oarnodes -Y -r 1")
 
 - Blacklister les options suivantes de POST /jobs :
 -D, --dumper                  Print result in DUMPER format
@@ -17,7 +20,6 @@
 
 - For a later release, thing about --stagein (and stageout?)
 
-- Database connection failures should not result in a loop waiting for the database, but an instantaneous error (should we use another db_connect function?) 
 
 Bugs:
 

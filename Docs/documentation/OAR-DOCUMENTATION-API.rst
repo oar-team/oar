@@ -1005,7 +1005,7 @@ GET /resources
    wget -q -O - http://localhost/oarapi/resources.yaml
 
 GET /resources/full
-------------------
+-------------------
 :description:
   Get the list of resources and all the details about them
 
@@ -1335,12 +1335,14 @@ DELETE /resources/<node>/<cpuset_id>
 Some equivalences with oar command line
 =======================================
 
-=============================== ====================================
+=============================== ======================================
       OAR command                   REST request
-=============================== ====================================
+=============================== ======================================
 oarstat                         GET /jobs.html
-oarstat -Y                      GET /jobs/details.yaml
+oarstat -Y                      GET /jobs/details.yaml?structure=oar
 oarstat -Y -fj <id>             GET /jobs/<id>.yaml
 oardel <id>                     DELETE /jobs/<id>.yaml
 oardel <id> *(alternative way)* POST /jobs/deletions/<id>/new.yaml
-=============================== ====================================
+oarnodes -Y                     GET /resources/full.yaml?structure=oar
+oarnodes -Y -r1                 GET /resources/1.yaml?structure=oar
+=============================== ======================================
