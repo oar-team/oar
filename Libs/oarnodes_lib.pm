@@ -48,6 +48,11 @@ sub get_all_hosts(){
 	return \@nodes;
 }
 
+sub get_all_resources(){
+    my @resources = iolib::list_resources($base);
+        return \@resources;
+}
+
 sub get_events($$){
 	my $hostname = shift;
 	my $date_from = shift;
@@ -67,11 +72,17 @@ sub get_resources_states($){
 	foreach my $current_resource (@$resources){
 		my $properties = iolib::get_resource_info($base, $current_resource);
 		$resources_states{$current_resource} = $properties->{state};
-		if ($properties->{state} eq "Absent" && $properties->{available_upto} != 0) {
-			$resources_states{$current_resource} .= " (standby)";
-		}
 	}
 	return \%resources_states;
+}
+
+sub get_all_resources_states(){
+        my($states,$hosts) = iolib::get_hosts_state($base);
+        my $res;
+        foreach my $resource ( keys(%$hosts) ) {
+          $res->{$hosts->{$resource}}->{$resource}=$states->{$resource};
+        }
+        return $res;
 }
 
 sub get_resources_states_for_host($){
@@ -89,9 +100,6 @@ sub get_resources_infos($){
 	my %resources_infos;
 	foreach my $current_resource (@$resources){
 		my $properties = iolib::get_resource_info($base, $current_resource);
-		if ($properties->{state} eq "Absent" && $properties->{available_upto} != 0) {
-			$properties->{state} .= " (standby)";
-		}
 		add_running_jobs_to_resource_properties($properties);
 		$resources_infos{$current_resource} = $properties
 	}

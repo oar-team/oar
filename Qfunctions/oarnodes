@@ -188,6 +188,9 @@ sub print_resource_flat_way($){
 		# Everything needed is in $info
 		print "network_address : $info->{network_address}\n";
 		print "resource_id : $info->{resource_id}\n";
+                if ($info->{state} eq "Absent" && $info->{available_upto} != 0) {
+                        $info->{state} .= " (standby)";
+                }
 		print "state : $info->{state}\n";
 		if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
 		my $properties_to_display='';
