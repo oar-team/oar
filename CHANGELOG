@@ -41,6 +41,8 @@ version 2.4.0:
   - Added the (standby) information to a node state in oarnodes when it's state 
 	is Absent and cm_availability != 0
   - Changed the name of cm_availability to available_upto which is more relevant
+  - Bug #8139: Drawgantt nil error (Add condition to test the presence of nil
+    value in resources table.)
   - Bug #8416: When a the automatic halt/wakeup feature is enabled then there
     was a problem to determine idle nodes.
   - add a --maintenance option to oarnodesetting that sets the state of a resource 
