@@ -435,7 +435,6 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd;
     my $resources;
     oarnodeslib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
@@ -450,30 +449,33 @@ SWITCH: for ($q) {
                                     $resources = apilib::filter_resource_list($resources); }
     oarnodeslib::close_db_connection;
     apilib::add_resources_uris($resources,$ext,'');
-    #my $result = apilib::struct_resource_list($resources,$STRUCTURE);
+    $resources = apilib::struct_resource_list($resources,$STRUCTURE,1);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    #print apilib::export($result,$ext);
     print apilib::export($resources,$ext);
     last;
   };
  
   #
-  # Details of a node (oarnodes wrapper)
+  # Details of a node
   #
   $URI = qr{^/resources/nodes/([\w\.-]+?)(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $cmd    = "$OARNODES_CMD $1 -D";  
-    my $cmdRes = apilib::send_cmd($cmd,"Oarnodes");
-    my $resources = apilib::import($cmdRes,"dumper");
+    oarnodeslib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $resources = oarnodeslib::get_resources_for_host($1);
+    $resources = apilib::filter_resource_list($resources);
+    oarnodeslib::close_db_connection;
     apilib::add_resources_uris($resources,$ext,'');
-    my $result = apilib::struct_resource_list($resources,$STRUCTURE);
+    $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($result,$ext);
+    print apilib::export($resources,$ext);
     last;
   }; 
 

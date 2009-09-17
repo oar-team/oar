@@ -437,24 +437,20 @@ sub filter_resource_list($) {
   return $filtered_resources;
 }
 
-sub struct_resource_list($$) {
+sub struct_resource_list($$$) {
   my $resources = shift;
   my $structure = shift;
+  my $compact = shift; # If true, replace a 1 element array by its element
   my $result;
-  if ($structure eq 'oar') {
-    return $resources ;
+  if ($structure eq 'simple') {
+    if (scalar @$resources == 1 && $compact == 1) {
+      return @$resources[0];
+    }
+    else { return $resources ; }
   }
-  elsif ($structure eq 'simple') {
-    foreach my $node ( keys( %{$resources} ) ) {
-      foreach my $id ( keys( %{$resources->{$node}} ) ) {
-        if ($id ne "uri" && $id ne "api_timestamp") {
-          $resources->{$node}->{$id}->{id}=$id;
-          $resources->{$node}->{$id}->{node}=$node;
-          $resources->{$node}->{$id}->{node_uri}=$resources->{$node}->{uri};
-          $resources->{$node}->{$id}->{api_timestamp}=$resources->{$node}->{api_timestamp};
-          push(@$result,$resources->{$node}->{$id});
-        }
-      }
+  elsif ($structure eq 'oar') {
+    foreach my $resource (@$resources)  {
+      $result->{$resource->{network_address}}->{$resource->{resource_id}}=$resource;
     }
     return $result; 
   }

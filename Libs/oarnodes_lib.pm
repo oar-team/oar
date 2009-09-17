@@ -102,6 +102,12 @@ sub get_resources_infos($){
 	return \%resources_infos;
 }
 
+sub get_resources_for_host($){
+	my $hostname = shift;
+	my @resources = iolib::get_node_info($base, $hostname);
+        return \@resources;
+}
+
 sub get_resources_infos_for_host($){
 	my $hostname = shift;
 	my @node_info = iolib::get_node_info($base, $hostname);
