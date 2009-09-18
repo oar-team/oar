@@ -52,6 +52,8 @@ version 2.4.0:
     his jobs
   - added a name field in the schema table that will refer to the OAR version name
   - added a table containing scheduler name, script and description
+  - Bug #8559: Almighty: Moved OAREXEC_XXXX management code out of the queue for 
+    immediate action, to prevent potential problems in case of scheduler timeouts.
 
 
 version 2.3.4:

@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.2";
+my $VERSION="0.2.3";
 
 ##############################################################################
 # CONFIGURATION
@@ -234,22 +234,24 @@ SWITCH: for ($q) {
     oarstatlib::close_db_connection; 
     print $header;
     if ($ext eq "html") {
+       my $hold="holds";
+       if ($job->{state} eq "Running") { $hold="rholds";}
        print $HTML_HEADER;
        print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
        print "</TD></TR><TR><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/deletions/new.html>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/deletions/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
        print "<INPUT TYPE=Submit VALUE=DELETE>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/holds/new.html>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/$hold/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
        print "<INPUT TYPE=Submit VALUE=HOLD>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/resumptions/new.html>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resumptions/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
        print "<INPUT TYPE=Submit VALUE=RESUME>\n";
        print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST method=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
        print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
        print "</FORM></TD>\n";
@@ -265,8 +267,8 @@ SWITCH: for ($q) {
   $URI = qr{^/jobs/(\d+)/(checkpoints|deletions|holds|rholds|resumptions)+/new(\.yaml|\.json|\.html)*$};
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $jobid = $2;
-    my $action = $1;
+    my $jobid = $1;
+    my $action = $2;
     my $ext=apilib::set_ext($q,$3);
     (my $header, my $type)=apilib::set_output_format($ext);
  
