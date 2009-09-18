@@ -1,4 +1,3 @@
-- Creer /jobs/<id>/resources  (à l'instar de /resources/<id>/jobs) et ajouter les uri correspondantes dans /jobs
 - Database connection failures should not result in a loop waiting for the database, but an instantaneous error (should we use another db_connect function?) 
 - /jobs/details?structure=oar devrait sortir la même structure que "oarstat -Y"
 

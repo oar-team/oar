@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.3";
+my $VERSION="0.2.4";
 
 ##############################################################################
 # CONFIGURATION
@@ -229,7 +229,7 @@ SWITCH: for ($q) {
                                                  );
     my $job = oarstatlib::get_specific_jobs([$jobid]);
     $job=oarstatlib::get_job_data(@$job[0],1);
-    apilib::add_job_uri($job,$ext);
+    apilib::add_job_uris($job,$ext);
     my $result = apilib::struct_job($job,$STRUCTURE);
     oarstatlib::close_db_connection; 
     print $header;
@@ -262,6 +262,30 @@ SWITCH: for ($q) {
        print "</TR></TABLE>\n";
     }
     print apilib::export($result,$ext);
+    last;
+  };
+
+  #
+  # Resources assigned to a job
+  #
+  $URI = qr{^/jobs/(\d+)/resources(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    oarstatlib::open_db_connection or apilib::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $job = oarstatlib::get_specific_jobs([$jobid]);
+    my $resources=oarstatlib::get_job_resources(@$job[0]);
+    $resources->{job_id}=$jobid;
+    $resources = apilib::struct_job_resources($resources,$STRUCTURE);
+    apilib::add_job_resources_uris($resources,$ext,''); 
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($resources,$ext);
     last;
   };
 

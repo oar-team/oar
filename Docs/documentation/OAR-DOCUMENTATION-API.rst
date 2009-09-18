@@ -274,6 +274,7 @@ GET /jobs
        name: ~
        owner: bzizou
        queue: default
+       resources_uri: /jobs/547/resources
        state: Running
        submission: 1245768249
        uri: /jobs/547
@@ -282,6 +283,7 @@ GET /jobs
        name: ~
        owner: bzizou
        queue: default
+       resources_uri: /jobs/546/resources
        state: Running
        submission: 1245768241
        uri: /jobs/546
@@ -332,6 +334,7 @@ GET /jobs/details
        properties: desktop_computing = 'NO'
        queue: default
        reservation: None
+       resources_uri: /jobs/575/resources
        resubmit_job_id: 0
        startTime: 1253103705
        state: Running
@@ -357,6 +360,7 @@ GET /jobs/details
        properties: desktop_computing = 'NO'
        queue: default
        reservation: None
+       resources_uri: /jobs/576/resources
        resubmit_job_id: 0
        startTime: 0
        state: Waiting
@@ -538,6 +542,7 @@ GET /jobs/<id>
      properties: desktop_computing = 'NO'
      queue: default
      reservation: None
+     resources_uri: /jobs/547/resources
      resubmit_job_id: 0
      scheduledStart: ~
      startTime: 1245768251
@@ -552,6 +557,45 @@ GET /jobs/<id>
   ::
 
    wget --user test --password test -q -O - http://localhost/oarapi/jobs/547.yaml
+
+GET /jobs/<id>/resources
+------------------------
+:description:
+  Get resources reserved or assigned to a job
+
+:parameters:
+  - **id**: the id of a job
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: hash
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1253279408
+     assigned_nodes:
+       - node: liza-1
+         node_uri: /resources/nodes/liza-1
+     assigned_resources:
+       - resource_id: 4
+         resource_uri: /resources/4
+       - resource_id: 5
+         resource_uri: /resources/5
+     job_id: 622
+     job_uri: /jobs/622
+     reserved_resources: []
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/jobs/547/resources.yaml
 
 POST /jobs/<id>/deletions/new
 -----------------------------

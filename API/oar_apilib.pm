@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.1";
+my $VERSION="0.2.2";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -245,11 +245,13 @@ sub get_api_uri_relative_base() {
 }
 
 # Add uri to a job
-sub add_job_uri($$) {
+sub add_job_uris($$) {
   my $job = shift;
   my $ext = shift;
   $job->{uri}=apilib::make_uri("/jobs/".$job->{Job_Id},$ext,0);
   $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
+  $job->{resources_uri}=apilib::make_uri("/jobs/".$job->{Job_Id}."/resources",$ext,0);
+  $job->{resources_uri}=apilib::htmlize_uri($job->{resources_uri},$ext);
   $job->{api_timestamp}=time();
 }
 
@@ -263,6 +265,8 @@ sub add_joblist_uris($$) {
       }
       $job->{uri}=apilib::make_uri("/jobs/".$job->{job_id},$ext,0);
       $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
+      $job->{resources_uri}=apilib::make_uri("/jobs/".$job->{job_id}."/resources",$ext,0);
+      $job->{resources_uri}=apilib::htmlize_uri($job->{resources_uri},$ext);
       $job->{api_timestamp}=time();
   }
 }
@@ -304,6 +308,28 @@ sub add_resources_uris($$$) {
     $resource->{jobs_uri}=htmlize_uri($resource->{jobs_uri},$ext);
     $resource->{api_timestamp}=time();
   }
+}
+
+# Add uris to resources of a job
+sub add_job_resources_uris($$$) {
+  my $resources = shift;
+  my $ext = shift;
+  my $prefix = shift;
+  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
+    $assigned_resource->{resource_uri}=apilib::make_uri("$prefix/resources/".$assigned_resource->{resource_id},$ext,0);
+    $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
+  }
+  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
+    $reserved_resource->{resource_uri}=apilib::make_uri("$prefix/resources/".$reserved_resource->{resource_id},$ext,0);
+    $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
+  }
+  foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
+    $assigned_node->{node_uri}=apilib::make_uri("$prefix/resources/nodes/".$assigned_node->{node},$ext,0);
+    $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
+  }
+  $resources->{job_uri}=apilib::make_uri("$prefix/jobs/".$resources->{job_id},$ext,0);
+  $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
+  $resources->{api_timestamp}=time();
 }
 
 # Add uris to a grid sites list
@@ -422,6 +448,7 @@ sub struct_job_list($$) {
                   queue => $job->{queue_name},
                   submission => $job->{submission_time},
                   uri => $job->{uri},
+                  resources_uri => $job->{resources_uri},
                   api_timestamp => $job->{api_timestamp}
     };
     if ($structure eq 'oar') {
@@ -431,6 +458,27 @@ sub struct_job_list($$) {
       $hashref->{id}=$job->{job_id};
       push (@$result,$hashref);
     } 
+  }
+  return $result;
+}
+
+# OAR RESOURCES OF A JOB
+sub struct_job_resources($$) {
+  my $resources=shift;
+  my $structure=shift;
+  my $result={};
+  $result->{assigned_resources}=[];
+  $result->{reserved_resources}=[];
+  $result->{assigned_nodes}=[];
+  $result->{job_id}=$resources->{job_id};
+  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
+    push(@{$result->{assigned_resources}},{resource_id=>$assigned_resource});
+  }
+  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
+    push(@{$result->{reserved_resources}},{resource_id=>$reserved_resource});
+  }
+  foreach my $assigned_hostname (@{$resources->{assigned_hostnames}}) {
+    push(@{$result->{assigned_nodes}},{node=>$assigned_hostname});
   }
   return $result;
 }
