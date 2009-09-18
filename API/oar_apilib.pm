@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.2";
+my $VERSION="0.2.5";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -461,6 +461,23 @@ sub struct_job_list($$) {
   }
   return $result;
 }
+
+# OAR JOB LIST WITH DETAILS
+sub struct_job_list_details($$) {
+  my $jobs = shift;
+  my $structure = shift;
+  my $result;
+  if ($structure eq 'oar') {
+    foreach my $job (@$jobs) {
+      $result->{$job->{job_id}} = $job;
+    }
+  }
+  elsif ($structure eq 'simple') {
+      $result=\@$jobs;
+  } 
+  return $result;
+}
+
 
 # OAR RESOURCES OF A JOB
 sub struct_job_resources($$) {

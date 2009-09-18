@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.4";
+my $VERSION="0.2.5";
 
 ##############################################################################
 # CONFIGURATION
@@ -191,6 +191,7 @@ SWITCH: for ($q) {
               $j = oarstatlib::get_job_data($j,undef);
            }
            apilib::add_joblist_uris($jobs,$ext);
+           $jobs=apilib::struct_job_list_details($jobs,$STRUCTURE);
         }
       }
       else {  
