@@ -254,6 +254,10 @@ SWITCH: for ($q) {
        print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
        print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
        print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
+       print "</FORM></TD><TD>\n";
+       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resubmissions/new.html>\n";
+       print "<INPUT TYPE=Hidden NAME=method VALUE=resubmit>\n";
+       print "<INPUT TYPE=Submit VALUE=RESUBMIT>\n";
        print "</FORM></TD>\n";
        print "</TR></TABLE>\n";
     }
@@ -264,7 +268,7 @@ SWITCH: for ($q) {
   #
   # Actions on a job (checkpoint, hold, resume,...)
   #
-  $URI = qr{^/jobs/(\d+)/(checkpoints|deletions|holds|rholds|resumptions)+/new(\.yaml|\.json|\.html)*$};
+  $URI = qr{^/jobs/(\d+)/(checkpoints|deletions|holds|rholds|resumptions|resubmissions)+/new(\.yaml|\.json|\.html)*$};
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
@@ -307,6 +311,11 @@ SWITCH: for ($q) {
       $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $jobid'";
       $status = "Resume request registered";
     }
+    # Resubmit
+    elsif ( $action eq "resubmissions" ) {
+      $cmd    = "$OARDODO_CMD '$OARSUB_CMD --resubmit $jobid'";
+      $status = "Resubmit request registered";
+    }
     # Impossible to get here!
     else {
       apilib::ERROR(400,"Bad query","Could not understand ". $action ." method"); 
@@ -314,13 +323,44 @@ SWITCH: for ($q) {
     }
 
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
-    print $q->header( -status => 202, -type => "$type" );
-    print $HTML_HEADER if ($ext eq "html");
-    print apilib::export( { 'id' => "$jobid",
-                    'status' => "$status",
-                    'cmd_output' => "$cmdRes",
-                    'api_timestamp' => time()
-                  } , $ext );
+
+    # Resubmit case (it is a oarsub and we have to catch the new job_id)
+    if ($action eq "resubmissions" ) {
+      if ( $? != 0 ) {
+        my $err = $? >> 8;
+        apilib::ERROR(
+          500,
+          "Oar server error",
+          "Oarsub command exited with status $err: $cmdRes\nCmd:\n$cmd"
+        );
+      }
+      elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
+        print $q->header( -status => 201, -type => "$type" );
+        print $HTML_HEADER if ($ext eq "html");
+        print apilib::export( { 'resubmit_id' => "$1",
+                        'id' => "$jobid",
+                        'resubmit_uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext),
+                        'job_uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext),
+                        'status' => "submitted",
+                        'cmd_output' => "$cmdRes",
+                        'api_timestamp' => time()
+                      } , $ext );
+      }else {
+        apilib::ERROR( 500, "Parse error",
+          "Job submitted but the id could not be parsed.\nCmd:\n$cmd" );
+      }
+
+    # Other cases
+    }else{
+      print $q->header( -status => 202, -type => "$type" );
+      print $HTML_HEADER if ($ext eq "html");
+      print apilib::export( { 'id' => "$jobid",
+                      'status' => "$status",
+                      'cmd_output' => "$cmdRes",
+                      'api_timestamp' => time(),
+                      'job_uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext)
+                    } , $ext );
+    }
     last;
   };
 
@@ -389,7 +429,8 @@ SWITCH: for ($q) {
     print apilib::export( { 'id' => "$jobid",
                     'status' => "$status",
                     'cmd_output' => "$cmdRes",
-                    'api_timestamp' => time()
+                    'api_timestamp' => time(),
+                    'job_uri' => apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext)
                   } , $ext );
     last;
   };
