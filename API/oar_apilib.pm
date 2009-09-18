@@ -820,6 +820,11 @@ sub check_job($$) {
   toggle_option($job,"scanscript");
   toggle_option($job,"hold");
 
+  # Ignore some nonsense (for the API) options
+  foreach my $option ("dumper","xml","yaml","json","help","version") {
+    delete($job->{"$option"});
+  }
+
   return $job;
 }
 

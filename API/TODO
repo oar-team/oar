@@ -6,14 +6,6 @@
 - job keys dans OAR API (pouvoir importer la cle depuis l'api)
 - Implementer POST /resources/<id>/status (equiv oarnodesetting -s) -> necessaire pour DELETE /resources/<id> puisqu'il faut mettre Dead une resource avant de la supprimer.
 
-- Blacklister les options suivantes de POST /jobs :
--D, --dumper                  Print result in DUMPER format
--X, --xml                     Print result in XML format
--Y, --yaml                    Print result in YAML format
--J, --json                    Print result in JSON format
--h, --help                    Print this help message
--V, --version
-
 - For a later release, thing about --stagein (and stageout?)
 
 
