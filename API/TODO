@@ -1,10 +1,8 @@
 - Database connection failures should not result in a loop waiting for the database, but an instantaneous error (should we use another db_connect function?) 
-- /jobs/details?structure=oar devrait sortir la même structure que "oarstat -Y"
 
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
 - job keys dans OAR API (pouvoir importer la cle depuis l'api)
-- Implementer POST /resources/<id>/status (equiv oarnodesetting -s) -> necessaire pour DELETE /resources/<id> puisqu'il faut mettre Dead une resource avant de la supprimer.
 
 - For a later release, thing about --stagein (and stageout?)
 

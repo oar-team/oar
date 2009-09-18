@@ -934,6 +934,56 @@ sub check_resource($$) {
   return $resource;
 }
 
+# Check the consistency of a posted oar resource change state request
+sub check_resource_state($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $resource;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $resource=import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $resource=import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $resource=import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Job description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Resource must have a "state" field
+  unless ( $resource->{state} ) {
+    ERROR 400, 'Missing Required Field',
+      'A state change request must have a "state" field!';
+    exit 0;
+  }
+  
+  # State must be "Alive, Absent or Dead"
+  my $r=$resource->{state};
+  unless ( $r eq "Alive" || $r eq "Absent" || $r eq "Dead") {
+    ERROR 400, 'Bad state',
+      'State mut be Alive, Absent or Dead!';
+    exit 0;
+  }
+
+  return $resource;
+}
+
 
 # Check the consistency of a posted grid job and load it into a hashref
 sub check_grid_job($$) {

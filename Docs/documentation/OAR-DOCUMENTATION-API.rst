@@ -1314,6 +1314,48 @@ POST /resources
    irb(main):078:0> r={ 'hostname'=>'test2', 'properties'=> { 'besteffort'=>'NO' , 'cpu' => '10' } }
    irb(main):078:0> puts post('/resources', r.to_json , :content_type => 'application/json')
 
+POST /resources/<id>/state
+--------------------------
+:description:
+  Change the state
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  A [state] entry is mandatory and must be "Absent", "Alive" or "Dead"
+
+  *structure*: hash of state
+
+  *fields*:
+     - **state**: Alive, Absent or Dead
+
+  *yaml example*:
+    ::
+
+     ---
+     state: Dead
+     
+:output:
+  *structure*: 
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1253283492
+     id: 34
+     status: Change state request registered
+     uri: /resources/34
+
+:usage example:
+  ::
+
+   irb
+
 DELETE /resources/<id>
 ----------------------
 :description:

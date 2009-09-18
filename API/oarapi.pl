@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.5";
+my $VERSION="0.2.6";
 
 ##############################################################################
 # CONFIGURATION
@@ -35,7 +35,6 @@ my $q=apilib::get_cgi_handler();
 
 # Oar commands
 my $OARSUB_CMD  = "oarsub";
-my $OARNODES_CMD  = "oarnodes";
 my $OARDEL_CMD  = "oardel";
 my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
@@ -770,6 +769,59 @@ SWITCH: for ($q) {
         "Could not create the new resource or get the new id"
       );
     }
+    last;
+  }; 
+
+  #
+  # Change the state of a resource
+  # 
+  $URI = qr{^/resources/(\d+)/state(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $id=$1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header)=apilib::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before creating new resources" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can create new resources" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+  
+    # Check and get the submited resource
+    # From encoded data
+    my $resource;
+    if ($q->param('POSTDATA')) {
+      $resource = apilib::check_resource_state( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $resource = apilib::check_resource_state( $q->Vars, $q->content_type );
+    }
+
+    my $dbh = iolib::connect() or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    iolib::set_resource_state($dbh,$id,$resource->{state},"NO");
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export( { 
+                      'status' => "Change state request registered",
+                      'id' => "$id",
+                      'api_timestamp' => time(),
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext)
+                    } , $ext );
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+    iolib::disconnect($dbh);
     last;
   }; 
 
