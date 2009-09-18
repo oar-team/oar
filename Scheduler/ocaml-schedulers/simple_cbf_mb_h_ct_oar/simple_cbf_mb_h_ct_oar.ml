@@ -34,23 +34,45 @@ let _ =
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
 
 			let potential_resources = Iolib.get_resource_list conn in
+      let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") in (* TO COMPLETE *)
 
-      (* TODO add condition test if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){ *)
+      (* TODO add condition test/case if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){ *)
+      
     	let resources = List.filter (fun n -> ((n.state = Alive) || (n.state = Absent))) potential_resources in
-      let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in (* TODO to remove *)
+      let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
 
       let available_uptos = Iolib.get_available_uptos conn in
 
       (* create corresponding job from available_up parameter of resource *) 
-      (* TODO *)
-      let filter_a_upto a = List.filter (fun n -> ((n.available_upto = a) && (n.available_upto < max_time_minus_one)) resources) in
-      let no_res a_upto =  ints2intervals (List.map (fun n -> n.resource_id) filter_a_upto) in
-      let pseudo_jobs_no_res = List.map (fun n -> no_res n) available_uptos in
+
+      let filter_a_upto_id a =
+        let rec find accu = function
+        | [] -> List.rev accu
+        | x :: l -> if (x.available_upto = a) && (x.available_upto < max_time_minus_one) then find (x.resource_id :: accu) l else find accu l in
+        find []
+      in
+      let pseudo_job_av_upto a_upto =
+                                    { jobid=0;
+                                      moldable_id=0;
+                                      time_b = a_upto;
+                                      walltime = Int64.sub max_time a_upto;
+                                      types = [];
+                                      constraints = [];
+                                      hy_level_rqt = [];
+                                      hy_nb_rqt = [];
+                                      set_of_rs = (ints2intervals (filter_a_upto_id a_upto resources)); } in
+
+(* TODO: filter sur max_time !!!*)
+      let pseudo_jobs_resources_available_upto = List.map (fun n -> pseudo_job_av_upto n) available_uptos in
 
       (* create intial slots and hashtable of slots to manage containers *)
       let h_slots = Hashtbl.create 10 in
-      let slot_init = {time_s = now; time_e = Int64.max_int; set_of_res = resource_intervals} in
-      Hashtbl.add h_slots 0 [slot_init];
+      let slot_init = {time_s = now; time_e = max_time; set_of_res = resource_intervals} in
+
+      let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
+
+ (*     Hashtbl.add h_slots 0 [slot_init]; *)
+        Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
 
   		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn queue resource_intervals in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
         

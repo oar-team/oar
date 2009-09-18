@@ -113,6 +113,11 @@ let get_value s =
   with Not_found -> 
     error (Printf.sprintf "Value %s not found in confFile %s" s conf_file)
 
+let test_key s = 
+  try (ignore (Hashtbl.find conf_values s); true)  
+  with Not_found -> 
+    false
+
 let get_optional_value s = 
   try Some (Hashtbl.find conf_values s)
   with Not_found -> 

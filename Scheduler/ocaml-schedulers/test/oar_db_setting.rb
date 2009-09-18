@@ -18,7 +18,7 @@ $moldable = DB[:moldable_job_descriptions]
 $job_resource_groups = DB[:job_resource_groups]
 $job_resource_description = DB[:job_resource_descriptions]
 $job_types = DB[:job_types]
-
+$resources = DB[:resources]
 
 def oar_job_insert(args={})
   res = DEFAULT_RES

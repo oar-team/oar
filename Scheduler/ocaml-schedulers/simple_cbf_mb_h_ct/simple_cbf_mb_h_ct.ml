@@ -342,14 +342,6 @@ let schedule_id_jobs jids h_jobs slots =
   in
     assign_res_jobs jids []
 
-
-
-
-
-
-
-
-
 (* function insert previously scheduled job in slots *)
 (* job must be sorted by start_time *)
 
