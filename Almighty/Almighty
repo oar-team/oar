@@ -198,7 +198,20 @@ sub comportement_appendice(){
 
         while (1){
             my $answer = qget_appendice();
-            if ($answer ne ""){
+            if ($answer =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
+                my $pid=0;
+                $pid=fork;
+                if($pid==0){
+                    #CHILD
+                    $SIG{USR1} = 'IGNORE';
+                    $SIG{INT}  = 'IGNORE';
+                    $SIG{TERM} = 'IGNORE';
+
+                    exec("$bipbip_command $1 $2 $3 $4");
+                }
+                oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4\n");
+                #launch_command("$bipbip_command $1 ATTACH &");
+            }elsif ($answer ne ""){
                 oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
                 print WRITE "$answer\n";
                 flush WRITE;
@@ -433,19 +446,6 @@ while (1){
             $state="Time update";
         }elsif ($command eq "ChState"){
             $state="Change node state";
-        }elsif ($command =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
-            my $pid=0;
-            $pid=fork;
-            if($pid==0){
-                #CHILD
-                $SIG{USR1} = 'IGNORE';
-                $SIG{INT}  = 'IGNORE';
-                $SIG{TERM} = 'IGNORE';
-
-                exec("$bipbip_command $1 $2 $3 $4");
-            }
-            oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4\n");
-            #launch_command("$bipbip_command $1 ATTACH &"); 
         }else{
             oar_debug("[Almighty] Unknown command found in queue : $command\n");
         }
