@@ -48,7 +48,7 @@ let get_resource_list dbh =
     			map res get_one
 
 let get_available_uptos dbh =
-  let query = "SELECT available_upto * FROM resources GROUP BY available_upto" in
+  let query = "SELECT available_upto FROM resources GROUP BY available_upto" in
   let res = execQuery dbh query in 
   let get_one a = 
     let get s = column res s a in

@@ -4,9 +4,12 @@ open Simple_cbf_mb_h_ct
 open Mysql
 (*
 TODO
-6) arrange file ???
-4) get_scheduled_jobs ???
-
+1) Extract resources/pseudo_job function from _ function
+2) Debug
+3) Besteffort
+4) Message scheduler/job (same and more than perl scheduler)
+5) Complete Tests infrastructure (automatic test / ruby) and add more tests...
+6) Doc
 *)
 
 let besteffort_duration = Int64.of_int (5*60)
@@ -24,7 +27,61 @@ let argv = if (Array.length(Sys.argv) > 2) then
     else
       ("default", Int64.of_float (Unix.time ()))
 
-let _ =
+(* Determine global resource intervals and init_slots with or without resource availabilty (fied available_upto in resources table *)
+let resources_init_slots_determination dbh now =
+  let potential_resources = Iolib.get_resource_list dbh in
+  let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") in (* TO COMPLETE *)
+  (* TODO add condition test/case if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){ *)
+  
+     
+  let resources = List.filter (fun n -> ((n.state = Alive) || (n.state = Absent))) potential_resources in
+    let resource_intervals = 
+      if ((List.length resources) = 0) then
+        begin
+          Conf.log "none available ressources for scheduling any jobs"; exit 0
+        end
+      else
+        ints2intervals (List.map (fun n -> n.resource_id) resources) 
+      in
+    let available_uptos = Iolib.get_available_uptos dbh in
+      (* create corresponding job from available_up parameter of resource *) 
+    let filter_map f_map f_filter =
+      let rec find accu = function
+        | [] -> List.rev accu
+        | x :: l -> if (f_filter x) then find ((f_map x) :: accu) l else find accu l in
+        find []
+      in
+
+    let filter_a_upto_id a =
+      let rec find accu = function
+        | [] -> List.rev accu
+        | x :: l -> if (x.available_upto = a) then find (x.resource_id :: accu) l else find accu l in
+        find []
+      in
+    let pseudo_job_av_upto a_upto =
+                                    { jobid=0;
+                                      moldable_id=0;
+                                      time_b = if (a_upto<now) then now else a_upto;
+                                     (* walltime = Int64.sub max_time_minus_one a_upto; *)
+                                      walltime = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
+                                      types = [];
+                                      constraints = [];
+                                      hy_level_rqt = [];
+                                      hy_nb_rqt = [];
+                                      set_of_rs = (ints2intervals (filter_a_upto_id a_upto resources)); } 
+      in
+    let pseudo_jobs_resources_available_upto = filter_map (fun n -> pseudo_job_av_upto n) (fun n -> if (n < max_time_minus_one) then true else false) available_uptos in
+
+    let slot_init = {time_s = now; time_e = max_time; set_of_res = resource_intervals} in
+    let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
+    (resource_intervals,slots_init_available_upto_resources) 
+
+ (*   (resource_intervals,[slot_init]) *)
+
+(*               *)
+(* Main function *)
+(*               *)
+let _ = 
 	try
 		Conf.log "Starting";
 
@@ -32,46 +89,11 @@ let _ =
 
     let (queue,now) = argv in
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
-
-			let potential_resources = Iolib.get_resource_list conn in
-      let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") in (* TO COMPLETE *)
-
-      (* TODO add condition test/case if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){ *)
-      
-    	let resources = List.filter (fun n -> ((n.state = Alive) || (n.state = Absent))) potential_resources in
-      let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
-
-      let available_uptos = Iolib.get_available_uptos conn in
-
-      (* create corresponding job from available_up parameter of resource *) 
-
-      let filter_a_upto_id a =
-        let rec find accu = function
-        | [] -> List.rev accu
-        | x :: l -> if (x.available_upto = a) && (x.available_upto < max_time_minus_one) then find (x.resource_id :: accu) l else find accu l in
-        find []
-      in
-      let pseudo_job_av_upto a_upto =
-                                    { jobid=0;
-                                      moldable_id=0;
-                                      time_b = a_upto;
-                                      walltime = Int64.sub max_time a_upto;
-                                      types = [];
-                                      constraints = [];
-                                      hy_level_rqt = [];
-                                      hy_nb_rqt = [];
-                                      set_of_rs = (ints2intervals (filter_a_upto_id a_upto resources)); } in
-
-(* TODO: filter sur max_time !!!*)
-      let pseudo_jobs_resources_available_upto = List.map (fun n -> pseudo_job_av_upto n) available_uptos in
-
-      (* create intial slots and hashtable of slots to manage containers *)
       let h_slots = Hashtbl.create 10 in
-      let slot_init = {time_s = now; time_e = max_time; set_of_res = resource_intervals} in
-
-      let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
-
- (*     Hashtbl.add h_slots 0 [slot_init]; *)
+	(*
+      Hashtbl.add h_slots 0 [slot_init]; 
+*)
+      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
 
   		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn queue resource_intervals in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
@@ -109,12 +131,14 @@ let _ =
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let assignement_jobs = 
             begin
+(*
               slots_with_scheduled_jobs; (* fill slots with prev scheduled jobs *)  
+*)
               schedule_id_jobs_ct h_slots h_waiting_jobs waiting_j_ids
             end 
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (ml642int now)));
-            Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);
+(*          Conf.log ("slot_init:\n  " ^  slot_to_string slot_init); *)
 (*
             Conf.log ("slots_with_scheduled_jobs:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
 *)
