@@ -4,12 +4,14 @@ open Simple_cbf_mb_h_ct
 open Mysql
 (*
 TODO
-1) Extract resources/pseudo_job function from _ function
+1) Extract resources/pseudo_job function from _ function (TODO terminate filter_map use and move it in Helpers)
 2) Debug
-3) Besteffort
-4) Message scheduler/job (same and more than perl scheduler)
+3) Besteffort (need resource reverse order => is not it's true need some discussion with scheduling en performance evaluation specialists)
+3.1) Suspend SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+4) Message scheduler/job (same and more than perl scheduler) (* need to be optimize vectorize*)
 5) Complete Tests infrastructure (automatic test / ruby) and add more tests...
 6) Doc
+7) Source cleanning (new directory ???)
 *)
 
 let besteffort_duration = Int64.of_int (5*60)
@@ -20,6 +22,8 @@ let besteffort_duration = Int64.of_int (5*60)
 *)
 let max_time = 2147483648L
 let max_time_minus_one = 2147483647L
+(* Constant duration time of a besteffort job *)
+let besteffort_duration = 300L
 
 
 let argv = if (Array.length(Sys.argv) > 2) then
@@ -51,7 +55,7 @@ let resources_init_slots_determination dbh now =
         | x :: l -> if (f_filter x) then find ((f_map x) :: accu) l else find accu l in
         find []
       in
-
+(* TODO replace filter_a_upto_id be a filter_map *)
     let filter_a_upto_id a =
       let rec find accu = function
         | [] -> List.rev accu
@@ -96,44 +100,38 @@ let _ =
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
 
-  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn queue resource_intervals in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
+  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn resource_intervals queue besteffort_duration in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
         
       Conf.log ("Job waiting ids"^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then
         begin
-          ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);(*TODO how to avoid 'Warning Y: unused variable v' *) 
-          (* set specific walltime for waiting besteffort jobs *)
-          (* TODO only if queue = besteffort ??? *)
-          (* WHY hash_order ??? *)
-          (* TODO......BESTEFFORT *)
-          (*
-          hash_order (fun n-> if ( List.mem "besteffort" n.types) then n.walltime <- besteffort_duration else ()) waiting_j_ids h_waiting_jobs;
-          *)
-          (* take into account previously scheduled jobs *)
+          ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
+          
           let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn in
           let slots_with_scheduled_jobs = if not ( prev_scheduled_jobs = []) then
-            let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
-            (* exclude besteffort jobs *)
-            (* test if job have besteffort type *)
-(* TODO BESTEFFORT 
-            let besteffort_mem job_test = 
-              List.mem "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_test.jobid
-                                      with Not_found -> failwith "Must no failed here").types in
-            let prev_scheduled_jobs_no_bt =  List.filter (fun n -> not (besteffort_mem n)) prev_scheduled_jobs in
-              Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); 
-*)
-(*            let prev_scheduled_jobs_no_bt = prev_scheduled_jobs in (* TODO BESTEFFORT *) *)
-            (* split_slots_prev_scheduled_jobs [slot_init] prev_scheduled_jobs_no_bt *)
+            let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
+            let prev_scheduled_job_ids =
+              if queue != "besteffort" then
+                (* exclude besteffort jobs *)
+                let besteffort_mem_remove job_id = 
+                  let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_id 
+                                                          with Not_found -> failwith "Must no failed here: besteffort_mem").types in
+                                                          if test_bt then () else  Hashtbl.remove  h_prev_scheduled_jobs_types job_id;
+                                                          test_bt  
+                  in  
+                    List.filter (fun n -> not (besteffort_mem_remove n)) prev_scheduled_job_ids_tmp
+ (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
+              else
+                prev_scheduled_job_ids_tmp
+            in
              set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids
           else ()
           in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let assignement_jobs = 
             begin
-(*
               slots_with_scheduled_jobs; (* fill slots with prev scheduled jobs *)  
-*)
               schedule_id_jobs_ct h_slots h_waiting_jobs waiting_j_ids
             end 
           in

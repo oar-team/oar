@@ -56,73 +56,6 @@ let get_available_uptos dbh =
     in
       map res get_one
 
-(* get_job_list *) 
-(* get jobid,walltime, nb_res *) 
-(* WARNING !!! only one occurence must be allowed, it doesn't support moldable and multiple resources requirement or hierachy*)
-
-(*
-let get_job_list db queue initial_resources =
-  
-
-  let 
-
-
-  let get_resources_for_job  constraints = 
-    if constraints = "" then 
-      initial_resources 
-    else begin 
-(* TO CONTINUE *)
-      let query = Printf.sprintf "SELECT resource_id FROM resources WHERE state = 'Alive'  AND ( %s )" constraints in  
-      let res = execQuery db query in 
-      let get_one_resource a = let get s = column res s a in 
-	    let r_id = not_null int2ml (get "resource_id") in
-      r_id in
-      let matching_resources = (map res get_one_resource) in
-	        ints2intervals matching_resources
-    end in
-
-    let resource_requested = get_resource_requested in
-
-
-  let query = Printf.sprintf "
-    SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties, 
-           moldable_job_descriptions.moldable_id, job_resource_descriptions.res_job_value
-    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
-    WHERE jobs.state = 'Waiting'
-    AND jobs.queue_name =  '%s'
-    AND jobs.reservation = 'None'
-    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
-    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-    ORDER BY job_id ASC ;" in
-  let res = execQuery db query in 
-  let get_one_job a = 
-    let get s = column res s a in 
-      let j_id = not_null int2ml (get "job_id") 
-      and j_walltime = not_null int642ml (get "moldable_walltime")
-      and j_moldable_id = not_null int2ml (get "moldable_id")
-      and j_properties = not_null str2ml (get "properties")
-      let j_constraints = get_resources_for_job j_properties in
-      let (j_hy_level_rqt, j_hy_nb_rqt) = get_resource_requested db j_id in
-        { 
-          jobid = j_id;
-          moldable_id = j_moldable_id;
-          time_b = Int64.zero;
-          walltime = j_walltime;
-          types = [];
-          constraints = j_constraints;
-          hy_level_rqt = j_hy_level_rqt;
-          hy_nb_rqt = j_hy_nb_rqt;
-(*
-          hy_level_rqt = [["cpu"]];(* TODO  fst (resource_requested *)
-          hy_nb_rqt = [[j_nb_res]]; (* TODO  snd resource_requested *)
-*)
-          set_of_rs = [];
-        } in
-      map res get_one_job
-*)
-
-
 let get_one_job_row res a = 
     let get s = column res s a in (
       not_null int2ml (get "job_id"),
@@ -134,7 +67,8 @@ let get_one_job_row res a =
       not_null str2ml (get "res_group_property")
     );;
 
-let get_job_list dbh queue default_resources =
+let get_job_list dbh default_resources queue besteffort_duration =
+  let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
 
@@ -186,7 +120,7 @@ let get_job_list dbh queue default_resources =
   let get_one_row a = 
     let get s = column res s a in (
       not_null int2ml (get "job_id"),
-      not_null int642ml (get "moldable_walltime"),
+      (if flag_besteffort then besteffort_duration else (not_null int642ml (get "moldable_walltime"))),
       not_null int2ml (get "moldable_id"),
       not_null str2ml (get "properties"),
       not_null str2ml (get "res_job_resource_type"),
@@ -253,7 +187,7 @@ let get_job_list dbh queue default_resources =
 
 (* iolib::get_gantt_scheduled_jobs *)
 let get_scheduled_jobs dbh =
-  let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
+   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
         m.moldable_index = 'CURRENT'
@@ -284,7 +218,7 @@ let get_scheduled_jobs dbh =
 	                time_b = j_start_time;
 	                walltime = j_walltime;
                   types = [];
-                  constraints = []; (* constraints irrelevant for already scheduled job *)
+                  constraints = []; (* constraints irrelevant fortest_container already scheduled job *)
                   hy_level_rqt = [];(* // *)
                   hy_nb_rqt = []; (* // *)
                   set_of_rs = []; (* will be set when all resource_id are fetched *)
@@ -323,7 +257,7 @@ let get_scheduled_jobs dbh =
  
 
 (* NOT USED only ONE job see save_assignS to job list assignement*)
-let save_assign conn job =
+let save_assign dbh job =
   let moldable_job_id = ml2int job.moldable_id in 
     let  moldable_job_id_start_time j = 
       Printf.sprintf "(%s, %s)" moldable_job_id  (ml642int j.time_b) in
@@ -340,8 +274,8 @@ let save_assign conn job =
     in
       Conf.log query_pred;
       Conf.log query_job_resources;
-      ignore (execQuery conn query_pred);
-      ignore (execQuery conn query_job_resources)
+      ignore (execQuery dbh query_pred);
+      ignore (execQuery dbh query_job_resources)
 
 let save_assigns conn jobs = (* TODO *)
   let  moldable_job_id_start_time j =
@@ -454,5 +388,33 @@ let get_current_jobs_required_status dbh =
     let results = map res get_one in
       ignore ( List.iter (fun x -> Hashtbl.add h_jobs_required_status (fst x) (snd x) ) results);
       h_jobs_required_status;;
-    
+(*    
+ set_job_message
+ sets the message field of the job of id passed in parameter
+ parameters : dbh, job_id, message
+ return value : /
+ side effects : changes the field message of the job in the table Jobs
+*)
+let set_job_message dbh job_id message = 
+  let query =  Printf.sprintf "UPDATE jobs SET message = '%s' WHERE job_id = %d" message job_id in
+    ignore (execQuery dbh query)
+
+(*
+  set_job_scheduler_info
+  sets the scheduler_info field of the job of id passed in parameter
+  parameters : dbh, job_id, message
+  return value : /
+*)
+let set_job_scheduler_info dbh job_id message = 
+  let query =  Printf.sprintf "UPDATE jobs SET scheduler_info = '%s' WHERE job_id = %d" message job_id in
+    ignore (execQuery dbh query)
+
+let set_job_and_scheduler_message dbh job_id message =  
+  let query =  Printf.sprintf "UPDATE jobs SET  message = '%s', scheduler_info = '%s',   WHERE job_id = %d" message message job_id in
+    ignore (execQuery dbh query)
+
+let set_job_and_scheduler_message_range dbh job_ids message =
+  let job_ids_str = Helpers.concatene_sep "," string_of_int job_ids in
+  let query =  Printf.sprintf "UPDATE jobs SET  message = '%s', scheduler_info = '%s',   WHERE IN ('%s');" message message job_ids_str in
+    ignore (execQuery dbh query)
 
