@@ -121,7 +121,8 @@ let for_float a b step =
 
 type ('a, 'b) union = One of 'a | Two of 'b
 
-let filter_map f l = 
+
+let filter_map2 f l = 
   let rec aux buf1 buf2 = function
       [] -> (List.rev buf1, List.rev buf2)
     | x::xs -> 
@@ -187,5 +188,12 @@ let couples2hash l =
     ignore ( List.iter (fun x -> Hashtbl.add h (fst x) (snd x) ) l);
     h
   end
+
+
+let filter_map f_filter f_map =
+  let rec find accu = function
+      [] -> List.rev accu
+    | x :: l -> if (f_filter x) then find ((f_map x) :: accu) l else find accu l in
+    find []
 
 (* *) 

@@ -7,19 +7,17 @@
 (* - insertion of previously scheduled jobs *)
 (* - multiple resource requests *) (* NOT TESTED *)
 (* - multiple resource types *) (* NOT TESTED *)
-(* - job container *) (* NOT YET DEVELOPPED *)
+(* - job container *) (* NOT TESTED *)
+(* - dependencies *) (* NOT TESTED *)
 (* *)
 (* Not supported features: *)
 (* - moldable jobs (use only first request set*)
 (* - timesharing *)
-(* - job dependencies *)
 (* - job array*)
 (* - fairesharing *)
 (* - suspend/resume, time guards, desktop compting feature do we need do address them in main scheduler ??? *)
 (* - no errors catching/namming *)
-(* - other advance features *)
-(* *)
-
+(* - ordering in resources selection *)
 
 (* TODO need   can't scheduled job ->  to error state ??? *)
 
@@ -27,18 +25,6 @@ open Int64
 open Interval
 open Types
 open Hierarchy
-
-(*
-type time_t = int64
-type job = {
-  
-	mutable time_b : time_t; 
-	walltime : time_t;
-	nb_res : int;
-  constraints : set_of_resources * int; 
-	mutable set_of_rs : set_of_resources;
-}
-*)
 
 type slot = {
 	time_s : time_t;
@@ -328,16 +314,25 @@ let schedule_id_jobs jids h_jobs slots =
 (*                let num_set_slots = if test_inner then (try int_of_string value with _ -> 0) else 0 in *)(* job_error *)
                   begin
                     let (test_container, value) = test_type j "container" in
-                      let (job, updated_slots ) = assign_resources_job_split_slots j (find_slots num_set_slots) in 
-                        Hashtbl.replace h_slots num_set_slots updated_slots;
-                      if test_container then
-                        (* create new slot / container *)
-                        Hashtbl.add h_slots jid [{time_s = job.time_b; time_e = (add job.time_b job.walltime) ; set_of_res = job.set_of_rs}];
+                      let current_slots = find_slots num_set_slots in
+                      let (ok, (job, updated_slots) ) = try (true, assign_resources_job_split_slots j current_slots) 
+                                                        with _ ->  ignore (Printf.sprintf "Can't scheduled job id:[%d]" jid); (false, (j_init, current_slots)) 
+                      
+                      in
+                        if ok then
+                          begin 
+                            Hashtbl.replace h_slots num_set_slots updated_slots;
+                            if test_container then
+                              (* create new slot / container *)
+                              Hashtbl.add h_slots jid [{time_s = job.time_b; time_e = (add job.time_b job.walltime) ; set_of_res = job.set_of_rs}];
 
-                      (* replace updated/assgined job in job hashtable *) 
-                      Hashtbl.replace h_jobs jid job; 
+                              (* replace updated/assgined job in job hashtable *) 
+                              Hashtbl.replace h_jobs jid job; 
 
-                      assign_res_jobs n  (job::scheduled_jobs)
+                            assign_res_jobs n  (job::scheduled_jobs)
+                          end
+                       else 
+                        assign_res_jobs n  (scheduled_jobs)
                   end 
   in
     assign_res_jobs jids []
