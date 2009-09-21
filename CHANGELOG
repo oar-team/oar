@@ -54,7 +54,9 @@ version 2.4.0:
   - added a table containing scheduler name, script and description
   - Bug #8559: Almighty: Moved OAREXEC_XXXX management code out of the queue for 
     immediate action, to prevent potential problems in case of scheduler timeouts.
-
+  - oarnodes, oarstat and the REST API are no more making retry connections to the 
+    database in case of failure, but exit with an error instead. The retry behavior 
+    is left for daemons.
 
 version 2.3.4:
 --------------
