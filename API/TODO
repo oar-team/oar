@@ -1,4 +1,5 @@
-- Database connection failures should not result in a loop waiting for the database, but an instantaneous error (should we use another db_connect function?) 
+- What about a fast-cgi version?
+- Remplacer les oardel par des appels à l'iolib (optimisation)
 
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
@@ -8,11 +9,5 @@
 
 
 Bugs:
-
-- https://helpdesk.grid5000.fr/oarapi/Grenoble/jobs.html
-   YAML data not understood
- -> not a bug: oar 2.2 sur genepi, hors l'api utilise oarnodes de oar 2.4 (array jobs en plus)
-
-- probleme de synchro de date (jobs soumis avec date de début 5s dans le futur par rapport à l'api de cyril)
 
 - Oargrid ne prends pas en compte les options multiples (exemple: -t besteffort -t timesharing), même si l'API le gère ("type"=>["timesharing", "besteffort"])

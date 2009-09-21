@@ -240,7 +240,7 @@ if ($Version){
     exit(0);
 }
 
-oarnodeslib::open_db_connection();
+oarnodeslib::open_db_connection() or die "DB connection error, exiting.\n";
 # Nodes list handling (set @nodes to what has been requested)
 if($ARGV[0]){
     @nodes = @ARGV;

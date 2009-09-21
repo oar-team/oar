@@ -15,7 +15,9 @@ my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 sub open_db_connection(){
-	$base  = iolib::connect_ro();
+	$base  = iolib::connect_ro_one();
+        if (defined($base)) { return 1; }
+        else {return 0; }
 }
 
 sub close_db_connection(){

@@ -8,7 +8,9 @@ package oarnodeslib;
 my $base;
 
 sub open_db_connection(){
-	$base  = iolib::connect_ro();
+	$base  = iolib::connect_ro_one();
+        if (defined($base)) { return 1; }
+        else {return 0; }
 }
 sub close_db_connection(){
 	iolib::disconnect($base);

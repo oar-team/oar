@@ -203,8 +203,10 @@ my $Cm_security_duration = 600;
 
 # CONNECTION
 
-my $Timeout_db_connection = 0;
+
 my $Max_db_connection_timeout = 30;
+my $Timeout_db_connection = 2;
+
 # connect_db
 # Connects to database and returns the base identifier
 # return value : base
@@ -263,20 +265,27 @@ sub connect_db($$$$$$) {
     
     if (!defined($dbh)){
         oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
-        if ($Timeout_db_connection < $Max_db_connection_timeout){
-            $Timeout_db_connection += 2;
-        }
+    }
+    return($dbh);
+}
+
+# timeout_db
+# Check the provided db handler and wait for an incremented time if not ok
+sub timeout_db($$) {
+  my $dbh = shift;
+  my $Max_db_connection_timeout = shift;
+  if (!defined($dbh)) {
         oar_warn("[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
         send_log_by_email("OAR database connection failed","[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
         my $sleep_time = 0;
         while ($sleep_time <= 1){
             $sleep_time = sleep($Timeout_db_connection);
         }
+        if ($Timeout_db_connection < $Max_db_connection_timeout){
+            $Timeout_db_connection += 2;
+        }
     }
-    
-    return($dbh);
-}
-
+} 
 
 # connect
 # Connects to database and returns the base identifier
@@ -306,7 +315,11 @@ sub connect() {
         $Remote_port = get_conf("SERVER_PORT");
 
         $dbh = connect_db($host,$dbport,$name,$user,$pwd,$log_level);
-    }
+
+        my $max_timeout = get_conf("MAX_DB_CONNECTION_TIMEOUT");
+        $max_timeout = $Max_db_connection_timeout unless defined($max_timeout);
+        timeout_db($dbh,$max_timeout);
+   }
     return($dbh);
 }
 
@@ -320,31 +333,43 @@ sub connect_ro() {
     # Connect to the database.
     my $dbh = undef;
     while (!defined($dbh)){
-        reset_conf();
-        init_conf($ENV{OARCONFFILE});
-
-        my $host = get_conf("DB_HOSTNAME");
-        my $dbport = get_conf("DB_PORT");
-        if (not defined($dbport)) {
-            $dbport = "";
-        }
-        my $name = get_conf("DB_BASE_NAME");
-        my $user = get_conf("DB_BASE_LOGIN_RO");
-        $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
-        my $pwd = get_conf("DB_BASE_PASSWD_RO");
-        $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
-        $Db_type = get_conf("DB_TYPE");
-        
-        my $log_level = get_conf("LOG_LEVEL");
-        
-        $Remote_host = get_conf("SERVER_HOSTNAME");
-        $Remote_port = get_conf("SERVER_PORT");
-
-        $dbh = connect_db($host,$dbport,$name,$user,$pwd,$log_level);
+        $dbh = connect_ro_one();
+        my $max_timeout = get_conf("MAX_DB_CONNECTION_TIMEOUT");
+        $max_timeout = $Max_db_connection_timeout unless defined($max_timeout);
+        timeout_db($dbh,$max_timeout);
     }
     return($dbh);
 }
 
+# connect_ro_one
+# Connects to database and returns the base identifier. No loop for retry.
+# parameters : /
+# return value : base
+# side effects : opens a connection to the base specified in ConfLib
+sub connect_ro_one() {
+    # Connect to the database.
+    reset_conf();
+    init_conf($ENV{OARCONFFILE});
+
+    my $host = get_conf("DB_HOSTNAME");
+    my $dbport = get_conf("DB_PORT");
+    if (not defined($dbport)) {
+        $dbport = "";
+    }
+    my $name = get_conf("DB_BASE_NAME");
+    my $user = get_conf("DB_BASE_LOGIN_RO");
+    $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
+    my $pwd = get_conf("DB_BASE_PASSWD_RO");
+    $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
+    $Db_type = get_conf("DB_TYPE");
+    
+    my $log_level = get_conf("LOG_LEVEL");
+    
+    $Remote_host = get_conf("SERVER_HOSTNAME");
+    $Remote_port = get_conf("SERVER_PORT");
+
+    return connect_db($host,$dbport,$name,$user,$pwd,$log_level);
+}
 
 # disconnect
 # Disconnect from database

@@ -119,7 +119,7 @@ if (defined($array_id) && $array_id !=0 && (scalar @job_ids > 0)){
     exit(1);
 }
 
-oarstatlib::open_db_connection();
+oarstatlib::open_db_connection() or die "DB connection error, exiting.\n";
 
 if (defined ($gantt_query)) {
     &print_gantt;
