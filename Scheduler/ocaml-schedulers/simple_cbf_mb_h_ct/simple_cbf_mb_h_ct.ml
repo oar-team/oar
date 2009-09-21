@@ -305,8 +305,8 @@ let schedule_id_jobs jids h_jobs slots =
  
   in
   (* assign ressource for all waiting jobs *)
-  let rec assign_res_jobs j_ids scheduled_jobs = match j_ids with
-		| [] -> List.rev scheduled_jobs
+  let rec assign_res_jobs j_ids scheduled_jobs nosched_jids = match j_ids with
+		| [] -> (List.rev scheduled_jobs, List.rev nosched_jids)
 		| jid::n -> let j_init = find_job jid in
                 let (test_skip, j) = dependencies_evaluation jid j_init in
                 let (test_inner, value_in) = test_type j "inner" in
@@ -315,8 +315,8 @@ let schedule_id_jobs jids h_jobs slots =
                   begin
                     let (test_container, value) = test_type j "container" in
                       let current_slots = find_slots num_set_slots in
-                      let (ok, (job, updated_slots) ) = try (true, assign_resources_job_split_slots j current_slots) 
-                                                        with _ ->  ignore (Printf.sprintf "Can't scheduled job id:[%d]" jid); (false, (j_init, current_slots)) 
+                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_job_split_slots j current_slots) 
+                                                        with _ -> (false, (jid::nosched_jids), (j_init, current_slots)) 
                       
                       in
                         if ok then
@@ -329,13 +329,13 @@ let schedule_id_jobs jids h_jobs slots =
                               (* replace updated/assgined job in job hashtable *) 
                               Hashtbl.replace h_jobs jid job; 
 
-                            assign_res_jobs n  (job::scheduled_jobs)
+                            assign_res_jobs n  (job::scheduled_jobs) ns_jids
                           end
                        else 
-                        assign_res_jobs n  (scheduled_jobs)
+                        assign_res_jobs n scheduled_jobs ns_jids
                   end 
   in
-    assign_res_jobs jids []
+    assign_res_jobs jids [] []
 
 (* function insert previously scheduled job in slots *)
 (* job must be sorted by start_time *)
