@@ -5,10 +5,12 @@ Kameleon 0.01b :)
    Checkout everything into one dir:
    https://scm.gforge.inria.fr/svn/oar/branches/gsoc-2009-kameleon/Misc/kameleon
 
-   The only non-standard ruby module that's needes is "session" -- installation tarball can be found in:
+   The only non-standard ruby module that's needed is "session" -- installation tarball can be found in:
    https://scm.gforge.inria.fr/svn/oar/branches/gsoc-2009-kameleon/Misc/kameleon/redist
 
    Upon extracting, session module can be installed by invoking "ruby install.rb" script.
+
+   Note: also available as a gem: "gem install session" and then run as "sudo ruby -rubygems ./kameleon.rb"
 
 2. Running kameleon
 

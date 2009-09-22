@@ -11,7 +11,14 @@ require 'yaml'
 require 'fileutils'
 
 # required for opening bash session in the background
-require 'session'
+begin
+ require 'session'
+rescue LoadError => e
+ warn "The \"session\" module is not found. You need to install it or load rubygems."
+ warn "To install session as a rubygem: 'gem install session'."
+ warn "Then, you may need to start ruby with -rubygems or to export RUBYOPT=rubygems"
+ exit 1
+end
 
 # required by exec_shell() function
 require 'tempfile'
@@ -121,6 +128,7 @@ end
 
 ### open prompt in the same enviromnent (shell) where the execution takes place
 def start_shell(shell)
+  puts green("Starting shell. Enter \\q to quit.")
   n = 0
   loop do
     print cyan("#{ n }:SHELL> ")
@@ -131,7 +139,8 @@ def start_shell(shell)
       open('shell.history','w'){|f| f.puts shell.history}
       next
     end
-    return if command =~ /^\s*(?:exit|quit)\s*$/io
+    #return if command =~ /^\s*(?:exit|quit)\s*$/io
+    return if command =~ /^\s*\\q\s*$/io
 
     shell.execute(command, :stdout => $stdout, :stderr => $stderr)
     n += 1
