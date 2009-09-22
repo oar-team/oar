@@ -125,11 +125,10 @@ install-indep:
                 OARDIR=/usr/lib/oar \
                 BINDIR=/usr/bin \
                 SBINDIR=/usr/sbin \
-		WWWDIR=/var/www/oar-web-status-files \
-		CGIDIR=/usr/lib/cgi-bin \
-		WWW_ROOTDIR=/oar-web-status-files \
-		GANTT_WEB_ROOT=/var/www/ \
-		GANTT_WEB_DIR=oar-web-status-files/drawgantt
+		PERLLIBDIR=/usr/share/perl5 \
+		VARLIBDIR=/var/lib \
+		WWWDIR=/usr/share/oar-web-status \
+		CGIDIR=/usr/lib/cgi-bin
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-admin
 	$(MAKE) sanity-check tools \
                 DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-admin \

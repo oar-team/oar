@@ -19,12 +19,11 @@ OARDIR=$(PREFIX)/oar
 BINDIR=$(PREFIX)/bin
 SBINDIR=$(PREFIX)/sbin
 DOCDIR=$(PREFIX)/doc/oar
-WWWDIR=/var/www
-CGIDIR=/usr/lib/cgi-bin
-PERLLIBDIR=/usr/share/perl5
+WWWDIR=$(PREFIX)/share/oar-www
+CGIDIR=$(PREFIX)/lib/cgi-bin
+PERLLIBDIR=$(PREFIX)/lib/site_perl
+VARLIBDIR=/var/lib
 WWW_ROOTDIR=
-GANTT_WEB_ROOT=$(WWWDIR)
-GANTT_WEB_DIR=drawgantt
 XAUTHCMDPATH=$(shell which xauth)
 ifeq "$(XAUTHCMDPATH)" ""
 	XAUTHCMDPATH=/usr/bin/xauth
@@ -450,21 +449,23 @@ doc: build-html-doc
 draw-gantt:
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	install -d -m 0755 $(DESTDIR)$(WWWDIR)
+	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)
 	install -m 0755 VisualizationInterfaces/DrawGantt/drawgantt.cgi $(DESTDIR)$(CGIDIR)
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
-	perl -i -pe "s#^web_root: .*#web_root: '$(GANTT_WEB_ROOT)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
-	perl -i -pe "s#^directory: .*#directory: '$(GANTT_WEB_DIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
+	perl -i -pe "s#^web_root: .*#web_root: '$(VARLIBDIR)'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
+	perl -i -pe "s#^directory: .*#directory: 'drawgantt-files'#" VisualizationInterfaces/DrawGantt/drawgantt.conf 
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/DrawGantt/drawgantt.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/drawgantt.conf || /bin/true ; fi
-	install -d -m 0755 $(DESTDIR)$(WWWDIR)/drawgantt/Icons
-	install -d -m 0755 $(DESTDIR)$(WWWDIR)/drawgantt/js
-	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt/Icons
-	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(DESTDIR)$(WWWDIR)/drawgantt/js
-	install -d -m 0755 $(DESTDIR)$(WWWDIR)/drawgantt/cache
-	-chown $(WWWUSER) $(DESTDIR)$(WWWDIR)/drawgantt/cache
+	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons
+	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js
+	install -m 0644 VisualizationInterfaces/DrawGantt/Icons/*.png $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons
+	install -m 0644 VisualizationInterfaces/DrawGantt/js/*.js $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js
+	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
+	-chown $(WWWUSER) $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
 
 monika:
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)
 	perl -i -pe "s#^css_path = .*#css_path = $(WWW_ROOTDIR)/monika.css#" VisualizationInterfaces/Monika/monika.conf
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/monika.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/Monika/monika.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/monika.conf || /bin/true ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(DESTDIR)$(CGIDIR)
@@ -477,6 +478,10 @@ monika:
 
 www-conf:
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
+	echo "ScriptAlias /monika $(CGIDIR)/monika.cgi" > $(DESTDIR)$(OARCONFDIR)/apache.conf
+	echo "ScriptAlias /drawgantt $(CGIDIR)/drawgantt.cgi" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
+	echo "Alias /monika.css $(WWWDIR)/monika.css" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
+	echo "Alias /drawgantt-files $(VARLIBDIR)/drawgantt-files" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/apache.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache.conf || /bin/true ; fi
 
 tools:
@@ -513,9 +518,9 @@ node-install: sanity-check configuration common-install libs node
 
 doc-install: doc
 
-draw-gantt-install: draw-gantt
+draw-gantt-install: www-conf draw-gantt
 
-monika-install: monika
+monika-install: www-conf monika
 
 desktop-computing-cgi-install: sanity-check configuration common-install libs desktop-computing-cgi
 

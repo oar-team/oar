@@ -340,14 +340,14 @@ fi
 ###### oar-web-status scripts ######
 
 %post web-status
-mkdir -p /var/www/html/oar-web-status-files/drawgantt/cache && chown apache /var/www/html/oar-web-status-files/drawgantt/cache || true
+mkdir -p /var/lib/drawgantt-files/cache && chown apache /var/lib/drawgantt-files/cache || true
 ln -s /etc/oar/apache.conf /etc/httpd/conf.d/oar-web-status.conf || true
 service httpd reload || true
 
 %postun web-status
 if [ "$1" = "0" ] ; then # last uninstall
   rm -f /etc/httpd/conf.d/oar-web-status.conf || true
-  rm -rf /var/www/html/oar-web-status-files/drawgantt/cache
+  rm -rf /var/lib/drawgantt-files/cache
 fi
 
 ###### oar-api scripts ######

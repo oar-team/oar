@@ -70,11 +70,10 @@ pkginstall:
                 OARDIR=/usr/lib/oar \
                 BINDIR=/usr/bin \
                 SBINDIR=/usr/sbin \
-		WWWDIR=/var/www/html/oar-web-status-files \
-		CGIDIR=/var/www/cgi-bin \
-		WWW_ROOTDIR=/oar-web-status-files \
-		GANTT_WEB_ROOT=/var/www/html \
-		GANTT_WEB_DIR=oar-web-status-files/drawgantt
+		WWWDIR=/usr/share/oar-web-status \
+		PERLLIBDIR=/usr/lib/perl5/site_perl \
+		VARLIBDIR=/var/lib \
+		CGIDIR=/var/www/cgi-bin
 	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-admin
 	$(MAKE) sanity-check tools \
                 DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-admin \
