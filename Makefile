@@ -21,6 +21,7 @@ SBINDIR=$(PREFIX)/sbin
 DOCDIR=$(PREFIX)/doc/oar
 WWWDIR=/var/www
 CGIDIR=/usr/lib/cgi-bin
+PERLLIBDIR=/usr/share/perl5
 WWW_ROOTDIR=
 GANTT_WEB_ROOT=$(WWWDIR)
 GANTT_WEB_DIR=drawgantt
@@ -470,10 +471,9 @@ monika:
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARCONFDIR)'\;#;;" $(DESTDIR)$(CGIDIR)/monika.cgi
 	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(DESTDIR)$(CGIDIR)
 	install -m 0644 VisualizationInterfaces/Monika/monika.css $(DESTDIR)$(WWWDIR)
-	install -d -m 0755 $(DESTDIR)$(CGIDIR)/monika
-	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(DESTDIR)$(CGIDIR)/monika
-	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(DESTDIR)$(CGIDIR)/monika
-	install -m 0644 VisualizationInterfaces/Monika/monika/overlib.js $(DESTDIR)$(CGIDIR)/monika
+	install -d -m 0755 $(DESTDIR)$(PERLLIBDIR)/monika
+	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(DESTDIR)$(PERLLIBDIR)/monika
+	install -m 0755 VisualizationInterfaces/Monika/monika/*.pm $(DESTDIR)$(PERLLIBDIR)/monika
 
 www-conf:
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
