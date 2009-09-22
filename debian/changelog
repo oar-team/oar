@@ -1,3 +1,11 @@
+oar (2.4.0-1~24.gbp12ad2d) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @12ad2de59c17dd99719b9b260d256417fe167ad7 **
+
+  * Lintian wants translations to be possible
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 22 Sep 2009 18:00:06 +0200
+
 oar (2.4.0-1~23.gbp7c9127) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @7c91273b78ece642ee90ae839bfe2d4e6a98f37b **
