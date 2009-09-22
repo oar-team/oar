@@ -30,7 +30,7 @@ oar (2.4.0-1~20.gbpc98090) UNRELEASED; urgency=low
 
   * Better data structure in the output of a new grid job query
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Tue, 07 Apr 2009 18:23:23 +0200
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 07 Apr 2009 18:23:23 +0200
 
 oar (2.4.0-1~19.gbpd75baa) UNRELEASED; urgency=low
 
@@ -55,7 +55,7 @@ oar (2.4.0-1~17.gbp40c3c5) UNRELEASED; urgency=low
 
   * Added /resources/(all|<id>|nodes/<node>) support
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Tue, 31 Mar 2009 20:11:29 +0200
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 31 Mar 2009 20:11:29 +0200
 
 oar (2.4.0-1~16.gbp0855cf) UNRELEASED; urgency=low
 
@@ -72,7 +72,7 @@ oar (2.4.0-1~15.gbpe6d8f7) UNRELEASED; urgency=low
   * Fixed problem with links into header and changed welcome page from .
     to index.html
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Mon, 23 Mar 2009 14:21:48 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 23 Mar 2009 14:21:48 +0100
 
 oar (2.4.0-1~14.gbpa49df8) UNRELEASED; urgency=low
 
@@ -82,7 +82,7 @@ oar (2.4.0-1~14.gbpa49df8) UNRELEASED; urgency=low
     able to execute oarres command for the stageout desktop_computing
     feature)
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Mon, 23 Mar 2009 13:18:55 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 23 Mar 2009 13:18:55 +0100
 
 oar (2.4.0-1~13.gbp428822) UNRELEASED; urgency=low
 
@@ -91,7 +91,7 @@ oar (2.4.0-1~13.gbp428822) UNRELEASED; urgency=low
   * REMOTE_IDENT is now X_REMOTE_IDENT from the http header so that it
     can be passed by another API
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Wed, 11 Mar 2009 17:54:45 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 11 Mar 2009 17:54:45 +0100
 
 oar (2.4.0-1~12.gbpbb7070) UNRELEASED; urgency=low
 
@@ -101,7 +101,7 @@ oar (2.4.0-1~12.gbpbb7070) UNRELEASED; urgency=low
     resume, delete) + html interface is now capable of deleting,
     checkpoint, hold and resume jobs
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Tue, 10 Mar 2009 18:08:56 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 10 Mar 2009 18:08:56 +0100
 
 oar (2.4.0-1~11.gbpa29018) UNRELEASED; urgency=low
 
@@ -110,7 +110,7 @@ oar (2.4.0-1~11.gbpa29018) UNRELEASED; urgency=low
   * Added keys management into oargridapi
     (/grid/jobs/<id>/keys/<private|public>)
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Fri, 06 Mar 2009 18:06:12 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 06 Mar 2009 18:06:12 +0100
 
 oar (2.4.0-1~10.gbpf03e72) UNRELEASED; urgency=low
 
@@ -142,7 +142,7 @@ oar (2.4.0-1~7.gbp47ac1f) UNRELEASED; urgency=low
 
   * Now can submit jobs from a browser into oarapi
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Thu, 05 Feb 2009 21:27:59 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 05 Feb 2009 21:27:59 +0100
 
 oar (2.4.0-1~6.gbp64d10a) UNRELEASED; urgency=low
 
