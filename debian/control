@@ -2,7 +2,7 @@ Source: oar
 Section: admin
 Priority: extra
 Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
-Build-Depends: debhelper (>= 4.0.0)
+Build-Depends: debhelper (>= 4.0.0), po-debconf
 Build-Depends-Indep: python-docutils, perl
 Standards-Version: 3.7.3
 Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/Debian/trunk/
