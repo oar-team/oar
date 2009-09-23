@@ -95,12 +95,12 @@ then
 
   if [ "$SNAPSHOT" == "y" ]; then
     git-dch --since=HEAD^ --snapshot --debian-branch=$BRANCH_NAME
-    git-add debian/changelog
+    git add debian/changelog
     WHAT="snapshot"
   else 
     #git-dch --since=HEAD^ --release --debian-branch=$BRANCH_NAME --new-version=$OARVersion
     git-dch --since=HEAD^ --release --debian-branch=$BRANCH_NAME
-    git-add debian/changelog
+    git add debian/changelog
     WHAT="release"
   fi
   #OARVERSION=`egrep -o -m 1 "\((.*\))" debian/changelog|sed "s/[()]//g"`
