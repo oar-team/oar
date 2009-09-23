@@ -762,7 +762,14 @@ sub ERROR($$$) {
   }
 
   # This is to prevent a loop as the export function may call ERROR!
-  if (!defined($extension) || get_content_type($extension) eq "UNKNOW_TYPE") {  $extension = "json"; }
+  if (!defined($extension) || get_content_type($extension) eq "UNKNOW_TYPE") {  
+     if ($JSONenabled) { $extension = "json" ; }
+     elsif ($YAMLenabled) { $extension = "yaml"; }
+     else { $extension = "html"; }
+  }
+  elsif($extension eq "json" && !$JSONenabled) { $extension = "html"; }
+  elsif($extension eq "yaml" && !$YAMLenabled) { $extension = "html"; }
+  elsif($extension eq "xml" && !$XMLenabled) { $extension = "html"; }
 
   $status=$status+0; # To convert the status to an integer
   print $q->header( -status => $status, -type => get_content_type($extension) );
