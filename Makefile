@@ -35,7 +35,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install | gridapi-install}"
+	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install | gridapi-install | uninstall }"
 	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -545,3 +545,17 @@ clean:
 	rm -f Docs/documentation/OAR-DOCUMENTATION*html
 	rm -f Docs/documentation/doc_usecases.html
 	rm -f man/man1/*.1
+uninstall:
+	for file in Almighty Gantt_hole_storage.pm Leon NodeChangeState bipbip default_data.sql detect_resources finaud mysql_default_admission_rules.sql mysql_structure.sql oar_Judas.pm oar_Tools.pm oar_apilib.pm oar_conflib.pm oar_iolib.pm oar_iolib.pm.orig oar_meta_sched oar_modules.rb oar_mysql_db_init oar_psql_db_init oar_resource_tree.pm oar_scheduler.pm oar_scheduler.pm.orig oaraccounting oaradmin.rb oaradmin_modules.rb oarapi.pl oardel oarexec oargrid_conflib.pm oargrid_lib.pm oargrid_mailer.pm oargridapi.pl oarhold oarmonitor oarnodecheckrun oarnodes oarnodes_lib.pm oarnodesetting oarnotify oarproperty oarremoveresource oarresume oarsh oarsh_oardo oarsh_shell oarstat oarstat_lib.pm oarsub oarsub_lib.pm oarversion.pm pg_default_admission_rules.sql pg_structure.sql ping_checker.pm runner sarko sentinelle.pl oar_checkdb.pl; do rm -f $(DESTDIR)/$(OARDIR)/$$file; done
+	rm -f $(DESTDIR)/$(OARDIR)/oardodo/oardodo
+	rm -f $(DESTDIR)/$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing
+	rm -f $(DESTDIR)/$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
+	for file in oarsub oarnodes oarstat oarcp oarprint oarsh oardel oarhold oarresume oarnodechecklist oarnodecheckquery oarmonitor_graph_gen; do rm -f $(DESTDIR)/$(BINDIR)/$$file; done
+	for file in Almighty oar_checkdb oar_mysql_db_init oar_psql_db_init oar_resources_init oaraccounting oarmonitor oarnodesetting oarnotify oarproperty oarremoveresource; do rm -f $(DESTDIR)/$(SBINDIR)/$$file; done
+	rm -f $(DESTDIR)/$(CGIDIR)/oarapi/oarapi.cgi
+	rm -f $(DESTDIR)/$(CGIDIR)/oarapi/oarapi-debug.cgi
+	rm -f $(DESTDIR)/$(CGIDIR)/oar-cgi
+	rm -f $(DESTDIR)/$(CGIDIR)/monika.cgi
+	rm -f $(DESTDIR)/$(CGIDIR)/drawgantt.cgi
+	for file in Conf.pm ConfNode.pm OAR.pm OARJob.pm OARNode.pm VERSION db_io.pm monikaCGI.pm; do rm -f $(DESTDIR)/$(PERLLIBDIR)/monika/$$file; done
+	rm -f $(DESTDIR)/$(VARLIBDIR)/drawgantt-files/cache/*
