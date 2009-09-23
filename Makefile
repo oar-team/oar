@@ -559,3 +559,4 @@ uninstall:
 	rm -f $(DESTDIR)/$(CGIDIR)/drawgantt.cgi
 	for file in Conf.pm ConfNode.pm OAR.pm OARJob.pm OARNode.pm VERSION db_io.pm monikaCGI.pm; do rm -f $(DESTDIR)/$(PERLLIBDIR)/monika/$$file; done
 	rm -f $(DESTDIR)/$(VARLIBDIR)/drawgantt-files/cache/*
+	for file in Almighty.1 oar_mysql_db_init.1 oaraccounting.1 oaradmin.1 oarcp.1 oardel.1 oargriddel.1 oargridstat.1 oargridsub.1 oarhold.1 oarmonitor.1 oarmonitor_graph_gen.1 oarnodes.1 oarnodesetting.1 oarnotify.1 oarprint.1 oarproperty.1 oarremoveresource.1 oarresume.1 oarsh.1 oarstat.1 oarsub.1;do rm -f $(DESTDIR)/$(MANDIR)/$$file; done
