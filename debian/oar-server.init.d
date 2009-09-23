@@ -1,7 +1,7 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          oar-server
-# Required-Start:    $network $local_fs $remote_fs $cron
+# Required-Start:    $network $local_fs $remote_fs $all
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
@@ -45,10 +45,21 @@ do_start()
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
         
-        #TODO: Add a database connction check here.
-
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
-		|| return 1
+	CHECK_STRING=`oar_checkdb 2>&1` 
+	if [ "$?" -ne "0" ]
+        then
+          echo 
+          echo "  Database is not ready! Maybe not initiated or no DBMS running?"
+          echo "  You must have a running MySQL or Postgres server."
+          echo "  To init the DB, run /usr/lib/oar/oar_mysql_db_init or /usr/lib/oar/oar_psql_db_init"
+          echo "  Also check the DB_* variables in /etc/oar/oar.conf"
+          echo -n "  The error was: "
+          echo $CHECK_STRING
+          return 2
+        fi
+	#start-stop-daemon --start --quiet --pidfile $PIDFILE --name $DAEMON_NAME --test > /dev/null \
+	#	|| return 1
+        pidofproc -p $PIDFILE > /dev/null && { echo -n " already running" ; return 1 ;}
 	start-stop-daemon --start --make-pidfile --pidfile $PIDFILE --background --exec $DAEMON -- \
 		$DAEMON_ARGS \
 		|| return 2

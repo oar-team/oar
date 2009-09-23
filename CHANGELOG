@@ -57,6 +57,8 @@ version 2.4.0:
   - oarnodes, oarstat and the REST API are no more making retry connections to the 
     database in case of failure, but exit with an error instead. The retry behavior 
     is left for daemons.
+  - improved packaging (try to install files in more standard places)
+  - improved init script for Almighty
 
 version 2.3.4:
 --------------
