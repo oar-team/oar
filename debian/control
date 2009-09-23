@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
 Build-Depends: debhelper (>= 4.0.0), po-debconf
 Build-Depends-Indep: python-docutils, perl
-Standards-Version: 3.7.3
+Standards-Version: 3.8.0
 Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/Debian/trunk/
 Vcs-Browser: https://gforge.inria.fr/plugins/scmsvn/viewcvs.php/Debian/trunk/?root=oar
 Homepage: http://oar.imag.fr/
@@ -44,7 +44,8 @@ Architecture: all
 Depends: httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
- This package install the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
+ This package install the OAR batch scheduler Gantt reservation diagram CGI: 
+ DrawGantt and the instant cluster state visualization CGI: Monika
 
 Package: oar-desktop-computing-agent
 Architecture: all
@@ -71,18 +72,21 @@ Architecture: all
 Depends: oar-user (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl
 Suggests: oar-doc, oar-server
 Description: OAR batch scheduler administration tools package
- This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...)
+ This package installs some useful tools to help the administrator
+ of a oar server (resources manipulation, admission rules edition, ...)
 
 Package: oar-api
 Architecture: all
 Depends: oar-common (= ${binary:Version}), oar-user (=${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl
 Suggests: oar-doc
 Description: OAR RESTful API
- This package installs a RESTful API for oar users. It works as a cgi into apache.
+ This package installs a RESTful API for oar users. 
+ It works as a cgi into apache.
 
 Package: oar-gridapi
 Architecture: all
 Depends: oargrid-client | oar-grid, oar-common (= ${binary:Version}), oar-api (= ${binary:Version}) , ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl
 Suggests: oar-doc
 Description: OAR RESTful grid api
- This package installs a RESTful API for oargrid users. It works as a cgi into apache.
+ This package installs a RESTful API for oargrid users. 
+ It works as a cgi into apache.

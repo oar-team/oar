@@ -1,3 +1,11 @@
+oar (2.4.0-1~25.gbp747ea9) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @747ea963fb84f6d7a86b6a10153856a9da3a07b9 **
+
+  * Fixed some lintian warnings
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 23 Sep 2009 15:42:20 +0200
+
 oar (2.4.0-1~24.gbp12ad2d) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @12ad2de59c17dd99719b9b260d256417fe167ad7 **
