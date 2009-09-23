@@ -1,3 +1,11 @@
+oar (2.4.0-1~26.gbpf49493) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @f49493554cca7ddac1d7f94a56514db0b65a1ede **
+
+  * Oups.... dh_installinit is responsible of making update-rc
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 23 Sep 2009 17:06:31 +0200
+
 oar (2.4.0-1~25.gbp747ea9) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @747ea963fb84f6d7a86b6a10153856a9da3a07b9 **
