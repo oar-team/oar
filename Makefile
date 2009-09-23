@@ -335,6 +335,15 @@ server: man
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/detect_resources'\;#;;\
 				" $(DESTDIR)$(SBINDIR)/oar_resources_init
+	install -m 0755 Tools/oar_checkdb.pl $(DESTDIR)$(OARDIR)
+	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oar_checkdb
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oar_checkdb
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oar_checkdb
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar_checkdb.pl'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oar_checkdb
 
 user: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
