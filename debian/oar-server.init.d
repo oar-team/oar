@@ -51,7 +51,7 @@ do_start()
           echo 
           echo "  Database is not ready! Maybe not initiated or no DBMS running?"
           echo "  You must have a running MySQL or Postgres server."
-          echo "  To init the DB, run /usr/lib/oar/oar_mysql_db_init or /usr/lib/oar/oar_psql_db_init"
+          echo "  To init the DB, run oar_mysql_db_init or oar_psql_db_init"
           echo "  Also check the DB_* variables in /etc/oar/oar.conf"
           echo -n "  The error was: "
           echo $CHECK_STRING
