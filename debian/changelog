@@ -1,3 +1,19 @@
+oar (2.4.0-1~31.gbp78a190) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @78a190c9a2df56897c040245a7b00f5a5d8f2bea **
+
+  * Minor fixes
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 24 Sep 2009 14:19:19 +0200
+
+oar (2.4.0-1~30.gbp7b60fa) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @7b60fa97572e81ef4b7726c4f11bd889e07d5f42 **
+
+  * Minor changes into warning messages
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 24 Sep 2009 13:18:05 +0200
+
 oar (2.4.0-1~29.gbpc635fc) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @c635fc0bf1e0335e692df3706cd81d3c9b8d7025 **

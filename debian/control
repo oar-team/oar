@@ -79,6 +79,7 @@ Package: oar-api
 Architecture: all
 Depends: oar-common (= ${binary:Version}), oar-user (=${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl
 Suggests: oar-doc
+Recommends: libxml-simple-perl, libyaml-perl
 Description: OAR RESTful API
  This package installs a RESTful API for oar users. 
  It works as a cgi into apache.

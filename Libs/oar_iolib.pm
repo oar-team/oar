@@ -347,6 +347,10 @@ sub connect_ro() {
 # return value : base
 # side effects : opens a connection to the base specified in ConfLib
 sub connect_ro_one() {
+  connect_ro_one_log(undef);
+}
+sub connect_ro_one_log($) {
+    my $log=shift;
     # Connect to the database.
     reset_conf();
     init_conf($ENV{OARCONFFILE});
@@ -363,7 +367,9 @@ sub connect_ro_one() {
     $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
     $Db_type = get_conf("DB_TYPE");
     
-    my $log_level = get_conf("LOG_LEVEL");
+    my $log_level;
+    if (defined($log)) { $log_level = 3; }
+    else { $log_level = get_conf("LOG_LEVEL"); }
     
     $Remote_host = get_conf("SERVER_HOSTNAME");
     $Remote_port = get_conf("SERVER_PORT");
