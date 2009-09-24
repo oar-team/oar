@@ -207,6 +207,8 @@ common: man
 	install -m 0644 man/man1/oarsh.1 $(DESTDIR)$(MANDIR)/man1/oarsh.1
 	install -m 0644 man/man1/oarprint.1 $(DESTDIR)$(MANDIR)/man1/oarprint.1
 	install -m 0755 Qfunctions/oarprint $(DESTDIR)$(BINDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)/db_upgrade
+	cp -f DB/*upgrade*.sql $(DESTDIR)$(OARDIR)/db_upgrade/
 	
 libs: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
