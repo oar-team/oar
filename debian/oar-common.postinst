@@ -72,10 +72,10 @@ usermod -U oar
 # Warning in case of an SQL upgrade
 if [ "$1" = configure ]
 then
-  if dpkg --compare-versions "$2" lt 2.3.3
+  if dpkg --compare-versions "$2" le 2.3.4
   then
     echo
-    echo "  WARNING! If you upgraded OAR from 2.3.2 or earlier, you have to upgrade"
+    echo "  WARNING! If you upgraded OAR from 2.3.4 or earlier, you have to upgrade"
     echo "  the database scheme (stop OAR before)!"
     echo "  Upgrade SQL scripts are available in the /usr/lib/oar/db_upgrade directory"
     echo

@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.4.0
-%define release 2test
+%define release 3test
 
 Name: 		oar
 Version:        %{version}
@@ -264,15 +264,9 @@ chsh -s /usr/lib/oar/oarsh_shell oar
 if [ "$1" != "1" ]
 then
   echo
-  echo "WARNING! If you upgraded from 2.3.2 or earlier, you have to upgrade the database scheme (stop OAR before)!"
-  echo "  
-          mysql:
-            ALTER TABLE jobs ADD array_id INT UNSIGNED NOT NULL DEFAULT 0;
-            UPDATE jobs SET array_id = job_id ;
-
-          postgres:
-            ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
-            UPDATE jobs SET array_id = job_id ; "
+  echo "WARNING! If you upgraded from 2.3.4 or earlier, you have to upgrade the"
+  echo "database scheme (stop OAR before)!"
+  echo " Upgrade SQL scripts are available in the /usr/lib/oar/db_upgrade directory"
   echo
 fi
 
@@ -363,6 +357,9 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+* Thu Sep 24 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-3test
+- Changed oar-web-status files paths
+- improved init script
 
 * Thu Jun 25 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-2test
 - Bug fix: upgrade of oar-web-status and oar-api packages removed some files
