@@ -75,15 +75,9 @@ then
   if dpkg --compare-versions "$2" lt 2.3.3
   then
     echo
-    echo "WARNING! If you upgraded from 2.3.2 or earlier, you have to upgrade the database scheme (stop OAR before)!"
-    echo "
-          mysql:
-            ALTER TABLE jobs ADD array_id INT UNSIGNED NOT NULL DEFAULT 0;
-            UPDATE jobs SET array_id = job_id ;
-
-          postgres:
-            ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
-            UPDATE jobs SET array_id = job_id ; "
+    echo "  WARNING! If you upgraded OAR from 2.3.2 or earlier, you have to upgrade"
+    echo "  the database scheme (stop OAR before)!"
+    echo "  Upgrade SQL scripts are available in the /usr/lib/oar/db_upgrade directory"
     echo
   fi
 fi

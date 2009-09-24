@@ -27,7 +27,7 @@ reload_apache()
         if apache2ctl configtest 2>/dev/null; then
                 invoke-rc.d apache2 force-reload || true
         else
-                echo "Your apache2 configuration is broken, so we're not restarting it for you."
+                echo "Your apache2 configuration is broken, so not restarting it."
         fi
 }
 
@@ -44,12 +44,14 @@ ln -s /etc/oar/apache-api.conf /etc/apache2/conf.d/oar-api.conf
 #reload_apache
 echo "
 
+ OAR API INSTALLATION
+ Edit /etc/oar/apache-api.conf to fit your needs.
  You may have to enable some modules into apache if you want
  oar-api to be fully operational (authentication). At least
- 'a2enmod ident;a2enmod headers' and maybe 'a2enmod authnz_ldap'.
+ 'a2enmod ident;a2enmod headers' and maybe 'a2enmod authnz_ldap'
+ and 'a2enmod rewrite'.
  For 'ident' to work, you'll also need 'pidentd' to be installed
  and activated into your system (generally through xinetd).
-
 "
 
 # dh_installdeb will replace this with shell code automatically
