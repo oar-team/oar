@@ -1,86 +1,99 @@
-# $Id: oar-server.init.d 1419 2008-05-26 11:03:31Z bzizou $
 #!/bin/bash
 #
 # oar-server          Start/Stop the oar server daemon.
 #
-# chkconfig: 2345 99 01
-# description: OAR is a resource manager (or batch scheduler) for large computing clusters.
+# chkconfig: 2345 90 10
+# description: This script starts or stops the OAR resource manager
 # processname: Almighty
 # config: /etc/oar/oar.conf
 # pidfile: /var/run/oar-server.pid
+#
+# LSB compliant header
+### BEGIN INIT INFO                                                                                                                          
+# Provides:          oar-server                                                                                                              
+# Required-Start:    $network $local_fs $remote_fs $all                                                                                      
+# Required-Stop:     $remote_fs                                                                                                              
+# Default-Start:     2 3 4 5                                                                                                                 
+# Default-Stop:      0 1 6                                                                                                                   
+# Short-Description: OAR server init script                                                                                                  
+# Description:       This script starts or stops the OAR resource manager                                                                    
+#                                                                                                                                            
+### END INIT INFO                                                                                                                            
 
-RETVAL=0
+# Author: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
+#                                              
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin
+DESC="OAR resource manager (server)"
+NAME=oar-server
 DAEMON=/usr/sbin/oar-server
-DESC=oar-server
-PIDFILE=/var/run/oar-server.pid
-CONFIG=/etc/oar/oar.conf
+DAEMON_NAME=Almighty
+DAEMON_ARGS=""
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+RETVAL=0
 
 test -x $DAEMON || exit 0
 
 # Source function library.
-. /etc/init.d/functions
+. /lib/lsb/init-functions
+
 
 # Set sysconfig settings
 [ -f /etc/sysconfig/oar-server ] && . /etc/sysconfig/oar-server
 
-check_sql() {
-        echo -n "Checking oar SQL base: "
-	if [ -f $CONFIG ] && . $CONFIG ; then
-           :
-        else
-          echo -n "Error loading $CONFIG"
-          failure
-          exit 1
-        fi
-        if [ "$DB_TYPE" = "mysql" -o "$DB_TYPE" = "Pg" ] ; then
-          export PERL5LIB="/usr/lib/oar"
-          export OARCONFFILE="$CONFIG"
-          perl <<EOS && success || failure 
-          use oar_iolib;
-	  \$Db_type="$DB_TYPE";
-          if (iolib::connect_db("$DB_HOSTNAME","$DB_PORT","$DB_BASE_NAME","$DB_BASE_LOGIN","$DB_BASE_PASSWD",0)) { exit 0; }
-          else { exit 1; }
-EOS
-        else
-          echo -n "Unknown $DB_TYPE database type"
-          failure
-          exit 1
-        fi
-}
-
-sql_init_error_msg (){
-  echo
-  echo "OAR database seems to be unreachable." 
-  echo "Did you forget to initialize it or to configure the oar.conf file?"
-  echo "See http://oar.imag.fr/docs/manual.html#configuration-of-the-cluster for more infos"
-  exit 1
-}
 
 start() {
         echo -n "Starting $DESC: "
-        daemon $DAEMON $DAEMON_OPTS && success || failure
+        CHECK_STRING=`oar_checkdb 2>&1`
+        if [ "$?" -ne "0" ]
+        then
+          echo
+          echo "  Database is not ready! Maybe not initiated or no DBMS running?"
+          echo "  You must have a running MySQL or Postgres server."
+          echo "  To init the DB, run oar_mysql_db_init or oar_psql_db_init"
+          echo "  Also check the DB_* variables in /etc/oar/oar.conf"
+          echo -n "  The error was: "
+          echo $CHECK_STRING
+          log_failure_msg
+          exit 1
+        fi
+        pidofproc -p $PIDFILE $DAEMON_NAME > /dev/null && { echo -n " already running" ; log_success_msg; exit 0;}
+        start_daemon $DAEMON $DAEMON_OPTS
         RETVAL=$?
-        echo
+        if [ $RETVAL -eq 0 ]; then
+                log_success_msg
+        else
+                log_failure_msg
+        fi
 }
 stop() {
         echo -n "Stopping $DESC: "
-        if [ -n "`pidfileofproc $DAEMON`" ]; then
-            killproc $DAEMON
-            sleep 1
-            killall Almighty 2>/dev/null
-            sleep 1
-            killall -9 Almighty 2>/dev/null
-            RETVAL=3
+        PID=`pidofproc -p $PIDFILE $DAEMON_NAME` 
+        if [ "$?" = "0" ]
+        then
+          kill $PID
         else
-            failure $"Stopping $DESC"
+          killall Almighty 2>/dev/null
         fi
-        RETVAL=$?
-        echo
+        # Wait
+        let max_wait=30
+        let c=0
+        while [ "`ps awux |grep 'oar.*Almighty'|grep -v grep`" \!= "" -a $c -lt $max_wait ]; do sleep 1; let c++; echo -n "."; done
+        # Kill -9 if always there
+        if [ $c -eq $max_wait ]
+        then
+          echo "forced kill"
+          killall -9 Almighty
+          killall -9 sarko
+        fi
+	rm -f $PIDFILE
+        log_success_msg
+        exit 0
 }
 
 case "$1" in
   start)
-        check_sql || sql_init_error_msg
         start
         ;;
   stop)
@@ -91,11 +104,8 @@ case "$1" in
         sleep 1
         start
         ;;
-  status)
-        status $DAEMON
-        ;;
   *)
-        echo $"Usage: $0 {start|stop|status|restart}"
+        echo $"Usage: $0 {start|stop|restart}"
         RETVAL=3
 esac
 exit $RETVAL
