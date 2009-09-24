@@ -638,7 +638,7 @@ SWITCH: for ($q) {
       $oarcmd .= " \"$script\"";
     }
 
-    my $cmd = "cd $workdir && $OARDODO_CMD 'cd $workdir && $oarcmd'";
+    my $cmd = "$OARDODO_CMD 'cd $workdir && $oarcmd'";
     my $cmdRes = `$cmd 2>&1`;
     if ( $? != 0 ) {
       my $err = $? >> 8;
