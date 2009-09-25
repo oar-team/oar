@@ -9,3 +9,4 @@ script VARCHAR( 100 ) NOT NULL,
 description VARCHAR( 255 ) NOT NULL,
 PRIMARY KEY (name)
 );
+CREATE INDEX array_id ON jobs(array_id);

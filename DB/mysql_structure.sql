@@ -69,6 +69,7 @@ INDEX reservation (reservation),
 INDEX queue_name (queue_name),
 INDEX accounted (accounted),
 INDEX suspended (suspended),
+INDEX array_id (array_id),
 PRIMARY KEY (job_id)
 );
 

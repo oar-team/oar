@@ -232,6 +232,7 @@ CREATE INDEX reservation ON jobs (reservation);
 CREATE INDEX queue_name ON jobs (queue_name);
 CREATE INDEX accounted ON jobs (accounted);
 CREATE INDEX suspended ON jobs (suspended);
+CREATE INDEX array_id ON jobs (array_id);
 
 
 CREATE TABLE moldable_job_descriptions (
