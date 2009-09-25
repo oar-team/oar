@@ -85,7 +85,7 @@ do
         [ "$cpu" != "$prev_cpu" ] && ((CPU++))
         ((CORE++))
         prev_cpu=$cpu
-        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -m mem=$mem" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $FILE_WITH_OAR_COMMANDS_GENERATED
     done
     echo "OK"
 done
