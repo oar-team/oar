@@ -544,7 +544,7 @@ api-install: sanity-check configuration common-install libs api
 gridapi-install: sanity-check configuration common-install libs gridlibs gridapi
 
 clean:
-	rm -f Docs/documentation/OAR-DOCUMENTATION*html
+	find Docs/documentation -regextype posix-extended -regex ".*OAR.*(aux|log|out|pdf|tex|html)" -exec rm -f {} \;
 	rm -f Docs/documentation/doc_usecases.html
 	rm -f man/man1/*.1
 uninstall:
