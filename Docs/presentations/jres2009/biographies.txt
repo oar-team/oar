@@ -1,0 +1,26 @@
+ORATEURS
+--------
+Bruno Bzeznik est ingénieur dans le meso-centre de calcul informatique
+de l'université Joseph Fourier (CIMENT) depuis 2006. Il gère une grille
+de calcul regroupant une dizaine de calculateurs et participe activement
+aux développements des logiciels OAR et CiGri au sein du Laboratoire 
+d'Informatique de Grenoble (LIG).
+
+Romain Cavagna, 27 ans, travaille depuis décembre 2008 au sein de
+l'équipe de développement du projet OAR. Il fait également parti
+du pôle développement du projet Grid'5000 ; une plate-forme
+expérimentale dans le domaine des grilles informatiques qui utilise OAR.
+
+AUTRES AUTEURS
+--------------
+Joseph Emeras, 28 ans, a suivi des etudes universitaires
+en informatique jusqu'en 2005 puis a fait une ecole
+d'ingenieur jusqu'en 2007. Il travaille depuis, comme ingenieur
+de developpement au sein de l'equipe OAR.
+ 
+Olivier Richard est enseignant-chercheur à l'Université Joseph Fourier et 
+membre du Laboratoire d'Informatique de Grenoble (LIG). Ces travaux de 
+recherche portent sur les logiciels systèmes pour les infrastructures de 
+calculs à haute-performe et pour plate-formes dédiées à l'expérimentation 
+comme Grid'5000.
+
