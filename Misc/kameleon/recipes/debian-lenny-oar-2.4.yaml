@@ -5,24 +5,25 @@ global:
  oar_repository: http://oar.imag.fr/debian/unstable/2.4/
  arch: i386
  kernel_arch: "686"
+ previous_chroot: /var/tmp/kameleon/2009-09-30-16-56-12/chroot
 steps:
  - check_deps
-# - bootstrap-fake
+ #- bootstrap-fake
  - bootstrap
  - system_config
  - software_install
  - oar_install
  - kernel_install
  - strip
- - build_tgz
-## - build_livecd
+ #- build_tgz
+ #- build_livecd
  - build_appliance:
    - create_raw_image
    - copy_system_tree
    - install_grub
    - save_as_raw
-#   - save_as_vmdk
-   - save_as_qcow2
-#   - save_as_vdi
+ #   - save_as_vmdk
+ #   - save_as_qcow2
+ #   - save_as_vdi
    - clean
  - clean
