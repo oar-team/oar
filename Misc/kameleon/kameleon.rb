@@ -76,7 +76,7 @@ def cyan(text); colorize(text, "\e[36m"); end
 def cmd_parse(cmd,step)
   if cmd.keys[0]=="check_cmd"
     return "which " + cmd.values[0]
-  elsif cmd.keys[0]=="check_appliance_cmd"
+  elsif cmd.keys[0]=="check_cmd_chroot"
     return "chroot " + $chroot + " which " + cmd.values[0]
   elsif cmd.keys[0]=="exec_current"
     return "cd " + $bin_dir + "; " + cmd.values[0]
