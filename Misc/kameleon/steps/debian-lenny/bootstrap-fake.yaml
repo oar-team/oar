@@ -1,4 +1,4 @@
 bootstrap-fake:
  - copy_tree:
-   - exec_appliance:  rsync -av /mnt/tmp/bootstrap/lenny_i386/* $$chroot/
+   - exec_appliance:  rsync -av $$previous_chroot/* $$chroot/
    - exec_appliance:  echo "rm -rf $$chroot" > $$workdir/clean.sh
