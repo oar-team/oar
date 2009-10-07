@@ -86,8 +86,8 @@ Kameleon commands are:
        value
 
 
-How-to and Tips
-===============
+Making your own recipes
+=======================
 
 Define a global variable and use it
 -----------------------------------
