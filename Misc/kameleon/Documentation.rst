@@ -180,7 +180,8 @@ If something goes wrong and kameleon hangs or you need to kill it, there's a hel
 It's very important to run this script right after the kameleon process dies (i.e. before starting kameleon again), 
 because some important resources might be deadlocked (proc filesystem mounted inside chroot, image mounted on loop device etc).
 
-Script can be run like this: ::
+Run the clean script: ::
+
   $ sudo /bin/bash /var/tmp/kameleon/<timestamp>/clean.sh
 
 
