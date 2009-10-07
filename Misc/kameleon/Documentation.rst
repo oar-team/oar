@@ -186,7 +186,7 @@ Directory structure:
     |
     |/redist
     |
-    |/steps/common
+    |/steps/default
           |
           |/include
           |
@@ -197,8 +197,8 @@ Since you pass path to the recipe file as a command line arg, recipes can be sto
 Macrostep definitions, however, have to be stored in the dir structure under the "steps" dir.
 In the recipe file, under global->distrib, one defines distribution name. Kameleon uses that 
 info to look for macrostep definition files under "<kameleon_root>/steps/$distrib/". 
-If the file can't be found there, kameleon looks into "common" dir 
-(one such example is /steps/common/clean.yaml).
+If the file can't be found there, kameleon looks into "default" dir 
+(one such example is /steps/default/clean.yaml).
 
 
 Provided recipes

@@ -1,4 +1,3 @@
-#/var/lib/kameleon/steps/common/oar_init.yaml
  - config_oar_key:
    - exec_chroot:      perl -pi -e 's/^/environment="OAR_KEY=1" /' ~oar/.ssh/authorized_keys
  - stop_host_mysql:

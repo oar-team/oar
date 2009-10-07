@@ -274,10 +274,10 @@ $recipe['steps'].each do
   # = "chroot /path/to/chroot/dir /etc/init.d/mysql start"
   script[step] = OrderedHash.new()
 
-  # check for macrostep file (distro-specific or common)
+  # check for macrostep file (distro-specific or default)
   if File.file?(path1 = $bin_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
     path=path1
-  elsif File.file?(path2 = $bin_dir + "/steps/common/" + step + ".yaml")
+  elsif File.file?(path2 = $bin_dir + "/steps/default/" + step + ".yaml")
     path=path2
   else
     printf("%s: macrostep file is missing: \n * %s\n * %s\n", step, path1, path2)
