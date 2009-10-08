@@ -11,3 +11,4 @@ CREATE TABLE scheduler (
 );
 CREATE INDEX array_id ON jobs(array_id);
 CREATE INDEX job_id ON event_logs (job_id);
+CREATE INDEX job_id ON challenges(job_id);

@@ -46,7 +46,7 @@ CREATE TABLE challenges (
   ssh_public_key text NOT NULL default '' ,
   PRIMARY KEY  (job_id)
 );
-
+CREATE INDEX job_id ON challenges (job_id);
 
 CREATE TABLE event_log_hostnames (
   event_id integer NOT NULL default '0',

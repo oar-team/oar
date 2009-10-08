@@ -91,6 +91,7 @@ job_id INT UNSIGNED NOT NULL ,
 challenge VARCHAR(255) NOT NULL ,
 ssh_private_key TEXT NOT NULL DEFAULT "" ,
 ssh_public_key TEXT NOT NULL DEFAULT "" ,
+INDEX job_id (job_id),
 PRIMARY KEY (job_id)
 );
 

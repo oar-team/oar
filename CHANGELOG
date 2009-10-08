@@ -62,7 +62,8 @@ version 2.4.0:
   - improved init script for Almighty (into deb and rpm packages)
   - fixed performance issue on oarstat (array_id index missing)
   - fixed performance issue (job_id index missing in event_log table)
-  - fixed a performance issue at job submission (optimized a query)
+  - fixed a performance issue at job submission (optimized a query and added an
+    index on challenges table)
 
 version 2.3.4:
 --------------
