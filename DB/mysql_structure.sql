@@ -293,6 +293,7 @@ description VARCHAR(255) NOT NULL,
 to_check ENUM('YES','NO') NOT NULL DEFAULT 'YES',
 INDEX event_type (type),
 INDEX event_check (to_check),
+INDEX job_id (job_id),
 PRIMARY KEY (event_id)
 );
 

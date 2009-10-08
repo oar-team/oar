@@ -67,7 +67,7 @@ CREATE TABLE event_logs (
 );
 CREATE INDEX event_type ON event_logs (type);
 CREATE INDEX event_check ON event_logs (to_check);
-
+CREATE INDEX job_id ON event_logs (job_id);
 
 CREATE TABLE files (
   file_id bigserial,

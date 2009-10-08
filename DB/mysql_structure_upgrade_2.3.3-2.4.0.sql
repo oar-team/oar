@@ -10,3 +10,4 @@ description VARCHAR( 255 ) NOT NULL,
 PRIMARY KEY (name)
 );
 CREATE INDEX array_id ON jobs(array_id);
+CREATE INDEX job_id ON event_logs (job_id);
