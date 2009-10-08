@@ -61,6 +61,7 @@ version 2.4.0:
   - improved packaging (try to install files in more standard places)
   - improved init script for Almighty (into deb and rpm packages)
   - fixed performance issue on oarstat (array_id index missing)
+  - fixed performance issue (job_id index missing in event_log table)
 
 version 2.3.4:
 --------------
