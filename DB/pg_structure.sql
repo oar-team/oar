@@ -46,7 +46,7 @@ CREATE TABLE challenges (
   ssh_public_key text NOT NULL default '' ,
   PRIMARY KEY  (job_id)
 );
-CREATE INDEX job_id ON challenges (job_id);
+CREATE INDEX challenge_job_id ON challenges (job_id);
 
 CREATE TABLE event_log_hostnames (
   event_id integer NOT NULL default '0',
@@ -67,7 +67,7 @@ CREATE TABLE event_logs (
 );
 CREATE INDEX event_type ON event_logs (type);
 CREATE INDEX event_check ON event_logs (to_check);
-CREATE INDEX job_id ON event_logs (job_id);
+CREATE INDEX event_job_id ON event_logs (job_id);
 
 CREATE TABLE files (
   file_id bigserial,
@@ -232,7 +232,7 @@ CREATE INDEX reservation ON jobs (reservation);
 CREATE INDEX queue_name ON jobs (queue_name);
 CREATE INDEX accounted ON jobs (accounted);
 CREATE INDEX suspended ON jobs (suspended);
-CREATE INDEX array_id ON jobs (array_id);
+CREATE INDEX job_array_id ON jobs (array_id);
 
 
 CREATE TABLE moldable_job_descriptions (

@@ -69,7 +69,7 @@ INDEX reservation (reservation),
 INDEX queue_name (queue_name),
 INDEX accounted (accounted),
 INDEX suspended (suspended),
-INDEX array_id (array_id),
+INDEX job_array_id (array_id),
 PRIMARY KEY (job_id)
 );
 
@@ -91,7 +91,7 @@ job_id INT UNSIGNED NOT NULL ,
 challenge VARCHAR(255) NOT NULL ,
 ssh_private_key TEXT NOT NULL DEFAULT "" ,
 ssh_public_key TEXT NOT NULL DEFAULT "" ,
-INDEX job_id (job_id),
+INDEX challenge_job_id (job_id),
 PRIMARY KEY (job_id)
 );
 
@@ -294,7 +294,7 @@ description VARCHAR(255) NOT NULL,
 to_check ENUM('YES','NO') NOT NULL DEFAULT 'YES',
 INDEX event_type (type),
 INDEX event_check (to_check),
-INDEX job_id (job_id),
+INDEX event_job_id (job_id),
 PRIMARY KEY (event_id)
 );
 
