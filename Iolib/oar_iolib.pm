@@ -470,6 +470,35 @@ sub get_jobs_in_state($$) {
     return(@res);
 }
 
+# get_jobs_in_multiple_states
+# returns the jobs in the specified states
+# parameters : base, job state list
+# return value : flatened list of hashref jobs
+# side effects : /
+sub get_jobs_in_multiple_states($$) {
+    my $dbh = shift;
+    my $states = shift;
+
+    my $state_str;
+    foreach my $s (@{$states}){
+        $state_str .= $dbh->quote($s);
+        $state_str .= ",";
+    }
+    chop($state_str);
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state IN (".$state_str.")
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(@res);
+}
+
 # get_jobs_in_state_for_user
 # returns the jobs in the specified state for the optionaly specified user
 # parameters : base, job state, user
@@ -1339,7 +1368,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 }
 
 
-sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$){
+sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime) = @_;
 
     # Test if properties and resources are coherent

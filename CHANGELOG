@@ -7,6 +7,8 @@ version 2.3.5:
     value in resources table.)
   - Bug #8416: When a the automatic halt/wakeup feature is enabled then there
     was a problem to determine idle nodes.
+  - Debug a mis-initialization of the Gantt with running jobs in the
+    metascheduler (concurrency access to PG database)
 
 version 2.3.4:
 --------------
