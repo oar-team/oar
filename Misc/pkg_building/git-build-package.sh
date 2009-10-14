@@ -35,7 +35,7 @@ get_oar_version() {
 }
 
 get_snapshot_id() {
-  SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline HEAD^..HEAD |cut -d. -f1`
+  SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline HEAD^..HEAD |sed 's/ /./'|cut -d. -f1`
 }
 
 SNAPSHOT=n
@@ -130,15 +130,28 @@ then
   git checkout $BRANCH_NAME
   get_oar_version
   if [ "$OARVersion" != "" ] ; then
+      if [ "$SNAPSHOT" == "y" ]; then
+        get_snapshot_id
+        FullVersion="$OARVersion~git-$SNAPSHOT_ID"
+      fi
       git archive --format=tar HEAD rpm |tar xvf - -C ../build-area
       mkdir -p ../build-area/rpm/BUILD ../build-area/rpm/RPMS ../build-area/rpm/SRPMS
-      git archive --format=tar --prefix=oar-$OARVersion/ HEAD | gzip > "../build-area/rpm/SOURCES/oar-$OARVersion.tar.gz"
+      git archive --format=tar --prefix=oar-$OARVersion/ HEAD > "../build-area/rpm/SOURCES/oar-$OARVersion.tar"
+      mkdir -p /tmp/oar-$OARVersion/Tools
+      tar xf ../build-area/rpm/SOURCES/oar-$OARVersion.tar -C /tmp oar-$OARVersion/Tools/oarversion.pm
+      perl -pi -e "s/OARVersion =.*$/OARVersion =\"$FullVersion\";/" /tmp/oar-$OARVersion/Tools/oarversion.pm
+      tar uf ../build-area/rpm/SOURCES/oar-$OARVersion.tar -C /tmp oar-$OARVersion/Tools/oarversion.pm
+      gzip ../build-area/rpm/SOURCES/oar-$OARVersion.tar
+      rm -rf /tmp/oar-$OARVersion
       cd ../build-area/rpm
       if [ -f /etc/debian_version ]; then
         echo "WARNING: building under Debian, so removing dependencies!"
         perl -pi -e 's/(BuildRequires.*)/#$1/' SPECS/oar.spec
       fi
       perl -pi -e "s/^%define version .*/%define version $OARVersion/" SPECS/oar.spec
+      if [ "$SNAPSHOT" == "y" ]; then
+        perl -pi -e "s/^%define release (.*)/%define release \$1git$SNAPSHOT_ID/" SPECS/oar.spec
+      fi
       rpmbuild -ba SPECS/oar.spec
       echo "RPM packages done into build-area/rpm/RPMS"
   else
