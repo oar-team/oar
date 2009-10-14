@@ -101,13 +101,7 @@ sub init_scheduler($$$$$$){
     iolib::gantt_flush_tables($dbh, $reservation_already_there, $Log_scheduling);
     iolib::set_gantt_date($dbh,$current_time_sec);
     
-    my @initial_jobs;
-    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Running"));
-    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "toLaunch"));
-    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Launching"));
-    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Finishing"));
-    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Suspended"));
-    push(@initial_jobs, iolib::get_jobs_in_state($dbh, "Resuming"));
+    my @initial_jobs = iolib::get_jobs_in_multiple_states($dbh, ["Running","toLaunch","Launching","Finishing","Suspended","Resuming"]);
 
     my $max_resources = 50;
     #Init the gantt chart with all resources

@@ -42,10 +42,6 @@ version 2.4.0:
   - Added the (standby) information to a node state in oarnodes when it's state 
 	is Absent and cm_availability != 0
   - Changed the name of cm_availability to available_upto which is more relevant
-  - Bug #8139: Drawgantt nil error (Add condition to test the presence of nil
-    value in resources table.)
-  - Bug #8416: When a the automatic halt/wakeup feature is enabled then there
-    was a problem to determine idle nodes.
   - add a --maintenance option to oarnodesetting that sets the state of a resource 
     to Absent and its available_upto to 0 if maintenance is on and resets previous
     values if maintenance is off.
@@ -64,6 +60,15 @@ version 2.4.0:
   - fixed performance issue (job_id index missing in event_log table)
   - fixed a performance issue at job submission (optimized a query and added an
     index on challenges table)
+
+version 2.3.5:
+--------------
+  - Bug #8139: Drawgantt nil error (Add condition to test the presence of nil
+    value in resources table.)
+  - Bug #8416: When a the automatic halt/wakeup feature is enabled then there
+    was a problem to determine idle nodes.
+  - Debug a mis-initialization of the Gantt with running jobs in the
+    metascheduler (concurrency access to PG database)
 
 version 2.3.4:
 --------------
