@@ -1,0 +1,64 @@
+oar_install:
+ - install_deps:
+   - exec_chroot: apt-get -y --force-yes install libdbi-perl libdbd-mysql-perl perl-suid
+ - install_mysql:
+   - exec_chroot: apt-get -y --force-yes install mysql-server
+   - exec_chroot: echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('kameleon')" | chroot $$chroot mysql --user=root
+##   - exec_chroot: mysqladmin -u root password "kameleon"
+ - install_oar:
+   - append_file:
+     - /etc/apt/sources.list
+     - |
+       deb $$oar_repository ./
+   - exec_chroot: apt-get update
+   - exec_chroot: apt-get -f install -y --force-yes mime-support || true
+   - exec_appliance: rm $$chroot/var/lib/dpkg/info/mime-support.*
+   - exec_chroot: apt-get -f install -y --force-yes mime-support
+   - exec_chroot: apt-get install -y --force-yes oar-server oar-user oar-node oar-doc oar-admin oar-web-status
+   - append_file:
+     - /var/lib/oar/.ssh/authorized_keys
+     - |
+       environment="OAR_KEY=1"
+ - install_taktuk:
+   - exec_chroot: apt-get -y --force-yes install taktuk
+   - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.or
+   - exec_chroot: sed -e 's/^#\(TAKTUK_CMD\=\"\/usr\/bin\/taktuk \-t 30 \-s\".*\)/\1/' /etc/oar/oar.conf.or > $$chroot/etc/oar/oar.conf.tmp
+   - exec_chroot: sed -e 's/^#\(PINGCHECKER_TAKTUK_ARG_COMMAND\=\"broadcast exec timeout 5 kill 9 \[ true \]\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
+ - configure_cpuset:
+   - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.tmp
+   - exec_chroot: sed -e 's/^#\(JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD\=\"cpuset\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
+   - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.tmp
+   - exec_chroot: sed -e 's/^#\(JOB_RESOURCE_MANAGER_FILE\=\"\/etc\/oar\/job_resource_manager\.pl\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
+   - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.tmp
+   - exec_chroot: sed -e 's/^#\(CPUSET_PATH\=\"\/oar\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
+ - oar_init:
+   - write_file:
+     - /usr/lib/oar/init.sql
+     - |
+       CREATE DATABASE IF NOT EXISTS oar;
+       
+       CONNECT mysql;
+       INSERT INTO user (Host,User,Password) VALUES('localhost','oar',PASSWORD('oar'));
+       
+       INSERT INTO user (Host,User,Password) VALUES('%','oar',PASSWORD('oar'));
+       INSERT INTO db  (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv) VALUES ('localhost','oar','oar','Y','Y','Y','Y','Y','Y');
+       INSERT INTO db  (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv) VALUES ('%','oar','oar','Y','Y','Y','Y','Y','Y');
+       FLUSH PRIVILEGES;
+       
+       GRANT ALL ON oar.* TO oar@localhost;
+       GRANT ALL ON oar.* TO oar@'%';
+       GRANT SELECT ON oar.* TO oarreader@localhost;
+       GRANT SELECT ON oar.* TO oarreader@'%';
+       FLUSH PRIVILEGES;
+   - exec_chroot: mysql -u root -p"kameleon" < $$chroot/usr/lib/oar/init.sql
+   - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/mysql_structure.sql
+   - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/mysql_default_admission_rules.sql
+   - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/default_data.sql || true
+ - install_oar_api:
+   - exec_chroot: apt-get install -y --force-yes oar-api
+   - exec_chroot: apt-get install -y --force-yes pidentd
+   - exec_chroot: a2enmod ident
+   - exec_chroot: a2enmod headers
+ - clean:
+   - exec_chroot: /etc/init.d/mysql stop || true
+   - exec_chroot: /etc/init.d/apache2 stop || true

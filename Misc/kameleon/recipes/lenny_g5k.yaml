@@ -1,0 +1,29 @@
+global:
+ distrib: lenny_g5k
+ workdir_base: /tmp/kameleon_results
+ distrib_repository: http://ftp.fr.debian.org/debian/
+ oar_repository: http://oar.imag.fr/debian/unstable/2.4/
+ arch: amd64
+ kernel_arch: "amd64"
+steps:
+ - check_deps
+# - bootstrap-fake
+ - bootstrap
+ - system_config
+ - software_install
+ - oar_install
+ - kernel_install
+ - strip
+ - build_tgz
+# - build_livecd
+# - build_appliance:
+#   - create_raw_image
+#   - copy_system_tree
+#   - install_grub
+#   - save_as_raw
+#   - save_as_vmdk
+#   - save_as_qcow2
+#   - save_as_vdi
+#   - clean
+ - clean
+
