@@ -1,3 +1,11 @@
+oar (2.4.0-1~32.gbp15ab6c) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @15ab6cd9bec94d565715b11d28e28b8ad7394d09 **
+
+  * New package to fix old postrm buggy script
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 15 Oct 2009 11:31:02 +0200
+
 oar (2.4.0-1~31.gbp78a190) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @78a190c9a2df56897c040245a7b00f5a5d8f2bea **
