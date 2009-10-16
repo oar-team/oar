@@ -138,8 +138,7 @@ sub get_queued_jobs($) {
     my $sth = $dbh->prepare("   SELECT jobs.job_id
                                 FROM (jobs INNER JOIN moldable_job_descriptions ON jobs.job_id = moldable_job_descriptions.moldable_job_id) LEFT JOIN assigned_resources ON assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_job_id
                                 WHERE
-                                    jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
                             ");
     $sth->execute();
     my @res = ();
