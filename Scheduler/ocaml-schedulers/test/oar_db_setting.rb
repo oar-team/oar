@@ -1,11 +1,21 @@
-
 require 'sequel'
 
+if ARGV.length != 0
+  puts "Options support not yet implemented"
+  exit(1)
+  # add user/passwod parsing
+else
+  DB_NAME = "oar"
+  USER = "oar"
+  PASSWD =  "oar"
+  HOST = "localhost"
+end
+
 DB = Sequel.mysql(
-  "oar",
-  :user=>"oar",
-  :password=>"oar",  
-  :host => "localhost"  
+  DB_NAME,
+  :user => USER,
+  :password => PASSWD,  
+  :host => HOST  
  )
 DEFAULT_QUEUE = "default"
 DEFAULT_WALLTIME = 7200
@@ -74,29 +84,31 @@ def oar_empty_jobs
 end
 
 def oar_truncate_jobs
-  DB << "
-    TRUNCATE `accounting`;
-    TRUNCATE `assigned_resources`;
-    TRUNCATE `challenges`;
-    TRUNCATE `event_logs`;
-    TRUNCATE `event_log_hostnames`;
-    TRUNCATE `files`;
-    TRUNCATE `frag_jobs`;
-    TRUNCATE `gantt_jobs_predictions`;
-    TRUNCATE `gantt_jobs_predictions_log`;
-    TRUNCATE `gantt_jobs_predictions_visu`;
-    TRUNCATE `gantt_jobs_resources`;
-    TRUNCATE `gantt_jobs_resources_log`;
-    TRUNCATE `gantt_jobs_resources_visu`;
-    TRUNCATE `jobs`;
-    TRUNCATE `job_dependencies`;
-    TRUNCATE `job_resource_descriptions`;
-    TRUNCATE `job_resource_groups`;
-    TRUNCATE `job_state_logs`;
-    TRUNCATE `job_types`;
-    TRUNCATE `moldable_job_descriptions`;
-    TRUNCATE `resource_logs`;
+#  DB << "
+ requests = "
+    TRUNCATE accounting;
+    TRUNCATE assigned_resources;
+    TRUNCATE challenges;
+    TRUNCATE event_logs;
+    TRUNCATE event_log_hostnames;
+    TRUNCATE files;
+    TRUNCATE frag_jobs;
+    TRUNCATE gantt_jobs_predictions;
+    TRUNCATE gantt_jobs_predictions_log;
+    TRUNCATE gantt_jobs_predictions_visu;
+    TRUNCATE gantt_jobs_resources;
+    TRUNCATE gantt_jobs_resources_log;
+    TRUNCATE gantt_jobs_resources_visu;
+    TRUNCATE jobs;
+    TRUNCATE job_dependencies;
+    TRUNCATE job_resource_descriptions;
+    TRUNCATE job_resource_groups;
+    TRUNCATE job_state_logs;
+    TRUNCATE job_types;
+    TRUNCATE moldable_job_descriptions;
+    TRUNCATE resource_logs;
   "
+  system "echo \"#{requests}\" | mysql -u#{USER} -p#{PASSWD} -h#{HOST} #{DB_NAME}"
 end
 
 def oar_update_visu
@@ -108,6 +120,24 @@ end
 
 def oar_sql_file file_name
   DB << File.open(file_name, "r").read
+end
+
+def oar_resource_insert(args={})
+  res_id = $resources.insert(:state=>"Alive")
+end
+
+def oar_truncate_resources
+#  DB << "
+  requests = "
+    TRUNCATE resources;
+    TRUNCATE resource_logs;
+    "
+  system "echo \"#{requests}\" | mysql -u#{USER} -p#{PASSWD} -h#{HOST} #{DB_NAME}"
+end
+
+def oar_db_clean
+  oar_truncate_jobs
+  oar_truncate_resources
 end
 
 puts "DB connection up"

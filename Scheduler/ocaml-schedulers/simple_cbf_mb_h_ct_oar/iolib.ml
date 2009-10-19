@@ -272,8 +272,10 @@ let save_assign dbh job =
       "INSERT INTO  gantt_jobs_resources (moldable_job_id,resource_id) VALUES "^
      	(String.concat ", " (List.map resource_to_value (intervals2ints job.set_of_rs))) 
     in
+(*
       Conf.log query_pred;
       Conf.log query_job_resources;
+*)
       ignore (execQuery dbh query_pred);
       ignore (execQuery dbh query_job_resources)
 
@@ -297,8 +299,10 @@ let save_assigns conn jobs = (* TODO *)
       "INSERT INTO  gantt_jobs_resources (moldable_job_id,resource_id) VALUES "^
      	(String.concat ",\n " (List.map job_resource_to_value jobs)) 
     in
+(*
       Conf.log query_pred;
       Conf.log query_job_resources;
+*)
       ignore (execQuery conn query_pred);
       ignore (execQuery conn query_job_resources)
 

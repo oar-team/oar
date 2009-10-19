@@ -127,9 +127,11 @@ let _ =
   				  Conf.log ( "Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) );        
 	  		    Conf.log ( "Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); 
 *)
+(*
             Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
 		        Conf.log ("Assigns:\n" ^  (Helpers.concatene_sep "\n\n" job_to_string assignement_jobs));
             Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );
+*)
             (* save assignements into db *)
             Iolib.save_assigns conn assignement_jobs;  
             Conf.log "Terminated";
