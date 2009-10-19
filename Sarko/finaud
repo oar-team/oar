@@ -36,7 +36,7 @@ if ($Occupied_nodes ne 'yes' && $Occupied_nodes ne 'no'){
 }
 
 if ($check_occupied_nodes eq 'no'){
-    $Occupied_nodes; = iolib::get_current_assigned_nodes($base);
+    $Occupied_nodes = iolib::get_current_assigned_nodes($base);
 }
 
 my %Nodes_hash;
