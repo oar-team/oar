@@ -351,14 +351,23 @@ user: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -d -m 0755 $(DESTDIR)$(BINDIR)
 	install -m 0755 Qfunctions/oarnodes $(DESTDIR)$(OARDIR)
+	install -m 0755 Qfunctions/oarnodes.v2_3 $(DESTDIR)$(OARDIR)
 	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarnodes
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarnodes.old
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarnodes
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarnodes.old
 	chmod 6755 $(DESTDIR)$(BINDIR)/oarnodes
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarnodes.old
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarnodes'\;#;;\
 				" $(DESTDIR)$(BINDIR)/oarnodes
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarnodes.v2_3'\;#;;\
+				" $(DESTDIR)$(BINDIR)/oarnodes.old
 	install -m 0755 Qfunctions/oardel $(DESTDIR)$(OARDIR)
 	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oardel
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oardel
@@ -369,14 +378,23 @@ user: man
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oardel'\;#;;\
 				" $(DESTDIR)$(BINDIR)/oardel
 	install -m 0755 Qfunctions/oarstat $(DESTDIR)$(OARDIR)
+	install -m 0755 Qfunctions/oarstat.v2_3 $(DESTDIR)$(OARDIR)
 	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarstat
+	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarstat.old
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarstat
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarstat.old
 	chmod 6755 $(DESTDIR)$(BINDIR)/oarstat
+	chmod 6755 $(DESTDIR)$(BINDIR)/oarstat.old
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
 			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarstat'\;#;;\
 				" $(DESTDIR)$(BINDIR)/oarstat
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+                             s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+                             s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+                                 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oarstat.v2_3'\;#;;\
+                                " $(DESTDIR)$(BINDIR)/oarstat.old
 	install -m 0755 Qfunctions/oarsub $(DESTDIR)$(OARDIR)
 	install -m 6755 Tools/oardo $(DESTDIR)$(BINDIR)/oarsub
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(BINDIR)/oarsub

@@ -85,10 +85,14 @@ db_version 2.0
 # Manage setuid bits
 chown oar:oar /usr/bin/oarnodes
 chmod 6755 /usr/bin/oarnodes
+chown oar:oar /usr/bin/oarnodes.old
+chmod 6755 /usr/bin/oarnodes.old
 chown oar:oar /usr/bin/oardel
 chmod 6755 /usr/bin/oardel
 chown oar:oar /usr/bin/oarstat
 chmod 6755 /usr/bin/oarstat
+chown oar:oar /usr/bin/oarstat.old
+chmod 6755 /usr/bin/oarstat.old
 chown oar:oar /usr/bin/oarsub
 chmod 6755 /usr/bin/oarsub
 chown oar:oar /usr/bin/oarhold

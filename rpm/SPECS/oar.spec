@@ -204,8 +204,10 @@ rm -rf tmp
 
 %files user -f oar-user.files
 %attr (6755,oar,oar) /usr/bin/oarnodes
+%attr (6755,oar,oar) /usr/bin/oarnodes.old
 %attr (6755,oar,oar) /usr/bin/oardel
 %attr (6755,oar,oar) /usr/bin/oarstat
+%attr (6755,oar,oar) /usr/bin/oarstat.old
 %attr (6755,oar,oar) /usr/bin/oarsub
 %attr (6755,oar,oar) /usr/bin/oarhold
 %attr (6755,oar,oar) /usr/bin/oarresume
