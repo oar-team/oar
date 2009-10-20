@@ -39,8 +39,6 @@ if ($check_occupied_nodes eq 'no'){
     $Occupied_nodes = iolib::get_current_assigned_nodes($base);
 }
 
-oar_debug("[finaud] Occupied resource(s) are : ".Dumper($Occupied_nodes)."\n");
-
 my %Nodes_hash;
 foreach my $i (@node_list_tmp){
     if (($check_occupied_nodes eq 'no') && !defined($Occupied_nodes->{$i->{network_address}})){
