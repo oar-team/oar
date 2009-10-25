@@ -37,10 +37,7 @@ struct exchange_result_
 
 typedef struct exchange_result_ exchange_result;
 
-
 // A function to send requests to the OARAPI
 exchange_result* oar_request_transmission();
-
-MAX_OAR_URL_LENGTH;
 
 #endif

@@ -33,13 +33,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <ctype.h>
 #include "oar_exchange.h"
 
-
-#define TRUE 1
-#define FALSE 0
-
 // In order to get back the error number with old versions of libcurl
 #if LIBCURL_VERSION_NUM < 0x070a03
-#define CURLE_HTTP_RETURNED_ERROR CURLE_HTTP_NOT_FOUND
+  #define CURLE_HTTP_RETURNED_ERROR CURLE_HTTP_NOT_FOUND
 #endif
 
 #define MAX_OAR_URL_LENGTH 200

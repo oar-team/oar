@@ -1,0 +1,8 @@
+* need some work to be really usable
+* too hardcoded paramaters (for oarapi connection)
+* factorize connection
+* debug 
+* stagein/stageout
+* sending signal
+* comment code
+* docs

@@ -25,9 +25,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef _OAR_PBS_H
 #define _OAR_PBS_H 
 
-# include <pbs_ifl.h>
-# include <pbs_error.h>
-# include "oar_exchange.h" 	// A JSON parser for OAR-API responses
+#include "pbs_ifl.h"
+#include "pbs_error.h"
+#include "oar_exchange.h" 	// A JSON parser for OAR-API responses
 
 
 // A set of type definition in order to make their use easier
