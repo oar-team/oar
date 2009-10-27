@@ -1,6 +1,5 @@
 /******************************************************************
 
-
 OAR DRMAA-C : A C library for using the OAR DRMS
 Copyright (C) 2009  LIG <http://www.liglab.fr/>
 
@@ -21,27 +20,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 **********************************************************************/
 
-
-	/*	PBS to/from OAR		*/
-
-
+/*	PBS to/from OAR		*/
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "oar_pbs.h"
 
-#define PBS_DEFAULT "192.168.0.1";		// Default PBS/OAR Server Name
+#define PBS_DEFAULT "localhost:8888"		// Default PBS/OAR Server Name
+
+#define OAR_API_BASE_URL "localhost:8888"
+
 #define MAX_OAR_JOB_LENGTH 300
 
 // EVENTS LIST
-#define UNKNOWN_EVENT 		0
-#define OUTPUT_FILES 		1
+#define UNKNOWN_EVENT     0
+#define OUTPUT_FILES 		  1
 #define FRAG_JOB_REQUEST 	2
 
-
 // PBS EXIT_STATUS LIST
-#define JOB_EXEC_OK		"0"
+#define JOB_EXEC_OK		     "0"
 #define JOB_EXEC_FAIL1		"-1"
 #define JOB_EXEC_FAIL2		"-2"
 #define JOB_EXEC_RETRY		"-3"
@@ -54,35 +52,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 
-char * pbs_server;		// server attempted to connect | connected to
-				// see pbs_connect(3B)
+char * pbs_server; // server attempted to connect | connected to
+				           // see pbs_connect(3B)
 
-int pbs_errno;			// PBS error number
-
+int pbs_errno;     // PBS error number
 
 // Prints the content of the attribute list
-void showAttributes(attrl *attributes) { 
+void showAttributes(attrl *attributes) {  // TODO debug ?? error log ?
+  attrl *attr;
+  attr = attributes;	 
 
-    attrl *attr;
-    attr = attributes;	 
-
-    if (attributes == NULL) {
-	
-	printf("Attributes == NULL");
- 	
-    }
-
-    while(attr != NULL) {
-	
-	printf("attr_name = %s, attr_resource = %s, attr_value = %s", attr->name, attr->resource, attr->value);
-		 	
-        attr = attr->next;
-	if (attr) printf(", \n");       
-    }
-
-    printf("\n");       	
+  if (attributes == NULL) { 
+	  printf("Attributes == NULL");
+  }
+  while(attr != NULL) {
+    printf("attr_name = %s, attr_resource = %s, attr_value = %s", attr->name, attr->resource, attr->value);
+    attr = attr->next;
+	  if (attr) printf(", \n");       
+  }
+  printf("\n");       	
 }
-
 
 void showBatchStatus(batch_status *status) {
 	printf("\n\n---------------------------------------------------------------\n");
@@ -97,107 +86,72 @@ void showBatchStatus(batch_status *status) {
 
 // Prints the content of the presult list
 void showBatchStatus_(batch_status *status) { 
+  batch_status *tmp;
+  tmp = status;	 
 
-    batch_status *tmp;
-    tmp = status;	 
-
-    while(tmp != NULL) {
-	
-	printf("JOB NAME = %s, JOB DESCRIPTION = %s\n", tmp->name, tmp->text);
-	showAttributes(tmp->attribs);
-		 	
-        tmp = tmp->next;
-	if (tmp) printf("__________________________\n");
-    }
-    printf("\n");       	
+  while(tmp != NULL) {
+	  printf("JOB NAME = %s, JOB DESCRIPTION = %s\n", tmp->name, tmp->text);
+	  showAttributes(tmp->attribs);
+		tmp = tmp->next;
+	  if (tmp) printf("__________________________\n");
+  }
+  printf("\n");       	
 }
-
 
 // Adds a new element to the attrl list (in the end) and returns the added element address
 struct attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value) { 
 
-    // We create a new presult element
-    attrl *newElement = malloc(sizeof(attrl));
-	
-//    printf("1\n");
-   
-    if(!newElement) {
+  // We create a new presult element
+  attrl *new_element= malloc(sizeof(attrl));
+  
+  if(!new_element) {
 		printf("** AddNewAttribute ** :NO ENOUGH MEMORY FOR THE ATTRL STRUCTURE");
 		exit(EXIT_FAILURE); // If we don't have enough memory 
 	}
 
-//    printf("2\n");
+  // We initialize the newly created element
+  new_element->name = name;		
+  new_element->resource = g_strdup(resource);	
+  new_element->value = g_strdup(value); // Thanks glib ;-)
+  new_element->next = NULL;
 
-    // We initialize the newly created element
-    newElement->name = name;		
-    newElement->resource = g_strdup(resource);	
-    newElement->value = g_strdup(value); // Thanks glib ;-)
-    newElement->next = NULL;
-
-//    printf("3\n");
-
-    if(*list == NULL) {           
-	
-	*list = newElement;
-
-//        printf("4\n");
-
-        return newElement;
-
-    } else { // We are adding the new element in the end of the list
-
-        attrl *temp = *list;
-
-//    	printf("5\n");
-
-        while(temp->next != NULL) {
-	    
-//  	    printf(".");
-
-            temp = temp->next;
-        }  
-	
-//	printf("\n");    
-
-//	printf("6\n");
-
-        temp->next = newElement;
-
-//	printf("7\n");
-
-        return newElement;
-    }
+  if(*list == NULL) {           
+	  *list = new_element;
+    return new_element;
+  } else { 
+    // We are adding the new element in the end of the list
+    attrl *temp = *list;
+    while(temp->next != NULL) {
+      temp = temp->next;
+    }  
+    temp->next = new_element;
+    return new_element;
+  }
 }
-
-
 
 // returns 1 if the attribute is found in pattern, otherwise it returns 0
 int isAnAttributeOf(char* name, struct attrl *pattern) {
 	struct attrl *iterator;
 	iterator = pattern;
-	while (iterator != NULL){
-	
+	while (iterator != NULL){	
 		if (!strcmp(name, iterator->name)){	// If the attribute name is found
 			return 1;
 		} 
-
 	iterator = iterator->next;
-
 	}
 	return 0;
 }
 
-void oar_toPbsStatus(int lastEvent, char **state, char **exit_status){	// Only the first character of the returned result will be user !!
+void oar_toPbsStatus(int lastEvent, char **state, char **exit_status) {	// Only the first character of the returned result will be use !
 
 	char *value = NULL;
 	
-		
-
 	if (!strcmp(*state, "Terminated")){	/*OK*/
 			*state = g_strdup("C(Terminated)");	
 			*exit_status = g_strdup(JOB_EXEC_OK);
 	} else if (!strcmp(*state, "Hold")){	/*OK*/
-			if (lastEvent == FRAG_JOB_REQUEST) {	// A small trick to overcome the fact that OAR return the state "Error" after a FRAG JOB REQUEST but not always quickly
+			if (lastEvent == FRAG_JOB_REQUEST) {	
+        // A small trick to overcome the fact that OAR return the state "Error" after a FRAG JOB REQUEST but not always quickly
 				*state = g_strdup("E(Error : FRAG_JOB_REQUEST)");
 				*exit_status = g_strdup(JOB_EXEC_CMDFAIL);
 			} else {
@@ -301,7 +255,6 @@ attrl *oar_toPbsAttributes(int lastEvent, attrl *oar_attr_list){
 		value = iterator->value;
 		next = iterator->next;
 
-
 		if (!strcmp(name, "state")){	
 			iterator->name = g_strdup(ATTR_state);
 			state = &(iterator->value);
@@ -311,10 +264,7 @@ attrl *oar_toPbsAttributes(int lastEvent, attrl *oar_attr_list){
 			exit_code = &(iterator->value);
 		} 
 
-
-
-	iterator = iterator->next;
-
+	  iterator = iterator->next;
 	}
 
 	oar_toPbsStatus(lastEvent, state, exit_code);
@@ -322,6 +272,7 @@ attrl *oar_toPbsAttributes(int lastEvent, attrl *oar_attr_list){
 	return oar_attr_list;
 }
 
+// TODO comment
 int string2event(char *eventName){
 
 	int value;
@@ -337,25 +288,21 @@ int string2event(char *eventName){
 	return value;
 }
 
+// TODO comment
 char *event2string(int event){
-
 	char* value;
 
 	switch(event){
-
-	   case OUTPUT_FILES : 
-		value = g_strdup("OUTPUT_FILES");
-		break;
-
-	   case FRAG_JOB_REQUEST : 
-		value = g_strdup("FRAG_JOB_REQUEST");
-		break;	
-
-	   default : 
-		value = g_strdup("UNKNOWN_EVENT");
-		break;
+    case OUTPUT_FILES : 
+		  value = g_strdup("OUTPUT_FILES");
+		  break;
+	  case FRAG_JOB_REQUEST : 
+		  value = g_strdup("FRAG_JOB_REQUEST");
+		  break;	
+	  default : 
+		  value = g_strdup("UNKNOWN_EVENT");
+		  break;
 	}
-
 	return value;	
 }
 
@@ -370,43 +317,31 @@ int oar_getLastEvent(presult *source){
 	
 	if (source == NULL) return UNKNOWN_EVENT;
 
-	while (iterator != NULL){
-		
+	while (iterator != NULL){	
 		if (!strcmp(iterator->key, "events")){
 			lastEvent = iterator->compValue;
-
 			if (lastEvent == NULL) return UNKNOWN_EVENT;
-
 			// If there is at least one event, we search for the last one
-			while (lastEvent->next != NULL) lastEvent = lastEvent->next;
-			
+			while (lastEvent->next != NULL) lastEvent = lastEvent->next;			
 			lastEventDetails = lastEvent->compValue;
-			
 			if (lastEventDetails == NULL) return UNKNOWN_EVENT;
-
 			while (lastEventDetails != NULL){
-		
 				if (!strcmp(lastEventDetails->key, "type")){
 					return string2event((lastEventDetails)->immValue.s);
 				}
-		
 				lastEventDetails = lastEventDetails->next;
 			}
-			
 			// If we haven't found a field named "type"
 			return UNKNOWN_EVENT;
-			
 		}
-		
 		iterator = iterator->next;
 	}
-
 	// If we haven't found a field named "events"
 	return UNKNOWN_EVENT;
 
 }
 
-
+//TODO better comment
 // converts a presult variable to the attrl format (ONLY THE IMMEDIAT VALUES WILL BE CONVERTED because attrl does not support complex values (objects and arrays))
 // if pattern == NULL the all the immediat values (integer, float, string) will be saved in the attrl format, otherwise, only the attributes listed in the pattern shall be converted
 struct attrl *presult2attrl(presult *source, struct attrl *pattern){
@@ -414,21 +349,12 @@ struct attrl *presult2attrl(presult *source, struct attrl *pattern){
 	attrl *result = NULL;
 	presult *iterator;	
 	char *value;	
-	// char value[200]; // Should we initialize it as a table of char, big enough to hold all converted characters ??
-
-//	printf(":: PRESULT2ATTRL : CHKPT 1\n");
 
 	if (source == NULL) {
 		return NULL;
 	}
 
-//	printf(":: PRESULT2ATTRL : CHKPT 2\n");
-
 	iterator = source;
-
-//	printf(":: PRESULT2ATTRL : CHKPT 3\n");
-	
-//	int i = 0;	
 	int iteratorType;
 
 	// Test
@@ -465,12 +391,7 @@ struct attrl *presult2attrl(presult *source, struct attrl *pattern){
 		iterator = iterator->next;
 
 	}
-	
-//	printf(":: PRESULT2ATTRL : CHKPT 4\n");
-	
-
 	return result;
-
 }
 
 
@@ -498,9 +419,6 @@ char * pbs_default(void){
 	return PBS_DEFAULT;
 }
 
-
-
-
 // delete a pbs batch job  
 int pbs_deljob(int connect, char *job_id, char *extend){
 	
@@ -514,14 +432,14 @@ int pbs_deljob(int connect, char *job_id, char *extend){
 
 	// PBS_DEFAULT should be changed into pbs_server
 
-	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+	strncat(full_url, OAR_API_BASE_URL , strlen(OAR_API_BASE_URL ));	
 
 	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));	
 
-  	strncat(full_url, job_id, strlen(job_id));
+  strncat(full_url, job_id, strlen(job_id));
 
 	exchange_result *res;
-	res = oar_request_transmission (full_url, "DELETE", NULL);
+	res = oar_request_transmission ("jobs", "DELETE", NULL);
 
 	// 0 if everything is OK, otherwise the error number (see pbs_error.h)
 	switch (res->code) {	// Est ce qu'il y a une possibilité de remonter directement le code OAR ??
@@ -552,7 +470,6 @@ int pbs_deljob(int connect, char *job_id, char *extend){
 	return retcode;	
 }
 
-
 // disconnect from a pbs batch server  
 int pbs_disconnect(int connect){
 
@@ -561,8 +478,6 @@ int pbs_disconnect(int connect){
 	return PBSE_NONE;	// We are not using this variable for the moment
 
 }
-
-
 
 // get error message for last pbs batch operation 
 char * pbs_geterrmsg(int connect){
@@ -588,7 +503,7 @@ int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend){
 
 	// PBS_DEFAULT should be changed into pbs_server
 
-	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+	strncat(full_url, OAR_API_BASE_URL , strlen(OAR_API_BASE_URL ));	
 
 	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));	
 
@@ -647,7 +562,7 @@ int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend){
 
 	// PBS_DEFAULT should be changed into pbs_server
 
-	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+	strncat(full_url, OAR_API_BASE_URL , strlen(OAR_API_BASE_URL ));	
 
 	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));	
 
@@ -787,7 +702,10 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 	// if attrl != NULL -> return the attributes whose names are pointed by the attrl member "name".
 	
 	if (id == NULL) {	// return the status of all jobs
-		
+	
+printf("WARNNING !!!!!\n");
+
+	
 		return NULL;		
 		
 	} else {	// If it's a job id (see difference between queue and job IDs in OAR)  <- queue ID not implemented
@@ -800,7 +718,7 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 
 	// PBS_DEFAULT should be changed into pbs_server
 
-	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+	strncat(full_url, OAR_API_BASE_URL , strlen(OAR_API_BASE_URL ));	
 
 	strncat(full_url, "/oarapi/jobs/", strlen("/oarapi/jobs/"));
 
@@ -812,11 +730,11 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 
 	printf("STAT JOB FULL URL = %s\n", full_url);
 
-//	printf("CHKPT 2 : ID = %s\n", id);	
+	printf("CHKPT 2 : ID = %s\n", id);	
 	
 	res = oar_request_transmission (full_url, "GET", NULL);
 
-//	printf("CHKPT 3 : ID = %s\n", id);
+	printf("CHKPT 3 : ID = %s\n", id);
 
 //	printf("STAT JOB CHKPT 1\n");	
 
@@ -825,75 +743,46 @@ struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, ch
 		return NULL;
 	}
 	// Everything is OK
-
-//	printf("CHKPT 4 : ID = %s\n", id);
-
-//	printf("STAT JOB CHKPT 2\n");
 	
 	// convert the res->code from presult to the attrl format (ONLY THE IMMEDIAT VALUES WILL BE CONVERTED because attrl does not support complex values (objects and arrays)) 
 	printf("JOB INFORMATION IN PRESULT FORMAT :\n");
 	showResult(res->data);
 	//attributes = presult2attrl(res->data,attrib);
 	attributes = oar_toPbsAttributes(oar_getLastEvent(res->data), presult2attrl(res->data,attrib));
-//	printf("STAT JOB CHKPT 3\n");
 	
 	id = id2;
 	bstatus->name = id;
 	bstatus->next = NULL;
 	bstatus->attribs = attributes;
-	bstatus->text = g_strdup("OAR : NO COMMENTS");	// In order to avoir freeing problems in pbs_statfree
-
-//	printf("STAT JOB CHKPT 4\n");
-
-//	printf("CHKPT 5 : ID = %s\n", id);
-
-
-	
-/*	
-	
-	printf("\n\nBEFORE RETURNING STATUS \n\n");
-
-	printf("STAT JOB CHKPT 3\n");	
-	printf("text: %s\n", bstatus->text);
-	printf("local id = %s", id);
-
-	printf("STAT JOB CHKPT 4\n");
-	printf("name: %s\n", bstatus->name);
-*/
+	bstatus->text = g_strdup("OAR : NO COMMENTS");	//In order to avoir freeing problems in pbs_statfree
 
 	printf("ATTRIBUTES AFTER CONVERSION :\n");
 	showAttributes(attributes);
 	
-//	printf("STAT JOB CHKPT 5\n");
-
-//	showBatchStatus(bstatus);
-
+  //showBatchStatus(bstatus);
 
 	printf("**PBS_STATJOB END\n");
 
 	return bstatus;
 }
 
-
-						// ** NOT IMPLEMENTED ** //
+						// ** NOT IMPLEMENTED ** // TODO to remove ???
 // obtain status of pbs batch queues
+// Ce n'est pas possible en ce moment via la OAR-API à moins de faire un parcours des infos de toutes les jobs et construire 
+// la liste des files à partir de ça ou créer une autre fonctions dans OAR-API pour faire ça	
+
 struct batch_status *pbs_statque(int connect, char *id, struct attrl *attrib, char *extend){
-
 	printf("**PBS_STATQUE BEGIN\n");
-	printf("!! no queue information are available in OAR, for the time being !! \n");
+	printf("!! Upto now, there are no queue information available in OAR !\n");
 	printf("**PBS_STATQUE END\n");
-	
-	return NULL;	// Ce n'est pas possible en ce moment via la OAR-API à moins de faire un parcours des infos de toutes les jobs et construire la liste des files à partir de ça
-			// ou créer une autre fonctions dans OAR-API pour faire ça	
-
-
+	return NULL;	
 }
 
 						// ** NOT IMPLEMENTED ** //
 // obtain status of a pbs batch server
 struct batch_status *pbs_statserver(int connect, struct attrl *attrib, char *extend){
 	printf("**PBS_STATSERVER BEGIN\n");
-	printf("!! no server information are available in OAR, for the time being !! \n");
+	printf("Upto now, there are no server information available in OAR !\n");
 	printf("**PBS_STATSERVER END\n");
 	return NULL;
 }
@@ -1046,11 +935,6 @@ char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, 
 			
 		} else if (!strcmp(name, ATTR_l)){	/* The wanted resources : "resource" */
 
-			
-
-			
-
-
 			if (!strcmp(resource, "walltime")){		/* Execution time : "reservation" */
 			
 				walltime = value;	// To be checked if it is working correctly or not !!			
@@ -1069,10 +953,6 @@ char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, 
 				strncat(resourceBuffer, json_strescape(value) , strlen(json_strescape(value)));
 
 			}
-
-
-
-
 			
 		} else if (!strcmp(name, ATTR_M)){	/* The notification e-mail : "notify" */
 
@@ -1120,9 +1000,8 @@ char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, 
 
 	}
 
-
 	/* Special treatment of the resource attribute */	
-
+  //TODO the default behaviour must not be addressed here !!!
 	if (resource_ok == 0){	// If we haven't asked for a resource, we take the default job (nodes=1,cpu=1)
 		strncpy(resourceBuffer, "\\/nodes=1\\/cpu=1", strlen("\\/nodes=1\\/cpu=1")+1);
 		resource_ok = 1;
@@ -1154,15 +1033,9 @@ char *oarjob_from_pbscontext(int connect, struct attropl *attrib, char *script, 
 		return NULL;
 	}
 	
-
-
-	
 	return jobBuffer;
-	
-
 	// JSON JOB REQUEST --> It should be adapted to the user request
 	//return "{\"script_path\":\"\\/usr\\/bin\\/id\",\"resource\":\"\\/nodes=2\\/cpu=1\"}";	
-
 }
 
 // Issue a batch request to submit a new batch job.
@@ -1200,7 +1073,7 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 
 	// PBS_DEFAULT should be changed into pbs_server
 
-	strncat(full_url, "192.168.0.1", strlen("192.168.0.1"));	
+	strncat(full_url, OAR_API_BASE_URL , strlen(OAR_API_BASE_URL ));	
 
 	strncat(full_url, "/oarapi/jobs", strlen("/oarapi/jobs"));
 	

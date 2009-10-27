@@ -29,76 +29,58 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include "presult.h"
 
-
-
-
-
-
 void UpCase(char *string);
 
 
 // Adds a new element to the presult list (in the end)
 presult *addElement(presult **list, char* key) { 
 
-    // We create a new presult element
-    presult *newElement = malloc(sizeof(presult));
+  // We create a new presult element
+  presult *newElement = malloc(sizeof(presult));
 
-    if(!newElement) exit(EXIT_FAILURE); // If we don't have enough memory     
+  if(!newElement) exit(EXIT_FAILURE); // If we don't have enough memory     
 
-    // We initialize the new created element
-    newElement->key = key;		// It can be NULL (useful for some "twisted" values like "events", ...)
-    newElement->type = UNKNOWN;		// TO BE CHANGED after calling the addElement function
-    newElement->compValue = NULL;
+  // We initialize the new created element
+  newElement->key = key;		// It can be NULL (useful for some "twisted" values like "events", ...)
+  newElement->type = UNKNOWN;		// TO BE CHANGED after calling the addElement function
+  newElement->compValue = NULL;
 
-    // C'est le dernier element
-    newElement->next = NULL;
-    
+  // C'est le dernier element
+  newElement->next = NULL;
+  
 
-    if(*list == NULL) { // If list is already empty
-	
-         
-	
-	*list = newElement;	// !!!  IS IT REAALLY NECESSARY TO KEEP THIS COMMAND
-        return newElement;
-
-    } else { // We are adding the new element in the end of the list
-        
-    
-
-        presult *temp = *list;	
-
-        while(temp->next != NULL) {
-
-            temp = temp->next;
-        }    
-
-        temp->next = newElement;
-
-        return newElement;
-    }
+  if(*list == NULL) { // If list is already empty
+    *list = newElement;	// !!!  IS IT REAALLY NECESSARY TO KEEP THIS COMMAND
+    return newElement;
+  } else { 
+    // We are adding the new element in the end of the list
+    presult *temp = *list;	
+    while(temp->next != NULL) {
+      temp = temp->next;
+    }    
+    temp->next = newElement;
+    return newElement;
+  }
 }
 
 // extract the value of the given attribute identifier
 char *extractStringAttribute(presult *list, char* key){
 	presult *tmp;
-    	tmp = list;	
+  tmp = list;	
 	char *attribute;
     
- //   printf("ShowResult, more Info: list = %p\n", list);     
+  //   printf("ShowResult, more Info: list = %p\n", list);     
+  attribute = NULL;
 
-    attribute = NULL;
-
-    while(tmp != NULL) {
-        
-
-	if (tmp->type == STRING){
-		if (!strcmp(key, tmp->key)){	// If the key is found
-			attribute = (tmp->immValue).s;
-		}  
-	}		 	
+  while(tmp != NULL) {
+	  if (tmp->type == STRING){
+		  if (!strcmp(key, tmp->key)){	// If the key is found
+			  attribute = (tmp->immValue).s;
+		  }  
+	  }		 	
  	
-        tmp = tmp->next;    
-    }
+    tmp = tmp->next;    
+  }
 
 	return g_strdup(attribute);
 }
@@ -261,23 +243,16 @@ void removeResult(presult list) {
 
 */
 
-
-
 // Puts all the characters into upper case
 void UpCase(char *string)
 {
   register int t;
-
   for(t=0; string[t]; ++t)  {
     string[t] = toupper(string[t]);
   }
 }
 
-
-
 // !!! A NON-USED FUNCTION (not for the time being, but maybe in the next OAR DRMAA version) !!!
-
-
 // Prints the DRMAA state of the job (conversion of OAR states) 
 void getDrmaaState(presult *list){ 
 

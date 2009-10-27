@@ -1,4 +1,9 @@
 * need some work to be really usable
+* for drmaa lib compilation process need to install pbs includes
+
+* curl + multithread + SSL (caution need to provide locking callback function) not impleted use tunnel indeed
+
+* change java-style name function 
 * too hardcoded paramaters (for oarapi connection)
 * factorize connection
 * debug 
@@ -6,3 +11,7 @@
 * sending signal
 * comment code
 * docs
+
+* notes pour l'experimentation avec le 
+su passwd baygon < echo
+ssh baygon@129.88.69.6 -L8888:129.88.69.6:80

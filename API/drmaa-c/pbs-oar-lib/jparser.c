@@ -1,6 +1,5 @@
 /******************************************************************
 
-
 OAR DRMAA-C : A C library for using the OAR DRMS
 Copyright (C) 2009  LIG <http://www.liglab.fr/>
 
@@ -21,8 +20,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 **********************************************************************/
 
-
-
 /**
 	JSON parser v2 : we create a Linked list for the received JSON stream 
 */
@@ -33,11 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <json-glib/json-glib.h>
 #include "jparser.h"
 
-
 static void putIntoResultList(JsonNode *node, presult **result);
 static int load_json(const gchar *file);
-
-
 
 // Loads a JSON stream from a file, parses it and give back the result
 static int load_json(const gchar *file) {
@@ -66,12 +60,10 @@ static int load_json(const gchar *file) {
   }
 
   root = json_parser_get_root (parser);
-
   
   // We fill result with the stream data
   putIntoResultList(root, &result);     //print_json(root);
   result = result->compValue;		// We delete the fictional first element      !! SHOULD WE FREE SOME SPACE ??!!
-
 
   // Give back the result
   showResult(result);
@@ -114,41 +106,36 @@ jresult *load_json_from_stream(const gchar *stream) {
   }
 
   root = json_parser_get_root (parser);
-
   
   // We fill result with the stream data
   putIntoResultList(root, &result);     //print_json(root);
   result = result->compValue;		// We delete the fictional first element      !! SHOULD WE FREE SOME SPACE ??!!
 
- // manipulate the object tree and then exit
-//  g_object_unref (parser);
+  // manipulate the object tree and then exit
+  //  g_object_unref (parser);
 
   res->status = EXIT_SUCCESS;
   res->data = result;
   
-//  g_print ("After puttting into structure\n");
-// showResult(res->data);
+  //  g_print ("After puttting into structure\n");
+  // showResult(res->data);
 
   return res;
 }
 
-
 static void putObjectIntoResultList(JsonObject *object, presult **result) {
 	
-
   GList *next = NULL;
   GList *members = NULL;
   presult *currentElement;
 
   next = members = json_object_get_members(object);
 
-
   while( next ) {
-
-	currentElement = addElement(result, (const gchar*)next->data);
-	JsonNode *node = json_object_get_member(object,(const gchar*)next->data);
-	putIntoResultList(node, &currentElement);
-	next = next->next;
+	  currentElement = addElement(result, (const gchar*)next->data);
+	  JsonNode *node = json_object_get_member(object,(const gchar*)next->data);
+	  putIntoResultList(node, &currentElement);
+	  next = next->next;
   }
 
   g_list_free(members);		// We free some space
@@ -163,11 +150,10 @@ static void putArrayIntoResultList(JsonArray *array, presult **result) {
 
   elements = json_array_get_elements (array);
 
-
   for (l = elements; l != NULL; l = l->next) {
-	JsonNode *element = l->data;
-	currentElement = addElement(result, NULL);
-	putIntoResultList(element, &currentElement);    
+  	JsonNode *element = l->data;
+  	currentElement = addElement(result, NULL);
+  	putIntoResultList(element, &currentElement);    
   }  
 
   g_list_free(elements);	/// We free some space
@@ -180,79 +166,82 @@ static void putIntoResultList(JsonNode *node, presult **result) {
   switch( JSON_NODE_TYPE(node) ) {
 
   	case JSON_NODE_OBJECT:
-	(*result)->type = COMPLEX;	// TYPE = COMPLEX
-	putObjectIntoResultList(json_node_get_object(node), &((*result)->compValue));	
+  	  (*result)->type = COMPLEX;	// TYPE = COMPLEX
+	    putObjectIntoResultList(json_node_get_object(node), &((*result)->compValue));	
     	break;
 
- 	case JSON_NODE_ARRAY:
-	(*result)->type = COMPLEX;	// TYPE = COMPLEX
-	putArrayIntoResultList(json_node_get_array(node), &((*result)->compValue));   
-	break;
+ 	  case JSON_NODE_ARRAY:
+	    (*result)->type = COMPLEX;	// TYPE = COMPLEX
+	    putArrayIntoResultList(json_node_get_array(node), &((*result)->compValue));   
+	    break;
 
   	case JSON_NODE_VALUE:
-    	switch(json_node_get_value_type(node)) {	// For the moment, the only used type in the OAR-API is String (char*) with the exception of "array_index" which is an Integer
+    	switch(json_node_get_value_type(node)) {	
+      // For the moment, the only used type in the OAR-API is String (char*) 
+      // with the exception of "array_index" which is an Integer
 
     		case G_TYPE_BOOLEAN:{
-      		gboolean value = json_node_get_boolean(node);
+      		  gboolean value = json_node_get_boolean(node);
 		
-			if (value){
-				(*result)->type = INTEGER;	// Boolean will be converted to Integer
-				(*result)->immValue.i = 1;	
-			} else {
-				(*result)->type = INTEGER;
-				(*result)->immValue.i = 0;	
-			}
-      		}break;
+			      if (value){
+				      (*result)->type = INTEGER;	// Boolean will be converted to Integer
+				      (*result)->immValue.i = 1;	
+			      } else {
+				      (*result)->type = INTEGER;
+				      (*result)->immValue.i = 0;	
+			      }
+      		}
+          break;
 
-   		case G_TYPE_INT:
-		(*result)->type = INTEGER;
-		(*result)->immValue.i = json_node_get_int(node);
-		break;
+   		  case G_TYPE_INT:
+		      (*result)->type = INTEGER;
+		      (*result)->immValue.i = json_node_get_int(node);
+		      break;
 
     		case G_TYPE_LONG:
-		(*result)->type = INTEGER;
-		(*result)->immValue.i = json_node_get_int(node);
+		      (*result)->type = INTEGER;
+		      (*result)->immValue.i = json_node_get_int(node);
       		break;
 
     		case G_TYPE_UINT:
-		(*result)->type = INTEGER;
-		(*result)->immValue.i = json_node_get_int(node);
-		break;
+		      (*result)->type = INTEGER;
+		      (*result)->immValue.i = json_node_get_int(node);
+		      break;
 
     		case G_TYPE_ULONG:
-		(*result)->type = INTEGER;
-		(*result)->immValue.i = json_node_get_int(node);
+		      (*result)->type = INTEGER;
+		      (*result)->immValue.i = json_node_get_int(node);
       		break;
 
     		case G_TYPE_ENUM:
       		break;
 
     		case G_TYPE_STRING:
-		(*result)->type = STRING;
-		(*result)->immValue.s = json_node_get_string(node);
+		      (*result)->type = STRING;
+		      (*result)->immValue.s = json_node_get_string(node);
       		break;
 
     		case G_TYPE_FLOAT:	
-		(*result)->type = FLOAT;
-		(*result)->immValue.f = json_node_get_double(node);
+		      (*result)->type = FLOAT;
+		      (*result)->immValue.f = json_node_get_double(node);
       		break;
 
     		case G_TYPE_DOUBLE:
-		(*result)->type = FLOAT;
-		(*result)->immValue.f = json_node_get_double(node);
+		      (*result)->type = FLOAT;
+		      (*result)->immValue.f = json_node_get_double(node);
       		break;
 
     		case G_TYPE_POINTER:
-		break;
+		      break;
 
     		case G_TYPE_BOXED:
-		break;
+		      break;
 
     		case G_TYPE_PARAM:
-		break;
+		      break;
 
     		case G_TYPE_OBJECT:
-		break;
+		      break;
 
     		default:
       		g_print("unsupported type!\n");
@@ -261,8 +250,8 @@ static void putIntoResultList(JsonNode *node, presult **result) {
     	break;
 
   	case JSON_NODE_NULL:
-	(*result)->type = STRING;
-	(*result)->immValue.s = "NULL";	
+	    (*result)->type = STRING;
+	    (*result)->immValue.s = "NULL";	
     	break;
 
   	default:

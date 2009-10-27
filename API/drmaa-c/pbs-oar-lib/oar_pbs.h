@@ -29,14 +29,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pbs_error.h"
 #include "oar_exchange.h" 	// A JSON parser for OAR-API responses
 
+#define MAX_OAR_URL_LENGTH 200
 
 // A set of type definition in order to make their use easier
 typedef struct batch_status batch_status;
 typedef struct attrl attrl;
 typedef struct attropl attropl;
-
-
-
 
 // List of PBS functions used in the PBS DRMAA
 int pbs_connect(char *server);
@@ -81,9 +79,5 @@ int pbs_errno;
 void show_BatchStatus(batch_status *status);					// A test function to show the content of a batch_status structure
 
 attrl *addNewAttribute(attrl **list, char* name, char* resource, char* value); 	// Add a new attribute to a PBS ATTRIBUTE LIST
-
-
-
-extern int MAX_OAR_URL_LENGTH;
 
 #endif

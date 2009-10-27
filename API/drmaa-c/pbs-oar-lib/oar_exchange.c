@@ -1,6 +1,5 @@
 /******************************************************************
 
-
 OAR DRMAA-C : A C library for using the OAR DRMS
 Copyright (C) 2009  LIG <http://www.liglab.fr/>
 
@@ -21,8 +20,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 **********************************************************************/
 
-
-
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
@@ -38,20 +35,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   #define CURLE_HTTP_RETURNED_ERROR CURLE_HTTP_NOT_FOUND
 #endif
 
-#define MAX_OAR_URL_LENGTH 200
-#define MAX_BODY_SIZE      20000
+//#define DEFAULT_OARAPI_URL "http://localhost/oarapi"
+#define DEFAULT_OARAPI_URL "http://localhost/oarapi"
+
+#define MAX_BODY_SIZE 20000 //do we remove it ? TODO
+
+static char *oar_api_url;
 
 
 static char *username, *password;
-
-
-void toUpperCase(char *instruction)
-{
-      	for (; *instruction !='\0'; instruction++){
-      		*instruction = toupper(*instruction);
-	}	
-}
-
 
 size_t headerHandler(void *buffer, size_t size, size_t nmemb, int *output) {
  // int *rq = (int *)output;
@@ -75,20 +67,15 @@ size_t headerHandler(void *buffer, size_t size, size_t nmemb, int *output) {
 //	printf("UNKNOWN HTTP HEADER FORM, bytes = %d\n",bytes);
 //	printf("BUFFER = %s\n",(char *)buffer);
   }
-  
 
   return bytes;
 }
 
-
 size_t bodyHandler(void *buffer, size_t size, size_t nmemb, char *output) {
+
 //  char *stream = (char *)output;
 //  char *stream;
-
-
-
 // *output = *((char *) buffer);
-
   size_t bytes = size * nmemb;
 //  printf("DATA BUFFER1 = %s\n",(char *)buffer);
 //  stream = strcat(stream,buffer);
@@ -99,7 +86,9 @@ size_t bodyHandler(void *buffer, size_t size, size_t nmemb, char *output) {
   return bytes;
 }
 
-
+void oarapi_init() {
+  *oar_api_url = DEFAULT_OARAPI_URL;
+}
 
 exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DATA) {
 
@@ -113,10 +102,7 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
 
   int headerStatus;
   char stream[MAX_BODY_SIZE];	// Perhaps we should use malloc instead of this ?! 
-  strcpy(stream, "");
-
-
-
+  strcpy(stream, ""); //TODO ???
 
   if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     fprintf(stderr, "curl_global_init() failed\n");
@@ -142,7 +128,9 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
 
   //  curl_global_init(CURL_GLOBAL_ALL);
 
-  curl_easy_setopt(curl, CURLOPT_URL, URL);
+ // curl_easy_setopt(curl, CURLOPT_URL, URL);
+  
+ curl_easy_setopt(curl, CURLOPT_URL, oar_api_url);
 
   // send header and all data to these functions
   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, headerHandler);
@@ -158,60 +146,52 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
 		char content_type[]="Content-Type: application/json";
 		
 		// set content type header
-                headers = curl_slist_append(headers, content_type);
+    headers = curl_slist_append(headers, content_type);
 		// set options 
-                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-                curl_easy_setopt(curl, CURLOPT_URL, URL);
-                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, DATA);
-                curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &curl_errorstr);
-                curl_easy_setopt(curl, CURLOPT_NOSIGNAL, TRUE);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_URL, URL);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, DATA);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &curl_errorstr);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, TRUE);
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
 
   } else if (!strcmp("PUT", OPERATION)) {        
 
 		curl_easy_setopt(curl, CURLOPT_PUT, TRUE);
 		curl_easy_setopt(curl, CURLOPT_READDATA, DATA);
-                curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, sizeof(DATA));
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, sizeof(DATA));
 		
 		// For the moment, we are using Virtualbox + OAR Live CD with the user baygon => we don't need a password 
 		                 
 		// curl_easy_setopt(curl, CURLOPT_USERPWD, password);
-                // curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST); 
-		
+    // curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST); 
 
   } else if (!strcmp("GET", OPERATION)) {
 		curl_easy_setopt(curl, CURLOPT_HTTPGET, TRUE);
   } else if (!strcmp("DELETE", OPERATION)) {
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
-		
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 	
   }else{
-	fprintf(stderr, "\nOperation inconnue : %s\n",OPERATION);
-	xr->code = 500; // Internal error
-    	xr->data = NULL;
-    	return xr; 
+	  fprintf(stderr, "\nOperation inconnue : %s\n",OPERATION);
+	  xr->code = 500; // Internal error
+    xr->data = NULL;
+    return xr; 
   }
 
-
   res = curl_easy_perform(curl);
-
 	
 	// We load the json parsing result from the stream 
 	jresult *jr;
 	jr = load_json_from_stream(stream);	
 
-
 	// We fill it with the received information
 	xr->code = headerStatus;	
 	xr->data = jr->data;
 
-
-  if (res!=0){
-	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
+  if (res!=0) {
+  	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
   }
 
   curl_easy_cleanup(curl);
-
   curl_global_cleanup();
 
   return xr;

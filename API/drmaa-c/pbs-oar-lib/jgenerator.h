@@ -1,6 +1,5 @@
 /******************************************************************
 
-
 OAR DRMAA-C : A C library for using the OAR DRMS
 Copyright (C) 2009  LIG <http://www.liglab.fr/>
 
@@ -21,13 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 **********************************************************************/
 
-
-
 #ifndef _J_GENERATOR_H
 #define _J_GENERATOR_H 
 
 #include <glib-object.h>
-
 
 // converts a string into JSON format
 gchar* json_strescape ();
