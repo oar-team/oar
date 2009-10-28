@@ -136,6 +136,7 @@ then
     echo "ServerName localhost" > $DISTRO_DIR/etc/apache2/conf.d/servername
     chroot $DISTRO_DIR bash -c "a2enmod ident" 
     chroot $DISTRO_DIR bash -c "a2enmod headers" 
+    chroot $DISTRO_DIR bash -c "a2enmod rewrite" 
     # Keyboard config
     cat > $DISTRO_DIR/etc/rc2.d/S99ask_keyboard <<EOS
 echo "***"
