@@ -238,7 +238,7 @@ SWITCH: for ($q) {
       }
       else {
         apilib::add_resources_uris($resources,$ext,"/sites/$site");
-        $resources = apilib::struct_resource_list($resources,$STRUCTURE);
+        $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
       }
       print $header;
       print $HTML_HEADER if ($ext eq "html");
@@ -271,7 +271,7 @@ SWITCH: for ($q) {
       }
       else {
         apilib::add_resources_uris($resources,$ext,"/sites/$site");
-        $resources = apilib::struct_resource_list($resources,$STRUCTURE);
+        $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
       }
       print $header;
       print $HTML_HEADER if ($ext eq "html");
