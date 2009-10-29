@@ -12,18 +12,18 @@ steps:
  - bootstrap
  - system_config
  - software_install
- #- oar_install
+ - oar_install
  - kernel_install
  - strip
- #- build_tgz
+ - build_tgz
  #- build_livecd
  - build_appliance:
    - create_raw_image
    - copy_system_tree
    - install_grub
    - save_as_raw
-  #- save_as_vmdk
+   - save_as_vmdk
    - save_as_qcow2
-  #- save_as_vdi
+   - save_as_vdi
    - clean
  - clean
