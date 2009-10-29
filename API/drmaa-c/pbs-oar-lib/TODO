@@ -39,6 +39,7 @@ export OARVMHOST=129.88.69.6
 
 gpg --keyserver wwwkeys.eu.pgp.net --recv-keys 9AA38DCD55BE302B
 apt-key add .gnupg/pubring.gpg
+apt-get update
 apt-get install curl libjson-glib-1.0-0 libglib2.0-0 gcc cmake make g++ libjson-glib-dev libglib2.0-dev libcurl4-openssl-dev python-pyrex
 
 scp -r drmaa-c baygon@$OARVMHOST:

@@ -981,11 +981,11 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	presult *iterator;
 	char full_url[MAX_OAR_URL_LENGTH];
 	char* jobId;	// returned value
-	char* JOB_DETAILS;
+	char* job_details;
 	int offlag = 0;	// OUTPUT FILES FLAG, Set to 1 if we have chosen to use our own output files (stdout, stderr) 
-	JOB_DETAILS = oarjob_from_pbscontext(connect, attrib, script, destination, extend, &offlag);
+	job_details = oarjob_from_pbscontext(connect, attrib, script, destination, extend, &offlag);
 
-	if (JOB_DETAILS == NULL){	// We have encountered a problem in attributes parsing phase
+	if (job_details == NULL){	// We have encountered a problem in attributes parsing phase
 		fprintf(stderr,"OAR_PBS_SUBMIT ERROR : ATTRIBUTES PARSING PROBLEM !!!,\nMAKE SURE YOU HAVE ASKED FOR A RESOURCE AND THAT YOU HAVE AT LEAST A SCRIPT OR A SCRIPT PATH !!!\n");
 		return NULL;
 	}
@@ -996,9 +996,10 @@ char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destin
 	strncat(full_url, "/oarapi/jobs", strlen("/oarapi/jobs"));
 	
 	DEBUG("SUBMISSION FULL URL = %s\n", full_url);
-	DEBUG("SUBMITTED JOB = %s\n", JOB_DETAILS);
+	DEBUG("SUBMITTED JOB = %s\n", job_details);
 
-	res = oar_request_transmission (full_url, "POST", JOB_DETAILS);
+	res = oar_request_transmission (full_url, "POST", job_details);
+  free(job_details);
 
 	if (res == NULL){
 		DEBUG0("SUBMISSION RESULT = NULL\n");
