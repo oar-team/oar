@@ -105,8 +105,13 @@ jresult *load_json_from_stream(const gchar *stream) {
     return res;
   }
 
-  root = json_parser_get_root (parser);
-  
+  root = json_parser_get_root(parser);
+ 
+  if (root == NULL)
+    {
+      printf("BOOM ???\n");
+    }
+ 
   // We fill result with the stream data
   putIntoResultList(root, &result);     //print_json(root);
   result = result->compValue;		// We delete the fictional first element      !! SHOULD WE FREE SOME SPACE ??!!

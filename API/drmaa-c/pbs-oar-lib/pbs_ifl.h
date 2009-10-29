@@ -425,9 +425,9 @@ extern int pbs_sigjob(int connect, char *job_id, char *signal, char *extend);
 
 extern void pbs_statfree(struct batch_status *stat);
 
-// Function does not exitst Bas van der Vlies
-// 
-// extern struct batch_status *pbs_statdest(int connect, char *id, char *extend);
+/* Function does not exitst Bas van der Vlies 
+extern struct batch_status *pbs_statdest(int connect, char *id, char *extend);
+*/
 
 extern struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend);
 

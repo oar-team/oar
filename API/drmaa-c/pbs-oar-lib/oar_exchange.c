@@ -97,6 +97,10 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
   char *ipstr=NULL;
   char curl_errorstr[CURL_ERROR_SIZE];
 
+
+  printf("OPERATION %s\n",OPERATION);
+  printf("URL %s\n", URL);
+
 // We create a new exchange_result element
    exchange_result *xr = malloc(sizeof(exchange_result));
 
@@ -128,9 +132,7 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
 
   //  curl_global_init(CURL_GLOBAL_ALL);
 
- // curl_easy_setopt(curl, CURLOPT_URL, URL);
-  
- curl_easy_setopt(curl, CURLOPT_URL, oar_api_url);
+ curl_easy_setopt(curl, CURLOPT_URL, URL);
 
   // send header and all data to these functions
   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, headerHandler);
@@ -167,6 +169,7 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
     // curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST); 
 
   } else if (!strcmp("GET", OPERATION)) {
+    printf("YOP\n");
 		curl_easy_setopt(curl, CURLOPT_HTTPGET, TRUE);
   } else if (!strcmp("DELETE", OPERATION)) {
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 	
@@ -178,19 +181,25 @@ exchange_result *oar_request_transmission (char *URL, char* OPERATION, char* DAT
   }
 
   res = curl_easy_perform(curl);
-	
+
+	if (res!=0) {
+  	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
+  }
+
 	// We load the json parsing result from the stream 
 	jresult *jr;
+  printf("DATA BUFFER2 = %s\n",stream);
+
 	jr = load_json_from_stream(stream);	
+
+
+
+
 
 	// We fill it with the received information
 	xr->code = headerStatus;	
 	xr->data = jr->data;
-
-  if (res!=0) {
-  	fprintf(stderr, "\n ERROR (%d) : %s \n",res, curl_errorstr);
-  }
-
+  
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 

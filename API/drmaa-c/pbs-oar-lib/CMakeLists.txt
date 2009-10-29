@@ -7,7 +7,6 @@ include_directories (/usr/include/glib-2.0 /usr/lib/glib-2.0/include /usr/includ
 
 # Sources List
 SET(PROJECT_SRCS
-
   presult.c
   presult.h
   jparser.c
@@ -23,19 +22,15 @@ SET(PROJECT_SRCS
 
 # Required Libraries List
 SET(PROJECT_LIBS
-
   curl 
   json-glib-1.0
   glib-2.0
   gobject-2.0  
 ) 
 
-
 # Output Library Path
-#SET (OUT "/usr/local")	# Should be fixed later so that it can be adapted to the PBS-DRMAA OUPUT PATH
-SET (OUT "/tmp/") 
+SET (OUT "/usr/local")	# Should be fixed later so that it can be adapted to the PBS-DRMAA OUPUT PATH
 SET (OUTPUT_PATH "${OUT}/lib")
-
 
 # Version
 SET(VERSION_MAJOR 2)
@@ -90,3 +85,11 @@ SET_TARGET_PROPERTIES("${PROJECT_NAME}-static" PROPERTIES
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${PROJECT_LIBS})	
 TARGET_LINK_LIBRARIES("${PROJECT_NAME}-static" ${PROJECT_LIBS})	
 #TARGET_LINK_LIBRARIES(${PROJECT_NAME} -Wl,-whole-archive "${PROJECT_NAME}-static" -Wl,-no-whole-archive ${PROJECT_LIBS})
+
+#need to finish TODO
+INSTALL(FILES pbs_error.h pbs_ifl.h DESTINATION ${OUT}/include)
+#INSTALL(TARGETS ${PROJECT_NAME} "${PROJECT_NAME}-static" 
+#  LIBRARY DESTINATION lib
+#  ARCHIVE DESTINATION lib
+#)
+

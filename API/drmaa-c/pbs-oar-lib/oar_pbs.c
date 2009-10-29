@@ -29,8 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define PBS_DEFAULT "localhost:8888"		// Default PBS/OAR Server Name
 
-#define OAR_API_BASE_URL "localhost:8888"
-
+//#define OAR_API_BASE_URL "localhost:8888"
+#define OAR_API_BASE_URL "localhost"
 #define MAX_OAR_JOB_LENGTH 300
 
 // EVENTS LIST
