@@ -1,4 +1,10 @@
-oargrid (2.2-1) unstable; urgency=low
+oargrid (2.2-3) unstable; urgency=low
+
+  * Bugfix: oargridsub didn't work anymore with oar >= 2.3 
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 29 Oct 2009 14:53:01 +0100
+
+oargrid (2.2-2) unstable; urgency=low
 
    * Bugfix: oargridstat -l <id> -Y reported the id twice
 
