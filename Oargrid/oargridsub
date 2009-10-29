@@ -338,7 +338,7 @@ while (($#clusterArguments >= 0) && ($endLoop == 0)){
     }
     
     # Submit command
-    my $cmd = "ssh $clusters{$i->{clusterName}}->{hostname} \"/bin/sh -c \\\"cd $directory && sudo -u $lusr oarsub -q $tmpQueue -r \\\\\\\"$tz_startDate\\\\\\\" -l $resources_def,walltime=$walltime";
+    my $cmd = "ssh $clusters{$i->{clusterName}}->{hostname} \"/bin/sh -c \\\"cd $directory && sudo -u $lusr oarsub -d $directory -q $tmpQueue -r \\\\\\\"$tz_startDate\\\\\\\" -l $resources_def,walltime=$walltime";
     if (defined($oar_keys)){
         #$cmd .= " --job-priv-key \'$private_ssh_key\' --job-pub-key \'$public_ssh_key\'";
         $cmd .= " -k --import-job-key-inline=\'$private_ssh_key\'";
