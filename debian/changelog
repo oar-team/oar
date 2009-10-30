@@ -1,3 +1,11 @@
+oar (2.4.0-1~35.gbp488361) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @488361a326668a7274a211acda74636bb0de2d39 **
+
+  * - New oargrid packages
+
+ -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Thu, 29 Oct 2009 16:39:15 +0100
+
 oar (2.4.0-1~34.gbp9ac4f7) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @9ac4f79f27572fa44222623d3eefd7e3435e44e1 **
