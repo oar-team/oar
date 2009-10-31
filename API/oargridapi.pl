@@ -229,14 +229,11 @@ SWITCH: for ($q) {
       else                          { $cmd = "$OARDODO_CMD $SSH_CMD $frontend \"oarnodes -D -s\""; }
       my $cmdRes = apilib::send_cmd($cmd,"Oarnodes on $frontend");
       my $resources = apilib::import($cmdRes,"dumper");
-      if (defined($2) && $2 =~ /\/([0-9]+)/) {
-        $resources = { @$resources[0]->{properties}->{network_address}
-           => { @$resources[0]->{resource_id} => @$resources[0] }}
-        }
       if ( !defined %{$resources} || !defined(keys(%{$resources})) ) {
         $resources = apilib::struct_empty($STRUCTURE);
       }
       else {
+        $resources = apilib::struct_resource_list_hash_to_array($resources);
         apilib::add_resources_uris($resources,$ext,"/sites/$site");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
       }
@@ -270,6 +267,7 @@ SWITCH: for ($q) {
         $resources = apilib::struct_empty($STRUCTURE);
       }
       else {
+        $resources = apilib::struct_resource_list_hash_to_array($resources);
         apilib::add_resources_uris($resources,$ext,"/sites/$site");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
       }

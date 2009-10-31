@@ -513,6 +513,24 @@ sub filter_resource_list($) {
   return $filtered_resources;
 }
 
+sub struct_resource_list_hash_to_array($) {
+  my $resources=shift;
+  my $array=[];
+  foreach my $r ( keys (%{$resources}) ){
+    if (defined($resources->{$r}->{resource_id})) {
+      push (@$array,$resources->{$r});
+    #oarnodes -s case
+    }else{
+      foreach my $id ( keys (%{$resources->{$r}})) {
+        push (@$array,{ 'state' => $resources->{$r}->{$id},
+                        'resource_id' => $id,
+                        'network_address' => $r});
+      }
+    }
+  }
+  return $array;
+}
+
 sub struct_resource_list($$$) {
   my $resources = shift;
   my $structure = shift;
