@@ -6,7 +6,7 @@ use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use POSIX;
 
-my $VERSION="0.1.7";
+my $VERSION="0.1.8";
 
 ##############################################################################
 # CONFIGURATION

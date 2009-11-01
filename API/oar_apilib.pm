@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.5";
+my $VERSION="0.2.6";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
