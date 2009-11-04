@@ -1,3 +1,11 @@
+oar (2.4.0-1~36.gbp996f70) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @996f70b625b4adfd14415ddd45fe9f5c1649c76d **
+
+  * New snapshot automaticaly created by git-build-package.sh
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 28 Oct 2009 17:50:38 +0100
+
 oar (2.4.0-1~35.gbpcc4176) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @cc41763b72fb248caa6e45bed7ba86446e500ebf **
