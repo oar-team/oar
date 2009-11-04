@@ -1,0 +1,1028 @@
+#!/usr/bin/perl
+
+use oargrid_lib;
+use oargrid_conflib;
+use Data::Dumper;
+use Getopt::Long;
+use strict;
+use warnings;
+use Time::Local;
+
+#Try to load XML module
+my $XMLenabled = 1;
+unless (eval "use XML::Simple qw(XMLout);1"){
+    $XMLenabled = 0;
+}
+    
+#Try to load YAML module
+my $YAMLenabled = 1;
+unless (eval "use YAML;1"){
+    $YAMLenabled = 0;
+}
+    
+my $gridpremsProperty = "gridPrems";
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
+#Prototypes
+sub usage();
+sub print_reservation($$);
+sub get_info_nodes($$);
+sub get_info_resources($$);
+sub get_resource_dead_range_date($$$);
+sub get_jobs_range_dates($$$$);
+sub get_jobs_gantt_scheduled($$$$);
+sub get_current_job_types($$);
+sub get_gantt_visu_date($);
+sub sql_to_local($);
+sub ymdhms_to_local($$$$$$);
+sub sql_to_ymdhms($);
+
+
+#$SIG{INT} = 'IGNORE';
+my $timeoutMysql = 30;
+
+# Get the user name
+if (!defined($ENV{SUDO_UID})){
+    die("[OAR_GRISUBD] I can not get user id\n");
+}
+my $lusr= getpwuid($ENV{SUDO_UID});
+
+# parse arguments
+my $sos;
+my $listNodes = 0;
+my $listKeys = 0;
+my @cluster;
+my $jobId;
+my $monitorMode;
+my $gantt;
+my $waitJobs;
+my $sleepTimeRetry = 5;
+my $maxPollingTime = 3600;
+my $dumperMode;
+my $XMLmode;
+my $YAMLmode;
+my $list_clusters;
+my $list_aliases;
+my $backward_compatible;
+my $version;
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions (
+            "help|h" => \$sos,
+            "list_nodes|l=i" => \$listNodes,
+            "list_keys|k=i" => \$listKeys,
+            "cluster|c=s" => \@cluster,
+            "job|j=i" => \$jobId,
+            "monitor" => \$monitorMode,
+            "gantt=s" => \$gantt,
+            "wait|w" => \$waitJobs,
+            "polling|p=i" => \$sleepTimeRetry,
+            "max_polling|m=i" => \$maxPollingTime,
+            "dumper|d" => \$dumperMode,
+            "DUMPER|D" => \$dumperMode,
+            "XML|X" => \$XMLmode,
+            "YAML|Y" => \$YAMLmode,
+            "list_clusters" => \$list_clusters,
+						"list_aliases" => \$list_aliases,
+				    "backward_compatible" => \$backward_compatible, 
+            "VERSION|V" => \$version
+           );
+
+if (defined($version)){
+    print("OARGRID version : ".oargrid_lib::get_version()."\n");
+    exit(0);
+}
+
+if ((defined($sos)) || (defined($jobId) && !defined($cluster[0]))){
+    usage();
+    exit(1);
+}
+
+if ($sleepTimeRetry < 5){
+    warn("Polling time must be greater than 5 seconds so I set it to 5.\n");
+    $sleepTimeRetry = 5;
+}
+
+if ($listKeys > 0) {
+  $listNodes=$listKeys;
+}
+
+my $exit_value = 0;
+# Initialize database connection
+oargrid_conflib::init_conf(oargrid_lib::get_config_file_name());
+my $DB_SERVER = oargrid_conflib::get_conf("DB_HOSTNAME");
+my $DB_BASE_NAME= oargrid_conflib::get_conf("DB_BASE_NAME");
+my $DB_BASE_LOGIN = oargrid_conflib::get_conf("DB_BASE_LOGIN");
+my $DB_BASE_PASSWD = oargrid_conflib::get_conf("DB_BASE_PASSWD");
+
+my $dbh = oargrid_lib::connect($DB_SERVER,$DB_BASE_NAME,$DB_BASE_LOGIN,$DB_BASE_PASSWD);
+
+# -l option
+if ($listNodes > 0 || $listKeys > 0){
+    my $priv_key;
+    my $pub_key;
+    my %readyNodes;
+    my %clusters = oargrid_lib::get_cluster_names($dbh);
+    my %resaInfo = oargrid_lib::get_reservation_informations($dbh,$listNodes);
+    my $alias_properties ="";
+    if (defined($cluster[0])) { 
+       $alias_properties=oargrid_lib::get_cluster_alias_properties($dbh,$cluster[0]);
+    }
+    foreach my $i (keys(%{$resaInfo{clusterJobs}})){
+        if ((!defined($cluster[0]) 
+	            || ($cluster[0] eq $i 
+		      || (defined($clusters{$cluster[0]}->{parent}) && $clusters{$cluster[0]}->{parent} eq $i) )
+	    ) 
+              && (defined($clusters{$i}))){
+            my $retry = 1;
+            my $nbRetry = 0;
+            while ($retry > 0){
+                my $jobEnded = 0;
+                my $oldout;
+                my $olderr;
+                open($oldout, ">&STDOUT");
+                open($olderr, ">&STDERR");
+                open(STDOUT, ">/dev/null");
+                open(STDERR, ">/dev/null");
+                eval{
+                    my $remoteDbh;
+                    $SIG{ALRM} = sub {oargrid_lib::disconnect($remoteDbh);die("alarm\n")};
+                    alarm($timeoutMysql);
+            
+                    $remoteDbh = oargrid_lib::connect($clusters{$i}->{dbHostname},$clusters{$i}->{dbName}, $clusters{$i}->{dbUser},$clusters{$i}->{dbPassword});
+                    my $whereClause = "" ;
+                    my $whereProps = "" ;
+                    foreach my $j (values(%{$resaInfo{clusterJobs}->{$i}})){
+                        if (!defined($jobId) || ($jobId == $j->{batchId})){
+                            $whereClause .= "$j->{batchId},";
+                        }
+                    }
+                    chop($whereClause);
+                    # Test if jobs are in Running state
+                    my %weights = ();
+                    my $sth;
+                    $sth = $remoteDbh->prepare("SELECT job_id,state
+                                                FROM jobs
+                                                WHERE
+                                                    job_id IN ($whereClause)");
+                    $sth->execute();
+                    while (my @ref = $sth->fetchrow_array()) {
+                        ##$weights{$ref[0]} = $ref[2];
+                        $weights{$ref[0]} = $resaInfo{clusterJobs}->{$i}->{$ref[0]}->{weight};
+                        if (defined($waitJobs)){
+                            if ($ref[1] ne "Running"){
+                                # if the job is already finished
+                                if (($ref[1] eq "Terminated") || ($ref[1] eq "Error")){
+                                    $jobEnded = $ref[0];
+                                }
+                                oargrid_lib::disconnect($remoteDbh);
+                                alarm(0);
+                                return;
+                            }
+
+                        }
+                    }
+                    $sth->finish();
+                    
+                    $retry = 0;
+
+                    if ($alias_properties ne "") {
+		        $whereProps .= " AND ". $alias_properties;
+		    }
+
+                    $sth = $remoteDbh->prepare("SELECT resources.network_address,moldable_job_descriptions.moldable_job_id
+                                                FROM assigned_resources, moldable_job_descriptions, resources
+                                                WHERE
+                                                    moldable_job_descriptions.moldable_job_id IN ($whereClause)
+                                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                                    AND resources.resource_id = assigned_resources.resource_id $whereProps");
+                    $sth->execute();
+                    while (my @ref = $sth->fetchrow_array()) {
+                        ##for (my $w = 0; $w < $weights{$ref[1]}; $w++){
+                        if (defined($resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name}) and ($resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name} ne "")){
+                            #push(@{$readyNodes{$i}{$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name}}{$ref[1]}}, $ref[0]);
+                            $readyNodes{$i}{$ref[1]}{name}=$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{name};
+                            push(@{$readyNodes{$i}{$ref[1]}{nodes}}, $ref[0]);
+                        }else{
+                            #push(@{$readyNodes{$i}{$resaInfo{clusterJobs}->{$i}->{$ref[1]}->{batchId}}{$ref[1]}}, $ref[0]);
+                            $readyNodes{$i}{$ref[1]}{name}="";
+                            push(@{$readyNodes{$i}{$ref[1]}{nodes}}, $ref[0]);
+                        }
+                        ##}
+                    }
+                    $sth->finish();
+
+                    $sth = $remoteDbh->prepare("SELECT ssh_private_key,ssh_public_key from challenges where job_id IN ($whereClause)");
+                    $sth->execute();
+                    while (my @ref = $sth->fetchrow_array()) {
+                       $priv_key=$ref[0];
+                       $pub_key=$ref[1];
+                    }
+
+                    oargrid_lib::disconnect($remoteDbh);
+                    alarm(0);
+                };
+                open(STDOUT, ">&", $oldout);
+                open(STDERR, ">&", $olderr);
+                if ($@){
+                    $exit_value = 2;
+                    $retry = 0;
+                    warn("$i mysql server timed out or was unreachable : $@\n");
+                }
+                
+                if ($jobEnded > 0){
+                    warn("ERROR: job $jobEnded is ended on cluster $i\n");
+                    $exit_value = 4;
+                    $retry = 0;
+                }
+                if (!defined($waitJobs)){
+                    $retry = 0;
+                }elsif($nbRetry * $sleepTimeRetry >= $maxPollingTime){
+                    warn("Max polling time reached\n");
+                    exit(3);
+                }elsif($retry > 0){
+                    warn("Not all jobs are running on $i, I wait $sleepTimeRetry seconds\n");
+                    sleep($sleepTimeRetry);
+                    $nbRetry++;
+                }
+            }
+        }
+    }
+    if (defined($dumperMode)){
+        print(Dumper(\%readyNodes));
+    }elsif(defined($XMLmode)){
+        if ($XMLenabled == 1){
+            #print(XMLout(\%readyNodes));
+            print("<opt>\n");
+            foreach my $xml_cluster (sort (keys(%readyNodes))) {
+                print("\t<cluster name=\"" . $xml_cluster . "\">\n");
+                foreach my $xml_name (sort (keys(%{$readyNodes{$xml_cluster}}))) {
+                    print("\t\t<job name=\"" . $xml_name . "\">\n");
+                    foreach my $xml_job (sort (keys(%{$readyNodes{$xml_cluster}{$xml_name}}))) {
+                        print("\t\t<job jobid=\"" . $xml_job . "\">\n");
+                        foreach my $xml_node (@{$readyNodes{$xml_cluster}{$xml_name}{$xml_job}}) {
+                                print("\t\t\t<node>" . $xml_node . "</node>\n");
+                        }
+                        print("\t\t</job>\n");
+                    }
+                }
+                print("\t</cluster>\n");
+            }
+            print("</opt>\n");
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exit_value = 5;
+        }
+    }elsif(defined($YAMLmode)){
+        if ($YAMLenabled == 1){
+            print(YAML::Dump(\%readyNodes));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exit_value = 6;
+        }
+    }else{
+      if ($listKeys > 0) {
+        my $key_path="/tmp/oargrid/oargrid_ssh_key_retrieved_$lusr"."_$listNodes";
+        open (FILE,">$key_path");
+        print FILE "$priv_key";
+        close(FILE);
+        open (FILE,">$key_path.pub");
+        print FILE "$pub_key";
+        close (FILE);
+        `chmod 600 $key_path`;
+        `sudo chown $lusr $key_path*`;
+        print "Key restored into $key_path\n"; 
+      }else {
+        foreach my $i (keys(%readyNodes)){
+            foreach my $j (keys(%{$readyNodes{$i}})){
+                foreach my $n (keys(%{$readyNodes{$i}{$j}})){
+                  if ($n ne "name") {
+                    foreach my $k (@{$readyNodes{$i}{$j}{$n}}){
+                    #for (my $weight=0; $weight < $resaInfo{clusterJobs}->{$i}->{$j}->{weight};$weight++){
+                        print("$k\n");
+                    #}
+                    }
+                  }
+                }
+            }
+        }
+        print("\n");
+      }
+    }
+
+# --list_clusters option
+}elsif(defined($list_clusters)){
+    my %clusterProperties = oargrid_lib::get_cluster_properties($dbh);
+    if(defined($XMLmode)){
+        if ($XMLenabled == 1){
+            print(XMLout(\%clusterProperties));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exit_value = 5;
+        }
+    }elsif(defined($YAMLmode)){
+        if ($YAMLenabled == 1){
+            print(YAML::Dump(\%clusterProperties));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exit_value = 6;
+        }
+    }else{
+        print(Dumper(\%clusterProperties));
+    }
+  
+# --list_aliases option
+}elsif(defined($list_aliases)){
+	 	my %cluster_aliases = oargrid_lib::get_all_cluster_aliases($dbh);
+    if(defined($XMLmode)){
+        if ($XMLenabled == 1){
+            print(XMLout(\%cluster_aliases));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exit_value = 5;
+        }
+    }elsif(defined($YAMLmode)){
+        if ($YAMLenabled == 1){
+            print(YAML::Dump(\%cluster_aliases));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exit_value = 6;
+        }
+    }else{
+        print(Dumper(\%cluster_aliases));
+    }
+  
+# --monitor or --gantt option
+}elsif(defined($monitorMode) || defined($gantt)){
+    my %clusters;
+    if ($backward_compatible) {
+      %clusters = oargrid_lib::get_cluster_aliases($dbh);
+    }
+    else {
+      %clusters = oargrid_lib::get_cluster_names($dbh);
+    }
+    my %pipeClusterList;
+ 
+    my @clustersToQuery;
+    if (defined($cluster[0])){
+        @clustersToQuery = @cluster;
+    }else{
+        @clustersToQuery = keys(%clusters);
+    }
+    
+    foreach my $i (@clustersToQuery){
+        #create PIPES for communication with childs
+        my $P1;
+        my $P2;
+        pipe($P1,$P2);
+        $pipeClusterList{$i} = $P1;
+        
+        if (fork() == 0){
+            # Child
+            close($P1);
+            #open(STDOUT, ">/dev/null");
+            #open(STDERR, ">/dev/null");
+            
+            # Test if the cluster exists!!
+            if (!defined($clusters{$i}->{dbHostname})){
+                warn("[ERROR] Unknown cluster $i\n");
+                close($P2);
+                exit(1);
+            }
+            
+            #$SIG{ALRM} = sub {die("alarm\n")};
+            #alarm($timeoutMysql);
+            # Timeout
+            my $father = $$;
+            my $child = fork();
+            if ($child == 0){
+                sleep($timeoutMysql);
+                kill(9, $father);
+                exit();
+            }
+
+            my %results;
+
+            my $remoteDbh = oargrid_lib::connect($clusters{$i}->{dbHostname},$clusters{$i}->{dbName}, $clusters{$i}->{dbUser},$clusters{$i}->{dbPassword});
+            
+            if (defined($monitorMode)){
+                #monitor queries
+                my %resTmp = get_info_nodes($remoteDbh,$clusters{$i}->{properties});
+                $results{nodes} = \%resTmp;
+                
+                # Get current job informations
+                my $sth;
+                my $clusterProperties=$clusters{$i}->{properties};
+                if (defined($clusterProperties) && $clusterProperties ne "") { $clusterProperties="AND $clusterProperties"; }
+                else { $clusterProperties = "";}
+                $sth = $remoteDbh->prepare(" SELECT *
+                                             FROM jobs j, assigned_resources p, resources r, moldable_job_descriptions m
+                                             WHERE (j.state=\"Waiting\"
+                                                OR    j.state=\"toLaunch\"
+                                                OR    j.state=\"Running\"
+                                                OR    j.state=\"Launching\"
+                                                OR    j.state=\"Suspended\"
+                                                OR    j.state=\"Resuming\"
+                                                OR    j.state=\"Hold\"
+                                                OR    j.state=\"toError\"
+                                                OR    j.state=\"toFinish\"
+                                                OR    j.state=\"toAckReservation\")
+                                                AND   p.moldable_job_id = j.assigned_moldable_job
+                                                AND   r.resource_id=p.resource_id
+						AND   m.moldable_id = j.assigned_moldable_job 
+						$clusterProperties
+                                        ");
+                $sth->execute();
+                while (my $ref = $sth->fetchrow_hashref()) {
+                    $results{jobs}{$ref->{job_id}}{"state"} = $ref->{state};
+                    $results{jobs}{$ref->{job_id}}{"queueName"} = $ref->{queue_name};
+                    $results{jobs}{$ref->{job_id}}{"reservation"} = $ref->{reservation};
+                    $results{jobs}{$ref->{job_id}}{"submissionTime"} = $ref->{submission_time};
+                    $results{jobs}{$ref->{job_id}}{"user"} = $ref->{job_user};
+                    #if (!defined($results{jobs_id}{$ref->{idJob}}{"weight"})){
+                    if (!defined($results{jobs}{$ref->{job_id}}{"weight"})){
+                        $results{jobs}{$ref->{job_id}}{"weight"} = 1;
+                    }else{
+                        $results{jobs}{$ref->{job_id}}{"weight"} ++;
+                    }
+                    $results{jobs}{$ref->{job_id}}{"startTime"} = $ref->{start_time};
+##                    $results{jobs}{$ref->{job_id}}{"nbNodes"} = $ref->{nbNodes};
+                    $results{jobs}{$ref->{job_id}}{"command"} = $ref->{command};
+                    $results{jobs}{$ref->{job_id}}{"jobType"} = $ref->{job_type};
+                    $results{jobs}{$ref->{job_id}}{"message"} = $ref->{message};
+                    $results{jobs}{$ref->{job_id}}{"properties"} = $ref->{properties};
+##                    $results{jobs}{$ref->{job_id}}{"maxTime"} = $ref->{maxTime};
+##                    $results{jobs}{$ref->{job_id}}{"idFile"} = $ref->{idFile};
+                    $results{jobs}{$ref->{job_id}}{"stopTime"} = $ref->{stop_time};
+                    $results{jobs}{$ref->{job_id}}{"launchingDirectory"} = $ref->{launching_directory};
+                    $results{jobs}{$ref->{job_id}}{"Walltime"} = $ref->{moldable_walltime};
+		    $results{nodes}{$ref->{network_address}}{weight} ++;
+		    $results{stats}{busyNodes} ++;
+                    push(@{$results{jobs}{$ref->{job_id}}{hostnames}}, $ref->{network_address});
+                }
+                $sth->finish();
+        
+                # Get stats informations
+##                $sth = $remoteDbh->prepare("SELECT COUNT(*) FROM nodes WHERE weight = 0 AND state = \"Alive\"");
+##                $sth->execute();
+##                while (my @ref = $sth->fetchrow_array()) {
+##                    $results{stats}{freeNodes} = $ref[0];
+##                }
+##                $sth->finish();
+                # Count busy resources 
+                #$sth = $remoteDbh->prepare("SELECT COUNT(DISTINCT(resources.resource_id))
+                #                            FROM resources,assigned_resources
+                #                            WHERE
+                #                                resources.state = \"Alive\"
+                #                                AND resources.resource_id = assigned_resources.resource_id
+                #                                AND assigned_resources.assigned_resource_index = 'CURRENT'
+                #                                $clusterProperties
+                #                           ");
+                #$sth->execute();
+                #while (my @ref = $sth->fetchrow_array()) {
+                #   $results{stats}{busyNodes} = $ref[0];
+                #}
+                #$sth->finish();
+                
+ 
+                # Count all resources
+                $clusterProperties=$clusters{$i}->{properties};
+                if (defined($clusterProperties) && $clusterProperties ne "") { 
+		  $sth = $remoteDbh->prepare("SELECT COUNT(DISTINCT(resource_id)) FROM resources WHERE $clusterProperties");
+                } else {
+                  $sth = $remoteDbh->prepare("SELECT COUNT(DISTINCT(resource_id)) FROM resources");
+		}
+                $sth->execute();
+                while (my @ref = $sth->fetchrow_array()) {
+                    $results{stats}{allNodes} = $ref[0];
+                    if (defined($results{stats}{busyNodes})) {
+		      $results{stats}{freeNodes} = $ref[0] - $results{stats}{busyNodes};
+		    } else { $results{stats}{freeNodes} = $ref[0]; }
+                }
+                $sth->finish();
+               
+                # Count not Alive resources and substract them from free resources
+                $clusterProperties=$clusters{$i}->{properties};
+                if (defined($clusterProperties) && $clusterProperties ne "") 
+		  { $clusterProperties="AND $clusterProperties"; }
+		else 
+		  { $clusterProperties=""; }
+                $sth = $remoteDbh->prepare("SELECT COUNT(DISTINCT(resource_id)) FROM resources where state != 'Alive' $clusterProperties");
+                $sth->execute();
+                while (my @ref = $sth->fetchrow_array()) {
+                    $results{stats}{freeNodes} -= $ref[0];
+                }
+                $sth->finish();
+ 
+            }else{
+                # gantt queries
+                my ($date_start,$date_stop) = split(/,/,$gantt);
+		if ($backward_compatible) {
+                  my %resNodeTmp = get_info_nodes($remoteDbh,$clusters{$i}->{properties});
+                  $results{nodes} = \%resNodeTmp; 
+		}
+		else {
+                  my %resNodeTmp = get_info_resources($remoteDbh,$clusters{$i}->{properties});
+                  $results{resources} = \%resNodeTmp;
+		}
+
+                # Add futur jobs
+                my %jobGantt = get_jobs_gantt_scheduled($remoteDbh,sql_to_local($date_start),sql_to_local($date_stop),$clusters{$i}->{properties});
+                $results{jobs} = \%jobGantt;
+                
+                # Add finished or running jobs
+		#print "start : $date_start, stop: $date_stop\n";
+                my %jobs_history = get_jobs_range_dates($remoteDbh,sql_to_local($date_start),sql_to_local($date_stop),$clusters{$i}->{properties});
+                foreach my $i (keys(%jobs_history)){
+                my $types = get_current_job_types($remoteDbh,$i);
+                  if (!defined($jobGantt{$i}) || (defined($types->{besteffort}))){
+                    if (($jobs_history{$i}->{state} eq "Running") ||
+                        ($jobs_history{$i}->{state} eq "toLaunch") ||
+                        ($jobs_history{$i}->{state} eq "Suspended") ||
+                        ($jobs_history{$i}->{state} eq "Resuming") ||
+                        ($jobs_history{$i}->{state} eq "Launching")){
+                        if (defined($types->{besteffort})){
+                            $jobs_history{$i}->{stop_time} = get_gantt_visu_date($remoteDbh);
+                        }else{
+                            #This job must be already  printed by gantt
+                            next;
+                        }
+                    }
+                    $results{jobs}{$i} = $jobs_history{$i};
+                  } 
+                }
+
+                # Add Absent, Down and Suspected nodes
+                my %deadNodeDates = get_resource_dead_range_date($remoteDbh,sql_to_local($date_start),sql_to_local($date_stop));
+                $results{dead_nodes} = \%deadNodeDates;
+            }
+            
+            oargrid_lib::disconnect($remoteDbh);
+            
+            my $localDbh = oargrid_lib::connect($DB_SERVER,$DB_BASE_NAME,$DB_BASE_LOGIN,$DB_BASE_PASSWD);
+            # Look at if the job is a grid reservation
+            foreach my $j (keys(%{$results{jobs}})){
+                my $localSth = $localDbh->prepare(" SELECT clusterJobsReservationId
+                                                    FROM clusterJobs,clusters
+                                                    WHERE   ( clusterJobsClusterName = \"$i\" OR clusterJobsClusterName = parent )
+                                                        AND clusterJobsBatchId = $j
+							AND clusters.clusterName = \"$i\"
+                                                  ");
+                $localSth->execute();
+                my @res = $localSth->fetchrow_array();
+                if (@res){
+                    $results{jobs}{$j}{"gridReservation"} = $res[0];
+                }else{
+                    $results{jobs}{$j}{"gridReservation"} = 0;
+                }
+                $localSth->finish();
+            }
+            oargrid_lib::disconnect($localDbh);
+
+            #alarm(0);
+            kill(9, $child);
+            print($P2 Dumper(\%results));
+            close($P2);
+            exit(0);
+        }
+    }
+    #Get informations from all childs
+    my %clusterProperties = oargrid_lib::get_cluster_properties($dbh);
+    my %monitorResults;
+    foreach my $i (@clustersToQuery){
+        my $reader = $pipeClusterList{$i};
+        my $str = <$reader>;
+        if (defined($str)){
+            my $resultHash = eval($str);
+            $monitorResults{$i} = $resultHash;
+            #Add cluster informations
+            foreach my $p (keys(%{$clusterProperties{$i}})){
+                $monitorResults{$i}{info}{$p} = $clusterProperties{$i}{$p};
+            }
+        }else{
+            warn("/!\\ Retrieve informations problems from $i.\n");
+        }
+        close($reader);
+        delete($pipeClusterList{$i});
+    }
+
+    if(defined($XMLmode)){
+        if ($XMLenabled == 1){
+            print(XMLout(\%monitorResults));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exit_value = 5;
+        }
+    }elsif(defined($YAMLmode)){
+        if ($YAMLenabled == 1){
+            print(YAML::Dump(\%monitorResults));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exit_value = 6;
+        }
+    }else{
+        print(Dumper(\%monitorResults));
+    }
+# Print informations about 1 reservation
+}elsif ((defined($ARGV[0])) && ($ARGV[0] =~ m/\d+/m)){
+    my %resaInfo = oargrid_lib::get_reservation_informations($dbh,$ARGV[0]);
+    
+    if (defined($dumperMode)){
+        print(Dumper(\%resaInfo));
+    }elsif(defined($XMLmode)){
+        if ($XMLenabled == 1){
+            print(XMLout(\%resaInfo));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exit_value = 5;
+        }
+    }elsif(defined($YAMLmode)){
+        if ($YAMLenabled == 1){
+            print(YAML::Dump(\%resaInfo));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exit_value = 6;
+        }
+    }else{
+        if (%resaInfo){
+            print_reservation(\%resaInfo,"");
+        }
+    }
+# Print informations about all reservations
+}else{
+    my %userInfo = oargrid_lib::get_user_informations($dbh,$lusr);
+
+    if (defined($dumperMode)){
+        print(Dumper(\%userInfo));
+    }elsif(defined($XMLmode)){
+        if ($XMLenabled == 1){
+            print(XMLout(\%userInfo));
+        }else{
+            warn("[ERROR] Cannot load XML module.\n");
+            $exit_value = 5;
+        }
+    }elsif(defined($YAMLmode)){
+        if ($YAMLenabled == 1){
+            print(YAML::Dump(\%userInfo));
+        }else{
+            warn("[ERROR] Cannot load YAML module.\n");
+            $exit_value = 6;
+        }
+    }else{
+        foreach my $i (sort({$a <=> $b} keys(%userInfo))){
+            print("Reservation # $i:\n");
+            print_reservation($userInfo{$i},"\t");
+            print("\n");
+        }
+    }
+}
+
+oargrid_lib::disconnect($dbh);
+
+exit($exit_value);
+
+###############
+## Functions ##
+###############
+
+# Print help messages
+sub usage(){
+    print <<EOU;
+Usage oargridstat [reservation_number | -h | -l reservation_number [-X | -Y | -D] [-w [-p polling_time][-m max_polling_time]] [-c cluster_alias_name [-j job_batch_id]] | --monitor [-c cluster_alias_name]* | --gantt "dateStart,dateStop" [-c cluster_alias_name]* | --list_clusters | --list_aliases | -V [ --backward_compatible ]
+    -h show this help message and exit
+    -l list all current nodes of the given reservation number
+    -D gives the results in Dumper format
+    -X gives the results in an XML format
+    -Y gives the results in an YAML format
+    -c cluster alias name
+    -j job batch id
+    -w wait for jobs on clusters to be in Running state
+    -p set the polling time : time in second between each job state check (default 5)
+    -m maximum of polling time in second (default 3600)
+    --monitor gives informations about current jobs on clusters (you can specify them with several -c options). The Result is a hash in Dumper mode by default
+    --gantt gives informations about jobs on clusters (you can specify them with several -c options). The Result is a hash in Dumper mode by default (date exemple : "2005-05-09 15:00:00,2005-05-10 15:00:00")
+    --list_clusters print a hash table in Dumper format by default with all clusters registred and there properties 
+		--list_aliases  print a hash table in Dumper format by default with all aliases registred and some properties
+    --backward_compatible prints output in the form of OAR1 version
+    -V print oargrid version and exit
+EOU
+}
+
+sub print_reservation($$){
+    my $resa = shift;
+    my $prefixStr = shift;
+
+    print($prefixStr."submission date : $resa->{reservationSubmissionDate}\n");
+    print($prefixStr."start date : $resa->{reservationStartDate}\n");
+    print($prefixStr."walltime : $resa->{reservationWallTime}\n");
+    print($prefixStr."program : $resa->{reservationProgram}\n");
+    print($prefixStr."directory : $resa->{reservationDirectory}\n");
+    print($prefixStr."user : $resa->{reservationUser}\n");
+    print($prefixStr."cmd : $resa->{reservationCommandLine}\n");
+    print($prefixStr."clusters with job id:\n");
+    foreach my $i (keys(%{$resa->{clusterJobs}})){
+        foreach my $j (values(%{$resa->{clusterJobs}->{$i}})){
+            #print($prefixStr."\t$i --> $j->{batchId} (name = \"$j->{name}\", nbNodes = $j->{nodes}, cpu = $j->{weight}, properties = \"$j->{properties}\", queue = $j->{queue}, environment = \"$j->{env}\", partition = \"$j->{part}\")\n");
+            #print($prefixStr."\t$i --> $j->{batchId} (name = \"$j->{name}\",  properties = \"$j->{properties}\", queue = $j->{queue}, environment = \"$j->{env}\", partition = \"$j->{part}\",status = \"$j->{status}\")\n");
+            print($prefixStr."\t$i --> $j->{batchId} (name = \"$j->{name}\", resources = \"$j->{rdef}\", properties = \"$j->{properties}\", queue = $j->{queue}, environment = \"$j->{env}\", partition = \"$j->{part}\")\n");
+        }
+    }
+}
+
+#Get informations about all nodes and return a hash
+sub get_info_nodes($$){
+    my $dbh = shift;
+    my $properties = shift;
+    my $sth;
+
+    # Get node informations
+    if (defined($properties) && $properties ne "") { 
+      $sth = $dbh->prepare("SELECT * FROM resources WHERE $properties");
+    } else {
+      $sth = $dbh->prepare("SELECT * FROM resources");
+    }
+
+    $sth->execute();
+    my %res;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $res{$ref->{network_address}}{"state"} = $ref->{state};
+        $res{$ref->{network_address}}{"maxWeight"} += 1;
+        $res{$ref->{network_address}}{"weight"} = 0;
+    }
+    $sth->finish();
+    
+    return(%res);
+}
+
+#Get informations about all resources and return a hash
+sub get_info_resources($$){
+    my $dbh = shift;
+    my $properties = shift;
+    my $sth;
+
+    # Get node informations
+    if (defined($properties) && $properties ne "") { 
+      $sth = $dbh->prepare("SELECT * FROM resources WHERE $properties");
+    } else {
+      $sth = $dbh->prepare("SELECT * FROM resources");
+    }
+
+    $sth->execute();
+    my %res;
+
+    while ( my $ref = $sth->fetchrow_hashref() ) 
+    {  
+      foreach my $key (keys %$ref) {
+         $res{$ref->{resource_id}}{$key}=$ref->{$key};
+       }
+    }
+    $sth->finish();
+    return(%res);
+}
+
+
+# get all jobs in a range of date in the gantt
+# args : base, start range, end range
+sub get_jobs_gantt_scheduled($$$$){
+    my $dbh = shift;
+    my $date_start = shift;
+    my $date_end = shift;
+    my $properties = shift;
+
+    if (defined($properties) && $properties ne "") {
+      $properties = "AND $properties";
+    } else { $properties = "" }
+
+    my $req =
+         "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
+         FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         WHERE
+             gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+             jobs.job_id = moldable_job_descriptions.moldable_job_id AND
+             gantt_jobs_predictions_visu.start_time < $date_end AND
+             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
+         $properties
+         ORDER BY jobs.job_id";
+    
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my %results;
+    while (my @ref = $sth->fetchrow_array()) {
+        if (!defined($results{$ref[0]})){
+            $results{$ref[0]} = {
+                                  'job_type' => $ref[1],
+                                  'state' => $ref[2],
+                                  'user' => $ref[3],
+                                  'command' => $ref[4],
+                                  'queue_name' => $ref[5],
+                                  'walltime' => $ref[6],
+                                  'properties' => $ref[7],
+                                  'launching_directory' => $ref[8],
+                                  'submission_time' => $ref[9],
+                                  'start_time' => $ref[10],
+                                  'stop_time' => $ref[11],
+                                  'resources' => [ $ref[12] ],
+                                 }
+        }else{
+            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
+        }
+    }
+    $sth->finish();
+
+    return %results;
+}
+
+# get all jobs in a range of date
+# args : base, start range, end range
+sub get_jobs_range_dates($$$$){
+    my $dbh = shift;
+    my $date_start = shift;
+    my $date_end = shift;
+    my $properties = shift;
+
+    if (defined($properties) && $properties ne "") {
+      $properties = "AND $properties";
+    } else { $properties = "" }
+
+    my $req =
+	"SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
+         FROM jobs, assigned_resources, moldable_job_descriptions, resources
+         WHERE
+             (
+                 jobs.stop_time >= $date_start OR
+                 (
+                     jobs.stop_time = \'0\' AND
+                     (jobs.state = \'Running\' OR
+                      jobs.state = \'Suspended\' OR
+                      jobs.state = \'Resuming\')
+                 )
+             ) AND
+             jobs.start_time < $date_end AND
+             jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+             moldable_job_descriptions.moldable_job_id = jobs.job_id AND
+             resources.resource_id = assigned_resources.resource_id
+             $properties
+         ORDER BY jobs.job_id";
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my %results;
+    while (my @ref = $sth->fetchrow_array()) {
+        if (!defined($results{$ref[0]})){
+            $results{$ref[0]} = {
+                                  'job_type' => $ref[1],
+                                  'state' => $ref[2],
+                                  'user' => $ref[3],
+                                  'command' => $ref[4],
+                                  'queue_name' => $ref[5],
+                                  'walltime' => $ref[6],
+                                  'properties' => $ref[7],
+                                  'launching_directory' => $ref[8],
+                                  'submission_time' => $ref[9],
+                                  'start_time' => $ref[10],
+                                  'stop_time' => $ref[11],
+                                  'resources' => [ $ref[12] ],
+                                  'limit_stop_time' => $ref[14]
+                                 }
+        }else{
+            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
+        }
+    }
+    $sth->finish();
+
+    return %results;
+}
+
+
+#get the range when nodes are dead between two dates
+# arg : base, start date, end date
+sub get_resource_dead_range_date($$$){
+    my $dbh = shift;
+    my $date_start = shift;
+    my $date_end = shift;
+
+    # get dead nodes between two dates
+    my $req = "SELECT resource_id, date_start, date_stop, value
+               FROM resource_logs
+               WHERE
+                   attribute = \'state\' AND
+                   (
+                       value = \'Absent\' OR
+                       value = \'Dead\' OR
+                       value = \'Suspected\'
+                   ) AND
+                   date_start <= $date_end AND
+                   (
+                       date_stop = 0 OR
+                       date_stop >= $date_start
+                   )
+              ";
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my %results;
+    while (my @ref = $sth->fetchrow_array()) {
+        my $interval_stopDate = $ref[2];
+        if (!defined($interval_stopDate)){
+            $interval_stopDate = $date_end;
+        }
+        push(@{$results{$ref[0]}}, [$ref[1],$interval_stopDate,$ref[3]]);
+    }
+    $sth->finish();
+
+    return(%results);
+}
+
+# get_current_job_types
+# return a hash table with all types for the given job ID
+sub get_current_job_types($$){
+    my $dbh = shift;
+    my $jobId = shift;
+
+    my $sth = $dbh->prepare("   SELECT type
+                                FROM job_types
+                                WHERE
+                                    types_index = \'CURRENT\'
+                                    AND job_id = $jobId
+                            ");
+    $sth->execute();
+    my %res;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        if ($ref->{type} =~ m/^\s*(\w+)\s*=\s*(.+)$/m){
+            $res{$1} = $2;
+        }else{
+            $res{$ref->{type}} = "true";
+        }
+    }
+    $sth->finish();
+
+    return(\%res);
+}
+
+# Return date of the gantt for visu
+sub get_gantt_visu_date($){
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("SELECT start_time
+                             FROM gantt_jobs_predictions_visu
+                             WHERE
+                                moldable_job_id = 0
+                            ");
+    $sth->execute();
+    my @res = $sth->fetchrow_array();
+    $sth->finish();
+
+    return($res[0]);
+}
+
+
+# sql_to_local
+# converts a date specified in the format used by the sql database to an
+# integer local time format
+# parameters : date string
+# return value : date integer
+# side effects : /
+sub sql_to_local($) {
+    my $date=shift;
+    my ($year,$mon,$mday,$hour,$min,$sec)=sql_to_ymdhms($date);
+    return ymdhms_to_local($year,$mon,$mday,$hour,$min,$sec);
+}
+
+
+# ymdhms_to_local
+# converts a date specified as year, month, day, minutes, secondes into an
+# integer local time format
+# parameters : year, month, day, hours, minutes, secondes
+# return value : date integer
+# side effects : /
+sub ymdhms_to_local($$$$$$) {
+    my ($year,$mon,$mday,$hour,$min,$sec)=@_;
+    return Time::Local::timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year);
+}
+
+# sql_to_ymdhms
+# converts a date specified in the format used by the sql database to year,
+# month, day, minutes, secondes values
+# parameters : date string
+# return value : year, month, day, hours, minutes, secondes
+# side effects : /
+sub sql_to_ymdhms($) {
+    my $date=shift;
+    $date =~ tr/-:/  /;
+    my ($year,$mon,$mday,$hour,$min,$sec) = split / /,$date;
+    # adjustment for localtime (since 1st january 1900, month from 0 to 11)
+    $year-=1900;
+    $mon-=1;
+    return ($year,$mon,$mday,$hour,$min,$sec);
+}
+
+

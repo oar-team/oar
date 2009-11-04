@@ -1,0 +1,102 @@
+#!/bin/bash
+# $Id$
+# This is the shell program used with the oarsh script.
+# It adds its own process in the cpuset OAR_CPUSET and launches
+# the shell or the script of the user OAR_JOB_USER.
+
+DEFAULT_SHELL=/bin/bash
+XAUTH_LOCATION="/usr/bin/xauth"
+CPUSET_MOUNT_POINT="/dev/cpuset"
+OARDIR="/usr/lib/oar"
+
+export PATH=$OARDIR/oardodo:$PATH
+
+OLDUMASK=$(umask)
+umask 0022
+
+# $1 = Name of the cpuset
+# $2,$3,... = PIDs to add
+# Add PIDS into the cpuset $1
+function add_process_to_cpuset() {
+    [ "$1" = "undef" ] && return
+    ######################
+    # CPUSET assignation #
+    ###########################################################################
+    #CPUSET_MOUNT_POINT=$(mount -t cpuset | cut -d " " -f 3 | head -1)
+    CPUSETFILE="$CPUSET_MOUNT_POINT/$1/tasks"
+    
+    if [ ! -w $CPUSETFILE ]
+    then
+        echo "oarsh: Cannot find cpuset file : $CPUSETFILE" 1>&2
+        exit 61
+    fi
+    shift
+    for p in $@
+    do
+        $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSETFILE" || return 1
+    done
+    ###########################################################################
+}
+
+if [ "$OAR_JOB_USER" == "" ]
+then
+    if [ "$SSH_CLIENT" != ""  ] && [ "$OAR_KEY" != "1" ]
+    then
+        echo "oarsh: The OAR_KEY environment variable is not defined and this seems to be a oar user connection." 1>&2
+        echo "oarsh: See 'Important notes' part of the 'CPUSET installation' section of the OAR documentation." 1>&2
+        exit 65
+    fi
+    # It must be oar
+    if [ "$OAR_CPUSET" != "" ]
+    then
+        add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
+    fi
+    $OARDIR/oardodo/oardodo renice 0 $$ $PPID > /dev/null 2>&1
+    export SHELL=$DEFAULT_SHELL
+    
+    umask $OLDUMASK
+    exec $DEFAULT_SHELL "$@"
+    echo "oarsh: exec failed" 1>&2
+    exit 66
+else
+    if [ "$OAR_CPUSET" == "" ]
+    then
+        echo "oarsh: OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET OAR_JOB_USER' on all computing nodes?" 1>&2
+        exit 63
+    fi
+    add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
+    
+    #Manage display
+    if [ -n "$DISPLAY" ]
+    then
+        if [ -x "$XAUTH_LOCATION" ]
+        then
+            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=${OAR_JOB_USER%_*} $OARDIR/oardodo/oardodo $XAUTH_LOCATION merge -
+            [ "${OAR_JOB_USER%_*}" != "$OAR_JOB_USER" ] && OARDO_BECOME_USER=${OAR_JOB_USER%_*} $OARDIR/oardodo/oardodo bash --noprofile --norc -c 'chmod 660 $HOME/.Xauthority'
+        fi
+    fi
+    #Change tty owner
+    TTY=$(tty) && test -e $TTY && $OARDIR/oardodo/oardodo chown $OAR_JOB_USER:oar $TTY && $OARDIR/oardodo/oardodo chmod 660 $TTY
+    $OARDIR/oardodo/oardodo renice 0 $$ $PPID > /dev/null 2>&1
+    if [ "$1" == "" ]
+    then
+        # Simulate initial login
+        export OARDO_BECOME_USER=$OAR_JOB_USER
+        umask $OLDUMASK
+        exec $OARDIR/oardodo/oardodo
+        #exec oardodo su - $OAR_JOB_USER
+        echo "oarsh: exec failed" 1>&2
+        exit 66
+    else
+        export OARDO_BECOME_USER=$OAR_JOB_USER
+        export OARDO_USE_USER_SHELL=1
+        umask $OLDUMASK
+        exec $OARDIR/oardodo/oardodo "$@"
+        echo "oarsh: exec failed" 1>&2
+        exit 66
+    fi
+fi
+
+echo "oarsh: Really bad error" 1>&2
+exit 67
+

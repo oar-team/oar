@@ -1,0 +1,1 @@
+egrep -v '^<\/body>|^<body>|^<!DOCTYPE|^<html xmlns|^<head>|^<\/head>|^<meta|^<title>|^<link|^</\html>' $1

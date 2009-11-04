@@ -1,0 +1,25 @@
+---
+title: Contact
+inMenu: true
+directoryName: oar
+orderInfo: 6
+---
+
+h2. Contact
+
+Use mailing list below for bug reports, general questions or feature requests. 
+
+h3. Mailing Lists
+
+*	"Users and development mailing lists":http://gforge.inria.fr/mail/?group_id=125 .
+*	Users mailing list "archive":http://lists.gforge.inria.fr/pipermail/oar-users/ .
+* Development mailing list "archive":http://lists.gforge.inria.fr/pipermail/oar-devel/ .
+
+
+h3. Contact for other needs
+
+	!images/email2.png!
+
+h3. Team
+
+Picture of the team is "here":team.html.

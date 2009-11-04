@@ -1,0 +1,36 @@
+software_install:
+ - editors:
+   - exec_chroot: yum install joe
+   - exec_chroot: yum install nano
+ - utils:
+   - exec_chroot: yum install less
+#   - exec_chroot: yum install man
+   - exec_chroot: yum install bzip2
+   - exec_chroot: yum install zip unzip
+   - exec_chroot: yum install rsync wget
+   - exec_chroot: yum install sed gawk
+# - x:
+#   - exec_chroot: yum install xorg-x11-server-Xorg xorg-x11-xinit xterm xorg-x11-twm xorg-x11-fonts-75dpi xorg-x11-fonts-100dpi xorg-x11-drv-fbdev
+#   - exec_chroot: yum install WindowMaker
+# - x-full:
+#   - exec_chroot: yum groupinstall "X Window System"
+#   - exec_chroot: yum install system-config-display
+ - scripting:
+   - exec_chroot: yum install python
+ - server:
+   - exec_chroot: yum install openssh-server
+   - exec_chroot: /sbin/chkconfig --level 35 sshd on
+   - exec_appliance: mount --bind /dev $$chroot/dev
+   - exec_appliance: sed -i "1i umount $$chroot/dev" $$workdir/clean.sh
+##   - write_file:
+##     - /root/ssh_keys
+##     - |
+##       . /etc/init.d/sshd
+##       
+##       do_rsa1_keygen
+##       do_rsa_keygen
+##       do_dsa_keygen
+##   - exec_chroot: /bin/bash /root/ssh_keys
+   - exec_chroot: /etc/init.d/sshd start
+   - exec_chroot: /etc/init.d/sshd stop
+   - exec_appliance: umount $$chroot/dev

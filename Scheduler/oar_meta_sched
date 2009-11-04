@@ -1,0 +1,217 @@
+#!/usr/bin/perl
+# $Id$
+
+use strict;
+use warnings;
+use DBI();
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Data::Dumper;
+use oar_scheduler;
+use oar_Tools;
+
+# Log category
+set_current_log_category('scheduler');
+
+my $exit_code = 0;
+my $base = iolib::connect();
+my $base_ro = iolib::connect_ro();
+
+init_conf($ENV{OARCONFFILE});
+my $security_time_overhead = 60;
+if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
+    $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
+}
+
+my $minimum_hole_time = 0;
+if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){
+    $minimum_hole_time = get_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME");
+}
+
+my $Order_part = get_conf("SCHEDULER_RESOURCE_ORDER");
+
+my $binpath;
+if (defined($ENV{OARDIR})){
+    $binpath = $ENV{OARDIR}."/";
+}else{
+    die("[MetaSched] OARDIR env variable must be defined\n");
+}
+
+my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Remote_host = get_conf("SERVER_HOSTNAME");
+my $Remote_port = get_conf("SERVER_PORT");
+
+oar_debug("[MetaSched] Start of meta scheduler\n");
+
+oar_scheduler::init_scheduler($base,$base_ro,$security_time_overhead,$minimum_hole_time,$Order_part,get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT"));
+
+my %initial_time = oar_scheduler::get_initial_time();
+my @queues = iolib::get_active_queues($base);
+my $name;
+my $policy;
+foreach my $i (@queues){
+    $name = $i->[0];
+    $policy = $i->[1];
+    my $waiting_jobs = iolib::is_waiting_job_specific_queue_present($base,$name);
+    if ($waiting_jobs == 1){
+        oar_debug("[MetaSched] Launching scheduler $name with $policy at time $initial_time{sql}\n");
+        my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = oar_Tools::launch_command("$binpath/schedulers/$policy $name $initial_time{sec} \"$initial_time{sql}\"");
+        if (($sched_signal_num != 0) || ($sched_dumped_core != 0)){
+            oar_error("[MetaSched] Something wrong occured, we inactive the queue $name (signal or core dumped or '$binpath/schedulers/$policy' cannot be executed)!!! Look at 'oarnotify' if you want to change queue settings.\n");
+            iolib::stop_a_queue($base,$name);
+        }
+        if ($sched_exit_code == 1){
+            $exit_code = 1;
+        }elsif($sched_exit_code != 0){
+            oar_error("[MetaSched] Scheduler $binpath/schedulers/$policy on queue $name at time $initial_time{sec} returns a bad value : $sched_exit_code. So this queue will be disabled (look at 'oarnotify' if you want to change queue settings).\n");
+            iolib::stop_a_queue($base,$name);
+            #$exit_code = 3;
+        }
+        if (oar_scheduler::treate_waiting_reservation_jobs($base,$name) != 0){
+            $exit_code = 1;
+        }
+        if (oar_scheduler::check_reservation_jobs($base,$base_ro,$name,$Order_part) != 0){
+            $exit_code = 1;
+        }
+    }else{
+        oar_debug("[MetaSched] No waiting job in $name queue\n");
+    }
+}
+
+if ($exit_code == 0){
+    if (oar_scheduler::check_jobs_to_kill($base) == 1){
+        # We must kill besteffort jobs
+        oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+        $exit_code = 2;
+    }elsif (oar_scheduler::check_jobs_to_launch($base) == 1){
+        $exit_code = 1;
+    }
+}
+
+#Update visu gantt tables
+oar_scheduler::update_gantt_visu_tables($base);
+iolib::disconnect($base_ro);
+
+# Manage dynamic node feature
+my $timeout_cmd = 10;
+if (is_conf("SCHEDULER_TIMEOUT")){
+    $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
+}
+if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
+    my @node_halt= oar_scheduler::get_idle_nodes(
+            $base,
+            get_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME"),
+            get_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME")
+        );
+    if ($#node_halt >= 0){
+        oar_debug("[MetaSched] Some nodes can be halted : @node_halt\n");
+        my $cmd = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD");
+        if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@node_halt))){
+            oar_error("[MetaSched] Try to launch the command $cmd to stop some nodes but the command timeouted($timeout_cmd s).\n");
+        }
+        oar_debug("[MetaSched] @node_halt should be shutting down now.\n");
+    }
+}
+
+if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+    # Wake up right nodes
+    my @nodes = oar_scheduler::get_nodes_to_wake_up($base);
+
+    if ($#nodes >= 0){
+        oar_debug("[MetaSched] Some nodes must be started : @nodes\n");
+        my $cmd = get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD");
+        if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@nodes))){
+            oar_error("[MetaSched] Try to launch the command $cmd to wake up some nodes but the command timeouted($timeout_cmd s).\n");
+        }
+    }
+}
+
+# Search jobs to resume
+foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
+    my @other_jobs = iolib::get_jobs_on_resuming_job_resources($base,$j->{job_id});
+    # TODO : look for timesharing other jobs. What do we do?????
+    if ($#other_jobs < 0){
+        # We can resume the job
+        oar_debug("[MetaSched] We can resume the job $j\n");
+        ###############
+        # RESUME PART #
+        ###############
+        my $script = get_conf("JUST_BEFORE_RESUME_EXEC_FILE");
+        my $timeout = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
+        $timeout = oar_Tools::get_default_suspend_resume_script_timeout() if (!defined($timeout));
+        my $skip = 0;
+        if (defined($script)){
+            # Launch admin script
+            my $script_error = 0;
+            eval {
+                $SIG{ALRM} = sub { die "alarm\n" };
+                alarm($timeout);
+                oar_debug("[OAR_META_SCHED] [$j->{job_id}] LAUNCH the script just after the suspend : $script $j->{job_id}\n");
+                $script_error = system("$script script $j->{job_id}");
+                oar_debug("[OAR_META_SCHED] [$j->{job_id}] END the script just after the suspend : $script $j->{job_id}\n");
+                alarm(0);
+            };
+            if( $@ || ($script_error != 0)){
+                my $str = "[OAR_META_SCHED] [$j->{job_id}] Suspend script error : $@; return code = $script_error\n";
+                oar_error($str);
+                iolib::add_new_event($base,"RESUME_SCRIPT_ERROR",$j->{job_id},$str);
+                iolib::frag_job($base,$j->{job_id});
+                oar_Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
+                $skip = 1;
+            }
+        }
+ 
+        if ((defined($Cpuset_field)) and ($skip == 0)){
+            my $cpuset_name = iolib::get_job_cpuset_name($base, $j->{job_id}) if (defined($Cpuset_field));
+            my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$j->{assigned_moldable_job});
+            my $suspend_data_hash = {
+                name => $cpuset_name,
+            };
+            if (defined($cpuset_nodes)){
+                my $taktuk_cmd = get_conf("TAKTUK_CMD");
+                my $openssh_cmd = get_conf("OPENSSH_CMD");
+                $openssh_cmd = oar_Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+                if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+                    oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+                }
+                my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
+                $suspend_file = oar_Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
+                $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
+                my ($tag,@bad) = oar_Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"resume",$openssh_cmd,$taktuk_cmd,$base);
+                if ($tag == 0){
+                    my $str = "[OAR_META_SCHED] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file : $suspend_file\n";
+                    oar_error($str);
+                    iolib::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
+                }else{
+                    if (($#bad < 0)){
+                        iolib::resume_job_action($base,$j->{job_id});
+                   }else{
+                        my $str = "[OAR_META_SCHED] [SUSPEND_RESUME] [$j->{job_id}] Error on several nodes : @bad\n";
+                        oar_error($str);
+                        iolib::add_new_event_with_host($base,"RESUME_ERROR",$j->{job_id},$str,\@bad);
+                        iolib::frag_job($base,$j->{job_id});
+                        # A Leon must be run
+                        $exit_code = 2;
+                    }
+                }
+            }
+        }
+        #####################
+        # RESUME PART, END  #
+        #####################
+    }
+}
+
+# Notify oarsub -I when they will be launched
+foreach my $j (iolib::get_gantt_waiting_interactive_prediction_date($base)){
+    my ($addr,$port) = split(/:/,$j->{info_type});
+    my $new_start_prediction = iolib::local_to_sql($j->{start_time});
+    oar_debug("[MetaSched] [$j->{job_id}] Notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
+    oar_Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] Start prediction: $new_start_prediction (".$j->{message}.")");
+}
+
+iolib::disconnect($base);
+oar_debug("[MetaSched] End of meta scheduler\n");
+
+exit($exit_code);

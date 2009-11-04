@@ -1,0 +1,284 @@
+FAQ - ADMIN
+===========
+
+Release policy
+--------------
+
+Since the version 2.2, release numbers are divided into 3 parts:
+ - The first represents the design and the implementation used.
+ - The second represents a set of OAR functionalities.
+ - The third is incremented after bug fixes.
+
+What means the error "Bad configuration option: PermitLocalCommand" when I am using oarsh?
+------------------------------------------------------------------------------------------
+
+For security reasons, on the latest OpenSSH releases you are able to execute
+a local command when you are connecting to the remote host and we must
+deactivate this option because the oarsh_ wrapper executes the *ssh* command
+into the user oar.
+
+So if you encounter this error message it means that your OpenSSH does
+not know this option and you have to remove it from the oar.conf.
+There is a variable named OARSH_OPENSSH_DEFAULT_OPTIONS_ in oar.conf used by oarsh.
+So you have just to remove the not yet implemented option.
+
+How to manage start/stop of the nodes?
+--------------------------------------
+You have to add a script in /etc/init.d which switches resources of the node
+into the "Alive" or "Absent" state.
+So when this script is called at boot time, it will change the state into
+"Alive". And when it is called at halt time, it will change into "Absent".
+
+There two ways to perform this action:
+
+ 1. Install OAR "oar-libs" part on all nodes. Thus you will be able to launch
+    the command oarnodesetting_ (be careful to right configure "oar.conf" with
+    database login and password AND to allow network connections on this
+    database).
+    So you can execute::
+
+        oarnodesetting -s Alive -h node_hostname
+            or
+        oarnodesetting -s Absent -h node_hostname
+
+ 2. You do not want to install anything else on each node. So you have to
+    enable oar user to connect to the server via ssh (for security you
+    can use another SSH key with restrictions on the command that oar can
+    launch with this one). Thus you will have in you init script
+    something like::
+
+        sudo -u oar ssh oar-server "oarnodesetting -s Alive -h node_hostname"
+            or
+        sudo -u oar ssh oar-server "oarnodesetting -s Absent -h node_hostname"
+
+    In this case, further OAR software upgrade will be more painless.
+
+How can I manage scheduling queues?
+-----------------------------------
+see oarnotify_.
+
+How can I handle licence tokens?
+--------------------------------
+OAR does not manage resources with an empty "network_address". So you can
+define resources that are not linked with a real node.
+
+So the steps to configure OAR with the possibility to reserve licences (or
+whatever you want that are other notions):
+
+ 1. Add a new field in the table resources_ to specify the licence name.
+    ::
+
+        oarproperty -a licence -c
+
+ 2. Add your licence name resources with oarnodesetting_.
+    ::
+
+        oarnodesetting -a -h "" -p type=mathlab -p licence=l1
+        oarnodesetting -a -h "" -p type=mathlab -p licence=l2
+        oarnodesetting -a -h "" -p type=fluent -p licence=l1
+        ...
+
+ 3. Now you have to write an admission rule to force oarsub "-l" option on
+    resources of the type "default" (node resources) if there is no other
+    specifications. 
+    ::
+
+        INSERT INTO admission_rules (rule) VALUES ('
+        foreach my $mold (@{$ref_resource_list}){
+            foreach my $r (@{$mold->[0]}){
+                my $prop = $r->{property};
+                if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
+                    if (!defined($prop)){
+                        $r->{property} = "type = \\\'default\\\'";
+                    }else{
+                        $r->{property} = "($r->{property}) AND type = \\\'default\\\'";
+                    }
+                }
+            }
+        }
+        print("[ADMISSION RULE] Modify resource description with type constraints\\n");
+        ');
+
+After this configuration, users can perform submissions like
+::
+
+    oarsub -I -l "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+
+So users ask OAR to give them some other resource types but nothing block
+their program to take more licences than they asked.
+You can resolve this problem with the SERVER_SCRIPT_EXEC_FILE_ configuration.
+In these files you have to bind OAR allocated resources to the licence servers
+to restrict user consumptions to what they asked. This is very dependant of
+the licence management.
+
+How can I handle multiple clusters with one OAR?
+------------------------------------------------
+These are the steps to follow:
+
+ 1. create a resource property to identify the corresponding cluster (like "cluster")::
+
+        oarproperty -a cluster
+
+    (you can see this new property when you use oarnodes)
+
+ 2. with oarnodesetting_ you have to fill this field for all resources; for example::
+ 
+        oarnodesetting -h node42.cluster1.com -p cluster=1
+        oarnodesetting -h node43.cluster1.com -p cluster=1
+        oarnodesetting -h node2.cluster2.com -p cluster=2
+        ...
+
+ 3. Then you have to restrict properties for new job type.
+    So an admission rule performs this job (this is a SQL syntax to use in a database interpreter)::
+
+        INSERT IGNORE INTO admission_rules (rule) VALUES ('
+            my $cluster_constraint = 0;
+            if (grep(/^cluster1$/, @{$type_list})){
+                $cluster_constraint = 1;
+            }elsif (grep(/^cluster2$/, @{$type_list})){    
+                $cluster_constraint = 2;
+            }
+        if ($cluster_constraint > 0){
+            if ($jobproperties ne ""){
+                $jobproperties = "($jobproperties) AND cluster = $cluster_constraint";
+            }else{
+                $jobproperties = "cluster = $cluster_constraint";
+            }
+            print("[ADMISSION RULE] Added automatically cluster resource constraint\\n");
+        }
+        ');
+
+ 4. Edit the admission rule which checks the right job types and add
+    "cluster1" and "cluster2" in.
+
+So when you will use oarsub to submit a "cluster2" job type only resources
+with the property "cluster=2" is used. This is the same when you will use the
+"cluster1" type.
+
+How to configure a more ecological cluster (or how to make some power consumption economies)?
+---------------------------------------------------------------------------------------------
+
+This feature can be performed with the `Dynamic nodes coupling features`.
+
+First you have to make sure that you have a command to wake up a computer
+that is stopped. For example you can use the WoL (Wake on Lan) feature
+(generally you have to right configure the BIOS and add right options to the
+Linux Ethernet driver; see "ethtool").
+
+If you want to enable a node to be woke up the next 12 hours::
+
+    ((DATE=$(date +%s)+3600*12))
+    oarnodesetting -h host_name -p cm_availability=$DATE
+
+Otherwise you can disable the wake up of nodes (but not the halt) by::
+
+    oarnodesetting -h host_name -p cm_availability=0
+
+If you want to disable the halt on a node::
+
+    oarnodesetting -h host_name -p cm_availability=2147483647
+
+2147483647 = 2^31 - 1 : we take this value as infinite and it is used to
+disable the halt mechanism.
+
+Note: In the unstable 2.4 OAR version, cm_availability has been renamed
+into available_upto. 
+    
+Your `SCHEDULER_NODE_MANAGER_WAKE_UP_CMD`_ must be a script that read node
+names and translate them into the right wake up command.
+
+So with the right OAR and node configurations you can optimize the power
+consumption of your cluster (and your air conditioning infrastructure)
+without drawback for the users.
+
+Take a look at your cluster occupation and your electricity bill to know if it
+could be interesting for you ;-)
+
+How to configure temporary UID for each job?
+--------------------------------------------
+For a better way to handle job processes we introduce the temporary user id
+feature.
+
+This feature creates a user for each job on assigned nodes. Hence it is
+possible to clean temporary files, IPC, every generated processes, ...
+Furthermore a lot of system features could be used like bandwidth management
+(iptables rules on the user id).
+
+To configure this feature, CPUSET must be activated and the tag
+JOB_RESOURCE_MANAGER_JOB_UID_TYPE has to be configured in the oar.conf file.
+The value is the content of the "type" field into the resources_ table. After
+that you have to add resources in the database with this type and fill the
+cpuset field with a unique UID (not used by real users). The maximum number of
+concurrent jobs is the number of resources of this type.
+
+For example, if you put this in your oar.onf::
+
+    JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD="cpuset"
+    JOB_RESOURCE_MANAGER_JOB_UID_TYPE="user"
+
+Then you can add temporary UID::
+
+    oarnodesetting -a -h fake -p cpuset=23000 -p type=user
+    oarnodesetting -a -h fake -p cpuset=23001 -p type=user
+    oarnodesetting -a -h fake -p cpuset=23002 -p type=user
+    ...
+
+You can put what you want in the place of the hostname (here "fake").
+
+The drawback of this feature is that users haven't their UID only their GID.
+
+How to enable jobs to connect to the frontales from the nodes using oarsh?
+--------------------------------------------------------------------------
+First you have to install the node part of OAR on the wanted nodes.
+
+
+After that you have to register the frontales into the database using
+oarnodesetting with the "frontal" (for example) type and assigned the desired
+cpus into the cpuset field; for example::
+
+    oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=0
+    oarnodesetting -a -h frontal1 -p type=frontal -p cpuset=1
+    oarnodesetting -a -h frontal2 -p type=frontal -p cpuset=0
+    ...
+
+Thus you will be able to see resources identifier of these resources with
+oarnodes; try to type::
+
+    oarnodes --sql "type='frontal'"
+    
+Then put this type name (here "frontal") into the *oar.conf* file on the OAR
+server into the tag SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE_.
+
+Notes:
+ - if one of these resources become "Suspected" then the scheduling will
+   stop.
+ - you can disable this feature with oarnodesetting_ and put these resources
+   into the "Absent" state.
+
+A job remains in the "Finishing" state, what can I do?
+------------------------------------------------------
+If you have waited more than a couple of minutes (5mn for example) then
+something wrong occurred (frontal has crashed, out of memory, ...).
+
+So you are able to turn manually a job into the "Error" state by typing in
+the OAR install directory (example with a bash shell)::
+
+    export OARCONFFILE=/etc/oar/oar.conf
+    perl -e 'use oar_iolib; $db = iolib::connect(); iolib::set_job_state($db,42,"Error")'
+
+(Replace 42 by your job identifier)
+
+How can I write my own scheduler?
+---------------------------------
+.. include:: Scheduler/README
+
+What is the syntax of this documentation?
+-----------------------------------------
+
+We are using the RST format from the `Docutils
+<http://docutils.sourceforge.net/>`_ project. This syntax is easily readable
+and can be converted into HTML, LaTex or XML.
+
+You can find basic informations on
+http://docutils.sourceforge.net/docs/user/rst/quickref.html
+

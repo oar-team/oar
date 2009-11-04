@@ -1,0 +1,126 @@
+Name
+====
+OAR (Resource management system for large computing)
+
+Contact
+=======
+Olivier Richard
+Phone: +33 476 61 20 56
+E-mail: olivier.richard@imag.fr
+
+Keywords
+========
+cluster, batch scheduler, resource manager, opensource
+
+Development team
+================
+Mescal and Moais
+
+Web site
+========
+http://oar.imag.fr/
+
+Vocation
+========
+to provide administrators a tool to manage their clusters and
+an easy way to use it by several users in concurrency
+
+Texte central
+=============
+Introduction
+------------
+On a cluster, resources (like processors) have to be assigned to user requests.
+OAR is made to respond to this problem in a flexible and efficient manner.
+
+1er paragraphe : Main features
+------------------------------
+
+ - Batch and Interactive jobs
+ - Admission rules
+ - Walltime
+ - Multi-schedulers support
+ - Multi-queues with priority
+ - Backfilling
+ - First-Fit Scheduler
+ - Reservation 
+ - Support of moldable tasks
+ - Check compute nodes 
+ - Epilogue/Prologue scripts
+ - Support of dynamic nodes
+ - Logging/Accounting
+ - Suspend/resume jobs
+
+2ieme paragraphe : OAR advantages
+---------------------------------
+ - No specific daemon on nodes
+ - Upgrades are made on the servers, nothing to do on computing nodes
+ - CPUSET (2.6 linux kernel) integration which restricts the jobs on assigned
+   resources (also useful to clean completely a job, even parallel job)
+ - Taktuk command support : enhance the scalability and the speed of the
+   administration tasks performed on a large amount of nodes
+   (http://taktuk.gforge.inria.fr/)
+ - Hierarchical resource requests (handle heterogeneous clusters)
+ - Gantt scheduling (allow to visualize the internal scheduler decisions)
+ - Full or partial time-sharing
+ - Checkpoint/resubmit
+ - Licences servers management support
+ - Environment deployment support : Kadeploy
+   (http://gforge.inria.fr/projects/kadeploy/)
+ - Best effort jobs: if another job wants the same resources then it is
+   deleted automatically (useful to execute programs like SETI@home)
+
+Code and documentation
+======================
+http://oar.imag.fr/
+
+Supported systems
+=================
+Linux, Solaris, Mac OS X
+
+License
+=======
+GPL
+
+Related publications
+====================
+
+ - A batch scheduler with high level components. Nicolas Capit, Georges Da Costa, Yiannis Georgiou, Guillaume Huard, Cyrille Martin, Grégory Mounié, Pierre Neyron, Olivier Richard. Cluster computing and Grid 2005 (CCGrid05), 2005.
+
+ - Grid'5000: A large scale, reconfigurable, controlable and monitorable grid platform. Franck Cappello, Frederic Desprez, Michel Dayde, Emmanuel Jeannot, Yvon Jegou, Stephane Lanteri, Nouredine Melab, Raymond Namyst, Pascale Primet, Olivier Richard, Eddy Caron, Julien Leduc, Guillaume Mornet. Grid2005 6th IEEE/ACM International Workshop on Grid Computing, 2005.
+
+ - CIMENT GRID: a GRID facility for large scale parametric computing. N. Capit, L. Desbat, L. Eyraud, O. Richard. Workshop PMAA. October 2004.
+
+Images
+======
+J'ai une image mais je ne sais pas si on peut la mettre:
+  
+  hierarchical_resources.png ou hierarchical_resources.svg
+
+Pour le bandeau
+---------------
+Nous n'avons pas d'image qui pourrait faire. Donc il faudrait trouver
+quelque-chose en rapport avec:
+
+ - cluster, grappe de PCs
+ - outil d'administration de cluster
+ - ordonnancement de tâches
+ - ...
+
+Sur le côté
+-----------
+ 1. monika.png
+ 2. gantt.png
+
+Logo du logiciel
+----------------
+oar.png
+
+Logos des projets
+-----------------
+ - MESCAL : pas de logo disponible, donc juste marquer le nom
+   (http://mescal.imag.fr/ : font en italic et en majuscule)
+ - MOAIS : moais.png
+ - CIMENT : ciment.png (mais pas terrible) et/ou marquer CIMENT
+   en font normale
+ - UJF : ujf.png ou ujf_1.png
+

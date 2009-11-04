@@ -1,0 +1,8 @@
+macrostep2:
+ - microstep1:
+   - check_cmd:       some-nonexisting-command
+ - microstep3:
+   - check_cmd:       dpkg-scanpackages
+ - include:           include/macrostep2.yaml
+ - microstep5:
+   - check_cmd:       dpkg-scanpackages

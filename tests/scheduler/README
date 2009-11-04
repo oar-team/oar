@@ -1,0 +1,115 @@
+= About =
+This directory proposes a unit tests suite for OAR's scheduler.
+It basically consists of a framework to help writing little scripts that will check the scheduler's decisions.
+
+Since OAR's API comes down to the Database, input and output data for the unit tests are SQL data.
+
+Input data are SQL file to be generated using mysqldump on a live OAR installation, or on a fake installation where resources aren't real (e.g. all resources targets are on the single test machine), then injected in the test database.
+
+Output data is actually the test database as it is let once the scheduler ran. 
+Unit test results are to be computed using SQL statements on that database.
+
+Several ideas behind this test framework come from Perl unit test packages mechanism (Test::More).
+
+= Notes =
+As a matter of implementation, it was needed to be able to run the Database server with a faked time, so that input SQL files are not outdated once inserted later after their creation. This is achieved using the faketime program, and tranparent thanks to the framework functions.
+
+Only the MySQL database is supported for now.
+
+A dedicated MySQL server is run for tests, hence you must watch out which TCP port is available: by default the dedicated MySQL server run on the 3307 port in order to avoid an obvious conflict with the default MySQL server instance which might be run on system startup.
+ 
+= Files =
+Any test is a file which is prefixed by 3 digits, e.g. 001_advance_reservation_with_absent_resource.sh .
+
+A test file uses file with the same prefix in the "data" directory, e.g. 001_oar.conf .
+
+Tests use bash functions that are defined in the "scripts" directory.
+
+Upon a test script execution, the execution environement is created in the "build" directory.
+
+Finally the "src" symlink is pointing to OAR source directory where the installation Makefile is located, e.g. <oar svn checkout>/trunk .
+
+= Configuration =
+Running those tests requires:
+* MySQL server
+* MySQL client
+* faketime
+* perl, aso...
+The src symlink pointing to OAR source directory, e.g. <oar svn checkout>/trunk .
+
+= Running tests =
+Running a test is only the matter of running the 3 digit prefixed bash script.
+
+The test might output to stderr a lot of verbose information, but only tests results goes to stdout.
+A test is successful if it outputs only "OK: ..." lines.
+A test fails as soon as it outputs one "KO: ..." line.
+
+= Writing tests =
+The easiest way to write a test is to copy one of the existing one, and adapt it.
+
+The test script process begins with the test_cleanup call, everthing above should be left as it is.
+
+3 kinds of functions are provided:
+* base, which provides the framework base functions, related to the actual testing
+* mysql, which provides functions to handle the MySQL database process
+* oar, which provides functions to handle OAR mechanisms
+
+== base ==
+* debug(message)
+Print (to stderr) debug info if debug is activated (DEBUG variable)
+
+* test_print_ok(message)
+Print the OK flag, along with a message
+
+* test_print_ko(message)
+Print the KO flag, along with a message
+
+* test_exit_status(message, command) {
+Print the OK or KO flag depending on the exit status of command, along with a message
+
+* test_preparer()
+Prepare the test environment
+
+* test_cleanup()
+Clean-up the test environment
+
+== MySQL ==
+* mysql_check_oar_conf()
+Check that the oar.conf used if ok for the test
+
+* mysql_copy_config(file=my.cnf)
+Fetch mysql config file from the data directory, by adding the test prefix to file.
+file defaults to "my.cnf".
+
+* mysql_init()
+Initialize the dedicated MySQL server own data.
+
+* mysql_start(date=null)
+Start the dedicated MySQL server, possibily a the specified date, or now if no date is given.
+
+* mysql_stop()
+Stop the dedicated MySQL server.
+
+* mysql_create_oar_db()
+Create the oar DB, as given in oar.conf, and grant privilegies.
+
+* mysql_query(query)
+Run the SQL query that is provided as parameter.
+
+* mysql_query_from_file(file)
+Run the SQL query from file, looked up in the data directory after prepending the test prefix.
+
+== OAR ==
+* oar_copy_config(file=oar.conf)
+Fetch OAR config file from the data directory, by adding the test prefix to file.
+file defaults to "oar.conf".
+
+* oar_source_conf()
+Source OAR parameters, making then available for the test functions.
+
+* oar_install()
+Perform OAR installation within the test enviroment.
+
+oar_run_scheduler()
+Run one pass of OAR meta scheduler, i.e. one pass of the queue's scheduler on each queue.
+

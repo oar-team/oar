@@ -1,0 +1,120 @@
+Template: oar/db/dbtype
+Type: select
+Choices: Mysql, Postgresql
+Default: Mysql
+_Description: OAR Database backend:
+ Choose the SQL backend that OAR will use to store all data concerning
+ node, scheduling,...
+
+Template: oar/node/dosetup
+Type: boolean
+Default: false
+_Description: Do you want to setup OAR nodes now ?
+ Nodes can be configured now
+
+Template: oar/node/listmethod
+Type: select
+Choices: inline, file
+Default: inline
+_Description: Node list input method:
+ Select the method you want for entering the OAR node hostname list
+
+Template: oar/node/deploymethod
+Type: select
+Choices: rsh, ssh, rshp/rsh, rshp/ssh
+Default: ssh
+_Description: Node configuration deployment method:
+ Choose a method for deploying OAR nodes configuration
+ Root account must be configured to access each node without prompt using the selected method.
+
+Template: oar/node/listinline
+Type: string
+Default: 
+_Description: OAR node list (inline):
+ You may provide now a list of execution nodes for OAR. Nodes in this list will be configured (OAR configuration files deployment, OAR SSH keys and known hosts base setup) so that once oar-exec is installed on each of them, they can be used to execute jobs submited to OAR.
+ To do so, please enter those nodes hostname list, using white spaces as separator.
+
+Template: oar/node/listfile
+Type: string
+Default: 
+_Description: OAR node list (file):
+ You may provide now a list of execution nodes for OAR. Nodes in this list will be configured (OAR configuration files deployment, OAR SSH keys and known hosts base setup) so that once oar-exec is installed on each of them, they can be used to execute jobs submited to OAR.
+ To do so, please enter the path to a file containing the list of node hostnames (one hostname per line).
+
+Template: oar/db/doinit
+Type: boolean
+Default: false
+_Description: Do you want to initialize the OAR database now ?
+ The OAR database can be created and configured for you now
+
+Template: oar/db/initfailed
+Type: error
+_Description: Failed to initialize OAR database
+ OAR database initialization failed.
+ You may try to initialize it by hand once packages installation is finished.
+ Use oar_mysql_db_init script located in /usr/sbin directory to achieve that.
+
+Template: oar/db/mysqlskipnetworking
+Type: note
+_Description: MySQL network access configuration
+ Warning: you may need to customize your MySQL server configuration in order to allow network access from remote host. 
+ This may be done by removing (commenting) the skip-networking sentence in /etc/mysql/my.conf file.
+
+Template: oar/db/postgreswarning
+Type: text
+_Description: Postgresql configuration note
+ Warning: this debian package does not perform postgresql database configuration.
+ You should follow the instruction from /usr/share/docs/oar-server/README.Debian
+ in order to create Posgressql users, databases and table suitable for OAR.
+
+Template: oar/db/hostname
+Type: string
+Default: localhost
+_Description: OAR database server hostname:
+ Please enter the name of the SQL server that will host the OAR database
+
+Template: oar/db/adminlogin
+Type: string
+Default: root
+_Description: OAR MySQL admin login:
+ Please enter the MySQL administrator's login
+
+Template: oar/db/adminpasswd
+Type: password
+_Description: OAR MySQL admin passwd:
+ Please enter the MySQL administrator's password
+
+Template: oar/db/basename
+Type: string
+Default: oar
+_Description: OAR database name:
+ Please enter the name of the OAR database
+
+Template: oar/db/baselogin
+Type: string
+Default: oar
+_Description: OAR database login:
+ Please enter the login name that will be the owner of the OAR database
+
+Template: oar/db/basepasswd
+Type: password
+_Description: OAR database user passwd:
+ Please enter the password of the user owning the OAR database
+
+Template: oar/server/hostname
+Type: string
+Default: localhost
+_Description: OAR server hostname:
+	Please enter OAR server hostname
+
+Template: oar/server/port
+Type: string
+Default: 6666
+_Description: OAR server port:
+	Please enter the port you want OAR server to listen to
+
+Template: oar/server/allowednetworks
+Type: string
+Default: 127.0.0.1/32
+_Description: OAR allowed networks:
+	Please enter networks from which OAR job may be submitted

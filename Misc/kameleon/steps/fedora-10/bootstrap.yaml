@@ -1,0 +1,7 @@
+bootstrap:
+ - rinse:
+   - exec_appliance:  if [ "$$arch" = "i386" ]; then rinse --arch=i386 --distribution fedora-core-10 --directory $$chroot/; fi
+   - exec_appliance:  if [ "$$arch" = "x86_64" ]; then rinse --arch=amd64 --distribution fedora-core-10 --directory $$chroot/; fi
+   - exec_appliance:  echo "rm -rf $$chroot" > $$workdir/clean.sh
+   - exec_chroot:     mount -t proc proc /proc
+   - exec_appliance:  sed -i "1i umount $$chroot/proc" $$workdir/clean.sh

@@ -1,0 +1,737 @@
+#!/usr/bin/perl -w
+# $Id: oarstat 2136 2009-04-09 17:37:59Z capitn $
+# print active job properties
+
+use strict;
+use warnings;
+use Data::Dumper;
+use oar_iolib;
+use Getopt::Long;
+use oarversion;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+# Read config
+init_conf($ENV{OARCONFFILE});
+my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
+
+
+#Try to load XML module
+my $XML_enabled = 1;
+unless (eval "use XML::Dumper qw(pl2xml);1"){
+    $XML_enabled = 0;
+}
+
+#Try to load YAML module
+my $YAML_enabled = 1;
+unless (eval "use YAML;1"){
+    $YAML_enabled = 0;
+}
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
+my $Printed_jobs = 0;
+
+my @job_ids;
+my $array_id;
+my $full_view;
+my $sql_property;
+my $XML_mode;
+my $YAML_mode;
+my $DUMPER_mode;
+my $Old;
+my $gantt_query;
+my $accounting_query;
+my $events_query;
+my $properties_query;
+
+my @jobs;
+my $user;
+my $base;
+
+warn("WARNING: This command will be deprecated in a future release!\n");
+
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions ("help|h" => \&show_usage,
+            "version|V" => \&show_version,
+            "job|j=i"  => \@job_ids,
+            "full|f"  => \$full_view,
+            "user|u:s" => \$user,
+            "array:i" => \$array_id,
+            "gantt|g=s"   => \$gantt_query,
+            "events|e" => \$events_query,
+            "properties|p" => \$properties_query,
+            "accounting=s"   => \$accounting_query,
+            "sql=s"   => \$sql_property,
+            "xml|X" => \$XML_mode,
+            "yaml|Y" => \$YAML_mode,
+            "dumper|D" => \$DUMPER_mode,
+            "backward-compatible|backward_compatible" => \$Old
+           );
+
+if (defined($XML_mode) and $XML_enabled != 1){
+    warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+    exit(1)
+}
+if (defined($YAML_mode) and $YAML_enabled != 1){
+    warn("Yaml module not available on the system. Ask your administrator to install it if needed.\n");
+    exit(1);
+}
+
+$user = $ENV{OARDO_USER} if (defined($user) and ($user eq ''));
+
+if (defined($array_id) && $array_id !=0 && (scalar @job_ids > 0)){
+    warn("/!\\ ERROR : Conflicting Job IDs and Array IDs (--array and -j cannot be used together)\n");
+    exit(1);
+}
+
+
+$base = iolib::connect_ro();
+
+
+if (defined ($gantt_query)) {
+    &show_gantt;
+} elsif (defined ($accounting_query)) {
+    &show_accounting;
+} elsif (defined ($events_query)) {
+    &show_events;
+} elsif (defined ($properties_query)) {
+    &show_properties;
+} else {
+    &show_job;
+}
+
+iolib::disconnect($base);
+exit(0);
+
+
+### sub routines ###
+sub show_usage {
+    print <<EOS;
+Usage: oarstat [-X|-Y|-D|-f] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array]
+       oarstat [-e|-p] [-j jobid|--array array_id] 
+       oarstat [-X|-Y|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
+       oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
+
+Print job information
+
+Options:
+  -j, --job                 show informations only for the specified job
+  -f, --full                show full informations
+  -u, --user                show informations for this user only
+      --array               show informations for the specified array_job(s) and
+                            toggle array view in
+  -g, --gantt               show job informations between two date-times
+  -e, --events              show job events
+  -p, --properties          show job properties
+      --accounting          show accounting informations between two dates
+      --sql                 restricts display by applying the SQL where clause 
+                            on the table jobs (ex: "project = 'p1'")
+  -D, --dumper              print result in DUMPER format
+  -X, --xml                 print result in XML format
+  -Y, --yaml                print result in YAML format
+      --backward-compatible OAR 1.* version like display
+  -V, --version             print OAR version number
+  -h, --help                show this help screen
+EOS
+    exit(1);
+}
+
+sub show_version {
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
+
+sub show_accounting {
+    if ($accounting_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*/m){
+        my ($date1,$date2) = ($1." 00:00:00",$2." 00:00:00");
+        my $login;
+        my $Consumptions=iolib::get_accounting_summary($base,iolib::sql_to_local($date1),iolib::sql_to_local($date2),$user);
+    
+        # One user output
+        if (defined($user)) {
+            my $asked;
+            my $used;
+            if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
+            else { $asked=0; }
+            if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
+            else { $used=0; }
+            if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
+            if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
+            print "Usage summary for user '$user' from $1 to $2:\n";
+            print "-------------------------------------------------------------\n";
+            printf ("%-28s %s\n","Start of the first window:",iolib::local_to_sql($Consumptions->{$user}->{begin}));
+            printf ("%-28s %s\n","End of the last window:",iolib::local_to_sql($Consumptions->{$user}->{end}));
+            printf ("%-28s %s ( %s)\n","Asked consumption:",$asked,duration($asked));
+            printf ("%-28s %s ( %s)\n","Used consumption:",$used,duration($used));
+            print "By project consumption:\n";
+            $Consumptions=iolib::get_accounting_summary_byproject($base,iolib::sql_to_local($date1),iolib::sql_to_local($date2),$user);
+            foreach my $project (keys %{$Consumptions}) {
+                 print "  $project:\n";
+                 $asked=$Consumptions->{$project}->{ASKED}->{$user};
+                 $used=$Consumptions->{$project}->{USED}->{$user};
+                 printf ("%-28s %s ( %s)\n","    Asked :",$asked,duration($asked));
+                 printf ("%-28s %s ( %s)\n","    Used :",$used,duration($used));
+                 if (my @last_karma=iolib::get_last_project_karma($base,$user,$project,iolib::sql_to_local($date2))) {
+                     printf ("%-28s %s\n","    Last Karma :",$last_karma[0]);
+                 }
+            }
+    
+        # All users array output
+        }else{
+            print <<EOS;
+    User       First window starts  Last window ends     Asked (seconds)  Used seconds)
+    ---------- -------------------- -------------------- ---------------- ----------------
+EOS
+            foreach $login (keys %{$Consumptions}) {
+                if (!defined($Consumptions->{$login}->{ASKED})) {$Consumptions->{$login}->{ASKED}=0;}
+                if (!defined($Consumptions->{$login}->{USED})) {$Consumptions->{$login}->{USED}=0;}
+                printf("%-10.10s %-19s  %-19s  %16s %16s\n",
+                       $login,
+                       iolib::local_to_sql($Consumptions->{$login}->{begin}),
+                       iolib::local_to_sql($Consumptions->{$login}->{end}),
+                       $Consumptions->{$login}->{ASKED},
+                       $Consumptions->{$login}->{USED}
+                );
+            }
+        }
+        
+    }else{
+        print("Bad syntax for --accounting\n");
+        iolib::disconnect($base);
+        exit(1);
+    }
+}
+
+sub show_gantt {
+    if ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m){
+        my $hist = get_history($base, "$1 $2", "$3 $4");
+        if (defined($DUMPER_mode)){
+            print(Dumper($hist));
+        }elsif(defined($XML_mode)){
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml($hist));
+        }elsif(defined($YAML_mode)){
+            print(YAML::Dump($hist));
+        }else{
+            $Data::Dumper::Purity = 1;
+            $Data::Dumper::Terse = 1;
+            $Data::Dumper::Indent = 1;
+            $Data::Dumper::Deepcopy = 0;
+            print(Dumper($hist));
+        }
+    }else{
+        warn("Bad syntax for --gantt\n");
+        iolib::disconnect($base);
+        exit(1);
+    }
+}
+
+sub show_properties {
+    if(defined($array_id) &&  $array_id !=0){
+        push(@job_ids, iolib::get_array_job_ids($base, $array_id));
+    }
+
+    if($#job_ids >= 0){
+        my @resources;
+        foreach my $j (@job_ids){
+            push  (@resources, iolib::get_job_resources_properties($base, $j));
+        }
+        foreach my $r (@resources){
+            my $line = "";
+            foreach my $p (keys(%{$r})){
+                if(oar_Tools::check_resource_system_property($p) != 1){
+                    $r->{$p} = "" if (!defined($r->{$p}));
+                    $line .= " $p = '$r->{$p}' ,"
+                }
+            }
+            chop($line);
+            print("$line\n") or exit(5);
+        }
+    } else {
+        warn("No job specified\n");
+        iolib::disconnect($base);
+        exit(1);
+    }
+}
+
+sub show_events {
+	if(defined($array_id) &&  $array_id !=0){
+        push(@job_ids, iolib::get_array_job_ids($base, $array_id));
+    }
+
+    if($#job_ids >= 0){
+        foreach my $j (@job_ids){
+            my @events = iolib::get_job_events($base, $j);
+            foreach my $e (@events){
+                print_event_logs($e);
+            }
+        }
+    } else {
+        warn("No job specified\n");
+        iolib::disconnect($base);
+        exit(1);
+    }
+}
+
+sub print_event_logs($){
+    my $event_hashref = shift;
+    printf("%s| %s| %s: %s\n",
+        iolib::local_to_sql($event_hashref->{'date'}),
+        $event_hashref->{'job_id'},
+        $event_hashref->{'type'},
+        $event_hashref->{'description'}
+    );
+}
+
+sub show_job {
+    if ($#job_ids < 0){
+        if (defined($sql_property)){
+            push(@jobs, iolib::get_jobs_with_given_properties($base,$sql_property));
+        }elsif(defined($array_id) && $array_id !=0){
+            push(@jobs, iolib::get_array_subjobs($base, $array_id));
+        }else{
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Finishing", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Running", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Resuming", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Suspended", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Launching", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "toLaunch", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Waiting", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "toAckReservation", $user));
+            push(@jobs, iolib::get_jobs_in_state_for_user($base, "Hold", $user));
+        }
+    }elsif($#job_ids >= 0){
+        foreach my $j (@job_ids){
+            my $tmp = iolib::get_job($base,$j);
+            if (defined($tmp)){
+                push(@jobs, $tmp);
+            }
+        }
+    }
+    my %data_to_print;
+    foreach my $g (@jobs) {
+        $data_to_print{$g->{job_id}} = get_job_data($base,$g);
+    }
+    print_job_data(\%data_to_print,\@jobs);
+}
+
+sub get_job_data($$){
+    my $dbh = shift;
+    my $job_info = shift;
+
+    my @nodes;
+    my @node_hostnames;
+    my $mold;
+    my @date_tmp;
+    my @job_events;
+    my %data_to_display;
+    my $job_user;
+    my $job_cpuset_uid;
+    my @job_dependencies;
+    my @job_types = iolib::get_job_types($dbh,$job_info->{job_id});
+    my $cpuset_name;
+    my $array_index;
+    
+    $cpuset_name = iolib::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
+    $array_index = iolib::get_job_array_index($dbh,$job_info->{job_id});
+
+    my $resources_string = "";
+    my $reserved_resources;
+    if ($job_info->{assigned_moldable_job} ne ""){
+        @nodes = iolib::get_job_resources($dbh,$job_info->{assigned_moldable_job});
+        @node_hostnames = iolib::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
+        $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
+    }
+    if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
+        $reserved_resources = iolib::get_gantt_visu_resources_for_resa($dbh,$job_info->{job_id});
+    } 
+
+    if (defined($full_view) or defined($Old)){
+        @date_tmp = iolib::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
+        @job_events = iolib::get_job_events($dbh,$job_info->{job_id});
+        @job_dependencies = iolib::get_current_job_dependencies($dbh,$job_info->{job_id});
+
+        $job_cpuset_uid = iolib::get_job_cpuset_uid($dbh, $job_info->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
+        $job_user = oar_Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$job_cpuset_uid);
+   
+        #Get the job resource description to print -l option
+        my $job_descriptions = iolib::get_resources_data_structure_current_job($dbh,$job_info->{job_id});
+        foreach my $moldable (@{$job_descriptions}){
+            my $tmp_str = "";
+            foreach my $group (@{$moldable->[0]}){
+                if ($tmp_str ne ""){
+                    # add a new group
+                    $tmp_str .= "+";
+                }else{
+                    # first group
+                    $tmp_str .= "-l \"";
+                }
+                if ((defined($group->{property})) and ($group->{property} ne "")){
+                    $tmp_str .= "{$group->{property}}";
+                }
+                foreach my $resource (@{$group->{resources}}){
+                    my $tmp_val = $resource->{value};
+                    if ($tmp_val == -1){
+                        $tmp_val = "ALL";
+                    }elsif ($tmp_val == -2){
+                        $tmp_val = "BEST";
+                    }
+                    $tmp_str .= "/$resource->{resource}=$tmp_val";
+                }
+            }
+            $tmp_str .= ",walltime=".iolib::duration_to_sql($moldable->[1])."\" ";
+            $resources_string .= $tmp_str;
+        }
+        
+        
+        %data_to_display = (
+            Job_Id => $job_info->{job_id},
+            array_id => $job_info->{array_id},
+            array_index => $array_index,
+            name => $job_info->{job_name},
+            owner => $job_info->{job_user},
+            job_user => $job_user,
+            job_uid => $job_cpuset_uid,
+            state => $job_info->{state},
+            assigned_resources => \@nodes,
+            assigned_network_address => \@node_hostnames,
+            queue => $job_info->{queue_name},
+            command => $job_info->{command},
+            launchingDirectory => $job_info->{launching_directory},
+            jobType => $job_info->{job_type},
+            properties => $job_info->{properties},
+            reservation => $job_info->{reservation},
+            walltime => $mold->{moldable_walltime},
+            submissionTime => $job_info->{submission_time},
+            startTime => $job_info->{start_time},
+            message => $job_info->{message},
+            scheduledStart => $date_tmp[0],
+            resubmit_job_id => $job_info->{resubmit_job_id},
+            events => \@job_events,
+            wanted_resources => $resources_string,
+            project => $job_info->{project},
+            cpuset_name => $cpuset_name,
+            types => \@job_types,
+            dependencies => \@job_dependencies,
+            exit_code => $job_info->{exit_code},
+            initial_request => ""
+
+        );
+        if (($ENV{OARDO_USER} eq $job_info->{job_user})
+            or ($ENV{OARDO_USER} eq "oar")
+            or ($ENV{OARDO_USER} eq "root")){
+            $data_to_display{initial_request} = $job_info->{initial_request};
+
+        }
+    }else{
+        %data_to_display = (
+            Job_Id => $job_info->{job_id},
+            array_id => $job_info->{array_id},
+            array_index => $array_index,
+            name => $job_info->{job_name},
+            owner => $job_info->{job_user},
+            state => $job_info->{state},
+            assigned_resources => \@nodes,
+            assigned_network_address => \@node_hostnames,
+            queue => $job_info->{queue_name},
+            command => $job_info->{command},
+            launchingDirectory => $job_info->{launching_directory},
+            jobType => $job_info->{job_type},
+            properties => $job_info->{properties},
+            reservation => $job_info->{reservation},
+            submissionTime => $job_info->{submission_time},
+            startTime => $job_info->{start_time},
+            message => $job_info->{message},
+            resubmit_job_id => $job_info->{resubmit_job_id},
+            project => $job_info->{project},
+            cpuset_name => $cpuset_name,
+            types => \@job_types,
+            dependencies => \@job_dependencies
+        );
+    }
+    if (defined($reserved_resources)) {
+        $data_to_display{'reserved_resources'}=$reserved_resources;
+    }
+
+    return(\%data_to_display);
+}
+
+sub print_job_data($$){
+    my $data = shift;
+    my $job_array = shift;
+
+   
+    if (defined($DUMPER_mode)){
+        print(Dumper($data));
+    }elsif(defined($XML_mode)){
+        my $dump = new XML::Dumper;
+        $dump->dtd;
+        print($dump->pl2xml($data));
+    }elsif(defined($YAML_mode)){
+        print(YAML::Dump($data));
+    }else{
+        my %hashestat = (
+                'Waiting' => 'W',
+                'toLaunch' => 'L',
+                'Launching' => 'L',
+                'Hold'        => 'H',
+                'Running' => 'R',
+                'Terminated' => 'T',
+                'Error' => 'E',
+                'toError' => 'E',
+                'Finishing' => 'F',
+                'Suspended' => 'S',
+                'Resuming' => 'S',
+                'toAckReservation' => 'W'
+        );
+ 
+        foreach my $job_info (@{$job_array}){
+            if (defined($Old)){
+                print("Job Id: $job_info->{job_id}.oar\n");
+                $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+                print("    job_array_id = $job_info->{array_id}\n");
+                print("    job_array_index =  $data->{$job_info->{job_id}}->{array_index},\n");
+                print("    Job_Name = $job_info->{job_name}\n");
+                print("    Job_Owner = $job_info->{job_user}\n");
+                print("    job_state = $hashestat{$job_info->{state}}\n");
+                print("    comment = $job_info->{message}\n");
+                print("    wanted_resources = $data->{$job_info->{job_id}}->{wanted_resources}\n");
+                print("    queue = $job_info->{queue_name}\n");
+                print("    types = ".join(", ",@{$data->{$job_info->{job_id}}->{types}})."\n");
+                $job_info->{command} = '' if (!defined($job_info->{command}));
+                print("    command = $job_info->{command}\n");
+                print("    launchingDirectory = $job_info->{launching_directory}\n");
+                print("    jobType = $job_info->{job_type}\n");
+                print("    properties = $job_info->{properties}\n");
+                print("    reservation = $job_info->{reservation}\n");
+                if (!defined($data->{$job_info->{job_id}}->{walltime})){
+                    $data->{$job_info->{job_id}}->{walltime} = '';
+                }else{
+                    $data->{$job_info->{job_id}}->{walltime} = iolib::duration_to_sql($data->{$job_info->{job_id}}->{walltime});
+                }
+                print("    walltime = $data->{$job_info->{job_id}}->{walltime}\n");
+                print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
+                print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
+                print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
+                if (!defined($data->{$job_info->{job_id}}->{scheduledStart})){
+                    $data->{$job_info->{job_id}}->{scheduledStart} = "no prediction";
+                }else{
+                    $data->{$job_info->{job_id}}->{scheduledStart} = iolib::local_to_sql($data->{$job_info->{job_id}}->{scheduledStart});
+                }
+                print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
+                print("    assigned_resources = ".join("+",sort({ $a <=> $b } @{$data->{$job_info->{job_id}}->{assigned_resources}}))."\n");
+                print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_network_address}})."\n");
+                print("    nbNodes = ". ($#{$data->{$job_info->{job_id}}->{assigned_network_address}} +1) ."\n");
+                print("    weight = ". ($#{$data->{$job_info->{job_id}}->{assigned_resources}} + 1) ."\n");
+                print("    dependencies = ".join(" ",@{$data->{$job_info->{job_id}}->{dependencies}})."\n");
+                print("\n");
+            }elsif (defined($full_view)){
+                print("Job_Id: $job_info->{job_id}\n");
+                $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+                print("    job_array_id = $job_info->{array_id}\n");
+                print("    job_array_index = $data->{$job_info->{job_id}}->{array_index}\n");
+                print("    name = $job_info->{job_name}\n");
+                print("    project = $job_info->{project}\n");
+                print("    owner = $job_info->{job_user}\n");
+                print("    state = $job_info->{state}\n");
+                print("    wanted_resources = $data->{$job_info->{job_id}}->{wanted_resources}\n");
+                print("    types = ".join(", ",@{$data->{$job_info->{job_id}}->{types}})."\n");
+                print("    dependencies = ".join(" ",@{$data->{$job_info->{job_id}}->{dependencies}})."\n");
+                print("    assigned_resources = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_resources}})."\n");
+                print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_network_address}})."\n");
+                print("    queue = $job_info->{queue_name}\n");
+                $job_info->{command} = '' if (!defined($job_info->{command}));
+                print("    command = $job_info->{command}\n");
+                if (defined($job_info->{exit_code})){
+                    my $exit_code = $job_info->{exit_code} >> 8;
+                    my $exit_num = $job_info->{exit_code} & 127;
+                    my $exit_core = $job_info->{exit_code} & 128;
+                    print("    exit_code = $job_info->{exit_code} ($exit_code,$exit_num,$exit_core)\n");
+                }
+                print("    launchingDirectory = $job_info->{launching_directory}\n");
+                print("    jobType = $job_info->{job_type}\n");
+                print("    properties = $job_info->{properties}\n");
+                print("    reservation = $job_info->{reservation}\n");
+                if (defined $data->{$job_info->{job_id}}->{'reserved_resources'}) {
+                    print("    reserved_resources = ");
+                    my @tmp_array_ok;
+                    my @tmp_array_ko;
+                    for my $r (keys %{$data->{$job_info->{job_id}}->{'reserved_resources'}}) {
+                        if ($data->{$job_info->{job_id}}->{'reserved_resources'}->{$r}->{'current_state'} eq "Alive") {
+                            push (@tmp_array_ok,$r);
+                        } else {
+                            push (@tmp_array_ko,$r);
+                        }
+                    }
+                    my $tmp_str_ok = join("+",sort ({ $a <=> $b } @tmp_array_ok));
+                    my $tmp_str_ko = join("+",sort ({ $a <=> $b } @tmp_array_ko));
+                    if ( $tmp_str_ok ne "" ) {
+                        print $tmp_str_ok;
+                    } else {
+                        print("none");
+                    }
+                    if ( $tmp_str_ko ne "" ) {
+                        print "+($tmp_str_ko)";
+                    }
+                    print("\n");
+                }
+                if (!defined($data->{$job_info->{job_id}}->{walltime})){
+                    $data->{$job_info->{job_id}}->{walltime} = '';
+                }else{
+                    $data->{$job_info->{job_id}}->{walltime} = iolib::duration_to_sql($data->{$job_info->{job_id}}->{walltime});
+                }
+                print("    walltime = $data->{$job_info->{job_id}}->{walltime}\n");
+                print("    submissionTime = ".iolib::local_to_sql($job_info->{submission_time})."\n");
+                print("    startTime = ".iolib::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
+                print("    stopTime = ".iolib::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
+                if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
+                    print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
+                }
+                if (defined($data->{$job_info->{job_id}}->{job_uid})){
+                    print("    job_user = $data->{$job_info->{job_id}}->{job_user}\n");
+                    print("    job_uid = $data->{$job_info->{job_id}}->{job_uid}\n");
+                }
+                if ((defined($job_info->{initial_request})) and
+                    (($ENV{OARDO_USER} eq $job_info->{job_user}) or
+                     ($ENV{OARDO_USER} eq "oar") or
+                     ($ENV{OARDO_USER} eq "root"))
+                   ){
+                    print("    initial_request = $job_info->{initial_request}\n");
+                }else{
+                    print("    initial_request = \n");
+                }
+                print("    message = $job_info->{message}\n");
+                if (!defined($data->{$job_info->{job_id}}->{scheduledStart})){
+                    $data->{$job_info->{job_id}}->{scheduledStart} = "no prediction";
+                }else{
+                    $data->{$job_info->{job_id}}->{scheduledStart} = iolib::local_to_sql($data->{$job_info->{job_id}}->{scheduledStart});
+                }
+                print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
+                print("    resubmit_job_id = $job_info->{resubmit_job_id}\n");
+                print("    events = ");
+                foreach my $e (@{$data->{$job_info->{job_id}}->{events}}){
+                    print("[".iolib::local_to_sql($e->{date})."] $e->{type}:$e->{description}");
+                    print(" , ");
+                }
+                print("\n\n");
+            }else{
+                if(defined($array_id)){
+                    if ($Printed_jobs == 0){
+                        print <<EOS;
+Job id    A. id     A. index  Name       User     Time Use            S Queue
+--------- --------- --------- ---------- -------- ------------------- - --------
+EOS
+                    }
+                    $job_info->{'command'} = '' if (!defined($job_info->{'command'}));                              
+                    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));            
+                    printf("%-9.9s %-9.9s %-9.9s %-10.10s %-8.8s %-19.19s %1.1s %-8.8s\n",
+                        $job_info->{'job_id'},
+                        $job_info->{'array_id'},
+                        $data->{$job_info->{job_id}}->{array_index},                                    $job_info->{'job_name'},
+                        $job_info->{'job_user'},
+                        iolib::local_to_sql($job_info->{'submission_time'}),
+                        $hashestat{$job_info->{'state'}},
+                        $job_info->{'queue_name'}
+                    );                    
+                    $Printed_jobs ++;
+                }else{ 
+                    if ($Printed_jobs == 0){
+                    print <<EOS;
+Job id     Name           User           Time Use            S Queue
+---------- -------------- -------------- ------------------- - ----------
+EOS
+                    }
+
+                    $job_info->{'command'} = '' if (!defined($job_info->{'command'}));
+                    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+                    printf("%-10.10s %-14.14s %-14.14s %-19.19s %1.1s %-10.10s\n",
+                        $job_info->{'job_id'},
+                        $job_info->{'job_name'},
+                        $job_info->{'job_user'},
+                        iolib::local_to_sql($job_info->{'submission_time'}),
+                        $hashestat{$job_info->{'state'}},
+                        $job_info->{'queue_name'}
+                    );
+                    $Printed_jobs ++;
+                }
+            }
+        }
+    }
+}
+
+sub get_history($$$){
+    my ($base,$date_start,$date_stop) = @_;
+
+    $date_start = iolib::sql_to_local($date_start);
+    $date_stop = iolib::sql_to_local($date_stop);
+    
+    my %hash_dumper_result;
+    my @nodes = iolib::list_resources($base);
+    $hash_dumper_result{resources} = \@nodes;
+    my %job_gantt = iolib::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
+    $hash_dumper_result{jobs} = \%job_gantt;
+    #print(Dumper(%hash_dumper_result));
+    #print finished or running jobs
+    my %jobs_history = iolib::get_jobs_range_dates($base,$date_start,$date_stop);
+    foreach my $i (keys(%jobs_history)){
+        my $types = iolib::get_current_job_types($base,$i);
+        if (!defined($job_gantt{$i}) || (defined($types->{besteffort}))){
+            if (($jobs_history{$i}->{state} eq "Running") ||
+                ($jobs_history{$i}->{state} eq "toLaunch") ||
+                ($jobs_history{$i}->{state} eq "Suspended") ||
+                ($jobs_history{$i}->{state} eq "Resuming") ||
+                ($jobs_history{$i}->{state} eq "Launching")){
+                if (defined($types->{besteffort})){
+                    $jobs_history{$i}->{stop_time} = iolib::get_gantt_visu_date($base);
+                }else{
+                    #This job must be already  printed by gantt
+                    next;
+                }
+            }
+            $hash_dumper_result{jobs}{$i} = $jobs_history{$i};
+        }
+    }
+
+    #print Down or Suspected resources
+    my %dead_resource_dates = iolib::get_resource_dead_range_date($base,$date_start,$date_stop);
+    $hash_dumper_result{dead_resources} = \%dead_resource_dates;
+
+    return(\%hash_dumper_result);
+}
+
+sub duration($){
+# Converts a number of seconds in a human readable duration (years,days,hours,mins,secs)
+    my $time=shift;
+    my $seconds;
+    my $minutes;
+    my $hours;
+    my $days;
+    my $years;
+    my $duration="";
+    $years=int($time/31536000);
+    if ($years==1) { $duration .="1 year ";}
+    elsif ($years) { $duration .="$years years ";};
+    $days=int($time/86400)%365;
+    if ($days==1) { $duration .="1 day ";}
+    elsif ($days) { $duration .="$days days ";};
+    $hours=int($time/3600)%24;
+    if ($hours==1) { $duration .="1 hour ";}
+    elsif ($hours) { $duration .="$hours hours ";};
+    $minutes=int($time/60)%60;
+    if ($minutes==1) { $duration .="1 minute ";}
+    elsif ($minutes) { $duration .="$minutes minutes ";};
+    $seconds=$time%60;
+    if ($seconds==1) { $duration .="1 second ";}
+    elsif ($seconds) { $duration .="$seconds seconds ";};
+    if ($duration eq "") {$duration="0 seconds ";};
+    return $duration;
+}

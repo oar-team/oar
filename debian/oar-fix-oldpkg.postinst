@@ -1,0 +1,13 @@
+#! /bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+db_version 2.0
+
+perl -pi -e "s,chsh -s /bin/bash oar,\n        ;;\n        remove|disappear)\n            chsh -s /bin/bash oar," /var/lib/dpkg/info/oar-common.postrm 2>/dev/null || true
+perl -pi -e "s,chsh -s /bin/bash oar,\n        ;;\n        remove|disappear)\n            chsh -s /bin/bash oar," /var/lib/dpkg/info/oar-node.postrm 2>/dev/null || true
+
+exit 0
+
+

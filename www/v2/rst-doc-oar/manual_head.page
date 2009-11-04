@@ -1,0 +1,8 @@
+---
+title: Manual
+inMenu: true
+directoryName: Documentations
+orderInfo: 2
+blocks:
+  - {format: html, name: content}
+---

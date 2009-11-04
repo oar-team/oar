@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+# $Id$
+
+use strict;
+use warnings;
+use Data::Dumper;
+use oar_iolib;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use Getopt::Long;
+use oarversion;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+Getopt::Long::Configure ("gnu_getopt");
+my $Version;
+my $Help;
+my $Delete_windows_before;
+my $Reinitialize;
+GetOptions (
+    "reinitialize" => \$Reinitialize,
+    "delete-before=i" => \$Delete_windows_before,
+    "help|h" => \$Help,
+    "version|V" => \$Version
+           );
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n") ;
+    exit(0);
+}
+
+if (defined($Help)){
+     print <<EOS;
+Usage: $0 [-h] [-V] [--reinitialize | --delete_before]
+Feed accounting table to make usage statistics.
+Options:
+      --reinitialize
+                delete everything and recheck every jobs and feed the table
+      --delete-before=<number_of_seconds>
+                delete every records number_of_seconds ago
+  -h, --help    show this help screen
+  -V, --version print OAR version number
+EOS
+    exit(0);
+}
+
+# Default window size
+my $windowSize = 86400;
+init_conf($ENV{OARCONFFILE});
+if (is_conf("ACCOUNTING_WINDOW")){
+    $windowSize = get_conf("ACCOUNTING_WINDOW");
+}
+
+my $base = iolib::connect();
+
+my $lockName = "ACCOUNTING";
+iolib::get_lock($base,$lockName,3600);
+if (defined($Reinitialize)){
+    print("Deleting all records from the acounting table...\n");
+    iolib::delete_all_from_accounting($base);
+}elsif (defined($Delete_windows_before)){
+    print("Deleting records older than $Delete_windows_before seconds ago...\n");
+    $Delete_windows_before = iolib::get_date($base) - $Delete_windows_before;
+    iolib::delete_accounting_windows_before($base,$Delete_windows_before);
+}else{
+    iolib::check_accounting_update($base,$windowSize);
+}
+iolib::release_lock($base,$lockName);
+
+iolib::disconnect($base);
+
+exit 0;

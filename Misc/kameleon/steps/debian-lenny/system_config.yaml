@@ -1,0 +1,55 @@
+system_config:
+ - resolve_conf:
+   - write_file:
+     - /etc/resolve.conf
+     - |
+       nameserver 208.67.222.222
+       nameserver 208.67.220.220
+ - fstab:
+   - write_file:
+     - /etc/fstab
+     - |
+       proc /proc proc defaults 0 0
+ - etc_hosts:
+   - write_file:
+     - /etc/hosts
+     - |
+       127.0.0.1  localhost oar
+ - etc_hostname:
+   - write_file:
+     - /etc/hostname
+     - |
+       oar
+ - network_interfaces:
+   - write_file:
+     - /etc/network/interfaces
+     - |
+       auto lo
+       iface lo inet loopback
+       
+       auto eth0
+       iface eth0 inet dhcp
+ - adduser:
+   - exec_chroot: useradd -m -p '$1$f/W7v.Ze$LMPAjbXywS/f1dHzrmXpg/' -s /bin/bash kameleon
+ - apt:
+   - exec_appliance: export DEBIAN_FRONTEND="noninteractive"
+   - exec_chroot: mkdir -p /var/cache/apt/archives/partial
+   - exec_chroot: apt-get update
+   - exec_chroot: apt-get -y --force-yes install gnupg
+   - exec_chroot: apt-get update
+   - exec_chroot: apt-get -y --force-yes install locales
+   - write_file:
+     - /etc/locale.gen
+     - |
+       en_US.UTF-8 UTF-8
+   - exec_chroot: locale-gen
+##   - exec_chroot: mkdir -p /chroot/var/lib/locales/supported.d
+##   - exec_appliance: cp /var/lib/locales/supported.d/local $$chroot/var/lib/locales/supported.d
+##   - exec_chroot: dpkg-reconfigure locales
+ - sudo:
+   - exec_chroot: apt-get -y --force-yes install sudo
+   - append_file:
+     - /etc/sudoers
+     - |
+       %sudo ALL=NOPASSWD: ALL
+   - exec_chroot: usermod -G sudo kameleon

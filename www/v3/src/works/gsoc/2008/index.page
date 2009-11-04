@@ -1,0 +1,13 @@
+---
+title: Google Summer Of code
+---
+h2. 2008 Edition
+
+During the summer 2008, OAR software took part on the Google Summer of Code event
+(see http://code.google.com/soc/2008/ for further details).
+We've participated successfully and we got two students to work upon two different project proposals. The final code produced can be found here: http://code.google.com/p/google-summer-of-code-2008-oar/ .
+The work done during gsoc 2008 by our two students is now integrated in our current development branch and will be released soon.
+You can take a look at the students work's reviews:
+
+* "Array jobs":gsoc_array_jobs.html
+* "Energy saving":gsoc_energy_saving.html

@@ -1,0 +1,26 @@
+TODO:
+
+* grid-job
+* gantt-panel ( see https://extjs.com/forum/showthread.php?t=11552 )
+https://extjs.com/forum/showthread.php?t=43262
+http://examples.extjs.eu/?ex=formloadsubmit
+
+* status-panel (monika)
+* submission/reservation (formulaire)
+* poar-widget.js file(??)
+* alpha-release
+
+*Enhancement
+* iframe (generic ???)
+* welcome treenode select by default
+
+
+DONE:
+* first try of grid-jobs
+* history (tree and center)
+* oar-bandeau (as layout-border)
+* welcome page
+* panel-bandeau (as layout-border) (must add at each panel)
+* iframe (ganttchart, monika)
+* tree-menu
+

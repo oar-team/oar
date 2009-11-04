@@ -1,0 +1,122 @@
+build_appliance:
+ - create_raw_image:
+   - exec_appliance:       dd if=/dev/zero of=$$workdir/image.raw bs=512 count=4194304
+   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mklabel msdos
+   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkpart primary ext2 0 1890
+   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkpart primary linux-swap 1890 2140
+   - exec_appliance:       /sbin/parted -s $$workdir/image.raw set 1 boot on
+   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkfs 1 ext2
+   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkfs 2 linux-swap
+ - copy_system_tree:
+   - exec_appliance:       export dev=`losetup -f`
+   - exec_appliance:       losetup $dev $$workdir/image.raw
+   - exec_appliance:       sed -i "1i losetup -d $dev" $$workdir/clean.sh
+   - exec_appliance:       export loopno=`echo $dev | grep -o "[0-9]*"`
+   - exec_appliance:       echo "0 4194304 linear 7:$loopno 0" | sudo dmsetup create hda
+   - exec_appliance:       sed -i "1i dmsetup remove hda" $$workdir/clean.sh
+   - exec_appliance:       kpartx -a /dev/mapper/hda
+   - exec_appliance:       sed -i "1i kpartx -d /dev/mapper/hda" $$workdir/clean.sh
+   - exec_appliance:       mkdir $$workdir/mnt
+   - exec_appliance:       sed -i "1i rm -rf $$workdir/mnt" $$workdir/clean.sh
+   - exec_appliance:       mount /dev/mapper/hda1 $$workdir/mnt
+   - exec_appliance:       sed -i "1i umount $$workdir/mnt" $$workdir/clean.sh
+   - exec_chroot:          umount /proc || true
+   - exec_appliance:       rsync -a $$chroot/* $$workdir/mnt
+ - install_grub:
+   - exec_appliance:       echo '(hd0) /dev/mapper/hda' > $$workdir/mnt/boot/grub/device.map
+   - exec_appliance:       grub-install --root-directory=$$workdir/mnt/ /dev/mapper/hda
+   - exec_appliance:       export kernel=`ls $$workdir/mnt/boot/vmlinuz* | grep -o "2.6.*"`
+   - exec_appliance:       export hda1=`ls -l /dev/disk/by-uuid/ | grep "mapper/hda1" | awk '{print $8}'`
+   - exec_appliance:       export hda2=`ls -l /dev/disk/by-uuid/ | grep "mapper/hda2" | awk '{print $8}'`
+   - exec_appliance:       sed -i "1i UUID=$hda2 none swap sw 0 0" $$workdir/mnt/etc/fstab
+   - exec_appliance:       sed -i "1i UUID=$hda1 / ext2 defaults 0 1" $$workdir/mnt/etc/fstab
+   - exec_appliance:       echo "default 0" > $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "timeout 3" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "hiddenmenu" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "title Fedora 10 $kernel" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "root (hd0,0)" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "kernel /boot/vmlinuz-$kernel root=UUID=$hda1 ro selinux=0" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "initrd /boot/initrd-$kernel.img" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       cd $$workdir/mnt/boot/grub; ln -s menu.lst grub.conf
+   - exec_appliance:       chroot $$workdir/mnt /sbin/new-kernel-pkg --package kernel --mkinitrd --depmod --install $kernel
+   - exec_appliance:       umount $$workdir/mnt
+   - exec_appliance:       rm -rf $$workdir/mnt
+   - exec_appliance:       kpartx -d /dev/mapper/hda
+   - exec_appliance:       dmsetup remove hda
+   - exec_appliance:       losetup -d $dev
+ - save_as_raw:
+   - exec_appliance:       mv $$workdir/image.raw $$workdir/$$distrib.raw
+   - exec_appliance:       cd $$workdir; ln -s $$distrib.raw image.raw
+ - save_as_vmdk:
+   - exec_appliance:       qemu-img convert -f raw $$workdir/image.raw -O vmdk $$workdir/$$distrib.vmdk
+   - write_file:
+     - /tmp/$$distrib.vmx
+     - |
+       #!/usr/bin/vmplayer
+       
+       # This is a Workstation 5 or 5.5 config file
+       # It can be used with Player
+       config.version = \"8\"
+       virtualHW.version = \"4\"
+       
+       displayName = \"OAR Appliance - $$distrib $$arch\"
+       numvcpus = \"1\"
+       memsize = \"256\"
+       MemAllowAutoScaleDown = \"FALSE\"
+       MemTrimRate = \"-1\"
+       uuid.action = \"create\"
+       # Startup hints interfers with automatic startup of a virtual machine
+       # This setting has no effect in VMware Player
+       hints.hideAll = \"TRUE\"
+       
+       # Enable time synchronization between computer
+       # and virtual machine
+       tools.syncTime = \"TRUE\"
+       
+       serial0.present = \"FALSE\"
+       serial1.present = \"FALSE\"
+       parallel0.present = \"FALSE\"
+       
+       isolation.tools.hgfs.disable = \"FALSE\"
+       isolation.tools.dnd.disable = \"FALSE\"
+       isolation.tools.copy.enable = \"TRUE\"
+       isolation.tools.paste.enabled = \"TRUE\"
+       
+       # First network interface card
+       # Change this address if you need to create several virtual machines.
+       # See http://www.vmware.com/support/esx21/doc/esx21admin_MACaddress.html
+       ethernet0.present = \"TRUE\"
+       ethernet0.virtualDev = \"e1000\"
+       ethernet0.connectionType = \"nat\"
+       ethernet0.addressType = \"static\"
+       ethernet0.address = \"00:50:56:3F:12:00\"
+       
+       floppy0.present = \"FALSE\"
+       
+       # First IDE disk
+       ide0:0.present = \"TRUE\"
+       ide0:0.fileName = \"$$distrib.vmdk\"
+       ide0:0.mode = \"persistent\"
+       ide0:0.startConnected = \"TRUE\"
+       ide0:0.writeThrough = \"TRUE\"
+       
+       tools.remindInstall = \"TRUE\"
+       
+       extendedConfigFile = \"$$distrib.vmxf\"
+       virtualHW.productCompatibility = \"hosted\"
+       tools.upgrade.policy = \"manual\"
+       
+       uuid.location = \"56 4d 82 82 8e ce 66 fb-e1 28 4f d3 7c 6b a3 d0\"
+       uuid.bios = \"56 4d 82 82 8e ce 66 fb-e1 28 4f d3 7c 6b a3 d0\"
+       
+       ide0:0.redo = \"\"
+   - exec_appliance: if [ "$$arch" = "x86_64" ]; then echo '       guestOS = "other26xlinux-64" ' >> $$chroot/tmp/$$distrib.vmx; else echo '       guestOS = "other26xlinux" ' >> $$chroot/tmp/$$distrib.vmx; fi
+   - exec_appliance:       mv $$chroot/tmp/$$distrib.vmx $$workdir/
+ - save_as_qcow2:
+   - exec_appliance:       qemu-img convert -f raw $$workdir/image.raw -O qcow2 $$workdir/$$distrib.qcow2
+ - save_as_vdi:
+   - exec_appliance:       VBoxManage convertdd $$workdir/image.raw $$workdir/$$distrib.vdi
+ - clean:
+   - exec_appliance:       rm $$workdir/image.raw

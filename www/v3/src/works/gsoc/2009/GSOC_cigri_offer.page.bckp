@@ -1,0 +1,6 @@
+---
+title: Advanced scheduler for CiGri
+inMenu: true
+orderInfo: 5
+---
+<notextile>{rstconverter: {rstfile: GSOC_cigri_offer.rst}}<notextile>

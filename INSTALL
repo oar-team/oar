@@ -1,0 +1,318 @@
+Installing the OAR batch system
+===============================
+
+
+What do you need?
+    - a cluster
+    - to be an admin of this cluster
+    - to get the install package of OAR (normally you have already done that)
+
+Requirements
+------------
+
+There a three kinds of nodes, each requiring a specific software configuration.
+
+These are :
+
+    - the server node, which will hold all of OAR "smartness" ;
+    - the login nodes, on which you will be allowed to login, then reserve some
+      computational nodes ;
+    - the computational nodes (a.k.a. the nodes), on which the jobs will run.
+
+On every nodes (server, login, computational), the following packages must be
+installed :
+
+    - Perl
+    - Perl-base
+    - openssh (server and client)
+
+On the OAR server and on the login nodes, the following packages must be
+installed:
+
+    - Perl-Mysql | Perl-PostgreSQL
+    - Perl-DBI
+    - MySQL | PostgreSQL
+    - libmysql | libpostgres
+
+From now on, we will suppose all the packages are correctly installed and
+configured and the database is started.
+
+
+Configuration of the cluster
+----------------------------
+
+The following steps have to be done, prior to installing OAR:
+
+    - add a user named "oar" in the group "oar" on every node
+
+    - let the user "oar" connect through ssh from any node to any node WITHOUT
+      password. To achieve this, here is some standard procedure for OpenSSH:
+      
+        * create a set of ssh keys for the user "oar" with ssh-keygen (for
+          instance 'id_dsa.pub' and 'id_dsa')
+        * copy these keys on each node of the cluster in the ".ssh" folder of
+          the user "oar"
+        * append the contents of 'id_dsa.pub' to the file
+          "~/.ssh/authorized_keys"
+        * the default oar ssh public key in the authorized_keys file must be
+          tagged for the security. So this prefix must be set in front of
+          the public key::
+
+                environment="OAR_KEY=1"
+
+          So if the oar public key is::
+
+                ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4b
+                zkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPW
+                FOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr
+
+
+          then it must be switched into::
+
+                environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP9
+                1oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM2
+                68p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr
+
+        * in "~/.ssh/config" add the lines::
+        
+            Host *
+                ForwardX11 no
+                StrictHostKeyChecking no
+                PasswordAuthentication no
+                AddressFamily inet
+
+        * test the ssh connection between (every) two nodes : there should not
+          be any prompt.
+
+There are three different flavors of installation :
+
+    * server:  install the daemon which must be running on the server
+    * user:    install all the tools needed to submit and manage jobs for the
+      users (oarsub, oarstat, oarnodes, ...)
+    * node:    install the tools for a computing node (check that the oar
+               user ssh key is prefixed by environment="OAR_KEY=1", see
+               `Important notes`_)
+
+The installation is straightforward:
+
+    - become root
+    - go to OAR source repository
+    - You can set Makefile variables in the command line to suit your configuration
+      (change "OARHOMEDIR" to the home of your user oar and "PREFIX" where you want
+      to copy all OAR files).
+    - run make  <module> [module] ...
+        where module := { server-install | user-install | node-install | doc-install | debian-package }
+              OPTIONS := { OARHOMEDIR | OARCONFDIR | OARUSER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }
+    - Edit /etc/oar/oar.conf file to match your cluster configuration.
+    - Make sure that the PATH environment variable contains $PREFIX/$BINDIR of
+      your installation (default is /usr/local/bin).
+
+
+Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init
+script provided with the server module installation and located in $PREFIX/sbin
+(/usr/local/sbin in default Makefile).
+
+If you want to use a postgres SQL server then you can call the oar_psql_db_init.pl
+script that will do all the users and tables creation for you.
+If you want to do this by yourself, you have to add a  new user which can 
+connect on a new oar database (use the commands *createdb* and *createuser*). 
+After that, you have to authorize network connections on the postgresql server 
+in the *postgresql.conf* (uncomment *tcpip_socket = true*).  Then you can import
+the database scheme stored in *oar_postgres.sql* (use *psql* and the SQL command
+"\\i").
+
+Here is an example to perform all the potgres database install(there is
+certainly other ways to do that)::
+
+    sudo su - postgres
+
+    createuser -P
+        Enter name of role to add: oar
+        Enter password for new role:
+        Enter it again: 
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) n
+        Shall the new role be allowed to create more new roles? (y/n) n
+        CREATE ROLE
+    
+    createuser -P
+        Enter name of role to add: oar_ro
+        Enter password for new role:
+        Enter it again: 
+        Shall the new role be a superuser? (y/n) n
+        Shall the new role be allowed to create databases? (y/n) n
+        Shall the new
+    
+    createdb oar
+
+    sudo vi /etc/postgresql/8.1/main/pg_hba.conf
+        host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
+        host    oar         oar               127.0.0.1          255.255.255.255    md5
+    # Be careful to put these two lines at the top of the file or it won't work
+
+    sudo /etc/init.d/postgresql-8.1 reload
+    
+    psql -Uoar -h127.0.0.1 oar
+        \i /usr/lib/oar/pg_structure.sql
+        \i /usr/lib/oar/pg_default_admission_rules.sql
+        \i /usr/lib/oar/default_data.sql
+        \q
+    
+    psql oar
+        GRANT ALL PRIVILEGES ON schema,accounting,admission_rules,assigned_resources,
+        challenges,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,
+        gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,
+        job_dependencies,job_resource_descriptions,job_resource_groups,
+        job_state_logs,job_types,jobs,moldable_job_descriptions,queues,
+        resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,
+        files_file_id_seq,job_resource_groups_res_group_id_seq,
+        job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,
+        moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,
+        resources_resource_id_seq,jobs_job_id_seq TO oar;
+        
+        GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,
+        event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,
+        gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,
+        job_resource_descriptions,job_resource_groups,job_state_logs,job_types,
+        jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,
+        event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,
+        job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,
+        moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,
+        resources_resource_id_seq,jobs_job_id_seq TO oar_ro;
+        \q
+    
+    # You can test it with
+    psql oar oar_ro -h127.0.0.1
+
+IMPORTANT: be sure to activate the "autovacuum" feature in the
+"postgresql.conf" file (OAR creates and deletes a lot of records and this
+setting cleans the postgres database from unneeded records).
+Better performances are achieved by adding the vacuum into the crontab of the
+postgres user like this ("crontab -e" to edit and add the line)
+::
+
+    postgres$ crontab -l
+    # m h  dom mon dow   command
+    02 02 * * * vacuumdb -a -f -z 
+
+
+For more information about postgresql, go to http://www.postgresql.org/.
+
+**Security issue**: For security reasons it is hardly **recommended** to
+configure a read only account for the OAR database (like the above example).
+Thus you will be able to add this data in DB_BASE_LOGIN_RO_ and
+DB_BASE_PASSWD_RO_ in *oar.conf*. 
+
+Note: The same machine may host several or even all modules.
+
+Note about X11: The easiest and scalable way to use X11 application on cluster
+nodes is to open X11 ports and set the right DISPLAY environment variable by
+hand.  Otherwise users can use X11 forwarding via ssh to access cluster
+frontal. After that you must configure ssh server on this frontal with ::
+
+    X11Forwarding yes
+    X11UseLocalhost no
+
+With this configuration, users can launch X11 applications after a 'oarsub -I'
+on the given node.
+
+CPUSET installation
+-------------------
+
+..  OAR can use CPUSET features provided with the Linux kernel >= 2.6. This
+    enables to restrict user processes only on reserved processors and clean
+    correctly nodes after the job.
+
+.. include:: CPUSET
+
+Using Taktuk
+------------
+
+If you want to use taktuk to manage remote admnistration commands, you have to
+install it. You can find information about taktuk from its website: 
+http://taktuk.gforge.inria.fr.
+Then, you have to edit your oar configuration file and to fill in the different 
+related parameters: 
+
+  - TAKTUK_CMD (the path to the taktuk command)
+  - PINGCHECKER_TAKTUK_ARG_COMMAND (the command used to check resources states)
+  - SCHEDULER_NODE_MANAGER_SLEEP_CMD (command used for halting nodes)
+
+Visualization tools installation
+--------------------------------
+
+There are two different tools. One, named Monika, displays the current cluster
+state with all active and waiting jobs. The other, named drawgantt, displays
+node occupation in a lapse of time.  These tools are CGI scripts and generate
+HTML pages.
+
+You can install these in this way:
+    drawgantt:
+    
+        - Make sure you installed "ruby", "libdbd-mysql-ruby" or
+          "libdbd-pg-ruby" and "libgd-ruby1.8" packages.
+        - Copy "drawgantt.cgi" and "drawgantt.conf" in the CGI folder of your
+          web server
+          (ex: /usr/lib/cgi-bin/ for Debian).
+        - Copy all icons and javascript files in a folder that web server can
+          find them
+          (ex: /var/www/oar/Icons and /var/www/oar/Icons).
+        - Make sure that these files can be read by the web server user.
+        - Edit "drawgantt.conf" and change tags to fit your configuration.
+
+    Monika:
+    
+        - The packages "libdbd-mysql-perl" or
+          "libdbd-pg-perl" and "perl-AppConfig" are required.
+        - Read INSTALL file in the monika repository.
+
+Debian packages
+---------------
+
+OAR is also released under Debian packages (or Ubuntu). You can find them at
+https://gforge.inria.fr/frs/?group_id=125.
+
+If you want to add it as a new source in your /etc/apt/sources.list then add
+the line::
+
+    deb http://oar.imag.fr/download ./
+
+.. The installation will ask you if you want to initialize the nodes. It will copy
+   the oar SSH key on each specified nodes. If you skip this step you will
+   have to do this manually.
+
+**IMPORTANT** : if you want to use the cpuset features then you have to install
+the oar-node package on computing nodes otherwise this is not mandatory.  But
+if this is performed then the configuration of `Important notes`_ must be set
+on these nodes.
+
+After installing packages, you have to edit the `configuration file`_ on the
+server, submission nodes and computing nodes to fit your needs.
+
+Starting
+--------
+
+First, you must start OAR daemon on the server (its name is "Almighty").
+
+    - if you have installed OAR from sources, become root user and launch
+      command "Almighty" (it stands in $PREFIX/sbin).
+    - if you have installed OAR from Debian packages, use the script
+      "/etc/init.d/oar-server" to start the daemon.
+
+Then you have to insert new resources in the database via the command
+oarnodesetting_.
+
+If you want to **automatically** initialize your cluster then you just need to
+launch *oar_resources_init*. It will detect the resources from the nodes that
+you put in a file and store right OAR commands to initialize the database with
+the appropriate values for the memory and the cpuset properties. Just try...
+
+A tool is now available to help you managing your oar resources and admission 
+rules : oaradmin.
+Take a look at the oaradmin documentation in the administrator commands section 
+for more details.
+
+Further informations
+--------------------
+For further information, please check http://oar.imag.fr/.
+

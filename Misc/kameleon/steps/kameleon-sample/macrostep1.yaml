@@ -1,0 +1,7 @@
+macrostep1:
+ - microstep1:
+   - check_cmd:       debootstrap
+   - exec_current:    debootstrap lenny $$chroot
+   - exec_chroot:     mkdir test
+   - breakpoint:      bp1
+   - exec_current:    ls -la $$workdir_base

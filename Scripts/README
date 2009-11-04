@@ -1,0 +1,75 @@
+Exemple files description:
+
+We give some prologue and epilogue files for exemple. If you want, you can change them to your cluster specifications.
+
+oar_prologue :
+    arg1 : jobId
+    arg2 : user name
+    arg3 : node list file
+    arg4 : name of user script executed
+
+    This script is executed by OAR system before user job. The user "oar" launchs this and he can do everything with "sudo" command (so you can do administrative tasks on your computer as root).
+    This script is executed only on the first job node. That why we use "oar_diffuse_script" to propagate commands.
+
+oar_epilogue :
+    arg1 : jobId
+    arg2 : user name
+    arg3 : node list file
+    arg4 : name of user script executed
+
+    This script is executed by OAR system after user job. The user "oar" launchs this and he can do everything with "sudo" command (so you can do administrative tasks on your computer as root).
+    This script is executed only on the first job node. That why we use "oar_diffuse_script" to propagate commands.
+
+oar_diffuse_script :
+    arg1 : file name which contains the list of nodes where to launch the commands
+    arg2..end : command line to launch on each node
+
+    This script executes a command on a node set. You have two choices :
+        - default choice : it make a loop of "ssh" commands in background and it waits end of all "ssh".
+        - optimal choice : you have installed a tool like "rshp" or "sentinelle" on each nodes (these tools make a "ssh" connection tree with nodes and are faster than the previous choice) and you can execute the command via this tool.
+    You can also configure the connection system. "ssh" is the default but you can use "rsh" instead.
+
+lock_user.sh :
+    This file contains two functions :
+        - lock_file : blocks execution until the file is removed. There is a lock file per resource.
+        - unlock_file : remove lock file.
+    These functions give an exclusive access to a node on a specified resource.
+
+oar_prologue_local :
+    arg1 : jobId
+    arg2 : user name
+
+    This script is executed by "oar_diffuse_script" on each nodes before brgining of each jobs. It uses "lock_user.sh" and can clean the computer safely.
+    
+oar_epilogue_local :
+    arg1 : jobId
+    arg2 : user name
+
+    This script is executed by "oar_diffuse_script" on each nodes after end of each jobs. It uses "lock_user.sh" and can clean the computer safely.
+
+
+#########
+# NOTES #
+#########
+
+If you want to daemonize a command in the prologue or in epilogue (it is not recommended), don't forget to use nohup:
+ex:
+    nohup toto.sh &>/dev/null &
+(toto.sh can execute itself even if the prologue or epilogue is ended)
+
+#######################
+# access restrictions #
+#######################
+
+You can disable all authentication on reserved nodes except for the user of this one:
+    - edit pam/common-account and add in your /etc/pam.d/common-account the line with pam_access.so module
+    - edit /etc/security/access.conf to add users that can log into the node all the time (see pam/access.conf)
+    - edit /etc/security/access_cluster.conf and copy the lines from pam/access_cluster.conf (all local users can log into the node and only listed users from the network)
+
+###################
+# Troubleshooting #
+###################
+
+The processus executed by OAR to prepare and launch the user job may be detached from its ssh connexion. So we must redirect STDIN, STDOUT and STDERR into /dev/null (when you detach a processus you are obliged to do that or some programs could hang).
+In this way you cannot see the results of "echo" command in the prologue and epilogue. I suggest to write your debug informations in files instead.
+

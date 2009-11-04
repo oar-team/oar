@@ -1,0 +1,147 @@
+#!/usr/bin/perl -w
+# $Id$
+# Simple Perl script to parse, sort and format a job resource properties file
+#
+use strict;
+use warnings;
+use Data::Dumper;
+use Getopt::Long;
+
+################################################################################
+## Global variables (parameters)
+my $key;
+my $input=$ENV{OAR_RESOURCE_PROPERTIES_FILE};
+my $fmt="%";
+my $properties;
+my $comma=",";
+my $replace="%";
+my $list;
+my @properties_list;
+
+################################################################################
+## Option parsing
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions(
+  "file|f=s" => \$input,
+  "format|F=s" => \$fmt,
+  "properties|P=s" => \$properties,
+  "comma|C=s" => \$comma,
+  "token|T=s" => \$replace,
+  "list|l" => \$list,
+  "help|h" => sub {usage(); exit(0);}
+);
+
+################################################################################
+## usage()
+sub usage() { 
+  print STDERR <<EOF;
+Usage: oarprint [options] <key property name>
+
+Print a sorted output of the resources of a job with regard to a key property,
+with a customisable format.
+
+Options:
+  -f <file>       input file, default: \$OAR_RESOURCE_PROPERTIES_FILE
+  -P <properties> property to display separated by commas, default: key property
+  -F <format>     customised output format, default: "%"
+  -T <string>     substitution token in the format string, default: %
+  -C <separator>  separator when displaying lists, default: ,
+  -l              list available properties and exit
+  -h              print this help and exit
+
+Examples:
+ On the job connection node (where \$OAR_RESOURCE_PROPERTIES_FILE is defined):
+ > oarprint host -P host,cpu,core -F "host: % cpu: % core: %" -C+
+ On the submission frontend:
+ > oarstat -j 42 -p | oarprint core -P host,cpuset,mem -F "%[%] (%)" -f -
+
+EOF
+}
+
+################################################################################
+## init_resource()
+sub init_resources {
+  my $fh;
+  if (not defined($input)) {
+    die "$0: no input data available\n";
+  }
+  if ($input eq "-") {
+    $fh = \*STDIN;
+  } else {
+    open($fh, "< $input") or die "$0: $!\n";
+  }
+  my @T;
+  while (<$fh>) {
+    chomp;
+    s/ = / => /g;
+    push @T,"{ $_ }";
+  }
+  if ($input ne "-") {
+    close $fh;
+  }
+  my $res = eval("[".join(',',@T)."];");
+  return $res;
+}
+
+################################################################################
+## list_properties()
+sub list_properties {
+  my $resources=shift;
+  print "List of properties:\n";
+  print join(", ",(keys %{$resources->[0]}))."\n";
+}
+
+################################################################################
+## print_output()
+sub print_output {
+  my $resources=shift;
+  my $property=shift;
+  # build a hash tree sorted on unique values of the key property
+  my $h = {}; 
+  foreach my $r (@$resources) {;
+    exists ($r->{$property}) or die "$0: Unknown property '$property'\n";
+    my $v = $r->{$property};
+    for my $o (@properties_list) {
+      exists ($r->{$o}) or die "$0: Unknown property '$o'\n";
+      $h->{$v}->{$o}->{$r->{$o}} = undef; 
+    }
+  }
+  #print Dumper($h)."\n";
+
+  #print data using the specified format
+  foreach my $v (values %$h) {
+    my @f = split($replace,$fmt);
+    my $i=0;
+    foreach my $o (@properties_list) {
+      if ($#f < 0) {
+        $i++ and print " ";
+      } else {
+        print shift(@f);
+      }
+      print join($comma,keys(%{$v->{$o}}));
+    }
+    if ($#f >= 0) {
+      print shift(@f);
+    }
+    print "\n";
+  }
+}
+
+################################################################################
+## Main
+my $resources = init_resources();
+if (defined($list)) {
+  list_properties($resources);
+} else {
+  $key = shift;
+  if (not defined($key)) {
+    die "$0: Need a property name\n";
+  }
+  if (defined($properties)) {
+    @properties_list = split(/\s*,\s*/,$properties);
+  }
+  if ($#properties_list < 0) {
+    @properties_list = ($key);
+  }
+  print_output($resources,$key);
+}

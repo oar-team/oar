@@ -1,0 +1,4 @@
+bootstrap:
+ - debootstrap:
+   - exec_appliance:  debootstrap --arch=$$arch lenny $$chroot/ $$distrib_repository
+   - exec_appliance:  echo "rm -rf $$chroot" > $$workdir/clean.sh
