@@ -87,6 +87,7 @@ desktop-computing-cgi:
 
 api:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	mkdir -p $(DESTDIR)$(OARCONFDIR)
 	install -m 0755 API/oarapi.pl $(DESTDIR)$(OARDIR)/oarapi.pl
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	mkdir -p $(DESTDIR)$(CGIDIR)/oarapi
@@ -113,6 +114,7 @@ api:
 
 gridapi:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	mkdir -p $(DESTDIR)$(OARCONFDIR)
 	install -m 0755 API/oargridapi.pl $(DESTDIR)$(OARDIR)/oargridapi.pl
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	mkdir -p $(DESTDIR)$(CGIDIR)/oarapi
