@@ -119,3 +119,16 @@ pkginstall:
                 SBINDIR=/usr/sbin \
                 WWWDIR=/var/www/html \
                 CGIDIR=/var/www/cgi-bin
+	$(MAKE) gridapi \
+                DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-gridapi \
+                OARUSER=oar \
+                OAROWNER=root \
+                OARCONFDIR=/etc/oar \
+                PREFIX=/usr \
+                MANDIR=/usr/share/man \
+                OARDIR=/usr/lib/oar \
+                BINDIR=/usr/bin \
+                SBINDIR=/usr/sbin \
+                WWWDIR=/var/www/html \
+                CGIDIR=/var/www/cgi-bin
+

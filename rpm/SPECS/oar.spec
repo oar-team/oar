@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.4.0
-%define release 3test
+%define release 4test
 
 Name: 		oar
 Version:        %{version}
@@ -36,7 +36,7 @@ Group:          System/Servers
 BuildArch: 	noarch
 Requires:       perl, perl-suidperl, shadow-utils, perl-DBI
   # How could we do (libdbd-mysql-perl | libdbd-pg-perl) ?
-Provides: 	perl(oar_iolib), perl(oar_Judas), perl(oar_Tools), perl(oar_conflib), perl(oar_resource_tree), perl(oarversion)
+Provides: 	perl(oar_iolib), perl(oar_Judas), perl(oar_Tools), perl(oar_conflib), perl(oar_resource_tree), perl(oarversion), perl(oarstat_lib), perl(oarnodes_lib), perl(oarsub_lib), perl(oar_apilib)
 %description common
 This package installs the common part or the OAR batch scheduler
 
@@ -115,6 +115,14 @@ BuildArch:      noarch
 %description    api
 This package installs the RESTful OAR user API.
 
+%package gridapi
+Summary:	OARGRID RESTful user API
+Group:          System/Servers
+Requires:	perl(CGI), oar-common = %version-%release, oar-user = %version-%release, httpd, oar-api = %version-%release
+BuildArch:      noarch
+%description    gridapi
+This package installs the RESTful OARGRID user API.
+
 %prep
 %setup -T -b 0
 cp %{_topdir}/SOURCES/Makefile.install .
@@ -140,7 +148,7 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
 |bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
 |sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init"
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api oar-gridapi
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | egrep -v "$EXCEPTS" > $package.files
@@ -157,6 +165,7 @@ install -D -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sy
 install -D -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
 install -D -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
 install -D -m 644 %{_topdir}/SOURCES/apache-api.conf $RPM_BUILD_ROOT/etc/oar/apache-api.conf
+install -D -m 644 %{_topdir}/SOURCES/apache2-grid.conf $RPM_BUILD_ROOT/etc/oar/apache-gridapi.conf
 install -D -m 644 %{_topdir}/SOURCES/oar-desktop-computing-cgi.cron.hourly $RPM_BUILD_ROOT/etc/cron.hourly/oar-desktop-computing-cgi
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
@@ -233,9 +242,18 @@ rm -rf tmp
 
 %files api -f oar-api.files
 %config %attr (0600,apache,root) /etc/oar/apache-api.conf
+%config %attr (0600,apache,root) /etc/oar/api_html_header.pl
+%config %attr (0600,apache,root) /etc/oar/api_html_postform.pl
 %attr(0750,oar,apache) /var/www/cgi-bin/oarapi
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi.cgi
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
+
+%files gridapi -f oar-gridapi.files
+%config %attr (0600,apache,root) /etc/oar/apache-gridapi.conf
+%config %attr (0600,apache,root) /etc/oar/gridapi_html_header.pl
+%config %attr (0600,apache,root) /etc/oar/gridapi_html_postform.pl
+%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi.cgi
+%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi-debug.cgi
 
 ###### oar-common scripts ######
 
@@ -352,13 +370,28 @@ fi
 ln -s /etc/oar/apache-api.conf /etc/httpd/conf.d/oar-api.conf || true
 service httpd reload || true
 
+%post gridapi
+ln -s /etc/oar/apache-gridapi.conf /etc/httpd/conf.d/oar-gridapi.conf || true
+service httpd reload || true
+
 %postun api
 if [ "$1" = "0" ] ; then # last uninstall
   rm -f /etc/httpd/conf.d/oar-api.conf || true
   service httpd reload || true
 fi
 
+%postun gridapi
+if [ "$1" = "0" ] ; then # last uninstall
+  rm -f /etc/httpd/conf.d/oar-gridapi.conf || true
+  service httpd reload || true
+fi
+
 %changelog
+* Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-4test
+- Added oar-gridapi package
+- fixed dependencies with oarnodes and oarstat libs
+- fixed api packaging
+
 * Thu Sep 24 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-3test
 - Changed oar-web-status files paths
 - improved init script

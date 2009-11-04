@@ -186,6 +186,7 @@ gpgcheck = 0" > $DISTRO_DIR/etc/yum.repos.d/rpmforge.repo
     chroot $DISTRO_DIR bash -c "yum install -q -y webcore-fonts"
     #chroot $DISTRO_DIR bash -c "yum install -q -y selinux-policy"
     chroot $DISTRO_DIR bash -c "yum install -q -y ruby"
+    chroot $DISTRO_DIR bash -c "yum install -q -y lsb"
      # I don't know why ruby-GD i386 is not seen by yum :-(
     chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-GD-*i386*"
     chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-DBI-*i386* --nodeps"
@@ -224,6 +225,8 @@ enabled=1" >> $DISTRO_DIR/etc/yum.repos.d/oar.repo
     # Apache Config
     echo "ServerName localhost" > $DISTRO_DIR/etc/httpd/conf.d/servername
     echo "LoadModule ident_module /etc/httpd/modules/mod_ident.so" > $DISTRO_DIR/etc/httpd/conf.d/ident.conf
+    echo "LoadModule headers_module /etc/httpd/modules/mod_headers.so" > $DISTRO_DIR/etc/httpd/conf.d/headers.conf
+    echo "LoadModule rewrite_module /etc/httpd/modules/mod_rewrite.so" > $DISTRO_DIR/etc/httpd/conf.d/rewrite.conf
     # Keyboard config
     cat > $DISTRO_DIR/etc/rc3.d/S99ask_keyboard <<EOS
 echo "***"
