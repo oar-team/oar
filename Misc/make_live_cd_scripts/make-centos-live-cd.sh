@@ -188,6 +188,7 @@ gpgcheck = 0" > $DISTRO_DIR/etc/yum.repos.d/rpmforge.repo
     chroot $DISTRO_DIR bash -c "yum install -q -y ruby"
     chroot $DISTRO_DIR bash -c "yum install -q -y lsb"
     chroot $DISTRO_DIR bash -c "yum install -q -y perl-URI"
+    chroot $DISTRO_DIR bash -c "yum install -q -y oidentd"
      # I don't know why ruby-GD i386 is not seen by yum :-(
     chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-GD-*i386*"
     chroot $DISTRO_DIR bash -c "rpm -U /var/rpms/ruby-DBI-*i386* --nodeps"
