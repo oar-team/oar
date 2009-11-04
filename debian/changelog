@@ -1,3 +1,9 @@
+oar (2.4.0-3) stable; urgency=low
+
+  * Releasing 2.4.0
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 04 Nov 2009 17:21:24 +0100
+
 oar (2.4.0-1~36.gbp996f70) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @996f70b625b4adfd14415ddd45fe9f5c1649c76d **
@@ -13,7 +19,7 @@ oar (2.4.0-1~35.gbpcc4176) UNRELEASED; urgency=low
   * Bug fix: oargridapi was broken (Not enough arguments for
     apilib::struct_resource_list at
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Wed, 28 Oct 2009 11:36:13 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 28 Oct 2009 11:36:13 +0100
 
 oar (2.4.0-1~34.gbp9ac4f7) UNRELEASED; urgency=low
 
@@ -22,7 +28,7 @@ oar (2.4.0-1~34.gbp9ac4f7) UNRELEASED; urgency=low
   * Enhanced uninstall part of makefile (uninstall correctly 2.2
     version)
 
- -- bzizou <bzizou@0575aaa5-7b03-0410-a32c-e91c5f07ea11>  Tue, 20 Oct 2009 15:59:31 +0200
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 20 Oct 2009 15:59:31 +0200
 
 oar (2.4.0-1~33.gbp7a77a7) UNRELEASED; urgency=low
 

@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.4.0
-%define release 4test
+%define release 5
 
 Name: 		oar
 Version:        %{version}
@@ -387,6 +387,9 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+* Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-5
+- Released 2.4.0
+
 * Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-4test
 - Added oar-gridapi package
 - fixed dependencies with oarnodes and oarstat libs
