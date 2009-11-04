@@ -242,16 +242,16 @@ rm -rf tmp
 
 %files api -f oar-api.files
 %config %attr (0600,apache,root) /etc/oar/apache-api.conf
-%config %attr (0600,apache,root) /etc/oar/api_html_header.pl
-%config %attr (0600,apache,root) /etc/oar/api_html_postform.pl
+%config %attr (0640,oar,apache) /etc/oar/api_html_header.pl
+%config %attr (0640,oar,apache) /etc/oar/api_html_postform.pl
 %attr(0750,oar,apache) /var/www/cgi-bin/oarapi
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi.cgi
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
 
 %files gridapi -f oar-gridapi.files
 %config %attr (0600,apache,root) /etc/oar/apache-gridapi.conf
-%config %attr (0600,apache,root) /etc/oar/gridapi_html_header.pl
-%config %attr (0600,apache,root) /etc/oar/gridapi_html_postform.pl
+%config %attr (0640,oar,apache) /etc/oar/gridapi_html_header.pl
+%config %attr (0640,oar,apache) /etc/oar/gridapi_html_postform.pl
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi.cgi
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi-debug.cgi
 
