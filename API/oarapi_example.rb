@@ -9,8 +9,8 @@ require 'json'
 require 'pp'
 
 # Custom variables
-APIURI="http://www.grenoble.grid5000.fr/oarapi"
-NODENAME_REGEX="(.*)\.grenoble\.grid5000\.fr"
+APIURI="http://localhost/oarapi"
+NODENAME_REGEX="(.*)"
 COLS=2
 
 # Function to get objects from the api
@@ -37,7 +37,7 @@ puts
 printf ("Please, wait while querying OAR API...\n\033[1A")
 
 # Get the resources
-resources = get(api,'/resources/full')
+resources = get(api,'/resources')
 
 # Get the running jobs
 jobs = get(api,'jobs/details')

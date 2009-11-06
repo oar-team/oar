@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.6";
+my $VERSION="0.2.7";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -507,6 +507,7 @@ sub filter_resource_list($) {
   foreach my $resource (@$resources) {
     push(@$filtered_resources,{ resource_id => $resource->{resource_id},
                                 state => $resource->{state},
+                                available_upto => $resource->{available_upto},
                                 network_address => $resource->{network_address}
                               });
   }

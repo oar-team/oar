@@ -3,7 +3,8 @@ OAR CHANGELOG
 
 version 2.4.1:
 --------------
-  - 
+  - Added standby info into `oarnodes -s` and available_upto info into 
+    /resources uri of the API
 
 version 2.4.0:
 --------------

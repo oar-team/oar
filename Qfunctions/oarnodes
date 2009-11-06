@@ -191,7 +191,7 @@ sub print_resources_flat_way($){
 	    my $info = $resources_info->{$id};
 	    print "network_address : $info->{network_address}\n";
 	    print "resource_id : $info->{resource_id}\n";
-	    if ($info->{state} eq "Absent" && $info->{available_upto} != 0) {
+	    if ($info->{state} eq "Absent" && $info->{available_upto} >= time()) {
 		$info->{state} .= " (standby)";
 	    }
 	    print "state : $info->{state}\n";
