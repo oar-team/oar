@@ -29,7 +29,7 @@ sub send_cmd_to_fifo($$) {
     oar_error("[Energy] Could not open the fifo $FIFO!\n");
     return 1;
   }
-  print FIFO "$command $nodes_list\n";
+  print FIFO "$command:$nodes_list\n";
   close(FIFO);
   return 0;
 }
@@ -67,12 +67,32 @@ sub start_energy_loop() {
 
     # Start to manage nodes comming on the fifo
        while (<FIFO>) {
-          #TODO HERE GOES THE CODE FOR NODES MANAGEMENT
-            print "Got $_\n";
+          (my $cmd, my $nodes)=split(/:/,$_,2);
+          my @nodes=split(/ /,$nodes);
+
+          #TODO: SMART wake up / shutdown of the nodes
+          # - Wake up by groups (50 nodes, sleep... 50 nodes, sleep...)
+          # - Don't send the wake up command if it has already been sent for a given node
+          # - Suspect node if wake up requested and not alive since ENERGY_SAVING_NODE_MANAGER_TIMEOUT
+          # - Don't shut down nodes depending on ENERGY_SAVING_NODES_KEEPALIVE variable
+          #
+          # if ($cmd eq "HALT") {
+          #    ...
+          # }elsif ($cmd eq "WAKEUP") {
+          #    ...
+          # }
+            print "Got $cmd for $nodes\n";
           #
        }
        close(FIFO);
     }
+}
+
+sub check_keepalive_nodes() {
+  # TODO
+  # function to be used by almighty, using ENERGY_SAVING_NODES_KEEPALIVE, select nodes to
+  # wake up and send them to the pipe (wake_up_nodes($nodes))
+  return 0;
 }
 
 return(1);

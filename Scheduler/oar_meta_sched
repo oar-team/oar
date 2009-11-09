@@ -99,7 +99,9 @@ my $timeout_cmd = 10;
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
 }
-if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") or get_conf("ENERGY_SAVING_INTERNAL") eq "yes") and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
+if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") 
+          or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD")))
+          and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
     my @node_halt= oar_scheduler::get_idle_nodes(
             $base,
             get_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME"),
@@ -124,7 +126,7 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") or get_conf("ENERGY_SAVING_INTE
     }
 }
 
-if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or get_conf("ENERGY_SAVING_INTERNAL") eq "yes"){
+if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
     # Wake up right nodes
     my @nodes = oar_scheduler::get_nodes_to_wake_up($base);
 
