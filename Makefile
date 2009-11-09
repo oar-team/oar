@@ -268,6 +268,7 @@ server: man
 	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(DESTDIR)$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
 	install -m 0755 Scheduler/oar_meta_sched $(DESTDIR)$(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Energy/oar_Energy.pm $(DESTDIR)$(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(DESTDIR)$(OARDIR)
 	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarnotify
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarnotify

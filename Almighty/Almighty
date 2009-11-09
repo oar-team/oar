@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 
 use strict;
 use Data::Dumper;
@@ -7,6 +6,7 @@ use IO::Socket::INET;
 use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use oar_conflib qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use oar_Tools;
+use oar_Energy;
 
 # Log category
 set_current_log_category('main');
@@ -103,6 +103,7 @@ my $lastvillains;
 my $lastchecknodes;
 my @internal_command_file;
 my $appendice_pid;
+my $energy_pid;
 
 # launch the command line passed in parameter
 sub launch_command($){
@@ -222,6 +223,10 @@ sub comportement_appendice(){
         }
 }
 
+sub energy_saving(){
+    oar_Energy::start_energy_loop();
+}
+
 # initial stuff that has to be done
 sub init(){
     if(!(pipe (READ, WRITE))){
@@ -260,6 +265,23 @@ sub init(){
     }
     close WRITE;
     close $server;
+
+    # Starting of the Energy saving module
+    if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
+      $energy_pid = fork();
+      if(!defined($energy_pid)){
+          oar_error("[Almighty] Cannot fork the energy saving module\n");
+          exit(6);
+      }
+      if (!$energy_pid){
+          $SIG{USR1}  = 'IGNORE';
+          $SIG{INT}  = 'IGNORE';
+          $SIG{TERM}  = 'IGNORE';
+          energy_saving();
+          oar_error("[Almighty] Energy saving daemon died. This should not happen.\n");
+          exit(7);
+      }
+    }
 
     $lastscheduler= time;
     $lastvillains= time;
@@ -403,6 +425,10 @@ while (1){
     oar_debug("[Almighty] Current state [$state]\n");
     #We stop Almighty and its child
     if ($finishTag == 1){
+        if (defined($energy_pid)) {
+          oar_debug("[Almighty] kill child process $energy_pid\n");
+          kill(9,$energy_pid);
+        }
         oar_debug("[Almighty] kill child process $appendice_pid\n");
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
