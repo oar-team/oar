@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.7";
+my $VERSION="0.2.8";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -433,6 +433,17 @@ sub struct_job($$) {
     }else {
       return $job->{(keys(%{$job}))[0]}; 
     }}
+}
+
+sub struct_job_list_hash_to_array($) {
+  my $jobs=shift;
+  my $array=[];
+  foreach my $j ( keys (%{$jobs}) ){
+    if (defined($jobs->{$j}->{Job_Id})) {
+      push (@$array,$jobs->{$j});
+    }
+  }
+  return $array;
 }
 
 # OAR JOB LIST
