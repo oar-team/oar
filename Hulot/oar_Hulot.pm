@@ -1,4 +1,4 @@
-package oar_Energy;
+package oar_Hulot;
 require Exporter;
 # This module is responsible of waking up / shutting down nodes
 # when the scheduler decides it (writes it on a named pipe)
@@ -16,17 +16,17 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(start_energy_loop);
 
-my $FIFO="/tmp/oar_energy_pipe";
+my $FIFO="/tmp/oar_hulot_pipe";
 
 # Log category
-set_current_log_category('energy');
+set_current_log_category('Hulot');
 
 sub send_cmd_to_fifo($$) {
   my $nodes=shift;
   my $command=shift;
   my $nodes_list=join(' ',@$nodes);
   unless (open(FIFO, "> $FIFO")) {
-    oar_error("[Energy] Could not open the fifo $FIFO!\n");
+    oar_error("[Hulot] Could not open the fifo $FIFO!\n");
     return 1;
   }
   print FIFO "$command:$nodes_list\n";
@@ -45,7 +45,8 @@ sub halt_nodes($) {
 }
 
 sub start_energy_loop() {
-
+    oar_debug("[DEBUG-HULOT] Starting start_energy_loop\n");
+	
     # Creates the fifo if it doesn't exist
     unless (-p $FIFO) {
         unlink $FIFO;
@@ -54,14 +55,14 @@ sub start_energy_loop() {
 
     # Test if the FIFO has been correctly created
     unless (-p $FIFO) { 
-        oar_error("[Energy] Could not create the fifo $FIFO!\n");
+        oar_error("[Hulot] Could not create the fifo $FIFO!\n");
         exit(1);
     }
 
     # Open the fifo
     while(1){
        unless (open (FIFO, "$FIFO")) {
-         oar_error("[Energy] Could not open the fifo $FIFO!\n");
+         oar_error("[Hulot] Could not open the fifo $FIFO!\n");
          exit(2);
        } 
 
@@ -81,7 +82,7 @@ sub start_energy_loop() {
           # }elsif ($cmd eq "WAKEUP") {
           #    ...
           # }
-            print "Got $cmd for $nodes\n";
+            print "[DEBUG-HULOT] Got $cmd for $nodes\n";
           #
        }
        close(FIFO);

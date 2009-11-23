@@ -18,14 +18,6 @@ use Time::HiRes qw(gettimeofday);
 #
 
 
-## Checks if user is root
-my $uid = $>; 
-if($uid ne 0){
-	error("You must be root to run this, please enter passwd\n");
-	exit 1;
-}
-
-
 ## Path to configurations files
 my $oar_conf_file = "/etc/oar/oar.conf";
 my $oararchive_conf_file = "/etc/oar/oararchive.conf";
@@ -64,6 +56,14 @@ my $str;
 my $start_time;
 my $end_time;
 
+
+## Checks if user is root
+my $uid = $>; 
+if($uid ne 0){
+	$log_level = 0;  # Do not write in log file
+	error("You must be root to run \'$command\'.\n");
+	exit 1;
+}
 
 # LOAD CONFIGURATION
 sub init_conf($);
