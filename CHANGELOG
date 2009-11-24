@@ -9,6 +9,7 @@ version 2.3.5:
     was a problem to determine idle nodes.
   - Debug a mis-initialization of the Gantt with running jobs in the
     metascheduler (concurrency access to PG database)
+  - Bug #9038: Security flaw in oarsub --notify option
 
 version 2.3.4:
 --------------
