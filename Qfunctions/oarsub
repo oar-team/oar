@@ -700,6 +700,13 @@ if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     exit(10);
 }
 
+if (defined($notify) && $notify =~ m/\s*exec:(.+)$/m){
+    unless ($notify =~ m/\s*exec:([a-zA-Z0-9_.\/ ]+)$/m){
+      warn("/!\\ Unsecure characters found in notification method.\n");
+      exit(16);
+    }
+}
+
 # Connect to a reservation
 if (defined($connect_job)){
     # Do not kill the job if the user close the window
