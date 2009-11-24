@@ -168,15 +168,24 @@ This section explains how the "--notify" oarsub_ option is handled by OAR:
  - The user wants to receive an email:    
      The syntax is "mail:name@domain.com". Mail section in the `Configuration
      file` must be present otherwise the mail cannot be sent.
-     
- - The user wants to launch a script:
+     The subject of the mail is of the form:
 
+     \*OAR\* [*TAG*]: job_id (job_name) on OAR_server_hostname
+     
+ 
+ - The user wants to launch a script:
      The syntax is "exec:/path/to/script args". OAR server will connect (using
      OPENSSH_CMD) on the node where the oarsub_ command was invoked and then
-     launches the script with in argument : *job_id*, *job_name*, *tag*,
+     launches the script with the following arguments : *job_id*, *job_name*, *TAG*,
      *comments*.
      
-     (*tag* is a value in : "START", "END", "ERROR")
+*TAG* can be:
+  - RUNNING : when the job is launched
+  - END : when the job is finished normally
+  - ERROR : when the job is finished abnormally
+  - INFO : used when oardel is called on the job
+  - SUSPENDED : when the job is suspended
+  - RESUMING : when the job is resumed
 
 Accounting aggregator
 ---------------------

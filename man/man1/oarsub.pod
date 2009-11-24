@@ -101,6 +101,16 @@ Ex:
  --notify "mail:name@domain.com"
  --notify "exec:/path/to/script args"
 
+args are job_id,job_name,TAG,comment
+
+TAG can be:
+  - RUNNING : when the job is launched
+  - END : when the job is finished normally
+  - ERROR : when the job is finished abnormally
+  - INFO : used when oardel is called on the job
+  - SUSPENDED : when the job is suspended
+  - RESUMING : when the job is resumed
+
 =item B<--resubmit> <OAR JOB ID>
 
 Resubmit the given job as a new one.
