@@ -1,6 +1,10 @@
 OAR CHANGELOG
 =============
 
+version 2.2.17:
+--------------
+  - Bug #9038: Security flaw in oarsub --notify option 
+
 version 2.2.16:
 --------------
    - Bug #7674: remove the computation of the scheduler_priority field for
