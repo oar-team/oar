@@ -38,6 +38,13 @@ get_snapshot_id() {
   SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline HEAD^..HEAD |sed 's/ /./'|cut -d. -f1`
 }
 
+remove_upstream_branch() {
+  git branch -D upstream
+  exit 1
+}
+
+trap remove_upstream_branch QUIT ERR
+
 SNAPSHOT=n
 while getopts "sh" options; do
   case $options in
