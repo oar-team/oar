@@ -97,3 +97,9 @@ Architecture: all
 Description: Package to fix a buggy postrm script in oar-common
  This package has to be installed only if you upgrade 
  from a version < 2.4.0
+
+Package: oar-keyring
+Architecture: all
+Description: GnuPG keys of OAR packages maintainers
+ This package contains the public keys of the OAR packages
+ maintainers.
