@@ -1,3 +1,19 @@
+oar (2.4.1-0~2.gbp88b17a) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @88b17abdab21b2cf16699be94db31b5a3114dba1 **
+
+  * Updated CHANGELOG
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 27 Nov 2009 11:15:31 +0100
+
+oar (2.4.1-0~1.gbpb4342e) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @b4342e8e299be54d27439b8fe9d41b3df8977bf5 **
+
+  * Added oar-keyring debian package. Packages are now signed.
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 27 Nov 2009 11:05:42 +0100
+
 oar (2.4.0-3) stable; urgency=low
 
   * Releasing 2.4.0

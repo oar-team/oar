@@ -6,6 +6,8 @@ version 2.4.1:
   - Added standby info into `oarnodes -s` and available_upto info into 
     /resources uri of the API
   - Bug #9038: Security flaw in oarsub --notify option
+  - Signed debian packages (install oar-keyring package)
+  - New "Hulot" module for intelligent and configurable energy saving
 
 version 2.4.0:
 --------------
