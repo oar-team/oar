@@ -1,3 +1,9 @@
+oar (2.3.5-1) unstable; urgency=low
+
+  * Releasing 2.3.5: Security update
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 30 Nov 2009 14:54:02 +0100
+
 oar (2.3.3-4) unstable; urgency=low
 
   [ bzizou ]
