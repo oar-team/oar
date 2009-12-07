@@ -1,3 +1,11 @@
+oar (2.4.1-0~3.gbpe157bd) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @e157bdbf3d50cf15c650ec998c3d680c54fe911e **
+
+  * Softer dependency for the API
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 07 Dec 2009 18:00:41 +0100
+
 oar (2.4.1-0~2.gbp88b17a) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @88b17abdab21b2cf16699be94db31b5a3114dba1 **
