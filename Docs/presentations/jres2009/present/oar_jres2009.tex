@@ -13,7 +13,7 @@
 \title{OAR}
 \subtitle{Un gestionnaire de tâches et de ressource pour grandes grappes de calcul}
 \author{Olivier~Richard \and Bruno~Bzeznik \and Romain~Cavagna \and Joseph~Emeras}
-\institute{ Laboratoire d'Informatique de Grenoble (LIG) - Equipe Mescal}
+\institute{ LIG / CIMENT / ALADDIN-G5K }
 \date{JRES - 3 decembre 2009}
 
 
@@ -39,6 +39,8 @@
         \includegraphics[height=5ex]{img/logo_upmf.jpg}
         \hspace{1ex}
         \includegraphics[height=2ex]{img/ciment-logo2.jpg}
+        \hspace{1ex}
+        \includegraphics[height=5ex]{img/Logo_Aladdin.png}
     \end{center}
 	}
 
@@ -52,25 +54,11 @@
 \frame{
  \frametitle{Les Gestionnaires de tâches et de ressources}
 	
-	Aussi appelés {\em Batch Scheduler}
-	
-	Existent en très grand-nombre:
-
-	  \begin{itemize}
-    \item {\bf Condor } 
-		\item {\bf Sun Grid Engine (SGE)} 
-    \item {\bf MAUI/Torque} 
-    \item {\bf Slurm} 
-    \item {\bf OAR} (LIG/INRIA) :)
-    \item {\bf Catalina} (job scheduler/ordonnanceur seul) 
-
-    \item {\em LSF } (Platform) 
-    \item {\em PBS Pro}
-    \item {\em Moab} (Cluster Resources)
-    \item Autres: {\bf BQS (CC-IN2P3)}, {\bf Lava}, Loadleveler, CCS...
- \end{itemize}
-  \begin{itemize}
-    \item \url{http://en.wikipedia.org/wiki/Job_scheduler}
+    \begin{itemize}
+	\item Aussi appelés {\em Batch Scheduler}
+        \item Contexte: {\bf High Performance Computing} (Supercalculateurs, Grappes de calcul, Clusters)
+	\item Existent en très grand-nombre: {\bf Condor }, {\bf Sun Grid Engine (SGE)}, {\bf MAUI/Torque}, {\bf Slurm}, {\bf OAR}, {\bf Catalina}, {\em LSF }, {\bf Lava}, {\em PBS Pro}, {\em Moab}, Loadleveler, CCS...
+        \item \url{http://en.wikipedia.org/wiki/Job_scheduler}
   \end{itemize}
 
 }
@@ -113,7 +101,7 @@
 		\item Accès exclusif / non-exclusif aux ressources 
 		\item Appariement de ressources
 		\item Scripts Epilogue/Prologue (exécuter avant/après les tâches)
-		\item Suivi ({\em monitoring} des tâches (consommation des ressources)
+		\item Suivi ({\em monitoring}) des tâches (consommation des ressources)
 		\item Dépendance entre tâches ({\em workflow})
 		\item Logging et accounting
 		\item Suspension/reprise des tâches 
@@ -124,7 +112,6 @@
 \frametitle{Fonctionnalités (2/2)}
 	{\bf liste non-exhaustive}
 		\begin{itemize}
-    \item Dépendance entre job
     \item Tableaux de tâches
 		\item First-Fit (Conservative Backfilling,)
 		\item Fairsharing
@@ -144,18 +131,25 @@
 
 	\begin{itemize}
 		\item Suivre l'évolution technologique (machine et infrastructure de plus en plus complexe)
-		\item Adaptation aux différents contextes (cluster, cluster-on-demand, cluster virtuel, multi-cluster, grille légère, plate-forme pour l'expérimentation à la Grid'5000, {\em grand cluster}, besoin spécifique). 
-\\ Contexte initial: CIMENT \hyperlink{ciment-appendix}{ \beamergotobutton{...}}  et Grid5000 \hyperlink{g5k-appendix}{ \beamergotobutton{...}}
+		\item Contexte initial: CIMENT \hyperlink{ciment-appendix}{ \beamergotobutton{...}}  et Grid5000 \hyperlink{g5k-appendix}{ \beamergotobutton{...}}
+                \item Adaptation aux différents contextes (cluster, cluster-on-demand, cluster virtuel, multi-cluster, grille légère, plate-forme pour l'expérimentation à la Grid'5000, {\em grand cluster}, besoin spécifique). 
 	\end{itemize}
 
-\begin{alertblock}{Sous-estimation}
-   Regle des 80/20 : les 20\% des fonctionnalités {\bf ne sont pas les mêmes pour tous !!!}  
-\end{alertblock}
+\begin{center}
+        \hspace{1ex}
+        \includegraphics[height=2ex]{img/ciment-logo2.jpg}
+        \hspace{1ex}
+        \includegraphics[height=7ex]{img/Logo_Aladdin.png}
+\end{center}
+
+%\begin{alertblock}{Sous-estimation}
+%   Regle des 80/20 : les 20\% des fonctionnalités {\bf ne sont pas les mêmes pour tous !!!}  
+%\end{alertblock}
 
 \end{frame}
 
 \frame{
-\frametitle{Eco-systéme}
+\frametitle{Eco-système}
   \begin{center}
     \includegraphics[width=11cm]{global_picture.png}
   \end{center}
@@ -170,11 +164,12 @@
 		\item {\bf Expression des hiérarchies dans les requêtes }
 		\item {\bf Support de ressources de type différent (ex licence, capacité de stockage, capacité réseaux...)  }
 		\item {\bf Tâche container} ({\em récursivité, soumettre dans une tâche})
-		\item {\bf Tâche besteffort} (tâche à priorité nulle)
-		\item {\bf Type multiple de tâches} (besteffort, powersaving, deploy, timesharing, idempotent, {\bf power}, cosystem ...) (élément important pour l'extension/l'adaptation)
+		\item {\bf Tâche besteffort} (tâche à priorité nulle, très utilisé par {\em CiGri}) 
+		\item {\bf Type multiple de tâches} (besteffort, deploy, timesharing, idempotent, power, cosystem ...) (personnalisable)
     \item {\bf Tâches moldables}
-		\item First-Fit (Conservative Backfilling,)
-		\item Fairsharing 
+    \item {\bf Economie d'énergie}
+		%\item First-Fit (Conservative Backfilling,)
+		%\item Fairsharing 
 		
 	\end{itemize}
 \end{frame}
@@ -188,44 +183,47 @@
   \frametitle{OAR: principes de conception}
 Utilisation de composants logiciels de haut niveau
    \begin{itemize}
-    \item {\bf Base de donnée relationnelle} (MySql/PostgreSQL) pour stocker et échanger:
-      \begin{itemize}
-        \item Information sur les ressources et les tâches 
-        \item L'état interne du système
-       \end{itemize}
-    \item {\bf Language(s) de script} (majoritairement Perl) pour le moteur d'exécution 
-    \begin{itemize}
-     \item Bien adapté pour les parties systèmes
-     \item Structures de haut niveau (listes, tables associatives, tris...)
-     \item Cycles de développement court
-    \end{itemize}
-    \item {\bf Autres composants} (Perl, Ruby, Caml) 
-    \begin{itemize}
-      \item \textbf{SSH, CPUSET} (confinement, nettoyage)
-      \item \textbf{Taktuk} lanceur parallèle adaptatif et polyvalent
-    \end{itemize}
+    \item {\bf Base de donnée relationnelle} (MySql/PostgreSQL) au coeur du système pour stocker et échanger
+      %\begin{itemize}
+      %  \item Information sur les ressources et les tâches 
+      %  \item L'état interne du système
+      % \end{itemize}
+    \item {\bf Language(s) de script} (Perl, Ruby) pour le moteur d'exécution et les modules (interchangeables)
+    %\begin{itemize}
+    % \item Bien adapté pour les parties systèmes
+    % \item Structures de haut niveau (listes, tables associatives, tris...)
+    % \item Cycles de développement court
+    % \end{itemize}
+    \item {\bf Autres composants}: SSH, CPUSETS, Taktuk
+    %\begin{itemize}
+    %  \item \textbf{SSH, CPUSET} (confinement, nettoyage)
+    %  \item \textbf{Taktuk} lanceur parallèle adaptatif et polyvalent
+    %\end{itemize}
   \end{itemize}
-
-}
-
-\frame{
-	\frametitle{OAR : organisation générale}
-
-	La base de donnée a un rôle central
-
-	\begin{itemize}
-		\item {\bf l'état interne simplement accessible}
-		\item le moteur est composé de {\bf petit modules Perl}
-		\item chaque module (= un script) peut-être facilement remplacé
-	\end{itemize}
-
 	\begin{center}
 		\includegraphics[height=3cm]{OAR_organization.pdf}
 	\end{center}
+
 }
 
+%\frame{
+%	\frametitle{OAR : organisation générale}
+%
+%	La base de donnée a un rôle central
+%
+%	\begin{itemize}
+%		\item {\bf l'état interne simplement accessible}
+%		\item le moteur est composé de {\bf petit modules Perl}
+%		\item chaque module (= un script) peut-être facilement remplacé
+%	\end{itemize}
+%
+%	\begin{center}
+%		\includegraphics[height=3cm]{OAR_organization.pdf}
+%	\end{center}
+%}
+
 \begin{frame}
-\frametitle{Cycle général}
+\frametitle{Cycle d'un job}
 	\begin{center}
 		\includegraphics[width=10cm]{cycle_job.png}
 	\end{center}
@@ -233,13 +231,13 @@ Utilisation de composants logiciels de haut niveau
 
 
 \frame{
-  \frametitle{Régles d'admissions}
+  \frametitle{Règles d'admissions}
   \begin{alertblock}{Un point de paramétrage important}
     \begin{itemize}
-      \item {\bf Cadrage} des réquêtes
+      \item Grandes possibilités de {\em personnalisation} pour l'administrateur
+      \item {\bf Cadrage} des requêtes
       \item fixe des valeurs par défaut: walltime, queue, nombre de ressources demandées, 
       \item contrôle d'accès (utilisateur, groupe, plage horaire...)
-      \item point de {\em personnalisation} (au même titre que les scripts de prologue et d'épilogue)
     \end{itemize}
   \end{alertblock}
 }
@@ -247,7 +245,7 @@ Utilisation de composants logiciels de haut niveau
 
 \frame{
 	\frametitle{Diagramme d'état d'une tâche}
-	Exemple du système OAR (version 1.6)
+	%Exemple du système OAR (version 1.6)
 	\includegraphics[width=\textwidth]{JobStates.pdf}
 }
 
@@ -330,7 +328,9 @@ où le système choisi les {\bf ressources à attribuées} aux tâches et {\bf l
 		\item FIFO (First-In First-Out)
 		\item First-Fit (Backfilling)
 		\item FairSharing
-    \item Récursivité
+		\item Timesharing
+		\item Advance reservation
+		\item Récursivité
 	\end{itemize}
 
 \end{frame}
@@ -423,32 +423,32 @@ Problème avec les applications parallèles sensible au débit communication.
 \frame{
 \frametitle{Contraintes Topologiques hiérarchiques}
 
-Notion de hiérarchie dans les requetes:
-\\
-{\bf oarsub -l switch=1/nodes=2/cpu=2/core=2 mon-appli-parallèle}
-\\
 \begin{itemize}
-  \item 1x2x2x2 = 8 coeurs
+ \item Notion de hiérarchie dans les requetes:
+  \\
+  {\bf oarsub -l switch=1/nodes=2/cpu=2/core=2 appli-parallèle}
+   \\        = 1x2x2x2 = 8 coeurs
+ \item Gestion des cpusets linux (attention à l'affinité même au sein d'un cpuset)
 \end{itemize}
 }
 
 
-\frame{
-  \frametitle{Application parallèle et affinité processeur}
- 
-  {\bf Note:} CPUSET ensemble de coeurs et/ou CPU sur un noeud.
-
-\begin{block}{}
-
-	  \begin{enumerate}
-  	  \item L'attribution CPUSET/core pour application parallèle peut ne pas suffire
-      \item Problème de l'ordonnanceur de l'OS (ici souvent Linux), le processus change de coeur à l'intérieur des CPUSET 
- 		  \item Il faut utilisé les capacités de verrouillage sur coeur ({\em Processor Affinity})
-	  \end{enumerate}
-
-\end{block}
- 
-}
+%\frame{
+%  \frametitle{Application parallèle et affinité processeur}
+% 
+%  {\bf Note:} CPUSET ensemble de coeurs et/ou CPU sur un noeud.
+%
+%\begin{block}{}
+%
+%	  \begin{enumerate}
+%  	  \item L'attribution CPUSET/core pour application parallèle peut ne pas suffire
+%      \item Problème de l'ordonnanceur de l'OS (ici souvent Linux), le processus change de coeur à l'intérieur des CPUSET 
+% 		  \item Il faut utilisé les capacités de verrouillage sur coeur ({\em Processor Affinity})
+%	  \end{enumerate}
+%
+%\end{block}
+% 
+%}
 
 %%% TODO
 %%% Energie
@@ -481,7 +481,9 @@ Notion de hiérarchie dans les requetes:
 
 \frame{
   \frametitle{OAR: Monika}
-  \includegraphics[width=\textwidth]{img/monika.png}
+  \begin{center}
+  \includegraphics[width=7cm]{img/monika.png}
+  \end{center}
 }
 
 
@@ -521,7 +523,7 @@ Notion de hiérarchie dans les requetes:
   \begin{center}
     \includegraphics[width=6cm]{img/chandler2.png}
   \end{center}
-  {\em Chandler}: en 80 lignes, affichage du status des noeuds et des coeurs en mode console.
+  {\em Chandler}: en 80 lignes de code, affichage du status des noeuds et des coeurs en mode console.
 }
 
 
@@ -546,7 +548,7 @@ Notion de hiérarchie dans les requetes:
   \begin{block}{Réferences}
   \begin{itemize}
     \item Entre 7000 et 15000 coeurs, autour de 30 clusters
-    \item Mesocentre CIMENT, Grid'5000, BRGM, Footways, Usharesoft, Université/Labo (France, Chine, Brésil, US, Slovakie...)
+    \item Mesocentre CIMENT, Grid'5000, BRGM, Footways, Usharesoft, Université/Labo (France, Chine, Brésil,Luxembourg, US, Slovakie...)
   \end{itemize}
  \end{block}
 
@@ -564,8 +566,8 @@ Notion de hiérarchie dans les requetes:
   \frametitle{Perspectives}
   \begin{block}{}
   \begin{itemize}
-    \item Interfacage à gLite (serveur blahp ?)
-    \item Ordonnanceur (nouvelle version) 
+    \item {\bf Interfacage à gLite} (serveur blahp ?)
+    \item {\bf Ordonnanceur (nouvelle version)}
     \item Interface web intégrée
     \item Actuellement de 1000 à 10000 (ressources: noeuds, cpus, coeurs...)
     \item 100K ressources, numa massivement multi-coeur  ?
@@ -599,12 +601,6 @@ Notion de hiérarchie dans les requetes:
 
 
 }
-
-\begin{frame}
-	\begin{center}
-		{\huge Des questions ?}
-	\end{center}
-\end{frame}
 
 \frame{
   \begin{center}
