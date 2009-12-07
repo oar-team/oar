@@ -14,7 +14,7 @@ news.html:
   title: news
   inMenu: true
   orderInfo: 2
-  url: /news.page
+  url: http://wiki-oar.imag.fr/news/
 
 admins/:
   inMenu: true
