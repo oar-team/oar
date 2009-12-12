@@ -1,4 +1,4 @@
-open Mysql
+(* open Mysql *) (* TODO *)
 open Int64
 open Interval
 type time_t = int64 (* 64 bits int because of unix_time use *)
@@ -52,7 +52,7 @@ type job_required_status = {
 (* Pretty - printing ** TO MOVE in helpers ??? **)
 
 let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in
-  (Printf.sprintf "(%d) start_time %s; walltime %s:" t.jobid (ml642int t.time_b) (ml642int t.walltime)) ^
+(* TODO  (Printf.sprintf "(%d) start_time %s; walltime %s:" t.jobid (ml642int t.time_b) (ml642int t.walltime)) ^ *)
   (String.concat ", " (List.map itv2str t.set_of_rs)) ^ 
   (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," (fun n -> String.concat "*" [fst(n);snd(n)]) t.types)) ^
   (Printf.sprintf "h_type: "^ (String.concat "*" (List.flatten t.hy_level_rqt)))^
