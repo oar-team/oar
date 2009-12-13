@@ -56,6 +56,7 @@ let get_available_uptos dbh =
     in
       map res get_one
 
+(* TODO to remove ??? 
 let get_one_job_row res a = 
     let get s = column res s a in (
       not_null int2ml (get "job_id"),
@@ -66,6 +67,8 @@ let get_one_job_row res a =
       not_null int2ml (get "res_job_order"),
       not_null str2ml (get "res_group_property")
     );;
+*)
+
 
 let get_job_list dbh default_resources queue besteffort_duration =
   let flag_besteffort = if (queue == "besteffort") then true else false in
@@ -421,4 +424,21 @@ let set_job_and_scheduler_message_range dbh job_ids message =
   let job_ids_str = Helpers.concatene_sep "," string_of_int job_ids in
   let query =  Printf.sprintf "UPDATE jobs SET  message = '%s', scheduler_info = '%s',   WHERE IN ('%s');" message message job_ids_str in
     ignore (execQuery dbh query)
+
+(* TODO for test purpose mysql / postgresql *)
+let get_resource_list_test dbh  = 
+  let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
+  let res = execQuery dbh query in
+  let get_one_resource a =
+(*     not_null int2ml a.(0)  *)
+    not_null int_of_string a.(0);
+
+(*
+   { resource_id =  int_of_string a.(0);
+      network_address =  a.(1);
+      state = rstate_of_string a.(2);
+      available_upto = Int64.of_string a.(3) ;}
+*)
+  in
+    map res get_one_resource ;;
 
