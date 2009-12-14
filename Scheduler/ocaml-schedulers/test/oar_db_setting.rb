@@ -1,22 +1,56 @@
+# TODO load config db from oar.conf file 
+# GetoptLong doesn't work with irb -r oar_db_setting -arg bla neither without -r flag
+# can DB DRIVER switch with DRIVER variable environment
 require 'sequel'
+require 'getoptlong'
 
-if ARGV.length != 0
-  puts "Options support not yet implemented"
-  exit(1)
-  # add user/passwod parsing
+$driver = "my"
+$name = "oar" 
+$user = "oar"
+$passwd = "oar"
+$host = "localhost"
+
+
+opts = GetoptLong.new(
+  [ "--driver", "-d", GetoptLong::REQUIRED_ARGUMENT ], 
+  [ "--name", "-n", GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--user", "-u", GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--passwd", "-p", GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--host", "-h", GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+opts.each do |option, value|
+  if (option == "driver")
+    $driver = value    
+  elsif (option == "name")
+    $name = value
+  elsif (option == "user")
+    $user = value
+  elsif (option == "passwd")
+    $passwd = value
+  elsif (option == "host")
+    $host = value
+  end
+end
+ 
+if ($driver=="my" && ENV['DRIVER'].nil?)
+  puts "Mysql Driver"
+  DB = Sequel.mysql(
+    $name,
+    :user => $user,
+    :password => $passwd,  
+    :host => $host  
+  )
 else
-  DB_NAME = "oar"
-  USER = "oar"
-  PASSWD =  "oar"
-  HOST = "localhost"
+  puts "Postgresql Driver"
+  DB = Sequel.postgres(
+    $name,
+    :user => $user,
+    :password => $passwd,  
+    :host => $host  
+  )
 end
 
-DB = Sequel.mysql(
-  DB_NAME,
-  :user => USER,
-  :password => PASSWD,  
-  :host => HOST  
- )
 DEFAULT_QUEUE = "default"
 DEFAULT_WALLTIME = 7200
 DEFAULT_RES = "resource_id=1"
@@ -108,7 +142,7 @@ def oar_truncate_jobs
     TRUNCATE moldable_job_descriptions;
     TRUNCATE resource_logs;
   "
-  system "echo \"#{requests}\" | mysql -u#{USER} -p#{PASSWD} -h#{HOST} #{DB_NAME}"
+  system "echo \"#{requests}\" | mysql -u#{$user} -p#{$passwd} -h#{$host} #{$name}"
 end
 
 def oar_update_visu
@@ -132,7 +166,7 @@ def oar_truncate_resources
     TRUNCATE resources;
     TRUNCATE resource_logs;
     "
-  system "echo \"#{requests}\" | mysql -u#{USER} -p#{PASSWD} -h#{HOST} #{DB_NAME}"
+  system "echo \"#{requests}\" | mysql -u#{$user} -p#{$passwd} -h#{$host} #{$name}"
 end
 
 def oar_db_clean
@@ -140,5 +174,9 @@ def oar_db_clean
   oar_truncate_resources
 end
 
-puts "DB connection up"
-
+if DB.test_connection
+  puts "DB connection up"
+else
+  puts "DB test connection failed"
+end
+puts DB.inspect

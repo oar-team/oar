@@ -1,38 +1,7 @@
-open Postgresql 
-open Conf
+open DBD
 open Types
 open Interval
 open Helpers
-
-type q_res = {
-  result: Postgresql.result;
-  ntuples: int;
-  mutable nt: int;
-} 
-
-
-let connect () = 
-  let user = get_optional_value "DB_BASE_LOGIN"
-  and name = get_optional_value "DB_BASE_NAME"
-  and host = get_optional_value "DB_HOSTNAME"
-  and passwd = get_optional_value "DB_BASE_PASSWD" in
-    let o = function None -> "" | Some s -> s in
-      log ( Printf.sprintf "Connecting as %s@%s on %s.\n" (o user) (o host) (o name)); 
-      let str_connection = Printf.sprintf  "host=%s user=%s password=%s dbname=%s"  (o host) (o user) (o passwd) (o name) in 
-        (* let str_connection = Some "host=" in *)
-        new connection ~conninfo:str_connection ();;
-
-let disconnect dbh = dbh#finish;;
-
-
-let execQuery (dbh:Postgresql.connection)  q = (* TODO must be completed *)
-  let res = dbh#exec q in
-    { result = res;
-      ntuples = res#ntuples;
-      nt = 0;
-    }
-(* TODO test status see dbi_postgresql.ml in ocamldbi *)
-;; 
 
 (* TODO to remove
 let test_db (dbh:Postgresql.connection) =
@@ -46,30 +15,18 @@ let test_db (dbh:Postgresql.connection) =
 
 *)
 
-(* let map (q_result:Postgresql.result) f = *)
-let map (qres) f = 
-  let rec loop i result_lst = match i with
-    | -1 -> result_lst
-    | _ -> loop (i-1) ((f (qres.result#get_tuple i))::result_lst)
-  in loop (qres.ntuples-1) [] ;;
+let connect () = DBD.connect ();;
+let disconnect dbh = DBD.disconnect dbh;;
 
-
-let fetch qres =
-  if (qres.nt == qres.ntuples) then
-    None
-  else
-    let r = qres.result#get_tuple qres.nt in
-      qres.nt <- qres.nt + 1;
-      Some r;;
 
 let get_resource_list (dbh)  = 
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
   let get_one_resource a =
-    { resource_id =  int_of_string a.(0); (* resource_id *)
-      network_address =  a.(1); (* network_address *)
-      state = rstate_of_string a.(2); (* state *)
-      available_upto = Int64.of_string a.(3) ;} (* available_upto *)
+    { resource_id = NoN int_of_string a.(0); (* resource_id *)
+      network_address = NoNStr a.(1); (* network_address *)
+      state = NoN rstate_of_string a.(2); (* state *)
+      available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
     map res get_one_resource ;;
 
@@ -88,7 +45,7 @@ let test_fetch_resource dbh =
 let get_available_uptos dbh =
   let query = "SELECT available_upto FROM resources GROUP BY available_upto" in
   let res = execQuery dbh query in 
-  let get_one a = Int64.of_string a.(0)  (* available_upto *)
+  let get_one a = NoN Int64.of_string a.(0)  (* available_upto *)
     in
       map res get_one;;
 
@@ -113,7 +70,7 @@ let get_job_list dbh default_resources queue besteffort_duration =
             let query = Printf.sprintf "SELECT resource_id FROM resources WHERE state = 'Alive'  AND ( %s )"  sql_cts in
             let res = execQuery dbh query in 
             let get_one_resource a = 
-              int_of_string a.(0) (* resource_id *)
+              NoN int_of_string a.(0) (* resource_id *)
             in
             let matching_resources = (map res get_one_resource) in 
             let itv_cts = ints2intervals matching_resources in
@@ -146,15 +103,15 @@ let get_job_list dbh default_resources queue besteffort_duration =
   let res = execQuery dbh query in 
 
   let get_one_row a = ( 
-    int_of_string a.(0), (* job_id *) 
+    NoN int_of_string a.(0), (* job_id *) 
     (if flag_besteffort then besteffort_duration else 
-      Int64.of_string a.(1)), (* moldable_walltime *)
-    int_of_string a.(3), (* moldable_id *)
-    a.(2),(* properties *)
-    a.(4), (* res_job_resource_type *)
-    int_of_string a.(5), (* res_job_value *)
-    int_of_string a.(6), (* res_job_order *)
-    a.(7) (* res_group_property *)
+      NoN Int64.of_string a.(1)), (* moldable_walltime *)
+      NoN int_of_string a.(3), (* moldable_id *)
+      NoNStr a.(2),(* properties *)
+      NoNStr a.(4), (* res_job_resource_type *)
+      NoN int_of_string a.(5), (* res_job_value *)
+      NoN int_of_string a.(6), (* res_job_order *)
+      NoNStr a.(7) (* res_group_property *)
   )
 
   in let result = map res get_one_row in
@@ -238,11 +195,11 @@ let get_scheduled_jobs dbh =
 (* function
            | None -> failwith "pas glop" (*not reacheable*) 
            | Some job_res -> *)
-              let j_id =  int_of_string a.(0) (* job_id *)
-              and j_walltime = Int64.of_string a.(2) (* moldable_walltime *)
-              and j_moldable_id = int_of_string a.(8)  (* moldable_id *)
-              and j_start_time = Int64.of_string a.(1) (* start_time *)
-              and j_nb_res = int_of_string a.(3) in (*resource_id *)  
+              let j_id = NoN int_of_string a.(0) (* job_id *)
+              and j_walltime = NoN Int64.of_string a.(2) (* moldable_walltime *)
+              and j_moldable_id = NoN int_of_string a.(8)  (* moldable_id *)
+              and j_start_time = NoN Int64.of_string a.(1) (* start_time *)
+              and j_nb_res = NoN int_of_string a.(3) in (*resource_id *)  
             
                 ( {
                   jobid = j_id;
@@ -259,8 +216,8 @@ let get_scheduled_jobs dbh =
        in
 
         let get_job_res a =
-          let j_id =  int_of_string a.(0) (* job_id *)
-          and j_nb_res =  int_of_string a.(3) in (*resource_id *)
+          let j_id = NoN int_of_string a.(0) (* job_id *)
+          and j_nb_res =  NoN int_of_string a.(3) in (*resource_id *)
           (j_id, j_nb_res)
         in 
       
@@ -349,9 +306,9 @@ let get_job_types dbh job_ids h_jobs =
   
   let res = execQuery dbh query in
    let add_id_types a = 
-      let job = try Hashtbl.find h_jobs  (int_of_string a.(0)) (* job_id *)
+      let job = try Hashtbl.find h_jobs ( NoN int_of_string a.(0)) (* job_id *)
         with Not_found -> failwith "get_job_type error can't find job_id" in
-        let jt0 = Helpers.split "=" a.(1) in (* type *)
+        let jt0 = Helpers.split "=" (NoNStr a.(1)) in (* type *)
 
         let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in  
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
@@ -369,9 +326,9 @@ let get_job_types_hash_ids dbh jobs =
   
   let res = execQuery dbh query in
     let add_id_types a =
-      let job = try Hashtbl.find h_jobs  (int_of_string a.(0)) (* job_id *)
+      let job = try Hashtbl.find h_jobs (NoN int_of_string a.(0)) (* job_id *)
         with Not_found -> failwith "get_job_type error can't find job_id" in
-        let jt0 = Helpers.split "=" a.(1) in (* type *)
+        let jt0 = Helpers.split "=" (NoNStr a.(1)) in (* type *)
 
         let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in 
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
@@ -385,8 +342,8 @@ let get_current_jobs_dependencies dbh =
   let query = "SELECT job_id, job_id_required FROM job_dependencies WHERE job_dependency_index = 'CURRENT'" in
   let res = execQuery dbh query in
   let get_one a =
-    let job_id = int_of_string a.(0) in (* job_id *)
-    let job_id_required = int_of_string a.(1) in (* job_id_required *)
+    let job_id = NoN int_of_string a.(0) in (* job_id *)
+    let job_id_required = NoN int_of_string a.(1) in (* job_id_required *)
 
     let dependencies = try Hashtbl.find h_jobs_dependencies job_id with Not_found -> (Hashtbl.add h_jobs_dependencies job_id []; []) in
     Hashtbl.replace h_jobs_dependencies job_id (job_id_required::dependencies) in
@@ -409,10 +366,10 @@ let get_current_jobs_required_status dbh =
                 GROUP BY jobs.job_id;" in
   let res = execQuery dbh query in
   let get_one a =
-    let j_id = int_of_string a.(0) (* job_id *) 
-    and j_state = a.(1) (* state *)
-    and j_jtype = a.(2) (* job_type *)
-    and j_exit_code = int_of_string a.(3) (* exit_code *)
+    let j_id = NoN int_of_string a.(0) (* job_id *) 
+    and j_state = NoNStr a.(1) (* state *)
+    and j_jtype = NoNStr a.(2) (* job_type *)
+    and j_exit_code = NoN int_of_string a.(3) (* exit_code *)
 
 (*
     and j_start_time = not_null int642ml (get "start_time")

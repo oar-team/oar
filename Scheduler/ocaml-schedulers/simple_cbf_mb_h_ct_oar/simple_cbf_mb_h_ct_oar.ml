@@ -1,7 +1,7 @@
 open Types
 open Interval 
 open Simple_cbf_mb_h_ct
-open Mysql
+(* open Mysql *)
 (*
 TODO
 2) Debug
@@ -121,7 +121,7 @@ let _ =
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status waiting_j_ids
           in
-            Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (ml642int now)));
+            Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
 (*          Conf.log ("slot_init:\n  " ^  slot_to_string slot_init); 
             Conf.log ("slots_with_scheduled_jobs:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
   				  Conf.log ( "Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) );        
