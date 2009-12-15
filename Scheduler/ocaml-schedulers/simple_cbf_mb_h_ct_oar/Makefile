@@ -3,14 +3,24 @@ export OCAMLMAKEFILE = ../common/OCamlMakefile
 
 # Export some common variable settings
 
+# test_iolib_my|pg use only for testing in development process
+define PROJ_test_iolib_my
+  export LIBS = unix str
+  export PACKS = mysql
+  SOURCES=  ../common/helpers.ml ../common/conf.ml ../common/interval.ml types.ml mysql_driver.ml iolib.ml \
+          test_iolib.ml
+  RESULT= test_iolib_my
+endef
+export PROJ_test_iolib_my
+
 define PROJ_test_iolib_pg
   export LIBS = unix str
   export PACKS = postgresql
-
-  SOURCES=  ../common/helpers.ml ../common/conf.ml ../common/interval.ml types.ml iolib_pg.ml \
-          test_iolib_pg.ml
+  SOURCES=  ../common/helpers.ml ../common/conf.ml ../common/interval.ml types.ml postgresql_driver.ml iolib.ml \
+          test_iolib.ml
   RESULT= test_iolib_pg
 endef
+
 export PROJ_test_iolib_pg
 
 define PROJ_simple_cbf_mb_h_ct_oar_pg
