@@ -5,7 +5,7 @@ INDEX = output/index.html
 
 all: html
 
-output/%.html: $(MANUALPAGE) 
+output/%.html: $(MANUALPAGE) news.yaml
 	export LC_ALL=C;webgen run
 	sed s/\<title\>Home/\<title\>OAR/ output/index.html > /tmp/index.html.tmp
 	mv /tmp/index.html.tmp  output/index.html 
@@ -42,5 +42,8 @@ publish-online: all
 
 html: $(INDEX)
 
+news.yaml: src/index.page
+	tools/rss2news.rb
+
 clean:
-	\rm -rf output
+	\rm -rf output news.yaml
