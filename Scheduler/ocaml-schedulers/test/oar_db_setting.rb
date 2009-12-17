@@ -157,7 +157,11 @@ def oar_sql_file file_name
 end
 
 def oar_resource_insert(args={})
-  res_id = $resources.insert(:state=>"Alive")
+  if (args.nil?)
+    res_id = $resources.insert(:state=>"Alive")
+  else
+    puts "Args support not yet implemented"
+  end
 end
 
 def oar_truncate_resources
