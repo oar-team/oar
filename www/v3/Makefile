@@ -1,5 +1,5 @@
-SITE = intra-id:/www-id/sites/oar/www/test
-#SITE = intra-id:/www-id/sites/oar/www
+#SITE = intra-id:/www-id/sites/oar/www/test
+SITE = intra-id:/www-id/sites/oar/www
 #SITE = localhost:/tmp/test
 INDEX = output/index.html
 
