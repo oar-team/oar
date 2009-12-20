@@ -3,17 +3,8 @@ open Types
 open Interval
 open Helpers
 
-(* TODO to remove
-let test_db (dbh:Postgresql.connection) =
-  let res = dbh#exec ~expect:[Tuples_ok] ("select * from admission_rules") in
-	if res#ntuples <> 0 then (
-    let tpl = res#get_tuple 0 in
-      print_string tpl.(0);
-      for i = 1 to Array.length tpl - 1 do print_string (" " ^ tpl.(i)) done;
-      print_newline ();
-    ) else (Printf.printf "Bou\n") ;;
+(*  Postgresql very sensible ? "type = \"default\""    "type = 'default'" *)
 
-*)
 
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
@@ -30,17 +21,6 @@ let get_resource_list (dbh)  =
   in
     map res get_one_resource ;;
 
-(* TODO to remove 
-let test_fetch_resource dbh =
-  let query = "SELECT resource_id FROM resources" in
-  let res = execQuery dbh query in
-  let rec aux row res_id_lst = match row with
-    | None -> res_id_lst
-    | Some x-> aux (fetch res) (x::res_id_lst)
-    in
-      aux (fetch res) [];;
-
-*)
 
 let get_available_uptos dbh =
   let query = "SELECT available_upto FROM resources GROUP BY available_upto" in

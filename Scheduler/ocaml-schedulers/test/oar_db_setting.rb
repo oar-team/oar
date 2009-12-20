@@ -79,7 +79,8 @@ def oar_job_insert(args={})
 
   res.split("+").each do |r|
     #res_group_id =	$job_resource_groups.insert(:res_group_moldable_id => moldable_id, :res_group_property => 'type = "default"')
-    $dbh.execute("insert into job_resource_groups (res_group_moldable_id,res_group_property) values (#{moldable_id},'type = \"default\"')").finish
+    $dbh.execute("insert into job_resource_groups (res_group_moldable_id,res_group_property) values 
+                                                  (#{moldable_id},'type = ''default''')").finish
     res_group_id = get_last_insert_id('job_resource_groups_res_group_id_seq')
 
     r.split('/').each_with_index do |type_value,order|
@@ -177,4 +178,5 @@ def oar_db_clean
 end
 
 base_connect
+# 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
 
