@@ -1,3 +1,11 @@
+#
+# usage:
+#   export SUBPROJS=simple_cbf_mb_h_ct_oar_my; make my_driver dc
+#   export SUBPROJS=simple_cbf_mb_h_ct_oar_my; make my_driver dc
+#   export SUBPROJS=test_iolib_my; make my_driver bc (bytecode ) 
+#   export SUBPROJS=test_iolib_my; make my_driver nc (native code)
+# top / dc / nc / bc ....
+
 # Set OCamlMakefile to use
 export OCAMLMAKEFILE = ../common/OCamlMakefile
 
@@ -45,8 +53,8 @@ export PROJ_simple_cbf_mb_h_ct_oar_my
 # If the environment does not define subprojects to handle,
 # then use "ex1 ex2" as default
 ifndef SUBPROJS
-#  export SUBPROJS = simple_cbf_mb_h_ct_oar_pg 
-  export SUBPROJS = simple_cbf_mb_h_ct_oar_my 
+  export SUBPROJS = simple_cbf_mb_h_ct_oar_pg 
+#  export SUBPROJS = simple_cbf_mb_h_ct_oar_my 
 endif
  
 # Default target to use
@@ -59,6 +67,17 @@ pg_driver:
 my_driver:
 	sed -e s/DBD/Mysql_driver/g -e 's/NoN\s/not_null\ /g' -e s/NoNStr/not_null\ str2ml/g iolib_tpl.ml > iolib.ml
 
+pg_scheduler: pg_driver
+	export SUBPROJS=simple_cbf_mb_h_ct_oar_pg; make nc
+
+my_scheduler: my_driver
+	export SUBPROJS=simple_cbf_mb_h_ct_oar_my; make nc
+
+pg_scheduler_debug: pg_driver
+	export SUBPROJS=simple_cbf_mb_h_ct_oar_pg; make dc
+
+my_scheduler_debug: pg_driver
+	export SUBPROJS=simple_cbf_mb_h_ct_oar_my; make dc
 
 # Catch-all target will be applied to all subprojects automatically
 %:
