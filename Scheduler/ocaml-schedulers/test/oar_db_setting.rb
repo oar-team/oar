@@ -28,7 +28,7 @@ end
 
 def get_last_insert_id(seq)
   id = 0
-  if ($db_type == "Mysql")
+  if ($db_type == "Mysql" || $db_type == "mysql" )
     id=$dbh.select_one("SELECT LAST_INSERT_ID()")[0]
   else
     id=$dbh.select_one("SELECT CURRVAL('#{seq}')")[0]
@@ -101,6 +101,16 @@ def oar_job_insert(args={})
   return job_id
 end
 
+
+def multiple_requests_execute(reqs)
+  #Strange dbi_mysql doesn't accept multiple request in one dbh.execute ???
+  reqs.split(';').each do |r|
+    if (r =~ /\w/)
+      $dbh.execute(r).finish
+    end
+  end
+end
+
 def oar_truncate_jobs
 #  DB << "
  requests = "
@@ -125,8 +135,8 @@ def oar_truncate_jobs
     TRUNCATE job_types;
     TRUNCATE moldable_job_descriptions;
     TRUNCATE resource_logs;
-  "
-  $dbh.execute(requests).finish
+"
+  multiple_requests_execute(requests)
 end
 
 def oar_update_visu
@@ -136,7 +146,7 @@ def oar_update_visu
     INSERT INTO gantt_jobs_predictions_visu SELECT * FROM gantt_jobs_predictions;
     INSERT INTO gantt_jobs_resources_visu SELECT * FROM gantt_jobs_resources;
   "
-  $dbh.execute(requests).finish
+  multiple_requests_execute(requests)
 end
 
 
@@ -158,7 +168,7 @@ def oar_truncate_resources
     TRUNCATE resources;
     TRUNCATE resource_logs;
     "
-  $dbh.execute(requests).finish
+  multiple_requests_execute(requests)
 end
 
 def oar_db_clean
