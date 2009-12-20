@@ -1,55 +1,5 @@
-# TODO load config db from oar.conf file 
-# GetoptLong doesn't work with irb -r oar_db_setting -arg bla neither without -r flag
-# can DB DRIVER switch with DRIVER variable environment
-require 'sequel'
-require 'getoptlong'
-
-$driver = "my"
-$name = "oar" 
-$user = "oar"
-$passwd = "oar"
-$host = "localhost"
-
-
-opts = GetoptLong.new(
-  [ "--driver", "-d", GetoptLong::REQUIRED_ARGUMENT ], 
-  [ "--name", "-n", GetoptLong::REQUIRED_ARGUMENT ],
-  [ "--user", "-u", GetoptLong::REQUIRED_ARGUMENT ],
-  [ "--passwd", "-p", GetoptLong::REQUIRED_ARGUMENT ],
-  [ "--host", "-h", GetoptLong::REQUIRED_ARGUMENT ]
-)
-
-opts.each do |option, value|
-  if (option == "driver")
-    $driver = value    
-  elsif (option == "name")
-    $name = value
-  elsif (option == "user")
-    $user = value
-  elsif (option == "passwd")
-    $passwd = value
-  elsif (option == "host")
-    $host = value
-  end
-end
- 
-if ($driver=="my" && ENV['DRIVER'].nil?)
-  puts "Mysql Driver"
-  DB = Sequel.mysql(
-    $name,
-    :user => $user,
-    :password => $passwd,  
-    :host => $host  
-  )
-else
-  puts "Postgresql Driver"
-  DB = Sequel.postgres(
-    $name,
-    :user => $user,
-    :password => $passwd,  
-    :host => $host  
-  )
-end
+require 'dbi'
+require 'yaml'
 
 DEFAULT_QUEUE = "default"
 DEFAULT_WALLTIME = 7200
@@ -57,12 +7,41 @@ DEFAULT_RES = "resource_id=1"
 DEFAULT_PROPERTIES = ""
 DEFAULT_TYPES = nil
 
-$jobs = DB[:jobs]
-$moldable = DB[:moldable_job_descriptions]
-$job_resource_groups = DB[:job_resource_groups]
-$job_resource_description = DB[:job_resource_descriptions]
-$job_types = DB[:job_types]
-$resources = DB[:resources]
+puts "### Reading configuration file..." 
+$conf = YAML::load(IO::read('oar_test.conf'))
+
+
+$db_type = $conf['DB_TYPE']
+
+puts "DB TYPE: #{$conf['DB_TYPE']}"
+
+def base_connect
+  db_type = $conf['DB_TYPE']
+	if $db_type == "mysql"
+		$db_type == "Mysql"
+	end
+	$dbh = DBI.connect("dbi:#{db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
+										 "#{$conf['DB_BASE_LOGIN_RO']}","#{$conf['DB_BASE_PASSWD_RO']}")
+
+  puts "DB Connection Establised"
+end
+
+def get_last_insert_id(seq)
+  id = 0
+  if ($db_type == "Mysql")
+    id=$dbh.select_one("SELECT LAST_INSERT_ID()")[0]
+  else
+    id=$dbh.select_one("SELECT CURRVAL('#{seq}')")[0]
+  end
+  return id
+end
+
+#$jobs = DB[:jobs]
+#$moldable = DB[:moldable_job_descriptions]
+#$job_resource_groups = DB[:job_resource_groups]
+#$job_resource_description = DB[:job_resource_descriptions]
+#$job_types = DB[:job_types]
+#$resources = DB[:resources]
 
 def oar_job_insert(args={})
   res = DEFAULT_RES
@@ -88,33 +67,38 @@ def oar_job_insert(args={})
   end
 
 
-  job_id = $jobs.insert(:job_name=>"yop", :state => "Waiting", :queue_name => queue, :properties => properties)
+  sth = $dbh.execute("insert into jobs (job_name,state,queue_name,properties,launching_directory,checkpoint_signal) values 
+                                      ('yop','Waiting','#{queue}','#{properties}','yop',0)")
+  sth.finish
 
-  moldable_id = $moldable.insert(:moldable_job_id => job_id, :moldable_walltime => walltime)
+  job_id= get_last_insert_id('jobs_job_id_seq') 
+
+  #moldable_id = $moldable.insert(:moldable_job_id => job_id, :moldable_walltime => walltime)
+  $dbh.execute("insert into moldable_job_descriptions (moldable_job_id,moldable_walltime) values (#{job_id},#{walltime})").finish 
+  moldable_id = get_last_insert_id('moldable_job_descriptions_moldable_id_seq')
 
   res.split("+").each do |r|
-    res_group_id =	$job_resource_groups.insert(:res_group_moldable_id => moldable_id, :res_group_property => "type = 'default'")
+    #res_group_id =	$job_resource_groups.insert(:res_group_moldable_id => moldable_id, :res_group_property => 'type = "default"')
+    $dbh.execute("insert into job_resource_groups (res_group_moldable_id,res_group_property) values (#{moldable_id},'type = \"default\"')").finish
+    res_group_id = get_last_insert_id('job_resource_groups_res_group_id_seq')
+
     r.split('/').each_with_index do |type_value,order|
       type,value = type_value.split('=')
-      $job_resource_description.insert(:res_job_group_id => res_group_id, :res_job_resource_type => type, :res_job_value => value.to_i, :res_job_order => order.to_i)
+      #$job_resource_description.insert(:res_job_group_id => res_group_id.to_i, :res_job_resource_type => type, :res_job_value => value.to_i, :res_job_order => order.to_i)
+      $dbh.execute("insert into job_resource_descriptions (res_job_group_id, res_job_resource_type, res_job_value, res_job_order ) 
+                   values (#{res_group_id.to_i},'#{type}',#{value.to_i},#{order.to_i})").finish
     end  
   end
 
   #job's types insertion
   if !types.nil?
     types.split(',').each do |type|
-      $job_types.insert(:job_id => job_id, :type => type)
+#      $job_types.insert(:job_id => job_id, :type => type)
+      $dbh.execute("insert into job_types (job_id, type) values (#{job_id},'#{type}')").finish
     end
   end
 
   return job_id
-end
-
-def oar_empty_jobs
-  $jobs.delete
-  $moldable.delete
-  $job_resource_groups.delete
-  $job_resource_description.delete
 end
 
 def oar_truncate_jobs
@@ -142,25 +126,29 @@ def oar_truncate_jobs
     TRUNCATE moldable_job_descriptions;
     TRUNCATE resource_logs;
   "
-  system "echo \"#{requests}\" | mysql -u#{$user} -p#{$passwd} -h#{$host} #{$name}"
+  $dbh.execute(requests).finish
 end
 
 def oar_update_visu
-  DB << "DELETE FROM gantt_jobs_predictions_visu"
-  DB << "DELETE FROM gantt_jobs_resources_visu"
-  DB << "INSERT INTO gantt_jobs_predictions_visu SELECT * FROM gantt_jobs_predictions"
-  DB << "INSERT INTO gantt_jobs_resources_visu SELECT * FROM gantt_jobs_resources"
+  requests = "
+    DELETE FROM gantt_jobs_predictions_visu;
+    DELETE FROM gantt_jobs_resources_visu;
+    INSERT INTO gantt_jobs_predictions_visu SELECT * FROM gantt_jobs_predictions;
+    INSERT INTO gantt_jobs_resources_visu SELECT * FROM gantt_jobs_resources;
+  "
+  $dbh.execute(requests).finish
 end
 
-def oar_sql_file file_name
-  DB << File.open(file_name, "r").read
-end
+
+#def oar_sql_file file_name
+#  DB << File.open(file_name, "r").read
+#end
 
 def oar_resource_insert(args={})
-  if (args.nil?)
-    res_id = $resources.insert(:state=>"Alive")
+  if (!args.nil?)
+    $dbh.execute("insert into resources (state) values ('Alive')").finish
   else
-    puts "Args support not yet implemented"
+    puts "Args not yet support"
   end
 end
 
@@ -170,7 +158,7 @@ def oar_truncate_resources
     TRUNCATE resources;
     TRUNCATE resource_logs;
     "
-  system "echo \"#{requests}\" | mysql -u#{$user} -p#{$passwd} -h#{$host} #{$name}"
+  $dbh.execute(requests).finish
 end
 
 def oar_db_clean
@@ -178,9 +166,5 @@ def oar_db_clean
   oar_truncate_resources
 end
 
-if DB.test_connection
-  puts "DB connection up"
-else
-  puts "DB test connection failed"
-end
-puts DB.inspect
+base_connect
+
