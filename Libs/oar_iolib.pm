@@ -4946,8 +4946,7 @@ sub search_idle_nodes($$){
     $req = "SELECT resources.network_address, MAX(resources.last_job_date)
             FROM resources
             WHERE
-                (resources.state = \'Alive\' OR
-                resources.state = \'Suspected\') AND
+                resources.state = \'Alive\' AND
                 resources.network_address != \'\' AND
                 resources.type = \'default\' AND
                 resources.available_upto < 2147483647
