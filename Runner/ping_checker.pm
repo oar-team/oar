@@ -190,7 +190,8 @@ sub sentinelle_script_hosts(@){
         close(WRITER);
         while(<ERROR>){
             chomp($_);
-            if ($_ =~ m/^([\w\.]+)\s:\sBAD\s.*$/m){
+            #if ($_ =~ m/^([\w\.]+)\s:\sBAD\s.*$/m){
+            if ($_ =~ m/^([\w\.\-]+)\s:\sBAD\s.*$/m){
                 if ($check_test_nodes{$1} == 1){
                     oar_debug("[PingChecker] Bad host = $1 \n");
                     push(@bad_hosts, $1);
@@ -379,7 +380,8 @@ sub generic_hosts(@){
         $pid = open3(\*WRITER, \*READER, \*ERROR, $test_cmd);
         while(<ERROR>){
             chomp($_);
-            $_ =~ m/^\s*([\w\.]+)\s*$/m;
+            #$_ =~ m/^\s*([\w\.]+)\s*$/m;
+            $_ =~ m/^\s*([\w\.\-]+)\s*$/m;
             if ($check_test_nodes{$1} == 1){
                 oar_debug("[PingChecker] Bad host = $1 \n");
                 push(@bad_hosts, $1);
