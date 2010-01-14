@@ -269,6 +269,7 @@ server: man
 	install -m 0755 Scheduler/oar_meta_sched $(DESTDIR)$(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 Hulot/oar_Hulot.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 WindowForker/window_forker.pm $(DESTDIR)$(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(DESTDIR)$(OARDIR)
 	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarnotify
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarnotify
