@@ -75,7 +75,6 @@ sub launch($$$$$$){
     my %finished_processes;
     my %process_duration;
     
-    ## Romain
     my $nextWindowTime = 0 ;
     my $nb_launching_processes_in_window = 0 ;
 	
@@ -141,8 +140,7 @@ sub launch($$$$$$){
           
           # Check if previous window time is finished
           if((time() >= $nextWindowTime) and ($nb_launching_processes_in_window < $window_size)){
-            print("[DEBUG WINDFORKER] Launching new window ".time()."/".$nextWindowTime." (NB launching = $nb_launching_processes_in_window/$window_size)\n");
-            warn("[VERBOSE] ".time." | Dans le while check if window is full or not\n") if ($verbose);
+            #print("[DEBUG WINDFORKER] Launching new window ".time()."/".$nextWindowTime." (NB launching = $nb_launching_processes_in_window/$window_size)\n");
             warn("[VERBOSE] ".time." | fork process: $commands->[$index]\n") if ($verbose);
             $process_duration{$index}->{"start"} = [gettimeofday()] if ($USE_TIME == 1);
         
@@ -160,7 +158,6 @@ sub launch($$$$$$){
                       }elsif ($cmd eq "HALT"){
                         $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
                       }
-                      #exec($command_to_exec);
                       oar_debug("-----[DEBUG WINDFORKER]----- Print : Type = \'".$forker_type{"type"}."\' ; ID = \'".$forker_type{"id_msg"}."\' ; Template = \'".$forker_type{"template"}."\'\n");
                       system($command_to_exec);
                       oar_debug("-----[DEBUG WINDFORKER]----- End of command \'$cmd\' on node \'$node\' -> Code returned : ".$?."\n");
@@ -173,8 +170,6 @@ sub launch($$$$$$){
                     }
                 }
                 else{
-                  #print("[PAPA WINDFORKER] [".time."] Dumper de @ timeout = ".Dumper(@timeout)."\n");
-                  #print("[PAPA WINDFORKER] [".time."] -> PID $pid : ".time()."/".$nextWindowTime." \t\tDelta:$window_time\t\tTimeout:$timeout\n");
                   $running_processes{$pid} = $index;
                   $nb_running_processes++;
                   push(@timeout, [$pid,time()+$timeout]);
