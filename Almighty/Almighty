@@ -224,7 +224,6 @@ sub comportement_appendice(){
 }
 
 sub energy_saving(){
-	oar_debug("[DEBUG-ROMAIN] Starting oar_Hulot::start_energy_loop\n");
     oar_Hulot::start_energy_loop();
 }
 
@@ -275,6 +274,7 @@ sub init(){
           exit(6);
       }
       if (!$energy_pid){
+					$SIG{CHLD} = 'DEFAULT';
           $SIG{USR1}  = 'IGNORE';
           $SIG{INT}  = 'IGNORE';
           $SIG{TERM}  = 'IGNORE';
