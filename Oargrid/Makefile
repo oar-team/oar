@@ -71,7 +71,7 @@ disco:
 
 install: sanity-check configuration common manual disco
 
-clean:
+uninstall:
 	-rm -f $(DESTDIR)/$(CONFIG_CMDS)/oargriddel \
 	 $(DESTDIR)/$(CONFIG_CMDS)/oargridsub \
 	 $(DESTDIR)/$(CONFIG_CMDS)/oargridstat \
@@ -91,4 +91,9 @@ clean:
 	-rmdir $(DESTDIR)/$(OARGRIDDIR)
 
 deb:
-	svn-buildpackage -rfakeroot -us -uc --svn-ignore
+	debuild -rfakeroot -us -uc
+
+clean: 
+	-rm -f build-arch-stamp build-indep-stamp configure-stamp debian/files debian/oargrid-client.debhelper.log debian/oargrid-client.substvars debian/oargrid-disco.debhelper.log debian/oargrid-disco.substvars
+	rm -rf debian/oargrid-client
+	rm -rf debian/oargrid-disco
