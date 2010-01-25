@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.6";
+my $VERSION="0.2.7";
 
 ##############################################################################
 # CONFIGURATION
@@ -612,15 +612,22 @@ SWITCH: for ($q) {
     my $oarcmd = "$OARSUB_CMD ";
     my $script = "";
     my $workdir = "~$authenticated_user";
+    my $command = "";
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
-        $oarcmd .= " $job->{script_path}";
+        $command = " \"$job->{script_path}\"";
+      }
+      elsif ($option eq "command") {
+        $command = " \"$job->{command}\"";
       }
       elsif ($option eq "script") {
         $script = $job->{script};
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
+      }
+      elsif ($option eq "resources") {
+        $oarcmd .= " --resource=$job->{resources}";
       }
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
@@ -637,6 +644,7 @@ SWITCH: for ($q) {
       $script =~ s/\"/\\\"/g;
       $oarcmd .= " \"$script\"";
     }
+    $oarcmd .= $command;
 
     my $cmd = "$OARDODO_CMD 'cd $workdir && $oarcmd'";
     my $cmdRes = `$cmd 2>&1`;

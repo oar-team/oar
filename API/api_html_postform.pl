@@ -13,7 +13,7 @@ $POSTFORM="
   <TD><INPUT TYPE=text SIZE=40 NAME=property VALUE=\"\"></TD>
 </TR><TR>
   <TD>Program to run</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=script_path VALUE='\"/bin/sleep 300\"'></TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=command VALUE='\"/bin/sleep 300\"'></TD>
 </TR><TR>
   <TD>Types</TD>
   <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>

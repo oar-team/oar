@@ -1,3 +1,4 @@
+### Examples using ruby restclient ###
 > gem install rest-client
 > export PATH=$PATH:/var/lib/gems/1.8/bin
 > restclient http://localhost/oarapi-debug
@@ -64,3 +65,9 @@ irb(main):079:0> puts delete('/resources/8')
 
 # Deleting a resource by node/cpuset (oar user only)
 irb(main):080:0> puts delete('/resources/test2-p/1')
+
+
+### Example using curl ###
+
+curl -i -X POST http://www/oarapi/jobs.json -H'Content-Type: application/json' -d '{"resource":"/nodes=1,walltime=00:10:00", "script_path":"\"sleep 600\"", "type":"inner=986078"}'
+

@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.8";
+my $VERSION="0.2.9";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -855,18 +855,30 @@ sub check_job($$) {
     exit 0;
   }
 
-  # Job must have a "script" or script_path field
-  unless ( $job->{script} or $job->{script_path} ) {
+  # Job must have a "script" or script_path field unless there's a reservation
+  unless ( $job->{reservation} or $job->{script} or $job->{script_path} or $job->{command}) {
     ERROR 400, 'Missing Required Field',
-      'A job must have a script or a script_path!';
+      'A job must have a script, a command (script_path) or must be a reservation!';
     exit 0;
   }
 
   # Clean options with an empty parameter that is normaly required
-  foreach my $option ("resources",   "name",
+  foreach my $option ("resource",   "name",
                       "property",    "script",
                       "script_path", "type",
-                      "reservation", "directory"
+                      "reservation", "directory",
+                      "project", "stagein",
+                      "connect", "resources",
+                      "array", "array-param-file",
+                      "queue", "checkpoint",
+                      "signal", "anterior",
+                      "notify", "resubmit",
+                      "import-job-key-from-file",
+                      "import-job-key-inline",
+                      "export-job-key-to-file",
+                      "stdout", "stderr",
+                      "stagein", "stagein-md5sum",
+                      "command"
                      ) { parameter_option($job,$option) }
 
   # Manage toggle options (no parameter)
@@ -877,6 +889,13 @@ sub check_job($$) {
   # Ignore some nonsense (for the API) options
   foreach my $option ("dumper","xml","yaml","json","help","version") {
     delete($job->{"$option"});
+  }
+
+  # Return an error for some forbidden options
+  if ($job->{"interactive"}) {
+    ERROR 400, 'The API cannot manage interactive jobs',
+      'The API cannot manage interactive jobs';
+    exit 0;
   }
 
   return $job;
