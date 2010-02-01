@@ -161,7 +161,7 @@ sub launch($$$$$$){
                       oar_debug("-----[DEBUG WINDFORKER]----- Print : Type = \'".$forker_type{"type"}."\' ; ID = \'".$forker_type{"id_msg"}."\' ; Template = \'".$forker_type{"template"}."\'\n");
                       system($command_to_exec);
                       oar_debug("-----[DEBUG WINDFORKER]----- End of command \'$cmd\' on node \'$node\' -> Code returned : ".$?."\n");
-                      if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, " *****  [MSG] : End \'$cmd\' on \'$node\' -> Code returned : ".$?." *****"), IPC_NOWAIT)){
+                      if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
                         oar_error("[WindowForker] Failed to send message to Hulot by msgsnd(): $!\n");
                       }
                       exit 0;

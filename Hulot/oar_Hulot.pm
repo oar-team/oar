@@ -38,6 +38,33 @@ my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
 
+## add_to_hash
+# parameters: ref on: source hash, destination hash
+sub add_to_hash($$){
+	my $hash_source = shift;
+	my $hash_dest = shift;
+	my $tmp;
+	foreach $tmp (keys(%$hash_source)){
+		@$hash_dest{$tmp} = @$hash_source{$tmp};
+	}
+}
+
+
+## change_node_state
+# Changes node state
+# parameters: base, nodeToChange, StateToSet
+# return value: /
+# side effects: /
+sub change_node_state($$$){
+	my ($base, 
+				$node,
+				$state) = @_;
+	#oar_debug("[Hulot] Changing state of node '$node' to '$state'\n");
+	iolib::set_node_nextState($base,$node,$state);
+	oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+}
+
+
 ## check_keepalive_nodes
 sub check_keepalive_nodes() {
   # TODO
@@ -47,14 +74,80 @@ sub check_keepalive_nodes() {
 }
 
 
-## add_to_hash
-sub add_to_hash($$){
-	my $hash_source = shift;
-	my $hash_dest = shift;
-	my $tmp;
-	foreach $tmp (keys(%$hash_source)){
-		@$hash_dest{$tmp} = @$hash_source{$tmp};
+##check_reminded_list
+# Checks if some nodes in list_to_remind can be processed
+# parameters: ref to hash : running list, reminded list and list to process
+# return value: /
+# side effects: move nodes from reminded list to list to process if it's possible.
+sub check_reminded_list($$$){
+	my ($tmp_list_running,
+			$tmp_list_to_remind, 
+			$tmp_list_to_process) = @_;
+	foreach my $rmd_node (keys(%$tmp_list_to_remind)){
+		my $tmp_nodeFinded=0;
+		foreach my $run_node (keys(%$tmp_list_running)){
+			if($rmd_node eq $run_node){
+				$tmp_nodeFinded=1;
+				oar_debug("[DEBUG-HULOT] [check_reminded_list] --Finded node $rmd_node-- (rmd_node:$rmd_node = run_node:$run_node)\n");
+				#if ($cmd eq $nodes_list_running{$node}){
+					## Couple node/command is already planned, so we don't need to add it.
+					## We have to keep in memory this new command";
+					#$nodeFinded=1;
+				#}
+			}
+		}
+		if ($tmp_nodeFinded==0){
+			# move this node from reminded list to list to process
+			# $nodes_list_to_remind{$node}
+			oar_debug("\n\n**********\n\n[DEBUG-HULOT] [check_reminded_list] Dumper de nodes_list_running = ".Dumper($tmp_list_running)."\n");
+			oar_debug("[DEBUG-HULOT] [check_reminded_list] Dumper de nodes_list_to_remind = ".Dumper($tmp_list_to_remind)."\n");
+			oar_debug("[DEBUG-HULOT] [check_reminded_list] Dumper de nodes_list_to_process = ".Dumper($tmp_list_to_process)."\n\n**********\n\n");
+			oar_debug("\n----------\n A copier dans list_to_process: Node:$rmd_node ; Cmd:$$tmp_list_to_remind{$rmd_node}\n--------\n");
+			
+			oar_debug("[DEBUG-HULOT] Adding to nodes_list_to_process '$rmd_node=>$$tmp_list_to_remind{$rmd_node}'\n");
+			$$tmp_list_to_process{$rmd_node} = {'command' => $$tmp_list_to_remind{$rmd_node}, 'time' => time};
+			
+			oar_debug("[DEBUG-HULOT] Removing node '$rmd_node' from nodes_list_to_remind\n");
+			remove_from_hash($tmp_list_to_remind,$rmd_node);
+		}
 	}
+}
+
+
+## check_returned_cmd
+sub check_returned_cmd($$$$$){
+	my ($base,
+			$tmp_message, 
+			$tmp_list_running,
+			$tmp_list_to_remind,
+			$tmp_list_to_process) = @_;
+	my $flag = 0;
+	
+	(my $tmp_node, my $tmp_cmd, my $tmp_return)=split(/:/,$tmp_message,3);
+	oar_debug("\n\n**********\n\n[Hulot] [check_returned_cmd] Received : Node=$tmp_node ; CMD=$tmp_cmd ; Return : $tmp_return\n");
+	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper($tmp_list_running)."\n");
+	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper($tmp_list_to_remind)."\n\n**********\n\n");
+	if ($tmp_return == 0){
+		if ($tmp_cmd eq "HALT"){
+			# Remove halted node from the list running nodes because we don't monitor the turning off
+			remove_from_hash($tmp_list_running,$tmp_node);
+			$flag = 1;
+		}
+	}else{
+		# Suspect node if error
+		change_node_state($base,$tmp_node,"Suspected");
+		oar_debug("[Hulot] Node '$tmp_node' was suspected because an error occurred with a command launched by Hulot\n");
+		$flag = 1;
+	}
+	
+	# Check if nodes in list_to_remind can be processed
+	if ($flag == 1){
+		check_reminded_list($tmp_list_running, $tmp_list_to_remind, $tmp_list_to_process);
+	}
+	# Si suspition et/ou retré de la running_liste, regarder si qqch à lancer dans list_to_remind
+	
+	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper($tmp_list_running)."\n");
+	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper($tmp_list_to_remind)."\n");
 }
 
 
@@ -161,6 +254,8 @@ sub start_energy_loop() {
 	my $id_msg_hulot;
 	my $pack_template="l! a*";
 	
+
+	
 	oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
 	
   # Creates the fifo if it doesn't exist
@@ -200,6 +295,8 @@ sub start_energy_loop() {
 			my $rcvd;
 			my $type_rcvd;
 			
+			my $base = iolib::connect() or die("[Hulot] Cannot connect to the database\n");
+			
 			
 			# CHECK command is : 
 			#  - sent by windowForker module to Hulot to avoid zombie process.
@@ -212,9 +309,11 @@ sub start_energy_loop() {
 			
 			if (msgrcv($id_msg_hulot, $rcvd, 600, 0, IPC_NOWAIT)) {
 				($type_rcvd, $rcvd) = unpack($pack_template, $rcvd);
+				check_returned_cmd($base, $rcvd, \%nodes_list_running, \%nodes_list_to_remind, \%nodes_list_to_process);
 				oar_debug("\n\n[Hulot] Received message \'$rcvd\' ; type \'$type_rcvd\' at ".time()." ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 				while (msgrcv($id_msg_hulot, $rcvd, 600, 0, IPC_NOWAIT)){
 					($type_rcvd, $rcvd) = unpack($pack_template, $rcvd);
+					check_returned_cmd($base, $rcvd, \%nodes_list_running, \%nodes_list_to_remind, \%nodes_list_to_process);
 					oar_debug("\n\n[Hulot] Received message \'$rcvd\' ; type \'$type_rcvd\' at ".time()." ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 				}
 			}else{
@@ -248,15 +347,12 @@ sub start_energy_loop() {
 			
 			oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
 			
-			my $base = iolib::connect() or die("[Hulot] Cannot connect to the database\n");
-			
 			# Checks if some booting nodes need to be suspected
 			foreach $key (keys(%nodes_list_running)){
 				if ($nodes_list_running{$key}->{'command'} eq "WAKEUP") {
 					if(time > ($nodes_list_running{$key}->{'time'} + get_conf_with_default_param("ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT", $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT))){
+						change_node_state($base,$key,"Suspected");
 						oar_debug("[Hulot] Node '$key' was suspected because it didn't wake up before the end of the timeout\n");
-						iolib::set_node_nextState($base,$key,"Suspected");
-						oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 						
 						# Remove suspected node from the list running nodes
 						remove_from_hash(\%nodes_list_running,$key);
@@ -337,8 +433,10 @@ sub start_energy_loop() {
 					/HALT/ && do {
 						# Change state node to "Absent"
 						print("\n[DEBUG-HULOT] [HALT] Debut mise a 'Absent' du noeud : ".$key."\n");
+						change_node_state($base,$key,"Absent");
 						#iolib::set_node_nextState($base,$key,"Absent");
 						#oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+						oar_debug("[Hulot] Hulot module put node '$key' in energy saving mode (~Absent)\n");
 						print("[DEBUG-HULOT] [HALT] Fin mise a 'Absent' du noeud : ".$key."\n");
 												
 						# ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD
