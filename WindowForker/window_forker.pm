@@ -78,8 +78,6 @@ sub launch($$$$$$){
     my $nextWindowTime = 0 ;
     my $nb_launching_processes_in_window = 0 ;
 	
-	print("Dumper des Commands :".Dumper($commands)."\n");
-	
     # Check if there is at least one command to connect to
     if ($#{$commands} < 0){
         warn("/!\\ No command specified\n");
@@ -121,11 +119,7 @@ sub launch($$$$$$){
     if (keys(%forker_type)<=0){
       oar_error("[WindowForker] No type specified. Set to default type\n");
       %forker_type = ("type" => "default");
-    }else{
-      print("\n\nTaille du forker_type = ".keys(%forker_type)."\n");
     }
-    
-    print(Dumper(\%forker_type)."\n");
 
     warn("[VERBOSE] Window size : $window_size\n") if ($verbose);
     warn("[VERBOSE] Timeout for each command : $timeout\n") if ($verbose);
@@ -135,12 +129,10 @@ sub launch($$$$$$){
     while (($index <= $#{$commands}) or ($#timeout >= 0)){
 		warn("[VERBOSE] ".time." | $index / $#{$commands}\n") if ($verbose);
         # Check if window is full or not
-        #while(((($nb_running_processes) < $window_size) and (time() > $nextWindowTime)) and ($index <= $#{$commands})){
         while((($nb_running_processes) < $window_size) and ($index <= $#{$commands})){
           
           # Check if previous window time is finished
           if((time() >= $nextWindowTime) and ($nb_launching_processes_in_window < $window_size)){
-            #print("[DEBUG WINDFORKER] Launching new window ".time()."/".$nextWindowTime." (NB launching = $nb_launching_processes_in_window/$window_size)\n");
             warn("[VERBOSE] ".time." | fork process: $commands->[$index]\n") if ($verbose);
             $process_duration{$index}->{"start"} = [gettimeofday()] if ($USE_TIME == 1);
         
@@ -151,6 +143,7 @@ sub launch($$$$$$){
                     #In the child
                     warn("[VERBOSE] ".time." | $pid Execute command : $commands->[$index]\n") if ($verbose);
                     if($forker_type{"type"} eq "Hulot"){
+                      # If Hulot request
                       my $command_to_exec="";
                       (my $cmd, my $node)=split(/:/,$commands->[$index],2);
                       if ($cmd eq "WAKEUP"){
@@ -158,9 +151,7 @@ sub launch($$$$$$){
                       }elsif ($cmd eq "HALT"){
                         $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
                       }
-                      oar_debug("-----[DEBUG WINDFORKER]----- Print : Type = \'".$forker_type{"type"}."\' ; ID = \'".$forker_type{"id_msg"}."\' ; Template = \'".$forker_type{"template"}."\'\n");
                       system($command_to_exec);
-                      oar_debug("-----[DEBUG WINDFORKER]----- End of command \'$cmd\' on node \'$node\' -> Code returned : ".$?."\n");
                       if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
                         oar_error("[WindowForker] Failed to send message to Hulot by msgsnd(): $!\n");
                       }
@@ -191,7 +182,6 @@ sub launch($$$$$$){
         # Check child endings
         warn("[VERBOSE] ".time." | $pid Check child endings\n") if ($verbose);
         while(($pid = waitpid(-1, WNOHANG)) > 0) {
-        warn("[VERBOSE] ".time." | $pid Dans le while check child endings\n") if ($verbose);
             register_wait_results($pid, $?, \%running_processes, \%process_duration, \%finished_processes, \$nb_running_processes, $verbose);
         }
 
@@ -199,23 +189,17 @@ sub launch($$$$$$){
         warn("[VERBOSE] ".time." | $pid Check timeouts\n") if ($verbose);
         my $t = 0;
         while(defined($timeout[$t]) and (($timeout[$t]->[1] < time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
-        warn("[VERBOSE] ".time." | $pid Dans le while check timeouts\n") if ($verbose);
             if (!defined($running_processes{$timeout[$t]->[0]})){
                splice(@timeout,$t,1);
             }else{
                 if ($timeout[$t]->[1] <= time()){
-                    print("[DEBUG WINDFORKER] [".time()."] Kill pid ".$timeout[$t]->[0]."\n");
                     kill(9,$timeout[$t]->[0]);
                 }
             }
             $t++;
         }
         select(undef,undef,undef,0.1) if ($t == 0);
-        
-        #print("[DEBUG WINDFORKER] [".time."] Dumper de @ timeout = ".Dumper(\@timeout)."\n");
     }
-
-    warn("[VERBOSE] ".time." Fin du while\n") if ($verbose);
     
     
     ## Here, send "CHECK signal" to Hulot by the named pipe ?
@@ -226,7 +210,7 @@ sub launch($$$$$$){
     print FIFO "CHECK";
     close(FIFO);
     
-	
+    
     return(\%finished_processes, \%process_duration);
 }
 

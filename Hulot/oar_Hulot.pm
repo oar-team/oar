@@ -3,6 +3,12 @@ require Exporter;
 # This module is responsible of waking up / shutting down nodes
 # when the scheduler decides it (writes it on a named pipe)
 
+# CHECK command is sent on the named pipe to Hulot : 
+#  - by windowForker module
+#      - to avoid zombie process
+#      - to messages received in queue (IPC)
+#  - by MetaScheduler if there is no node to wake up / shut down in order to check timeout and check memorized nodes list <TODO>
+
 use strict;
 use oar_conflib qw(init_conf get_conf is_conf get_conf_with_default_param);
 use POSIX qw(strftime sys_wait_h);
@@ -88,26 +94,14 @@ sub check_reminded_list($$$){
 		foreach my $run_node (keys(%$tmp_list_running)){
 			if($rmd_node eq $run_node){
 				$tmp_nodeFinded=1;
-				oar_debug("[DEBUG-HULOT] [check_reminded_list] --Finded node $rmd_node-- (rmd_node:$rmd_node = run_node:$run_node)\n");
-				#if ($cmd eq $nodes_list_running{$node}){
-					## Couple node/command is already planned, so we don't need to add it.
-					## We have to keep in memory this new command";
-					#$nodeFinded=1;
-				#}
 			}
 		}
 		if ($tmp_nodeFinded==0){
 			# move this node from reminded list to list to process
-			# $nodes_list_to_remind{$node}
-			oar_debug("\n\n**********\n\n[DEBUG-HULOT] [check_reminded_list] Dumper de nodes_list_running = ".Dumper($tmp_list_running)."\n");
-			oar_debug("[DEBUG-HULOT] [check_reminded_list] Dumper de nodes_list_to_remind = ".Dumper($tmp_list_to_remind)."\n");
-			oar_debug("[DEBUG-HULOT] [check_reminded_list] Dumper de nodes_list_to_process = ".Dumper($tmp_list_to_process)."\n\n**********\n\n");
-			oar_debug("\n----------\n A copier dans list_to_process: Node:$rmd_node ; Cmd:$$tmp_list_to_remind{$rmd_node}\n--------\n");
-			
-			oar_debug("[DEBUG-HULOT] Adding to nodes_list_to_process '$rmd_node=>$$tmp_list_to_remind{$rmd_node}'\n");
+			oar_debug("[Hulot] Adding '$rmd_node=>$$tmp_list_to_remind{$rmd_node}' to list to process\n");
 			$$tmp_list_to_process{$rmd_node} = {'command' => $$tmp_list_to_remind{$rmd_node}, 'time' => time};
 			
-			oar_debug("[DEBUG-HULOT] Removing node '$rmd_node' from nodes_list_to_remind\n");
+			oar_debug("[Hulot] Removing node '$rmd_node' from list to remember\n");
 			remove_from_hash($tmp_list_to_remind,$rmd_node);
 		}
 	}
@@ -115,39 +109,30 @@ sub check_reminded_list($$$){
 
 
 ## check_returned_cmd
+# Checks received messages from WindowForker module
+# parameters: base, received messages and ref to hash : running list, reminded list and list to process
+# return value: /
+# side effects: - Removes halted node from the running list ;
+#               - Suspects node if an error is returned by WindowForker module.
 sub check_returned_cmd($$$$$){
 	my ($base,
 			$tmp_message, 
 			$tmp_list_running,
 			$tmp_list_to_remind,
 			$tmp_list_to_process) = @_;
-	my $flag = 0;
 	
 	(my $tmp_node, my $tmp_cmd, my $tmp_return)=split(/:/,$tmp_message,3);
-	oar_debug("\n\n**********\n\n[Hulot] [check_returned_cmd] Received : Node=$tmp_node ; CMD=$tmp_cmd ; Return : $tmp_return\n");
-	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper($tmp_list_running)."\n");
-	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper($tmp_list_to_remind)."\n\n**********\n\n");
+	oar_debug("[Hulot] Received from WindowForker : Node=$tmp_node ; Action=$tmp_cmd ; ReturnCode : $tmp_return\n");
 	if ($tmp_return == 0){
 		if ($tmp_cmd eq "HALT"){
 			# Remove halted node from the list running nodes because we don't monitor the turning off
 			remove_from_hash($tmp_list_running,$tmp_node);
-			$flag = 1;
 		}
 	}else{
 		# Suspect node if error
 		change_node_state($base,$tmp_node,"Suspected");
 		oar_debug("[Hulot] Node '$tmp_node' was suspected because an error occurred with a command launched by Hulot\n");
-		$flag = 1;
 	}
-	
-	# Check if nodes in list_to_remind can be processed
-	if ($flag == 1){
-		check_reminded_list($tmp_list_running, $tmp_list_to_remind, $tmp_list_to_process);
-	}
-	# Si suspition et/ou retré de la running_liste, regarder si qqch à lancer dans list_to_remind
-	
-	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper($tmp_list_running)."\n");
-	oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper($tmp_list_to_remind)."\n");
 }
 
 
@@ -156,42 +141,6 @@ sub halt_nodes($) {
   my $nodes=shift;
   return send_cmd_to_fifo($nodes,"HALT");
 }
-
-
-# Not used ! #
-## is_exists_in_array
-# Returns true if the value exists in the array
-# parameters: Value searched, ref on the array
-# return value: boolean
-# side effects: /
-sub is_exists_in_array ( $ $ ){
-	my $value = shift;
-  my $array = shift;
-	my $res=0;
-	if ( "@$array" =~ /$value/) {
-		$res=1;
-	} else {
-		$res=0;
-	} 
-	return ($res)
-}
-
-
-# Not used ? #
-## launch_command
-# Send commands to execute to the window forker module.
-# parameters: Reference on an array containing commands to execute
-# return value: references of 2 hashs
-#sub launch_command($){
-	#my $commands = shift;
-	#(my $finished_processes, my $process_duration) = window_forker::launch($commands,
-											#get_conf_with_default_param("ENERGY_SAVING_WINDOW_SIZE", $ENERGY_SAVING_WINDOW_SIZE),
-											#get_conf_with_default_param("ENERGY_SAVING_WINDOW_TIME", $ENERGY_SAVING_WINDOW_TIME),
-											#get_conf_with_default_param("ENERGY_SAVING_WINDOW_TIMEOUT", $ENERGY_SAVING_WINDOW_TIMEOUT),
-											#0,
-											#"Hulot");
-	#return($finished_processes, $process_duration);
-#}
 
 
 ## remove_from_array
@@ -282,9 +231,7 @@ sub start_energy_loop() {
 		unless (open (FIFO, "$FIFO")) {
 			oar_error("[Hulot] Could not open the fifo $FIFO!\n");
       exit(2);
-		} 
-		print("\n\n\n[DEBUG-HULOT] En attente de commandes sur le pipe ...\n");
-		
+		}
 		
     # Start to manage commands and nodes comming on the fifo
 		while (<FIFO>) {
@@ -297,27 +244,13 @@ sub start_energy_loop() {
 			
 			my $base = iolib::connect() or die("[Hulot] Cannot connect to the database\n");
 			
-			
-			# CHECK command is : 
-			#  - sent by windowForker module to Hulot to avoid zombie process.
-			#  - ...
-			if($_ eq "CHECK"){
-				oar_debug("[Hulot] Received CHECK command on the named pipe ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>\n");	
-			}else{
-				oar_debug("[Hulot] Received energy command on the named pipe ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>\n");	
-			}
-			
 			if (msgrcv($id_msg_hulot, $rcvd, 600, 0, IPC_NOWAIT)) {
 				($type_rcvd, $rcvd) = unpack($pack_template, $rcvd);
 				check_returned_cmd($base, $rcvd, \%nodes_list_running, \%nodes_list_to_remind, \%nodes_list_to_process);
-				oar_debug("\n\n[Hulot] Received message \'$rcvd\' ; type \'$type_rcvd\' at ".time()." ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 				while (msgrcv($id_msg_hulot, $rcvd, 600, 0, IPC_NOWAIT)){
 					($type_rcvd, $rcvd) = unpack($pack_template, $rcvd);
 					check_returned_cmd($base, $rcvd, \%nodes_list_running, \%nodes_list_to_remind, \%nodes_list_to_process);
-					oar_debug("\n\n[Hulot] Received message \'$rcvd\' ; type \'$type_rcvd\' at ".time()." ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 				}
-			}else{
-				oar_debug("[Hulot][MSG] Nothing received\n");
 			}
 			
 			(my $cmd, my $nodes)=split(/:/,$_,2);
@@ -325,17 +258,17 @@ sub start_energy_loop() {
       my @nodes=split(/ /,$nodes);
 			
 			#TODO: SMART wake up / shutdown of the nodes
-      # - Wake up by groups (50 nodes, sleep... 50 nodes, sleep...)
-      # - Don't send the wake up command if it has already been sent for a given node
-      # - Suspect node if wake up requested and not alive since ENERGY_SAVING_NODE_MANAGER_TIMEOUT
+      # - [Done] Wake up by groups (50 nodes, sleep... 50 nodes, sleep...)
+      # - [Done] Don't send the wake up command if it has already been sent for a given node
+      # - [Done] Suspect node if wake up requested and not alive since ENERGY_SAVING_NODE_MANAGER_TIMEOUT
       # - Don't shut down nodes depending on ENERGY_SAVING_NODES_KEEPALIVE variable
-			# - Launch commands in background task in order to not block the scheduler (by using fork in the windowForker -> ok) -> OK
-			# - Call windowForker in a fork ? in order to not block the pipe listening 
-			#		-> (Sinon Hulot attend que windowForker rende la main -> temps long si bcp de commande car bcp de fenetre a executer)
+			# - [Done] Launch commands in background task in order to not block the scheduler (by using fork in the windowForker -> ok) -> OK
+			# - [Done] Call windowForker in a fork ? in order to not block the pipe listening 
+			#      -> (Sinon Hulot attend que windowForker rende la main -> temps long si bcp de commande car bcp de fenetre a executer)
       #
-			# -- Pour la mise en standBy, mettre le noeud "absent" avant de lancer la commande d'exctinction (pour que rien de soit scheduler dessus)
+			# - [Done] Pour la mise en standBy, mettre le noeud "absent" avant de lancer la commande d'exctinction (pour que rien de soit scheduler dessus)
 			#
-			# -- Extinction d'un noeud : 
+			# - [Done]  Extinction d'un noeud : 
 			#				1/ Change node state to Absent 
 			#				2/ Execute poweroff command
 			#				3/ On regarde le code de retour du script appele pour eteindre et si erreur alors on suspect le noeud
@@ -343,9 +276,17 @@ sub start_energy_loop() {
 			#				4/ Puis enlever ce noeud de %nodes_list_running 
 			#
 			# -- si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job
-			
-			
+      
+      # TODO
+      # - Signal CHECK sent by MetaScheduler if there is no node to wake up / shut down in order to check timeout and check memorized nodes list
+      # - Check booting nodes periodically and remove them from running list once they are up (else they will be suspected by hulot after the timeout).
+			#
+      
 			oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
+      
+      #oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper(\%nodes_list_running)."\n");
+			#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n");
+			#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper(\%nodes_list_to_remind)."\n");
 			
 			# Checks if some booting nodes need to be suspected
 			foreach $key (keys(%nodes_list_running)){
@@ -363,14 +304,12 @@ sub start_energy_loop() {
 					}
 				}
 			}
-			
-			#print "[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper(\%nodes_list_running)."\n";
-			#print "[DEBUG-HULOT] Dumper de nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n";
-			#print "[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper(\%nodes_list_to_remind)."\n";
+      
+      # Check if some nodes in list_to_remind can be processed
+      check_reminded_list(\%nodes_list_running, \%nodes_list_to_remind, \%nodes_list_to_process);
 			
 			# Checking if each couple node/command was already received or not
 			foreach my $node (@nodes){
-				print "[DEBUG-HULOT] ### -> Node $node\n";
 				$nodeFinded=0;
 				$nodeToAdd=0;
 				$nodeToRemind=0;
@@ -379,18 +318,13 @@ sub start_energy_loop() {
 					foreach $key (keys(%nodes_list_running)){
 						if($node eq $key){
 							$nodeFinded=1;
-							print "[DEBUG-HULOT] --Finded node $node-- (node:$node = key:$key)\n";
-							#if ($cmd eq $nodes_list_running{$node}){
-								## Couple node/command is already planned, so we don't need to add it.
-								## We have to keep in memory this new command";
-								#$nodeFinded=1;
-							#}
 							if ($cmd ne $nodes_list_running{$key}->{'command'}){
-								# This node is already planned for an other action.
-								# We have to keep in memory this new couple node/command";
-								#$nodeFinded=1;
+								# This node is already planned for an other action
+								# We have to keep in memory this new couple node/command
 								$nodeToRemind=1;
-							}
+							}else{
+                oar_debug("[Hulot] Command '$nodes_list_running{$key}->{'command'}' is already running on node '$node'\n");
+              }
 						}
 					}
 					if ($nodeFinded==0){
@@ -402,46 +336,32 @@ sub start_energy_loop() {
 				
 				if ($nodeToAdd==1){
 					# Adding couple node/command to the list to process
-					print "[DEBUG-HULOT] Adding to nodes_list_to_process ($node=>$cmd)\n";
-					#$nodes_list_to_process{$node} = $cmd;
-					#$tmp_hash_of_hash{$node} = {'command' => $cmd, 'time' => time};
+					oar_debug("[Hulot] Adding '$node=>$cmd' to list to process\n");
 					$nodes_list_to_process{$node} = {'command' => $cmd, 'time' => time};
 				}
 				
 				if ($nodeToRemind==1){
 					# Adding couple node/command to the list to remind
-					print "[DEBUG-HULOT] Adding to nodes_list_to_remind ($node=>$cmd)\n";
+					oar_debug("[Hulot] Adding '$node=>$cmd' to list to remember\n");
 					$nodes_list_to_remind{$node} = $cmd;
 				}
 			}
-			
-			#print "[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper(\%nodes_list_running)."\n";
-			#print "[DEBUG-HULOT] Dumper de nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n";
-			#print "[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper(\%nodes_list_to_remind)."\n";
 			
 			my @commandToLaunch = ();
 			
 			foreach $key (keys(%nodes_list_to_process)){
 				SWITCH: for ($nodes_list_to_process{$key}->{'command'}) {
 					/WAKEUP/ && do {
-						# ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD
-						print("[DEBUG-HULOT] [WAKEUP] Node/Command : ".$key."/".$nodes_list_to_process{$key}->{'command'}."\n");
-						#push (@commandToLaunch, "echo \"`date +%T` : Commande node : ".$key."/".$nodes_list_to_process{$key}->{'command'}." \" >> /tmp/oar_hulot_LaunchedCommands ; sleep 30 ; echo \"`date +%T` : [FIN] Commande node : ".$key."/".$nodes_list_to_process{$key}->{'command'}." \" >> /tmp/oar_hulot_LaunchedCommands");
+						#print("[DEBUG-HULOT] [WAKEUP] Node/Command : ".$key."/".$nodes_list_to_process{$key}->{'command'}."\n");
 						push (@commandToLaunch, "WAKEUP:$key");
 						last; 
 					};
 					/HALT/ && do {
 						# Change state node to "Absent"
-						print("\n[DEBUG-HULOT] [HALT] Debut mise a 'Absent' du noeud : ".$key."\n");
 						change_node_state($base,$key,"Absent");
-						#iolib::set_node_nextState($base,$key,"Absent");
-						#oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-						oar_debug("[Hulot] Hulot module put node '$key' in energy saving mode (~Absent)\n");
-						print("[DEBUG-HULOT] [HALT] Fin mise a 'Absent' du noeud : ".$key."\n");
-												
-						# ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD
-						print("[DEBUG-HULOT] [HALT] Node/Command : ".$key."/".$nodes_list_to_process{$key}->{'command'}."\n");
-						#push (@commandToLaunch, "echo \"`date +%T` : Commande node : ".$key."/".$nodes_list_to_process{$key}->{'command'}." \" >> /tmp/oar_hulot_LaunchedCommands ; sleep 30 ; echo \"`date +%T` : [FIN] Commande node : ".$key."/".$nodes_list_to_process{$key}->{'command'}." \" >> /tmp/oar_hulot_LaunchedCommands");
+						oar_debug("[Hulot] Hulot module put node '$key' in energy saving mode (state~Absent)\n");
+            
+						#print("[DEBUG-HULOT] [HALT] Node/Command : ".$key."/".$nodes_list_to_process{$key}->{'command'}."\n");
 						push (@commandToLaunch, "HALT:$key");
 						last; 
 					};
@@ -452,16 +372,13 @@ sub start_energy_loop() {
 			
 			iolib::disconnect($base);
 			
-			oar_debug("[Hulot] Before send commands to windowForker (Window time is ".get_conf("ENERGY_SAVING_WINDOW_TIME").") : time = ".time."\n");
+      # Launching commands
 			if ($#commandToLaunch >= 0){
-				# Make a fork in order to not block the pipe listening 
-				
+        oar_debug("[Hulot] Launching commands to nodes by using WindowForker\n");
+				# fork in order to don't block the pipe listening 
 				$forker_pid = fork();
 				if (defined($forker_pid)){
 					if ($forker_pid == 0){
-						#In the child
-						oar_debug("Je suis le fils PID = $$ (".time().")\n");
-						
 						my %forker_type = ("type" => "Hulot",
 							"id_msg" => $id_msg_hulot,
 							"template" => $pack_template);
@@ -472,17 +389,11 @@ sub start_energy_loop() {
 													get_conf_with_default_param("ENERGY_SAVING_WINDOW_TIMEOUT", $ENERGY_SAVING_WINDOW_TIMEOUT),
 													0,
 													\%forker_type);
-						
 						exit 0;
-					}
-					else{
-						#In the parent
 					}
 				}else{
 					oar_error("[Hulot] Fork system call failed\n");
 				}
-			}else{
-				oar_debug("[Hulot] No new command to execute by the energy saving module\n");
 			}
 			
 			# Check child endings
@@ -490,18 +401,11 @@ sub start_energy_loop() {
 				register_wait_results($forker_pid, $?);
 			}
 			
-			#oar_debug("[Hulot] After send commands to windowForker : time = ".time."\n");
-			
 			# Adds to running list last new launched commands
 			add_to_hash(\%nodes_list_to_process, \%nodes_list_running);
 			
 			# Cleaning the list to process
 			%nodes_list_to_process = ();
-			
-			#print "[DEBUG-HULOT] After cleaning nodes_list_to_process\n";
-			#print "[DEBUG-HULOT] [APRES VIDAGE] nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n";
-			#print "[DEBUG-HULOT] [APRES VIDAGE] nodes_list_running = ".Dumper(\%nodes_list_running)."\n";
-			
     }
 		close(FIFO);
   }
@@ -517,7 +421,7 @@ sub register_wait_results($$){
     my $signal_num  = $return_code & 127;
     my $dumped_core = $return_code & 128;
     if ($pid > 0){
-			oar_debug("[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n");
+			#oar_debug("[DEBUG-HULOT] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n");
 		}  
 }
 
