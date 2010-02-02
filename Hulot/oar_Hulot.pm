@@ -11,6 +11,34 @@ require Exporter;
 #      - to check timeout and check memorized nodes list <TODO>
 #      - to check booting nodes status
 
+
+#***********************************************
+#  [TODO]
+      # - [Done] Wake up by groups (50 nodes, sleep... 50 nodes, sleep...)
+      # - [Done] Don't send the wake up command if it has already been sent for a given node
+      # - [Done] Suspect node if wake up requested and not alive since ENERGY_SAVING_NODE_MANAGER_TIMEOUT
+      # -- Don't shut down nodes depending on ENERGY_SAVING_NODES_KEEPALIVE variable
+			# - [Done] Launch commands in background task in order to not block the scheduler (by using fork in the windowForker -> ok) -> OK
+			# - [Done] Call windowForker in a fork ? in order to not block the pipe listening 
+			#      -> (Sinon Hulot attend que windowForker rende la main -> temps long si bcp de commande car bcp de fenetre a executer)
+      #
+			# - [Done] Pour la mise en standBy, mettre le noeud "absent" avant de lancer la commande d'exctinction (pour que rien de soit scheduler dessus)
+			#
+			# - [Done] Extinction d'un noeud : 
+			#				1/ Change node state to Absent 
+			#				2/ Execute poweroff command
+			#				3/ On regarde le code de retour du script appele pour eteindre et si erreur alors on suspect le noeud
+			#				Sinon si pas d'erreur pas de check avec un timeout pour suspecter l'extinction
+			#				4/ Puis enlever ce noeud de %nodes_list_running 
+      #
+      # - [Done] Signal CHECK sent by MetaScheduler if there is no node to wake up / shut down in order to check timeout and check memorized nodes list
+      # - [Done] Check booting nodes periodically and remove them from running list once they are up (else they will be suspected by hulot after the timeout).
+			#
+			# -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job
+			#
+#***********************************************
+
+
 use strict;
 use oar_conflib qw(init_conf get_conf is_conf get_conf_with_default_param);
 use POSIX qw(strftime sys_wait_h);
@@ -20,6 +48,7 @@ use oar_Tools;
 use oar_Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use window_forker;
 use IPC::SysV qw(IPC_PRIVATE IPC_RMID IPC_CREAT S_IRUSR S_IWUSR IPC_NOWAIT);
+use oar_scheduler;
 
 use Data::Dumper;
 
@@ -74,6 +103,7 @@ sub change_node_state($$$){
 
 
 ## check
+# Sends 'check' signal on the named pipe to Hulot
 sub check() {
   my @tab = ();
   return send_cmd_to_fifo(\@tab,"CHECK");
@@ -151,6 +181,24 @@ sub halt_nodes($) {
 }
 
 
+## is_exists_in_array
+# Returns true if the value exists in the array
+# parameters: Value searched, ref on the array
+# return value: boolean
+# side effects: /
+sub is_exists_in_array ( $ $ ){
+	my $value = shift;
+    my $array = shift;
+	my $res=0;
+	if ( "@$array" =~ /$value/) {
+		$res=1;
+	} else {
+		$res=0;
+	} 
+	return ($res)
+}
+
+
 ## remove_from_array
 # Remove a value from an array
 # parameters: Reference on an array, value to remove
@@ -211,8 +259,6 @@ sub start_energy_loop() {
 	my $id_msg_hulot;
 	my $pack_template="l! a*";
 	
-
-	
 	oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
 	
   # Creates the fifo if it doesn't exist
@@ -264,31 +310,6 @@ sub start_energy_loop() {
 			(my $cmd, my $nodes)=split(/:/,$_,2);
 			chomp($nodes);
       my @nodes=split(/ /,$nodes);
-			
-			#TODO: SMART wake up / shutdown of the nodes
-      # - [Done] Wake up by groups (50 nodes, sleep... 50 nodes, sleep...)
-      # - [Done] Don't send the wake up command if it has already been sent for a given node
-      # - [Done] Suspect node if wake up requested and not alive since ENERGY_SAVING_NODE_MANAGER_TIMEOUT
-      # - Don't shut down nodes depending on ENERGY_SAVING_NODES_KEEPALIVE variable
-			# - [Done] Launch commands in background task in order to not block the scheduler (by using fork in the windowForker -> ok) -> OK
-			# - [Done] Call windowForker in a fork ? in order to not block the pipe listening 
-			#      -> (Sinon Hulot attend que windowForker rende la main -> temps long si bcp de commande car bcp de fenetre a executer)
-      #
-			# - [Done] Pour la mise en standBy, mettre le noeud "absent" avant de lancer la commande d'exctinction (pour que rien de soit scheduler dessus)
-			#
-			# - [Done]  Extinction d'un noeud : 
-			#				1/ Change node state to Absent 
-			#				2/ Execute poweroff command
-			#				3/ On regarde le code de retour du script appele pour eteindre et si erreur alors on suspect le noeud
-			#				Sinon si pas d'erreur pas de check avec un timeout pour suspecter l'extinction
-			#				4/ Puis enlever ce noeud de %nodes_list_running 
-			#
-			# -- si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job
-      
-      # TODO
-      # - Signal CHECK sent by MetaScheduler if there is no node to wake up / shut down in order to check timeout and check memorized nodes list
-      # - Check booting nodes periodically and remove them from running list once they are up (else they will be suspected by hulot after the timeout).
-			#
       
       if($cmd eq "CHECK"){
         oar_debug("[Hulot] Got request '$cmd'\n");
@@ -300,6 +321,9 @@ sub start_energy_loop() {
 			#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n");
 			#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper(\%nodes_list_to_remind)."\n");
 			
+      # Retrieve list of nodes to wake up
+      my @nodesToWakeupList = oar_scheduler::get_nodes_to_wake_up($base);
+      
 			# Checks if some booting nodes need to be suspected
 			foreach $key (keys(%nodes_list_running)){
 				if ($nodes_list_running{$key}->{'command'} eq "WAKEUP") {
@@ -312,8 +336,12 @@ sub start_energy_loop() {
 						
 						# Remove this node from received list (if node is present) because it was suspected
 						remove_from_array(\@nodes,$key);
-						#oar_debug("[DEBUG-HULOT] Apres remove_from_array | nodes = ".Dumper(\@nodes)."\n");
-					}
+					}elsif(!is_exists_in_array($key,\@nodesToWakeupList)){
+            oar_debug("[Hulot] Booting node '$key' seems now up (no more in wakeup nodes list)\n");
+            oar_debug("[Hulot] Removing node '$key' from the running nodes list\n");
+            # Remove node from the list running nodes
+						remove_from_hash(\%nodes_list_running,$key);
+          }
 				}
 			}
       
