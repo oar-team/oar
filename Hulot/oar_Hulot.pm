@@ -3,11 +3,13 @@ require Exporter;
 # This module is responsible of waking up / shutting down nodes
 # when the scheduler decides it (writes it on a named pipe)
 
-# CHECK command is sent on the named pipe to Hulot : 
-#  - by windowForker module
+# CHECK command is sent on the named pipe to Hulot: 
+#  - by windowForker module:
 #      - to avoid zombie process
 #      - to messages received in queue (IPC)
-#  - by MetaScheduler if there is no node to wake up / shut down in order to check timeout and check memorized nodes list <TODO>
+#  - by MetaScheduler if there is no node to wake up / shut down in order: 
+#      - to check timeout and check memorized nodes list <TODO>
+#      - to check booting nodes status
 
 use strict;
 use oar_conflib qw(init_conf get_conf is_conf get_conf_with_default_param);
@@ -70,6 +72,12 @@ sub change_node_state($$$){
 	oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 }
 
+
+## check
+sub check() {
+  my @tab = ();
+  return send_cmd_to_fifo(\@tab,"CHECK");
+}
 
 ## check_keepalive_nodes
 sub check_keepalive_nodes() {
@@ -282,7 +290,11 @@ sub start_energy_loop() {
       # - Check booting nodes periodically and remove them from running list once they are up (else they will be suspected by hulot after the timeout).
 			#
       
-			oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
+      if($cmd eq "CHECK"){
+        oar_debug("[Hulot] Got request '$cmd'\n");
+      }else{
+       oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n"); 
+      }
       
       #oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper(\%nodes_list_running)."\n");
 			#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n");

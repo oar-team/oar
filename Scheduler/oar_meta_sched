@@ -96,6 +96,7 @@ iolib::disconnect($base_ro);
 
 # Manage dynamic node feature
 my $timeout_cmd = 10;
+my $flagHulot=0;
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
 }
@@ -114,6 +115,7 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
             if (oar_Hulot::halt_nodes(\@node_halt) ) {
                 oar_error("[MetaSched] Communication problem with Hulot (the energy saving module)!\n");
             }
+						$flagHulot=1;
         }
         # Not using the built-in energy saving module to shut down nodes
         else {
@@ -137,6 +139,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
             if (oar_Hulot::wake_up_nodes(\@nodes) ) {
                 oar_error("[MetaSched] Communication problem with Hulot (the energy saving module)!\n");
             }
+						$flagHulot=1;
         }
         # Not using the built-in energy saving module to wake up nodes
         else {
@@ -146,6 +149,13 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
             }
         }
     }
+}
+
+# Send CHECK signal to Hulot if needed
+if(!$flagHulot and (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes")){
+  if (oar_Hulot::check() ) {
+    oar_error("[MetaSched] Communication problem with Hulot (the energy saving module)!\n");
+  }
 }
 
 # Search jobs to resume
