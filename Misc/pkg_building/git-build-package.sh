@@ -133,6 +133,8 @@ then
       if [ "$SNAPSHOT" == "y" ]; then
         get_snapshot_id
         FullVersion="$OARVersion~git-$SNAPSHOT_ID"
+      else
+        FullVersion="$OARVersion"
       fi
       git archive --format=tar HEAD rpm |tar xvf - -C ../build-area
       mkdir -p ../build-area/rpm/BUILD ../build-area/rpm/RPMS ../build-area/rpm/SRPMS
