@@ -8,6 +8,7 @@ version 2.4.1:
   - Bug #9038: Security flaw in oarsub --notify option
   - Signed debian packages (install oar-keyring package)
   - New "Hulot" module for intelligent and configurable energy saving
+  - API bug fixes in job submission parsing
 
 version 2.4.0:
 --------------
