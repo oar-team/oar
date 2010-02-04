@@ -805,14 +805,13 @@ POST /jobs
   user
 
 :input:
-  Only [resource] and [command or script] are mandatory
+  Only [resource] and [command] are mandatory
 
   *structure*: hash with possible arrays (for options that may be passed multiple times)
 
   *fields*:
      - **resource** (*string*): the resources description as required by oar (example: "/nodes=1/cpu=2")
-     - **command** (*string*): the name and path of a script that is launched when the job starts
-     - **script** (*text*): an inline provided script that will is launched when the job starts
+     - **command** (*string*): a command name or a script that is executed when the job starts
      - **workdir** (*string*): the path of the directory from where the job will be submited
      - **All other option accepted by the oarsub unix command**: every long option that may be passed to the oarsub command is known as a key of the input hash. If the option is a toggle (no value), you just have to set it to "1" (for example: 'use-job-key' => '1'). Some options may be arrays (for example if you want to specify several 'types' for a job)
   *yaml example*:
@@ -820,7 +819,7 @@ POST /jobs
 
      ---
      stdout: /tmp/outfile
-     command: /usr/bin/id
+     command: /usr/bin/id;echo "OK"
      resource: /nodes=2/cpu=1
      workdir: ~bzizou/tmp
      type:
