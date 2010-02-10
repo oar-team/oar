@@ -234,7 +234,7 @@ sub notify_user($$$$$$$$){
         iolib::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
         my $server_hostname = hostname();
         send_mail($1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
-    }elsif($method =~ m/\s*exec:(.+)$/m){
+    }elsif($method =~ m/\s*exec:([a-zA-Z0-9_.\/ ]+)$/m){
         my $cmd = "$Openssh_cmd -x -T $host OARDO_BECOME_USER=$user oardodo $1 $job_id $job_name $tag \\\"$comments\\\" > /dev/null 2>&1";
         $SIG{PIPE} = 'IGNORE';
         my $pid = fork();
