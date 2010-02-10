@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.4.0
-%define release 6
+%define release 7
 
 Name: 		oar
 Version:        %{version}
@@ -387,6 +387,12 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+* Wed Feb 10 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-7
+- oar_apilib is now in the oar-api package
+
+* Wed Feb 3 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-6
+- Fixed missing version number in oarstat -V
+
 * Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-5
 - Released 2.4.0
 
