@@ -2,7 +2,7 @@ oar (2.4.0-5) stable; urgency=low
 
   * Bugfix 9038: Security flaw in oarsub --notify option
 
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, Nov 24 2009 16:14:59 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 24 Nov 2009 16:14:59 +0100
 
 oar (2.4.0-3) stable; urgency=low
 
