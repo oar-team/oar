@@ -87,6 +87,7 @@ desktop-computing-cgi:
 
 api:
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -m 0644 API/oar_apilib.pm $(DESTDIR)$(OARDIR)
 	mkdir -p $(DESTDIR)$(OARCONFDIR)
 	install -m 0755 API/oarapi.pl $(DESTDIR)$(OARDIR)/oarapi.pl
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
@@ -242,7 +243,6 @@ libs: man
 	perl -i -pe "s#^OARNODESCMD=.*#OARNODESCMD=$(BINDIR)/oarnodes#" $(DESTDIR)$(OARCONFDIR)/update_cpuset_id.sh
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oarnodesetting.1 $(DESTDIR)$(MANDIR)/man1/oarnodesetting.1
-	install -m 0644 API/oar_apilib.pm $(DESTDIR)$(OARDIR)
 
 
 server: man
