@@ -1,3 +1,9 @@
+oar (2.4.0-6) stable; urgency=low
+
+  * oar_apilib is now into the oar-api package and no more into oar-common
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 10 Feb 2010 17:41:17 +0100
+
 oar (2.4.0-5) stable; urgency=low
 
   * Bugfix 9038: Security flaw in oarsub --notify option
