@@ -80,8 +80,8 @@ case "$1" in
         stop_oar_node
         stop
         sleep 1
-        start_oar_node
         start
+        start_oar_node
         ;;
   *)
         echo $"Usage: $0 {start|stop|reload|restart}"
