@@ -110,7 +110,7 @@ This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 %package api
 Summary:	OAR RESTful user API
 Group:          System/Servers
-Requires:	perl(CGI), oar-common = %version-%release, oar-user = %version-%release, httpd
+Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd
 BuildArch:      noarch
 %description    api
 This package installs the RESTful OAR user API.
@@ -118,7 +118,7 @@ This package installs the RESTful OAR user API.
 %package gridapi
 Summary:	OARGRID RESTful user API
 Group:          System/Servers
-Requires:	perl(CGI), oar-common = %version-%release, oar-user = %version-%release, httpd, oar-api = %version-%release
+Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd, oar-api = %version-%release
 BuildArch:      noarch
 %description    gridapi
 This package installs the RESTful OARGRID user API.
