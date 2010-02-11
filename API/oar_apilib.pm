@@ -1119,7 +1119,7 @@ sub check_json() {
 sub parameter_option($$) {
   my $hash = shift;
   my $key = shift;
-  if ( defined($hash->{"$key"}) && $hash->{"$key"} eq "" ) {
+  if ((defined($hash->{"$key"}) && ($hash->{"$key"} eq "")) || not defined($hash->{"$key"})) {
     delete($hash->{"$key"})
   }
 }
