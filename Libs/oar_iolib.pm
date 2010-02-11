@@ -3128,8 +3128,8 @@ sub get_finaud_nodes($) {
       }
       $str = $str." FROM resources
                     WHERE
-                      state = \'Alive\' OR
-                      (state = \'Suspected\' AND finaud_decision = \'YES\') AND
+                      (state = \'Alive\' OR
+                      (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
                       type = \'default\'";
       $sth = $dbh->prepare($str);
     }
