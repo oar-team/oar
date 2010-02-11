@@ -805,13 +805,13 @@ POST /jobs
   user
 
 :input:
-  Only [resource] and [script_path or script] are mandatory
+  Only [resource] and [command or script] are mandatory
 
   *structure*: hash with possible arrays (for options that may be passed multiple times)
 
   *fields*:
      - **resource** (*string*): the resources description as required by oar (example: "/nodes=1/cpu=2")
-     - **script_path** (*string*): the name and path of a script that is launched when the job starts
+     - **command** (*string*): the name and path of a script that is launched when the job starts
      - **script** (*text*): an inline provided script that will is launched when the job starts
      - **workdir** (*string*): the path of the directory from where the job will be submited
      - **All other option accepted by the oarsub unix command**: every long option that may be passed to the oarsub command is known as a key of the input hash. If the option is a toggle (no value), you just have to set it to "1" (for example: 'use-job-key' => '1'). Some options may be arrays (for example if you want to specify several 'types' for a job)
@@ -820,7 +820,7 @@ POST /jobs
 
      ---
      stdout: /tmp/outfile
-     script_path: /usr/bin/id
+     command: /usr/bin/id
      resource: /nodes=2/cpu=1
      workdir: ~bzizou/tmp
      type:
@@ -847,7 +847,7 @@ POST /jobs
 
    # Submitting a job using ruby rest client
    irb(main):010:0> require 'json'
-   irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'script_path' => '/usr/bin/id' }
+   irb(main):012:0> j={ 'resource' => '/nodes=2/cpu=1', 'command' => '/usr/bin/id' }
    irb(main):015:0> job=post('/jobs' , j.to_json , :content_type => 'application/json')
 
    # Submitting a job with a provided inline script
@@ -974,7 +974,7 @@ GET /jobs/form
        <TD><INPUT TYPE=text SIZE=40 NAME=property VALUE=""></TD>
      </TR><TR>
        <TD>Program to run</TD>
-       <TD><INPUT TYPE=text SIZE=40 NAME=script_path VALUE='"/bin/sleep 300"'></TD>
+       <TD><INPUT TYPE=text SIZE=40 NAME=command VALUE='"/bin/sleep 300"'></TD>
      </TR><TR>
        <TD>Types</TD>
        <TD><INPUT TYPE=text SIZE=40 NAME=type></TD>
