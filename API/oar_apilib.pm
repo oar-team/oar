@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.9";
+my $VERSION="0.2.10";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -866,7 +866,7 @@ sub check_job($$) {
                       "export-job-key-to-file",
                       "stdout", "stderr",
                       "stagein", "stagein-md5sum",
-                      "command"
+                      "command", "script"
                      ) { parameter_option($job,$option) }
 
   # Manage toggle options (no parameter)

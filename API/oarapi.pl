@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.7";
+my $VERSION="0.2.8";
 
 ##############################################################################
 # CONFIGURATION
@@ -610,10 +610,10 @@ SWITCH: for ($q) {
 
     # Make the query (the hash is converted into a list of long options)
     my $oarcmd = "$OARSUB_CMD ";
-    my $script = "";
     my $workdir = "~$authenticated_user";
     my $command = "";
     foreach my $option ( keys( %{$job} ) ) {
+    # Note: actualy, now, script_path, script and command are the same thing
       if ($option eq "script_path") {
         $command = " \"$job->{script_path}\"";
       }
@@ -621,7 +621,7 @@ SWITCH: for ($q) {
         $command = " \"$job->{command}\"";
       }
       elsif ($option eq "script") {
-        $script = $job->{script};
+        $command = " \"$job->{script}\"";
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
@@ -640,13 +640,10 @@ SWITCH: for ($q) {
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
-    if ($script ne "") {
-      $script =~ s/\"/\\\"/g;
-      $oarcmd .= " \"$script\"";
-    }
     $oarcmd .= $command;
+    $oarcmd =~ s/\"/\\\"/g;
 
-    my $cmd = "$OARDODO_CMD 'cd $workdir && $oarcmd'";
+    my $cmd = "$OARDODO_CMD \"cd $workdir && $oarcmd\"";
     my $cmdRes = `$cmd 2>&1`;
     if ( $? != 0 ) {
       my $err = $? >> 8;
