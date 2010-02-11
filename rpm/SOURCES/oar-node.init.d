@@ -77,8 +77,10 @@ case "$1" in
         reload
         ;;
   restart|force-reload|restart)
+        stop_oar_node
         stop
         sleep 1
+        start_oar_node
         start
         ;;
   *)
