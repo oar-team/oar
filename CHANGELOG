@@ -6,6 +6,7 @@ version 2.4.1:
   - Bug #9038: Security flaw in oarsub --notify option
   - Bug #9601: Containers are no more killed when a resource is set to Absent
   - Fixed some packaging bugs
+  - API bug fixes in job submission parsing
 
 version 2.4.0:
 --------------
