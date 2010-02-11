@@ -15,6 +15,8 @@ version 2.4.1:
   - Added standby info into `oarnodes -s` and available_upto info into
     /resources uri of the API
   - Bug Grid'5000 #2687 Fix possible crashes of the scheduler.
+  - Bug fix: with MySQL DB Finaud suspected resources which are not of the
+    "default" type.
 
 version 2.4.0:
 --------------
