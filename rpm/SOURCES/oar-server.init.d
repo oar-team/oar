@@ -10,18 +10,17 @@
 #
 # LSB compliant header
 ### BEGIN INIT INFO                                                                                                                          
-# Provides:          oar-server                                                                                                              
-# Required-Start:    $network $local_fs $remote_fs $all                                                                                      
-# Required-Stop:     $remote_fs                                                                                                              
-# Default-Start:     2 3 4 5                                                                                                                 
-# Default-Stop:      0 1 6                                                                                                                   
+# Provides:          oar-server
+# Required-Start:    $network $local_fs $remote_fs $all
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
 # Short-Description: OAR server init script                                                                                                  
-# Description:       This script starts or stops the OAR resource manager                                                                    
+# Description:       This script starts or stops the OAR resource manager           
 #                                                                                                                                            
-### END INIT INFO                                                                                                                            
-
+### END INIT INFO
 # Author: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
-#                                              
+#
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin
 DESC="OAR resource manager (server)"
@@ -89,7 +88,6 @@ stop() {
         fi
 	rm -f $PIDFILE
         log_success_msg
-        exit 0
 }
 
 case "$1" in
@@ -98,6 +96,7 @@ case "$1" in
         ;;
   stop)
         stop
+        exit 0
         ;;
   restart|force-reload|restart)
         stop
