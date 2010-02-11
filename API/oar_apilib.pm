@@ -507,6 +507,7 @@ sub filter_resource_list($) {
   foreach my $resource (@$resources) {
     push(@$filtered_resources,{ resource_id => $resource->{resource_id},
                                 state => $resource->{state},
+                                available_upto => $resource->{available_upto},
                                 network_address => $resource->{network_address}
                               });
   }

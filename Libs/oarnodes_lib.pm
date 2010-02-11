@@ -73,6 +73,9 @@ sub get_resources_states($){
 	my %resources_states;
 	foreach my $current_resource (@$resources){
 		my $properties = iolib::get_resource_info($base, $current_resource);
+                if ($properties->{state} eq "Absent" && $properties->{available_upto} >= time()) {
+                   $properties->{state} .= " (standby)";
+                }
 		$resources_states{$current_resource} = $properties->{state};
 	}
 	return \%resources_states;
