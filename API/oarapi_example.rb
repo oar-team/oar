@@ -61,22 +61,22 @@ col=0
 resources.collect{|r| r['network_address']}.uniq.each do |node|
   resources.select{|r| r['network_address']==node}.each do |resource|
     if resource['state'] == "Dead"
-      printf("\033[101mD\033[0m")
+      printf("\033[41m\033[30mD\033[0m")
     elsif resource['state'] == "Absent"
       if resource['available_upto'].to_i > Time.new().to_i
-        printf("\033[106m \033[0m")
+        printf("\033[46m \033[0m")
       else
-        printf("\033[41mA\033[0m")
+        printf("\033[41m\033[30mA\033[0m")
       end
     elsif resource['state'] == "Suspected"
-      printf("\033[45mS\033[0m")
+      printf("\033[41m\033[30mS\033[0m")
     elsif resource['state'] == "Alive"
       #jobs=get(api,resource['jobs_uri'])
       #if jobs.nil?
       if used_resources[resource['resource_id']].nil?
-        printf("\033[102m \033[0m")
+        printf("\033[42m \033[0m")
       else
-        printf("\033[107mJ\033[0m")
+        printf("\033[47m\033[30mJ\033[0m")
       end
     end
   end
@@ -88,4 +88,4 @@ resources.collect{|r| r['network_address']}.uniq.each do |node|
     puts
   end
 end 
-printf("\n\n\033[102m \033[0m=Free \033[106m \033[0m=Standby \033[107mJ\033[0m=Job \033[45mS\033[0m=Suspected \033[41mA\033[0m=Absent \033[101mD\033[0m=Dead\n\n")
+printf("\n\n\033[42m \033[0m=Free \033[46m \033[0m=Standby \033[47m\033[30mJ\033[0m=Job \033[41m\033[30mS\033[0m=Suspected \033[41m\033[30mA\033[0m=Absent \033[41m\033[30mD\033[0m=Dead\n\n")
