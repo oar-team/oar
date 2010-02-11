@@ -314,7 +314,7 @@ foreach my $i (keys(%resources_to_change)){
         
         if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
             oar_debug("[NodeChangeState] Check jobs to delete on $i ($resource_info->{network_address}):\n");
-            my @jobs = iolib::get_resource_job($base,$i);
+            my @jobs = iolib::get_resource_job_to_frag($base,$i);
             foreach my $j (@jobs){
                 oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
                 iolib::frag_job($base,$j);

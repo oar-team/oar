@@ -9,6 +9,7 @@ version 2.4.1:
   - Signed debian packages (install oar-keyring package)
   - New "Hulot" module for intelligent and configurable energy saving
   - API bug fixes in job submission parsing
+  - Bug #9601: Containers are no more killed when a resource is set to Absent
 
 version 2.4.0:
 --------------

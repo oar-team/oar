@@ -144,7 +144,7 @@ sub set_maintenance_on($$$$$){
 	    oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 	    if (!$nowaitMode){
 		print("Check jobs to delete on resource $res :\n");
-		my @jobs = iolib::get_resource_job($base,$res);
+		my @jobs = iolib::get_resource_job_to_frag($base,$res);
 		wait_end_of_running_jobs($base,\@jobs);
 	    }
 	}
@@ -296,7 +296,7 @@ if (defined($new_resource)){
                 if (!$nowaitMode){
                     foreach my $r (@resources_to_check){
                         print("Check jobs to delete on resource $r :\n");
-                        my @jobs = iolib::get_resource_job($base,$r);
+                        my @jobs = iolib::get_resource_job_to_frag($base,$r);
                         wait_end_of_running_jobs($base,\@jobs);
                     }
                 }
@@ -344,7 +344,7 @@ if (defined($new_resource)){
                 if (!$nowaitMode){
                     foreach my $h (@nodes_to_check){
                         print("Check jobs to delete on node $h :\n");
-                        my @jobs = iolib::get_node_job($base,$h);
+                        my @jobs = iolib::get_node_job_to_frag($base,$h);
                         wait_end_of_running_jobs($base,\@jobs);
                     }
                 }

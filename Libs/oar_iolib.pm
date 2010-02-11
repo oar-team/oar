@@ -97,7 +97,9 @@ sub get_array_job_ids($$);
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub get_resource_job($$);
+sub get_resource_job_to_frag($$);
 sub get_node_job($$);
+sub get_node_job_to_frag($$);
 sub get_resources_in_state($$);
 sub add_resource_job_pair($$$);
 
@@ -2976,6 +2978,38 @@ sub get_resource_job($$) {
     return @res;
 }
 
+# get_resource_job_to_frag
+# same as get_resource_job but excepts the cosystem jobs
+# parameters : base, resource
+# return value : list of jobid
+# side effects : /
+sub get_resource_job_to_frag($$) {
+    my $dbh = shift;
+    my $resource = shift;
+    my $sth = $dbh->prepare("   SELECT jobs.job_id
+                                FROM assigned_resources, moldable_job_descriptions, jobs
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                    AND assigned_resources.resource_id = $resource
+                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND jobs.state != \'Terminated\'
+                                    AND jobs.state != \'Error\'
+                                    AND jobs.job_id NOT IN (
+                                                             SELECT job_id from job_types
+                                                             WHERE
+                                                                 type=\'cosystem\'
+                                                                 AND types_index=\'CURRENT\'
+                                                           )
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{'job_id'});
+    }
+    return @res;
+}
 
 # get_node_job
 # returns the list of jobs associated to the hostname passed in parameter
@@ -3005,6 +3039,39 @@ sub get_node_job($$) {
     return @res;
 }
 
+# get_node_job_to_frag
+# same as get_node_job but excepts cosystem jobs
+# parameters : base, hostname
+# return value : list of jobid
+# side effects : /
+sub get_node_job_to_frag($$) {
+    my $dbh = shift;
+    my $hostname = shift;
+    my $sth = $dbh->prepare("   SELECT jobs.job_id
+                                FROM assigned_resources, moldable_job_descriptions, jobs, resources
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                    AND resources.network_address = \'$hostname\'
+                                    AND assigned_resources.resource_id = resources.resource_id
+                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND jobs.state != \'Terminated\'
+                                    AND jobs.state != \'Error\'
+                                    AND jobs.job_id NOT IN (
+                                                             SELECT job_id from job_types
+                                                             WHERE
+                                                                 type=\'cosystem\'
+                                                                 AND types_index=\'CURRENT\'
+                                                           )
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{'job_id'});
+    }
+    return @res;
+}
 
 # get_resources_in_state
 # returns the list of resources in the state specified
