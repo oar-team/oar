@@ -290,7 +290,16 @@ sub find_first_hole($$$$$){
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
 
-    return ($Infinity, ()) if (!defined($tree_description_list->[0]));
+    # Test if all groups are populated
+    my $return_infinity = 0;
+    my $g = 0;
+    while (($return_infinity == 0) and ($g <= $#$tree_description_list)){
+        if (!defined($tree_description_list->[$g])){
+            $return_infinity = 1;
+        }
+        $g++;
+    }
+    return ($Infinity, ()) if ($return_infinity > 0);
 
     my @result_tree_list = ();
     my $end_loop = 0;
@@ -402,7 +411,17 @@ sub find_first_hole_parallel($$$$$$){
     # $tree_description_list->[1]  --> Second resource group corresponding tree
     # ...
 
-    return ($Infinity, ()) if (!defined($tree_description_list->[0]));
+    # Test if all groups are populated
+    my $return_infinity = 0;
+    my $g = 0;
+    while (($return_infinity == 0) and ($g <= $#$tree_description_list)){
+        if (!defined($tree_description_list->[$g])){
+            $return_infinity = 1;
+        }
+        $g++;
+    }
+    return ($Infinity, ()) if ($return_infinity > 0);
+
 
     my @result_tree_list = ();
     my $end_loop = 0;

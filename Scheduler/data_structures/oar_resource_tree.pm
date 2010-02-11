@@ -69,12 +69,8 @@ sub new(){
 # arg : tree ref
 # return a copy of the tree ref
 sub clone($){
-    my $tree_ref = shift;
-    if (defined($tree_ref)){
-      return(dclone($tree_ref));
-    }else{
-      return undef;
-    }
+  my $tree_ref = shift;
+  return(dclone($tree_ref));
 }
 
 
