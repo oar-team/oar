@@ -435,6 +435,17 @@ sub struct_job($$) {
     }}
 }
 
+sub struct_job_list_hash_to_array($) {
+  my $jobs=shift;
+  my $array=[];
+  foreach my $j ( keys (%{$jobs}) ){
+    if (defined($jobs->{$j}->{Job_Id})) {
+      push (@$array,$jobs->{$j});
+    }
+  }
+  return $array;
+}
+
 # OAR JOB LIST
 sub struct_job_list($$) {
   my $jobs = shift;

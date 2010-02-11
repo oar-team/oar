@@ -6,7 +6,7 @@ use oar_apilib;
 use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use POSIX;
 
-my $VERSION="0.1.8";
+my $VERSION="0.1.9";
 
 ##############################################################################
 # CONFIGURATION
@@ -333,6 +333,7 @@ SWITCH: for ($q) {
       }
       else {
         apilib::add_joblist_griduris($jobs,$ext,$1);
+        $jobs = apilib::struct_job_list_hash_to_array($jobs);
         $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
       }
       print $header;
