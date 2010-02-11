@@ -1,14 +1,17 @@
 OAR CHANGELOG
 =============
 
-version 2.4.1:
+version 2.4.2:
 --------------
   - Added standby info into `oarnodes -s` and available_upto info into 
     /resources uri of the API
-  - Bug #9038: Security flaw in oarsub --notify option
   - Signed debian packages (install oar-keyring package)
   - New "Hulot" module for intelligent and configurable energy saving
   - API bug fixes in job submission parsing
+ 
+version 2.4.1:
+--------------
+  - Bug #9038: Security flaw in oarsub --notify option
   - Bug #9601: Containers are no more killed when a resource is set to Absent
 
 version 2.4.0:
