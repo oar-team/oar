@@ -5,11 +5,12 @@ set -e
 
 usage() {
   cat <<EOF
-$0 [-h] [-s] <deb|rpm|tgz> <branch_name>
+$0 [-h] [-s] [-u] <deb|rpm|tgz> <branch_name>
 Build OAR package from the given branch 
  (ex branch name: 'trunk-work', '2.2-test')
 Options:
   -s   snapshot version (for generating a beta or not released)
+  -u   unsigned packages
   -h   print this message and exit
 EOF
 exit 1
@@ -38,13 +39,22 @@ get_snapshot_id() {
   SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline HEAD^..HEAD |sed 's/ /./'|cut -d. -f1`
 }
 
+remove_upstream_branch() {
+  git branch -D upstream
+  exit 1
+}
+
+trap remove_upstream_branch QUIT ERR
+
 SNAPSHOT=n
-while getopts "sh" options; do
+while getopts "shu" options; do
   case $options in
-    s) SNAPSHOT=y ; shift;;
+    s) SNAPSHOT=y ;;
+    u) UNSIGNED="-us" ;;
     *) usage ;;
   esac
 done
+shift $(($OPTIND - 1))
 
 PACKAGE_TYPE=$1
 BRANCH_NAME=$2
@@ -113,7 +123,7 @@ then
   #fi
   git commit -m "New $WHAT automaticaly created by git-build-package.sh"
 
-  git-buildpackage --git-debian-branch=$BRANCH_NAME --git-export-dir=../build-area/ -rfakeroot -uc
+  git-buildpackage --git-debian-branch=$BRANCH_NAME --git-export-dir=../build-area/ -rfakeroot $UNSIGNED -uc
   git branch -D upstream
   echo 
   echo "Your packages have been built into ./build-area/*$OARVERSION* !"
