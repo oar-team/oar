@@ -188,6 +188,8 @@ install-indep:
                 SBINDIR=/usr/sbin \
 		WWWDIR=/var/www \
 		CGIDIR=/usr/lib/cgi-bin
+	$(MAKE) keyring-install \
+		DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-keyring
 
 	dh_install -i
 

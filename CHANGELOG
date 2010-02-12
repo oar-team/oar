@@ -12,6 +12,7 @@ version 2.4.1:
   - Bug Grid'5000 #2687 Fix possible crashes of the scheduler.
   - Bug fix: with MySQL DB Finaud suspected resources which are not of the
     "default" type.
+  - Signed debian packages (install oar-keyring package)
 
 version 2.4.0:
 --------------

@@ -538,6 +538,10 @@ gridlibs:
 	install -m 0644 Oargrid/oargrid_conflib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 Oargrid/oargrid_mailer.pm $(DESTDIR)$(OARDIR)
 
+keyring-install:
+	install -d -m 0755 $(DESTDIR)/usr/share/keyrings
+	install -m 0644 Misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/keyrings
+
 common-install: common
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
@@ -562,6 +566,7 @@ tools-install: sanity-check configuration common-install libs tools
 api-install: sanity-check configuration common-install libs api
 
 gridapi-install: sanity-check configuration common-install libs gridlibs gridapi
+
 
 clean:
 	find Docs/documentation -regextype posix-extended -regex ".*OAR.*(aux|log|out|pdf|tex|html)" -exec rm -f {} \;

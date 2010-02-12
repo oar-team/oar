@@ -113,7 +113,7 @@ then
   #fi
   git commit -m "New $WHAT automaticaly created by git-build-package.sh"
 
-  git-buildpackage --git-debian-branch=$BRANCH_NAME --git-export-dir=../build-area/ -rfakeroot -us -uc
+  git-buildpackage --git-debian-branch=$BRANCH_NAME --git-export-dir=../build-area/ -rfakeroot -uc
   git branch -D upstream
   echo 
   echo "Your packages have been built into ./build-area/*$OARVERSION* !"
