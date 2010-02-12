@@ -1,3 +1,15 @@
+oar (2.4.0-7~1.gbp94fe03) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @94fe03000b4c41403f03127e9ba6088f75877bd5 **
+
+  [ bzizou ]
+  * Bug fix: with MySQL DB Finaud suspected resources which are not of
+    the
+
+  [ Bruno Bzeznik ]
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 12 Feb 2010 09:47:10 +0100
+
 oar (2.4.0-6) stable; urgency=low
 
   * oar_apilib is now into the oar-api package and no more into oar-common
