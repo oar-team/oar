@@ -1,12 +1,6 @@
-oar (2.4.0-7~1.gbp94fe03) UNRELEASED; urgency=low
+oar (2.4.1-0~37.gbpe157bd) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @94fe03000b4c41403f03127e9ba6088f75877bd5 **
-
-  [ bzizou ]
-  * Bug fix: with MySQL DB Finaud suspected resources which are not of
-    the
-
-  [ Bruno Bzeznik ]
+  * New next release is 2.4.1
 
  -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 12 Feb 2010 09:47:10 +0100
 
