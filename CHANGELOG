@@ -8,7 +8,7 @@ version 2.4.2:
 version 2.4.1:
 --------------
   - Bug #9038: Security flaw in oarsub --notify option
-  - Bug #9601: Containers are no more killed when a resource is set to Absent
+  - Bug #9601: Cosystem jobs are no more killed when a resource is set to Absent
   - Fixed some packaging bugs
   - API bug fixes in job submission parsing
   - Added standby info into `oarnodes -s` and available_upto info into
