@@ -1,3 +1,15 @@
+oar (2.4.1-0~39.gbp05a18a) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @05a18a593ee344cd77dde770cde23aecbef13da5 **
+
+  [ bzizou ]
+  * (Merge from trunk) Added oar-keyring debian package. Packages are
+    now signed.
+
+  [ Bruno Bzeznik ]
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 12 Feb 2010 10:12:57 +0100
+
 oar (2.4.1-0~38.gbp4e8a5c) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @4e8a5c3cc8fcd94e59aaff59a35c8cb947c53d09 **
