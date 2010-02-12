@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
-%define version 2.4.0
-%define release 7
+%define version 2.4.2
+%define release 1
 
 Name: 		oar
 Version:        %{version}
