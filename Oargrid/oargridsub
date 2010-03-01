@@ -28,7 +28,7 @@ sub usage($){
 Usage oargridsub -s date [-q queue_name][-p program_to_run][-w walltime][-i identity_file][-T timeout][-d directory][-v][-V][-f file] DESC
     -s give the date of the begining of the reservation, ex: "2005-01-07 11:00:00" (default is NOW)
     -q give the queue
-    -t give the type
+    -t give the type (several -t are allowed)
     -p give the program to run
     -d give the directory where the program will be launched (default is "~")
     -w walltime of the reservation (default is "1:00:00")
@@ -82,7 +82,7 @@ my $startDate;
 my $sos;
 my $verbose;
 my $queue;
-my $type;
+my @type;
 my $file;
 my $continue;
 my $version;
@@ -98,7 +98,7 @@ GetOptions ("walltime|w=s" => \$walltime,
             "help|h" => \$sos,
             "verbose|v" => \$verbose,
             "queue|q=s" => \$queue,
-            "type|t=s" => \$type,
+            "type|t=s" => \@type,
             "file|f=s" => \$file,
             "FORCE|F" => \$continue,
             "VERSION|V" => \$version
@@ -151,8 +151,8 @@ if (defined($file)) {
         if (($content =~ m/QUEUE\s*=\s*\"(.+)\"\s*/m) && !defined($queue)){
             $queue = "$1";
         }
-        if (($content =~ m/TYPE\s*=\s*\"(.+)\"\s*/m) && !defined($type)){
-            $type = "$1";
+        if (($content =~ m/TYPE\s*=\s*\"(.+)\"\s*/m) && !@type){
+            push(@type,$1);
         }
         if ($content =~ m/DESC\s*=\s*\"(.+)\"\s*/m){
             my $tmpValue = $1;
@@ -188,9 +188,6 @@ if (!defined($queue)){
 if (!defined($program)){
     $program = "";
 }
-if (!defined($type)){
-    $type = "";
-}
 
 
 print("DESC string : $argumentDescription\n") if (defined($verbose));
@@ -205,13 +202,14 @@ foreach my $i (@argParsed){
                     name => "",
                     env => "",
                     part => "",
-		    type => "",
+		    types => [],
                     rdef => ""
                   );
     my @tmpArray = split(":", $i);
     $tmpHash{clusterName} = shift(@tmpArray);
     $tmpHash{clusterName} =~ m/\s*(.+)\s*/m;
     $tmpHash{clusterName} = $1;
+    my @types;
     foreach my $j (@tmpArray){
         print "Scanning $j...\n" if (defined($verbose));
         if ($j =~ m/\s*rdef\s*=\s*(.+)/m){
@@ -237,7 +235,7 @@ foreach my $i (@argParsed){
         }elsif ($j =~ m/\s*name\s*=\s*(.+)/m){
             $tmpHash{name} = $1;
         }elsif ($j =~ m/\s*type\s*=\s*(.+)/m){
-            $tmpHash{type} = $1;
+            push(@types,$1);
         }
 	else {
 	  print "ERROR: $j: unknown keyword\n";
@@ -245,6 +243,7 @@ foreach my $i (@argParsed){
 	  exit(2);
 	}
     }
+    $tmpHash{types}=[ @types ];
     push(@clusterArguments, \%tmpHash);
 }
 
@@ -305,9 +304,16 @@ while (($#clusterArguments >= 0) && ($endLoop == 0)){
     if ($i->{queue} ne ""){
         $tmpQueue = $i->{queue};
     }
-    my $tmpType = $type;
-    if ($i->{type} ne ""){
-        $tmpType = $i->{type};
+    my $tmpType;
+    # Globals types
+    if (@type) {
+      foreach my $t (@type) {
+        $tmpType .= " -t ".$t;
+      }
+    }
+    # Local types (only for that resources definition)
+    foreach my $t (@{$i->{types}}){
+       $tmpType .= " -t ".$t;
     }
     my $resources_def = "";
     if ($i->{rdef} ne "") {
@@ -349,7 +355,7 @@ while (($#clusterArguments >= 0) && ($endLoop == 0)){
         #$cmd .= " --force-cpuset-name $cpuset_name";
     }
     if ($tmpType ne "") {
-      $cmd .= " -t ".$tmpType;
+      $cmd .= " ".$tmpType;
     }
     if ($i->{properties} ne ""){
         $property_string .= "(". $i->{properties} .")";
