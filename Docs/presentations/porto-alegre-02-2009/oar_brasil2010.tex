@@ -181,7 +181,7 @@
 		\begin{itemize}
     \item Classical features +
     \item Advance Reservation
-		\item {\bf Hierarchical experessions into requests }
+		\item {\bf Hierarchical expressions into requests }
 		\item {\bf Different types of resources (ex licence, storage capacity, network capacity...)  }
 		\item {\bf Container tasks} ({\em recursive, task submission inside another task})
 		\item {\bf Besteffort tasks} (zero priority task, highly used by {\em CiGri}) 
@@ -305,7 +305,7 @@ Interactive task: \footnote{{\bf Note:} Each submission command returns an id nu
 	Scheduling is the step \footnote{{\bf Note:} scheduling is computed again at each major change in the state of a task.}
 at which the system selects the {\bf ressources to give} to tasks {\bf and starting dates}.
 \\[0.4cm]
-	Scheduling is made following a {\bf rule} that is defined by a {\bf scheduling algorithm}.
+	Scheduling is made following a {\bf policy} that is defined by a {\bf scheduling algorithm}.
 \\[0.4cm]
 	{\bf Furthermore} numerous {\bf parameters} are used to guide and scope the allocations and priorities.
  
@@ -317,7 +317,7 @@ at which the system selects the {\bf ressources to give} to tasks {\bf and start
 	Tasks are put into queues
 	\begin{itemize}
 		\item each queue as a priority level
-		\item each queue obey to a scheduling rule
+		\item each queue obey to a scheduling policy
 	\end{itemize}
 %equivalent to scheduling jobs with priorities but easier to administrate
 \includegraphics[width=\textwidth]{schedule_eng.pdf}
@@ -342,7 +342,7 @@ at which the system selects the {\bf ressources to give} to tasks {\bf and start
 
 
 \begin{frame}
-	\frametitle{Scheduling rules}
+	\frametitle{Scheduling policies}
 		\begin{itemize}
 		\item FIFO (First-In First-Out)
 		\item First-Fit (Backfilling)
@@ -624,9 +624,10 @@ Problem with parallel applications that are network-bandwidth sensitive.
  \begin{block}{}
   \begin{itemize}
     \item {\bf Versatile and customizable}
-    \item Functionalities level like 
+    \item Features level like other products
     \item Very stable
-    \item Version stable:  {\bf {\em 2.4.1 (Thriller)}} (.tgz, .deb, .rpm)
+    \item Current stable version:  {\bf {\em 2.4.1 (Thriller)}} (.tgz, .deb, .rpm)
+    \item Next version in a few weeks, with a new energy saving module:  {\bf {\em 2.4.2}} (.tgz, .deb, .rpm)
     \item This is a continuously evolving domain 
   \end{itemize}
  \end{block}
