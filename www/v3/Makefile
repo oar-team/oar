@@ -24,9 +24,7 @@ output/%.html: $(MANUALPAGE) news.yaml
 	cd output/users; ln -s ../images; cd -
 	
 upload: all
-	scp -r output/* $(SITE)
-	scp -r ../../Docs/schemas $(SITE) #must be enhanced rsync png svg
-	scp -r output/* $(SITE)
+	scp -r output/* $(SITE); scp -r ../../Docs/schemas $(SITE) #must be enhanced rsync png svg
 	touch upload
 
 rsync: all
