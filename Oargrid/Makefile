@@ -91,6 +91,7 @@ uninstall:
 	-rmdir $(DESTDIR)/$(OARGRIDDIR)
 
 deb:
+	@DEB_VERSION=`head -1 debian/changelog|awk -F"(" '{print $$2}' |awk -F")" '{print $$1}'`;VERSION=`grep "Version = " oargrid_lib.pm|awk -F"\"" '{print $$2}'`;[ "$$VERSION" = "$$DEB_VERSION" ] || ( echo "***** ERROR: Version number ($$VERSION) in oargrid_lib mismatch debian/changelog ($$DEB_VERSION)! ******" ; exit 1 )
 	debuild -rfakeroot -us -uc
 
 clean: 
