@@ -165,7 +165,7 @@ sub set_occupation($$$$){
                 if ($gantt->[$g]->[1]->[$h]->[0] > $date){
                     # This slot ends after $date
                     
-                    print("-->[1]\n ".($date - $gantt->[$g]->[0])." -- $gantt->[0]->[4]\n<--[1]\n");
+                    #print("-->[1]\n ".($date - $gantt->[$g]->[0])." -- $gantt->[0]->[4]\n<--[1]\n");
                     
                     if (($gantt->[$g]->[0] < $date) and ($slot_date_here == 0) and ($date - $gantt->[$g]->[0] > $gantt->[0]->[4])){
                         # We must create a smaller slot (hole start time < $date)
@@ -173,7 +173,7 @@ sub set_occupation($$$$){
                         $h++;   # Go to the slot that we were on it before the splice
                         $slot_date_here = 1;
 
-                        print("-->[2]\n "); pretty_print($gantt); print("<--[2]\n");
+                        #print("-->[2]\n "); pretty_print($gantt); print("<--[2]\n");
 
                     }
                     # Add new slots in the new hole
@@ -196,7 +196,7 @@ sub set_occupation($$$$){
                             # There is no slot so we create one
                             push(@{$new_hole->[1]}, [ $gantt->[$g]->[1]->[$h]->[0], $gantt->[$g]->[1]->[$h]->[1] ]);
                             
-                            print("-->[3]\n Add new hole $new_hole->[0]: $gantt->[$g]->[1]->[$h]->[0]:\n".Dumper($new_hole)."\n -->[3]\n");
+                            #print("-->[3]\n Add new hole $new_hole->[0]: $gantt->[$g]->[1]->[$h]->[0]:\n".Dumper($new_hole)."\n -->[3]\n");
                         
                         }
                     }
@@ -205,13 +205,13 @@ sub set_occupation($$$$){
                     if (unpack("%32b*",$gantt->[$g]->[1]->[$h]->[1]) == 0){
                         # There is no free resource on this slot so we delete it
                         
-                        print("-->[4]\n Delete slot: $gantt->[$g]->[0],$gantt->[$g]->[1]->[$h]->[0] \n<--[4]\n");
+                        #print("-->[4]\n Delete slot: $gantt->[$g]->[0],$gantt->[$g]->[1]->[$h]->[0] \n<--[4]\n");
                         
                         splice(@{$gantt->[$g]->[1]}, $h, 1);
                         $h--;
                         $slot_deleted = 1;
 
-                        print("-->[5]\n "); pretty_print($gantt); print("<--[5]\n");
+                        #print("-->[5]\n "); pretty_print($gantt); print("<--[5]\n");
 
                     }elsif ($h > 0){
                         # check if this is the same hole than the previous one
@@ -234,8 +234,8 @@ sub set_occupation($$$$){
             # Test if there is a same hole
             my $different = 0;
 
-            print("-->[6]\n ");pretty_print($gantt);print("<--[6]\n");
-            print("-->[7]\nG-1=$gantt->[$g - 1]->[0]       G=$gantt->[$g]->[0] \n<--[7]\n");
+            #print("-->[6]\n ");pretty_print($gantt);print("<--[6]\n");
+            #print("-->[7]\nG-1=$gantt->[$g - 1]->[0]       G=$gantt->[$g]->[0] \n<--[7]\n");
             
             if ($#{$gantt->[$g - 1]->[1]} != $#{$gantt->[$g]->[1]}){
                 $different = 1;
@@ -254,7 +254,7 @@ sub set_occupation($$$$){
             }
             if ($different == 0){
                 
-                print("-->[8]\n Delete Hole: $gantt->[$g]->[0] \n-->[8]\n");
+                #print("-->[8]\n Delete Hole: $gantt->[$g]->[0] \n-->[8]\n");
                 
                 splice(@{$gantt}, $g, 1);
                 $g--;
@@ -264,7 +264,7 @@ sub set_occupation($$$$){
         $g++;
     }
     
-    print("-->[9]\n "); pretty_print($gantt); print("<--[9]\n");
+    #print("-->[9]\n "); pretty_print($gantt); print("<--[9]\n");
     
     if ($#{$new_hole->[1]} >= 0){
         # Add the new hole
