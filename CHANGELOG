@@ -4,6 +4,7 @@ OAR CHANGELOG
 version 2.4.2:
 --------------
   - New "Hulot" module for intelligent and configurable energy saving
+  - Bug #9906: fix bad optimization in the gantt lib (so bad scheduling
  
 version 2.4.1:
 --------------
@@ -77,6 +78,7 @@ version 2.4.0:
   - fixed performance issue (job_id index missing in event_log table)
   - fixed a performance issue at job submission (optimized a query and added an
     index on challenges table)
+    decisions).
 
 version 2.3.5:
 --------------

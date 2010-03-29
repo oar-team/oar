@@ -4,6 +4,7 @@ require Exporter;
 use oar_resource_tree;
 use Data::Dumper;
 use POSIX ":sys_wait_h";
+use POSIX qw(strftime);
 use Storable qw(store_fd fd_retrieve);
 use warnings;
 use strict;
@@ -35,16 +36,18 @@ sub get_infinity_value(){
 sub pretty_print($){
     my $gantt = shift;
    
+    print("--------------------------------------------------------------------\n");
     my @bits = split(//, unpack("b*", $gantt->[0]->[2]));
     print("@bits\n");
     foreach my $g (@{$gantt}){
-        print("BEGIN : $g->[0]\n");
+        print("BEGIN : $g->[0](".strftime("%F %T",localtime($g->[0])).")\n");
         foreach my $h (@{$g->[1]}){
             @bits = split(//, unpack("b*", $h->[1]));
-            print("    $h->[0] : @bits\n");
+            print("    $h->[0](".strftime("%F %T",localtime($h->[0])).") : @bits\n");
         }
         print("\n");
     }
+    print("--------------------------------------------------------------------\n");
 }
 
 # Creates an empty Gantt
@@ -161,12 +164,17 @@ sub set_occupation($$$$){
                 $slot_date_here = 1 if ($gantt->[$g]->[1]->[$h]->[0] == $date);
                 if ($gantt->[$g]->[1]->[$h]->[0] > $date){
                     # This slot ends after $date
-                    #print($date - $gantt->[$g]->[0]." -- $gantt->[0]->[4]\n");
+                    
+                    print("-->[1]\n ".($date - $gantt->[$g]->[0])." -- $gantt->[0]->[4]\n<--[1]\n");
+                    
                     if (($gantt->[$g]->[0] < $date) and ($slot_date_here == 0) and ($date - $gantt->[$g]->[0] > $gantt->[0]->[4])){
                         # We must create a smaller slot (hole start time < $date)
                         splice(@{$gantt->[$g]->[1]}, $h, 0, [ $date , $gantt->[$g]->[1]->[$h]->[1] ]);
                         $h++;   # Go to the slot that we were on it before the splice
                         $slot_date_here = 1;
+
+                        print("-->[2]\n "); pretty_print($gantt); print("<--[2]\n");
+
                     }
                     # Add new slots in the new hole
                     if (($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]) and ($gantt->[$g]->[1]->[$h]->[0] - $new_hole->[0] > $gantt->[0]->[4])){
@@ -187,15 +195,24 @@ sub set_occupation($$$$){
                         }elsif ($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]){
                             # There is no slot so we create one
                             push(@{$new_hole->[1]}, [ $gantt->[$g]->[1]->[$h]->[0], $gantt->[$g]->[1]->[$h]->[1] ]);
+                            
+                            print("-->[3]\n Add new hole $new_hole->[0]: $gantt->[$g]->[1]->[$h]->[0]:\n".Dumper($new_hole)."\n -->[3]\n");
+                        
                         }
                     }
                     # Remove new occupied resources from the current slot
                     $gantt->[$g]->[1]->[$h]->[1] &= (~ $resources_vec) ;
                     if (unpack("%32b*",$gantt->[$g]->[1]->[$h]->[1]) == 0){
                         # There is no free resource on this slot so we delete it
+                        
+                        print("-->[4]\n Delete slot: $gantt->[$g]->[0],$gantt->[$g]->[1]->[$h]->[0] \n<--[4]\n");
+                        
                         splice(@{$gantt->[$g]->[1]}, $h, 1);
                         $h--;
                         $slot_deleted = 1;
+
+                        print("-->[5]\n "); pretty_print($gantt); print("<--[5]\n");
+
                     }elsif ($h > 0){
                         # check if this is the same hole than the previous one
                         my $tmp_vec = $gantt->[$g]->[1]->[$h-1]->[1] ^ $gantt->[$g]->[1]->[$h]->[1];
@@ -216,18 +233,29 @@ sub set_occupation($$$$){
         }elsif($g > 0){
             # Test if there is a same hole
             my $different = 0;
+
+            print("-->[6]\n ");pretty_print($gantt);print("<--[6]\n");
+            print("-->[7]\nG-1=$gantt->[$g - 1]->[0]       G=$gantt->[$g]->[0] \n<--[7]\n");
+            
             if ($#{$gantt->[$g - 1]->[1]} != $#{$gantt->[$g]->[1]}){
                 $different = 1;
             }
             my $tmp_h = 0;
             while (($different == 0) and (defined($gantt->[$g]->[1]->[$tmp_h]))){
-                my $tmp_vec = $gantt->[$g - 1]->[1]->[$tmp_h]->[1] ^ $gantt->[$g]->[1]->[$tmp_h]->[1];
-                if (unpack("%32b*",$tmp_vec) != 0){
+                if ($gantt->[$g - 1]->[1]->[$tmp_h]->[0] != $gantt->[$g]->[1]->[$tmp_h]->[0]){
                     $different = 1;
+                }else{
+                    my $tmp_vec = $gantt->[$g - 1]->[1]->[$tmp_h]->[1] ^ $gantt->[$g]->[1]->[$tmp_h]->[1];
+                    if (unpack("%32b*",$tmp_vec) != 0){
+                        $different = 1;
+                    }
                 }
                 $tmp_h++;
             }
             if ($different == 0){
+                
+                print("-->[8]\n Delete Hole: $gantt->[$g]->[0] \n-->[8]\n");
+                
                 splice(@{$gantt}, $g, 1);
                 $g--;
             }
@@ -235,6 +263,9 @@ sub set_occupation($$$$){
         # Go to the next hole
         $g++;
     }
+    
+    print("-->[9]\n "); pretty_print($gantt); print("<--[9]\n");
+    
     if ($#{$new_hole->[1]} >= 0){
         # Add the new hole
         if (($g > 0) and ($g - 1 <= $#{$gantt}) and ($gantt->[$g - 1]->[0] == $new_hole->[0])){
