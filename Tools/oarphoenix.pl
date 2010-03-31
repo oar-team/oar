@@ -33,7 +33,7 @@ my $SOFT_REBOOTCMD="ssh {NODENAME} reboot";
 my $SOFT_TIMEOUT=300;
 
 # Command sent to rebopot a node (seond attempt)
-my $HARD_REBOOTCMD="ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power cycle";
+my $HARD_REBOOTCMD="ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power off;ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power on";
 
 # Timeout (s) for a hard rebooted node to be considered really broken, then
 # an email is sent
@@ -41,10 +41,10 @@ my $HARD_REBOOTCMD="ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power cycle
 my $HARD_TIMEOUT=300;
 
 # Max number of simultaneous reboots (soft OR hard)
-my $MAX_REBOOTS=5;
+my $MAX_REBOOTS=10;
 
 # Timout (s) for unix commands
-my $CMD_TIMEOUT=10;
+my $CMD_TIMEOUT=15;
 
 # Get the broken nodes list (SQL request to customize)
 my $base = iolib::connect();
@@ -136,12 +136,14 @@ sub get_nodes_to_hard_reboot($$) {
   my $nodes;
   my $c=0;
   foreach my $node (@broken_nodes) {
-    if (defined($db->{$node}->{"soft_reboot"})) {
-      if (time() > $db->{$node}->{"soft_reboot"} + $SOFT_TIMEOUT) {
-        $c++;
-        push (@$nodes,$node);
+    if (defined($db->{$node})) {
+      if (defined($db->{$node}->{"soft_reboot"})) {
+        if (time() > $db->{$node}->{"soft_reboot"} + $SOFT_TIMEOUT) {
+          $c++;
+          push (@$nodes,$node);
+        }
+        last if ($c>=$MAX_REBOOTS);
       }
-      last if ($c>=$MAX_REBOOTS);
     }
   }
   return $nodes;
