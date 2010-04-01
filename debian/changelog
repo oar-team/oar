@@ -1,3 +1,12 @@
+oar (2.5.0-0~1.gbp2188d3) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @2188d3b1f36ddb1a8b709bd01b529b70cd5c5519 **
+
+  * Top level directory names are now lowercase + reorganized some
+    locations (modules are groupped in a module directory)
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 01 Apr 2010 14:34:12 +0200
+
 oar (2.4.2-0~1.gbpe157bd) UNRELEASED; urgency=low
 
   * Dummy changelog entry for version upgrade
