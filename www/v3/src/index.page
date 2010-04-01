@@ -5,7 +5,8 @@ directoryName: oar
 template: default_with_news.template
 ---
 
-h4. OAR is a resource manager (or batch scheduler) for large clusters.
+h4. OAR is a versatile resource manager (or batch scheduler) for large clusters.
+
 
 h2. Forge link
 
@@ -17,6 +18,5 @@ You can find at this URL:
     * bug reports
     * mailing lists
     * source repository
-
 
 <notextile>{rstconverter: {rstfile: doc_overview.rst}}<notextile>

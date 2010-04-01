@@ -4191,6 +4191,28 @@ sub get_resources_with_given_sql($$) {
     return(@res);
 }
 
+# get_nodes_with_given_sql
+# gets the nodes list with the given sql properties
+# parameters : base, $sql where clause
+# return value : list of network addresses
+# side effects : /
+sub get_nodes_with_given_sql($$) {
+    my $dbh = shift;
+    my $where = shift;
+
+    my $sth = $dbh->prepare("   SELECT distinct(network_address)
+                                FROM resources
+                                WHERE
+                                    $where
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{network_address});
+    }
+    $sth->finish();
+    return(@res);
+}
 
 ## return all properties for a specific resource
 ## parameters : base, resource
@@ -5013,8 +5035,7 @@ sub search_idle_nodes($$){
     $req = "SELECT resources.network_address, MAX(resources.last_job_date)
             FROM resources
             WHERE
-                (resources.state = \'Alive\' OR
-                resources.state = \'Suspected\') AND
+                resources.state = \'Alive\' AND
                 resources.network_address != \'\' AND
                 resources.type = \'default\' AND
                 resources.available_upto < 2147483647

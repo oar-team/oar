@@ -1,35 +1,32 @@
-oar (2.4.1-1) unstable; urgency=low
+oar (2.4.2-0~1.gbpe157bd) UNRELEASED; urgency=low
 
-  [ Bruno Bzeznik ]
-  * New 2.4.1 release (bugfixes)
+  * Dummy changelog entry for version upgrade
 
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 12 Feb 2010 10:35:17 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 07 Dec 2009 18:00:41 +0100
 
-oar (2.4.1-0~38.gbp4e8a5c) UNRELEASED; urgency=low
+oar (2.4.1-0~3.gbpe157bd) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @4e8a5c3cc8fcd94e59aaff59a35c8cb947c53d09 **
+  ** SNAPSHOT build @e157bdbf3d50cf15c650ec998c3d680c54fe911e **
 
-  * Upgraded pkg versions of 2.4 branch to 2.4.1
+  * Softer dependency for the API
 
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 12 Feb 2010 09:56:16 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 07 Dec 2009 18:00:41 +0100
 
-oar (2.4.1-0~37.gbpe157bd) UNRELEASED; urgency=low
+oar (2.4.1-0~2.gbp88b17a) UNRELEASED; urgency=low
 
-  * New next release is 2.4.1
+  ** SNAPSHOT build @88b17abdab21b2cf16699be94db31b5a3114dba1 **
 
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 12 Feb 2010 09:47:10 +0100
+  * Updated CHANGELOG
 
-oar (2.4.0-6) stable; urgency=low
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 27 Nov 2009 11:15:31 +0100
 
-  * oar_apilib is now into the oar-api package and no more into oar-common
+oar (2.4.1-0~1.gbpb4342e) UNRELEASED; urgency=low
 
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 10 Feb 2010 17:41:17 +0100
+  ** SNAPSHOT build @b4342e8e299be54d27439b8fe9d41b3df8977bf5 **
 
-oar (2.4.0-5) stable; urgency=low
+  * Added oar-keyring debian package. Packages are now signed.
 
-  * Bugfix 9038: Security flaw in oarsub --notify option
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 24 Nov 2009 16:14:59 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 27 Nov 2009 11:05:42 +0100
 
 oar (2.4.0-3) stable; urgency=low
 

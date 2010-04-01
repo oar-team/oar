@@ -106,8 +106,8 @@ api:
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-api.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-api.conf already exists, not overwriting it." ; else install -m 0600 API/apache2.conf $(DESTDIR)$(OARCONFDIR)/apache-api.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-api.conf || /bin/true ; fi
-	install -d -m 0755 $(DESTDIR)$(DOCDIR)
-	install -m 0644 API/oarapi_examples.txt $(DESTDIR)$(DOCDIR)
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/examples
+	install -m 0644 API/oarapi_examples.txt $(DESTDIR)$(DOCDIR)/examples
 	install -m 0644 API/INSTALL $(DESTDIR)$(DOCDIR)/API_INSTALL
 	install -m 0644 API/TODO $(DESTDIR)$(DOCDIR)/API_TODO
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_header.pl already exists, not overwriting it." ; else install -m 0600 API/api_html_header.pl $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_header.pl || /bin/true ; fi
@@ -133,8 +133,8 @@ gridapi:
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 	-chmod 6755 $(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf already exists, not overwriting it." ; else install -m 0600 API/apache2-grid.conf $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-gridapi.conf || /bin/true ; fi
-	install -d -m 0755 $(DESTDIR)$(DOCDIR)
-	install -m 0644 API/oargridapi_examples.txt $(DESTDIR)$(DOCDIR)
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/examples
+	install -m 0644 API/oargridapi_examples.txt $(DESTDIR)$(DOCDIR)/examples
 	install -m 0644 API/oargridapi.txt $(DESTDIR)$(DOCDIR)
 	install -m 0644 API/INSTALL $(DESTDIR)$(DOCDIR)/API_INSTALL
 	install -m 0644 API/TODO $(DESTDIR)$(DOCDIR)/API_TODO
@@ -268,6 +268,8 @@ server: man
 	install -m 0755 Scheduler/oar_sched_gantt_with_timesharing_and_fairsharing $(DESTDIR)$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
 	install -m 0755 Scheduler/oar_meta_sched $(DESTDIR)$(OARDIR)
 	install -m 0644 Scheduler/oar_scheduler.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 Hulot/oar_Hulot.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 WindowForker/window_forker.pm $(DESTDIR)$(OARDIR)
 	install -m 0755 Qfunctions/oarnotify $(DESTDIR)$(OARDIR)
 	install -m 6750 Tools/oardo $(DESTDIR)$(SBINDIR)/oarnotify
 	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oarnotify
@@ -494,6 +496,7 @@ draw-gantt:
 	-chown $(WWWUSER) $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
 
 monika:
+	install -d -m 0755 $(DESTDIR)$(DOCDIR)/examples
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	install -d -m 0755 $(DESTDIR)$(WWWDIR)
@@ -501,7 +504,7 @@ monika:
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/monika.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/monika.conf already exists, not overwriting it." ; else install -m 0600 VisualizationInterfaces/Monika/monika.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/monika.conf || /bin/true ; fi
 	install -m 0755 VisualizationInterfaces/Monika/monika.cgi $(DESTDIR)$(CGIDIR)
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARCONFDIR)'\;#;;" $(DESTDIR)$(CGIDIR)/monika.cgi
-	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(DESTDIR)$(CGIDIR)
+	install -m 0755 VisualizationInterfaces/Monika/userInfos.cgi $(DESTDIR)$(DOCDIR)/examples
 	install -m 0644 VisualizationInterfaces/Monika/monika.css $(DESTDIR)$(WWWDIR)
 	install -d -m 0755 $(DESTDIR)$(PERLLIBDIR)/monika
 	install -m 0644 VisualizationInterfaces/Monika/monika/VERSION $(DESTDIR)$(PERLLIBDIR)/monika

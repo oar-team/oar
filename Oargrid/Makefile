@@ -71,7 +71,7 @@ disco:
 
 install: sanity-check configuration common manual disco
 
-clean:
+uninstall:
 	-rm -f $(DESTDIR)/$(CONFIG_CMDS)/oargriddel \
 	 $(DESTDIR)/$(CONFIG_CMDS)/oargridsub \
 	 $(DESTDIR)/$(CONFIG_CMDS)/oargridstat \
@@ -91,4 +91,10 @@ clean:
 	-rmdir $(DESTDIR)/$(OARGRIDDIR)
 
 deb:
-	svn-buildpackage -rfakeroot -us -uc --svn-ignore
+	@DEB_VERSION=`head -1 debian/changelog|awk -F"(" '{print $$2}' |awk -F")" '{print $$1}'`;VERSION=`grep "Version = " oargrid_lib.pm|awk -F"\"" '{print $$2}'`;[ "$$VERSION" = "$$DEB_VERSION" ] || ( echo "***** ERROR: Version number ($$VERSION) in oargrid_lib mismatch debian/changelog ($$DEB_VERSION)! ******" ; exit 1 )
+	debuild -rfakeroot -us -uc
+
+clean: 
+	-rm -f build-arch-stamp build-indep-stamp configure-stamp debian/files debian/oargrid-client.debhelper.log debian/oargrid-client.substvars debian/oargrid-disco.debhelper.log debian/oargrid-disco.substvars
+	rm -rf debian/oargrid-client
+	rm -rf debian/oargrid-disco

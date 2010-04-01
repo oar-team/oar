@@ -1,4 +1,10 @@
-oargrid (2.2-3) unstable; urgency=low
+oargrid (2.2.4) unstable; urgency=low
+
+  * Oargrid now supports jobs having several types
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 01 Mar 2010 15:53:01 +0100
+
+oargrid (2.2.3) unstable; urgency=low
 
   * Bugfix: oargridsub didn't work anymore with oar >= 2.3 
 

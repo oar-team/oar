@@ -20,9 +20,9 @@ To add page
 	- A little plugin is use to integrate rst file (rst files must are in rst_files directory, you can use symlink)
 	
 
-To add a news
-	- just put the news in new.yaml file (in respect of the format of previous news)
+About news
+	- news' box in homepage is filled by news.yaml which is automatically created by rss2news.rb script from oar's blog rss2 flux. 
+    This script is called by makefile when news.yaml is missing.
 
 Todo:
- - add rss flux generator
  - bibtex support

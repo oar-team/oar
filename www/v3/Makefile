@@ -1,11 +1,11 @@
-SITE = intra-id:/www-id/sites/oar/www/test
-#SITE = intra-id:/www-id/sites/oar/www
+#SITE = intra-id:/www-id/sites/oar/www/test
+SITE = intra-id:/www-id/sites/oar/www
 #SITE = localhost:/tmp/test
 INDEX = output/index.html
 
 all: html
 
-output/%.html: $(MANUALPAGE) 
+output/%.html: $(MANUALPAGE) news.yaml
 	export LC_ALL=C;webgen run
 	sed s/\<title\>Home/\<title\>OAR/ output/index.html > /tmp/index.html.tmp
 	mv /tmp/index.html.tmp  output/index.html 
@@ -24,8 +24,7 @@ output/%.html: $(MANUALPAGE)
 	cd output/users; ln -s ../images; cd -
 	
 upload: all
-	scp -r ../../Docs/schemas $(SITE) #must be enhanced rsync png svg
-	scp -r output/* $(SITE)
+	scp -r output/* $(SITE); scp -r ../../Docs/schemas $(SITE) #must be enhanced rsync png svg
 	touch upload
 
 rsync: all
@@ -42,5 +41,8 @@ publish-online: all
 
 html: $(INDEX)
 
+news.yaml: src/index.page
+	tools/rss2news.rb
+
 clean:
-	\rm -rf output
+	\rm -rf output news.yaml

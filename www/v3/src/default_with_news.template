@@ -13,6 +13,7 @@ template:
     <link rel="stylesheet" href="{relocatable: default.css}" type="text/css" media="screen,projection" />
     <link rel="stylesheet" type="text/css" href="{resource: webgen-css}" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="alternate" type="application/rss+xml" title="OAR RSS Feed" href="http://wiki-oar.imag.fr/news/?feed=rss2" />
     <title>{title:}</title>
   </head>
 
@@ -45,7 +46,7 @@ template:
   			<div id="subcontent">
         	<div class="small box">
 						<strong>Latest News:</strong>
-						<a href="http://oar.imag.fr/feed"><img style = "border: 0px;" src="{relocatable: images/feed-icon-14x14.png}"/></a>
+						<a href="http://wiki-oar.imag.fr/news/?feed=rss2"><img style = "border: 0px;" src="{relocatable: images/feed-icon-14x14.png}"/></a>
 							{news: {options: {maxEntries: 2, maxParagraphs: 1}}}
 					</div>
       	</div>
@@ -56,7 +57,7 @@ template:
       	<div id="copyright">
            <span style="float: left; padding-left: 20px;">
            	 <span id='copy' title='Copyright notice'>
-    					 <p>&copy; 2008 OAR Team
+    					 <p>&copy; 2010 OAR Team
 						 </span>
            </span>
            <span style="float: right; display: block; padding-right: 20px;">

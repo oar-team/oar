@@ -1,6 +1,6 @@
-# 
-%define version 2.4.1
-%define release 8
+# $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
+%define version 2.4.2
+%define release 2
 
 Name: 		oar
 Version:        %{version}
@@ -43,7 +43,7 @@ This package installs the common part or the OAR batch scheduler
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, openssh-clients, openssh-server, vixie-cron
+Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions
 BuildArch: 	noarch
 %description server
 This package installs the server part or the OAR batch scheduler
@@ -51,7 +51,7 @@ This package installs the server part or the OAR batch scheduler
 %package node
 Summary:	OAR batch scheduler node package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, openssh-clients, openssh-server
+Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /lib/lsb/init-functions
 BuildArch: 	noarch
 %description node
 This package installs the execution node part of the OAR batch scheduler
@@ -59,7 +59,7 @@ This package installs the execution node part of the OAR batch scheduler
 %package user
 Summary:	OAR batch scheduler user package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, openssh-clients
+Requires:       oar-common = %version-%release, /usr/bin/ssh
 BuildArch: 	noarch
 %description user
 This package install the submission and query part of the OAR batch scheduler
@@ -387,6 +387,13 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+
+* Fri Mar 12 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.2-2
+- Fixed some dependencies
+
+* Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.2-1
+- 2.4.2 beta
+
 * Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-5
 - Released 2.4.0
 

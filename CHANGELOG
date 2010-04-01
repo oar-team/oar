@@ -1,10 +1,15 @@
 OAR CHANGELOG
 =============
 
+version 2.4.2:
+--------------
+  - New "Hulot" module for intelligent and configurable energy saving
+  - Bug #9906: fix bad optimization in the gantt lib (so bad scheduling
+ 
 version 2.4.1:
 --------------
   - Bug #9038: Security flaw in oarsub --notify option
-  - Bug #9601: Containers are no more killed when a resource is set to Absent
+  - Bug #9601: Cosystem jobs are no more killed when a resource is set to Absent
   - Fixed some packaging bugs
   - API bug fixes in job submission parsing
   - Added standby info into `oarnodes -s` and available_upto info into
@@ -73,6 +78,7 @@ version 2.4.0:
   - fixed performance issue (job_id index missing in event_log table)
   - fixed a performance issue at job submission (optimized a query and added an
     index on challenges table)
+    decisions).
 
 version 2.3.5:
 --------------

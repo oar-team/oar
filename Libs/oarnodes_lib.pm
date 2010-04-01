@@ -68,6 +68,12 @@ sub get_resources_with_given_sql($){
 	return \@sql_resources;
 }
 
+sub get_nodes_with_given_sql($){
+	my $sql_clause = shift;
+	my @sql_resources = iolib::get_nodes_with_given_sql($base,$sql_clause);
+	return \@sql_resources;
+}
+
 sub get_resources_states($){
 	my $resources = shift;
 	my %resources_states;

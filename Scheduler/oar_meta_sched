@@ -6,10 +6,11 @@ use warnings;
 use DBI();
 use oar_iolib;
 use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
-use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use Data::Dumper;
 use oar_scheduler;
 use oar_Tools;
+use oar_Hulot;
 
 # Log category
 set_current_log_category('scheduler');
@@ -95,10 +96,13 @@ iolib::disconnect($base_ro);
 
 # Manage dynamic node feature
 my $timeout_cmd = 10;
+my $flagHulot=0;
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
 }
-if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
+if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") 
+          or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD")))
+          and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
     my @node_halt= oar_scheduler::get_idle_nodes(
             $base,
             get_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME"),
@@ -106,25 +110,52 @@ if (is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") and is_conf("SCHEDULER_NODE_MANA
         );
     if ($#node_halt >= 0){
         oar_debug("[MetaSched] Some nodes can be halted : @node_halt\n");
-        my $cmd = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD");
-        if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@node_halt))){
-            oar_error("[MetaSched] Try to launch the command $cmd to stop some nodes but the command timeouted($timeout_cmd s).\n");
+        # Using the built-in energy saving module to shut down nodes
+        if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
+            if (oar_Hulot::halt_nodes(\@node_halt) ) {
+                oar_error("[MetaSched] Communication problem with Hulot (the energy saving module)!\n");
+            }
+						$flagHulot=1;
         }
-        oar_debug("[MetaSched] @node_halt should be shutting down now.\n");
+        # Not using the built-in energy saving module to shut down nodes
+        else {
+            my $cmd = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD");
+            if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@node_halt))){
+                oar_error("[MetaSched] Try to launch the command $cmd to stop some nodes but the command timeouted($timeout_cmd s).\n");
+            }
+            oar_debug("[MetaSched] @node_halt should be shutting down now.\n");
+        }
     }
 }
 
-if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-    # Wake up right nodes
+if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
+	# Wake up right nodes
     my @nodes = oar_scheduler::get_nodes_to_wake_up($base);
 
     if ($#nodes >= 0){
         oar_debug("[MetaSched] Some nodes must be started : @nodes\n");
-        my $cmd = get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD");
-        if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@nodes))){
-            oar_error("[MetaSched] Try to launch the command $cmd to wake up some nodes but the command timeouted($timeout_cmd s).\n");
+        # Using the built-in energy saving module to wake up nodes
+        if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
+            if (oar_Hulot::wake_up_nodes(\@nodes) ) {
+                oar_error("[MetaSched] Communication problem with Hulot (the energy saving module)!\n");
+            }
+						$flagHulot=1;
+        }
+        # Not using the built-in energy saving module to wake up nodes
+        else {
+            my $cmd = get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD");
+            if (! defined(oar_Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@nodes))){
+                oar_error("[MetaSched] Try to launch the command $cmd to wake up some nodes but the command timeouted($timeout_cmd s).\n");
+            }
         }
     }
+}
+
+# Send CHECK signal to Hulot if needed
+if(!$flagHulot and (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes")){
+  if (oar_Hulot::check() ) {
+    oar_error("[MetaSched] Communication problem with Hulot (the energy saving module)!\n");
+  }
 }
 
 # Search jobs to resume

@@ -291,9 +291,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             $duration = $moldable->[1] + $security_time_overhead;
         }
 
-        # CM part
+        # CM part and Hulot part (wake up nodes in energy saving mode)
         my $alive_resources_vector_store = $alive_resources_vector;
-        if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+        if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
             foreach my $r (iolib::get_resources_that_can_be_waked_up($base, iolib::get_date($base) + $duration)){
                 vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
             }

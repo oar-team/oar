@@ -287,7 +287,7 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "FRAG_JOB_REQUEST")
        ){
             my ($addr,$port) = split(/:/,$job->{info_type});
-            oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"INFO","Your job was asked to be deleted\n$i->{description}");
+            oar_Judas::notify_user($base,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"INFO","Your job was asked to be deleted - $i->{description}");
     }
      
     iolib::check_event($base, $i->{type}, $i->{job_id});

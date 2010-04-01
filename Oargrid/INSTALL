@@ -32,6 +32,7 @@ The following steps have to be done, prior to installing OAR_GRID:
       visudo to add the following lines (adapt command paths to fit your 
       settings, if needed) :
             Defaults>oargrid    env_reset,env_keep = "PWD"
+            Defaults:oargrid    !requiretty, visiblepw
             Cmnd_Alias OARGRIDCMD = /usr/local/oargrid/cmds/oargridsub, /usr/local/oargrid/cmds/oargriddel, /usr/local/oargrid/cmds/oargridstat
             ALL ALL=(oargrid) NOPASSWD: OARGRIDCMD
             oargrid ALL=(ALL) NOPASSWD: /bin/chown
