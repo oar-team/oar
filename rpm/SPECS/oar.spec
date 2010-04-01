@@ -147,7 +147,8 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
 |bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
-|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init"
+|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init
+|sbin/oar_phoenix\$"
 for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api oar-gridapi
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
@@ -199,7 +200,9 @@ rm -rf tmp
 %attr (6750,oar,oar) /usr/sbin/oarmonitor
 %attr (0750,oar,oar) /usr/sbin/oar-server
 %attr (6750,oar,oar) /usr/sbin/oar_resources_init
+%attr (6750,oar,oar) /usr/sbin/oar_phoenix
 %config /etc/sysconfig/oar-server
+%config /etc/oar/oar_phoenix.pl
 
 %files node -f oar-node.files
 %attr(0755,root,root) /etc/init.d/oar-node
@@ -320,6 +323,8 @@ EOF
     chown oar:oar /var/lib/oar/.ssh -R || true
 fi
 chkconfig --add oar-server
+mkdir -p /var/lib/oar/phoenix
+chown oar:oar /var/lib/oar/phoenix
 
 %preun server
 /etc/init.d/oar-server stop 2>/dev/null || true
@@ -387,6 +392,10 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+
+* Thu Apr 01 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.5.0-1
+- started 2.5.0 packaging
+- added oar_phoenix
 
 * Fri Mar 12 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.2-2
 - Fixed some dependencies

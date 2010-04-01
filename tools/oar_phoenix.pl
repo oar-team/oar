@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 # OAR Script to check and automatically reboot Suspected nodes.
 # This script is intended to be started periodically from cron
-# this way:
-#  PERL5LIB=/usr/lib/oar OARCONFFILE=/etc/oar/oar.conf perl /usr/local/bin/phoenix.pl
+# for example:
+#    */10 * * * *	root /usr/sbin/oar_phoenix
 # It needs the nodes to be configured to set up themselves
 # in the Alive state at boot time.
 # !!! Work in progress: this script needs to be improved !!!
@@ -14,37 +14,38 @@ use strict;
 use warnings;
 use YAML;
 use oar_iolib;
-use oarnodes_lib;
 
 
 ################### CUSTOMIZABLE PART #######################
 
 # File where phoenix stores the states of the broken nodes
-my $DBFILE="/var/lib/phoenix/oar_phoenix.db";
+my $PHOENIX_DBFILE="/var/lib/oar/phoenix/oar_phoenix.db";
 
 # Directory where logfiles are created in case of problems
 # !! NOT YET IMPLEMENTED !!
-my $LOGDIR="/var/lib/phoenix/";
+my $PHOENIX_LOGDIR="/var/lib/oar/phoenix/";
 
 # Command sent to reboot a node (first attempt)
-my $SOFT_REBOOTCMD="ssh {NODENAME} reboot";
+#my $PHOENIX_SOFT_REBOOTCMD="ssh -p 6667 {NODENAME} oardodo reboot";
+my $PHOENIX_SOFT_REBOOTCMD="echo 'Soft reboot command for {NODENAME}: PHOENIX_SOFT_REBOOTCMD not configured'";
 
 # Timeout for a soft rebooted node to be considered hard rebootable
-my $SOFT_TIMEOUT=300;
+my $PHOENIX_SOFT_TIMEOUT=300;
 
 # Command sent to rebopot a node (seond attempt)
-my $HARD_REBOOTCMD="ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power off;ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power on";
+#my $PHOENIX_HARD_REBOOTCMD="oardodo ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power off;sleep 2;oardodo ipmitool -U USERID -P PASSW0RD -H {NODENAME}-mgt power on";
+my $PHOENIX_HARD_REBOOTCMD="echo 'Hard reboot command for {NODENAME}: PHOENIX_HARD_REBOOTCMD not configured'";
 
 # Timeout (s) for a hard rebooted node to be considered really broken, then
 # an email is sent
 # !! NOT YET IMPLEMENTED!!
-my $HARD_TIMEOUT=300;
+my $PHOENIX_HARD_TIMEOUT=300;
 
 # Max number of simultaneous reboots (soft OR hard)
-my $MAX_REBOOTS=10;
+my $PHOENIX_MAX_REBOOTS=10;
 
 # Timout (s) for unix commands
-my $CMD_TIMEOUT=15;
+my $PHOENIX_CMD_TIMEOUT=15;
 
 # Get the broken nodes list (SQL request to customize)
 my $base = iolib::connect();
@@ -60,9 +61,9 @@ iolib::disconnect($base);
 sub send_cmd($) {
   my $cmd=shift;
   eval {
-    open(my $LOGFILE,">>$LOGDIR/phoenix.log") or die "can't open logfile for writing!: $!";
+    open(my $LOGFILE,">>$PHOENIX_LOGDIR/oar_phoenix.log") or die "can't open logfile into $PHOENIX_LOGDIR/ for writing!: $!";
     local $SIG{ALRM} = sub {die "alarm\n"};
-    alarm $CMD_TIMEOUT;
+    alarm $PHOENIX_CMD_TIMEOUT;
     my $res = `$cmd 2>&1`;
     print $LOGFILE $res ."\n";
     close($LOGFILE);
@@ -123,7 +124,7 @@ sub get_nodes_to_soft_reboot($$) {
       $c++;
       push (@$nodes,$node);
     }
-    last if ($c>=$MAX_REBOOTS);
+    last if ($c>=$PHOENIX_MAX_REBOOTS);
   }
   return $nodes;
 }
@@ -138,11 +139,11 @@ sub get_nodes_to_hard_reboot($$) {
   foreach my $node (@broken_nodes) {
     if (defined($db->{$node})) {
       if (defined($db->{$node}->{"soft_reboot"})) {
-        if (time() > $db->{$node}->{"soft_reboot"} + $SOFT_TIMEOUT) {
+        if (time() > $db->{$node}->{"soft_reboot"} + $PHOENIX_SOFT_TIMEOUT) {
           $c++;
           push (@$nodes,$node);
         }
-        last if ($c>=$MAX_REBOOTS);
+        last if ($c>=$PHOENIX_MAX_REBOOTS);
       }
     }
   }
@@ -156,7 +157,7 @@ sub soft_reboot_nodes($$) {
   my $cmd;
   my $res;
   foreach my $node (@$nodes) {
-    $cmd=$SOFT_REBOOTCMD;
+    $cmd=$PHOENIX_SOFT_REBOOTCMD;
     $cmd =~ s/\{NODENAME\}/$node/g;
     print "Soft rebooting the broken node $node\n"; 
     $db->{$node}={ 'soft_reboot' => time() };
@@ -171,7 +172,7 @@ sub hard_reboot_nodes($$) {
   my $cmd;
   my $res;
   foreach my $node (@$nodes) {
-    $cmd=$HARD_REBOOTCMD;
+    $cmd=$PHOENIX_HARD_REBOOTCMD;
     $cmd =~ s/\{NODENAME\}/$node/g;
     print "Hard rebooting the broken node $node\n"; 
     delete($db->{$node});
@@ -180,12 +181,12 @@ sub hard_reboot_nodes($$) {
   }
 }
 
-init_db($DBFILE);
-my $db=load_db($DBFILE);
+init_db($PHOENIX_DBFILE);
+my $db=load_db($PHOENIX_DBFILE);
 clean_db($db,@broken_nodes);
 my $nodes=get_nodes_to_soft_reboot($db,@broken_nodes);
 soft_reboot_nodes($db,$nodes);
 $nodes=get_nodes_to_hard_reboot($db,@broken_nodes);
 hard_reboot_nodes($db,$nodes);
-save_db($DBFILE,$db);
+save_db($PHOENIX_DBFILE,$db);
 

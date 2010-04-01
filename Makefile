@@ -350,6 +350,15 @@ server: man
 			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar_checkdb.pl'\;#;;\
 				" $(DESTDIR)$(SBINDIR)/oar_checkdb
+	install -m 0750 tools/oar_phoenix.pl $(DESTDIR)$(OARCONFDIR)/
+	install -m 0750 tools/oardo $(DESTDIR)$(SBINDIR)/oar_phoenix
+	-chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(SBINDIR)/oar_phoenix
+	chmod 6750 $(DESTDIR)$(SBINDIR)/oar_phoenix
+	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
+			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
+			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
+				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARCONFDIR)/oar_phoenix.pl'\;#;;\
+				" $(DESTDIR)$(SBINDIR)/oar_phoenix
 
 user: man
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
@@ -581,7 +590,7 @@ uninstall:
 	rm -f $(DESTDIR)/$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing
 	rm -f $(DESTDIR)/$(OARDIR)/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
 	for file in oarsub oarnodes oarstat oarcp oarprint oarsh oardel oarhold oarresume oarnodechecklist oarnodecheckquery oarmonitor_graph_gen oar-agent oarcache oarres oarnotify; do rm -f $(DESTDIR)/$(BINDIR)/$$file; done
-	for file in Almighty oar_checkdb oar_mysql_db_init oar_psql_db_init oar_resources_init oaraccounting oarmonitor oarnodesetting oarnotify oarproperty oarremoveresource oarcache oarres; do rm -f $(DESTDIR)/$(SBINDIR)/$$file; done
+	for file in Almighty oar_checkdb oar_mysql_db_init oar_psql_db_init oar_resources_init oaraccounting oarmonitor oarnodesetting oarnotify oarproperty oarremoveresource oarcache oarres oar_phoenix; do rm -f $(DESTDIR)/$(SBINDIR)/$$file; done
 	rm -f $(DESTDIR)/$(CGIDIR)/oarapi/oarapi.cgi
 	rm -f $(DESTDIR)/$(CGIDIR)/oarapi/oarapi-debug.cgi
 	rm -f $(DESTDIR)/$(CGIDIR)/oar-cgi
