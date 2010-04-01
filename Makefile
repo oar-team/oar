@@ -550,6 +550,16 @@ gridlibs: FORCE
 	install -m 0644 oargrid/oargrid_conflib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 oargrid/oargrid_mailer.pm $(DESTDIR)$(OARDIR)
 
+ocaml-schedulers:
+	$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar \
+	PACKS=mysql
+	cp modules/scheduler/ocaml-schedulers/simple_cbf_oar/simple_cbf_oar $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
+	$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar clean
+	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar \
+        #PACKS=postgresql
+	#cp modules/scheduler/ocaml-schedulers/simple_cbf_oar/simple_cbf_oar $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_psql
+	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar clean
+
 keyring-install: FORCE
 	install -d -m 0755 $(DESTDIR)/usr/share/keyrings
 	install -m 0644 misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/keyrings
@@ -558,6 +568,7 @@ common-install: common
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
 
 server-install: sanity-check configuration common-install libs server dbinit
+#server-install: sanity-check configuration common-install libs server dbinit ocaml-schedulers
 
 user-install: sanity-check configuration common-install libs user
 
