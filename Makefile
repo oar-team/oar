@@ -45,15 +45,15 @@ sanity-check:
 man:
 	@cd man/man1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
 
-configuration:
+configuration: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/oar.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 tools/oar.conf $(DESTDIR)$(OARCONFDIR) ; chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/oar.conf || /bin/true ; fi
 
-desktop-computing-agent:
+desktop-computing-agent: FORCE
 	install -d -m 0755 $(DESTDIR)$(BINDIR)
 	install -m 0755 desktop_computing/oar-agent.pl $(DESTDIR)$(BINDIR)/oar-agent
 
-desktop-computing-cgi:
+desktop-computing-cgi: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
 	install -m 0755 desktop_computing/oarcache.pl $(DESTDIR)$(OARDIR)/oarcache.pl
@@ -113,7 +113,7 @@ api: FORCE
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_header.pl already exists, not overwriting it." ; else install -m 0600 api/api_html_header.pl $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_header.pl || /bin/true ; fi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl already exists, not overwriting it." ; else install -m 0644 api/api_html_postform.pl $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl || /bin/true ; fi
 
-gridapi:
+gridapi: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	mkdir -p $(DESTDIR)$(OARCONFDIR)
 	install -m 0755 api/oargridapi.pl $(DESTDIR)$(OARDIR)/oargridapi.pl
@@ -141,7 +141,7 @@ gridapi:
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/gridapi_html_header.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/gridapi_html_header.pl already exists, not overwriting it." ; else install -m 0600 api/gridapi_html_header.pl $(DESTDIR)$(OARCONFDIR)/gridapi_html_header.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/gridapi_html_header.pl || /bin/true ; fi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/gridapi_html_postform.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/gridapi_html_postform.pl already exists, not overwriting it." ; else install -m 0644 api/gridapi_html_postform.pl $(DESTDIR)$(OARCONFDIR)/gridapi_html_postform.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/gridapi_html_postform.pl || /bin/true ; fi
 
-dbinit:
+dbinit: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
 	install -m 0755 database/oar_mysql_db_init.pl $(DESTDIR)$(OARDIR)/oar_mysql_db_init
@@ -488,7 +488,7 @@ doc: build-html-doc
 	install -m 0644 scripts/lock_user.sh $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 	install -m 0644 scripts/oar_server_proepilogue.pl $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 
-draw-gantt:
+draw-gantt: FORCE
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	install -d -m 0755 $(DESTDIR)$(WWWDIR)
 	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)
@@ -504,7 +504,7 @@ draw-gantt:
 	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
 	-chown $(WWWUSER) $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
 
-monika:
+monika: FORCE
 	install -d -m 0755 $(DESTDIR)$(DOCDIR)/examples
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
@@ -519,7 +519,7 @@ monika:
 	install -m 0644 visualization_interfaces/Monika/monika/VERSION $(DESTDIR)$(PERLLIBDIR)/monika
 	install -m 0755 visualization_interfaces/Monika/monika/*.pm $(DESTDIR)$(PERLLIBDIR)/monika
 
-www-conf:
+www-conf: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	echo "ScriptAlias /monika $(CGIDIR)/monika.cgi" > $(DESTDIR)$(OARCONFDIR)/apache.conf
 	echo "ScriptAlias /drawgantt $(CGIDIR)/drawgantt.cgi" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
@@ -527,7 +527,7 @@ www-conf:
 	echo "Alias /drawgantt-files $(VARLIBDIR)/drawgantt-files" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -m 0600 visualization_interfaces/apache.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache.conf || /bin/true ; fi
 
-tools:
+tools: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
 	install -m 0755 oaradmin/oaradmin.rb $(DESTDIR)$(OARDIR)
@@ -544,13 +544,13 @@ tools:
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/oaradmin.1 $(DESTDIR)$(MANDIR)/man1/oaradmin.1
 
-gridlibs:
+gridlibs: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -m 0644 oargrid/oargrid_lib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 oargrid/oargrid_conflib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 oargrid/oargrid_mailer.pm $(DESTDIR)$(OARDIR)
 
-keyring-install:
+keyring-install: FORCE
 	install -d -m 0755 $(DESTDIR)/usr/share/keyrings
 	install -m 0644 misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/keyrings
 
