@@ -85,7 +85,7 @@ desktop-computing-cgi:
 				 s#Cmd_wrapper = .*#Cmd_wrapper = '$(OARDIR)/oar-cgi.pl'\;#;;\
 				" $(DESTDIR)$(CGIDIR)/oar-cgi
 
-api:
+api: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
 	install -m 0644 api/oar_apilib.pm $(DESTDIR)$(OARDIR)
 	mkdir -p $(DESTDIR)$(OARCONFDIR)
@@ -600,3 +600,5 @@ uninstall:
 	rm -f $(DESTDIR)/$(VARLIBDIR)/drawgantt-files/cache/*
 	for file in Almighty.1 oar_mysql_db_init.1 oaraccounting.1 oaradmin.1 oarcp.1 oardel.1 oargriddel.1 oargridstat.1 oargridsub.1 oarhold.1 oarmonitor.1 oarmonitor_graph_gen.1 oarnodes.1 oarnodesetting.1 oarnotify.1 oarprint.1 oarproperty.1 oarremoveresource.1 oarresume.1 oarsh.1 oarstat.1 oarsub.1;do rm -f $(DESTDIR)/$(MANDIR)/man1/$$file; done
 	 for file in html/OAR-DOCUMENTATION-ADMIN.html html/OAR-DOCUMENTATION-API.html html/OAR-DOCUMENTATION-USER.html html/db_scheme.png html/OAR-DOCUMENTATION.html html/oar_logo.png html/interactive_oarsub_scheme.png html/Almighty.fig html/Almighty.ps scripts/cpuset_manager/cpuset_manager_SGI_Altix_350_SLES9.pl scripts/cpuset_manager/cpuset_manager_PAM.pl scripts/prologue_epilogue/oar_prologue scripts/prologue_epilogue/oar_epilogue scripts/prologue_epilogue/oar_diffuse_script scripts/prologue_epilogue/oar_epilogue_local scripts/prologue_epilogue/oar_server_proepilogue.pl scripts/prologue_epilogue/lock_user.sh scripts/prologue_epilogue/oar_prologue_local scripts/job_resource_manager/job_resource_manager.pl ;do rm -f $(DESTDIR)/$(DOCDIR)/$$file; done
+
+FORCE:
