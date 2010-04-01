@@ -31,7 +31,7 @@ check_branch() {
 
 get_oar_version() {
   # Sets up the $OARVersion variable
-  VER_CMD=`egrep -o -m 1 "OARVersion = \"(.*)\"" Tools/oarversion.pm |sed "s/ //g"`
+  VER_CMD=`egrep -o -m 1 "OARVersion = \"(.*)\"" tools/oarversion.pm |sed "s/ //g"`
   eval $VER_CMD
 }
 
@@ -115,8 +115,8 @@ then
   fi
   #OARVERSION=`egrep -o -m 1 "\((.*\))" debian/changelog|sed "s/[()]//g"`
   #if [ "$OARVERSION" != "" ]; then
-  #  perl -pi -e "s/OARVersion =.*$/OARVersion =\"$OARVERSION\";/" Tools/oarversion.pm
-  #  git add Tools/oarversion.pm
+  #  perl -pi -e "s/OARVersion =.*$/OARVersion =\"$OARVERSION\";/" tools/oarversion.pm
+  #  git add tools/oarversion.pm
   #else
   #  echo "Problem getting the generated version!"
   #  exit 1
@@ -149,10 +149,10 @@ then
       git archive --format=tar HEAD rpm |tar xvf - -C ../build-area
       mkdir -p ../build-area/rpm/BUILD ../build-area/rpm/RPMS ../build-area/rpm/SRPMS
       git archive --format=tar --prefix=oar-$OARVersion/ HEAD > "../build-area/rpm/SOURCES/oar-$OARVersion.tar"
-      mkdir -p /tmp/oar-$OARVersion/Tools
-      tar xf ../build-area/rpm/SOURCES/oar-$OARVersion.tar -C /tmp oar-$OARVersion/Tools/oarversion.pm
-      perl -pi -e "s/OARVersion =.*$/OARVersion =\"$FullVersion\";/" /tmp/oar-$OARVersion/Tools/oarversion.pm
-      tar uf ../build-area/rpm/SOURCES/oar-$OARVersion.tar -C /tmp oar-$OARVersion/Tools/oarversion.pm
+      mkdir -p /tmp/oar-$OARVersion/tools
+      tar xf ../build-area/rpm/SOURCES/oar-$OARVersion.tar -C /tmp oar-$OARVersion/tools/oarversion.pm
+      perl -pi -e "s/OARVersion =.*$/OARVersion =\"$FullVersion\";/" /tmp/oar-$OARVersion/tools/oarversion.pm
+      tar uf ../build-area/rpm/SOURCES/oar-$OARVersion.tar -C /tmp oar-$OARVersion/tools/oarversion.pm
       gzip ../build-area/rpm/SOURCES/oar-$OARVersion.tar
       rm -rf /tmp/oar-$OARVersion
       cd ../build-area/rpm
@@ -167,7 +167,7 @@ then
       rpmbuild -ba SPECS/oar.spec
       echo "RPM packages done into build-area/rpm/RPMS"
   else
-    echo "Could not get the version from Tools/oarversion.pm!"
+    echo "Could not get the version from tools/oarversion.pm!"
     exit 1
   fi
 
@@ -188,7 +188,7 @@ then
     git archive --format=tar --prefix=oar-$OARVersion/ HEAD | gzip >../oar-$OARVersion.tar.gz
     echo "oar-$OARVersion.tar.gz archive created"
   else
-    echo "Could not get the version from Tools/oarversion.pm!"
+    echo "Could not get the version from tools/oarversion.pm!"
     exit 1
   fi
 else

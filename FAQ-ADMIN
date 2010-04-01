@@ -270,7 +270,7 @@ the OAR install directory with the root user (example with a bash shell)::
 
 How can I write my own scheduler?
 ---------------------------------
-.. include:: Scheduler/README
+.. include:: scheduler/README
 
 What is the syntax of this documentation?
 -----------------------------------------
