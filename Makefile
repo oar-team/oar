@@ -550,15 +550,19 @@ gridlibs: FORCE
 	install -m 0644 oargrid/oargrid_conflib.pm $(DESTDIR)$(OARDIR)
 	install -m 0644 oargrid/oargrid_mailer.pm $(DESTDIR)$(OARDIR)
 
-ocaml-schedulers:
-	$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar \
-	PACKS=mysql
-	cp modules/scheduler/ocaml-schedulers/simple_cbf_oar/simple_cbf_oar $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
-	$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar clean
-	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar \
-        #PACKS=postgresql
-	#cp modules/scheduler/ocaml-schedulers/simple_cbf_oar/simple_cbf_oar $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_psql
-	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_oar clean
+hierarchy-extractor: FORCE
+	install -m 0755 modules/scheduler/ocaml-schedulers/misc/hierarchy_extractor.rb $(DESTDIR)$(OARDIR)/
+
+ocaml-scheduler-mysql: FORCE
+	install -d -m 0755 $(DESTDIR)$(OARDIR)/schedulers
+	$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar my_scheduler
+	install -m 0755 modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_my $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
+
+ocaml-scheduler-psql: FORCE
+	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar my_scheduler
+	#install -m 0755 modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_my $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
+
+ocaml-schedulers: ocaml-scheduler-mysql hierarchy-extractor
 
 keyring-install: FORCE
 	install -d -m 0755 $(DESTDIR)/usr/share/keyrings
@@ -595,6 +599,14 @@ clean:
 	find docs/documentation -regextype posix-extended -regex ".*OAR.*(aux|log|out|pdf|tex|html)" -exec rm -f {} \;
 	rm -f docs/documentation/doc_usecases.html
 	rm -f man/man1/*.1
+	$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar clean
+	rm -rf modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/common
+	rm -f modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/iolib.ml
+	rm -f modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/mysql_driver.cmi
+	rm -f modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/mysql_driver.cmx
+	rm -f modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/mysql_driver.o
+	rm -f modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_my
+
 uninstall:
 	for file in Almighty Gantt_hole_storage.pm Leon NodeChangeState bipbip default_data.sql detect_resources finaud mysql_default_admission_rules.sql mysql_structure.sql oar_Judas.pm oar_Tools.pm oar_apilib.pm oar_conflib.pm oar_iolib.pm oar_iolib.pm.orig oar_meta_sched oar_modules.rb oar_mysql_db_init oar_psql_db_init oar_resource_tree.pm oar_scheduler.pm oar_scheduler.pm.orig oaraccounting oaradmin.rb oaradmin_modules.rb oarapi.pl oardel oarexec oargrid_conflib.pm oargrid_lib.pm oargrid_mailer.pm oargridapi.pl oarhold oarmonitor oarnodecheckrun oarnodes oarnodes_lib.pm oarnodesetting oarnotify oarproperty oarremoveresource oarresume oarsh oarsh_oardo oarsh_shell oarstat oarstat_lib.pm oarsub oarsub_lib.pm oarversion.pm pg_default_admission_rules.sql pg_structure.sql ping_checker.pm runner sarko sentinelle.pl oar_checkdb.pl oarcache.pl oarres.pl oar-cgi Gantt.pm Gantt_2.pm configurator_wrapper.sh oar_mysql.sql oar_postgres.sql oar_sched_gantt_with_timesharing oar_sched_gantt_with_timesharing_and_fairsharing oarnodesetting_ssh sorted_chained_list.pm cmds/oarsh cmds/Almighty cmds/oarsub cmds/oarstat cmds/oarnotify cmds/oarnodes cmds/oardel cmds/oar_mysql_db_init cmds/oarproperty cmds/oarnodesetting cmds/oarremoveresource cmds/oarresume cmds/oarhold cmds/oaraccounting oarcache oarres cmds/oar-cgi cmds/oarcache cmds/oarres; do rm -f $(DESTDIR)/$(OARDIR)/$$file; done
 	rm -f $(DESTDIR)/$(OARDIR)/oardodo/oardodo

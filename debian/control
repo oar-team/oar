@@ -24,6 +24,13 @@ Suggests: taktuk, mysql-client | postgresql-client, mysql-server | postgresql, p
 Description: OAR batch scheduler server package
  This package installs the server part of the OAR batch scheduler
 
+Package: oar-scheduler-ocaml-mysql
+Architecture: all
+Depends: oar-server (= ${binary:Version}), ${misc:Depends}, libmysql-ocaml
+Build-Depends: ocaml, libmysql-ocaml-dev, ocaml-findlib
+Description: OAR batch scheduler package for ocaml scheduler
+ This package installs the OCAML scheduler
+
 Package: oar-node
 Architecture: all
 Depends: oar-common (= ${binary:Version}), openssh-client | ssh, openssh-server | ssh

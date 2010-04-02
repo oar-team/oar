@@ -190,6 +190,16 @@ install-indep:
 		CGIDIR=/usr/lib/cgi-bin
 	$(MAKE) keyring-install \
 		DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-keyring
+	$(MAKE) sanity-check ocaml-scheduler-mysql hierarchy-extractor \
+                DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-scheduler-ocaml-mysql \
+		OARUSER=oar \
+		OAROWNER=root \
+                OARCONFDIR=/etc/oar \
+                PREFIX=/usr \
+                MANDIR=/usr/share/man \
+                OARDIR=/usr/lib/oar \
+                BINDIR=/usr/bin \
+                SBINDIR=/usr/sbin
 
 	dh_install -i
 
