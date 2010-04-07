@@ -1,0 +1,9 @@
+oar_system_config:
+ - adduser:
+   - exec_chroot: useradd -m -p '$1$f/W7v.Ze$LMPAjbXywS/f1dHzrmXpg/' -s /bin/bash kameleon
+ - sudo:
+   - append_file:
+     - /etc/sudoers
+     - |
+       %sudo ALL=NOPASSWD: ALL
+   - exec_chroot: usermod -G sudo kameleon

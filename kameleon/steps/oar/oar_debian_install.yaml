@@ -1,15 +1,11 @@
-oar_install:
- - install_deps:
-   - exec_chroot: apt-get -y --force-yes install libdbi-perl libdbd-mysql-perl perl-suid
- - install_mysql:
-   - exec_chroot: apt-get -y --force-yes install mysql-server
+oar_debian_install:
+ - config_mysql:
    - exec_chroot: echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('kameleon')" | chroot $$chroot mysql --user=root
-##   - exec_chroot: mysqladmin -u root password "kameleon"
  - install_oar:
    - append_file:
      - /etc/apt/sources.list
      - |
-       deb $$oar_repository ./
+       $$oar_repository
    - exec_chroot: apt-get update
    - exec_chroot: apt-get -f install -y --force-yes mime-support || true
    - exec_appliance: rm $$chroot/var/lib/dpkg/info/mime-support.*
@@ -19,8 +15,7 @@ oar_install:
      - /var/lib/oar/.ssh/authorized_keys
      - |
        environment="OAR_KEY=1"
- - install_taktuk:
-   - exec_chroot: apt-get -y --force-yes install taktuk
+ - config_taktuk:
    - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.or
    - exec_chroot: sed -e 's/^#\(TAKTUK_CMD\=\"\/usr\/bin\/taktuk \-t 30 \-s\".*\)/\1/' /etc/oar/oar.conf.or > $$chroot/etc/oar/oar.conf.tmp
    - exec_chroot: sed -e 's/^#\(PINGCHECKER_TAKTUK_ARG_COMMAND\=\"broadcast exec timeout 5 kill 9 \[ true \]\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
@@ -56,7 +51,6 @@ oar_install:
    - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/default_data.sql || true
  - install_oar_api:
    - exec_chroot: apt-get install -y --force-yes oar-api
-   - exec_chroot: apt-get install -y --force-yes pidentd
    - exec_chroot: a2enmod ident
    - exec_chroot: a2enmod headers
  - clean:

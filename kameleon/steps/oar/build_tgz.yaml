@@ -1,0 +1,4 @@
+build_tgz:
+ - build_tgz:
+   - exec_current:  OAR_VERSION=`chroot $$workdir/chroot dpkg -s oar-common|grep "Version:"|awk '{print $2}'`
+   - exec_current:  cd $$workdir; tar -czf $$distrib.$$debian_version_name.$OAR_VERSION.tar.gz -C chroot .

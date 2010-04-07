@@ -167,7 +167,7 @@ end
 
 # define global vars
 $bin_dir=File.dirname($0)
-version="0.01b"
+version="1.0-beta"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 
