@@ -1,0 +1,3 @@
+mount_proc:
+ - mount_proc:
+   - exec_chroot: mount -t proc proc /proc

@@ -1,0 +1,3 @@
+build_tgz:
+ - build_tgz:
+   - exec_current:  cd $$workdir; tar -czf $$distrib.$$debian_version_name.tar.gz -C chroot .

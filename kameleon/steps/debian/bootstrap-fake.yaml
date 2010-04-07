@@ -1,0 +1,4 @@
+bootstrap-fake:
+ - copy_tree:
+   - exec_appliance:  rsync -a $$previous_chroot/* $$chroot/
+   - exec_appliance:  echo "rm -rf $$chroot" > $$workdir/clean.sh

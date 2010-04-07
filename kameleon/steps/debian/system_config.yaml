@@ -1,0 +1,25 @@
+system_config:
+ - fstab:
+   - write_file:
+     - /etc/fstab
+     - |
+       proc /proc proc defaults 0 0
+ - etc_hosts:
+   - write_file:
+     - /etc/hosts
+     - |
+       127.0.0.1  localhost $$distrib
+ - etc_hostname:
+   - write_file:
+     - /etc/hostname
+     - |
+       $$distrib
+ - network_interfaces:
+   - write_file:
+     - /etc/network/interfaces
+     - |
+       auto lo
+       iface lo inet loopback
+       
+       auto eth0
+       iface eth0 inet dhcp

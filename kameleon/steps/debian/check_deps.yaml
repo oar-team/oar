@@ -1,0 +1,12 @@
+check_deps:
+ - required:
+   - check_cmd:       debootstrap
+#   - check_cmd:       rsync
+#   - check_cmd:       parted
+#   - check_cmd:       kpartx
+#   - check_cmd:       losetup
+#   - check_cmd:       dmsetup
+   - check_cmd:       grub-install
+   - check_cmd:       awk
+#   - check_cmd:       kvm-img
+#   - check_cmd:       VBoxManage
