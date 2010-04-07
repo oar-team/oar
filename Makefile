@@ -559,8 +559,8 @@ ocaml-scheduler-mysql: FORCE
 	install -m 0755 modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_my $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
 
 ocaml-scheduler-psql: FORCE
-	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar my_scheduler
-	#install -m 0755 modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_my $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
+	#$(MAKE) -C modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar pg_scheduler
+	#install -m 0755 modules/scheduler/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_pg $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_psql
 
 ocaml-schedulers: ocaml-scheduler-mysql hierarchy-extractor
 
