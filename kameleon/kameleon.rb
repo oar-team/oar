@@ -269,19 +269,36 @@ $recipe['steps'].each do
     step = macrostep.keys[0]
   end
 
+  # check for a file imported from another distrib
+  if step =~ /(.+)\/(.+)/
+    step=$2
+    dist=$1
+  else
+    dist=""
+  end
+
   # create a structure that looks something like this:
   # script["oar_init"]["start_appliance_mysql"][0] = \
   # = "chroot /path/to/chroot/dir /etc/init.d/mysql start"
   script[step] = OrderedHash.new()
 
   # check for macrostep file (distro-specific or default)
-  if File.file?(path1 = $bin_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
-    path=path1
-  elsif File.file?(path2 = $bin_dir + "/steps/default/" + step + ".yaml")
-    path=path2
+  if dist != ""
+    if File.file?(path0 = $bin_dir + "/steps/" + dist + "/" + step + ".yaml")
+      path=path0
+    else
+      printf("%s: macrostep file is missing: \n * %s\n", step, path0)
+      exit(6)
+    end
   else
-    printf("%s: macrostep file is missing: \n * %s\n * %s\n", step, path1, path2)
-    exit(6)
+    if File.file?(path1 = $bin_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
+      path=path1
+    elsif File.file?(path2 = $bin_dir + "/steps/default/" + step + ".yaml")
+      path=path2
+    else
+      printf("%s: macrostep file is missing: \n * %s\n * %s\n", step, path1, path2)
+      exit(6)
+    end
   end
 
   # load macrostep file

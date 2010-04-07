@@ -110,7 +110,7 @@ Here is a simple example of e recipe file: ::
   steps:
     - check_deps
     - bootstrap
-    - system_config
+    - debian/system_config
     - software_install
     - kernel_install
     - strip
@@ -129,6 +129,7 @@ Here, *create_raw_image*, *install_grub*, ... are microsteps and *build_applianc
 are macrosteps. In this recipe, in the *build_appliance* macrostep definition, only the specified
 microsteps will be called, on all the other macrosteps, all the microsteps composing them will be called.
 
+Note that you can include macrosteps from other distribs, for example here we included *debian/system_config* that may be a generic macrostep for every debian distribs.
 
 
 Installing kameleon
