@@ -1,0 +1,21 @@
+xen_domu:
+ - kernel_modules:
+   - exec_appliance:  cp -a $$xen_domu_modules ./lib/modules
+ - fstab:
+   - append_file:
+     - /etc/fstab
+     - |
+       /dev/xvda1       /               ext3    defaults,errors=remount-ro 0       1
+       /dev/xvda2       none            swap    sw              0       0
+ - inittab:
+   - exec_chroot: perl -pi -e "s/tty1/hvc0/" /etc/inittab
+ - securetty:
+   - append_file:
+     - /etc/securetty
+     - |
+       hvc0
+ - net_device:
+   - append_file:
+     - /etc/modules
+     - |
+       xen-netfront

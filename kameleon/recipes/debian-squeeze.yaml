@@ -1,12 +1,13 @@
 global:
  distrib: debian
  debian_version_name: squeeze
- arch: amd64
- kernel_arch: amd64
+ arch: i386
+ kernel_arch: "686"
  workdir_base: /var/tmp/kameleon
  distrib_repository: http://ftp.fr.debian.org/debian/
  extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring"
- #previous_chroot: /var/tmp/kameleon/2010-04-07-16-02-52/chroot
+ #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
+ #previous_chroot: /var/tmp/squeeze/chroot
 steps:
  - check_deps
 # - bootstrap-fake
@@ -18,6 +19,7 @@ steps:
  - kernel_install
  - strip
  - umount_proc
+# - xen_domu
  - build_tgz
 # - build_livecd
 # - build_appliance:
