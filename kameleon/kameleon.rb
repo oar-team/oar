@@ -342,6 +342,10 @@ $recipe['steps'].each do
       end
     end
   else
+    if macrostep.values[0].nil?
+      puts "Error in recipe: '#{step}' microsteps list is empty!"
+      exit 1
+    end
     macrostep.values[0].each do
       |microstep|
       script[step][microstep] = Array.new()
