@@ -6,6 +6,7 @@ version 2.5.0:
     (to setup into /etc/oar/oar_phoenix.pl)
   - New (experimental!) scheduler written in Ocaml
   - New oaradmin option: --auto-offset
+  - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is unreachable. 
 
 version 2.4.2:
 --------------
