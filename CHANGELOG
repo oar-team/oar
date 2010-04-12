@@ -8,6 +8,7 @@ version 2.5.0:
   - New oaradmin option: --auto-offset
   - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is unreachable. 
   - Cpusets are activated by default
+  - Bugfix #9990: prevent from inserting jobs with invalid username (like an empty username)
 
 version 2.4.2:
 --------------

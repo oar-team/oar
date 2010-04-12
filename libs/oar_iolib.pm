@@ -1469,6 +1469,12 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         }
     }
 
+    # Check the user validity
+    if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
+      warn("/!\\ Invalid username: $user\n");
+      return(-11);
+    }
+
     #Insert job
     my $date = get_date($dbh);
     #lock_table($dbh,["jobs"]);
