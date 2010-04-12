@@ -280,7 +280,13 @@ $recipe['steps'].each do
   # create a structure that looks something like this:
   # script["oar_init"]["start_appliance_mysql"][0] = \
   # = "chroot /path/to/chroot/dir /etc/init.d/mysql start"
-  script[step] = OrderedHash.new()
+  if script[step].nil?
+    script[step] = OrderedHash.new()
+  else
+    puts "Error: '#{step}' defined twice! Exiting as the first occurence is going to"
+    puts "not be executed at all and this is probably not what you want."
+    exit(11)
+  end
 
   # check for macrostep file (distro-specific or default)
   if dist != ""
