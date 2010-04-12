@@ -40,13 +40,10 @@ cat << EOF
 ##########################################################################
 # oar-node #
 ############
-If you want to use the CPUSET feature of OAR then you have to:
-    Add just before the public ssh key of the user oar in his
-    /var/lib/oar/.ssh/authorized_keys (on the same line; on
-    the begining of the line):
-
-        environment="OAR_KEY=1"
-
+    You need to install the ssh keys (private and public) of the oar user
+    into /var/lib/oar/.ssh.
+    A common way is to copy the entire .ssh directory from the server on 
+    all the nodes of your cluster.
 ##########################################################################
     
 EOF

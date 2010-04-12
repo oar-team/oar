@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.5.0
-%define release 1
+%define release 2
 
 Name: 		oar
 Version:        %{version}
@@ -312,7 +312,8 @@ if [ -e /var/lib/oar/.ssh ]; then
 else
     mkdir -p /var/lib/oar/.ssh
     ssh-keygen -t rsa -q -f /var/lib/oar/.ssh/id_rsa -N '' || true
-    cat /var/lib/oar/.ssh/id_rsa.pub > /var/lib/oar/.ssh/authorized_keys || true
+    echo -n 'environment="OAR_KEY=1 "' > /var/lib/oar/.ssh/authorized_keys || true
+    cat /var/lib/oar/.ssh/id_rsa.pub >> /var/lib/oar/.ssh/authorized_keys || true
     cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
     ForwardX11 no
