@@ -100,23 +100,23 @@ let _ =
           if not ( prev_scheduled_jobs = []) then
             let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
-(* TODO DEBUG TODO !! TODO DEBUG TODO !! TODO DEBUG TODO !!
               if queue != "besteffort" then
                 (* exclude besteffort jobs *)
                 let besteffort_mem_remove job_id = 
                   let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_id 
                                                           with Not_found -> failwith "Must no failed here: besteffort_mem").types in
-                                                          if test_bt then () else  Hashtbl.remove  h_prev_scheduled_jobs_types job_id;
+                                                          if test_bt then Hashtbl.remove  h_prev_scheduled_jobs_types job_id else ();
                                                           test_bt  
                   in  
                     List.filter (fun n -> not (besteffort_mem_remove n)) prev_scheduled_job_ids_tmp
  (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
               else
-*)
                 prev_scheduled_job_ids_tmp
             in
+(*
              Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots)));
              Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
+*)
              set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids;
           else ();
 
