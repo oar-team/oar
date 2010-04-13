@@ -11,6 +11,7 @@ TODO
 5) Complete Tests infrastructure (automatic test / ruby) and add more tests...
 6) Doc
 7) Source cleanning (new directory ???)
+8) export OARCONFFILE=oar.conf as in perl version
 *)
 
 let besteffort_duration = Int64.of_int (5*60)
@@ -73,6 +74,7 @@ let resources_init_slots_determination dbh now =
 let _ = 
 	try
 		Conf.log "Starting";
+
     (* get hierarchy description from oar.conf and convert it in hierarchy levels *)
     Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
 
@@ -98,6 +100,7 @@ let _ =
           if not ( prev_scheduled_jobs = []) then
             let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
+(* TODO DEBUG TODO !! TODO DEBUG TODO !! TODO DEBUG TODO !!
               if queue != "besteffort" then
                 (* exclude besteffort jobs *)
                 let besteffort_mem_remove job_id = 
@@ -109,8 +112,11 @@ let _ =
                     List.filter (fun n -> not (besteffort_mem_remove n)) prev_scheduled_job_ids_tmp
  (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
               else
+*)
                 prev_scheduled_job_ids_tmp
             in
+             Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots)));
+             Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
              set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids;
           else ();
 

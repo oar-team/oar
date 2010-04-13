@@ -165,6 +165,8 @@ let get_scheduled_jobs dbh =
         AND m.moldable_id = g2.moldable_job_id
         AND j.job_id = m.moldable_job_id
       ORDER BY j.start_time, j.job_id;" in
+
+
   let res = execQuery dbh query in
 (* let first_res = fetch res *)
     let first_res = function
@@ -295,11 +297,13 @@ let get_job_types dbh job_ids h_jobs =
           ignore (map res add_id_types);;
 
 (*                                                                            *)
+(* retreive job_type for all jobs in the hashtable                            *)
 (* TODO factorize with get_job_types ?? change simple_cbf**.ml ??? REMOVE ??? *)
 (*                                                                            *)
 let get_job_types_hash_ids dbh jobs =
   let h_jobs =  Hashtbl.create 1000 in
   let job_ids = List.map (fun n -> Hashtbl.add h_jobs n.jobid n; n.jobid) jobs in 
+
   let job_ids_str = Helpers.concatene_sep "," string_of_int job_ids in
   
   let query = "SELECT job_id, type FROM job_types WHERE types_index = 'CURRENT' AND job_id IN (" ^ job_ids_str ^ ");" in
@@ -313,7 +317,9 @@ let get_job_types_hash_ids dbh jobs =
         let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in 
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
           ignore (map res add_id_types);
-          (h_jobs, job_ids);;
+
+  (*  Conf.log ("length h_jobs:"^(string_of_int (Hashtbl.length h_jobs))); *)
+  (h_jobs, job_ids);;
 
 (* retrieve jobs dependencies *)
 (* return an hashtable, key = job_id, value = list of required jobs *)

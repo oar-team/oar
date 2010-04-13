@@ -76,7 +76,7 @@ my_scheduler: my_driver
 pg_scheduler_debug: pg_driver
 	export SUBPROJS=simple_cbf_mb_h_ct_oar_pg; make dc
 
-my_scheduler_debug: pg_driver
+my_scheduler_debug: my_driver
 	export SUBPROJS=simple_cbf_mb_h_ct_oar_my; make dc
 
 # Catch-all target will be applied to all subprojects automatically
