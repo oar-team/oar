@@ -1,0 +1,4 @@
+root_passwd:
+ - set_root_passwd:
+   # Sets the root password to "kameleon"
+   - exec_chroot: usermod -p '$6$vDcPTe4u$EMxu.WTCjZaZeWQxiqFLC00gYledHmrvHsjvmAE1yQ/7d43EZrb0QuzcFdDv.Fm2IbbOLNdPvqdS08os6HHPH/' root

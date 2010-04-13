@@ -13,6 +13,7 @@ steps:
 # - bootstrap-fake
  - bootstrap
  - system_config
+ - root_passwd
  - mount_proc
  - software_install:
    - extra_packages
