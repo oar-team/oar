@@ -22,10 +22,14 @@ steps:
  - software_install:
    - extra_packages
  - kernel_install
+# - oar/oar_precheck
+# - oar/oar_debian_install
+# - oar/oar_system_config
  - strip
  - umount_proc
 # - xen_domu
  - build_tgz
+# - oar/oar_build_tgz
 # - build_livecd
  - build_appliance:
    - create_raw_image
