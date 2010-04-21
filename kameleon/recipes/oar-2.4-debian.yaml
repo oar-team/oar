@@ -7,11 +7,11 @@ global:
  arch: i386
  kernel_arch: "686"
  extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd"
- #previous_chroot: /var/tmp/kameleon/2010-04-07-21-40-39/chroot
+ #bootstrap_fake_dir: /var/tmp/kameleon/2010-04-07-21-40-39/chroot
 steps:
  - debian/check_deps
  - check
- #- debian/bootstrap-fake
+ #- bootstrap-fake
  - debian/bootstrap
  - debian/system_config
  - mount_proc
