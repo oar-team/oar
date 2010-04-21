@@ -6,14 +6,18 @@ global:
  workdir_base: /var/tmp/kameleon
  distrib_repository: http://ftp.fr.debian.org/debian/
  extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring"
+ # or for a oar apliance:
+ #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd"
  #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
  #bootstrap_fake_dir: /var/tmp/etch/chroot
+ #oar_repository: "deb http://oar.imag.fr/debian/2.4 unstable main"
 steps:
  - debian_check_deps
  - check_deps:
    - rsync
    - building_appliance
    - building_kvm_images
+# - oar/oar_precheck
 # - bootstrap-fake
  - bootstrap
  - system_config
@@ -22,7 +26,6 @@ steps:
  - software_install:
    - extra_packages
  - kernel_install
-# - oar/oar_precheck
 # - oar/oar_debian_install
 # - oar/oar_system_config
  - strip
