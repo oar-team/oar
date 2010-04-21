@@ -27,13 +27,13 @@ build_appliance:
    - exec_appliance:       export hda2=`grub-probe -t fs_uuid -d ${NBD_DEVICE}p2`
    - exec_appliance:       echo "UUID=$hda1 / ext2 relatime,errors=remount-ro 0 1" >> $$workdir/mnt/etc/fstab
    - exec_appliance:       echo "UUID=$hda2 none swap sw 0 0" >> $$workdir/mnt/etc/fstab
-   - exec_appliance:       echo "default 0" > $$workdir/mnt/boot/grub/grub.cfg
-   - exec_appliance:       echo "timeout 3" >> $$workdir/mnt/boot/grub/grub.cfg
+   - exec_appliance:       echo "set default=0" > $$workdir/mnt/boot/grub/grub.cfg
+   - exec_appliance:       echo "set timeout=3" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "set root='(hd0,1)'" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "menuentry \"$kernel\" {" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "  linux /boot/vmlinuz-$kernel root=UUID=$hda1 ro" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "  initrd /boot/initrd.img-$kernel" >> $$workdir/mnt/boot/grub/grub.cfg
-   - exec_appliance:       echo "}" >> $$workdir/mnt/boot/grub/menu.lst
+   - exec_appliance:       echo "}" >> $$workdir/mnt/boot/grub/grub.cfg
  - umount_image:
    - exec_appliance:       umount $$workdir/mnt
    - exec_appliance:       rm -rf $$workdir/mnt
