@@ -1,14 +1,19 @@
 global:
  distrib: debian
- debian_version_name: lenny
+ debian_version_name: squeeze
  arch: amd64
- kernel_arch: amd64
+ kernel_arch: "amd64"
  workdir_base: /var/tmp/kameleon
  distrib_repository: http://ftp.fr.debian.org/debian/
  extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring"
- #bootstrap_fake_dir: /var/tmp/kameleon/2010-04-07-16-02-52/chroot
+ #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
+ #bootstrap_fake_dir: /var/tmp/etch/chroot
 steps:
- - check_deps
+ - debian_check_deps
+ - check_deps:
+   - rsync
+   - building_appliance
+   - building_kvm_images
 # - bootstrap-fake
  - bootstrap
  - system_config
@@ -19,16 +24,18 @@ steps:
  - kernel_install
  - strip
  - umount_proc
+# - xen_domu
  - build_tgz
 # - build_livecd
-# - build_appliance:
-#   - create_raw_image
-#   - copy_system_tree
-#   - install_grub
-#   - save_as_raw
+ - build_appliance:
+   - create_raw_image
+   - mount_image
+   - copy_system_tree
+   - install_grub
+   - umount_image
+   - save_as_raw
 #   - save_as_vmdk
-#   - save_as_qcow2
+   - save_as_qcow2
 #   - save_as_vdi
-#   - clean
  - clean
 

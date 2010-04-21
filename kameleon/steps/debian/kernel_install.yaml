@@ -10,4 +10,4 @@ kernel_install:
        do_initrd = yes
        link_in_boot = no
  - kernel_install:
-   - exec_chroot: apt-get -y --force-yes install linux-image-2.6-$$kernel_arch
+   - exec_chroot: apt-get -y --force-yes install linux-image-$$kernel_arch
