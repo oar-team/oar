@@ -173,6 +173,7 @@ end
 
 # define global vars
 $bin_dir=File.dirname($0)
+$var_dir="/var/lib/kameleon"
 version="1.0-beta"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
@@ -298,17 +299,23 @@ $recipe['steps'].each do
   if dist != ""
     if File.file?(path0 = $bin_dir + "/steps/" + dist + "/" + step + ".yaml")
       path=path0
+    elsif File.file?(path1 = $var_dir + "/steps/" + dist + "/" + step + ".yaml")
+      path=path1
     else
-      printf("%s: macrostep file is missing: \n * %s\n", step, path0)
+      printf("%s: macrostep file is missing: \n * %s\n * %s\n", step, path0, path1)
       exit(6)
     end
   else
-    if File.file?(path1 = $bin_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
-      path=path1
-    elsif File.file?(path2 = $bin_dir + "/steps/default/" + step + ".yaml")
+    if File.file?(path2 = $bin_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
       path=path2
+    elsif File.file?(path3 = $bin_dir + "/steps/default/" + step + ".yaml")
+      path=path3
+    elsif File.file?(path4 = $var_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
+      path=path4
+    elsif File.file?(path5 = $var_dir + "/steps/default/" + step + ".yaml")
+      path=path5
     else
-      printf("%s: macrostep file is missing: \n * %s\n * %s\n", step, path1, path2)
+      printf("%s: macrostep file is missing: \n * %s\n * %s\n * %s\n * %s\n", step, path2, path3, path4, path5)
       exit(6)
     end
   end
