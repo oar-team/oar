@@ -8,12 +8,12 @@ system_config:
    - write_file:
      - /etc/hosts
      - |
-       127.0.0.1  localhost $$distrib
+       127.0.0.1  localhost $$network_hostname
  - etc_hostname:
    - write_file:
      - /etc/hostname
      - |
-       $$distrib
+       $$network_hostname
  - network_interfaces:
    - write_file:
      - /etc/network/interfaces

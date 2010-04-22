@@ -1,4 +1,3 @@
 bootstrap:
  - debootstrap:
    - exec_appliance:  debootstrap --arch=$$arch $$debian_version_name $$chroot/ $$distrib_repository
-   - exec_appliance:  echo "rm -rf $$chroot" > $$workdir/clean.sh

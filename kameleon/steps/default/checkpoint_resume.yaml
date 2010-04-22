@@ -1,4 +1,4 @@
-bootstrap-fake:
- - copy_tree:
-   - exec_appliance:  rsync -a $$bootstrap_fake_dir/* $$chroot/
-   - exec_appliance:  echo "rm -rf $$chroot" > $$workdir/clean.sh
+checkpoint_resume:
+ - restore_tar:
+   - exec_appliance:  tar zxf $$checkpoint_file -C $$chroot/
+   - exec_appliance:  mkdir $$chroot/proc
