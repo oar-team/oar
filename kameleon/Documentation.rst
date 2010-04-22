@@ -177,6 +177,7 @@ Run the clean script: ::
 
   $ sudo /bin/bash /var/tmp/kameleon/<timestamp>/clean.sh
 
+Note: starting from version 1.0, kameleon now executes automatically this script on a ctrl-C or abort on error.
 
 
 Directory structure:

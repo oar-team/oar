@@ -219,7 +219,7 @@ $recipe['global']['bindir'] = $bin_dir
 begin
   FileUtils.mkdir_p($chroot)
 rescue
-  print "Failed to create working direcroty. ", $!, "\n"
+  print "Failed to create working directory. ", $!, "\n"
   exit(5)
 end
 
