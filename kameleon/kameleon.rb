@@ -75,7 +75,7 @@ def cyan(text); colorize(text, "\e[36m"); end
 ### function for converting command definitions into bash commands
 def cmd_parse(cmd,step)
   if cmd.keys[0]=="check_cmd"
-    return "which " + cmd.values[0]
+    return "which " + cmd.values[0] + " >/dev/null"
   elsif cmd.keys[0]=="check_cmd_chroot"
     return "chroot " + $chroot + " which " + cmd.values[0]
   elsif cmd.keys[0]=="exec_current"
