@@ -3,6 +3,7 @@
 # tested succesfully to generate etch, lenny and squeeze as of April 2010.
 # The steps and variables beginning with "oar" can be activated to make
 # a OAR client/server demo/test appliance.
+# By default, it makes a tgz image and a qcow2 directly bootable into KVM.
 #
 global:
  #
@@ -67,13 +68,13 @@ steps:
 # - xen_domu
  - build_tgz
 # - oar/oar_build_tgz
-# - build_livecd
  - build_appliance:
    - create_raw_image
    - create_nbd_device
    - mkfs
    - mount_image
    - copy_system_tree
+#   - grub_197_workaround
    - install_grub
    - umount_image
    - save_as_raw

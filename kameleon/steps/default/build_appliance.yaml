@@ -17,9 +17,12 @@ build_appliance:
    - exec_appliance:       mount ${NBD_DEVICE}p1 $$workdir/mnt
  - copy_system_tree:
    - exec_appliance:       rsync -a $$chroot/* $$workdir/mnt
+ - grub_197_workaround:
+   - exec_appliance:       mkdir -p $$workdir/mnt/boot/grub
+   - exec_appliance:       echo "(hd0,1) ${NBD_DEVICE}p1" > $$workdir/mnt/boot/grub/device.map
  - install_grub:
    - exec_appliance:       mkdir -p $$workdir/mnt/boot/grub
-   - exec_appliance:       echo "(hd0) $NBD_DEVICE" > $$workdir/mnt/boot/grub/device.map
+   - exec_appliance:       echo "(hd0) $NBD_DEVICE" >> $$workdir/mnt/boot/grub/device.map
    - exec_appliance:       grub-install --root-directory=$$workdir/mnt --modules="biosdisk part_msdos" $NBD_DEVICE
    - exec_appliance:       export kernel=`ls $$workdir/mnt/boot/vmlinuz* | grep -o "2.6.*"`
    - exec_appliance:       export hda1=`grub-probe -t fs_uuid -d ${NBD_DEVICE}p1`
