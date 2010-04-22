@@ -1,4 +1,4 @@
 checkpoint:
  - make_tar:
    - breakpoint:      WARNING! Going to create a checkpoint over $$checkpoint_file. This is your last chance to backup this file before it is replaced by the current appliance.
-   - exec_appliance:  tar zcf $$checkpoint_file -C $$chroot/ --numeric-owner .
+   - exec_appliance:  tar zcf $$checkpoint_file -C $$chroot/ --numeric-owner --exclude=proc .

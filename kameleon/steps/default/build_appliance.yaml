@@ -1,19 +1,18 @@
 build_appliance:
  - create_raw_image:
-   - check_cmd:            /sbin/parted
-   - exec_appliance:       dd if=/dev/zero of=$$workdir/image.raw bs=512 count=4194304
-   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mklabel msdos
-   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkpart primary ext2 100 1890
-   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkpart primary linux-swap 1890 2140
-   - exec_appliance:       /sbin/parted -s $$workdir/image.raw set 1 boot on
-   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkfs 1 ext2
-   - exec_appliance:       /sbin/parted -s $$workdir/image.raw mkfs 2 linux-swap
- - mount_image:
+   - check_cmd:            /sbin/sfdisk
+   - exec_appliance:       dd if=/dev/zero of=$$workdir/image.raw bs=1M count=1 seek=2000
+   - exec_appliance:       echo -e "1,190,83,*\n191,,82" | /sbin/sfdisk $$workdir/image.raw
+ - create_nbd_device:
    - check_cmd:            kvm-nbd
    - exec_appliance:       modprobe nbd max_part=8
    - exec_appliance:       export NBD_DEVICE=/dev/nbd11 # Need a way to automatically find a free one 
    - exec_appliance:       kvm-nbd -c $NBD_DEVICE $$workdir/image.raw
    - exec_appliance:       sleep 5
+ - mkfs:
+   - exec_appliance:       mkfs.ext3 ${NBD_DEVICE}p1
+   - exec_appliance:       export SWAP_UUID=`mkswap ${NBD_DEVICE}p2|egrep -o "UUID=(.*)"|cut -d= -f2`
+ - mount_image:
    - exec_appliance:       mkdir $$workdir/mnt
    - exec_appliance:       mount ${NBD_DEVICE}p1 $$workdir/mnt
  - copy_system_tree:
@@ -24,9 +23,8 @@ build_appliance:
    - exec_appliance:       grub-install --root-directory=$$workdir/mnt --modules="biosdisk part_msdos" $NBD_DEVICE
    - exec_appliance:       export kernel=`ls $$workdir/mnt/boot/vmlinuz* | grep -o "2.6.*"`
    - exec_appliance:       export hda1=`grub-probe -t fs_uuid -d ${NBD_DEVICE}p1`
-   - exec_appliance:       export hda2=`grub-probe -t fs_uuid -d ${NBD_DEVICE}p2`
    - exec_appliance:       echo "UUID=$hda1 / ext2 relatime,errors=remount-ro 0 1" >> $$workdir/mnt/etc/fstab
-   - exec_appliance:       echo "UUID=$hda2 none swap sw 0 0" >> $$workdir/mnt/etc/fstab
+   - exec_appliance:       echo "UUID=$SWAP_UUID none swap sw 0 0" >> $$workdir/mnt/etc/fstab
    - exec_appliance:       echo "set default=0" > $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "set timeout=3" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "set root='(hd0,1)'" >> $$workdir/mnt/boot/grub/grub.cfg

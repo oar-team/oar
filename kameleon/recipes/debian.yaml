@@ -70,6 +70,8 @@ steps:
 # - build_livecd
  - build_appliance:
    - create_raw_image
+   - create_nbd_device
+   - mkfs
    - mount_image
    - copy_system_tree
    - install_grub

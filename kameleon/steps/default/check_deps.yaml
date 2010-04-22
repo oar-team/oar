@@ -2,7 +2,7 @@ check_deps:
  - rsync:
    - check_cmd:       rsync
  - building_appliance:
-   - check_cmd:       /sbin/parted
+   - check_cmd:       /sbin/sfdisk
    - check_cmd:       kvm-nbd
    - check_cmd:       grub-install
    - check_cmd:       grub-mkimage # To check for grub2
