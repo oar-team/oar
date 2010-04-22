@@ -424,6 +424,7 @@ script.each do
               elsif answer=="a"
                 puts red("Aborting execution ...")
                 puts red("You should clean workdir: " + $workdir)
+                system("umount " + $workdir + "/chroot/proc 2>/dev/null")
                 exit(10)
               end
             end
