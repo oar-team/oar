@@ -32,6 +32,7 @@ build_appliance:
    - exec_appliance:       echo "  linux /boot/vmlinuz-$kernel root=UUID=$hda1 ro" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "  initrd /boot/initrd.img-$kernel" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "}" >> $$workdir/mnt/boot/grub/grub.cfg
+   - exec_appliance:       echo "(hd0) /dev/hda" > $$workdir/mnt/boot/grub/device.map
  - umount_image:
    - exec_appliance:       umount $$workdir/mnt
    - exec_appliance:       rm -rf $$workdir/mnt
