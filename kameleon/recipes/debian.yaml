@@ -29,8 +29,8 @@ global:
  #network_eth0_ip: 129.88.70.251
  #network_eth0_mask: 255.255.255.248
  #network_gateway: 129.88.70.249
- #network_dns: 172.16.16.247
- #network_domain: grenoble.grid5000.fr
+ #network_dns: 129.88.30.10
+ #network_domain: imag.fr
  #
  # If you're building a Xen appliance, it may help:
  #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
