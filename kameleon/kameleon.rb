@@ -147,6 +147,12 @@ def start_shell(shell)
   end
 end
 
+### Cleaning function
+def clean()
+  puts red("Running cleaning script...")
+  system("bash " + $chroot + "/clean.sh")
+end 
+
 ### print usage info
 def usage()
   puts "Usage: kameleon.rb recipe.yaml"
@@ -386,6 +392,15 @@ end
 
 puts blue("\n ### ") + green("Welcome to Kameleon " + version) + blue(" ###\n")
 
+system("touch " + $chroot + "/clean.sh")
+
+trap("INT") {
+  puts red("Interrupted.")
+  clean()
+  puts("Exiting.")
+  exit
+}
+
 # traverse macrostep->microstep->command structure
 script.each do
   |macrostep|
@@ -423,6 +438,7 @@ script.each do
                 print green("Press [r] to retry, [c] to continue with execution, [a] to abort execution, [s] to switch to shell: ")
               elsif answer=="a"
                 puts red("Aborting execution ...")
+                clean()
                 puts red("You should clean workdir: " + $workdir)
                 system("umount " + $workdir + "/chroot/proc 2>/dev/null")
                 exit(10)

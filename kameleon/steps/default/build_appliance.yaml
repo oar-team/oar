@@ -8,6 +8,7 @@ build_appliance:
    - exec_appliance:       modprobe nbd max_part=8
    - exec_appliance:       export NBD_DEVICE=/dev/nbd11 # Need a way to automatically find a free one 
    - exec_appliance:       kvm-nbd -c $NBD_DEVICE $$workdir/image.raw
+   - exec_appliance:       echo "kvm-nbd -d $NBD_DEVICE" >> $$workdir/clean.sh
    - exec_appliance:       sleep 5
  - mkfs:
    - exec_appliance:       mkfs.ext3 ${NBD_DEVICE}p1
@@ -15,6 +16,7 @@ build_appliance:
  - mount_image:
    - exec_appliance:       mkdir $$workdir/mnt
    - exec_appliance:       mount ${NBD_DEVICE}p1 $$workdir/mnt
+   - exec_appliance:       echo "umount $NBD_DEVICE" >> $$workdir/clean.sh
  - copy_system_tree:
    - exec_appliance:       rsync -a $$chroot/* $$workdir/mnt
  - grub_197_workaround:
