@@ -35,3 +35,5 @@ install: install-engine install-data install-doc
 
 uninstall: 
 	rm -rf $(DESTDIR)$(KAMELEON_DIR)
+	rm -f $(DESTDIR)$(BINDIR)/kameleon
+	rm -rf $(DESTDIR)/$(DOCDIR)

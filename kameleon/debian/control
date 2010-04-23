@@ -1,0 +1,16 @@
+Source: kameleon
+Section: admin
+Priority: extra
+Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
+Build-Depends: debhelper (>= 7.0.50)
+Standards-Version: 3.8.4
+Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/trunk/kameleon
+Vcs-Browser: https://gforge.inria.fr/scm/viewvc.php/trunk/kameleon/?root=oar
+Homepage: http://wiki-oar.imag.fr/Kameleon
+
+Package: kameleon
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ruby
+Description: Simple appliances image builder
+ Kameleon is a very simple tool to create initial virtual machines images or 
+ live-cd. It works as a bash script generator using recipes written in YAML.
