@@ -14,9 +14,16 @@ require 'fileutils'
 begin
  require 'session'
 rescue LoadError => e
- warn "The \"session\" module is not found. You need to install it or load rubygems."
- warn "To install session as a rubygem: 'gem install session'."
- warn "Then, you may need to start ruby with -rubygems or to export RUBYOPT=rubygems"
+ warn "The \"session\" module is not found. You need to install it."
+ warn "To install session as a rubygem, type 'gem install session'."
+ begin
+   Gem.ruby_version
+ rescue
+   warn "\nFurthermore, Rubygems does not seems to be loaded."
+   warn "You maybe have to enable rubygems, by setting RUBYOPT=rubygems"
+   warn "or starting ruby with the -rubygems option."
+   exit 1
+ end
  exit 1
 end
 
@@ -212,7 +219,7 @@ if path == ""
   exit(2)
 end
 begin
-  puts green("Loading #{path}...")
+  puts cyan("->") + green("| Loading " + path)
   $recipe = YAML.load(File.open(path))
 rescue
   print "Failed to open recipe file. ", $!, "\n"
@@ -346,6 +353,7 @@ $recipe['steps'].each do
 
   # load macrostep file
   begin
+    puts green("  | Loading " + path)
     macrostep_yaml = YAML.load(File.open(path))
   rescue
     print "Failed to open macrostep file. ", $!, "\n"
@@ -428,7 +436,7 @@ system("touch " + $chroot + "/clean.sh")
 trap("INT") {
   puts red("Interrupted.")
   clean()
-  puts("Exiting.")
+  puts("Exiting kameleon.")
   exit
 }
 
