@@ -79,7 +79,7 @@ def cmd_parse(cmd,step)
   elsif cmd.keys[0]=="check_cmd_chroot"
     return "chroot " + $chroot + " which " + cmd.values[0]
   elsif cmd.keys[0]=="exec_current"
-    return "cd " + $bin_dir + "; " + cmd.values[0]
+    return "cd " + $cur_dir + "; " + cmd.values[0]
   elsif cmd.keys[0]=="exec_appliance"
     return "cd " + $chroot + "; " + cmd.values[0]
   elsif cmd.keys[0]=="exec_chroot"
@@ -155,7 +155,7 @@ end
 
 ### print usage info
 def usage()
-  puts "Usage: kameleon.rb recipe.yaml"
+  puts "Usage: kameleon.rb recipe[.yaml]"
 end
 
 ######################################
@@ -172,8 +172,9 @@ end
 ######################
 
 # define global vars
-$bin_dir=File.dirname($0)
+$cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
+$kameleon_dir=File.dirname($0)
 version="1.0-beta"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
@@ -193,8 +194,26 @@ rescue
 end
 
 # load recipe
+path=""
+searched_pathes=""
+[$cur_dir,$var_dir,$kameleon_dir].each do |dir|
+  if File.file?(search_path1 = dir + "/recipes/" + ARGV[0])
+    path=search_path1
+    break
+  elsif File.file?(search_path2 = dir + "/recipes/" + ARGV[0] + ".yaml")
+    path=search_path2
+    break
+  else
+    searched_pathes=searched_pathes + " * " + search_path1 + "\n * " + search_path2 + "\n"
+  end
+end
+if path == ""
+  printf("%s: could not find recipe in none of the following files: \n%s", ARGV[0], searched_pathes)
+  exit(2)
+end
 begin
-  $recipe = YAML.load(File.open(ARGV[0]))
+  puts green("Loading #{path}...")
+  $recipe = YAML.load(File.open(path))
 rescue
   print "Failed to open recipe file. ", $!, "\n"
   exit(2)
@@ -216,7 +235,7 @@ end
 # We also define two global vars here: $workdir and $chroot
 $recipe['global']['workdir'] = $workdir = $recipe['global']['workdir_base']+"/"+Time.now.strftime("%Y-%m-%d-%H-%M-%S")
 $recipe['global']['chroot'] = $chroot = $workdir + "/chroot"
-$recipe['global']['bindir'] = $bin_dir
+$recipe['global']['bindir'] = $cur_dir
 begin
   FileUtils.mkdir_p($chroot)
 rescue
@@ -296,28 +315,33 @@ $recipe['steps'].each do
   end
 
   # check for macrostep file (distro-specific or default)
+  path=""
+  searched_pathes=""
   if dist != ""
-    if File.file?(path0 = $bin_dir + "/steps/" + dist + "/" + step + ".yaml")
-      path=path0
-    elsif File.file?(path1 = $var_dir + "/steps/" + dist + "/" + step + ".yaml")
-      path=path1
-    else
-      printf("%s: macrostep file is missing: \n * %s\n * %s\n", step, path0, path1)
-      exit(6)
+    [$cur_dir,$var_dir,$kameleon_dir].each do |dir|
+      if File.file?(search_path = dir + "/steps/" + dist + "/" + step + ".yaml")
+        path=search_path
+        break
+      else
+        searched_pathes=searched_pathes + " * " + search_path + "\n"
+      end
     end
   else
-    if File.file?(path2 = $bin_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
-      path=path2
-    elsif File.file?(path3 = $bin_dir + "/steps/default/" + step + ".yaml")
-      path=path3
-    elsif File.file?(path4 = $var_dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
-      path=path4
-    elsif File.file?(path5 = $var_dir + "/steps/default/" + step + ".yaml")
-      path=path5
-    else
-      printf("%s: macrostep file is missing: \n * %s\n * %s\n * %s\n * %s\n", step, path2, path3, path4, path5)
-      exit(6)
+    [$cur_dir,$var_dir,$kameleon_dir].each do |dir|
+      if File.file?(search_path1 = dir + "/steps/" + $recipe['global']['distrib'] + "/" + step + ".yaml")
+        path=search_path1
+        break
+      elsif File.file?(search_path2 = dir + "/steps/default/" + step + ".yaml")
+        path=search_path2
+        break
+      else
+        searched_pathes=searched_pathes + " * " + search_path1 + "\n * " + search_path2 + "\n"
+      end
     end
+  end
+  if path == ""
+    printf("%s: macrostep file is missing: \n%s", step, searched_pathes)
+    exit(6)
   end
 
   # load macrostep file
@@ -334,7 +358,7 @@ $recipe['steps'].each do
     if microstep.keys[0] == "include"
       # load macrostep file
       begin
-        macrostep_include_yaml = YAML.load(File.open($bin_dir + "/steps/" + microstep.values[0]))
+        macrostep_include_yaml = YAML.load(File.open($cur_dir + "/steps/" + microstep.values[0]))
       rescue
         print "Failed to open macrostep file. ", $!, "\n"
         exit(7)
