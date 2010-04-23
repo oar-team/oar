@@ -206,6 +206,8 @@ If the file can't be found there, kameleon looks into "default" dir
 Provided recipes
 ================
 
+Warning: This section is obsolete...
+
 Recipes are stored in "<kameleon_root>/recipes/" directory.
 
 

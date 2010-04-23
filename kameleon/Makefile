@@ -25,7 +25,13 @@ install-data:
 	install -d -m 755 $(VARLIBDIR)/kameleon/steps
 	install -d -m 755 $(VARLIBDIR)/kameleon/recipes
 
-install: install-engine install-data
+install-doc:
+	install -d -m 0755 $(DESTDIR)/$(DOCDIR)
+	install Documentation.rst $(DESTDIR)/$(DOCDIR)
+	install COPYING $(DESTDIR)/$(DOCDIR)
+	install AUTHORS $(DESTDIR)/$(DOCDIR)
+
+install: install-engine install-data install-doc
 
 uninstall: 
 	rm -rf $(DESTDIR)$(KAMELEON_DIR)
