@@ -63,12 +63,14 @@ steps:
 # - checkpoint
 # - oar/oar_debian_install
 # - oar/oar_system_config
+# - kameleon/kameleon_debian_install
  - strip
  - umount_proc
 # - xen_domu
- - build_tgz
 # - oar/oar_build_tgz
  - build_appliance:
+   - clean_udev
+   - save_as_tgz
    - create_raw_image
    - create_nbd_device
    - mkfs

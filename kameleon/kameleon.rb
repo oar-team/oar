@@ -151,7 +151,7 @@ end
 
 ### open prompt in the same enviromnent (shell) where the execution takes place
 def start_shell(shell)
-  puts green("Starting shell. Enter \\q to quit.")
+  puts green("Starting shell. Enter \\q to exit from shell.")
   n = 0
   loop do
     print cyan("#{ n }:SHELL> ")
@@ -198,7 +198,7 @@ end
 $cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
 $kameleon_dir=File.dirname($0)
-version="1.0"
+version="1.0b"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 

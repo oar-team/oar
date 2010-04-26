@@ -1,14 +1,18 @@
 build_appliance:
+ - clean_udev:
+   - exec_appliance:       rm -f etc/udev/rules.d/*persistent-net.rules*
+ - save_as_tgz:
+   - exec_current:         cd $$workdir; tar -czf $$distrib.tar.gz -C chroot .
  - create_raw_image:
    - check_cmd:            /sbin/sfdisk
-   - exec_appliance:       dd if=/dev/zero of=$$workdir/image.raw bs=1M count=1 seek=2000
-   - exec_appliance:       echo -e "1,190,83,*\n191,,82" | /sbin/sfdisk $$workdir/image.raw
+   - exec_appliance:       dd if=/dev/zero of=$$workdir/image.raw bs=1M count=1 seek=5000
+   - exec_appliance:       echo -e "1,574,83,*\n575,,82" | /sbin/sfdisk $$workdir/image.raw
  - create_nbd_device:
    - check_cmd:            kvm-nbd
    - exec_appliance:       modprobe nbd max_part=8
    - exec_appliance:       export NBD_DEVICE=/dev/nbd11 # Need a way to automatically find a free one 
    - exec_appliance:       kvm-nbd -c $NBD_DEVICE $$workdir/image.raw
-   - exec_appliance:       echo "kvm-nbd -d $NBD_DEVICE" >> $$workdir/clean.sh
+   - exec_appliance:       echo "umount $NBD_DEVICE ; kvm-nbd -d $NBD_DEVICE" >> $$workdir/clean.sh
    - exec_appliance:       sleep 5
  - mkfs:
    - exec_appliance:       mkfs.ext3 ${NBD_DEVICE}p1
@@ -113,7 +117,7 @@ build_appliance:
    - exec_appliance:       mv $$chroot/tmp/$$distrib.vmx $$workdir/
  - save_as_qcow2:
    - check_cmd:            kvm-img
-   - exec_appliance:       kvm-img convert -f raw $$workdir/image.raw -O qcow2 $$workdir/$$distrib.qcow2
+   - exec_appliance:       kvm-img convert -c -f raw $$workdir/image.raw -O qcow2 $$workdir/$$distrib.qcow2
  - save_as_vdi:
    - check_cmd:            VBoxManage
    - exec_appliance:       VBoxManage convertdd $$workdir/image.raw $$workdir/$$distrib.vdi

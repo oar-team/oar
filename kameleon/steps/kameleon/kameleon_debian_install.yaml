@@ -1,0 +1,29 @@
+kameleon_debian_install:
+ - config_apt:
+   - append_file:
+     - /etc/apt/sources.list
+     - |
+       deb http://oar.imag.fr/debian/kameleon unstable main
+   - exec_chroot: apt-get update
+ - install:
+   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install kameleon rubygems debootstrap kvm grub2 mingetty"
+ - install_session_gem:
+   - exec_chroot: gem install session
+ - motd_config:
+   - append_file:
+     - /etc/motd.tail
+     - |
+         
+       ********************** WELCOME TO THE KAMELEON APPLIANCE ***********************
+       To create a new appliance, based on Debian for example, you can follow those 
+       simple steps:
+         'cp /usr/local/share/kameleon/recipes/debian.yaml /var/lib/kameleon/recipes/'
+         'vim /var/lib/kameleon/recipes/debian.yaml'
+              customize...
+         'kameleon debian'
+              wait and get your newly created image(s) into /var/tmp/kameleon
+       Note: if you want to change the keyboard mapping, use: 
+         'loadkeys <2_letters_country_code>'
+       ********************************************************************************
+ - autologin:
+   - exec_chroot: perl -pi -e 's/getty.*tty1/mingetty --noclear --autologin root tty1/' /etc/inittab        
