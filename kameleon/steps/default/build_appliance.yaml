@@ -121,5 +121,26 @@ build_appliance:
  - save_as_vdi:
    - check_cmd:            VBoxManage
    - exec_appliance:       VBoxManage convertdd $$workdir/image.raw $$workdir/$$distrib.vdi
+ - save_as_iso:
+   - check_cmd:            wget
+   - exec_chroot:          "ldd /lib/libc.so.6 |grep x86-64 && ( echo -e \"\\n\\nERROR: Iso image can only be made with a 32 bits appliance. Please, put 'arch: i386' into your recipe.\\n\\n\" ; exit 1 ) || true" 
+   - exec_appliance:       export LINUX_LIVE_VERSION="6.3.0"
+   - exec_appliance:       export LINUX_LIVE_KVERSION="2.6.27.27-i486-1"
+   - exec_appliance:       "[ ! -s $$workdir_base/linux-live-${LINUX_LIVE_VERSION}.tar.gz ] && wget -q -O $$workdir_base/linux-live-${LINUX_LIVE_VERSION}.tar.gz -c http://oar.imag.fr/live/linux-live-${LINUX_LIVE_VERSION}.tar.gz || true"
+   - exec_appliance:       "[ ! -s $$workdir_base/linux-${LINUX_LIVE_KVERSION}.tgz ] && wget -q -O $$workdir_base/linux-${LINUX_LIVE_KVERSION}.tgz -c http://oar.imag.fr/live/linux-${LINUX_LIVE_KVERSION}.tgz || true"
+   - exec_appliance:       tar zxf $$workdir_base/linux-live-${LINUX_LIVE_VERSION}.tar.gz -C tmp/
+   - exec_appliance:       tar zxf $$workdir_base/linux-${LINUX_LIVE_KVERSION}.tgz
+   - exec_appliance:       KVERSION=`echo $LINUX_LIVE_KVERSION|cut -d"-" -f1`
+   - exec_appliance:       perl -pi -e "s/^KERNEL=.*/KERNEL=$KVERSION/" tmp/linux-live-$LINUX_LIVE_VERSION/.config
+   - exec_appliance:       perl -pi -e "s/read NEWLIVECDNAME/NEWLIVECDNAME=kameleon;echo/" tmp/linux-live-$LINUX_LIVE_VERSION/build
+   - exec_appliance:       perl -pi -e "s,read NEWKERNEL,NEWKERNEL=/boot/vmlinuz;echo," tmp/linux-live-$LINUX_LIVE_VERSION/build
+   - exec_appliance:       perl -pi -e "s/read junk/echo/" tmp/linux-live-$LINUX_LIVE_VERSION/build
+   - exec_appliance:       perl -pi -e "s,read ISONAME,ISONAME=/tmp/kameleon.iso;echo," tmp/linux-live-$LINUX_LIVE_VERSION/cd-root/linux/make_iso.sh
+# Comment the following line to enable compression:
+   - exec_appliance:       perl -pi -e "s/(create_module.*)/\$1 -noD -noF -noI/" tmp/linux-live-$LINUX_LIVE_VERSION/build
+   - exec_chroot:          depmod -a $KVERSION
+   - exec_chroot:          bash -c "cd /tmp/linux-live-$LINUX_LIVE_VERSION && ./build"
+   - exec_chroot:          bash -c "cd /tmp/live_data* && ./kameleon/make_iso.sh"
+   - exec_appliance:       mv $$workdir/chroot/tmp/kameleon.iso $$workdir/$$distrib.iso
  - clean:
    - exec_appliance:       rm $$workdir/image.raw

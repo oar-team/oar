@@ -83,5 +83,6 @@ steps:
 #   - save_as_vmdk
    - save_as_qcow2
 #   - save_as_vdi
+#   - save_as_iso
  - clean
 
