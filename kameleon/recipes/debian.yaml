@@ -63,6 +63,8 @@ steps:
 # - checkpoint
 # - oar/oar_debian_install
 # - oar/oar_system_config
+# - oar/oar_config
+# - oar/oar_clean
 # - kameleon/kameleon_debian_install
  - strip
  - umount_proc
