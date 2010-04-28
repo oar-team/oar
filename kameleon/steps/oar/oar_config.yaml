@@ -1,5 +1,6 @@
 oar_config:
  - config_mysql:
+   - exec_chroot: /etc/init.d/mysql start || service mysql start || true
    - exec_chroot: echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('kameleon')" | chroot $$chroot mysql --user=root
  - config_taktuk:
    - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.or
@@ -39,7 +40,19 @@ oar_config:
    - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/mysql_structure.sql
    - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/mysql_default_admission_rules.sql
    - exec_chroot: mysql -u root -p"kameleon" oar < $$chroot/usr/lib/oar/default_data.sql || true
-# - clean:
-#   - exec_chroot: /etc/init.d/mysql stop || true
-#   - exec_chroot: /etc/init.d/apache2 stop || true
-
+ - update_hostfile:
+   - append_file:
+     - /etc/hosts
+     - |
+       127.0.0.2 node1 node2
+ - create_resources:
+   - exec_chroot: oarproperty -a core
+   - exec_chroot: oarproperty -a cpu
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 =p core=0
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 =p core=1
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 =p core=0
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 =p core=1
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=0 =p core=0
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=0 =p core=1
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=1 =p core=0
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=1 =p core=1
