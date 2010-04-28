@@ -13,7 +13,7 @@ oar_config:
    - exec_chroot: sed -e 's/^#\(JOB_RESOURCE_MANAGER_FILE\=\"\/etc\/oar\/job_resource_manager\.pl\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
    - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.tmp
    - exec_chroot: sed -e 's/^#\(CPUSET_PATH\=\"\/oar\".*\)/\1/' /etc/oar/oar.conf.tmp > $$chroot/etc/oar/oar.conf
-   - exec_chroot: perl -pi -e 's/^/environment="OAR_KEY=1" /' /var/lib/oar/.ssh/authorized_keys
+   - exec_chroot: perl -pi -e 's/^ssh-/environment="OAR_KEY=1" ssh-/' /var/lib/oar/.ssh/authorized_keys
  - oar_init:
    - write_file:
      - /usr/lib/oar/init.sql
