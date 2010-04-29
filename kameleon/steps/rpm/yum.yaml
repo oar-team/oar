@@ -1,0 +1,8 @@
+yum:
+ - fix:
+   - exec_appliance: mkdir -p usr/lib/python2.4/site-packages/urlgrabber.skx
+   - exec_appliance: mv usr/lib/python2.4/site-packages/urlgrabber/keepalive.* usr/lib/python2.4/site-packages/urlgrabber.skx/
+ - yum_provided_conf:
+   - exec_appliance: cp -f $$yum_conf_file /etc/yum.conf
+ - bootstrap:
+   - exec_chroot:  /usr/bin/yum -y install yum
