@@ -13,3 +13,4 @@ oar_debian_install:
    - exec_chroot: apt-get install -y --force-yes oar-api
    - exec_chroot: a2enmod ident
    - exec_chroot: a2enmod headers
+   - exec_chroot: a2enmod rewrite

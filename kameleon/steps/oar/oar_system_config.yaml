@@ -7,3 +7,25 @@ oar_system_config:
      - |
        %sudo ALL=NOPASSWD: ALL
    - exec_chroot: usermod -G sudo kameleon
+ - motd_config:
+   - append_file:
+     - /etc/motd.tail
+     - |
+
+       ************************** WELCOME TO THE OAR APPLIANCE ************************
+       We created 2 fake nodes pointing to localhost.
+       You can, for example, directly:
+         $ su - kameleon
+         $ oarsub -I
+       Or check the API:
+         $ wget -O - http://localhost/oarapi/resources.yaml
+       Check the API more deeply, submitting a job as the "kameleon" user:
+         $ su - kameleon
+         $ curl -i -X POST http://localhost/oarapi/jobs.json \\
+             -H'Content-Type: application/json' \\
+             -d '{\"resource\":\"/nodes=1,walltime=00:10:00\", \"command\":\"sleep 600\"}'
+         
+       Note: if you want to change the keyboard mapping, use:
+         'loadkeys <2_letters_country_code>'
+       ********************************************************************************
+
