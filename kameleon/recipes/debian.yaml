@@ -42,7 +42,7 @@ global:
  #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
  # 
  # OAR specific
- #oar_repository: "deb http://oar.imag.fr/debian/2.4 unstable main"
+ #oar_repository: "deb http://oar.imag.fr/debian/2.5 unstable main"
  
 steps:
  - debian_check_deps

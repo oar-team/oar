@@ -1,3 +1,9 @@
+kameleon (1.0c-2) unstable; urgency=low
+
+  * Oar step defaults to oar 2.5 
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 30 Apr 2010 16:37:22 +0200
+
 kameleon (1.0c-1) unstable; urgency=low
 
   * Minor fix into the cleaning and enhanced oar steps
