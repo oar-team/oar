@@ -174,6 +174,8 @@ end
 def clean()
   puts red("Running cleaning script...")
   system("bash " + $chroot + "/clean.sh")
+  system("umount " + $workdir + "/chroot/proc 2>/dev/null")
+  system("umount " + $workdir + "/mnt/proc 2>/dev/null")
 end 
 
 ### print usage info
@@ -198,7 +200,7 @@ end
 $cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
 $kameleon_dir=File.dirname($0)
-version="1.0b"
+version="1.0c"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 
@@ -495,7 +497,6 @@ script.each do
                 puts red("Aborting execution ...")
                 clean()
                 puts red("You should clean workdir: " + $workdir)
-                system("umount " + $workdir + "/chroot/proc 2>/dev/null")
                 exit(10)
               end
             end
