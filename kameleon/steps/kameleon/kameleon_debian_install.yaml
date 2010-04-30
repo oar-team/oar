@@ -25,5 +25,3 @@ kameleon_debian_install:
        Note: if you want to change the keyboard mapping, use: 
          'loadkeys <2_letters_country_code>'
        ********************************************************************************
- - autologin:
-   - exec_chroot: perl -pi -e 's/getty.*tty1/mingetty --noclear --autologin root tty1/' /etc/inittab        

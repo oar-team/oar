@@ -66,6 +66,7 @@ steps:
 # - oar/oar_config
 # - oar/oar_clean
 # - kameleon/kameleon_debian_install
+# - autologin
  - strip
  - umount_proc
 # - xen_domu
