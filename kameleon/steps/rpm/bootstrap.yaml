@@ -1,6 +1,6 @@
 bootstrap:
  - rinse:
-   - exec_appliance:  "[ -f $$rinse_config_directory/rinse.conf ] && export RINSE_DIR=$$rinse_config_directory || (export RINSE_DIR=/usr/share/kameleon/steps/rpm/rinse;echo \"** WARNING! ***: rinse.conf file not found! Reverting to default rinse directory $RINSE_DIR\")"
+   - exec_appliance:  "if [ -f $$rinse_config_directory/rinse.conf ]; then export RINSE_DIR=$$rinse_config_directory; else export RINSE_DIR=/usr/share/kameleon/steps/rpm/rinse;echo \"** WARNING! ***: rinse.conf file not found! Reverting to default rinse directory $RINSE_DIR\";fi"
    - exec_appliance:  "[ -f $RINSE_DIR/$$rpm_distrib_name.packages ] || (echo \"Could not find $RINSE_DIR/$$rpm_distrib_name.packages!\"; exit 2)"
    - exec_appliance:  "[ -d /usr/lib/rinse/$$rpm_distrib_name ] || (echo \"Rinse requires an empty directory /usr/lib/rinse/$$rpm_distrib_name\"; exit 2)"
    - exec_appliance:  rinse --config $RINSE_DIR/rinse.conf --arch=$$arch --pkgs-dir $RINSE_DIR --distribution $$rpm_distrib_name --directory $$chroot --post-install /bin/true
