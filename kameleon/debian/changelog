@@ -1,3 +1,15 @@
+kameleon (1.0b-5) unstable; urgency=low
+
+  * Bugfix into rinse directory checking 
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 29 Apr 2010 13:09:44 +0200
+
+kameleon (1.0b-4) unstable; urgency=low
+
+  * New recipe for rpm-based distribs 
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 29 Apr 2010 12:03:58 +0200
+
 kameleon (1.0b-3) unstable; urgency=low
 
   * Bugfix into oar steps 
