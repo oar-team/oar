@@ -1,0 +1,17 @@
+oar_rpm_install:
+ - install_oar:
+   - write_file:
+     - /etc/yum.repos.d/oar.repo
+     - |
+       [oar]
+       name=OAR
+       baseurl=$$oar_repository
+       gpgcheck=0
+       enabled=1
+   - exec_chroot: yum -y install oar-server oar-user oar-node oar-doc
+   #- exec_chroot: yum -y install oar-admin oar-web-status
+ - install_oar_api:
+   - exec_chroot: yum -y install oar-api
+   #- exec_chroot: a2enmod ident
+   #- exec_chroot: a2enmod headers
+   #- exec_chroot: a2enmod rewrite

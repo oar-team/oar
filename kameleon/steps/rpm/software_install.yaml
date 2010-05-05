@@ -1,0 +1,3 @@
+software_install:
+ - extra_packages:
+   - exec_chroot: yum -y install $$extra_packages

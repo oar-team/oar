@@ -14,7 +14,7 @@ global:
  # 
  # RPM specific
  distrib: rpm
- rpm_distrib_name: scientific-linux-5.4
+ rpm_distrib_name: centos-5
  rinse_config_directory: /usr/local/share/kameleon/steps/rpm/rinse
  #
  # You may have to provide a yum.conf file 
@@ -25,9 +25,9 @@ global:
  arch: i386
  #
  # Extra packages to install on the minimal base system
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools"
+ extra_packages: "vim-enhanced less bzip2 openssh-server rsync gnupg perl man"
  # If you're building a OAR appliance, use this package list:
- #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd console-tools"
+ #extra_packages: "vim-enhanced less bzip2 openssh-server rsync gnupg perl man httpd mysql-server"
  #
  # Network configuration
  network_hostname: kameleon
@@ -66,8 +66,8 @@ steps:
 #   - yum_provided_conf
    - bootstrap
  - root_passwd
-# - software_install:
-#   - extra_packages
+ - software_install:
+   - extra_packages
  - kernel_install
 # - oar/oar_rpm_install
 # - oar/oar_system_config
