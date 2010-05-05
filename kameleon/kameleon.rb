@@ -171,7 +171,7 @@ def start_shell(shell,histfile)
       f.puts "PS1='\\e[36;1mKAMELEON \\w # \\e[0m'" 
     end
   end
-  shell.execute("env |egrep -v '^PWD=|^LS_COLORS=|^ZLSCOLORS='> #{$workdir}/kameleon_env")
+  shell.execute("env |egrep -v '^PWD='|perl -pi -e 's/=/=\"/'|perl -pi -e 's/\$/\"/' > #{$workdir}/kameleon_env")
   system("cd #{$workdir}; KAMELEON_TIMESTAMP=#{$timestamp} HISTFILE='#{histfile}' bash --rcfile #{rcfile}")
  
  # loop do
@@ -221,7 +221,7 @@ end
 $cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
 $kameleon_dir=File.dirname($0)
-version="1.1b"
+version="1.1c"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 
