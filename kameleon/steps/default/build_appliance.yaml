@@ -39,7 +39,7 @@ build_appliance:
    - exec_appliance:       echo "set root='(hd0,1)'" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "menuentry \"$kernel\" {" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "  linux /boot/vmlinuz-$kernel root=UUID=$hda1 ro" >> $$workdir/mnt/boot/grub/grub.cfg
-   - exec_appliance:       export INITRD=`find ./boot -name "initrd*$kernel*"|tail -c +2`
+   - exec_appliance:       export INITRD=`find ./boot -name "initrd*$kernel*"|head -1|tail -c +2`
    - exec_appliance:       echo "  initrd $INITRD" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "}" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "(hd0) /dev/hda" > $$workdir/mnt/boot/grub/device.map
