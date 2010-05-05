@@ -22,4 +22,4 @@ system_config:
        BOOTPROTO=dhcp
        ONBOOT=yes
  - resolv_conf:
-   exec_appliance: cp -f /etc/resolv.conf $chroot/etc
+   - exec_appliance: cp -f /etc/resolv.conf $$chroot/etc
