@@ -49,6 +49,10 @@ require 'tempfile'
 # required for debugging
 require 'pp'
 
+# History file
+$histfile="#{ENV['HOME']}/.kameleon_history"
+$history=[]
+
 ############################
 ### function definitions ###
 ############################
@@ -149,25 +153,42 @@ def error_prompt()
   return answer[0,1]
 end
 
-### open prompt in the same enviromnent (shell) where the execution takes place
-def start_shell(shell)
-  puts green("Starting shell. Enter \\q to exit from shell.")
-  n = 0
-  loop do
-    print cyan("#{ n }:SHELL> ")
-    command = $stdin.gets
-    $log.stdin_write(command)
-    #command = Readline.readline(cyan("#{ n }:SHELL> "), true) 
-    if command =~ /^\s*\!*history\!*\s*$/
-      open('shell.history','w'){|f| f.puts shell.history}
-      next
-    end
-    #return if command =~ /^\s*(?:exit|quit)\s*$/io
-    return if command =~ /^\s*\\q\s*$/io
-
-    shell.execute(command, :stdout => $stdout, :stderr => $stderr)
-    n += 1
+### save an history file
+def save_history
+  open($histfile,'a') do |f|
+    $history.each { |h| f.puts h }
   end
+  $history = []
+end
+
+### open prompt in the same enviromnent (shell) where the execution takes place
+def start_shell(shell,histfile)
+  puts green("Starting shell. Enter 'exit' to return to kameleon.")
+#  n = 0
+  unless File.file?(rcfile="#{ENV['HOME']}/.kameleon_rc")
+    open(rcfile,'w') do |f| 
+      f.puts "source #{ENV['HOME']}/.kameleon_env" 
+      f.puts "PS1='\\e[36;1mKAMELEON \\w # \\e[0m'" 
+    end
+  end
+  shell.execute("env |egrep -v '^PWD=|^LS_COLORS=|^ZLSCOLORS='> #{ENV['HOME']}/.kameleon_env")
+  system("cd #{$workdir}; HISTFILE='#{histfile}' bash --rcfile #{rcfile}")
+ 
+ # loop do
+ #   print cyan("#{ n }:SHELL> ")
+ #   command = $stdin.gets
+ #   $log.stdin_"write(command)
+ #   #command = Readline.readline(cyan("#{ n }:SHELL> "), true) 
+ #   if command =~ /^\s*\!*history\!*\s*$/
+ #     open('shell.history','w'){|f| f.puts shell.history}
+ #     next
+ #   end
+ #   #return if command =~ /^\s*(?:exit|quit)\s*$/io
+ #   return if command =~ /^\s*\\q\s*$/io
+ #
+ #   shell.execute(command, :stdout => $stdout, :stderr => $stderr)
+ #   n += 1
+ # end
 end
 
 ### Cleaning function
@@ -200,7 +221,7 @@ end
 $cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
 $kameleon_dir=File.dirname($0)
-version="1.0c"
+version="1.1"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 
@@ -455,6 +476,7 @@ trap("INT") {
   puts red("Interrupted.")
   clean()
   puts("Exiting kameleon.")
+  save_history
   exit
 }
 
@@ -475,12 +497,14 @@ script.each do
           if command[0,14] == "KML-breakpoint"
             puts green("  |-> Breakpoint: " + command[15,command.length])
             # open interactive shell instead of executing a command
-            start_shell(bash)
+            save_history
+            start_shell(bash,$histfile)
           else
             puts green("  |-> " + command)
             # execute the command in the background bash session, connecting
             # it's stdout and stderr to kameleon's stdout and stderr
             bash.execute(command, :stdout => $stdout, :stderr => $stderr)
+            $history << command
           end
           # check exit status, and stop execution on non-zero exit code
           if (bash.exit_status !=0) && (command[0,14] != "KML-breakpoint")
@@ -490,7 +514,8 @@ script.each do
             # offer three options: continue, abort, switch to shell (manually fix the error and then continue)
             while not ["c","r"].include?(answer=error_prompt):
               if answer=="s"
-                start_shell(bash)
+                save_history 
+                start_shell(bash,$histfile)
                 puts green("Getting back to Kameleon ...")
                 print green("Press [r] to retry, [c] to continue with execution, [a] to abort execution, [s] to switch to shell: ")
               elsif answer=="a"
@@ -515,3 +540,4 @@ script.each do
     end
   end
 end
+save_history
