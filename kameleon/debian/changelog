@@ -1,3 +1,9 @@
+kameleon (1.0c-3) unstable; urgency=low
+
+  * Bugfix into grub config
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 30 Apr 2010 17:13:52 +0200
+
 kameleon (1.0c-2) unstable; urgency=low
 
   * Oar step defaults to oar 2.5 

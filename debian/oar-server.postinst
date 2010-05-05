@@ -29,7 +29,7 @@ setup_oar_ssh() {
 	else
 		mkdir -p /var/lib/oar/.ssh 
 		ssh-keygen -t rsa -q -f /var/lib/oar/.ssh/id_rsa -N '' || true
-                echo -n 'environment="OAR_KEY=1 "' > /var/lib/oar/.ssh/authorized_keys || true
+                echo -n 'environment="OAR_KEY=1" ' > /var/lib/oar/.ssh/authorized_keys || true
 		cat /var/lib/oar/.ssh/id_rsa.pub >> /var/lib/oar/.ssh/authorized_keys || true
 	  cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
