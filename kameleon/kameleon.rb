@@ -167,12 +167,12 @@ def start_shell(shell,histfile)
 #  n = 0
   unless File.file?(rcfile="#{ENV['HOME']}/.kameleon_rc")
     open(rcfile,'w') do |f| 
-      f.puts "source #{ENV['HOME']}/.kameleon_env" 
+      f.puts "source #{$recipe['global']['workdir_base']}/\$KAMELEON_TIMESTAMP/kameleon_env" 
       f.puts "PS1='\\e[36;1mKAMELEON \\w # \\e[0m'" 
     end
   end
-  shell.execute("env |egrep -v '^PWD=|^LS_COLORS=|^ZLSCOLORS='> #{ENV['HOME']}/.kameleon_env")
-  system("cd #{$workdir}; HISTFILE='#{histfile}' bash --rcfile #{rcfile}")
+  shell.execute("env |egrep -v '^PWD=|^LS_COLORS=|^ZLSCOLORS='> #{$workdir}/kameleon_env")
+  system("cd #{$workdir}; KAMELEON_TIMESTAMP=#{$timestamp} HISTFILE='#{histfile}' bash --rcfile #{rcfile}")
  
  # loop do
  #   print cyan("#{ n }:SHELL> ")
@@ -279,7 +279,8 @@ end
 # $workdir_base/<timestamp>/chroot
 # Example: /var/tmp/kameleon/2009-07-10-18-55-34/chroot
 # We also define two global vars here: $workdir and $chroot
-$recipe['global']['workdir'] = $workdir = $recipe['global']['workdir_base']+"/"+Time.now.strftime("%Y-%m-%d-%H-%M-%S")
+$timestamp=Time.now.strftime("%Y-%m-%d-%H-%M-%S")
+$recipe['global']['workdir'] = $workdir = $recipe['global']['workdir_base']+"/"+$timestamp
 $recipe['global']['chroot'] = $chroot = $workdir + "/chroot"
 $recipe['global']['bindir'] = $cur_dir
 begin
