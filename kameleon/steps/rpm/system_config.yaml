@@ -21,3 +21,5 @@ system_config:
        DEVICE=eth0
        BOOTPROTO=dhcp
        ONBOOT=yes
+ - resolv_conf:
+   exec_appliance: cp -f /etc/resolv.conf $chroot/etc
