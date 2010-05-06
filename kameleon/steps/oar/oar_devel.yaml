@@ -1,0 +1,3 @@
+oar_devel:
+ - open_api:
+   - exec_appliance: perl -pi -e "s/Deny from all/#Deny from all/" etc/oar/apache-api.conf
