@@ -88,6 +88,7 @@ steps:
    - copy_system_tree
 #   - grub_197_workaround
    - install_grub
+   - old_kernel_workaround
    - umount_image
    - save_as_raw
 #   - save_as_vmdk

@@ -32,7 +32,7 @@ build_appliance:
    - exec_appliance:       grub-install --root-directory=$$workdir/mnt --modules="biosdisk part_msdos" $NBD_DEVICE
    - exec_appliance:       export kernel=`ls $$workdir/mnt/boot/vmlinuz* | grep -o "2.6.*"`
    - exec_appliance:       export hda1=`grub-probe -t fs_uuid -d ${NBD_DEVICE}p1`
-   - exec_appliance:       echo "UUID=$hda1 / ext2 relatime,errors=remount-ro 0 1" >> $$workdir/mnt/etc/fstab
+   - exec_appliance:       echo "UUID=$hda1 / ext3 errors=remount-ro 0 1" >> $$workdir/mnt/etc/fstab
    - exec_appliance:       echo "UUID=$SWAP_UUID none swap sw 0 0" >> $$workdir/mnt/etc/fstab
    - exec_appliance:       echo "set default=0" > $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "set timeout=3" >> $$workdir/mnt/boot/grub/grub.cfg
@@ -43,6 +43,10 @@ build_appliance:
    - exec_appliance:       echo "  initrd $INITRD" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "}" >> $$workdir/mnt/boot/grub/grub.cfg
    - exec_appliance:       echo "(hd0) /dev/hda" > $$workdir/mnt/boot/grub/device.map
+ - old_kernel_workaround:
+   - exec_appliance:       perl -pi -e "s,UUID=.*ext3,/dev/hda1 / ext3," $$workdir/mnt/etc/fstab
+   - exec_appliance:       perl -pi -e "s,UUID=.*swap,/dev/hda2 none swap," $$workdir/mnt/etc/fstab
+   - exec_chroot:          mkinitrd -f /boot/initrd-$kernel.img $kernel
  - umount_image:
    - exec_appliance:       umount $$workdir/mnt
    - exec_appliance:       rm -rf $$workdir/mnt
