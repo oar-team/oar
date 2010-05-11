@@ -171,7 +171,7 @@ def start_shell(shell,histfile)
       f.puts "PS1='\\e[36;1mKAMELEON \\w # \\e[0m'" 
     end
   end
-  shell.execute("env |egrep -v '^PWD='|perl -pi -e 's/=/=\"/'|perl -pi -e 's/\$/\"/' > #{$workdir}/kameleon_env")
+  shell.execute("env |egrep -v '^PWD='|perl -pi -e 's/=/=\"/'|perl -pi -e 's/\$/\"/' >> #{$workdir}/kameleon_env")
   system("cd #{$workdir}; KAMELEON_TIMESTAMP=#{$timestamp} HISTFILE='#{histfile}' bash --rcfile #{rcfile}")
  
  # loop do
@@ -189,6 +189,10 @@ def start_shell(shell,histfile)
  #   shell.execute(command, :stdout => $stdout, :stderr => $stderr)
  #   n += 1
  # end
+end
+
+def append_to_env_file(line)
+  open("#{$workdir}/kameleon_env",'a') { |f| f.puts line }
 end
 
 ### Cleaning function
@@ -221,7 +225,7 @@ end
 $cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
 $kameleon_dir=File.dirname($0)
-version="1.1d"
+version="1.2"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 
@@ -429,7 +433,10 @@ $recipe['steps'].each do
       script[step][microstep.keys[0]] = Array.new()
       microstep.values[0].each do
         |command|
-        script[step][microstep.keys[0]].push(var_parse(cmd_parse(command,step+"->"+microstep.keys[0]), path))
+        cmd_string=var_parse(cmd_parse(command,step+"->"+microstep.keys[0]),path)
+        script[step][microstep.keys[0]].push(cmd_string)
+        cmd_string=cmd_string.gsub(/['()]/,"\\\\\0")
+        append_to_env_file("alias #{step}_#{microstep.keys[0]}='#{cmd_string}'")
       end
     end
   else
@@ -458,7 +465,10 @@ $recipe['steps'].each do
 
       macrostep_yaml[step][found].values[0].each do
         |command|
-        script[step][microstep].push(var_parse(cmd_parse(command,step+"->"+microstep), path))
+        cmd_string=var_parse(cmd_parse(command,step+"->"+microstep),path)
+        script[step][microstep].push(cmd_string)
+        cmd_string=cmd_string.gsub(/['()]/,"\\\\\0")
+        append_to_env_file("alias #{step}_#{microstep}='#{cmd_string}'")
       end
 
     end
