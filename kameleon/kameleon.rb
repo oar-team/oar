@@ -221,7 +221,7 @@ end
 $cur_dir=Dir.pwd
 $var_dir="/var/lib/kameleon"
 $kameleon_dir=File.dirname($0)
-version="1.1c"
+version="1.1d"
 required_globals = ["distrib", "workdir_base"]
 required_commands = ["chroot", "which", "cat", "echo"]
 
@@ -242,11 +242,11 @@ end
 # load recipe
 path=""
 searched_pathes=""
-[$cur_dir,$var_dir,$kameleon_dir].each do |dir|
-  if File.file?(search_path1 = dir + "/recipes/" + ARGV[0])
+[$cur_dir,"#{$cur_dir}/recipes","#{$var_dir}/recipes","#{$kameleon_dir}/recipes"].each do |dir|
+  if File.file?(search_path1 = dir + "/" + ARGV[0])
     path=search_path1
     break
-  elsif File.file?(search_path2 = dir + "/recipes/" + ARGV[0] + ".yaml")
+  elsif File.file?(search_path2 = dir + "/" + ARGV[0] + ".yaml")
     path=search_path2
     break
   else
