@@ -1,0 +1,92 @@
+# ### debian.yaml Kameleon recipe ###
+# This recipe can be used to create any Debian appliance. It has been
+# tested succesfully to generate etch, lenny and squeeze as of April 2010.
+# The steps and variables beginning with "oar" can be activated to make
+# a OAR client/server demo/test appliance.
+# By default, it makes a tgz image and a qcow2 directly bootable into KVM.
+#
+global:
+ #
+ # Where Kameleon stores tmp files and appliances
+ workdir_base: /var/tmp/kameleon
+ # 
+ # Debian specific
+ distrib: debian
+ debian_version_name: squeeze
+ distrib_repository: http://ftp.fr.debian.org/debian/
+ #
+ # Architecture
+ arch: amd64
+ kernel_arch: "amd64"
+ #
+ # Extra packages to install on the minimal base system
+ #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
+ # If you're building a OAR appliance, use this package list:
+ extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd console-tools mingetty curl"
+ #
+ # Network configuration
+ network_hostname: oar
+ # Following variables are used by the "network_config_static" step
+ #network_eth0_ip: 129.88.70.251
+ #network_eth0_mask: 255.255.255.248
+ #network_gateway: 129.88.70.249
+ #network_dns: 129.88.30.10
+ #network_domain: imag.fr
+ #
+ # If you're building a Xen appliance, it may help:
+ #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
+ # 
+ # You can start with a "checkpoint_resume" step if you want
+ # to start form a pre-built image. The image can be made
+ # with the "checkpoint" step.
+ #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
+ # 
+ # OAR specific
+ oar_repository: "deb http://oar.imag.fr/debian/2.5 unstable main"
+ 
+steps:
+ - debian_check_deps
+ - check_deps:
+   - rsync
+   - building_appliance
+   - building_kvm_images
+ - oar/oar_precheck
+# - checkpoint_resume
+ - bootstrap
+ - system_config
+# - network_config_static
+ - root_passwd
+ - mount_proc
+ - software_install:
+   - extra_packages
+ - kernel_install
+# - checkpoint
+ - oar/oar_debian_install
+ - oar/oar_system_config
+ - oar/oar_config
+ - oar/oar_devel
+ - oar/oar_clean
+# - kameleon/kameleon_debian_install
+ - autologin
+ - strip
+ - umount_proc
+# - xen_domu
+# - oar/oar_build_tgz
+ - build_appliance:
+   - clean_udev
+#   - save_as_tgz
+   - create_raw_image
+   - create_nbd_device
+   - mkfs
+   - mount_image
+   - copy_system_tree
+#   - grub_197_workaround
+   - install_grub
+   - umount_image
+   - save_as_raw
+#   - save_as_vmdk
+#   - save_as_qcow2
+#   - save_as_vdi
+#   - save_as_iso
+ - clean
+
