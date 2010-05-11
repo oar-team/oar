@@ -16,8 +16,8 @@ global:
  distrib_repository: http://ftp.fr.debian.org/debian/
  #
  # Architecture
- arch: i386
- kernel_arch: "686"
+ arch: amd64
+ kernel_arch: "amd64"
  #
  # Extra packages to install on the minimal base system
  extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty rinse"

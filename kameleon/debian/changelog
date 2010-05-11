@@ -1,3 +1,9 @@
+kameleon (1.2.1-2) unstable; urgency=low
+
+  * Added sample debian appliances
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 11 May 2010 13:36:21 +0200
+
 kameleon (1.2.1) unstable; urgency=low
 
   * Shell and steps improvements
