@@ -42,6 +42,11 @@ oar_config:
      - /etc/hosts
      - |
        127.0.0.2 node1 node2
+ - hosts_check_startup:
+   - append_file: 
+     - /etc/default/oar_server
+     - |
+       cat /etc/hosts | grep node1 || echo '127.0.0.2 node1 node2' >> /etc/hosts
  - create_resources:
    - exec_chroot: oarproperty -a core
    - exec_chroot: oarproperty -a cpu

@@ -1,0 +1,34 @@
+save_as_g5k:
+ - save_as_g5k:
+   - append_file:
+     - /etc/apt/apt.conf
+     - |
+       APT::Get::AllowUnauthenticated "true";
+   - exec_chroot:          apt-get -f install -y --force-yes ssh libmlx4-1 libmlx4-dev
+   - append_file:
+     - /etc/modules
+     - |
+       ib_ipoib
+       ib_uverbs
+       ib_umad
+       ib_addr
+       mlx4_ib
+       ib_mthca
+   - exec_chroot:          useradd g5k -m -p "\$1\$EHMIS4yo\$I2YpHDD6PkrQR3FQmq1Pv1"
+   - exec_chroot:          wget --no-check-certificate https://gforge.inria.fr/frs/download.php/6991/tgz-g5k_1.0.3-1_all.deb
+   - exec_chroot:          dpkg -i ./tgz-g5k_1.0.3-1_all.deb
+   - exec_chroot:          tgz-g5k /tmp/$$distrib.g5k.tgz
+   - exec_appliance:       cp $$chroot/tmp/$$distrib.g5k.tgz $$workdir
+#   - append_file:   	   
+#     - /tmp/$$distrib.g5k.dsc3
+#     - |
+#       name : $$distrib.g5k
+#       tarball : PATH_TO_IMAGE/$$distrib.g5k.tgz|tgz
+#       postinstall : /grid5000/postinstalls/sid-x64-base-1.1-post.tgz|tgz|traitement.ash /rambin
+#       kernel : /boot/vmlinuz-2.6.32-3-686
+#       initrd : /boot/initrd.img-2.6.32-3-686
+#       filesystem : ext2
+#       environment_kind : linux
+#       fdisktype : 83
+#   - exec_appliance:       cp $$chroot/tmp/$$distrib.g5k.dsc3 $$workdir
+
