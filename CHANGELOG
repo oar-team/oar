@@ -9,6 +9,8 @@ version 2.5.0:
   - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is unreachable. 
   - Cpusets are activated by default
   - Bugfix #9990: prevent from inserting jobs with invalid username (like an empty username)
+  - Added hook script for suspected resources (to be able to check and repair immediately
+    with an external tool (activate the HEALING_EXEC_FILE variable)
 
 version 2.4.2:
 --------------

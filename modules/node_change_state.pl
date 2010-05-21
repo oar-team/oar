@@ -17,6 +17,8 @@ init_conf($ENV{OARCONFFILE});
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Healing_exec_file = get_conf("HEALING_EXEC_FILE");
+my @resources_to_heal;
 
 my $Exit_code = 0;
 
@@ -139,6 +141,9 @@ foreach my $i (@events_to_check){
             #    foreach my $r (@free_resources){
                     #iolib::set_resource_state($base,$r,"Suspected",$finaud_tag);
                     iolib::set_node_state($base,$j,"Suspected",$finaud_tag);
+                    foreach my $r (iolib::get_all_resources_on_node($base,$j)){
+                      push(@resources_to_heal,"$r $j");
+                    }
                     $Exit_code = 1;
             #    }
             #}
@@ -311,6 +316,10 @@ foreach my $i (keys(%resources_to_change)){
         iolib::set_resource_nextState($base,$i,'UnChanged');
 
         $debug_info{$resource_info->{network_address}}->{$i} = $resources_to_change{$i};
+
+        if ($resources_to_change{$i} eq 'Suspected') {
+          push(@resources_to_heal,$i." ".$resource_info->{network_address});
+        }
         
         if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
             oar_debug("[NodeChangeState] Check jobs to delete on $i ($resource_info->{network_address}):\n");
@@ -344,5 +353,16 @@ if (defined($str)){
 
 iolib::unlock_table($base);
 iolib::disconnect($base);
+
+my $timeout_cmd = 10;
+if (is_conf("HEALING_TIMEOUT")){
+    $timeout_cmd = get_conf("HEALING_TIMEOUT");
+}
+if (defined($Healing_exec_file) && @resources_to_heal > 0){
+    oar_warn("[NodeChangeState] Running healing script for suspected resources.\n");
+    if (! defined(oar_Tools::fork_and_feed_stdin($Healing_exec_file, $timeout_cmd, \@resources_to_heal))){
+        oar_error("[NodeChangeState] Try to launch the command $Healing_exec_file to heal resources, but the command timed out($timeout_cmd s).\n");
+    }
+}
 
 exit($Exit_code);
