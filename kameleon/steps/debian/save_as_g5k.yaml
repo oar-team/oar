@@ -14,7 +14,7 @@ save_as_g5k:
        ib_addr
        mlx4_ib
        ib_mthca
-   - exec_chroot:          useradd g5k -m -p "\$1\$EHMIS4yo\$I2YpHDD6PkrQR3FQmq1Pv1"
+   - exec_chroot:          useradd g5k -m -p "\$1\$EHMIS4yo\$I2YpHDD6PkrQR3FQmq1Pv1" || true
    - exec_chroot:          wget --no-check-certificate https://gforge.inria.fr/frs/download.php/6991/tgz-g5k_1.0.3-1_all.deb
    - exec_chroot:          dpkg -i ./tgz-g5k_1.0.3-1_all.deb
    - exec_chroot:          tgz-g5k /tmp/$$distrib.g5k.tgz
