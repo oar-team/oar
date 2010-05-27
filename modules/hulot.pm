@@ -14,26 +14,7 @@ require Exporter;
 
 #***********************************************
 #  [TODO]
-# - [Done] Wake up by groups (50 nodes, sleep... 50 nodes, sleep...)
-# - [Done] Don't send the wake up command if it has already been sent for a given node
-# - [Done] Suspect node if wake up requested and not alive since ENERGY_SAVING_NODE_MANAGER_TIMEOUT
-# -- Don't shut down nodes depending on ENERGY_SAVING_NODES_KEEPALIVE variable
-# - [Done] Launch commands in background task in order to not block the scheduler (by using fork in the windowForker -> ok) -> OK
-# - [Done] Call windowForker in a fork ? in order to not block the pipe listening
-#      -> (Sinon Hulot attend que windowForker rende la main -> temps long si bcp de commande car bcp de fenetre a executer)
-#
-# - [Done] Pour la mise en standBy, mettre le noeud "absent" avant de lancer la commande d'exctinction (pour que rien de soit scheduler dessus)
-#
-# - [Done] Extinction d'un noeud :
-#				1/ Change node state to Absent
-#				2/ Execute poweroff command
-#				3/ On regarde le code de retour du script appele pour eteindre et si erreur alors on suspect le noeud
-#				Sinon si pas d'erreur pas de check avec un timeout pour suspecter l'extinction
-#				4/ Puis enlever ce noeud de %nodes_list_running
-#
-# - [Done] Signal CHECK sent by MetaScheduler if there is no node to wake up / shut down in order to check timeout and check memorized nodes list
-# - [Done] Check booting nodes periodically and remove them from running list once they are up (else they will be suspected by hulot after the timeout).
-#
+# InProgress: Keepalive of some nodes
 # -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job
 #
 #***********************************************
@@ -258,6 +239,34 @@ sub start_energy_loop() {
     my $pack_template = "l! a*";
 
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
+
+    # Getting keepalive values ie construct a hash:
+    #      sql properties => number of nodes to keepalive
+    # given the ENERGY_SAVING_NODES_KEEPALIVE variable such as:
+    # "cluster=paradent:nodes=4,cluster=paraquad:nodes=6"
+    my %keepalive; 
+    my $keepalive_string=get_conf_with_default_param(
+                                "ENERGY_SAVING_NODES_KEEPALIVE",
+                                "0"
+                              );
+    if ($keepalive_string =~ /^\d+$/) {  
+      $keepalive{"default"}=$keepalive_string;
+      oar_debug("[Hulot] Keepalive ". $keepalive_string ." nodes\n");
+    }else{
+      my @keepalive_items=split(/,/,$keepalive_string);
+      foreach my $item (@keepalive_items) {
+        my $nodes_number;
+        (my $properties, my $nodes_string)=split(/:/,$item);
+        if ($nodes_string =~ /^.*=(\d+)$/) {
+          $nodes_number=$1;
+        }else{
+          oar_error("[Hulot] Syntax error into ENERGY_SAVING_NODES_KEEPALIVE!\n");
+          exit(2);
+        }
+        $keepalive{$properties}=$nodes_number;
+        oar_debug("[Hulot] ". $properties ." => ". $nodes_number ."\n");
+      }
+    }
 
     # Creates the fifo if it doesn't exist
     unless ( -p $FIFO ) {
