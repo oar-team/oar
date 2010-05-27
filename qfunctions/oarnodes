@@ -128,8 +128,9 @@ sub print_resources_states_for_hosts($){
           $result{$current_host}=oarnodeslib::get_resources_states_for_host($current_host);
           if (!$dump_mode) {
             print "$current_host\n";
-            while ( my ($k,$v) = each %{$result{$current_host}} ){
-	   	print "    $k : $v\n";
+            foreach my $k (sort keys %{$result{$current_host}} ) {
+            #while ( my ($k,$v) = each %{$result{$current_host}} ){
+	   	print "    $k : $result{$current_host}{$k}\n";
             }
           }
         }
