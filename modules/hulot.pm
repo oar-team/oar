@@ -15,6 +15,7 @@ require Exporter;
 #***********************************************
 #  [TODO]
 # InProgress: Keepalive of some nodes
+# Todo: Group nodes passed to the sleeping command (to do inside windowforker)
 # -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job
 #
 #***********************************************
@@ -111,14 +112,14 @@ sub check_reminded_list($$$) {
         if ( $tmp_nodeFinded == 0 ) {
 
             # move this node from reminded list to list to process
-            oar_debug(
-"[Hulot] Adding '$rmd_node=>$$tmp_list_to_remind{$rmd_node}' to list to process\n"
-            );
+#            oar_debug(
+#"[Hulot] Adding '$rmd_node=>$$tmp_list_to_remind{$rmd_node}' to list to process\n"
+#            );
             $$tmp_list_to_process{$rmd_node} =
               { 'command' => $$tmp_list_to_remind{$rmd_node}, 'time' => time };
 
-            oar_debug(
-                "[Hulot] Removing node '$rmd_node' from list to remember\n");
+#            oar_debug(
+#                "[Hulot] Removing node '$rmd_node' from list to remember\n");
             remove_from_hash( $tmp_list_to_remind, $rmd_node );
         }
     }
@@ -240,31 +241,35 @@ sub start_energy_loop() {
 
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
 
-    # Getting keepalive values ie construct a hash:
+    # Init keepalive values ie construct a hash:
     #      sql properties => number of nodes to keepalive
     # given the ENERGY_SAVING_NODES_KEEPALIVE variable such as:
     # "cluster=paradent:nodes=4,cluster=paraquad:nodes=6"
-    my %keepalive; 
+    my %keepalive;
+    # Number of nodes to keepalive per properties:
+    #     $keepalive{<properties>}{"min"}=int
+    # Number of nodes currently alive and with no jobs, per properties:
+    #     $keepalive{<properties>}{"cur_idle"}=int 
+    # List of nodes corresponding to properties:
+    #     $keepalive{<properties>}{"nodes"}=@;     
     my $keepalive_string=get_conf_with_default_param(
                                 "ENERGY_SAVING_NODES_KEEPALIVE",
-                                "0"
+                                "type='default':0"
                               );
-    if ($keepalive_string =~ /^\d+$/) {  
-      $keepalive{"default"}=$keepalive_string;
-      oar_debug("[Hulot] Keepalive ". $keepalive_string ." nodes\n");
+    if (not $keepalive_string =~ /.+:\d+,*/) {
+      oar_debug("[Hulot] Syntax error into ENERGY_SAVING_NODES_KEEPALIVE!\n");
+      exit(3);
     }else{
-      my @keepalive_items=split(/,/,$keepalive_string);
+      my @keepalive_items=split(/\s*\&\s*/,$keepalive_string);
       foreach my $item (@keepalive_items) {
-        my $nodes_number;
-        (my $properties, my $nodes_string)=split(/:/,$item);
-        if ($nodes_string =~ /^.*=(\d+)$/) {
-          $nodes_number=$1;
-        }else{
-          oar_error("[Hulot] Syntax error into ENERGY_SAVING_NODES_KEEPALIVE!\n");
+        (my $properties, my $nodes_number)=split(/:/,$item);
+        if (not $nodes_number =~ /^(\d+)$/) {
+          oar_error("[Hulot] Syntax error into ENERGY_SAVING_NODES_KEEPALIVE! (not an integer)\n");
           exit(2);
         }
-        $keepalive{$properties}=$nodes_number;
-        oar_debug("[Hulot] ". $properties ." => ". $nodes_number ."\n");
+        $keepalive{$properties}=();
+        $keepalive{$properties}{"min"}=$nodes_number;
+        oar_debug("[Hulot] Keepalive(". $properties .") => ". $nodes_number ."\n");
       }
     }
 
@@ -317,9 +322,9 @@ sub start_energy_loop() {
                 }
             }
 
-            ( my $cmd, my $nodes ) = split( /:/, $_, 2 );
+            ( my $cmd, my $nodes ) = split(/:/, $_, 2 );
             chomp($nodes);
-            my @nodes = split( / /, $nodes );
+            my @nodes = split(/ /, $nodes );
 
             if ( $cmd eq "CHECK" ) {
                 oar_debug("[Hulot] Got request '$cmd'\n");
@@ -327,10 +332,6 @@ sub start_energy_loop() {
             else {
                 oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
             }
-
-#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_running = ".Dumper(\%nodes_list_running)."\n");
-#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_process = ".Dumper(\%nodes_list_to_process)."\n");
-#oar_debug("[DEBUG-HULOT] Dumper de nodes_list_to_remind = ".Dumper(\%nodes_list_to_remind)."\n");
 
             # Retrieve list of nodes to wake up
             my @nodesToWakeupList = oar_scheduler::get_nodes_to_wake_up($base);
@@ -414,8 +415,8 @@ sub start_energy_loop() {
                 if ( $nodeToAdd == 1 ) {
 
                     # Adding couple node/command to the list to process
-                    oar_debug(
-                        "[Hulot] Adding '$node=>$cmd' to list to process\n");
+#                    oar_debug(
+#                        "[Hulot] Adding '$node=>$cmd' to list to process\n");
                     $nodes_list_to_process{$node} =
                       { 'command' => $cmd, 'time' => time };
                 }
@@ -423,35 +424,79 @@ sub start_energy_loop() {
                 if ( $nodeToRemind == 1 ) {
 
                     # Adding couple node/command to the list to remind
-                    oar_debug(
-                        "[Hulot] Adding '$node=>$cmd' to list to remember\n");
+#                    oar_debug(
+#                        "[Hulot] Adding '$node=>$cmd' to list to remember\n");
                     $nodes_list_to_remind{$node} = $cmd;
                 }
             }
 
+            # Check keepalive nodes
+            foreach my $properties (keys %keepalive) {
+              $keepalive{$properties}{"nodes"} = 
+                 [ iolib::get_nodes_with_given_sql($base,$properties) ];
+              $keepalive{$properties}{"cur_idle"}=0;
+              foreach my $alive_node (iolib::get_nodes_with_given_sql($base,
+                                        $properties. " and state='Alive'")) {
+                unless (iolib::get_node_job($base,$alive_node)) {
+                  $keepalive{$properties}{"cur_idle"}+=1;
+                }
+              }
+              #oar_debug("[Hulot] cur_idle($properties) => "
+              #     .$keepalive{$properties}{"cur_idle"}."\n");
+            }
+
+            # Creating command list
             my @commandToLaunch = ();
+            my @dont_halt;
+            my $match=0;
 
             foreach $key ( keys(%nodes_list_to_process) ) {
               SWITCH: for ( $nodes_list_to_process{$key}->{'command'} ) {
-                    /WAKEUP/ && do {
 
-#print("[DEBUG-HULOT] [WAKEUP] Node/Command : ".$key."/".$nodes_list_to_process{$key}->{'command'}."\n");
+                    /WAKEUP/ && do {
                         push( @commandToLaunch, "WAKEUP:$key" );
                         last;
                     };
+
                     /HALT/ && do {
+                        # Don't halt nodes that needs to be kept alive
+                        $match=0;
+                        foreach my $properties (keys %keepalive) {
+                          my @nodes=@{$keepalive{$properties}{"nodes"}};
+                          if (@nodes>0 && grep(/$key/,@nodes)) {
+                            if ($keepalive{$properties}{"cur_idle"} 
+                                 <= $keepalive{$properties}{"min"}) {
+                              oar_debug(
+"[Hulot] Refusing to halt '$key' because I need to keep alive ".
+$keepalive{$properties}{"min"} ." nodes having '$properties'\n"
+                              );
+                              $match=1;
+                              remove_from_hash(\%nodes_list_running,$key);
+                              remove_from_hash(\%nodes_list_to_process,$key);
+                            }
+                          }
+                        }
 
-                        # Change state node to "Absent"
-                        change_node_state( $base, $key, "Absent" );
-                        oar_debug(
+                        # If the node is ok to be halted
+                        unless($match) {
+                          # Update the keepalive counts
+                          foreach my $properties (keys %keepalive) {
+                            my @nodes=@{$keepalive{$properties}{"nodes"}};
+                            if (@nodes>0 && grep(/$key/,@nodes)) {
+                              $keepalive{$properties}{"cur_idle"}-=1;
+                            }
+                          }
+                          # Change state node to "Absent" and halt it
+                          change_node_state( $base, $key, "Absent" );
+                          oar_debug(
 "[Hulot] Hulot module put node '$key' in energy saving mode (state~Absent)\n"
-                        );
-
-#print("[DEBUG-HULOT] [HALT] Node/Command : ".$key."/".$nodes_list_to_process{$key}->{'command'}."\n");
-                        push( @commandToLaunch, "HALT:$key" );
+                          );
+                          push( @commandToLaunch, "HALT:$key" );
+                        } 
                         last;
                     };
-                    oar_error("[Hulot] Error during commands producing\n");
+
+                    oar_error("[Hulot] Unknown command\n");
                     exit 1;
                 }
             }
