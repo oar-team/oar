@@ -333,6 +333,54 @@ sub start_energy_loop() {
                 oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
             }
 
+            # Check idle and occupied nodes
+            foreach my $properties (keys %keepalive) {
+              my @occupied_nodes;
+              my @idle_nodes;
+              $keepalive{$properties}{"nodes"} = 
+                 [ iolib::get_nodes_with_given_sql($base,$properties) ];
+              $keepalive{$properties}{"cur_idle"}=0;
+              foreach my $alive_node (iolib::get_nodes_with_given_sql($base,
+                                        $properties. " and (state='Alive' or next_state='Alive')")) {
+                if (iolib::get_node_job($base,$alive_node)) {
+                  push(@occupied_nodes,$alive_node);
+                }else{
+                  $keepalive{$properties}{"cur_idle"}+=1;
+                  push(@idle_nodes,$alive_node);
+                }
+              }
+              #oar_debug("[Hulot] cur_idle($properties) => "
+              #     .$keepalive{$properties}{"cur_idle"}."\n");
+
+              # Wake up some nodes corresponding to properties if needed
+              my $ok_nodes=$keepalive{$properties}{"cur_idle"}
+                            - $keepalive{$properties}{"min"};
+              my $wakeable_nodes=@{$keepalive{$properties}{"nodes"}}
+                            - @idle_nodes - @occupied_nodes;
+              while ($ok_nodes < 0 && $wakeable_nodes > 0) {
+                foreach my $node (@{$keepalive{$properties}{"nodes"}}) {
+                  unless (grep(/^$node$/,@idle_nodes) || grep(/^$node$/,@occupied_nodes)) {
+                    # we have a good candidate to wake up
+                    $ok_nodes++;
+                    $wakeable_nodes--;
+                    # add WAKEUP:$node to list of commands if not already
+                    # into the current command list
+                    if (not defined($nodes_list_running{$node})) {
+                      $nodes_list_to_process{$node} =
+                        { 'command' => "WAKEUP", 'time' => time };
+                      oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
+                    }else{
+                       if ($nodes_list_running{$node}->{'command'} ne "WAKEUP") {
+                         oar_debug("[Hulot] Wanted to wake up $node to satisfy '$properties' keepalive, but a command is already running on this node. So doing nothing and waiting for the next cycles to converge.\n");
+                       }
+                    }
+                    last if ($ok_nodes >=0 || $wakeable_nodes <= 0);
+                  }
+                }
+                
+              }
+            }
+ 
             # Retrieve list of nodes to wake up
             my @nodesToWakeupList = oar_scheduler::get_nodes_to_wake_up($base);
 
@@ -430,43 +478,7 @@ sub start_energy_loop() {
                 }
             }
 
-            # Check idle nodes
-            foreach my $properties (keys %keepalive) {
-              my @alive_nodes;
-              $keepalive{$properties}{"nodes"} = 
-                 [ iolib::get_nodes_with_given_sql($base,$properties) ];
-              $keepalive{$properties}{"cur_idle"}=0;
-              foreach my $alive_node (iolib::get_nodes_with_given_sql($base,
-                                        $properties. " and state='Alive'")) {
-                unless (iolib::get_node_job($base,$alive_node)) {
-                  $keepalive{$properties}{"cur_idle"}+=1;
-                  push(@alive_nodes,$alive_node);
-                }
-              }
-              #oar_debug("[Hulot] cur_idle($properties) => "
-              #     .$keepalive{$properties}{"cur_idle"}."\n");
-
-              # Wake up some nodes corresponding to properties if needed
-              my $ok_nodes=$keepalive{$properties}{"cur_idle"}
-                            - $keepalive{$properties}{"min"};
-              my $wakeable_nodes=@{$keepalive{$properties}{"nodes"}}
-                            - @alive_nodes;
-              while ($ok_nodes < 0 && $wakeable_nodes > 0) {
-                foreach my $node (@{$keepalive{$properties}{"nodes"}}) {
-                  unless (grep(/^$node$/,@alive_nodes)) {
-                    # we have a good candidate to wake up
-                    $ok_nodes++;
-                    $wakeable_nodes--;
-                    # TODO: add WAKEUP:$node to list of commands if not already
-                    # into the current command
-                    oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
-                    last if ($ok_nodes >=0 || $wakeable_nodes <= 0);
-                  }
-                }
-                
-              }
-            }
-            
+           
             # Creating command list
             my @commandToLaunch = ();
             my @dont_halt;
@@ -489,7 +501,7 @@ sub start_energy_loop() {
                             if ($keepalive{$properties}{"cur_idle"} 
                                  <= $keepalive{$properties}{"min"}) {
                               oar_debug(
-"[Hulot] Refusing to halt '$key' because I need to keep alive ".
+"[Hulot] Not halting '$key' because I need to keep alive ".
 $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
                               );
                               $match=1;
@@ -518,7 +530,7 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
                         last;
                     };
 
-                    oar_error("[Hulot] Unknown command\n");
+                    oar_error("[Hulot] Unknown command: '".$nodes_list_to_process{$key}->{'command'}."' for node '$key'\n");
                     exit 1;
                 }
             }
