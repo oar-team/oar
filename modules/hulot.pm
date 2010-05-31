@@ -430,8 +430,9 @@ sub start_energy_loop() {
                 }
             }
 
-            # Check keepalive nodes
+            # Check idle nodes
             foreach my $properties (keys %keepalive) {
+              my @alive_nodes;
               $keepalive{$properties}{"nodes"} = 
                  [ iolib::get_nodes_with_given_sql($base,$properties) ];
               $keepalive{$properties}{"cur_idle"}=0;
@@ -439,12 +440,33 @@ sub start_energy_loop() {
                                         $properties. " and state='Alive'")) {
                 unless (iolib::get_node_job($base,$alive_node)) {
                   $keepalive{$properties}{"cur_idle"}+=1;
+                  push(@alive_nodes,$alive_node);
                 }
               }
               #oar_debug("[Hulot] cur_idle($properties) => "
               #     .$keepalive{$properties}{"cur_idle"}."\n");
-            }
 
+              # Wake up some nodes corresponding to properties if needed
+              my $ok_nodes=$keepalive{$properties}{"cur_idle"}
+                            - $keepalive{$properties}{"min"};
+              my $wakeable_nodes=@{$keepalive{$properties}{"nodes"}}
+                            - @alive_nodes;
+              while ($ok_nodes < 0 && $wakeable_nodes > 0) {
+                foreach my $node (@{$keepalive{$properties}{"nodes"}}) {
+                  unless (grep(/^$node$/,@alive_nodes)) {
+                    # we have a good candidate to wake up
+                    $ok_nodes++;
+                    $wakeable_nodes--;
+                    # TODO: add WAKEUP:$node to list of commands if not already
+                    # into the current command
+                    oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
+                    last if ($ok_nodes >=0 || $wakeable_nodes <= 0);
+                  }
+                }
+                
+              }
+            }
+            
             # Creating command list
             my @commandToLaunch = ();
             my @dont_halt;
