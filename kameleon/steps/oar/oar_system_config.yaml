@@ -20,8 +20,7 @@ oar_system_config:
        Or check the API:
          $ wget -O - http://localhost/oarapi/resources.yaml
        Check the API more deeply, submitting a job as the "kameleon" user:
-         $ su - kameleon
-         $ curl -i -X POST http://localhost/oarapi/jobs.json \\
+         $ curl -i -X POST http://kameleon:kameleon@localhost/oarapi-priv/jobs.json \\
              -H'Content-Type: application/json' \\
              -d '{\"resource\":\"/nodes=1,walltime=00:10:00\", \"command\":\"sleep 600\"}'
          
