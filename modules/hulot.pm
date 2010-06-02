@@ -15,6 +15,7 @@ require Exporter;
 #***********************************************
 #  [TODO]
 # Todo: Group nodes passed to the sleeping command (to do inside windowforker)
+# Todo: log events
 # -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job -> au prochain cycle, metasched va choisir un autre noeud a reveiller, non??
 #
 #***********************************************
