@@ -14,9 +14,8 @@ require Exporter;
 
 #***********************************************
 #  [TODO]
-# InProgress: Keepalive of some nodes
 # Todo: Group nodes passed to the sleeping command (to do inside windowforker)
-# -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job
+# -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job -> au prochain cycle, metasched va choisir un autre noeud a reveiller, non??
 #
 #***********************************************
 
@@ -381,13 +380,20 @@ sub start_energy_loop() {
               }
             }
  
-            # Retrieve list of nodes to wake up
-            my @nodesToWakeupList = oar_scheduler::get_nodes_to_wake_up($base);
+            # Retrieve list of nodes having at least one resource Alive
+            my @nodes_alive = iolib::get_nodes_with_given_sql($base,"state='Alive'");
 
             # Checks if some booting nodes need to be suspected
             foreach $key ( keys(%nodes_list_running) ) {
                 if ( $nodes_list_running{$key}->{'command'} eq "WAKEUP" ) {
-                    if (
+                    if (grep(/^$key$/,@nodes_alive)) {
+                        oar_debug(
+"[Hulot] Booting node '$key' seems now up, so removing it from running list.\n"
+                        );
+
+                        # Remove node from the list running nodes
+                        remove_from_hash( \%nodes_list_running, $key );
+                    }elsif (
                         time > (
                             $nodes_list_running{$key}->{'time'} +
                               get_conf_with_default_param(
@@ -407,17 +413,6 @@ sub start_energy_loop() {
 
 # Remove this node from received list (if node is present) because it was suspected
                         remove_from_array( \@nodes, $key );
-                    }
-                    elsif ( !is_exists_in_array( $key, \@nodesToWakeupList ) ) {
-                        oar_debug(
-"[Hulot] Booting node '$key' seems now up (no more in wakeup nodes list)\n"
-                        );
-                        oar_debug(
-"[Hulot] Removing node '$key' from the running nodes list\n"
-                        );
-
-                        # Remove node from the list running nodes
-                        remove_from_hash( \%nodes_list_running, $key );
                     }
                 }
             }
