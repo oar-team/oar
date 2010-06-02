@@ -51,10 +51,10 @@ oar_config:
    - exec_chroot: oarproperty -a core
    - exec_chroot: oarproperty -a cpu
    - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 -p core=0 -p cpuset=0
-   - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 -p core=1 -p cpuset=1
-   - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 -p core=0 -p cpuset=2
-   - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 -p core=1 -p cpuset=3
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 -p core=1 -p cpuset=0
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 -p core=0 -p cpuset=0
+   - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 -p core=1 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=0 -p core=0 -p cpuset=0
-   - exec_chroot: oarnodesetting -a -h node2 -p cpu=0 -p core=1 -p cpuset=1
-   - exec_chroot: oarnodesetting -a -h node2 -p cpu=1 -p core=0 -p cpuset=2
-   - exec_chroot: oarnodesetting -a -h node2 -p cpu=1 -p core=1 -p cpuset=3
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=0 -p core=1 -p cpuset=0
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=1 -p core=0 -p cpuset=0
+   - exec_chroot: oarnodesetting -a -h node2 -p cpu=1 -p core=1 -p cpuset=0
