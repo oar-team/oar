@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
-%define version 2.4.2
-%define release 2
+%define version 2.4.3
+%define release 1
 
 Name: 		oar
 Version:        %{version}
@@ -387,6 +387,10 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+
+* Fri Jun 4 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.3-1
+- Hulot keepalive
+- Healing hook
 
 * Fri Mar 12 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.2-2
 - Fixed some dependencies

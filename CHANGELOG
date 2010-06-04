@@ -1,6 +1,13 @@
 OAR CHANGELOG
 =============
 
+version 2.4.3:
+--------------
+  - Hulot module now has customizable keepalive feature 
+    (backport from 2.5)
+  - Added a hook to launch a healing command when nodes are suspected
+    (backport from 2.5)
+
 version 2.4.2:
 --------------
   - New "Hulot" module for intelligent and configurable energy saving
