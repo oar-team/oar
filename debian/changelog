@@ -1,3 +1,11 @@
+oar (2.4.3-0~3.gbpd7a188) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @d7a1887ac7e73fc9509cd4378dc6810386b15b1a **
+
+  * Hulot event_logging bug fix
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 04 Jun 2010 18:07:10 +0200
+
 oar (2.4.3-0~2.gbp3fdefd) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @3fdefd1d68a05661f2892d3605af4f9b6c759c22 **
