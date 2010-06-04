@@ -14,9 +14,7 @@ require Exporter;
 
 #***********************************************
 #  [TODO]
-# Todo: Group nodes passed to the sleeping command (to do inside windowforker)
-# Todo: log events
-# -- Si on passe le noeud à suspected parce qu'on arrive pas à le réveiller : on fait quoi du job -> au prochain cycle, metasched va choisir un autre noeud a reveiller, non??
+# Todo?: Group nodes passed to the sleeping command (to do inside windowforker)
 #
 #***********************************************
 
@@ -86,14 +84,6 @@ sub check() {
     return send_cmd_to_fifo( \@tab, "CHECK" );
 }
 
-## check_keepalive_nodes
-sub check_keepalive_nodes() {
-
-# TODO
-# function to be used by almighty, using ENERGY_SAVING_NODES_KEEPALIVE, select nodes to
-# wake up and send them to the pipe (wake_up_nodes($nodes))
-    return 0;
-}
 
 ##check_reminded_list
 # Checks if some nodes in list_to_remind can be processed
