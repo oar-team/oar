@@ -151,10 +151,10 @@ sub launch($$$$$$){
                          or die("[Hulot] Cannot connect to the database\n");
                       if ($cmd eq "WAKEUP"){
                         $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD");
-                        iolib::add_new_event_with_host($base,"WAKEUP_NODE",0,"Node $node wake-up request",($node) );
+                        iolib::add_new_event_with_host($base,"WAKEUP_NODE",0,"Node $node wake-up request",[$node] );
                       }elsif ($cmd eq "HALT"){
                         $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
-                        iolib::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",($node) );
+                        iolib::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",[$node] );
                       }
                       iolib::disconnect($base);
                       system($command_to_exec);
