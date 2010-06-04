@@ -1,3 +1,14 @@
+oar (2.4.3-0~2.gbp3fdefd) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @3fdefd1d68a05661f2892d3605af4f9b6c759c22 **
+
+  [ bzizou ]
+  * Backport from 2.5 (trunk) branch:
+
+  [ Bruno Bzeznik ]
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 04 Jun 2010 15:52:16 +0200
+
 oar (2.4.3-0~1.gbpe157bd) UNRELEASED; urgency=low
 
   * Dummy changelog entry for version upgrade
