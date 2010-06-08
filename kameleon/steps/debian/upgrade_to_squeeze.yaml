@@ -1,0 +1,21 @@
+upgrade_to_squeeze:
+ - upgrade_to_squeeze:
+   - append_file:
+     - /etc/apt/apt.conf
+     - |
+       APT::Get::AllowUnauthenticated "true";
+   - write_file:
+     - /etc/apt/sources.list
+     - |
+       deb http://ftp.fr.debian.org/debian/ squeeze main non-free
+       deb-src http://ftp.fr.debian.org/debian/ squeeze main non-free
+       deb http://security.debian.org/ squeeze/updates main non-free
+       deb-src http://security.debian.org/ squeeze/updates main non-free
+   - write_file:
+     - /etc/apt/apt.conf.d/local-dpkg_force-confnew
+     - |
+       DPkg::Options {"--force-confnew";};
+   - exec_chroot:          apt-get update
+   - exec_chroot:          apt-get install --fix-broken --fix-missing --yes --force-yes apt dpkg aptitude
+   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get --fix-broken --fix-missing --yes --force-yes  dist-upgrade"
+

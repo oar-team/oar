@@ -4,7 +4,7 @@ save_as_g5k_inside_g5k:
      - /etc/apt/apt.conf
      - |
        APT::Get::AllowUnauthenticated "true";
-   - exec_chroot:          apt-get -f install -y --force-yes ssh libmlx4-1 libmlx4-dev
+#   - exec_chroot:          apt-get -f install -y --force-yes ssh libmlx4-1 libmlx4-dev
    - append_file:
      - /etc/modules
      - |
