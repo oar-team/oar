@@ -324,6 +324,8 @@ server: man
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 tools/oarmonitor_sensor.pl $(DESTDIR)$(OARCONFDIR); fi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_prologue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 scripts/server_prologue $(DESTDIR)$(OARCONFDIR) ; fi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 scripts/server_epilogue $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/wake_up_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/wake_up_nodes.sh already exists, not overwriting it." ; else install -m 0755 tools/wake_up_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh already exists, not overwriting it." ; else install -m 0755 tools/shut_down_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
 	install -d -m 0755 $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/man1/Almighty.1 $(DESTDIR)$(MANDIR)/man1/Almighty.1
 	install -m 0644 man/man1/oar_mysql_db_init.1 $(DESTDIR)$(MANDIR)/man1/oar_mysql_db_init.1
