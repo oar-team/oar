@@ -78,27 +78,6 @@ whatever you want that are other notions):
         oarnodesetting -a -h "" -p type=fluent -p licence=l1
         ...
 
- 3. Now you have to write an admission rule to force oarsub "-l" option on
-    resources of the type "default" (node resources) if there is no other
-    specifications. 
-    ::
-
-        INSERT INTO admission_rules (rule) VALUES ('
-        foreach my $mold (@{$ref_resource_list}){
-            foreach my $r (@{$mold->[0]}){
-                my $prop = $r->{property};
-                if (($prop !~ /[\\s\\(]type[\\s=]/) and ($prop !~ /^type[\\s=]/)){
-                    if (!defined($prop)){
-                        $r->{property} = "type = \\\'default\\\'";
-                    }else{
-                        $r->{property} = "($r->{property}) AND type = \\\'default\\\'";
-                    }
-                }
-            }
-        }
-        print("[ADMISSION RULE] Modify resource description with type constraints\\n");
-        ');
-
 After this configuration, users can perform submissions like
 ::
 
