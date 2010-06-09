@@ -312,7 +312,30 @@ rules : oaradmin.
 Take a look at the oaradmin documentation in the administrator commands section 
 for more details.
 
+Energy saving
+-------------
+
+Starting with version 2.4.3, OAR provides a module responsible of advanced
+management of wake-up/shut-down of nodes when they are not used.
+To activate this feature, you have to:
+
+    - provide 2 commands or scripts that are to be executed on the oar server
+      to shutdown (or set into standby) some nodes and to wake-up some nodes
+      (configure the path of those commands into the ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD
+      and ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
+    - configure the available_upto property of all your nodes
+    - activate the energy saving module by setting ENERGY_SAVING_INTERNAL="yes"
+      and configuring the ENERGY_* variables into oar.conf
+    - configure the metascheduler time values into SCHEDULER_NODE_MANAGER_IDLE_TIME,
+      SCHEDULER_NODE_MANAGER_SLEEP_TIME and SCHEDULER_NODE_MANAGER_WAKEUP_TIME
+      variables of the oar.conf file.
+    - restart the oar server (you should see an "Almighty" process more).
+
+More informations are available inside the oar.conf file itself. For more
+details about the mechanism, take a look at the "Hulot" module documentation.
+
 Further informations
 --------------------
+
 For further information, please check http://oar.imag.fr/.
 
