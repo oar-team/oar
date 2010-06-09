@@ -351,18 +351,23 @@ sub start_energy_loop() {
                 foreach my $node (@{$keepalive{$properties}{"nodes"}}) {
                   unless (grep(/^$node$/,@idle_nodes) || grep(/^$node$/,@occupied_nodes)) {
                     # we have a good candidate to wake up
-                    $ok_nodes++;
+                    # now, check if the node has a good status
                     $wakeable_nodes--;
-                    # add WAKEUP:$node to list of commands if not already
-                    # into the current command list
-                    if (not defined($nodes_list_running{$node})) {
-                      $nodes_list_to_process{$node} =
-                        { 'command' => "WAKEUP", 'time' => time };
-                      oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
-                    }else{
-                       if ($nodes_list_running{$node}->{'command'} ne "WAKEUP") {
+                    my @node_info=iolib::get_node_info($base, $node);
+                    if ($node_info[0]->{state} eq "Absent" 
+                        && $node_info[0]->{available_upto} > time) {
+                      $ok_nodes++;
+                      # add WAKEUP:$node to list of commands if not already
+                      # into the current command list
+                      if (not defined($nodes_list_running{$node})) {
+                        $nodes_list_to_process{$node} =
+                          { 'command' => "WAKEUP", 'time' => time };
+                        oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
+                      }else{
+                         if ($nodes_list_running{$node}->{'command'} ne "WAKEUP") {
                          oar_debug("[Hulot] Wanted to wake up $node to satisfy '$properties' keepalive, but a command is already running on this node. So doing nothing and waiting for the next cycles to converge.\n");
-                       }
+                         }
+                      }
                     }
                     last if ($ok_nodes >=0 || $wakeable_nodes <= 0);
                   }
