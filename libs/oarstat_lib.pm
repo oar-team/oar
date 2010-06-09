@@ -91,6 +91,76 @@ sub get_all_jobs_for_user {
   return \@jobs;
 }
 
+sub get_jobs_for_user_query {
+	my $user = shift;
+	my $user_query = shift;
+	my $limit = shift;
+	my $jobs_per_page = shift;
+	my @jobs =  iolib::get_limit_jobs_for_user($base,$user,$user_query,$limit,$jobs_per_page);
+	return \@jobs;
+}
+
+sub count_jobs_for_user_query {
+	my $user = shift;
+	my $count_query = shift;
+	my $res =  iolib::count_jobs_for_user($base,$user,$count_query);
+	return ($res);
+}
+
+sub get_pagination_sql_query_and_link($$$) {
+	my $state = shift;
+	my $from_date = shift;
+	my $to_date = shift;
+	
+	# URL parameters parser
+    my $state_parameter_def;
+    my $date_parameter_def;
+    my $state_query;
+    my $date_query;
+    
+	if (defined($state)) {
+    	$state_parameter_def = 1;
+    	my @states = split(/_/,$state);
+    	my $statement;
+    	foreach my $s (@states) {
+    		$statement .= $base->quote($s);
+    		$statement .= ",";
+    	}
+    	chop($statement);
+        $state_query = " state IN (".$statement.")";
+    }
+    if (defined($from_date) && defined($to_date)) {
+    	$date_parameter_def = 1;
+    	$date_query = " start_time >= ".$from_date." AND stop_time <= ".$to_date;
+    }
+    # sql queries composition and link generation
+    my $link;
+    my $sql_jobs_query = "SELECT * FROM jobs";
+    my $sql_count_jobs_query = "SELECT COUNT(*) as total_jobs FROM jobs";
+    if (defined($state_parameter_def) && !defined($date_parameter_def)) {
+    	$sql_jobs_query .= " WHERE $state_query";
+    	$sql_count_jobs_query .= " WHERE $state_query";
+    	$link = "?state=".$state;
+    }
+    if (!defined($state_parameter_def) && defined($date_parameter_def)) {
+    	$sql_jobs_query .= " WHERE $date_query";
+    	$sql_count_jobs_query .= " WHERE $date_query";
+    	$link = "?from=".$from_date."&to=".$to_date;
+    }
+    if (defined($state_parameter_def) && defined($date_parameter_def)) {
+    	$sql_jobs_query .= " WHERE $state_query AND $date_query";
+    	$sql_count_jobs_query .= " WHERE $state_query AND $date_query";
+    	$link = "?state=".$state."&from=".$from_date."&to=".$to_date;
+    }
+    
+    my @sql_query_and_link;
+    push(@sql_query_and_link,$sql_jobs_query);
+    push(@sql_query_and_link,$sql_count_jobs_query);
+    push(@sql_query_and_link,$link);
+    
+    return (@sql_query_and_link);
+}
+
 sub get_duration($){
 # Converts a number of seconds in a human readable duration (years,days,hours,mins,secs)
     my $time=shift;
