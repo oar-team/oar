@@ -39,8 +39,6 @@ sub disconnect($);
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub get_jobs_in_state_for_user($$$);
-sub get_limit_jobs_for_user($$$$$);
-sub count_jobs_for_user($$$);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
@@ -573,40 +571,6 @@ sub get_jobs_in_state_for_user($$$) {
         push(@res, $ref);
     }
     return(@res);
-}
-
-sub get_limit_jobs_for_user($$$$$) {
-	my $dbh = shift;
-	my $user = shift;
-	my $user_query = shift;
-	my $limit = shift;
-	my $jobs_per_page = shift;
-	
-	if (defined $user and "$user" ne "") {
-		$user_query = $user_query." AND job_user =" . $dbh->quote($user);
-	}
-	$user_query = $user_query." ORDER BY job_id DESC LIMIT ".$limit.",".$jobs_per_page ;
-	my $sth = $dbh->prepare($user_query);
-	$sth->execute();
-	my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref);
-    }
-    return(@res); 
-}
-
-sub count_jobs_for_user($$$) {
-	my $dbh = shift;
-	my $user = shift;
-	my $count_query = shift;
-	
-	if (defined $user and "$user" ne "") {
-		$count_query=$count_query." AND job_user =" . $dbh->quote($user);
-	}
-	my $sth = $dbh->prepare($count_query);
-	$sth->execute();
-    my ($count) = $sth->fetchrow_array();
-    return $count ;  
 }
 
 # get_jobs_with_given_properties
