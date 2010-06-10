@@ -17,7 +17,7 @@ init_conf($ENV{OARCONFFILE});
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-my $Healing_exec_file = get_conf("HEALING_EXEC_FILE");
+my $Healing_exec_file = get_conf("SUSPECTED_HEALING_EXEC_FILE");
 my @resources_to_heal;
 
 my $Exit_code = 0;
@@ -355,8 +355,8 @@ iolib::unlock_table($base);
 iolib::disconnect($base);
 
 my $timeout_cmd = 10;
-if (is_conf("HEALING_TIMEOUT")){
-    $timeout_cmd = get_conf("HEALING_TIMEOUT");
+if (is_conf("SUSPECTED_HEALING_TIMEOUT")){
+    $timeout_cmd = get_conf("SUSPECTED_HEALING_TIMEOUT");
 }
 if (defined($Healing_exec_file) && @resources_to_heal > 0){
     oar_warn("[NodeChangeState] Running healing script for suspected resources.\n");

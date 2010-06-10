@@ -8,6 +8,7 @@ use oar_conflib qw(init_conf get_conf is_conf get_conf_with_default_param);
 use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use IPC::SysV qw(IPC_NOWAIT);
 use Data::Dumper;
+use oar_iolib;
 
 # Log category
 set_current_log_category('WindowForker');
@@ -146,11 +147,16 @@ sub launch($$$$$$){
                       # If Hulot request
                       my $command_to_exec="";
                       (my $cmd, my $node)=split(/:/,$commands->[$index],2);
+                      my $base = iolib::connect()
+                         or die("[Hulot] Cannot connect to the database\n");
                       if ($cmd eq "WAKEUP"){
                         $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD");
+                        iolib::add_new_event_with_host($base,"WAKEUP_NODE",0,"Node $node wake-up request",[$node] );
                       }elsif ($cmd eq "HALT"){
                         $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
+                        iolib::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",[$node] );
                       }
+                      iolib::disconnect($base);
                       system($command_to_exec);
                       if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
                         oar_error("[WindowForker] Failed to send message to Hulot by msgsnd(): $!\n");
