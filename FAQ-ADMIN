@@ -172,14 +172,18 @@ If you want to enable a node to be woke up the next 12 hours::
 
 Otherwise you can disable the wake up of nodes (but not the halt) by::
 
-    oarnodesetting -h host_name -p cm_availability=0
+    oarnodesetting -h host_name -p cm_availability=1
 
-If you want to disable the halt on a node::
+If you want to disable the halt on a node (but not the wakeup)::
 
     oarnodesetting -h host_name -p cm_availability=2147483647
 
 2147483647 = 2^31 - 1 : we take this value as infinite and it is used to
 disable the halt mechanism.
+
+And if you want to disable the halt and the wakeup::
+
+    oarnodesetting -h host_name -p cm_availability=0
 
 Note: In the unstable 2.4 OAR version, cm_availability has been renamed
 into available_upto. 
