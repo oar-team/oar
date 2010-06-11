@@ -5089,7 +5089,8 @@ sub search_idle_nodes($$){
                 resources.state = \'Alive\' AND
                 resources.network_address != \'\' AND
                 resources.type = \'default\' AND
-                resources.available_upto < 2147483647
+                resources.available_upto < 2147483647 AND
+                resources.available_upto > 0
             GROUP BY resources.network_address";
     $sth = $dbh->prepare($req);
     $sth->execute();
