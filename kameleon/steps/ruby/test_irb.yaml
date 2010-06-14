@@ -1,0 +1,15 @@
+test_irb:
+ - load_json: 
+   - exec_appliance: echo "require 'pp'" > irb_stdin
+ - print_output1:
+   - exec_appliance: sleep 1 # DIRTY!! We need to find a solution based on a stdout fifo
+   - exec_appliance: cat irb_stdout 
+   - exec_appliance: cat /dev/null > irb_stdout
+ - create_array:
+    - exec_appliance: echo "arr=['hello','world','and','universe']" > irb_stdin
+    - exec_appliance: echo "pp arr" > irb_stdin
+ - print_output2:
+   - exec_appliance: sleep 1
+   - exec_appliance: cat irb_stdout
+   - exec_appliance: cat /dev/null > irb_stdout
+
