@@ -2,4 +2,5 @@ clean:
  - remove_workdir:
    - breakpoint:          Take another look before cleaning :)
    - exec_chroot:         umount /proc 2>/dev/null|| true
+   - exec_current:        bash $$workdir/clean.sh
    - exec_current:        rm -rf $$chroot
