@@ -87,7 +87,7 @@ desktop-computing-cgi: FORCE
 
 api: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
-	install -m 0644 api/oar_apilib.pm $(DESTDIR)$(OARDIR)
+	install -m 0644 libs/oar_apilib.pm $(DESTDIR)$(OARDIR)
 	mkdir -p $(DESTDIR)$(OARCONFDIR)
 	install -m 0755 api/oarapi.pl $(DESTDIR)$(OARDIR)/oarapi.pl
 	install -d -m 0755 $(DESTDIR)$(CGIDIR)
