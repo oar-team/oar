@@ -1,3 +1,16 @@
+oar (2.4.3-0~6.gbp905944) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @9059445e64f694ecae13af82b9e29434bf18270a **
+
+  [ bzizou ]
+  * available_upto=0 means that all energy saving is disabled for a node
+    (wake-up AND shutdown). available_upto=1 means the same thing as
+    before (with 0)
+
+  [ Bruno Bzeznik ]
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 14 Jun 2010 14:56:58 +0200
+
 oar (2.4.3-0~5.gbp2b76c5) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @2b76c5ad6f66be39eec440dfbe888d410d1d0bfb **
