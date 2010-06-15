@@ -323,7 +323,15 @@ To activate this feature, you have to:
       to shutdown (or set into standby) some nodes and to wake-up some nodes
       (configure the path of those commands into the ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD
       and ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
-    - configure the available_upto property of all your nodes
+    - configure the available_upto property of all your nodes:
+
+      - available_upto=0           : to disable the wake-up and halt      
+      - available_upto=1           : to disable the wake-up (but not the halt) 
+      - available_upto=2147483647  : to disable the halt (but not the wake-up) 
+      - available_upto=2147483646  : to enable wake-up/halt forever            
+      - available_upto=<timestamp> : to enable the halt, and the wake-up until 
+        the date given by <timestamp> 
+
     - activate the energy saving module by setting ENERGY_SAVING_INTERNAL="yes"
       and configuring the ENERGY_* variables into oar.conf
     - configure the metascheduler time values into SCHEDULER_NODE_MANAGER_IDLE_TIME,
@@ -331,6 +339,7 @@ To activate this feature, you have to:
       variables of the oar.conf file.
     - restart the oar server (you should see an "Almighty" process more).
 
+You need to restart OAR each time you change an ENERGY_* variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
