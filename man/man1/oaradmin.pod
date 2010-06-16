@@ -42,7 +42,7 @@ Ex : oaradmin resources -a /node=mycluster{12}.local/cpu={2}/core={2}. Number in
 
 A second form is useful to name nodes. The expression -a /node=mycluster[1-100].local creates nodes mycluster1.local, mycluster2.local... mycluster100.local. It is possible to specify lists and groups for hosts. Ex : -a /node=mycluster[1-8,10,15,20-30],host_a,host_b/cpu={2}. Of course, in [...] only numeric values are allowed. Expression -a /node=chemistry_cluster[1-10,18],physics_cluster[1-50]/cpu={2} is also possible.
 
-For nodes naming, a numeric format and an offset are available. The numeric format is specified with %xd where x is the number of digits. Ex : -a /node=mycluster-{%2d12} will create nodes mycluster-01, mycluster-02... The offset is specified with +xoffset where x is the offset value. mycluster{12+20offset} will create mycluster21 as first node name. Remember that the first node name with mycluster{12} is mycluster1. So the first numeric value is increased by +20offset. Offset can be negative with -xoffset. Numeric format and offset can be used anywhere in {} expression : {12%3d+20offset} or {+20offset12%3d}.  With [] form in nodes names, offset is useless ; only numeric format can be used in this case. mycluster[1-100] define values of names. mycluster{12} defined at the same time a number of elements and values of names.
+For nodes naming, a numeric format and an offset are available. The numeric format is specified with %xd where x is the number of digits. Ex : -a /node=mycluster-{%2d12} will create nodes mycluster-01, mycluster-02... The offset is specified with +x (or +xoffset) where x is the offset value. mycluster{12+20} will create mycluster21 as first node name. Remember that the first node name with mycluster{12} is mycluster1. So the first numeric value is increased by +20. Offset can be negative with -x. Numeric format and offset can be used anywhere in {} expression : {12%3d+20} or {+20offset12%3d}.  With [] form in nodes names, offset is useless ; only numeric format can be used in this case. mycluster[1-100] define values of names. mycluster{12} defined at the same time a number of elements and values of names.
 
 Some expressions does not match or are not allowed :
   -a /switch={2}/node=mycluster[1-12]. If an expression uses [], it must be the first expression behind -a.
@@ -70,6 +70,9 @@ Other examples :
 
   oaradmin resources -a /node=mycluster[1-25]/cpu={2} -p mem=1024 -p arch=amd_64 -p infiniband=YES -c
 
+=item B<--auto-offset>
+
+This option automatically computes the node, cpu, and core offsets for you based on what is already registered in the OAR database. Node names must be of the form <cluster>-<number><something> for oaradmin to automatically find the good <number>.
 
 =item B<-s> <EXPR> B<-p> <EXPR> 
 
@@ -80,7 +83,7 @@ The <EXPR> form is : property=value. As add feature, property field corresponds 
 It is possible to group resources with {x} and {%} operators. {x} defines a group of x elements or means "each x elements". {%} means an increment of 1 to 1. Ex : 
 oaradmin resources -s core={4} -p cpu={%}. Creates one cpu each 4 cores. {x} is allowed only in the selected expression. {%} is allowed only with -p option.
 
-Offset can be used in this form : oaradmin resources -s core={4+56offset} -p cpu={%+56offset}.
+Offset can be used in this form : oaradmin resources -s core={4+56} -p cpu={%+56}.
 
 Witout -c option, oaradmin prints only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 

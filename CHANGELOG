@@ -10,6 +10,7 @@ version 2.4.3:
   - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is unreachable. 
   - Bugfix #9990: prevent from inserting jobs with invalid username (like an empty username)
   - Oarnodecheck improvements: node is not checked if a job is already running
+  - New oaradmin option: --auto-offset
 
 version 2.4.2:
 --------------
