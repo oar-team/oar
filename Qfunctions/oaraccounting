@@ -50,7 +50,7 @@ if (is_conf("ACCOUNTING_WINDOW")){
     $windowSize = get_conf("ACCOUNTING_WINDOW");
 }
 
-my $base = iolib::connect();
+my $base = iolib::connect_one();
 
 my $lockName = "ACCOUNTING";
 iolib::get_lock($base,$lockName,3600);
