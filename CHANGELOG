@@ -15,6 +15,7 @@ version 2.5.0:
     repair immediately
     with an external tool (activate the SUSPECTED_HEALING_EXEC_FILE variable)
   - Hulot module enhanced: keepalive of specific nodes
+  - Oarnodecheck improvements: node is not checked if a job is already running
 
 version 2.4.2:
 --------------
