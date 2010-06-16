@@ -78,7 +78,7 @@ sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
 sub get_jobs_range_dates($$$);
-sub get_jobs_gantt_scheduled($$$);
+sub get_jobs_gantt_scheduled;
 sub get_desktop_computing_host_jobs($$);
 sub get_stagein_id($$);
 sub set_stagein($$$$$$);
@@ -580,12 +580,12 @@ sub get_limit_jobs_for_user($$$$$) {
 	my $user = shift;
 	my $user_query = shift;
 	my $limit = shift;
-	my $jobs_per_page = shift;
+	my $offset = shift;
 	
 	if (defined $user and "$user" ne "") {
 		$user_query = $user_query." AND job_user =" . $dbh->quote($user);
 	}
-	$user_query = $user_query." ORDER BY job_id DESC LIMIT ".$limit.",".$jobs_per_page ;
+	$user_query = $user_query." ORDER BY job_id DESC LIMIT ".$limit." OFFSET ".$offset ;
 	my $sth = $dbh->prepare($user_query);
 	$sth->execute();
 	my @res = ();
@@ -3315,11 +3315,14 @@ sub get_jobs_range_dates($$$){
 
 # get all jobs in a range of date in the gantt
 # args : base, start range, end range
-sub get_jobs_gantt_scheduled($$$){
+sub get_jobs_gantt_scheduled{
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
-
+    my $limit = shift || "";
+    my $offset = shift || "";
+    if ($limit ne "") { $limit="LIMIT $limit"; }
+    if ($offset ne "") { $limit="OFFSET $offset"; }
     my $req =
         "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
          FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
@@ -3330,7 +3333,7 @@ sub get_jobs_gantt_scheduled($$$){
              gantt_jobs_predictions_visu.start_time < $date_end AND
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
              gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
-         ORDER BY jobs.job_id";
+         ORDER BY jobs.job_id $limit $offset";
     
     my $sth = $dbh->prepare($req);
     $sth->execute();
