@@ -3,8 +3,18 @@
 
 OARUSER=oar
 eval CHECKLOGDIR=~$OARUSER/checklogs
+CHECKSCRIPTDIR=/etc/oar/check.d
+# Get oarnodecheckrun path from oar-node configuration file
+eval $(grep "^OARNODECHECKRUN=.*" /etc/syslog/oar-node /etc/default/oar-node 2>/dev/null)
+STAMPFILE=$CHECKSCRIPTDIR/$(basename $0).lastrun
+DELAY=3600 # seconds
 
 shopt -s nullglob
+
+[ -f $STAMPFILE ] && \
+  [ $(expr `date +"%s"` - `stat --printf="%Y" $STAMPFILE`) -lt $DELAY  ] || \
+  $OARNODECHECKRUN
+
 
 for f in $CHECKLOGDIR/*; do
 	exit 1

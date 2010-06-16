@@ -2,19 +2,21 @@ OAR CHANGELOG
 =============
 
 version 2.5.0:
+  - Sources directories reorganized
   - New "Phoenix" tool to try to reboot automatically broken nodes
     (to setup into /etc/oar/oar_phoenix.pl)
   - New (experimental!) scheduler written in Ocaml
-  - New oaradmin option: --auto-offset
-  - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is 
-    unreachable. 
   - Cpusets are activated by default
-  - Bugfix #9990: prevent from inserting jobs with invalid username (like 
-    an empty username)
-  - Added hook script for suspected resources (to be able to check and 
-    repair immediately
-    with an external tool (activate the SUSPECTED_HEALING_EXEC_FILE variable)
-  - Hulot module enhanced: keepalive of specific nodes
+
+version 2.4.3:
+--------------
+  - Hulot module now has customizable keepalive feature
+  - Added a hook to launch a healing command when nodes are suspected
+    (activate the SUSPECTED_HEALING_EXEC_FILE variable)
+  - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is unreachable.
+  - Bugfix #9990: prevent from inserting jobs with invalid username (like an empty username)
+  - Oarnodecheck improvements: node is not checked if a job is already running
+  - New oaradmin option: --auto-offset
 
 version 2.4.2:
 --------------
