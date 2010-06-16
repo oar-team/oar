@@ -1,3 +1,14 @@
+oar (2.4.3-0~7.gbpdb3666) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @db366656ed1f5639265afb3cd07206ec07394020 **
+
+  [ bzizou ]
+  * Merge from trunk: Updated oaradmin doc
+
+  [ Bruno Bzeznik ]
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 16 Jun 2010 15:53:28 +0200
+
 oar (2.4.3-0~6.gbp905944) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @9059445e64f694ecae13af82b9e29434bf18270a **
