@@ -1471,7 +1471,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     # Check the user validity
     if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
-      warn("/!\\ Invalid username: '$user'\n");
+      warn("/!\\ Invalid username: $user\n");
       return(-11);
     }
 

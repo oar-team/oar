@@ -8,6 +8,7 @@ version 2.4.3:
   - Added a hook to launch a healing command when nodes are suspected
     (backport from 2.5)
   - Bugfix #9995: oaraccouting script doesn't freeze anymore when db is unreachable. 
+  - Bugfix #9990: prevent from inserting jobs with invalid username (like an empty username)
 
 version 2.4.2:
 --------------
