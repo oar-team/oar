@@ -4,19 +4,23 @@
 OARUSER=oar
 eval CHECKLOGDIR=~$OARUSER/checklogs
 CHECKSCRIPTDIR=/etc/oar/check.d
-# Get oarnodecheckrun path from oar-node configuration file
-eval $(grep "^OARNODECHECKRUN=.*" /etc/syslog/oar-node /etc/default/oar-node 2>/dev/null)
-STAMPFILE=$CHECKSCRIPTDIR/$(basename $0).lastrun
+OARNODECHECKRUN=/usr/lib/oar/oarnodecheckrun
+OARDODO=/usr/lib/oar/oardodo/oardodo
+STAMPFILE=$CHECKSCRIPTDIR/oarnodecheckrun.lastrun
 DELAY=3600 # seconds
 
 shopt -s nullglob
 
-[ -f $STAMPFILE ] && \
-  [ $(expr `date +"%s"` - `stat --printf="%Y" $STAMPFILE`) -lt $DELAY  ] || \
-  $OARNODECHECKRUN
-
+if [ -f $STAMPFILE ]; then
+  if [ $(expr `date +"%s"` - `stat --printf="%Y" $STAMPFILE`) -ge $DELAY  ]; then
+    SUDO=""
+    # User $OARUSER MUST be sudoer !
+    [ "$UID" -eq 0 ] || SUDO="$OARDODO"
+    $SUDO $OARNODECHECKRUN || exit 1
+  fi
+fi
 
 for f in $CHECKLOGDIR/*; do
-	exit 1
+	exit 2
 done
 exit 0
