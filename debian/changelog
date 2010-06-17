@@ -1,3 +1,11 @@
+oar (2.5.0-0~2.gbp86d00c) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @86d00c945e2c9532993519813349cad31544a1a6 **
+
+  * Added poar installation and packaging (into oar-web-status)
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 17 Jun 2010 15:31:44 +0200
+
 oar (2.5.0-0~1.gbp2188d3) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @2188d3b1f36ddb1a8b709bd01b529b70cd5c5519 **
