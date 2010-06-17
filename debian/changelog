@@ -1,3 +1,11 @@
+oar (2.5.0-0~24.gbp86d00c) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @86d00c945e2c9532993519813349cad31544a1a6 **
+
+  * Dummy version upgrade to sync with daily snapshots
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 17 Jun 2010 15:31:44 +0200
+
 oar (2.5.0-0~2.gbp86d00c) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @86d00c945e2c9532993519813349cad31544a1a6 **
