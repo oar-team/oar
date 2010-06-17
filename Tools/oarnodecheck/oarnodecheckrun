@@ -6,7 +6,7 @@ eval CHECKLOGDIR=~$OARUSER/checklogs
 CHECKSCRIPTDIR=/etc/oar/check.d
 CPUSET_DIR=/dev/cpuset/oar
 LOCKFILE=$CHECKSCRIPTDIR/$(basename $0).lock
-STAMPFILE=$CHECKSCRIPTDIR/$(basename $0).lastrun
+STAMPFILE=$CHECKSCRIPTDIR/oarnodecheckrun.lastrun
 
 if ! [ -r $CHECKLOGDIR ]; then
   echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
@@ -33,6 +33,8 @@ cd $CHECKSCRIPTDIR
 for f in *; do
   [ -x $f ] && CHECKLOGFILE=$CHECKLOGDIR/$f.$(date +%F.%T) ./$f
 done
+cd - > /dev/null
 
 # Release the lock.
-rm -f $STAMPFILE
+rm -f $LOCKFILE
+
