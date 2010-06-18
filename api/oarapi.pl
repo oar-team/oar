@@ -11,7 +11,7 @@ use oarversion;
 use POSIX;
 #use Data::Dumper;
 
-my $VERSION="0.2.8";
+my $VERSION="0.3.0";
 
 ##############################################################################
 # CONFIGURATION
@@ -54,6 +54,10 @@ if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 # Default data structure variant
 my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
+
+# Get the default maximum number of items
+my $MAX_ITEMS=500;
+if (is_conf("API_DEFAULT_MAX_ITEMS_NUMBER")){ $MAX_ITEMS = get_conf("API_DEFAULT_MAX_ITEMS_NUMBER"); }
 
 # Header for html version
 my $apiuri=apilib::get_api_uri_relative_base();
