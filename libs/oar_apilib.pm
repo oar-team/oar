@@ -408,6 +408,47 @@ sub add_gridjob_uris($$) {
  
 }
 
+sub get_pagination_query_and_link($$$) {
+	my $from_timestamp = shift;
+	my $to_timestamp = shift;
+	my $state = shift;
+
+    # sql queries composition and link generation
+    my $link;
+    my $where_jobs_query;
+    
+    if (defined($from_timestamp) && defined($to_timestamp)) {
+    	$where_jobs_query = "start_time >= ".$from_timestamp." AND stop_time <= ".$to_timestamp;
+    	$link = "?from=".$from_timestamp."&to=".$to_timestamp;
+    }
+
+	if (defined($state)) {
+    	my @states = split(/_/,$state);
+    	my $statement;
+    	foreach my $s (@states) {
+    		$statement .= $base->quote($s);
+    		$statement .= ",";
+    	}
+    	chop($statement);
+    	my $where_state = "state IN (".$statement.")";
+
+        if (!defined($link)) {
+			$where_jobs_query = $where_state;
+    	    $link = "?state=".$state;
+		}
+		else {
+			$where_jobs_query .= "AND ".$where_state;
+    	    $link .= "&state=".$state;
+		}
+    }
+
+    my @sql_query_and_link;
+    push(@sql_query_and_link,$where_jobs_query);
+    push(@sql_query_and_link,$link);
+
+    return (@sql_query_and_link);
+}
+
 ##############################################################################
 # Data structure functions
 # (functions for shaping data depending on $STRUCTURE)

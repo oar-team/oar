@@ -181,7 +181,67 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my $jobs = oarstatlib::get_all_jobs_for_user("");
+    my @where_statement_and_url = oarstatlib::get_pagination_query_and_url($q->param('from'),$q->param('to'),$q->param('state'));
+    my $parameters = pop(@where_statement_and_url);
+    my $where_statement = pop(@where_statement_and_url);
+
+    # url reconstruction
+    my $url; 
+
+    if (defined($more_infos)) {
+        $url = ".".$more_infos.".".$ext;
+    }
+    else {   
+        $url = "jobs.".$ext;
+    }
+        
+    if (defined($parameters)) {
+    	$url .= $parameters;
+    }
+
+    # Default data structure variant
+    my $ITEMS_LIMIT = 20;
+    if (is_conf("API_NUMBER_ITEMS_LIMIT")){ $ITEMS_LIMIT = get_conf("API_NUMBER_ITEMS_LIMIT"); }
+    if (defined($q->param('limit'))) {
+        $ITEMS_LIMIT = $q->param('limit');
+        $url .= "&limit=".$ITEMS_LIMIT;
+    }
+    # offset settings
+    my $offset = 0;
+    if (defined($q->param('offset'))) {
+        $offset = $q->param('offset');
+    } 
+    # current url
+    my $current_url = $url."&offset=".$offset;
+    
+    # next and previous url
+    my $next_url;
+    my $previous_url;
+
+    # jobs requested
+    my $jobs;
+
+    if (defined($where_statement)) {
+    	# get the total number of jobs
+    	my $total_jobs = oarstatlib::count_jobs_for_user_query("", $where_statement);
+
+        $jobs = oarstatlib::get_jobs_for_user_query("",$where_statement,$ITEMS_LIMIT,$offset);
+        oarstatlib::close_db_connection();
+
+        if (($total_jobs > 0) && ($offset + $ITEMS_LIMIT <= $total_jobs)) {
+        	# next items list url
+        	$next_url = $url."&offset=".($offset + $ITEMS_LIMIT);
+        }
+        if (($total_jobs > 0) && ($offset - $ITEMS_LIMIT >= 0)) {
+        	# previous items list url
+        	$previous_url = $url."&offset=".($offset - $ITEMS_LIMIT);
+        }
+    }
+    else {
+    	# retrieving all current jobs for user
+    	$jobs = oarstatlib::get_all_jobs_for_user("");
+    }
+
     if ( !defined @$jobs || scalar(@$jobs) == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
@@ -194,7 +254,7 @@ SWITCH: for ($q) {
               $j = oarstatlib::get_job_data($j,undef);
            }
            apilib::add_joblist_uris($jobs,$ext);
-           $jobs=apilib::struct_job_list_details($jobs,$STRUCTURE);
+           $jobs = apilib::struct_job_list_details($jobs,$STRUCTURE);
         }
       }
       else {  
@@ -207,145 +267,6 @@ SWITCH: for ($q) {
     print apilib::export($jobs,$ext);
     last;
   };
-
-  #
-  # List jobs for a specific query
-  #
-
-  $URI = qr{^/query.(html)$};
-
-  apilib::GET( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$1);
-    (my $header, my $type)=apilib::set_output_format($ext);
-    ##### my $more_infos=$1;
-
-    # Get the id of the user as more details may be obtained for her jobs
-    if ( $authenticated_user =~ /(\w+)/ ) {
-      $authenticated_user = $1;
-      $ENV{OARDO_USER} = $authenticated_user;
-    }
-    oarstatlib::open_db_connection or apilib::ERROR(500, 
-                                                "Cannot connect to the database",
-                                                "Cannot connect to the database"
-                                                 );  
-    my @sql_and_link = oarstatlib::get_pagination_sql_query_and_link($q->param('state'),$q->param('from'),$q->param('to'));
-    my $link = pop(@sql_and_link);
-    my $sql_count_jobs_query = pop(@sql_and_link);
-    my $sql_jobs_query = pop(@sql_and_link);
-    
-    # setting links names
-    if (defined($link)) {
-    	$link = "query.html".$link;
-    }    
-	# retrieve the total of jobs
-	my $number_of_jobs = oarstatlib::count_jobs_for_user_query("",$sql_count_jobs_query);
-	    
-    # the number of jobs to be printed per page
-    my $jobs_per_page = 10;
-    
-    # total number of pages
-    my $total_pages = ceil($number_of_jobs/$jobs_per_page);
-    
-    # current page parameter
-    my $current_page = 1;
-    if (defined($q->param('page')) && $q->param('page') > 1 && $q->param('page') <= $total_pages) {
-    	$current_page = $q->param('page');
-    }
-
-    # position to read in database
-    my $db_read_entry = ($current_page - 1) * $jobs_per_page;
-    
-    # jobs request
-    my $jobs = oarstatlib::get_jobs_for_user_query("",$sql_jobs_query,$db_read_entry,$jobs_per_page);
-    oarstatlib::close_db_connection();
-    
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-
-    if ( !defined @$jobs || scalar(@$jobs) == 0 ) {
-      print "<BR>No jobs match your query...";
-    }
-    else {
-      apilib::add_joblist_uris($jobs,$ext);
-      # $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
-      print "\n<TABLE border=1>\n<CAPTION> List of requested jobs </CAPTION>\n";
-      print "<TH>id</TH>\n";
-      print "<TH>name</TH>\n";
-      print "<TH>owner</TH>\n";
-      print "<TH>queue</TH>\n";
-      print "<TH>resources_uri</TH>\n";
-      print "<TH>state</TH>\n";
-      print "<TH>submission</TH>\n";
-      print "<TH>uri</TH>\n</TR>";
-      foreach my $job (@$jobs) {
-    	print "<TR>\n";
-    	print "<TD>".$job->{'job_id'}."</TD>\n";
-    	print "<TD>".$job->{'job_name'}."</TD>\n";
-    	print "<TD>".$job->{'job_user'}."</TD>\n";
-    	print "<TD>".$job->{'queue_name'}."</TD>\n";
-    	print "<TD>".$job->{'resources_uri'}."</TD>\n";
-    	print "<TD>".$job->{'state'}."</TD>\n";
-    	print "<TD>".$job->{'submission_time'}."</TD>\n";
-    	print "<TD>".$job->{'uri'}."</TD>\n";	
-    }
-    print "</TABLE>";
-    }
-    # link pages generation
-    my $footer_pagination_links;
-    my $first_page;
-    my $previous_page;
-    my $next_page;
-    my $last_page;
-    # space between links;
-    my $space = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-    
-    if ($current_page == 1 && $current_page < $total_pages) { 
-    	# first pagination on about more than one page pagination	
-    	if (defined($link)) {
-    		$next_page = $link."&page=".($current_page + 1);
-    	    $last_page = $link."&page=".$total_pages;
-    	}
-    	else {
-    		$next_page = "query.html?page=".($current_page + 1);
-    	    $last_page = "query.html?page=".$total_pages;
-    	}
-    	print "<center><h3><a href=$next_page>></a>$space<a href=$last_page>>></a></h3></center>";
-    }
-    if ($current_page > 1 && $current_page < $total_pages) { 
-    	# middle pagination on about more than one page pagination
-    	if (defined($link)) {
-    		$first_page = $link."&page=1";
-    	    $previous_page = $link."&page=".($current_page - 1);
-    	    $next_page = $link."&page=".($current_page + 1);
-    	    $last_page = $link."&page=".$total_pages;
-    	}
-    	else {
-    		$first_page = "query.html?page=1";
-    	    $previous_page = "query.html?page=".($current_page - 1);
-    	    $next_page = "query.html?page=".($current_page + 1);
-    	    $last_page = "query.html?page=".$total_pages;
-    	}
-    	
-    	print "<center><h3><a href=$first_page><<</a>$space<a href=$previous_page><</a>$space<a href=$next_page>></a>$space<a href=$last_page>>></a></h3></center>";
-    }
-    if ($current_page > 1 && $current_page == $total_pages) {
-    	# last page pagination
-    	if (defined($link)) {
-    		$first_page = $link."&page=1";
-    	    $previous_page = $link."&page=".($current_page - 1);
-    	}
-    	else {
-    		$first_page = "query.html?page=1";
-    	    $previous_page = "query.html?page=".($current_page - 1);
-    	}
-    	# print the footer page pagination
-    	print "<center><h3><a href=$first_page><<</a>$space<a href=$previous_page><</a></h3></center>";
-    } 
-
-    last;
-  };
-
 
   #
   # Details of a job

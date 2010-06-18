@@ -93,33 +93,35 @@ sub get_all_jobs_for_user {
 
 sub get_jobs_for_user_query {
 	my $user = shift;
-	my $user_query = shift;
-	my $limit = shift;
-	my $jobs_per_page = shift;
-	my @jobs =  iolib::get_limit_jobs_for_user($base,$user,$user_query,$limit,$jobs_per_page);
+	my $where = shift;
+    my $limit = shift;
+	my $offset = shift;
+	my @jobs =  iolib::get_jobs_for_user_query($base,$user,$where,$limit,$offset);
 	return \@jobs;
 }
 
 sub count_jobs_for_user_query {
 	my $user = shift;
-	my $count_query = shift;
-	my $res =  iolib::count_jobs_for_user($base,$user,$count_query);
+	my $where = shift;
+	my $res =  iolib::count_jobs_for_user_query($base,$user,$where);
 	return ($res);
 }
 
-sub get_pagination_sql_query_and_link($$$) {
+sub get_pagination_query_and_url($$$) {
+	my $from_timestamp = shift;
+	my $to_timestamp = shift;
 	my $state = shift;
-	my $from_date = shift;
-	my $to_date = shift;
-	
-	# URL parameters parser
-    my $state_parameter_def;
-    my $date_parameter_def;
-    my $state_query;
-    my $date_query;
-    
+
+    # sql queries composition and link generation
+    my $url;
+    my $where_jobs_query;
+
+    if (defined($from_timestamp) && defined($to_timestamp)) {
+    	$where_jobs_query = "start_time >= ".$from_timestamp." AND stop_time <= ".$to_timestamp;
+    	$url = "?from=".$from_timestamp."&to=".$to_timestamp;
+    }
+
 	if (defined($state)) {
-    	$state_parameter_def = 1;
     	my @states = split(/_/,$state);
     	my $statement;
     	foreach my $s (@states) {
@@ -127,38 +129,23 @@ sub get_pagination_sql_query_and_link($$$) {
     		$statement .= ",";
     	}
     	chop($statement);
-        $state_query = " state IN (".$statement.")";
+    	my $where_state = "state IN (".$statement.")";
+
+        if (!defined($url)) {
+			$where_jobs_query = $where_state;
+    	    $url = "?state=".$state;
+		}
+		else {
+			$where_jobs_query .= " AND ".$where_state;
+    	    $url .= "&state=".$state;
+		}
     }
-    if (defined($from_date) && defined($to_date)) {
-    	$date_parameter_def = 1;
-    	$date_query = " start_time >= ".$from_date." AND stop_time <= ".$to_date;
-    }
-    # sql queries composition and link generation
-    my $link;
-    my $sql_jobs_query = "SELECT * FROM jobs";
-    my $sql_count_jobs_query = "SELECT COUNT(*) as total_jobs FROM jobs";
-    if (defined($state_parameter_def) && !defined($date_parameter_def)) {
-    	$sql_jobs_query .= " WHERE $state_query";
-    	$sql_count_jobs_query .= " WHERE $state_query";
-    	$link = "?state=".$state;
-    }
-    if (!defined($state_parameter_def) && defined($date_parameter_def)) {
-    	$sql_jobs_query .= " WHERE $date_query";
-    	$sql_count_jobs_query .= " WHERE $date_query";
-    	$link = "?from=".$from_date."&to=".$to_date;
-    }
-    if (defined($state_parameter_def) && defined($date_parameter_def)) {
-    	$sql_jobs_query .= " WHERE $state_query AND $date_query";
-    	$sql_count_jobs_query .= " WHERE $state_query AND $date_query";
-    	$link = "?state=".$state."&from=".$from_date."&to=".$to_date;
-    }
-    
-    my @sql_query_and_link;
-    push(@sql_query_and_link,$sql_jobs_query);
-    push(@sql_query_and_link,$sql_count_jobs_query);
-    push(@sql_query_and_link,$link);
-    
-    return (@sql_query_and_link);
+
+    my @sql_query_and_url;
+    push(@sql_query_and_url,$where_jobs_query);
+    push(@sql_query_and_url,$url);
+
+    return (@sql_query_and_url);
 }
 
 sub get_duration($){

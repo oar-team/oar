@@ -39,8 +39,8 @@ sub disconnect($);
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub get_jobs_in_state_for_user($$$);
-sub get_limit_jobs_for_user($$$$$);
-sub count_jobs_for_user($$$);
+sub get_jobs_for_user_query($$$$$);
+sub count_jobs_for_user_query($$$);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
@@ -575,35 +575,55 @@ sub get_jobs_in_state_for_user($$$) {
     return(@res);
 }
 
-sub get_limit_jobs_for_user($$$$$) {
+# get_jobs_for_user_query
+# returns the jobs in the specified query for the optionaly specified user
+# parameters : base, user, where SQL constraints, limit, increment
+# return value : flatened list of hashref jobs
+# side effects : /
+sub get_jobs_for_user_query($$$$$) {
 	my $dbh = shift;
 	my $user = shift;
-	my $user_query = shift;
-	my $limit = shift;
-	my $offset = shift;
-	
+	my $where = shift;
+	my $limit = shift || "";
+    my $offset = shift || "";
+    if ($limit ne "") { $limit = "LIMIT $limit"; }
+    if ($offset ne "") { $offset = "OFFSET $offset"; }
+
 	if (defined $user and "$user" ne "") {
-		$user_query = $user_query." AND job_user =" . $dbh->quote($user);
+		$where = $where." AND job_user =" . $dbh->quote($user);
 	}
-	$user_query = $user_query." ORDER BY job_id DESC LIMIT ".$limit." OFFSET ".$offset ;
-	my $sth = $dbh->prepare($user_query);
+    my $statement = $where." ORDER BY job_id DESC $limit $offset";
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    $statement
+                            ");
 	$sth->execute();
 	my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref);
+    	push(@res, $ref);
     }
     return(@res); 
 }
 
-sub count_jobs_for_user($$$) {
+# count_jobs_for_user_query
+# returns the number of jobs with specified query for the optionaly specified user
+# parameters : base, user, where SQL constraints
+# return value : total jobs value
+# side effects : /
+sub count_jobs_for_user_query($$$) {
 	my $dbh = shift;
 	my $user = shift;
-	my $count_query = shift;
-	
+	my $statement = shift;
+
 	if (defined $user and "$user" ne "") {
-		$count_query=$count_query." AND job_user =" . $dbh->quote($user);
+		$statement = $statement." AND job_user =" . $dbh->quote($user);
 	}
-	my $sth = $dbh->prepare($count_query);
+	my $sth = $dbh->prepare("   SELECT COUNT(*)
+                                FROM jobs
+                                WHERE
+                                    $statement
+                            ");
 	$sth->execute();
     my ($count) = $sth->fetchrow_array();
     return $count ;  
@@ -3322,7 +3342,7 @@ sub get_jobs_gantt_scheduled{
     my $limit = shift || "";
     my $offset = shift || "";
     if ($limit ne "") { $limit="LIMIT $limit"; }
-    if ($offset ne "") { $limit="OFFSET $offset"; }
+    if ($offset ne "") { $offset="OFFSET $offset"; }
     my $req =
         "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
          FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
