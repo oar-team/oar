@@ -1,0 +1,15 @@
+test_submit:
+   - submission:
+     - script:   /home/nk/test.sh
+     - resource: /nodes=1/core=1    
+     - walltime:  1
+   - exec: sleep 600 #will wait 10 min
+   - check:
+     - submitted_job: # this refers to the last job submitted by the test file
+       - state: Running
+
+
+
+
+
+
