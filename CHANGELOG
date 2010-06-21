@@ -7,6 +7,8 @@ version 2.5.0:
     (to setup into /etc/oar/oar_phoenix.pl)
   - New (experimental!) scheduler written in Ocaml
   - Cpusets are activated by default
+  - Feature request #10565: add the possibility to check the aliveness of the
+    nodes of a job at the end of this one (pingchecker) 
 
 version 2.4.3:
 --------------
