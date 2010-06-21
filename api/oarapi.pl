@@ -181,22 +181,22 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my @where_statement_and_url = oarstatlib::get_pagination_query_and_url($q->param('from'),$q->param('to'),$q->param('state'));
-    my $parameters = pop(@where_statement_and_url);
-    my $where_statement = pop(@where_statement_and_url);
+    my @where_statement_and_uri = oarstatlib::get_pagination_query_and_uri($q->param('from'),$q->param('to'),$q->param('state'));
+    my $parameters = pop(@where_statement_and_uri);
+    my $where_statement = pop(@where_statement_and_uri);
 
-    # url reconstruction
-    my $url; 
+    # uri reconstruction
+    my $uri; 
 
     if (defined($more_infos)) {
-        $url = ".".$more_infos.".".$ext;
+        $uri = "/jobs".$more_infos.".".$ext;
     }
     else {   
-        $url = "jobs.".$ext;
+        $uri = "/jobs.".$ext;
     }
         
     if (defined($parameters)) {
-    	$url .= $parameters;
+    	$uri .= $parameters;
     }
 
     # Default data structure variant
@@ -204,37 +204,40 @@ SWITCH: for ($q) {
     if (is_conf("API_NUMBER_ITEMS_LIMIT")){ $ITEMS_LIMIT = get_conf("API_NUMBER_ITEMS_LIMIT"); }
     if (defined($q->param('limit'))) {
         $ITEMS_LIMIT = $q->param('limit');
-        $url .= "&limit=".$ITEMS_LIMIT;
+        $uri .= "&limit=".$ITEMS_LIMIT;
     }
     # offset settings
     my $offset = 0;
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
     } 
-    # current url
-    my $current_url = $url."&offset=".$offset;
+    # current uri
+    my $current_uri = $uri."&offset=".$offset;
     
-    # next and previous url
-    my $next_url;
-    my $previous_url;
+    # next and previous uri
+    my $next_uri;
+    my $previous_uri;
+    
+    # total number of jobs
+    my $total_jobs;
 
     # jobs requested
     my $jobs;
 
     if (defined($where_statement)) {
     	# get the total number of jobs
-    	my $total_jobs = oarstatlib::count_jobs_for_user_query("", $where_statement);
+    	$total_jobs = oarstatlib::count_jobs_for_user_query("", $where_statement);
 
         $jobs = oarstatlib::get_jobs_for_user_query("",$where_statement,$ITEMS_LIMIT,$offset);
         oarstatlib::close_db_connection();
 
         if (($total_jobs > 0) && ($offset + $ITEMS_LIMIT <= $total_jobs)) {
-        	# next items list url
-        	$next_url = $url."&offset=".($offset + $ITEMS_LIMIT);
+        	# next items list uri
+        	$next_uri = $uri."&offset=".($offset + $ITEMS_LIMIT);
         }
         if (($total_jobs > 0) && ($offset - $ITEMS_LIMIT >= 0)) {
-        	# previous items list url
-        	$previous_url = $url."&offset=".($offset - $ITEMS_LIMIT);
+        	# previous items list uri
+        	$previous_uri = $uri."&offset=".($offset - $ITEMS_LIMIT);
         }
     }
     else {
@@ -246,6 +249,13 @@ SWITCH: for ($q) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
     else {
+    	my $jobs_extras = {
+    		              total => $total_jobs,
+    		              offset => $offset,
+    		              current_uri => apilib::htmlize_uri(apilib::make_uri($current_uri,"",0),$ext),
+    		              next_uri => apilib::htmlize_uri(apilib::make_uri($next_uri,"",0),$ext),
+    		              previous_uri => apilib::htmlize_uri(apilib::make_uri($previous_uri,"",0),$ext)
+    	};
       apilib::add_joblist_uris($jobs,$ext);
       if (defined($more_infos)) {
         if ($more_infos eq "/details") {
@@ -254,11 +264,11 @@ SWITCH: for ($q) {
               $j = oarstatlib::get_job_data($j,undef);
            }
            apilib::add_joblist_uris($jobs,$ext);
-           $jobs = apilib::struct_job_list_details($jobs,$STRUCTURE);
+           $jobs = apilib::struct_job_list_details($jobs,$STRUCTURE,$jobs_extras);
         }
       }
       else {  
-          $jobs = apilib::struct_job_list($jobs,$STRUCTURE);
+          $jobs = apilib::struct_job_list($jobs,$STRUCTURE,$jobs_extras);
       }
     }
     oarstatlib::close_db_connection();

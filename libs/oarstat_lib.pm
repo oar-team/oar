@@ -107,7 +107,7 @@ sub count_jobs_for_user_query {
 	return ($res);
 }
 
-sub get_pagination_query_and_url($$$) {
+sub get_pagination_query_and_uri($$$) {
 	my $from_timestamp = shift;
 	my $to_timestamp = shift;
 	my $state = shift;
