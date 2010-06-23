@@ -1,3 +1,11 @@
+oar (2.4.3-0~9.gbp79ac2c) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @79ac2c2cfcb56becdb953800e68800de0aaf4c08 **
+
+  * Cosmetic change in the name of the variable
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 23 Jun 2010 10:10:35 +0200
+
 oar (2.4.3-0~8.gbp3262da) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @3262daaf727d21cf97e6a35d1928a5b476a31604 **
