@@ -1,3 +1,14 @@
+oar (2.4.3-0~8.gbp3262da) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @3262daaf727d21cf97e6a35d1928a5b476a31604 **
+
+  [ bzizou ]
+  * When CPUSET is enabled, disable checks during jobs.
+
+  [ Bruno Bzeznik ]
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 21 Jun 2010 14:24:53 +0200
+
 oar (2.4.3-0~7.gbpdb3666) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @db366656ed1f5639265afb3cd07206ec07394020 **
