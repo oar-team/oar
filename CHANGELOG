@@ -11,6 +11,8 @@ version 2.4.3:
   - Bugfix #9990: prevent from inserting jobs with invalid username (like an empty username)
   - Oarnodecheck improvements: node is not checked if a job is already running
   - New oaradmin option: --auto-offset
+  - Feature request #10565: add the possibility to check the aliveness of the
+    nodes of a job at the end of this one (pingchecker) 
 
 version 2.4.2:
 --------------
