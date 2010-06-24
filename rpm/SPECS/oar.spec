@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.4.3
-%define release 5
+%define release 6
 
 Name: 		oar
 Version:        %{version}
@@ -387,6 +387,9 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+* Wed Jun 24 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.3-6
+- Released 2.4.3
+
 * Wed Jun 23 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.3-5
 - Some features merged from trunk
 
