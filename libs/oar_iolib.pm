@@ -39,8 +39,6 @@ sub disconnect($);
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub get_jobs_in_state_for_user($$$);
-sub get_jobs_for_user_query($$$$$);
-sub count_jobs_for_user_query($$$);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
@@ -79,6 +77,8 @@ sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
 sub get_jobs_range_dates($$$);
 sub get_jobs_gantt_scheduled;
+sub get_distinct_jobs_gantt_scheduled;
+sub count_distinct_jobs_gantt_scheduled;
 sub get_desktop_computing_host_jobs($$);
 sub get_stagein_id($$);
 sub set_stagein($$$$$$);
@@ -575,59 +575,6 @@ sub get_jobs_in_state_for_user($$$) {
     return(@res);
 }
 
-# get_jobs_for_user_query
-# returns the jobs in the specified query for the optionaly specified user
-# parameters : base, user, where SQL constraints, limit, increment
-# return value : flatened list of hashref jobs
-# side effects : /
-sub get_jobs_for_user_query($$$$$) {
-	my $dbh = shift;
-	my $user = shift;
-	my $where = shift;
-	my $limit = shift || "";
-    my $offset = shift || "";
-    if ($limit ne "") { $limit = "LIMIT $limit"; }
-    if ($offset ne "") { $offset = "OFFSET $offset"; }
-
-	if (defined $user and "$user" ne "") {
-		$where = $where." AND job_user =" . $dbh->quote($user);
-	}
-    my $statement = $where." ORDER BY job_id DESC $limit $offset";
-	my $sth = $dbh->prepare("   SELECT *
-                                FROM jobs
-                                WHERE
-                                    $statement
-                            ");
-	$sth->execute();
-	my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-    	push(@res, $ref);
-    }
-    return(@res); 
-}
-
-# count_jobs_for_user_query
-# returns the number of jobs with specified query for the optionaly specified user
-# parameters : base, user, where SQL constraints
-# return value : total jobs value
-# side effects : /
-sub count_jobs_for_user_query($$$) {
-	my $dbh = shift;
-	my $user = shift;
-	my $statement = shift;
-
-	if (defined $user and "$user" ne "") {
-		$statement = $statement." AND job_user =" . $dbh->quote($user);
-	}
-	my $sth = $dbh->prepare("   SELECT COUNT(*)
-                                FROM jobs
-                                WHERE
-                                    $statement
-                            ");
-	$sth->execute();
-    my ($count) = $sth->fetchrow_array();
-    return $count ;  
-}
 
 # get_jobs_with_given_properties
 # returns the jobs with specified properties
@@ -3332,29 +3279,34 @@ sub get_jobs_range_dates($$$){
 }
 
 
-
 # get all jobs in a range of date in the gantt
 # args : base, start range, end range
-sub get_jobs_gantt_scheduled{
+sub get_jobs_gantt_scheduled {
     my $dbh = shift;
-    my $date_start = shift;
-    my $date_end = shift;
+    my $date_start = shift || "";
+    my $date_end = shift || "";
+    my $state = shift || "";
     my $limit = shift || "";
-    my $offset = shift || "";
-    if ($limit ne "") { $limit="LIMIT $limit"; }
-    if ($offset ne "") { $offset="OFFSET $offset"; }
+    my $offset = shift;
+    my $user = shift || "";
+    if ($date_start ne "") { $date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start "; }
+    if ($date_end ne "") { $date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";}
+    if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
+    if ($limit ne "") { $limit = "LIMIT $limit"; }
+    if (defined($offset)) { $offset = "OFFSET $offset"; }
+    if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
+
     my $req =
-        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
+        "SELECT jobs.job_id,jobs.job_name,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
          FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
          WHERE
              gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
              gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
              jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-             gantt_jobs_predictions_visu.start_time < $date_end AND
-             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
+             resources.resource_id = gantt_jobs_resources_visu.resource_id 
+             $date_start $ date_end $state $user
          ORDER BY jobs.job_id $limit $offset";
-    
+
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
@@ -3362,26 +3314,109 @@ sub get_jobs_gantt_scheduled{
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($results{$ref[0]})){
             $results{$ref[0]} = {
-                                  'job_type' => $ref[1],
-                                  'state' => $ref[2],
-                                  'user' => $ref[3],
-                                  'command' => $ref[4],
-                                  'queue_name' => $ref[5],
-                                  'walltime' => $ref[6],
-                                  'properties' => $ref[7],
-                                  'launching_directory' => $ref[8],
-                                  'submission_time' => $ref[9],
-                                  'start_time' => $ref[10],
-                                  'stop_time' => $ref[11],
-                                  'resources' => [ $ref[12] ],
+            					  'job_name' => $ref[1],
+                                  'job_type' => $ref[2],
+                                  'state' => $ref[3],
+                                  'user' => $ref[4],
+                                  'command' => $ref[5],
+                                  'queue_name' => $ref[6],
+                                  'walltime' => $ref[7],
+                                  'properties' => $ref[8],
+                                  'launching_directory' => $ref[9],
+                                  'submission_time' => $ref[10],
+                                  'start_time' => $ref[11],
+                                  'stop_time' => $ref[12],
+                                  'resources' => [ $ref[13] ],
                                  }
         }else{
-            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
+            push(@{$results{$ref[0]}->{resources}}, $ref[13]);
         }
     }
     $sth->finish();
 
     return %results;
+}
+
+
+# get all distinct jobs in a range of date in the gantt
+# args : base, start range, end range
+sub get_distinct_jobs_gantt_scheduled {
+    my $dbh = shift;
+    my $date_start = shift || "";
+    my $date_end = shift || "";
+    my $state = shift || "";
+    my $limit = shift || "";
+    my $offset = shift;
+    my $user = shift || "";
+    if ($date_start ne "") { $date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start "; }
+    if ($date_end ne "") { $date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";}
+    if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
+    if ($limit ne "") { $limit = "LIMIT $limit"; }
+    if (defined($offset)) { $offset = "OFFSET $offset"; }
+    if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
+
+    my $req =
+        "SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time
+         FROM jobs
+         WHERE
+             jobs.job_id IN
+					   (SELECT DISTINCT(jobs.job_id)
+         				FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         				WHERE
+             				gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+             				gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+             				jobs.job_id = moldable_job_descriptions.moldable_job_id AND
+             				resources.resource_id = gantt_jobs_resources_visu.resource_id 
+             				$date_start $ date_end $state $user)
+ 		ORDER BY jobs.job_id $limit $offset";
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my %results;
+    while (my @ref = $sth->fetchrow_array()) {
+         $results{$ref[0]} = {
+            				'job_name' => $ref[1],
+                            'state' => $ref[2],
+                            'user' => $ref[3],
+                            'queue_name' => $ref[4],
+                            'submission_time' => $ref[5]
+                              }
+    }
+    $sth->finish();
+
+    return %results;
+}
+
+
+# count all jobs in a range of date in the gantt
+# args : base, start range, end range
+sub count_distinct_jobs_gantt_scheduled {
+    my $dbh = shift;
+    my $date_start = shift || "";
+    my $date_end = shift || "";
+    my $state = shift || "";
+    my $user = shift || "";
+    if ($date_start ne "") { $date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start "; }
+    if ($date_end ne "") { $date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";}
+    if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
+    if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
+
+    my $req =
+        "SELECT COUNT(DISTINCT(jobs.job_id))
+         FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         WHERE
+         	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+         	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+         	jobs.job_id = moldable_job_descriptions.moldable_job_id AND
+         	resources.resource_id = gantt_jobs_resources_visu.resource_id 
+         	$date_start $ date_end $state $user";
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my ($count) = $sth->fetchrow_array();
+    return $count ;  
 }
 
 

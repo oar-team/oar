@@ -160,7 +160,6 @@ SWITCH: for ($q) {
     last;
   };
 
-
   #
   # List of current jobs
   #
@@ -180,96 +179,128 @@ SWITCH: for ($q) {
     oarstatlib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
-                                                 );
-    my @where_statement_and_uri = oarstatlib::get_pagination_query_and_uri($q->param('from'),$q->param('to'),$q->param('state'));
-    my $parameters = pop(@where_statement_and_uri);
-    my $where_statement = pop(@where_statement_and_uri);
+                                          );
 
+    # default parameters for the parameters
+    my $JOBS_URI_DEFAULT_PARAMS;
+    if (is_conf("API_JOBS_URI_DEFAULT_PARAMS")){ $JOBS_URI_DEFAULT_PARAMS = get_conf("API_JOBS_URI_DEFAULT_PARAMS"); }
+
+    # query string parameters
+    my $from = $q->param('from');
+    my $to = $q->param('to');
+    my $state = $q->param('state');
+
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
+
+        my $param = qr{.*from=(.*?)(&|$)};
+        if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
+        	$from = $1;
+        }
+        
+    	$param = qr{.*to=(.*?)(&|$)};
+    	if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
+        	$to = $1;
+        }
+    	
+    	$param = qr{.*state=(.*?)(&|$)};
+    	if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
+        	$state = $1;
+        }
+    }
+
+    # getting parameters uri
+    my $uri_parameters = oarstatlib::get_pagination_uri($from, $to, $state);
+    
     # uri reconstruction
-    my $uri; 
+    my $uri = "/jobs";
 
     if (defined($more_infos)) {
-        $uri = "/jobs".$more_infos.".".$ext;
+        $uri .= $more_infos.".".$ext;
     }
     else {   
-        $uri = "/jobs.".$ext;
-    }
-        
-    if (defined($parameters)) {
-    	$uri .= $parameters;
+        $uri .= ".".$ext;
     }
 
-    # Default data structure variant
+    if (defined($uri_parameters)) {
+    	$uri .= $uri_parameters;
+    }
+
+    # default number of items
     my $ITEMS_LIMIT = 20;
     if (is_conf("API_NUMBER_ITEMS_LIMIT")){ $ITEMS_LIMIT = get_conf("API_NUMBER_ITEMS_LIMIT"); }
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
+    	# get limit from defaut url
+        my $param = qr{.*limit=(.*?)(&|$)};
+        
+        if (defined($JOBS_URI_DEFAULT_PARAMS =~ m/$param/)) {
+        	$ITEMS_LIMIT = $1;
+        	$uri .= "&limit=".$ITEMS_LIMIT;
+        }
+    }
     if (defined($q->param('limit'))) {
         $ITEMS_LIMIT = $q->param('limit');
         $uri .= "&limit=".$ITEMS_LIMIT;
     }
+
     # offset settings
     my $offset = 0;
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
-    } 
-    # current uri
-    my $current_uri = $uri."&offset=".$offset;
-    
-    # next and previous uri
-    my $next_uri;
-    my $previous_uri;
-    
-    # total number of jobs
-    my $total_jobs;
-
-    # jobs requested
-    my $jobs;
-
-    if (defined($where_statement)) {
-    	# get the total number of jobs
-    	$total_jobs = oarstatlib::count_jobs_for_user_query("", $where_statement);
-
-        $jobs = oarstatlib::get_jobs_for_user_query("",$where_statement,$ITEMS_LIMIT,$offset);
-        oarstatlib::close_db_connection();
-
-        if (($total_jobs > 0) && ($offset + $ITEMS_LIMIT <= $total_jobs)) {
-        	# next items list uri
-        	$next_uri = $uri."&offset=".($offset + $ITEMS_LIMIT);
-        }
-        if (($total_jobs > 0) && ($offset - $ITEMS_LIMIT >= 0)) {
-        	# previous items list uri
-        	$previous_uri = $uri."&offset=".($offset - $ITEMS_LIMIT);
-        }
-    }
-    else {
-    	# retrieving all current jobs for user
-    	$jobs = oarstatlib::get_all_jobs_for_user("");
     }
 
-    if ( !defined @$jobs || scalar(@$jobs) == 0 ) {
+    # requested user jobs
+    my $jobs = oarstatlib::get_jobs_for_user_query("",$from,$to,$state,$ITEMS_LIMIT,$offset);
+    oarstatlib::close_db_connection();
+
+    if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
     else {
+    	# total user jobs
+    	my $total_jobs = oarstatlib::count_jobs_for_user_query("",$from,$to,$state);
+    	# current, next and previous uri
+    	my $current_uri = $uri."&offset=".$offset;
+    	my $next_uri;
+    	my $previous_uri;
+
+    	if ($offset + $ITEMS_LIMIT < $total_jobs) {
+        	# next items list uri
+        	$next_uri = $uri."&offset=".($offset + $ITEMS_LIMIT);
+    	}
+    	if ($offset - $ITEMS_LIMIT >= 0) {
+        	# previous items list uri
+        	$previous_uri = $uri."&offset=".($offset - $ITEMS_LIMIT);
+    	}
+    	
+    	if (defined($next_uri)) {
+    		$next_uri = apilib::htmlize_uri(apilib::make_uri($next_uri,"",0),$ext);
+    	}
+    	if (defined($previous_uri)) {
+    		$previous_uri = apilib::htmlize_uri(apilib::make_uri($previous_uri,"",0),$ext);
+    	}
     	my $jobs_extras = {
     		              total => $total_jobs,
     		              offset => $offset,
     		              current_uri => apilib::htmlize_uri(apilib::make_uri($current_uri,"",0),$ext),
-    		              next_uri => apilib::htmlize_uri(apilib::make_uri($next_uri,"",0),$ext),
-    		              previous_uri => apilib::htmlize_uri(apilib::make_uri($previous_uri,"",0),$ext)
+    		              next_uri => $next_uri,
+    		              previous_uri => $previous_uri
     	};
-      apilib::add_joblist_uris($jobs,$ext);
-      if (defined($more_infos)) {
-        if ($more_infos eq "/details") {
-           # will be useful for cigri and behaves exactly as a oarstat -D
-           foreach my $j (@$jobs) {
-              $j = oarstatlib::get_job_data($j,undef);
-           }
-           apilib::add_joblist_uris($jobs,$ext);
-           $jobs = apilib::struct_job_list_details($jobs,$STRUCTURE,$jobs_extras);
-        }
-      }
-      else {  
-          $jobs = apilib::struct_job_list($jobs,$STRUCTURE,$jobs_extras);
-      }
+
+    	$jobs = apilib::struct_job_list_hash_to_array($jobs);
+      	apilib::add_joblist_uris($jobs,$ext);
+      	if (defined($more_infos)) {
+        	if ($more_infos eq "/details") {
+           	# will be useful for cigri and behaves exactly as a oarstat -D
+           	foreach my $j (@$jobs) {
+              	$j = oarstatlib::get_job_data($j,undef);
+           	}
+           	apilib::add_joblist_uris($jobs,$ext);
+           	$jobs = apilib::struct_job_list_details($jobs,$STRUCTURE,$jobs_extras);
+        	}
+      	}
+      	else {
+          	$jobs = apilib::struct_job_list($jobs,$STRUCTURE,$jobs_extras);
+      	}
     }
     oarstatlib::close_db_connection();
     print $header;

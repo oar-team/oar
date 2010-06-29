@@ -438,9 +438,13 @@ sub struct_job($$) {
 sub struct_job_list_hash_to_array($) {
   my $jobs=shift;
   my $array=[];
-  foreach my $j ( keys (%{$jobs}) ){
+  foreach my $j ( keys (%{$jobs}) ) {
     if (defined($jobs->{$j}->{Job_Id})) {
       push (@$array,$jobs->{$j});
+    }
+    else {
+    	$jobs->{$j}->{Job_Id} = $j;
+    	push (@$array,$jobs->{$j});
     }
   }
   return $array;
@@ -453,15 +457,20 @@ sub struct_job_list($$$) {
   my $jobs_extra = shift;
   my $items;
   foreach my $job (@$jobs) {
+  	my $self_job_link = { href => $job->{uri}, rel => "self" };
+  	my $resource_job_link = { href => $job->{resources_uri}, rel => "resources" };
+    my $job_links; 
+    push (@$job_links,$self_job_link);
+    push (@$job_links,$resource_job_link);
+
     my $hashref = {
                   state => $job->{state},
                   owner => $job->{job_user},
                   name => $job->{job_name},
                   queue => $job->{queue_name},
                   submission => $job->{submission_time},
-                  uri => $job->{uri},
-                  resources_uri => $job->{resources_uri},
-                  api_timestamp => $job->{api_timestamp}
+                  api_timestamp => $job->{api_timestamp},
+                  links => $job_links
     };
     if ($structure eq 'oar') {
       $items->{$job->{job_id}} = $hashref;
@@ -471,11 +480,16 @@ sub struct_job_list($$$) {
       push (@$items,$hashref);
     } 
   };
-  my $links = {
-  	         current => $jobs_extra->{current_uri},
-  	         previous => $jobs_extra->{previous_uri},
-  	         next => $jobs_extra->{next_uri}
-  };
+  
+  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
+  my $previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
+  my $next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
+
+  my $links;
+  push (@$links,$self_uri_link);
+  push (@$links,$previous_uri_link);
+  push (@$links,$next_uri_link);
+  
   my $result = {
   	           items => $items,
   	           total => $jobs_extra->{total},
@@ -499,11 +513,15 @@ sub struct_job_list_details($$$) {
   elsif ($structure eq 'simple') {
       $items = \@$jobs;
   }
-  my $links = {
-  	         current => $jobs_extra->{current_uri},
-  	         previous => $jobs_extra->{previous_uri},
-  	         next => $jobs_extra->{next_uri}
-  };
+  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
+  my $previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
+  my $next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
+
+  my $links;
+  push (@$links,$self_uri_link);
+  push (@$links,$previous_uri_link);
+  push (@$links,$next_uri_link);
+  
   my $result = {
   	           items => $items,
   	           total => $jobs_extra->{total},

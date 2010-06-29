@@ -93,59 +93,78 @@ sub get_all_jobs_for_user {
 
 sub get_jobs_for_user_query {
 	my $user = shift;
-	my $where = shift;
+	my $from = shift;
+    my $to = shift;
+    my $state = shift;
     my $limit = shift;
 	my $offset = shift;
-	my @jobs =  iolib::get_jobs_for_user_query($base,$user,$where,$limit,$offset);
-	return \@jobs;
-}
-
-sub count_jobs_for_user_query {
-	my $user = shift;
-	my $where = shift;
-	my $res =  iolib::count_jobs_for_user_query($base,$user,$where);
-	return ($res);
-}
-
-sub get_pagination_query_and_uri($$$) {
-	my $from_timestamp = shift;
-	my $to_timestamp = shift;
-	my $state = shift;
-
-    # sql queries composition and link generation
-    my $url;
-    my $where_jobs_query;
-
-    if (defined($from_timestamp) && defined($to_timestamp)) {
-    	$where_jobs_query = "start_time >= ".$from_timestamp." AND stop_time <= ".$to_timestamp;
-    	$url = "?from=".$from_timestamp."&to=".$to_timestamp;
-    }
-
+	
 	if (defined($state)) {
-    	my @states = split(/_/,$state);
+		my @states = split(/,/,$state);
     	my $statement;
     	foreach my $s (@states) {
     		$statement .= $base->quote($s);
     		$statement .= ",";
     	}
-    	chop($statement);
-    	my $where_state = "state IN (".$statement.")";
+    chop($statement);
+    $state = $statement;
+	}
 
-        if (!defined($url)) {
-			$where_jobs_query = $where_state;
-    	    $url = "?state=".$state;
+	my %jobs =  iolib::get_distinct_jobs_gantt_scheduled($base,$from,$to,$state,$limit,$offset,$user);
+	return (\%jobs);
+}
+
+sub count_jobs_for_user_query {
+	my $user = shift;
+	my $from = shift;
+    my $to = shift;
+    my $state = shift;
+	
+	if (defined($state)) {
+		my @states = split(/,/,$state);
+    	my $statement;
+    	foreach my $s (@states) {
+    		$statement .= $base->quote($s);
+    		$statement .= ",";
+    	}
+    chop($statement);
+    $state = $statement;
+	}
+
+	my $total =  iolib::count_distinct_jobs_gantt_scheduled($base,$from,$to,$state,$user);
+	return $total;
+}
+
+sub get_pagination_uri($$$) {
+	my $from_timestamp = shift;
+	my $to_timestamp = shift;
+	my $state = shift;
+
+    # link generation
+    my $uri_params;
+
+    if (defined($from_timestamp) && !defined($to_timestamp)) {
+    	$uri_params = "?from=".$from_timestamp;
+    }
+
+    if (defined($to_timestamp) && !defined($from_timestamp)) {
+    	$uri_params = "?to=".$to_timestamp;
+    }
+
+    if (defined($from_timestamp) && defined($to_timestamp)) {
+    	$uri_params = "?from=".$from_timestamp."&to=".$to_timestamp;
+    }
+
+	if (defined($state)) {
+        if (!defined($uri_params)) {
+    	    $uri_params = "?state=".$state;
 		}
 		else {
-			$where_jobs_query .= " AND ".$where_state;
-    	    $url .= "&state=".$state;
+    	    $uri_params .= "&state=".$state;
 		}
     }
 
-    my @sql_query_and_url;
-    push(@sql_query_and_url,$where_jobs_query);
-    push(@sql_query_and_url,$url);
-
-    return (@sql_query_and_url);
+    return $uri_params;
 }
 
 sub get_duration($){
