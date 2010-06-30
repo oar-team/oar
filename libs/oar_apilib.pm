@@ -480,16 +480,23 @@ sub struct_job_list($$$) {
       push (@$items,$hashref);
     } 
   };
-  
-  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
-  my $previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
-  my $next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
 
   my $links;
+  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
+  my $previous_uri_link;
+  my $next_uri_link;
+
   push (@$links,$self_uri_link);
-  push (@$links,$previous_uri_link);
-  push (@$links,$next_uri_link);
-  
+
+  if (defined ($jobs_extra->{previous_uri})) {
+  	$previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
+  	push (@$links,$previous_uri_link);
+  }
+  if (defined($jobs_extra->{next_uri})) {
+  	$next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
+  	push (@$links,$next_uri_link);
+  }
+
   my $result = {
   	           items => $items,
   	           total => $jobs_extra->{total},
@@ -513,23 +520,31 @@ sub struct_job_list_details($$$) {
   elsif ($structure eq 'simple') {
       $items = \@$jobs;
   }
-  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
-  my $previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
-  my $next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
 
   my $links;
+  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
+  my $previous_uri_link;
+  my $next_uri_link;
+
   push (@$links,$self_uri_link);
-  push (@$links,$previous_uri_link);
-  push (@$links,$next_uri_link);
-  
+
+  if (defined ($jobs_extra->{previous_uri})) {
+  	$previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
+  	push (@$links,$previous_uri_link);
+  }
+  if (defined($jobs_extra->{next_uri})) {
+  	$next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
+  	push (@$links,$next_uri_link);
+  }
+
   my $result = {
   	           items => $items,
   	           total => $jobs_extra->{total},
   	           offset => $jobs_extra->{offset},
   	           links => $links
   };
-  
   return $result;
+
 }
 
 

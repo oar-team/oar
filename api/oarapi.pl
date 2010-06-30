@@ -228,7 +228,7 @@ SWITCH: for ($q) {
     # default number of items
     my $ITEMS_LIMIT = 20;
     if (is_conf("API_NUMBER_ITEMS_LIMIT")){ $ITEMS_LIMIT = get_conf("API_NUMBER_ITEMS_LIMIT"); }
-    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
         my $param = qr{.*limit=(.*?)(&|$)};
         
