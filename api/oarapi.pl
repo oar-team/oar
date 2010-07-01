@@ -1021,7 +1021,6 @@ SWITCH: for ($q) {
     last;
   };
 
-
   #
   # Html form for job posting
   #
@@ -1039,6 +1038,119 @@ SWITCH: for ($q) {
     eval join("\n",@lines);
     close(FILE);
     print $POSTFORM;
+    last;
+  };
+
+  #
+  # List of all admissions rules
+  #
+  $URI = qr{^/admission_rules\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+  	$_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$1);
+    (my $header, my $type)=apilib::set_output_format($ext);
+
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                          );
+    my $admissions_rules = oarstatlib::get_all_admission_rules();;
+    if (!defined @$admissions_rules || scalar(@$admissions_rules) == 0 ) {
+    	$admissions_rules = apilib::struct_empty($STRUCTURE);
+    }
+    else {
+      	apilib::add_admission_rules_uris($admissions_rules,$ext);
+      	$admissions_rules = apilib::struct_admission_rule_list($admissions_rules,$STRUCTURE);
+    }
+
+    oarstatlib::close_db_connection();
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($admissions_rules,$ext);
+    last;
+  };
+
+  #
+  # Details of an admission rule
+  #
+  $URI = qr{^/admission_rules/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $rule_id = $1;
+    my $ext=apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+ 
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $admission_rule = oarstatlib::get_specific_admission_rule($rule_id);
+    apilib::add_admission_rule_uris($admission_rule,$ext);
+    $admission_rule = apilib::struct_admission_rule($admission_rule,$STRUCTURE);
+
+    oarstatlib::close_db_connection; 
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($admission_rule,$ext);
+    last;
+  };
+
+  #
+  # Create a new admission rule
+  # 
+  $URI = qr{^/admission_rules(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=apilib::set_ext($q,$1);
+    (my $header)=apilib::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before creating new resources" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can create new resources" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+  
+    # Check and get the submited admission rule
+    # From encoded data
+    my $admission_rule;
+    if ($q->param('POSTDATA')) {
+      $admission_rule = apilib::check_admission_rule( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $admission_rule = apilib::check_admission_rule( $q->Vars, $q->content_type );
+    }
+
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $id = oarstatlib::add_admission_rule($admission_rule->{rule});
+    if ( $id && $id > 0) {
+      	print $header;
+      	print $HTML_HEADER if ($ext eq "html");
+      	print apilib::export( { 
+                      'id' => "$id",
+                      'rule' => "$admission_rule->{rule}",
+                      'api_timestamp' => time(),
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("/admission_rules/$id",$ext,0),$ext)
+                    } , $ext );
+      	oarstatlib::close_db_connection; 
+    }
+    else {
+      apilib::ERROR(
+        500,
+        "Admission rule not created",
+        "Could not create the new admission rule or get the new id"
+      );
+    }
     last;
   };
 

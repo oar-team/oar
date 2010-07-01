@@ -3590,6 +3590,67 @@ sub get_job_stagein($$) {
     return($ref);
 }
 
+# ADMISSION RULES MANAGEMENT
+
+# add_admission_rule
+# adds a new rule in the table admission_rule
+# parameters : base, rule
+# return value : new admission rule id
+sub add_admission_rule($$) {
+    my $dbh = shift;
+    my $rule = shift;
+
+    $dbh->do("  INSERT INTO admission_rules (rule)
+                VALUES (\'$rule\')
+             ");
+    my $id = get_last_insert_id($dbh,"admission_rules_id_seq");
+
+    return($id);
+}
+
+# list_admission_rules
+# get the list of all admission rules
+# parameters : base
+# return value : list of admission rules
+# side effects : /
+sub list_admission_rules($) {
+	my $dbh = shift;
+	
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM admission_rules
+                           ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return @res;
+}
+
+# get_admission_rule
+# returns a ref to some hash containing data for the admission rule of id passed in
+# parameter
+# parameters : base, admission_rule_id
+# return value : ref
+# side effects : /
+sub get_admission_rule($$) {
+    my $dbh = shift;
+    my $rule_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM admission_rules
+                                WHERE
+                                    id = $rule_id
+                            ");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return($ref);
+}
+
+
 # NODES MANAGEMENT
 
 # add_resource

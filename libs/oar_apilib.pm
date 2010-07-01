@@ -408,6 +408,27 @@ sub add_gridjob_uris($$) {
  
 }
 
+# Add uris to a single admission rule
+sub add_admission_rule_uris($$) {
+  my $admission_rule = shift;
+  my $ext = shift;
+  $admission_rule->{uri} = apilib::make_uri("/admission_rules/".$admission_rule->{id},$ext,0);
+  $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
+  $admission_rule->{api_timestamp} = time();
+}
+
+# Add uris to an admission rules list
+sub add_admission_rules_uris($$) {
+  my $admission_rules = shift;
+  my $ext = shift;
+
+  foreach my $admission_rule (@$admission_rules) {
+    $admission_rule->{uri} = apilib::make_uri("/admission_rules/".$admission_rule->{id},$ext,0);
+    $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
+    $admission_rule->{api_timestamp} = time();
+  }
+}
+
 ##############################################################################
 # Data structure functions
 # (functions for shaping data depending on $STRUCTURE)
@@ -732,6 +753,44 @@ sub struct_gridjob_nodes($$) {
     }
   }
   return \@result;
+}
+
+# SINGLE ADMISSION RULE
+sub struct_admission_rule($$) {
+  my $admission_rule = shift;
+  my $structure = shift;
+  my $result;
+  if ($structure eq 'simple') { 
+  	return $admission_rule; 
+  }
+  elsif ($structure eq 'oar') { 
+  	 $result->{$admission_rule->{id}} = $admission_rule;
+  }
+}
+
+
+# LIST OF ADMISSION RULES
+sub struct_admission_rule_list($$) {
+  my $admission_rules = shift;
+  my $structure = shift;
+
+  my $result;
+  foreach my $admission_rule (@$admission_rules) {
+  	my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
+    my $hashref = {
+                  rule => $admission_rule->{rule},
+                  links => $current_rule_link
+    };
+    if ($structure eq 'oar') {
+      $result->{$admission_rule ->{id}} = $hashref;
+    }
+    elsif ($structure eq 'simple') {
+      $hashref->{id} = $admission_rule->{id};
+      push (@$result,$hashref);
+    } 
+  };
+
+  return $result;
 }
 
 ##############################################################################
@@ -1153,6 +1212,48 @@ sub check_grid_job($$) {
   toggle_option($job,"verbose");
 
   return $job;
+}
+
+# Check the consistency of a posted oar admission rule and load it into a hashref
+sub check_admission_rule($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $admission_rule;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $admission_rule = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $admission_rule = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $admission_rule = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Admission rule description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Admission rule must have a "rule" field
+  unless ( $admission_rule->{rule}) {
+    ERROR 400, 'Missing Required Field',
+      'An admission rule must have a rule field';
+    exit 0;
+  }
+
+  return $admission_rule;
 }
 
 ##############################################################################

@@ -167,6 +167,24 @@ sub get_pagination_uri($$$) {
     return $uri_params;
 }
 
+sub get_all_admission_rules() {
+	my @admission_rules = iolib::list_admission_rules($base);
+	return \@admission_rules;
+}
+
+sub get_specific_admission_rule {
+    my $rule_id = shift;
+    my $rule;
+    $rule = iolib::get_admission_rule($base,$rule_id);
+    return $rule;
+}
+
+sub add_admission_rule {
+	my $rule = shift;
+	my $id = iolib::add_admission_rule($base,$rule);
+	return $id;
+}
+
 sub get_duration($){
 # Converts a number of seconds in a human readable duration (years,days,hours,mins,secs)
     my $time=shift;
