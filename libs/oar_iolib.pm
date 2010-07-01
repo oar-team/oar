@@ -3880,11 +3880,26 @@ sub set_node_state($$$$) {
     my $state = shift;
     my $finaud = shift;
 
-    $dbh->do("  UPDATE resources
-                SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
-                WHERE
-                    network_address = \'$hostname\'
-             ");
+
+    if ($state eq "Suspected"){
+        if ($dbh->do("  UPDATE resources
+                    SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
+                    WHERE
+                        network_address = \'$hostname\'
+                        AND state = \'Alive\'
+                ") <= 0){
+            # OAR wants to turn the node into Suspected state but it is not in
+            # the Alive state --> so we do nothing
+            oar_Judas::oar_debug("[oar_iolib] Try to turn the node $hostname into Suspected but it is not into the Alive state SO we do nothing\n");
+            return();
+        }
+    }else{
+        $dbh->do("  UPDATE resources
+                    SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
+                    WHERE
+                        network_address = \'$hostname\'
+                ");
+    }
 
     my $date = get_date($dbh);
     if ($Db_type eq "Pg"){
