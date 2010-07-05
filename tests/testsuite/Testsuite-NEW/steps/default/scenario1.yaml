@@ -1,0 +1,35 @@
+scenario1:
+ - submit_job:
+   - exec_appliance: write_irb "require '/home/kameleon/lib/librspectests'"
+   - exec_appliance: write_irb "obj = Tests.new"
+   - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script' => \"ls;pwd;whoami;sleep 60\" }"
+ - test_if_submitted:
+   - exec_appliance: write_irb "obj.test_submit_job(jhash)"
+   - exec_appliance: write_irb "jid = obj.jobid"
+   - exec_appliance: write_irb "puts \"Submitted job \"+jid.to_s"
+   - exec_appliance: write_irb "obj.test_job_in_queue(jid)"
+ - delete_job:
+   - exec_appliance: write_irb "puts \"Deleting job \"+jid.to_s"
+   - exec_appliance: write_irb "puts jid.to_s"
+ - test_if_deleted:
+   - exec_appliance: write_irb "obj.test_jobs_delete(jid)"
+   - exec_appliance: write_irb "obj.test_job_notin_queue(jid)"
+   - exec_appliance: write_irb "puts \"Scenario1 successfully tested and passed\""
+ - print_output:
+   - exec_appliance: write_irb "exit"
+   - exec_appliance: sleep 1
+   - exec_appliance: cat irb_stdout|tee output_file
+   - exec_appliance: echo "Results of the Testsuite Run"
+   - exec_appliance: sleep 4
+   - exec_appliance: grep -C 1 "OarApis" output_file
+   - exec_appliance: sleep 3
+   - exec_appliance: grep failures output_file>numexamples
+   - exec_appliance: sleep 3
+   - exec_appliance: cat numexamples|wc -l|sed 's/^/Total Number of examples run:/'
+   - exec_appliance: sleep 3
+   - exec_appliance: awk -F '[ ,]' '{static s; if($4 == 0) s++}; END { print s }' numexamples|sed 's/^/Number of Successes:/'
+   - exec_appliance: echo "Time taken to run each tests"
+   - exec_appliance: sleep 2
+   - exec_appliance: grep seconds output_file|tee testtime
+   - exec_appliance: echo "Total Time taken:"
+   - exec_appliance: awk '{ static timesum; timesum+=$3 }; END { print timesum }' testtime
