@@ -1047,7 +1047,7 @@ SWITCH: for ($q) {
   $URI = qr{^/admission_rules\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
   	$_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$1);
+    my $ext = apilib::set_ext($q,$1);
     (my $header, my $type)=apilib::set_output_format($ext);
 
     oarstatlib::open_db_connection or apilib::ERROR(500, 
@@ -1077,7 +1077,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $rule_id = $1;
-    my $ext=apilib::set_ext($q,$2);
+    my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
  
     oarstatlib::open_db_connection or apilib::ERROR(500, 
@@ -1101,18 +1101,18 @@ SWITCH: for ($q) {
   $URI = qr{^/admission_rules(\.yaml|\.json|\.html)*$};
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $ext=apilib::set_ext($q,$1);
-    (my $header)=apilib::set_output_format($ext);
+    my $ext = apilib::set_ext($q,$1);
+    (my $header) = apilib::set_output_format($ext);
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
       apilib::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before creating new resources" );
+        "A suitable authentication must be done before creating new admission rules" );
       last;
     }
     if ( not $authenticated_user eq "oar" ) {
       apilib::ERROR( 401, "Permission denied",
-        "Only the oar user can create new resources" );
+        "Only the oar user can create new admission rules" );
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
@@ -1150,6 +1150,106 @@ SWITCH: for ($q) {
         "Admission rule not created",
         "Could not create the new admission rule or get the new id"
       );
+    }
+    last;
+  };
+
+  #
+  # Delete an admission rule
+  #
+  $URI = qr{^/admission_rules/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::DELETE( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $rule_id = $1;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before deleting an admission rule" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can delete admission rules" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+    
+
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $admission_rule = oarstatlib::get_specific_admission_rule($rule_id);
+    print $header;
+    if (defined($admission_rule)) {
+    	oarstatlib::delete_specific_admission_rule($rule_id);
+    	print $HTML_HEADER if ($ext eq "html");
+    	print apilib::export( { 'id' => "$admission_rule->{id}",
+    				            'rule' => "$admission_rule->{rule}",
+                    			'status' => "Delete request registered",
+                    			'api_timestamp' => time()
+    						  } , $ext );
+        oarstatlib::close_db_connection; 
+    }
+    else {
+    	apilib::ERROR(404,"Not found","Corresponding admission rule could not be found");
+    }
+    last;
+  };
+  
+  #
+  # Delete an admission rule
+  # Should not be used unless for delete from an http browser
+  # (better to use the URI above)
+  #
+  $URI = qr{^/admission_rules/(\d+)(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $rule_id = $1;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type) = apilib::set_output_format($ext);
+ 
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before deleting an admission rule" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+    
+    oarstatlib::open_db_connection or apilib::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    # Check and get the submitted data
+    # From encoded data
+    my $admission_rule;
+    if ($q->param('POSTDATA')) {
+      $admission_rule = apilib::check_admission_rule_update( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $admission_rule = apilib::check_admission_rule_update( $q->Vars, $q->content_type );
+    }
+
+    # Delete (alternative way to DELETE request, for html forms)
+    print $header;
+    if ($admission_rule->{method} eq "delete" ) {
+    	oarstatlib::delete_specific_admission_rule($rule_id);
+    	print $HTML_HEADER if ($ext eq "html");
+    	print apilib::export( { 'id' => "$rule_id",
+                    			'status' => "Delete request registered",
+                    			'api_timestamp' => time()
+    						  } , $ext );
+        oarstatlib::close_db_connection;
+    }
+    else {
+      apilib::ERROR(400,"Bad query","Could not understand ". $admission_rule->{method} ." method");
     }
     last;
   };

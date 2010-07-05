@@ -145,6 +145,12 @@ sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
 sub get_gantt_visu_resources_for_resa($$);
 
+# ADMISSION RULES MANAGEMENT
+sub add_admission_rule($$);
+sub list_admission_rules($);
+sub get_admission_rule($$);
+sub delete_admission_rule($$);
+
 # TIME CONVERSION
 sub ymdhms_to_sql($$$$$$);
 sub sql_to_ymdhms($);
@@ -3648,6 +3654,21 @@ sub get_admission_rule($$) {
     $sth->finish();
 
     return($ref);
+}
+
+# delete_admission_rule
+# parameter
+# parameters : base, admission_rule_id
+sub delete_admission_rule($$) {
+	my $dbh = shift;
+    my $rule_id = shift;
+    
+    my $sth = $dbh->prepare("   DELETE
+                                FROM admission_rules
+                                WHERE
+                                    id = $rule_id
+                            ");
+    $sth->execute();
 }
 
 

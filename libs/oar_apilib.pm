@@ -1256,6 +1256,48 @@ sub check_admission_rule($$) {
   return $admission_rule;
 }
 
+# Check the consistency of a posted oar admission rule for update and load it into a hashref
+sub check_admission_rule_update($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $admission_rule;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $admission_rule = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $admission_rule = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $admission_rule = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Admission rule description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+  
+  # Admission rule must have a "method" field
+  unless ( $admission_rule->{method} ) {
+    ERROR 400, 'Missing Required Field',
+      'An admission rule update must have a "method" field!';
+    exit 0;
+  }
+
+  return $admission_rule;
+}
+
 ##############################################################################
 # Other functions
 ##############################################################################
