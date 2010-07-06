@@ -1048,7 +1048,7 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
   	$_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type) = apilib::set_output_format($ext);
 
     oarstatlib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
@@ -1099,7 +1099,7 @@ SWITCH: for ($q) {
   # Create a new admission rule
   # 
   $URI = qr{^/admission_rules(\.yaml|\.json|\.html)*$};
-  apilib::POST( $_, $URI ) && do {
+  (apilib::POST( $_, $URI ) || apilib::PUT( $_, $URI )) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $header) = apilib::set_output_format($ext);
@@ -1120,8 +1120,12 @@ SWITCH: for ($q) {
     # Check and get the submited admission rule
     # From encoded data
     my $admission_rule;
+
     if ($q->param('POSTDATA')) {
       $admission_rule = apilib::check_admission_rule( $q->param('POSTDATA'), $q->content_type );
+    }
+    elsif ($q->param('PUTDATA')) {
+      $admission_rule = apilib::check_admission_rule( $q->param('PUTDATA'), $q->content_type );
     }
     # From html form
     else {
