@@ -66,7 +66,7 @@ $hierarchy_labels.each do |label|
   sym_label = label.to_sym
   if $fields.include?(sym_label)
     h_level = h_synth($hierarchy_set.map(sym_label))
-    h_desc << "#{label}=\"#{h_level}\”\n"
+    h_desc << "#{label}=\"#{h_level}\"\n"
     h_labels << label << ',' 
   end
 end
