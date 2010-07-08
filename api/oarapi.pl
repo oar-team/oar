@@ -182,7 +182,7 @@ SWITCH: for ($q) {
                                           );
 
     # default parameters for the parameters
-    my $JOBS_URI_DEFAULT_PARAMS;
+    my $JOBS_URI_DEFAULT_PARAMS = "state=Finishing,Running,Resuming,Suspended,Launching,toLaunch,Waiting,toAckReservation,Hold";
     if (is_conf("API_JOBS_URI_DEFAULT_PARAMS")){ $JOBS_URI_DEFAULT_PARAMS = get_conf("API_JOBS_URI_DEFAULT_PARAMS"); }
 
     # query string parameters
@@ -210,7 +210,7 @@ SWITCH: for ($q) {
 
     # getting parameters uri
     my $uri_parameters = oarstatlib::get_pagination_uri($from, $to, $state);
-    
+
     # uri reconstruction
     my $uri = "/jobs";
 
@@ -225,21 +225,18 @@ SWITCH: for ($q) {
     	$uri .= $uri_parameters;
     }
 
-    # default number of items
-    my $ITEMS_LIMIT;
-    if (is_conf("API_NUMBER_ITEMS_LIMIT")){ $ITEMS_LIMIT = get_conf("API_NUMBER_ITEMS_LIMIT"); }
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
         my $param = qr{.*limit=(.*?)(&|$)};
         
-        if (defined($JOBS_URI_DEFAULT_PARAMS =~ m/$param/)) {
-        	$ITEMS_LIMIT = $1;
-        	$uri .= "&limit=".$ITEMS_LIMIT;
+        if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
+        	$MAX_ITEMS = $1;
+        	$uri .= "&limit=".$MAX_ITEMS;
         }
     }
     if (defined($q->param('limit'))) {
-        $ITEMS_LIMIT = $q->param('limit');
-        $uri .= "&limit=".$ITEMS_LIMIT;
+        $MAX_ITEMS = $q->param('limit');
+        $uri .= "&limit=".$MAX_ITEMS;
     }
 
     # offset settings
@@ -249,7 +246,7 @@ SWITCH: for ($q) {
     }
 
     # requested user jobs
-    my $jobs = oarstatlib::get_jobs_for_user_query("",$from,$to,$state,$ITEMS_LIMIT,$offset);
+    my $jobs = oarstatlib::get_jobs_for_user_query("",$from,$to,$state,$MAX_ITEMS,$offset);
     oarstatlib::close_db_connection();
 
     if ( !defined $jobs || keys %$jobs == 0 ) {
@@ -263,13 +260,13 @@ SWITCH: for ($q) {
     	my $next_uri;
     	my $previous_uri;
 
-    	if ($offset + $ITEMS_LIMIT < $total_jobs) {
+    	if ($offset + $MAX_ITEMS < $total_jobs) {
         	# next items list uri
-        	$next_uri = $uri."&offset=".($offset + $ITEMS_LIMIT);
+        	$next_uri = $uri."&offset=".($offset + $MAX_ITEMS);
     	}
-    	if ($offset - $ITEMS_LIMIT >= 0) {
+    	if ($offset - $MAX_ITEMS >= 0) {
         	# previous items list uri
-        	$previous_uri = $uri."&offset=".($offset - $ITEMS_LIMIT);
+        	$previous_uri = $uri."&offset=".($offset - $MAX_ITEMS);
     	}
     	
     	if (defined($next_uri)) {
