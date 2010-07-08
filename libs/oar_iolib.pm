@@ -3287,31 +3287,22 @@ sub get_jobs_range_dates($$$){
 
 # get all jobs in a range of date in the gantt
 # args : base, start range, end range
-sub get_jobs_gantt_scheduled {
+sub get_jobs_gantt_scheduled($$$) {
     my $dbh = shift;
-    my $date_start = shift || "";
-    my $date_end = shift || "";
-    my $state = shift || "";
-    my $limit = shift || "";
-    my $offset = shift;
-    my $user = shift || "";
-    if ($date_start ne "") { $date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start "; }
-    if ($date_end ne "") { $date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";}
-    if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
-    if ($limit ne "") { $limit = "LIMIT $limit"; }
-    if (defined($offset)) { $offset = "OFFSET $offset"; }
-    if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
+    my $date_start = shift;
+    my $date_end = shift;
 
     my $req =
-        "SELECT jobs.job_id,jobs.job_name,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
+        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
          FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
          WHERE
              gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
              gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
              jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-             resources.resource_id = gantt_jobs_resources_visu.resource_id 
-             $date_start $ date_end $state $user
-         ORDER BY jobs.job_id $limit $offset";
+             gantt_jobs_predictions_visu.start_time < $date_end AND
+             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
+         ORDER BY jobs.job_id";
 
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -3320,22 +3311,21 @@ sub get_jobs_gantt_scheduled {
     while (my @ref = $sth->fetchrow_array()) {
         if (!defined($results{$ref[0]})){
             $results{$ref[0]} = {
-            					  'job_name' => $ref[1],
-                                  'job_type' => $ref[2],
-                                  'state' => $ref[3],
-                                  'user' => $ref[4],
-                                  'command' => $ref[5],
-                                  'queue_name' => $ref[6],
-                                  'walltime' => $ref[7],
-                                  'properties' => $ref[8],
-                                  'launching_directory' => $ref[9],
-                                  'submission_time' => $ref[10],
-                                  'start_time' => $ref[11],
-                                  'stop_time' => $ref[12],
-                                  'resources' => [ $ref[13] ],
+                                  'job_type' => $ref[1],
+                                  'state' => $ref[2],
+                                  'user' => $ref[3],
+                                  'command' => $ref[4],
+                                  'queue_name' => $ref[5],
+                                  'walltime' => $ref[6],
+                                  'properties' => $ref[7],
+                                  'launching_directory' => $ref[8],
+                                  'submission_time' => $ref[9],
+                                  'start_time' => $ref[10],
+                                  'stop_time' => $ref[11],
+                                  'resources' => [ $ref[12] ],
                                  }
         }else{
-            push(@{$results{$ref[0]}->{resources}}, $ref[13]);
+            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
         }
     }
     $sth->finish();
@@ -3373,7 +3363,7 @@ sub get_distinct_jobs_gantt_scheduled {
              				gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
              				jobs.job_id = moldable_job_descriptions.moldable_job_id AND
              				resources.resource_id = gantt_jobs_resources_visu.resource_id 
-             				$date_start $ date_end $state $user)
+             				$date_start $date_end $state $user)
  		ORDER BY jobs.job_id $limit $offset";
 
     my $sth = $dbh->prepare($req);
