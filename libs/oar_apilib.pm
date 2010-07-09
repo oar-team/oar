@@ -1157,6 +1157,56 @@ sub check_resource_state($$) {
   return $resource;
 }
 
+# Check the consistency of a posted request resource generation and load it into a hashref
+sub check_resource_expression($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $description;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $description = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $description = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $description = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Ressource description must be in YAML or JSON',
+      "The correct format for a resource description is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Resource description must have a "expression" field
+  unless ( $description->{expression} ) {
+    ERROR 400, 'Missing Required Field',
+      'A resource description must have an expression field';
+    exit 0;
+  }
+
+  # "properties" field must be a HASH
+  if (defined($description->{properties})) {
+  	unless ( ref($description->{properties}) eq "HASH" ) {
+  		ERROR 400, 'Missing Type Field',
+      'The field properties must be a HASH type';
+    exit 0;
+  	}
+  }
+
+  return $description;
+}
 
 # Check the consistency of a posted grid job and load it into a hashref
 sub check_grid_job($$) {

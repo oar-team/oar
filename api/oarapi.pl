@@ -38,6 +38,7 @@ my $OARSUB_CMD  = "oarsub";
 my $OARDEL_CMD  = "oardel";
 my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
+my $OARADMIN_CMD = "oaradmin";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # OAR server
@@ -1252,6 +1253,48 @@ SWITCH: for ($q) {
     else {
       apilib::ERROR(400,"Bad query","Could not understand ". $admission_rule->{method} ." method");
     }
+    last;
+  };
+
+
+  #
+  # Generate resources (oaradmin wrapping)
+  #
+  $URI = qr{^/resources/generate(\.yaml|\.json|\.html)*$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$1);
+    (my $header) = apilib::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before generating resources" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can generate resources" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+
+    # Check and get the submited resource description
+    # From encoded data
+    my $description;
+    if ($q->param('POSTDATA')) {
+      $description = apilib::check_resource_expression( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $description = apilib::check_resource_expression( $q->Vars, $q->content_type );
+    }
+    my $oarcmd = "$OARADMIN_CMD resources -a ".$description->{expression};
+    foreach my $property ( keys %{$description->{properties}} ) {
+    	$oarcmd .= " -p ".$property."=".$description->{properties}->{$property}
+    }
+
+    apilib::ERROR(404,"String",$oarcmd);
     last;
   };
 
