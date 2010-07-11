@@ -459,7 +459,7 @@ sub struct_job($$) {
 sub struct_job_list_hash_to_array($) {
   my $jobs=shift;
   my $array=[];
-  foreach my $j ( keys (%{$jobs}) ) {
+  foreach my $j ( sort { $a <=> $b } keys (%{$jobs}) ) {
     if (defined($jobs->{$j}->{Job_Id})) {
       push (@$array,$jobs->{$j});
     }
