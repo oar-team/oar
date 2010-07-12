@@ -2,7 +2,7 @@
 ***************************************Library Documentation***********************************************
 ***********************************************************************************************************
 
-i) librspectests:
+i) rspectests_lib:
 
 Class: Test
 
@@ -31,9 +31,9 @@ Methods:
 
 
 
-ii) librestapi:
+ii) oarrestapi_lib:
 
-Class: OarApis
+Class: OarApi
 
 Methods:
 

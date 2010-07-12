@@ -1,17 +1,22 @@
 global:
  workdir_base: /var/tmp/kameleon
- # Debian specific
+##Debian specific
  distrib: debian
  debian_version_name: squeeze
  distrib_repository: http://ftp.fr.debian.org/debian/
 
-## Note: Only 1 print_output can be given at a time. Each macrostep file has print_output microstep dealing with closing of IRB. So place after all required tests.
+##APIURI Path
+ apiuri: "http://kameleon:kameleon@localhost/oarapi-priv"
+
+##RSpec Library Path
+ rpsec_lib_path: /home/kameleon/lib/rspectests_lib
+
+## Note: Only 1 print_output can be given in recipe file; print_output microstep deals with closing of IRB. So place after all required tests.
 
 steps:
- - irb                                       #Initializes IRB          
- - tests:
-   - load_libs
-   - create_objects
+ - irb                                                 
+ - load_lib_create_object
+ - unit_tests:
    - test_get_version
    - test_get_timezone
    - test_submit_job                          
@@ -20,25 +25,23 @@ steps:
    - test_job_dump_table
    - test_get_resource_state
    - test_get_resource_details
-#   - print_output
-      
-## Scenario Testings
+# - print_output
 
+## Scenario Testings
 
  - scenario1:
    - submit_job
    - test_if_submitted
    - delete_job
    - test_if_deleted
-   - print_output      
-
+ - print_output      
 
 
 # - scenario2:
 #   - submit_job
 #   - test_if_submitted
 #   - test_if_job_running
-#   - print_output    #Place this macrostep only after the required tests and scenarios you want to run together.
+
 
 
 # - scenario3:
@@ -48,7 +51,7 @@ steps:
 #   - test_if_job_held
 #   - resume_job
 #   - test_if_job_resumed
-#   - print_output      
+
 
 
 # - scenario4:
@@ -56,7 +59,7 @@ steps:
 #   - test_if_submitted
 #   - update_job
 #   - test_if_job_updated
-#   - print_output
+
  
 
 
@@ -65,7 +68,7 @@ steps:
 #   - test_if_submitted
 #   - checkpoint_job
 #   - test_checkpointed_job_details
-#   - print_output
+
 
 
 
@@ -76,8 +79,8 @@ steps:
 
 
 # - scenario7:
-#    - create_new_resource
-#    - test_if_resource_created
+#   - create_new_resource
+#   - test_if_resource_created
 
 
 
