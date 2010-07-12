@@ -36,7 +36,7 @@ use warnings;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(init_conf get_conf is_conf dump_conf reset_conf get_conf_with_default_param);
+@EXPORT_OK = qw(init_conf get_conf is_conf dump_conf get_conf_list reset_conf get_conf_with_default_param);
 
 ## the configuration file.
 my $file = undef;
@@ -98,6 +98,11 @@ sub get_conf ( $ ) {
     my $key = shift;
     (defined $key) or die "missing a key!";
     return $params{$key};
+}
+
+## return the list of configured parameters
+sub get_conf_list () {
+    return (\%params);
 }
 
 ## check if a parameter is defined

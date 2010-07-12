@@ -2,7 +2,7 @@
 use strict;
 use DBI();
 use oar_apilib;
-use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_conflib qw(init_conf dump_conf get_conf_list get_conf is_conf);
 use oar_iolib;
 use oarstat_lib;
 use oarnodes_lib;
@@ -1295,6 +1295,82 @@ SWITCH: for ($q) {
     }
 
     apilib::ERROR(404,"String",$oarcmd);
+    last;
+  };
+
+
+  #
+  # List of all the configured parameters
+  #
+  $URI = qr{^/config\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+  	$_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$1);
+    (my $header, my $type) = apilib::set_output_format($ext);
+    
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting configuration variables" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can get configuration variables" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+
+    # get all configured parameters
+    my $parameters = get_conf_list();
+
+    if ( !defined $parameters || keys %$parameters == 0 ) {
+      $parameters = apilib::struct_empty($STRUCTURE);
+    }
+
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($parameters,$ext);
+    last;
+  };
+  
+
+  #
+  # Get a configuration parameter value
+  #
+  $URI = qr{^/config/(\w+)\.(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+  	$_->path_info =~ m/$URI/;
+  	my $variable = $1;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type) = apilib::set_output_format($ext);
+    
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting configuration variables" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can get configuration variables" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+    
+    # result parameter
+    my %parameter;
+
+    if (is_conf($variable )) {
+    	$parameter{value} = get_conf($variable );
+    }
+    else {
+    	$parameter{value} = apilib::struct_empty($STRUCTURE);
+    }
+
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export(\%parameter,$ext);
     last;
   };
 
