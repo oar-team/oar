@@ -1357,15 +1357,23 @@ SWITCH: for ($q) {
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
-    
+
     # result parameter
     my %parameter;
 
-    if (is_conf($variable )) {
-    	$parameter{value} = get_conf($variable );
+    if (is_conf($variable)) {
+    	my $links;
+    	my $post_uri_link = { rel => "set", method => "post", url => "/config/".$variable};
+    	my $get_uri_link = { rel => "self", method => "get", url => "/config/".$variable};
+    	push (@$links,$post_uri_link);
+    	push (@$links,$get_uri_link);
+
+    	$parameter{$variable} = get_conf($variable);
+    	$parameter{api_timestamp} = time;
+    	$parameter{links} = $links;
     }
     else {
-    	$parameter{value} = apilib::struct_empty($STRUCTURE);
+    	$parameter{$variable} = apilib::struct_empty($STRUCTURE);
     }
 
     print $header;
