@@ -3346,8 +3346,10 @@ sub get_jobs_for_user_query {
     my $user = shift || "";
     my $first_query_date_start = "";
     my $second_query_date_start = "";
+    my $third_query_date_start = "";
     my $first_query_date_end = "";
     my $second_query_date_end = "";
+    my $third_query_date_end = "";
 
     if ($date_start ne "") {
     	$first_query_date_start = "(   
@@ -3360,10 +3362,12 @@ sub get_jobs_for_user_query {
                  						)
              						) AND";
     	$second_query_date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start ";
+    	$third_query_date_start = " AND $date_start <= jobs.submission_time";
     }
     if ($date_end ne "") {
     	$first_query_date_end = "jobs.start_time < $date_end AND";
     	$second_query_date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";
+    	$third_query_date_end = " AND jobs.submission_time <= $date_end";
     }
     if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
     if ($limit ne "") { $limit = "LIMIT $limit"; }
@@ -3372,32 +3376,41 @@ sub get_jobs_for_user_query {
 
     my $req =
         "
-        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time
+        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job
         FROM jobs
         WHERE
              jobs.job_id IN (
          						 SELECT DISTINCT jobs.job_id
-         						 FROM jobs, assigned_resources, moldable_job_descriptions, resources
-         						 WHERE 
+         						 FROM jobs, assigned_resources, moldable_job_descriptions
+         						 WHERE
                  					$first_query_date_start
              						$first_query_date_end
              						jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-             						moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-             						resources.resource_id = assigned_resources.resource_id
+             						moldable_job_descriptions.moldable_job_id = jobs.job_id
              						$state $user
 
          						UNION
 
          						SELECT DISTINCT jobs.job_id
-         						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu
          						WHERE
-         						gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-         						gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
-         						jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-         						resources.resource_id = gantt_jobs_resources_visu.resource_id 
-         						$second_query_date_start
-         						$second_query_date_end
-         						$state $user )
+         						   gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+         						   gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+         						   jobs.job_id = moldable_job_descriptions.moldable_job_id
+         						   $second_query_date_start
+         						   $second_query_date_end
+         						   $state $user
+         						
+         						UNION
+         						
+         						SELECT DISTINCT jobs.job_id
+         						FROM jobs
+         						WHERE 
+         						   jobs.start_time = \'0\'
+         						   $third_query_date_start
+         						   $third_query_date_end
+         						   $state $user
+         						)
          ORDER BY jobs.job_id $limit $offset";
 
     my $sth = $dbh->prepare($req);
@@ -3410,8 +3423,9 @@ sub get_jobs_for_user_query {
                             'state' => $ref[2],
                             'user' => $ref[3],
                             'queue_name' => $ref[4],
-                            'submission_time' => $ref[5]
-                              }
+                            'submission_time' => $ref[5],
+                            'assigned_moldable_job' => $ref[6]
+                              };
     }
     $sth->finish();
 
@@ -3431,8 +3445,10 @@ sub count_jobs_for_user_query {
     my $user = shift || "";
     my $first_query_date_start = "";
     my $second_query_date_start = "";
+    my $third_query_date_start = "";
     my $first_query_date_end = "";
     my $second_query_date_end = "";
+    my $third_query_date_end = "";
 
     if ($date_start ne "") {
     	$first_query_date_start = "(   
@@ -3445,16 +3461,18 @@ sub count_jobs_for_user_query {
                  						)
              						) AND";
     	$second_query_date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start ";
+    	$third_query_date_start = " AND $date_start <= jobs.submission_time";
     }
     if ($date_end ne "") {
     	$first_query_date_end = "jobs.start_time < $date_end AND";
     	$second_query_date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";
+    	$third_query_date_end = " AND jobs.submission_time <= $date_end";
     }
     if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
     if ($limit ne "") { $limit = "LIMIT $limit"; }
     if (defined($offset)) { $offset = "OFFSET $offset"; }
     if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
-    
+
     my $req =
         "
         SELECT COUNT(jobs.job_id)
@@ -3462,27 +3480,36 @@ sub count_jobs_for_user_query {
         WHERE
              jobs.job_id IN (
          						 SELECT DISTINCT jobs.job_id
-         						 FROM jobs, assigned_resources, moldable_job_descriptions, resources
+         						 FROM jobs, assigned_resources, moldable_job_descriptions
          						 WHERE
                  					$first_query_date_start
              						$first_query_date_end
              						jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-             						moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-             						resources.resource_id = assigned_resources.resource_id
+             						moldable_job_descriptions.moldable_job_id = jobs.job_id
              						$state $user
 
          						UNION
 
          						SELECT DISTINCT jobs.job_id
-         						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
+         						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu
          						WHERE
-         						gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-         						gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
-         						jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-         						resources.resource_id = gantt_jobs_resources_visu.resource_id 
-         						$second_query_date_start
-         						$second_query_date_end
-         						$state $user )";
+         						   gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+         						   gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+         						   jobs.job_id = moldable_job_descriptions.moldable_job_id
+         						   $second_query_date_start
+         						   $second_query_date_end
+         						   $state $user
+
+         						UNION
+
+         						SELECT DISTINCT jobs.job_id
+         						FROM jobs
+         						WHERE
+         						   jobs.start_time = \'0\'
+         						   $third_query_date_start
+         						   $third_query_date_end
+         						   $state $user
+         						)";
 
     my $sth = $dbh->prepare($req);
     $sth->execute();
