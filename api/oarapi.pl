@@ -2,13 +2,14 @@
 use strict;
 use DBI();
 use oar_apilib;
-use oar_conflib qw(init_conf dump_conf get_conf_list get_conf is_conf);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use oar_iolib;
 use oarstat_lib;
 use oarnodes_lib;
 use oar_Tools;
 use oarversion;
 use POSIX;
+use JSON;
 #use Data::Dumper;
 
 my $VERSION="0.3.0";
@@ -44,6 +45,10 @@ my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 # OAR server
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
+my $stageout_dir = get_conf("STAGEOUT_DIR");
+my $stagein_dir = get_conf("STAGEIN_DIR");
+my $allow_create_node = get_conf("DESKTOP_COMPUTING_ALLOW_CREATE_NODE");
+my $expiry = get_conf("DESKTOP_COMPUTING_EXPIRY");
 
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
@@ -121,6 +126,56 @@ SWITCH: for ($q) {
     print $q->header( -status => 200, -type => "text/html" );
     print $HTML_HEADER;
     print "Welcome on the oar API\n";
+    last;
+  };
+  $URI = qr{^/desktop/agents(.*)$};
+  apilib::POST( $_, $URI ) && do {
+    warn "haha";
+    my $request = decode_json $q->param('POSTDATA');
+    sign_in($request->{hostname});
+    print $q->header( -status => 200, -type => "text/html" );
+    last;
+  };
+  $URI = qr{^/jobs/(\d+)/run(.*)$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    runJob($1);
+    last;
+  };
+  $URI = qr{^/jobs/(\d+)/terminate(.*)$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    terminateJob($1);
+    last;
+  };
+  $URI = qr{^/resources/nodes/([-\.\w]+)/jobs(.*)$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    print $q->header( -status => 200, -type => "application/json" );
+    getJobsToLaunch($1);
+    last;
+
+  };
+  $URI = qr{^/jobs/(\d+)/stagein(.*)$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    jobStageIn($1);
+    last;
+  };
+  $URI = qr{^/jobs/(\d+)/stageout(.*)$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    jobStageOut($1);
     last;
   };
 
@@ -1298,92 +1353,98 @@ SWITCH: for ($q) {
     last;
   };
 
-
-  #
-  # List of all the configured parameters
-  #
-  $URI = qr{^/config\.*(yaml|json|html)*$};
-  apilib::GET( $_, $URI ) && do {
-  	$_->path_info =~ m/$URI/;
-    my $ext = apilib::set_ext($q,$1);
-    (my $header, my $type) = apilib::set_output_format($ext);
-    
-    # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before getting configuration variables" );
-      last;
-    }
-    if ( not $authenticated_user eq "oar" ) {
-      apilib::ERROR( 401, "Permission denied",
-        "Only the oar user can get configuration variables" );
-      last;
-    }
-    $ENV{OARDO_BECOME_USER} = "oar";
-
-    # get all configured parameters
-    my $parameters = get_conf_list();
-
-    if ( !defined $parameters || keys %$parameters == 0 ) {
-      $parameters = apilib::struct_empty($STRUCTURE);
-    }
-
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-    print apilib::export($parameters,$ext);
-    last;
-  };
-  
-
-  #
-  # Get a configuration parameter value
-  #
-  $URI = qr{^/config/(\w+)\.(yaml|json|html)*$};
-  apilib::GET( $_, $URI ) && do {
-  	$_->path_info =~ m/$URI/;
-  	my $variable = $1;
-    my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type) = apilib::set_output_format($ext);
-    
-    # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      apilib::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before getting configuration variables" );
-      last;
-    }
-    if ( not $authenticated_user eq "oar" ) {
-      apilib::ERROR( 401, "Permission denied",
-        "Only the oar user can get configuration variables" );
-      last;
-    }
-    $ENV{OARDO_BECOME_USER} = "oar";
-
-    # result parameter
-    my %parameter;
-
-    if (is_conf($variable)) {
-    	my $links;
-    	my $post_uri_link = { rel => "set", method => "post", url => "/config/".$variable};
-    	my $get_uri_link = { rel => "self", method => "get", url => "/config/".$variable};
-    	push (@$links,$post_uri_link);
-    	push (@$links,$get_uri_link);
-
-    	$parameter{$variable} = get_conf($variable);
-    	$parameter{api_timestamp} = time;
-    	$parameter{links} = $links;
-    }
-    else {
-    	$parameter{$variable} = apilib::struct_empty($STRUCTURE);
-    }
-
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-    print apilib::export(\%parameter,$ext);
-    last;
-  };
-
   #
   # Anything else -> 404
   #
   apilib::ERROR( 404, "Not found", "No way to handle your request " . $q->path_info );
+}
+
+sub message($) {
+    my $msg = shift;
+    warn $msg;
+}
+
+sub getJobsToLaunch($) {
+    #TODO: get from the oar conf file
+    my $allow_create_node = "0";
+    my $quit=undef;
+    #TODO hardcoded
+    my $hostname=shift;
+    my $base = iolib::connect() or die "cannot connect to the data base\n";
+    my $is_desktop_computing = iolib::is_node_desktop_computing($base,$hostname);
+
+    my $dbJobs = iolib::get_desktop_computing_host_jobs($base,$hostname);
+    my $toLaunchJobs = undef;
+    my $toKillJobs = undef;
+    iolib::disconnect($base);
+    foreach my $jobid (keys %$dbJobs) {
+        unless ($$dbJobs{$jobid}{'state'} eq 'toLaunch') {
+            delete($$dbJobs{$jobid});
+        }
+    }
+    print apilib::export($dbJobs,'json');
+}
+sub jobStageIn($) {
+    my $jobid = shift;
+    my $base = iolib::connect() or die "cannot connect to the data base\n";
+    my $stagein = iolib::get_job_stagein($base,$jobid);
+    iolib::disconnect($base);
+    if ($stagein->{'method'} eq "FILE") {
+        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
+        print <F>;
+        close F;
+    } else {
+        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
+    } 
+}
+
+sub terminateJob($) {
+    my $jobid = shift;
+    my $base = iolib::connect() or die "cannot connect to the data base\n";
+    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    iolib::set_job_state($base,$jobid,"Terminated");
+    
+    iolib::set_finish_date($base,$jobid);
+    iolib::set_job_message($base,$jobid,"ALL is GOOD");
+    iolib::unlock_table($base);
+    iolib::disconnect($base);
+}
+
+sub runJob($) {
+    my $jobid = shift;
+    my $base = iolib::connect() or die "cannot connect to the data base\n";
+    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    iolib::set_running_date($base,$jobid);
+    iolib::set_job_state($base,$jobid,"Running");
+    iolib::unlock_table($base);
+    iolib::disconnect($base);
+}
+sub errorJob() {
+}
+
+sub sign_in($) {
+    my $hostname = shift;
+    my $do_notify;
+    my $base = iolib::connect() or die "cannot connect to the data base\n";
+    my $is_desktop_computing = iolib::is_node_desktop_computing($base,$hostname);
+    if (defined $is_desktop_computing and $is_desktop_computing eq 'YES'){
+	    iolib::lock_table($base,["resources"]);
+	    if (iolib::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
+		$do_notify=1;
+	    }
+	    iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
+	    iolib::unlock_table($base);
+    }
+    elsif ($allow_create_node) {
+        my $resource = iolib::add_resource($base, $hostname, "Alive");
+        iolib::set_resource_property($base,$resource,"desktop_computing","YES");
+        iolib::set_resource_nextState($base,$resource,"Alive");
+        iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
+        $do_notify=1;        
+    } 
+    if ($do_notify) {
+	oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+    }
+
+    iolib::disconnect($base);
 }
