@@ -40,6 +40,7 @@ my $OARDEL_CMD  = "oardel";
 my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
 my $OARADMIN_CMD = "oaradmin";
+my $OARNODES_CMD = "oarnodes";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # OAR server
@@ -1320,6 +1321,8 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $header) = apilib::set_output_format($ext);
+    
+   
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1338,18 +1341,69 @@ SWITCH: for ($q) {
     # From encoded data
     my $description;
     if ($q->param('POSTDATA')) {
-      $description = apilib::check_resource_expression( $q->param('POSTDATA'), $q->content_type );
+      $description = apilib::check_resource_description( $q->param('POSTDATA'), $q->content_type );
     }
     # From html form
     else {
-      $description = apilib::check_resource_expression( $q->Vars, $q->content_type );
+      $description = apilib::check_resource_description( $q->Vars, $q->content_type );
     }
-    my $oarcmd = "$OARADMIN_CMD resources -a ".$description->{expression};
+    my $cmd = "$OARADMIN_CMD resources -a ".$description->{resources};
     foreach my $property ( keys %{$description->{properties}} ) {
-    	$oarcmd .= " -p ".$property."=".$description->{properties}->{$property}
+    	$cmd .= " -p ".$property."=".$description->{properties}->{$property}
     }
 
-    apilib::ERROR(404,"String",$oarcmd);
+    # add commit option to command
+    $cmd .= " -c";
+
+    my $cmdRes = apilib::send_cmd($cmd,"Oar");
+    # Test the status returned by the subprocess command
+    if ( $? != 0 ) {
+    	# Error
+    	my $err = $? >> 8;
+        apilib::ERROR(
+          500,
+          "Oar server error",
+          "Oaradmin command exited with status $err: $cmdRes\nCmd:\n$cmd"
+        );
+     }
+     else {
+     	# Success
+     	my $list_nodes = apilib::get_list_nodes($description->{resources});
+     	my $statement = "\"network_address IN (";
+     	foreach my $node (@$list_nodes) {
+    		$statement .= oarstatlib::set_quote($node);
+    		$statement .= ",";
+    	}
+    	chop($statement);
+    	$statement .= ")\"";
+
+    	$cmd = "$OARNODES_CMD -Y --sql $statement";  	
+    	$cmdRes = apilib::send_cmd($cmd,"Oar");
+    	
+    	my $data = apilib::import($cmdRes,"yaml");
+
+    	print $header;
+        print $HTML_HEADER if ($ext eq "html");
+    	print apilib::export($data,$ext);
+     }
+    last;
+  };
+  
+  #
+  # Html form for resources generation
+  #
+  $URI = qr{^/resources/form.html$};
+  apilib::GET( $_, $URI ) && do {
+    (my $header, my $type)=apilib::set_output_format("html");
+    print $header;
+    print $HTML_HEADER;
+    my $POSTFORM="";
+    my $file = "/etc/oar/api_html_postform_resources.pl";
+    open(FILE,$file);
+    my(@lines) = <FILE>;
+    eval join("\n",@lines);
+    close(FILE);
+    print $POSTFORM;
     last;
   };
 

@@ -43,6 +43,21 @@ sub duration_to_sql($) {
     return iolib::duration_to_sql($duration);
 }
 
+sub set_quote($) {
+	my $string = shift;
+	my $result;
+	if (defined ($base)) {
+		$result = $base->quote($string);
+	}
+	else {
+		open_db_connection();
+		$result = $base->quote($string);
+		close_db_connection();
+	}
+	
+	return $result;
+}
+
 sub get_jobs_with_given_properties {
   my $sql_property = shift;
   my @jobs;

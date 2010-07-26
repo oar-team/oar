@@ -641,6 +641,37 @@ sub struct_resource_list($$$) {
   }
 }
 
+sub get_list_nodes($) {
+	my $expression = shift;
+	my $pattern = qr{/(node|nodes)=(.*?)(/|$)};
+	my $result;
+	
+	if ($expression =~ /$pattern/) {
+		my $prefix = $1;
+		my $value = $2;
+		if ($value =~ /\{(.+)\}/) {
+			for (my $i=1; $i<=$1; $i++) {
+				push(@$result, $prefix.$i);
+            }  
+        }
+        else {
+        	my @params = split(/,/,$value);
+        	foreach my $param (@params) {
+        		if ($param =~ /\[(\d+)-(\d+)\]/) {
+        			for (my $i=$1; $i<=$2; $i++) {
+        				push(@$result, $prefix.$i);
+        			}
+        		}
+        		else {
+        			push(@$result, $param);
+        		}
+        	}
+        }
+	}
+
+	return $result;
+}
+
 # GRID SITE LIST
 sub struct_sites_list($$) {
   my $sites = shift;
@@ -1158,7 +1189,7 @@ sub check_resource_state($$) {
 }
 
 # Check the consistency of a posted request resource generation and load it into a hashref
-sub check_resource_expression($$) {
+sub check_resource_description($$) {
   my $data         = shift;
   my $content_type = shift;
   my $description;
@@ -1183,16 +1214,16 @@ sub check_resource_expression($$) {
 
   # We expect the data to be in YAML or JSON format
   else {
-    ERROR 406, 'Ressource description must be in YAML or JSON',
-      "The correct format for a resource description is text/yaml or application/json. "
+    ERROR 406, 'Resource description must be in YAML or JSON',
+      "The correct format for resource description is text/yaml or application/json. "
       . $content_type;
     exit 0;
   }
 
   # Resource description must have a "expression" field
-  unless ( $description->{expression} ) {
+  unless ( $description->{resources} ) {
     ERROR 400, 'Missing Required Field',
-      'A resource description must have an expression field';
+      'Resources generation description must have a resources field';
     exit 0;
   }
 
