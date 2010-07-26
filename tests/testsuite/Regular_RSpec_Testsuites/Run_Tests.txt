@@ -1,0 +1,14 @@
+**************************************************
+Running the Testsuites in regular RSpec method
+**************************************************
+
+1. To create a testsuite, write rspec test files, name ending with _spec.rb and place it in spec folder.
+2. Use spec command to run :
+   $spec path_to_spec_folder --format specdoc  
+   (For spec options, see rdoc of spec or man spec)
+
+3. To run tests individually, 
+   $spec spec_filename --format specdoc
+
+
+
