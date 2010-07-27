@@ -1196,7 +1196,7 @@ SWITCH: for ($q) {
       	print $HTML_HEADER if ($ext eq "html");
       	print apilib::export( { 
                       'id' => "$id",
-                      'rule' => "$admission_rule->{rule}",
+                      'rule' => apilib::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
                       'uri' => apilib::htmlize_uri(apilib::make_uri("/admission_rules/$id",$ext,0),$ext)
                     } , $ext );
@@ -1206,7 +1206,7 @@ SWITCH: for ($q) {
       apilib::ERROR(
         500,
         "Admission rule not created",
-        "Could not create the new admission rule or get the new id"
+        "Could not create the new admission rule"
       );
     }
     last;
@@ -1309,6 +1309,24 @@ SWITCH: for ($q) {
     else {
       apilib::ERROR(400,"Bad query","Could not understand ". $admission_rule->{method} ." method");
     }
+    last;
+  };
+  
+   #
+  # Html form for admission rules submission
+  #
+  $URI = qr{^/admission_rules/form.html$};
+  apilib::GET( $_, $URI ) && do {
+    (my $header, my $type)=apilib::set_output_format("html");
+    print $header;
+    print $HTML_HEADER;
+    my $POSTFORM="";
+    my $file = "/etc/oar/api_html_postform_rule.pl";
+    open(FILE,$file);
+    my(@lines) = <FILE>;
+    eval join("\n",@lines);
+    close(FILE);
+    print $POSTFORM;
     last;
   };
 

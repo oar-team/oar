@@ -59,6 +59,17 @@ $extension=set_ext($q,$extension);
 sub ERROR($$$);
 
 ##############################################################################
+# Output text formating
+##############################################################################
+
+# Inserts html line breaks in a string
+sub nl2br {
+  my $t = shift or return;
+  $t =~ s/(\r\n)/<br \/>/g;
+  return $t;
+}
+
+##############################################################################
 # Data conversion functions
 ##############################################################################
 
@@ -786,17 +797,27 @@ sub struct_gridjob_nodes($$) {
   return \@result;
 }
 
+
 # SINGLE ADMISSION RULE
 sub struct_admission_rule($$) {
   my $admission_rule = shift;
   my $structure = shift;
   my $result;
+  
+  my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
+  my $hashref = {
+                  rule => nl2br($admission_rule->{rule}),
+                  links => $current_rule_link
+    };
+  
   if ($structure eq 'simple') { 
-  	return $admission_rule; 
+  	$hashref->{id} = $admission_rule->{id};
+    push (@$result,$hashref);
   }
-  elsif ($structure eq 'oar') { 
-  	 $result->{$admission_rule->{id}} = $admission_rule;
+  elsif ($structure eq 'oar') {
+  	$result->{$admission_rule ->{id}} = $hashref;
   }
+  return $result;
 }
 
 
@@ -806,10 +827,11 @@ sub struct_admission_rule_list($$) {
   my $structure = shift;
 
   my $result;
+  
   foreach my $admission_rule (@$admission_rules) {
   	my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
     my $hashref = {
-                  rule => $admission_rule->{rule},
+                  rule => nl2br($admission_rule->{rule}),
                   links => $current_rule_link
     };
     if ($structure eq 'oar') {

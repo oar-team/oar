@@ -3696,10 +3696,10 @@ sub get_job_stagein($$) {
 # return value : new admission rule id
 sub add_admission_rule($$) {
     my $dbh = shift;
-    my $rule = shift;
-
+    my $rule = $dbh->quote(shift);
+     
     $dbh->do("  INSERT INTO admission_rules (rule)
-                VALUES (\'$rule\')
+                VALUES ($rule)
              ");
     my $id = get_last_insert_id($dbh,"admission_rules_id_seq");
 
