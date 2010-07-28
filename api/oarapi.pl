@@ -1358,21 +1358,38 @@ SWITCH: for ($q) {
     # Check and get the submited resource description
     # From encoded data
     my $description;
+    
+    # command generation
+    my $cmd;    
+    # ressources properties
+    my $cmd_properties;
+    
     if ($q->param('POSTDATA')) {
       $description = apilib::check_resource_description( $q->param('POSTDATA'), $q->content_type );
+      # getting properties
+      if (defined($description->{properties})) {
+    	foreach my $property ( keys %{$description->{properties}} ) {
+    		$cmd_properties .= " -p ".$property."=".$description->{properties}->{$property}
+        }
+      }
     }
     # From html form
     else {
       $description = apilib::check_resource_description( $q->Vars, $q->content_type );
-    }
-    my $cmd = "$OARADMIN_CMD resources -a ".$description->{resources};
-    foreach my $property ( keys %{$description->{properties}} ) {
-    	$cmd .= " -p ".$property."=".$description->{properties}->{$property}
+      # getting properties
+      if (defined($description->{properties})) {
+      	my @properties = split(/,/,$description->{properties});
+      	foreach my $property (@properties) {
+      		$cmd_properties .= " -p $property";
+      	}
+      }
     }
 
+    # command with arguments
+    $cmd = "$OARADMIN_CMD resources -a ".$description->{resources}.$cmd_properties;
     # add commit option to command
     $cmd .= " -c";
-
+    # execute the command
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
     # Test the status returned by the subprocess command
     if ( $? != 0 ) {
@@ -1425,7 +1442,6 @@ SWITCH: for ($q) {
     last;
   };
 
-
   #
   # List of all the configured variables
   #
@@ -1460,7 +1476,6 @@ SWITCH: for ($q) {
     print apilib::export($parameters,$ext);
     last;
   };
-
 
   #
   # Get a configuration variable value

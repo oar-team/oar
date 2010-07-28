@@ -1250,13 +1250,13 @@ sub check_resource_description($$) {
   }
 
   # "properties" field must be a HASH
-  if (defined($description->{properties})) {
-  	unless ( ref($description->{properties}) eq "HASH" ) {
-  		ERROR 400, 'Missing Type Field',
-      'The field properties must be a HASH type';
-    exit 0;
-  	}
-  }
+  #if (defined($description->{properties})) {
+  #	unless ( ref($description->{properties}) eq "HASH" ) {
+  #		ERROR 400, 'Missing Type Field',
+  #    'The field properties must be a HASH type';
+  #  exit 0;
+  #	}
+  #}
 
   return $description;
 }

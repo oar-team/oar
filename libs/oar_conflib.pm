@@ -128,7 +128,6 @@ sub reset_conf () {
     return 1;
 }
 
-
 ## set value to a parameter
 sub set_value ($$){
 	my $variable = shift;
@@ -163,7 +162,6 @@ sub set_value ($$){
 
     return 1;
 }
-
 
 ## write content in the config file
 sub write_config {

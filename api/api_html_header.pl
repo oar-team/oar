@@ -6,6 +6,7 @@ $HTML_HEADER = "
 <BODY>
 <HR>
 <A HREF=$apiuri/resources.html>RESOURCES</A>&nbsp;&nbsp;&nbsp;
+<A HREF=$apiuri/resources/form.html>GENERATE RESOURCES</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/jobs.html>JOBS</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/jobs/form.html>JOB SUBMISSION</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/admission_rules.html>ADMISSION RULES</A>&nbsp;&nbsp;&nbsp;
