@@ -2,7 +2,7 @@
 use strict;
 use DBI();
 use oar_apilib;
-use oar_conflib qw(init_conf dump_conf get_conf_list get_conf is_conf);
+use oar_conflib qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
 use oar_iolib;
 use oarstat_lib;
 use oarnodes_lib;
@@ -1427,7 +1427,7 @@ SWITCH: for ($q) {
 
 
   #
-  # List of all the configured parameters
+  # List of all the configured variables
   #
   $URI = qr{^/config\.*(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
@@ -1438,12 +1438,12 @@ SWITCH: for ($q) {
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
       apilib::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before getting configuration variables" );
+        "A suitable authentication must be done before getting configuration parameters" );
       last;
     }
     if ( not $authenticated_user eq "oar" ) {
       apilib::ERROR( 401, "Permission denied",
-        "Only the oar user can get configuration variables" );
+        "Only the oar user can get configuration parameters" );
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
@@ -1463,7 +1463,7 @@ SWITCH: for ($q) {
 
 
   #
-  # Get a configuration parameter value
+  # Get a configuration variable value
   #
   $URI = qr{^/config/(\w+)\.(yaml|json|html)*$};
   apilib::GET( $_, $URI ) && do {
@@ -1475,12 +1475,12 @@ SWITCH: for ($q) {
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
       apilib::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before getting configuration variables" );
+        "A suitable authentication must be done before getting configuration parameters" );
       last;
     }
     if ( not $authenticated_user eq "oar" ) {
       apilib::ERROR( 401, "Permission denied",
-        "Only the oar user can get configuration variables" );
+        "Only the oar user can get configuration parameters" );
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
@@ -1506,6 +1506,56 @@ SWITCH: for ($q) {
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export(\%parameter,$ext);
+    last;
+  };
+  
+  #
+  # Change the value of a configuration parameter
+  #
+  $URI = qr{^/config/(\w+)\.(yaml|json|html)*$};
+  apilib::POST( $_, $URI ) && do {
+  	$_->path_info =~ m/$URI/;
+  	my $variable = $1;
+    my $ext = apilib::set_ext($q,$2);
+    (my $header, my $type) = apilib::set_output_format($ext);
+    
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    
+    # Must be administrator (oar user)
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before changing configuration parameters" );
+      last;
+    }
+    if ( not $authenticated_user eq "oar" ) {
+      apilib::ERROR( 401, "Permission denied",
+        "Only the oar user can make changes on configuration parameters" );
+      last;
+    }
+    $ENV{OARDO_BECOME_USER} = "oar";
+
+    # configuration parameter
+    my $parameter;
+
+    if ($q->param('POSTDATA')) {
+      $parameter = apilib::check_configuration_variable( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $parameter = apilib::check_configuration_variable( $q->Vars, $q->content_type );
+    }
+
+    my $result;
+    if (is_conf($variable)) {
+    	set_value($variable, $parameter->{value});
+    	$result->{$variable} = $parameter;
+    }
+    else {
+    	$result->{$variable} = apilib::struct_empty($STRUCTURE);
+    }
+
+    print apilib::export($result,$ext);
     last;
   };
 
