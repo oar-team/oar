@@ -7,7 +7,7 @@ $POSTFORM="
   <TD><INPUT TYPE=text SIZE=40 NAME=resources VALUE=\"\"></TD>
 </TR><TR>
   <TD>Properties</TD>
-  <TD><INPUT TYPE=text SIZE=40 NAME=properties VALUE=\"\">(comma separated)</TD>
+  <TD><INPUT TYPE=text SIZE=40 NAME=properties VALUE=\"\">(commas separated)</TD>
 </TR><TR>
   <TD></TD><TD><INPUT TYPE=submit VALUE=SUBMIT></TD>
 </TR>

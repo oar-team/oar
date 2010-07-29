@@ -1258,7 +1258,7 @@ SWITCH: for ($q) {
     }
     last;
   };
-  
+
   #
   # Delete an admission rule
   # Should not be used unless for delete from an http browser
@@ -1339,8 +1339,6 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $header) = apilib::set_output_format($ext);
-    
-   
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1465,10 +1463,19 @@ SWITCH: for ($q) {
     $ENV{OARDO_BECOME_USER} = "oar";
 
     # get all configured parameters
-    my $parameters = get_conf_list();
+    my $list_params = get_conf_list();
+    # parameters hash result
+    my $parameters;
 
-    if ( !defined $parameters || keys %$parameters == 0 ) {
+    if ( !defined $list_params || keys %$list_params == 0 ) {
       $parameters = apilib::struct_empty($STRUCTURE);
+    }
+    else {
+    	foreach my $param (keys %$list_params) {
+    		$parameters->{$param}->{value} =  $list_params->{$param};
+    	}
+    	apilib::add_config_parameters_uris($parameters,$ext);
+    	$parameters = apilib::struct_config_parameters_list($parameters,$STRUCTURE);
     }
 
     print $header;
@@ -1501,26 +1508,21 @@ SWITCH: for ($q) {
     $ENV{OARDO_BECOME_USER} = "oar";
 
     # result parameter
-    my %parameter;
+    my $parameter;
 
     if (is_conf($variable)) {
-    	my $links;
-    	my $post_uri_link = { rel => "set", method => "post", url => "/config/".$variable};
-    	my $get_uri_link = { rel => "self", method => "get", url => "/config/".$variable};
-    	push (@$links,$post_uri_link);
-    	push (@$links,$get_uri_link);
-
-    	$parameter{$variable} = get_conf($variable);
-    	$parameter{api_timestamp} = time;
-    	$parameter{links} = $links;
+    	$parameter->{id} = $variable;
+    	$parameter->{value} = get_conf($variable);
+    	apilib::add_config_parameter_uris($parameter,$ext);
+    	$parameter = apilib::struct_config_parameter($parameter,$STRUCTURE);
     }
     else {
-    	$parameter{$variable} = apilib::struct_empty($STRUCTURE);
+    	$parameter->{name} = apilib::struct_empty($STRUCTURE);
     }
 
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print apilib::export(\%parameter,$ext);
+    print apilib::export($parameter,$ext);
     last;
   };
   

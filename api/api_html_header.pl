@@ -11,7 +11,7 @@ $HTML_HEADER = "
 <A HREF=$apiuri/jobs/form.html>JOB SUBMISSION</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/admission_rules.html>ADMISSION RULES</A>&nbsp;&nbsp;&nbsp;
 <A HREF=$apiuri/admission_rules/form.html>RULE SUBMISSION</A>&nbsp;&nbsp;&nbsp;
-<A HREF=$apiuri/config.html>PARAMETERS</A>&nbsp;&nbsp;&nbsp;
+<A HREF=$apiuri/config.html>CONFIGURATION</A>&nbsp;&nbsp;&nbsp;
 <HR>
 "
 

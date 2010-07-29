@@ -440,6 +440,27 @@ sub add_admission_rules_uris($$) {
   }
 }
 
+# Add uris to a single config parameter
+sub add_config_parameter_uris($$) {
+  my $parameter = shift;
+  my $ext = shift;
+  $parameter->{uri} = apilib::make_uri("/config/".$parameter->{id},$ext,0);
+  $parameter->{uri} = htmlize_uri($parameter->{uri},$ext);
+  $parameter->{api_timestamp} = time();
+}
+
+# Add uris to a config parameters list
+sub add_config_parameters_uris($$) {
+  my $parameters = shift;
+  my $ext = shift;
+
+  foreach my $name (keys %$parameters) {
+    $parameters->{$name}->{uri} = apilib::make_uri("/config/".$name,$ext,0);
+    $parameters->{$name}->{uri} = htmlize_uri($parameters->{$name}->{uri},$ext);
+    $parameters->{$name}->{api_timestamp} = time();
+  }
+}
+
 ##############################################################################
 # Data structure functions
 # (functions for shaping data depending on $STRUCTURE)
@@ -827,7 +848,6 @@ sub struct_admission_rule_list($$) {
   my $structure = shift;
 
   my $result;
-  
   foreach my $admission_rule (@$admission_rules) {
   	my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
     my $hashref = {
@@ -842,6 +862,54 @@ sub struct_admission_rule_list($$) {
       push (@$result,$hashref);
     } 
   };
+
+  return $result;
+}
+
+# CONFIG PARAMETERS
+sub struct_config_parameter($$) {
+  my $parameter = shift;
+  my $structure = shift;
+
+  my $result;
+
+  my $current_rule_link = { href => $parameter->{uri}, rel => "self" };
+  my $hashref = {
+                  id => $parameter->{id},
+                  value => $parameter->{value},
+                  links => $current_rule_link
+   };
+   if ($structure eq 'oar') {
+     $result->{$parameter->{id}} = $hashref;
+   }
+   elsif ($structure eq 'simple') {
+     $hashref->{id} = $parameter->{id};
+     push (@$result,$hashref);
+   } 
+
+  return $result;
+}
+
+# LIST OF CONFIG PARAMETERS
+sub struct_config_parameters_list($$) {
+  my $parameters = shift;
+  my $structure = shift;
+
+  my $result;
+  foreach my $param ( keys( %{$parameters} ) ) {
+  	my $current_rule_link = { href => $parameters->{$param}->{uri}, rel => "self" };
+  	my $hashref = {
+                  value => $parameters->{$param}->{value},
+                  links => $current_rule_link
+    };
+    if ($structure eq 'oar') {
+      $result->{$param} = $hashref;
+    }
+    elsif ($structure eq 'simple') {
+      $hashref->{id} = $param;
+      push (@$result,$hashref);
+    } 
+  }
 
   return $result;
 }
