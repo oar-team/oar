@@ -1,9 +1,10 @@
-require '/home/nk/lib/oarrestapi_lib'
+require 'oarrestapi_lib'
 
 $jobid = ""
 describe OarApi do
   before :all do
   apiuri="http://www.grenoble.grid5000.fr/oarapi"
+#apiuri="http://kameleon:kameleon@localhost/oarapi-priv" 
   #Object of OarApis class
   @obj = OarApi.new(apiuri)
   @c=0 
@@ -12,7 +13,7 @@ describe OarApi do
   
   #Submitting a job
   it "should submit a job successfully " do
-  jhash = { 'resource' => "/nodes=1/core=1" , 'script_path' => "/home/nk/Testsuite-NEW/infiniteloop_script.sh", 'walltime' => "00:05:00" }
+  jhash = { 'resource' => "/nodes=1/core=1" , 'script_path' => "infiniteloop.sh", 'walltime' => "00:05:00" }
   begin
   @obj.submit_job(jhash)
   $jobid = @obj.jobstatus['id'].to_s

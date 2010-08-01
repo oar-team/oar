@@ -1,11 +1,11 @@
-require '/home/nk/lib/oarrestapi_lib'
+require 'oarrestapi_lib'
 
 $jobid = ""
 describe OarApi do
   before :all do
   # Custom variables
   APIURI="http://www.grenoble.grid5000.fr/oarapi"
- 
+#APIURI="http://kameleon:kameleon@localhost/oarapi-priv" 
   #Object of OarApis class
   @obj = OarApi.new(APIURI)
   @c=0 

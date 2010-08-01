@@ -1,4 +1,4 @@
-require '/home/nk/lib/oarrestapi_lib'
+require 'oarrestapi_lib'
 
 #
 # Scenario to test if a lengthy job submitted is still running after some time; or doesnt terminate before its expected finish time
@@ -9,7 +9,7 @@ describe OarApi do
   before :all do
   # Custom variables
   APIURI="http://www.grenoble.grid5000.fr/oarapi"
- 
+#APIURI="http://kameleon:kameleon@localhost/oarapi-priv"  
   #Object of OarApis class
   @obj = OarApi.new(APIURI)
   @c=0 

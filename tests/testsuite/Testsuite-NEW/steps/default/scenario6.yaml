@@ -1,0 +1,13 @@
+scenario6:
+ - submit_job_with_walltime:
+   - exec_appliance: write_irb "walltime = \"00:05:00\""
+   - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script_path' => \"infiniteloop.sh\" , "walltime" => \"#{walltime}\"}"
+ - test_if_submitted:
+   - exec_appliance: write_irb "obj.test_submit_job(jhash)"
+   - exec_appliance: write_irb "jid = obj.jobid"
+   - exec_appliance: write_irb "puts \"Submitted job \"+jid.to_s"
+   - exec_appliance: write_irb "obj.test_job_in_queue(jid)"
+ - wait_till_little_after_walltime:
+   - exec_appliance: sleep 360
+ - test_if_job_killed:
+   - exec_appliance: write_irb "obj.test_job_notin_queue(jid)"
