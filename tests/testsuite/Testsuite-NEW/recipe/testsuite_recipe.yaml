@@ -70,21 +70,26 @@ steps:
 #   - test_checkpointed_job_details
 
 
-
-
 # - scenario6:
+#    - submit_job_with_walltime
+#    - test_if_submitted
+#    - wait_till_little_after_walltime
+#    - test_if_job_killed
+
+
+# - scenario7:
 #   - submit_job_sleep
 #   - test_if_job_sleeping 
 
 
 
-# - scenario7:
+# - scenario8:
 #   - create_new_resource
 #   - test_if_resource_created
 
 
 
-# - scenario8: 
+# - scenario9: 
 #   - create_new_resource
 #   - test_if_resource_created 
 #   - delete_resource
@@ -93,5 +98,5 @@ steps:
 
 
 
-# - scenario09
+# - scenario10
    	
