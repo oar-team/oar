@@ -504,100 +504,45 @@ sub struct_job_list_hash_to_array($) {
 }
 
 # OAR JOB LIST
-sub struct_job_list($$$) {
+sub struct_job_list($$) {
   my $jobs = shift;
   my $structure = shift;
-  my $jobs_extra = shift;
-  my $items;
+  my $result;
   foreach my $job (@$jobs) {
-  	my $self_job_link = { href => $job->{uri}, rel => "self" };
-  	my $resource_job_link = { href => $job->{resources_uri}, rel => "resources" };
-    my $job_links; 
-    push (@$job_links,$self_job_link);
-    push (@$job_links,$resource_job_link);
-
     my $hashref = {
                   state => $job->{state},
                   owner => $job->{job_user},
                   name => $job->{job_name},
                   queue => $job->{queue_name},
                   submission => $job->{submission_time},
-                  api_timestamp => $job->{api_timestamp},
-                  links => $job_links
+                  api_timestamp => $job->{api_timestamp}
     };
     if ($structure eq 'oar') {
-      $items->{$job->{job_id}} = $hashref;
+      $result->{$job->{job_id}} = $hashref;
     }
     elsif ($structure eq 'simple') {
       $hashref->{id}=$job->{job_id};
-      push (@$items,$hashref);
+      push (@$result,$hashref);
     } 
-  };
-
-  my $links;
-  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
-  my $previous_uri_link;
-  my $next_uri_link;
-
-  push (@$links,$self_uri_link);
-
-  if (defined ($jobs_extra->{previous_uri})) {
-  	$previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
-  	push (@$links,$previous_uri_link);
   }
-  if (defined($jobs_extra->{next_uri})) {
-  	$next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
-  	push (@$links,$next_uri_link);
-  }
-
-  my $result = {
-  	           items => $items,
-  	           total => $jobs_extra->{total},
-  	           offset => $jobs_extra->{offset},
-  	           links => $links
-  };
   return $result;
 }
 
+
 # OAR JOB LIST WITH DETAILS
-sub struct_job_list_details($$$) {
+sub struct_job_list_details($$) {
   my $jobs = shift;
   my $structure = shift;
-  my $jobs_extra = shift;
-  my $items;
+  my $result;
   if ($structure eq 'oar') {
     foreach my $job (@$jobs) {
-      $items->{$job->{job_id}} = $job;
+      $result->{$job->{job_id}} = $job;
     }
   }
   elsif ($structure eq 'simple') {
-      $items = \@$jobs;
-  }
-
-  my $links;
-  my $self_uri_link = { href => $jobs_extra->{current_uri}, rel => "self" };
-  my $previous_uri_link;
-  my $next_uri_link;
-
-  push (@$links,$self_uri_link);
-
-  if (defined ($jobs_extra->{previous_uri})) {
-  	$previous_uri_link = { href => $jobs_extra->{previous_uri}, rel => "previous" };
-  	push (@$links,$previous_uri_link);
-  }
-  if (defined($jobs_extra->{next_uri})) {
-  	$next_uri_link = { href => $jobs_extra->{next_uri}, rel => "next" };
-  	push (@$links,$next_uri_link);
-  }
-
-  my $result = {
-  	           items => $items,
-  	           total => $jobs_extra->{total},
-  	           offset => $jobs_extra->{offset},
-  	           links => $links
-  };
+      $result=\@$jobs;
+  } 
   return $result;
-
 }
 
 
@@ -621,6 +566,7 @@ sub struct_job_resources($$) {
   }
   return $result;
 }
+
 
 # OAR RESOURCES
 sub filter_resource_list($) {
@@ -672,6 +618,7 @@ sub struct_resource_list($$$) {
     return $result; 
   }
 }
+
 
 sub get_list_nodes($) {
 	my $expression = shift;
@@ -1596,6 +1543,94 @@ sub get_key($$$) {
   else {
     return $cmdRes;
   }
+}
+
+# Add pagination to a set of record
+sub add_pagination($$$$$$$$) {
+	my $record = shift;
+	my $total = shift;
+	my $path = shift;
+	my $params = shift;
+	my $ext = shift;
+	my $limit = shift;
+	my $offset = shift;
+	my $STRUCTURE = shift;
+	
+	my $offset_separation_char = "&";
+	
+	if(defined($params) && $params ne "") {
+		# replacing all ';' char by '&' in query string
+		$params =~ s/;/&/g;
+		$params =~ s/offset=(.*?)(&|$)//g;
+		$params =~ s/&$//g;
+		# completing path with query string or separating char
+		if ($params ne "") {
+			$path .= "?".$params;
+		}
+		else {
+			$offset_separation_char = "?";
+		}
+	}
+	else {
+		# no parameters was passed, the separating char
+		# must be '?'
+		$offset_separation_char = "?";
+	}
+	
+	# current, next and previous uri
+	my $current_uri;
+    my $next_uri;
+    my $previous_uri;
+	
+	if (!defined $record || $total <= 0) {
+		$record = struct_empty($STRUCTURE);
+		return $record;
+    }
+    else {
+    	# setting current uri
+    	$current_uri = $path.$offset_separation_char."offset=".$offset;
+    	
+    	# setting next uri
+    	if ($offset + $limit < $total) {
+        	# next items list uri
+        	$next_uri = $path.$offset_separation_char."offset=".($offset + $limit);
+    	}
+    	
+    	# setting previous uri  
+    	if ($offset - $limit >= 0) {
+        	# previous items list uri
+        	$previous_uri = $path.$offset_separation_char."offset=".($offset - $limit);
+    	}
+    	
+    	# uris are setting into hasmaps
+    	$current_uri = apilib::htmlize_uri(apilib::make_uri($current_uri,"",0),$ext);
+    	$current_uri = { href => $current_uri, rel => "self" };
+    	
+    	if (defined($next_uri)) {
+    		$next_uri = apilib::htmlize_uri(apilib::make_uri($next_uri,"",0),$ext);
+    		$next_uri = { href => $next_uri, rel => "next" };
+    	}
+    	if (defined($previous_uri)) {
+    		$previous_uri = apilib::htmlize_uri(apilib::make_uri($previous_uri,"",0),$ext);
+    		$previous_uri = { href => $previous_uri , rel => "previous" };
+    	}
+    	
+    	my $links;
+    	# pushing uris
+    	push (@$links,$previous_uri);
+    	push (@$links,$current_uri);
+    	push (@$links,$next_uri);
+    	
+    	my $result = {
+  	           items => $record,
+  	           total => $total,
+  	           offset => $offset,
+  	           links => $links
+    	};
+    	
+    	return $result;    	
+    }
+
 }
 
 return 1;

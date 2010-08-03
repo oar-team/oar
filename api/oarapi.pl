@@ -264,39 +264,23 @@ SWITCH: for ($q) {
         	$state = $1;
         }
     }
-
-    # getting parameters uri
-    my $uri_parameters = oarstatlib::get_pagination_uri($from, $to, $state);
-
-    # uri reconstruction
-    my $uri = "/jobs";
-
-    if (defined($more_infos)) {
-        $uri .= $more_infos.".".$ext;
-    }
-    else {   
-        $uri .= ".".$ext;
-    }
-
-    if (defined($uri_parameters)) {
-    	$uri .= $uri_parameters;
-    }
-
+    
+    # GET max items from configuration parameter
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
         my $param = qr{.*limit=(.*?)(&|$)};
         
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$MAX_ITEMS = $1;
-        	$uri .= "&limit=".$MAX_ITEMS;
         }
     }
+    
+    # GET max items from uri parameter
     if (defined($q->param('limit'))) {
         $MAX_ITEMS = $q->param('limit');
-        $uri .= "&limit=".$MAX_ITEMS;
     }
 
-    # offset settings
+    # set offset / GET offset from uri parameter
     my $offset = 0;
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
@@ -304,44 +288,16 @@ SWITCH: for ($q) {
 
     # requested user jobs
     my $jobs = oarstatlib::get_jobs_for_user_query("",$from,$to,$state,$MAX_ITEMS,$offset);
-    oarstatlib::close_db_connection();
-
+    my $total_jobs = oarstatlib::count_jobs_for_user_query("",$from,$to,$state);
+    
     if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
     }
     else {
-    	# total user jobs
-    	my $total_jobs = oarstatlib::count_jobs_for_user_query("",$from,$to,$state);
-    	# current, next and previous uri
-    	my $current_uri = $uri."&offset=".$offset;
-    	my $next_uri;
-    	my $previous_uri;
-
-    	if ($offset + $MAX_ITEMS < $total_jobs) {
-        	# next items list uri
-        	$next_uri = $uri."&offset=".($offset + $MAX_ITEMS);
-    	}
-    	if ($offset - $MAX_ITEMS >= 0) {
-        	# previous items list uri
-        	$previous_uri = $uri."&offset=".($offset - $MAX_ITEMS);
-    	}
     	
-    	if (defined($next_uri)) {
-    		$next_uri = apilib::htmlize_uri(apilib::make_uri($next_uri,"",0),$ext);
-    	}
-    	if (defined($previous_uri)) {
-    		$previous_uri = apilib::htmlize_uri(apilib::make_uri($previous_uri,"",0),$ext);
-    	}
-    	my $jobs_extras = {
-    		              total => $total_jobs,
-    		              offset => $offset,
-    		              current_uri => apilib::htmlize_uri(apilib::make_uri($current_uri,"",0),$ext),
-    		              next_uri => $next_uri,
-    		              previous_uri => $previous_uri
-    	};
-
     	$jobs = apilib::struct_job_list_hash_to_array($jobs);
       	apilib::add_joblist_uris($jobs,$ext);
+      	
       	if (defined($more_infos)) {
         	if ($more_infos eq "/details") {
            	# will be useful for cigri and behaves exactly as a oarstat -D
@@ -349,14 +305,16 @@ SWITCH: for ($q) {
               	$j = oarstatlib::get_job_data($j,undef);
            	}
            	apilib::add_joblist_uris($jobs,$ext);
-           	$jobs = apilib::struct_job_list_details($jobs,$STRUCTURE,$jobs_extras);
+           	$jobs = apilib::struct_job_list_details($jobs,$STRUCTURE);
         	}
       	}
       	else {
-          	$jobs = apilib::struct_job_list($jobs,$STRUCTURE,$jobs_extras);
+          	$jobs = apilib::struct_job_list($jobs,$STRUCTURE);
       	}
     }
     oarstatlib::close_db_connection();
+    
+    $jobs = apilib::add_pagination($jobs,$total_jobs,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($jobs,$ext);
@@ -547,7 +505,6 @@ SWITCH: for ($q) {
     last;
   };
 
-
   #
   # Update of a job (delete, checkpoint, ...)
   # Should not be used unless for delete from an http browser
@@ -652,7 +609,6 @@ SWITCH: for ($q) {
     last;
   };
 
-
   #
   # List of resources or details of a resource
   #
@@ -661,21 +617,47 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
+    
+    # GET limit from uri parameter
+    if (defined($q->param('limit'))) {
+        $MAX_ITEMS = $q->param('limit');
+    }
+
+    # set offset / GET offset from uri parameter
+    my $offset = 0;
+    if (defined($q->param('offset'))) {
+        $offset = $q->param('offset');
+    }
+    
     my $resources;
     oarnodeslib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
     if (defined($1)) {
-      if    ($1 eq "/full")        { $resources = oarnodeslib::get_all_resources();         }
-      elsif ($1 =~ /\/([0-9]+)/)  { $resources = [oarnodeslib::get_resource_infos($1)];   }
-      else                        { apilib::ERROR(500,"Error 666!","Error 666");           }
+    	if ($1 eq "/full") {
+    		$resources = oarnodeslib::get_requested_resources($MAX_ITEMS,$offset);         
+    	}
+        elsif ($1 =~ /\/([0-9]+)/)  {
+        	$resources = [oarnodeslib::get_resource_infos($1)];   
+        }
+        else {
+        	apilib::ERROR(500,"Error 666!","Error 666");           
+        }
     }
-    else                          { $resources = oarnodeslib::get_all_resources(); 
-                                    $resources = apilib::filter_resource_list($resources); }
+    else
+    {
+    	$resources = oarnodeslib::get_requested_resources($MAX_ITEMS,$offset); 
+        $resources = apilib::filter_resource_list($resources); 
+    }
     oarnodeslib::close_db_connection;
     apilib::add_resources_uris($resources,$ext,'');
     $resources = apilib::struct_resource_list($resources,$STRUCTURE,1);
+    
+    my $total_resources = oarnodeslib::count_all_resources();
+    $resources = apilib::add_pagination($resources,$total_resources,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
+ 
+
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($resources,$ext);
@@ -703,7 +685,7 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($resources,$ext);
     last;
-  }; 
+  };
 
   #
   # Jobs running on a resource
@@ -1517,7 +1499,7 @@ SWITCH: for ($q) {
     	$parameter = apilib::struct_config_parameter($parameter,$STRUCTURE);
     }
     else {
-    	$parameter->{name} = apilib::struct_empty($STRUCTURE);
+    	$parameter->{id} = apilib::struct_empty($STRUCTURE);
     }
 
     print $header;

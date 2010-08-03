@@ -55,6 +55,18 @@ sub get_all_resources(){
         return \@resources;
 }
 
+sub count_all_resources() {
+	my $total = iolib::count_all_resources($base);
+	return $total;
+}
+
+sub get_requested_resources($$){
+	my $limit = shift;
+	my $offset = shift;
+	my @resources = iolib::get_requested_resources($base,$limit,$offset);
+	return \@resources;
+}
+
 sub get_events($$){
 	my $hostname = shift;
 	my $date_from = shift;

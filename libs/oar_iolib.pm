@@ -109,6 +109,8 @@ sub add_resource_job_pair($$$);
 sub add_resource($$$);
 sub list_nodes($);
 sub list_resources($);
+sub count_all_resources($$$);
+sub get_requested_resources($$$);
 sub get_resource_info($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
@@ -3834,6 +3836,44 @@ sub list_resources($) {
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
+
+# count_all_resources
+# count all resources
+# parameters : base
+# side effects : /
+sub count_all_resources($) {
+	my $dbh = shift;
+	
+	my $sth = $dbh->prepare("	SELECT COUNT(*)
+	                            FROM resources
+	                        ");
+    $sth->execute();
+
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
+}
+
+# get_requested_resources
+# get requested resources
+# parameters : base limit offset
+# side effects : /
+sub get_requested_resources($$$) {
+	my $dbh = shift;
+	my $limit = shift;
+	my $offset= shift;
+	
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                ORDER BY resource_id LIMIT $limit OFFSET $offset
                             ");
     $sth->execute();
     my @res = ();
