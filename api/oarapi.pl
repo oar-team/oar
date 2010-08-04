@@ -248,23 +248,19 @@ SWITCH: for ($q) {
     my $state = $q->param('state');
 
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
-
         my $param = qr{.*from=(.*?)(&|$)};
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$from = $1;
         }
-        
     	$param = qr{.*to=(.*?)(&|$)};
     	if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$to = $1;
         }
-    	
     	$param = qr{.*state=(.*?)(&|$)};
     	if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$state = $1;
         }
     }
-    
     # GET max items from configuration parameter
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
@@ -274,18 +270,15 @@ SWITCH: for ($q) {
         	$MAX_ITEMS = $1;
         }
     }
-    
     # GET max items from uri parameter
     if (defined($q->param('limit'))) {
         $MAX_ITEMS = $q->param('limit');
     }
-
     # set offset / GET offset from uri parameter
     my $offset = 0;
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
     }
-
     # requested user jobs
     my $jobs = oarstatlib::get_jobs_for_user_query("",$from,$to,$state,$MAX_ITEMS,$offset);
     my $total_jobs = oarstatlib::count_jobs_for_user_query("",$from,$to,$state);
@@ -1506,7 +1499,6 @@ SWITCH: for ($q) {
 
     # result parameter
     my $parameter;
-
     if (is_conf($variable)) {
     	$parameter->{id} = $variable;
     	$parameter->{value} = get_conf($variable);
