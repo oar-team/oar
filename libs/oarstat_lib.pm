@@ -150,38 +150,6 @@ sub count_jobs_for_user_query {
 	return $total;
 }
 
-sub get_pagination_uri($$$) {
-	my $from_timestamp = shift;
-	my $to_timestamp = shift;
-	my $state = shift;
-
-    # link generation
-    my $uri_params;
-
-    if (defined($from_timestamp) && !defined($to_timestamp)) {
-    	$uri_params = "?from=".$from_timestamp;
-    }
-
-    if (defined($to_timestamp) && !defined($from_timestamp)) {
-    	$uri_params = "?to=".$to_timestamp;
-    }
-
-    if (defined($from_timestamp) && defined($to_timestamp)) {
-    	$uri_params = "?from=".$from_timestamp."&to=".$to_timestamp;
-    }
-
-	if (defined($state)) {
-        if (!defined($uri_params)) {
-    	    $uri_params = "?state=".$state;
-		}
-		else {
-    	    $uri_params .= "&state=".$state;
-		}
-    }
-
-    return $uri_params;
-}
-
 sub get_all_admission_rules() {
 	my @admission_rules = iolib::list_admission_rules($base);
 	return \@admission_rules;
