@@ -109,7 +109,7 @@ sub add_resource_job_pair($$$);
 sub add_resource($$$);
 sub list_nodes($);
 sub list_resources($);
-sub count_all_resources($$$);
+sub count_all_resources($);
 sub get_requested_resources($$$);
 sub get_resource_info($$);
 sub is_node_exists($$);
