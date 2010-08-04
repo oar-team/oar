@@ -151,6 +151,8 @@ sub get_gantt_visu_resources_for_resa($$);
 sub add_admission_rule($$);
 sub list_admission_rules($);
 sub get_admission_rule($$);
+sub get_requested_admission_rules($$$);
+sub count_all_admission_rules($);
 sub delete_admission_rule($$);
 
 # TIME CONVERSION
@@ -3726,6 +3728,44 @@ sub list_admission_rules($) {
     }
     $sth->finish();
     return @res;
+}
+
+# get_requested_admission_rules
+# get requested admission rules
+# parameters : base limit offset
+# side effects : /
+sub get_requested_admission_rules($$$) {
+	my $dbh = shift;
+	my $limit = shift;
+	my $offset= shift;
+	
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM admission_rules
+                                ORDER BY id LIMIT $limit OFFSET $offset
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
+
+# count_all_admission_rules
+# count all admissions rules
+# parameters : base
+# side effects : /
+sub count_all_admission_rules($) {
+	my $dbh = shift;
+	
+	my $sth = $dbh->prepare("	SELECT COUNT(*)
+	                            FROM admission_rules
+	                        ");
+    $sth->execute();
+    
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
 }
 
 # get_admission_rule

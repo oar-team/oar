@@ -314,6 +314,7 @@ SWITCH: for ($q) {
     }
     oarstatlib::close_db_connection();
     
+    # add pagination informations
     $jobs = apilib::add_pagination($jobs,$total_jobs,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
@@ -622,7 +623,6 @@ SWITCH: for ($q) {
     if (defined($q->param('limit'))) {
         $MAX_ITEMS = $q->param('limit');
     }
-
     # set offset / GET offset from uri parameter
     my $offset = 0;
     if (defined($q->param('offset'))) {
@@ -636,6 +636,7 @@ SWITCH: for ($q) {
                                                  );
     if (defined($1)) {
     	if ($1 eq "/full") {
+    		# get specified intervals of resources
     		$resources = oarnodeslib::get_requested_resources($MAX_ITEMS,$offset);         
     	}
         elsif ($1 =~ /\/([0-9]+)/)  {
@@ -647,6 +648,7 @@ SWITCH: for ($q) {
     }
     else
     {
+    	# get specified intervals of resources
     	$resources = oarnodeslib::get_requested_resources($MAX_ITEMS,$offset); 
         $resources = apilib::filter_resource_list($resources); 
     }
@@ -654,7 +656,9 @@ SWITCH: for ($q) {
     apilib::add_resources_uris($resources,$ext,'');
     $resources = apilib::struct_resource_list($resources,$STRUCTURE,1);
     
+    # get the total number of resources
     my $total_resources = oarnodeslib::count_all_resources();
+    # add pagination informations
     $resources = apilib::add_pagination($resources,$total_resources,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
  
 
@@ -1085,21 +1089,32 @@ SWITCH: for ($q) {
   	$_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $header, my $type) = apilib::set_output_format($ext);
-
+    
+    # GET limit from uri parameter
+    if (defined($q->param('limit'))) {
+        $MAX_ITEMS = $q->param('limit');
+    }
+    # set offset / GET offset from uri parameter
+    my $offset = 0;
+    if (defined($q->param('offset'))) {
+        $offset = $q->param('offset');
+    }
     oarstatlib::open_db_connection or apilib::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                           );
-    my $admissions_rules = oarstatlib::get_all_admission_rules();;
-    if (!defined @$admissions_rules || scalar(@$admissions_rules) == 0 ) {
-    	$admissions_rules = apilib::struct_empty($STRUCTURE);
-    }
-    else {
-      	apilib::add_admission_rules_uris($admissions_rules,$ext);
-      	$admissions_rules = apilib::struct_admission_rule_list($admissions_rules,$STRUCTURE);
-    }
-
+    # get specified intervals of admission rules
+    my $admissions_rules = oarstatlib::get_requested_admission_rules($MAX_ITEMS,$offset);
+    
+    apilib::add_admission_rules_uris($admissions_rules,$ext);
+    $admissions_rules = apilib::struct_admission_rule_list($admissions_rules,$STRUCTURE);
+    
+    # get the total number of admissions rules
+    my $total_rules = oarstatlib::count_all_admission_rules();
     oarstatlib::close_db_connection();
+    
+    # add pagination informations
+    $admissions_rules = apilib::add_pagination($admissions_rules,$total_rules,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($admissions_rules,$ext);

@@ -155,6 +155,18 @@ sub get_all_admission_rules() {
 	return \@admission_rules;
 }
 
+sub get_requested_admission_rules {
+	my $limit = shift;
+	my $offset = shift;
+	my @rules = iolib::get_requested_admission_rules($base,$limit,$offset);
+	return \@rules;
+}
+
+sub count_all_admission_rules {
+	my $total = iolib::count_all_admission_rules($base);
+	return $total;
+}
+
 sub get_specific_admission_rule {
     my $rule_id = shift;
     my $rule;
