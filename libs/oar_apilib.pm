@@ -509,13 +509,21 @@ sub struct_job_list($$) {
   my $structure = shift;
   my $result;
   foreach my $job (@$jobs) {
+  	# job links uri (self and associated resources)
+  	my $job_uri = { href => $job->{uri}, rel => "self" };
+  	my $resource_uri = { href => $job->{resources_uri}, rel => "resources" };
+  	my $links;
+  	push (@$links, $job_uri);
+  	push (@$links, $resource_uri);
+  	
     my $hashref = {
                   state => $job->{state},
                   owner => $job->{job_user},
                   name => $job->{job_name},
                   queue => $job->{queue_name},
                   submission => $job->{submission_time},
-                  api_timestamp => $job->{api_timestamp}
+                  api_timestamp => $job->{api_timestamp},
+                  links => $links
     };
     if ($structure eq 'oar') {
       $result->{$job->{job_id}} = $hashref;
