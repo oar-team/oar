@@ -1553,7 +1553,10 @@ sub get_key($$$) {
   }
 }
 
-# Add pagination to a set of record
+# add_pagination
+# add pagination to a set of record
+# parameters : record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
+# return value : /
 sub add_pagination($$$$$$$$) {
 	my $record = shift;
 	my $total = shift;
