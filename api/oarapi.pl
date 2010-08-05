@@ -612,6 +612,10 @@ SWITCH: for ($q) {
     my $ext=apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
     
+    # will the resources need be paged or not
+    # by default resources results are paged
+    my $paged = 1;
+    
     # GET limit from uri parameter
     if (defined($q->param('limit'))) {
         $MAX_ITEMS = $q->param('limit');
@@ -633,7 +637,18 @@ SWITCH: for ($q) {
     		$resources = oarnodeslib::get_requested_resources($MAX_ITEMS,$offset);         
     	}
         elsif ($1 =~ /\/([0-9]+)/)  {
-        	$resources = [oarnodeslib::get_resource_infos($1)];   
+        	# get the resources infos
+        	my $resource = oarnodeslib::get_resource_infos($1);
+        	if (defined($resource)) {
+        		$resources = [oarnodeslib::get_resource_infos($1)];
+        	}
+        	else {
+        		# resource does not exist
+        		$resources = apilib::struct_empty($STRUCTURE);
+        	}
+        	
+        	# do not need to paging resource detail
+        	$paged = 0;
         }
         else {
         	apilib::ERROR(500,"Error 666!","Error 666");           
@@ -649,11 +664,13 @@ SWITCH: for ($q) {
     apilib::add_resources_uris($resources,$ext,'');
     $resources = apilib::struct_resource_list($resources,$STRUCTURE,1);
     
-    # get the total number of resources
-    my $total_resources = oarnodeslib::count_all_resources();
-    # add pagination informations
-    $resources = apilib::add_pagination($resources,$total_resources,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
- 
+    # test if resources need to be paged
+    if ($paged == 1) {
+    	# get the total number of resources
+    	my $total_resources = oarnodeslib::count_all_resources();
+    	# add pagination informations
+    	$resources = apilib::add_pagination($resources,$total_resources,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
+    }
 
     print $header;
     print $HTML_HEADER if ($ext eq "html");
