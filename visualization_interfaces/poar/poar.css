@@ -1,0 +1,25 @@
+	html, body {
+        font:normal 12px verdana;
+        margin:0;
+        padding:0;
+        border:0 none;
+        overflow:hidden;
+        height:100%;
+    }
+	p {
+	    margin:5px;
+	}
+
+#north {
+    background: #7F99BE url(images/layout-browser-hd-bg.gif) repeat-x center;
+}
+#north h1 {
+    font-size: 16px;
+    color: #fff;
+    font-weight: normal;
+    padding: 5px 10px;
+}
+
+
+
+ 
