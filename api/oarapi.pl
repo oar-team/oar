@@ -1255,7 +1255,7 @@ SWITCH: for ($q) {
     	print $HTML_HEADER if ($ext eq "html");
     	print apilib::export( { 'id' => "$admission_rule->{id}",
     				            'rule' => "$admission_rule->{rule}",
-                    			'status' => "Delete request registered",
+                    			'status' => "deleted",
                     			'api_timestamp' => time()
     						  } , $ext );
         oarstatlib::close_db_connection; 
@@ -1308,7 +1308,7 @@ SWITCH: for ($q) {
     	oarstatlib::delete_specific_admission_rule($rule_id);
     	print $HTML_HEADER if ($ext eq "html");
     	print apilib::export( { 'id' => "$rule_id",
-                    			'status' => "Delete request registered",
+                    			'status' => "deleted",
                     			'api_timestamp' => time()
     						  } , $ext );
         oarstatlib::close_db_connection;

@@ -1262,6 +1262,74 @@ GET /resources/nodes/<network_address>
   ::
 
    wget -q -O - http://localhost/oarapi/resources/nodes/liza-1.yaml
+   
+POST /resources/generate
+---------------
+:description:
+  Generates a set of resources
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  [resources] and [properties] entries are mandatory
+
+  *structure*: hash describing the resource to be created
+
+  *fields*:
+     - **resources** : network(s) address(es) given to the resource(s)
+     - **properties** (*hash*): an optional hash defining some properties for these new resources
+
+  *yaml example*:
+    ::
+
+     ---
+     ressources: /node=node747
+     properties:
+       memnode: 1050
+       cpufreq: 5
+
+:output:
+  *structure*: hash returning the id of the newly created resources details
+
+  *yaml example*:
+    ::
+
+     ---
+     25:
+     	available_upto: 0
+  	 	besteffort: YES
+  	 	core: ~
+  	 	cpu: ~
+  	 	cpufreq: 5
+  	 	cpuset: 0
+  	 	cputype: ~
+  	 	deploy: NO
+  	 	desktop_computing: NO
+  	 	expiry_date: 0
+  	 	finaud_decision: NO
+  	 	last_available_upto: 0
+  	 	last_job_date: 0
+  	 	memnode: 1050
+  	 	network_address: node747
+  	 	next_finaud_decision: NO
+  	 	next_state: UnChanged
+  	 	resource_id: 25
+  	 	scheduler_priority: 0
+  	 	state: Alive
+  	 	state_num: 1
+  	 	suspended_jobs: NO
+  	 	type: default
+     
+:usage example:
+  ::
+
+   # Adding a new resource with the ruby rest client (oar user only)
+   irb(main):078:0> r={ 'hostname'=>'/node=node747', 'properties'=> { 'memnode'=>'1050' , 'cpufreq' => '5' } }
+   irb(main):078:0> puts post('/resources', r.to_json , :content_type => 'application/json')
 
 
 POST /resources
@@ -1415,6 +1483,195 @@ DELETE /resources/<node>/<cpuset_id>
 
 :note:
   If the resource could not be deleted, returns a 403 and the reason into the message body.
+
+GET /admission_rules
+--------------
+:description:
+  Get the list of admission rules
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: array of hashes
+
+  *yaml example*:
+    ::
+
+     ---
+	items:
+  		- id: 1
+ 		  links:
+      	    href: /admission_rules/1
+            rel: self
+          rule: 'if (not defined($queue_name)) {$queue_name="default";}'
+  		- id: 2
+          links:
+            href: /admission_rules/2
+            rel: self
+          rule: 'die ("[ADMISSION RULE] root and oar users are not allowed to submit jobs.\n") if ( $user eq "root" or $user eq "oar" );'
+  		- id: 3
+          links:
+            href: /admission_rules/3
+            rel: self
+          rule: |2
+      
+          	my $admin_group = "admin";
+      		if ($queue_name eq "admin") {
+          		my $members; 
+          		(undef,undef,undef, $members) = getgrnam($admin_group);
+          		my %h = map { $_ => 1 } split(/\s+/,$members);
+          		if ( $h{$user} ne 1 ) {
+              		{die("[ADMISSION RULE] Only member of the group ".$admin_group." can submit jobs in the admin queue\n");}
+          		}
+      		}
+
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/admission_rules.yaml
+
+GET /admission_rules/<id>
+-------------------
+:description:
+  Get details about the admission rule identified by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*: 1 element array of hash
+
+  *yaml example*:
+    ::
+
+     ---
+     - id: 1
+  	   links:
+         href: /admission_rules/1
+         rel: self
+       rule: 'if (not defined($queue_name)) {$queue_name="default";}'
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/admission_rules/1.yaml
+
+DELETE /admission_rule/<id>
+----------------------
+:description:
+  Delete the admission rule identified by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash returning the status
+
+  *yaml example*:
+    ::
+
+     ---
+     id: 32
+     api_timestamp: 1245946801
+     status: deleted
+
+:usage example:
+  ::
+
+   # Deleting an admisssion rule with the ruby rest client
+   puts delete('/admission_rules/32.yaml')
+
+:note:
+  :note:
+  Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /admission_rule/<id> rule.
+  If the admission rule could not be deleted, returns a 403 and the reason into the message body.
+
+GET /config
+--------------
+:description:
+  Get the list of configured variables
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: array of hashes
+
+  *yaml example*:
+    ::
+    
+     ---
+	 - id: OARSUB_FORCE_JOB_KEY
+  	   links:
+    	 href: /config/OARSUB_FORCE_JOB_KEY
+    	 rel: self
+  		 value: no
+	 - id: SCHEDULER_GANTT_HOLE_MINIMUM_TIME
+  	   links:
+    	 href: /config/SCHEDULER_GANTT_HOLE_MINIMUM_TIME
+    	 rel: self
+  	 	 value: 300
+	 - id: SCHEDULER_RESOURCE_ORDER
+  	   links:
+    	 href: /config/SCHEDULER_RESOURCE_ORDER
+    	 rel: self
+  		 value: 'scheduler_priority ASC, suspended_jobs ASC, network_address DESC, resource_id ASC'
+	 - id: SCHEDULER_PRIORITY_HIERARCHY_ORDER
+  	   links:
+         href: /config/SCHEDULER_PRIORITY_HIERARCHY_ORDER
+    	 rel: self
+  		 value: network_address/resource_id
+	 - id: OARSUB_NODES_RESOURCES
+  	   links:
+    	 href: /config/OARSUB_NODES_RESOURCES
+    	 rel: self
+  		 value: network_address
+	 - id: SCHEDULER_JOB_SECURITY_TIME
+  	   links:
+       href: /config/SCHEDULER_JOB_SECURITY_TIME
+       rel: self
+       value: 60
+	 - id: DETACH_JOB_FROM_SERVER
+       links:
+    	 href: /config/DETACH_JOB_FROM_SERVER
+    	 rel: self
+  	     value: 0
+	- id: LOG_LEVEL
+  	  links:
+    	href: /config/LOG_LEVEL
+    	rel: self
+  		value: 2
+	- id: OAREXEC_DEBUG_MODE
+  	  links:
+    	href: /config/OAREXEC_DEBUG_MODE
+    	rel: self
+  		value: 0
+	- id: DB_BASE_NAME
+  	  links:
+      	href: /config/DB_BASE_NAME
+    	rel: self
+  		value: oar
+  	 .....
+  	 .....
+ 
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/admission_rules.yaml
 
 
 Some equivalences with oar command line
