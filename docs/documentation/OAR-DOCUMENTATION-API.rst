@@ -1671,7 +1671,79 @@ GET /config
 :usage example:
   ::
 
-   wget -q -O - http://localhost/oarapi/admission_rules.yaml
+   curl -i -X GET http://login:password@localhost/oarapi-priv/config.yaml
+
+GET /config/<variable>
+-------------------
+:description:
+  Get details about the configuration variable identified by *variable*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: 1 element array of hash
+
+  *yaml example*:
+    ::
+    
+     ---
+	 - id: DB_TYPE
+  	   links:
+    	 href: /config/DB_TYPE
+    	 rel: self
+  	   value: mysql
+
+:usage example:
+  ::
+
+   curl -i -X GET http://login:password@localhost/oarapi-priv/config/DB_TYPE.yaml
+
+POST /config/<variable>
+---------------
+:description:
+  Change the value of the configuration variable identified by *variable*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  A [value] entry is mandatory
+
+  *structure*: hash describing the new value of the variable
+
+  *fields*:
+     - **value** (*string*): the value of the given variable
+
+  *yaml example*:
+    ::
+
+     ---
+     value: 'state=Finishing,Running,Resuming,Suspended,Launching,toLaunch,Waiting,toAckReservation,Hold,Terminated'
+
+:output:
+  *structure*: hash returning the id of the newly created resource and status
+
+  *yaml example*:
+    ::
+
+     ---
+	 API_JOBS_URI_DEFAULT_PARAMS:
+  	   value: 'state=Finishing,Running,Resuming,Suspended,Launching,toLaunch,Waiting,toAckReservation,Hold,Terminated'
+
+:usage example:
+  ::
+
+   curl -i -X POST http://login:password@localhost/oarapi-priv/config/API_JOBS_URI_DEFAULT_PARAMS.yaml -H'Content-Type: text/yaml' -T config.yaml
+   
+:note:
+  config.yaml contains the value of the variable.
 
 
 Some equivalences with oar command line
