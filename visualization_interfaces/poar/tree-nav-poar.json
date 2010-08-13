@@ -1,0 +1,57 @@
+/* This Json File contains the information about the leaves in the navigation tree */
+[{
+    text:'Menu',
+    expanded: true,
+    children:[{
+        text:'Welcome',
+        id:'welcome',
+        leaf:true
+    },{
+        text:'iframeGanttChart',
+        id:'iframe-ganttchart',
+        leaf:true
+    },{
+        text:'iframeStatus',
+        id:'iframe-monika',
+        leaf:true
+    },{
+        text:'Job list',
+        id:'jobs',
+        leaf:true
+    },{
+        text:'Resource list',
+        id:'Resources',
+        leaf:true
+    },{
+        text:'Job Submission',
+        id:'submission-form',
+        leaf:true
+
+    },{
+
+        text:'Delete Job',
+        id:'update-job',
+        leaf:true
+    },{
+	text:'Update Resources',
+        id:'update-resource',
+	leaf:true
+    },{
+	text:'Charts',
+        id:'Chart',
+	leaf:true
+    },{
+	text:'Single Job/Resource',
+        id:'Single-job-resource',
+	leaf:true
+    },{
+	text:'Oaradmin',
+        id:'oaradmin',
+	leaf:true
+    },{
+	text:'help',
+        id:'help',
+	leaf:true
+    }				 
+	 ]
+}]
