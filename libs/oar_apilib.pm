@@ -1594,8 +1594,8 @@ sub add_pagination($$$$$$$$) {
     my $previous_uri;
 	
 	if (!defined $record || $total <= 0) {
-		$record = struct_empty($STRUCTURE);
-		return $record;
+		# return an empty hash
+		return {};
     }
     else {
     	# setting current uri
