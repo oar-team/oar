@@ -263,32 +263,53 @@ GET /jobs
   public
 
 :output:
-  *structure*: array of hashes (a job is an array element described by a hash)
+  *structure*: hash
+  
+  *fields*:
+     - **items** : list of jobs
+     - **links** : links to previous, current and next jobs
+     - **offset** : current offset
+     - **total** : jobs total
 
   *yaml example*:
     ::
 
      ---
-     - api_timestamp: 1245768256
-       id: 547
-       name: ~
-       owner: bzizou
-       queue: default
-       resources_uri: /jobs/547/resources
-       state: Running
-       submission: 1245768249
-       uri: /jobs/547
-     - api_timestamp: 1245768256
-       id: 546
-       name: ~
-       owner: bzizou
-       queue: default
-       resources_uri: /jobs/546/resources
-       state: Running
-       submission: 1245768241
-       uri: /jobs/546
+     items:
+      - api_timestamp: 1245768256
+        id: 547
+        name: ~
+        owner: bzizou
+        queue: default
+        resources_uri: /jobs/547/resources
+        state: Running
+        submission: 1245768249
+        uri: /jobs/547
+      - api_timestamp: 1245768256
+        id: 546
+        name: ~
+        owner: bzizou
+        queue: default
+        resources_uri: /jobs/546/resources
+        state: Running
+        submission: 1245768241
+        uri: /jobs/546
+     links:
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
+         rel: previous
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
+    	 rel: self
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
+    	 rel: next
+    offset: 15
+    total: 41
 
   *note*: You can make a GET on the *uri* value for more details about a given job.
+  
+  *note*: The following parameters can be passed through the requested URL
+          - state : list of jobs states to be retrieved (comma separeted)
+          - limit : limit of jobs to be shown per page
+          - offset : the page result offset
 
 :usage example:
   ::
@@ -307,13 +328,20 @@ GET /jobs/details
   public
 
 :output:
-  *structure*: array of hashes (a job is an array element described by a hash)
+  *structure*: hash
+  
+  *fields*:
+     - **items** : list of jobs
+     - **links** : links to previous, current and next jobs
+     - **offset** : current offset
+     - **total** : jobs total
 
   *yaml example*:
     ::
 
      ---
-     - Job_Id: 575
+     items:
+      - Job_Id: 575
        api_timestamp: 1253103710
        array_id: 575
        array_index: 1
@@ -367,8 +395,24 @@ GET /jobs/details
        submissionTime: 1253103707
        types: []
        uri: /jobs/576
+     links:
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
+         rel: previous
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
+    	 rel: self
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
+    	 rel: next
+    offset: 15
+    total: 41
+    
+     
 
   *note*: You can make a GET on the *uri* value for more details about a given job.
+  
+  *note*: The following parameters can be passed through the requested URL
+          - state : list of jobs states to be retrieved (comma separeted)
+          - limit : limit of jobs to be shown per page
+          - offset : the page result offset
 
 :usage example:
   ::
@@ -387,13 +431,20 @@ GET /jobs/table
   public
 
 :output:
-  *structure*: array of hashes (a job is an array element described by a hash)
+  *structure*: hash
+  
+  *fields*:
+     - **items** : list of jobs
+     - **links** : links to previous, current and next jobs
+     - **offset** : current offset
+     - **total** : jobs total
 
   *yaml example*:
     ::
 
      ---
-     - accounted: NO
+     items:
+      - accounted: NO
        api_timestamp: 1253017554
        array_id: 566
        assigned_moldable_job: 566
@@ -461,10 +512,24 @@ GET /jobs/table
        submission_time: 1246948570
        suspended: NO
        uri: /jobs/560
+     links:
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
+         rel: previous
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
+    	 rel: self
+  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
+    	 rel: next
+    offset: 15
+    total: 41
 
   *note*: You can make a GET on the *uri* value for more details about a given job.
 
   *note*: Field names may vary from the other job lists because this query results more like a dump of the jobs table.
+  
+  *note*: The following parameters can be passed through the requested URL
+          - state : list of jobs states to be retrieved (comma separeted)
+          - limit : limit of jobs to be shown per page
+          - offset : the page result offset
 
 :usage example:
   ::
@@ -1004,43 +1069,63 @@ GET /resources
   public
 
 :output:
-  *structure*: array of hashes
+  *structure*: hash
+  
+  *fields*:
+     - **items** : list of resources
+     - **links** : links to previous, current and next resources
+     - **offset** : current offset
+     - **total** : resources total
 
   *yaml example*:
     ::
 
      ---
+     items:
+      - api_timestamp: 1253201950
+        jobs_uri: /resources/4/jobs
+        network_address: liza-1 
+        node_uri: /resources/nodes/liza-1
+        resource_id: 4
+        state: Alive
+        uri: /resources/4
+      - api_timestamp: 1253201950
+        jobs_uri: /resources/5/jobs
+        network_address: liza-1
+        node_uri: /resources/nodes/liza-1
+        resource_id: 5
+        state: Alive
+        uri: /resources/5
+      - api_timestamp: 1253201950
+        jobs_uri: /resources/6/jobs
+        network_address: liza-2
+        node_uri: /resources/nodes/liza-2
+        resource_id: 6
+        state: Alive
+        uri: /resources/6
      - api_timestamp: 1253201950
-       jobs_uri: /resources/4/jobs
-       network_address: liza-1 
-       node_uri: /resources/nodes/liza-1
-       resource_id: 4
-       state: Alive
-       uri: /resources/4
-     - api_timestamp: 1253201950
-       jobs_uri: /resources/5/jobs
-       network_address: liza-1
-       node_uri: /resources/nodes/liza-1
-       resource_id: 5
-       state: Alive
-       uri: /resources/5
-     - api_timestamp: 1253201950
-       jobs_uri: /resources/6/jobs
-       network_address: liza-2
-       node_uri: /resources/nodes/liza-2
-       resource_id: 6
-       state: Alive
-       uri: /resources/6
-     - api_timestamp: 1253201950
-       jobs_uri: /resources/7/jobs
-       network_address: liza-2
-       node_uri: /resources/nodes/liza-2
-       resource_id: 7
-       state: Alive
-       uri: /resources/7
+        jobs_uri: /resources/7/jobs
+        network_address: liza-2
+        node_uri: /resources/nodes/liza-2
+        resource_id: 7
+        state: Alive
+        uri: /resources/7
+    links:
+  	  - href: '/resources.yaml?limit=5&offset=2'
+    	rel: previous
+  	  - href: '/resources.yaml?limit=5&offset=7'
+    	rel: self
+  	  - href: '/resources.yaml?limit=5&offset=12'
+    	rel: next
+  		
+     offset: 2
+	 total: 49
      
 
   *note*: More details about a resource can be obtained with a GET on the provided *uri*. The list of all the resources of the same node may be obtained with a GET on *node_uri*. The list of running jobs on a resource can be obtained with a GET on the jobs_uri resource.
+  *note*: The following parameters can be passed through the requested URL
+          - limit : limit of resources to be shown per page
+          - offset : the page result offset
 
 :usage example:
   ::
@@ -1059,121 +1144,121 @@ GET /resources/full
   public
 
 :output:
-  *structure*: array of hashes
+  *structure*: hash
+  
+  *fields*:
+     - **items** : list of resources
+     - **links** : links to previous, current and next resources
+     - **offset** : current offset
+     - **total** : resources total
 
   *yaml example*:
     ::
 
      ---
-     - api_timestamp: 1253202216
-       available_upto: 0
-       besteffort: YES
-       cluster: 0
-       cpu: 3
-       cpuset: 0
-       deploy: YES
-       desktop_computing: NO
-       expiry_date: 0
-       finaud_decision: NO
-       jobs_uri: /resources/4/jobs
-       last_available_upto: 0
-       last_job_date: 1245825515
-       licence: ~
-       network_address: liza-1
-       next_finaud_decision: NO
-       next_state: UnChanged
-       node_uri: /resources/nodes/liza-1
-       resource_id: 4
-       scheduler_priority: 4294967289
-       state: Alive
-       state_num: 1
-       suspended_jobs: NO
-       test: ~
-       type: default
-       uri: /resources/4
-     - api_timestamp: 1253202216
-       available_upto: 0
-       besteffort: YES
-       cluster: 0
-       cpu: 4
-       cpuset: 1
-       deploy: YES
-       desktop_computing: NO
-       expiry_date: 0
-       finaud_decision: NO
-       jobs_uri: /resources/5/jobs
-       last_available_upto: 0
-       last_job_date: 1240244422
-       licence: ~
-       network_address: liza-1
-       next_finaud_decision: NO
-       next_state: UnChanged
-       node_uri: /resources/nodes/liza-1
-       resource_id: 5
-       scheduler_priority: 4294967293
-       state: Alive
-       state_num: 1
-       suspended_jobs: NO
-       test: ~
-       type: default
-       uri: /resources/5
-     - api_timestamp: 1253202216
-       available_upto: 0
-       besteffort: YES
-       cluster: 0
-       cpu: 5
-       cpuset: 0
-       deploy: NO
-       desktop_computing: NO
-       expiry_date: 0
-       finaud_decision: NO
-       jobs_uri: /resources/6/jobs
-       last_available_upto: 0
-       last_job_date: 1253198104
-       licence: ~
-       network_address: liza-2
-       next_finaud_decision: NO
-       next_state: UnChanged
-       node_uri: /resources/nodes/liza-2
-       resource_id: 6
-       scheduler_priority: 0
-       state: Alive
-       state_num: 1
-       suspended_jobs: NO
-       test: ~
-       type: default
-       uri: /resources/6
-     - api_timestamp: 1253202216
-       available_upto: 0
-       besteffort: YES
-       cluster: 0
-       cpu: 6
-       cpuset: 1
-       deploy: NO
-       desktop_computing: NO
-       expiry_date: 0
-       finaud_decision: NO
-       jobs_uri: /resources/7/jobs
-       last_available_upto: 0
-       last_job_date: 1245671780
-       licence: ~
-       network_address: liza-2
-       next_finaud_decision: NO
-       next_state: UnChanged
-       node_uri: /resources/nodes/liza-2
-       resource_id: 7
-       scheduler_priority: 0
-       state: Alive
-       state_num: 1
-       suspended_jobs: NO
-       test: ~
-       type: default
-       uri: /resources/7
+	 items:
+  		- api_timestamp: 1281967035
+    	  available_upto: 0
+    	  besteffort: YES
+    	  core: ~
+    	  cpu: 0
+          cpufreq: ~
+    	  cpuset: 0
+    	  cputype: ~
+    	  deploy: NO
+    	  desktop_computing: NO
+    	  expiry_date: 0
+    	  finaud_decision: NO
+    	  jobs_uri: '/resources/1/jobs.html'
+    	  last_available_upto: 0
+    	  last_job_date: 1278588052
+    	  memnode: ~
+    	  network_address: node1
+	      next_finaud_decision: NO
+	      next_state: UnChanged
+	      node_uri: '/resources/nodes/node1.html'
+	      resource_id: 1
+	      scheduler_priority: 0
+	      state: Suspected
+	      state_num: 3
+	      suspended_jobs: NO
+	      type: default
+	      uri: '/resources/1.html'
+	  	- api_timestamp: 1281967035
+	      available_upto: 0
+	      besteffort: YES
+	      core: ~
+	      cpu: 0
+	      cpufreq: ~
+	      cpuset: 0
+	      cputype: ~
+	      deploy: NO
+	      desktop_computing: NO
+	      expiry_date: 0
+	      finaud_decision: NO
+	      jobs_uri: '/resources/2/jobs.html'
+	      last_available_upto: 0
+	      last_job_date: 1278588052
+	      memnode: ~
+	      network_address: node1
+	      next_finaud_decision: NO
+	      next_state: UnChanged
+	      node_uri: '/resources/nodes/node1.html'
+	      resource_id: 2
+	      scheduler_priority: 0
+	      state: Suspected
+	      state_num: 3
+	      suspended_jobs: NO
+	      type: default
+	      uri: '/resources/2.html'
+	  	- api_timestamp: 1281967035
+	      available_upto: 0
+	      besteffort: YES
+	      core: ~
+	      cpu: 1
+	      cpufreq: ~
+	      cpuset: 0
+	      cputype: ~
+	      deploy: NO
+	      desktop_computing: NO
+	      expiry_date: 0
+	      finaud_decision: NO
+	      jobs_uri: '/resources/3/jobs.html'
+	      last_available_upto: 0
+	      last_job_date: 1278588052
+	      memnode: ~
+	      network_address: node1
+	      next_finaud_decision: NO
+	      next_state: UnChanged
+	      node_uri: '/resources/nodes/node1.html'
+	      resource_id: 3
+	      scheduler_priority: 0
+	      state: Suspected
+	      state_num: 3
+	      suspended_jobs: NO
+	      type: default
+	      uri: '/resources/3.html'
+	  links:
+  		  - href: '/resources/full.yaml?limit=5&offset=2'
+    		rel: previous
+  		  - href: '/resources/full.yaml?limit=5&offset=7'
+    		rel: self
+  		  - href: '/resources/full.yaml?limit=5&offset=12'
+    		rel: next
+  		
+     offset: 2
+	 total: 49
+	  
+    
      
 :usage example:
   ::
 
    wget -q -O - http://localhost/oarapi/resources/full.yaml
+   
+   *note*: The following parameters can be passed through the requested URL
+          - limit : limit of resources to be shown per page
+          - offset : the page result offset
 
 GET /resources/<id>
 -------------------
@@ -1496,7 +1581,13 @@ GET /admission_rules
   public
 
 :output:
-  *structure*: array of hashes
+  *structure*: hash
+  
+  *fields*:
+     - **items** : list of admission rules
+     - **links** : links to previous, current and next admission rules
+     - **offset** : current offset
+     - **total** : admission rules total
 
   *yaml example*:
     ::
@@ -1528,12 +1619,25 @@ GET /admission_rules
               		{die("[ADMISSION RULE] Only member of the group ".$admin_group." can submit jobs in the admin queue\n");}
           		}
       		}
-
+    links:
+  		- href: '/admission_rules.yaml?limit=5&offset=0'
+    	  rel: previous
+  		- href: '/admission_rules.yaml?limit=5&offset=5'
+    	  rel: self
+  		- href: '/admission_rules.yaml?limit=5&offset=10'
+    	  rel: next
+	offset: 5
+	total: 5
+       
 
 :usage example:
   ::
 
    wget -q -O - http://localhost/oarapi/admission_rules.yaml
+   
+   *note*: The following parameters can be passed through the requested URL
+          - limit : limit of admission rules to be shown per page
+          - offset : the page result offset
 
 GET /admission_rules/<id>
 -------------------
@@ -1728,7 +1832,7 @@ POST /config/<variable>
      value: 'state=Finishing,Running,Resuming,Suspended,Launching,toLaunch,Waiting,toAckReservation,Hold,Terminated'
 
 :output:
-  *structure*: hash returning the id of the newly created resource and status
+  *structure*: hash returning the variable and his new value
 
   *yaml example*:
     ::
