@@ -1,0 +1,123 @@
+[32m[1m  | Loading /var/lib/kameleon/steps/default/irb.yaml[0m
+[32m[1m  | Loading /var/lib/kameleon/steps/default/load_lib_create_object.yaml[0m
+[32m[1m  | Loading /var/lib/kameleon/steps/default/scenario6.yaml[0m
+[32m[1m  | Loading /var/lib/kameleon/steps/default/print_output.yaml[0m
+[34m[1m
+ ### [0m[32m[1mWelcome to Kameleon 1.2.1[0m[34m[1m ###
+[0m
+[36m->[0m[32m[1m| Executing irb[0m[36m->[0m[32m[1mcreate_pipes[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; mkfifo irb_stdout[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; mkfifo irb_stdin[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; mkfifo irb_stderr[0m
+[36m->[0m[32m[1m| Executing irb[0m[36m->[0m[32m[1mstart[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; irb <irb_stdin >irb_stdout &[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; IRB_PID=$![0m
+[36m->[0m[32m[1m| Executing irb[0m[36m->[0m[32m[1mbash_function[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; function write_irb(){ echo "$1" > irb_stdin; }[0m
+[36m->[0m[32m[1m| Executing irb[0m[36m->[0m[32m[1mclean[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "kill $IRB_PID" >> /var/tmp/kameleon/2010-08-15-18-56-34/clean.sh[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "rm -f /var/tmp/kameleon/2010-08-15-18-56-34/chroot/irb_stdout" >> /var/tmp/kameleon/2010-08-15-18-56-34/clean.sh[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "rm -f /var/tmp/kameleon/2010-08-15-18-56-34/chroot/irb_stdin" >> /var/tmp/kameleon/2010-08-15-18-56-34/clean.sh[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "rm -f /var/tmp/kameleon/2010-08-15-18-56-34/chroot/irb_stderr" >> /var/tmp/kameleon/2010-08-15-18-56-34/clean.sh[0m
+[36m->[0m[32m[1m| Executing load_lib_create_object[0m[36m->[0m[32m[1mload_libs[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "require '/home/kameleon/lib/rspectests_lib.rb'"[0m
+[36m->[0m[32m[1m| Executing load_lib_create_object[0m[36m->[0m[32m[1mcreate_objects[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "obj = Tests.new(\"http://kameleon:kameleon@localhost/oarapi-priv\")"[0m
+[36m->[0m[32m[1m| Executing scenario6[0m[36m->[0m[32m[1msubmit_job_with_walltime[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "walltime = \"00:05:00\""[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script_path' => \"infiniteloop.sh\" , "walltime" => \"#{walltime}\"}"[0m
+[36m->[0m[32m[1m| Executing scenario6[0m[36m->[0m[32m[1mtest_if_submitted[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "obj.test_submit_job(jhash)"[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "jid = obj.jobid"[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "puts \"Submitted job \"+jid.to_s"[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "obj.test_job_in_queue(jid)"[0m
+[36m->[0m[32m[1m| Executing scenario6[0m[36m->[0m[32m[1mwait_till_little_after_walltime[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "sleep 360"[0m
+[36m->[0m[32m[1m| Executing scenario6[0m[36m->[0m[32m[1mtest_if_job_killed[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "obj.test_job_notin_queue(jid)"[0m
+[36m->[0m[32m[1m| Executing print_output[0m[36m->[0m[32m[1mprint[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; write_irb "exit"[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; sleep 1[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; cat irb_stdout|tee output_file[0m
+require '/home/kameleon/lib/rspectests_lib.rb'
+true
+obj = Tests.new("http://kameleon:kameleon@localhost/oarapi-priv")
+#<Tests:0xb6fbcbb8 @obj=#<OarApi:0xb6fbcb90 @apiuri="http://kameleon:kameleon@localhost/oarapi-priv", @api=#<RestClient::Resource:0xb6fbcb68 @block=nil, @url="http://kameleon:kameleon@localhost/oarapi-priv", @options={}>>>
+walltime = "00:05:00"
+"00:05:00"
+jhash = { 'resource' => "/nodes=1/core=1" , 'script_path' => "infiniteloop.sh" , walltime => "#{walltime}"}
+{"script_path"=>"infiniteloop.sh", "resource"=>"/nodes=1/core=1", "00:05:00"=>"00:05:00"}
+obj.test_submit_job(jhash)
+Job ID: =>86
+
+OarApi
+- should check the correct functioning of POST /jobs API
+
+Finished in 0.674897 seconds
+
+1 example, 0 failures
+true
+jid = obj.jobid
+"86"
+puts "Submitted job "+jid.to_s
+Submitted job 86
+nil
+obj.test_job_in_queue(jid)
+
+OarApi
+- should contain jobid in queue of created job
+
+Finished in 0.540491 seconds
+
+1 example, 0 failures
+true
+sleep 360
+360
+obj.test_job_notin_queue(jid)
+
+OarApi
+- should not contain the deleted job in the queue now
+
+Finished in 0.276597 seconds
+
+1 example, 0 failures
+true
+exit
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "Results of the Testsuite Run"[0m
+Results of the Testsuite Run
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; sleep 4[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; grep -C 1 "OarApi" output_file[0m
+obj = Tests.new("http://kameleon:kameleon@localhost/oarapi-priv")
+#<Tests:0xb6fbcbb8 @obj=#<OarApi:0xb6fbcb90 @apiuri="http://kameleon:kameleon@localhost/oarapi-priv", @api=#<RestClient::Resource:0xb6fbcb68 @block=nil, @url="http://kameleon:kameleon@localhost/oarapi-priv", @options={}>>>
+walltime = "00:05:00"
+--
+
+OarApi
+- should check the correct functioning of POST /jobs API
+--
+
+OarApi
+- should contain jobid in queue of created job
+--
+
+OarApi
+- should not contain the deleted job in the queue now
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; sleep 3[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; grep failure output_file>numexamples[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; sleep 3[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; cat numexamples|wc -l|sed 's/^/Total Number of examples run:/'[0m
+Total Number of examples run:3
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; sleep 3[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; awk -F '[ ,]' '{static s; if($4 == 0) s++}; END { print s }' numexamples|sed 's/^/Number of Successes:/'[0m
+Number of Successes:3
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "Time taken to run each tests"[0m
+Time taken to run each tests
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; sleep 2[0m
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; grep seconds output_file|tee testtime[0m
+Finished in 0.674897 seconds
+Finished in 0.540491 seconds
+Finished in 0.276597 seconds
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; echo "Total Time taken:"[0m
+Total Time taken:
+[32m[1m  |-> cd /var/tmp/kameleon/2010-08-15-18-56-34/chroot; awk '{ static timesum; timesum+=$3 }; END { print timesum }' testtime[0m
+1.49198
