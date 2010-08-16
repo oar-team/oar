@@ -1,0 +1,15 @@
+scenario7:
+ - submit_job:
+   - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script' => \"ls;pwd;whoami\" }" 
+   - exec_appliance: write_irb "obj.test_submit_job(jhash)" 
+ - test_if_submitted:
+   - exec_appliance: write_irb "jid = obj.jobid" 
+   - exec_appliance: write_irb "puts \"Submitted job \"+jid.to_s"
+ - update_job
+   - exec_appliance: write_irb "actionhash = {"method":"delete"}" 
+   - exec_appliance: write_irb "puts \"Updating job \"+jid.to_s"
+   - exec_appliance: write_irb "obj.test_job_update (jid, actionhash)"
+ - test_if_job_updated
+   - exec_appliance: write_irb "obj.test_if_job_delete_updated (jid)"
+   - exec_appliance: write_irb "puts \"Scenario4 successfully tested!\""
+ 

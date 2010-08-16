@@ -1,0 +1,13 @@
+scenario4:
+ - submit_job:
+   - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script' => \"ls;pwd;whoami;sleep 40\" }" 
+   - exec_appliance: write_irb "obj.test_submit_job(jhash)" 
+ - test_if_submitted:
+   - exec_appliance: write_irb "jid = obj.jobid" 
+   - exec_appliance: write_irb "puts \"Submitted job \"+jid.to_s"
+ - checkpoint_job:
+   - exec_appliance: write_irb "puts \"Checkpointing job \"+jid.to_s" 
+ - test_checkpointed_job_details:
+   - exec_appliance: write_irb "obj.test_job_checkpoint(jid)" 
+   - exec_appliance: write_irb "puts \"Scenario5 successfully tested!\"" 
+
