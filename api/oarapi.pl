@@ -150,6 +150,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
+    print $q->header( -status => 200, -type => "application/json" );
     terminateJob($1);
     last;
   };
@@ -176,7 +177,10 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    jobStageOut($1);
+    open FILE, ">$stageout_dir$1.tar.gz" or die "Couldn't open file";
+    printf FILE $q->param('POSTDATA');
+    close FILE;
+    print $q->header( -status => 200, -type => "application/json" );
     last;
   };
 
