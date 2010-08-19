@@ -269,7 +269,7 @@ GET /jobs
      - **items** : list of jobs
      - **links** : links to previous, current and next jobs
      - **offset** : current offset
-     - **total** : jobs total
+     - **total** : total of jobs
 
   *yaml example*:
     ::
@@ -295,21 +295,24 @@ GET /jobs
         submission: 1245768241
         uri: /jobs/546
      links:
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
-         rel: previous
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
-    	 rel: self
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
-    	 rel: next
-    offset: 15
-    total: 41
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
+      	rel: previous
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
+      	rel: self
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
+      	rel: next
+     offset: 15
+     total: 41
 
-  *note*: You can make a GET on the *uri* value for more details about a given job.
+:note:
+
+  You can make a GET on the *uri* value for more details about a given job.
   
-  *note*: The following parameters can be passed through the requested URL
-          - state : list of jobs states to be retrieved (comma separeted)
-          - limit : limit of jobs to be shown per page
-          - offset : the page result offset
+  The following parameters can be passed through the requested URL
+
+    - state : list of jobs states to be retrieved (comma separeted)
+    - limit : limit of jobs to be shown per page
+    - offset : the page result offset
 
 :usage example:
   ::
@@ -334,7 +337,7 @@ GET /jobs/details
      - **items** : list of jobs
      - **links** : links to previous, current and next jobs
      - **offset** : current offset
-     - **total** : jobs total
+     - **total** : total of jobs
 
   *yaml example*:
     ::
@@ -342,70 +345,68 @@ GET /jobs/details
      ---
      items:
       - Job_Id: 575
-       api_timestamp: 1253103710
-       array_id: 575
-       array_index: 1
-       assigned_network_address:
+        api_timestamp: 1253103710
+        array_id: 575
+        array_index: 1
+        assigned_network_address:
          - bart-3
-       assigned_resources:
+        assigned_resources:
          - 3
-       command: /bin/sleep 300
-       cpuset_name: bzizou_575
-       dependencies: []
-       jobType: PASSIVE
-       job_id: 575
-       launchingDirectory: /home/bzizou
-       message: FIFO scheduling OK
-       name: Test_job
-       owner: bzizou
-       project: default
-       properties: desktop_computing = 'NO'
-       queue: default
-       reservation: None
-       resources_uri: /jobs/575/resources
-       resubmit_job_id: 0
-       startTime: 1253103705
-       state: Running
-       submissionTime: 1253103704
-       types: []
-       uri: /jobs/575
-     - Job_Id: 576
-       api_timestamp: 1253103710
-       array_id: 576
-       array_index: 1
-       assigned_network_address: []
-       assigned_resources: []
-       command: /bin/sleep 300
-       cpuset_name: bzizou_576
-       dependencies: []
-       jobType: PASSIVE
-       job_id: 576
-       launchingDirectory: /home/bzizou
-       message: FIFO scheduling OK
-       name: Test_job
-       owner: bzizou
-       project: default
-       properties: desktop_computing = 'NO'
-       queue: default
-       reservation: None
-       resources_uri: /jobs/576/resources
-       resubmit_job_id: 0
-       startTime: 0
-       state: Waiting
-       submissionTime: 1253103707
-       types: []
-       uri: /jobs/576
+        command: /bin/sleep 300
+        cpuset_name: bzizou_575
+        dependencies: []
+        jobType: PASSIVE
+        job_id: 575
+        launchingDirectory: /home/bzizou
+        message: FIFO scheduling OK
+        name: Test_job
+        owner: bzizou
+        project: default
+        properties: desktop_computing = 'NO'
+        queue: default
+        reservation: None
+        resources_uri: /jobs/575/resources
+        resubmit_job_id: 0
+        startTime: 1253103705
+        state: Running
+        submissionTime: 1253103704
+        types: []
+        uri: /jobs/575
+      - Job_Id: 576
+        api_timestamp: 1253103710
+        array_id: 576
+        array_index: 1
+        assigned_network_address: []
+        assigned_resources: []
+        command: /bin/sleep 300
+        cpuset_name: bzizou_576
+        dependencies: []
+        jobType: PASSIVE
+        job_id: 576
+        launchingDirectory: /home/bzizou
+        message: FIFO scheduling OK
+        name: Test_job
+        owner: bzizou
+        project: default
+        properties: desktop_computing = 'NO'
+        queue: default
+        reservation: None
+        resources_uri: /jobs/576/resources
+        resubmit_job_id: 0
+        startTime: 0
+        state: Waiting
+        submissionTime: 1253103707
+        types: []
+        uri: /jobs/576
      links:
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
-         rel: previous
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
-    	 rel: self
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
-    	 rel: next
-    offset: 15
-    total: 41
-    
-     
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
+      	rel: previous
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
+      	rel: self
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
+      	rel: next
+     offset: 15
+     total: 41
 
   *note*: You can make a GET on the *uri* value for more details about a given job.
   
@@ -437,7 +438,7 @@ GET /jobs/table
      - **items** : list of jobs
      - **links** : links to previous, current and next jobs
      - **offset** : current offset
-     - **total** : jobs total
+     - **total** : total of jobs
 
   *yaml example*:
     ::
@@ -445,82 +446,82 @@ GET /jobs/table
      ---
      items:
       - accounted: NO
-       api_timestamp: 1253017554
-       array_id: 566
-       assigned_moldable_job: 566
-       checkpoint: 0
-       checkpoint_signal: 12
-       command: ''
-       exit_code: ~
-       file_id: ~
-       info_type: bart:33033
-       initial_request: oarsub -I
-       job_env: ~
-       job_group: ''
-       job_id: 566
-       job_name: ~
-       job_type: INTERACTIVE
-       job_user: bzizou
-       launching_directory: /home/bzizou/git/oar/git
-       message: FIFO scheduling OK
-       notify: ~
-       project: default
-       properties: desktop_computing = 'NO'
-       queue_name: default
-       reservation: None
-       resubmit_job_id: 0
-       scheduler_info: FIFO scheduling OK
-       start_time: 1253017553
-       state: Launching
-       stderr_file: OAR.%jobid%.stderr
-       stdout_file: OAR.%jobid%.stdout
-       stop_time: 0
-       submission_time: 1253017551
-       suspended: NO
-       uri: /jobs/566
-     - accounted: NO
-       api_timestamp: 1253017554
-       array_id: 560
-       assigned_moldable_job: 0
-       checkpoint: 0
-       checkpoint_signal: 12
-       command: /usr/bin/id
-       exit_code: ~
-       file_id: ~
-       info_type: 'bart:'
-       initial_request: oarsub --resource=/nodes=2/cpu=1 --use_job_key=1 /usr/bin/id
-       job_env: ~
-       job_group: ''
-       job_id: 560
-       job_name: ~
-       job_type: PASSIVE
-       job_user: bzizou
-       launching_directory: /home/bzizou
-       message: Cannot find enough resources which fit for the job 560
-       notify: ~
-       project: default
-       properties: desktop_computing = 'NO'
-       queue_name: default
-       reservation: None
-       resubmit_job_id: 0
-       scheduler_info: Cannot find enough resources which fit for the job 560
-       start_time: 0
-       state: Waiting
-       stderr_file: OAR.%jobid%.stderr
-       stdout_file: OAR.%jobid%.stdout
-       stop_time: 0
-       submission_time: 1246948570
-       suspended: NO
-       uri: /jobs/560
+        api_timestamp: 1253017554
+        array_id: 566
+        assigned_moldable_job: 566
+        checkpoint: 0
+        checkpoint_signal: 12
+        command: ''
+        exit_code: ~
+        file_id: ~
+        info_type: bart:33033
+        initial_request: oarsub -I
+        job_env: ~
+        job_group: ''
+        job_id: 566
+        job_name: ~
+        job_type: INTERACTIVE
+        job_user: bzizou
+        launching_directory: /home/bzizou/git/oar/git
+        message: FIFO scheduling OK
+        notify: ~
+        project: default
+        properties: desktop_computing = 'NO'
+        queue_name: default
+        reservation: None
+        resubmit_job_id: 0
+        scheduler_info: FIFO scheduling OK
+        start_time: 1253017553
+        state: Launching
+        stderr_file: OAR.%jobid%.stderr
+        stdout_file: OAR.%jobid%.stdout
+        stop_time: 0
+        submission_time: 1253017551
+        suspended: NO
+        uri: /jobs/566
+      - accounted: NO
+        api_timestamp: 1253017554
+        array_id: 560
+        assigned_moldable_job: 0
+        checkpoint: 0
+        checkpoint_signal: 12
+        command: /usr/bin/id
+        exit_code: ~
+        file_id: ~
+        info_type: 'bart:'
+        initial_request: oarsub --resource=/nodes=2/cpu=1 --use_job_key=1 /usr/bin/id
+        job_env: ~
+        job_group: ''
+        job_id: 560
+        job_name: ~
+        job_type: PASSIVE
+        job_user: bzizou
+        launching_directory: /home/bzizou
+        message: Cannot find enough resources which fit for the job 560
+        notify: ~
+        project: default
+        properties: desktop_computing = 'NO'
+        queue_name: default
+        reservation: None
+        resubmit_job_id: 0
+        scheduler_info: Cannot find enough resources which fit for the job 560
+        start_time: 0
+        state: Waiting
+        stderr_file: OAR.%jobid%.stderr
+        stdout_file: OAR.%jobid%.stdout
+        stop_time: 0
+        submission_time: 1246948570
+        suspended: NO
+        uri: /jobs/560
      links:
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
-         rel: previous
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
-    	 rel: self
-  	   - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
-    	 rel: next
-    offset: 15
-    total: 41
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=0'
+      	rel: previous
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=15'
+      	rel: self
+      - href: '/jobs/table.html?state=Terminated&limit=15&offset=30'
+      	rel: next
+     offset: 15
+     total: 41
 
   *note*: You can make a GET on the *uri* value for more details about a given job.
 
@@ -1103,27 +1104,27 @@ GET /resources
         resource_id: 6
         state: Alive
         uri: /resources/6
-     - api_timestamp: 1253201950
+      - api_timestamp: 1253201950
         jobs_uri: /resources/7/jobs
         network_address: liza-2
         node_uri: /resources/nodes/liza-2
         resource_id: 7
         state: Alive
         uri: /resources/7
-    links:
-  	  - href: '/resources.yaml?limit=5&offset=2'
-    	rel: previous
-  	  - href: '/resources.yaml?limit=5&offset=7'
-    	rel: self
-  	  - href: '/resources.yaml?limit=5&offset=12'
-    	rel: next
-  		
+     links:
+      - href: '/resources.yaml?limit=5&offset=2'
+      	rel: previous
+      - href: '/resources.yaml?limit=5&offset=7'
+      	rel: self
+      - href: '/resources.yaml?limit=5&offset=12'
+      	rel: next
      offset: 2
-	 total: 49
+     total: 49
      
 
   *note*: More details about a resource can be obtained with a GET on the provided *uri*. The list of all the resources of the same node may be obtained with a GET on *node_uri*. The list of running jobs on a resource can be obtained with a GET on the jobs_uri resource.
   *note*: The following parameters can be passed through the requested URL
+  
           - limit : limit of resources to be shown per page
           - offset : the page result offset
 
@@ -1150,7 +1151,7 @@ GET /resources/full
      - **items** : list of resources
      - **links** : links to previous, current and next resources
      - **offset** : current offset
-     - **total** : resources total
+     - **total** : total of resources
 
   *yaml example*:
     ::
@@ -1239,18 +1240,15 @@ GET /resources/full
 	      type: default
 	      uri: '/resources/3.html'
 	  links:
-  		  - href: '/resources/full.yaml?limit=5&offset=2'
-    		rel: previous
-  		  - href: '/resources/full.yaml?limit=5&offset=7'
-    		rel: self
-  		  - href: '/resources/full.yaml?limit=5&offset=12'
-    		rel: next
-  		
+	    - href: '/resources/full.yaml?limit=5&offset=2'
+	      rel: previous
+	    - href: '/resources/full.yaml?limit=5&offset=7'
+	      rel: self
+	    - href: '/resources/full.yaml?limit=5&offset=12'
+	      rel: next
      offset: 2
 	 total: 49
-	  
-    
-     
+
 :usage example:
   ::
 
@@ -1349,7 +1347,7 @@ GET /resources/nodes/<network_address>
    wget -q -O - http://localhost/oarapi/resources/nodes/liza-1.yaml
    
 POST /resources/generate
----------------
+------------------------
 :description:
   Generates a set of resources
 
@@ -1570,7 +1568,7 @@ DELETE /resources/<node>/<cpuset_id>
   If the resource could not be deleted, returns a 403 and the reason into the message body.
 
 GET /admission_rules
---------------
+--------------------
 :description:
   Get the list of admission rules
 
@@ -1587,29 +1585,28 @@ GET /admission_rules
      - **items** : list of admission rules
      - **links** : links to previous, current and next admission rules
      - **offset** : current offset
-     - **total** : admission rules total
+     - **total** : total of admission rules 
 
   *yaml example*:
     ::
 
      ---
-	items:
-  		- id: 1
- 		  links:
-      	    href: /admission_rules/1
+     items:
+       - id: 1
+         links:
+            href: /admission_rules/1
             rel: self
-          rule: 'if (not defined($queue_name)) {$queue_name="default";}'
-  		- id: 2
-          links:
+         rule: 'if (not defined($queue_name)) {$queue_name="default";}'
+       - id: 2
+         links:
             href: /admission_rules/2
             rel: self
-          rule: 'die ("[ADMISSION RULE] root and oar users are not allowed to submit jobs.\n") if ( $user eq "root" or $user eq "oar" );'
-  		- id: 3
-          links:
+         rule: 'die ("[ADMISSION RULE] root and oar users are not allowed to submit jobs.\n") if ( $user eq "root" or $user eq "oar" );'
+       - id: 3
+         links:
             href: /admission_rules/3
             rel: self
-          rule: |2
-      
+         rule: |2
           	my $admin_group = "admin";
       		if ($queue_name eq "admin") {
           		my $members; 
@@ -1619,16 +1616,15 @@ GET /admission_rules
               		{die("[ADMISSION RULE] Only member of the group ".$admin_group." can submit jobs in the admin queue\n");}
           		}
       		}
-    links:
-  		- href: '/admission_rules.yaml?limit=5&offset=0'
-    	  rel: previous
-  		- href: '/admission_rules.yaml?limit=5&offset=5'
-    	  rel: self
-  		- href: '/admission_rules.yaml?limit=5&offset=10'
-    	  rel: next
-	offset: 5
-	total: 5
-       
+     links:
+       - href: '/admission_rules.yaml?limit=5&offset=0'
+         rel: previous
+       - href: '/admission_rules.yaml?limit=5&offset=5'
+         rel: self
+       - href: '/admission_rules.yaml?limit=5&offset=10'
+         rel: next
+     offset: 5
+     total: 5
 
 :usage example:
   ::
@@ -1640,7 +1636,7 @@ GET /admission_rules
           - offset : the page result offset
 
 GET /admission_rules/<id>
--------------------
+-------------------------
 :description:
   Get details about the admission rule identified by *id*
 
@@ -1658,9 +1654,9 @@ GET /admission_rules/<id>
 
      ---
      - id: 1
-  	   links:
-         href: /admission_rules/1
-         rel: self
+       links:
+          href: /admission_rules/1
+          rel: self
        rule: 'if (not defined($queue_name)) {$queue_name="default";}'
 
 :usage example:
@@ -1669,7 +1665,7 @@ GET /admission_rules/<id>
    wget -q -O - http://localhost/oarapi/admission_rules/1.yaml
 
 DELETE /admission_rule/<id>
-----------------------
+---------------------------
 :description:
   Delete the admission rule identified by *id*
 
@@ -1698,11 +1694,11 @@ DELETE /admission_rule/<id>
 
 :note:
   :note:
-  Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /admission_rule/<id> rule.
-  If the admission rule could not be deleted, returns a 403 and the reason into the message body.
+  	Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /admission_rule/<id> rule.
+  	If the admission rule could not be deleted, returns a 403 and the reason into the message body.
 
 GET /config
---------------
+-----------
 :description:
   Get the list of configured variables
 
@@ -1719,56 +1715,57 @@ GET /config
     ::
     
      ---
-	 - id: OARSUB_FORCE_JOB_KEY
-  	   links:
-    	 href: /config/OARSUB_FORCE_JOB_KEY
-    	 rel: self
-  		 value: no
-	 - id: SCHEDULER_GANTT_HOLE_MINIMUM_TIME
-  	   links:
-    	 href: /config/SCHEDULER_GANTT_HOLE_MINIMUM_TIME
-    	 rel: self
-  	 	 value: 300
-	 - id: SCHEDULER_RESOURCE_ORDER
-  	   links:
-    	 href: /config/SCHEDULER_RESOURCE_ORDER
-    	 rel: self
-  		 value: 'scheduler_priority ASC, suspended_jobs ASC, network_address DESC, resource_id ASC'
-	 - id: SCHEDULER_PRIORITY_HIERARCHY_ORDER
-  	   links:
-         href: /config/SCHEDULER_PRIORITY_HIERARCHY_ORDER
-    	 rel: self
-  		 value: network_address/resource_id
-	 - id: OARSUB_NODES_RESOURCES
-  	   links:
-    	 href: /config/OARSUB_NODES_RESOURCES
-    	 rel: self
-  		 value: network_address
-	 - id: SCHEDULER_JOB_SECURITY_TIME
-  	   links:
-       href: /config/SCHEDULER_JOB_SECURITY_TIME
-       rel: self
-       value: 60
-	 - id: DETACH_JOB_FROM_SERVER
+     - id: DB_BASE_NAME
        links:
-    	 href: /config/DETACH_JOB_FROM_SERVER
-    	 rel: self
-  	     value: 0
-	- id: LOG_LEVEL
-  	  links:
-    	href: /config/LOG_LEVEL
-    	rel: self
-  		value: 2
-	- id: OAREXEC_DEBUG_MODE
-  	  links:
-    	href: /config/OAREXEC_DEBUG_MODE
-    	rel: self
-  		value: 0
-	- id: DB_BASE_NAME
-  	  links:
-      	href: /config/DB_BASE_NAME
-    	rel: self
-  		value: oar
+          href: /config/DB_BASE_NAME
+          rel: self
+       value: oar
+     - id: OARSUB_FORCE_JOB_KEY
+       links:
+          href: /config/OARSUB_FORCE_JOB_KEY
+          rel: self
+       value: no
+     - id: SCHEDULER_GANTT_HOLE_MINIMUM_TIME
+       links:
+          href: /config/SCHEDULER_GANTT_HOLE_MINIMUM_TIME
+          rel: self
+       value: 300
+     - id: SCHEDULER_RESOURCE_ORDER
+       links:
+          href: /config/SCHEDULER_RESOURCE_ORDER
+          rel: self
+       value: 'scheduler_priority ASC, suspended_jobs ASC, network_address DESC, resource_id ASC'
+     - id: SCHEDULER_PRIORITY_HIERARCHY_ORDER
+       links:
+          href: /config/SCHEDULER_PRIORITY_HIERARCHY_ORDER
+          rel: self
+       value: network_address/resource_id
+     - id: OARSUB_NODES_RESOURCES
+       links:
+          href: /config/OARSUB_NODES_RESOURCES
+          rel: self
+       value: network_address
+     - id: SCHEDULER_JOB_SECURITY_TIME
+       links:
+          href: /config/SCHEDULER_JOB_SECURITY_TIME
+          rel: self
+          value: 60
+     - id: DETACH_JOB_FROM_SERVER
+       links:
+          href: /config/DETACH_JOB_FROM_SERVER
+          rel: self
+       value: 0
+     - id: LOG_LEVEL
+       links:
+          href: /config/LOG_LEVEL
+          rel: self
+       value: 2
+     - id: OAREXEC_DEBUG_MODE
+       links:
+          href: /config/OAREXEC_DEBUG_MODE
+          rel: self
+       value: 0
+     
   	 .....
   	 .....
  
@@ -1778,7 +1775,7 @@ GET /config
    curl -i -X GET http://login:password@localhost/oarapi-priv/config.yaml
 
 GET /config/<variable>
--------------------
+----------------------
 :description:
   Get details about the configuration variable identified by *variable*
 
@@ -1795,11 +1792,11 @@ GET /config/<variable>
     ::
     
      ---
-	 - id: DB_TYPE
-  	   links:
-    	 href: /config/DB_TYPE
-    	 rel: self
-  	   value: mysql
+     - id: DB_TYPE
+       links:
+          href: /config/DB_TYPE
+          rel: self
+       value: mysql
 
 :usage example:
   ::
@@ -1807,7 +1804,7 @@ GET /config/<variable>
    curl -i -X GET http://login:password@localhost/oarapi-priv/config/DB_TYPE.yaml
 
 POST /config/<variable>
----------------
+-----------------------
 :description:
   Change the value of the configuration variable identified by *variable*
 
