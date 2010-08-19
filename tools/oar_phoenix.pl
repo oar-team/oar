@@ -9,6 +9,9 @@
 # - No locking!
 # - No logging!
 # - Timed out processes may still run!
+# - Hard timeout is not yet implemented:
+#     it should trig a call to Judas to send an e-mail
+#     to the admin.
 
 use strict;
 use warnings;
