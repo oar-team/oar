@@ -1,0 +1,35 @@
+
+    Orpheus
+    =======
+
+ Orpheus is a simple jobs sleeping executor. It replace the use of runner, oarexec, bipbip and real or sleeping execution jobs.
+Its purposes is to simply experimentation and oar's frontend and scheduling testing and evalution.
+
+Principe:
+ TO COMPLETE
+
+Limitations:
+ * no support of Interactive job (no way)
+ * besteffort and kill/delete job (todo)
+ * does not read oar.conf for db parameters and almighty port (todo)
+
+Installation:
+ Note: execute following commands as oar user
+ * cd /usr/lib/oar/
+ * mv runner orig.runner
+ * ln -s /tmp/orpheus_signal_sender runner
+ * in oar.conf you must stop periodic node checking by setting FINAUD_FREQUENCY="0"
+ 
+ * install lua5.1 liblua5.1-socket2
+ * as root:
+    * cd lua-signal
+    * make && make install
+
+Running:
+ * sudo -u oar lua orpheus.lua -> launch the executor
+ 
+Comments, bugs, request:
+  * send mail to: olivier.richard@imag.fr or oar-devel@lists.gforge.inria.fr
+
+
+
