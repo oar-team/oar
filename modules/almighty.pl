@@ -120,6 +120,7 @@ sub launch_command($){
             $SIG{USR1} = 'IGNORE';
             $SIG{INT}  = 'IGNORE';
             $SIG{TERM} = 'IGNORE';
+            $0="Almighty: $command";
             exec($command); 
         }
         my $kid;
@@ -207,7 +208,7 @@ sub comportement_appendice(){
                     $SIG{USR1} = 'IGNORE';
                     $SIG{INT}  = 'IGNORE';
                     $SIG{TERM} = 'IGNORE';
-
+                    $0="Almighty: bipbip";
                     exec("$bipbip_command $1 $2 $3 $4");
                 }
                 oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4\n");
@@ -259,6 +260,7 @@ sub init(){
         $SIG{USR1}  = 'IGNORE';
         $SIG{INT}  = 'IGNORE';
         $SIG{TERM}  = 'IGNORE';
+        $0="Almighty: appendice";
         comportement_appendice();
         oar_error("[Almighty] Returned from comportement_appendice, this should not happen (infinite loop for listening messages on the server socket)\n");
         exit(7);
@@ -278,6 +280,7 @@ sub init(){
           $SIG{USR1}  = 'IGNORE';
           $SIG{INT}  = 'IGNORE';
           $SIG{TERM}  = 'IGNORE';
+          $0="Almighty: hulot";
           energy_saving();
           oar_error("[Almighty] Hulot daemon died. This should not happen.\n");
           exit(7);
