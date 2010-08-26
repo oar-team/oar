@@ -8,6 +8,9 @@ No supported
  - Best effort (side effect of killing job capacity)
 
 TODO:
+* Pour le kill: le plus simple proposer une alternative de 
+signal_oarexec($$$$$$$) dans oar_Tools.pm et modifier leon.pl pour l'appeler
+
 * walltime (optional) only command !
 * install/uninstall 
 * arg (walltime)
