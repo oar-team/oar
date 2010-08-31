@@ -17,5 +17,5 @@ upgrade_to_squeeze:
        DPkg::Options {"--force-confnew";};
    - exec_chroot:          apt-get update
    - exec_chroot:          apt-get install --fix-broken --fix-missing --yes --force-yes apt dpkg aptitude
-   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get --fix-broken --fix-missing --yes --force-yes  dist-upgrade"
+   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get --fix-broken --fix-missing --yes --force-yes  dist-upgrade || true "
 

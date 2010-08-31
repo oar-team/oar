@@ -22,7 +22,7 @@ save_as_g5k_inside_g5k:
    - exec_chroot:          apt-get update
    - exec_chroot:          apt-get install tgz-g5k
    - exec_chroot:          tgz-g5k /tmp/$$distrib.g5k.tgz
-   - exec_appliance:       cp $$chroot/tmp/$$distrib.g5k.tgz $$workdir
+#   - exec_appliance:       mv $$chroot/tmp/$$distrib.g5k.tgz $$workdir
 #   - append_file:   	   
 #     - /tmp/$$distrib.g5k.dsc3
 #     - |

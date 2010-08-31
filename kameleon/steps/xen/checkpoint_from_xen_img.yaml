@@ -1,0 +1,9 @@
+checkpoint_from_xen_img:
+ - checkpoint_from_xen_img:
+   - exec_appliance: xm destroy domU
+   - exec_appliance: cp /opt/xen/domains/domU/disk.img /opt/xen/domains/domU/disk.img.bckp
+   - exec_appliance: mkdir /mnt/xen
+   - exec_appliance: mount /opt/xen/domains/domU/disk.img /mnt/xen -o loop
+   - exec_appliance: cd /mnt/xen/ ; tar pczf $$workdir_base/domU.tgz ./*
+   - exec_appliance: cd / ; umount /mnt/xen
+
