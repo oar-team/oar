@@ -1,6 +1,9 @@
 
 Simple schedulers in ocaml
----------------------------------
+---------------------------
+
+
+* Actual developed version is simple_cbf_mb_h_ct_oar * 
 
 ocaml-schedulers have several goals
 
@@ -60,49 +63,61 @@ Based on simple_cbf_mb_h it will provide container feature.
 Uses simple_cbf_mb_h_ct will be usable with oar's DB to perform some simple test performance (and perhaps it will
 be develop up for production usage after test)
 
-/simple_cbf_mb_h_ts:
+/simple_cbf_mb_h_ts: (not developed)
 Based on simple_cbf_mb_h it will provide timesharing feature
 
-/simple_cbf_mb_h_ts_oar:
+/simple_cbf_mb_h_ts_oar: (not developed)
 Uses simple_cbf_mb_h_ts will be usable with oar's DB to perform some simple test performance (not suitable for production use)  
 
 Next:
+
+ * testing testing 
+  ** DB only testing
+
+ * BEST / ALL 
  * scheduler message (see perl version *)
  * job_error / job_message / scheduler message
  * dependencies
  * suspend job
- * available_upto (???)
- * besteffort
 
  * need to test multi-resource-type (since >= cbf_mb_h)
  * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
- * test on trunk DB version
  * Scalability performance testing
- * Add more features to reach perl scheduler's feature set :)
- * General and source documentation
- * Support of postgresql
+ * General documentation in rst format (docutils)
+ * Source documentation
  * Code restructuration (Interval in common)
  * compute mode support
  * timesharing, container, faireshare, ComputeMode, Postgresql...
- * suspended jobs (
- * add security_time_overhead (beetween jobs)
+ * add security_time_overhead (beetween jobs ???)
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
  * errors logging (at least same error support as provide in perl scheduler)
 
  * how to emulate resource order ?, need of specifique scheduler for besteffort or use perl scheduler for besteffort ???
  * Do we need global scheduling timeout ??? (at timeout expiration we can save succesfully scheduled job, can also be the way for incremental assignement saving...)
 
+ * dump first k ready launchable jobs (for performance /reactivity issue)
+
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
  * time_end_slot(n-1) = time_start_slot(n) for same resource must be time_start_slot(n) = time_end_slot(n-1) + 1 ! rajouter + 1 au walltime des jobs + une garde temporelle ?!! (can be address by the use of security_time_overhead ?) 
 
+
+To test:
+ * DB postgresql / mysql
+ * besteffort
+ * container
+ * available_upto (???)
+ * multi-resource-type
+ * multi-request with non exclusive resource selection
+ 
 Done:
+
+ * container
+ * Support of postgresql
  * Preliminary performance comparaison (perl version timesharing only scheduler from oar-server_2.3.4-1_all.deb against cbf_mh_h). Perl scheduler doesn't seem to scale with number of resources)
  * modify itv_intersect in Interval / remove itv2str, itvs2str (>= cbf_mh_h)
  * multi-resource-type (since >= cbf_mh_h) (
  * multi-request with non exclusive resource selection (since >= cbf_mh_h)
 
-
-
 Remarks:
- * 2.2.x series and previous are NOT SUPPORTED
+ * 2.2.x series and previous oar's version are NOT SUPPORTED
  * Use of OUNIT for unit testing (cbf_mh_h and above)

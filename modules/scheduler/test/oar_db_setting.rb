@@ -4,7 +4,7 @@ require 'yaml'
 DEFAULT_JOB_ARGS = {
   :queue => "default",
   :walltime => 7200,
-  :res => "resource_id=1",
+  :res = "resource_id=1",
   :propreties => "",
   :type => nil
 }
@@ -152,7 +152,6 @@ def oar_resource_insert(args={})i
       args[:nb_resources].times do
          $dbh.execute("insert into resources (state) values ('Alive')").finish   
       end
-    end
   end
 end
 
@@ -173,7 +172,7 @@ end
 if ($0=='irb')
   puts 'irb session detected, db connection launched'
   oar_load_test_config
-  oar_db_connect
+  oar_base_connect
 end
 # 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
 
