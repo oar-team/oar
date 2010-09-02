@@ -36,10 +36,10 @@ echo "$OARPROPERTY -a cpuset" >> $FILE_WITH_OAR_COMMANDS_GENERATED
 echo "$OARPROPERTY -a mem" >> $FILE_WITH_OAR_COMMANDS_GENERATED
 
 # Init CPU id
-CPU=$(oarnodes --sql true | grep 'cpu=' | awk -F ",cpu=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+CPU=$(oarnodes --sql true | grep 'cpu=' | awk -F ", cpu=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
 [ -z "$CPU" ] && CPU=0
 # Init CORE id
-CORE=$(oarnodes --sql true | grep 'core=' | awk -F ",core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+CORE=$(oarnodes --sql true | grep 'core=' | awk -F ", core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
 [ -z "$CORE" ] && CORE=0
 
 echo
