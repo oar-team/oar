@@ -1,6 +1,10 @@
 OAR CHANGELOG
 =============
 
+version 2.4.4:
+--------------
+  - Bugfix: oaradmin rules edition/add was broken 
+
 version 2.4.3:
 --------------
   - Hulot module now has customizable keepalive feature 

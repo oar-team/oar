@@ -630,6 +630,7 @@ class CLI
 
 
       when $options[:add]
+        editor, directory = Edit.env($config)
         # Add admission rule
         rule_id = nil
         list_rules = Admission_rules.rule_list_from_command_line
@@ -670,6 +671,7 @@ class CLI
 
 
       when $options[:edit]
+        editor, directory = Edit.env($config)
         # Update admission rule
         # rules given by user
         list_rules = Admission_rules.rule_list_from_command_line
@@ -954,6 +956,7 @@ class CLI
 
         $config=Oar.load_configuration
         editor, directory = Edit.env($config)
+
 
         # edit file
         rule = Rule.new(nil, nil)
