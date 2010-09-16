@@ -35,6 +35,12 @@ Connect to a running job.
 Set the requested resources for the job. The different parameters are resource properties registered in OAR database, and `walltime' which specifies the duration before the job must be automatically terminated if still running. 
 Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: nodes=4/cpu=1,walltime=2:00:00
 
+You can specify multiple -l options at the same line. This tells OAR that this is a moldable job so it can take different shapes. For example if you have an application that is very scalable:
+
+oarsub -l cpu=2,walltime=20:00:00 -l cpu=4,walltime=10:00:00 -l cpu=8,walltime=5:00:00 ./script.sh
+
+OAR will schedule one of these three resource definitions (depending of the current load of the cluster).
+
 =item B<--array> <NUMBER>
 
 Submit an array job containing "NUMBER" subjobs. All the subjobs share the same array_id but each subjob is independent and has its own job_id. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.
