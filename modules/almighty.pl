@@ -436,6 +436,17 @@ while (1){
         oar_debug("[Almighty] kill child process $appendice_pid\n");
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
+        # Clean ipcs
+        open(IPCS,"/proc/sysvipc/msg");
+        my @oar = getpwnam('oar');
+        while (<IPCS>) {
+        my @ipcs=split;
+          if ($ipcs[7] eq $oar[2]) {
+            my $ipc=$ipcs[1];
+            oar_debug("[Almighty] cleaning ipc $ipc\n");
+            `/usr/bin/ipcrm -q $ipc`;
+          }
+        }
         oar_warn("[Almighty] Stop Almighty\n");
         send_log_by_email("Stop OAR server","[Almighty] Stop Almighty");
         exit(10);
