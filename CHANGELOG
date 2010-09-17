@@ -8,6 +8,9 @@ version 2.5.0:
   - New (experimental!) scheduler written in Ocaml
   - Cpusets are activated by default
   - Bugfix #11065: oar_resource_init fix (add a space)
+  - Bug 10999: memory leak into Hulot when used with postgresql. The leak has been
+    minimized, but it is still there (DBD::Pg bug)
+  - Almighty cleans ipcs used by oar on exit 
 
 version 2.4.3:
 --------------
