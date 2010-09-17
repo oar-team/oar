@@ -123,6 +123,7 @@ sub get_expired_resources($);
 sub is_node_desktop_computing($$);
 sub get_resources_data_structure_current_job($$);
 sub get_hosts_state($);
+sub get_alive_nodes_with_jobs($);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
@@ -3054,6 +3055,35 @@ sub get_node_job($$) {
     return @res;
 }
 
+# get_alive_nodes_with_jobs
+# returns the list of occupied nodes
+# parameters : base
+# return value : list of node names
+# side effects : /
+sub get_alive_nodes_with_jobs($) {
+    my $dbh = shift;
+    my $sth = $dbh->prepare("   SELECT resources.network_address
+                                FROM assigned_resources, moldable_job_descriptions, jobs, resources
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                    AND (resources.state = 'Alive' or resources.next_state='Alive')
+                                    AND assigned_resources.resource_id = resources.resource_id
+                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND jobs.state != \'Terminated\'
+                                    AND jobs.state != \'Error\'
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my @ary = $sth->fetchrow_array) {
+        push(@res, @ary[0]);
+    }
+    return @res;
+    $sth->finish();
+}
+
+
 # get_node_job_to_frag
 # same as get_node_job but excepts cosystem jobs
 # parameters : base, hostname
@@ -3178,6 +3208,29 @@ sub get_resources_that_can_be_waked_up($$) {
         push(@res, $ref);
     }
     return(@res);
+}
+
+# get_nodes_that_can_be_waked_up
+# returns a list of resources
+# parameters : base, date max
+# return value : list of node names
+sub get_nodes_that_can_be_waked_up($$) {
+    my $dbh = shift;
+    my $max_date = shift;
+    
+    $max_date = $max_date + $Cm_security_duration;
+    my $sth = $dbh->prepare("   SELECT distinct(network_address)
+                                FROM resources
+                                WHERE
+                                    state = \'Absent\' AND
+                                    resources.available_upto > $max_date
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my @ary = $sth->fetchrow_array) {
+        push(@res, @ary[0]);
+    }
+    return @res;
 }
 
 

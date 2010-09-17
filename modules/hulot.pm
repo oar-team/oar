@@ -30,7 +30,9 @@ use window_forker;
 use IPC::SysV qw(IPC_PRIVATE IPC_RMID IPC_CREAT S_IRUSR S_IWUSR IPC_NOWAIT);
 use oar_scheduler;
 
-use Data::Dumper;
+#use Devel::Cycle;
+#use Devel::Peek;
+#use Data::Dumper;
 
 require Exporter;
 our ( @ISA, @EXPORT, @EXPORT_OK );
@@ -258,6 +260,7 @@ sub start_energy_loop() {
           exit(2);
         }
         $keepalive{$properties}=();
+        $keepalive{$properties}{"nodes"}=[];
         $keepalive{$properties}{"min"}=$nodes_number;
         oar_debug("[Hulot] Keepalive(". $properties .") => ". $nodes_number ."\n");
       }
@@ -289,15 +292,19 @@ sub start_energy_loop() {
             exit(2);
         }
 
+        #debug
+        #open(DUMP,">>/tmp/hulot_dump");
+        #my $pid=$$;
+
         # Start to manage commands and nodes comming on the fifo
         while (<FIFO>) {
+        #print DUMP "point 1:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
             my $key;
             my $nodeFinded   = 0;
             my $nodeToAdd    = 0;
             my $nodeToRemind = 0;
             my $rcvd;
             my $type_rcvd;
-
             my $base = iolib::connect()
               or die("[Hulot] Cannot connect to the database\n");
 
@@ -323,16 +330,20 @@ sub start_energy_loop() {
                 oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
             }
 
+            #print DUMP "point 2:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
+
             # Check idle and occupied nodes
+            my @all_occupied_nodes=iolib::get_alive_nodes_with_jobs($base);
+            my @nodes_that_can_be_waked_up=iolib::get_nodes_that_can_be_waked_up($base,iolib::get_date($base));
             foreach my $properties (keys %keepalive) {
               my @occupied_nodes;
               my @idle_nodes;
-              $keepalive{$properties}{"nodes"} = 
+              $keepalive{$properties}{"nodes"} =
                  [ iolib::get_nodes_with_given_sql($base,$properties) ];
               $keepalive{$properties}{"cur_idle"}=0;
               foreach my $alive_node (iolib::get_nodes_with_given_sql($base,
                                         $properties. " and (state='Alive' or next_state='Alive')")) {
-                if (iolib::get_node_job($base,$alive_node)) {
+                if (grep(/^$alive_node$/,@all_occupied_nodes)) {
                   push(@occupied_nodes,$alive_node);
                 }else{
                   $keepalive{$properties}{"cur_idle"}+=1;
@@ -341,6 +352,8 @@ sub start_energy_loop() {
               }
               #oar_debug("[Hulot] cur_idle($properties) => "
               #     .$keepalive{$properties}{"cur_idle"}."\n");
+
+              #print DUMP "point 3:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
 
               # Wake up some nodes corresponding to properties if needed
               my $ok_nodes=$keepalive{$properties}{"cur_idle"}
@@ -353,9 +366,7 @@ sub start_energy_loop() {
                     # we have a good candidate to wake up
                     # now, check if the node has a good status
                     $wakeable_nodes--;
-                    my @node_info=iolib::get_node_info($base, $node);
-                    if ($node_info[0]->{state} eq "Absent" 
-                        && $node_info[0]->{available_upto} > time) {
+                    if (grep(/^$node$/,@nodes_that_can_be_waked_up)) {
                       $ok_nodes++;
                       # add WAKEUP:$node to list of commands if not already
                       # into the current command list
@@ -372,10 +383,11 @@ sub start_energy_loop() {
                     last if ($ok_nodes >=0 || $wakeable_nodes <= 0);
                   }
                 }
-                
               }
             }
  
+            #print DUMP "point 4:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
+
             # Retrieve list of nodes having at least one resource Alive
             my @nodes_alive = iolib::get_nodes_with_given_sql($base,"state='Alive'");
 
@@ -469,7 +481,6 @@ sub start_energy_loop() {
                 }
             }
 
-           
             # Creating command list
             my @commandToLaunch = ();
             my @dont_halt;
@@ -581,6 +592,8 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
             %nodes_list_to_process = ();
         }
         close(FIFO);
+        # Unfortunately, never reached:
+        shmctl($id_msg_hulot, IPC_RMID, 0);
     }
 }
 
