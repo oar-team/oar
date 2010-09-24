@@ -78,7 +78,7 @@ if (defined $cgi->param('node') and defined $nodes{$cgi->param('node')}) {
 		 "Node ".$node." detailed status:");
   print $nodes{$node}->htmlStatusTable($cgi);
   print $cgi->h3({ -align => "center" },
-		 $cgi->a({ -href => $cgi->self_url(-query=>0)},
+		 $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
 		"back to main page"
 	      ));
 ## if job param is present, show detailed view of the pointed job
@@ -95,7 +95,7 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
     print $jobInfos->htmlStatusTable($cgi);
   }
   print $cgi->h3({ -align => "center" },
-		 $cgi->a({ -href => $cgi->self_url(-query=>0)},
+		 $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
 		"back to main page"
 	      ));
 ## else show the main page
