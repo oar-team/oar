@@ -1,19 +1,17 @@
 -- 
 -- a oarlib draft for lua modules and tools
 --
---
 -- TODO:
---   postgresql suppor
-
+--   postgresql support
 
 require "luasql.mysql"
 oar= {}
 local env, con
 
 oar.conf={}
+-- TODO change oar.conf location
+-- oar_confile_name = "/etc/oar/oar.conf"
 oar_confile_name = "/home/auguste/prog/oar/trunk/tools/oar.conf"
-
-
 
 -- lazy programmed table printers
 function oar.print_table(t)
@@ -106,6 +104,7 @@ end
 function oar.set_all_jobs_toLaunch()
   assert (con:execute"UPDATE jobs SET state='toLaunch'")
 end
+
 function oar.sql(query)
   assert (con:execute(query))
 end
@@ -149,13 +148,15 @@ function oar.get_waiting_jobs_black_maria(queue)
   if not queue then queue = "default" end
 
   local waiting_jobs = {}
+
+  -- note: jobs.scheduler_info = '' below is use to filter job already submited to foreign JRMS
   local query = "SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties , moldable_job_descriptions.moldable_id, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value, job_resource_descriptions.res_job_order, job_resource_groups.res_group_property FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs \
     WHERE \
       moldable_job_descriptions.moldable_index = 'CURRENT' \
       AND job_resource_groups.res_group_index = 'CURRENT' \
       AND job_resource_descriptions.res_job_index = 'CURRENT' \
       AND jobs.state = 'Waiting' \
-      AND jobs.scheduler_info = '' \
+      AND jobs.scheduler_info = '' \ 
       AND jobs.queue_name =  '" .. queue .. "' \
       AND jobs.reservation = 'None' \
       AND jobs.job_id = moldable_job_descriptions.moldable_job_id \
@@ -171,5 +172,38 @@ function oar.get_waiting_jobs_black_maria(queue)
   return waiting_jobs
 end
 
+-- update scheduler_info field for a set of jobs
+function oar.set_scheduler_message_range(j_ids,msg)
+  local job_ids = ""
+  for i,j_id in ipairs(a) do
+    job_ids = job_ids .. j_id .. ','
+  end
+  job_ids = string.sub(job_ids, 1, -2) --chomp the last ','
+  local query = "UPDATE jobs SET scheduler_info='"..msg.."' WHERE job_id IN ("..job_ids.. ")"
+  assert (con:execute(query))
+end
 
-  
+-- retreive resource_ids by node 
+function oar.get_nodes_resources_black_maria()
+  local nodes_resources = {}
+  local query = "SELECT resource_id, network_address FROM resources"
+  for row in oar.rows(query) do
+    local n = row[1]
+    local r_id = row[2]
+    if nodes_resources[n] then
+      nodes_resources[n][#nodes_resources[n]+1] = r_id
+    else
+      nodes_resources[n]={r_id}
+    end
+  end
+  return nodes_resources
+end
+
+-- save resources assignemet for one job  
+function save_assign_black_maria(job)
+--[[
+-- TODO intearction with metascheduler ? gantt prediction / visualisation/
+-- set start time
+-- 
+"INSERT INTO  gantt_jobs_predictions  (moldable_job_id,start_time) VALUES "^ (moldable_job_id_start_time job) in
+end

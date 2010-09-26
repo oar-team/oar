@@ -19,6 +19,7 @@ signal_oarexec($$$$$$$) dans oar_Tools.pm et modifier leon.pl pour l'appeler
 * oar.conf
 * Best effort / kill job
 * testx
+* oar.lua
 
 DONE:
 
