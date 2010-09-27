@@ -3,3 +3,6 @@
 echo "FAKE sbatch Slurm command" 
 echo "ARGS:" $@ 
 
+echo "sbatch: Submitted batch job " $RANDOM
+
+
