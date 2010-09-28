@@ -1,19 +1,21 @@
 #!/usr/bin/make
 #Under Debian or Ubuntu you must install the package "python-docutils"
 
-all: doc-admin doc-user doc-usecases doc-api
+all: doc-admin doc-user doc-usecases doc-api doc-devel
 	
 doc-admin: OAR-DOCUMENTATION-ADMIN.html
 	
 doc-user: OAR-DOCUMENTATION-USER.html
 
+doc-devel: oar-documentation-devel.html
+
 doc-usecases: doc_usecases.html
 
 doc-api: OAR-DOCUMENTATION-API.html
 
-latex: OAR-DOCUMENTATION-ADMIN.tex OAR-DOCUMENTATION-USER.tex OAR-DOCUMENTATION-API.tex
+latex: OAR-DOCUMENTATION-ADMIN.tex OAR-DOCUMENTATION-USER.tex OAR-DOCUMENTATION-API.tex oar-documentation-devel.tex
 
-pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf OAR-DOCUMENTATION-API.pdf
+pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf OAR-DOCUMENTATION-API.pdf oar-documentation-devel.pdf
 
 %.html: %.rst
 	rst2html -stg $< $@
