@@ -1,6 +1,20 @@
 require "oar"
-require "pp"
 require "copas"
+
+oar.conf_load()
+oar.connect()
+
+if oar.conf["BKM_SYNC_PORT"]==nil then 
+  bkm_sync_port = 2220
+else
+  bkm_sync_port = oar.conf["BKM_SYNC_PORT"]
+end
+
+function notify_almighty()
+  local client = socket.connect(oar.conf["SERVER_HOSTNAME"],oar.conf["SERVER_PORT"])
+  client:send("Scheduling\n")
+  client:close()
+end
 
 function handler(c, host, port)
   local peer = host .. ":" .. port
@@ -31,32 +45,23 @@ function handler(c, host, port)
 
   dumptable(resource_ids)
 
-  -- update oar's DB / save assignement
-  --  iolib::set_assigned_moldable_job(
-  -- add_resource_job_pair
--- TODO
   oar.set_assigned_moldable_job(job_id,moldable_job_id)
   oar.save_assignements_black_maria(moldable_job_id,resource_ids) 
-
---TODO
-  -- set job's stat to running 
---TODO
+  -- update job's state to Running and set assigned_moldable_job field
+  oar.sql("UPDATE jobs SET state = ".."Running"..
+          ",assigned_moldable_job = ".. moldable_job_id..
+          " WHERE job_id = ".. job_id)
   -- notify almighy (schedule cycle ? will update Gantt Diagram ??)
-
+  notify_almighty()
   -- notifiy for external tools ?
-
-  -- gantt visu ??? 
-
 end
 
-oar.conf_load()
-oar.connect()
 -- retreive resource_ids by node 
 nodes_resources_ids = oar.get_nodes_resources_black_maria()
 dumptable(nodes_resources_ids)
 
 -- add tcp server
-copas.addserver(assert(socket.bind("*",2220)),
+copas.addserver(assert(socket.bind("*",bkm_sync_port)),
                 function(c) return handler(copas.wrap(c), c:getpeername()) end
 )
 

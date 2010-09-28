@@ -3262,6 +3262,8 @@ sub get_resources_that_will_be_out($$) {
 # adds a new pair (jobid, resource) to the table assigned_resources
 # parameters : base, jobid, resource id
 # return value : /
+
+#TODO: consider the use  of multiple values insertion within one request : INSERT INTO tbl_name (a,b,c) VALUES(1,2,3),(4,5,6),(7,8,9);
 sub add_resource_job_pair($$$) {
     my $dbh = shift;
     my $moldable = shift;

@@ -1,13 +1,21 @@
 require "oar"
-require "pp"
--- TODO: 
 
--- 1)
-
---  black-maria-notify -> notify job starting to black-maria-notify (foreign-jrms-nodefile, oar-jobidi, oar-modlable,... in json format ???)
---  black-maria-synch ->  set node allocated by foreign jrms to oar
+oar.conf_load()
+oar.connect()
 
 submitted_jobs = {}
+
+if oar.conf["BKM_SYNC_HOST"]==nil then
+  bkm_sync_host = oar.conf["SERVER_HOSTNAME"] 
+else
+  bkm_sync_host = oar.conf["BKM_SYNC_HOST"]
+end
+
+if oar.conf["BKM_SYNC_PORT"]==nil then 
+  bkm_sync_port = 2220
+else
+  bkm_sync_port = oar.conf["BKM_SYNC_PORT"]
+end
 
 -- index correspondance for job's attributs in return of get_waiting_jobs_black_maria function 
 j_id= 1
@@ -15,13 +23,9 @@ walltime = 2
 nb_res = 4
 modalble_id = 5
 
-
-function get_job_to_execute()
-end
-
 -- Submit job on foreign LRMS
 -- Jobs are submitted sequentially. It's made the assumption that there not a lot of these kind of job at a given time. 
--- TODO: a connector for each supported LRMS (priority to SLUMR)
+-- TODO: a connector for each supported JRMS (priority to SLURM)
 function submit_to_jrms(jobs_to_launch)
   local job_ids = {}
   local submit_cmd_part1 = "./sbatch -N"
@@ -29,10 +33,15 @@ function submit_to_jrms(jobs_to_launch)
   for i,job in ipairs(jobs_to_launch) do
     job_ids[i] = job[j_id]
     print("BKM: submit job to LRMS")
+    -- TODO 
+    -- TODO walltime for foreign JRMS
+    -- TODO
     local cmd = submit_cmd_part1 .. job[nb_res] .. submit_cmd_part2 ..
-                job[j_id] .." ".. 
-                job[walltime] .." "..
-                job[modalble_id]
+                bkm_sync_host ..
+                bkm_sync_port ..
+                job[j_id] .." " ..
+                job[modalble_id] .. "" ..
+                job[walltime]
                 
     print("BKM: " .. cmd)
 
@@ -61,11 +70,6 @@ end
 queue = "default"
 if arg[1] then queue = arg[1] end
 
-oar.conf_load()
-oar.connect()
-
-
---waiting_jobs = oar.get_waiting_jobs_no_moldable(queue)
 waiting_jobs = oar.get_waiting_jobs_black_maria(queue) 
 dumptable(waiting_jobs)
 

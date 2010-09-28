@@ -1,11 +1,10 @@
 #!/bin/bash
 
 BKM_SYNC_HOST=$1
-BKM_SYN_PORT=$2
+BKM_SYNC_PORT=$2
 OAR_JOB_ID=$3
 OAR_MOLDABLE_JOB_ID=$4
 WALLTIME=$5
-
 
 SLURM_NODELIST="slurm_nodelist.txt"
 
