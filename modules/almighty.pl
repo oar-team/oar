@@ -224,10 +224,30 @@ sub comportement_appendice(){
         }
 }
 
-sub energy_saving(){
-    oar_Hulot::start_energy_loop();
+# hulot module forking
+sub start_hulot(){
+    $energy_pid = fork();
+    if(!defined($energy_pid)){
+        oar_error("[Almighty] Cannot fork Hulot, the energy saving module\n");
+        exit(6);
+    }
+    if (!$energy_pid){
+        $SIG{CHLD} = 'DEFAULT';
+        $SIG{USR1}  = 'IGNORE';
+        $SIG{INT}  = 'IGNORE';
+        $SIG{TERM}  = 'IGNORE';
+        $0="Almighty: hulot";
+        oar_Hulot::start_energy_loop();
+        oar_error("[Almighty] Energy saving loop (hulot) exited. This should not happen.\n");
+        exit(7);
+    }
 }
 
+# check the hulot process
+sub check_hulot(){
+  return kill 0, $energy_pid;
+}
+ 
 # initial stuff that has to be done
 sub init(){
     if(!(pipe (READ, WRITE))){
@@ -270,22 +290,8 @@ sub init(){
 
     # Starting of Hulot, the Energy saving module
     if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
-      $energy_pid = fork();
-      if(!defined($energy_pid)){
-          oar_error("[Almighty] Cannot fork Hulot, the energy saving module\n");
-          exit(6);
-      }
-      if (!$energy_pid){
-					$SIG{CHLD} = 'DEFAULT';
-          $SIG{USR1}  = 'IGNORE';
-          $SIG{INT}  = 'IGNORE';
-          $SIG{TERM}  = 'IGNORE';
-          $0="Almighty: hulot";
-          energy_saving();
-          oar_error("[Almighty] Hulot daemon died. This should not happen.\n");
-          exit(7);
-      }
-    }
+      start_hulot();
+   }
 
     $lastscheduler= time;
     $lastvillains= time;
@@ -451,6 +457,14 @@ while (1){
         send_log_by_email("Stop OAR server","[Almighty] Stop Almighty");
         exit(10);
     }
+
+    # We check Hulot
+    if (defined($energy_pid) && !check_hulot()) {
+      oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
+      sleep 5;
+      start_hulot();
+    }
+
     # INIT
     if($state eq "Init"){
         init();

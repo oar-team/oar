@@ -11,6 +11,7 @@ version 2.5.0:
   - Bug 10999: memory leak into Hulot when used with postgresql. The leak has been
     minimized, but it is still there (DBD::Pg bug)
   - Almighty cleans ipcs used by oar on exit 
+  - Bugfix #10641 and #10999 : Hulot is automatically and periodically restarted
 
 version 2.4.3:
 --------------

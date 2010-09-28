@@ -230,6 +230,10 @@ sub start_energy_loop() {
     my $forker_pid;
     my $id_msg_hulot;
     my $pack_template = "l! a*";
+    my $max_cycles=int(get_conf_with_default_param(
+                                "ENERGY_MAX_CYCLES_UNTIL_REFRESH",
+                                "5000"
+                              ));
 
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
 
@@ -284,6 +288,8 @@ sub start_energy_loop() {
         oar_error("[Hulot] Cannot create message queue : msgget failed\n");
         exit(1);
     }
+
+    my $count_cycles;
 
     # Open the fifo
     while (1) {
@@ -590,6 +596,16 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
 
             # Cleaning the list to process
             %nodes_list_to_process = ();
+
+            # Suicide to workaround memory leaks. Almighty will restart hulot.
+            $count_cycles++;
+            if ($count_cycles > $max_cycles) {
+              oar_warn("[Hulot] Reached $max_cycles cycles. Suiciding (place aux jeunes).\n");
+              shmctl($id_msg_hulot, IPC_RMID, 0);
+              # TODO: should dump %nodes_list_running and %nodes_list_to_remind into files to
+              # be able to restore state
+              exit(42);
+            }
         }
         close(FIFO);
         # Unfortunately, never reached:
