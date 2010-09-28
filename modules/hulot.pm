@@ -32,7 +32,7 @@ use oar_scheduler;
 
 #use Devel::Cycle;
 #use Devel::Peek;
-#use Data::Dumper;
+use Data::Dumper;
 
 require Exporter;
 our ( @ISA, @EXPORT, @EXPORT_OK );
@@ -234,8 +234,26 @@ sub start_energy_loop() {
                                 "ENERGY_MAX_CYCLES_UNTIL_REFRESH",
                                 "5000"
                               ));
+    my $runtime_directory=get_conf_with_default_param(
+                                "OAR_RUNTIME_DIRECTORY",
+                                "/tmp/oar_runtime"
+                              );
 
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
+    
+    # Load state if exists
+    if (-s "$runtime_directory/hulot_status.dump") {
+      my $ref = do "$runtime_directory/hulot_status.dump";
+      if ($ref) {
+        if (defined($ref->[0]) && defined($ref->[1]) &&
+            ref($ref->[0]) eq "HASH" && ref($ref->[1]) eq "HASH") {
+          oar_debug("[Hulot] State file found, loading it\n");
+          %nodes_list_running = %{$ref->[0]};
+          %nodes_list_to_remind = %{$ref->[1]};
+        }
+      }
+    }
+    unlink "$runtime_directory/hulot_status.dump";
 
     # Init keepalive values ie construct a hash:
     #      sql properties => number of nodes to keepalive
@@ -601,9 +619,20 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
             $count_cycles++;
             if ($count_cycles > $max_cycles) {
               oar_warn("[Hulot] Reached $max_cycles cycles. Suiciding (place aux jeunes).\n");
-              shmctl($id_msg_hulot, IPC_RMID, 0);
-              # TODO: should dump %nodes_list_running and %nodes_list_to_remind into files to
-              # be able to restore state
+              # cleaning ipc
+              shmctl($id_msg_hulot, IPC_RMID, 0); # <- doesn't work... why??
+              # saving state
+              if (open(FILE,">$runtime_directory/hulot_status.dump")) {
+                # removing HALT commands from state file as we don't check timeout on that
+                foreach my $node ( keys(%nodes_list_running) ) {
+                  if ($nodes_list_running{$node}->{'command'} eq "HALT") {
+                    remove_from_hash( \%nodes_list_running, $node );
+                  }
+                }
+                print FILE Dumper([\%nodes_list_running,\%nodes_list_to_remind]);
+              }else{
+                oar_error("[Hulot] could not open $runtime_directory/hulot_status.dump for writing!");
+              }
               exit(42);
             }
         }
