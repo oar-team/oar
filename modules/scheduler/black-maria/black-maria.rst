@@ -1,6 +1,6 @@
-===========
-Black-Maria
-===========
+=======================================
+Black-Maria: a coupling with other JRMS
+=======================================
 
 Black-Maria (BKM) is an extension to couple foreign job and resource management system (JRMS) with OAR. BKM is primarly developed to meet the needs of ANR-SPADES project. 
 

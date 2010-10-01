@@ -1,5 +1,4 @@
 #!/bin/bash
-
 BKM_SYNC_HOST=$1
 BKM_SYNC_PORT=$2
 OAR_JOB_ID=$3
@@ -16,8 +15,8 @@ NODE_FILE=$SLURM_NODELIST
 #
 BKM_SYNC_DATA="{['j_id']=$OAR_JOB_ID, ['moldable_j_id']=$OAR_MOLDABLE_JOB_ID, ['nodes_file']='$NODE_FILE'}"
 echo $BKM_SYNC_DATA
-echo $BKM_SYNC_DATA | nc $BKM_SYNC_HOST $BKM_SYN_PORT
+echo $BKM_SYNC_DATA | nc $BKM_SYNC_HOST $BKM_SYNC_PORT
 
 # time to sleep
-sleep $WALLTIME
-
+#sleep $WALLTIME
+sleep 2

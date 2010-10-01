@@ -6,6 +6,8 @@
 
 require "luasql.mysql"
 oar= {}
+log_level = 2
+log_file = "/var/log/oar.log"
 local env, con
 
 oar.conf={}
@@ -57,6 +59,9 @@ function oar.conf_load()
     end
     f:close()
   end
+
+  if oar.conf["LOG_LEVEL"] then log_level = oar.conf["LOG_LEVEL"] end
+  if oar.conf["LOG_FILE"] then log_file = oar.conf["LOG_FILE"] end
 end
 
 function oar.config_dump()
@@ -92,7 +97,7 @@ end
 
 -- usefull iterator
 function oar.rows (sql_statement)
-  print(sql_statement)
+--  print(sql_statement)
   local cursor = assert (con:execute (sql_statement))
   return function ()
     return cursor:fetch({})
@@ -143,7 +148,7 @@ function oar.get_waiting_jobs_black_maria(queue)
   local waiting_jobs = {}
 
   -- note: jobs.scheduler_info = '' below is use to filter job already submited to foreign JRMS
-  local query = "SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties , moldable_job_descriptions.moldable_id, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value, job_resource_descriptions.res_job_order, job_resource_groups.res_group_property FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs \
+  local query = "SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties , moldable_job_descriptions.moldable_id, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value, jobs.job_user FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs \
     WHERE \
       moldable_job_descriptions.moldable_index = 'CURRENT' \
       AND job_resource_groups.res_group_index = 'CURRENT' \
@@ -175,6 +180,7 @@ function oar.set_scheduler_message_range(j_ids,msg)
   end
   job_ids = string.sub(job_ids, 1, -2) --chomp the last ','
   local query = "UPDATE jobs SET scheduler_info='"..msg.."' WHERE job_id IN ("..job_ids.. ")"
+  print(query)
   assert (con:execute(query))
 end
 
@@ -194,12 +200,20 @@ function oar.get_nodes_resources_black_maria()
   return nodes_resources
 end
 
+-- set_assigned_moldable_job
+-- sets the assigned_moldable_job field to the given value
+function oar.set_assigned_moldable_job(job_id,moldable_job_id)
+  local query = "UPDATE jobs SET assigned_moldable_job =" .. moldable_job_id ..
+                 "WHERE job_id = " .. job_id ..")"
+  assert(con:execute(query))
+end
+
 -- save resources assignemet for one job  
 function oar.save_assignements_black_maria(moldable_job_id,resource_ids)
 
   local values = ""
   for i,r_id in ipairs(resource_ids) do
-    values = values ..'('.. moldable_job_id .. ',' resource_ids .. ',\'CURRENT\'),' 
+    values = values ..'('.. moldable_job_id .. ',' .. resource_ids .. ',\'CURRENT\'),' 
   end
 
   values = string.sub(values, 1, -2) --chomp the last ','
@@ -210,6 +224,27 @@ end
 ---
 --- helper section
 ---
+
+function oar.write_log(msg)
+  -- TODO to be completed
+  print(msg)
+end
+
+function oar.debug(msg)
+  if log_level > 2 then
+    oar.write_log('[debug] '..msg)
+  end
+end
+
+function oar.warn(msg)
+  if log_level > 1 then
+    oar.write_log('[info] '..msg)
+  end
+end
+
+function oar.error(msg)
+  oar.write_log('[error] '..msg)
+end
 
 ---
 --- this code come from lua's wiki site

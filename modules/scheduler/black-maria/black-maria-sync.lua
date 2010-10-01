@@ -4,7 +4,7 @@ require "copas"
 oar.conf_load()
 oar.connect()
 
-if oar.conf["BKM_SYNC_PORT"]==nil then 
+if not oar.conf["BKM_SYNC_PORT"] then 
   bkm_sync_port = 2220
 else
   bkm_sync_port = oar.conf["BKM_SYNC_PORT"]
@@ -22,19 +22,19 @@ function handler(c, host, port)
  -- c:send("Hello\r\n")
 
   -- get data 
-  data = (c:receive"*l")
+  local data = (c:receive"*l")
   print("data from", peer, data)
-  assert(loadstring("job_infos =" .. data))()
+  assert(loadstring("job_info =" .. data))()
 
-  dumptable(job_infos)
+  dumptable(job_info)
   
-  print(job_infos.nodes_file)
+  print(job_info.nodes_file)
  
 
   -- read JRMS' node file and build resource id list
   resource_ids = {}
   k = 1
-  local f = assert(io.open(job_infos.nodes_file, "r"))
+  local f = assert(io.open(job_info.nodes_file, "r"))
   for line in f:lines() do 
     print(line)
     for i,r_id in ipairs(nodes_resources_ids[line]) do
@@ -45,16 +45,20 @@ function handler(c, host, port)
 
   dumptable(resource_ids)
 
-  oar.set_assigned_moldable_job(job_id,moldable_job_id)
-  oar.save_assignements_black_maria(moldable_job_id,resource_ids) 
+  oar.save_assignements_black_maria(job_info.moldable_j_id,resource_ids) 
+  
   -- update job's state to Running and set assigned_moldable_job field
-  oar.sql("UPDATE jobs SET state = ".."Running"..
-          ",assigned_moldable_job = ".. moldable_job_id..
-          " WHERE job_id = ".. job_id)
+  oar.sql("UPDATE jobs SET state = ".."'Running'"..
+          ",assigned_moldable_job = ".. job_info.moldable_j_id..
+          " WHERE job_id = ".. job_info.j_id)
   -- notify almighy (schedule cycle ? will update Gantt Diagram ??)
   notify_almighty()
   -- notifiy for external tools ?
 end
+
+--
+-- main
+--
 
 -- retreive resource_ids by node 
 nodes_resources_ids = oar.get_nodes_resources_black_maria()
