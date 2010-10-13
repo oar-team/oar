@@ -124,12 +124,12 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
 		 "Job details:");
   print $oar->htmlJobTable($cgi);
 }
-open VERSION, "<./monika/VERSION";
-my $version="";
-while (<VERSION>) {
-  $version.=$_;
-}
-close VERSION;
+#open VERSION, "<./monika/VERSION";
+#my $version="";
+#while (<VERSION>) {
+#  $version.=$_;
+#}
+#close VERSION;
 ## print © stuff
 print $cgi->h6({ -align => "center",
 		 onmouseover => "popup('Link description here','yellow')",
@@ -138,7 +138,7 @@ print $cgi->h6({ -align => "center",
 	       "- ".
 	       $cgi->a({ -href => 'http://ka-tools.sourceforge.net'},
 		       "Monika").
-	       " - v$version - &copy;".
+	       " - &copy;".
 	       $cgi->a({ -href => 'http://www-id.imag.fr'},
 		       'Laboratoire d\'Informatique de Grenoble').
 	       " -"
