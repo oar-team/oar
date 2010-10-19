@@ -2,16 +2,18 @@ slurm_install:
  - munge_config:
    - exec_chroot: /usr/sbin/create-munge-key
  - slurm_install:
-   #- exec_chroot: wget $$slurm_repository/$$slurm_version.tar.bz2
-   #- exec_chroot: tar xvjf $$slurm_version.tar.bz2 -C .
-   #- exec_current: $$chroot/$$slurm_version/configure
-   #- exec_current: cd $$chroot/$$slurm_version/ ; make
-   #- exec_chroot: cd $$slurm_version/ ; make install
+   - exec_chroot: apt-get update
+   - exec_chroot: apt-get -f install -y --force-yes build-essential libreadline6-dev gcc python gawk
+   - exec_chroot: wget $$slurm_repository/$$slurm_version.tar.bz2
+   - exec_chroot: tar xvjf $$slurm_version.tar.bz2 -C .
+   - exec_chroot: bash -c "cd /$$slurm_version/ ; ./configure --enable-multiple-slurmd"
+   #- exec_current: cd $$chroot/$$slurm_version/ ; ./configure --enable-multiple-slurmd
+   - exec_chroot: bash -c "cd /$$slurm_version/ ; make"
+   - exec_chroot: bash -c "cd /$$slurm_version/ ; make install"
    - exec_chroot: useradd slurm
    - exec_chroot: usermod -p \$1\$KkIWr.cK\$cue3GT8UYBVfEVIvMCBLF0 slurm
-   - exec_chroot: apt-get update
-   #- exec_chroot: apt-get -f install -y --force-yes slurm-llnl slurm-llnl-basic-plugins slurm-llnl-basic-plugins-dev slurm-llnl-doc slurm-llnl-slurmdbd slurm-llnl-sview
    - exec_chroot: mkdir /etc/slurm-llnl
+   - exec_chroot: mkdir /var/log/slurm
    - write_file:
      - /etc/slurm-llnl/slurm.conf
      - |
@@ -57,9 +59,9 @@ slurm_install:
        #SallocDefaultCommand=
        SlurmctldPidFile=/var/run/slurmctld.pid
        SlurmctldPort=6817
-       SlurmdPidFile=/var/run/slurmd.pid
+       #SlurmdPidFile=/var/run/slurmd.pid
        SlurmdPort=6818
-       SlurmdSpoolDir=/tmp/slurmd
+       #SlurmdSpoolDir=/tmp/slurmd
        SlurmUser=slurm
        #SrunEpilog=
        #SrunProlog=
@@ -146,7 +148,14 @@ slurm_install:
        SlurmctldDebug=9
        SlurmctldLogFile=/var/log/slurmctldlog
        SlurmdDebug=9
-       SlurmdLogFile=/var/log/slurmdlog-%h
+       #SlurmdLogFile=/var/log/slurmdlog-%h
+
+       ##### Multi daemon
+       SlurmdLogFile=/var/log/slurm/slurmd.%n.log
+       SlurmdPidFile=/var/run/slurmd.%n.pid
+       SlurmdSpoolDir=/var/spool/slurmd.%n
+       #####
+
        #
        #
        # POWER SAVE SUPPORT FOR IDLE NODES (optional)
@@ -164,12 +173,18 @@ slurm_install:
        #
        #
        # COMPUTE NODES     
+   - exec_chroot: bash -c "ln -s /etc/slurm-llnl/slurm.conf /usr/local/etc/slurm.conf"
    - append_file:
      - /etc/slurm-llnl/slurm.conf
      - |
-       NodeName=$$network_hostname Procs=2 RealMemory=2000 Sockets=1 CoresPerSocket=2 ThreadsPerCore=1 State=IDLE
-       PartitionName=local Priority=1 Nodes=$$network_hostname Default=YES MaxTime=INFINITE State=UP
-   - exec_chroot: apt-get -f install -y --force-yes slurm-llnl slurm-llnl-basic-plugins slurm-llnl-basic-plugins-dev slurm-llnl-doc slurm-llnl-slurmdbd slurm-llnl-sview
+       #NodeName=$$network_hostname Procs=2 RealMemory=2000 Sockets=1 CoresPerSocket=2 ThreadsPerCore=1 State=IDLE
+       
+       NodeName=node1 NodeHostname=node1  Port=17001
+       NodeName=node2 NodeHostname=node2  Port=17002
+
+       PartitionName=test Priority=1 Nodes=node1,node2 Default=YES MaxTime=INFINITE State=UP
+       #PartitionName=local Priority=1 Nodes=$$network_hostname Default=YES MaxTime=INFINITE State=UP
+   #- exec_chroot: apt-get -f install -y --force-yes slurm-llnl slurm-llnl-basic-plugins slurm-llnl-basic-plugins-dev slurm-llnl-doc slurm-llnl-slurmdbd slurm-llnl-sview
    - write_file:
      - /etc/init.d/slurm_conf
      - |       
@@ -180,7 +195,10 @@ slurm_install:
          start)
            mkdir /dev/cpuset
            mount -t cpuset none /dev/cpuset 
-           scontrol update NodeName=$$network_hostname State=IDLE
+           /usr/local/bin/scontrol update NodeName=$$network_hostname State=IDLE
+           /usr/local/sbin/slurmctld
+           /usr/local/sbin/slurmd -N node1
+           /usr/local/sbin/slurmd -N node2
            ;;
          stop)
            ;;
