@@ -516,7 +516,15 @@ while (1){
         }elsif ($check_result == 1){
             $state="Scheduler";
         }elsif ($check_result == 0){
-            #Launch the scheduler
+            #Launch the scheduler 
+               # We check Hulot just before starting the scheduler
+               # because if the pipe is not read, it may freeze oar
+               if (defined($energy_pid) && !check_hulot()) {
+                 oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
+                 sleep 5;
+                 ipc_clean();
+                 start_hulot();
+               }
             my $scheduler_result=scheduler();
             if ($scheduler_result == 1){
                 $state="Runner";
