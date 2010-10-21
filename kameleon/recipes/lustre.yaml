@@ -19,7 +19,7 @@ global:
  kernel_arch: "amd64"
  #
  # Extra packages to install on the minimal base system
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty perl e2fsprogs ntp ntpdate lustre-utils"
+ extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty perl e2fsprogs ntp ntpdate lustre-utils lvm2 iozone3"
  #
  # Network configuration
  network_hostname: kameleon

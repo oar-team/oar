@@ -23,3 +23,5 @@ system_config:
        
        auto eth0
        iface eth0 inet dhcp
+ - add_contribs_source:
+   - exec_appliance: perl -pi -e "s/main$/main contrib non-free/" etc/apt/sources.list

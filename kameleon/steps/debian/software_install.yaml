@@ -1,5 +1,6 @@
 software_install:
  - extra_packages:
+   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes update"
    - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install $$extra_packages"
 # - editors:
 #   - exec_chroot: apt-get -y --force-yes install joe
