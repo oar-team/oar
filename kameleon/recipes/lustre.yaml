@@ -11,13 +11,15 @@ global:
  distrib: debian
  debian_version_name: squeeze
  distrib_repository: http://ftp.fr.debian.org/debian/
+ lustre_repository: http://oar.imag.fr/debian/mirrors/pkg-lustre.alioth.debian.org/lustre/
+ lustre_g5kutils_repository: http://oar.imag.fr/debian/lustre/
  #
  # Architecture
  arch: amd64
  kernel_arch: "amd64"
  #
  # Extra packages to install on the minimal base system
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty perl e2fsprogs ntp ntpdate lustre-source lustre-utils linux-patch-lustre kernel-package"
+ extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty perl e2fsprogs ntp ntpdate lustre-utils"
  #
  # Network configuration
  network_hostname: kameleon
@@ -52,9 +54,9 @@ steps:
  - software_install:
    - extra_packages
  - kernel_install:
-   kernel-img_conf
-# - kernel_headers_install
+   - kernel-img_conf
  - lustre_kernel_install
+ - lustre_g5kutils_install
  - checkpoint
 # - breakpoint
  - strip
@@ -62,7 +64,7 @@ steps:
 # - xen_domu
  - build_appliance:
    - clean_udev
-   - save_as_tgz
+#   - save_as_tgz
    - create_raw_image
    - create_nbd_device
    - mkfs
@@ -73,8 +75,9 @@ steps:
    - umount_image
    - save_as_raw
 #   - save_as_vmdk
-   - save_as_qcow2
+#   - save_as_qcow2
 #   - save_as_vdi
 #   - save_as_iso
+ - save_as_g5k
  - clean
 

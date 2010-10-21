@@ -1,25 +1,14 @@
 lustre_kernel_install:
- - apt_config_lenny:
-# Get the 2.6.26 kernel from Lenny as this is the latest working with lustre
-   - exec_appliance: echo "deb http://ftp.fr.debian.org/debian/ lenny main contrib non-free" >> etc/apt/sources.list
+ - lustre_apt_config:
+   - append_file:
+     - /etc/apt/sources.list
+     - |
+       deb $$lustre_repository lenny main
    - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get update"
- - prepare_lenny_kernel_source:
-   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install linux-image-2.6.26-2-amd64 linux-source-2.6.26"
-   - exec_appliance: cd usr/src/ && tar jxf linux-source-2.6.26.tar.bz2
-# Here, we suppose that the 'linux-patch-lustre' pkg has been installed (from extra_packages step)
-   - exec_appliance: cd usr/src/linux-source-2.6.26 && ln -s ../kernel-patches/lustre/series/2.6.26-vanilla.series ./series
-   - exec_appliance: cd usr/src/linux-source-2.6.26 && ln -s ../kernel-patches/lustre/patches .
-# Use 'quilt' to patch the kernel
-   - exec_chroot: bash -c "cd usr/src/linux-source-2.6.26 && quilt push -av"
-# Get the default debian kernel config
-   - exec_appliance: cp boot/config-2.6.26-2-amd64 usr/src/linux-source-2.6.26/.config
-# Don't know why this is missing (maybe added by a lustre patch)
-   - exec_appliance: echo "CONFIG_SD_IOSTATS=y" >> usr/src/linux-source-2.6.26/.config
-# Compiling the kernel
- - make_kpkg:
-   - exec_chroot: bash -c "cd /usr/src/linux-source-2.6.26 && CONCURRENCY_LEVEL=4 make-kpkg --initrd --append-to-version '-lustre' --added-modules=lustre binary-arch modules"
- - clean_orig:
-   - exec_chroot: dpkg -r linux-image-2.6.26-2-amd64 || true
- - install_lustre_kernel:
-   - exec_chroot: dpkg -i /usr/src/linux-image-2.6.26-lustre_2.6.26-lustre-10.00.Custom_amd64.deb 
-
+ - lustre_kernel_install:
+   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install lustre-modules-2.6.27.39+lustre1.8.4+0.credativ.lenny.1 linux-image-2.6.27.39+lustre1.8.4+0.credativ.lenny.1"
+   - append_file:
+     - /etc/modules
+     - |
+       lustre
+       ldiskfs
