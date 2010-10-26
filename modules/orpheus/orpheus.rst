@@ -31,7 +31,7 @@ Installation:
  Note: execute following commands as oar user
  * cd /usr/lib/oar/
  * mv runner orig.runner
- * touch /tmp/orpheus_signal_sender
+ * sudo -u oar touch /tmp/orpheus_signal_sender
  * ln -s /tmp/orpheus_signal_sender runner
  * in oar.conf you must stop periodic node checking by setting FINAUD_FREQUENCY="0"
  

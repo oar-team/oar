@@ -19,12 +19,10 @@ signal_oarexec($$$$$$$) dans oar_Tools.pm et modifier leon.pl pour l'appeler
 * Readme
 * oar.conf
 * Best effort / kill job
-* test
-* oar.lua
+* tests (à la oar_api rspec)
+* use of oar.lua
 * kameleon step
 * simple I/O contention/perturbation simulation
-
-DONE:
 
 
 I/O contention/perturbation simulation
@@ -47,9 +45,14 @@ require "luasql.mysql"
 chronos = {} -- array to keep end of execution time of jobs 
 io_jobs = {} -- tables of job with io activities
 io_model = "linear" -- NOT USET YET, in the eventually of mutiple io models
-io_capacity = 10 -- option argument ???
+io_capacity = 10 -- TODO: option argument ???
+io_workload = 0 -- current global io workload
+next_io_workload = 0  -- to store the next io_worload value due to new or terminated io jobs 
+                      -- (simple model constant io workload per job)
 
 default_walltime  = 10
+
+tmp_job = {} -- store temparaly job's parameter/desciption from oar's db
 
 t0 = os.time()
 
@@ -81,19 +84,39 @@ function rows (connection, sql_statement)
   end
 end
 
-function asplit(text, start )
-  local s,e,word = string.find(text, "(%S+)", start or 1)
-  if s then return word, split(text, e+1); end
+
+--
+-- copy table function from lua-users.oar/wiki
+-- http://lua-users.org/wiki/CopyTable
+-- TODO: move to oar.lua
+--
+function deepcopy(object)
+    local lookup_table = {}
+    local function _copy(object)
+        if type(object) ~= "table" then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local new_table = {}
+        lookup_table[object] = new_table
+        for index, value in pairs(object) do
+            new_table[_copy(index)] = _copy(value)
+        end
+        return setmetatable(new_table, getmetatable(object))
+    end
+    return _copy(object)
 end
 
-function asplit(str)
+
+function asplit(str) -- TODO: not use, move to oar.lua
   local t = {}
   local function helper(word) table.insert(t, word) return "" end
   if not str:gsub("%w+", helper):find"%S" then return t end
 end
 
 
-function split(text, start)
+function split(text, start) -- TODO: not use, move to oar.lua
   local s,e,word = string.find(text, "(%S+)", start or 1)
   if s then return word, split(text, e+1); end
 end
@@ -119,56 +142,55 @@ end
 function get_jobs()
   local job_ids = ""
   local execution_time = default_walltime
-  local command, arg_time 
-  local next_io_workload = io_workload
-  local ts = os.time() - t0 
-  -- orpheus start_time for this get jobs cycle be carefull of SQL processing time it'll include in global time job execution 
+  local delta_io_workload = 0 -- io_worload evolution due to new or terminated jobs
+  local new_io_jobs = false
+  local ts = os.time() - t0 -- orpheus start_time for this get jobs cycle 
+                            -- be carefull of SQL processing time it'll include in global time job execution 
   for row in rows(con,"SELECT job_id, command from jobs WHERE state='toLaunch'") do
+    local job = {}
     job_id = row[1]
     job_ids = job_ids .. job_id .. ','
-    -- determine the execution time (if no arg_time take command as execution time else command
+    -- determine the execution time 
     if row[2] then
       -- options is set as valid lua table in place cli argument testio {exec_time=1234,io=1,io_workload=1, io_sensivity=1 ...} 
       local f,l,opts = string.find(row[2], ".%S+%s(.*)")
       if opts then
-        loadstring("job = " .. opts)
+        print("OPTS: "..opts)
+        assert(loadstring("tmp_job = " .. opts))()
+        --assert(loadstring("tmp_job =".."{exec_time=5}"))()
+        job = deepcopy(tmp_job)
+        if job.exec_time then 
+          execution_time = job.exec_time
+        end
       end
     end
---[[  
-      command, arg_time = split(row[2])
-      if arg_time then
-        execution_time = arg_time
-      else
-        execution_time = command
-      end
-    end
-]]--
-
-    local i = ts + execution_time 
-    if not chronos[i] then chronos[i] = {} end
-    -- job id insert in stop_time
-    chronos[i][#chronos[i]+1] = job_id
-    -- job is running now !!!
-    nb_launched_jobs = nb_launched_jobs + 1
     
-    -- if  this job is one with I/O requirements
+    --  this job is one with I/O requirements
     if job.io then
       new_io_jobs = true
       --   ad to I/O list job
       io_jobs[job_id] = job
       io_jobs[job_id].t_prev = ts -- save time where work and io perturbation have been updated 
       io_jobs[job_id].work = 0 -- work which had been executed (normalized to 1 unit per second) 
-      -- compute new I/O contention 
-      next_io_workload = next_io_workload + job.io_workload 
+      -- add job's I/O workload contribution 
+      delta_io_workload = delta_io_workload + job.io_workload 
+    else
+      local i = ts + execution_time
+      if not chronos[i] then chronos[i] = {} end -- initialize slot end_time if needed
+      -- job id insert in slot end_time
+      chronos[i][#chronos[i]+1] = job_id
     end
+
+    nb_launched_jobs = nb_launched_jobs + 1
+    
   end
   job_ids = string.sub(job_ids, 1, -2) --chomp the last ','
 
   if new_io_jobs then
-    -- update io_workload
-    --    io_workload = next_io_workload -- TODO: ??? false ??? 
-    -- update IO/jobs terminating time
-    update_io_jobs_exection_time()
+    print("new_io_jobs")
+    -- update next io_workload
+    next_io_workload = io_workload + delta_io_workload 
+    update_io_jobs_execution_time()
   end 
 
   -- set job running
@@ -177,36 +199,50 @@ function get_jobs()
   assert (con:execute("UPDATE jobs SET state='Running' WHERE job_id IN ("..job_ids..')'))
 end
 
-function update_io_jobs_exection_time()
+function update_io_jobs_execution_time()
   tc = os.time() - t0
-  for j_id,job in ipairs(io_jobs) do
+  print("update_io_job")
+  print("io_workload: ".. io_workload)
+  print("next_io_workload: ".. next_io_workload)
+
+  for j_id,job in pairs(io_jobs) do
+
+    print("io_jobid: "..j_id)
+    
     -- for linear model
     local executed_work = (tc - job.t_prev)
-    if io_capacity < io_workload then
+    job.t_prev = tc -- for the next compute of executed work step
+
+    -- proportional slowdown if io_workload had exceeded IO system's capacity
+    if io_workload > io_capacity then 
       executed_work = executed_work * (io_capacity / io_workload) 
     end
+    job.work = job.work + executed_work -- update executed work
     
-    io_jobs[j_id].work = io_jobs[j_id].work + executed_work
-    
-    io_workload = next_io_workload
-    -- compute new ending time TODO test is new_remaning_time > 0
-    local new_remaning_time = job.exec_time - executed_work
-    if io_capacity < io_workload then
-      new_terminating_time = (job.exec_time - executed_work) * (io_capacity / io_workload)
+
+    -- compute new ending time 
+    local new_remaning_time = job.exec_time - job.work
+    if next_io_workload > io_capacity then
+      new_remaning_time = (job.exec_time - job.work) * (next_io_workload / io_capacity)
     end
-    
+
+    print("remainng time:".. new_remaning_time)
+
     if new_remaning_time > 0 then -- new insert in chronos old one will be ignored at expiration time  
       local i =  new_remaning_time + tc
+      if not chronos[i] then chronos[i] = {} end -- initialize slot end_time if needed
       chronos[i][#chronos[i]+1] = j_id
-      io_jobs[j_id].ending_time = i
+      job.ending_time = i -- used to test the job's ending
     else
       -- TODO Do we have a trouble ?
       print("warning (new_remaning_time =< 0) something dirty is happen with iojob: "..j_id)
     end
-  end   
+  end
+  io_worlkload = next_io_workload
 end
 
 function terminated_jobs()
+  local delta_io_workload = 0 -- io_worload evolution due to new or terminated jobs
   local n1 = os.time() - t0
   local terminated_jobs = 0
   local terminated_job_ids = ""
@@ -214,26 +250,31 @@ function terminated_jobs()
     local next_io_workload = io_workload
     local io_jobs_terminated = false
     if chronos[i] then
-      for k,v in ipairs(chronos[i]) do
-        if io_jobs[v] then
-          if i == io_jobs[j_id].ending_time then -- io job terminated
+      for k,j_id in ipairs(chronos[i]) do
+        if io_jobs[j_id] then
+          local job = io_jobs[j_id]
+          if i == job.ending_time then -- io job terminated
             io_jobs_terminated = true
-            -- next io_worload / ended_io_job
-            next_io_workload = next_io_workload - io_jobs[j_id].io_workload
+            -- remove job's io_workload 
+            delat_io_workload = delta_io_workload - job.io_workload
             io_jobs[j_id] = nil -- remove io_job from the list
-            print("terminated job_id: ",v,"i:",i)
-            terminated_job_ids = terminated_job_ids  .. v .. ','
+            print("terminated job_id: ",j_id,"i:",i)
+            terminated_job_ids = terminated_job_ids  .. j_id .. ','
             terminated_jobs = terminated_jobs + 1
           end
         else 
-          print("terminated job_id: ",v,"i:",i)
-          terminated_job_ids = terminated_job_ids  .. v .. ','
+          print("terminated job_id: ",j_id,"i:",i)
+          terminated_job_ids = terminated_job_ids  .. j_id .. ','
           terminated_jobs = terminated_jobs + 1
         end
       end
       chronos[i] = nil --bye bye job_ids 
     end
-    if io_jobs_terminated then update_io_jobs_exection_time(); end
+    if io_jobs_terminated then 
+      -- update next io_workload
+      next_io_workload = io_workload + delta_io_workload
+      update_io_jobs_execution_time()
+    end
   end
   n_last = n1
   if terminated_jobs ~= 0 then
