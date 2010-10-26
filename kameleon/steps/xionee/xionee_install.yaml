@@ -1,0 +1,8 @@
+xionee_install:
+ - xionee_install:
+   - exec_chroot: svn checkout --username anonsvn --password anonsvn $$cmdctrl_repository --non-interactive --trust-server-cert
+   - exec_chroot: svn checkout --username anonsvn --password anonsvn $$rctrl_repository --non-interactive --trust-server-cert
+   - exec_chroot: svn checkout --username anonsvn --password anonsvn $$xionee_repository --non-interactive --trust-server-cert
+   - exec_chroot: bash -c "cd /cmdctrl/ ; ./setup.rb"
+   - exec_chroot: bash -c "cd /rctrl/ ; ./setup.rb"
+
