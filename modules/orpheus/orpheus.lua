@@ -44,6 +44,7 @@ require "luasql.mysql"
 -- some globals
 chronos = {} -- array to keep end of execution time of jobs 
 io_jobs = {} -- tables of job with io activities
+terminated_io_jobs = {} -- to keep trace of already terminated io_jobs
 io_model = "linear" -- NOT USET YET, in the eventually of mutiple io models
 io_capacity = 10 -- TODO: option argument ???
 io_workload = 0 -- current global io workload
@@ -238,7 +239,7 @@ function update_io_jobs_execution_time()
       print("warning (new_remaning_time =< 0) something dirty is happen with iojob: "..j_id)
     end
   end
-  io_worlkload = next_io_workload
+  io_workload = next_io_workload
 end
 
 function terminated_jobs()
@@ -247,25 +248,29 @@ function terminated_jobs()
   local terminated_jobs = 0
   local terminated_job_ids = ""
   for i=n_last,n1 do
-    local next_io_workload = io_workload
     local io_jobs_terminated = false
     if chronos[i] then
       for k,j_id in ipairs(chronos[i]) do
         if io_jobs[j_id] then
           local job = io_jobs[j_id]
-          if i == job.ending_time then -- io job terminated
+          -- io job terminated
+          if (i == job.ending_time) then
             io_jobs_terminated = true
             -- remove job's io_workload 
-            delat_io_workload = delta_io_workload - job.io_workload
+            delta_io_workload = delta_io_workload - job.io_workload
             io_jobs[j_id] = nil -- remove io_job from the list
+            print("terminated io_job_id: ",j_id,"i:",i)
+            terminated_job_ids = terminated_job_ids  .. j_id .. ','
+            terminated_jobs = terminated_jobs + 1
+
+            terminated_io_jobs[j_id] = true
+          end
+        else
+          if not terminated_io_jobs[j_id] then
             print("terminated job_id: ",j_id,"i:",i)
             terminated_job_ids = terminated_job_ids  .. j_id .. ','
             terminated_jobs = terminated_jobs + 1
           end
-        else 
-          print("terminated job_id: ",j_id,"i:",i)
-          terminated_job_ids = terminated_job_ids  .. j_id .. ','
-          terminated_jobs = terminated_jobs + 1
         end
       end
       chronos[i] = nil --bye bye job_ids 
@@ -273,6 +278,7 @@ function terminated_jobs()
     if io_jobs_terminated then 
       -- update next io_workload
       next_io_workload = io_workload + delta_io_workload
+      print ("iow,n_iow,d_iow", io_workload, next_io_workload, delta_io_workload)
       update_io_jobs_execution_time()
     end
   end
@@ -318,10 +324,13 @@ while true do
 
   terminated_jobs()
   if (k % 10) == 0 then
-    print("nb_launched_jobs: ", nb_launched_jobs, 
-          "nb_terminated_jobs: ", nb_terminated_jobs , 
-          "nb_running_jobs: ", nb_launched_jobs-nb_terminated_jobs,
-          "\nnb_recv_signal/nb_get_jobs", nb_received_signals, nb_get_jobs)
+    print('=========================================================================')
+    print("nb_jobs launched:", nb_launched_jobs, 
+          "terminated: ", nb_terminated_jobs , 
+          "running: ", nb_launched_jobs-nb_terminated_jobs,
+          "\nnb_recv_signal/nb_get_jobs", nb_received_signals, nb_get_jobs,
+          "\nio_workload: ", io_workload)
+    print('=========================================================================')
   end
   k = k +1
 end
