@@ -58,3 +58,8 @@ oar_config:
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=2 -p core=5 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=3 -p core=6 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=3 -p core=7 -p cpuset=0
+ - modify_job_resource_manager:
+   - exec_chroot: mv /etc/oar/job_resource_manager.pl /etc/oar/job_resource_manager.pl.tmp
+   - exec_chroot: sed -e 's/#exit/exit/' /etc/oar/job_resource_manager.pl.tmp > $$chroot/etc/oar/job_resource_manager.pl
+
+
