@@ -11,8 +11,12 @@ esp_install:
    - exec_chroot: chmod 777 /root/tools
    - exec_chroot: chmod 777 /root/tools/$$esp_version
    - exec_chroot: chmod 777 /root/tools/$$esp_version/jobmix
+   - exec_chroot: touch /root/tools/$$esp_version/LOG
+   - exec_chroot: mkdir /root/tools/$$esp_version/logs
    - exec_chroot: chmod 666 /root/tools/$$esp_version/LOG
    - exec_chroot: chmod 777 /root/tools/$$esp_version/logs
    - exec_chroot: bash -c "cd /root/tools ; wget $$esp_repository/disco_utilized_cores"
    - exec_chroot: bash -c "cd /root/tools ; wget $$esp_repository/oarnodes_utilized_cores"
+   - exec_chroot: chmod 777 /root/tools/disco_utilized_cores
+   - exec_chroot: chmod 777 /root/tools/oarnodes_utilized_cores
 
