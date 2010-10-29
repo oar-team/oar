@@ -1,9 +1,9 @@
 xionee_install:
  - xionee_install:
    - exec_chroot: mkdir /root/tools || true
-   - exec_chroot: cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$cmdctrl_repository --non-interactive --trust-server-cert
-   - exec_chroot: cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$rctrl_repository --non-interactive --trust-server-cert
-   - exec_chroot: cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$xionee_repository --non-interactive --trust-server-cert
+   - exec_chroot: bash -c "cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$cmdctrl_repository --non-interactive --trust-server-cert"
+   - exec_chroot: bash -c "cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$rctrl_repository --non-interactive --trust-server-cert"
+   - exec_chroot: bash -c "cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$xionee_repository --non-interactive --trust-server-cert"
    - exec_chroot: bash -c "cd /root/tools/cmdctrl/ ; ./setup.rb"
    - exec_chroot: bash -c "cd /root/tools/rctrl/ ; ./setup.rb"
    - exec_chroot: chmod 777 /root/tools

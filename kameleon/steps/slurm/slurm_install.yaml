@@ -4,8 +4,8 @@ slurm_install:
  - slurm_install:
    #- exec_chroot: apt-get update
    #- exec_chroot: apt-get -f install -y --force-yes build-essential libreadline6-dev gcc python gawk
-   - exec_chroot: cd /root/ ; wget $$slurm_repository/$$slurm_version.tar.bz2
-   - exec_chroot: cd /root/ ; tar xvjf $$slurm_version.tar.bz2 -C .
+   - exec_chroot: bash -c "cd /root/ ; wget $$slurm_repository/$$slurm_version.tar.bz2"
+   - exec_chroot: bash -c "cd /root/ ; tar xvjf $$slurm_version.tar.bz2 -C ."
    - exec_chroot: bash -c "cd /root/$$slurm_version/ ; ./configure --enable-multiple-slurmd"
    - exec_chroot: bash -c "cd /root/$$slurm_version/ ; make"
    - exec_chroot: bash -c "cd /root/$$slurm_version/ ; make install"
