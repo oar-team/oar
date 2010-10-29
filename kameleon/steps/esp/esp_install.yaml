@@ -1,5 +1,6 @@
 esp_install:
  - esp_install:
+   - exec_chroot: chmod 755 /root
    - exec_chroot: mkdir /root/tools || true
    - exec_chroot: bash -c "cd /root/tools ; wget $$esp_repository/$$esp_version.tar.gz"
    - exec_chroot: bash -c "cd /root/tools ; tar xvzf $$esp_version.tar.gz -C ."
