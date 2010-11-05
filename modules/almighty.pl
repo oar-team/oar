@@ -247,6 +247,21 @@ sub start_hulot(){
 sub check_hulot(){
   return kill 0, $energy_pid;
 }
+
+# Clean ipcs
+sub ipc_clean(){
+        open(IPCS,"/proc/sysvipc/msg");
+        my @oar = getpwnam('oar');
+        while (<IPCS>) {
+        my @ipcs=split;
+          if ($ipcs[7] eq $oar[2]) {
+            my $ipc=$ipcs[1];
+            oar_debug("[Almighty] cleaning ipc $ipc\n");
+            `/usr/bin/ipcrm -q $ipc`;
+          }
+        }
+        close(IPCS);
+}
  
 # initial stuff that has to be done
 sub init(){
@@ -442,17 +457,7 @@ while (1){
         oar_debug("[Almighty] kill child process $appendice_pid\n");
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
-        # Clean ipcs
-        open(IPCS,"/proc/sysvipc/msg");
-        my @oar = getpwnam('oar');
-        while (<IPCS>) {
-        my @ipcs=split;
-          if ($ipcs[7] eq $oar[2]) {
-            my $ipc=$ipcs[1];
-            oar_debug("[Almighty] cleaning ipc $ipc\n");
-            `/usr/bin/ipcrm -q $ipc`;
-          }
-        }
+        ipc_clean();
         oar_warn("[Almighty] Stop Almighty\n");
         send_log_by_email("Stop OAR server","[Almighty] Stop Almighty");
         exit(10);
@@ -462,6 +467,7 @@ while (1){
     if (defined($energy_pid) && !check_hulot()) {
       oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
       sleep 5;
+      ipc_clean();
       start_hulot();
     }
 
