@@ -10,6 +10,7 @@ package monika::OAR;
 use strict;
 use warnings;
 use Data::Dumper;
+use monika::Conf;
 use monika::db_io;
 use monika::OARNode;
 use monika::OARJob;
@@ -62,8 +63,10 @@ sub oarnodes {
       $hashInfosJobs{jobs}= \@jobs;
       $hashInfoCurrentNodeRessources{$currentRessource}= \%hashInfosJobs;
     }
-    my $node= new monika::OARNode($currentNode, \%hashInfoCurrentNodeRessources);
-    $self->allnodes()->{$node->displayname} = $node;
+    if ( $currentNode =~ monika::Conf::myself()->nodenameRegex() ) {
+      my $node= new monika::OARNode($currentNode, \%hashInfoCurrentNodeRessources);
+      $self->allnodes()->{$node->displayname} = $node;
+    }
   }
   monika::db_io::dbDisconnect($dbh);
 }

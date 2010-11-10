@@ -25,7 +25,7 @@ my $conf = monika::Conf->new;
 if ( defined $file and -r $file) {
   $conf->parse($file);
 } elsif (-r "$Oardir/$basename.conf") {
-  $conf->parse("$Oardir/monika.conf");
+  $conf->parse("$Oardir/$basename.conf");
 } elsif (-r "./$basename.conf") {
   $conf->parse("./$basename.conf");
 } elsif (-r "/etc/$basename.conf") {
