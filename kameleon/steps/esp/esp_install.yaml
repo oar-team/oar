@@ -1,6 +1,5 @@
 esp_install:
  - esp_install:
-   - exec_chroot: chmod 755 /root
    - exec_chroot: mkdir /root/tools || true
    - exec_chroot: bash -c "cd /root/tools ; wget $$esp_repository/$$esp_version.tar.gz"
    - exec_chroot: bash -c "cd /root/tools ; tar xvzf $$esp_version.tar.gz -C ."
@@ -16,8 +15,8 @@ esp_install:
    - exec_chroot: mkdir /root/tools/$$esp_version/logs
    - exec_chroot: chmod 666 /root/tools/$$esp_version/LOG
    - exec_chroot: chmod 777 /root/tools/$$esp_version/logs
-   - exec_chroot: bash -c "cd /root/tools ; wget $$esp_repository/disco_utilized_cores"
-   - exec_chroot: bash -c "cd /root/tools ; wget $$esp_repository/oarnodes_utilized_cores"
-   - exec_chroot: chmod 777 /root/tools/disco_utilized_cores
-   - exec_chroot: chmod 777 /root/tools/oarnodes_utilized_cores
+   - exec_chroot: bash -c "cd /usr/local/bin ; wget $$esp_repository/disco_utilized_cores"
+   - exec_chroot: bash -c "cd /usr/local/bin ; wget $$esp_repository/oarnodes_utilized_cores"
+   - exec_chroot: chmod 777 /usr/local/bin/disco_utilized_cores
+   - exec_chroot: chmod 777 /usr/local/bin/oarnodes_utilized_cores
 

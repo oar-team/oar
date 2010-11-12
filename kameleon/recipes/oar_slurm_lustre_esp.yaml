@@ -85,8 +85,6 @@ steps:
    - slurm_install
    - write_conf_file
  - esp/esp_install
- ##- esp/create_oar_pm
- ##- esp/create_slurm_pm
  - xionee/xionee_install
  - autologin
  - strip

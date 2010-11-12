@@ -1,6 +1,5 @@
 xionee_install:
  - xionee_install:
-   - exec_chroot: chmod 755 /root
    - exec_chroot: mkdir /root/tools || true
    - exec_chroot: bash -c "cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$cmdctrl_repository --non-interactive --trust-server-cert"
    - exec_chroot: bash -c "cd /root/tools ; svn checkout --username anonsvn --password anonsvn $$rctrl_repository --non-interactive --trust-server-cert"
