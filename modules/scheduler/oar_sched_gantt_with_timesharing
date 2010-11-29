@@ -300,12 +300,12 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             foreach my $r (iolib::get_resources_that_will_be_out($base, iolib::get_date($base) + $duration)){
                 vec($alive_resources_vector, $r->{resource_id}, 1) = 0;
             }
-            my $str_tmp = "state_num ASC, available_upto DESC";
-            if (defined($Order_part)){
-                $Order_part = $str_tmp.",".$Order_part;
-            }else{
-                $Order_part = $str_tmp;
-            }
+            #my $str_tmp = "state_num ASC, available_upto DESC";
+            #if (defined($Order_part)){
+            #    $Order_part = $str_tmp.",".$Order_part;
+            #}else{
+            #    $Order_part = $str_tmp;
+            #}
         }
         # CM part
         
