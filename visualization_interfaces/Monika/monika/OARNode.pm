@@ -188,7 +188,7 @@ sub htmlTable {
       my $available_upto = $self->{Ressources}->{$currentRessource}->{infos}->{available_upto};
       if(defined($available_upto) && $available_upto ne '0'){
         my $now= `date +%s`;
-        if($now < $available_upto){
+        if($now < $available_upto && $available_upto ne '2147483647'){
           $output .= $cgi->colorTd("StandBy",100/$self->cpus."%");
         }else{
           $output .= $cgi->colorTd("Absent",100/$self->cpus."%");
