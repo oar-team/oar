@@ -41,4 +41,11 @@ io_workload:  0
 =========================================================================
 
 
+create iofs resource
 
+for ((i=0;i<10;i++)) ; do
+  echo "i vaut $i"
+  oarnodesetting -a -h "" -p type=io -p ops=$i
+done
+
+oarsub -l "{type = 'default'}/resource_id=1+{type = 'io'}/resource_id=1, walltime=???" "plop {exec_time=20,io=1,io_workload=10}";

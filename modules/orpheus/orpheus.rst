@@ -30,7 +30,7 @@ Installation:
 
  Note: execute following commands as oar user
  * cd /usr/lib/oar/
- * mv runner orig.runner
+ * mv runner orig.runner #backup the orignal runner script
  * sudo -u oar touch /tmp/orpheus_signal_sender
  * ln -s /tmp/orpheus_signal_sender runner
  * in oar.conf you must stop periodic node checking by setting FINAUD_FREQUENCY="0"
@@ -40,23 +40,34 @@ Installation:
     * cd lua-signal
     * make && make install
 
- * Can be compiled with llvm-lua  
+ * Can be compiled with llvm-lua
 
-Running:
---------
+Running and usage:
+-------------------
 
- * sudo -u oar lua orpheus.lua -> launch the executor
+ Launch the orpheus daemon. It's needed before first submition either some resources will be suspected.
+ * sudo -u oar lua orpheus.lua
+
+ Submit a fake script (yop) with default resource requirement (depending of actual oar configuration oar.conf or/and admission rules). 
+The fake yop script does not exist. 
+ * oarsub yop 
+
+ Submit a fake script with its execution time specified in second and one node required
+ * oarsub -l nodes=1 "yop {exec_time=100}"  
+
+ Submit a fake script with execution time and io settings, io=1 to indicate the job is an io one and io workload paramter according to io model.
+ * oarsub "yop {exec_time=10,io=1,io_workload=20}"
 
 Todo:
 -----
 
  * Support Killing job (for best effort and enerfy saving)
- * Use of "oarlib.lua" for db, config functions
- * test
- * support Hulot ?
- * install/uninstall(active/unactive?) command
+ * More test
+ * support Hulot (energy saving)?
+ * job and node faults
+ * install/uninstall(active/unactive?) script
  * kameleon step
- * simple I/O simulation
+ * simple I/O simulation (need more test)
 
 Comments, bugs, request:
 ------------------------
