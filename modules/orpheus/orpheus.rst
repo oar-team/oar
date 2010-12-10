@@ -34,6 +34,7 @@ Installation:
  * sudo -u oar touch /tmp/orpheus_signal_sender
  * ln -s /tmp/orpheus_signal_sender runner
  * in oar.conf you must stop periodic node checking by setting FINAUD_FREQUENCY="0"
+ * orpheus.lua and oar.lua must be located in the same directory (oar.lua is in /libs)
  
  * install lua5.1 liblua5.1-socket2
  * as root:
