@@ -4,6 +4,7 @@ OAR CHANGELOG
 version 2.4.4:
 --------------
   - Bugfix: oaradmin rules edition/add was broken 
+  - Bug #11599: missing pingchecker line into Leon
 
 version 2.4.3:
 --------------

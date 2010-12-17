@@ -12,6 +12,7 @@ use Data::Dumper;
 use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use IO::Socket::INET;
 use oar_Tools;
+use ping_checker qw(test_hosts);
 
 # Log category
 set_current_log_category('main');
