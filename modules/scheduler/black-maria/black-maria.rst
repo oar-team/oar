@@ -30,6 +30,7 @@ Todo:
 -----
 * an alpha version ;)
 * more connector
+* support node nodelist with slurm node list grammar ex: dev[0-8,12,13,18-25]
 
 Comments, bugs, request:
 ------------------------

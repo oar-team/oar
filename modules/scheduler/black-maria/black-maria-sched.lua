@@ -29,7 +29,8 @@ user =  7
 function submit_to_jrms(jobs_to_launch)
   local job_ids = {}
   -- TODO must add oardodo user
-  local submit_cmd_part1 = "./sbatch -N"
+  locat oardodo_part = "OARDO_BECOME_USER"..job[user].."; oardodo "
+  local submit_cmd_part1 = "sbatch -N"
   local submit_cmd_part2 = " -l black-maria-pilot.sh "
   for i,job in ipairs(jobs_to_launch) do
     job_ids[i] = job[j_id]
@@ -41,7 +42,8 @@ function submit_to_jrms(jobs_to_launch)
     if oar.conf["BKM_RESOURCE_FACTOR"] then 
       nb_nodes = nb_nodes / oar.conf["BKM_RESOURCE_FACTOR"]
     end
-    local cmd = submit_cmd_part1 .. nb_nodes .. submit_cmd_part2 ..
+    local cmd = oardodo ..
+                submit_cmd_part1 .. nb_nodes .. submit_cmd_part2 ..
                 bkm_sync_host .. " " ..
                 bkm_sync_port .. " " ..
                 job[j_id] .." " ..
@@ -75,11 +77,13 @@ end
 queue = "default"
 if arg[1] then queue = arg[1] end
 
+print("BKM-sched launched with queue: "..queue)
+
 waiting_jobs = oar.get_waiting_jobs_black_maria(queue) 
 dumptable(waiting_jobs)
 
 if #waiting_jobs>0 then
   submit_to_jrms(waiting_jobs)
 else
-  print "BKM-sched: nothing to do"
+  print("BKM-sched: nothing to do")
 end

@@ -10,6 +10,32 @@ else
   bkm_sync_port = oar.conf["BKM_SYNC_PORT"]
 end
 
+-- 
+-- Transform a compact node list as use in Slurm to list of individual nodes
+-- ex: nodes[23,45,50-52] -> [nodes23, node45, node50, node51, node52] 
+-- TODO: this funcion must be move to an helper library
+-- TODO: support different named nodes
+function flatten_nodelist(nodelist_compact)
+  x,y,node,desc =  nodelist_compact:find("^(%S+)%[(%S+)%]")
+  if not x then
+    return {node}
+  end
+  d = oar.tsplit(desc:gsub(","," "))
+
+  local nodelist = {}
+  for i,n in ipairs(d) do
+    x,y, b,e = n:find("(%d+)-(%d+)")
+    if x then
+      for i=b,e,1 do
+        nodelist[#nodelist+1]=node..i
+      end
+    else
+      nodelist[#nodelist+1]=node..n
+    end
+  end
+  return nodelist
+end
+
 function notify_almighty()
   local client = socket.connect(oar.conf["SERVER_HOSTNAME"],oar.conf["SERVER_PORT"])
   client:send("Scheduling\n")
@@ -30,8 +56,9 @@ function handler(c, host, port)
   
   print(job_info.nodes_file)
  
-
   -- read JRMS' node file and build resource id list
+  -- TODO:  SLURM_JOB_NODELIST= lx[15,18,32-33] -> use flatten_nodelist
+
   resource_ids = {}
   k = 1
   local f = assert(io.open(job_info.nodes_file, "r"))
