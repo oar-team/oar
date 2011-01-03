@@ -633,6 +633,8 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
               }else{
                 oar_error("[Hulot] could not open $runtime_directory/hulot_status.dump for writing!");
               }
+              close(FIFO);
+              unlink $FIFO;
               exit(42);
             }
         }
