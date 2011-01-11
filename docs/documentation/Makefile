@@ -1,5 +1,5 @@
 #!/usr/bin/make
-#Under Debian or Ubuntu you must install the package "python-docutils"
+#Under Debian or Ubuntu you must install the package "python-docutils tetex-latex-recommended texlive-fonts-recommended make"
 
 all: doc-admin doc-user doc-usecases doc-api doc-devel
 	
