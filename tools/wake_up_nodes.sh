@@ -1,7 +1,6 @@
 #!/bin/bash
 # Sample script for energy saving (wake-up)
 
-set -e
 IPMI_HOST="admin"
 POWER_ON_CMD="cpower --up --quiet"
 
