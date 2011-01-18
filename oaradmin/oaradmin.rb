@@ -89,17 +89,19 @@ class CLI
 
       $cmd_user = []
       $oar_cmd = ""
+      $resources = []
 
       $list_resources_id=[]	 	# contains the list of resources to delete
 
       # Options for parsing
       $options = {}
       $options[:auto_offset] = false
+      $options[:yaml] = false
       $options[:add] = $options[:select] = $options[:property] = $options[:delete] = $options[:commit] = false
       $options[:cpusetproperty] = false
       $options[:cpusetproperty_name] = ""
       opts = OptionParser.new do |opts|
-        opts.banner = "Usage: oaradmin resources [-a [--cpusetproperty=prop][-p] [--auto-offset]] [-s -p] [-d] [-c]"
+        opts.banner = "Usage: oaradmin resources [-a [--cpusetproperty=prop][-p] [--auto-offset] [--yaml]] [-s -p] [-d] [-c]"
 
         # add resources
         opts.on("-a","--add","Add new resources") do
@@ -111,6 +113,14 @@ class CLI
           ARGV.delete("--auto-offset")	# CR: avoid crappy errors in following code since options are actually parsed at least 3 times... Don't want to mess with that.
           $options[:auto_offset] = true
         end
+
+        # yaml export
+        opts.on("-Y","--yaml", "Export yaml datastructure instead of oarnodesetting commands") do
+          $options[:yaml] = true
+          ARGV.delete("--yaml")	# BB: avoid crappy errors... same thing as CR ;-)
+          ARGV.delete("-Y")	# BB: avoid crappy errors... same thing as CR ;-)
+        end
+
 
         # cpusetproperty
         opts.on("--cpusetproperty=prop","Property name for cpuset numbers") do |opt|
@@ -216,7 +226,9 @@ class CLI
         # Properties exists in OAR database ?
         Resources.properties_exists
 
-        Resources.tree 1, $oar_cmd
+        Resources.tree 1, $oar_cmd, {}
+
+        puts YAML.dump($resources) if $options[:yaml]
 
       end 	# if $options[:add]
 

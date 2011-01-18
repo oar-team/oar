@@ -12,6 +12,16 @@ version 2.5.0:
     minimized, but it is still there (DBD::Pg bug)
   - Almighty cleans ipcs used by oar on exit 
   - Bugfix #10641 and #10999 : Hulot is automatically and periodically restarted
+  - Feature request #10565: add the possibility to check the aliveness of the
+    nodes of a job at the end of this one (pingchecker) 
+  - REST API heavily updated: new data structures with paginated results, desktop
+    computing functions, rspec tests, oaradmin resources management, admission
+    rules edition
+  - New ruby desktop computing agent using REST API (experimental)
+  - Experimental testsuite
+  - Poar: web portal using the REST API (experimental)
+  - Oaradmin YAML export support for resources creation (for the REST API)
+  - New OCAML scheduler (experimental)
 
 version 2.4.3:
 --------------

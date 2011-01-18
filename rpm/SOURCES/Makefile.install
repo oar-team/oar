@@ -60,7 +60,7 @@ pkginstall:
                 OARDIR=/usr/lib/oar \
                 BINDIR=/usr/bin \
                 SBINDIR=/usr/sbin
-	$(MAKE) draw-gantt monika www-conf\
+	$(MAKE) draw-gantt monika poar www-conf\
                 DESTDIR=$(CURDIR)/$(BUILDDIR)/oar-web-status \
 		OARUSER=oar \
 		OAROWNER=root \

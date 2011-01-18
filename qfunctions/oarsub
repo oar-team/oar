@@ -697,7 +697,7 @@ if (($Interactive == 1) and ($Reservation ne "0")){
 if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     warn("/!\\ A desktop computing job cannot be interactive.\n");
     usage();
-    exit(10);
+    exit(17);
 }
 
 if (defined($notify) && $notify =~ m/\s*exec:(.+)$/m){

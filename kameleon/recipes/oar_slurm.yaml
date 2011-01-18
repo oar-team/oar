@@ -45,31 +45,31 @@ global:
  slurm_repository: "http://downloads.sourceforge.net/project/slurm/under_development"
  slurm_version: "slurm-2.2.0-0.pre10"
 steps:
-# - debian_check_deps
-# - check_deps:
-#   - rsync
-#   - building_appliance
-#   - building_kvm_images
-# - oar/oar_precheck
- - checkpoint_resume
-# - bootstrap
-# - system_config
-# - root_passwd
-# - mount_proc
-# - software_install:
-#   - extra_packages
-# - kernel_install
+ - debian_check_deps
+ - check_deps:
+   - rsync
+   - building_appliance
+   - building_kvm_images
+ - oar/oar_precheck
+# - checkpoint_resume
+ - bootstrap
+ - system_config
+ - root_passwd
+ - mount_proc
+ - software_install:
+   - extra_packages
+ - kernel_install
 # - checkpoint
-# - oar/oar_debian_install
-# - oar/oar_system_config
-# - oar/oar_config
-# - oar/oar_devel
-# - oar/oar_clean
+ - oar/oar_debian_install
+ - oar/oar_system_config
+ - oar/oar_config
+ - oar/oar_devel
+ - oar/oar_clean
 # - checkpoint
  - slurm/slurm_install
  - autologin
  - strip
-# - umount_proc
+ - umount_proc
 # - xen_domu
 # - oar/oar_build_tgz
  - build_appliance:

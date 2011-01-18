@@ -1,3 +1,58 @@
+oar (2.5.0-0~94.gbpaa89bc_all.deb) UNRELEASED; urgency=low
+
+  * Dummy version upgrade to sync with daily snapshots  
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 01 Oct 2010 13:27:27 +0200
+
+oar (2.5.0-0ubuntu3) lucid; urgency=low
+
+  [ tpresa ]
+  * New release automaticaly created by git-build-package.sh
+
+  [ root ]
+
+ -- root <root@tpresa-desktop>  Thu, 30 Sep 2010 14:02:52 +0200
+
+oar (2.5.0-0ubuntu2) lucid; urgency=low
+
+  [ tpresa ]
+  * New release automaticaly created by git-build-package.sh
+
+  [ root ]
+
+ -- root <root@tpresa-desktop>  Thu, 30 Sep 2010 13:59:20 +0200
+
+oar (2.5.0-0ubuntu1) lucid; urgency=low
+
+  [ tpresa ]
+  * New release automaticaly created by git-build-package.sh
+
+  [ root ]
+
+ -- root <root@tpresa-desktop>  Thu, 30 Sep 2010 13:58:08 +0200
+
+oar (2.5.0-0) lucid; urgency=low
+
+  [ Bruno Bzeznik ]
+  ** SNAPSHOT build @86d00c945e2c9532993519813349cad31544a1a6 **
+
+  * Dummy version upgrade to sync with daily snapshots
+
+  [ bzizou ]
+  * Fixed agent package (hope2)
+
+  [ tpresa ]
+
+ -- tpresa <tpresa@tpresa-desktop>  Thu, 30 Sep 2010 13:57:34 +0200
+
+oar (2.5.0-0~2.gbp86d00c) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @86d00c945e2c9532993519813349cad31544a1a6 **
+
+  * Added poar installation and packaging (into oar-web-status)
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 17 Jun 2010 15:31:44 +0200
+
 oar (2.5.0-0~1.gbp2188d3) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @2188d3b1f36ddb1a8b709bd01b529b70cd5c5519 **

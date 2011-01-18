@@ -157,7 +157,6 @@ slurm_install:
        SlurmdPidFile=/var/run/slurmd.%n.pid
        SlurmdSpoolDir=/var/spool/slurmd.%n
        #####
-
        #
        #
        # POWER SAVE SUPPORT FOR IDLE NODES (optional)
@@ -209,4 +208,3 @@ slurm_install:
        exit 0
    - exec_chroot: chmod +x /etc/init.d/slurm-server-conf
    - exec_chroot: update-rc.d slurm-server-conf defaults
-

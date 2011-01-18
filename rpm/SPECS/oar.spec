@@ -1,6 +1,6 @@
 # $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
 %define version 2.5.0
-%define release 2
+%define release 3
 
 Name: 		oar
 Version:        %{version}
@@ -94,7 +94,7 @@ This package installs some useful tools to help the administrator of a oar serve
 %package desktop-computing-agent
 Summary:        OAR desktop computing agent
 Group:          System/Servers
-Requires:	perl-libwww-perl, perl-URI
+Requires:	oar-common = %version-%release, ruby
 BuildArch:	noarch
 %description desktop-computing-agent
 This package install the OAR batch scheduler desktop computing agent
@@ -393,6 +393,8 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 %changelog
+* Thu Jun 17 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.5.0-3
+- added poar
 
 * Thu Apr 01 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.5.0-1
 - started 2.5.0 packaging

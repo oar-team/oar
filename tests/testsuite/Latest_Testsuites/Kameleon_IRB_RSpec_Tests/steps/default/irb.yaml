@@ -1,0 +1,15 @@
+irb:
+ - create_pipes:
+     - exec_appliance: mkfifo irb_stdout
+     - exec_appliance: mkfifo irb_stdin
+     - exec_appliance: mkfifo irb_stderr
+ - start:
+     - exec_appliance: irb <irb_stdin >irb_stdout &
+     - exec_appliance: IRB_PID=$!
+ - bash_function:
+     - exec_appliance: function write_irb(){ echo "$1" > irb_stdin; }
+ - clean:
+     - exec_appliance: echo "kill $IRB_PID" >> $$workdir/clean.sh
+     - exec_appliance: echo "rm -f $$workdir/chroot/irb_stdout" >> $$workdir/clean.sh
+     - exec_appliance: echo "rm -f $$workdir/chroot/irb_stdin" >> $$workdir/clean.sh
+     - exec_appliance: echo "rm -f $$workdir/chroot/irb_stderr" >> $$workdir/clean.sh

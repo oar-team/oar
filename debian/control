@@ -56,7 +56,7 @@ Description: OAR batch scheduler Gantt reservation diagram
 
 Package: oar-desktop-computing-agent
 Architecture: all
-Depends: ${perl:Depends}, libwww-perl, liburi-perl
+Depends: ruby, oar-common (= ${binary:Version}), libjson-ruby, librestclient-ruby, libdaemons-ruby
 Suggests: oar-doc
 Description: OAR desktop computing agent
  This package install the OAR batch scheduler desktop computing agent

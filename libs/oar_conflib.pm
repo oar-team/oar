@@ -36,7 +36,7 @@ use warnings;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(init_conf get_conf is_conf dump_conf reset_conf get_conf_with_default_param);
+@EXPORT_OK = qw(init_conf get_conf is_conf dump_conf get_conf_list reset_conf get_conf_with_default_param set_value);
 
 ## the configuration file.
 my $file = undef;
@@ -100,6 +100,11 @@ sub get_conf ( $ ) {
     return $params{$key};
 }
 
+## return the list of configured parameters
+sub get_conf_list () {
+    return (\%params);
+}
+
 ## check if a parameter is defined
 sub is_conf ( $ ) {
     my $key = shift;
@@ -121,6 +126,49 @@ sub reset_conf () {
     $file = undef;
     %params = ();
     return 1;
+}
+
+## set value to a parameter
+sub set_value ($$){
+	my $variable = shift;
+	my $value = shift;
+	my $new_file_content;
+
+    open CONF, $file or die "Open configuration file";
+    %params = ();
+    foreach my $line (<CONF>) {
+      if ($line =~ $regex) {
+        my ($key,$val) = ($1,$2);
+        if ($key eq $variable) {
+        	$new_file_content .= $key."="."\"$value\""."\n";
+        }
+        else {
+        	$new_file_content .= $key."=".$val;
+        }
+      }
+      else {
+      	if (!defined($new_file_content)) {
+      		$new_file_content = $line;
+      	}
+      	else {
+      		$new_file_content.= $line;
+      	}
+      }
+    }
+    close CONF;
+    
+    # writing data in the config file
+    write_config($new_file_content);
+
+    return 1;
+}
+
+## write content in the config file
+sub write_config {
+	my $config_content = shift;
+	open NEW_CONF, ">$file" or die "Open configuration file";
+    print NEW_CONF $config_content;
+    close NEW_CONF;
 }
 
 return 1;

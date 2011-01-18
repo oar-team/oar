@@ -11,11 +11,13 @@ doc-devel: oar-documentation-devel.html
 
 doc-usecases: doc_usecases.html
 
-doc-api: OAR-DOCUMENTATION-API.html
+doc-api: OAR-DOCUMENTATION-API-USER.html OAR-DOCUMENTATION-API-ADMIN.html OAR-DOCUMENTATION-API-DEVEL.html
 
-latex: OAR-DOCUMENTATION-ADMIN.tex OAR-DOCUMENTATION-USER.tex OAR-DOCUMENTATION-API.tex oar-documentation-devel.tex
+latex: OAR-DOCUMENTATION-ADMIN.tex OAR-DOCUMENTATION-USER.tex OAR-DOCUMENTATION-API-USER.tex OAR-DOCUMENTATION-API-ADMIN.tex OAR-DOCUMENTATION-API-DEVEL.tex oar-documentation-devel.tex
 
-pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf OAR-DOCUMENTATION-API.pdf oar-documentation-devel.pdf
+pdf-api: OAR-DOCUMENTATION-API-USER.pdf OAR-DOCUMENTATION-API-ADMIN.pdf OAR-DOCUMENTATION-API-DEVEL.pdf oar-documentation-devel.pdf
+
+pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf pdf-api
 
 %.html: %.rst
 	rst2html -stg $< $@
@@ -28,5 +30,5 @@ pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf OAR-DOCUMENTATION-AP
 	pdflatex $< $@
 
 clean:
-	rm -f *.pdf *.html *.tex *.aux *.log *.out
+	for i in OAR-DOCUMENTATION-ADMIN OAR-DOCUMENTATION-USER OAR-DOCUMENTATION-API-USER OAR-DOCUMENTATION-API-ADMIN OAR-DOCUMENTATION-API-DEVEL doc_usecases; do rm -f $$i.pdf $$i.html $$i.tex $$i.aux $$i.log $$i.out; done
 

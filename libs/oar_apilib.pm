@@ -52,11 +52,22 @@ if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
 sub set_ext($$); # defined later
 my $extension;
 if ( $q->path_info =~ /^$/ ) { $extension = "html"; }
-elsif ( $q->path_info =~ /.*\.(yaml|json|html)$/ ) { $extension = $1; };
+elsif ( $q->path_info =~ /.*\.(yaml|json|html|tgz|tar\.gz)$/ ) { $extension = $1; };
 $extension=set_ext($q,$extension);
 
 # Declared later with REST functions
 sub ERROR($$$);
+
+##############################################################################
+# Output text formating
+##############################################################################
+
+# Inserts html line breaks in a string
+sub nl2br {
+  my $t = shift or return;
+  $t =~ s/(\r\n)/<br \/>/g;
+  return $t;
+}
 
 ##############################################################################
 # Data conversion functions
@@ -148,6 +159,8 @@ sub export($$) {
     return export_json($data)."\n";
   }elsif ( $format eq 'html' ) {
     return export_html($data)."\n";
+  }elsif ( $format eq 'tgz' ) {
+    return export_yaml($data)."\n";
   }else {
     ERROR 406, "Unknown $format format",
       "The $format format is not known.";
@@ -248,11 +261,17 @@ sub get_api_uri_relative_base() {
 sub add_job_uris($$) {
   my $job = shift;
   my $ext = shift;
-  $job->{uri}=apilib::make_uri("/jobs/".$job->{Job_Id},$ext,0);
-  $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
-  $job->{resources_uri}=apilib::make_uri("/jobs/".$job->{Job_Id}."/resources",$ext,0);
-  $job->{resources_uri}=apilib::htmlize_uri($job->{resources_uri},$ext);
+  my $self=apilib::make_uri("/jobs/".$job->{id},$ext,0);
+  $self=apilib::htmlize_uri($self,$ext);
+  my $resources=apilib::make_uri("/jobs/".$job->{id}."/resources",$ext,0);
+  $resources=apilib::htmlize_uri($resources,$ext);
+  my $links;
+  push (@$links, { href => $self, rel => "self" });
+  push (@$links, { href => $resources, rel => "resources" });
+  $job->{links}=$links;
   $job->{api_timestamp}=time();
+  # Don't know why this function breaks the type of the id, so:
+  $job->{"id"}=int($job->{"id"});
 }
 
 # Add uris to a oar job list
@@ -263,11 +282,7 @@ sub add_joblist_uris($$) {
       if (defined($job->{Job_Id}) && !defined($job->{job_id})) {
         $job->{job_id}=$job->{Job_Id};
       }
-      $job->{uri}=apilib::make_uri("/jobs/".$job->{job_id},$ext,0);
-      $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
-      $job->{resources_uri}=apilib::make_uri("/jobs/".$job->{job_id}."/resources",$ext,0);
-      $job->{resources_uri}=apilib::htmlize_uri($job->{resources_uri},$ext);
-      $job->{api_timestamp}=time();
+      add_job_uris($job,$ext);
   }
 }
 
@@ -288,9 +303,7 @@ sub add_jobs_on_resource_uris($$) {
   my $jobs = shift,
   my $ext = shift;
   foreach my $job (@$jobs) {
-    $job->{uri}=apilib::make_uri("/jobs/".$job->{id},$ext,0);
-    $job->{uri}=apilib::htmlize_uri($job->{uri},$ext);
-    $job->{api_timestamp}=time();
+    add_job_uris($job,$ext);
   }
 }
 
@@ -300,17 +313,40 @@ sub add_resources_uris($$$) {
   my $ext = shift;
   my $prefix = shift;
   foreach my $resource (@$resources) {
-    $resource->{uri}=apilib::make_uri("$prefix/resources/".$resource->{resource_id},$ext,0);
-    $resource->{uri}=htmlize_uri($resource->{uri},$ext);
-    $resource->{node_uri}=apilib::make_uri("$prefix/resources/nodes/".$resource->{network_address},$ext,0);
-    $resource->{node_uri}=htmlize_uri($resource->{node_uri},$ext);
-    $resource->{jobs_uri}=apilib::make_uri("$prefix/resources/".$resource->{resource_id}."/jobs",$ext,0);
-    $resource->{jobs_uri}=htmlize_uri($resource->{jobs_uri},$ext);
+    my $links;
+    my $node;
+    if (defined($resource->{network_address})) {
+      $node=apilib::make_uri("$prefix/resources/nodes/".$resource->{network_address},$ext,0);
+      $node=apilib::htmlize_uri($node,$ext);
+      push (@$links, { href => $node, rel => "node" });
+    }
+    my $self=apilib::make_uri("$prefix/resources/".$resource->{resource_id},$ext,0);
+    my $jobs=apilib::make_uri("$prefix/resources/".$resource->{resource_id}."/jobs",$ext,0);
+    $self=apilib::htmlize_uri($self,$ext);
+    $jobs=apilib::htmlize_uri($jobs,$ext);
+    push (@$links, { href => $self, rel => "self" });
+    push (@$links, { href => $jobs, rel => "jobs" });
+    $resource->{links}=$links;
     $resource->{api_timestamp}=time();
+  }
+}
+# Add uris to a list of nodes
+sub add_nodes_uris($$$) {
+  my $nodes = shift;
+  my $ext = shift;
+  my $prefix = shift;
+  foreach my $node (@$nodes) {
+    my $links;
+    my $self=apilib::make_uri("$prefix/resources/nodes/".$node->{network_address},$ext,0);
+    $self=apilib::htmlize_uri($self,$ext);
+    push (@$links, { href => $self, rel => "self" });
+    $node->{links}=$links;
+    $node->{api_timestamp}=time();
   }
 }
 
 # Add uris to resources of a job
+# OBSOLETE!
 sub add_job_resources_uris($$$) {
   my $resources = shift;
   my $ext = shift;
@@ -408,6 +444,48 @@ sub add_gridjob_uris($$) {
  
 }
 
+# Add uris to a single admission rule
+sub add_admission_rule_uris($$) {
+  my $admission_rule = shift;
+  my $ext = shift;
+  $admission_rule->{uri} = apilib::make_uri("/admission_rules/".$admission_rule->{id},$ext,0);
+  $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
+  $admission_rule->{api_timestamp} = time();
+}
+
+# Add uris to an admission rules list
+sub add_admission_rules_uris($$) {
+  my $admission_rules = shift;
+  my $ext = shift;
+
+  foreach my $admission_rule (@$admission_rules) {
+    $admission_rule->{uri} = apilib::make_uri("/admission_rules/".$admission_rule->{id},$ext,0);
+    $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
+    $admission_rule->{api_timestamp} = time();
+  }
+}
+
+# Add uris to a single config parameter
+sub add_config_parameter_uris($$) {
+  my $parameter = shift;
+  my $ext = shift;
+  $parameter->{uri} = apilib::make_uri("/config/".$parameter->{id},$ext,0);
+  $parameter->{uri} = htmlize_uri($parameter->{uri},$ext);
+  $parameter->{api_timestamp} = time();
+}
+
+# Add uris to a config parameters list
+sub add_config_parameters_uris($$) {
+  my $parameters = shift;
+  my $ext = shift;
+
+  foreach my $name (keys %$parameters) {
+    $parameters->{$name}->{uri} = apilib::make_uri("/config/".$name,$ext,0);
+    $parameters->{$name}->{uri} = htmlize_uri($parameters->{$name}->{uri},$ext);
+    $parameters->{$name}->{api_timestamp} = time();
+  }
+}
+
 ##############################################################################
 # Data structure functions
 # (functions for shaping data depending on $STRUCTURE)
@@ -421,26 +499,61 @@ sub struct_empty($) {
 }
 
 # OAR JOB
+sub fix_job_integers($) {
+  my $job = shift;
+  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","submissionTime","scheduledStart") {
+    $job->{$key}=int($job->{$key});
+  }
+  foreach my $event (@{$job->{"events"}}) {
+    $event->{'job_id'}=int($event->{'job_id'});
+    $event->{'event_id'}=int($event->{'event_id'});
+    $event->{'date'}=int($event->{'date'});
+  }
+}
+
 sub struct_job($$) {
   my $job = shift;
   my $structure = shift;
   my $result;
   if    ($structure eq 'oar')    { return $job; }
   elsif ($structure eq 'simple') { 
-    if ($job->{(keys(%{$job}))[0]} ne "HASH") {
-      $job->{id}=$job->{Job_Id};
-      return $job;
-    }else {
-      return $job->{(keys(%{$job}))[0]}; 
-    }}
+    if ($job->{(keys(%{$job}))[0]} eq "HASH") {
+      $job=$job->{(keys(%{$job}))[0]};
+    }
+    fix_job_integers($job);
+    $job->{id}=$job->{Job_Id};
+    delete $job->{Job_Id};
+    $job->{start_time}=$job->{startTime};
+    delete $job->{startTime};
+    $job->{scheduled_start}=$job->{scheduledStart};
+    delete $job->{scheduledStart};
+    $job->{submission_time}=$job->{submissionTime};
+    delete $job->{submissionTime};
+    $job->{type}=$job->{jobType};
+    delete $job->{jobType};
+    $job->{launching_directory}=$job->{launchingDirectory};
+    delete $job->{launchingDirectory};
+    delete $job->{job_user};
+    delete $job->{job_uid};
+    delete $job->{reserved_resources};
+    delete $job->{assigned_resources};
+    delete $job->{assigned_network_address};
+    return $job;
+  }
 }
 
 sub struct_job_list_hash_to_array($) {
   my $jobs=shift;
   my $array=[];
-  foreach my $j ( keys (%{$jobs}) ){
+  foreach my $j ( sort { $a <=> $b } keys (%{$jobs}) ) {
     if (defined($jobs->{$j}->{Job_Id})) {
+      $jobs->{$j}->{id}=int($jobs->{$j}->{Job_Id});
       push (@$array,$jobs->{$j});
+    }
+    else {
+    	$jobs->{$j}->{Job_Id} = int($j);
+    	$jobs->{$j}->{id} = int($j);
+    	push (@$array,$jobs->{$j});
     }
   }
   return $array;
@@ -453,38 +566,42 @@ sub struct_job_list($$) {
   my $result;
   foreach my $job (@$jobs) {
     my $hashref = {
+                  id => int($job->{job_id}),
                   state => $job->{state},
                   owner => $job->{job_user},
                   name => $job->{job_name},
                   queue => $job->{queue_name},
                   submission => $job->{submission_time},
-                  uri => $job->{uri},
-                  resources_uri => $job->{resources_uri},
-                  api_timestamp => $job->{api_timestamp}
+                  api_timestamp => int($job->{api_timestamp}),
+                  links => $job->{links}
     };
     if ($structure eq 'oar') {
       $result->{$job->{job_id}} = $hashref;
     }
     elsif ($structure eq 'simple') {
-      $hashref->{id}=$job->{job_id};
       push (@$result,$hashref);
     } 
   }
   return $result;
 }
 
+
 # OAR JOB LIST WITH DETAILS
+# TODO: need to append "resources" and "nodes" as /jobs/XXX/resources
 sub struct_job_list_details($$) {
   my $jobs = shift;
   my $structure = shift;
   my $result;
   if ($structure eq 'oar') {
     foreach my $job (@$jobs) {
-      $result->{$job->{job_id}} = $job;
+      $result->{$job->{job_id}} = int($job);
     }
   }
   elsif ($structure eq 'simple') {
-      $result=\@$jobs;
+    foreach my $job (@$jobs) {
+      $job=struct_job($job,$structure);
+      push (@$result,$job);
+    }
   } 
   return $result;
 }
@@ -494,31 +611,37 @@ sub struct_job_list_details($$) {
 sub struct_job_resources($$) {
   my $resources=shift;
   my $structure=shift;
-  my $result={};
-  $result->{assigned_resources}=[];
-  $result->{reserved_resources}=[];
-  $result->{assigned_nodes}=[];
-  $result->{job_id}=$resources->{job_id};
-  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    push(@{$result->{assigned_resources}},{resource_id=>$assigned_resource});
+  my $result=[];
+  foreach my $r (@{$resources->{assigned_resources}}) {
+    push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'assigned'});
   }
-  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    push(@{$result->{reserved_resources}},{resource_id=>$reserved_resource});
-  }
-  foreach my $assigned_hostname (@{$resources->{assigned_hostnames}}) {
-    push(@{$result->{assigned_nodes}},{node=>$assigned_hostname});
+  if (ref($resources->{reserved_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{reserved_resources}})) {
+      push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'reserved'});
+    }
   }
   return $result;
 }
+
+sub struct_job_nodes($$) {
+  my $resources=shift;
+  my $structure=shift;
+  my $result=[];
+  foreach my $n (@{$resources->{assigned_hostnames}}) {
+    push(@$result,{'network_address' => $n, 'id' => 0});
+  }
+  return $result;
+}
+
 
 # OAR RESOURCES
 sub filter_resource_list($) {
   my $resources = shift;
   my $filtered_resources;
   foreach my $resource (@$resources) {
-    push(@$filtered_resources,{ resource_id => $resource->{resource_id},
+    push(@$filtered_resources,{ resource_id => int($resource->{resource_id}),
                                 state => $resource->{state},
-                                available_upto => $resource->{available_upto},
+                                available_upto => int($resource->{available_upto}),
                                 network_address => $resource->{network_address}
                               });
   }
@@ -535,7 +658,7 @@ sub struct_resource_list_hash_to_array($) {
     }else{
       foreach my $id ( keys (%{$resources->{$r}})) {
         push (@$array,{ 'state' => $resources->{$r}->{$id},
-                        'resource_id' => $id,
+                        'resource_id' => int($id),
                         'network_address' => $r});
       }
     }
@@ -543,11 +666,24 @@ sub struct_resource_list_hash_to_array($) {
   return $array;
 }
 
+sub struct_resource_list_fix_ints($) {
+  my $resources = shift;
+  foreach my $resource (@$resources)  {
+    if (defined($resource->{resource_id})) { 
+      $resource->{id}=int($resource->{resource_id}); 
+      $resource->{resource_id}=int($resource->{resource_id}); 
+    }
+    if (defined($resource->{available_upto})) { $resource->{available_upto}=int($resource->{available_upto}); }
+    if (defined($resource->{cpuset})) { $resource->{cpuset}=int($resource->{cpuset}); }
+  }
+}
+
 sub struct_resource_list($$$) {
   my $resources = shift;
   my $structure = shift;
   my $compact = shift; # If true, replace a 1 element array by its element
   my $result;
+  struct_resource_list_fix_ints($resources);
   if ($structure eq 'simple') {
     if (scalar @$resources == 1 && $compact == 1) {
       return @$resources[0];
@@ -556,10 +692,42 @@ sub struct_resource_list($$$) {
   }
   elsif ($structure eq 'oar') {
     foreach my $resource (@$resources)  {
-      $result->{$resource->{resource_id}}=$resource;
+      $result->{$resource->{resource_id}}=int($resource);
     }
     return $result; 
   }
+}
+
+
+sub get_list_nodes($) {
+	my $expression = shift;
+	my $pattern = qr{/(node|nodes)=(.*?)(/|$)};
+	my $result;
+	
+	if ($expression =~ /$pattern/) {
+		my $prefix = $1;
+		my $value = $2;
+		if ($value =~ /\{(.+)\}/) {
+			for (my $i=1; $i<=$1; $i++) {
+				push(@$result, $prefix.$i);
+            }  
+        }
+        else {
+        	my @params = split(/,/,$value);
+        	foreach my $param (@params) {
+        		if ($param =~ /\[(\d+)-(\d+)\]/) {
+        			for (my $i=$1; $i<=$2; $i++) {
+        				push(@$result, $prefix.$i);
+        			}
+        		}
+        		else {
+        			push(@$result, $param);
+        		}
+        	}
+        }
+	}
+
+	return $result;
 }
 
 # GRID SITE LIST
@@ -676,6 +844,102 @@ sub struct_gridjob_nodes($$) {
   return \@result;
 }
 
+
+# SINGLE ADMISSION RULE
+sub struct_admission_rule($$) {
+  my $admission_rule = shift;
+  my $structure = shift;
+  my $result;
+  
+  my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
+  my $hashref = {
+                  rule => nl2br($admission_rule->{rule}),
+                  links => $current_rule_link
+    };
+  
+  if ($structure eq 'simple') { 
+  	$hashref->{id} = int($admission_rule->{id});
+    push (@$result,$hashref);
+  }
+  elsif ($structure eq 'oar') {
+  	$result->{$admission_rule ->{id}} = $hashref;
+  }
+  return $result;
+}
+
+
+# LIST OF ADMISSION RULES
+sub struct_admission_rule_list($$) {
+  my $admission_rules = shift;
+  my $structure = shift;
+
+  my $result;
+  foreach my $admission_rule (@$admission_rules) {
+  	my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
+    my $hashref = {
+                  rule => nl2br($admission_rule->{rule}),
+                  links => $current_rule_link
+    };
+    if ($structure eq 'oar') {
+      $result->{$admission_rule ->{id}} = $hashref;
+    }
+    elsif ($structure eq 'simple') {
+      $hashref->{id} = $admission_rule->{id};
+      push (@$result,$hashref);
+    } 
+  };
+
+  return $result;
+}
+
+# CONFIG PARAMETERS
+sub struct_config_parameter($$) {
+  my $parameter = shift;
+  my $structure = shift;
+
+  my $result;
+
+  my $current_rule_link = { href => $parameter->{uri}, rel => "self" };
+  my $hashref = {
+                  id => int($parameter->{id}),
+                  value => $parameter->{value},
+                  links => $current_rule_link
+   };
+   if ($structure eq 'oar') {
+     $result->{$parameter->{id}} = $hashref;
+   }
+   elsif ($structure eq 'simple') {
+     $hashref->{id} = $parameter->{id};
+     push (@$result,$hashref);
+   } 
+
+  return $result;
+}
+
+# LIST OF CONFIG PARAMETERS
+sub struct_config_parameters_list($$) {
+  my $parameters = shift;
+  my $structure = shift;
+
+  my $result;
+  foreach my $param ( keys( %{$parameters} ) ) {
+  	my $current_rule_link = { href => $parameters->{$param}->{uri}, rel => "self" };
+  	my $hashref = {
+                  value => $parameters->{$param}->{value},
+                  links => $current_rule_link
+    };
+    if ($structure eq 'oar') {
+      $result->{$param} = $hashref;
+    }
+    elsif ($structure eq 'simple') {
+      $hashref->{id} = $param;
+      push (@$result,$hashref);
+    } 
+  }
+
+  return $result;
+}
+
 ##############################################################################
 # Content type functions
 ##############################################################################
@@ -688,6 +952,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
+  elsif ($content_type eq "application/x-gzip")  { return "tgz"; }
   #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
   else                                  { return "UNKNOWN_TYPE"; }
 }
@@ -698,6 +963,7 @@ sub get_content_type($) {
   if    ( $format eq "yaml" ) { return "text/yaml"; } 
   elsif ( $format eq "html" ) { return "text/html"; } 
   elsif ( $format eq "json" ) { return "application/json"; } 
+  elsif ( $format eq "tgz" || $format eq "tar.gz" ) { return "application/x-gzip"; } 
   else                        { return "UNKNOWN_TYPE"; }
 }
 
@@ -754,11 +1020,18 @@ sub set_ext($$) {
 # REST Functions
 ##############################################################################
 
+sub HEAD($$);
 sub GET($$);
 sub POST($$);
 sub DELETE($$);
 sub PUT($$);
 sub ERROR($$$);
+
+sub HEAD($$) {
+  ( my $q, my $path ) = @_;
+  if   ( $q->request_method eq 'HEAD' && $q->path_info =~ /$path/ ) { return 1; }
+  else                                                             { return 0; }
+}
 
 sub GET($$) {
   ( my $q, my $path ) = @_;
@@ -944,50 +1217,74 @@ sub check_job_update($$) {
 }
 
 # Check the consistency of a posted oar resource and load it into a hashref
-sub check_resource($$) {
+sub check_resources($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $resource;
+  my $resources;
 
   # content_type may be of the form "application/json; charset=UTF-8"
   ($content_type)=split(/\s*;\s*/,$content_type);
 
   # If the data comes in the YAML format
   if ( $content_type eq 'text/yaml' ) {
-    $resource=import_yaml($data);
+    $resources=import_yaml($data);
   }
 
   # If the data comes in the JSON format
   elsif ( $content_type eq 'application/json' ) {
-    $resource=import_json($data);
+    $resources=import_json($data);
   }
 
   # If the data comes from an html form
   elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $resource=import_html_form($data);
+    $resources=import_html_form($data);
+    $resources=import_yaml($resources->{"yaml_array"});
   }
 
   # We expect the data to be in YAML or JSON format
   else {
-    ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
+    ERROR 406, 'Resource description must be in YAML or JSON',
+      "The correct format for a resource request is text/yaml or application/json. "
       . $content_type;
     exit 0;
   }
+ 
+ my $resources_array;
+ if ( ref($resources) eq "HASH") {
+   $resources_array = [ $resources ] ;
+ }
+ elsif ( ref($resources) eq "ARRAY") {
+   $resources_array = $resources ;
+ }
+ else {
+   ERROR 406, 'Bad type',
+     'resource must be an array or a hash!';
+   exit 0;
+ } 
+ foreach my $r (@$resources_array) {
+    # Resource must have a "hostname" or "network_address" field
+    unless ( $r->{hostname} or $r->{network_address} ) {
+      ERROR 400, 'Missing Required Field',
+        'A resource must have a hosname field or a network_address property!';
+      exit 0;
+    }
 
-  # Resource must have a "hostname" or "network_address" field
-  unless ( $resource->{hostname} or $resource->{properties}->{network_address} ) {
-    ERROR 400, 'Missing Required Field',
-      'A resource must have a hosname field or a network_address property!';
-    exit 0;
+    # Fill network_address with $hostname if provided
+    if ( ! $r->{network_address} && $r->{hostname} ) {
+      $r->{network_address}=$r->{hostname};
+      delete $r->{hostname};
+    }
+
+    # Check for system properties
+    foreach my $property ( keys %{$r} ) {
+      if (oar_Tools::check_resource_system_property($property) == 1){
+         ERROR 403, "Forbidden",
+           "The property \"$property\" is a system one and can't be assigned by the admin";
+         exit 0;
+      }
+    }
   }
-
-  # Fill hostname with network_address if provided
-  if ( ! $resource->{hostname} && $resource->{properties}->{network_address} ) {
-    $resource->{hostname}=$resource->{properties}->{network_address};
-  }
-
-  return $resource;
+  return $resources_array;
 }
 
 # Check the consistency of a posted oar resource change state request
@@ -1040,6 +1337,56 @@ sub check_resource_state($$) {
   return $resource;
 }
 
+# Check the consistency of a posted request resource generation and load it into a hashref
+sub check_resource_description($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $description;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $description = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $description = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $description = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Resource description must be in YAML or JSON',
+      "The correct format for resource description is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Resource description must have a "expression" field
+  unless ( $description->{resources} ) {
+    ERROR 400, 'Missing Required Field',
+      'Resources generation description must have a resources field';
+    exit 0;
+  }
+
+  # "properties" field must be a HASH
+  #if (defined($description->{properties})) {
+  #	unless ( ref($description->{properties}) eq "HASH" ) {
+  #		ERROR 400, 'Missing Type Field',
+  #    'The field properties must be a HASH type';
+  #  exit 0;
+  #	}
+  #}
+
+  return $description;
+}
 
 # Check the consistency of a posted grid job and load it into a hashref
 sub check_grid_job($$) {
@@ -1095,6 +1442,132 @@ sub check_grid_job($$) {
   toggle_option($job,"verbose");
 
   return $job;
+}
+
+# Check the consistency of a posted oar admission rule and load it into a hashref
+sub check_admission_rule($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $admission_rule;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $admission_rule = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $admission_rule = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $admission_rule = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Admission rule description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Admission rule must have a "rule" field
+  unless ( $admission_rule->{rule}) {
+    ERROR 400, 'Missing Required Field',
+      'An admission rule must have a rule field';
+    exit 0;
+  }
+
+  return $admission_rule;
+}
+
+# Check the consistency of a posted oar admission rule for update and load it into a hashref
+sub check_admission_rule_update($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $admission_rule;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $admission_rule = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $admission_rule = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $admission_rule = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Admission rule description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+  
+  # Admission rule must have a "method" field
+  unless ( $admission_rule->{method} ) {
+    ERROR 400, 'Missing Required Field',
+      'An admission rule update must have a "method" field!';
+    exit 0;
+  }
+
+  return $admission_rule;
+}
+
+# Check the consistency of a posted configuration variable and load it into a hashref
+sub check_configuration_variable($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $parameter;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $parameter = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $parameter = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $parameter = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Configuration variable description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Parameter must have a "value" field
+  unless ( $parameter->{value}) {
+    ERROR 400, 'Missing Required Field',
+      'Configuration variable must have a value field';
+    exit 0;
+  }
+
+  return $parameter;
 }
 
 ##############################################################################
@@ -1159,7 +1632,7 @@ sub send_cmd($$) {
     ERROR(
       400,
       "$error_name error",
-      "$error_name command exited with status $err: $cmdRes"
+      "$error_name command exited with status $err: $cmdRes. (Command was: $cmd)."
     );
     exit 0;
   }
@@ -1182,6 +1655,104 @@ sub get_key($$$) {
   else {
     return $cmdRes;
   }
+}
+
+# add_pagination
+# add pagination to a set of record
+# parameters : record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
+# return value : /
+sub add_pagination($$$$$$$$) {
+	my $record = shift;
+	my $total = shift;
+	my $path = shift;
+	my $params = shift;
+	my $ext = shift;
+	my $limit = shift;
+	my $offset = shift;
+	my $STRUCTURE = shift;
+	
+	my $offset_separation_char = "&";
+	
+	if(defined($params) && $params ne "") {
+		# replacing all ';' char by '&' in query string
+		$params =~ s/;/&/g;
+		$params =~ s/offset=(.*?)(&|$)//g;
+		$params =~ s/&$//g;
+		# completing path with query string or separating char
+		if ($params ne "") {
+			$path .= "?".$params;
+		}
+		else {
+			$offset_separation_char = "?";
+		}
+	}
+	else {
+		# no parameters was passed, the separating char
+		# must be '?'
+		$offset_separation_char = "?";
+	}
+	
+	# current, next and previous uri
+	my $current_uri;
+    my $next_uri;
+    my $previous_uri;
+	
+	if (!defined $record || $total <= 0) {
+		# return an empty structure
+		return {
+  	           items => [],
+  	           total => 0,
+  	           offset => 0,
+  	           links => []
+                };
+    }
+    else {
+    	# setting current uri
+        if ($limit != 0) { 
+    	  $current_uri = $path.$offset_separation_char."offset=".$offset;
+        }else{
+    	  $current_uri = $path;
+        }
+	
+    	# setting next uri
+    	if ($limit != 0 && ($offset + $limit < $total)) {
+        	# next items list uri
+        	$next_uri = $path.$offset_separation_char."offset=".($offset + $limit);
+    	}
+    	
+    	# setting previous uri  
+    	if ($limit != 0 && ($offset - $limit >= 0)) {
+        	# previous items list uri
+        	$previous_uri = $path.$offset_separation_char."offset=".($offset - $limit);
+    	}
+    	
+    	# uris are setting into hasmaps
+    	my $links;
+    	$current_uri = apilib::htmlize_uri(apilib::make_uri($current_uri,"",0),$ext);
+    	$current_uri = { href => $current_uri, rel => "self" };
+    	push (@$links,$current_uri);
+    	
+    	if (defined($next_uri)) {
+    		$next_uri = apilib::htmlize_uri(apilib::make_uri($next_uri,"",0),$ext);
+    		$next_uri = { href => $next_uri, rel => "next" };
+    	        push (@$links,$next_uri);
+    	}
+    	if (defined($previous_uri)) {
+    		$previous_uri = apilib::htmlize_uri(apilib::make_uri($previous_uri,"",0),$ext);
+    		$previous_uri = { href => $previous_uri , rel => "previous" };
+    	        push (@$links,$previous_uri);
+    	}
+    	
+    	my $result = {
+  	           items => $record,
+  	           total => int($total),
+  	           offset => int($offset),
+  	           links => $links,
+                   api_timestamp => time()
+    	};
+    	return $result;    	
+    }
+
 }
 
 return 1;

@@ -35,7 +35,7 @@ all: usage
 install: usage
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] MODULES"
-	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install | gridapi-install | uninstall }"
+	@echo "Where MODULES := { server-install | user-install | node-install | monika-install | draw-gantt-install | doc-install | desktop-computing-agent-install | desktop-computing-cgi-install | tools-install | api-install | gridapi-install | poar-install | uninstall }"
 	@echo "      OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR }"
 
 sanity-check:
@@ -51,7 +51,16 @@ configuration: FORCE
 
 desktop-computing-agent: FORCE
 	install -d -m 0755 $(DESTDIR)$(BINDIR)
-	install -m 0755 desktop_computing/oar-agent.pl $(DESTDIR)$(BINDIR)/oar-agent
+	install -d -m 0755 $(DESTDIR)$(SBINDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)
+	install -d -m 0755 $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644 desktop_computing/agent/lib/job.rb $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644 desktop_computing/agent/lib/client.rb $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644 desktop_computing/agent/lib/config.rb $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644 desktop_computing/agent/lib/job_execution_exception.rb $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644 desktop_computing/agent/lib/job_resource.rb $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0755 desktop_computing/agent/lib/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
+	install -m 0755 desktop_computing/agent/lib/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
 
 desktop-computing-cgi: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
@@ -108,10 +117,13 @@ api: FORCE
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache-api.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache-api.conf already exists, not overwriting it." ; else install -m 0600 api/apache2.conf $(DESTDIR)$(OARCONFDIR)/apache-api.conf ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache-api.conf || /bin/true ; fi
 	install -d -m 0755 $(DESTDIR)$(DOCDIR)/examples
 	install -m 0644 api/oarapi_examples.txt $(DESTDIR)$(DOCDIR)/examples
+	install -m 0755 api/chandler.rb $(DESTDIR)$(DOCDIR)/examples
 	install -m 0644 api/INSTALL $(DESTDIR)$(DOCDIR)/API_INSTALL
 	install -m 0644 api/TODO $(DESTDIR)$(DOCDIR)/API_TODO
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_header.pl already exists, not overwriting it." ; else install -m 0600 api/api_html_header.pl $(DESTDIR)$(OARCONFDIR)/api_html_header.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_header.pl || /bin/true ; fi
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl already exists, not overwriting it." ; else install -m 0644 api/api_html_postform.pl $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_postform.pl || /bin/true ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_postform_resources.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_postform_resources.pl already exists, not overwriting it." ; else install -m 0644 api/api_html_postform_resources.pl $(DESTDIR)$(OARCONFDIR)/api_html_postform_resources.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_postform_resources.pl || /bin/true ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl already exists, not overwriting it." ; else install -m 0644 api/api_html_postform_rule.pl $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl || /bin/true ; fi
 
 gridapi: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARDIR)
@@ -472,7 +484,9 @@ doc: build-html-doc
 	install -d -m 0755 $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 docs/documentation/OAR-DOCUMENTATION-USER.html $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DESTDIR)$(DOCDIR)/html
-	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API-USER.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API-ADMIN.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API-DEVEL.html $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 docs/schemas/oar_logo.png $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 docs/schemas/db_scheme.png $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 docs/schemas/interactive_oarsub_scheme.png $(DESTDIR)$(DOCDIR)/html
@@ -521,12 +535,20 @@ monika: FORCE
 	install -m 0644 visualization_interfaces/Monika/monika/VERSION $(DESTDIR)$(PERLLIBDIR)/monika
 	install -m 0755 visualization_interfaces/Monika/monika/*.pm $(DESTDIR)$(PERLLIBDIR)/monika
 
+poar: FORCE
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)
+	install -d -m 0755 $(DESTDIR)$(WWWDIR)/poar
+	cp -rf visualization_interfaces/poar/* $(DESTDIR)$(WWWDIR)/poar 
+	-chown $(WWWUSER) $(DESTDIR)$(WWWDIR)/poar/*
+	-chmod 0644 $(DESTDIR)$(WWWDIR)/poar/*
+
 www-conf: FORCE
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	echo "ScriptAlias /monika $(CGIDIR)/monika.cgi" > $(DESTDIR)$(OARCONFDIR)/apache.conf
 	echo "ScriptAlias /drawgantt $(CGIDIR)/drawgantt.cgi" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
 	echo "Alias /monika.css $(WWWDIR)/monika.css" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
 	echo "Alias /drawgantt-files $(VARLIBDIR)/drawgantt-files" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
+	echo "Alias /poar $(WWWDIR)/poar" >> $(DESTDIR)$(OARCONFDIR)/apache.conf
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/apache.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/apache.conf already exists, not overwriting it." ; else install -m 0600 visualization_interfaces/apache.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/apache.conf || /bin/true ; fi
 
 tools: FORCE
@@ -586,6 +608,8 @@ draw-gantt-install: www-conf draw-gantt
 
 monika-install: www-conf monika
 
+poar-install: www-conf poar
+
 desktop-computing-cgi-install: sanity-check configuration common-install libs desktop-computing-cgi
 
 desktop-computing-agent-install: desktop-computing-agent
@@ -625,5 +649,5 @@ uninstall:
 	rm -f $(DESTDIR)/$(VARLIBDIR)/drawgantt-files/cache/*
 	for file in Almighty.1 oar_mysql_db_init.1 oaraccounting.1 oaradmin.1 oarcp.1 oardel.1 oargriddel.1 oargridstat.1 oargridsub.1 oarhold.1 oarmonitor.1 oarmonitor_graph_gen.1 oarnodes.1 oarnodesetting.1 oarnotify.1 oarprint.1 oarproperty.1 oarremoveresource.1 oarresume.1 oarsh.1 oarstat.1 oarsub.1;do rm -f $(DESTDIR)/$(MANDIR)/man1/$$file; done
 	 for file in html/OAR-DOCUMENTATION-ADMIN.html html/OAR-DOCUMENTATION-API.html html/OAR-DOCUMENTATION-USER.html html/db_scheme.png html/OAR-DOCUMENTATION.html html/oar_logo.png html/interactive_oarsub_scheme.png html/Almighty.fig html/Almighty.ps scripts/cpuset_manager/cpuset_manager_SGI_Altix_350_SLES9.pl scripts/cpuset_manager/cpuset_manager_PAM.pl scripts/prologue_epilogue/oar_prologue scripts/prologue_epilogue/oar_epilogue scripts/prologue_epilogue/oar_diffuse_script scripts/prologue_epilogue/oar_epilogue_local scripts/prologue_epilogue/oar_server_proepilogue.pl scripts/prologue_epilogue/lock_user.sh scripts/prologue_epilogue/oar_prologue_local scripts/job_resource_manager/job_resource_manager.pl ;do rm -f $(DESTDIR)/$(DOCDIR)/$$file; done
-
+	cd visualization_interfaces;for file in `find poar`; do rm -rf "$(DESTDIR)$(WWWDIR)/$$file" ; done
 FORCE:

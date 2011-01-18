@@ -39,6 +39,9 @@ These are the steps to perform when you want to release a new version of OAR:
         package release number. You'll notice that the changelog is 
 	automatically filled with all the commits since the previous release.
 
+        If you want just a snapshot of your work, you can use the -s flag:
+          ./git-build-package.sh -s deb trunk-work
+
    3d - Make the RPM package:
         Edit manually the package release number into rpm/SPECS/oar.spec
         and then:

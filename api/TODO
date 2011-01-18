@@ -1,14 +1,10 @@
 - What about a fast-cgi version?
 - Remplacer les oardel par des appels à l'iolib (optimisation)
 - Implementer timeout dans la fonction send_cmd (a tester sur le oarsub)
-- Typage non respectédans les sorties json (tout semble etre traduit en strings, meme les int) 
 
 - Finir les formulaires et le parsing des options (check_gridjob dans apilib), debugger --FORCE
 - Dans l'api oargrid, définir une structure de données que l'on peut utiliser à la place de la syntaxe cluster:rdef=... (mais bien conserver cette syntaxe aussi)  ??
 - job keys dans OAR API (pouvoir importer la cle depuis l'api)
-
-- For a later release, thing about --stagein (and stageout?)
-
 
 Bugs:
 

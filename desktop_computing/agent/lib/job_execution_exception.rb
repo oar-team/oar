@@ -1,0 +1,2 @@
+class JobExecutionException < Exception
+end

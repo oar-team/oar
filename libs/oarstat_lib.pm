@@ -43,6 +43,21 @@ sub duration_to_sql($) {
     return iolib::duration_to_sql($duration);
 }
 
+sub set_quote($) {
+	my $string = shift;
+	my $result;
+	if (defined ($base)) {
+		$result = $base->quote($string);
+	}
+	else {
+		open_db_connection();
+		$result = $base->quote($string);
+		close_db_connection();
+	}
+	
+	return $result;
+}
+
 sub get_jobs_with_given_properties {
   my $sql_property = shift;
   my @jobs;
@@ -89,6 +104,85 @@ sub get_all_jobs_for_user {
     push( @jobs, @get_jobs_in_state_for_user );
   }
   return \@jobs;
+}
+
+sub get_jobs_for_user_query {
+    my $user = shift;
+    my $from = shift;
+    my $to = shift;
+    my $state = shift;
+    my $limit = shift;
+    my $offset = shift;
+	
+    if (defined($state)) {
+        my @states = split(/,/,$state);
+        my $statement;
+        foreach my $s (@states) {
+            $statement .= $base->quote($s);
+            $statement .= ",";
+        }
+        chop($statement);
+        $state = $statement;
+    }
+
+    my %jobs =  iolib::get_jobs_for_user_query($base,$from,$to,$state,$limit,$offset,$user);
+    return (\%jobs);
+}
+
+sub count_jobs_for_user_query {
+	my $user = shift;
+	my $from = shift;
+    my $to = shift;
+    my $state = shift;
+	
+	if (defined($state)) {
+		my @states = split(/,/,$state);
+    	my $statement;
+    	foreach my $s (@states) {
+    		$statement .= $base->quote($s);
+    		$statement .= ",";
+    	}
+    chop($statement);
+    $state = $statement;
+	}
+
+	my $total =  iolib::count_jobs_for_user_query($base,$from,$to,$state,$user);
+	return $total;
+}
+
+sub get_all_admission_rules() {
+	my @admission_rules = iolib::list_admission_rules($base);
+	return \@admission_rules;
+}
+
+sub get_requested_admission_rules {
+	my $limit = shift;
+	my $offset = shift;
+	my @rules = iolib::get_requested_admission_rules($base,$limit,$offset);
+	return \@rules;
+}
+
+sub count_all_admission_rules {
+	my $total = iolib::count_all_admission_rules($base);
+	return $total;
+}
+
+sub get_specific_admission_rule {
+    my $rule_id = shift;
+    my $rule;
+    $rule = iolib::get_admission_rule($base,$rule_id);
+    return $rule;
+}
+
+sub add_admission_rule {
+	my $rule = shift;
+	my $id = iolib::add_admission_rule($base,$rule);
+	return $id;
+}
+
+sub delete_specific_admission_rule {
+	my $rule_id = shift;
+	iolib::delete_admission_rule($base,$rule_id);
 }
 
 sub get_duration($){

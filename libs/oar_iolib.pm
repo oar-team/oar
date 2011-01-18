@@ -76,7 +76,9 @@ sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
 sub get_jobs_range_dates($$$);
-sub get_jobs_gantt_scheduled($$$);
+sub get_jobs_gantt_scheduled;
+sub get_jobs_for_user_query;
+sub count_jobs_for_user_query;
 sub get_desktop_computing_host_jobs($$);
 sub get_stagein_id($$);
 sub set_stagein($$$$$$);
@@ -107,6 +109,8 @@ sub add_resource_job_pair($$$);
 sub add_resource($$$);
 sub list_nodes($);
 sub list_resources($);
+sub count_all_resources($);
+sub get_requested_resources($$$);
 sub get_resource_info($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
@@ -144,6 +148,14 @@ sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
 sub get_gantt_visu_resources_for_resa($$);
 
+# ADMISSION RULES MANAGEMENT
+sub add_admission_rule($$);
+sub list_admission_rules($);
+sub get_admission_rule($$);
+sub get_requested_admission_rules($$$);
+sub count_all_admission_rules($);
+sub delete_admission_rule($$);
+
 # TIME CONVERSION
 sub ymdhms_to_sql($$$$$$);
 sub sql_to_ymdhms($);
@@ -167,6 +179,7 @@ sub get_to_check_events($);
 sub get_hostname_event($$);
 sub get_job_events($$);
 sub get_events_for_hostname($$$);
+sub get_last_event_from_type($$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -573,6 +586,7 @@ sub get_jobs_in_state_for_user($$$) {
     }
     return(@res);
 }
+
 
 # get_jobs_with_given_properties
 # returns the jobs with specified properties
@@ -2994,6 +3008,33 @@ sub get_resource_job($$) {
     return @res;
 }
 
+# get_resource_job_with_state
+# returns the list of jobs associated to the resource passed in parameter
+# parameters : base, resource
+# return value : list of jobid
+# side effects : /
+sub get_resource_job_with_state($$$) {
+    my $dbh = shift;
+    my $resource = shift;
+    my $state = shift;
+    my $sth = $dbh->prepare("   SELECT jobs.job_id
+                                FROM assigned_resources, moldable_job_descriptions, jobs
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                    AND assigned_resources.resource_id = $resource
+                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND jobs.state = \'$state\'
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{'job_id'});
+    }
+    return @res;
+}
+
 # get_resource_job_to_frag
 # same as get_resource_job but excepts the cosystem jobs
 # parameters : base, resource
@@ -3153,7 +3194,8 @@ sub get_finaud_nodes($) {
                                   WHERE
                                     (state = \'Alive\' OR
                                     (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
-                                    type = \'default\'
+                                    type = \'default\' AND
+                                    desktop_computing = \'NO\'
                               ");
     }
     else{
@@ -3175,7 +3217,8 @@ sub get_finaud_nodes($) {
                     WHERE
                       (state = \'Alive\' OR
                       (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
-                      type = \'default\'";
+                      type = \'default\' AND
+                      desktop_computing = \'NO\'";
       $sth = $dbh->prepare($str);
     }
     $sth->execute();
@@ -3331,10 +3374,9 @@ sub get_jobs_range_dates($$$){
 }
 
 
-
 # get all jobs in a range of date in the gantt
 # args : base, start range, end range
-sub get_jobs_gantt_scheduled($$$){
+sub get_jobs_gantt_scheduled($$$) {
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
@@ -3350,7 +3392,7 @@ sub get_jobs_gantt_scheduled($$$){
              resources.resource_id = gantt_jobs_resources_visu.resource_id AND
              gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
          ORDER BY jobs.job_id";
-    
+
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
@@ -3380,6 +3422,191 @@ sub get_jobs_gantt_scheduled($$$){
     return %results;
 }
 
+
+# get all distinct jobs for a user query
+# args : base, start range, end range, jobs states, limit, offset, user
+sub get_jobs_for_user_query {
+    my $dbh = shift;
+    my $date_start = shift || "";
+    my $date_end = shift || "";
+    my $state = shift || "";
+    my $limit = shift || "";
+    my $offset = shift;
+    my $user = shift || "";
+    my $first_query_date_start = "";
+    my $second_query_date_start = "";
+    my $third_query_date_start = "";
+    my $first_query_date_end = "";
+    my $second_query_date_end = "";
+    my $third_query_date_end = "";
+
+    if ($date_start ne "") {
+    	$first_query_date_start = "(
+                 			jobs.stop_time >= $date_start OR
+                 			(   
+                     			jobs.stop_time = \'0\' AND
+                     			( (jobs.state = \'Running\' AND 
+                                          jobs.start_time + moldable_job_descriptions.moldable_walltime >= $date_start ) OR
+                  			jobs.state = \'Suspended\' OR
+                      			jobs.state = \'Resuming\')
+                 			)
+             			) AND";
+    	$second_query_date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start ";
+    	$third_query_date_start = " AND $date_start <= jobs.submission_time";
+    }
+    if ($date_end ne "") {
+    	$first_query_date_end = "jobs.start_time < $date_end AND";
+    	$second_query_date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";
+    	$third_query_date_end = " AND jobs.submission_time <= $date_end";
+    }
+    if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
+    if ($limit ne "") { $limit = "LIMIT $limit"; }
+    if (defined($offset)) { $offset = "OFFSET $offset"; }
+    if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
+
+    my $req =
+        "
+        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job
+        FROM jobs
+        WHERE
+             jobs.job_id IN (
+         						 SELECT DISTINCT jobs.job_id
+         						 FROM jobs, assigned_resources, moldable_job_descriptions
+         						 WHERE
+                 					$first_query_date_start
+             						$first_query_date_end
+             						jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+             						moldable_job_descriptions.moldable_job_id = jobs.job_id
+             						$state $user
+
+         						UNION
+
+         						SELECT DISTINCT jobs.job_id
+         						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu
+         						WHERE
+         						   gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+         						   gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+         						   jobs.job_id = moldable_job_descriptions.moldable_job_id
+         						   $second_query_date_start
+         						   $second_query_date_end
+         						   $state $user
+         						
+         						UNION
+         						
+         						SELECT DISTINCT jobs.job_id
+         						FROM jobs
+         						WHERE 
+         						   jobs.start_time = \'0\'
+         						   $third_query_date_start
+         						   $third_query_date_end
+         						   $state $user
+         						)
+         ORDER BY jobs.job_id $limit $offset";
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my %results;
+    while (my @ref = $sth->fetchrow_array()) {
+         $results{$ref[0]} = {
+            				'job_name' => $ref[1],
+                            'state' => $ref[2],
+                            'job_user' => $ref[3],
+                            'queue_name' => $ref[4],
+                            'submission_time' => $ref[5],
+                            'assigned_moldable_job' => $ref[6]
+                              };
+    }
+    $sth->finish();
+
+    return %results;
+}
+
+
+# count all distinct jobs for a user query
+# args : base, start range, end range, jobs states, limit, offset, user
+sub count_jobs_for_user_query {
+	my $dbh = shift;
+    my $date_start = shift || "";
+    my $date_end = shift || "";
+    my $state = shift || "";
+    my $limit = shift || "";
+    my $offset = shift;
+    my $user = shift || "";
+    my $first_query_date_start = "";
+    my $second_query_date_start = "";
+    my $third_query_date_start = "";
+    my $first_query_date_end = "";
+    my $second_query_date_end = "";
+    my $third_query_date_end = "";
+
+    if ($date_start ne "") {
+    	$first_query_date_start = "(   
+                 						jobs.stop_time >= $date_start OR
+                 						(   
+                     						jobs.stop_time = \'0\' AND
+                     						(jobs.state = \'Running\' OR
+                      						jobs.state = \'Suspended\' OR
+                      						jobs.state = \'Resuming\')
+                 						)
+             						) AND";
+    	$second_query_date_start = " AND gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start ";
+    	$third_query_date_start = " AND $date_start <= jobs.submission_time";
+    }
+    if ($date_end ne "") {
+    	$first_query_date_end = "jobs.start_time < $date_end AND";
+    	$second_query_date_end = " AND gantt_jobs_predictions_visu.start_time < $date_end ";
+    	$third_query_date_end = " AND jobs.submission_time <= $date_end";
+    }
+    if ($state ne "") { $state = " AND jobs.state IN (".$state.") ";}
+    if ($limit ne "") { $limit = "LIMIT $limit"; }
+    if (defined($offset)) { $offset = "OFFSET $offset"; }
+    if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
+
+    my $req =
+        "
+        SELECT COUNT(jobs.job_id)
+        FROM jobs
+        WHERE
+             jobs.job_id IN (
+         						 SELECT DISTINCT jobs.job_id
+         						 FROM jobs, assigned_resources, moldable_job_descriptions
+         						 WHERE
+                 					$first_query_date_start
+             						$first_query_date_end
+             						jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+             						moldable_job_descriptions.moldable_job_id = jobs.job_id
+             						$state $user
+
+         						UNION
+
+         						SELECT DISTINCT jobs.job_id
+         						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu
+         						WHERE
+         						   gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+         						   gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+         						   jobs.job_id = moldable_job_descriptions.moldable_job_id
+         						   $second_query_date_start
+         						   $second_query_date_end
+         						   $state $user
+
+         						UNION
+
+         						SELECT DISTINCT jobs.job_id
+         						FROM jobs
+         						WHERE
+         						   jobs.start_time = \'0\'
+         						   $third_query_date_start
+         						   $third_query_date_end
+         						   $state $user
+         						)";
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
+}
 
 # get scheduling informations about Interactive jobs in Waiting state
 # args : base
@@ -3551,6 +3778,120 @@ sub get_job_stagein($$) {
     return($ref);
 }
 
+# ADMISSION RULES MANAGEMENT
+
+# add_admission_rule
+# adds a new rule in the table admission_rule
+# parameters : base, rule
+# return value : new admission rule id
+sub add_admission_rule($$) {
+    my $dbh = shift;
+    my $rule = $dbh->quote(shift);
+     
+    $dbh->do("  INSERT INTO admission_rules (rule)
+                VALUES ($rule)
+             ");
+    my $id = get_last_insert_id($dbh,"admission_rules_id_seq");
+
+    return($id);
+}
+
+# list_admission_rules
+# get the list of all admission rules
+# parameters : base
+# return value : list of admission rules
+# side effects : /
+sub list_admission_rules($) {
+	my $dbh = shift;
+	
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM admission_rules
+                           ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return @res;
+}
+
+# get_requested_admission_rules
+# get requested admission rules
+# parameters : base limit offset
+# side effects : /
+sub get_requested_admission_rules($$$) {
+	my $dbh = shift;
+	my $limit = shift;
+	my $offset= shift;
+	
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM admission_rules
+                                ORDER BY id LIMIT $limit OFFSET $offset
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
+
+# count_all_admission_rules
+# count all admissions rules
+# parameters : base
+# side effects : /
+sub count_all_admission_rules($) {
+	my $dbh = shift;
+	
+	my $sth = $dbh->prepare("	SELECT COUNT(*)
+	                            FROM admission_rules
+	                        ");
+    $sth->execute();
+    
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
+}
+
+# get_admission_rule
+# returns a ref to some hash containing data for the admission rule of id passed in
+# parameter
+# parameters : base, admission_rule_id
+# return value : ref
+# side effects : /
+sub get_admission_rule($$) {
+    my $dbh = shift;
+    my $rule_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM admission_rules
+                                WHERE
+                                    id = $rule_id
+                            ");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return($ref);
+}
+
+# delete_admission_rule
+# parameter
+# parameters : base, admission_rule_id
+sub delete_admission_rule($$) {
+	my $dbh = shift;
+    my $rule_id = shift;
+    
+    my $sth = $dbh->prepare("   DELETE
+                                FROM admission_rules
+                                WHERE
+                                    id = $rule_id
+                            ");
+    $sth->execute();
+}
+
+
 # NODES MANAGEMENT
 
 # add_resource
@@ -3572,17 +3913,83 @@ sub add_resource($$$) {
     $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
                 VALUES ($id,\'state\',\'$state\',\'$date\')
              ");
+    return $id;
+}
 
-#    # Init cpu field with the id
-#    eval{
-#        $dbh->do("  UPDATE resources
-#                    SET cpu = $id
-#                    WHERE
-#                        resource_id = $id
-#                 ");
-#    };
+# get_last_resource_id
+# get the last resource id
+sub get_last_resource_id($) {
+    my $dbh = shift;
+    my $sth = $dbh->prepare("SELECT MAX(resource_id) from resources");
+    $sth->execute();
+    my @arr = $sth->fetchrow_array();
+    $sth->finish();
+    return $arr[0];
+} 
 
-    return($id);
+# add_resources
+# adds an array of resources in the table resources in block
+# parameters : base, name, resources
+# return value : array of newly created resources ids
+sub add_resources($$) {
+    my $dbh = shift;
+    my $resources = shift;
+
+    lock_table($dbh,["resources","resource_logs"]);
+
+    # Getting the last id as we are not using auto_increment
+    my $id=get_last_resource_id($dbh);    
+    my @ids;
+
+    # Construct the properties list
+    my @properties;
+    foreach my $r (@$resources) {
+      foreach my $prop (keys(%$r)) {
+        if(!grep(/^$prop$/,@properties)) {
+          push(@properties,$prop);
+        }
+      }  
+    }
+
+    # Construct the queries
+    my $query="INSERT INTO resources (resource_id,state,state_num,".join(",",@properties).") VALUES ";
+    my $log_query="INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
+    my $date = get_date($dbh);
+    my $first=1;
+    my @values;
+    my @log_values;
+    foreach my $r (@$resources) {
+      if ($first) { $query.="("; }
+      else        { $query.=",(";}
+      @values=();
+      $id++;
+      push(@values,$id);
+      push(@log_values,"($id,\'state\',\'Alive\',\'$date\')");
+      push(@values,"\"Alive\"");
+      push(@values,$State_to_num{"Alive"});
+      push(@ids,$id);
+      foreach my $p (@properties) {
+        if (defined($r->{$p})) { 
+          push(@values,"\"".$r->{$p}."\"");
+          push(@log_values,"($id,\'$p\',\'$r->{$p}\',\'$date\')");
+        }
+        else { push(@values,"NULL");   }  
+      }
+      $query.=join(",",@values);
+      $query.=")";
+      $first=0;
+    }
+    $log_query.=join(",",@log_values);
+
+    # Execute the query
+    $dbh->do($query);
+    if ($DBI::err) {
+      @ids=["Error: ". $DBI::errstr ."Query: " .$query];
+    }else{
+      $dbh->do($log_query);
+    }
+    unlock_table($dbh);
+    return(@ids);
 }
 
 
@@ -3621,6 +4028,44 @@ sub list_resources($) {
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM resources
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+    return(@res);
+}
+
+# count_all_resources
+# count all resources
+# parameters : base
+# side effects : /
+sub count_all_resources($) {
+	my $dbh = shift;
+	
+	my $sth = $dbh->prepare("	SELECT COUNT(*)
+	                            FROM resources
+	                        ");
+    $sth->execute();
+
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
+}
+
+# get_requested_resources
+# get requested resources
+# parameters : base limit offset
+# side effects : /
+sub get_requested_resources($$$) {
+	my $dbh = shift;
+	my $limit = shift;
+	my $offset= shift;
+	
+	my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                ORDER BY resource_id LIMIT $limit OFFSET $offset
                             ");
     $sth->execute();
     my @res = ();
@@ -4194,6 +4639,8 @@ sub set_resource_property($$$$){
                                    ");
     };
     if ($nbRowsAffected < 1){
+        warn "query UPDATE resources SET $property = $value WHERE resource_ID = $resource";
+        warn "rows affected $nbRowsAffected";
         return(1);
     }else{
         #Update LOG table
@@ -6041,6 +6488,26 @@ sub get_events_for_hostname($$$){
     $sth->finish();
 
     return(@results);
+}
+
+# Get the last event for the given type
+# args: database ref, event type
+# returns: the requested event
+sub get_last_event_from_type($$){
+    my $dbh = shift;
+    my $type = shift;
+    my $sth = $dbh->prepare("SELECT *
+                              FROM event_logs 
+                              WHERE
+                                  type = '$type'
+                              ORDER BY event_id DESC
+                              LIMIT 1");
+
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return($ref);
 }
 
 # Get events for the specified job

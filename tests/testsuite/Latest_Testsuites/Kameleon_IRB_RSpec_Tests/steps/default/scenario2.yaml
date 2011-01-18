@@ -1,0 +1,14 @@
+scenario2:
+ - submit_job:
+   - exec_appliance: write_irb "puts \"Submitting a job that runs for 2mnts\""
+   - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script' => \"ls;pwd;whoami;sleep 120\" }"
+   - exec_appliance: write_irb "obj.test_submit_job(jhash)"
+ - test_if_submitted:
+   - exec_appliance: write_irb "jid = obj.jobid"
+   - exec_appliance: write_irb "puts \"Submitted job \"+jid.to_s"
+ - test_if_job_running:
+   - exec_appliance: write_irb "puts \"Test if job is running after 1mnt\""
+   - exec_appliance: write_irb "sleep 65"
+   - exec_appliance: write_irb "obj.test_job_running(jid)"
+   - exec_appliance: write_irb "puts \"Scenario2 successfully tested! \""
+

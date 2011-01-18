@@ -375,19 +375,32 @@ module Resources
 
 
   # Explore $cmd_user[] table and create oar commands - recursiv algorithm
-  def Resources.tree n, str
+  def Resources.tree n, str , resources_hash
     # n : the current level
     # str : string contains the oar command to execute
+    # resources : array of resources (for YAML export)
+    property=""
+    value=""
+    value2=""
 
     if n <= $cmd_user.length
 
       # Create oarnodesetting command with correct syntax
       if $cmd_user[n-1][:property_name] == "nodes" || $cmd_user[n-1][:property_name] == "node"
-        str += "-h " + $cmd_user[n-1][:property_fixed_value]
+        hostname=$cmd_user[n-1][:property_fixed_value]
+        property="network_address"
+        value=hostname
+        str += "-h " + hostname
+        resources_hash[property]=hostname
       else
-        str += "-p " + $cmd_user[n-1][:property_name] + "=" + $cmd_user[n-1][:property_fixed_value]
+        property=$cmd_user[n-1][:property_name]
+        value=$cmd_user[n-1][:property_fixed_value]
+        str += "-p " + property + "=" + value
+        resources_hash[property]=value
       end
       str2 = str
+      resources_hash2={}
+      resources_hash2.replace(resources_hash)
 
       if $cmd_user[n-1][:property_nb].is_a?(Fixnum)
         # We have a form /param={3}
@@ -396,7 +409,9 @@ module Resources
           v = ($cmd_user[n-1][:property_ndx] + $cmd_user[n-1][:offset])
           v = sprintf("#{$cmd_user[n-1][:format_num]}", v) if $cmd_user[n-1][:format_num].length > 0
 
-          str = str2 + v.to_s + $cmd_user[n-1][:property_fixed_value2] + " "
+          value2=v.to_s + $cmd_user[n-1][:property_fixed_value2]
+          str = str2 + value2 + " "
+          resources_hash[property]=resources_hash2[property].to_s + value2
 
           # For cpuset no
           if $cmd_user[n-1][:property_name]=="nodes" || $cmd_user[n-1][:property_name]=="node"
@@ -408,7 +423,7 @@ module Resources
             end
           end
 
-          tree n+1, str
+          tree n+1, str, resources_hash
         end
       else
         # We have a form /param=host_a,host_b, host[10-20,30,35-50,70],host_c,host[80-120]
@@ -416,13 +431,14 @@ module Resources
 
         list_val.each do |item|
           str = str2 + item + " "
+          resources_hash[property]=resources_hash2[property].to_s + item
 
           # For cpuset no
           if $cmd_user[n-1][:property_name]=="nodes" || $cmd_user[n-1][:property_name]=="node"
             $cpuset_host_current=item
           end
 
-          tree n+1, str
+          tree n+1, str, resources_hash
         end
 
       end   # if $cmd_user[n-1][:property_nb].is_a?(Fixnum)
@@ -444,12 +460,16 @@ module Resources
         end
       end
       str += " -p cpuset="+$cpuset_no.to_s
+      resources_hash["cpuset"]=$cpuset_no
 
       # End of levels - execution
       execute_command(str)
+      hash={}
+      hash.replace(resources_hash)
+      $resources << hash
 
       str = $oar_cmd
-
+      
     end
 
   end  # end tree
@@ -458,7 +478,7 @@ module Resources
   # Execute oar command
   def Resources.execute_command(str)
     
-    puts str
+    puts str unless $options[:yaml]
 
     if $options[:commit]
       r1 = `#{str}`

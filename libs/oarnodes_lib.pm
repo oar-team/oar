@@ -1,9 +1,11 @@
+package oarnodeslib;
 use strict;
 use warnings;
 use oarversion;
 use oar_iolib;
+use oar_Tools;
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 
-package oarnodeslib;
 
 my $base;
 
@@ -50,9 +52,30 @@ sub get_all_hosts(){
 	return \@nodes;
 }
 
+sub heartbeat($){
+    my $hostname = shift;
+    if (iolib::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
+      my $remote_host = get_conf("SERVER_HOSTNAME");
+      my $remote_port = get_conf("SERVER_PORT");
+      oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+    }
+}
+
 sub get_all_resources(){
     my @resources = iolib::list_resources($base);
         return \@resources;
+}
+
+sub count_all_resources() {
+	my $total = iolib::count_all_resources($base);
+	return $total;
+}
+
+sub get_requested_resources($$){
+	my $limit = shift;
+	my $offset = shift;
+	my @resources = iolib::get_requested_resources($base,$limit,$offset);
+	return \@resources;
 }
 
 sub get_events($$){
@@ -102,6 +125,11 @@ sub get_resource_infos($){
   my $resource = iolib::get_resource_info($base,$id);
 }
 
+sub is_job_tokill($){
+  my $id=shift;
+  return iolib::is_tokill_job($base,$id);
+}
+
 sub get_resources_infos($){
 	my $resources = shift;
 	my %resources_infos;
@@ -132,6 +160,33 @@ sub get_resources_infos_for_host($){
 sub get_jobs_running_on_resource($){
 	my $resource_id = shift;
 	my @jobs = iolib::get_resource_job($base, $resource_id);
+	return \@jobs;
+}
+
+sub get_jobs_running_on_node($){
+        my $node = shift;
+        my @node_info = iolib::get_node_info($base, $node);
+        my @jobs;
+        foreach my $info (@node_info){
+          my @resource_jobs = iolib::get_resource_job($base, $info->{resource_id});
+          foreach my $job (@resource_jobs) {
+            push(@jobs,$job);
+          }
+        }
+	return \@jobs;
+}
+
+sub get_jobs_on_node($$){
+        my $node = shift;
+        my $state = shift;
+        my @node_info = iolib::get_node_info($base, $node);
+        my @jobs;
+        foreach my $info (@node_info){
+          my @resource_jobs = iolib::get_resource_job_with_state($base, $info->{resource_id},$state);
+          foreach my $job (@resource_jobs) {
+            push(@jobs,$job);
+          }
+        }
 	return \@jobs;
 }
 
