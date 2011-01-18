@@ -30,5 +30,5 @@ pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf pdf-api
 	pdflatex $< $@
 
 clean:
-	for i in OAR-DOCUMENTATION-ADMIN OAR-DOCUMENTATION-USER OAR-DOCUMENTATION-API-USER OAR-DOCUMENTATION-API-ADMIN OAR-DOCUMENTATION-API-DEVEL doc_usecases; do rm -f $$i.pdf $$i.html $$i.tex $$i.aux $$i.log $$i.out; done
+	for i in OAR-DOCUMENTATION-ADMIN OAR-DOCUMENTATION-USER OAR-DOCUMENTATION-API-USER OAR-DOCUMENTATION-API-ADMIN OAR-DOCUMENTATION-API-DEVEL doc_usecases oar-documentation-devel; do rm -f $$i.pdf $$i.html $$i.tex $$i.aux $$i.log $$i.out; done
 

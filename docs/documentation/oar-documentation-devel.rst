@@ -18,7 +18,7 @@ PDF version : `<oar-documentation-devel.pdf>`_
 Coding Guidelines
 =================
 
-.. include:: OAR-DOCUMENTATION-API.rst
+.. include:: OAR-DOCUMENTATION-API-DEVEL.rst
 
 
 Database scheme
