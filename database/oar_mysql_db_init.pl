@@ -65,7 +65,15 @@ print("\n");
 system("tty &> /dev/null && stty echo");
 
 # Connect to the database.
-my $dbh = DBI->connect("DBI:mysql:database=mysql;host=$dbHost;port=$dbPort", $dbLogin, $dbPassword, {'RaiseError' => 0});
+
+my $connection_string;
+if($dbPort eq "" || !($dbPort>1 && $dbPort<65535)){
+    $connection_string = "DBI:mysql:database=mysql;host=$dbHost";
+}
+else{
+    $connection_string = "DBI:mysql:database=mysql;host=$dbHost;port=$dbPort";
+}
+my $dbh = DBI->connect($connection_string, $dbLogin, $dbPassword, {'RaiseError' => 0});
 my $query;
 # Database creation
 $dbh->do("CREATE DATABASE IF NOT EXISTS $dbName CHARACTER SET latin1") or die $dbh->errstr;
