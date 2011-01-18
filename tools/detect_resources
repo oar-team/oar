@@ -4,7 +4,7 @@
 #set -x
 
 OPENSSH_CMD=/usr/bin/ssh
-source "$OARCONFFILE" || exit 20
+. "$OARCONFFILE" || exit 20
 
 OARNODES="oarnodesetting"
 OARPROPERTY="oarproperty"

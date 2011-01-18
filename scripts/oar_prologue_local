@@ -7,7 +7,7 @@
 # argv[2] is the user's name
 # argv[3] is the job script name if exists
 
-source ~oar/lock_user.sh
+. ~oar/lock_user.sh
 USERFILE="/tmp/oar_user_list.oar.$2"
 USERFILETMP="$USERFILE.tmp"
 
