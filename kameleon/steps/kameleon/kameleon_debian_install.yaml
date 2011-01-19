@@ -17,7 +17,7 @@ kameleon_debian_install:
        ********************** WELCOME TO THE KAMELEON APPLIANCE ***********************
        To create a new appliance, based on Debian for example, you can follow those 
        simple steps:
-         'cp /usr/local/share/kameleon/recipes/debian.yaml /var/lib/kameleon/recipes/'
+         'cp /usr/share/kameleon/recipes/debian.yaml /var/lib/kameleon/recipes/'
          'vim /var/lib/kameleon/recipes/debian.yaml'
               customize...
          'kameleon debian'
