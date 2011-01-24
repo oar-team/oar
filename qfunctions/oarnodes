@@ -56,18 +56,19 @@ Usage: oarnodes [ -r number | --sql sql_properties | -s | -l | -h | -V ]
 [list of nodes] [ -e [date] | -X | -Y | -D]
 Display node informations
 Options:
- -r, --resource     show only a resource properties
- -s, --state        show only node states
- -l, --list         show only node list
- -e, --events       show events recorded for a node: either the last 20 if no 
-                    date is given or all events since the specified date
-     --sql          display resources which matches this sql where clause
+ -r, --resource     show the properties of the resource whose id is given as
+                    parameter
+ -s, --state        show the states of the nodes
+ -l, --list         show the nodes list
+ -e, --events       show the events recorded for a node either since the date
+                    given as parameter or the last 20
+     --sql          display resources which matches the SQL where clause
                     (ex: "state = 'Suspected'")
- -D, --dumper       print result in DUMPER format
+ -D, --dumper       print result in Perl Data::Dumper format
  -X, --xml          print result in XML format
  -Y, --yaml         print result in YAML format
  -J, --json         print result in JSON format
- -h, --help         show this help screen
+ -h, --help         show this help message
  -V, --version      print OAR version number
 EOS
 }

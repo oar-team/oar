@@ -1,6 +1,6 @@
 =head1 NAME
 
-oarnodes - show information about nodes managed by OAR.
+oarnodes - show information about the nodes managed by OAR.
 
 =head1 SYNOPSIS
 
@@ -8,7 +8,7 @@ B<oarnodes> [ -a | -s | -r <integer> | --sql <sql_properties> | -l | -h | -V ] [
 
 =head1 DESCRIPTION
 
-Display information about nodes managed by OAR.
+Display information about the nodes managed by OAR.
 
 =head1 OPTION
 
@@ -20,27 +20,27 @@ Show all resources with their properties.
 
 =item B<-r, --resource>
 
-Show only a resource with their properties.
+Show only the resource whose id is given as parameter with its properties.
 
 =item B<-s, --state>
 
-Show only resource states.
+Show the states of the resources.
 
 =item B<-l, --list>
 
-Show only node list.
+Show the nodes list.
 
 =item B<-e, --events>
 
-Print events related to a node: either the last 20 if no date is given or all events since the specified date.
+Print events related to a node: either since the date given as parameter or the last 20.
 
 =item B<--sql>
 
-Display resources which matches this sql where clause (ex: "state = 'Suspected'")
+Select the resources which match the SQL where clause given as parameter (e.g. "state = 'Suspected'") and display them.
 
 =item B<-D, --DUMPER>
 
-Print result in DUMPER format.
+Print result in Perl Data::Dumper format.
 
 =item B<-X, --XML>
 
@@ -60,7 +60,7 @@ Print OAR version number.
 
 =item B<-h, --help>
 
-Show help usage.
+Show the help message.
 
 =back
 
