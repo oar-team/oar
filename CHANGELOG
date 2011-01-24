@@ -25,6 +25,11 @@ version 2.5.0:
   - Bugfix #10567: enabling to bypass window mechanism of hulot.
   - Bugfix #10568: Wake up timeout changing with the number of nodes
 
+version 2.4.4:
+--------------
+  - job suspend: oardo does not exist anymore (long long time ago). Replace it
+    with oardodo.
+
 version 2.4.3:
 --------------
   - Hulot module now has customizable keepalive feature
