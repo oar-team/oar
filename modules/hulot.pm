@@ -108,7 +108,7 @@ sub check_reminded_list($$$) {
 #"[Hulot] Adding '$rmd_node=>$$tmp_list_to_remind{$rmd_node}' to list to process\n"
 #            );
             $$tmp_list_to_process{$rmd_node} =
-              { 'command' => $$tmp_list_to_remind{$rmd_node}, 'time' => time };
+              { 'command' => $$tmp_list_to_remind{$rmd_node}, 'timeout' => -1 };
 
 #            oar_debug(
 #                "[Hulot] Removing node '$rmd_node' from list to remember\n");
@@ -238,7 +238,10 @@ sub start_energy_loop() {
                                 "OAR_RUNTIME_DIRECTORY",
                                 "/tmp/oar_runtime"
                               );
-
+    my %timeouts = fill_timeouts(get_conf_with_default_param(
+                       "ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT", 
+                       $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT));
+    
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
     
     # Load state if exists
@@ -396,7 +399,7 @@ sub start_energy_loop() {
                       # into the current command list
                       if (not defined($nodes_list_running{$node})) {
                         $nodes_list_to_process{$node} =
-                          { 'command' => "WAKEUP", 'time' => time };
+                          { 'command' => "WAKEUP", 'timeout' => -1 };
                         oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
                       }else{
                          if ($nodes_list_running{$node}->{'command'} ne "WAKEUP") {
@@ -425,16 +428,8 @@ sub start_energy_loop() {
 
                         # Remove node from the list running nodes
                         remove_from_hash( \%nodes_list_running, $key );
-                    }elsif (
-                        time > (
-                            $nodes_list_running{$key}->{'time'} +
-                              get_conf_with_default_param(
-                                "ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT",
-                                $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT
-                              )
-                        )
-                      )
-                    {
+                    }
+                    elsif (time > $nodes_list_running{$key}->{'timeout'}) {
                         change_node_state( $base, $key, "Suspected" );
                         oar_debug(
 "[Hulot] Node '$key' was suspected because it didn't wake up before the end of the timeout\n"
@@ -493,7 +488,7 @@ sub start_energy_loop() {
 #                    oar_debug(
 #                        "[Hulot] Adding '$node=>$cmd' to list to process\n");
                     $nodes_list_to_process{$node} =
-                      { 'command' => $cmd, 'time' => time };
+                      { 'command' => $cmd, 'timeout' => -1 };
                 }
 
                 if ( $nodeToRemind == 1 ) {
@@ -504,16 +499,23 @@ sub start_energy_loop() {
                     $nodes_list_to_remind{$node} = $cmd;
                 }
             }
-
+            
             # Creating command list
             my @commandToLaunch = ();
             my @dont_halt;
             my $match=0;
+            # Get the timeout taking into account the number of nodes
+            # already waking up + the number of nodes to wake up
+            my $timeout = get_timeout(\%timeouts, 
+                                      scalar keys(%nodes_list_running) +
+                                      scalar keys(%nodes_list_to_process));
 
             foreach $key ( keys(%nodes_list_to_process) ) {
               SWITCH: for ( $nodes_list_to_process{$key}->{'command'} ) {
 
                     /WAKEUP/ && do {
+                        #Save the timeout for the nodes to be processed.
+                        $nodes_list_to_process{$key}->{'timeout'} = time + $timeout;
                         push( @commandToLaunch, "WAKEUP:$key" );
                         last;
                     };
@@ -711,6 +713,58 @@ sub register_wait_results($$) {
 sub wake_up_nodes($) {
     my $nodes = shift;
     return send_cmd_to_fifo( $nodes, "WAKEUP" );
+}
+
+#Fill the timeouts hash with the different timeouts
+sub fill_timeouts ($) {
+    my $string = shift;
+    my %timeouts = ();
+    
+    # test if the timeout is a simple duration in seconds
+    if ($string =~ /^\s*\d+\s*$/ ){
+        $timeouts{1} = int($string);
+    }
+    else {
+        #Remove front spaces
+        $string =~ s/^\s+//;
+        #Values must be separated by non-printable characters
+        my @words = split( /\s+/, $string);
+        my @vals = ();
+        foreach my $couple (@words) {
+            #Each couple of values is only composed of digits separated by
+            if ($couple =~ /^\d+:\d+$/) {
+                @vals = split(/:/, $couple);
+                $timeouts{$vals[0]} =  $vals[1];
+            }
+            else {
+                oar_warning("[Hulot] \"$couple\" is not a valid couple for a timeout\n");
+            }
+        }
+    }
+    
+    #If no good value has been found, use the default one
+    if ( keys( %timeouts ) == 0) {
+        $timeouts{1} = $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT;
+        oar_warning("[Hulot] Timeout not properly defined, using default value: 
+                     $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT\n");
+    }
+    
+    return %timeouts;
+}
+
+#Choose a timeout based on the number of nodes to wake up
+sub get_timeout($$) {
+    my ($timeouts, $nb_nodes) = @_;
+    my $timeout = $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT;
+    $timeout = @$timeouts{1} if (defined(@$timeouts{1}));
+    
+    #Search for the timeout of the corresponding interval
+    foreach my $tmp ( sort { $a <=> $b } keys( %$timeouts ) ) {
+        last if ($nb_nodes < $tmp);
+        $timeout = @$timeouts{$tmp};
+    }
+    
+    return $timeout;
 }
 
 return (1);
