@@ -304,7 +304,7 @@ while (($#clusterArguments >= 0) && ($endLoop == 0)){
     if ($i->{queue} ne ""){
         $tmpQueue = $i->{queue};
     }
-    my $tmpType;
+    my $tmpType = "";
     # Globals types
     if (@type) {
       foreach my $t (@type) {
