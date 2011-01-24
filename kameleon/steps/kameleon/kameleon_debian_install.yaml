@@ -22,6 +22,8 @@ kameleon_debian_install:
               customize...
          'kameleon debian'
               wait and get your newly created image(s) into /var/tmp/kameleon
-       Note: if you want to change the keyboard mapping, use: 
+       Notes:
+         - if you want to change the keyboard mapping, use: 
          'loadkeys <2_letters_country_code>'
+         - root password is: kameleon
        ********************************************************************************

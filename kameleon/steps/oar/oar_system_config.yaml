@@ -24,7 +24,10 @@ oar_system_config:
              -H'Content-Type: application/json' \\
              -d '{\"resource\":\"/nodes=1,walltime=00:10:00\", \"command\":\"sleep 600\"}'
          
-       Note: if you want to change the keyboard mapping, use:
+        Notes:
+         - if you want to change the keyboard mapping, use: 
          'loadkeys <2_letters_country_code>'
+         - root password is: kameleon
+
        ********************************************************************************
 
