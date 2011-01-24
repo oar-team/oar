@@ -3,6 +3,8 @@ OAR CHANGELOG
 
 version 2.4.4:
 --------------
+  - job suspend: oardo does not exist anymore (long long time ago). Replace it
+    with oardodo.
   - Bugfix: oaradmin rules edition/add was broken 
   - Bug #11599: missing pingchecker line into Leon
 

@@ -35,13 +35,13 @@ if ($ARGV[0] eq "suspend"){
     # Suspend all processes of the cpuset
 
     system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
-            oardo kill -SIGSTOP $PROCESSES'
+            oardodo kill -SIGSTOP $PROCESSES'
           );
 }elsif ($ARGV[0] eq "resume"){
     # Resume all processes of the cpuset
 
     system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
-            oardo kill -SIGCONT $PROCESSES'
+            oardodo kill -SIGCONT $PROCESSES'
           );
 }else{
     print("[suspend_resume_manager] Bad command line argument $ARGV[0].\n");
