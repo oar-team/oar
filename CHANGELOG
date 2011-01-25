@@ -27,6 +27,8 @@ version 2.5.0:
 
 version 2.4.4:
 --------------
+  - oar_resource_init: bad awk delimiter. There's a space and if the property
+    is the first one then there is not a ','.
   - job suspend: oardo does not exist anymore (long long time ago). Replace it
     with oardodo.
 
