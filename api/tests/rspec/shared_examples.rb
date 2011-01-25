@@ -1,7 +1,7 @@
 # All data structures minimum requirements
 shared_examples_for "All structures" do
       specify { @api.value.should have_key('api_timestamp') }
-      specify('api_timestamp should be a fixnum') { @api.value['api_timestamp'].should be_a(Fixnum) }
+      specify('api_timestamp should be an integer') { @api.value['api_timestamp'].should be_a(Integer) }
       specify { @api.value.should have_key('links') }
       specify('links should be an array') { @api.value['links'].should be_an(Array) }
       specify('links should not be empty') { @api.value['links'].should_not be_empty }
@@ -13,17 +13,17 @@ shared_examples_for "All list structures" do
       specify('items should be an array') { @api.value['items'].should be_an(Array) }
       specify { @api.value['items'].should_not be_empty }
       specify { @api.value.should have_key('total') }
-      specify('total should be a fixnum') { @api.value['total'].should be_a(Fixnum) }
+      specify('total should be an integer') { @api.value['total'].should be_a(Integer) }
       specify('total should be positive') { @api.value['total'].to_i.should > 0}
       specify { @api.value.should have_key('offset') }
-      specify('offset should be a fixnum') { @api.value['offset'].should be_a(Fixnum) }
+      specify('offset should be an integer') { @api.value['offset'].should be_a(Integer) }
 end
 
 # Item structure minimum requirements
 shared_examples_for "Item" do
       it_should_behave_like "All structures"
       specify { @api.value.should have_key('id') }
-      specify('id should be a fixnum') { @api.value['id'].should be_a(Fixnum) }
+      specify('id should be an integer') { @api.value['id'].should be_a(Integer) }
       specify('should have a self link') { @api.get_link_href('self').should be_a(String) }
 end
 
@@ -49,12 +49,12 @@ shared_examples_for "Job" do
       }
       specify('array_id should be an integer') {
         if not @api.value['array_id'].nil?
-          @api.value['array_id'].should be_a(Fixnum)
+          @api.value['array_id'].should be_a(Integer)
         end
       }
       specify('start_time should be an integer') {
         if not @api.value['start_time'].nil?
-          @api.value['start_time'].should be_a(Fixnum)
+          @api.value['start_time'].should be_a(Integer)
         end
       }
 end
@@ -65,9 +65,9 @@ shared_examples_for "ResourceId" do
       specify('self link should be correct') { 
            @api.get_link_href('self').should == "/resources/#{@api.value['id']}"
       }
-      specify('available_upto should be a fixnum') { 
+      specify('available_upto should be an integer') { 
         if not @api.value['available_upto'].nil?
-          @api.value['available_upto'].should be_a(Fixnum) 
+          @api.value['available_upto'].should be_a(Integer) 
         end
       }
 end

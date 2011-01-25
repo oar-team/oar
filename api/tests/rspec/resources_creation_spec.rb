@@ -37,7 +37,7 @@ describe OarApi do
     end
     it "should contain ids of newly created resources" do
       @oar_server.resstatus['items'].each do |item|
-        item["id"].to_i.should be_a(Fixnum)    
+        item["id"].to_i.should be_a(Integer)    
       end
     end
     it "should return the new resources links" do
@@ -95,7 +95,7 @@ describe OarApi do
       @oar_server.resstatus['items'].length.should == 1
     end
     it "should contain id of newly created resource" do
-      @oar_server.resstatus['items'][0]["id"].to_i.should be_a(Fixnum)    
+      @oar_server.resstatus['items'][0]["id"].to_i.should be_a(Integer)    
     end
     it "should return the new resource link" do
       links=@oar_server.resstatus['items'][0]["links"]

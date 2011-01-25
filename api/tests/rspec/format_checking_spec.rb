@@ -34,14 +34,14 @@ describe OarApi do
       jhash = { 'resource' => "/nodes=1/core=2" , 'script' => "ls;pwd;whoami;sleep 60" , 'array' => '10' }
       @api.submit_job(jhash)
       $jobid = @api.jobstatus['id']
-      $jobid.should be_a(Fixnum)
+      $jobid.should be_a(Integer)
       $jobid.should > 0
     end
     it "should have a reservation job just submitted" do
-      jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60" , 'reservation' => '2099-01-01 01:00:00' }
+      jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60" , 'reservation' => '2037-01-01 01:00:00' }
       @api.submit_job(jhash)
       $rjobid = @api.jobstatus['id']
-      $rjobid.should be_a(Fixnum)
+      $rjobid.should be_a(Integer)
       $rjobid.should > 0
     end
   end
@@ -312,10 +312,10 @@ describe OarApi do
     before(:all) do
       @api = OarApi.new(APIURI)
     end
-    context "(from 2098 to 2100)" do
+    context "(from 2036 to 2038)" do
       before(:all) do
-        from=Time.local(2098,"jan",1,1,1,1).to_i
-        to=Time.local(2100,"jan",1,1,1,1).to_i
+        from=Time.local(2036,"jan",1,1,1,1).to_i
+        to=Time.local(2038,"jan",1,1,1,1).to_i
         @api.get_hash("/jobs?from=#{from}&to=#{to}")
       end
       it "should return only one job" do
