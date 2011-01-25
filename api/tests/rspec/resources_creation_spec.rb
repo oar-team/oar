@@ -267,8 +267,8 @@ describe OarApi do
       }.should_not raise_exception
     end
     it_should_behave_like "All list structures"
-    it "should return resources with cpu number > 4" do
-      @api.value["items"][0]["cpu"].to_i.should > 4
+    it "should return resources with cpu number > 1" do
+      @api.value["items"][0]["cpu"].to_i.should > 1
     end
   end 
 
