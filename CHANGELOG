@@ -9,6 +9,9 @@ version 2.4.4:
     with oardodo.
   - Bugfix: oaradmin rules edition/add was broken 
   - Bug #11599: missing pingchecker line into Leon
+  - Bug #10567: enabling to bypass window mechanism of hulot (Backport from 2.5)
+  - Bug #10568: Wake up timeout changing with the number of nodes
+    (Backport from 2.5)
 
 version 2.4.3:
 --------------

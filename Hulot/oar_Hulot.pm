@@ -106,7 +106,7 @@ sub check_reminded_list($$$) {
 #"[Hulot] Adding '$rmd_node=>$$tmp_list_to_remind{$rmd_node}' to list to process\n"
 #            );
             $$tmp_list_to_process{$rmd_node} =
-              { 'command' => $$tmp_list_to_remind{$rmd_node}, 'time' => time };
+              { 'command' => $$tmp_list_to_remind{$rmd_node}, 'timeout' => -1 };
 
 #            oar_debug(
 #                "[Hulot] Removing node '$rmd_node' from list to remember\n");
@@ -228,7 +228,10 @@ sub start_energy_loop() {
     my $forker_pid;
     my $id_msg_hulot;
     my $pack_template = "l! a*";
-
+    my %timeouts = fill_timeouts(get_conf_with_default_param(
+                       "ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT", 
+                       $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT));
+    
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
 
     # Init keepalive values ie construct a hash:
@@ -258,6 +261,7 @@ sub start_energy_loop() {
           exit(2);
         }
         $keepalive{$properties}=();
+        $keepalive{$properties}{"nodes"}=[];
         $keepalive{$properties}{"min"}=$nodes_number;
         oar_debug("[Hulot] Keepalive(". $properties .") => ". $nodes_number ."\n");
       }
@@ -297,7 +301,6 @@ sub start_energy_loop() {
             my $nodeToRemind = 0;
             my $rcvd;
             my $type_rcvd;
-
             my $base = iolib::connect()
               or die("[Hulot] Cannot connect to the database\n");
 
@@ -327,7 +330,7 @@ sub start_energy_loop() {
             foreach my $properties (keys %keepalive) {
               my @occupied_nodes;
               my @idle_nodes;
-              $keepalive{$properties}{"nodes"} = 
+              $keepalive{$properties}{"nodes"} =
                  [ iolib::get_nodes_with_given_sql($base,$properties) ];
               $keepalive{$properties}{"cur_idle"}=0;
               foreach my $alive_node (iolib::get_nodes_with_given_sql($base,
@@ -361,7 +364,7 @@ sub start_energy_loop() {
                       # into the current command list
                       if (not defined($nodes_list_running{$node})) {
                         $nodes_list_to_process{$node} =
-                          { 'command' => "WAKEUP", 'time' => time };
+                          { 'command' => "WAKEUP", 'timeout' => -1 };
                         oar_debug("[Hulot] Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n");
                       }else{
                          if ($nodes_list_running{$node}->{'command'} ne "WAKEUP") {
@@ -372,7 +375,6 @@ sub start_energy_loop() {
                     last if ($ok_nodes >=0 || $wakeable_nodes <= 0);
                   }
                 }
-                
               }
             }
  
@@ -389,16 +391,8 @@ sub start_energy_loop() {
 
                         # Remove node from the list running nodes
                         remove_from_hash( \%nodes_list_running, $key );
-                    }elsif (
-                        time > (
-                            $nodes_list_running{$key}->{'time'} +
-                              get_conf_with_default_param(
-                                "ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT",
-                                $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT
-                              )
-                        )
-                      )
-                    {
+                    }
+                    elsif (time > $nodes_list_running{$key}->{'timeout'}) {
                         change_node_state( $base, $key, "Suspected" );
                         oar_debug(
 "[Hulot] Node '$key' was suspected because it didn't wake up before the end of the timeout\n"
@@ -457,7 +451,7 @@ sub start_energy_loop() {
 #                    oar_debug(
 #                        "[Hulot] Adding '$node=>$cmd' to list to process\n");
                     $nodes_list_to_process{$node} =
-                      { 'command' => $cmd, 'time' => time };
+                      { 'command' => $cmd, 'timeout' => -1 };
                 }
 
                 if ( $nodeToRemind == 1 ) {
@@ -468,17 +462,23 @@ sub start_energy_loop() {
                     $nodes_list_to_remind{$node} = $cmd;
                 }
             }
-
-           
+            
             # Creating command list
             my @commandToLaunch = ();
             my @dont_halt;
             my $match=0;
+            # Get the timeout taking into account the number of nodes
+            # already waking up + the number of nodes to wake up
+            my $timeout = get_timeout(\%timeouts, 
+                                      scalar keys(%nodes_list_running) +
+                                      scalar keys(%nodes_list_to_process));
 
             foreach $key ( keys(%nodes_list_to_process) ) {
               SWITCH: for ( $nodes_list_to_process{$key}->{'command'} ) {
 
                     /WAKEUP/ && do {
+                        #Save the timeout for the nodes to be processed.
+                        $nodes_list_to_process{$key}->{'timeout'} = time + $timeout;
                         push( @commandToLaunch, "WAKEUP:$key" );
                         last;
                     };
@@ -530,42 +530,77 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
 
             # Launching commands
             if ( $#commandToLaunch >= 0 ) {
-                oar_debug(
-"[Hulot] Launching commands to nodes by using WindowForker\n"
-                );
-
-                # fork in order to don't block the pipe listening
-                $forker_pid = fork();
-                if ( defined($forker_pid) ) {
-                    if ( $forker_pid == 0 ) {
-                        my %forker_type = (
-                            "type"     => "Hulot",
-                            "id_msg"   => $id_msg_hulot,
-                            "template" => $pack_template
-                        );
-
-                        ( my $t, my $y ) = window_forker::launch(
-                            \@commandToLaunch,
-                            get_conf_with_default_param(
-                                "ENERGY_SAVING_WINDOW_SIZE",
-                                $ENERGY_SAVING_WINDOW_SIZE
-                            ),
-                            get_conf_with_default_param(
-                                "ENERGY_SAVING_WINDOW_TIME",
-                                $ENERGY_SAVING_WINDOW_TIME
-                            ),
-                            get_conf_with_default_param(
-                                "ENERGY_SAVING_WINDOW_TIMEOUT",
-                                $ENERGY_SAVING_WINDOW_TIMEOUT
-                            ),
-                            0,
-                            \%forker_type
-                        );
-                        exit 0;
+                if (get_conf_with_default_param("ENERGY_SAVING_WINDOW_FORKER_BYPASS", "no") eq "yes") {
+                    #Bypassing window_forker
+                    oar_debug("[Hulot] Launching commands to nodes\n");
+                    
+                    #Strings that will be passed to wakeup and shutdown commands
+                    my $nodesToWakeUp = "";
+                    my $nodesToShutDown = "";
+                    
+                    #Build strings to pass to wakeup and shutdown commands
+                    my $base = iolib::connect();
+                    foreach my $command ( @commandToLaunch ) {
+                        (my $cmd, my $node)=split(/:/,$command, 2);
+                        if ( $cmd eq "HALT" ) {
+                            $nodesToShutDown .= $node . " ";
+                            iolib::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",[$node]);
+                        }
+                        elsif ( $cmd eq "WAKEUP" ) {
+                            $nodesToWakeUp .= $node . " ";
+                            iolib::add_new_event_with_host($base,"WAKEUP_NODE",0,"Node $node wake-up request",[$node]);
+                        }
+                    }
+                    iolib::disconnect($base);
+                    
+                    my $command_to_exec = "echo \"$nodesToWakeUp\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD");
+                    if ($nodesToWakeUp) {
+                        execute_action($command_to_exec);
+                    }
+                    $command_to_exec = "echo \"$nodesToShutDown\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
+                    if ($nodesToShutDown) {
+                        execute_action($command_to_exec);
                     }
                 }
                 else {
-                    oar_error("[Hulot] Fork system call failed\n");
+                    # Use the window forker to execute commands in parallel
+                    oar_debug(
+    "[Hulot] Launching commands to nodes by using WindowForker\n"
+                    );
+
+                    # fork in order to don't block the pipe listening
+                    $forker_pid = fork();
+                    if ( defined($forker_pid) ) {
+                        if ( $forker_pid == 0 ) {
+                            my %forker_type = (
+                                "type"     => "Hulot",
+                                "id_msg"   => $id_msg_hulot,
+                                "template" => $pack_template
+                            );
+
+                            ( my $t, my $y ) = window_forker::launch(
+                                \@commandToLaunch,
+                                get_conf_with_default_param(
+                                    "ENERGY_SAVING_WINDOW_SIZE",
+                                    $ENERGY_SAVING_WINDOW_SIZE
+                                ),
+                                get_conf_with_default_param(
+                                    "ENERGY_SAVING_WINDOW_TIME",
+                                    $ENERGY_SAVING_WINDOW_TIME
+                                ),
+                                get_conf_with_default_param(
+                                    "ENERGY_SAVING_WINDOW_TIMEOUT",
+                                    $ENERGY_SAVING_WINDOW_TIMEOUT
+                                ),
+                                0,
+                                \%forker_type
+                            );
+                            exit 0;
+                        }
+                    }
+                    else {
+                        oar_error("[Hulot] Fork system call failed\n");
+                    }
                 }
             }
 
@@ -581,6 +616,23 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
             %nodes_list_to_process = ();
         }
         close(FIFO);
+        # Unfortunately, never reached:
+        shmctl($id_msg_hulot, IPC_RMID, 0);
+    }
+}
+
+sub execute_action($) {
+    my $command_to_exec = shift;
+    my $forker_pid = fork();
+    if ( defined($forker_pid) ) {
+        if ( $forker_pid == 0 ) {
+            exec($command_to_exec);
+        }
+    }
+    else {
+        oar_error("[Hulot] Fork system call failed, command \"" . 
+            $command_to_exec . 
+            "\" not executing\n");
     }
 }
 
@@ -601,6 +653,58 @@ sub register_wait_results($$) {
 sub wake_up_nodes($) {
     my $nodes = shift;
     return send_cmd_to_fifo( $nodes, "WAKEUP" );
+}
+
+#Fill the timeouts hash with the different timeouts
+sub fill_timeouts ($) {
+    my $string = shift;
+    my %timeouts = ();
+    
+    # test if the timeout is a simple duration in seconds
+    if ($string =~ /^\s*\d+\s*$/ ){
+        $timeouts{1} = int($string);
+    }
+    else {
+        #Remove front spaces
+        $string =~ s/^\s+//;
+        #Values must be separated by non-printable characters
+        my @words = split( /\s+/, $string);
+        my @vals = ();
+        foreach my $couple (@words) {
+            #Each couple of values is only composed of digits separated by
+            if ($couple =~ /^\d+:\d+$/) {
+                @vals = split(/:/, $couple);
+                $timeouts{$vals[0]} =  $vals[1];
+            }
+            else {
+                oar_warning("[Hulot] \"$couple\" is not a valid couple for a timeout\n");
+            }
+        }
+    }
+    
+    #If no good value has been found, use the default one
+    if ( keys( %timeouts ) == 0) {
+        $timeouts{1} = $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT;
+        oar_warning("[Hulot] Timeout not properly defined, using default value: 
+                     $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT\n");
+    }
+    
+    return %timeouts;
+}
+
+#Choose a timeout based on the number of nodes to wake up
+sub get_timeout($$) {
+    my ($timeouts, $nb_nodes) = @_;
+    my $timeout = $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT;
+    $timeout = @$timeouts{1} if (defined(@$timeouts{1}));
+    
+    #Search for the timeout of the corresponding interval
+    foreach my $tmp ( sort { $a <=> $b } keys( %$timeouts ) ) {
+        last if ($nb_nodes < $tmp);
+        $timeout = @$timeouts{$tmp};
+    }
+    
+    return $timeout;
 }
 
 return (1);
