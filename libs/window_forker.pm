@@ -15,6 +15,7 @@ set_current_log_category('WindowForker');
 
 # Declaration of the named pipe used by Hulot module
 my $FIFO="/tmp/oar_hulot_pipe";
+my $NOTIFY_HULOT = 1;
 
 my $USE_TIME = 1;
 unless (eval "use Time::HiRes qw(gettimeofday tv_interval);1"){
@@ -115,6 +116,10 @@ sub launch($$$$$$){
       return(\%finished_processes, \%process_duration);
     }
     
+    if (!defined($type)){
+        $type = {"type" => "default"};
+        $NOTIFY_HULOT = 0;
+    }
     my %forker_type = %$type;
     # Check type
     if (keys(%forker_type)<=0){
@@ -207,14 +212,15 @@ sub launch($$$$$$){
         select(undef,undef,undef,0.1) if ($t == 0);
     }
     
-    
-    ## Here, send "CHECK signal" to Hulot by the named pipe ?
-    unless (open(FIFO, "> $FIFO")) {
-      oar_error("[WindowForker] Could not open the fifo $FIFO!\n");
-      return 1;
+    if ($NOTIFY_HULOT == 1){
+        ## Here, send "CHECK signal" to Hulot by the named pipe ?
+        unless (open(FIFO, "> $FIFO")) {
+          oar_error("[WindowForker] Could not open the fifo $FIFO!\n");
+          return 1;
+        }
+        print FIFO "CHECK";
+        close(FIFO);
     }
-    print FIFO "CHECK";
-    close(FIFO);
     
     
     return(\%finished_processes, \%process_duration);

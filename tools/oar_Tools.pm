@@ -29,6 +29,7 @@ my $Default_suspend_resume_file_manager = "/etc/oar/suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
 my $Default_node_file_db_field_distinct_values = "resource_id";
+my $Default_runner_sliding_window_size = 5;
 
 # Prototypes
 sub get_all_process_children();
@@ -131,6 +132,11 @@ sub get_default_node_file_db_field_distinct_values(){
 # Get default value for OARMONITOR_SENSOR_FILE tag
 sub get_default_monitor_sensor_file(){
     return($Default_monitor_file_sensor);
+}
+
+# Get default value for RUNNER_SLIDING_WINDOW_SIZE tag
+sub get_default_runner_sliding_window_size(){
+    return($Default_runner_sliding_window_size);
 }
 
 # Get the name of the file of the private ssh key for the given cpuset name

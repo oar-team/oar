@@ -24,6 +24,10 @@ version 2.5.0:
   - New OCAML scheduler (experimental)
   - Bugfix #10567: enabling to bypass window mechanism of hulot.
   - Bugfix #10568: Wake up timeout changing with the number of nodes
+  - Add in oar.conf the tag "RUNNER_SLIDING_WINDOW_SIZE": it allows the runner
+    to use a sliding window to launch the bipbip processes if
+    "DETACH_JOB_FROM_SERVER=1". This feature avoids the overload of the server
+    if plenty of jobs have to be launched at the same time.
 
 version 2.4.4:
 --------------
