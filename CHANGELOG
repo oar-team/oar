@@ -37,6 +37,7 @@ version 2.4.4:
     with oardodo.
   - oarsub: when an admission rule died micheline returns an integer and not an
     array ref. Now oarsub ends nicely.
+  - Monika: add a link on each jobid on the node display area.
 
 version 2.4.3:
 --------------
