@@ -35,6 +35,8 @@ version 2.4.4:
     is the first one then there is not a ','.
   - job suspend: oardo does not exist anymore (long long time ago). Replace it
     with oardodo.
+  - oarsub: when an admission rule died micheline returns an integer and not an
+    array ref. Now oarsub ends nicely.
 
 version 2.4.3:
 --------------

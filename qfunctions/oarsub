@@ -969,6 +969,11 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
      $Job_id_list_ref = oarsublib::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
 
+if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){
+    oarsublib::close_db_connection();
+    exit($Job_id_list_ref);
+}
+
 if(@{$Job_id_list_ref} > 1){
     for my $j (@{$Job_id_list_ref}){
         print("OAR_JOB_ID=".$j."\n");
