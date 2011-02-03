@@ -159,6 +159,7 @@ sub htmlTable {
 			       });
   $output .= $cgi->start_Tr({-align => "center"});
 
+  my $cgiName = File::Basename::basename($cgi->self_url(-query=>0));
   foreach my $currentRessource (sort keys %{$self->{Ressources}}){
     #my $ressourceState= $self->{Ressources}->{$currentRessource}->{infos}->{state};
     my $ressourceState= $self->ressourceState($currentRessource);
@@ -170,7 +171,7 @@ sub htmlTable {
       $output .= $cgi->start_table({-border => "1", -cellspacing => "0", -cellpadding => "0", -width => "100%"});
       foreach my $curr_job (@jobs){
       	$output .= $cgi->start_Tr({-align => "center"});
-      	$output .= $cgi->colorTd($curr_job, 100/$self->cpus."%");
+      	$output .= $cgi->colorTd($curr_job, 100/$self->cpus."%",$cgiName."?job=$curr_job");
       	$output .= $cgi->end_Tr();
       }
       $output .= $cgi->end_table();
