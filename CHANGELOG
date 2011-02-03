@@ -12,6 +12,8 @@ version 2.4.4:
   - Bug #10567: enabling to bypass window mechanism of hulot (Backport from 2.5)
   - Bug #10568: Wake up timeout changing with the number of nodes
     (Backport from 2.5)
+  - oarsub: when an admission rule died micheline returns an integer and not an
+    array ref. Now oarsub ends nicely.
 
 version 2.4.3:
 --------------
