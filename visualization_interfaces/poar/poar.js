@@ -93,7 +93,7 @@ Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
 /* Has the chart values loaded */
 if(chart_flag==0)
 {
-	setTimeout('final_func()',10000);// if chart is not rendered, wait for 10000 miliseconds.
+	setTimeout('final_func()',500);// if chart is not rendered, wait for 500 miliseconds.
 }
 else
 {
