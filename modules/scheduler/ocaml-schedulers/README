@@ -74,6 +74,8 @@ Next:
  * testing testing 
   ** DB only testing
 
+ * use Bolt to LOG facilities ("à la" log4j)  : http://bolt.x9c.fr/index.html
+
  * BEST / ALL 
  * scheduler message (see perl version *)
  * job_error / job_message / scheduler message
