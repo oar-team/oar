@@ -1,3 +1,0 @@
-mount_proc:
- - mount_proc:
-   - exec_appliance: mount -o bind /proc  $$chroot/proc

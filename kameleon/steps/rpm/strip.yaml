@@ -1,5 +1,0 @@
-strip:
- - strip:
-   - exec_chroot:  yum clean all
-   - exec_appliance: rm -f *.rpm
-

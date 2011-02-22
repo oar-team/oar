@@ -1,3 +1,0 @@
-umount_proc:
- - umount_proc:
-   - exec_chroot: umount /proc 

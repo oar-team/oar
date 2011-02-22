@@ -1,3 +1,0 @@
-kernel_install:
- - kernel_install:
-   - exec_chroot: yum install kernel

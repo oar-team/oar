@@ -1,4 +1,0 @@
-autologin:
- # The following microstep requires mingetty into the appliance
- - mingetty:
-   - exec_chroot: perl -pi -e 's/getty.*tty1/mingetty --noclear --autologin root tty1/' /etc/inittab

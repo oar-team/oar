@@ -1,3 +1,0 @@
-rpm_check_deps:
- - rinse:
-   - check_cmd:       rinse

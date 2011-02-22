@@ -1,3 +1,0 @@
-bootstrap:
- - debootstrap:
-   - exec_appliance:  debootstrap --arch=$$arch $$debian_version_name $$chroot/ $$distrib_repository

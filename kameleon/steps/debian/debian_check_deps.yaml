@@ -1,3 +1,0 @@
-debian_check_deps:
- - debootstrap:
-   - check_cmd:       debootstrap

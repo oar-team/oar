@@ -1,4 +1,0 @@
-install_extra_packages:
- - install_extra_packages:
-   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install $$extra_packages"
-

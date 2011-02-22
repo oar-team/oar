@@ -1,9 +1,0 @@
-lustre_g5kutils_install:
- - lustre_g5kutils_apt_config:
-   - append_file:
-     - /etc/apt/sources.list
-     - |
-       deb $$lustre_g5kutils_repository unstable main
-   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get update"
- - lustre_g5kutils_install:
-   - exec_chroot: bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install lustre-g5kutils"

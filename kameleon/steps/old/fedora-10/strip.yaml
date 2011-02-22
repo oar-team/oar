@@ -1,4 +1,0 @@
-strip:
- - strip:
-   - exec_chroot:  yum clean all
-

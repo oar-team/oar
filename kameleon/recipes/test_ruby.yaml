@@ -1,7 +1,0 @@
-global:
- workdir_base: /var/tmp/kameleon
- distrib: ruby
-steps:
- - irb
- - test_irb
- - clean

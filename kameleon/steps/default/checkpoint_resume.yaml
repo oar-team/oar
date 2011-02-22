@@ -1,4 +1,0 @@
-checkpoint_resume:
- - restore_tar:
-   - exec_appliance:  tar zxf $$checkpoint_file -C $$chroot/
-   - exec_appliance:  mkdir -p $$chroot/proc
