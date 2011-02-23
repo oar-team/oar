@@ -120,6 +120,7 @@ sub launch_command($){
             $SIG{USR1} = 'IGNORE';
             $SIG{INT}  = 'IGNORE';
             $SIG{TERM} = 'IGNORE';
+            $0="Almighty: $command";
             exec($command); 
         }
         my $kid;
@@ -207,7 +208,7 @@ sub comportement_appendice(){
                     $SIG{USR1} = 'IGNORE';
                     $SIG{INT}  = 'IGNORE';
                     $SIG{TERM} = 'IGNORE';
-
+                    $0="Almighty: bipbip";
                     exec("$bipbip_command $1 $2 $3 $4");
                 }
                 oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4\n");
@@ -223,10 +224,45 @@ sub comportement_appendice(){
         }
 }
 
-sub energy_saving(){
-    oar_Hulot::start_energy_loop();
+# hulot module forking
+sub start_hulot(){
+    $energy_pid = fork();
+    if(!defined($energy_pid)){
+        oar_error("[Almighty] Cannot fork Hulot, the energy saving module\n");
+        exit(6);
+    }
+    if (!$energy_pid){
+        $SIG{CHLD} = 'DEFAULT';
+        $SIG{USR1}  = 'IGNORE';
+        $SIG{INT}  = 'IGNORE';
+        $SIG{TERM}  = 'IGNORE';
+        $0="Almighty: hulot";
+        oar_Hulot::start_energy_loop();
+        oar_error("[Almighty] Energy saving loop (hulot) exited. This should not happen.\n");
+        exit(7);
+    }
 }
 
+# check the hulot process
+sub check_hulot(){
+  return kill 0, $energy_pid;
+}
+
+# Clean ipcs
+sub ipc_clean(){
+        open(IPCS,"/proc/sysvipc/msg");
+        my @oar = getpwnam('oar');
+        while (<IPCS>) {
+        my @ipcs=split;
+          if ($ipcs[7] eq $oar[2]) {
+            my $ipc=$ipcs[1];
+            oar_debug("[Almighty] cleaning ipc $ipc\n");
+            `/usr/bin/ipcrm -q $ipc`;
+          }
+        }
+        close(IPCS);
+}
+ 
 # initial stuff that has to be done
 sub init(){
     if(!(pipe (READ, WRITE))){
@@ -259,6 +295,7 @@ sub init(){
         $SIG{USR1}  = 'IGNORE';
         $SIG{INT}  = 'IGNORE';
         $SIG{TERM}  = 'IGNORE';
+        $0="Almighty: appendice";
         comportement_appendice();
         oar_error("[Almighty] Returned from comportement_appendice, this should not happen (infinite loop for listening messages on the server socket)\n");
         exit(7);
@@ -268,21 +305,8 @@ sub init(){
 
     # Starting of Hulot, the Energy saving module
     if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
-      $energy_pid = fork();
-      if(!defined($energy_pid)){
-          oar_error("[Almighty] Cannot fork Hulot, the energy saving module\n");
-          exit(6);
-      }
-      if (!$energy_pid){
-					$SIG{CHLD} = 'DEFAULT';
-          $SIG{USR1}  = 'IGNORE';
-          $SIG{INT}  = 'IGNORE';
-          $SIG{TERM}  = 'IGNORE';
-          energy_saving();
-          oar_error("[Almighty] Hulot daemon died. This should not happen.\n");
-          exit(7);
-      }
-    }
+      start_hulot();
+   }
 
     $lastscheduler= time;
     $lastvillains= time;
@@ -433,10 +457,20 @@ while (1){
         oar_debug("[Almighty] kill child process $appendice_pid\n");
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
+        ipc_clean();
         oar_warn("[Almighty] Stop Almighty\n");
         send_log_by_email("Stop OAR server","[Almighty] Stop Almighty");
         exit(10);
     }
+
+    # We check Hulot
+    if (defined($energy_pid) && !check_hulot()) {
+      oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
+      sleep 5;
+      ipc_clean();
+      start_hulot();
+    }
+
     # INIT
     if($state eq "Init"){
         init();
@@ -488,7 +522,15 @@ while (1){
         }elsif ($check_result == 1){
             $state="Scheduler";
         }elsif ($check_result == 0){
-            #Launch the scheduler
+            #Launch the scheduler 
+               # We check Hulot just before starting the scheduler
+               # because if the pipe is not read, it may freeze oar
+               if (defined($energy_pid) && !check_hulot()) {
+                 oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
+                 sleep 5;
+                 ipc_clean();
+                 start_hulot();
+               }
             my $scheduler_result=scheduler();
             if ($scheduler_result == 1){
                 $state="Runner";

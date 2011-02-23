@@ -30,6 +30,8 @@ use window_forker;
 use IPC::SysV qw(IPC_PRIVATE IPC_RMID IPC_CREAT S_IRUSR S_IWUSR IPC_NOWAIT);
 use oar_scheduler;
 
+#use Devel::Cycle;
+#use Devel::Peek;
 use Data::Dumper;
 
 require Exporter;
@@ -228,11 +230,33 @@ sub start_energy_loop() {
     my $forker_pid;
     my $id_msg_hulot;
     my $pack_template = "l! a*";
+    my $max_cycles=int(get_conf_with_default_param(
+                                "ENERGY_MAX_CYCLES_UNTIL_REFRESH",
+                                "5000"
+                              ));
+    my $runtime_directory=get_conf_with_default_param(
+                                "OAR_RUNTIME_DIRECTORY",
+                                "/tmp/oar_runtime"
+                              );
     my %timeouts = fill_timeouts(get_conf_with_default_param(
                        "ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT", 
                        $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT));
     
     oar_debug("[Hulot] Starting Hulot, the energy saving module\n");
+    
+    # Load state if exists
+    if (-s "$runtime_directory/hulot_status.dump") {
+      my $ref = do "$runtime_directory/hulot_status.dump";
+      if ($ref) {
+        if (defined($ref->[0]) && defined($ref->[1]) &&
+            ref($ref->[0]) eq "HASH" && ref($ref->[1]) eq "HASH") {
+          oar_debug("[Hulot] State file found, loading it\n");
+          %nodes_list_running = %{$ref->[0]};
+          %nodes_list_to_remind = %{$ref->[1]};
+        }
+      }
+    }
+    unlink "$runtime_directory/hulot_status.dump";
 
     # Init keepalive values ie construct a hash:
     #      sql properties => number of nodes to keepalive
@@ -286,6 +310,8 @@ sub start_energy_loop() {
         exit(1);
     }
 
+    my $count_cycles;
+
     # Open the fifo
     while (1) {
         unless ( open( FIFO, "$FIFO" ) ) {
@@ -293,8 +319,13 @@ sub start_energy_loop() {
             exit(2);
         }
 
+        #debug
+        #open(DUMP,">>/tmp/hulot_dump");
+        #my $pid=$$;
+
         # Start to manage commands and nodes comming on the fifo
         while (<FIFO>) {
+        #print DUMP "point 1:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
             my $key;
             my $nodeFinded   = 0;
             my $nodeToAdd    = 0;
@@ -326,7 +357,11 @@ sub start_energy_loop() {
                 oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
             }
 
+            #print DUMP "point 2:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
+
             # Check idle and occupied nodes
+            my @all_occupied_nodes=iolib::get_alive_nodes_with_jobs($base);
+            my @nodes_that_can_be_waked_up=iolib::get_nodes_that_can_be_waked_up($base,iolib::get_date($base));
             foreach my $properties (keys %keepalive) {
               my @occupied_nodes;
               my @idle_nodes;
@@ -335,7 +370,7 @@ sub start_energy_loop() {
               $keepalive{$properties}{"cur_idle"}=0;
               foreach my $alive_node (iolib::get_nodes_with_given_sql($base,
                                         $properties. " and (state='Alive' or next_state='Alive')")) {
-                if (iolib::get_node_job($base,$alive_node)) {
+                if (grep(/^$alive_node$/,@all_occupied_nodes)) {
                   push(@occupied_nodes,$alive_node);
                 }else{
                   $keepalive{$properties}{"cur_idle"}+=1;
@@ -344,6 +379,8 @@ sub start_energy_loop() {
               }
               #oar_debug("[Hulot] cur_idle($properties) => "
               #     .$keepalive{$properties}{"cur_idle"}."\n");
+
+              #print DUMP "point 3:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
 
               # Wake up some nodes corresponding to properties if needed
               my $ok_nodes=$keepalive{$properties}{"cur_idle"}
@@ -356,9 +393,7 @@ sub start_energy_loop() {
                     # we have a good candidate to wake up
                     # now, check if the node has a good status
                     $wakeable_nodes--;
-                    my @node_info=iolib::get_node_info($base, $node);
-                    if ($node_info[0]->{state} eq "Absent" 
-                        && $node_info[0]->{available_upto} > time) {
+                    if (grep(/^$node$/,@nodes_that_can_be_waked_up)) {
                       $ok_nodes++;
                       # add WAKEUP:$node to list of commands if not already
                       # into the current command list
@@ -378,6 +413,8 @@ sub start_energy_loop() {
               }
             }
  
+            #print DUMP "point 4:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
+
             # Retrieve list of nodes having at least one resource Alive
             my @nodes_alive = iolib::get_nodes_with_given_sql($base,"state='Alive'");
 
@@ -614,6 +651,29 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
 
             # Cleaning the list to process
             %nodes_list_to_process = ();
+
+            # Suicide to workaround memory leaks. Almighty will restart hulot.
+            $count_cycles++;
+            if ($count_cycles > $max_cycles) {
+              oar_warn("[Hulot] Reached $max_cycles cycles. Suiciding (place aux jeunes).\n");
+              # cleaning ipc
+              shmctl($id_msg_hulot, IPC_RMID, 0); # <- doesn't work... why??
+              # saving state
+              if (open(FILE,">$runtime_directory/hulot_status.dump")) {
+                # removing HALT commands from state file as we don't check timeout on that
+                foreach my $node ( keys(%nodes_list_running) ) {
+                  if ($nodes_list_running{$node}->{'command'} eq "HALT") {
+                    remove_from_hash( \%nodes_list_running, $node );
+                  }
+                }
+                print FILE Dumper([\%nodes_list_running,\%nodes_list_to_remind]);
+              }else{
+                oar_error("[Hulot] could not open $runtime_directory/hulot_status.dump for writing!");
+              }
+              close(FIFO);
+              unlink $FIFO;
+              exit(42);
+            }
         }
         close(FIFO);
         # Unfortunately, never reached:
