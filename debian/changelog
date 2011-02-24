@@ -1,3 +1,11 @@
+oar (2.4.4-0~2.gbp01c947) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @01c9470ae4f45edb9b38162bad7d5f94dd73bd61 **
+
+  * Preparing for 2.4.4 release
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 24 Feb 2011 12:58:05 +0100
+
 oar (2.4.4-0~1.gbpxxxxxx) UNRELEASED; urgency=low
 
   [ Bruno Bzeznik ]
