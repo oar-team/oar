@@ -1,3 +1,10 @@
+oar (2.4.4-0~1.gbpxxxxxx) UNRELEASED; urgency=low
+
+  [ Bruno Bzeznik ]
+  * Testing 2.4.4
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 24 Feb 2011 10:45:20 +0200
+
 oar (2.4.3-1) stable; urgency=low
 
   [ Bruno Bzeznik ]
