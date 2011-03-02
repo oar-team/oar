@@ -567,37 +567,35 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
 
             # Launching commands
             if ( $#commandToLaunch >= 0 ) {
+                my %forker_type = (
+                        "type"     => "Hulot",
+                        "id_msg"   => $id_msg_hulot,
+                        "template" => $pack_template
+                    );
                 if (get_conf_with_default_param("ENERGY_SAVING_WINDOW_FORKER_BYPASS", "no") eq "yes") {
                     #Bypassing window_forker
                     oar_debug("[Hulot] Launching commands to nodes\n");
                     
                     #Strings that will be passed to wakeup and shutdown commands
-                    my $nodesToWakeUp = "";
-                    my $nodesToShutDown = "";
+                    my @nodesToWakeUp = ();
+                    my @nodesToShutDown = ();
                     
                     #Build strings to pass to wakeup and shutdown commands
                     my $base = iolib::connect();
                     foreach my $command ( @commandToLaunch ) {
                         (my $cmd, my $node)=split(/:/,$command, 2);
                         if ( $cmd eq "HALT" ) {
-                            $nodesToShutDown .= $node . " ";
+                            push(@nodesToShutDown, $node);
                             iolib::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",[$node]);
                         }
                         elsif ( $cmd eq "WAKEUP" ) {
-                            $nodesToWakeUp .= $node . " ";
+                            push(@nodesToWakeUp, $node);
                             iolib::add_new_event_with_host($base,"WAKEUP_NODE",0,"Node $node wake-up request",[$node]);
                         }
                     }
                     iolib::disconnect($base);
-                    
-                    my $command_to_exec = "echo \"$nodesToWakeUp\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD");
-                    if ($nodesToWakeUp) {
-                        execute_action($command_to_exec);
-                    }
-                    $command_to_exec = "echo \"$nodesToShutDown\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
-                    if ($nodesToShutDown) {
-                        execute_action($command_to_exec);
-                    }
+                    execute_action(get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"), \@nodesToWakeUp, "WAKEUP", \%forker_type);
+                    execute_action(get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD"), \@nodesToShutDown, "HALT", \%forker_type);
                 }
                 else {
                     # Use the window forker to execute commands in parallel
@@ -609,12 +607,6 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
                     $forker_pid = fork();
                     if ( defined($forker_pid) ) {
                         if ( $forker_pid == 0 ) {
-                            my %forker_type = (
-                                "type"     => "Hulot",
-                                "id_msg"   => $id_msg_hulot,
-                                "template" => $pack_template
-                            );
-
                             ( my $t, my $y ) = window_forker::launch(
                                 \@commandToLaunch,
                                 get_conf_with_default_param(
@@ -681,18 +673,28 @@ $keepalive{$properties}{"min"} ." nodes having '$properties'\n"
     }
 }
 
-sub execute_action($) {
-    my $command_to_exec = shift;
-    my $forker_pid = fork();
-    if ( defined($forker_pid) ) {
-        if ( $forker_pid == 0 ) {
-            exec($command_to_exec);
+sub execute_action($$$$) {
+    my ($command, $nodes, $cmd, $type) = @_;
+    my %forker_type = %$type;
+    if ($#{$nodes} >= 0) {
+        my $command_to_exec = "echo \"" . join(" ", @{$nodes}) . "\" | " . $command;
+        print $command_to_exec . " \n";
+        my $forker_pid = fork();
+        if ( defined($forker_pid) ) {
+            if ( $forker_pid == 0 ) {
+                system($command_to_exec);
+                foreach my $node ( @{$nodes} ) {
+                    if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
+                        oar_error("[Hulot] Failed to send message by msgsnd(): $!\n");
+                    }
+                }
+                exit 0;
+            }
         }
-    }
-    else {
-        oar_error("[Hulot] Fork system call failed, command \"" . 
-            $command_to_exec . 
-            "\" not executing\n");
+        else {
+            oar_error("[Hulot] Fork system call failed, command \"" . 
+                $command_to_exec . "\" not executing\n");
+        }
     }
 }
 
