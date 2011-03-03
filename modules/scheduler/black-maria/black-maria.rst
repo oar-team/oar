@@ -17,11 +17,11 @@ Workflow
 
 Limitations:
 ------------
-* Caution it's a prototype and only developed for experimentation purpose 
+* Caution it's a prototype and only developed for experimentation purpose
 
 Installation:
 -------------
-
+* Recette/makefile installation
 
 Running:
 --------
@@ -32,8 +32,12 @@ Todo:
 * more connector
 * support node nodelist with slurm node list grammar ex: dev[0-8,12,13,18-25]
 
+* recette/makefile installation 
+
 Comments, bugs, request:
 ------------------------
+
+* Caution it's a prototype and only developed for experimentation purpose 
 
 Log:
 ----

@@ -12,8 +12,8 @@ local env, con
 
 oar.conf={}
 -- TODO change oar.conf location
--- oar_confile_name = "/etc/oar/oar.conf"
-oar_confile_name = "/home/auguste/prog/oar/trunk/tools/oar.conf"
+oar_confile_name = "/etc/oar/oar.conf"
+--oar_confile_name = "/home/auguste/prog/oar/trunk/tools/oar.conf"
 
 -- lazy programmed table printers
 function oar.print_table(t)
@@ -213,7 +213,7 @@ function oar.save_assignements_black_maria(moldable_job_id,resource_ids)
 
   local values = ""
   for i,r_id in ipairs(resource_ids) do
-    values = values ..'('.. moldable_job_id .. ',' .. resource_ids .. ',\'CURRENT\'),' 
+    values = values ..'('.. moldable_job_id .. ',' .. r_id .. ',\'CURRENT\'),' 
   end
 
   values = string.sub(values, 1, -2) --chomp the last ','
@@ -224,9 +224,22 @@ end
 ---
 --- helper section
 ---
+ 
+-- white space split string function returns multiple strings
+function oar.wssplit(text, start)
+  local s,e,word = string.find(text, "(%S+)", start or 1)
+  if s then return word, oar.wssplit(text, e+1); end
+end
+
+-- white space split string function, returns a table
+function oar.tsplit(str) 
+  local t = {}
+  local function helper(word) table.insert(t, word) return "" end
+  if not str:gsub("%S+", helper):find"%S" then return t end
+end
 
 function oar.write_log(msg)
-  -- TODO to be completed
+  -- TODO 
   print(msg)
 end
 
@@ -451,6 +464,33 @@ function dumptable(t)   -- Only global declaration in the package
     -- wrapper was the best solution I came up with...
     return do_dumptable(t, 0, {})
 end
+
+--------------
+--------------
+--
+-- copy table function from lua-users.oar/wiki
+-- http://lua-users.org/wiki/CopyTable
+--
+
+function oar.deepcopy(object)
+    local lookup_table = {}
+    local function _copy(object)
+        if type(object) ~= "table" then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local new_table = {}
+        lookup_table[object] = new_table
+        for index, value in pairs(object) do
+            new_table[_copy(index)] = _copy(value)
+        end
+        return setmetatable(new_table, getmetatable(object))
+    end
+    return _copy(object)
+end
+
+
 
 --[[ 
 -- The Whole Enchillada

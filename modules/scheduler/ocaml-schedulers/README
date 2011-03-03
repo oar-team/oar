@@ -75,6 +75,8 @@ Next:
   ** DB only testing
 
  * use Bolt to LOG facilities ("à la" log4j)  : http://bolt.x9c.fr/index.html
+ * use cpp or m4 or cppo or c4same approach form LOG) for mysql / postgresql ??? 
+ * ocamlopt -c -pp "cppo -D 'VERSION 1.0'" example.ml for (use cppo for preprocessinf phase)
 
  * BEST / ALL 
  * scheduler message (see perl version *)
@@ -120,6 +122,9 @@ Done:
  * multi-resource-type (since >= cbf_mh_h) (
  * multi-request with non exclusive resource selection (since >= cbf_mh_h)
 
-Remarks:
+Remarks and misc:
  * 2.2.x series and previous oar's version are NOT SUPPORTED
  * Use of OUNIT for unit testing (cbf_mh_h and above)
+
+ * http://martin.jambon.free.fr/ocaml.htm 
+ * Forin  Provides a foreach-style replacement of List.iter. Now available through P4ck. [view|save]. [Camlp4 3.10 port: no] License: Public Domain. 
