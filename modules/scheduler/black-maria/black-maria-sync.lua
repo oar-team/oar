@@ -56,12 +56,13 @@ function handler(c, host, port)
   
   print(job_info.nodes_file)
  
-  -- read JRMS' node file and build resource id list
+  -- read RJMS' node file and build resource id list
   -- TODO:  SLURM_JOB_NODELIST= lx[15,18,32-33] -> use flatten_nodelist
 
   resource_ids = {}
   k = 1
-  local f = assert(io.open(job_info.nodes_file, "r"))
+--TODO if node_list -> slurm blabla
+  local f = assert(io.open(job_info.nodes_file, "r")) 
   for line in f:lines() do 
     print(line)
     for i,r_id in ipairs(nodes_resources_ids[line]) do
@@ -69,7 +70,7 @@ function handler(c, host, port)
       k = k + 1
     end 
   end
-
+  print("BKM-sync: dump resource_ids")
   dumptable(resource_ids)
 
   oar.save_assignements_black_maria(job_info.moldable_j_id,resource_ids) 

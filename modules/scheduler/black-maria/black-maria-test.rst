@@ -24,27 +24,31 @@ scp -P 2222 -r black-maria root@localhost:/root
 apt-get install phpmyadmin
 apt-get install lua5.1 liblua5.1-copas0 blua5.1-coxpcall0 liblua5.1-sql-mysql-2 
 
-echo "lua /root/black-maria/black-maria-sched.lua" > /usr/lib/oar/schedulers/black-maria-sched
+echo "lua /root/black-maria/black-maria-sched.lua \$1" > /usr/lib/oar/schedulers/black-maria-sched
+ln -s /root/black-maria/oar.lua /usr/share/lua/5.1/
 chmod 755 /usr/lib/oar/schedulers/black-maria-sched
+chmod 755 /root
 
 
+#sync from external black-maria 
+rsync -avL . kam:/root/black-maria/
 
 # install new oar queue (spades for instance)
 oarnotify --add_queue "spades,5,black-maria-sched"
-
-
-
 
 Multiple slurmd support:
 
 slurm must be recompiled with "--enable-multiple-slurmd" parameter at configure step.
 For more information, see:
 https://computing.llnl.gov/linux/slurm/programmer_guide.html
+(realized in kameleon's slurm step kameleon/steps/slurm)
 
 
-20/11/10
+02/03/11
 ========
-*  ./kvm-tcp oar_slurm-v2.raw 
+*  ./kvm-tcp oar-slurm-v2.raw 
+Notes: kvm-tcp -> sudo kvm -m 512 -redir tcp:2222::22 $1
+oarsub -I / sinfo OK
 
 
 17/10/10

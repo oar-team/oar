@@ -29,21 +29,21 @@ user =  7
 function submit_to_jrms(jobs_to_launch)
   local job_ids = {}
   -- TODO must add oardodo user
-  locat oardodo_part = "OARDO_BECOME_USER"..job[user].."; oardodo "
-  local submit_cmd_part1 = "sbatch -N"
-  local submit_cmd_part2 = " -l black-maria-pilot.sh "
+
+  local submit_cmd_part1 = "sbatch --workdir=/tmp/ -n"
+  local submit_cmd_part2 = " black-maria-pilot.sh "
   for i,job in ipairs(jobs_to_launch) do
+    local oardodo = "OARDO_BECOME_USER="..job[user].."; oardodo "
     job_ids[i] = job[j_id]
     print("BKM: submit job to LRMS")
-    -- TODO 
-    -- TODO walltime for foreign JRMS
-    -- TODO Do we need of a transform function ?
     local nb_nodes = job[nb_res]
     if oar.conf["BKM_RESOURCE_FACTOR"] then 
       nb_nodes = nb_nodes / oar.conf["BKM_RESOURCE_FACTOR"]
     end
     local cmd = oardodo ..
-                submit_cmd_part1 .. nb_nodes .. submit_cmd_part2 ..
+                submit_cmd_part1 .. nb_nodes .. 
+                " -t " .. job[walltime]/60 ..":10" .. -- TODO adapt for each RJMSand parametrize timeguard 10 seconds here
+                submit_cmd_part2 ..
                 bkm_sync_host .. " " ..
                 bkm_sync_port .. " " ..
                 job[j_id] .." " ..
@@ -74,6 +74,7 @@ end
 --
 -- main
 --
+
 queue = "default"
 if arg[1] then queue = arg[1] end
 
