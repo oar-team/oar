@@ -12,13 +12,13 @@ end
 
 -- 
 -- Transform a compact node list as use in Slurm to list of individual nodes
--- ex: nodes[23,45,50-52] -> [nodes23, node45, node50, node51, node52] 
+-- ex: nodes[23,45,50-52] -> {nodes23, node45, node50, node51, node52} 
 -- TODO: this funcion must be move to an helper library
 -- TODO: support different named nodes
 function flatten_nodelist(nodelist_compact)
   x,y,node,desc =  nodelist_compact:find("^(%S+)%[(%S+)%]")
-  if not x then
-    return {node}
+  if not x then -- only one node
+    return {nodelist_compact}
   end
   d = oar.tsplit(desc:gsub(","," "))
 
@@ -54,22 +54,39 @@ function handler(c, host, port)
 
   dumptable(job_info)
   
-  print(job_info.nodes_file)
- 
+  print(job_info.node_list)
+
   -- read RJMS' node file and build resource id list
   -- TODO:  SLURM_JOB_NODELIST= lx[15,18,32-33] -> use flatten_nodelist
 
   resource_ids = {}
   k = 1
---TODO if node_list -> slurm blabla
-  local f = assert(io.open(job_info.nodes_file, "r")) 
-  for line in f:lines() do 
-    print(line)
-    for i,r_id in ipairs(nodes_resources_ids[line]) do
-      resource_ids[k]=r_id
-      k = k + 1
-    end 
+
+-- convert node_list or node_file allocated and given by foreign RJMS to OAR's resource id list
+-- TODO need to uniq the node_file  
+  if job_info.node_list=='' then
+    local f = assert(io.open(job_info.node_file, "r")) 
+    for line in f:lines() do 
+      print(line)
+      for i,r_id in ipairs(nodes_resources_ids[line]) do
+        resource_ids[k]=r_id
+        k = k + 1
+      end 
+    end
+  else
+
+    print("BKM-sync: dump flatten_nodellist")
+    dumptable(flatten_nodelist(job_info.node_list))
+
+    for i, node in ipairs(flatten_nodelist(job_info.node_list)) do
+      print("BKM-sync: allocated node:"..node)
+      for i,r_id in ipairs(nodes_resources_ids[node]) do
+        resource_ids[k]=r_id
+        k = k + 1
+      end 
+    end
   end
+
   print("BKM-sync: dump resource_ids")
   dumptable(resource_ids)
 
