@@ -30,10 +30,10 @@ function submit_to_jrms(jobs_to_launch)
   local job_ids = {}
   -- TODO must add oardodo user
 
-  local submit_cmd_part1 = "sbatch --workdir=/tmp/ -n"
+  local submit_cmd_part1 = " sbatch_oardodo --workdir=/tmp/ -n"
   local submit_cmd_part2 = " black-maria-pilot.sh "
   for i,job in ipairs(jobs_to_launch) do
-    local oardodo = "OARDO_BECOME_USER="..job[user].."; oardodo "
+    local oardodo = "export OARDO_BECOME_USER="..job[user].."; oardodo "
     job_ids[i] = job[j_id]
     print("BKM: submit job to LRMS")
     local nb_nodes = job[nb_res]
@@ -42,14 +42,14 @@ function submit_to_jrms(jobs_to_launch)
     end
     local cmd = oardodo ..
                 submit_cmd_part1 .. nb_nodes .. 
-                " -t " .. job[walltime]/60 ..":10" .. -- TODO adapt for each RJMSand parametrize timeguard 10 seconds here
+                " -t " .. job[walltime]/60 .. ":10" .. -- TODO adapt for each RJMSand parametrize timeguard 10 seconds here
                 submit_cmd_part2 ..
                 bkm_sync_host .. " " ..
                 bkm_sync_port .. " " ..
                 job[j_id] .." " ..
                 job[modalble_id] .. " " ..
                 job[walltime]
-                
+--    cmd = "export OARDO_BECOME_USER=kameleon; oardodo yop1"           
     print("BKM: " .. cmd)
 
     f = assert  (io.popen (cmd)) -- TODO retrieve the exist status value

@@ -20,5 +20,5 @@ echo $BKM_SYNC_DATA
 echo $BKM_SYNC_DATA | nc $BKM_SYNC_HOST $BKM_SYNC_PORT
 
 # time to sleep
-#sleep $WALLTIME
+sleep $WALLTIME
 sleep 2
