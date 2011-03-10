@@ -3077,7 +3077,7 @@ sub get_alive_nodes_with_jobs($) {
     $sth->execute();
     my @res = ();
     while (my @ary = $sth->fetchrow_array) {
-        push(@res, @ary[0]);
+        push(@res, $ary[0]);
     }
     return @res;
     $sth->finish();
@@ -3228,7 +3228,7 @@ sub get_nodes_that_can_be_waked_up($$) {
     $sth->execute();
     my @res = ();
     while (my @ary = $sth->fetchrow_array) {
-        push(@res, @ary[0]);
+        push(@res, $ary[0]);
     }
     return @res;
 }
