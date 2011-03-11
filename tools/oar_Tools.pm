@@ -40,6 +40,7 @@ sub get_default_oarexec_directory();
 sub set_default_oarexec_directory($);
 sub get_default_openssh_cmd();
 sub get_oar_pid_file_name($);
+sub get_oar_user_signal_file_name($);
 sub get_oarsub_connections_file_name($);
 sub get_ssh_timeout();
 sub get_taktuk_timeout();
@@ -261,6 +262,13 @@ sub get_oar_pid_file_name($){
     return($Default_oarexec_directory."/".$Oarexec_pid_file_name.$job_id);
 }
 
+# Get the name of the file which contains the signal given by the user
+# arg : job id
+sub get_oar_user_signal_file_name($){
+    my $job_id = shift;
+
+    return($Default_oarexec_directory."/USER_SIGNAL_".$job_id);
+}
 
 # Get the name of the file which contains parent pids of oarsub connections
 # arg : job id
@@ -308,10 +316,11 @@ sub signal_oarexec($$$$$$$){
     $cmd[$c] = "-T";$c++;
     $cmd[$c] = $host;$c++;
     if (defined($user_signal) && $user_signal ne ''){
-	$cmd[$c] = "bash -c 'echo $user_signal > /tmp/USER_SIGNAL && test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+        my $signal_file = oar_Tools::get_oar_user_signal_file_name($job_id);
+	    $cmd[$c] = "bash -c 'echo $user_signal > $signal_file && test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
     }
     else {
-	$cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+    	$cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
     }
     $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();

@@ -101,7 +101,7 @@ sub quit_oarexec($$){
 #delete temporary file
 sub clean_all(){
     #system("rm -f $OAR_FILE_NODES $oarPidFile");
-    unlink($Node_file,$Res_file,$Pid_file);
+    unlink($Node_file,$Res_file,$Pid_file,oar_Tools::get_oar_user_signal_file_name($Job_id));
     # Kill oarsub connections
     my $file = oar_Tools::get_oarsub_connections_file_name($Job_id);
     if (open(OARSUBS,$file)){
@@ -348,7 +348,7 @@ sub user_defined_signal_handler {
 
     print("[oarexec $Job_id] In user defined signal handler of @_\n");
     my $signal;
-    open(FILE, "/tmp/USER_SIGNAL");
+    open(FILE, oar_Tools::get_oar_user_signal_file_name($Job_id));
     while (<FILE>) {
 	$signal = $_;
     }

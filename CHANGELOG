@@ -30,6 +30,8 @@ version 2.5.0:
     if plenty of jobs have to be launched at the same time.
   - Fix problem when deleting a job in the Suspended state (oarexec was stopped
     by a SIGSTOP so it was not able to handle the delete operation)
+  - Make the USER_SIGNAL feature of oardel multi job independant and remove the
+    temporary file at the end of the job
 
 version 2.4.4:
 --------------
