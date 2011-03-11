@@ -95,7 +95,7 @@ my ($job_challenge,$ssh_private_key,$ssh_public_key) = iolib::get_job_challenge(
 
 my @hosts = iolib::get_job_current_hostnames($base,$Job_id);
 
-if (!(($job->{state} eq "Launching") or (($job->{state} eq "Running")))){
+if (!(($job->{state} eq "Launching") or ($job->{state} eq "Running") or ($job->{state} eq "Suspended") or ($job->{state} eq "Resuming"))){
     oar_error("[bipbip $Job_id] A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???\n");
     iolib::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???");
     iolib::disconnect($base);

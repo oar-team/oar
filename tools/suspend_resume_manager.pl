@@ -27,16 +27,27 @@ if (!defined($Cpuset_name)){
 # From now, "Hash" is of the form: 
 # $Hash = {
 #           name => "cpuset name",
+#           job_id => "job id",
+#           oarexec_pid_file => "file which contains the oarexec pid"
 #         }
 #
 # $Cpuset_name is the name of the cpuset
 
+my $oarexec_pid_file = $Hash->{oarexec_pid_file};
+
 if ($ARGV[0] eq "suspend"){
     # Suspend all processes of the cpuset
-
-    system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
-            oardodo kill -SIGSTOP $PROCESSES'
-          );
+    system('set -x;
+            PROC=0;
+            test -e '.$oarexec_pid_file.' && PROC=$(cat '.$oarexec_pid_file.');
+            for p in $(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
+            do
+            if [ $PROC != $p ]
+            then
+                oardodo kill -SIGSTOP $p;
+            fi
+            done
+          ');
 }elsif ($ARGV[0] eq "resume"){
     # Resume all processes of the cpuset
 

@@ -198,6 +198,8 @@ foreach my $j (iolib::get_jobs_in_state($base, "Resuming")){
             my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$j->{assigned_moldable_job});
             my $suspend_data_hash = {
                 name => $cpuset_name,
+                job_id => $j->{job_id},
+                oarexec_pid_file => oar_Tools::get_oar_pid_file_name($j->{job_id}),
             };
             if (defined($cpuset_nodes)){
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");

@@ -28,6 +28,8 @@ version 2.5.0:
     to use a sliding window to launch the bipbip processes if
     "DETACH_JOB_FROM_SERVER=1". This feature avoids the overload of the server
     if plenty of jobs have to be launched at the same time.
+  - Fix problem when deleting a job in the Suspended state (oarexec was stopped
+    by a SIGSTOP so it was not able to handle the delete operation)
 
 version 2.4.4:
 --------------

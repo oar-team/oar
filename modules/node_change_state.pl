@@ -218,6 +218,8 @@ foreach my $i (@events_to_check){
                 my $cpuset_nodes = iolib::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
                 my $suspend_data_hash = {
                     name => $cpuset_name,
+                    job_id => $i->{job_id},
+                    oarexec_pid_file => oar_Tools::get_oar_pid_file_name($i->{job_id}),
                 };
                 if (defined($cpuset_nodes)){
                     my $taktuk_cmd = get_conf("TAKTUK_CMD");
