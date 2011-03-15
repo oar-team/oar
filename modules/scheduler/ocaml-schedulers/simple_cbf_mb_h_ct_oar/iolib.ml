@@ -5,6 +5,14 @@ open Helpers
 
 (*  Postgresql very sensible ? "type = \"default\""    "type = 'default'" *)
 
+#ifdef POSTGRESQL
+  #define NoN
+  #define DBD Postgresql_driver
+#else
+  #define NoN not_null
+  #define DBD Mysql_driver
+#endif
+
 
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
@@ -86,8 +94,6 @@ let get_job_list dbh default_resources queue besteffort_duration =
     NoN int_of_string a.(0), (* job_id *) 
     (if flag_besteffort then besteffort_duration else 
       NoN Int64.of_string a.(1)), (* moldable_walltime *)
-(*    NoN  Int64.of_string a.(1)),  moldable_walltime *)
-      (NoN  Int64.of_string a.(1)) + 1), (*  moldable_walltime + 1 second for timeguard TEMPORARY UGLY HACK *)
 
       NoN int_of_string a.(3), (* moldable_id *)
       NoNStr a.(2),(* properties *)
