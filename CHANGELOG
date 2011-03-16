@@ -32,6 +32,12 @@ version 2.5.0:
     by a SIGSTOP so it was not able to handle the delete operation)
   - Make the USER_SIGNAL feature of oardel multi job independant and remove the
     temporary file at the end of the job
+  - Monika: display if the job is of timesharing type or not
+            add in the job listing the initial_request (is there a reason to
+            not display it?)
+  - IoLib: update scheduler_priority resources property for timesharing jobs.
+           So the scheduler will be able to avoid to launch every timesharing
+           jobs on the same resources (they can be dispatched)
 
 version 2.4.4:
 --------------

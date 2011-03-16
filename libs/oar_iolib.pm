@@ -1763,6 +1763,23 @@ sub set_job_state($$$) {
                 if ($state eq "Terminated"){
                     oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"END","Job stopped normally.");
                 }else{
+                    # Verify if the job was suspended and if the resource
+                    # property suspended is updated
+                    if ($job->{suspended} eq "YES"){
+                        
+                        my @r = get_current_resources_with_suspended_job($dbh);
+                        if ($#r >= 0){
+                        $dbh->do("  UPDATE resources
+                                    SET suspended_jobs = \'NO\'
+                                    WHERE
+                                        resource_id NOT IN (".join(",",@r).")
+                                 ");
+                        }else{
+                            $dbh->do("  UPDATE resources
+                                        SET suspended_jobs = \'NO\'
+                                     ");
+                        }
+                    }
                     oar_Judas::notify_user($dbh,$job->{notify},$addr,$job->{job_user},$job->{job_id},$job->{job_name},"ERROR","Job stopped abnormally or an OAR error occured.");
                 }
                 update_current_scheduler_priority($dbh,$job->{job_id},$job->{assigned_moldable_job},"-2","STOP");
@@ -4825,10 +4842,14 @@ sub update_current_scheduler_priority($$$$$){
 
     if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")){
         my $types = iolib::get_current_job_types($dbh,$job_id);
-        if ((defined($types->{besteffort}))
+        if (((defined($types->{besteffort})) or (defined($types->{timesharing})))
             and (($state eq "START" and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED_START") <= 0))
                 or (($state eq "STOP") and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED_START") > 0)))
            ){
+            my $coeff = 1;
+            if ((defined($types->{timesharing})) and !(defined($types->{besteffort}))){
+                $coeff = 10;
+            }
             my $index = 0;
             foreach my $f (split('/',get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER"))){
                 next if ($f eq "");
@@ -4851,7 +4872,7 @@ sub update_current_scheduler_priority($$$$$){
                 return if (!defined($value_str));
                 chop($value_str);
                 my $req =  "UPDATE resources
-                            SET scheduler_priority = scheduler_priority + ($value * $index)
+                            SET scheduler_priority = scheduler_priority + ($value * $index * $coeff)
                             WHERE
                                 $f IN (".$value_str.")
                            ";

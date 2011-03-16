@@ -117,11 +117,14 @@ sub htmlTableRow {
   my $scheduled_start = $self->get("scheduled_start");
   my $initial_request = $self->get("initial_request");
   
-  if($initial_request =~ /-t container/){
+  if($initial_request =~ / -t container/){
   	$type.=" - container";
   }
-  elsif($initial_request =~ /-t inner=(\d+)/){
+  elsif($initial_request =~ / -t inner=(\d+)/){
   	$type.=" - inner job (container=$1)";
+  }
+  elsif($initial_request =~ / -t timesharing/){
+  	$type.=" - timesharing";
   }
 
   $output .= $cgi->td({-align => "center"},$state);
@@ -151,7 +154,8 @@ sub htmlStatusTable {
   $output .= $cgi->end_Tr();
   my @keylist = keys %{$self};
   foreach my $key (sort @keylist) {
-    if(($key eq "job_id") or ($key eq "initial_request")){
+    if(($key eq "job_id")){
+    #if(($key eq "job_id") or ($key eq "initial_request")){
       next;
     }
     $output .= $cgi->start_Tr();

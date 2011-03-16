@@ -37,7 +37,7 @@ my $oarexec_pid_file = $Hash->{oarexec_pid_file};
 
 if ($ARGV[0] eq "suspend"){
     # Suspend all processes of the cpuset
-    system('set -x;
+    system('#set -x;
             PROC=0;
             test -e '.$oarexec_pid_file.' && PROC=$(cat '.$oarexec_pid_file.');
             for p in $(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
