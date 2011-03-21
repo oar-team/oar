@@ -25,7 +25,7 @@ Description: OAR batch scheduler server package
  This package installs the server part of the OAR batch scheduler
 
 Package: oar-scheduler-ocaml-mysql
-Architecture: all
+Architecture: any
 Depends: oar-server (= ${binary:Version}), ${misc:Depends}, libmysql-ocaml, libsequel-ruby
 Description: OAR batch scheduler package for ocaml scheduler
  This package installs the OCAML scheduler
