@@ -56,7 +56,7 @@ parse_args() {
 
 # Debug function: dump parsed information
 dump() {
-	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
+       for i in $(seq 0 $((SSHARGS_OPTCOUNT - 1))); do
 		echo "SSHARGS_OPT[$i]="${SSHARGS_OPT[$i]} >> $DEBUGFILE
 		echo "SSHARGS_OPTARG[$i]="${SSHARGS_OPTARG[$i]} >> $DEBUGFILE
 	done
@@ -99,7 +99,7 @@ fix_opts() {
         unset OPTS
 	OPTCOUNT=0
         let j=0
-	for ((i=0;i<$SSHARGS_OPTCOUNT;i++)); do
+        for i in $(seq 0 $((SSHARGS_OPTCOUNT - 1))); do
 		if [[ ${SSHARGS_OPT[$i]} =~ ^l ]]; then
 			:
                 elif [[ ${SSHARGS_OPT[$i]} =~ ^i ]]; then

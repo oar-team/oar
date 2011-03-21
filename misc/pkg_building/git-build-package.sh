@@ -103,7 +103,7 @@ then
 
   #REVISION=$(git-svn info Makefile| grep "^Revision:" | cut -d ' ' -f 2)
 
-  if [ "$SNAPSHOT" == "y" ]; then
+  if [ "$SNAPSHOT" = "y" ]; then
     git-dch --since=HEAD^ --snapshot --debian-branch=$BRANCH_NAME
     git add debian/changelog
     WHAT="snapshot"
@@ -140,7 +140,7 @@ then
   git checkout $BRANCH_NAME
   get_oar_version
   if [ "$OARVersion" != "" ] ; then
-      if [ "$SNAPSHOT" == "y" ]; then
+      if [ "$SNAPSHOT" = "y" ]; then
         get_snapshot_id
         FullVersion="$OARVersion~git-$SNAPSHOT_ID"
       else
@@ -161,7 +161,7 @@ then
         perl -pi -e 's/(BuildRequires.*)/#$1/' SPECS/oar.spec
       fi
       perl -pi -e "s/^%define version .*/%define version $OARVersion/" SPECS/oar.spec
-      if [ "$SNAPSHOT" == "y" ]; then
+      if [ "$SNAPSHOT" = "y" ]; then
         perl -pi -e "s/^%define release (.*)/%define release \$1git$SNAPSHOT_ID/" SPECS/oar.spec
       fi
       rpmbuild -ba SPECS/oar.spec
@@ -181,7 +181,7 @@ then
   git checkout $BRANCH_NAME
   get_oar_version
   if [ "$OARVersion" != "" ] ; then
-    if [ "$SNAPSHOT" == "y" ]; then
+    if [ "$SNAPSHOT" = "y" ]; then
       get_snapshot_id
       OARVersion="$OARVersion~git-$SNAPSHOT_ID"
     fi

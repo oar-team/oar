@@ -97,7 +97,7 @@ fi
 if [ "$CPUSET_PATH" != "" ]; then
     if [ -r /proc/self/cpuset ]; then
         OAR_CPUSET=$(< /proc/self/cpuset)
-        if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
+        if [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
                 umask $OLDUMASK
@@ -142,7 +142,7 @@ if [ -n "$OAR_JOB_ID" ]; then
 
     eval $STR
 
-    if [ "$OAR_CPUSET" == "" ]; then
+    if [ "$OAR_CPUSET" = "" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
         exit 5
     else
@@ -153,7 +153,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     fi
 
     # Check if we must use a tmp user id for this job
-    if [ "$OAR_JOB_USER" == "" ]; then
+    if [ "$OAR_JOB_USER" = "" ]; then
         OAR_JOB_USER=$OARDO_USER
     fi
     if [ "$CPUSET_PATH" != "" ]; then
