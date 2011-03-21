@@ -2,6 +2,7 @@ OAR CHANGELOG
 =============
 
 version 2.5.0:
+--------------
   - Sources directories reorganized
   - New "Phoenix" tool to try to reboot automatically broken nodes
     (to setup into /etc/oar/oar_phoenix.pl)
@@ -21,7 +22,6 @@ version 2.5.0:
   - Experimental testsuite
   - Poar: web portal using the REST API (experimental)
   - Oaradmin YAML export support for resources creation (for the REST API)
-  - New OCAML scheduler (experimental)
   - Bugfix #10567: enabling to bypass window mechanism of hulot.
   - Bugfix #10568: Wake up timeout changing with the number of nodes
   - Add in oar.conf the tag "RUNNER_SLIDING_WINDOW_SIZE": it allows the runner
