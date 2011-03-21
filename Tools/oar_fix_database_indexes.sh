@@ -15,7 +15,7 @@ fi
 
 TMPFILE=/tmp/$(basename $0).$$
 
-if [ $DB_TYPE == "mysql" ]; then
+if [ $DB_TYPE = "mysql" ]; then
 	mysql -N -h$DB_HOSTNAME -u$DB_BASE_LOGIN -p$DB_BASE_PASSWD $DB_BASE_NAME <<EOF | sort -u > $TMPFILE
 #assigned_resources
 SELECT DISTINCT jobs.job_id
