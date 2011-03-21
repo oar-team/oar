@@ -211,7 +211,7 @@ possible resources we want to add 2 others which fit *sql2* and the hierarchy
 Examples
 ::
 
-  # oarsub -l /node=4 test.sh
+  # oarsub -l /nodes=4 test.sh
 
 (the "test.sh" script will be run on 4 entire nodes in the default queue with
 the default walltime)
@@ -229,7 +229,7 @@ written in the file "test12.702.stdout" and the standard error in
 
 ::
 
-  # oarsub -q default -l /node=10/cpu=3,walltime=2:15:00 \
+  # oarsub -q default -l /nodes=10/cpu=3,walltime=2:15:00 \
     -p "switch = 'sw1'" /home/users/toto/prog
     
 (the "/home/users/toto/prog" script will be run on 10 nodes with 3 cpus (so a
@@ -237,7 +237,7 @@ total of 30 cpus) in the default queue with a walltime of  2:15:00.
 Moreover "-p" option restricts resources only on the switch 'sw1')
 ::
      
-  # oarsub -r "2009-04-27 11:00:00" -l /node=12/cpu=2
+  # oarsub -r "2009-04-27 11:00:00" -l /nodes=12/cpu=2
 
 (a reservation will begin at "2009-04-27 11:00:00" on 12 nodes with 2 cpus
 on each one)
