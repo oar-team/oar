@@ -628,7 +628,7 @@ chmod 0600 /var/lib/heartbeat/crm/cib.xml
 #-----------------------Modify OAR service, LSB compatible---------------------------------------------------
 
 if [ "$ISDATABASE" = "n" ]||[ "$CONF" = "2nodes" ]; then
-	echo '#! /bin/sh' > /etc/init.d/oar-server
+	echo '#! /bin/bash' > /etc/init.d/oar-server
 
 	echo '### BEGIN INIT INFO' >> /etc/init.d/oar-server
 	echo '# Provides:         oar-server' >> /etc/init.d/oar-server
@@ -894,7 +894,7 @@ fi
 
 if [ "$USEFILEPARTITION" = "y" ]; then
 
-	echo '#!/bin/sh' > /etc/init.d/active-loop
+	echo '#!/bin/bash' > /etc/init.d/active-loop
 	echo 'case "$1" in' >> /etc/init.d/active-loop
 	echo '  start|"") ' >> /etc/init.d/active-loop
 	echo '        losetup /dev/loop0 /image.img' >> /etc/init.d/active-loop

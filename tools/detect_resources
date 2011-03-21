@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # $Id$
 # Detect resources on a list of nodes and print corresponding OAR commands
 #set -x
