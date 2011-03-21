@@ -423,7 +423,7 @@ sub get_oardel_command($$$){
     my $user = shift;
     my $jobId = shift;
 
-    return("ssh $cluster \"/bin/sh -c \\\"sudo -u $user oardel $jobId\\\"\"");
+    return("ssh $cluster \"/bin/bash -c \\\"sudo -u $user oardel $jobId\\\"\"");
 }
 
 
