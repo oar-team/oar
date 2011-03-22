@@ -1,17 +1,24 @@
+(*pp cpp -P -w *)
+(* previous line is to ask OcamlMafile to preprocess this file with cpp preprocesseur *)
+
+(* Postgresql very sensible ? "type = \"default\""    "type = 'default'" *)
+
+(* preprocessor part *)
+
+#ifdef POSTGRESQL
+  #define DBD Postgresql_driver
+  #define NoN
+  #define NoNStr Str 
+#else
+  #define DBD Mysql_driver
+  #define NoN not_null
+  #define NoNStr not_null str2ml
+#endif
+
 open DBD
 open Types
 open Interval
 open Helpers
-
-(*  Postgresql very sensible ? "type = \"default\""    "type = 'default'" *)
-
-#ifdef POSTGRESQL
-  #define NoN
-  #define DBD Postgresql_driver
-#else
-  #define NoN not_null
-  #define DBD Mysql_driver
-#endif
 
 
 let connect () = DBD.connect ();;
@@ -184,7 +191,7 @@ let get_scheduled_jobs dbh =
  (*   if not (first_res = None) then *)
           let newjob_res a = 
 (* function
-           | None -> failwith "pas glop" (*not reacheable*) 
+           | None -> failwith "pas glop"  
            | Some job_res -> *)
               let j_id = NoN int_of_string a.(0) (* job_id *)
               and j_walltime = NoN Int64.of_string a.(2) (* moldable_walltime *)
@@ -199,8 +206,8 @@ let get_scheduled_jobs dbh =
 	                walltime = j_walltime;
                   types = [];
                   constraints = []; (* constraints irrelevant fortest_container already scheduled job *)
-                  hy_level_rqt = [];(* // *)
-                  hy_nb_rqt = []; (* // *)
+                  hy_level_rqt = [];(*  *)
+                  hy_nb_rqt = []; (*  *)
                   set_of_rs = []; (* will be set when all resource_id are fetched *)
                 }, 
                   [j_nb_res]) 
