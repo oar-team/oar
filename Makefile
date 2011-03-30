@@ -589,8 +589,9 @@ ocaml-scheduler-psql: FORCE
 ocaml-schedulers: ocaml-scheduler-mysql hierarchy-extractor
 
 keyring-install: FORCE
-	install -d -m 0755 $(DESTDIR)/usr/share/keyrings
-	install -m 0644 misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/keyrings
+	install -d -m 0755 $(DESTDIR)/usr/share/oar-keyring
+	install -m 0644 misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/oar-keyring
+	install -m 0644 misc/pkg_building/oarmaster.gpg $(DESTDIR)/usr/share/oar-keyring
 
 common-install: common
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
