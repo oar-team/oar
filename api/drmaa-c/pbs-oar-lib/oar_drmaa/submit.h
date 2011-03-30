@@ -68,7 +68,7 @@ struct oardrmaa_submit_s {
         fsd_template_t *oar_job_attributes;
 	fsd_expand_drmaa_ph_t *expand_ph;
         /* struct attrl *oar_attribs; */
-        /* uint32_t oar_attribs_bitset[ PBS_ATTRIBS_BITSET_SIZE ]; */ //TODO: What is it ?
+        /* uint32_t oar_attribs_bitset[ PBS_ATTRIBS_BITSET_SIZE ]; */ /*TODO: What is it ?*/
 };
 
 void oardrmaa_submit_apply_native_specification(

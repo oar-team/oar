@@ -1,3 +1,7 @@
+
+#ifndef __OAR_DRMAA__OAR_ERROR_H
+#define __OAR_DRMAA__OAR_ERROR_H
+
 /* from number and text from pbs_error.h must replaced by OAR code */
 #define OAR_ERRNO_NONE       0		/* no error */
 #define OAR_ERRNO_UNKJOBID	15001		/* Unknown Job Identifier */
@@ -75,12 +79,15 @@
 #define USER_HOLD 0 /* TODO */
 
 
-struct pbs_err_to_txt {
+struct oar_err_to_txt {
         int    err_no;
         char **err_txt;
 };
 
 char *oar_errno_to_txt(int err_no);
 
-int oar_errno = 0; /* global value to store oar error from OAR_REST_API request. TODO: to verify */
+extern int oar_errno; /* global value to store oar error from OAR_REST_API request. TODO: to verify */
+
+#endif /* __OAR_DRMAA__OAR_ERROR_H */
+
 

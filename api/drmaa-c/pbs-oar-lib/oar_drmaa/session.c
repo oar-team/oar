@@ -211,9 +211,11 @@ void
 oardrmaa_session_apply_configuration( fsd_drmaa_session_t *self )
 {
 
-    ///TODO pbs_home conf file !!!
-    /*
+    /* TODO pbs_home log file ???*/
+
         oardrmaa_session_t *oarself = (oardrmaa_session_t*)self;
+
+        /*
 	fsd_conf_option_t *pbs_home;
 	pbs_home = fsd_conf_dict_get(self->configuration, "pbs_home" );
 	if( pbs_home )
@@ -253,12 +255,13 @@ oardrmaa_session_apply_configuration( fsd_drmaa_session_t *self )
 		 }
 		else
 		{
-			pbsself->super.enable_wait_thread = false;
-			pbsself->wait_thread_log = false;
-			fsd_log_debug(("pbs_home not configured. Running standard wait_thread (pooling)."));
+                */
+                        oarself->super.enable_wait_thread = false;
+                        /* oarself->wait_thread_log = false; */ /* TODO: to remove */
+                        fsd_log_debug(("Running standard wait_thread (pooling)."));
+/*
 		}
 	 }
-
 */
 
         oarself->super_apply_configuration(self); /* call method from the superclass */
@@ -288,9 +291,9 @@ retry:
                                  oarself->oar_conn, (void*)status ));
                 if( status == NULL  &&  oar_errno != 0 )
 		 {
-                        if (oar_errno == OAR_ERRNO_PROTOCOL || oar_errno == OAR_ERRNO_EXPIRED) //TODO: to adapt
-                        // TODO
-                        // TODO
+                        if (oar_errno == OAR_ERRNO_PROTOCOL || oar_errno == OAR_ERRNO_EXPIRED) /*TODO: to adapt */
+                        /* TODO */
+                        /* TODO */
 			 {
                                 if ( oarself->oar_conn >= 0)
                                         oar_disconnect( oarself->oar_conn );
@@ -388,7 +391,7 @@ oardrmaa_create_status_attrl(void)
 	const int max_attribs = 16;
 	int n_attribs;
 	int j = 0;
-// TODO to adapt
+/* TODO to adapt */
 	fsd_log_enter((""));
 	fsd_calloc( result, max_attribs, struct attrl );
 	result[j++].name="job_state";
@@ -436,7 +439,7 @@ bool
 oardrmaa_session_do_drm_keeps_completed_jobs( oardrmaa_session_t *self )
 {
 
-//TODO: to adapt
+/*TODO: to adapt */
     /*
 	struct attrl default_queue_query;
 	struct attrl keep_completed_query;
@@ -524,7 +527,7 @@ oardrmaa_session_do_drm_keeps_completed_jobs( oardrmaa_session_t *self )
 void *
 oardrmaa_session_wait_thread( fsd_drmaa_session_t *self )
 {
-    //TODO: to adapt
+    /*TODO: to adapt */
     /*
 	pbsdrmaa_log_reader_t *log_reader = NULL;
 	

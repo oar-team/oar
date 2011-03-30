@@ -37,7 +37,7 @@
 #include <oar_drmaa/oar_error.h>
 
 #include <oar_drmaa/job.h>
-/* #include <oar_drmaa/oar_attrib.h> */ /* TODO: Do we need it ? */
+#include <oar_drmaa/oar_attrib.h>
 #include <oar_drmaa/session.h>
 #include <oar_drmaa/util.h>
 
@@ -280,8 +280,9 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
                 attr = oardrmaa_oar_attrib_by_name( i->name );
 		switch( attr )
 		 {
+                    /* TODO-TODO , oar_state = i->value[0]; conversion de l'état ???
                         case OARDRMAA_ATTR_JOB_STATE:
-                                oar_state = i->value[0];
+                                oar_state = i->value[0]
 				break;
                         case OARDRMAA_ATTR_EXIT_STATUS:
 				exit_status = atoi( i->value );
@@ -321,6 +322,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 				if (sscanf(i->value, "%lu", &modify_time) != 1)
 					modify_time = 0;
 				break;
+                 */
 		 }
 	 }
 
@@ -334,6 +336,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 	 }
         if(oar_state){
                 switch( oar_state )
+                    /* TODO: must be adapted */
 		 {
 			case 'C': /* Job is completed after having run. */
 				self->flags &= FSD_JOB_TERMINATED_MASK;
@@ -409,7 +412,6 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 		 }
 	 }
 
-        */
 }
 
 void

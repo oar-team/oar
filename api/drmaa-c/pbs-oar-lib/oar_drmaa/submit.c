@@ -1,6 +1,6 @@
 /* $Id: submit.c 386 2011-01-06 18:13:33Z mamonski $ */
 /*
- *  FedStage DRMAA for PBS Pro
+ *  FedStage DRMAA for /oar Pro
  *  Copyright (C) 2006-2009  FedStage Systems
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -14,7 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with this program.  If not, see <http:/www.gnu.org/licenses/>.
  */
 
 /*
@@ -39,7 +39,8 @@
 #include <drmaa_utils/datetime.h>
 #include <drmaa_utils/iter.h>
 #include <drmaa_utils/template.h>
-// #include <oar_drmaa/oar_attrib.h> //TODO: Do we need it ?
+#include <oar_drmaa/oar.h>
+#include <oar_drmaa/oar_attrib.h>
 #include <oar_drmaa/session.h>
 #include <oar_drmaa/submit.h>
 #include <oar_drmaa/util.h>
@@ -172,7 +173,7 @@ oardrmaa_submit_submit( oardrmaa_submit_t *self )
 					p->name = fsd_strdup( name );
 				fsd_log_debug(("set attr: %s = %s", name, value));
 				p->value = fsd_strdup( value );
-				p->op = SET;
+                                /* p->op = SET; */ /* TODO: can we remove ir ?*/
 			 }
 		 }
 
@@ -180,7 +181,7 @@ oardrmaa_submit_submit( oardrmaa_submit_t *self )
 retry:
                 job_id = oar_submit( ((oardrmaa_session_t*)self->session)->oar_conn,
                                 (struct attropl*)oar_attr, self->script_filename,
-				self->destination_queue, NULL );
+                                self->destination_queue );
 
                 fsd_log_info(("oar_submit() =%s", job_id));
 
@@ -239,8 +240,7 @@ oardrmaa_submit_eval( oardrmaa_submit_t *self )
 
 
 void
-oardrmaa_submit_set( oardrmaa_submit_t *self, const char *name,
-		 char *value, unsigned placeholders )
+oardrmaa_submit_set( oardrmaa_submit_t *self, const char *name, char *value, unsigned placeholders )
 {
         fsd_template_t *oar_attr = self->oar_job_attributes;
 	TRY
@@ -261,18 +261,26 @@ oardrmaa_submit_set( oardrmaa_submit_t *self, const char *name,
 void
 oardrmaa_submit_apply_defaults( oardrmaa_submit_t *self )
 {
+    /* TODO default */
         fsd_template_t *oar_attr = self->oar_job_attributes;
+printf("yop\n");
+        oar_attr->set_attr( oar_attr, OARDRMAA_STDOUT_FILE, "prout" );
+        oar_attr->set_attr( oar_attr, OARDRMAA_JOB_NAME, "yopyop" );
+
+        /*
         oar_attr->set_attr( oar_attr, OARDRMAA_CHECKPOINT, "u" );
-        pbs_attr->set_attr( pbs_attr, OARDRMAA_KEEP_FILES, "n" );
-        pbs_attr->set_attr( pbs_attr, OARDRMAA_PRIORITY, "0" );
+        oar_attr->set_attr( oar_attr, OARDRMAA_KEEP_FILES, "n" );
+        oar_attr->set_attr( oar_attr, OARDRMAA_PRIORITY, "0" );
+*/
+
 }
 
 
 void
-pbsdrmaa_submit_apply_job_script( pbsdrmaa_submit_t *self )
+oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
-        /* fsd_template_t *oar_attr = self->oar_job_attributes; */ //TODO: Do we need if ?
+        /* fsd_template_t *oar_attr = self->oar_job_attributes; */ /*TODO: Do we need if ? */
 	fsd_expand_drmaa_ph_t *expand = self->expand_ph;
 	char *script = NULL;
 	size_t script_len;
@@ -335,9 +343,9 @@ pbsdrmaa_submit_apply_job_script( pbsdrmaa_submit_t *self )
 	script = expand->expand( expand, script,
 			FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR );
 
-        /* oar_attr->set_attr( oar_attr, "!script", script ); */ //TODO: Do we need it ?
+        /* oar_attr->set_attr( oar_attr, "!script", script ); */ /*TODO: Do we need it ? */
 
-        self->script_filename = oardrmaa_write_tmpfile( script, strlen(script) ); //TODO: WARNING ???
+        self->script_filename = oardrmaa_write_tmpfile( script, strlen(script) ); /*TODO: WARNING ??? */
 	fsd_free( script );
 }
 
@@ -360,6 +368,8 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 
 	if( submit_state != NULL )
 	 {
+            printf("TODO hold_types\n");
+            /* TODO
 		const char *hold_types;
 		if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_ACTIVE) )
 			hold_types = "n";
@@ -371,13 +381,18 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 					DRMAA_JS_STATE, DRMAA_SUBMISSION_STATE_ACTIVE,
 					DRMAA_SUBMISSION_STATE_HOLD );
                 oar_attr->set_attr( oar_attr, OARDRMAA_HOLD_TYPES, hold_types );
+                */
 	 }
 
 	if( drmaa_start_time != NULL )
 	 {
+                /*
 		time_t start_time;
                 char oar_start_time[20];
 		struct tm start_time_tm;
+                */
+                 printf("NOT YET IMPLEMENTED --- TODO hold_types\n");
+                /*
 		start_time = fsd_datetime_parse( drmaa_start_time );
 		localtime_r( &start_time, &start_time_tm );
                 sprintf( oar_start_time, "%04d%02d%02d%02d%02d.%02d",
@@ -388,7 +403,9 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 				start_time_tm.tm_min,
 				start_time_tm.tm_sec
 				);
+
                 oar_attr->set_attr( oar_attr, OARDRMAA_EXECUTION_TIME, oar_start_time );
+                */
 	 }
 }
 
@@ -411,12 +428,12 @@ oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 		if( i == 0 )
 		 {
 			drmaa_name = DRMAA_OUTPUT_PATH;
-                        oar_name = OARDRMAA_OUTPUT_PATH;
+                        oar_name = OARDRMAA_STDOUT_FILE;
 		 }
 		else
 		 {
 			drmaa_name = DRMAA_ERROR_PATH;
-                        oar_name = OARDRMAA_ERROR_PATH;
+                        oar_name = OARDRMAA_STDERR_FILE;
 		 }
 
 		path = jt->get_attr( jt, drmaa_name );
@@ -427,17 +444,19 @@ oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
                         self->set(self, oar_name, fsd_strdup(path), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR);
 		 }
 	 }
-
+/* TODO*/
+        /*
 	join_files = jt->get_attr( jt, DRMAA_JOIN_FILES );
 	b_join_files = join_files != NULL  &&  !strcmp(join_files,"1");
         oar_attr->set_attr( oar_attr, OARDRMAA_JOIN_FILES, (b_join_files ? "y" : "n") );
+*/
 }
 
 
 void
 oardrmaa_submit_apply_file_staging( oardrmaa_submit_t *self )
 {
-        /* TODO */ //TODO: Do we need it ?
+    /*TODO: Do we need it ? */
 }
 
 
@@ -449,12 +468,12 @@ oardrmaa_submit_apply_job_resources( oardrmaa_submit_t *self )
 	const char *cpu_time_limit = NULL;
 	const char *walltime_limit = NULL;
 
-        //TODO: In OAR we haven't a cpu_time_limit
+        /*TODO: In OAR we haven't a cpu_time_limit */
 	cpu_time_limit = jt->get_attr( jt, DRMAA_DURATION_HLIMIT );
 	walltime_limit = jt->get_attr( jt, DRMAA_WCT_HLIMIT );
 	if( cpu_time_limit )
 	 {
-                oar_attr->set_attr( oar_attr, "Resource_List.pcput", cpu_time_limit );
+                oar_attr->set_attr( oar_attr, "Resource_List.pcput", cpu_time_limit ); /*TODO no resource...*/
                 oar_attr->set_attr( oar_attr, "Resource_List.cput", cpu_time_limit );
 	 }
 	if( walltime_limit )
@@ -491,7 +510,7 @@ oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
 		}
 
 		env_c[strlen(env_c) -1 ] = '\0'; /*remove the last ',' */
-
+/* TODO */
                 self->oar_job_attributes->set_attr(self->oar_job_attributes, "Variable_List", env_c);
 
 		fsd_free(env_c);
@@ -704,9 +723,7 @@ oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self,
 		 }
 		FINALLY
 		 {
-#ifndef PBS_PROFESSIONAL // TODO: to adapt
-			pbs_attr->set_attr( pbs_attr, "submit_args", native_specification);
-#endif
+                        oar_attr->set_attr( oar_attr, "submit_args", native_specification);
 			args_list->destroy(args_list);
 			fsd_free(native_spec_copy);
 		 }

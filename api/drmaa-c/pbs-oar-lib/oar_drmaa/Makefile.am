@@ -19,9 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#GPERF       = @GPERF@
-#GPERFFLAGS  = --readonly-tables
-
+GPERF       = @GPERF@
+GPERFFLAGS  = --readonly-tables
 AM_CPPFLAGS = -I$(top_srcdir)/drmaa_utils -fPIC
 
 lib_LTLIBRARIES = liboardrmaa.la
@@ -31,16 +30,18 @@ liboardrmaa_la_SOURCES = \
  drmaa.c \
  job.c job.h \
  session.c session.h \
+ oar_attrib.gperf oar_attrib.h \
  submit.c submit.h \
  util.c util.h \
  oar.c oar.h \
  oar_error.h
 
-#BUILT_SOURCES       = pbs_attrib.c
-#EXTRA_DIST          = pbs_attrib.c
+BUILT_SOURCES       = oar_attrib.c
+EXTRA_DIST          = oar_attrib.c
 #dist_sysconf_DATA   = oar_drmaa.conf.example
 
 liboardrmaa_la_LIBADD  = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la 
+liboardrmaa_la_LDFLAGS = -lcurl -version-info @OAR_DRMAA_VERSION_INFO@
 
 # see ../m4/ax_pbs.m4 for @OAR_xxx@ 
 #liboardrmaa_la_LIBADD  = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la @OAR_LIBS@
@@ -50,6 +51,6 @@ liboardrmaa_la_LIBADD  = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la
 .gperf.c:
 	$(GPERF) $(GPERFFLAGS) --output-file=$@ $<
 
-#if GCC
-#pbs_attrib.lo: CFLAGS += @GCC_W_NO_MISSING_FIELD_INITIALIZERS@
-#endif
+if GCC
+oar_attrib.lo: CFLAGS += @GCC_W_NO_MISSING_FIELD_INITIALIZERS@
+endif

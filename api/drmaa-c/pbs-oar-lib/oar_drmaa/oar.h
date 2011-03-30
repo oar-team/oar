@@ -6,6 +6,7 @@
 #	include <config.h>
 #endif
 
+#define DEBUGGING true
 
 
 struct attrl {

@@ -38,5 +38,14 @@ void oardrmaa_free_attrl( struct attrl *list );
 void oardrmaa_dump_attrl(
 		const struct attrl *attribute_list, const char *prefix );
 
+/**
+ * Writes temporary file.
+ * @param content   Buffer with content to write.
+ * @param len       Buffer's length.
+ * @return Path to temporary file.
+ */
+char *
+oardrmaa_write_tmpfile( const char *content, size_t len );
+
 #endif /* __OAR_DRMAA__UTIL_H */
 

@@ -56,6 +56,11 @@ oardrmaa_dump_attrl( const struct attrl *attribute_list, const char *prefix )
 	if( prefix == NULL )
 		prefix = "";
 	for( i = attribute_list;  i != NULL;  i = i->next )
+
+            printf("hello\n");
+            /* printf("name: %s \n", i->name); */
+
+
 		fsd_log_debug(( "\n %s %s%s%s=%s",
 				prefix, i->name,
 				i->resource ? "." : "",  i->resource ? i->resource : "",
@@ -99,8 +104,6 @@ oardrmaa_exc_raise_oar( const char *function )
 	 */
 	/* XXX: PBSPro has some link problems with pbse_to_txt function */
         message = oar_errno_to_txt( oar_errno );
-
-
 
         fsd_errno = oardrmaa_map_oar_errno( _oar_errno );
 	fsd_log_error((
@@ -215,4 +218,46 @@ oardrmaa_map_oar_errno( int _oar_errno )
 	 }
 }
 
+char *
+oardrmaa_write_tmpfile( const char *content, size_t len )
+{
+        static const char *tmpfile_template = "/tmp/oar_drmaa.XXXXXX";
+        char *volatile name = NULL;
+        volatile int fd = -1;
+
+        fsd_log_enter(( "" ));
+
+        TRY
+         {
+                name = fsd_strdup( tmpfile_template );
+                fd = mkstemp( name );
+                if( fd < 0 )
+                        fsd_exc_raise_sys(0);
+                while( len > 0 )
+                 {
+                        size_t written = write( fd, content, len );
+                        if( written != (size_t)-1 )
+                         {
+                                content += written;
+                                len -= written;
+                         }
+                        else
+                                fsd_exc_raise_sys(0);
+                 }
+         }
+        EXCEPT_DEFAULT
+         { fsd_free( name ); }
+        FINALLY
+         {
+                if( fd >= 0 )
+                 {
+                        if( close( fd ) )
+                                fsd_exc_raise_sys(0);
+                 }
+         }
+        END_TRY
+
+        fsd_log_return(( "=%s", name ));
+        return name;
+}
 
