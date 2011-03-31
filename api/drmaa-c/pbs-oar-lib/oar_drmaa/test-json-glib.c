@@ -2,6 +2,10 @@
 export LD_LIBRARY_PATH=/home/auguste/prog/json-glib-0.12.0/lib
 
 gcc -I include/json-glib-1.0/ -I /usr/include/glib-2.0/ -I /usr/lib/glib-2.0/include/  -Llib/ -ljson-glib-1.0 builder-test.c 
+
+
+
+
 */
 
 #include <stdlib.h>

@@ -1,6 +1,7 @@
 /*
    simple test program based on different documentation gathered on the web
-   to compifil gcc -g test_drmaa.c  -L.libs -loardrmaa
+   to compile:
+     gcc -g test_drmaa.c  -L.libs -loardrmaa
 */
 
 #include <drmaa.h>

@@ -38,11 +38,20 @@ http://linux.die.net/man/3/pbs_statjob
 
 todo
 ====
- * complet copyright header
-
+* complet copyright header
+* use ident for REST api access
+* example with basic authentification/httpsn, other ???
+* use:  json_builder_reset (builder); (see builder-test.c in json-glib-0.12.0/json-glib/tests)
+* use: getinmemory.c curl example for
 
 log of modification
 ====================
+
+basic tests: curl and json-glib
+-------------------------------
+- use json-glib-0.12.0 for reader / builder
+ json_builder_reset (builder);
+
 
 oar_drmaa file
 --------------

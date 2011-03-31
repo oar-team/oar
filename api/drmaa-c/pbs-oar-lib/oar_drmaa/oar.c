@@ -2,6 +2,7 @@
 #	include <config.h>
 #endif
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -15,8 +16,12 @@
 #include <oar_drmaa/oar.h>
 #include <oar_drmaa/util.h>
 
-
+/* curl to perform http access*/
 #include <curl/curl.h>
+/* json-glib and glib to manipulate json. Be carefull need version >= 0.12.0 (for reader/builder) */
+#include <glib.h>
+#include <json-glib/json-glib.h>
+
 
 #ifndef lint
 static char rcsid[]
@@ -28,8 +33,36 @@ static char rcsid[]
 
 int oar_errno = 0;
 
-CURL *curl;
+struct memory_struct {
+  char *memory;
+  size_t size;
+};
+
+CURL *curl_handle;
 CURLcode res;
+struct memory_struct recv_data; /* to store oar_rest_api get results */
+
+static size_t
+write_memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+  size_t realsize = size * nmemb;
+  struct memory_struct *mem = (struct memory_struct *)data;
+
+  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
+  if (mem->memory == NULL) {
+    /* out of memory! */
+    printf("not enough memory (realloc returned NULL)\n");
+    exit(EXIT_FAILURE);
+  }
+
+  memcpy(&(mem->memory[mem->size]), ptr, realsize);
+  mem->size += realsize;
+  mem->memory[mem->size] = 0;
+
+  return realsize;
+}
+
+struct memory_struct recv_data;
 
 int
 oar_sigjob(int connect, char *job_id, char *signal)
@@ -47,14 +80,59 @@ oar_holdjob(int connect, char *job_id, char *hold_type)
 int
 oar_connect(char *server)
 {
-    curl = curl_easy_init();
-    curl = curl_easy_init();
-    if(curl) {
-      curl_easy_setopt(curl, CURLOPT_URL, "http://localhost/oarapi/resources.json");
-      res = curl_easy_perform(curl);
+    g_type_init (); /* only once ???*/
+    JsonParser *parser = json_parser_new ();
+    JsonReader *reader = json_reader_new (NULL);
+    GError *error = NULL;
+
+    /* intialize recv_data in memory storage */
+    recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
+    recv_data.size = 0;
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_handle = curl_easy_init();
+    if(!curl_handle) {
+        printf("no curl handle\n");
+        exit(EXIT_FAILURE);
     }
+
+    /* send all data to this function  */
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_memory_callback);
+
+    /* we pass our 'recv_data' struct to the callback function */
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&recv_data);
+
+    /* some servers don't like requests that are made without a user-agent field, so we provide one */
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+
+
+    curl_easy_setopt(curl_handle, CURLOPT_URL, "http://localhost/oarapi/resources.json");
+    res = curl_easy_perform(curl_handle); /* */
+
+    printf("%lu bytes retrieved\n", (long)recv_data.size);
+
+    json_parser_load_from_data (parser, recv_data.memory, -1, &error);
+    json_reader_set_root (reader, json_parser_get_root (parser));
+
+    printf("number of members: %d\n", json_reader_count_members (reader));
+
+    json_reader_read_member (reader, "total");
+    json_reader_is_value (reader);
+    printf("total: %d\n",json_reader_get_int_value (reader));
+
+    g_object_unref (reader);
+    g_object_unref (parser);
+
+    if(recv_data.memory) {
+        free(recv_data.memory);
+        /* ready for next receive */
+        recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
+        recv_data.size = 0;
+    }
+
     /* always cleanup */
-    curl_easy_cleanup(curl);
+    curl_easy_cleanup(curl_handle);
 
     fsd_set_verbosity_level(FSD_LOG_ALL);
 
@@ -75,6 +153,11 @@ int oar_deljob(int connect, char *job_id)
 int oar_disconnect(int connect)
 {
     printf("oar_disconnect\n");
+
+    /* we're done with libcurl, so clean it up */
+    curl_global_cleanup();
+
+
     return 0;
 }
 
