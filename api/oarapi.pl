@@ -45,7 +45,7 @@ use File::Basename;
 
 #use Data::Dumper;
 
-my $VERSION="1.0.0pre1";
+my $VERSION="1.0.1alpha1";
 
 ##############################################################################
 # CONFIGURATION
@@ -162,6 +162,39 @@ SWITCH: for ($q) {
   # API informations
   ###########################################
   #
+  #{{{ GET /: Root links
+  #
+  $URI = qr{^\/*\.*(yaml|json|html)*$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = apilib::set_ext($q,$1);
+    (my $header, my $type)=apilib::set_output_format($ext);
+    my $root={    "oar_version" => oarversion::get_version(),
+                  "api_version" => $VERSION,
+                  "apilib_version" => apilib::get_version(),
+                  "api_timestamp" => time(),
+                  "api_timezone" => strftime("%Z", localtime()),
+                  "links" => [ 
+                      { 'rel' => 'self' , 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("/",$ext,0),$ext) 
+                      },
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("/resources",$ext,0),$ext),
+                        'title' => 'resources'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("/jobs",$ext,0),$ext),
+                        'title' => 'jobs'
+                      } 
+                             ]
+             };
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print apilib::export($root,$ext);
+    last;
+  };
+  #}}}
+  #
   #{{{ GET /version : Version informations
   #
   $URI = qr{^/version\.*(yaml|json|html)*$};
@@ -169,11 +202,11 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
     (my $header, my $type)=apilib::set_output_format($ext);
-    my $version={ "oar" => oarversion::get_version(),
-                  "apilib" => apilib::get_version(),
+    my $version={ "oar_version" => oarversion::get_version(),
+                  "apilib_version" => apilib::get_version(),
                   "api_timestamp" => time(),
                   "api_timezone" => strftime("%Z", localtime()),
-                  "api" => $VERSION };
+                  "api_version" => $VERSION };
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print apilib::export($version,$ext);

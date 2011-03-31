@@ -2,7 +2,7 @@
 package apilib;
 require Exporter;
 
-my $VERSION="0.2.10";
+my $VERSION="1.0.1alpha1";
 
 use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
@@ -267,7 +267,7 @@ sub add_job_uris($$) {
   $resources=apilib::htmlize_uri($resources,$ext);
   my $links;
   push (@$links, { href => $self, rel => "self" });
-  push (@$links, { href => $resources, rel => "resources" });
+  push (@$links, { href => $resources, rel => "collection", title => "resources" });
   $job->{links}=$links;
   $job->{api_timestamp}=time();
   # Don't know why this function breaks the type of the id, so:
@@ -318,14 +318,14 @@ sub add_resources_uris($$$) {
     if (defined($resource->{network_address})) {
       $node=apilib::make_uri("$prefix/resources/nodes/".$resource->{network_address},$ext,0);
       $node=apilib::htmlize_uri($node,$ext);
-      push (@$links, { href => $node, rel => "node" });
+      push (@$links, { href => $node, title => "node", rel => "member" });
     }
     my $self=apilib::make_uri("$prefix/resources/".$resource->{resource_id},$ext,0);
     my $jobs=apilib::make_uri("$prefix/resources/".$resource->{resource_id}."/jobs",$ext,0);
     $self=apilib::htmlize_uri($self,$ext);
     $jobs=apilib::htmlize_uri($jobs,$ext);
     push (@$links, { href => $self, rel => "self" });
-    push (@$links, { href => $jobs, rel => "jobs" });
+    push (@$links, { href => $jobs, title => "jobs" , rel => "collection"});
     $resource->{links}=$links;
     $resource->{api_timestamp}=time();
   }
