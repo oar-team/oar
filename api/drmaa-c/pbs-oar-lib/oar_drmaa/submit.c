@@ -88,7 +88,8 @@ oardrmaa_submit_new( fsd_drmaa_session_t *session,
                 fsd_malloc( self, oardrmaa_submit_t );
 		self->session = session;
 		self->job_template = job_template;
-		self->script_filename = NULL;
+                self->script_path = NULL;
+                self->workdir = NULL;
 		self->destination_queue = NULL;
                 self->oar_job_attributes = NULL;
 		self->expand_ph = NULL;
@@ -125,11 +126,10 @@ oardrmaa_submit_new( fsd_drmaa_session_t *session,
 void
 oardrmaa_submit_destroy( oardrmaa_submit_t *self )
 {
-	if( self->script_filename )
-	 {
-		unlink( self->script_filename );
-		fsd_free( self->script_filename );
-	 }
+        if( self-> script_path)
+                fsd_free( self->script_path );
+        if( self-> workdir)
+                fsd_free( self->workdir );
         if( self->oar_job_attributes )
                 self->oar_job_attributes->destroy( self->oar_job_attributes );
 	if( self->expand_ph )
@@ -180,8 +180,8 @@ oardrmaa_submit_submit( oardrmaa_submit_t *self )
 		conn_lock = fsd_mutex_lock( &self->session->drm_connection_mutex );
 retry:
                 job_id = oar_submit( ((oardrmaa_session_t*)self->session)->oar_conn,
-                                (struct attropl*)oar_attr, self->script_filename,
-                                self->destination_queue );
+                                (struct attropl*)oar_attr, self->script_path,
+                                self->workdir, self->destination_queue );
 
                 fsd_log_info(("oar_submit() =%s", job_id));
 
@@ -280,75 +280,66 @@ void
 oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
-        /* fsd_template_t *oar_attr = self->oar_job_attributes; */ /*TODO: Do we need if ? */
-	fsd_expand_drmaa_ph_t *expand = self->expand_ph;
-	char *script = NULL;
-	size_t script_len;
-	const char *executable;
+
+        char *script_path = NULL;
+        size_t script_path_len;
+
+        const char *executable;
 	const char *wd;
 	const char *const *argv;
-	const char *input_path;
-	const char *const *i;
+        const char *input_path;
+        const char *const *i;
 
-	executable   = jt->get_attr( jt, DRMAA_REMOTE_COMMAND );
+        executable   = jt->get_attr( jt, DRMAA_REMOTE_COMMAND );
 	wd           = jt->get_attr( jt, DRMAA_WD );
-	argv         = jt->get_v_attr( jt, DRMAA_V_ARGV );
-	input_path   = jt->get_attr( jt, DRMAA_INPUT_PATH );
+        argv         = jt->get_v_attr( jt, DRMAA_V_ARGV );
+        input_path   = jt->get_attr( jt, DRMAA_INPUT_PATH );
 
 	if( wd )
-	 {
-		char *cwd = NULL;
-		cwd = expand->expand( expand, fsd_strdup(wd),
-				FSD_DRMAA_PH_HD | FSD_DRMAA_PH_INCR );
-		expand->set( expand, FSD_DRMAA_PH_WD, cwd );
+         {
+            self->workdir = fsd_strdup(wd);
 	 }
+
+        if( input_path != NULL )
+         {
+                if( input_path[0] == ':' )
+                        input_path++;
+         }
 
 	if( executable == NULL )
 		fsd_exc_raise_code( FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE );
+        if (argv)
+        {
+            /* compute script_lengh length */
+            /* script_path_len = 1;*/ /* begining double quote */ /* TODO: to remove ? */
+            script_path_len += strlen(executable);
+            for( i = argv;  *i != NULL;  i++ )
+                    script_path_len += 3+strlen(*i);
+            if( input_path != NULL )
+                    script_path_len += strlen(" <") + strlen(input_path);
+            /* script_path_len +=1;*/ /* ending double quote */ /* TODO: to remove ? */
 
-	if( input_path != NULL )
-	 {
-		if( input_path[0] == ':' )
-			input_path++;
-	 }
+            fsd_calloc( script_path, script_path_len+1, char );
 
-	 { /* compute script length */
-		script_len = 0;
-		if( wd != NULL )
-			script_len += strlen("cd ") + strlen(wd) + strlen("; ");
-		script_len += strlen("exec ") + strlen(executable);
-		if( argv != NULL )
-			for( i = argv;  *i != NULL;  i++ )
-				script_len += 3+strlen(*i);
-		if( input_path != NULL )
-			script_len += strlen(" <") + strlen(input_path);
-	 }
+            char *s;
+            s = script_path;
+            /*s += sprintf( s,"\""); */ /* begining double quote */ /* TODO: to remove ? */
+            s += sprintf( s,"%s",executable);
+            for( i = argv;  *i != NULL;  i++ )
+                    s += sprintf( s, " '%s'", *i );
+            if( input_path != NULL )
+                s += sprintf( s, " <%s", input_path );
+            /* s += sprintf( s,"\""); */ /* ending double quote */ /* TODO: to remove ? */
 
-	fsd_calloc( script, script_len+1, char );
+            fsd_assert( s == script_path+script_path_len );
 
-	 {
-		char *s;
-		s = script;
-		if( wd != NULL )
-			s += sprintf( s, "cd %s; ", wd );
-		s += sprintf( s, "exec %s", executable );
-		if( argv != NULL )
-			for( i = argv;  *i != NULL;  i++ )
-				s += sprintf( s, " '%s'", *i );
-		if( input_path != NULL )
-			s += sprintf( s, " <%s", input_path );
-		fsd_assert( s == script+script_len );
-	 }
+            self->script_path = script_path;
 
-	script = expand->expand( expand, script,
-			FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR );
-
-        /* oar_attr->set_attr( oar_attr, "!script", script ); */ /*TODO: Do we need it ? */
-
-        self->script_filename = oardrmaa_write_tmpfile( script, strlen(script) ); /*TODO: WARNING ??? */
-	fsd_free( script );
+        } else
+        {
+            self->script_path = fsd_strdup(executable);
+        }
 }
-
 
 void
 oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
@@ -413,6 +404,7 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 void
 oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 {
+    /* TODO STDOUT....*/
 	const fsd_template_t *jt = self->job_template;
         fsd_template_t *oar_attr = self->oar_job_attributes;
 	const char *join_files;

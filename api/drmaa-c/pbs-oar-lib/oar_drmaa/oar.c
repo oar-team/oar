@@ -80,7 +80,7 @@ oar_holdjob(int connect, char *job_id, char *hold_type)
 int
 oar_connect(char *server)
 {
-    g_type_init (); /* only once ???*/
+    g_type_init (); /* only once ??? */
     JsonParser *parser = json_parser_new ();
     JsonReader *reader = json_reader_new (NULL);
     GError *error = NULL;
@@ -96,12 +96,10 @@ oar_connect(char *server)
         exit(EXIT_FAILURE);
     }
 
-    /* send all data to this function  */
+    /* send all received data to this function  */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_memory_callback);
-
     /* we pass our 'recv_data' struct to the callback function */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&recv_data);
-
     /* some servers don't like requests that are made without a user-agent field, so we provide one */
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
@@ -130,9 +128,6 @@ oar_connect(char *server)
         recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
         recv_data.size = 0;
     }
-
-    /* always cleanup */
-    curl_easy_cleanup(curl_handle);
 
     fsd_set_verbosity_level(FSD_LOG_ALL);
 
@@ -180,13 +175,74 @@ struct batch_status *oar_statjob(int connect, char *id, struct attrl *attrib)
 
 char *job_id_foo;
 char str_job_id[]="1234";
-char *oar_submit(int connect, struct attropl *attrib, char *script, char *destination)
+char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination)
 {
     printf("oar_submit\n");
-    printf("script: %s destination %s\n",script,destination);
+    printf("script_path: %s \nqueue_destination %s\n", script_path, queue_destination);
     oardrmaa_dump_attrl( attrib, NULL );
+
+    /* builder */
+    JsonBuilder *builder = json_builder_new ();
+    JsonNode *node;
+    JsonGenerator *generator;
+    gsize length;
+    gchar *data;
+
+    /* reader */
+    JsonParser *parser = json_parser_new ();
+    JsonReader *reader = json_reader_new (NULL);
+    GError *error = NULL;
+
+    /* build request */
+
+    json_builder_begin_object (builder);
+
+    json_builder_set_member_name (builder, "script_path");
+    json_builder_add_string_value (builder, script_path);
+
+    json_builder_end_object (builder);
+    node = json_builder_get_root (builder);
+
+    generator = json_generator_new ();
+    json_generator_set_root (generator, node);
+    data = json_generator_to_data (generator, &length);
+
+    printf("data: >>>%s<<< \n",data);
+    g_object_unref (builder);
+    json_node_free (node);
+    g_object_unref (generator);
+
+    /* CURL */
+
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+
+    curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+    curl_easy_setopt(curl_handle, CURLOPT_URL, "http://localhost/oarapi/jobs.json");
+
+    res = curl_easy_perform(curl_handle);
+
+    printf("%lu bytes retrieved\n", (long)recv_data.size);
+
+    g_free (data);
+
+    json_parser_load_from_data (parser, recv_data.memory, -1, &error);
+    json_reader_set_root (reader, json_parser_get_root (parser));
+    json_reader_read_member (reader,"id");
+    int job_id = json_reader_get_int_value (reader);
+    printf("job id: %d\n",job_id);
+
+    g_object_unref (reader);
+    g_object_unref (parser);
+/*
     job_id_foo = (char *)malloc((strlen(str_job_id) + 1) * sizeof(char));
     strcpy(job_id_foo, str_job_id);
+ */
+
+    job_id_foo = (char *)malloc(50);
+    sprintf(job_id_foo,"%d",job_id);
+    printf("job_id: %s\n",job_id_foo);
     return job_id_foo;
 }
 

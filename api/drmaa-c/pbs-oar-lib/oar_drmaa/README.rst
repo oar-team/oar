@@ -8,6 +8,16 @@ Main adpatation
 ================
 * remove log reader stuff because OAR keep job history in database. 
 
+Features
+=========
+- DRMAA_REMOTE_COMMAND (TODO)
+- DRMAA_WD (TODO)
+- DRMAA_V_ARGV (TODO)
+- DRMAA_INPUT_PATH (not tested)
+Limitation and not supported features
+======================================
+- DRMAA_START_TIME (oar can do it by dependenct on advance reservation job
+
 log
 ===
 

@@ -47,7 +47,7 @@ void oar_statfree(struct batch_status *stat);
 
 struct batch_status *oar_statjob(int connect, char *id, struct attrl *attrib);
 
-char *oar_submit(int connect, struct attropl *attrib, char *script, char *destination);
+char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination);
 
 #endif	/*  __OAR_H  */
 

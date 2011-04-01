@@ -1,7 +1,9 @@
 /*
    simple test program based on different documentation gathered on the web
    to compile:
-     gcc -g test_drmaa.c  -L.libs -loardrmaa
+     gcc -g test_drmaa.c  -L.libs -loardrmaa -o test_drmaa
+
+     export LD_LIBRARY_PATH=.libs
 */
 
 #include <drmaa.h>

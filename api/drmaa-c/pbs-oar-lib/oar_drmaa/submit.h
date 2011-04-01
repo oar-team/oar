@@ -59,11 +59,14 @@ struct oardrmaa_submit_s {
                         oardrmaa_submit_t *self, const char *native_specification );
 
         void (*set)( oardrmaa_submit_t *self, const char *oar_attr,
-			char *value, unsigned placeholders );
+                        char *value, unsigned placeholders );
 
 	fsd_drmaa_session_t *session;
 	const fsd_template_t *job_template;
-	char *script_filename;
+
+        char *script_path; /* oar job parameter */
+        char *workdir; /* oar job parameter */
+
 	char *destination_queue;
         fsd_template_t *oar_job_attributes;
 	fsd_expand_drmaa_ph_t *expand_ph;
