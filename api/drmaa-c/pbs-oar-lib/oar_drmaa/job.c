@@ -108,47 +108,44 @@ oardrmaa_job_control( fsd_job_t *self, int action )
 			 {
 				/*
 				 * We cannot know whether we did suspend job
-				 * in other way than remembering this inside DRMAA session.
+                                 * in other way than remembering this inside DRMAA session.
+                                 * Note: With OAR we can (job event):) Can we exploit this ?
 				 */
 				case DRMAA_CONTROL_SUSPEND:
-                                        apicall = "oar_sigjob";
-                                        rc = oar_sigjob( session->oar_conn, (char*)job_id,
-                                                        "SIGSTOP");
-                                        fsd_log_info(("oar_sigjob(%s, SIGSTOP) =%d", job_id, rc));
-                                        if( rc ==  OAR_ERRNO_NONE) /*TODO: to adapt */
+                                        apicall = "oar_job_control_rhold";
+                                        rc = oar_control_job(session->oar_conn, (char*)job_id, action);
+                                        fsd_log_info(("oar_job_control (%s, RHOLD) =%d", job_id, rc));
+                                        if( rc ==  OAR_ERRNO_NONE)
 						self->flags |= FSD_JOB_SUSPENDED;
 					break;
 				case DRMAA_CONTROL_RESUME:
-                                        apicall = "oar_sigjob";
-                                        rc = oar_sigjob( session->oar_conn, (char*)job_id,
-                                                        "SIGCONT");
-                                        fsd_log_info(("oar_sigjob(%s, SIGCONT) =%d", job_id, rc));
-                                        if( rc == OAR_ERRNO_NONE ) /*TODO: to adapt */
+                                        apicall = "oar_job_control_resumptions";
+                                        rc = oar_control_job(session->oar_conn, (char*)job_id, action);
+                                        fsd_log_info(("oar_job_control(%s, RESUMPTIONS/RESUMES) =%d", job_id, rc));
+                                        if( rc == OAR_ERRNO_NONE )
 						self->flags &= ~FSD_JOB_SUSPENDED;
 					break;
 				case DRMAA_CONTROL_HOLD:
-                                        apicall = "oar_holdjob";
-                                        rc = oar_holdjob( session->oar_conn, (char*)job_id,
-                                                        USER_HOLD);
-                                        fsd_log_info(("oar_sigjob(%s, SIGHOLD) =%d", job_id, rc));
-                                        if( rc ==  OAR_ERRNO_NONE ) /*TODO: to adapt */
+                                        apicall = "oar_job_control_hold";
+                                        rc = oar_control_job(session->oar_conn, (char*)job_id, action);
+
+                                        fsd_log_info(("oar_job_control(%s, HOLD) =%d", job_id, rc));
+                                        if( rc ==  OAR_ERRNO_NONE )
 						self->flags |= FSD_JOB_HOLD;
 					break;
 				case DRMAA_CONTROL_RELEASE:
-                                        apicall = "oar_rlsjob";
-                                        rc = oar_rlsjob( session->oar_conn, (char*)job_id,
-                                                        USER_HOLD);
-                                        fsd_log_info(("oar_rlsjob(%s) =%d", job_id, rc));
-                                        if( rc == OAR_ERRNO_NONE ) /*TODO: to adapt*/
+                                        apicall = "oar_job_control_resumptions";
+                                        rc = oar_control_job(session->oar_conn, (char*)job_id, action);
+                                        fsd_log_info(("oar_job_control(%s, RESUMPTIONS/RELEASE) =%d", job_id, rc));
+                                        if( rc == OAR_ERRNO_NONE )
 						self->flags &= FSD_JOB_HOLD;
 					break;
 				case DRMAA_CONTROL_TERMINATE:
-                                        apicall = "oar_deljob";
-                                        rc = oar_deljob( session->oar_conn, (char*)job_id);
-                                        fsd_log_info(("oar_deljob(%s) =%d", job_id, rc));
-					/* Torque:
-					 * deldelay=N -- delay between SIGTERM and SIGKILL (default 0) */
-                                        if( rc == OAR_ERRNO_NONE ) /*TODO: to adapt */
+                                        apicall = "oar_job_control_deletions";
+                                        rc = oar_control_job(session->oar_conn, (char*)job_id, action);
+                                        fsd_log_info(("oar_job_control(%s, DELETIONS) =%d", job_id, rc));
+
+                                        if( rc == OAR_ERRNO_NONE )
 					 {
 						self->flags &= FSD_JOB_TERMINATED_MASK;
 						if( (self->flags & FSD_JOB_TERMINATED) == 0 )
@@ -157,21 +154,20 @@ oardrmaa_job_control( fsd_job_t *self, int action )
 					break;
 			 }
 
-                        if( rc == OAR_ERRNO_NONE ) /*TODO: to adapt */
+                        if( rc == OAR_ERRNO_NONE )
 				break;
                         else if( rc == OAR_ERRNO_INTERNAL ) /*TODO: to adapt: PBSE_INTERNAL */
 			 {
-                            /* TODO: to remove ? */
-				/*
-				 * In PBS Pro pbs_sigjob raises internal server error (PBSE_INTERNAL)
-				 * when job just changed its state to running.
-				 */
-				fsd_log_debug(( "repeating request (%d of %d)",
-							try_count+2, max_tries ));
-				sleep( 1 );
+                           /* TODO: to remove ? */
+                           /*
+                            * In PBS Pro pbs_sigjob raises internal server error (PBSE_INTERNAL)
+                            * when job just changed its state to running.
+                            */
+                            fsd_log_debug(( "repeating request (%d of %d)", try_count+2, max_tries ));
+                            sleep( 1 );
 			 }
 			else
-                                oardrmaa_exc_raise_oar( apicall );
+                            oardrmaa_exc_raise_oar( apicall );
 		 } /* end for */
 	 }
 	FINALLY
@@ -336,12 +332,12 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 	 }
         if(oar_state){
                 switch( oar_state )
-                    /* TODO: must be adapted */
+                    /* TODO: must be adapted
 		 {
-			case 'C': /* Job is completed after having run. */
+                 case 'C': #*Job is completed after having run. *#
 				self->flags &= FSD_JOB_TERMINATED_MASK;
 				self->flags |= FSD_JOB_TERMINATED;
-				if (exit_status != -2) { /* has exit code */
+                                if (exit_status != -2) { #*has exit code *#
 					if( self->exit_status == 0) 
 						self->state = DRMAA_PS_DONE;
 					else 
@@ -350,24 +346,24 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 					self->state = DRMAA_PS_FAILED;
 					self->exit_status = -1;
 				}
-				self->end_time = modify_time; /* take last modify time as end time */
+                                self->end_time = modify_time; #*take last modify time as end time *#
 				break;
-			case 'E': /* Job is exiting after having run. - MM: ignore exiting state (transient state) - outputs might have not been transfered yet, 
-					MM2: mark job as running if current job status is undetermined - fix "ps after job was ripped" */
+                        case 'E': #*Job is exiting after having run. - MM: ignore exiting state (transient state) - outputs might have not been transfered yet,
+                                        MM2: mark job as running if current job status is undetermined - fix "ps after job was ripped" *#
 				if (self->state == DRMAA_PS_UNDETERMINED)
 					self->state = DRMAA_PS_RUNNING;
 				break;
-			case 'H': /* Job is held. */
+                        case 'H': #*Job is held. *#
 				self->state = DRMAA_PS_USER_ON_HOLD;
 				self->flags |= FSD_JOB_HOLD;
 				break;
-			case 'Q': /* Job is queued, eligible to run or routed. */
-			case 'W': /* Job is waiting for its execution time to be reached. */
+                        case 'Q': #*Job is queued, eligible to run or routed. *#
+                        case 'W': #*Job is waiting for its execution time to be reached. *#
 				self->state = DRMAA_PS_QUEUED_ACTIVE;
 				self->flags &= ~FSD_JOB_HOLD;
 				break;
-			case 'R': /* Job is running. */
-			case 'T': /* Job is being moved to new location (?). */
+                        case 'R': #*Job is running. *#
+                        case 'T': #*Job is being moved to new location (?). *#
 			 {
 				if( self->flags & FSD_JOB_SUSPENDED )
 					self->state = DRMAA_PS_USER_SUSPENDED;
@@ -375,7 +371,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 					self->state = DRMAA_PS_RUNNING;
 				break;
 			 }
-			case 'S': /* (Unicos only) job is suspend. */
+                        case 'S': #*(Unicos only) job is suspend. *#
 				self->state = DRMAA_PS_SYSTEM_SUSPENDED;
 				break;
 			case 0:  default:
@@ -383,6 +379,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 				break;
 	 }
 }
+*/
 	fsd_log_debug(( "job_ps: %s", drmaa_job_ps_to_str(self->state) ));
 
 	 {

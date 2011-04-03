@@ -601,7 +601,7 @@ static void parse_additional_attr(fsd_template_t *oar_attr,const char *add_attr)
 	END_TRY
 }
 
-
+/* TODO TODO TODO */
 void
 oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self,
 		const char *native_specification )

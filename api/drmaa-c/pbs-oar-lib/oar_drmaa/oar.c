@@ -33,6 +33,19 @@ static char rcsid[]
 
 int oar_errno = 0;
 
+const char *drmaa_control_to_oar_rest[]={
+    "/rholds/new.json",         /* DRMAA_CONTROL_SUSPEND   0 */
+    "/resumptions/new.json",    /* DRMAA_CONTROL_RESUME    1 */
+    "/holds/new.json",          /* DRMAA_CONTROL_HOLD      2 */
+    "/resumptions/new.json",    /* DRMAA_CONTROL_RELEASE   3 */
+    "/deletions/new.json"       /* DRMAA_CONTROL_TERMINATE 4 */
+};
+
+
+
+
+
+
 struct memory_struct {
   char *memory;
   size_t size;
@@ -65,22 +78,9 @@ write_memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
 struct memory_struct recv_data;
 
 int
-oar_sigjob(int connect, char *job_id, char *signal)
-{
-    return 0;
-}
-
-int
-oar_holdjob(int connect, char *job_id, char *hold_type)
-{
-    printf("oar_holdjob\n");
-    return 0;
-}
-
-int
 oar_connect(char *server)
 {
-    g_type_init (); /* only once ??? */
+    g_type_init (); /* only once */
     JsonParser *parser = json_parser_new ();
     JsonReader *reader = json_reader_new (NULL);
     GError *error = NULL;
@@ -138,16 +138,9 @@ oar_connect(char *server)
     return 0;
 }
 
-
-int oar_deljob(int connect, char *job_id)
-{
-    printf("oar_deljob\n");
-    return 0;
-}
-
 int oar_disconnect(int connect)
 {
-    printf("oar_disconnect\n");
+    printf("TODO: oar_disconnect\n");
 
     /* we're done with libcurl, so clean it up */
     curl_global_cleanup();
@@ -156,25 +149,102 @@ int oar_disconnect(int connect)
     return 0;
 }
 
-int oar_rlsjob(int connect, char *job_id, char *hold_type)
+int oar_control_job(int connect, char *job_id, int action)
 {
-    printf("oar_rlsjob\n");
+    printf("oar_job_control: job_id: %s action: %i  drmaa_control: %s\n",
+           job_id, action, drmaa_control_to_str(action));
+
+    /* CURL */
+    long http_code = 0;
+    char *rest_url[256];
+    struct curl_slist *headers = NULL;
+    sprintf(rest_url,"http://localhost/oarapi/jobs/%s%s",job_id,drmaa_control_to_oar_rest[action]);
+    /*printf("url:%s\n",rest_url); */
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, "");
+    curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
+    res = curl_easy_perform(curl_handle);
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+    printf("http code %ld\n",http_code);
+    /* read response */
+    JsonParser *parser = json_parser_new ();
+    JsonReader *reader = json_reader_new (NULL);
+    GError *error = NULL;
+    printf("%lu bytes retrieved\n", (long)recv_data.size);
+    json_parser_load_from_data (parser, recv_data.memory, -1, &error);
+    json_reader_set_root (reader, json_parser_get_root (parser));
+    /* test return http status */
+
+
+    if (http_code >= 200 && http_code < 300) /* http successful */
+    {
+        json_reader_read_member (reader,"id");
+        int job_id = json_reader_get_int_value (reader);
+        printf("Http request successfull OK: job id: %d\n",job_id);
+    } else
+    {
+        char *title=NULL;
+        char *message=NULL;
+        int code=0;
+        json_reader_read_member(reader,"title");
+        title = json_reader_get_string_value(reader);
+        json_reader_end_element (reader);
+
+        json_reader_read_member(reader,"message");
+        message = json_reader_get_string_value (reader);
+        json_reader_end_element (reader);
+
+        json_reader_read_member(reader,"code");
+        code = json_reader_get_int_value (reader);
+        json_reader_end_element (reader);
+
+        printf("title: %s\nmessage: %s\ncode: %d\n",title,message,code);
+
+    }
+    /* clean recv/reader/parser stuff */
+    g_object_unref (reader);
+    g_object_unref (parser);
+    if(recv_data.memory) {
+        free(recv_data.memory);
+        /* ready for next receive */
+        recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
+        recv_data.size = 0;
+    }
+
+    /* TODO */
+
     return 0;
 }
 
-void oar_statfree(struct batch_status *stat)
-{
-    printf("oar_statfree\n");
-}
+
 
 struct batch_status *oar_statjob(int connect, char *id, struct attrl *attrib)
 {
-    printf("oar_statjob\n");
+
+    batch_status *b_status = malloc(sizeof(batch_status));
+
+
+    printf("TODO: oar_statjob\n");
+    oardrmaa_dump_attrl(attrib, "oar_statjob");
+
+
+    //attributes = presult2attrl(res->data,attrib);
+    attributes = oar_toPbsAttributes(oar_getLastEvent(res->data), presult2attrl(res->data,attrib));
+
+    bstatus->name = fsd_strdup(id);
+    bstatus->next = NULL;
+    bstatus->attribs = attributes;
+    bstatus->text = g_strdup("");	//In order to avoir freeing problems in pbs_statfree
+
+
+
+
+
     return 0;
 }
 
-char *job_id_foo;
-char str_job_id[]="1234";
+char *job_id_str;
 char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination)
 {
     printf("oar_submit\n");
@@ -213,7 +283,6 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     g_object_unref (generator);
 
     /* CURL */
-
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
@@ -235,32 +304,28 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     g_object_unref (reader);
     g_object_unref (parser);
-/*
-    job_id_foo = (char *)malloc((strlen(str_job_id) + 1) * sizeof(char));
-    strcpy(job_id_foo, str_job_id);
- */
 
-    job_id_foo = (char *)malloc(50);
-    sprintf(job_id_foo,"%d",job_id);
-    printf("job_id: %s\n",job_id_foo);
-    return job_id_foo;
+    if(recv_data.memory) {
+        free(recv_data.memory);
+        /* ready for next receive */
+        recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
+        recv_data.size = 0;
+    }
+
+    job_id_str = (char *)malloc(50);
+    sprintf(job_id_str,"%d",job_id);
+    printf("job_id: %s\n",job_id_str);
+    return job_id_str;
 }
 
-/*
-fsd_template_t *oardrmaa_oar_template_new(void)
+void oar_statfree(struct batch_status *stat)
 {
-    printf("oardrmaa_oar_template_new\n");
-    return 0;
+    printf("TODO: oar_statfree ???\n");
 }
 
-int oardrmaa_oar_attrib_by_name( const char *name )
-{
-    printf("oardrmaa_oar_attrib_by_name\n");
-    return 0;
-}
-*/
+
 char *oar_errno_to_txt(int err_no)
 {
-    printf("oar_errno_to_txt\n");
+    printf("TODO: oar_errno_to_txt\n");
     return 0;
 }

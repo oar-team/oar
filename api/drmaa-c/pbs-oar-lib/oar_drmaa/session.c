@@ -392,9 +392,13 @@ oardrmaa_create_status_attrl(void)
 	int n_attribs;
 	int j = 0;
 /* TODO to adapt */
+/*         printf("Prout...................................................\n");
+*/
+
 	fsd_log_enter((""));
 	fsd_calloc( result, max_attribs, struct attrl );
 	result[j++].name="job_state";
+        printf("name %s\n",result[j-1].name);
 	result[j++].name="exit_status";
 	result[j++].name="resources_used";
 	result[j++].name="ctime";
@@ -407,16 +411,7 @@ oardrmaa_create_status_attrl(void)
 	result[j++].name="exec_host";
 	result[j++].name="start_time";
 	result[j++].name="mtime";
-#if 0
-	result[j].name="resources_used";  result[j].resource="walltime";  j++;
-	result[j].name="resources_used";  result[j].resource="cput";  j++;
-	result[j].name="resources_used";  result[j].resource="mem";  j++;
-	result[j].name="resources_used";  result[j].resource="vmem";  j++;
-	result[j].name="Resource_List";  result[j].resource="walltime";  j++;
-	result[j].name="Resource_List";  result[j].resource="cput";  j++;
-	result[j].name="Resource_List";  result[j].resource="mem";  j++;
-	result[j].name="Resource_List";  result[j].resource="vmem";  j++;
-#endif
+
 	n_attribs = j;
 	for( i = result;  true;  i++ )
 		if( i+1 < result + n_attribs )
@@ -427,10 +422,11 @@ oardrmaa_create_status_attrl(void)
 			break;
 		 }
 
-#ifdef DEBUGGING
+                printf("Prout\n");
+/* #ifdef DEBUGGING */
 	fsd_log_return((":"));
         oardrmaa_dump_attrl( result, NULL );
-#endif
+/* #endif */
 	return result;
 }
 

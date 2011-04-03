@@ -7,6 +7,7 @@
 */
 
 #include <drmaa.h>
+extern const char *drmaa_control_to_str( int action ); /* ??? */
 
 void instance_handling()
 {
@@ -85,7 +86,51 @@ main ()
     printf ("Your job has been submitted with id %s\n", jobid);
   }
 
-  /* Delete Job Template*/
+  /* Get Job State */
+  /**
+   * The possible values of
+   * a program's staus are:
+   *   - DRMAA_PS_UNDETERMINED
+   *   - DRMAA_PS_QUEUED_ACTIVE
+   *   - DRMAA_PS_SYSTEM_ON_HOLD
+   *   - DRMAA_PS_USER_ON_HOLD
+   *   - DRMAA_PS_USER_SYSTEM_ON_HOLD
+   *   - DRMAA_PS_RUNNING
+   *   - DRMAA_PS_SYSTEM_SUSPENDED
+   *   - DRMAA_PS_USER_SUSPENDED
+   *   - DRMAA_PS_DONE
+   *   - DRMAA_PS_FAILED
+   * Terminated jobs have a status of DRMAA_PS_FAILED.
+   */
+  int *remote_ps;
+  errnum =  drmaa_job_ps(jobid,remote_ps, error, DRMAA_ERROR_STRING_BUFFER);
+  printf("drmaa_job_ps: job_id: %s job_ps: %d\n",jobid,*remote_ps);
+  /* Conrol Job */
+  /*
+  *   - DRMAA_CONTROL_SUSPEND   0
+  *   - DRMAA_CONTROL_RESUME    1
+  *   - DRMAA_CONTROL_HOLD      2
+  *   - DRMAA_CONTROL_RELEASE   3
+  *   - DRMAA_CONTROL_TERMINATE 4
+  */
+  /* Delete Job */
+  int i;
+  for(i=0;i<5;i++)
+  {
+    errnum = drmaa_control(jobid, i, error, DRMAA_ERROR_STRING_BUFFER);
+    if (errnum != DRMAA_ERRNO_SUCCESS)
+    {
+        fprintf (stderr, "Couldn't drmaa_control job: %s\n", error);
+    } else
+    {
+     const char *str = drmaa_control_to_str(i);
+     printf("drmaa_control: job_id: %s action: %s\n", jobid, str);
+    }
+  }
+
+
+
+   /* Delete Job Template*/
 
   errnum = drmaa_delete_job_template (jt, error,  DRMAA_ERROR_STRING_BUFFER);
   if (errnum != DRMAA_ERRNO_SUCCESS) 

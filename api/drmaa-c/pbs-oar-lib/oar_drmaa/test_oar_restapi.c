@@ -7,6 +7,8 @@ int main(void)
 {
     CURL *curl_handle;
     CURLcode res;
+    long http_code = 0;
+
     struct curl_slist *headers = NULL;
 
     char rest_req[] = "{\"script_path\":\"sleep\"}";
@@ -19,11 +21,13 @@ int main(void)
         curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 
         curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, rest_req);
+
         printf("YOP\n");
         res = curl_easy_perform(curl_handle);
+        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
 
-        printf("YOP\n");
-
+        printf("res: %d error: %s\n",res, curl_easy_strerror(res));
+        printf("http code %ld\n",http_code);
         /* always cleanup */
         curl_easy_cleanup(curl_handle);
   }

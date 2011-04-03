@@ -57,14 +57,13 @@ oardrmaa_dump_attrl( const struct attrl *attribute_list, const char *prefix )
 		prefix = "";
 	for( i = attribute_list;  i != NULL;  i = i->next )
 
-            printf("hello\n");
-            /* printf("name: %s \n", i->name); */
+            printf("name:%s value:%s \n",i->name, i->value ? i->value : "null");
 
-
-		fsd_log_debug(( "\n %s %s%s%s=%s",
+                fsd_log_debug(( "\n %s %s%s%s=%s",
+                /* fsd_log_warning(( "\n %s %s%s%s=%s", */
 				prefix, i->name,
 				i->resource ? "." : "",  i->resource ? i->resource : "",
-				i->value
+                                i->value ? i->value : "null"
 				));
 }
 
