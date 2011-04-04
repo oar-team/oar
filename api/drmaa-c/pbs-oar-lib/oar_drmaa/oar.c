@@ -151,6 +151,7 @@ int oar_disconnect(int connect)
 
 int oar_control_job(int connect, char *job_id, int action)
 {
+
     printf("oar_job_control: job_id: %s action: %i  drmaa_control: %s\n",
            job_id, action, drmaa_control_to_str(action));
 
@@ -174,13 +175,13 @@ int oar_control_job(int connect, char *job_id, int action)
     printf("%lu bytes retrieved\n", (long)recv_data.size);
     json_parser_load_from_data (parser, recv_data.memory, -1, &error);
     json_reader_set_root (reader, json_parser_get_root (parser));
+
     /* test return http status */
-
-
     if (http_code >= 200 && http_code < 300) /* http successful */
     {
         json_reader_read_member (reader,"id");
         int job_id = json_reader_get_int_value (reader);
+        json_reader_end_element (reader);
         printf("Http request successfull OK: job id: %d\n",job_id);
     } else
     {
@@ -222,20 +223,98 @@ int oar_control_job(int connect, char *job_id, int action)
 struct batch_status *oar_statjob(int connect, char *id, struct attrl *attrib)
 {
 
-    batch_status *b_status = malloc(sizeof(batch_status));
+    /* TODO !!!
+    man pbs_statjob (several mode , information on attrl)
+    http://linux.die.net/man/3/pbs_statjob
+
+    from iheb-work
+        if id == NULL -> return the status of all jobs <- not implemented yet
+        if id == queue Identifier ->  return the status of all jobs in the queue  <- not implemented yet
+        if id == job id -> return the status of this job
+        if attrl == NULL -> return all attributes
+        if attrl != NULL -> return the attributes whose names are pointed by the attrl member "name".
+
+     */
+    if (id==NULL) {printf("Status of all jobs(not DONE and TERMINATED ???): TODO ");}
+    if (atoi(id)==0)  {printf("Status jobs in the queue: %s Not Yet Implemented\n", id);}
+    if (attrib==NULL)
+    {
+        printf("Return all attributs\n");
+    } else
+    {
+        printf("Return indicates attributs\n");
+    }
+
+    struct batch_status *b_status = malloc(sizeof(struct batch_status));
 
 
     printf("TODO: oar_statjob\n");
     oardrmaa_dump_attrl(attrib, "oar_statjob");
 
 
-    //attributes = presult2attrl(res->data,attrib);
-    attributes = oar_toPbsAttributes(oar_getLastEvent(res->data), presult2attrl(res->data,attrib));
+    /* CURL stuff */
+    long http_code = 0;
+    char *rest_url[256];
+    struct curl_slist *headers = NULL;
+    sprintf(rest_url,"http://localhost/oarapi/jobs/%s.json",id);
+    /*printf("url:%s\n",rest_url); */
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L); /* perform a get http request */
+    curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
+    res = curl_easy_perform(curl_handle);
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+    printf("http code %ld\n",http_code);
 
-    bstatus->name = fsd_strdup(id);
-    bstatus->next = NULL;
-    bstatus->attribs = attributes;
-    bstatus->text = g_strdup("");	//In order to avoir freeing problems in pbs_statfree
+    /* read response */
+    JsonParser *parser = json_parser_new ();
+    JsonReader *reader = json_reader_new (NULL);
+    GError *error = NULL;
+
+    printf("%lu bytes retrieved\n", (long)recv_data.size);
+    json_parser_load_from_data (parser, recv_data.memory, -1, &error);
+    json_reader_set_root (reader, json_parser_get_root (parser));
+
+
+    /* test return http status */
+    if (http_code >= 200 && http_code < 300) /* http successful */
+    {
+        json_reader_read_member (reader,"id");
+        int job_id = json_reader_get_int_value (reader);
+        json_reader_end_element (reader);
+        printf("Http request successfull OK: job id: %d\n",job_id);
+
+        json_reader_read_member (reader,"state");
+        char *state = json_reader_get_string_value(reader); /* need to free after use ??? */
+        json_reader_end_element (reader);
+        printf("job state: %s\n",state);
+
+        json_reader_read_member (reader,"exit_code");
+        if (!json_reader_get_null_value(reader))
+        {
+            int exit_code = json_reader_get_int_value(reader);
+            printf("exit_code: %d\n",exit_code);
+        } else
+        {
+            printf("exit_code: is null\n"); /* set to -2 ... ???*/
+        }
+        json_reader_end_element (reader);
+    } else
+    {
+        /* TODO */
+    }
+
+
+
+
+    /* attributes = presult2attrl(res->data,attrib); */
+    /*
+    attributes = oar_toPbsAttributes(oar_getLastEvent(res->data), presult2attrl(res->data,attrib));
+    */
+    b_status->name = fsd_strdup(id);
+    b_status->next = NULL;
+    /* b_status->attribs = attributes; */
+    b_status->text = g_strdup("");	/* In order to avoir freeing problems in pbs_statfree */
 
 
 

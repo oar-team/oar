@@ -256,7 +256,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 {
 	struct attrl *attribs = status->attribs;
 	struct attrl *i = NULL;
-        char oar_state = 0;
+        char *oar_state = 0;
 	int exit_status = -2;
 	const char *cpu_usage = NULL;
 	const char *mem_usage = NULL;
@@ -330,8 +330,60 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 		fsd_log_debug(( "exit_status: %d", exit_status ));
 		self->exit_status = exit_status;
 	 }
-        if(oar_state){
+        if(oar_state)
+        {
+            if(strcmp(oar_state,OAR_JS_WAITING)||strcmp(oar_state,OAR_JS_TOLAUNCH))
+            { /* DRMAA_PS_QUEUED_ACTIVE */
+                self->state = DRMAA_PS_QUEUED_ACTIVE;
+                self->flags &= ~FSD_JOB_HOLD;
+            } else
+            if (strcmp(oar_state,OAR_JS_HOLD))
+            { /* DRMAA_PS_SYSTEM_ON_HOLD / DRMAA_PS_USER_ON_HOLD [default] / DRMAA_PS_USER_SYSTEM_ON_HOLD */
+                /* TODO: system/user */
+                self->state = DRMAA_PS_USER_ON_HOLD;
+                self->flags |= FSD_JOB_HOLD;
+            } else
+            if (strcmp(oar_state,OAR_JS_TOERROR)||strcmp(oar_state,OAR_JS_ERROR))
+            { /* DRMAA_PS_FAILED */
+                self->state = DRMAA_PS_FAILED;
+            } else
+            if (strcmp(oar_state,OAR_JS_LAUNCHING)||strcmp(oar_state,OAR_JS_RUNNING)||strcmp(oar_state,OAR_JS_FINISHING))
+            { /* DRMAA_PS_RUNNING */
+                self->state = DRMAA_PS_RUNNING;
+            } else
+            if (strcmp(oar_state,OAR_JS_SUSPENDED)||strcmp(oar_state,OAR_JS_RESUMING))
+            { /* DRMAA_PS_SYSTEM_SUSPENDED / DRMAA_PS_USER_SUSPENDED [default] */
+                 /* TODO: system/user */
+                self->state = DRMAA_PS_USER_SUSPENDED;
+            } else
+            if (strcmp(oar_state,OAR_JS_TERMINATED))
+            { /* DRMAA_PS_DONE */
+                self->flags &= FSD_JOB_TERMINATED_MASK;
+                self->flags |= FSD_JOB_TERMINATED;
+                if (exit_status != -2) { /*has exit code */
+                        if( self->exit_status == 0)
+                                self->state = DRMAA_PS_DONE;
+                        else
+                                /* TODO: is not possible with OAR ??? */
+                                self->state = DRMAA_PS_FAILED;
+                } else {
+                        /* TODO: is not possible with OAR ??? */
+                        self->state = DRMAA_PS_FAILED;
+                        self->exit_status = -1;
+                }
+                self->end_time = modify_time; /* END_TIME */
+
+            } else /* OAR_JS_TOASKRESERV || other */
+            { /* DRMAA_PS_UNDETERMINED */
+                self->state = DRMAA_PS_UNDETERMINED;
+            }
+
+
+
+        }
+            /*
                 switch( oar_state )
+                */
                     /* TODO: must be adapted
 		 {
                  case 'C': #*Job is completed after having run. *#
@@ -378,8 +430,8 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 				self->state = DRMAA_PS_UNDETERMINED;
 				break;
 	 }
-}
-*/
+         */
+
 	fsd_log_debug(( "job_ps: %s", drmaa_job_ps_to_str(self->state) ));
 
 	 {
