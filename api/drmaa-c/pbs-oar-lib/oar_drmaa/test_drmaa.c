@@ -6,6 +6,8 @@
      export LD_LIBRARY_PATH=.libs
 */
 
+#include <stdlib.h>
+
 #include <drmaa.h>
 extern const char *drmaa_control_to_str( int action ); /* ??? */
 
@@ -32,6 +34,7 @@ main ()
   char error[DRMAA_ERROR_STRING_BUFFER];
   int errnum = 0;
   char jobid[DRMAA_JOBNAME_BUFFER];
+  char jobid_2[DRMAA_JOBNAME_BUFFER];
   
   /* Init Session */
   /* drmaa_init | oar_connect */
@@ -58,7 +61,7 @@ main ()
   }
 
   /* Job Templates */
-  errnum = drmaa_set_attribute (jt, DRMAA_REMOTE_COMMAND, "sleeper.sh", error, DRMAA_ERROR_STRING_BUFFER);
+  errnum = drmaa_set_attribute (jt, DRMAA_REMOTE_COMMAND, "/bin/sleep", error, DRMAA_ERROR_STRING_BUFFER);
   if (errnum != DRMAA_ERRNO_SUCCESS) 
   {
     fprintf (stderr, "Couldn't set remote command: %s\n", error);
@@ -86,6 +89,10 @@ main ()
     printf ("Your job has been submitted with id %s\n", jobid);
   }
 
+  /* Run Job */
+  errnum = drmaa_run_job (jobid_2, DRMAA_JOBNAME_BUFFER, jt, error, DRMAA_ERROR_STRING_BUFFER);
+
+
   /* Get Job State */
   /**
    * The possible values of
@@ -102,9 +109,17 @@ main ()
    *   - DRMAA_PS_FAILED
    * Terminated jobs have a status of DRMAA_PS_FAILED.
    */
-  int *remote_ps;
-  errnum =  drmaa_job_ps(jobid,remote_ps, error, DRMAA_ERROR_STRING_BUFFER);
-  printf("drmaa_job_ps: job_id: %s job_ps: %d\n",jobid,*remote_ps);
+  /*
+  int remote_ps;
+  errnum =  drmaa_job_ps(jobid, &remote_ps, error, DRMAA_ERROR_STRING_BUFFER);
+  printf("drmaa_job_ps: job_id: %s job_ps: %d\n",jobid,remote_ps);
+
+
+
+  errnum =  drmaa_job_ps(jobid, &remote_ps, error, DRMAA_ERROR_STRING_BUFFER);
+  printf("2-drmaa_job_ps: job_id: %s job_ps: %d\n",jobid,remote_ps);
+*/
+
   /* Conrol Job */
   /*
   *   - DRMAA_CONTROL_SUSPEND   0
@@ -114,8 +129,9 @@ main ()
   *   - DRMAA_CONTROL_TERMINATE 4
   */
   /* Delete Job */
+  /*
   int i;
-  for(i=0;i<5;i++)
+  for(i=0;i<0;i++)
   {
     errnum = drmaa_control(jobid, i, error, DRMAA_ERROR_STRING_BUFFER);
     if (errnum != DRMAA_ERRNO_SUCCESS)
@@ -127,8 +143,31 @@ main ()
      printf("drmaa_control: job_id: %s action: %s\n", jobid, str);
     }
   }
+  */
+  printf("drmaa_wait \n");
 
+  int stat;
+  drmaa_wait(DRMAA_JOB_IDS_SESSION_ANY, jobid, sizeof(jobid)-1, &stat, 20, NULL, NULL, 0);
+  printf("drmaa_wait JobId: %s\n", jobid);
 
+  printf("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\n");
+  drmaa_wait(DRMAA_JOB_IDS_SESSION_ANY, jobid, sizeof(jobid)-1, &stat, 20, NULL, NULL, 0);
+  printf("drmaa_wait JobId: %s\n", jobid);
+
+  /*
+  const char **job_ids = NULL;
+  job_ids = calloc( 2, sizeof(char *) );
+  job_ids[0]=jobid;
+  printf("drmaa_synchronize\n");
+  errnum = drmaa_synchronize(job_ids, 200, 0,
+          error, DRMAA_ERROR_STRING_BUFFER);
+*/
+  /* TODO free fsb_free_vector(job_ids); */
+
+  if (errnum != DRMAA_ERRNO_SUCCESS)
+  {
+      fprintf (stderr, "Couldn't drmaa_synchronize: %s\n", error);
+  }
 
    /* Delete Job Template*/
 

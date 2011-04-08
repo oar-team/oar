@@ -73,10 +73,18 @@ struct attropl {
         char		*value;
 };
 
+struct oar_job_status {
+    int     id;
+    char    *state;
+    int     exit_status;
+    int     walltime;
+    char    *queue;
+};
+
 struct batch_status {
         struct batch_status *next;
         char		    *name;
-        struct attrl	    *attribs;
+        struct oar_job_status *status;
         char		    *text;
 };
 
@@ -88,7 +96,11 @@ int oar_control_job(int connect, char *job_id, int action);
 
 void oar_statfree(struct batch_status *stat);
 
-struct batch_status *oar_statjob(int connect, char *id, struct attrl *attrib);
+void oar_status_dump(struct batch_status *stat);
+
+struct batch_status *oar_statjob(int connect, char *id);
+
+struct batch_status *oar_multiple_statjob(int connect, char **job_id);
 
 char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination);
 

@@ -53,12 +53,12 @@ extern const fsd_attribute_t oardrmaa_oar_attributes[];
 struct oar_attrib { int name; const fsd_attribute_t *attr; }
 
 %%
-job_name, t(OARDRMAA_ATTR_JOB_NAME)
+job_name,    t(OARDRMAA_ATTR_JOB_NAME)
 sdtout_file, t(OARDRMAA_ATTR_STDOUT_FILE)
 stderr_file, t(OARDRMAA_ATTR_STDERR_FILE)
-walltime, t(OARDRMAA_ATTR_WALLTIME)
-args, t(OARDRMAA_ATTR_ARGS)
-job_state, t(OARDRMAA_ATTR_JOB_STATE)
+walltime,    t(OARDRMAA_ATTR_WALLTIME)
+args,        t(OARDRMAA_ATTR_ARGS)
+job_state,   t(OARDRMAA_ATTR_JOB_STATE)
 %%
 #undef t
 
@@ -118,12 +118,12 @@ oardrmaa_oar_template_new(void)
 }
 
 const fsd_attribute_t oardrmaa_oar_attributes[ OARDRMAA_N_OAR_ATTRIBUTES ] = {
-    {"job_name", OARDRMAA_ATTR_JOB_NAME, false },
+    {"job_name",    OARDRMAA_ATTR_JOB_NAME, false },
     {"sdtout_file", OARDRMAA_ATTR_STDOUT_FILE, false },
     {"stderr_file", OARDRMAA_ATTR_STDERR_FILE, false },
-    {"walltime", OARDRMAA_ATTR_WALLTIME,false },
-    { "args", OARDRMAA_ATTR_ARGS, false },
-    { "job_state", OARDRMAA_ATTR_JOB_STATE, false }
+    {"walltime",    OARDRMAA_ATTR_WALLTIME,false },
+    {"args",        OARDRMAA_ATTR_ARGS, false },
+    {"job_state",   OARDRMAA_ATTR_JOB_STATE, false }
 };
 
 /* vim: set ft=c: */

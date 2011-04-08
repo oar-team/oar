@@ -32,7 +32,7 @@ todo
 ====
 
 * oar_statjob (id / attrl = NULL see man pbs_statjob)
-* oar_sumbit / attributs
+* oar_sumbit / attributs / default attributs
 * end_time
 * start_time
 * frag trick

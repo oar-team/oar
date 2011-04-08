@@ -1,4 +1,4 @@
-    /* $Id: session.c 385 2011-01-04 18:24:05Z mamonski $ */
+/* $Id: session.c 385 2011-01-04 18:24:05Z mamonski $ */
 /*
  *  FedStage DRMAA for PBS Pro
  *  Copyright (C) 2006-2009  FedStage Systems
@@ -20,6 +20,11 @@
 /*
  * Adapted from pbs_drmaa/session.c
  */
+
+/* TODO remove
+    oardrmaa_create_status_attrl
+    status_attrl in session
+*/
 
 #ifdef HAVE_CONFIG_H
 #	include <config.h>
@@ -84,9 +89,10 @@ oardrmaa_session_run_impl(
 		int bulk_idx
 		);
 
+/* TODO to remove
 static struct attrl *
 oardrmaa_create_status_attrl(void);
-
+*/
 
 fsd_drmaa_session_t *
 oardrmaa_session_new( const char *contact )
@@ -103,7 +109,7 @@ oardrmaa_session_new( const char *contact )
 
                 self->oar_conn = -1;
 
-		self->status_attrl = NULL;
+        /*	self->status_attrl = NULL;*/ /* to remove ??? */
 		
 		self->super_destroy = self->super.destroy;
                 self->super.destroy = oardrmaa_session_destroy;
@@ -117,9 +123,9 @@ oardrmaa_session_new( const char *contact )
 
 		self->do_drm_keeps_completed_jobs =
                         oardrmaa_session_do_drm_keeps_completed_jobs;
-
+                /* to remove
                 self->status_attrl = oardrmaa_create_status_attrl();
-
+                */
                 self->oar_conn = oar_connect( self->super.contact );
                 fsd_log_info(( "oar_connect(%s) =%d", self->super.contact,
                                         self->oar_conn ));
@@ -152,7 +158,7 @@ oardrmaa_session_destroy( fsd_drmaa_session_t *self )
 	self->stop_wait_thread( self );
         if( oarself->oar_conn >= 0 )
                 oar_disconnect( oarself->oar_conn );
-        fsd_free( oarself->status_attrl );
+        /* fsd_free( oarself->status_attrl ); */ /* TODO: to remove */
         oarself->super_destroy( self );
 }
 
@@ -276,6 +282,18 @@ oardrmaa_session_update_all_jobs_status( fsd_drmaa_session_t *self )
         oardrmaa_session_t *oarself = (oardrmaa_session_t*)self;
         fsd_job_set_t *jobs = self->jobs;
 	struct batch_status *volatile status = NULL;
+        char **job_ids = NULL;
+
+ printf("oardrmaa_session_update_all_jobs_status NOT YET implemented !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+
+
+        jobs_lock = fsd_mutex_lock( &jobs->mutex );
+
+        job_ids  = jobs->get_all_job_ids(jobs);
+
+        jobs_lock = fsd_mutex_unlock( &jobs->mutex );
+
+        printf("yopyop\n");
 
 	fsd_log_enter((""));
 
@@ -284,16 +302,14 @@ oardrmaa_session_update_all_jobs_status( fsd_drmaa_session_t *self )
 		conn_lock = fsd_mutex_lock( &self->drm_connection_mutex );
 retry:
 
+                status = oar_multiple_statjob( oarself->oar_conn, job_ids);
 
-                status = oar_statjob( oarself->oar_conn, NULL, oarself->status_attrl);
-
-                fsd_log_info(( "oar_statjob( fd=%d, job_id=NULL, attribs={...} ) =%p",
+                fsd_log_info(( "oar_multiple_statjob( fd=%d, job_id=NULL, attribs={...} ) =%p",
                                  oarself->oar_conn, (void*)status ));
                 if( status == NULL  &&  oar_errno != 0 )
 		 {
-                        if (oar_errno == OAR_ERRNO_PROTOCOL || oar_errno == OAR_ERRNO_EXPIRED) /*TODO: to adapt */
-                        /* TODO */
-                        /* TODO */
+                        if (oar_errno == OAR_ERRNO_PROTOCOL || oar_errno == OAR_ERRNO_EXPIRED)
+
 			 {
                                 if ( oarself->oar_conn >= 0)
                                         oar_disconnect( oarself->oar_conn );
@@ -377,11 +393,13 @@ retry:
 			jobs_lock = fsd_mutex_unlock( &jobs->mutex );
 	 }
 	END_TRY
-
+        fsd_free_vector( job_ids );
 	fsd_log_return((""));
+
 }
 
 
+/* to remove
 
 struct attrl *
 oardrmaa_create_status_attrl(void)
@@ -391,15 +409,18 @@ oardrmaa_create_status_attrl(void)
 	const int max_attribs = 16;
 	int n_attribs;
 	int j = 0;
+        */
 /* TODO to adapt */
 /*         printf("Prout...................................................\n");
 */
-
+/*
 	fsd_log_enter((""));
 	fsd_calloc( result, max_attribs, struct attrl );
 	result[j++].name="job_state";
         printf("name %s\n",result[j-1].name);
 	result[j++].name="exit_status";
+        */
+        /*
 	result[j++].name="resources_used";
 	result[j++].name="ctime";
 	result[j++].name="mtime";
@@ -407,11 +428,13 @@ oardrmaa_create_status_attrl(void)
 	result[j++].name="etime";
 
 	result[j++].name="queue";
+
 	result[j++].name="Account_Name";
 	result[j++].name="exec_host";
 	result[j++].name="start_time";
 	result[j++].name="mtime";
-
+*/
+/*
 	n_attribs = j;
 	for( i = result;  true;  i++ )
 		if( i+1 < result + n_attribs )
@@ -423,12 +446,9 @@ oardrmaa_create_status_attrl(void)
 		 }
 
                 printf("Prout\n");
-/* #ifdef DEBUGGING */
-	fsd_log_return((":"));
-        oardrmaa_dump_attrl( result, NULL );
-/* #endif */
+
 	return result;
-}
+*/
 
 
 bool

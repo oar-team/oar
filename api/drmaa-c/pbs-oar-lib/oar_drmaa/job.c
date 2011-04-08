@@ -192,15 +192,14 @@ oardrmaa_job_update_status( fsd_job_t *self )
 	TRY
 	 {
 		conn_lock = fsd_mutex_lock( &self->session->drm_connection_mutex );
-retry:
-
-                status = oar_statjob( session->oar_conn, self->job_id, session->status_attrl);
+retry:        
+                status = oar_statjob( session->oar_conn, self->job_id);
 
                 fsd_log_info(( "oar_statjob(fd=%d, job_id=%s, attribs={...}) =%p",
                                  session->oar_conn, self->job_id, (void*)status ));
 		if( status == NULL )
 		 {
-
+ printf("TODOTODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n");
                         fsd_log_error(("oar_statjob error: %d, %s", oar_errno, oar_errno_to_txt(oar_errno)));
 
                         switch( oar_errno )
@@ -252,63 +251,50 @@ retry:
 
 
 void
-oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
+oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
 {
-	struct attrl *attribs = status->attribs;
-	struct attrl *i = NULL;
-        char *oar_state = 0;
+
+        char *oar_state = NULL;
 	int exit_status = -2;
+        struct oar_job_status *status = b_status->status;
+        /* TODO to remove ???
 	const char *cpu_usage = NULL;
 	const char *mem_usage = NULL;
 	const char *vmem_usage = NULL;
-	const char *walltime = NULL;
-	long unsigned int modify_time = 0;
+        */
+        const char *walltime = NULL;
+
+        long unsigned int modify_time = 0; /* TODO */
 
 	fsd_log_enter(( "({job_id=%s})", self->job_id ));
 #ifdef DEBUGGING
         oardrmaa_dump_attrl( attribs, NULL );
 #endif
-	fsd_assert( !strcmp( self->job_id, status->name ) );
+        fsd_assert( !strcmp( self->job_id, b_status->name ) );
 /* TODO: to adapt */
-	for( i = attribs;  i != NULL;  i = i->next )
-	 {
-		int attr;
-                attr = oardrmaa_oar_attrib_by_name( i->name );
-		switch( attr )
-		 {
-                    /* TODO-TODO , oar_state = i->value[0]; conversion de l'état ???
-                        case OARDRMAA_ATTR_JOB_STATE:
-                                oar_state = i->value[0]
-				break;
-                        case OARDRMAA_ATTR_EXIT_STATUS:
-				exit_status = atoi( i->value );
-				break;
-                        case OARDRMAA_ATTR_RESOURCES_USED:
-				if( !strcmp( i->resource, "cput" ) )
-					cpu_usage = i->value;
-				else if( !strcmp( i->resource, "mem" ) )
-					mem_usage = i->value;
-				else if( !strcmp( i->resource, "vmem" ) )
-					vmem_usage = i->value;
-				else if( !strcmp( i->resource, "walltime" ) )
-					walltime = i->value;
-				break;
-                        case OARDRMAA_ATTR_QUEUE:
-				if (!self->queue)
-					self->queue = fsd_strdup(i->value);
-				break;
-                        case OARDRMAA_ATTR_ACCOUNT_NAME:
-				if (!self->project)
-					self->project = fsd_strdup(i->value);
-				break;
-                        case OARDRMAA_ATTR_EXECUTION_HOST:
-				if (!self->execution_hosts) {
-					fsd_log_debug(("execution_hosts = %s", i->value));
-					self->execution_hosts = fsd_strdup(i->value);
-				}
-				break;
-                        case OARDRMAA_ATTR_START_TIME:
-				{
+
+
+        printf("TODO-TODO-oardrmaa_job_update TODO-TODO-oardrmaa_job_update  TODO-TODO-oardrmaa_job_update\n");
+
+        oar_status_dump(b_status);
+
+        oar_state = status->state;
+        exit_status = status->exit_status;
+        self->walltime = status -> walltime;
+
+        if (!self->queue)
+                self->queue = fsd_strdup(status->queue);
+        /* TODO in oar.c*/
+        /*
+        if (!self->project)
+                self->project = fsd_strdup(status->project);
+        */
+        /* TODO
+        if (!self->execution_hosts) {
+                fsd_log_debug(("execution_hosts = %s", i->value));
+                self->execution_hosts = fsd_strdup(i->value);
+        */
+        /* TODO
 				  long unsigned int start_time;
 				  if (self->start_time == 0 && sscanf(i->value, "%lu", &start_time) == 1)
 					self->start_time = start_time;
@@ -317,13 +303,21 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
                         case OARDRMAA_ATTR_MTIME:
 				if (sscanf(i->value, "%lu", &modify_time) != 1)
 					modify_time = 0;
-				break;
-                 */
-		 }
-	 }
+        */
+
+
+        printf("==========oar_state: %s \n", oar_state);
+
+        if (!strcmp(oar_state,OAR_JS_TERMINATED))
+        {
+            printf("YOP %s %s\n",oar_state,OAR_JS_TERMINATED);
+        } else
+        {
+            printf("PAS GLOP %s %s\n",oar_state,OAR_JS_TERMINATED);
+        }
 
         if( oar_state )
-                fsd_log_debug(( "oar_state: %c", oar_state ));
+                fsd_log_debug(( "oar_state: %s", oar_state ));
 
 	if( exit_status != -2 )
 	 {
@@ -332,40 +326,47 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 	 }
         if(oar_state)
         {
-            if(strcmp(oar_state,OAR_JS_WAITING)||strcmp(oar_state,OAR_JS_TOLAUNCH))
+            if(!strcmp(oar_state,OAR_JS_WAITING)||!strcmp(oar_state,OAR_JS_TOLAUNCH))
             { /* DRMAA_PS_QUEUED_ACTIVE */
                 self->state = DRMAA_PS_QUEUED_ACTIVE;
                 self->flags &= ~FSD_JOB_HOLD;
             } else
-            if (strcmp(oar_state,OAR_JS_HOLD))
+            if (!strcmp(oar_state,OAR_JS_HOLD))
             { /* DRMAA_PS_SYSTEM_ON_HOLD / DRMAA_PS_USER_ON_HOLD [default] / DRMAA_PS_USER_SYSTEM_ON_HOLD */
                 /* TODO: system/user */
                 self->state = DRMAA_PS_USER_ON_HOLD;
                 self->flags |= FSD_JOB_HOLD;
             } else
-            if (strcmp(oar_state,OAR_JS_TOERROR)||strcmp(oar_state,OAR_JS_ERROR))
+            if (!strcmp(oar_state,OAR_JS_TOERROR)||!strcmp(oar_state,OAR_JS_ERROR))
             { /* DRMAA_PS_FAILED */
                 self->state = DRMAA_PS_FAILED;
             } else
-            if (strcmp(oar_state,OAR_JS_LAUNCHING)||strcmp(oar_state,OAR_JS_RUNNING)||strcmp(oar_state,OAR_JS_FINISHING))
+            if (!strcmp(oar_state,OAR_JS_LAUNCHING)||!strcmp(oar_state,OAR_JS_RUNNING)||!strcmp(oar_state,OAR_JS_FINISHING))
             { /* DRMAA_PS_RUNNING */
                 self->state = DRMAA_PS_RUNNING;
             } else
-            if (strcmp(oar_state,OAR_JS_SUSPENDED)||strcmp(oar_state,OAR_JS_RESUMING))
+            if (!strcmp(oar_state,OAR_JS_SUSPENDED)||!strcmp(oar_state,OAR_JS_RESUMING))
             { /* DRMAA_PS_SYSTEM_SUSPENDED / DRMAA_PS_USER_SUSPENDED [default] */
                  /* TODO: system/user */
                 self->state = DRMAA_PS_USER_SUSPENDED;
             } else
-            if (strcmp(oar_state,OAR_JS_TERMINATED))
+            if (!strcmp(oar_state,OAR_JS_TERMINATED))
             { /* DRMAA_PS_DONE */
+                printf("strcmp(oar_state,OAR_JS_TERMINATED)/n");
                 self->flags &= FSD_JOB_TERMINATED_MASK;
                 self->flags |= FSD_JOB_TERMINATED;
-                if (exit_status != -2) { /*has exit code */
-                        if( self->exit_status == 0)
-                                self->state = DRMAA_PS_DONE;
-                        else
-                                /* TODO: is not possible with OAR ??? */
-                                self->state = DRMAA_PS_FAILED;
+                if (exit_status != -2)
+                { /*has exit code */
+                    if( self->exit_status == 0)
+                    {
+                        printf("DRMAA_PS_DONE\n");
+                        self->state = DRMAA_PS_DONE;
+                    } else
+                    {
+                        /* TODO: is not possible with OAR ??? */
+                         printf("DRMAA_PS_FAILED\n");
+                        self->state = DRMAA_PS_FAILED;
+                    }
                 } else {
                         /* TODO: is not possible with OAR ??? */
                         self->state = DRMAA_PS_FAILED;
@@ -378,9 +379,11 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
                 self->state = DRMAA_PS_UNDETERMINED;
             }
 
-
-
         }
+
+
+
+
             /*
                 switch( oar_state )
                 */
@@ -433,7 +436,8 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
          */
 
 	fsd_log_debug(( "job_ps: %s", drmaa_job_ps_to_str(self->state) ));
-
+        /* TODO adapt ??? */
+/*
 	 {
 		int hours, minutes, seconds;
 		long mem;
@@ -460,6 +464,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *status )
 			fsd_log_debug(( "walltime: %s=%lds", walltime, self->walltime ));
 		 }
 	 }
+*/
 
 }
 

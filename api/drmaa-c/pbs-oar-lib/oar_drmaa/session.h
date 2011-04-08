@@ -60,10 +60,13 @@ struct oardrmaa_session_s {
 	 */
         int oar_conn; /*TODO we need more information ? */
 
-	/*
+        /* tp remove
 	 * List of attributes which will be used to query jobs.
 	 */
-        struct attrl *status_attrl; /*TODO we can support it */
+        /*
+        struct attrl *status_attrl;
+        */
+        /*TODO we can support it */
 
 };
 
