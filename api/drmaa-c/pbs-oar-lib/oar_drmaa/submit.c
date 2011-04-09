@@ -263,7 +263,6 @@ oardrmaa_submit_apply_defaults( oardrmaa_submit_t *self )
 {
     /* TODO default */
         fsd_template_t *oar_attr = self->oar_job_attributes;
-printf("yop\n");
         oar_attr->set_attr( oar_attr, OARDRMAA_STDOUT_FILE, "prout" );
         oar_attr->set_attr( oar_attr, OARDRMAA_JOB_NAME, "yopyop" );
 

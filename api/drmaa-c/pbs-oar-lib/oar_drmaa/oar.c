@@ -260,6 +260,7 @@ struct batch_status *oar_statjob(int connect, char *id)
     /* CURL stuff */
     long http_code = 0;
     char rest_url[256];
+    char *exit_code_str;
     struct curl_slist *headers = NULL;
     sprintf(rest_url,"http://localhost/oarapi/jobs/%s.json",id);
     printf("url:%s\n",rest_url);
@@ -299,11 +300,13 @@ struct batch_status *oar_statjob(int connect, char *id)
         json_reader_end_element (reader);
         printf("job state: %s\n",state);
 
-        json_reader_read_member (reader,"exit_code");
+        json_reader_read_member(reader,"exit_code");
+
         if (!json_reader_get_null_value(reader))
         {
-            exit_code = json_reader_get_int_value(reader);
-            printf("exit_code: %d\n",exit_code);
+            exit_code_str = json_reader_get_string_value(reader);
+            exit_code = atoi(exit_code_str) >> 8;
+            printf("exit_code_str: %s exit_code8: %d\n",exit_code_str, exit_code);
         }
         json_reader_end_element (reader);
 
@@ -361,14 +364,10 @@ struct batch_status * oar_multiple_statjob(int connect, char **job_ids)
     struct batch_status *b_status=NULL;
     struct batch_status *cur_status=NULL;
 
-    printf("oar_multiple_statjob\n");
     /* iterate on job_ids (list of job id) */
     while(*job_ids !=NULL)
     {
-        printf("Job_id %s\n",*job_ids);
-
         j_status = oar_statjob(connect, *job_ids);
-        printf("YOP\n");
         if(j_status==NULL)
         {
             printf("TODO oar_statjob return NULL in oar_multiple_statjob\n");
@@ -466,7 +465,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     return job_id_str;
 }
 
-oar_status_dump(struct batch_status *stat)
+void oar_status_dump(struct batch_status *stat)
 {
     struct batch_status *next;
     while( stat!=NULL) {

@@ -60,8 +60,11 @@ main ()
     return 1;
   }
 
+  char cmd1[]="/bin/sleep";
+  char cmd2[]="exit";
+
   /* Job Templates */
-  errnum = drmaa_set_attribute (jt, DRMAA_REMOTE_COMMAND, "/bin/sleep", error, DRMAA_ERROR_STRING_BUFFER);
+  errnum = drmaa_set_attribute (jt, DRMAA_REMOTE_COMMAND, cmd2, error, DRMAA_ERROR_STRING_BUFFER);
   if (errnum != DRMAA_ERRNO_SUCCESS) 
   {
     fprintf (stderr, "Couldn't set remote command: %s\n", error);
@@ -90,8 +93,9 @@ main ()
   }
 
   /* Run Job */
-  errnum = drmaa_run_job (jobid_2, DRMAA_JOBNAME_BUFFER, jt, error, DRMAA_ERROR_STRING_BUFFER);
-
+  /*
+    errnum = drmaa_run_job (jobid_2, DRMAA_JOBNAME_BUFFER, jt, error, DRMAA_ERROR_STRING_BUFFER);
+  */
 
   /* Get Job State */
   /**
@@ -144,15 +148,14 @@ main ()
     }
   }
   */
+
+  sleep(7);
   printf("drmaa_wait \n");
 
   int stat;
   drmaa_wait(DRMAA_JOB_IDS_SESSION_ANY, jobid, sizeof(jobid)-1, &stat, 20, NULL, NULL, 0);
   printf("drmaa_wait JobId: %s\n", jobid);
 
-  printf("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\n");
-  drmaa_wait(DRMAA_JOB_IDS_SESSION_ANY, jobid, sizeof(jobid)-1, &stat, 20, NULL, NULL, 0);
-  printf("drmaa_wait JobId: %s\n", jobid);
 
   /*
   const char **job_ids = NULL;

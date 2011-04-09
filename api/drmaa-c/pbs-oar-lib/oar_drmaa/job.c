@@ -199,7 +199,6 @@ retry:
                                  session->oar_conn, self->job_id, (void*)status ));
 		if( status == NULL )
 		 {
- printf("TODOTODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n");
                         fsd_log_error(("oar_statjob error: %d, %s", oar_errno, oar_errno_to_txt(oar_errno)));
 
                         switch( oar_errno )
@@ -273,9 +272,6 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
         fsd_assert( !strcmp( self->job_id, b_status->name ) );
 /* TODO: to adapt */
 
-
-        printf("TODO-TODO-oardrmaa_job_update TODO-TODO-oardrmaa_job_update  TODO-TODO-oardrmaa_job_update\n");
-
         oar_status_dump(b_status);
 
         oar_state = status->state;
@@ -305,9 +301,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
 					modify_time = 0;
         */
 
-
-        printf("==========oar_state: %s \n", oar_state);
-
+        /*
         if (!strcmp(oar_state,OAR_JS_TERMINATED))
         {
             printf("YOP %s %s\n",oar_state,OAR_JS_TERMINATED);
@@ -315,7 +309,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
         {
             printf("PAS GLOP %s %s\n",oar_state,OAR_JS_TERMINATED);
         }
-
+*/
         if( oar_state )
                 fsd_log_debug(( "oar_state: %s", oar_state ));
 
