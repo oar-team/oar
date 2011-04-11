@@ -35,12 +35,13 @@
 fsd_template_t *oardrmaa_oar_template_new(void);
 int oardrmaa_oar_attrib_by_name( const char *name );
 
-#define OARDRMAA_JOB_NAME  "job_name"
-#define OARDRMAA_STDOUT_FILE "sdtout_file"
-#define OARDRMAA_STDERR_FILE "stderr_file"
-#define OARDRMAA_WALLTIME "walltime"
-#define OARDRMAA_ARGS		"args"
-#define OARDRMAA_JOB_STATE "job_state"
+#define OARDRMAA_JOB_NAME       "job_name"
+#define OARDRMAA_STDOUT_FILE    "stdout"
+#define OARDRMAA_STDERR_FILE    "stderr"
+#define OARDRMAA_WALLTIME       "walltime"
+#define OARDRMAA_ARGS           "args"
+#define OARDRMAA_JOB_STATE      "job_state"
+#define OARDRMAA_HOLD           "hold"
 
 typedef enum {
         OARDRMAA_ATTR_JOB_NAME,
@@ -49,6 +50,7 @@ typedef enum {
         OARDRMAA_ATTR_WALLTIME,
         OARDRMAA_ATTR_ARGS,
         OARDRMAA_ATTR_JOB_STATE,
+        OARDRMAA_ATTR_HOLD,
         OARDRMAA_N_OAR_ATTRIBUTES
 } oar_attribute_t;
 

@@ -304,10 +304,10 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
         /*
         if (!strcmp(oar_state,OAR_JS_TERMINATED))
         {
-            printf("YOP %s %s\n",oar_state,OAR_JS_TERMINATED);
+            fsd_log_debug((("YOP %s %s\n",oar_state,OAR_JS_TERMINATED);
         } else
         {
-            printf("PAS GLOP %s %s\n",oar_state,OAR_JS_TERMINATED);
+            fsd_log_debug((("PAS GLOP %s %s\n",oar_state,OAR_JS_TERMINATED);
         }
 */
         if( oar_state )
@@ -333,6 +333,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
             } else
             if (!strcmp(oar_state,OAR_JS_TOERROR)||!strcmp(oar_state,OAR_JS_ERROR))
             { /* DRMAA_PS_FAILED */
+                printf("OAR_JS_TOERROR||OAR_JS_ERROR -> DRMAA_PS_FAILED\n");
                 self->state = DRMAA_PS_FAILED;
             } else
             if (!strcmp(oar_state,OAR_JS_LAUNCHING)||!strcmp(oar_state,OAR_JS_RUNNING)||!strcmp(oar_state,OAR_JS_FINISHING))
@@ -346,19 +347,19 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
             } else
             if (!strcmp(oar_state,OAR_JS_TERMINATED))
             { /* DRMAA_PS_DONE */
-                printf("strcmp(oar_state,OAR_JS_TERMINATED)/n");
+                fsd_log_debug(("strcmp(oar_state,OAR_JS_TERMINATED)/n"));
                 self->flags &= FSD_JOB_TERMINATED_MASK;
                 self->flags |= FSD_JOB_TERMINATED;
                 if (exit_status != -2)
                 { /*has exit code */
                     if( self->exit_status == 0)
                     {
-                        printf("DRMAA_PS_DONE\n");
+                        fsd_log_debug(("DRMAA_PS_DONE\n"));
                         self->state = DRMAA_PS_DONE;
                     } else
                     {
                         /* TODO: is not possible with OAR ??? */
-                         printf("DRMAA_PS_FAILED\n");
+                         fsd_log_debug(("DRMAA_PS_FAILED\n"));
                         self->state = DRMAA_PS_FAILED;
                     }
                 } else {

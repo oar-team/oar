@@ -154,8 +154,6 @@ oar_connect(char *server)
 
     fsd_log_debug(( "OAR-CONNECT\n"));
 
-    printf("oar_connect\n");
-
     return 0;
 }
 
@@ -223,7 +221,9 @@ int oar_control_job(int connect, char *job_id, int action)
         code = json_reader_get_int_value (reader);
         json_reader_end_element (reader);
 
+        /*
         printf("title: %s\nmessage: %s\ncode: %d\n",title,message,code);
+        */
 
     }
     /* clean recv/reader/parser stuff */
@@ -241,8 +241,6 @@ int oar_control_job(int connect, char *job_id, int action)
     return 0;
 }
 
-
-
 struct batch_status *oar_statjob(int connect, char *id)
 {
     char *state = NULL;
@@ -253,39 +251,31 @@ struct batch_status *oar_statjob(int connect, char *id)
 
     struct batch_status *b_status = malloc(sizeof(struct batch_status));
 
-
-    printf("TODO: oar_statjob\n");
-    /* oardrmaa_dump_attrl(attrib, "oar_statjob"); */
-
     /* CURL stuff */
     long http_code = 0;
     char rest_url[256];
     char *exit_code_str;
     struct curl_slist *headers = NULL;
     sprintf(rest_url,"http://localhost/oarapi/jobs/%s.json",id);
-    printf("url:%s\n",rest_url);
+    /* fsd_log_debug(("url:%s\n",rest_url)); */
     headers = curl_slist_append(headers, "Content-Type: application/json");
 
     init_recv_data();
-
-    if(curl_handle==NULL) printf("BOUBOUBOUBOUBOU\n");
 
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L); /* perform a get http request */
     curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
     res = curl_easy_perform(curl_handle);
     curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
-    printf("http code %ld\n",http_code);
 
     /* read response */
     JsonParser *parser = json_parser_new ();
     JsonReader *reader = json_reader_new (NULL);
     GError *error = NULL;
 
-    printf("%lu bytes retrieved\n", (long)recv_data.size);
+    /* fsd_log_debug(("%lu bytes retrieved\n", (long)recv_data.size)); */
     json_parser_load_from_data (parser, recv_data.memory, -1, &error);
     json_reader_set_root (reader, json_parser_get_root (parser));
-
 
     /* test return http status */
     if (http_code >= 200 && http_code < 300) /* http successful */
@@ -293,12 +283,10 @@ struct batch_status *oar_statjob(int connect, char *id)
         json_reader_read_member (reader,"id");
         job_id = json_reader_get_int_value (reader);
         json_reader_end_element (reader);
-        printf("Http request successfull OK: job id: %d\n",job_id);
 
         json_reader_read_member (reader,"state");
         state = json_reader_get_string_value(reader); /* need to free after use ??? */
         json_reader_end_element (reader);
-        printf("job state: %s\n",state);
 
         json_reader_read_member(reader,"exit_code");
 
@@ -306,7 +294,7 @@ struct batch_status *oar_statjob(int connect, char *id)
         {
             exit_code_str = json_reader_get_string_value(reader);
             exit_code = atoi(exit_code_str) >> 8;
-            printf("exit_code_str: %s exit_code8: %d\n",exit_code_str, exit_code);
+            /* fsd_log_debug(("exit_code_str: %s exit_code8: %d\n",exit_code_str, exit_code)); */
         }
         json_reader_end_element (reader);
 
@@ -320,9 +308,9 @@ struct batch_status *oar_statjob(int connect, char *id)
         json_reader_read_member (reader,"queue");
         queue = json_reader_get_string_value(reader);
         json_reader_end_element (reader);
+
         printf("job state: %s\n",state);
-
-
+        fsd_log_debug(("job state: %s\n",state));
     } else
     {
         /* TODO */
@@ -342,8 +330,6 @@ struct batch_status *oar_statjob(int connect, char *id)
     b_status->text = fsd_strdup(""); /* In order to avoir freeing problems in pbs_statfree */
 
     /* clean recv/reader/parser stuff TODO */
-
-
     g_object_unref (reader);
     g_object_unref (parser);
 
@@ -370,7 +356,7 @@ struct batch_status * oar_multiple_statjob(int connect, char **job_ids)
         j_status = oar_statjob(connect, *job_ids);
         if(j_status==NULL)
         {
-            printf("TODO oar_statjob return NULL in oar_multiple_statjob\n");
+            fsd_log_debug(("TODO oar_statjob return NULL in oar_multiple_statjob\n"));
         }
 
         if (cur_status == NULL) {
@@ -390,8 +376,10 @@ struct batch_status * oar_multiple_statjob(int connect, char **job_ids)
 
 char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination)
 {
-    printf("oar_submit\n");
-    printf("script_path: %s \nqueue_destination %s\n", script_path, queue_destination);
+    struct attropl *i;
+    fsd_log_debug(("oar_submit: script_path: %s \nqueue_destination %s\n", script_path, queue_destination));
+
+
     oardrmaa_dump_attrl( attrib, NULL );
 
     char *job_id_str;
@@ -415,6 +403,14 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     json_builder_set_member_name (builder, "script_path");
     json_builder_add_string_value (builder, script_path);
 
+
+    for( i = attrib;  i != NULL;  i = i->next )
+    {
+        json_builder_set_member_name (builder, i->name);
+        json_builder_add_string_value (builder, i->value);
+    }
+
+
     json_builder_end_object (builder);
     node = json_builder_get_root (builder);
 
@@ -422,7 +418,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     json_generator_set_root (generator, node);
     data = json_generator_to_data (generator, &length);
 
-    printf("data: >>>%s<<< \n",data);
+    fsd_log_debug(("data: >>>%s<<< \n",data));
     g_object_unref (builder);
     json_node_free (node);
     g_object_unref (generator);
@@ -437,7 +433,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     res = curl_easy_perform(curl_handle);
 
-    printf("%lu bytes retrieved\n", (long)recv_data.size);
+    fsd_log_debug(("%lu bytes retrieved\n", (long)recv_data.size));
 
     g_free (data);
 
@@ -445,7 +441,6 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     json_reader_set_root (reader, json_parser_get_root (parser));
     json_reader_read_member (reader,"id");
     int job_id = json_reader_get_int_value (reader);
-    printf("job id: %d\n",job_id);
 
     /* TODO if jobid = 0 erreur !!! , http error also ???? */
 
@@ -461,7 +456,6 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     job_id_str = (char *)malloc(50);
     sprintf(job_id_str,"%d",job_id);
-    printf("job_id: %s\n",job_id_str);
     return job_id_str;
 }
 
@@ -470,10 +464,10 @@ void oar_status_dump(struct batch_status *stat)
     struct batch_status *next;
     while( stat!=NULL) {
         next = stat->next;
-        printf("job name: %s\n",stat->name);
-        printf("status: id: %d state: %s exit_status: %d walltime: %d queue: %s\n",
-               stat->status->id, stat->status->state, stat->status->exit_status, stat->status->walltime, stat->status->queue);
-        printf("text: %s\n",stat->text);
+        fsd_log_debug(("job name: %s\n",stat->name));
+        fsd_log_debug(("status: id: %d state: %s exit_status: %d walltime: %d queue: %s\n",
+               stat->status->id, stat->status->state, stat->status->exit_status, stat->status->walltime, stat->status->queue));
+        fsd_log_debug(("text: %s\n",stat->text));
         stat = next;
     }
 }
@@ -490,7 +484,7 @@ void oar_statfree(struct batch_status *stat)
 #if 1
     struct batch_status *next;
 
-    printf("oar_statfree\n");
+    fsd_log_debug(("oar_statfree\n"));
 
     while( stat!=NULL) {
         next = stat->next;
@@ -502,11 +496,6 @@ void oar_statfree(struct batch_status *stat)
     }
 #endif
 }
-
-
-
-
-
 
 char *oar_errno_to_txt(int err_no)
 {

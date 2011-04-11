@@ -263,9 +263,10 @@ oardrmaa_submit_apply_defaults( oardrmaa_submit_t *self )
 {
     /* TODO default */
         fsd_template_t *oar_attr = self->oar_job_attributes;
+        /*
         oar_attr->set_attr( oar_attr, OARDRMAA_STDOUT_FILE, "prout" );
         oar_attr->set_attr( oar_attr, OARDRMAA_JOB_NAME, "yopyop" );
-
+*/
         /*
         oar_attr->set_attr( oar_attr, OARDRMAA_CHECKPOINT, "u" );
         oar_attr->set_attr( oar_attr, OARDRMAA_KEEP_FILES, "n" );
@@ -359,6 +360,9 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 	if( submit_state != NULL )
 	 {
             printf("TODO hold_types\n");
+            if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_HOLD) )
+                oar_attr->set_attr( oar_attr, OARDRMAA_HOLD, "1" );
+
             /* TODO
 		const char *hold_types;
 		if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_ACTIVE) )

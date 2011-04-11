@@ -71,6 +71,9 @@ main ()
     return 1;
   }
 
+  /* set HOLD state at submission */
+  errnum = drmaa_set_attribute(jt, DRMAA_JS_STATE, DRMAA_SUBMISSION_STATE_HOLD, NULL, 0);
+
   const char *args[2] = {"5", NULL};
 
   errnum = drmaa_set_vector_attribute (jt, DRMAA_V_ARGV, args, error, DRMAA_ERROR_STRING_BUFFER);
