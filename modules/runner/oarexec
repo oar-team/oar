@@ -443,6 +443,9 @@ if ($Job->{mode} eq "PASSIVE"){
         $SIG{QUIT} = 'DEFAULT';
         $SIG{USR1} = 'DEFAULT';
         $SIG{USR2} = 'DEFAULT';
+        $SIG{PIPE} = 'DEFAULT';
+        $SIG{HUP} = 'DEFAULT';
+
         print("[oarexec $Job_id] child exec: @cmd\n");
         close(pipe_script_read);
         close(STDOUT);

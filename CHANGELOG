@@ -38,6 +38,7 @@ version 2.5.0:
   - IoLib: update scheduler_priority resources property for timesharing jobs.
            So the scheduler will be able to avoid to launch every timesharing
            jobs on the same resources (they can be dispatched)
+  - OAREXEC: unmask SIGHUP and SIGPIPE for user script
 
 version 2.4.4:
 --------------
