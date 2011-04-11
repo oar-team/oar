@@ -284,16 +284,10 @@ oardrmaa_session_update_all_jobs_status( fsd_drmaa_session_t *self )
 	struct batch_status *volatile status = NULL;
         char **job_ids = NULL;
 
- printf("oardrmaa_session_update_all_jobs_status NOT YET implemented !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-
 
         jobs_lock = fsd_mutex_lock( &jobs->mutex );
-
         job_ids  = jobs->get_all_job_ids(jobs);
-
         jobs_lock = fsd_mutex_unlock( &jobs->mutex );
-
-        printf("yopyop\n");
 
 	fsd_log_enter((""));
 

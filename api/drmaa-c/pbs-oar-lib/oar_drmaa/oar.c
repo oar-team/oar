@@ -293,7 +293,15 @@ struct batch_status *oar_statjob(int connect, char *id)
         if (!json_reader_get_null_value(reader))
         {
             exit_code_str = json_reader_get_string_value(reader);
-            exit_code = atoi(exit_code_str) >> 8;
+            exit_code = atoi(exit_code_str);
+
+            if((exit_code & 0x7f) == 0)
+            {
+                exit_code = exit_code >> 8;
+            } else
+            {
+                exit_code = (exit_code & 0x7f) + 128;
+            }
             /* fsd_log_debug(("exit_code_str: %s exit_code8: %d\n",exit_code_str, exit_code)); */
         }
         json_reader_end_element (reader);
@@ -377,8 +385,7 @@ struct batch_status * oar_multiple_statjob(int connect, char **job_ids)
 char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination)
 {
     struct attropl *i;
-    fsd_log_debug(("oar_submit: script_path: %s \nqueue_destination %s\n", script_path, queue_destination));
-
+    fsd_log_info(("oar_submit: script_path: %s \nqueue_destination %s\n", script_path, queue_destination));
 
     oardrmaa_dump_attrl( attrib, NULL );
 

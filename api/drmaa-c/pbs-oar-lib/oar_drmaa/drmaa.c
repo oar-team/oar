@@ -175,6 +175,7 @@ oardrmaa_wifaborted(
 		char *error_diagnosis, size_t error_diag_len
 		)
 {
+        fsd_log_info(("wifaborted(%d)>>>>", stat));
 	fsd_log_debug(("wifaborted(%d)", stat));
 
 	if ( stat == -1 )

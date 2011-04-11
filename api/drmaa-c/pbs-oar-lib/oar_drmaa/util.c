@@ -57,15 +57,7 @@ oardrmaa_dump_attrl( const struct attrl *attribute_list, const char *prefix )
 		prefix = "";
 	for( i = attribute_list;  i != NULL;  i = i->next )
 
-            printf("var:%s value:%s \n",i->name, i->value ? i->value : "null");
-
-                /* fsd_log_debug(( "\n %s %s%s%s=%s",
-                 fsd_log_warning(( "\n %s %s=%s",
-                                    prefix ? prefix : "null",
-                                    i->name,
-                                    i->value ? i->value : "null"
-				));
-                                */
+            fsd_log_info(("var:%s value:%s \n",i->name, i->value ? i->value : "null"));
 }
 
 

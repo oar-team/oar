@@ -315,7 +315,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
 
 	if( exit_status != -2 )
 	 {
-		fsd_log_debug(( "exit_status: %d", exit_status ));
+                fsd_log_debug(( "exit_status: %d", exit_status ));
 		self->exit_status = exit_status;
 	 }
         if(oar_state)
@@ -335,6 +335,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
             { /* DRMAA_PS_FAILED */
                 printf("OAR_JS_TOERROR||OAR_JS_ERROR -> DRMAA_PS_FAILED\n");
                 self->state = DRMAA_PS_FAILED;
+                self->exit_status = -1;
             } else
             if (!strcmp(oar_state,OAR_JS_LAUNCHING)||!strcmp(oar_state,OAR_JS_RUNNING)||!strcmp(oar_state,OAR_JS_FINISHING))
             { /* DRMAA_PS_RUNNING */
@@ -359,7 +360,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
                     } else
                     {
                         /* TODO: is not possible with OAR ??? */
-                         fsd_log_debug(("DRMAA_PS_FAILED\n"));
+                        fsd_log_debug(("DRMAA_PS_FAILED\n"));
                         self->state = DRMAA_PS_FAILED;
                     }
                 } else {
@@ -367,7 +368,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
                         self->state = DRMAA_PS_FAILED;
                         self->exit_status = -1;
                 }
-                self->end_time = modify_time; /* END_TIME */
+                self->end_time = modify_time; /* END_TIME */ /* TODO */
 
             } else /* OAR_JS_TOASKRESERV || other */
             { /* DRMAA_PS_UNDETERMINED */
@@ -375,9 +376,6 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
             }
 
         }
-
-
-
 
             /*
                 switch( oar_state )
