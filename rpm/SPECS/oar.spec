@@ -15,7 +15,7 @@ Url:            http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source0: 	oar-%version.tar.gz
-Source1:	Makefile.install
+#Source1:	Makefile.install
 Source2:	oar-common.logrotate
 Source3:	oar-server.init.d
 Source4:	oar-server.cron.d
@@ -123,19 +123,49 @@ BuildArch:      noarch
 %description    gridapi
 This package installs the RESTful OARGRID user API.
 
+#%package scheduler-ocaml-mysql
+#Summary:        OAR batch scheduler package for ocaml schedular
+#Group:          System/Servers
+#Requires:       oar-server, ocaml-mysql, rubygem-sequel
+#BuildArch:      amd64 i686
+
 %prep
 %setup -T -b 0
-cp %{_topdir}/SOURCES/Makefile.install .
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
-perl -i -pe "s/chown/-chown/" Makefile
-perl -i -pe "s/-o root//" Makefile
-perl -i -pe "s/-g root//" Makefile
-
+#for file in Makefiles/*.mk; do
+#    perl -i -pe "s/chown/-chown/" $file
+#    perl -i -pe "s/-o root//" $file
+#    perl -i -pe "s/-g root//" $file
+#done
+#perl -i -pe "s/chown/-chown/" Makefile
+#perl -i -pe "s/-o root//" Makefile
+#perl -i -pe "s/-g root//" Makefile
+#
 %build
+
+export OARUSER=oar
+export OAROWNER=root
+export OARCONFDIR=/etc/oar
+export PREFIX=/usr
+export MANDIR=/usr/share/man
+export OARDIR=/usr/lib/oar
+export BINDIR=/usr/bin
+export SBINDIR=/usr/sbin
+export CGIDIR=/var/www/cgi-bin
+export PERLLIBDIR=/usr/share/perl5/site_perl
+export VARLIBDIR=/var/lib
+export WWWUSER=root
+export WWWDIR=/usr/share/oar-web-status
+
+# build
+make build
+
 # Install into separated directories using the provided makefile
-make -f Makefile.install pkginstall BUILDDIR=tmp WWWUSER=$USER DESTDIR=$RPM_BUILD_ROOT 
+mkdir tmp/
+make packages-install PACKAGES_DIR=tmp
+
 # Reconstruct the whole system
 mkdir -p $RPM_BUILD_ROOT
 cp -a tmp/*/* $RPM_BUILD_ROOT/
@@ -147,9 +177,9 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
 |bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
-|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init
+|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init\$\
 |sbin/oar_phoenix\$"
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api oar-gridapi
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api oar-gridapi oar-scheduler-ocaml-mysql
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | egrep -v "$EXCEPTS" > $package.files
@@ -171,6 +201,7 @@ install -D -m 644 %{_topdir}/SOURCES/oar-desktop-computing-cgi.cron.hourly $RPM_
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
+make clean
 rm -rf $RPM_BUILD_ROOT/*
 rm -rf tmp
 
@@ -258,6 +289,7 @@ rm -rf tmp
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi.cgi
 %attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi-debug.cgi
 
+#%files scheduler-ocaml-mysql -f oar-scheduler-ocaml-mysql
 ###### oar-common scripts ######
 
 %pre common

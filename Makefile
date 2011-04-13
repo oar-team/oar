@@ -119,4 +119,84 @@ common-install: setup
 setup: sanity-setup-check
 	$(MAKE) -f Makefiles/setup.mk setup
 
+# Build packages structures for debian/rpm packaging tools
+packages-install:
+	# oar-doc
+	$(MAKE) -e -f Makefiles/doc.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-doc \
+	    DOCDIR=/usr/share/doc/oar-do
+	
+	# oar-common
+	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar	
+	$(MAKE) -e -f Makefiles/common.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-common
+	$(MAKE) -e -f Makefiles/libs.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-common
+	$(MAKE) -e -f Makefiles/gridlibs.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-common
+	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
+	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
+	
+	# oar-server
+	mkdir -p $(PACKAGES_DIR)/oar-server/var/lib/oar
+	$(MAKE) -e -f Makefiles/server.mk install\
+                DESTDIR=$(PACKAGES_DIR)/oar-server
+	$(MAKE) -e -f Makefiles/database.mk install\
+                DESTDIR=$(PACKAGES_DIR)/oar-server
+	
+	# oar-node
+	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
+	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
+	$(MAKE) -e -f Makefiles/node.mk install\
+                DESTDIR=$(PACKAGES_DIR)/oar-node
+	
+	# oar-user
+	mkdir -p $(PACKAGES_DIR)/oar-user/var/lib/oar
+	$(MAKE) -e -f Makefiles/user.mk install\
+                DESTDIR=$(PACKAGES_DIR)/oar-user
+	
+	# oar-web-status
+	$(MAKE) -e -f Makefiles/monika.mk install \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	$(MAKE) -e -f Makefiles/poar.mk install \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	$(MAKE) -e -f Makefiles/draw-gantt.mk install \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	$(MAKE) -e -f Makefiles/www-conf.mk install \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	
+	# oar-admin
+	$(MAKE) -e -f Makefiles/tools.mk install \
+                DESTDIR=$(PACKAGES_DIR)/oar-admin
+	
+	# oar-desktop-computing-agent
+	$(MAKE) -e -f Makefiles/desktop-computing-agent.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
+	
+	# oar-desktop-computing-cgi
+	$(MAKE) -e -f Makefiles/desktop-computing-cgi.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
+	
+	# api
+	$(MAKE) -e -f Makefiles/api.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-api \
+	    DOCDIR=/usr/share/doc/oar-api
+	
+	# gridapi
+	$(MAKE) -e -f Makefiles/gridapi.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-gridapi \
+	    DOCDIR=/usr/share/doc/oar-gridapi
+	
+	# keyring
+	$(MAKE) -e -f Makefiles/keyring.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-keyring \
+	    DOCDIR=/usr/share/doc/oar-keyring
+	
+	# scheduler-ocaml-mysql
+	$(MAKE) -e -f Makefiles/scheduler-ocaml.mk install \
+	    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
 

@@ -41,8 +41,8 @@ install:
 	
 	install -d -m 0755 $(DESTDIR)$(OARDIR)/oardodo
 	install -m 6750 tools/oardodo $(DESTDIR)$(OARDIR)/oardodo
-	-chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
-	-chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
+	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
+	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
