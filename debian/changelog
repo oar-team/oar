@@ -1,49 +1,18 @@
+oar (2.5.0-0~195) UNRELEASED; urgency=low
+
+  [ Bruno Bzeznik ]
+  * Dummy version upgrade to sync with daily snapshots  
+
+  [ Philippe Le Brouster ]
+  * the debian package use debhelper 7
+  * Update the Makefile to separate build/install targets
+  * Add myself as uploaders
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Fri, 08 Apr 2011 11:12:41 +0200
+
 oar (2.5.0-0~194.gbpb1f55b) UNRELEASED; urgency=low
 
   * Dummy version upgrade to sync with daily snapshots  
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 01 Oct 2010 13:27:27 +0200
-
-oar (2.5.0-0ubuntu3) lucid; urgency=low
-
-  [ tpresa ]
-  * New release automaticaly created by git-build-package.sh
-
-  [ root ]
-
- -- root <root@tpresa-desktop>  Thu, 30 Sep 2010 14:02:52 +0200
-
-oar (2.5.0-0ubuntu2) lucid; urgency=low
-
-  [ tpresa ]
-  * New release automaticaly created by git-build-package.sh
-
-  [ root ]
-
- -- root <root@tpresa-desktop>  Thu, 30 Sep 2010 13:59:20 +0200
-
-oar (2.5.0-0ubuntu1) lucid; urgency=low
-
-  [ tpresa ]
-  * New release automaticaly created by git-build-package.sh
-
-  [ root ]
-
- -- root <root@tpresa-desktop>  Thu, 30 Sep 2010 13:58:08 +0200
-
-oar (2.5.0-0) lucid; urgency=low
-
-  [ Bruno Bzeznik ]
-  ** SNAPSHOT build @86d00c945e2c9532993519813349cad31544a1a6 **
-
-  * Dummy version upgrade to sync with daily snapshots
-
-  [ bzizou ]
-  * Fixed agent package (hope2)
-
-  [ tpresa ]
-
- -- tpresa <tpresa@tpresa-desktop>  Thu, 30 Sep 2010 13:57:34 +0200
 
 oar (2.5.0-0~2.gbp86d00c) UNRELEASED; urgency=low
 
