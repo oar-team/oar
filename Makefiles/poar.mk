@@ -18,7 +18,7 @@ install:
 	    $(POAR_DIR)/poar.css  \
 	    $(POAR_DIR)/poar.js  \
 	    $(POAR_DIR)/resources \
-  	    $(POAR_DIR)/"User Manual.txt" \
+  	    $(POAR_DIR)/User_Manual.txt \
 	    $(POAR_DIR)/ext_lib \
 	    $(POAR_DIR)/pages \
 	    $(POAR_DIR)/poar.html \
