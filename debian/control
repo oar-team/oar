@@ -2,9 +2,9 @@ Source: oar
 Section: admin
 Priority: extra
 Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
-Build-Depends: debhelper (>= 4.0.0), po-debconf, ocaml, libmysql-ocaml-dev, ocaml-findlib
+Build-Depends: debhelper (>= 7.0.50~), po-debconf, ocaml, libmysql-ocaml-dev, ocaml-findlib
 Build-Depends-Indep: python-docutils, perl
-Standards-Version: 3.8.0
+Standards-Version: 3.8.4
 Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/Debian/trunk/
 Vcs-Browser: https://gforge.inria.fr/plugins/scmsvn/viewcvs.php/Debian/trunk/?root=oar
 Homepage: http://oar.imag.fr/
