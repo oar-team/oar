@@ -39,6 +39,12 @@ version 2.5.0:
            So the scheduler will be able to avoid to launch every timesharing
            jobs on the same resources (they can be dispatched)
   - OAREXEC: unmask SIGHUP and SIGPIPE for user script
+  - node_change_state: do not Suspect the first node of a job which was
+    EXTERMINATED by Leon if the cpuset feature is configured (let do the job by
+    the cpuset)
+  - OAREXEC: ESRF detected that sometime oarexec think that he notified the
+    Almighty with it exit code but nothing was seen on the server. So try to
+    resend the exit code until oarexec is killed.
 
 version 2.4.4:
 --------------

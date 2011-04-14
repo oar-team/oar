@@ -395,7 +395,8 @@ my %data_to_transfer = (
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
         tmp_directory       => oar_Tools::get_default_oarexec_directory,
-        detach_oarexec      => $Detach_oarexec
+        detach_oarexec      => $Detach_oarexec,
+        cpuset_full_path   => $Cpuset_full_path
     );
 
 my $error = 50;

@@ -77,9 +77,16 @@ sub quit_oarexec($$){
         my $wait_time = 30;
     
         while (1){
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+            my $string = sprintf("%02d:%02d:%02d", $hour,$min,$sec);
             if (!defined(oar_Tools::notify_tcp_socket($job_data->{almighty_hostname},$job_data->{almighty_port},"OAREXEC_$job_data->{job_id}"."_$exit_value"."_$Exit_script_code"."_$job_data->{challenge}"))){
-                print("[oarexec $Job_id] I notified Almighty with my exit value $exit_value;so I am exiting\n");
-                exit($exit_value);
+                if (defined($job_data->{cpuset_full_path})){
+                    print("[oarexec $Job_id] [$string] I notified Almighty with my exit value $exit_value and I will retry in $max_wait_time seconds if I am not killed by the cpuset_manager before\n");
+                    $wait_time = $max_wait_time;
+                }else{
+                    print("[oarexec $Job_id] [$string] I notified Almighty with my exit value $exit_value;so I am exiting\n");
+                    exit($exit_value);
+                }
             }else{
                 print("[oarexec $Job_id] I cannot notify Almighty; maybe the server is down or network is wrong configured\n");
             }
