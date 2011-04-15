@@ -45,6 +45,8 @@ version 2.5.0:
   - OAREXEC: ESRF detected that sometime oarexec think that he notified the
     Almighty with it exit code but nothing was seen on the server. So try to
     resend the exit code until oarexec is killed.
+  - oar_Tools: add in notify_almighty a check on the print and on the close of
+    the socket connected to Almighty.
 
 version 2.4.4:
 --------------
