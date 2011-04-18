@@ -1,6 +1,6 @@
-# $Id$
-%define version 2.3.3
-%define release 2
+# $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
+%define version 2.5.0
+%define release 3
 
 Name: 		oar
 Version:        %{version}
@@ -14,8 +14,8 @@ Url:            http://oar.imag.fr
 # %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 # %define _unpackaged_files_terminate_build 0
 
-Source0: 	oar_%version.tar.gz
-Source1:	Makefile.install
+Source0: 	oar-%version.tar.gz
+#Source1:	Makefile.install
 Source2:	oar-common.logrotate
 Source3:	oar-server.init.d
 Source4:	oar-server.cron.d
@@ -36,14 +36,14 @@ Group:          System/Servers
 BuildArch: 	noarch
 Requires:       perl, perl-suidperl, shadow-utils, perl-DBI
   # How could we do (libdbd-mysql-perl | libdbd-pg-perl) ?
-Provides: 	perl(oar_iolib), perl(oar_Judas), perl(oar_Tools), perl(oar_conflib), perl(oar_resource_tree), perl(oarversion)
+Provides: 	perl(oar_iolib), perl(oar_Judas), perl(oar_Tools), perl(oar_conflib), perl(oar_resource_tree), perl(oarversion), perl(oarstat_lib), perl(oarnodes_lib), perl(oarsub_lib), perl(oar_apilib)
 %description common
 This package installs the common part or the OAR batch scheduler
 
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, openssh-clients, openssh-server, vixie-cron
+Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions
 BuildArch: 	noarch
 %description server
 This package installs the server part or the OAR batch scheduler
@@ -51,7 +51,7 @@ This package installs the server part or the OAR batch scheduler
 %package node
 Summary:	OAR batch scheduler node package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, openssh-clients, openssh-server
+Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /lib/lsb/init-functions
 BuildArch: 	noarch
 %description node
 This package installs the execution node part of the OAR batch scheduler
@@ -59,7 +59,7 @@ This package installs the execution node part of the OAR batch scheduler
 %package user
 Summary:	OAR batch scheduler user package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, openssh-clients
+Requires:       oar-common = %version-%release, /usr/bin/ssh
 BuildArch: 	noarch
 %description user
 This package install the submission and query part of the OAR batch scheduler
@@ -94,7 +94,7 @@ This package installs some useful tools to help the administrator of a oar serve
 %package desktop-computing-agent
 Summary:        OAR desktop computing agent
 Group:          System/Servers
-Requires:	perl-libwww-perl, perl-URI
+Requires:	oar-common = %version-%release, ruby
 BuildArch:	noarch
 %description desktop-computing-agent
 This package install the OAR batch scheduler desktop computing agent
@@ -107,19 +107,65 @@ BuildArch:      noarch
 %description    desktop-computing-cgi	
 This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
+%package api
+Summary:	OAR RESTful user API
+Group:          System/Servers
+Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd
+BuildArch:      noarch
+%description    api
+This package installs the RESTful OAR user API.
+
+%package gridapi
+Summary:	OARGRID RESTful user API
+Group:          System/Servers
+Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd, oar-api = %version-%release
+BuildArch:      noarch
+%description    gridapi
+This package installs the RESTful OARGRID user API.
+
+#%package scheduler-ocaml-mysql
+#Summary:        OAR batch scheduler package for ocaml schedular
+#Group:          System/Servers
+#Requires:       oar-server, ocaml-mysql, rubygem-sequel
+#BuildArch:      amd64 i686
+
 %prep
 %setup -T -b 0
-cp %{_topdir}/SOURCES/Makefile.install .
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
-perl -i -pe "s/chown/-chown/" Makefile
-perl -i -pe "s/-o root//" Makefile
-perl -i -pe "s/-g root//" Makefile
-
+#for file in Makefiles/*.mk; do
+#    perl -i -pe "s/chown/-chown/" $file
+#    perl -i -pe "s/-o root//" $file
+#    perl -i -pe "s/-g root//" $file
+#done
+#perl -i -pe "s/chown/-chown/" Makefile
+#perl -i -pe "s/-o root//" Makefile
+#perl -i -pe "s/-g root//" Makefile
+#
 %build
+
+export OARUSER=oar
+export OAROWNER=root
+export OARCONFDIR=/etc/oar
+export PREFIX=/usr
+export MANDIR=/usr/share/man
+export OARDIR=/usr/lib/oar
+export BINDIR=/usr/bin
+export SBINDIR=/usr/sbin
+export CGIDIR=/var/www/cgi-bin
+export PERLLIBDIR=/usr/share/perl5/site_perl
+export VARLIBDIR=/var/lib
+export WWWUSER=root
+export WWWDIR=/usr/share/oar-web-status
+
+# build
+make build
+
 # Install into separated directories using the provided makefile
-make -f Makefile.install pkginstall BUILDDIR=tmp WWWUSER=$USER
+mkdir tmp/
+make packages-install PACKAGES_DIR=tmp
+
 # Reconstruct the whole system
 mkdir -p $RPM_BUILD_ROOT
 cp -a tmp/*/* $RPM_BUILD_ROOT/
@@ -131,8 +177,9 @@ EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.
 |bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
 |oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
 |bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
-|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$"
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi
+|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init\$\
+|sbin/oar_phoenix\$"
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api oar-gridapi oar-scheduler-ocaml-mysql
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | egrep -v "$EXCEPTS" > $package.files
@@ -148,10 +195,13 @@ install -D -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysc
 install -D -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
 install -D -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
 install -D -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
+install -D -m 644 %{_topdir}/SOURCES/apache-api.conf $RPM_BUILD_ROOT/etc/oar/apache-api.conf
+install -D -m 644 %{_topdir}/SOURCES/apache2-grid.conf $RPM_BUILD_ROOT/etc/oar/apache-gridapi.conf
 install -D -m 644 %{_topdir}/SOURCES/oar-desktop-computing-cgi.cron.hourly $RPM_BUILD_ROOT/etc/cron.hourly/oar-desktop-computing-cgi
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
 %clean
+make clean
 rm -rf $RPM_BUILD_ROOT/*
 rm -rf tmp
 
@@ -180,7 +230,10 @@ rm -rf tmp
 %attr (6750,oar,oar) /usr/sbin/oarproperty
 %attr (6750,oar,oar) /usr/sbin/oarmonitor
 %attr (0750,oar,oar) /usr/sbin/oar-server
+%attr (6750,oar,oar) /usr/sbin/oar_resources_init
+%attr (6750,oar,oar) /usr/sbin/oar_phoenix
 %config /etc/sysconfig/oar-server
+%config /etc/oar/oar_phoenix.pl
 
 %files node -f oar-node.files
 %attr(0755,root,root) /etc/init.d/oar-node
@@ -194,8 +247,10 @@ rm -rf tmp
 
 %files user -f oar-user.files
 %attr (6755,oar,oar) /usr/bin/oarnodes
+%attr (6755,oar,oar) /usr/bin/oarnodes.old
 %attr (6755,oar,oar) /usr/bin/oardel
 %attr (6755,oar,oar) /usr/bin/oarstat
+%attr (6755,oar,oar) /usr/bin/oarstat.old
 %attr (6755,oar,oar) /usr/bin/oarsub
 %attr (6755,oar,oar) /usr/bin/oarhold
 %attr (6755,oar,oar) /usr/bin/oarresume
@@ -219,7 +274,22 @@ rm -rf tmp
 %attr(6750,oar,oar) /usr/lib/oar/oarres
 %attr(6750,oar,apache) /var/www/cgi-bin/oar-cgi
 
+%files api -f oar-api.files
+%config %attr (0600,apache,root) /etc/oar/apache-api.conf
+%config %attr (0640,oar,apache) /etc/oar/api_html_header.pl
+%config %attr (0640,oar,apache) /etc/oar/api_html_postform.pl
+%attr(0750,oar,apache) /var/www/cgi-bin/oarapi
+%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi.cgi
+%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
 
+%files gridapi -f oar-gridapi.files
+%config %attr (0600,apache,root) /etc/oar/apache-gridapi.conf
+%config %attr (0640,oar,apache) /etc/oar/gridapi_html_header.pl
+%config %attr (0640,oar,apache) /etc/oar/gridapi_html_postform.pl
+%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi.cgi
+%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi-debug.cgi
+
+#%files scheduler-ocaml-mysql -f oar-scheduler-ocaml-mysql
 ###### oar-common scripts ######
 
 %pre common
@@ -230,7 +300,6 @@ fi
 if ! getent passwd oar > /dev/null 2>&1 ; then
     mkdir -p /var/lib/oar
     useradd -r -m -d /var/lib/oar -g oar -s /bin/bash oar
-    usermod -p"*" oar
     usermod -U oar
     cd /var/lib/oar
     echo '' >> .bash_profile
@@ -246,23 +315,13 @@ install -o oar -m 755 -d /var/run/oar
 
 %post common
 # set OAR Shell
-if [ "`getent passwd oar |cut -f7 -d:`" != "/usr/lib/oar/oarsh_shell" ]
-then
-  chsh -s /usr/lib/oar/oarsh_shell oar
-fi
-
+chsh -s /usr/lib/oar/oarsh_shell oar
 if [ "$1" != "1" ]
 then
   echo
-  echo "WARNING! If you upgraded from 2.3.2 or earlier, you have to upgrade the database scheme (stop OAR before)!"
-  echo "  
-          mysql:
-            ALTER TABLE jobs ADD array_id INT UNSIGNED NOT NULL DEFAULT 0;
-            UPDATE jobs SET array_id = job_id ;
-
-          postgres:
-            ALTER TABLE jobs ADD array_id INTEGER NOT NULL default '0';
-            UPDATE jobs SET array_id = job_id ; "
+  echo "WARNING! If you upgraded from 2.3.4 or earlier, you have to upgrade the"
+  echo "database scheme (stop OAR before)!"
+  echo " Upgrade SQL scripts are available in the /usr/lib/oar/db_upgrade directory"
   echo
 fi
 
@@ -285,7 +344,8 @@ if [ -e /var/lib/oar/.ssh ]; then
 else
     mkdir -p /var/lib/oar/.ssh
     ssh-keygen -t rsa -q -f /var/lib/oar/.ssh/id_rsa -N '' || true
-    cat /var/lib/oar/.ssh/id_rsa.pub > /var/lib/oar/.ssh/authorized_keys || true
+    echo -n 'environment="OAR_KEY=1 "' > /var/lib/oar/.ssh/authorized_keys || true
+    cat /var/lib/oar/.ssh/id_rsa.pub >> /var/lib/oar/.ssh/authorized_keys || true
     cat <<EOF > /var/lib/oar/.ssh/config || true
 Host *
     ForwardX11 no
@@ -296,6 +356,8 @@ EOF
     chown oar:oar /var/lib/oar/.ssh -R || true
 fi
 chkconfig --add oar-server
+mkdir -p /var/lib/oar/phoenix
+chown oar:oar /var/lib/oar/phoenix
 
 %preun server
 /etc/init.d/oar-server stop 2>/dev/null || true
@@ -330,14 +392,71 @@ fi
 ###### oar-web-status scripts ######
 
 %post web-status
-mkdir -p /var/www/html/oar-web-status-files/drawgantt/cache && chown apache /var/www/html/oar-web-status-files/drawgantt/cache || true
+mkdir -p /var/lib/drawgantt-files/cache && chown apache /var/lib/drawgantt-files/cache || true
 ln -s /etc/oar/apache.conf /etc/httpd/conf.d/oar-web-status.conf || true
 service httpd reload || true
 
 %postun web-status
-rm -f /etc/httpd/conf.d/oar-web-status.conf || true
-rm -rf /var/www/html/oar-web-status-files/drawgantt/cache
+if [ "$1" = "0" ] ; then # last uninstall
+  rm -f /etc/httpd/conf.d/oar-web-status.conf || true
+  rm -rf /var/lib/drawgantt-files/cache
+fi
+
+###### oar-api scripts ######
+
+%post api
+ln -s /etc/oar/apache-api.conf /etc/httpd/conf.d/oar-api.conf || true
+service httpd reload || true
+
+%post gridapi
+ln -s /etc/oar/apache-gridapi.conf /etc/httpd/conf.d/oar-gridapi.conf || true
+service httpd reload || true
+
+%postun api
+if [ "$1" = "0" ] ; then # last uninstall
+  rm -f /etc/httpd/conf.d/oar-api.conf || true
+  service httpd reload || true
+fi
+
+%postun gridapi
+if [ "$1" = "0" ] ; then # last uninstall
+  rm -f /etc/httpd/conf.d/oar-gridapi.conf || true
+  service httpd reload || true
+fi
 
 %changelog
+* Thu Jun 17 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.5.0-3
+- added poar
+
+* Thu Apr 01 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.5.0-1
+- started 2.5.0 packaging
+- added oar_phoenix
+
+* Fri Mar 12 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.2-2
+- Fixed some dependencies
+
+* Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.2-1
+- 2.4.2 beta
+
+* Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-5
+- Released 2.4.0
+
+* Wed Nov 4 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-4test
+- Added oar-gridapi package
+- fixed dependencies with oarnodes and oarstat libs
+- fixed api packaging
+
+* Thu Sep 24 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-3test
+- Changed oar-web-status files paths
+- improved init script
+
+* Thu Jun 25 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-2test
+- Bug fix: upgrade of oar-web-status and oar-api packages removed some files
+
+* Mon Jan 26 2009 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.4.0-1test
+- First RPM packaging for 2.4 branch.
+- Added oar-api package
+
 * Sun Mar 23 2008 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.3.0-1
 - First RPM packaging for 2.3 branch. Inspired from 1.6 RPM packaging and 2.3 Debian packaging.
+
