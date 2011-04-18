@@ -1,4 +1,4 @@
-# $Id$
+# $Id: oar-node.init.d 1285 2008-03-27 15:54:26Z bzizou $
 #! /bin/bash
 #
 # oar-node          Start/Stop the oar node services
@@ -35,7 +35,7 @@ stop_oar_node() {
 start() {
         echo -n "Starting $DESC: "
         if [ -f "$OAR_SSHD_CONF" ] ; then
-            daemon --force /usr/sbin/sshd $SSHD_OPTS && success || failure
+            daemon -20 --force /usr/sbin/sshd $SSHD_OPTS && success || failure
             RETVAL=$?
             echo
         else 
@@ -70,16 +70,18 @@ case "$1" in
         start_oar_node
         ;;
   stop)
-        stop
         stop_oar_node
+        stop
         ;;
   reload)
         reload
         ;;
   restart|force-reload|restart)
+        stop_oar_node
         stop
         sleep 1
         start
+        start_oar_node
         ;;
   *)
         echo $"Usage: $0 {start|stop|reload|restart}"
