@@ -1,0 +1,11 @@
+lustre-g5kutils (1.0-2) unstable; urgency=low
+
+  * Scripts are working 
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 21 Oct 2010 18:01:40 +0200
+
+lustre-g5kutils (1.0-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 21 Oct 2010 16:06:54 +0200

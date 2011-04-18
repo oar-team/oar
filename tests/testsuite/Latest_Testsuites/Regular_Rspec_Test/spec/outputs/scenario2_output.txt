@@ -1,0 +1,10 @@
+
+OarApi
+Hello
+- should submit a job successfully 
+- should contain jobid in queue of created job
+- should not contain the killed job in the queue past walltime
+
+Finished in 398.801102 seconds
+
+3 examples, 0 failures

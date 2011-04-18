@@ -1,0 +1,171 @@
+#!/usr/bin/perl
+# $Id$
+#Almighty module : launch job bipbips
+
+use strict;
+use DBI();
+use Data::Dumper;
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
+use window_forker;
+use oar_Tools;
+
+# Log category
+set_current_log_category('main');
+
+init_conf($ENV{OARCONFFILE});
+my $binpath;
+if (defined($ENV{OARDIR})){
+    $binpath = $ENV{OARDIR}."/";
+}else{
+    oar_error("[Runner] OARDIR env variable must be defined\n");
+    exit(3);
+}
+
+my $batch = $binpath."bipbip";
+
+my $Exit_code = 0;
+
+sub answer($$$){
+    my $jobid = shift;
+    my $info = shift;
+    my $message = shift;
+
+    my $error = 0;
+    my ($addr,$port) = split(/:/,$info);
+    oar_debug("[Runner] oarsub addr:port = $addr:$port info = $info\n");
+    if(!defined(oar_Tools::notify_tcp_socket($addr,$port,"$message"))){
+        oar_debug("[Runner] Notification done\n");
+    }else{
+        oar_debug("[Runner] Cannot open connection to oarsub client for job $jobid !\n");
+        $error = 1;
+    }
+    return($error);
+}
+
+my $base = iolib::connect();
+
+# for toError jobs
+foreach my $j (iolib::get_jobs_in_state($base,"toError")){
+    oar_debug("[Runner] Treate job $j->{job_id} in toError state\n");
+    if ($j->{job_type} eq "INTERACTIVE"){
+        oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        answer($j->{job_id},$j->{info_type},"$j->{message}");
+        answer($j->{job_id},$j->{info_type},"BAD JOB");
+    }elsif(($j->{job_type} eq "PASSIVE") && ($j->{reservation} eq "Scheduled")){
+        oar_debug("[Runner] Notify oarsub for a reservation job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        answer($j->{job_id},$j->{info_type},"$j->{message}");
+        answer($j->{job_id},$j->{info_type},"BAD JOB");
+    }
+    oar_debug("[Runner] Set job $j->{job_id} to state Error\n");
+    iolib::set_job_state($base, $j->{job_id}, "Error");
+}
+
+# for toAckReservation jobs
+foreach my $j (iolib::get_jobs_in_state($base,"toAckReservation")){
+    oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
+    if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
+        oar_warn("[Runner] Frag job $j->{job_id}, I cannot notify oarsub for the reservation\n");
+        iolib::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
+        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        iolib::frag_job($base,$j->{job_id});
+        iolib::unlock_table($base);
+        $Exit_code = 1;
+    }else{
+        oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
+        iolib::set_job_state($base,$j->{job_id} , "Waiting");
+        # Test if we must notify Almighty to Launch scheduler for the reservation
+        if ($Exit_code == 0){
+            if ($j->{start_time} - 1 <= iolib::get_date($base)){
+                $Exit_code = 2;
+            }
+        }
+    }
+}
+
+# for toLaunch jobs
+my $Detach_oarexec = get_conf("DETACH_JOB_FROM_SERVER");
+if (!defined($Detach_oarexec)){
+    $Detach_oarexec = 0;
+}
+# To communicate with bipbip if we detach or not oarexec
+if ($Detach_oarexec == 0){
+    $ENV{OAR_DETACH_OAREXEC} = 0;
+}else{
+    $ENV{OAR_DETACH_OAREXEC} = 1;
+}
+my @commands_to_launch_with_sliding_window;
+my $runner_launcher_window_size = get_conf_with_default_param(
+            "RUNNER_SLIDING_WINDOW_SIZE",
+            oar_Tools::get_default_runner_sliding_window_size()
+        );
+
+foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
+    my $jobid = $job->{job_id};
+    my $jobtype = $job->{job_type};
+    my $jobinfo = $job->{info_type};
+    
+    my $is_desktop_computing = iolib::is_job_desktop_computing($base,$jobid);
+    oar_debug("[Runner] is_desktop_computing = $is_desktop_computing\n");
+    if ($is_desktop_computing) {
+        oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
+        next;
+    }
+    
+    iolib::set_job_state($base,$jobid,"Launching");
+    if (($Detach_oarexec == 0) or ($runner_launcher_window_size < 1)){
+        # Every bipbip are forked now
+        oar_debug("[Runner] Launching job : $batch $jobid\n");
+        oar_Tools::fork_no_wait("$batch $jobid",$base);
+    }else{
+        # Each bipbip will be launched with a sliding window to avoid to crash
+        # the server
+        oar_debug("[Runner] Launching job with the sliding window: $batch $jobid\n");
+        push(@commands_to_launch_with_sliding_window, "$batch $jobid");
+   }
+}
+
+iolib::disconnect($base);
+
+# If bipbip is detached then we can use sliding window to avoid to kill the
+# server if there are a lot of job to launch at the same time
+if ($#commands_to_launch_with_sliding_window >= 0){
+    # Default values if not specified in oar.conf
+    my $runner_launcher_command_timeout = 900;  # Timeouts are processed into bipbip
+
+    my $pid;
+    $SIG{PIPE}  = 'IGNORE';
+    # We have to put this in background otherwise a pingchecker or a ssh or
+    # something else in bipbip could freeze the Almighty
+    my $pid = fork();
+    if(defined($pid)){
+        if($pid == 0){
+            #child
+            undef($base);
+            $SIG{USR1} = 'IGNORE';
+            $SIG{INT}  = 'IGNORE';
+            $SIG{TERM} = 'IGNORE';
+
+            oar_debug("[Runner] Beginning of the sliding window: $$, with a window of $runner_launcher_window_size\n");
+            ( my $t, my $y ) = window_forker::launch(
+                    \@commands_to_launch_with_sliding_window,
+                    $runner_launcher_window_size,
+                    undef,
+                    $runner_launcher_command_timeout,
+                    0,
+                    undef
+                );
+            oar_debug("[Runner] End of the sliding window: $$\n");
+            #oar_debug("[Runner] Finished processes".Dumper($t)."\n");
+            #oar_debug("[Runner] Processes times".Dumper($y)."\n");
+            exit(0);
+        }else{
+            oar_debug("[Runner] Sliding window fork with pid: $pid\n");
+        }
+    }else{
+        oar_error("[Runner] Not able to create the child fork for the sliding window\n");
+    }
+}
+
+exit($Exit_code);

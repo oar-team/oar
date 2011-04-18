@@ -1,0 +1,425 @@
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 0
+\use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+\added_space_top vfill \added_space_bottom vfill 
+Module OAR pour le Desktop-Computing
+\layout Author
+
+Pierre Neyron <pierre.neyron@icatis.com> 
+\layout Date
+
+29 octobre 2004
+\layout Standard
+
+Ce papier présente le travail réalisé sur OAR dans le context du contrat
+ ACI CIGRI-Icatis.
+\layout Standard
+
+
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset 
+
+
+\layout Section
+
+Objectifs
+\layout Standard
+
+Développement d'un client de calcul OAR léger, permettant d'utiliser OAR
+ dans un environnement non cluster, c'est à dire une grille ou internet
+ de manière générale.
+\layout Section
+
+Sous objectifs (cahier des charges)
+\layout Standard
+
+Le client léger de calcul doit:
+\layout Itemize
+
+inter-opérer avec les firewalls (passer les firewalls)
+\layout Itemize
+
+ne pas être dépendant de NFS (environnement non cluster)
+\layout Itemize
+
+être suffisamment dynamique pour fonctionner dans un environnement peu stable
+ comme celui du desktop-computing (mode pull)
+\layout Itemize
+
+être suffisamment propre pour ne pas perturber l'environnement d'exécution
+ de la machine de calcul, celle-ci ne pouvant a priori pas être nettoyée
+ à la main par un administrateur averti, comme un noeud de cluster.
+ 
+\layout Itemize
+
+être léger à déployer sur les machines de calcul
+\layout Section
+
+Architecture
+\layout Standard
+
+Afin de passer les firewalls, le client léger base ses communications réseau
+ sur HTTP.
+ En effet la plupart des firewalls autorise d'une façon directe ou via un
+ proxy HTTP, le transit de messages HTTP.
+ Le module desktop-computing est donc composé de deux éléments, un client
+ (agent) dialoguant en HTTP et un interprète traduisant les messages HTTP
+ en données OAR et réciproquement.
+ Seul le deuxième élément est en contact avec les autres modules OAR, Almighty,
+ base de données, etc.
+ Pour encapsuler dans des messages HTTP les données échangées entre l'agent
+ et l'interprète, une méthode de sérialisation a été mise en place.
+ L'étude de protocoles comme SOAP (web services) a été envisagée, mais un
+ mécanisme plus simple a été préféré (Il est basé sur le module Data::Dumper
+ de Perl).
+\layout Standard
+
+L'absence de système de fichiers partagé implique quant à elle la mise en
+ place de mécanisme de stage-in et de stage-out.
+ Ceux-ci sont réalisés grâce aux possibilités offertes par HTTP pour le
+ download et l'upload de fichiers.
+ Des mécanismes de caches ont également été mis en place.
+ Un mécanisme de sélection en fonction de la bande passante vers les noeuds
+ de calcul légers, et des tailles des données à échanger pourrait être envisagé.
+ Les communications entre l'agent et OAR sont toujours à l'initiative de
+ l'agent.
+ Cela permet d'envisager sereinement un contexte ou des clients peuvent
+ être n'importe où, quitte à ne pas être accessibles directement depuis
+ le serveur OAR (Ex: machines derrière un firewall avec translation d'IP,
+ machines sur un intranet d'entreprise fermé avec proxy HTTP).
+\layout Standard
+
+Des mécanismes d'exécution de style sand-box n'ont pas pu être utilisés
+ pour ce client léger (aucun mécanisme satisfaisant et suffisamment léger
+ de ce type ne semble exister).
+ Les jobs sont donc simplement exécutés en temps qu'un utilisateur normal
+ sur la machine (celui-ci peut cependant être un utilisateur dédié).
+ Il est très difficile de garantir qu'aucun job exécuté sur le noeud de
+ calcul ne perturbera pas un jour le fonctionnement général de la machine.
+ Un minimum de garantie est offert par l'utilisation d'un utilisateur dédié,
+ dont l'élimination de tous les processus supprimera tout désagrément constaté.
+ Pour ce nettoyage, des mécanismes plus fins ont été et sont toujours à
+ étudier.
+\layout Standard
+
+Coté déployement, l'agent est un script Perl indépendant, nécessitant seulement
+ la présence de quelques composants comme la commande `tar' sur le système
+ de la machine de calcul.
+ Le système cible est GNU Linux, un portage vers MS Windows/Cygwin pourrait
+ certainement être envisagé, mais il nécessiterait également le développement
+ d'un mécanisme de sélection supplémentaire au niveau de OAR pour le choix
+ du système d'exécution approprié pour un job (compatibilité d'environnement
+ d'exécution).
+ Des packages RPM et Debian sont disponibles pour une installation.
+\layout Section
+
+Intégration dans le fonctionnement de OAR pré-existant
+\layout Standard
+
+Un des objectifs sous-jasent de ce développement a été de ne pas trop dénaturer,
+ c'est à dire nécessiter de changements, dans le fonctionnement de OAR en
+ mode cluster, tout en permettant un fonctionnement en mode Desktop-Computing.
+ Cela a conduit à un certain nombre de choix et de limitations.
+\layout Standard
+
+Une des principales conséquences est le fait que contrairement à des systèmes
+ comme Seti@Home, c'est toujours le système OAR qui attribue les jobs aux
+ noeuds, et ce de manière asynchrone par rapport aux requêtes des agents
+ de desktop-computing.
+ Un agent signale donc simplement sa présence et ses possibilités d'exécution
+ (à intervalle régulier), puis dans un deuxième temps seulement, récupère
+ des jobs à exécuter si l'ordonnanceur de OAR lui en a attribué.
+ Un mode pull plus classique correspondrait plus à un mécanisme de vol de
+ tache.
+ Quand l'agent s'arrête normalement, il en informe l'infrastructure OAR
+ qui marque le noeud comme absent.
+ Si l'agent est interrompu, il sera marqué absent dans OAR dès que sa date
+ d'expiration sera dépassée, l'agent ne mettant en effet plus celle-ci à
+ jour.
+ 
+\layout Standard
+
+L'agent a d'autre part été restreint aux limitations suivantes: 
+\layout Itemize
+
+un job "Desktop-Computing" ne peut s'exécuter que sur une seule et même
+ machine.
+ S'il requiert un poids supérieur à un, il pourra uniquement être exécuté
+ sur des machines offrant un poids égal ou supérieur.
+ Sans parler des problèmes liés à la dispersion très probables des machines
+ et donc de leur interconnexion non garantie, permettre une exécution de
+ jobs multi-noeud demanderait trop de modifications dans l'infrastructure
+ OAR actuelle pour être supporté (cela nécessiterait notamment l'ajout d'états
+ dans l'automate, et de modifier l'ordonnanceur).
+\layout Itemize
+
+du fait de la dispersion possible des machines de calcul et de la limitation
+ précédente, il est difficile d'envisager des jobs fortement parallèles
+ dans le contexte du desktop computing.
+ L'usage est donc essentiellement prévu pour des jobs séquentiels, avec
+ variation des paramètres.
+\layout Section
+
+Composants et modification de OAR nécessaires
+\layout Standard
+
+Comme dit précédemment, le module de desktop-computing est composé de deux
+ composants: 
+\layout Itemize
+
+oar-agent qui est l'agent lancé sur les noeuds de calcul.
+ 
+\layout Itemize
+
+oar-cgi qui est l'interprète qui interface le système OAR avec le protocole
+ HTTP (CGI Perl).
+ 
+\layout Standard
+
+Ces deux composants sont fournis dans deux packages à part entière (RPM
+ ou Debian).
+ Le premier package (oar-agent), nommé oar-desktop-computing-agent, doit
+ être installé sur les noeuds de calcul.
+ Il est indépendant.
+ Le second, oar-desktop-computing-cgi est dépendant d'un serveur HTTP et
+ du package oar-common.
+ Il doit être installé sur une machine du cluster OAR disposant d'un serveur
+ HTTP.
+ Une installation simple consiste à installer oar-desktop-computing-cgi
+ et Apache sur la même machine où a été installé le package oar-server.
+ 
+\layout Standard
+
+Même si elles ont été le moins intrusives possible, le développement du
+ module de Desktop-Computing a nécessite d'apporter quelques modifications
+ au système OAR.
+ En voici un résumé: 
+\layout Itemize
+
+Ajout d'une propriété "DesktopComputing" sur les noeuds pour identifier
+ les noeuds faisant du Desktop-Computing, et d'une colonne "expiryDate"
+ dans la table nodes pour le mécanisme de détection de la disparition des
+ noeuds.
+ 
+\layout Itemize
+
+Ajout de la table files et d'une colonne dans la table job pour gérer les
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-ins
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ 
+\layout Itemize
+
+Ajout d'un certain nombre de fonctions dans iolib.
+ Certaines fonctions existantes ont également été modifiées, mais leur nombre
+ a été limité.
+ 
+\layout Itemize
+
+Modification de Leon, Runner, Sarko, oarnodesetting, oarsub pour qu'ils
+ prennent en compte le desktop-computing.
+\layout Section
+
+Utilisation
+\layout Standard
+
+Un fois installé, oar-agent peut être lancé avec comme paramètre l'URL pointant
+ vers 
+\begin_inset Quotes eld
+\end_inset 
+
+oar-cgi
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Attention, l'utilisateur qui lance 
+\begin_inset Quotes eld
+\end_inset 
+
+oar-agent
+\begin_inset Quotes erd
+\end_inset 
+
+ exécutera aussi les jobs.
+ L'utilisation d'un utilisateur dédié peut permettre un nettoyage plus rapide
+ en cas de dysfonctionnement.
+ Des options permettent de préciser le nom du noeud (si ce n'est pas le
+ nom donné par `hostname'), le poids (uniquement à la première utilisation),
+ et de passer en mode 
+\begin_inset Quotes eld
+\end_inset 
+
+verbose
+\begin_inset Quotes erd
+\end_inset 
+
+, etc (voir `oar-agent -h').
+ Un sous répertoire dans le répertoire courant est créé pour stocker les
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-ins
+\begin_inset Quotes erd
+\end_inset 
+
+ (avec un mécanisme de cache), ainsi que pour chaque job à exécuter.
+ Les répertoires des jobs sont supprimés quand ceux-ci se terminent.
+\layout Standard
+
+Pour la soumission de job pour le desktop-computing, la procedure consiste
+ a donner au job la propriété 
+\begin_inset Quotes eld
+\end_inset 
+
+DesktopComputing
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Il est de plus possible de preciser l'environnement de 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-in
+\begin_inset Quotes erd
+\end_inset 
+
+ sous forme d'une archive créée au préalable, ou bien en donnant simplement
+ un repertoire.
+ Voici un exemple de soumission:
+\layout Standard
+
+> oarsub -p 
+\begin_inset Quotes eld
+\end_inset 
+
+DesktopComputing='YES'
+\begin_inset Quotes erd
+\end_inset 
+
+ -s my_stage_in_directory 
+\begin_inset Quotes eld
+\end_inset 
+
+ ./my_job.sh param1 param2
+\begin_inset Quotes erd
+\end_inset 
+
+
+\layout Standard
+
+A noter qu'il sera possible de créér une queue spéciale 
+\begin_inset Quotes eld
+\end_inset 
+
+Desktop-Computing
+\begin_inset Quotes erd
+\end_inset 
+
+ avec une règle d'admission qui positionnera automatiquement la propriété.
+\layout Section
+
+Évolutions envisagées
+\layout Itemize
+
+[Fait] Finir de mettre au point le mécanisme de nettoyage récursif des processus
+ des jobs avec leur descendance dans les cas de la suppression de jobs ou
+ de l'interruption de l'agent.
+ Un mécanisme basé sur les sessions-id des processus peut également être
+ ajoute en deuxième recourt.
+\layout Itemize
+
+[Fait] Améliorer les mécanismes de 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-in
+\begin_inset Quotes erd
+\end_inset 
+
+ et de 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-out
+\begin_inset Quotes erd
+\end_inset 
+
+ pour qu'ils soient interruptibles, par exemple quand le job concerné est
+ tué.
+ Le mécanisme de cache peut également être affiné afin de prendre en compte
+ les temps de téléchargement en plus de la taille et la date de dernier
+ accès aux fichiers.
+\layout Itemize
+
+Voir si il serait vraiment intéressant de rajouter des états sur les jobs
+ pour délimiter les périodes de 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-in
+\begin_inset Quotes erd
+\end_inset 
+
+ (Launching ?), et de 
+\begin_inset Quotes eld
+\end_inset 
+
+stage-out
+\begin_inset Quotes erd
+\end_inset 
+
+ (Terminating ?).
+\layout Itemize
+
+Ajouter un mécanisme d'authentification des noeuds d'exécution légers via
+ une 
+\begin_inset Quotes eld
+\end_inset 
+
+host key
+\begin_inset Quotes erd
+\end_inset 
+
+ à la SSH par exemple.
+\layout Itemize
+
+Mettre à disposition d'agent sous forme d'un service (démon) UNIX.
+\layout Itemize
+
+Coupler l'agent avec un logiciel d'écran de veille, ou tout autre détecteur
+ de charge ou d'activité d'une machine.
+\the_end

@@ -1,0 +1,27 @@
+#!/usr/bin/expect
+
+set user "pneyron"
+set prompt "${user}@\\w+-\\d+:.+\$$"
+log_user 0
+
+spawn ssh -t genepi.g5k oarsub -I
+set timeout 60
+expect "Generate a job key..." {
+		send_user "OK generate job key\n"
+}
+expect -re "OAR_JOB_ID=\(\\d+\)" {
+		set jobid $expect_out(1,string)
+		send_user "OK got jobid: $jobid\n"
+}
+expect -re $prompt
+send "ls -l  /var/lib/oar/${jobid}\n"
+expect -re "-rw-r--r-- 1 oar oar" {
+		send_user "OK nodefile is readable\n"
+}
+expect -re $prompt
+send "cat /proc/self/cpuset\n"
+expect "/oar/${user}_${jobid}" {
+		send_user "OK got correct cpuset\n"
+}
+#interact
+send eof

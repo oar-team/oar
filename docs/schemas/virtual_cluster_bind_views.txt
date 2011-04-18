@@ -1,0 +1,54 @@
+# Bind configuration for OAR virtual cluster
+###
+
+# Bind config sample
+view "subnet-1" {
+	match-clients { 10.1.1.0/24; };
+	zone "oar.vpn" {
+		type master;
+		file "db.oar.vpn.subnet-1";
+	}
+}
+view "subnet-2" {
+	match-clients { 10.1.2.0/24; };
+	zone "oar.vpn" {
+		type master;
+		file "db.oar.vpn.subnet-2";
+	}
+}
+view "subnet-3" {
+	match-clients { 10.1.3.0/24; };
+	zone "oar.vpn" {
+		type master;
+		file "db.oar.vpn.subnet-3";
+	}
+}
+
+# Zone sample: db.oar.vpn.subnet-1
+$ORIGIN .
+oar.vpn		IN SOA ...
+$ORIGIN oar.vpn
+vnode-1-1	A	195.220.82.8
+vnode-1-2	A	195.220.82.9
+vnode-1-3	A	195.220.82.10
+vnode-2-1	A	10.1.2.1
+vnode-2-2	A	10.1.2.2
+vnode-2-3	A	10.1.2.3
+vnode-3-1       A       10.1.3.1
+vnode-3-2       A       10.1.3.2
+vnode-3-3       A       10.1.3.3
+
+# Zone sample: db.oar.vpn.subnet-2
+$ORIGIN .
+oar.vpn		IN SOA ...
+$ORIGIN oar.vpn
+vnode-1-1	A	10.1.1.1
+vnode-1-2	A	10.1.1.2
+vnode-1-3	A	10.1.1.3
+vnode-2-1	A	129.89.30.23
+vnode-2-2	A	129.89.30.24
+vnode-2-3	A	129.89.30.25
+vnode-3-1       A       10.1.3.1
+vnode-3-2       A       10.1.3.2
+vnode-3-3       A       10.1.3.3
+

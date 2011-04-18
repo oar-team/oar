@@ -1,0 +1,16 @@
+scenario1:
+ - submit_job:
+   - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script' => \"ls;pwd;whoami;sleep 60\" }"
+ - test_if_submitted:
+   - exec_appliance: write_irb "obj.test_submit_job(jhash)"
+   - exec_appliance: write_irb "jid = obj.jobid"
+   - exec_appliance: write_irb "puts \"Submitted job \"+jid.to_s"
+   - exec_appliance: write_irb "obj.test_job_in_queue(jid)"
+ - delete_job:
+   - exec_appliance: write_irb "puts \"Deleting job \"+jid.to_s"
+   - exec_appliance: write_irb "puts jid.to_s"
+ - test_if_deleted:
+   - exec_appliance: write_irb "obj.test_jobs_delete(jid)"
+   - exec_appliance: write_irb "obj.test_job_notin_queue(jid)"
+   - exec_appliance: write_irb "puts \"Scenario1 successfully tested!\""
+

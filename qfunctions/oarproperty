@@ -1,0 +1,179 @@
+#!/usr/bin/perl -w
+# $Id$
+#
+# This script aims at managing the node properties (list, add, delete).
+# To set the properties values, use oarnodesettings.
+#
+# To use the quiet mode, just do something like:
+#   echo -e "mysqlroot\nmysqlpassword\n" | oar_property.pl -q -l
+
+use strict;
+use warnings;
+use oar_iolib;
+use oar_conflib qw(init_conf get_conf is_conf);
+use Getopt::Long;
+use oarversion;
+use oar_Tools;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+# The functions are appended at the end of this file
+sub print_usage();
+sub check_property_name($);
+
+Getopt::Long::Configure("gnu_getopt");
+
+my ($Help,  $List_properties, $Quiet, $Varchar);
+my @Add_property;
+my @Delete_property;
+my @Rename_property;
+my $Version;
+GetOptions( "help|h"   => \$Help,
+            "add|a=s"    => \@Add_property,
+            "delete|d=s" => \@Delete_property,
+            "rename|r=s" => \@Rename_property,
+            "list|l"   => \$List_properties,
+            "quiet|q"  => \$Quiet,
+            "varchar|c"  => \$Varchar,
+            "version|V" => \$Version
+          );
+
+if (defined($Version)){
+    print("OAR version : ".oarversion::get_version()."\n");
+    exit(0);
+}
+
+if ($Help || (($#Add_property < 0) and ($#Delete_property < 0)  and ($#Rename_property < 0)  and (! defined($List_properties)))) {
+    print_usage();
+    exit(1);
+}
+
+my $base = iolib::connect();
+
+my $query;
+
+if (defined($List_properties)) {
+    my %list = iolib::list_resource_properties_fields($base);
+    foreach my $l (keys(%list)){
+        unless  (oar_Tools::check_resource_property($l) == 1){
+            print("$l\n");
+        }
+    }
+}
+
+foreach my $r (@Delete_property){
+    check_property_name($r);
+
+    $base->do("ALTER TABLE resources DROP COLUMN $r")
+        or die("DB error: " . $base->errstr."\n");
+
+    if (! $Quiet) {
+        print("Removed property: $r\n");
+    }
+}
+
+foreach my $a (@Add_property){
+    check_property_name($a);
+
+    my $req;
+    if ($Varchar){
+        $req = "ALTER TABLE resources ADD COLUMN $a VARCHAR(255)";
+    }else{
+        $req = "ALTER TABLE resources ADD COLUMN $a INT";
+    }
+    $base->do($req)
+        or die("DB error: " . $base->errstr."\n");
+
+    if (! $Quiet) {
+        print("Added property: $a\n");
+    }
+}
+
+foreach my $p (@Rename_property){
+    my ($old_prop,$new_prop);
+    if ($p !~ m/^\s*([a-z0-9_]+)\s*,\s*([a-z0-9_]+)\s*$/m){
+        print_usage();
+        exit(1);
+    }
+    $old_prop = $1;
+    $new_prop = $2;
+    
+    check_property_name($old_prop);
+    check_property_name($new_prop);
+    if (iolib::get_database_type() eq "Pg"){
+        $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
+            or die("DB error: " . $base->errstr."\n");
+    }else{
+        my $sth = $base->prepare("  SHOW FIELDS
+                                    FROM resources
+                                 ");
+        $sth->execute() or die("DB error : ".$base->errstr."\n");
+        my $type;
+        my $field = "";
+        while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())){
+            $field = $ref[0];
+            $type = $ref[1];
+        }
+        $sth->finish();
+        die("Unknown field $old_prop\n") if ($field ne $old_prop);
+        $base->do(" ALTER TABLE resources CHANGE $old_prop $new_prop $type");
+    }
+
+    $base->do(" UPDATE resource_logs
+                SET attribute = \'$new_prop\'
+                WHERE
+                    attribute = \'$old_prop\'")
+        or die("DB error: " . $base->errstr."\n");
+
+    $base->do(" UPDATE job_resource_descriptions
+                SET res_job_resource_type = \'$new_prop\'
+                WHERE
+                    res_job_resource_type = \'$old_prop\'")
+        or die("DB error: " . $base->errstr."\n");
+
+    if (! $Quiet) {
+        print("Rename property $old_prop into $new_prop\n");
+    }
+}
+
+iolib::disconnect($base);
+	
+exit(0);
+
+
+#############################################################################
+# FUNCTIONS
+#
+#Display usage
+sub print_usage() {
+    print <<EOS;
+Usage: $0 [ -l | [ -a [ -V ] | -d ] ] [ -q ] [ -h ]
+Manage OAR resource properties
+Options:
+ -l, --list                             list properties
+ -a NAME, --add NAME                    add property
+    -c, --varchar                       sql new field of type VARCHAR(255)
+                                        (default is integer)
+ -d NAME, --delete NAME                 delete property
+ -r "OLD_NAME,NEW_NAME", --rename ...   rename property OLD_NAME into NEW_NAME
+ -q, --quiet                            quiet mode (no extra output)
+ -h, --help                             show this help screen
+ -V, --version                          show OAR version
+EOS
+}
+
+# Check that the given parameter is a valid column name to avoid issues within
+# MySQL
+sub check_property_name($) {
+    my $propertyname = shift;
+    if (not $propertyname =~ /^[a-z0-9_]+$/) {
+        die("Error: '$propertyname' is not a valid property name");
+    }
+    if (oar_Tools::check_resource_property($propertyname) == 1){
+        warn("Error: '$propertyname' is a OAR system property and may not be altered\n");
+        exit(1);
+    }
+}
+#############################################################################
+

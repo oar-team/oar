@@ -1,0 +1,16 @@
+
+OarApi
+JobID of submitted job: 55
+- should submit a job successfully 
+Jos in Queue =>
+47
+55
+- should contain jobid in queue of created job
+- should delete the currently submitted job using the post api and jobid
+Jobs in Queue =>
+47
+- should not contain the deleted job in the queue now
+
+Finished in 197.812256 seconds
+
+4 examples, 0 failures

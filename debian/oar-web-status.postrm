@@ -22,7 +22,7 @@ case "$1" in
 	    rm -f /etc/apache2/conf.d/oar-web-status.conf || true
         ;;
 	purge)
-	    rm -rf /var/www/oar-web-status-files/drawgantt/cache
+	    rm -rf /var/lib/drawgantt-files
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2

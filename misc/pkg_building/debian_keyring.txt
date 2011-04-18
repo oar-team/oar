@@ -1,0 +1,9 @@
+# Here is how to make the keyring:
+gpg -a --output oar.asc --export 21E44652
+gpg --no-default-keyring --keyring oar.gpg --import oar.asc
+rm oar.asc
+
+
+# oarmaster.gpg correspond to the OAR Archive Automatic Signing Key
+# Key fingerprint = 0F5A B5E3 9D21 FB89 344F  D980 640C B53E D90D 0568
+

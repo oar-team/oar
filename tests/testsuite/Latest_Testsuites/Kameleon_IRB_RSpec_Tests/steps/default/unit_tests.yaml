@@ -1,0 +1,19 @@
+unit_tests:
+  - test_get_version:
+    - exec_appliance: write_irb "obj.test_get_version" 
+  - test_get_timezone:
+    - exec_appliance: write_irb "obj.test_get_timezone" 
+  - test_submit_job:                
+    - exec_appliance: write_irb "jhash = { 'resource' => \"/nodes=1/core=1\" , 'script' => \"ls;pwd;whoami\" }" 
+    - exec_appliance: write_irb "obj.test_submit_job(jhash)" 
+  - test_get_jobs_detail:                    
+    - exec_appliance: write_irb "obj.test_get_jobs_details" 
+  - test_get_running_jobs:
+    - exec_appliance: write_irb "obj.test_get_running_jobs"
+  - test_job_dump_table:
+    - exec_appliance: write_irb "obj.test_get_jobs_table" 
+  - test_get_resource_state:
+    - exec_appliance: write_irb "obj.test_get_resources" 
+  - test_get_resource_details:
+    - exec_appliance: write_irb "obj.test_get_resources_full" 
+ 

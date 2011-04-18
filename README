@@ -1,0 +1,54 @@
+                    OAR resource manager
+                    --------------------
+
+OAR is a resource manager (or batch scheduler if you prefer this wording) for
+small to large clusters.
+
+It is suitable for production use and may also be used as a tool to do research
+experiments.
+
+See INSTALL file to be shown with a detailed installation procedure.
+
+Feel free to check the manpages and the OAR web site (http://oar.imag.fr/) for
+further information.
+
+Some features of OAR :
+
+- Batch and Interactive jobs
+- Admission rules
+- Walltime
+- Matching of resources (job/node properties)
+- Hold and resume jobs
+- Multi-schedulers support (simple fifo and fifo with matching)
+- Multi-queues with priority
+- Best-effort queues (for exploiting idle resources)
+- Check compute nodes before launching
+- Epilogue/Prologue scripts
+- No Daemon on compute nodes
+- Dynamic insertion/deletion of compute node
+- Logging
+- Backfiling
+- First-Fit Scheduler with matching resource (very soon)
+- Advance Reservation
+
+Have a good time.
+
+License
+-------
+Copyright (c) 2003-2008 LIG <http://lig.imag.fr/>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+
+$Id$

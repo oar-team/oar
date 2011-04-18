@@ -9,7 +9,7 @@
 # Short-Description:    OAR node init script (launch its own sshd)
 ### END INIT INFO
 
-# $Id$
+# $Id: oar-node.init.d 1273 2008-03-26 13:53:32Z neyron $
 
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -50,6 +50,7 @@ case "$1" in
     ;;
   stop)
     echo "Stopping $DESC: "
+    stop_oar_node
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start-stop-daemon --stop --quiet --pidfile /var/lib/oar/oar_sshd.pid; then
             echo " * OAR dedicated SSH server stopped."
@@ -57,7 +58,6 @@ case "$1" in
             echo " * Failed to stop OAR dedicated SSH server."
         fi
     fi
-    stop_oar_node
     ;;
   reload|force-reload|restart)
         $0 stop

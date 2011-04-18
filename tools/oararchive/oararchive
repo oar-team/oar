@@ -1,0 +1,916 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Data::Dumper;
+use DBI();
+use Getopt::Long;
+use Term::ANSIColor;	# To send the ANSI color-change sequences to the user's terminal
+use POSIX qw(strftime);
+use Time::HiRes qw(gettimeofday);
+
+
+######-------######## ??????? ########
+#
+#
+# TO FIX !!!!!!!
+# Le print error dans les fonctions connect_xxx ne s'affiche pas en cas d'erreur de connexion aux BDD !
+#
+
+
+## Path to configurations files
+my $oar_conf_file = "/etc/oar/oar.conf";
+my $oararchive_conf_file = "/etc/oar/oararchive.conf";
+
+## Script version
+my $scriptVersion="1.0";
+
+## the configuration file.
+my $file = undef;
+## parameters container...
+my %params;
+## configuration file regexp (one line).
+my $regex = qr{^\s*([^#=\s]+)\s*=\s*([^#]*)};
+
+## Initializes dump file path
+my $dump_file = "/tmp/dump-oar.sql";
+
+
+### Generic variables ###
+my $VERBOSE = 0;              # option variable for verbose mode with default value (false)
+my $DEBUG   = 0;              # option variable for debug mode with default value (false)
+my $QUIET   = 0;              # By default, display all informations
+my $command = `basename $0`;  # base command
+chomp($command);
+
+
+### Variables declaration ###
+my $backup;
+my $cmd;
+my $list_table;
+my $usage;
+my $version;
+my $log_level = 2;		# By default, level = 2
+my $log_file = "/var/log/oararchive.log";	# Sets the default file
+my $str;
+my $start_time;
+my $end_time;
+
+
+## Checks if user is root
+my $uid = $>; 
+if($uid ne 0){
+	$log_level = 0;  # Do not write in log file
+	error("You must be root to run \'$command\'.\n");
+	exit 1;
+}
+
+# LOAD CONFIGURATION
+sub init_conf($);
+sub get_conf ($);
+sub reset_conf ();
+
+
+# CONNECTION
+my $Db_type ;
+my $Timeout_db_connection = 0;
+my $Max_db_connection_timeout = 10;
+
+sub connect_oar();
+sub connect_archive();
+sub disconnect($);
+
+#usage if ((@ARGV < 1) || !($ARGV[0] =~ /^\d+$/));
+#my $Resource = $ARGV[0];
+
+#system("echo -e \"\nwhoami: \" `whoami`");
+#system("echo -e \"\nenv: `env`\"");
+
+
+## Retrieves oar database parameters
+reset_conf();
+init_conf($oar_conf_file);
+my $dbType = get_conf("DB_TYPE");
+my $dbHost = get_conf("DB_HOSTNAME");
+my $dbName = get_conf("DB_BASE_NAME");
+my $dbUserName = get_conf("DB_BASE_LOGIN");
+my $dbUserPassword = get_conf("DB_BASE_PASSWD");
+
+
+## Retrieves archive database parameters
+reset_conf();
+init_conf($oararchive_conf_file);
+my $dbArchiveHost = get_conf("DB_ARCHIVE_HOSTNAME");
+my $dbArchiveName = get_conf("DB_ARCHIVE_BASE_NAME");
+my $dbArchiveUserName = get_conf("DB_ARCHIVE_BASE_LOGIN");
+my $dbArchiveUserPassword = get_conf("DB_ARCHIVE_BASE_PASSWD");
+$log_level = get_conf("ARCHIVE_LOG_LEVEL");
+if (!defined($log_level)){
+    $log_level = 2;
+}
+$log_file = get_conf("ARCHIVE_LOG_FILE");
+if (!defined($log_file)){
+    $log_file = "/var/log/oararchive.log";
+}
+
+## Retrieves list of tables to archive with their primary key
+my %hash_table_to_archive = eval(get_conf("HASH_TABLES_TO_ARCHIVE")) ;
+
+##################
+## Main
+##################
+
+# Parses command line option
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions (# Specific options
+			"list-table|l" => \$list_table,						# List tables that will be archived
+            "version|V" => \$version,							# Show version
+			# Generic (classical) options
+			"verbose|v" => \$VERBOSE,							# Verbose mode
+			"quiet|q"   => \$QUIET,                             # Quiet mode
+			"debug"     => sub { $DEBUG = 1; $VERBOSE = 1; },   # Debug mode
+			"help|h"	=> \$usage								# Show help
+           );
+
+if (defined ($usage)) {
+    &print_usage;
+    exit(0);
+}
+
+if (defined ($version)) {
+    &print_version;
+    exit(0);
+}
+
+if (defined ($list_table)) {
+    &print_list_table;
+    exit(0);
+}
+
+&launch_archiving;
+
+
+exit(0);
+
+##################
+## END Main
+##################
+
+
+##################
+## Methods
+##################
+
+
+# connect_archive
+# Connects to archive database and returns the base identifier
+# parameters : /
+# return value : base
+# side effects : opens a connection to the archive base specified in ConfLib
+sub connect_archive() {
+    # Connects to the archive database.
+    my $dbh = undef;
+	my $connect_attempt=0;
+    while (!defined($dbh)){
+        reset_conf();
+        init_conf($oar_conf_file);
+
+		$Db_type = get_conf("DB_TYPE");
+        my $log_level = get_conf("LOG_LEVEL");
+
+		reset_conf();
+        init_conf($oararchive_conf_file);
+
+        my $host = get_conf("DB_ARCHIVE_HOSTNAME");
+        my $name = get_conf("DB_ARCHIVE_BASE_NAME");
+        my $user = get_conf("DB_ARCHIVE_BASE_LOGIN");
+        my $pwd = get_conf("DB_ARCHIVE_BASE_PASSWD");
+        
+
+        #$Remote_host = get_conf("SERVER_HOSTNAME");
+        #$Remote_port = get_conf("SERVER_PORT");
+
+        $dbh = connect_db($host,$name,$user,$pwd,$log_level);
+		if (!defined($dbh) && $connect_attempt>5){
+			error("Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name)\n");
+			exit 1 ;
+		}
+		$connect_attempt ++ ;
+    }
+    return($dbh);
+}
+
+
+# connect_db
+# Connects to database and returns the base identifier
+# return value : base
+sub connect_db($$$$$) {
+    my $host = shift;
+    my $name = shift;
+    my $user = shift;
+    my $pwd = shift;
+    my $debug_level = shift;
+
+    my $printerror = 0;
+    if (defined($debug_level) and ($debug_level >= 3)){
+        $printerror = 1;
+    }
+
+    my $type;
+    if ($Db_type eq "Pg"){
+        $type = "Pg";
+    }elsif ($Db_type eq "mysql"){
+        $type = "mysql";
+    }else{
+        warning("Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
+        $type = "mysql";
+        $Db_type = "mysql";
+    }
+
+    my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
+    
+    if (!defined($dbh)){
+        warning("Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
+        if ($Timeout_db_connection < $Max_db_connection_timeout){
+            $Timeout_db_connection += 2;
+        }
+        warning("I will retry to connect to the database in $Timeout_db_connection s\n");
+        sleep($Timeout_db_connection);
+    }
+    
+    return($dbh);
+}
+
+
+# connect_oar
+# Connects to database and returns the base identifier
+# parameters : /
+# return value : base
+# side effects : opens a connection to the base specified in ConfLib
+sub connect_oar() {
+    # Connects to the OAR database.
+    my $dbh = undef;
+	my $connect_attempt=0;
+    while (!defined($dbh)){
+        reset_conf();
+        init_conf($oar_conf_file);
+
+        my $host = get_conf("DB_HOSTNAME");
+        my $name = get_conf("DB_BASE_NAME");
+        my $user = get_conf("DB_BASE_LOGIN");
+        my $pwd = get_conf("DB_BASE_PASSWD");
+        $Db_type = get_conf("DB_TYPE");
+        my $log_level = get_conf("LOG_LEVEL");
+
+        #$Remote_host = get_conf("SERVER_HOSTNAME");
+        #$Remote_port = get_conf("SERVER_PORT");
+
+        $dbh = connect_db($host,$name,$user,$pwd,$log_level);
+		if (!defined($dbh) && $connect_attempt>5){
+			error("Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name)\n");
+			exit 1 ;
+		}
+		$connect_attempt ++ ;
+    }
+    return($dbh);
+}
+
+
+## disconnect
+# Disconnect from database
+# parameters : base
+# return value : /
+# side effects : closes a previously opened connection to the specified base
+sub disconnect($) {
+    my $dbh = shift;
+
+    # Disconnects from the database.
+    $dbh->disconnect();
+}
+
+
+## execute_maxid_query
+# Execute a query to obtain a MAX ID and return the result
+# parameters : base, request
+# return value : The MAX_ID
+sub execute_maxid_query( $ $) {
+	my $dbh = shift;
+	my $sql = shift;
+	my $sth = $dbh->prepare($sql);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+	unless ($ref->{'MAX_ID'}){
+		$ref->{'MAX_ID'} = 0;
+		debug("Function execute_maxid_query. No result for this request \"$sql\". Set to 0 ref->[MAX_ID]\n");
+	}
+	return $ref->{'MAX_ID'};
+}
+
+
+## Retrieves a parameter from the configuration file
+sub get_conf ( $ ) {
+    my $key = shift;
+    (defined $key) or die "missing a key!";
+    return $params{$key};
+}
+
+
+## get_max_id
+# Gets the max ID
+# parameters : base, table, field name
+# return value : max ID
+sub get_max_id( $ $ $ ){
+	my $dbh = shift;
+	my $table = shift;
+	my $field = shift;
+	my $sth = $dbh->prepare("SELECT max( $field ) MAX_ID FROM $table");
+	
+	$sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+	unless ($ref->{'MAX_ID'}){
+		$ref->{'MAX_ID'} = 0;
+		debug("Function get_max_id. No result for table \"$table\". Set to 0 ref->[MAX_ID]\n");
+	}
+	return($ref->{'MAX_ID'});
+}
+
+## get_max_job_id
+# Gets the max job ID with state terminated or error (without others states in)
+# parameters : base
+# return value : max job ID
+sub get_max_job_id ( $ ) {
+	my $dbh = shift;
+	my $sth = $dbh->prepare("
+	SELECT max( job_id ) MAX_JOB_ID FROM jobs
+		WHERE (state = \'Error\' OR state = \'Terminated\')
+		AND job_id < (
+			SELECT min( job_id ) FROM jobs
+				WHERE state IN (\'Waiting\', \'Hold\', \'toLaunch\', \'toError\', \'toAckReservation\', \'Launching\', \'Running\', \'Suspended\', \'Resuming\', \'Finishing\')
+		)");
+	
+	$sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+    return($ref->{'MAX_JOB_ID'});
+}
+
+
+## get_number_rows
+# Retrieves number of rows to archive
+# parameters : base, query
+# return value : number of rows
+sub get_number_rows ( $ $ ) {
+	my $dbh = shift;
+	my $sql = shift;
+	my $sth = $dbh->prepare($sql);
+	$sth->execute();
+	return($sth->rows);
+}
+
+
+## get_tables_list
+# Retrieves the tables list in specified database
+# parameters : base
+# return value : a reference on the array containing the tables list
+sub get_tables_list ( $ ) {
+	my $dbh = shift;
+	my @table_list = ();
+	my $sth = $dbh->prepare("SHOW TABLES");
+	$sth->execute();
+	while (my @ref = $sth->fetchrow_array()) {
+		push(@table_list,$ref[0]);
+	}
+	return \@table_list;
+}
+
+
+## get_time_to_log
+# Returns the current date formated like : [08 Sep 11 14:47:09.829]
+# parameters : -
+# return value : the current date formated
+sub get_time_to_log (){
+	my ($seconds, $microseconds) = gettimeofday();
+	$microseconds = int($microseconds / 1000);
+	$microseconds = sprintf("%03d",$microseconds);
+	my $time = "[".sprintf("%02d",strftime("%Y",localtime($seconds)) % 100)." ".strftime("%b %d %T",localtime($seconds)).".$microseconds]";
+	return $time;
+}
+
+
+## Initialization of the configuration
+# param: configuration file pathname
+# Result: 0 if conf was already loaded
+#         1 if conf was actually loaded
+#         2 if conf was not found
+sub init_conf ($){
+  # If file already loaded, exit immediately
+  (defined $file) and return 0;
+  $file = shift;
+  (defined $file) or return 2;
+  if (open( CONF, $file)){ 
+	%params = ();
+	foreach my $line (<CONF>) {
+		if ($line =~ $regex) {
+		my ($key,$val) = ($1,$2);
+		$val =~ /^([\"\']?)(.+)\1\s*$/;
+		$val = $2 if ($2 ne "");
+		$params{$key}=$val;
+		}
+	}
+	close CONF;
+	return 1;
+  }
+  else{
+	  error("Failed to open configuration file ($file)\n"); 
+	  exit 1;
+  }
+}
+
+
+## is_exists_in_array
+# Returns true if the value exists in the array
+# parameters: Value searched, ref on the array
+# return value: boolean
+# side effects: /
+sub is_exists_in_array ( $ $ ){
+	my $value = shift;
+    my $array = shift;
+	my $res=0;
+	if ( "@$array" =~ /$value/) {
+		$res=1;
+	} else {
+		$res=0;
+	} 
+	return ($res)
+}
+
+sub launch_archiving {
+	$start_time = time();
+	write_log("\n[START] ".get_time_to_log()." Starts to archive database $dbName\n");
+	
+	my $base = connect_oar();
+	my $base_archive = connect_archive();
+	
+	my $archive_tables_list;
+	my $dump_option;
+	my $table_exists;
+	my $oar_tables_list;
+	my $sth;
+	my $max_table_id_to_archive;
+	my $table;
+	my $nb_row_to_archive;
+	my $nb_row_before_insert;
+	my $nb_row_after_insert;
+	
+	
+	my $where_clause;
+	
+	my @archive_existing_tables;
+	
+	my %oar_table_max_id;
+	my %archive_table_max_id;
+	
+	
+	## Creates dump file and restrict access to OAR user
+	debug("Create dump file ($dump_file)\n");
+	debug("chmod 600 on dump file ($dump_file)\n");
+	verbose("=> Create dump file and restrict access .....");
+	system("touch ".$dump_file);
+	system("chmod 600 ".$dump_file);
+	verbose("Done\n");
+	
+	if ($dbType eq "Pg"){
+		error("This script doesn't support PostgreSQL databases.\n");
+		exit 1;
+	}
+	elsif ($dbType eq "mysql"){
+		## Gets the max job ID (the max with terminated and error state strictly)
+		my $maxJobId = get_max_job_id($base);
+		debug("Max JOB ID = ".$maxJobId."\n");
+		
+		## Retrieves the tables list in OAR database
+		$oar_tables_list = get_tables_list($base);
+		
+		## Retrieves the tables list in archive database
+		$archive_tables_list = get_tables_list($base_archive);	
+		
+		## Checks if all tables described in conf file really exist in OAR database		
+		foreach $table (keys(%hash_table_to_archive)){
+			if(!is_exists_in_array($table,$oar_tables_list)) {
+				error("Table \"$table\" described in conf file doesn't exist in OAR databases.\n");
+				exit 1;
+			}
+		}
+		
+		## For each table, export datas from the OAR database and insert them in the archive database
+		foreach $table (keys(%hash_table_to_archive)){
+			$dump_option = "";
+			$table_exists = 0;
+			$where_clause = " --where=\"1 ";
+			$max_table_id_to_archive = 0;			
+			
+			## If debug mode, ventilates the output
+			if ($DEBUG == 1) { print("\n"); }
+			$str = "Archive table \"$table\"\n";
+			info($str);
+			write_log($str);
+			debug("Couple table/primary_key : \"$table\"->$hash_table_to_archive{$table}\n");
+			
+			## Gets the max tuple to archive according to the table 
+			## Depends on the MAX JOB ID.
+			SWITCH: for ($table) {
+				/accounting/ && do {
+					## No direct relation with maxJobId limit. Nothing to do.
+					last; 
+					};
+				/admission_rules/ && do {
+					## No direct relation with maxJobId limit. Nothing to do.
+					last; 
+					};
+				/assigned_resources/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, moldable_job_descriptions, jobs 
+						where $table.moldable_job_id = moldable_job_descriptions.moldable_id 
+						and moldable_job_descriptions.moldable_job_id = jobs.job_id
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/challenges/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table 
+						where $table.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/event_logs/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table 
+						where $table.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last;
+					};
+				/event_log_hostnames/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, event_logs 
+						where $table.event_id = event_logs.event_id 
+						and event_logs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/files/	&& do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, jobs 
+						where $table.file_id = jobs.file_id 
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/frag_jobs/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table 
+						where $table.frag_id_job <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/jobs/ && do {	
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $maxJobId)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$maxJobId." ";
+					last; 
+					};
+				/job_dependencies/ && do {	
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, jobs 
+						where $table.job_id = jobs.job_id
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/job_resource_descriptions/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, job_resource_groups, moldable_job_descriptions, jobs 
+						where $table.res_job_group_id = job_resource_groups.res_group_id 
+						and job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id 
+						and moldable_job_descriptions.moldable_job_id = jobs.job_id
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/job_resource_groups/ && do {
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, moldable_job_descriptions, jobs 
+						where $table.res_group_moldable_id = moldable_job_descriptions.moldable_id 
+						and moldable_job_descriptions.moldable_job_id = jobs.job_id
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/job_state_logs/ && do {	
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, jobs 
+						where $table.job_id = jobs.job_id
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/job_types/ && do { 
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table 
+						where $table.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/moldable_job_descriptions/ && do {	
+					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
+						FROM $table, jobs 
+						where $table.moldable_job_id = jobs.job_id
+						and jobs.job_id <= $maxJobId");
+					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
+					last; 
+					};
+				/queues/ && do {
+					## No direct relation with maxJobId limit. Nothing to do.
+					last;
+					};
+				/resources/ && do {
+					## No direct relation with maxJobId limit. Nothing to do.
+					last; 
+					};
+				/resource_logs/ && do {
+					## No direct relation with maxJobId limit. Nothing to do.
+					last; 
+					};
+				/schema/ && do {
+					## No direct relation with maxJobId limit. Nothing to do.
+					last;
+					};
+				error("Table \'$table\' doesn't seem be a default OAR table or it is not needed to archive this table.\n This script is not able to archive table: \'$table\'.\n Remove it in $oararchive_conf_file or contact the OAR Team\n");
+				exit 1;
+			}
+			
+			## Checks if table exists in the archive database
+			$table_exists = is_exists_in_array($table,$archive_tables_list);
+			if ($table_exists == 1) {
+				push(@archive_existing_tables,$table);
+				
+				## Retrieves number of rows before insert in archive database
+				$nb_row_before_insert = get_number_rows ($base_archive, "SELECT 1 FROM \`$table\` ");
+				print(">>> nb_row_before_insert in archive database: ".$nb_row_before_insert."\n");
+				
+				## If already exists, don't export table structure
+				$dump_option .= " --add-drop-table=FALSE --no-create-info ";
+				debug("Table \"$table\" already exists in archive database\n");
+				
+				## Retrieves the max ID of the table if the primary key is an integer field
+				## Here we determine the "where_clause" to specify tuples to archive
+				if ($hash_table_to_archive{$table} ne "NO_ID"){
+					## For OAR database
+					$oar_table_max_id{$table} = get_max_id($base,$table,$hash_table_to_archive{$table});
+					debug("DB OAR - table \"$table\" -> max ID = $oar_table_max_id{$table}\n");
+					## For archive database
+					$archive_table_max_id{$table} = get_max_id($base_archive,$table,$hash_table_to_archive{$table});
+					debug("DB ARCHIVE - table \"$table\" -> max ID = $archive_table_max_id{$table}\n");
+					
+					#$where_clause = " --where=\"".$hash_table_to_archive{$table}.">".$archive_table_max_id{$table}."\" ";
+					$where_clause .= " AND ".$hash_table_to_archive{$table}.">".$archive_table_max_id{$table}." ";
+				}else{ 
+					##  We overwrite the following tables
+					SWITCH: for ($table) {
+						/queues/ && do {	
+							## Even if table exists we overwrite it
+							$dump_option = " --add-drop-table ";
+							debug("Overwrite table \"$table\" in archive database\n");
+							last;
+							};
+						/schema/ && do {
+							## Even if table exists we overwrite it
+							$dump_option = " --add-drop-table ";
+							debug("Overwrite table \"$table\" in archive database\n");
+							last; 
+							};
+						error("Table \'$table\' doesn't seem be a default OAR table or it is not needed to archive this table.\n This script is not able to archive table: \'$table\'.\n Remove it in $oararchive_conf_file or contact the OAR Team\n");
+						exit 1;
+					}
+				}
+				
+				$where_clause .= " \"";
+			}else{
+				debug("Table \"$table\" doesn't exist in archive database. I create it.\n");
+				$where_clause .= " \"";
+				$nb_row_before_insert = 0;
+			}
+			
+			## Retrieves number of rows to archive
+			my $tmpWhere = $where_clause;
+			$tmpWhere =~ /.*--where="(.*)"/;
+			$nb_row_to_archive = get_number_rows ($base, "SELECT 1 FROM \`$table\` where $1");
+			print(">>> nb_row_to_archive: ".$nb_row_to_archive."\n");
+			
+			$cmd = "mysqldump ".$dump_option." ".$where_clause." --host=\'$dbHost\' --user=\'$dbUserName\' --password=\'$dbUserPassword\' $dbName $table > $dump_file";
+			$cmd =~ /(.*--password=').*('.*)/;
+			debug("Dump command: ".$1."<SECRET>".$2."\n");
+			
+			verbose("  => Dump table ".$dbName.".".$table." ..... ");
+			system($cmd);
+			verbose("Done\n");
+			
+			if ($? != 0){
+				error("This command aborted: $cmd; \$?=$?, $! \n");
+				exit 1;
+			}
+			
+			## Imports data in the archive database
+			$cmd = "mysql --host=\'$dbArchiveHost\' --user=\'$dbArchiveUserName\' --password=\'$dbArchiveUserPassword\' $dbArchiveName < $dump_file";
+			$cmd =~ /(.*--password=').*('.*)/;
+			debug("MySQL command: ".$1."<SECRET>".$2."\n");
+			verbose("  => Import data in ".$dbArchiveName.".".$table." ..... ");
+			system($cmd);
+			verbose("Done\n");
+			if ($? != 0){
+				error("This command aborted: $cmd; \$?=$?, $! \n");
+				exit 1;
+			}
+			
+			## Retrieves number of rows after insert in archive database
+			$nb_row_after_insert = get_number_rows ($base_archive, "SELECT 1 FROM \`$table\` ");
+			print(">>> nb_row_after_insert in archive database: ".$nb_row_after_insert."\n");
+		}
+	}
+
+
+	## Removes dump file
+	$cmd = "rm -f ".$dump_file;
+	debug("Remove command: ".$cmd."\n");
+	verbose("=> Remove dump file ..... ");
+	system($cmd);
+	verbose("Done\n");
+
+	$str = "Done.\n";
+	info($str);
+	write_log("[END] ".get_time_to_log()." ".$str);
+
+	disconnect($base);
+	disconnect($base_archive);
+	
+	$end_time = time();
+	verbose("=> Total duration: ".int($end_time - $start_time)."s\n");
+}
+
+
+######
+# Display tables that will be archived
+##
+sub print_list_table {
+	my $i=0;
+	print "\nTables to archive :\n";
+	foreach my $table (keys(%hash_table_to_archive)){
+		$i++;
+		print"\t- $table\n";
+	}
+	print"$i tables will be archived\n";
+	exit(0);
+}
+
+
+sub print_usage {
+    print <<EOS;
+Usage: $command [Options]
+
+This script archives data from the OAR database and imports them in the archive database.
+Parameters specified in oar.conf and oararchive.conf files are used.
+
+Options:
+  --debug                   Debug mode. Display debugging information
+  -h, --help                Display this help screen and quit
+  -l, --list-table          Display tables that will be archived and quit
+  -q, --quiet               Quiet mode. Minimize the number of printed messages
+  -v, --verbose             Verbose mode
+  -V, --version             Print program version
+EOS
+}
+
+
+## reset the module state
+sub reset_conf () {
+    $file = undef;
+    %params = ();
+    return 1;
+}
+
+
+
+##################
+## Generic methods
+##################
+
+## Print de version of this script
+sub print_version {
+    print($command." version: ".$scriptVersion."\n");
+    exit(0);
+}
+
+######
+# Print information in the following form: '[$2] $1' ($2='=>' if not submitted)
+# usage: info(text [,title])
+##
+sub info {
+    PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
+    #my $prefix = $_[1] ? $_[1] : '=>';
+    my $prefix = $_[1] ? $_[1] : '*';
+    print "$prefix $_[0]" unless $QUIET;
+}
+
+######
+# Print verbose information (i.e print only if $VERBOSE is set)
+# usage: verbose(text)
+##
+sub verbose {
+    PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
+    print @_ if ${VERBOSE};
+	## Writes in log file
+	write_log($_[0]);
+}
+
+
+######
+# Print debug information (i.e print only if $DEBUG is set)
+# usage: debug(text)
+##
+sub debug {
+    PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
+    info(@_, '['. color("yellow") . 'DEBUG' . color("reset") . ']') if ${DEBUG};
+	## Writes in log file
+	if ($log_level >= 3){
+		my $str = $_[0];
+		write_log("[DEBUG] ".get_time_to_log()." ".$str);
+	}
+}
+
+
+######
+# Print error message 
+# usage: error(text)
+##
+sub error {
+    PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
+    info(@_, '['. color("red") . 'ERROR' . color("reset") . ']');
+	## Writes in log file
+	if ($log_level >= 1){
+		my $str = $_[0];
+		write_log("[ERROR] ".get_time_to_log()." ".$str);
+	}
+}
+
+######
+# Print error message and exit program
+# usage: error(text)
+##
+sub error_and_quit {
+    PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
+    info(@_, '['. color("red") . 'ERROR' . color("reset") . ']');
+	exit 1;
+}
+
+
+######
+# Print warning message 
+# usage: warning(text)
+##
+sub warning {
+    PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
+    info(@_, '['. color("magenta") . 'WARNING' . color("reset") . ']');
+	## Writes in log file
+	if ($log_level >= 2){
+		my $str = $_[0];
+		write_log("[WARNING] ".get_time_to_log()." ".$str);
+	}
+}
+
+
+## write_log
+# Writes output text into the log file
+# parameters : string to write
+# return value : -
+sub write_log( $ ) {
+	my $str = shift;
+	if (open(LOG,">>$log_file")){
+		print(LOG "$str");
+		close(LOG);
+	}else{
+		error_and_quit("Cannot write in file $log_file\n");
+	}
+}

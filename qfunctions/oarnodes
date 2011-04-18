@@ -1,0 +1,284 @@
+#!/usr/bin/perl
+# $Id$
+# print OAR node properties
+#
+# EXAMPLES:
+# oarnodes -l
+#   => returns the complete list without information  - status = 0
+# oarnodes -s
+#   => returns only the state of nodes - status = 0
+# oarnodes -h|--help
+#   => returns a help message - status = 0
+# oarnodes host1 [.. hostn]
+#   => returns the information for hostX - status is 0 for every host known - 1 otherwise
+#
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Getopt::Long;
+use oarnodes_lib;
+use oar_Tools;
+
+### CONFIG STUFF ###
+Getopt::Long::Configure ("gnu_getopt");
+
+# suitable Data::Dumper configuration for serialization
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Deepcopy = 1;
+
+### END CONFIG STUFF ###
+
+
+### Variables declaration ###
+my $stateMode;
+my $usage;
+my $listall;
+my $sql_property;
+my $XML_mode;
+my $YAML_mode;
+my $JSON_mode;
+my $DUMPER_mode;
+my $Version;
+my $events;
+my @resources;
+my @nodes;
+### END Variables declaration ###
+
+
+### Print Methods ###
+
+sub print_usage(){
+    print <<EOS;
+Usage: oarnodes [ -r number | --sql sql_properties | -s | -l | -h | -V ]
+[list of nodes] [ -e [date] | -X | -Y | -D]
+Display node informations
+Options:
+ -r, --resource     show the properties of the resource whose id is given as
+                    parameter
+ -s, --state        show the states of the nodes
+ -l, --list         show the nodes list
+ -e, --events       show the events recorded for a node either since the date
+                    given as parameter or the last 20
+     --sql          display resources which matches the SQL where clause
+                    (ex: "state = 'Suspected'")
+ -D, --dumper       print result in Perl Data::Dumper format
+ -X, --xml          print result in XML format
+ -Y, --yaml         print result in YAML format
+ -J, --json         print result in JSON format
+ -h, --help         show this help message
+ -V, --version      print OAR version number
+EOS
+}
+
+sub print_oar_version(){
+    print "OAR version : ".oarnodeslib::get_oar_version()."\n";
+}
+
+sub print_events($$){
+	my $date_from = shift;
+	my $hostnames = shift;
+        my $dump_mode=0;
+        my %result;
+        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+
+	foreach my $current_hostname (@$hostnames){
+          $result{$current_hostname}=oarnodeslib::get_events($current_hostname, $date_from);
+          if (!$dump_mode) {
+	    foreach my $current_event (@{$result{$current_hostname}}) {
+		  printf("%s| %s| %s: %s\n", 
+			oarnodeslib::format_date($current_event->{'date'}),
+			$current_event->{'job_id'},
+			$current_event->{'type'},
+			$current_event->{'description'}
+		  );
+	    }
+          }
+	}
+        format_result(\%result) if $dump_mode;
+}
+
+sub add_sql_resources($){
+	my $sql_clause = shift;
+	my $sql_resources = oarnodeslib::get_resources_with_given_sql($sql_clause);
+	push @resources, @$sql_resources;
+}
+
+sub format_result($){
+	my $result = shift;
+    if (defined($DUMPER_mode)){
+        print(Dumper($result)."\n");
+    }elsif(defined($XML_mode)){
+        print(oarnodeslib::encode_result($result, "XML")."\n");
+    }elsif(defined($YAML_mode)){
+        print(oarnodeslib::encode_result($result, "YAML")."\n");
+    }elsif(defined($JSON_mode)){
+        print(oarnodeslib::encode_result($result, "JSON")."\n");
+    }
+}
+
+sub print_resources_states_for_hosts($){
+	my $nodes = shift;
+        my %result;
+        my $dump_mode=0;
+        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+
+        foreach my $current_host (@$nodes){
+          $result{$current_host}=oarnodeslib::get_resources_states_for_host($current_host);
+          if (!$dump_mode) {
+            print "$current_host\n";
+            foreach my $k (sort keys %{$result{$current_host}} ) {
+            #while ( my ($k,$v) = each %{$result{$current_host}} ){
+	   	print "    $k : $result{$current_host}{$k}\n";
+            }
+          }
+        }
+        format_result(\%result) if $dump_mode;
+}
+
+sub print_resources_states($){
+	my $resources = shift;
+	my $resources_states = oarnodeslib::get_resources_states($resources);
+        if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+          format_result($resources_states);
+        }
+        else {
+	  while ( my ($k,$v) = each %$resources_states ){
+		print "$k : $v\n";
+	  }
+        }
+}
+
+sub print_all_hostnames(){
+  	my $nodes_to_print = oarnodeslib::get_all_hosts();
+	foreach my $current_node (@$nodes_to_print) {
+		print "$current_node\n";
+	}
+}
+
+sub print_hosts_infos($){
+	my $nodes = shift;
+	my $infos;
+	foreach my $current_node (@$nodes){
+		my $infos_for_host = oarnodeslib::get_resources_infos_for_host($current_node);
+		while ( my ($id,$info) = each %$infos_for_host ){
+		    $infos->{$id} = $info; # modify here to add depth (sorted by network_address)
+		}
+	}
+	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+	    format_result($infos);
+	}
+	else{
+	    print_resources_flat_way($infos);
+	}
+}
+
+sub print_resources_infos($){
+	my $resources = shift;
+	my $res_infos = oarnodeslib::get_resources_infos($resources);
+	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+	    format_result($res_infos);
+	}
+	else{
+	    print_resources_flat_way($res_infos);
+	}
+}
+
+# INFO: function to change if you want to change the user std output
+sub print_resources_flat_way($){
+	my $resources_info = shift;
+	foreach my $id ( sort keys %$resources_info ){
+	    my $info = $resources_info->{$id};
+	    print "network_address : $info->{network_address}\n";
+	    print "resource_id : $info->{resource_id}\n";
+	    if ($info->{state} eq "Absent" && $info->{available_upto} >= time()) {
+		$info->{state} .= " (standby)";
+	    }
+	    print "state : $info->{state}\n";
+	    if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
+	    my $properties_to_display='';
+	    while ( my ($k,$v) = each %$info ){
+		    if (oar_Tools::check_resource_system_property($k) == 0){
+			    if(defined($v)){
+				    $properties_to_display .= "$k=$v, ";
+			    }else{
+				    $properties_to_display .= "$k=, ";
+			    }
+		    }
+	    }
+	    chop($properties_to_display); # remove last space
+	    chop($properties_to_display); # remove last ,
+	    print "properties : $properties_to_display\n\n";
+	}
+}
+
+### END Print Methods ###
+
+
+### Main ###
+
+# parse command line option
+GetOptions ("state|s" => \$stateMode,
+            "help|h"  => \$usage,
+            "list|l"  => \$listall,
+            "events|e:s"  => \$events,
+            "resource|r=i" => \@resources,
+            "sql=s" => \$sql_property,
+            "xml|X" => \$XML_mode,
+            "yaml|Y" => \$YAML_mode,
+            "json|J" => \$JSON_mode,
+            "dumper|D" => \$DUMPER_mode,
+            "version|V" => \$Version
+           );
+
+if ($usage){
+    print_usage();
+    exit(0);
+}
+if ($Version){
+    print_oar_version();
+    exit(0);
+}
+
+oarnodeslib::open_db_connection() or die "DB connection error, exiting.\n";
+# Nodes list handling (set @nodes to what has been requested)
+if($ARGV[0]){
+    @nodes = @ARGV;
+}else{
+    my $nodes_tmp = oarnodeslib::get_all_hosts();
+	@nodes = @$nodes_tmp;
+}
+# SQL where handling, add resources that match sql clause to @resources
+if (defined($sql_property)) {
+	add_sql_resources($sql_property);
+}
+
+if (defined($events)) {
+    print_events($events, \@nodes);
+}
+elsif ($stateMode){
+	if ($#resources >= 0){
+		print_resources_states(\@resources);
+	}
+	else{
+		print_resources_states_for_hosts(\@nodes);
+	}
+}
+elsif ($listall){
+	print_all_hostnames();
+}
+elsif ($#resources >= 0 || defined($sql_property)){ # -r or --sql where called
+	print_resources_infos(\@resources);
+}
+elsif ($#nodes >= 0){ # a hostname was given or not (in this case all hostnames)
+	print_hosts_infos(\@nodes);
+}
+else{
+	print "\/!\\ No nodes to display...\n";
+}
+
+oarnodeslib::close_db_connection();
+
+### END Main ###

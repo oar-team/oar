@@ -1,0 +1,21 @@
+oar_desktop_client:
+ - oar_desktop_client:
+   - append_file:
+     - /etc/apt/sources.list
+     - |
+       $$oar_repository
+   - exec_chroot: apt-get update
+   - exec_chroot: apt-get install -y --force-yes oar-desktop-computing-agent openvpn subversion
+   - exec_chroot: svn export svn://scm.gforge.inria.fr/svn/oar/branches/gsoc-2010/desktop_computing/oar-agent.pl /usr/bin/oar-agent
+   - write_file:
+     - /etc/openvpn/client1.conf
+     - |
+      ## openvpn client1.conf
+      remote 192.168.56.101
+      dev tun
+      proto udp
+      ifconfig 10.0.0.2 10.0.0.1
+      secret /etc/openvpn/keys/static.key
+      comp-lzo
+      keepalive 10 60
+

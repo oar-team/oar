@@ -1,0 +1,18 @@
+#!/bin/bash
+# $Id$
+###############################################################################
+# Perform a check and report to CHECKLOGFILE
+# WARNING:
+# The CHECKLOGFILE file must not be created unless the check really unveiled
+# a problem.
+
+# Print to stderr if CHECKLOGFILE is not defined yet (e.g. as the script is
+# not called from oarnodecheckcron the CHECKLOGFILE environment varialbe is
+# not defined)
+[ -n "$CHECKLOGFILE" ] || CHECKLOGFILE=/dev/stderr
+
+###############################################################################
+# EDIT SCRIPT BELOW
+
+# Example of check
+[ -d /var/lib/oar ] || echo "OAR runtime directory (/var/lib/oar) does not exist)" > $CHECKLOGFILE 

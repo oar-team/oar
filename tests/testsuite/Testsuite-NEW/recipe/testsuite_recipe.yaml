@@ -1,0 +1,102 @@
+global:
+ workdir_base: /var/tmp/kameleon
+##Debian specific
+ distrib: debian
+ debian_version_name: squeeze
+ distrib_repository: http://ftp.fr.debian.org/debian/
+
+##APIURI Path
+ apiuri: "http://kameleon:kameleon@localhost/oarapi-priv"
+
+##RSpec Library Path
+ rpsec_lib_path: /home/kameleon/lib/rspectests_lib
+
+## Note: Only 1 print_output can be given in recipe file; print_output microstep deals with closing of IRB. So place after all required tests.
+
+steps:
+ - irb                                                 
+ - load_lib_create_object
+ - unit_tests:
+   - test_get_version
+   - test_get_timezone
+   - test_submit_job                          
+   - test_get_jobs_detail                           
+   - test_get_running_jobs
+   - test_job_dump_table
+   - test_get_resource_state
+   - test_get_resource_details
+# - print_output
+
+## Scenario Testings
+
+ - scenario1:
+   - submit_job
+   - test_if_submitted
+   - delete_job
+   - test_if_deleted
+ - print_output      
+
+
+# - scenario2:
+#   - submit_job
+#   - test_if_submitted
+#   - test_if_job_running
+
+
+
+# - scenario3:
+#   - submit_job_running
+#   - test_if_submitted
+#   - hold_job_running
+#   - test_if_job_held
+#   - resume_job
+#   - test_if_job_resumed
+
+
+
+# - scenario4:
+#   - submit_job
+#   - test_if_submitted
+#   - update_job
+#   - test_if_job_updated
+
+ 
+
+
+# - scenario5:
+#   - submit_job
+#   - test_if_submitted
+#   - checkpoint_job
+#   - test_checkpointed_job_details
+
+
+# - scenario6:
+#    - submit_job_with_walltime
+#    - test_if_submitted
+#    - wait_till_little_after_walltime
+#    - test_if_job_killed
+
+
+# - scenario7:
+#   - submit_job_sleep
+#   - test_if_job_sleeping 
+
+
+
+# - scenario8:
+#   - create_new_resource
+#   - test_if_resource_created
+
+
+
+# - scenario9: 
+#   - create_new_resource
+#   - test_if_resource_created 
+#   - delete_resource
+#   - test_if_resource_deleted
+
+
+
+
+# - scenario10
+   	

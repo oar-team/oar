@@ -1,0 +1,35 @@
+Installation of the OAR RESTful user API
+========================================
+
+Configuring OAR
+---------------
+For the moment, the API needs the user tools to be installed on the same host ('make user-install' or oar-user package). A suitable /etc/oar/oar.conf should be present. For the API to work, you should have the oarstat/oarnodes/oarsub commands to work (on the same host you installed the API)
+
+Installing the API files
+------------------------
+ - From sources: Download OAR and do "make api-install" as the root user.
+ - From Debian packages: apt-get install oar-api
+ - From RPM packages: yum install oar-api
+
+Configuring apache
+------------------
+The api provides a default configuration file (/etc/oar/apache-api.conf) that
+is using a identd user identification enabled only from localhost.
+Edit the /etc/oar/apache-api.conf file and customize it to reflect the authentication mechanism you want to use. For ident, you may have to install a "identd" daemon on your distrib. The steps may be:
+ - Install and run a identd daemon on your server
+ - Activate the ident auth mechanism into apache (a2enmod ident)
+ - Activate the headers apache module (a2enmod headers)
+ - Customize apache-api.conf to allow the hosts you trust for ident
+
+YAML, JSON, XML
+---------------
+You need at least one of the YAML or JSON perl module to be installed on the host running the API.
+
+Test
+----
+You may test the API with a simple wget:
+
+ wget -O - http://localhost:/oarapi/resources.html
+
+It should give you the list of resources in the yaml format but enclosed in an html page.
+To test if the authentication works, you need to post a new job. See the example.txt file that gives you example queries with a ruby rest client.

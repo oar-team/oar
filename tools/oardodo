@@ -1,0 +1,177 @@
+#!/usr/bin/perl
+# $Id$
+#
+# This script must be setuid root.
+# Cases for the use of this script:
+#
+#   - user $Oaruser executes this script and OARDO_BECOME_USER is empty
+#       --> if @ARGV is empty
+#               then run the root shell with a dash in front of the process
+#               name (login shell)
+#           else
+#               @ARGV is executed with root privileges
+#
+#   - user $Oaruser executes this script and OARDO_BECOME_USER is set
+#       --> if @ARGV is empty
+#               then run the OARDO_BECOME_USER shell with a dash in front of
+#               the process name (login shell)
+#           else
+#               if OARDO_USE_USER_SHELL is set
+#                   then execute "shell @ARGV" with OARDO_BECOME_USER
+#                   privileges and shell user
+#               else
+#                   @ARGV is executed with OARDO_BECOME_USER privileges
+#
+
+###############################################################################
+# Static conf to edit #
+#######################
+
+my $Oardir = "";
+my $Oarconffile = "/etc/oar/oar.conf";
+my $Oarxauthlocation = "/usr/bin/xauth";
+my $Oaruser = "oar";
+my $Id_cmd = "/usr/bin/id";
+
+###############################################################################
+
+$ENV{OARDO_USER} = getpwuid($<);
+$ENV{OARDO_UID} = $<;
+$ENV{OARDIR} = $Oardir;
+$ENV{PERL5LIB} = $Oardir;
+$ENV{OARUSER} = $Oaruser;
+$ENV{OARCONFFILE} = $Oarconffile;
+$ENV{OARXAUTHLOCATION} = $Oarxauthlocation;
+
+my @clean_argv;
+# BEGIN CLEAN
+
+# Clean ARGV to prevent tainted perl behaviour
+for (my $i=0; $i <= $#ARGV; $i++){
+    my $str = "";
+    foreach my $l (split("\n",$ARGV[$i])){
+        $l =~ m/(.*)/m;
+        $str .= $1."\n";
+    }
+    chop($str);
+    $clean_argv[$i] = $str;
+}
+#warn("@clean_argv\n");
+
+# clean PATH (needed for tainted perl)
+$ENV{PATH} =~ s,(^\./:)*(:\.)*,,g; # Remove ./ from PATH
+$ENV{PATH} =~ m/^(.*)$/m;
+$ENV{PATH} = $1;
+
+delete @ENV{'IFS', 'CDPATH', 'MAIL', 'LD_LIBRARY_PATH'};
+# BASH_ENV is not deleted because used in oarexec to launch user script (see
+# 'man bash')
+$ENV{BASH_ENV} =~ m/^(.*)$/m;
+$ENV{BASH_ENV} = $1;
+$ENV{ENV} =~ m/^(.*)$/m;
+$ENV{ENV} = $1;
+
+# END CLEAN
+
+sub change_process_owner($){
+    my $user = shift;
+
+    my @tmp = getpwnam($user);
+    if ($#tmp < 0){
+        warn("oardo: Cannot get information from user '$user'.\n");
+        exit(52);
+    }
+
+    my $groups = "$tmp[3] $tmp[3]";
+    
+    # Try to retrieve all group ids
+    if ((defined($Id_cmd)) and (-x $Id_cmd)){
+        pipe(child_stdout_read,child_stdout_write);
+        my $pid = fork();
+        if (defined($pid)){
+            if($pid == 0){
+                #CHILD
+                close(child_stdout_read);
+                close(STDOUT);
+                open(STDOUT, ">& child_stdout_write");
+                close(STDERR);
+                close(STDIN);
+                exec({$Id_cmd} $Id_cmd,'-G',$user);
+                exit(1);
+            }
+            close(child_stdout_write);
+            if (<child_stdout_read> =~ m/^([\d\s]+)\n$/m){
+                $groups = "$tmp[3] $1";
+            }
+            close(child_stdout_read);
+            wait();
+        }else{
+            close(child_stdout_write);
+            close(child_stdout_read);
+        }
+    }
+
+    undef($!);
+    $( = $groups;
+    if ($!){
+        warn("oardo: $!\n       Cannot set GID to '$groups'.\n");
+        exit(52);
+    }
+    $) = $groups;
+    if ($!){
+        warn("oardo: $!\n       Cannot set EGID to '$groups'.\n");
+        exit(52);
+    }
+    $< = $tmp[2];
+    if ($!){
+        warn("oardo: $!\n       Cannot set UID to '$user'.\n");
+        exit(52);
+    }
+    $> = $tmp[2];
+    if ($!){
+        warn("oardo: $!\n       Cannot set EUID to '$user'.\n");
+        exit(52);
+    }
+    $ENV{USER} = $user;
+    $ENV{LOGNAME} = $user;
+    $ENV{SHELL} = $tmp[8];
+    $ENV{HOME} = $tmp[7];
+}
+
+# Default user to become is root
+my $user = "root";
+if (defined($ENV{OARDO_BECOME_USER}) and ($ENV{OARDO_BECOME_USER} ne "")){
+    $ENV{OARDO_BECOME_USER} =~ m/^(.+)$/m;
+    $user = $1;
+    delete($ENV{OARDO_BECOME_USER});
+}
+change_process_owner($user);
+if ($#clean_argv < 0){
+    # Login shell
+    $ENV{HOME} =~ m/(.*)/m;
+    my $home = $1;
+    chdir($home);
+    $ENV{SHELL} =~ m/(.*)/m;
+    my $shell = $1;
+    my @tmp = split('/',$shell);
+    exec({$shell} "-$tmp[$#tmp]");
+    warn("oardodo: Cannot execute with $user privileges : $shell .\n");
+    exit(51);
+}else{
+    if (defined($ENV{OARDO_USE_USER_SHELL}) and ($ENV{OARDO_USE_USER_SHELL} ne "")){
+        delete($ENV{OARDO_USE_USER_SHELL});
+        $ENV{HOME} =~ m/(.*)/m;
+        my $home = $1;
+        chdir($home);
+        $ENV{SHELL} =~ m/(.*)/m;
+        my $shell = $1;
+        exec({$shell} $shell,@clean_argv);
+        warn("oardodo: Cannot execute with $user privileges : $shell @clean_argv .\n");
+        exit(51);
+    }else{
+        exec(@clean_argv);
+        warn("oardodo: Cannot execute with $user privileges : @clean_argv .\n");
+        exit(51);
+    }
+}
+
