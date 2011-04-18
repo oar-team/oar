@@ -1,6 +1,0 @@
----
-title: Array jobs 
-inMenu: true
-orderInfo: 1
----
-<notextile>{rstconverter: {rstfile: GSOC_array_jobs.rst}}<notextile>

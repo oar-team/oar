@@ -1,7 +1,0 @@
----
-title: Reasons  
-inMenu: true
----
-h1. Reasons to choose OAR
-
-<notextile>{rstconverter: {rstfile: doc_oar-whyusing.rst}}<notextile>

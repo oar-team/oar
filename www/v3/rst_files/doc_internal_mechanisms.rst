@@ -1,1 +1,0 @@
-../../../Docs/documentation/doc_internal_mechanisms.rst

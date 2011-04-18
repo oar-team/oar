@@ -1,5 +1,0 @@
-DOCUFILE=../src/docs/manual.page
-
-cat manual_head.page > $DOCUFILE
-
-cat $1 | rst2html -stg | egrep -v '^<\/body>|^<body>|^<!DOCTYPE|^<html xmlns|^<head>|^<\/head>|^<meta|^<title>|^<link|^</\html>' >> $DOCUFILE

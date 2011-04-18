@@ -1,1 +1,0 @@
-../../../Docs/documentation/OAR-DOCUMENTATION-ADMIN.rst

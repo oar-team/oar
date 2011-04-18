@@ -1,6 +1,0 @@
----
-title: Overview  
-inMenu: true
----
-
-<notextile>{rstconverter: {rstfile: doc_overview.rst}}<notextile>
