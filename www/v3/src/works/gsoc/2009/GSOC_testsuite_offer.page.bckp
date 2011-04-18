@@ -1,6 +1,0 @@
----
-title: Test suite 
-inMenu: true
-orderInfo: 3
----
-<notextile>{rstconverter: {rstfile: GSOC_testsuite_offer.rst}}<notextile>

@@ -1,7 +1,0 @@
----
-title: Features  
-inMenu: true
----
-h1. Features
-
-<notextile>{rstconverter: {rstfile: doc_oar-presentation.rst}}<notextile>

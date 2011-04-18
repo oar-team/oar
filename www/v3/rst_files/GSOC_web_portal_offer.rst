@@ -1,1 +1,0 @@
-../../../Docs/works/gsoc/2009/GSOC_web_portal_offer.rst

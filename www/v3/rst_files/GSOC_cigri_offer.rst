@@ -1,1 +1,0 @@
-../../../Docs/works/gsoc/2009/GSOC_cigri_offer.rst

@@ -1,6 +1,0 @@
----
-title: Fault tolerance 
-inMenu: true
-orderInfo: 2
----
-<notextile>{rstconverter: {rstfile: GSOC_fault_tolerance_offer.rst}}<notextile>

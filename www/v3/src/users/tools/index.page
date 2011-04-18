@@ -1,8 +1,0 @@
----
-title: Tools
----
-h2. Tools around OAR for users purpose
-
-* "Monika":monika.html Visualize current cluster's state and jobs
-* "DrawGantt":drawgantt.html Visualize cluster's Gantt diagram
-
