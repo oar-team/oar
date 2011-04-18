@@ -1,0 +1,9 @@
+Init scripts are available for debian and rpm based distribution.
+Get the one you need in the packaging trees:
+
+Server:
+  DEB: debian/oar-server.init.d
+  RPM: rpm/SOURCES/oar-server.init.d
+Node:
+  DEB: debian/oar-node.init.d
+  RPM: rpm/SOURCES/oar-node.init.d

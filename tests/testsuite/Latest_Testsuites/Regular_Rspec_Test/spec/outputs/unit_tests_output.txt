@@ -1,0 +1,14 @@
+
+OarApi
+- should return OAR Version Details Successfully - GET /version REST API
+- should return the correct OAR Timezone of the OAR Server
+- should check the correct functioning of POST /jobs API
+- should check the correct functioning of GET /job/details API
+- should check the correct functioning of GET /jobs API
+- should check the correct functioning of GET /jobs/table API
+- should check the correct functioning of GET /resources
+- should check the correct functioning of GET /resources/full
+
+Finished in 170.627516 seconds
+
+8 examples, 0 failures

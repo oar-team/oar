@@ -1,0 +1,11 @@
+From fping sources : http://www.fping.com/
+
+in fping.c :
+    set MIN_INTERVAL to 0
+
+in option.h :
+    set DEFAULT_SELECT_TIME to 0 or 0.01 (to avoid using too much cpu)
+    set DEFAULT_INTERVAL to 0
+
+the command:
+    fping -q

@@ -1,0 +1,63 @@
+                INSTALLING THE OAR_GRID TOOLS
+
+
+
+CONFIGURATION
+=============
+
+The following steps have to be done, prior to installing OAR_GRID:
+
+    - add a user named "oargrid" in the group "oargrid"
+
+    - let the user "oargrid" connect through ssh from any cluster fronts to
+      any other cluster fronts WITHOUT password. To achieve this, here is
+      some standard procedure for OpenSSH:
+        * create a set of ssh keys for the user "oargrid" with ssh-keygen (for
+          instance 'id_dsa.pub' and 'id_dsa')
+        * copy these keys on each cluster fronts of the cluster in the ".ssh"
+          folder of the user "oargrid"
+        * append the contents of 'id_dsa.pub' to the file
+          "~/.ssh/authorized_keys"
+        * in "~/.ssh/config" add the lines:
+            Host *
+                ForwardX11 no
+                StrictHostKeyChecking no
+                PasswordAuthentication no
+        * test the ssh connection between (every) two nodes : there should not
+          be any prompt.
+
+    - grant users in group "oargrid" the permission to execute commands with user
+      of the group "oargrid" privileges. To achieve that, OAR_GRID makes use
+      of sudo. As a consequence, /etc/sudoers must be configured. Please use
+      visudo to add the following lines (adapt command paths to fit your 
+      settings, if needed) :
+            Defaults>oargrid    env_reset,env_keep = "PWD"
+            Defaults:oargrid    !requiretty, visiblepw
+            Cmnd_Alias OARGRIDCMD = /usr/local/oargrid/cmds/oargridsub, /usr/local/oargrid/cmds/oargriddel, /usr/local/oargrid/cmds/oargridstat
+            ALL ALL=(oargrid) NOPASSWD: OARGRIDCMD
+            oargrid ALL=(ALL) NOPASSWD: /bin/chown
+
+    - on each clusters recoded in the databases of OAR_GRID, you must allow "oargrid"
+      user to execute OAR commands with users of "g5k" group privileges (adapt
+      command paths to fit your settings, if needed) :
+            Cmnd_Alias OARGRIDUSERCMD = /usr/local/bin/oarsub, /usr/local/bin/oardel, /usr/local/bin/oarstat, /usr/local/bin/oarnodes
+            oargrid ALL=(%g5k) NOPASSWD: OARGRIDUSERCMD
+
+The installation is straightforward:
+    - become root
+    - go to OAR_GRID source repository
+    - You can set Makefile variables in the command line to suit your configuration
+      (change "OARHOMEDIR" to the home of your user oargrid and "PREFIX" where you want
+      to copy all OAR_GRID files).
+    - run make  <module> [module] ...
+        where module := { install }
+              OPTIONS := { OARGRIDHOMEDIR | OARGRIDCONFDIR | OARGRIDUSER | OARGRIDGROUP | PREFIX | MANDIR | OARGRIDDIR | BINDIR | SBINDIR }
+    - Edit /etc/oargrid.conf file to match your configuration.
+    - Make sure that the PATH environment variable contains $PREFIX/$BINDIR of
+      your installation (default is /usr/local/bin).
+
+Initialization of OAR_GRID database (MySQL) is achieved using the MySQL script "db_scheme.sql".
+You must edit it to change the database user informations and run a command like:
+   mysql -uroot -p < db_scheme.sql
+
+

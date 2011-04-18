@@ -1,0 +1,55 @@
+* need some work to be really usable
+* for drmaa lib compilation process need to install pbs includes
+
+* curl + multithread + SSL (caution need to provide locking callback function) not impleted use tunnel indeed
+
+* change java-style name function 
+* too hardcoded paramaters (for oarapi connection)
+* factorize connection
+* debug 
+* stagein/stageout
+* sending signal
+* comment code
+* docs
+
+* notes pour l'experimentation avec le 
+su passwd baygon
+ssh baygon@129.88.69.6 -L8888:129.88.69.6:80
+ssh baygon@192.168.1.104 -L8888:192.168.1.104:80
+
+export OARVMHOST=129.88.69.6
+
+scp  -r /home/auguste/Prog/drmaa-oar-torque-install/* baygon@$OARVMHOST:
+scp  -r /home/auguste/Prog/drmaa-oar/pbs_drmaa-1.0/python  baygon@$OARVMHOST:
+
+
+make C_FLAGS="-g -Dtorque_EXPORTS -fPIC -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/json-glib-1.0 -I/usr/include/curl"
+
+
+
+
+Pour pbs_drmaa-1.0
+==================
+./configure --with-pbs=/home/auguste/Prog/drmaa-oar-torque-install --prefix=/home/auguste/Prog/drmaa-oar-torque-install
+
+export LD_LIBRARY_PATH=/home/auguste/Prog/drmaa-oar-torque-install/lib
+export LD_LIBRARY_PATH=/home/baygon/lib
+
+export OARVMHOST=129.88.69.6
+
+gpg --keyserver wwwkeys.eu.pgp.net --recv-keys 9AA38DCD55BE302B
+apt-key add .gnupg/pubring.gpg
+apt-get update
+apt-get install curl libjson-glib-1.0-0 libglib2.0-0 gcc cmake make g++ libjson-glib-dev libglib2.0-dev libcurl4-openssl-dev python-pyrex
+
+scp -r drmaa-c baygon@$OARVMHOST:
+
+rm -rf CMakeCache.txt CMakeFiles 
+cmake -G "Unix Makefiles"
+
+tar zxvf pbs_drmaa-1.0.tar.gz
+cd pbs_drmaa-1.0
+./configure --with-pbs=/usr/local/ --prefix=/usr/local
+
+
+

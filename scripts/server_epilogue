@@ -1,0 +1,14 @@
+#!/bin/bash
+# $Id$
+#
+# This a placeholder script for OAR jobs server side epilogue.
+# This script is to be run on OAR server upon job termination.
+# This feature is activated if and only if SERVER_EPILOGUE_EXEC_FILE is set
+# in OAR configuration file.
+
+# Usage:
+# Script is run under uid of oar who is sudo
+# argv[1] is the jobid
+# Other job information are meant to be retrieved using oarstat.
+
+exit

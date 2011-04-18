@@ -1,0 +1,13 @@
+#!/bin/bash
+
+OARGRIDDIR=
+OARGRIDUSER=
+
+PERL5LIB=$OARGRIDDIR
+OARGRIDCONFFILE=/etc/oargrid.conf
+export PERL5LIB
+export OARGRIDDIR
+export OARGRIDUSER
+export OARGRIDCONFFILE
+
+exec $OARGRIDDIR/`basename $0` "$@"

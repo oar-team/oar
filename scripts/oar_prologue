@@ -1,0 +1,22 @@
+#!/bin/bash
+# $Id$
+
+# prologue arguments
+# Script is run under uid of oar who is sudo
+# argv[1] is the jobid
+# argv[2] is the user's name
+# argv[3] is the file which contains the list of nodes used
+# argv[4] is the job script name if exists
+
+exit
+
+# Redirect stdout and stderr in a file
+exec &> /tmp/oar_prologue.log
+
+#Exemple for mono processor cluster
+DIFFUSE_SCRIPT=~oar/oar_diffuse_script
+PROLOGUE_LOCAL=~oar/oar_prologue_local
+CMD="$PROLOGUE_LOCAL $1 $2 $4"
+
+$DIFFUSE_SCRIPT $3 $CMD
+

@@ -1,0 +1,4 @@
+
+This directory contains files and scripts to simplify scheduler testing.
+These tests are focused only on scheduling phase and dont' encompass other phases like launching, runing, checking and so on.
+To execute theses tests only oar database and scheduler are required (and meta-scheduler for some tests).
