@@ -1,9 +1,0 @@
-If you want to generate the Debian packages from the sources:
-
-    - untar the OAR archive and go into the new directory
-    - then execute the command::
-
-        dpkg-buildpackage -us -uc -rfakeroot
-
-    - the packages are created into parent directory
-
