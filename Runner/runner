@@ -1,0 +1,107 @@
+#!/usr/bin/perl
+# $Id$
+#Almighty module : launch job bipbips
+
+use strict;
+use DBI();
+use Data::Dumper;
+use oar_iolib;
+use oar_Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use oar_conflib qw(init_conf dump_conf get_conf is_conf);
+use oar_Tools;
+
+# Log category
+set_current_log_category('main');
+
+init_conf($ENV{OARCONFFILE});
+my $binpath;
+if (defined($ENV{OARDIR})){
+    $binpath = $ENV{OARDIR}."/";
+}else{
+    oar_error("[Runner] OARDIR env variable must be defined\n");
+    exit(3);
+}
+
+my $batch = $binpath."bipbip";
+
+my $Exit_code = 0;
+
+sub answer($$$){
+    my $jobid = shift;
+    my $info = shift;
+    my $message = shift;
+
+    my $error = 0;
+    my ($addr,$port) = split(/:/,$info);
+    oar_debug("[Runner] oarsub addr:port = $addr:$port info = $info\n");
+    if(!defined(oar_Tools::notify_tcp_socket($addr,$port,"$message"))){
+        oar_debug("[Runner] Notification done\n");
+    }else{
+        oar_debug("[Runner] Cannot open connection to oarsub client for job $jobid !\n");
+        $error = 1;
+    }
+    return($error);
+}
+
+my $base = iolib::connect();
+
+# for toError jobs
+foreach my $j (iolib::get_jobs_in_state($base,"toError")){
+    oar_debug("[Runner] Treate job $j->{job_id} in toError state\n");
+    if ($j->{job_type} eq "INTERACTIVE"){
+        oar_debug("[Runner] Notify oarsub for an INTERACTIVE job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        answer($j->{job_id},$j->{info_type},"$j->{message}");
+        answer($j->{job_id},$j->{info_type},"BAD JOB");
+    }elsif(($j->{job_type} eq "PASSIVE") && ($j->{reservation} eq "Scheduled")){
+        oar_debug("[Runner] Notify oarsub for a reservation job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        answer($j->{job_id},$j->{info_type},"$j->{message}");
+        answer($j->{job_id},$j->{info_type},"BAD JOB");
+    }
+    oar_debug("[Runner] Set job $j->{job_id} to state Error\n");
+    iolib::set_job_state($base, $j->{job_id}, "Error");
+}
+
+# for toAckReservation jobs
+foreach my $j (iolib::get_jobs_in_state($base,"toAckReservation")){
+    oar_debug("[Runner] Treate job $j->{job_id} in toAckReservation state\n");
+    if (answer($j->{job_id},$j->{info_type},"GOOD RESERVATION") == 1){
+        oar_warn("[Runner] Frag job $j->{job_id}, I cannot notify oarsub for the reservation\n");
+        iolib::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[runner] Can not notify oarsub for the job $j->{job_id}");
+        iolib::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        iolib::frag_job($base,$j->{job_id});
+        iolib::unlock_table($base);
+        $Exit_code = 1;
+    }else{
+        oar_debug("[Runner] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
+        iolib::set_job_state($base,$j->{job_id} , "Waiting");
+        # Test if we must notify Almighty to Launch scheduler for the reservation
+        if ($Exit_code == 0){
+            if ($j->{start_time} - 1 <= iolib::get_date($base)){
+                $Exit_code = 2;
+            }
+        }
+    }
+}
+
+# for toLaunch jobs
+foreach my $job (iolib::get_jobs_in_state($base,"toLaunch")){
+    my $jobid = $job->{job_id};
+    my $jobtype = $job->{job_type};
+    my $jobinfo = $job->{info_type};
+    
+    my $is_desktop_computing = iolib::is_job_desktop_computing($base,$jobid);
+    oar_debug("[Runner] is_desktop_computing = $is_desktop_computing\n");
+    if ($is_desktop_computing) {
+        oar_debug("[Runner] Desktop computing job, I don't handle it !\n");
+        next;
+    }
+    
+    iolib::set_job_state($base,$jobid,"Launching");
+    oar_debug("[Runner] Launching job : $batch $jobid\n");
+    oar_Tools::fork_no_wait("$batch $jobid",$base);
+}
+
+
+iolib::disconnect($base);
+
+exit($Exit_code);

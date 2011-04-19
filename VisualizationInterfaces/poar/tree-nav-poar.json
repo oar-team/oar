@@ -1,0 +1,33 @@
+[{
+    text:'Menu',
+    expanded: true,
+    children:[{
+        text:'Welcome',
+        id:'welcome',
+        leaf:true
+    },{
+        text:'iframeGanttChart',
+        id:'iframe-ganttchart',
+        leaf:true
+    },{
+        text:'iframeStatus',
+        id:'iframe-monika',
+        leaf:true
+    },{
+        text:'Submission',
+        id:'submission-form',
+        leaf:true
+    },{
+        text:'Jobs',
+        id:'jobs',
+        leaf:true
+    },{
+        text:'Jobs-summary',
+        id:'jobs-summary',
+        leaf:true
+    },{
+        text:'Test',
+        id:'test',
+        leaf:true
+    }]
+}]

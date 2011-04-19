@@ -1,0 +1,49 @@
+ - config_oar_key:
+   - exec_chroot:      perl -pi -e 's/^/environment="OAR_KEY=1" /' ~oar/.ssh/authorized_keys
+ - stop_host_mysql:
+   - exec_current: |
+                   RC=0
+                   /etc/init.d/mysql status > /dev/null || RC=$?
+                   if [ "$RC" = "0" ]
+                   then
+                     /etc/init.d/mysql stop
+                     MYSQL_STARTED=1
+                   fi
+ - init_mysql_db:
+   - write_file:
+     - /tmp/init.sql
+     - |
+       CREATE DATABASE IF NOT EXISTS oar;
+       CONNECT mysql;
+       INSERT INTO user (Host,User,Password) VALUES('localhost','oar',PASSWORD('oar'));
+       INSERT INTO user (Host,User,Password) VALUES('%','oar',PASSWORD('oar'));
+       INSERT INTO db  (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv)
+         VALUES
+         ('localhost','oar','oar','Y','Y','Y','Y','Y','Y');
+       INSERT INTO db  (Host,Db,User,Select_priv,Insert_priv,Update_priv,Delete_priv, Create_priv,Drop_priv)
+         VALUES
+         ('%','oar','oar','Y','Y','Y','Y','Y','Y');
+       FLUSH PRIVILEGES;
+       GRANT ALL ON oar.* TO oar@localhost;
+       GRANT ALL ON oar.* TO oar@"%";
+       GRANT SELECT ON oar.* TO oarreader@localhost;
+       GRANT SELECT ON oar.* TO oarreader@"%";
+       FLUSH PRIVILEGES;
+   - exec_chroot: mysql < /tmp/init.sql
+ - init_oar_db:
+   - exec_chroot: |
+                  mysql oar < /usr/lib/oar/mysql_structure.sql
+                  mysql oar < /usr/lib/oar/mysql_default_admission_rules.sql
+                  mysql oar < /usr/lib/oar/default_data.sql || true
+ - create_oar_resources:
+   - exec_chroot: |
+                  oarproperty -a core
+                  oarproperty -a cpu
+                  oarnodesetting -a -h node1 -p cpu=0 =p core=0
+                  oarnodesetting -a -h node1 -p cpu=0 =p core=1
+                  oarnodesetting -a -h node1 -p cpu=1 =p core=0
+                  oarnodesetting -a -h node1 -p cpu=1 =p core=1
+                  oarnodesetting -a -h node2 -p cpu=0 =p core=0
+                  oarnodesetting -a -h node2 -p cpu=0 =p core=1
+                  oarnodesetting -a -h node2 -p cpu=1 =p core=0
+                  oarnodesetting -a -h node2 -p cpu=1 =p core=1

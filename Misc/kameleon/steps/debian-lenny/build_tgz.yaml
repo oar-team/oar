@@ -1,0 +1,5 @@
+build_tgz:
+ - build_tgz:
+   - exec_current:  cd $$workdir; mv chroot $$distrib
+   - exec_current:  cd $$workdir; tar -czf $$distrib.tar.gz ./$$distrib
+   - exec_current:  cd $$workdir; mv $$distrib chroot

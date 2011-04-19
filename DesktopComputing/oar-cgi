@@ -1,0 +1,11 @@
+#!/bin/sh
+# $Id$
+
+OARDIR=/usr/local/oar
+OARUSER=oar
+
+export PERL5LIB=$OARDIR:$PERL5LIB
+export OARDIR
+
+exec sudo -u $OARUSER /home/neyron/huron/oar-dc/DesktopComputing/oar-cgi.pl
+

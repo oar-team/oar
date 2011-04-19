@@ -1,0 +1,311 @@
+=head1 NAME
+
+oarsub - OAR batch scheduler job submission command.
+
+=head1 SYNOPSIS
+
+B<oarsub> [OPTIONS] <job executable>
+
+B<oarsub> [OPTIONS] -I
+
+B<oarsub> [OPTIONS] -C <JOB ID>
+
+=head1 DESCRIPTION
+
+One uses B<oarsub> to submit a job to the B<OAR batch scheduler> managing the resources of a B<HPC Cluster>.
+A job is defined by the description of a set of resources needed to execute a task and a script or executable to run.
+A job may also be run interactively, and one may also use oarsub to connect to a previously submitted job.
+
+The scheduler is in charge of providing a set of resources matching the oarsub command request. Once scheduled and then launched, a job consists of one process executed on the first node of the resources it was attibuted, with a set of environment variables that define the resources which are at the job disposal. That means that the job's executable is responsible for connecting those resources and dispatching the tasks.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-I, --interactive>
+
+Request an interactive job. Open a login shell on the first node of the reservation instead of running a script.
+
+=item B<-C, --connect> <JOB ID>
+
+Connect to a running job.
+
+=item B<-l, --resource> <LIST>
+
+Set the requested resources for the job. The different parameters are resource properties registered in OAR database, and `walltime' which specifies the duration before the job must be automatically terminated if still running. 
+Walltime format is [hour:mn:sec|hour:mn|hour]. Ex: nodes=4/cpu=1,walltime=2:00:00
+
+=item B<--array> <NUMBER>
+
+Submit an array job containing "NUMBER" subjobs. All the subjobs share the same array_id but each subjob is independent and has its own job_id. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.
+
+Array jobs can neither be Interactive (-I) nor a reservation (-r).
+
+
+=item B<--array-param-file> <FILE>
+
+Submit a parametric array job. Each non-empty line of "FILE" defines the parameters for the submition of new subjob. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.   '#' is the comment sign.
+
+Parametric array jobs can neither be Interactive (-I) nor a reservation (-r).
+
+=item B<-S, --scanscript>
+
+Batch mode only: ask oarsub to scan the given script for OAR directives (#OAR -l ...)
+
+=item B<-q, --queue> <QUEUE>
+
+Set the the queue to submit the job to.
+
+=item B<-p, --property> "<LIST>"
+
+Add a list of constraints to properties for the job.
+The format of a contraint is the one of a WHERE clause using the SQL syntax.
+
+=item B<-r, --reservation>  <DATE>
+
+Request that the job starts at a specified time. A job creation using this option is called a I<reservation> and instead of a I<submission>. 
+
+=item B<--checkpoint> <DELAY>
+
+Enable the checkpointing mechanism for the job.
+A signal will be sent DELAY seconds before the walltime to the first processus of the job (on the first node of the resources).
+
+=item B<--signal> <#SIG>
+
+Specify the signal to use when checkpointing. Use signal numbers (see kill -l), default is I<12> (SIGUSR2).
+
+=item B<-t, --type> <TYPE>
+
+Specify a specific type (I<deploy>, I<besteffort>, I<cosystem>, I<checkpoint>, I<timesharing>)
+
+=item B<-d, --directory> <DIR>
+
+Specify the directory where to launch the command (default is current directory)
+
+=item B<--project> <TXT>
+
+Specify a name of a project the job belongs to.
+
+=item B<-n, --name> <TXT>
+
+Specify an arbitrary name for the job.
+
+=item B<-a, --anterior> <OAR JOB ID>
+
+Previously submitted job that this new job execution must depend on. The new job will only start upon the end of the previous one.
+
+=item B<--notify> <TXT>
+
+Specify a notification method (mail or command to execute).
+Ex: 
+ --notify "mail:name@domain.com"
+ --notify "exec:/path/to/script args"
+
+args are job_id,job_name,TAG,comment
+
+TAG can be:
+  - RUNNING : when the job is launched
+  - END : when the job is finished normally
+  - ERROR : when the job is finished abnormally
+  - INFO : used when oardel is called on the job
+  - SUSPENDED : when the job is suspended
+  - RESUMING : when the job is resumed
+
+=item B<--resubmit> <OAR JOB ID>
+
+Resubmit the given job as a new one.
+
+=item B<-k, --use-job-key>
+
+Activate the job-key mechanism. A job-key will be generated allowing to connect the job from outside the set of resources managed by OAR. The job-key mechanism may be activated by default in your OAR environment. In this case this option is useless.
+
+=item B<-i, --import-job-key-from-file>
+
+Import the job-key to use from existing files (public and private key files) instead of generating a new one. One may also use the OAR_JOB_KEY_FILE environment variable.
+
+=item B<--import-job-key-inline>
+
+Import the job-key to use inline instead of generating a new one.
+
+=item B<-e, --export-job-key-to-file>
+
+Export the the job key to a file.
+I<Warning>: the file will be overwritten if it already exists.
+(the %jobid% pattern is automatically replaced)
+
+=item B<-O> <FILE>
+
+Specify the files that will store the standart output stream of the job. The %jobid% pattern is automatically replaced.
+
+=item B<-E> <FILE>
+
+Specify the files that will store the standart error stream of the job. The %jobid% pattern is automatically replaced.
+
+=item B<--hold>
+
+Set the job state into Hold instead of Waiting, so that it is not scheduled (you must run I<oarresume> to turn it into the Waiting state).
+
+=item B<-D, --dumper>
+
+Print result in Perl Data::Dumper format.
+
+=item B<-X, --xml>
+
+Print result in XML format.
+
+=item B<-Y, --yaml>
+
+Print result in YAML format.
+
+=item B<-J, --json>
+
+Print result in JSON format.
+
+=item B<-h, --help>
+
+Print this help message.
+
+=item B<-V, --version>
+
+Print the version of OAR.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+=item B<OAR_FILE_NODES> aka B<OAR_NODE_FILE> aka B<OAR_NODEFILE>
+
+Pathname to the file containing the list of the nodes that are allocated to the job. 
+
+=item B<OAR_JOB_NAME>
+
+Name of the job as given using the B<-n> option.
+
+=item B<OAR_JOB_ID> aka B<OAR_JOBID>
+
+Id of the job. Each job get a unique job identifier. This identifier can be use to retrieve information about the job using B<oarstat>, or to connect to a running job using B<oarsub -C> or B<oarsh> for instance.
+
+=item B<OAR_ARRAY_ID> aka B<OAR_ARRAYID>
+
+Array Id of the job. Each array job get an unique array identifier that is shared by all the subjobs of the array job. This identifier can be used to identify the different subjobs pertaining to a same array job. It can also be used to deal with all the subjobs of a given array at once (by means of the option --array in the case of oarstat, oarhold, oarresume and oardel). By definition, single jobs are considered array jobs with only one subjob.
+ 
+
+=item B<OAR_JOB_INDEX> aka B<OAR_JOBINDEX>
+
+Array Index of the job. On an array job, each job get an unique an unique (on a given array) job index. This identifier can be used to differ jobs on the context of a given array, for instance to give a different behaviour to each of the subjobs. By definition, single jobs are considered array jobs with only one subjob, having OAR_JOB_INDEX = 0.
+
+
+=item B<OAR_JOB_WALLTIME> resp. B<OAR_JOB_WALLTIME_SECONDS>
+
+Walltime of the job in the hh:mm:ss format resp. in seconds.
+
+=item B<OAR_RESOURCE_PROPERTIES_FILE>
+
+Pathname to the file containing the list of all resources attributes for the job, and their value
+
+=item B<OAR_PROJECT_NAME>
+
+Name of the project the job is part of, as given using the B<--project> option.
+
+=item B<OAR_STDOUT> and B<OAR_STDERR>
+
+Pathname to the files storing the standart output and error of the job's executable when not running in interactive mode.
+
+=item B<OAR_WORKING_DIRECTORY> aka B<OAR_WORKDIR> aka B<OAR_O_WORKDIR>
+
+Working directory for the job. The job executable will be executed in this directory on the first node allocated to the job.
+
+=item B<OAR_JOB_KEY_FILE>
+
+Key file to use for the submission (or for oarsh) if using a job key (-k or --use-job-key option). One may provide the job key to import using the -i or --import-job-key-from-file option as well.
+
+=back
+
+=head1 SCRIPT
+
+Script can contain the description of the job. Lines with options must begin by the key B<#OAR>. There are the same options as previous.
+
+=head1 EXAMPLES
+
+Job submission with arguments :
+
+=over
+
+=item oarsub -l /nodes=4 -I
+
+=item oarsub -q default -l /nodes=10/cpu=3,walltime=50:30:00 -p "switch = 'sw1'" /home/users/toto/prog
+
+=item oarsub -r "2009-04-27 11:00:00" -l /nodes=12/cpu=2
+
+=item oarsub -C 154
+
+=back
+
+Submit an array job with 10 identic subjobs: 
+
+=over
+
+=item oarsub -l /nodes=4 /home/users/toto/prog --array 10
+
+=back
+
+Submit a parametric array job (file params.txt):
+
+=over
+
+=item oarsub /home/users/toto/prog --array-param-file /home/users/toto/params.txt
+
+=back
+
+=item Parameter File example (params.txt): 
+
+=item # my param file
+=item #single param
+=item 100
+=item #a subjob without parameters
+=item ""
+=item #a subjob with a string containing spaces as parameter
+=item "arg1a arg1b arg1c" "arg2a arg2b"
+ 
+
+Script example (file /home/users/toto/script.sh):
+
+=over
+
+=item #!/bin/bash
+
+=item #OAR -l /nodes=4/cpu=1,walltime=3:15:00
+
+=item #OAR -p switch = 'sw3' or switch = 'sw5'
+
+=item #OAR -t besteffort
+
+=item #OAR -t type2
+
+=item #OAR -k
+
+=item #OAR -e /path/to/job/key
+
+=item #OAR --stdout stdoutfile.log
+
+=item /home/users/toto/prog
+
+=back
+
+Submit the script :
+
+=over
+
+=item oarsub -S /home/users/toto/script.sh
+
+=back
+
+=head1 SEE ALSO
+
+oarsh(1), oardel(1), oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
+
+=head1 COPYRIGHTS
+
+ Copyright © 2008 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

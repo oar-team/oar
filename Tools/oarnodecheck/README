@@ -1,0 +1,36 @@
+oarnodecheck is a simple local node check mechanism working as follows:
+
+* the oarnodecheckquery script is meant to be called by OAR ping checker, 
+  to report the node health status. In OAR server's oar.conf:
+  PINGCHECKER_TAKTUK_ARG_COMMAND="-t 3 broadcast exec [ /path/to/oarnodecheckquery ]
+
+* health status is bad as soon as any check log file exists in the checklog 
+  directory (~oar/checklogs/)
+
+* the directory of check scripts (/etc/oar/check.d/) is meant to contain admin
+  defined scripts that perform checks with regard to possible errors 
+
+* if and only if an error is detected, a checklog file must be created within
+  the checklog directory (using the pathname defined by the CHECKLOGFILE
+  environmenet variable)
+
+* the oarnodecheckrun must be run as root by cron (on an hourly basis for instance)
+  to execute all scripts of the directory of check scripts
+
+* if cpuset is enabled, then oarnodecheckrun do not launch the check scripts
+  while any job is running on the node; to avoid situations when oarnodecheckrun
+  would never launch the check scripts, it creates a stamp file when the scripts
+  are actually run
+
+* oarnodecheckquery checks for the existence of the oarnodecheckrun stamp file
+  and if it is older than one hour, then it runs oarnodecheckrun before looking
+  into the checklog directory (NB: the OAR ping checker is not called while at
+  least one job is running on a node)
+
+* since oarnodecheckquery may run the check scripts, the OAR ping chekcer
+  timeout must be tuned accordingly on the server side
+
+* the oarnodechecklist command lists the currently recorder check logs
+
+See the template script for a template of check script to place in the
+directory of check scripts (/etc/oar/check.d)

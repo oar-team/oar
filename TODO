@@ -1,0 +1,67 @@
+========
+OAR TODO
+========
+
+.. contents:: Table des matières
+
+-------------
+Documentation
+-------------
+  Doc plus ouverte.
+  Les personnes qui sont intéressées pour contribuer à la documentation de OAR
+  sont les bienvenue (ajout de sections, correction de l'anglais, ...).
+  
+  Avis aux amatrices et amateurs ...:
+
+   http://oar.imag.fr/docs/manual.html
+
+----------
+Simulateur
+----------
+   Le simulateur est en cours d'écriture.
+  
+   Les 2 principales notions sont:
+    
+    - temps compressible : le système est en attente de la fin d'un job ou d'
+      une soumission. Donc rien ne se passe dans OAR et donc nous avons la
+      possibilité d'accélérer le temps jusqu'au prochain événement.
+    - temps incompressible : le système fait quelque-chose que l'on ne peut
+      pas accélérer. Donc on laisse faire OAR.
+
+   Donc le temps de référence du système ne sera plus celui de la base de
+   données mais sera fourni par un autre moyen.
+
+   Ce simulateur nous permettra de valider plus facilement et avec plus
+   d'exactitude les ordonnanceurs introduits dans OAR grâce à des jeux
+   de tests.
+
+------------------------------------
+Comparaison avec les autres systèmes
+------------------------------------
+ 
+------------------
+OAR dans la debian
+------------------
+  Que reste-t-il à faire ?
+
+----------------------
+Interface avec OpenPBS
+----------------------
+
+-----------------
+Interface Globus4
+-----------------
+
+---------
+Publicité
+---------
+  Pub OAR Orap, wikipedia, site linuxhpc.
+
+----------------------------------------
+Stagein/stageout des fichiers de données
+----------------------------------------
+
+-----------------------
+Tests de non regression
+-----------------------
+

@@ -1,0 +1,4 @@
+strip:
+ - strip:
+   - exec_chroot:  rm -rf /var/cache/apt/archives/*.deb
+

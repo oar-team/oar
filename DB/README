@@ -1,0 +1,5 @@
+These are choices implemented for the compatibility between MySQL and PostrgreSQL:
+==================================================================================
+
+* All field and table names must be lowercase.
+* MySQL AUTO_INCREMENT is replaced by PostgreSQL constraint sequence field.
