@@ -66,11 +66,12 @@ sub get_jobs_with_given_properties {
   return \@jobs;
 }
 
-sub get_accounting_summary($$$){
+sub get_accounting_summary($$$$){
     my $start = shift;
     my $stop = shift;
     my $user = shift;
-	return iolib::get_accounting_summary($base,$start,$stop,$user);
+    my $sql_property = shift;
+	return iolib::get_accounting_summary($base,$start,$stop,$user,$sql_property);
 }
 
 sub get_accounting_summary_byproject($$$){

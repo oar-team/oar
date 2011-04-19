@@ -485,7 +485,7 @@ sub show_accounting {
     if ($accounting_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*/m){
         my ($date1,$date2) = ($1." 00:00:00",$2." 00:00:00");
         my $login;
-        my $Consumptions=oarstatlib::get_accounting_summary(oarstatlib::sql_to_local($date1),oarstatlib::sql_to_local($date2),$user);
+        my $Consumptions=oarstatlib::get_accounting_summary(oarstatlib::sql_to_local($date1),oarstatlib::sql_to_local($date2),$user,$sql_property);
     
         # One user output
         if (defined($user)) {

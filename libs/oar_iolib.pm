@@ -184,7 +184,7 @@ sub get_last_event_from_type($$);
 # ACCOUNTING
 sub check_accounting_update($$);
 sub update_accounting($$$$$$$$$);
-sub get_accounting_summary($$$$);
+sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$);
 sub get_last_project_karma($$$$);
 
@@ -6256,14 +6256,21 @@ sub get_sum_accounting_for_param($$$$$){
 
 # Get an array of consumptions by users 
 # params: base, start date, ending date, optional user
-sub get_accounting_summary($$$$){
+sub get_accounting_summary($$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
     my $user = shift;
+    my $sql_property = shift;
     my $user_query="";
+    my $property="";
     if (defined($user) && "$user" ne "") {
         $user_query="AND accounting_user = ". $dbh->quote($user);
+    }
+    if (defined($sql_property) && "$sql_property" ne "") {
+      $property="AND ( $sql_property )";
+    }else{
+      $property="";
     }
 
     my $sth = $dbh->prepare("   SELECT accounting_user as user,
@@ -6277,6 +6284,7 @@ sub get_accounting_summary($$$$){
                                     window_stop > $start AND
                                     window_start < $stop
                                     $user_query
+                                    $property
                                 GROUP BY accounting_user,consumption_type
                                 ORDER BY seconds
                             ");
