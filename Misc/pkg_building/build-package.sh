@@ -155,7 +155,7 @@ if [ "`git status |grep 'working directory clean'`" = "" ]; then
 fi
 
 CURRENT_BRANCH=$(git status | head -n 1 | sed -e 's/.* //')
-git checkout $BRANCH_NAME
+git checkout $BRANCH_NAME >/dev/null 2>&1
 
 if [ -f debian/control ]; then
     echo "You seem to use a debian branch as a source branch".
@@ -178,14 +178,14 @@ fi
 
 case $TARGET in
     tgz)
-        check_branch $BRANCH_NAME
+        check_branch $BRANCH_NAME >/dev/null 2>&1
         gen_tarball
         ;;
     deb)
         check_branch $BRANCH_NAME
         check_branch $DEBIAN_BRANCH_NAME
         gen_tarball
-        git checkout $DEBIAN_BRANCH_NAME
+        git checkout $DEBIAN_BRANCH_NAME >/dev/null 2>&1 
         gen_deb
         ;;
     rpm)
@@ -200,7 +200,7 @@ case $TARGET in
         check_branch $DEBIAN_BRANCH_NAME
         check_branch $RPM_BRANCH_NAME
         gen_tarball
-        git checkout $DEBIAN_BRANCH_NAME
+        git checkout $DEBIAN_BRANCH_NAME >/dev/null 2>&1
         gen_deb
         #git checkout $RPM_BRANCH_NAME
         gen_rpm
@@ -209,5 +209,5 @@ case $TARGET in
         usage
         ;;
 esac
-git checkout $CURRENT_BRANCH
+git checkout $CURRENT_BRANCH >/dev/null 2>&1
 
