@@ -320,6 +320,7 @@ sub get_specific_jobs {
 sub get_job_resources($) {
     my $job_info=shift;
     my $reserved_resources=[];
+    my $scheduled_resources=[];
     my @assigned_resources;
     my @assigned_hostnames;
     if (defined($job_info->{assigned_moldable_job}) && $job_info->{assigned_moldable_job} ne ""){
@@ -329,9 +330,14 @@ sub get_job_resources($) {
     if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
         $reserved_resources = iolib::get_gantt_visu_resources_for_resa($base,$job_info->{job_id});
     }
-    return { assigned_resources => \@assigned_resources,
-             assigned_hostnames => \@assigned_hostnames,
-             reserved_resources => $reserved_resources };
+    if ($job_info->{reservation} eq "None" and $job_info->{state} eq "Waiting") {
+        $scheduled_resources = iolib::get_gantt_visu_resources_for_resa($base,$job_info->{job_id});
+    }
+    return { assigned_resources  => \@assigned_resources,
+             assigned_hostnames  => \@assigned_hostnames,
+             reserved_resources  => $reserved_resources, 
+             scheduled_resources  => $scheduled_resources 
+         };
 }
 
 sub get_job_data($$){

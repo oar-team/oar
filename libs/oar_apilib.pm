@@ -620,6 +620,11 @@ sub struct_job_resources($$) {
       push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'reserved'});
     }
   }
+  if (ref($resources->{scheduled_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
+      push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'scheduled'});
+    }
+  }
   return $result;
 }
 
