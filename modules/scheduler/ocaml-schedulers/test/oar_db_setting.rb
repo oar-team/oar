@@ -10,8 +10,8 @@ DEFAULT_JOB_ARGS = {
 }
 
 def oar_load_test_config
-  puts "### Reading configuration oar_test_conf file..." 
-  $conf = YAML::load(IO::read('oar_test.conf'))
+  puts "### Reading configuration ./oar_test_conf file ..." 
+  $conf = YAML::load(IO::read('./oar_test.conf'))
   $db_type = $conf['DB_TYPE']
   puts "DB TYPE: #{$conf['DB_TYPE']}"
 end
@@ -21,7 +21,7 @@ def oar_db_connect
 		$db_type == "Mysql"
 	end
 	$dbh = DBI.connect("dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
-										 "#{$conf['DB_BASE_LOGIN_RO']}","#{$conf['DB_BASE_PASSWD_RO']}")
+										 "#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}")
   puts "DB Connection Establised"
 end
 
@@ -143,7 +143,7 @@ end
 #  DB << File.open(file_name, "r").read
 #end
 
-def oar_resource_insert(args={})i
+def oar_resource_insert(args={})
 
   if (args.nil?)
     $dbh.execute("insert into resources (state) values ('Alive')").finish
@@ -170,10 +170,54 @@ def oar_db_clean
   oar_truncate_resources
 end
 
+def get_start_time(job_id)
+ $dbh.execute("select jobs.start_time from jobs where jobs.job_id=#{job_id}").first.first
+end
+
+def delete_assignements_from_start_time(start_time)
+# $dbh.execute("SELECT * FROM assigned_resources,jobs, moldable_job_descriptions WHERE
+#                jobs.start_time > #{start_time} AND
+#                jobs.assigned_moldable_job = assigned_resources.moldable_job_id )"
+
+  $dbh.execute("DELETE assigned_resources FROM assigned_resources,jobs, moldable_job_descriptions WHERE
+                jobs.start_time > #{start_time} AND
+                jobs.assigned_moldable_job = assigned_resources.moldable_job_id")
+end
+
+# limitations
+# * advance reservation
+# * submission time is not translated
+def reset_job_from_start_time(start_time, now, delay = 10)
+ 
+  # Running jobs:  
+  #   change state
+  #   change start time and stop time
+  delta = now - start_time
+  $dbh.execute("UPDATE jobs  
+    SET 
+      state='Running', 
+      start_time = #{delta} + jobs.start_time, 
+      stop_time = 0  
+    WHERE 
+      start_time < #{start_time} AND
+      stop_time > #{start_time}
+    ")
+
+  # Reset future jobs
+  #   delete_assignements
+  delete_assignements_from_start_time(start_time)
+  #   change state waiting 
+  $dbh.execute("UPDATE jobs SET state='Waiting' WHERE jobs.start_time > #{start_time}")
+
+end
+
 if ($0=='irb')
   puts 'irb session detected, db connection launched'
   oar_load_test_config
   oar_db_connect
 end
 # 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
+
+
+
 
