@@ -146,7 +146,7 @@ sub get_gantt_resources_for_jobs_to_launch($$);
 sub get_gantt_resources_for_job($$);
 sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
-sub get_gantt_visu_resources_for_resa($$);
+sub get_gantt_visu_scheduled_job_resources($$);
 
 # ADMISSION RULES MANAGEMENT
 sub add_admission_rule($$);
@@ -5793,7 +5793,7 @@ sub get_gantt_Alive_resources_for_job($$){
 
 #Get network_address allocated to a (waiting) reservation
 #args : base, job id
-sub get_gantt_visu_resources_for_resa($$){
+sub get_gantt_visu_scheduled_job_resources($$){
     my $dbh = shift;
     my $job = shift;
 
