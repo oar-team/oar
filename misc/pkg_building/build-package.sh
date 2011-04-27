@@ -24,7 +24,12 @@ get_snapshot_version() {
     OARVERSION=$(perl -e "require '$OAR_VERSION_FILE'; print oarversion::get_version()" | sed -e "s/ .*//")
     REVISION=$(git log --oneline $OARVERSION..$BRANCH_NAME -- | wc -l)
     SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline $BRANCH_NAME^..$BRANCH_NAME |sed 's/ /./'|cut -d. -f1`
-    echo "$OARVERSION+dev$REVISION.$SNAPSHOT_ID"
+    if [ "$BRANCH_NAME" != "2.5" ] && [ "$BRANCH_NAME" != "2.4" ]; then
+        PREFIX=${BRANCH_NAME//[^a-zA-Z0-9.]/}
+    else
+        PREFIX=dev
+    fi
+        echo "${OARVERSION}+${PREFIX}${REVISION}.${SNAPSHOT_ID}"
 }
 
 usage() {
