@@ -21,6 +21,14 @@ version 2.4.4:
   - Monika: add a link on each jobid on the node display area.
   - sshd_config: with nodes with a lot of core, 10 // connections could be too
     few
+  - backport: node_change_state: do not Suspect the first node of a job which
+    was EXTERMINATED by Leon if the cpuset feature is configured (let do the
+    job by the cpuset)
+  - backport: OAREXEC: ESRF detected that sometime oarexec think that he
+    notified the Almighty with it exit code but nothing was seen on the server.
+    So try to resend the exit code until oarexec is killed.
+  - backport: oar_Tools: add in notify_almighty a check on the print and on the
+    close of the socket connected to Almighty.
 
 version 2.4.3:
 --------------

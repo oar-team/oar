@@ -219,8 +219,8 @@ sub notify_tcp_socket($$$){
                                        Proto => "tcp",
                                        Type  => SOCK_STREAM)
              or return("Could not connect to the socket $almighty_host:$almighty_port");
-    print($socket "$tag\n");
-    close($socket);
+    print($socket "$tag\n") or return("Print $tag failed to $almighty_host:$almighty_port");
+    close($socket) or return("Socket close failed: $almighty_host:$almighty_port");
 
     return(undef);
 }
