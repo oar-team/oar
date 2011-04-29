@@ -6354,7 +6354,7 @@ sub check_end_of_job($$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
-            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected; If this job is of type cosystem or deploy, check if the oar server is able to connect to the corresponding nodes, oar-node started";
             push(@events, {type => "EXIT_VALUE_OAREXEC", string => $strWARN});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }
