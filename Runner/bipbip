@@ -366,6 +366,14 @@ if ((defined($types->{cosystem})) or ($#hosts < 0)){
 my $array_index = iolib::get_job_array_index($base,$Job_id);
 
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
+
+my $oarexec_cpuset_path;
+if ((defined($Cpuset_full_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
+    # So oarexec will retry several times to contact Almighty until it will be
+    # killed by the cpuset manager
+    $oarexec_cpuset_path = $Cpuset_full_path;
+}
+
 my %data_to_transfer = (
         job_id              => $Job_id,
         array_id            => $job->{array_id},
@@ -397,7 +405,7 @@ my %data_to_transfer = (
         epilogue            => $epilogue_exec_file,
         tmp_directory       => oar_Tools::get_default_oarexec_directory,
         detach_oarexec      => $Detach_oarexec,
-        cpuset_full_path   => $Cpuset_full_path
+        cpuset_full_path    => $oarexec_cpuset_path
     );
 
 my $error = 50;
