@@ -316,12 +316,12 @@ sub add_resources_uris($$$) {
     my $links;
     my $node;
     if (defined($resource->{network_address})) {
-      $node=apilib::make_uri("$prefix/resources/nodes/".$resource->{network_address},$ext,0);
+      $node=apilib::make_uri($prefix."resources/nodes/".$resource->{network_address},$ext,0);
       $node=apilib::htmlize_uri($node,$ext);
       push (@$links, { href => $node, title => "node", rel => "member" });
     }
-    my $self=apilib::make_uri("$prefix/resources/".$resource->{resource_id},$ext,0);
-    my $jobs=apilib::make_uri("$prefix/resources/".$resource->{resource_id}."/jobs",$ext,0);
+    my $self=apilib::make_uri($prefix."resources/".$resource->{resource_id},$ext,0);
+    my $jobs=apilib::make_uri($prefix."resources/".$resource->{resource_id}."/jobs",$ext,0);
     $self=apilib::htmlize_uri($self,$ext);
     $jobs=apilib::htmlize_uri($jobs,$ext);
     push (@$links, { href => $self, rel => "self" });
@@ -337,7 +337,7 @@ sub add_nodes_uris($$$) {
   my $prefix = shift;
   foreach my $node (@$nodes) {
     my $links;
-    my $self=apilib::make_uri("$prefix/resources/nodes/".$node->{network_address},$ext,0);
+    my $self=apilib::make_uri($prefix."resources/nodes/".$node->{network_address},$ext,0);
     $self=apilib::htmlize_uri($self,$ext);
     push (@$links, { href => $self, rel => "self" });
     $node->{links}=$links;
@@ -352,18 +352,18 @@ sub add_job_resources_uris($$$) {
   my $ext = shift;
   my $prefix = shift;
   foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    $assigned_resource->{resource_uri}=apilib::make_uri("$prefix/resources/".$assigned_resource->{resource_id},$ext,0);
+    $assigned_resource->{resource_uri}=apilib::make_uri($prefix."resources/".$assigned_resource->{resource_id},$ext,0);
     $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
   }
   foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    $reserved_resource->{resource_uri}=apilib::make_uri("$prefix/resources/".$reserved_resource->{resource_id},$ext,0);
+    $reserved_resource->{resource_uri}=apilib::make_uri($prefix."resources/".$reserved_resource->{resource_id},$ext,0);
     $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
   }
   foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
-    $assigned_node->{node_uri}=apilib::make_uri("$prefix/resources/nodes/".$assigned_node->{node},$ext,0);
+    $assigned_node->{node_uri}=apilib::make_uri($prefix."resources/nodes/".$assigned_node->{node},$ext,0);
     $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
   }
-  $resources->{job_uri}=apilib::make_uri("$prefix/jobs/".$resources->{job_id},$ext,0);
+  $resources->{job_uri}=apilib::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
   $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
   $resources->{api_timestamp}=time();
 }
