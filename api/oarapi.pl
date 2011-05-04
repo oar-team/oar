@@ -176,14 +176,14 @@ SWITCH: for ($q) {
                   "api_timezone" => strftime("%Z", localtime()),
                   "links" => [ 
                       { 'rel' => 'self' , 
-                        'href' => apilib::htmlize_uri(apilib::make_uri("/",$ext,0),$ext) 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("./",$ext,0),$ext) 
                       },
                       { 'rel' => 'collection', 
-                        'href' => apilib::htmlize_uri(apilib::make_uri("/resources",$ext,0),$ext),
+                        'href' => apilib::htmlize_uri(apilib::make_uri("resources",$ext,0),$ext),
                         'title' => 'resources'
                       } ,
                       { 'rel' => 'collection', 
-                        'href' => apilib::htmlize_uri(apilib::make_uri("/jobs",$ext,0),$ext),
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs",$ext,0),$ext),
                         'title' => 'jobs'
                       } 
                              ]
