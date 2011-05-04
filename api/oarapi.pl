@@ -387,7 +387,7 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /jobs/<id>/[resources|nodes] : Resources or nodes assigned to a job
+  #{{{ GET /jobs/<id>/[resources|nodes] : Resources or nodes assigned or scheduled to a job
   #
   $URI = qr{^/jobs/(\d+)/(resources|nodes)(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {

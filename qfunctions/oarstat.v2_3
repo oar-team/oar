@@ -352,7 +352,7 @@ sub get_job_data($$){
         $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
     }
     if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
-        $reserved_resources = iolib::get_gantt_visu_resources_for_resa($dbh,$job_info->{job_id});
+        $reserved_resources = iolib::get_gantt_visu_scheduled_job_resources($dbh,$job_info->{job_id});
     } 
 
     if (defined($full_view) or defined($Old)){
