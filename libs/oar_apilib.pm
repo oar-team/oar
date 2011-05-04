@@ -8,6 +8,7 @@ use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use CGI qw/:standard/;
 
+our $ABSOLUTE_URIS;
 
 ##############################################################################
 # INIT
@@ -207,13 +208,23 @@ sub get_clusters($) {
 sub make_uri($$$) {
   my $path = shift;
   my $ext = shift;
-  my $absolute = shift;
+  my $absolute = shift; # deprecated, left here for compatibility
   if ($ext eq "html") { $path.=".html"; }
-  if ($absolute == 1) {
-    return $q->url(-full => 1). $path;
+  if (our $ABSOLUTE_URIS == 1) {
+    return $q->url(-absolute => 1)."/".$path;
   }
   else {
-    return $path;
+    if ($URIenabled) {
+      my $base = URI->new($q->url().$q->path_info);
+      my $goal = URI->new($q->url()."/".$path);
+      return "".$goal->rel($base);
+    }
+    else { 
+      ERROR (500,
+             "LWP URI module not enabled",
+             "I cannot make relative uris without LWP URI module!" );
+      exit 0;
+    }
   }
 }
 
@@ -222,19 +233,7 @@ sub htmlize_uri($$) {
   my $uri=shift;
   my $type=shift;
   if ($type eq "html") {
-    if ($URIenabled) {
-      my $base = $q->path_info;
-      $base =~ s/\.html$// ;
-      $base = "http://bidon".$base;
-      my $goal = "http://bidon".$uri;
-      return "<A HREF=".URI->new($goal)->rel($base).">$uri</A>";
-    }
-    else { 
-      ERROR (500,
-             "LWP URI module not enabled",
-             "I cannot make uris without LWP URI module!" );
-      exit 0;
-    }
+    return "<A HREF=$uri>$uri</A>";
   }
   else { return $uri; }
 }
@@ -1677,6 +1676,9 @@ sub add_pagination($$$$$$$$) {
 	my $STRUCTURE = shift;
 	
 	my $offset_separation_char = "&";
+
+        # remove leading / into path if any
+        $path =~ s/^\///;
 	
 	if(defined($params) && $params ne "") {
 		# replacing all ';' char by '&' in query string

@@ -111,6 +111,10 @@ my(@lines) = <FILE>;
 eval join("\n",@lines);
 close(FILE);
 
+# Relative/absolute uris config variable
+$apilib::ABSOLUTE_URIS=1;
+if (is_conf("API_ABSOLUTE_URIS")){ $apilib::ABSOLUTE_URIS=get_conf("API_ABSOLUTE_URIS"); }
+
 # TMP directory
 my $TMPDIR="/tmp";
 if (defined($ENV{TMPDIR})) {
