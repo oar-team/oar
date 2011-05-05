@@ -195,6 +195,14 @@ SWITCH: for ($q) {
                         'title' => 'jobs'
                       } ,
                       { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs/details",$ext,0),$ext),
+                        'title' => 'detailed_jobs'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs/table",$ext,0),$ext),
+                        'title' => 'jobs_table'
+                      } ,
+                      { 'rel' => 'collection', 
                         'href' => apilib::htmlize_uri(apilib::make_uri("config",$ext,0),$ext),
                         'title' => 'config'
                       } ,
