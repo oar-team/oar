@@ -187,8 +187,20 @@ SWITCH: for ($q) {
                         'title' => 'resources'
                       } ,
                       { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("resources/full",$ext,0),$ext),
+                        'title' => 'full_resources'
+                      } ,
+                      { 'rel' => 'collection', 
                         'href' => apilib::htmlize_uri(apilib::make_uri("jobs",$ext,0),$ext),
                         'title' => 'jobs'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("config",$ext,0),$ext),
+                        'title' => 'config'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("admission_rules",$ext,0),$ext),
+                        'title' => 'admission_rules'
                       } 
                              ]
              };
