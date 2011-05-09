@@ -121,7 +121,7 @@ gen_rpm() {
 
 ACTION=
 QUIET=no
-while getopts "qrsh" options; do
+while getopts "qrshm" options; do
   case $options in
     q) QUIET=yes ;;
     s) ACTION=snapshot ;;
