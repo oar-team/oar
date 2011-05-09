@@ -972,10 +972,12 @@ sub get_content_type($) {
 }
 
 # Set oar output option and header depending on the format given
-sub set_output_format($) {
+# Also add the Allow (GET[,POST]) header variable if a second argument is given
+sub set_output_format {
   my $format=shift;
+  my $allow=shift || "GET";
   my $type = get_content_type($format);
-  my $header=$q->header( -status => 200, -type => "$type" );
+  my $header=$q->header( -status => 200, -type => "$type", -allow => "$allow" );
   return ($header,$type);
 }
 
