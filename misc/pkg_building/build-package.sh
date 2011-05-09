@@ -75,7 +75,7 @@ gen_tarball() {
     mkdir -p $BUILD_AREA
     TARBALL=$BUILD_AREA/oar-$VERSION.tar.gz
     tar czf $TARBALL -C $TMPDIR .
-    echo "oar-$VERSION.tar.gz has been created into $BUILD_AREA/"
+    echo "$BUILD_AREA/oar-$VERSION.tar.gz"
 }
 
 gen_deb() {
