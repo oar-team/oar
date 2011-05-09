@@ -111,6 +111,10 @@ my(@lines) = <FILE>;
 eval join("\n",@lines);
 close(FILE);
 
+# Relative/absolute uris config variable
+$apilib::ABSOLUTE_URIS=1;
+if (is_conf("API_ABSOLUTE_URIS")){ $apilib::ABSOLUTE_URIS=get_conf("API_ABSOLUTE_URIS"); }
+
 # TMP directory
 my $TMPDIR="/tmp";
 if (defined($ENV{TMPDIR})) {
@@ -176,15 +180,27 @@ SWITCH: for ($q) {
                   "api_timezone" => strftime("%Z", localtime()),
                   "links" => [ 
                       { 'rel' => 'self' , 
-                        'href' => apilib::htmlize_uri(apilib::make_uri("/",$ext,0),$ext) 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("./",$ext,0),$ext) 
                       },
                       { 'rel' => 'collection', 
-                        'href' => apilib::htmlize_uri(apilib::make_uri("/resources",$ext,0),$ext),
+                        'href' => apilib::htmlize_uri(apilib::make_uri("resources",$ext,0),$ext),
                         'title' => 'resources'
                       } ,
                       { 'rel' => 'collection', 
-                        'href' => apilib::htmlize_uri(apilib::make_uri("/jobs",$ext,0),$ext),
+                        'href' => apilib::htmlize_uri(apilib::make_uri("resources/full",$ext,0),$ext),
+                        'title' => 'full_resources'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs",$ext,0),$ext),
                         'title' => 'jobs'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("config",$ext,0),$ext),
+                        'title' => 'config'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("admission_rules",$ext,0),$ext),
+                        'title' => 'admission_rules'
                       } 
                              ]
              };
@@ -387,7 +403,7 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /jobs/<id>/[resources|nodes] : Resources or nodes assigned to a job
+  #{{{ GET /jobs/<id>/[resources|nodes] : Resources or nodes assigned or scheduled to a job
   #
   $URI = qr{^/jobs/(\d+)/(resources|nodes)(\.yaml|\.json|\.html)*$};
   apilib::GET( $_, $URI ) && do {

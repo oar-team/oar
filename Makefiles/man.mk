@@ -1,7 +1,13 @@
 
-clean:
-	@cd man/man1/ && for i in `ls *.pod`; do rm -f `basename $$i .pod`.1; done
+sources=$(wildcard man/man1/*.pod)
+targets=$(patsubst %.pod,%.1,$(sources))
 
-build:
-	@cd man/man1/ && for i in `ls *.pod | sed -ne 's/.pod//p'`; do pod2man --section=1 --release=$$1 --center "OAR commands" --name $$i "$$i.pod" > $$i.1 ; done
+clean:
+	rm -f $(targets)
+
+build: $(targets)
+
+%.1: %.pod
+	pod2man --section=1 --release="$(notdir $(basename $<))" --center "OAR commands" --name="$(notdir $(basename $<))" "$<" > $@
+
 
