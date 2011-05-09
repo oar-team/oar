@@ -34,7 +34,7 @@ get_snapshot_version() {
 
 usage() {
   cat <<EOF
-  $0 [-h] -s|-r|-m tgz|deb|rpm|all <branch_name> [ <debian_branch_name> | <rpm_branch_name>]
+  $0 [-h] -q -s|-r|-m tgz|deb|rpm|all <branch_name> [ <debian_branch_name> | <rpm_branch_name>]
 Build OAR tarball from the given branch 
  (ex branch name: 'trunk-work', '2.2-test')
 Options:
@@ -42,8 +42,15 @@ Options:
   -r   release version (for publishing)
   -m   merge only (only for debian)
   -h   print this message and exit
+  -q   quiet (only write relevant information for automation to stdout)
 EOF
 exit 1
+}
+
+log_info() {
+    if [ "$QUIET" != "yes" ]; then
+        echo "$*"
+    fi
 }
 
 gen_tarball() {
@@ -69,7 +76,7 @@ gen_tarball() {
     mv $TMPDIR/oar $TMPDIR/oar-$VERSION
     BUILD_AREA=$OARPWD/../build-area/$VERSION
     if [ -e "$BUILD_AREA" ]; then
-        echo "The build area $BUILD_AREA exist. Cleaning..."
+        log_info "The build area $BUILD_AREA exist. Cleaning..."
         rm -rf $BUILD_AREA
     fi
     mkdir -p $BUILD_AREA
@@ -113,8 +120,10 @@ gen_rpm() {
 }
 
 ACTION=
-while getopts "rsh" options; do
+QUIET=no
+while getopts "qrsh" options; do
   case $options in
+    q) QUIET=yes ;;
     s) ACTION=snapshot ;;
     r) ACTION=release ;;
     m) ACTION=merge-only ;;
