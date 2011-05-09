@@ -66,11 +66,12 @@ sub get_jobs_with_given_properties {
   return \@jobs;
 }
 
-sub get_accounting_summary($$$){
+sub get_accounting_summary($$$$){
     my $start = shift;
     my $stop = shift;
     my $user = shift;
-	return iolib::get_accounting_summary($base,$start,$stop,$user);
+    my $sql_property = shift;
+	return iolib::get_accounting_summary($base,$start,$stop,$user,$sql_property);
 }
 
 sub get_accounting_summary_byproject($$$){
@@ -319,6 +320,7 @@ sub get_specific_jobs {
 sub get_job_resources($) {
     my $job_info=shift;
     my $reserved_resources=[];
+    my $scheduled_resources=[];
     my @assigned_resources;
     my @assigned_hostnames;
     if (defined($job_info->{assigned_moldable_job}) && $job_info->{assigned_moldable_job} ne ""){
@@ -326,11 +328,16 @@ sub get_job_resources($) {
         @assigned_hostnames = iolib::get_job_network_address($base,$job_info->{assigned_moldable_job});
     }
     if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
-        $reserved_resources = iolib::get_gantt_visu_resources_for_resa($base,$job_info->{job_id});
+        $reserved_resources = iolib::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
     }
-    return { assigned_resources => \@assigned_resources,
-             assigned_hostnames => \@assigned_hostnames,
-             reserved_resources => $reserved_resources };
+    if ($job_info->{reservation} eq "None" and $job_info->{state} eq "Waiting") {
+        $scheduled_resources = iolib::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
+    }
+    return { assigned_resources  => \@assigned_resources,
+             assigned_hostnames  => \@assigned_hostnames,
+             reserved_resources  => $reserved_resources, 
+             scheduled_resources  => $scheduled_resources 
+         };
 }
 
 sub get_job_data($$){
@@ -362,7 +369,7 @@ sub get_job_data($$){
         $mold = iolib::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
     }
     if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
-        $reserved_resources = iolib::get_gantt_visu_resources_for_resa($dbh,$job_info->{job_id});
+        $reserved_resources = iolib::get_gantt_visu_scheduled_job_resources($dbh,$job_info->{job_id});
     } 
 	
 	if (defined($full_view)){

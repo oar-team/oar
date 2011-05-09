@@ -8,6 +8,7 @@ use strict;
 #use oar_conflib qw(init_conf dump_conf get_conf is_conf);
 use CGI qw/:standard/;
 
+our $ABSOLUTE_URIS;
 
 ##############################################################################
 # INIT
@@ -207,13 +208,23 @@ sub get_clusters($) {
 sub make_uri($$$) {
   my $path = shift;
   my $ext = shift;
-  my $absolute = shift;
+  my $absolute = shift; # deprecated, left here for compatibility
   if ($ext eq "html") { $path.=".html"; }
-  if ($absolute == 1) {
-    return $q->url(-full => 1). $path;
+  if (our $ABSOLUTE_URIS == 1) {
+    return $q->url(-absolute => 1)."/".$path;
   }
   else {
-    return $path;
+    if ($URIenabled) {
+      my $base = URI->new($q->url().$q->path_info);
+      my $goal = URI->new($q->url()."/".$path);
+      return "".$goal->rel($base);
+    }
+    else { 
+      ERROR (500,
+             "LWP URI module not enabled",
+             "I cannot make relative uris without LWP URI module!" );
+      exit 0;
+    }
   }
 }
 
@@ -222,19 +233,7 @@ sub htmlize_uri($$) {
   my $uri=shift;
   my $type=shift;
   if ($type eq "html") {
-    if ($URIenabled) {
-      my $base = $q->path_info;
-      $base =~ s/\.html$// ;
-      $base = "http://bidon".$base;
-      my $goal = "http://bidon".$uri;
-      return "<A HREF=".URI->new($goal)->rel($base).">$uri</A>";
-    }
-    else { 
-      ERROR (500,
-             "LWP URI module not enabled",
-             "I cannot make uris without LWP URI module!" );
-      exit 0;
-    }
+    return "<A HREF=$uri>$uri</A>";
   }
   else { return $uri; }
 }
@@ -261,9 +260,9 @@ sub get_api_uri_relative_base() {
 sub add_job_uris($$) {
   my $job = shift;
   my $ext = shift;
-  my $self=apilib::make_uri("/jobs/".$job->{id},$ext,0);
+  my $self=apilib::make_uri("jobs/".$job->{id},$ext,0);
   $self=apilib::htmlize_uri($self,$ext);
-  my $resources=apilib::make_uri("/jobs/".$job->{id}."/resources",$ext,0);
+  my $resources=apilib::make_uri("jobs/".$job->{id}."/resources",$ext,0);
   $resources=apilib::htmlize_uri($resources,$ext);
   my $links;
   push (@$links, { href => $self, rel => "self" });
@@ -292,7 +291,7 @@ sub add_joblist_griduris($$$) {
   my $ext = shift;
   my $site = shift;
     foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=apilib::make_uri("/sites/$site/jobs/$job",$ext,0);
+      $jobs->{$job}->{uri}=apilib::make_uri("sites/$site/jobs/$job",$ext,0);
       $jobs->{$job}->{uri}=apilib::htmlize_uri($jobs->{$job}->{uri},$ext);
       $jobs->{$job}->{api_timestamp}=time();
   }
@@ -316,12 +315,12 @@ sub add_resources_uris($$$) {
     my $links;
     my $node;
     if (defined($resource->{network_address})) {
-      $node=apilib::make_uri("$prefix/resources/nodes/".$resource->{network_address},$ext,0);
+      $node=apilib::make_uri($prefix."resources/nodes/".$resource->{network_address},$ext,0);
       $node=apilib::htmlize_uri($node,$ext);
       push (@$links, { href => $node, title => "node", rel => "member" });
     }
-    my $self=apilib::make_uri("$prefix/resources/".$resource->{resource_id},$ext,0);
-    my $jobs=apilib::make_uri("$prefix/resources/".$resource->{resource_id}."/jobs",$ext,0);
+    my $self=apilib::make_uri($prefix."resources/".$resource->{resource_id},$ext,0);
+    my $jobs=apilib::make_uri($prefix."resources/".$resource->{resource_id}."/jobs",$ext,0);
     $self=apilib::htmlize_uri($self,$ext);
     $jobs=apilib::htmlize_uri($jobs,$ext);
     push (@$links, { href => $self, rel => "self" });
@@ -337,7 +336,7 @@ sub add_nodes_uris($$$) {
   my $prefix = shift;
   foreach my $node (@$nodes) {
     my $links;
-    my $self=apilib::make_uri("$prefix/resources/nodes/".$node->{network_address},$ext,0);
+    my $self=apilib::make_uri($prefix."resources/nodes/".$node->{network_address},$ext,0);
     $self=apilib::htmlize_uri($self,$ext);
     push (@$links, { href => $self, rel => "self" });
     $node->{links}=$links;
@@ -352,18 +351,18 @@ sub add_job_resources_uris($$$) {
   my $ext = shift;
   my $prefix = shift;
   foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    $assigned_resource->{resource_uri}=apilib::make_uri("$prefix/resources/".$assigned_resource->{resource_id},$ext,0);
+    $assigned_resource->{resource_uri}=apilib::make_uri($prefix."resources/".$assigned_resource->{resource_id},$ext,0);
     $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
   }
   foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    $reserved_resource->{resource_uri}=apilib::make_uri("$prefix/resources/".$reserved_resource->{resource_id},$ext,0);
+    $reserved_resource->{resource_uri}=apilib::make_uri($prefix."resources/".$reserved_resource->{resource_id},$ext,0);
     $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
   }
   foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
-    $assigned_node->{node_uri}=apilib::make_uri("$prefix/resources/nodes/".$assigned_node->{node},$ext,0);
+    $assigned_node->{node_uri}=apilib::make_uri($prefix."resources/nodes/".$assigned_node->{node},$ext,0);
     $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
   }
-  $resources->{job_uri}=apilib::make_uri("$prefix/jobs/".$resources->{job_id},$ext,0);
+  $resources->{job_uri}=apilib::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
   $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
   $resources->{api_timestamp}=time();
 }
@@ -374,15 +373,15 @@ sub add_sites_uris($$) {
   my $ext = shift;
   foreach my $site ( keys( %{$sites} ) ) {
       $sites->{$site}->{uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/sites/$site",$ext,0),
+                               apilib::make_uri("sites/$site",$ext,0),
                                $ext
                              );
       $sites->{$site}->{resources_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/sites/$site/resources",$ext,0),
+                               apilib::make_uri("sites/$site/resources",$ext,0),
                                $ext
                              );
       $sites->{$site}->{timezone_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/sites/$site/timezone",$ext,0),
+                               apilib::make_uri("sites/$site/timezone",$ext,0),
                                $ext
                              );
       $sites->{$site}->{api_timestamp}=time();
@@ -395,11 +394,11 @@ sub add_gridjobs_uris($$) {
   my $ext = shift;
   foreach my $job ( keys( %{$jobs} ) ) {
       $jobs->{$job}->{uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/$job",$ext,0),
+                               apilib::make_uri("grid/jobs/$job",$ext,0),
                                $ext
                              );
       $jobs->{$job}->{nodes_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/$job/resources/nodes",$ext,0),
+                               apilib::make_uri("grid/jobs/$job/resources/nodes",$ext,0),
                                $ext
                              );
       $jobs->{$job}->{api_timestamp}=time();
@@ -414,19 +413,19 @@ sub add_gridjob_uris($$) {
   $job->{api_timestamp}=time();
   # List of resources
   $job->{resources_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/". $job->{id} ."/resources",$ext,0),
+                               apilib::make_uri("grid/jobs/". $job->{id} ."/resources",$ext,0),
                                $ext
                              );
   # List of resources without details (nodes only)
   $job->{nodes_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
+                               apilib::make_uri("grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
                                $ext
                              );
   # Link to the batch job on the corresponding cluster
   foreach my $cluster (keys %{$job->{clusterJobs}}) {
     foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
       $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri}=apilib::htmlize_uri(
-              apilib::make_uri("/sites/$cluster/jobs/" 
+              apilib::make_uri("sites/$cluster/jobs/" 
                  .$job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},$ext,0),
               $ext
               );
@@ -434,11 +433,11 @@ sub add_gridjob_uris($$) {
   }
   # Ssh keys
   $job->{ssh_private_key_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/".$job->{id}."/keys/private",$ext,0),
+                               apilib::make_uri("grid/jobs/".$job->{id}."/keys/private",$ext,0),
                                $ext
                              );
   $job->{ssh_public_key_uri}=apilib::htmlize_uri(
-                               apilib::make_uri("/grid/jobs/".$job->{id}."/keys/public",$ext,0),
+                               apilib::make_uri("grid/jobs/".$job->{id}."/keys/public",$ext,0),
                                $ext
                              );
  
@@ -448,7 +447,7 @@ sub add_gridjob_uris($$) {
 sub add_admission_rule_uris($$) {
   my $admission_rule = shift;
   my $ext = shift;
-  $admission_rule->{uri} = apilib::make_uri("/admission_rules/".$admission_rule->{id},$ext,0);
+  $admission_rule->{uri} = apilib::make_uri("admission_rules/".$admission_rule->{id},$ext,0);
   $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
   $admission_rule->{api_timestamp} = time();
 }
@@ -459,7 +458,7 @@ sub add_admission_rules_uris($$) {
   my $ext = shift;
 
   foreach my $admission_rule (@$admission_rules) {
-    $admission_rule->{uri} = apilib::make_uri("/admission_rules/".$admission_rule->{id},$ext,0);
+    $admission_rule->{uri} = apilib::make_uri("admission_rules/".$admission_rule->{id},$ext,0);
     $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
     $admission_rule->{api_timestamp} = time();
   }
@@ -469,7 +468,7 @@ sub add_admission_rules_uris($$) {
 sub add_config_parameter_uris($$) {
   my $parameter = shift;
   my $ext = shift;
-  $parameter->{uri} = apilib::make_uri("/config/".$parameter->{id},$ext,0);
+  $parameter->{uri} = apilib::make_uri("config/".$parameter->{id},$ext,0);
   $parameter->{uri} = htmlize_uri($parameter->{uri},$ext);
   $parameter->{api_timestamp} = time();
 }
@@ -480,7 +479,7 @@ sub add_config_parameters_uris($$) {
   my $ext = shift;
 
   foreach my $name (keys %$parameters) {
-    $parameters->{$name}->{uri} = apilib::make_uri("/config/".$name,$ext,0);
+    $parameters->{$name}->{uri} = apilib::make_uri("config/".$name,$ext,0);
     $parameters->{$name}->{uri} = htmlize_uri($parameters->{$name}->{uri},$ext);
     $parameters->{$name}->{api_timestamp} = time();
   }
@@ -618,6 +617,11 @@ sub struct_job_resources($$) {
   if (ref($resources->{reserved_resources}) eq "HASH") {
     foreach my $r (keys(%{$resources->{reserved_resources}})) {
       push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'reserved'});
+    }
+  }
+  if (ref($resources->{scheduled_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
+      push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'scheduled'});
     }
   }
   return $result;
@@ -1672,6 +1676,9 @@ sub add_pagination($$$$$$$$) {
 	my $STRUCTURE = shift;
 	
 	my $offset_separation_char = "&";
+
+        # remove leading / into path if any
+        $path =~ s/^\///;
 	
 	if(defined($params) && $params ne "") {
 		# replacing all ';' char by '&' in query string

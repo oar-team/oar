@@ -146,7 +146,7 @@ sub get_gantt_resources_for_jobs_to_launch($$);
 sub get_gantt_resources_for_job($$);
 sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
-sub get_gantt_visu_resources_for_resa($$);
+sub get_gantt_visu_scheduled_job_resources($$);
 
 # ADMISSION RULES MANAGEMENT
 sub add_admission_rule($$);
@@ -184,7 +184,7 @@ sub get_last_event_from_type($$);
 # ACCOUNTING
 sub check_accounting_update($$);
 sub update_accounting($$$$$$$$$);
-sub get_accounting_summary($$$$);
+sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$);
 sub get_last_project_karma($$$$);
 
@@ -5793,7 +5793,7 @@ sub get_gantt_Alive_resources_for_job($$){
 
 #Get network_address allocated to a (waiting) reservation
 #args : base, job id
-sub get_gantt_visu_resources_for_resa($$){
+sub get_gantt_visu_scheduled_job_resources($$){
     my $dbh = shift;
     my $job = shift;
 
@@ -6256,14 +6256,21 @@ sub get_sum_accounting_for_param($$$$$){
 
 # Get an array of consumptions by users 
 # params: base, start date, ending date, optional user
-sub get_accounting_summary($$$$){
+sub get_accounting_summary($$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
     my $user = shift;
+    my $sql_property = shift;
     my $user_query="";
+    my $property="";
     if (defined($user) && "$user" ne "") {
         $user_query="AND accounting_user = ". $dbh->quote($user);
+    }
+    if (defined($sql_property) && "$sql_property" ne "") {
+      $property="AND ( $sql_property )";
+    }else{
+      $property="";
     }
 
     my $sth = $dbh->prepare("   SELECT accounting_user as user,
@@ -6277,6 +6284,7 @@ sub get_accounting_summary($$$$){
                                     window_stop > $start AND
                                     window_start < $stop
                                     $user_query
+                                    $property
                                 GROUP BY accounting_user,consumption_type
                                 ORDER BY seconds
                             ");
@@ -6859,7 +6867,7 @@ sub check_end_of_job($$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
-            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected; If this job is of type cosystem or deploy, check if the oar server is able to connect to the corresponding nodes, oar-node started";
             push(@events, {type => "EXIT_VALUE_OAREXEC", string => $strWARN});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
         }

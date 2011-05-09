@@ -234,7 +234,7 @@ SWITCH: for ($q) {
       }
       else {
         $resources = apilib::struct_resource_list_hash_to_array($resources);
-        apilib::add_resources_uris($resources,$ext,"/sites/$site");
+        apilib::add_resources_uris($resources,$ext,"/sites/$site/");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
       }
       print $header;
@@ -268,7 +268,7 @@ SWITCH: for ($q) {
       }
       else {
         $resources = apilib::struct_resource_list_hash_to_array($resources);
-        apilib::add_resources_uris($resources,$ext,"/sites/$site");
+        apilib::add_resources_uris($resources,$ext,"/sites/$site/");
         $resources = apilib::struct_resource_list($resources,$STRUCTURE,0);
       }
       print $header;

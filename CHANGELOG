@@ -47,6 +47,7 @@ version 2.5.0:
     resend the exit code until oarexec is killed.
   - oar_Tools: add in notify_almighty a check on the print and on the close of
     the socket connected to Almighty.
+  - oaraccounting: --sql is now possible into a "oarstat --accounting" query
 
 version 2.4.4:
 --------------
