@@ -2,15 +2,12 @@
 
 set -e
 
-KEYRING="oar"
-
 case "${1}" in
         configure)
                 if [ -x /usr/bin/apt-key ]
                 then
-                        # update only uses /usr/share/keyrings/debian-archive-*.gpg
-                        # /usr/bin/apt-key update
-                        /usr/bin/apt-key add /usr/share/keyrings/${KEYRING}.gpg
+                        /usr/bin/apt-key add /usr/share/keyrings/oar.gpg
+                        /usr/bin/apt-key add /usr/share/keyrings/oarmaster.gpg
                 fi
                 ;;
 
