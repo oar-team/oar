@@ -24,12 +24,17 @@ get_snapshot_version() {
     OARVERSION=$(perl -e "require '$OAR_VERSION_FILE'; print oarversion::get_version()" | sed -e "s/ .*//")
     REVISION=$(git log --oneline $OARVERSION..$BRANCH_NAME -- | wc -l)
     SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline $BRANCH_NAME^..$BRANCH_NAME |sed 's/ /./'|cut -d. -f1`
-    echo "$OARVERSION+dev$REVISION.$SNAPSHOT_ID"
+    if [ "$BRANCH_NAME" != "2.5" ] && [ "$BRANCH_NAME" != "2.4" ]; then
+        PREFIX=${BRANCH_NAME//[^a-zA-Z0-9.]/}
+    else
+        PREFIX=dev
+    fi
+        echo "${OARVERSION}+${PREFIX}${REVISION}.${SNAPSHOT_ID}"
 }
 
 usage() {
   cat <<EOF
-  $0 [-h] -s|-r|-m tgz|deb|rpm|all <branch_name> [ <debian_branch_name> | <rpm_branch_name>]
+  $0 [-h] -q -s|-r|-m tgz|deb|rpm|all <branch_name> [ <debian_branch_name> | <rpm_branch_name>]
 Build OAR tarball from the given branch 
  (ex branch name: 'trunk-work', '2.2-test')
 Options:
@@ -37,8 +42,15 @@ Options:
   -r   release version (for publishing)
   -m   merge only (only for debian)
   -h   print this message and exit
+  -q   quiet (only write relevant information for automation to stdout)
 EOF
 exit 1
+}
+
+log_info() {
+    if [ "$QUIET" != "yes" ]; then
+        echo "$*"
+    fi
 }
 
 gen_tarball() {
@@ -64,13 +76,13 @@ gen_tarball() {
     mv $TMPDIR/oar $TMPDIR/oar-$VERSION
     BUILD_AREA=$OARPWD/../build-area/$VERSION
     if [ -e "$BUILD_AREA" ]; then
-        echo "The build area $BUILD_AREA exist. Cleaning..."
+        log_info "The build area $BUILD_AREA exist. Cleaning..."
         rm -rf $BUILD_AREA
     fi
     mkdir -p $BUILD_AREA
     TARBALL=$BUILD_AREA/oar-$VERSION.tar.gz
     tar czf $TARBALL -C $TMPDIR .
-    echo "oar-$VERSION.tar.gz has been created into $BUILD_AREA/"
+    echo "$BUILD_AREA/oar-$VERSION.tar.gz"
 }
 
 gen_deb() {
@@ -108,8 +120,10 @@ gen_rpm() {
 }
 
 ACTION=
-while getopts "rsh" options; do
+QUIET=no
+while getopts "qrshm" options; do
   case $options in
+    q) QUIET=yes ;;
     s) ACTION=snapshot ;;
     r) ACTION=release ;;
     m) ACTION=merge-only ;;
