@@ -384,7 +384,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST, DELETE");
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -883,7 +883,11 @@ SWITCH: for ($q) {
     my $ext=apilib::set_ext($q,$2);
     my $header, my $type;
     if(defined($1)) {
-      ($header, $type)=apilib::set_output_format($ext);
+      if ($1 ne "/full") {
+        ($header, $type)=apilib::set_output_format($ext,"GET, DELETE");
+      }else{
+        ($header, $type)=apilib::set_output_format($ext,"GET");
+      }
     }else{
       ($header, $type)=apilib::set_output_format($ext,"GET, POST");
     }
