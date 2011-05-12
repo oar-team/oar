@@ -195,6 +195,14 @@ SWITCH: for ($q) {
                         'title' => 'jobs'
                       } ,
                       { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs/details",$ext,0),$ext),
+                        'title' => 'detailed_jobs'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs/table",$ext,0),$ext),
+                        'title' => 'jobs_table'
+                      } ,
+                      { 'rel' => 'collection', 
                         'href' => apilib::htmlize_uri(apilib::make_uri("config",$ext,0),$ext),
                         'title' => 'config'
                       } ,
@@ -258,8 +266,13 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    my $header ; my $type; 
     my $more_infos=$1;
+    if (!defined($more_infos)) { 
+      ($header,$type)=apilib::set_output_format($ext,"GET, POST");
+    }else{
+      ($header,$type)=apilib::set_output_format($ext);
+    }
 
     # Get the id of the user as more details may be obtained for her jobs
     if ( $authenticated_user =~ /(\w+)/ ) {
@@ -442,7 +455,7 @@ SWITCH: for ($q) {
     my $jobid = $2;
     my $action = $3;
     my $ext=apilib::set_ext($q,$4);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -547,7 +560,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -617,7 +630,7 @@ SWITCH: for ($q) {
     my $jobid = $1;
     my $signal = $2;
     my $ext=apilib::set_ext($q,$3);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -649,7 +662,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -820,7 +833,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
     my $fh = $q->upload('myfile');
     if (defined $fh) {
         my $io_handle = $fh->handle;
@@ -841,7 +854,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
     print $q->header( -status => 200, -type => $type );
     my $json = decode_json $q->param('POSTDATA');
     my $state = $json->{'state'};
@@ -868,8 +881,13 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
-    
+    my $header, my $type;
+    if(defined($1)) {
+      ($header, $type)=apilib::set_output_format($ext);
+    }else{
+      ($header, $type)=apilib::set_output_format($ext,"GET, POST");
+    }
+ 
     # will the resources need be paged or not
     # by default resources results are paged
     my $paged = 1;
@@ -1053,7 +1071,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $header)=apilib::set_output_format($ext);
+    (my $header)=apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1112,7 +1130,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $id=$1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header)=apilib::set_output_format($ext);
+    (my $header)=apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1250,7 +1268,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
-    (my $header) = apilib::set_output_format($ext);
+    (my $header) = apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1391,7 +1409,7 @@ SWITCH: for ($q) {
   (apilib::POST( $_, $URI ) || apilib::PUT( $_, $URI )) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
-    (my $header) = apilib::set_output_format($ext);
+    (my $header) = apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1504,7 +1522,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $rule_id = $1;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type) = apilib::set_output_format($ext);
+    (my $header, my $type) = apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1644,7 +1662,7 @@ SWITCH: for ($q) {
   	$_->path_info =~ m/$URI/;
   	my $variable = $1;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type) = apilib::set_output_format($ext);
+    (my $header, my $type) = apilib::set_output_format($ext,"GET, POST");
     
     print $header;
     print $HTML_HEADER if ($ext eq "html");
