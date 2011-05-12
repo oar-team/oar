@@ -230,8 +230,10 @@ if ($ARGV[0] eq "init"){
         if (open(IPCMSG,"< /proc/sysvipc/msg")) {
             <IPCMSG>;
             while (<IPCMSG>) {
-                if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
+                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
                     $ipcrm_args .= " -q $1";
+                } else {
+                    print_log(3,"Cannot parse IPC MSG: $_.");
                 }
             }
             close (IPCMSG);
@@ -241,8 +243,10 @@ if ($ARGV[0] eq "init"){
         if (open(IPCSHM,"< /proc/sysvipc/shm")) {
             <IPCSHM>;
             while (<IPCSHM>) {
-                if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
+                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
                     $ipcrm_args .= " -m $1";
+                } else {
+                    print_log(3,"Cannot parse IPC SHM: $_.");
                 }
             }
             close (IPCSHM);
@@ -252,8 +256,10 @@ if ($ARGV[0] eq "init"){
         if (open(IPCSEM,"< /proc/sysvipc/sem")) {
             <IPCSEM>;
             while (<IPCSEM>) {
-                if (/\s+\d+\s+(\d+)(?:\s+\d+){2}\s+$Cpuset->{job_uid}(?:\s+\d+){5}$/) {
+                if (/^\s*\d+\s+(\d+)(?:\s+\d+){2}\s+$Cpuset->{job_uid}(?:\s+\d+){5}$/) {
                     $ipcrm_args .= " -s $1";
+                } else {
+                    print_log(3,"Cannot parse IPC SEM: $_.\n");
                 }
             }
             close (IPCSEM);
