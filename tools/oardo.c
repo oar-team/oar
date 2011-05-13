@@ -34,7 +34,6 @@ void error(char *error_str, int exit_code){
 int main(int ac, char **av){
     struct passwd *passwd_user_pointer;
     struct passwd *passwd_oar_user_pointer;
-    char str_tmp[256];
 
     // Get user information: effective user and oar
     passwd_user_pointer = getpwuid(getuid());
@@ -53,6 +52,7 @@ int main(int ac, char **av){
     if (setenv("OARDIR", OARDIR, 1)){
         error("Cannot change environment variable OARDIR", 2);
     }
+    char str_tmp[256];
     sprintf(str_tmp, "%i", passwd_user_pointer->pw_uid);
     if (setenv("OARDO_UID", str_tmp, 1)){
         error("Cannot change environment variable OARDO_UID", 2);
