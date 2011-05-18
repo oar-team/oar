@@ -1,0 +1,25 @@
+#!/bin/sh
+
+APP_DIR=/var/lib/oar
+case "$1" in
+   start)
+	echo "Starting Job monitoring"
+	$APP_DIR/clustermon.pl & 
+	echo $! >/var/run/oar/jobmonitor.pid
+	;;
+   stop)
+	echo "Stopping Job monitoring"
+	pid=`cat /var/run/oar/jobmonitor.pid`
+	kill $pid
+	;;
+   restart)
+	echo "Stopping Job monitoring"
+	pid=`cat /var/run/oar/jobmonitor.pid`
+        kill $pid
+        echo "Starting Job monitoring"
+        $APP_DIR/clustermon.pl &
+        echo $! >/var/run/oar/jobmonitor.pid
+	;;
+esac
+
+exit 0
