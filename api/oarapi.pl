@@ -384,7 +384,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST, DELETE");
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -523,9 +523,9 @@ SWITCH: for ($q) {
         print apilib::export( {
                         'id' => int($1),
                         'links' => [ { 'rel' => 'self' , 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext) },
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$1",$ext,0),$ext) },
                                      { 'rel' => 'parent', 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext) } ],
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$jobid",$ext,0),$ext) } ],
                         'status' => "submitted",
                         'cmd_output' => "$cmdRes",
                         'api_timestamp' => time()
@@ -544,7 +544,7 @@ SWITCH: for ($q) {
                       'cmd_output' => "$cmdRes",
                       'api_timestamp' => time(),
                       'links' => [ { 'rel' => 'self' , 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext) } ]
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$jobid",$ext,0),$ext) } ]
                     } , $ext );
     }
     last;
@@ -616,7 +616,7 @@ SWITCH: for ($q) {
                     'cmd_output' => "$cmdRes",
                     'api_timestamp' => time(),
                     'links' => [ { 'rel' => 'self' , 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext) } ]
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$jobid",$ext,0),$ext) } ]
                   } , $ext );
     last;
   };
@@ -759,8 +759,8 @@ SWITCH: for ($q) {
       }
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
-      my $uri=apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext);
-      my $abs_uri=apilib::make_uri("/jobs/$1",$ext,1);
+      my $uri=apilib::htmlize_uri(apilib::make_uri("jobs/$1",$ext,0),$ext);
+      my $abs_uri=apilib::make_uri("jobs/$1",$ext,1);
       print $q->header( -status => 201, -type => "$type" , -location => $abs_uri );
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'id' => int($1),
@@ -883,7 +883,11 @@ SWITCH: for ($q) {
     my $ext=apilib::set_ext($q,$2);
     my $header, my $type;
     if(defined($1)) {
-      ($header, $type)=apilib::set_output_format($ext);
+      if ($1 ne "/full") {
+        ($header, $type)=apilib::set_output_format($ext,"GET, DELETE");
+      }else{
+        ($header, $type)=apilib::set_output_format($ext,"GET");
+      }
     }else{
       ($header, $type)=apilib::set_output_format($ext,"GET, POST");
     }
@@ -1167,7 +1171,7 @@ SWITCH: for ($q) {
                       'status' => "Change state request registered",
                       'id' => "$id",
                       'api_timestamp' => time(),
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("resources/$id",$ext,0),$ext)
                     } , $ext );
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
@@ -1451,7 +1455,7 @@ SWITCH: for ($q) {
                       'id' => "$id",
                       'rule' => apilib::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/admission_rules/$id",$ext,0),$ext)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("admission_rules/$id",$ext,0),$ext)
                     } , $ext );
       	oarstatlib::close_db_connection; 
     }
