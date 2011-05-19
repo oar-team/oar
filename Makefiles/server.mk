@@ -110,11 +110,11 @@ install: build
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh already exists, not overwriting it." ; else install -m 0755 tools/shut_down_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
 	
 uninstall:
-	@for file in $(OARDIR_BINFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(OARDIR_DATAFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(OARCONFDIR_FILES); do rm $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
-	@for file in $(OARSCHEDULER_BINFILES); do rm $(DESTDIR)$(OARDIR)/schedulers/`basename $$file`; done
-	@for file in $(MANDIR_FILES); do rm $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(OARCONFDIR_FILES); do rm -f $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
+	@for file in $(OARSCHEDULER_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/schedulers/`basename $$file`; done
+	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnotify CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnotify

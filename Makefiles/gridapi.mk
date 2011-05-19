@@ -43,9 +43,9 @@ install:
 
 
 uninstall:
-	@for file in $(OARDIR_BINFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(DOCDIR_FILES); do rm $(DESTDIR)$(DOCDIR)/`basename $$file`; done
-	@for file in $(EXAMPLEDIR_FILES); do rm $(DESTDIR)$(DOCDIR)/examples/`basename $$file`; done
+	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(DOCDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/`basename $$file`; done
+	@for file in $(EXAMPLEDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/examples/`basename $$file`; done
 	
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi CMD_RIGHTS=6755
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi CMD_RIGHTS=6755

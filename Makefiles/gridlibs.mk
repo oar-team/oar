@@ -17,6 +17,6 @@ install:
 	install -m 0644 -t $(DESTDIR)$(OARDIR) $(OARDIR_DATAFILES)
 
 uninstall:
-	@for file in $(OARDIR_DATAFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
 
 
