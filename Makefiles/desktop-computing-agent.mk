@@ -37,4 +37,6 @@ uninstall:
 	for file in $(AGENTDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/desktop_computing/`basename $$file`; done
 	@for file in $(BINDIR_FILES); do rm -f $(DESTDIR)$(BINDIR)/`basename $$file`; done
 	@for file in $(SBINDIR_FILES); do rm -f $(DESTDIR)$(SBINDIR)/`basename $$file`; done
+	rm -f $(DESTDIR)$(BINDIR)/oar-agent
+	rm -f $(DESTDIR)$(SBINDIR)/oar-agent-daemon
 	   

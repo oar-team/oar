@@ -72,6 +72,7 @@ uninstall:
 	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
 	@for file in $(BINDIR_FILES); do rm -f $(DESTDIR)$(BINDIR)/`basename $$file`; done
 	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+	rm -f $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen	
 	
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes.old  CMD_RIGHTS=6755
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes CMD_RIGHTS=6755

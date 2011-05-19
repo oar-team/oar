@@ -50,6 +50,7 @@ uninstall:
 	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
 	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
 	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+	rm -f $(DESTDIR)$(OARDIR)/oar_Judas.pm
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 

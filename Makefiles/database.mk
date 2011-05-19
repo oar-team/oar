@@ -35,6 +35,8 @@ install:
 uninstall:
 	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
 	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	rm -f $(DESTDIR)$(OARDIR)/oar_mysql_db_init
+	rm -f $(DESTDIR)$(OARDIR)/oar_psql_db_init
 	
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init
