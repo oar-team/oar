@@ -62,9 +62,9 @@ install:
 	cp -f database/*upgrade*.sql $(DESTDIR)$(OARDIR)/db_upgrade/
 
 uninstall:
-	@for file in $(OARDIR_FILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(MANDIR_FILES); do rm $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+	@for file in $(OARDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
 	$(OARDO_UNINSTALL) CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo CMD_WRAPPER=$(OARDIR)/oarsh CMD_RIGHTS=6755
-	rm $(DESTDIR)$(MANDIR)/man1/oarcp.1
+	rm -f $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	rm -f $(DESTDIR)$(OARDIR)/db_upgrade/*upgrade*.sql
 

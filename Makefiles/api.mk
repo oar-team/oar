@@ -47,10 +47,10 @@ install:
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl already exists, not overwriting it." ; else install -m 0644 api/api_html_postform_rule.pl $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl ; chown $(OAROWNER) $(DESTDIR)$(OARCONFDIR)/api_html_postform_rule.pl || /bin/true ; fi
 
 uninstall:
-	@for file in $(OARDIR_BINFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(OARDIR_DATAFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(DOCDIR_FILES); do rm $(DESTDIR)$(DOCDIR)/`basename $$file`; done
-	@for file in $(EXAMPLEDIR_FILES); do rm $(DESTDIR)$(DOCDIR)/examples/`basename $$file`; done
+	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(DOCDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/`basename $$file`; done
+	@for file in $(EXAMPLEDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/examples/`basename $$file`; done
 	
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
