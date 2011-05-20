@@ -29,10 +29,10 @@
 // Static conf to edit //
 /////////////////////////
 
-#define OARDIR "/usr/local/oar"
-#define OARCONFFILE "/etc/oar/oar.conf"
-#define OARXAUTHLOCATION "/usr/bin/xauth"
-#define OARUSER "oar"
+#define OARDIR "TT/usr/local/oar"
+#define OARCONFFILE "TT/etc/oar/oar.conf"
+#define OARXAUTHLOCATION "TT/usr/bin/xauth"
+#define OARUSER "TToar"
 
 ///////////////////////////////////////////////////////////////////////////////
 

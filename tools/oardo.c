@@ -9,12 +9,13 @@
 // Static conf to edit //
 /////////////////////////
 
-#define CMD_WRAPPER "/usr/local/oar/oarsub"
+#define CMD_WRAPPER "TT/usr/local/oar/oarsub"
 
-#define OARDIR "/usr/local/oar"
-#define OARCONFFILE "/etc/oar/oar.conf"
-#define OARXAUTHLOCATION "/usr/bin/xauth"
-#define USERTOBECOME "root"
+#define OARDIR "TT/usr/local/oar"
+#define OARCONFFILE "TT/etc/oar/oar.conf"
+#define OARXAUTHLOCATION "TT/usr/bin/xauth"
+#define USERTOBECOME "TToar"
+#define PATH2SET "TT/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/oar/oardodo"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -71,7 +72,7 @@ int main(int ac, char **av){
     }
 
     // Clean some environment variables
-    if (setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:"OARDIR"/../bin:"OARDIR"/../sbin:"OARDIR"/oardodo", 1)){
+    if (setenv("PATH", PATH2SET, 1)){
         error("Cannot change environment variable PATH", 2);
     }
     if (unsetenv("IFS")){

@@ -34,19 +34,22 @@ clean:
 build:
 	# Noting to do
 
-
 install: 
 ifeq "$(CMD_TARGET)" ""
 	echo "no CMD_TARGET given. Fail !"
 	exit 1
 endif
-	install -m $(CMD_RIGHTS) tools/oardo $(CMD_TARGET)
-	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
-            s#Oarconffile = .*#Oarconffile = '$(OARCONFFILE)'\;#;;\
-            s#Oarxauthlocation = .*#Oarxauthlocation = '$(OARXAUTHLOCATION)'\;#;;\
-            s#Cmd_wrapper = .*#Cmd_wrapper = '$(CMD_WRAPPER)'\;#;;\
-            " $(CMD_TARGET)
-	chown $(CMD_OWNER).$(CMD_GROUP) $(CMD_TARGET)
+	install -m $(CMD_RIGHTS) tools/oardo.c "$(CMD_TARGET).c"
+	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
+			s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFFILE)\"#;;\
+			s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(OARXAUTHLOCATION)\"#;;\
+			s#define USERTOBECOME .*#define USERTOBECOME \"$(CMD_OWNER)\"#;;\
+			s#define PATH2SET .*#define PATH2SET \"/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo\"#;;\
+			s#define CMD_WRAPPER .*#define CMD_WRAPPER \"$(CMD_WRAPPER)\"#;;\
+			" "$(CMD_TARGET).c"
+	gcc -o $(CMD_TARGET) "$(CMD_TARGET).c"
+	rm $(CMD_TARGET).c
+	chown root.$(CMD_GROUP) $(CMD_TARGET)
 	chmod $(CMD_RIGHTS) $(CMD_TARGET)
 
 uninstall:
