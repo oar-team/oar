@@ -48,6 +48,8 @@ version 2.5.0:
   - oar_Tools: add in notify_almighty a check on the print and on the close of
     the socket connected to Almighty.
   - oaraccounting: --sql is now possible into a "oarstat --accounting" query
+  - Add more logs to the command "oarnodes -e host" when a node turns into
+    Suspected
 
 version 2.4.4:
 --------------

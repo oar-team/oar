@@ -131,6 +131,7 @@ foreach my $i (@events_to_check){
                     @hosts = ();
                 }
             }
+            iolib::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $i->{description}, \@hosts);
         }
 
         if ($#hosts >= 0){
