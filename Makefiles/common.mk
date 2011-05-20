@@ -26,7 +26,6 @@ install:
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(DESTDIR)$(OARDIR)/oarsh
 	
 	$(OARDO_INSTALL) CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo CMD_WRAPPER=$(OARDIR)/oarsh CMD_RIGHTS=6755
-	chown $(OAROWNER).$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oarsh_oardo
 	chmod 6755 $(DESTDIR)$(OARDIR)/oarsh_oardo
 	
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
@@ -40,16 +39,18 @@ install:
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(DESTDIR)$(BINDIR)/oarcp
 	
 	install -d -m 0755 $(DESTDIR)$(OARDIR)/oardodo
-	install -m 6750 tools/oardodo $(DESTDIR)$(OARDIR)/oardodo
+	install -m 6750 tools/oardodo.c $(DESTDIR)$(OARDIR)/oardodo
+	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
+			     s#define OARUSER .*#define OARUSER \"$(OAROWNER)\"#;;\
+			     s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFDIR)/oar.conf\"#;;\
+			     s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(XAUTHCMDPATH)\"#;;\
+				" $(DESTDIR)$(OARDIR)/oardodo/oardodo.c
+	gcc -o $(DESTDIR)$(OARDIR)/oardodo/oardodo "$(DESTDIR)$(OARDIR)/oardodo/oardodo.c"
+	rm "$(DESTDIR)$(OARDIR)/oardodo/oardodo.c"
 	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
 	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo/oardodo
-	perl -i -pe "s#Oardir = .*#Oardir = '$(OARDIR)'\;#;;\
-			     s#Oaruser = .*#Oaruser = '$(OARUSER)'\;#;;\
-			     s#Oarconffile = .*#Oarconffile = '$(OARCONFDIR)/oar.conf'\;#;;\
-			     s#Oarxauthlocation = .*#Oarxauthlocation = '$(XAUTHCMDPATH)'\;#;;\
-				" $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/oar.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 tools/oar.conf $(DESTDIR)$(OARCONFDIR) ; chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/oar.conf || /bin/true ; fi

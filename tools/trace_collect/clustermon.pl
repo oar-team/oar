@@ -25,7 +25,7 @@ use strict;
 #syscr  - number of read syscalls
 #syscw  - number of write syscalls
 #read_bytes - number of bytes caused by this process to read from underlying storage
-#write_bytes - number of bytes caused by this process to written from           underlying storage
+#write_bytes - number of bytes caused by this process to written from underlying storage
 
 #mesauring the %CPU Utilization
 #ps -p PID -o "pcpu" | sed  '/%CPU/d' gives us the CPU %  per pid
@@ -36,6 +36,10 @@ use strict;
 #Interface, Receive : bytes,  packets,
 #           Trasmit : bytes,  packets,
 
+
+############NFS FILE SYSTEM #############
+#cat /proc/$pid/mountstats | grep WRITE | awk '{print $5}'  bytes writes to a NFS system
+#cat /proc/$pid/mountstats | sed -n '/READ$/p' | awk '{print $5}'
 #######################################################################################################
 
 ###File Format  ##############
@@ -92,6 +96,7 @@ my @dirs;
 my $timestamp;
 my $read_bytes;
 my $write_bytes;
+my $isolated;
 
 sub usage() {
 	print <<EOS;
@@ -178,6 +183,9 @@ for (;;){
   #print " dirs: @dirs \n";
   if(@dirs)
   {
+	$isolated=0;
+	#verifying if there are more than one job in the machine
+	if(@dirs>1){$isolated=1;}
     	#reading PID
     	foreach $dir (@dirs)
     	{  
@@ -257,6 +265,7 @@ for (;;){
             			}
 				#printing information into file
 				print TRACE "$timestamp $oarjobid $pid $cmdline $minorfaults $majorfaults $vmpeak $vmsize $vmrss $vmswap $msize $mresident $mshared $charread $charwrite $syscr $syscw $read_bytes $write_bytes $cpu $recvtotal $sendtotal \n"; 
+				if($isolated==1){print TRACE "Warning: There are more than one Job in the machine \n";}
 				}
    			}	
     }
