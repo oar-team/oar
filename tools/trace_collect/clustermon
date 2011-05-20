@@ -1,6 +1,12 @@
 #!/bin/sh
 
 APP_DIR=/var/lib/oar
+
+if [ -f `dirname $0`/init.conf ]
+then
+  . `dirname $0`/init.conf
+fi
+
 case "$1" in
    start)
 	echo "Starting Job monitoring"
