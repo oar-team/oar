@@ -4,6 +4,7 @@ APP_DIR=/var/lib/oar
 case "$1" in
    start)
 	echo "Starting Job monitoring"
+        mkdir -p /var/run/oar
 	$APP_DIR/clustermon.pl & 
 	echo $! >/var/run/oar/jobmonitor.pid
 	;;
