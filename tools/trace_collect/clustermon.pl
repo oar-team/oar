@@ -97,7 +97,8 @@ my $timestamp;
 my $read_bytes;
 my $write_bytes;
 my $isolated;
-
+my $recvtotal=0; 
+my $sendtotal=0; 
 sub usage() {
 	print <<EOS;
 Usage: $0 -f confile
@@ -238,35 +239,43 @@ for (;;){
       				my $mshared=(split(/ /,$statm))[2];
       				
 				###reading /proc/pid/io file #######
-       				my $iostatus=`cat /proc/$pid/io `;
-      				chomp($charread=(split(/\n/,$iostatus))[0]);
-     				$charread=(split(/ /,$charread))[1];
-      				chomp($charwrite=(split(/\n/,$iostatus))[1]);
-      				$charwrite=(split(/ /,$charwrite))[1];
-      				chomp($syscr=(split(/\n/,$iostatus))[2]);
-      				$syscr=(split(/ /,$syscr))[1];
-      				chomp($syscw=(split(/\n/,$iostatus))[3]);
-      				$syscw=(split(/ /,$syscw))[1];
-      				chomp($read_bytes=(split(/\n/,$iostatus))[4]);
-				$read_bytes=(split(/ /,$read_bytes))[1];
-				chomp($write_bytes=(split(/\n/,$iostatus))[5]);
-                                $write_bytes=(split(/ /,$write_bytes))[1];
+				if(-e "cat /proc/$pid/io")
+				{
+       					my $iostatus=`cat /proc/$pid/io `;
+      					chomp($charread=(split(/\n/,$iostatus))[0]);
+     					$charread=(split(/ /,$charread))[1];
+      					chomp($charwrite=(split(/\n/,$iostatus))[1]);
+      					$charwrite=(split(/ /,$charwrite))[1];
+      					chomp($syscr=(split(/\n/,$iostatus))[2]);
+      					$syscr=(split(/ /,$syscr))[1];
+      					chomp($syscw=(split(/\n/,$iostatus))[3]);
+      					$syscw=(split(/ /,$syscw))[1];
+      					chomp($read_bytes=(split(/\n/,$iostatus))[4]);
+					$read_bytes=(split(/ /,$read_bytes))[1];
+					chomp($write_bytes=(split(/\n/,$iostatus))[5]);
+                                	$write_bytes=(split(/ /,$write_bytes))[1];
+				}
+				else{$charread=0;$charwrite=0;$syscr=0;$syscw=0;$read_bytes=0;$write_bytes=0;}
       				
 				### getting the CPU % used by the process ####
       				chomp($cpu=`ps -p $pid -o "pcpu" | sed  '/CPU/d'`);
-      				
+      			        
 				##### Network information /proc/PID/net/dev ####
-				my $network=`cat /proc/$pid/net/dev`;#####testing code
-      				my $recvtotal=0; my $recv;
-      				my $sendtotal=0; my $send;
-				foreach $interface (split(/\n/,$network)){
-					if ($interface =~ /^\s+(\w+):\s*(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/){
-                				$recv=$2;
-                				$send=$3;
-					}
-					$recvtotal=sprintf("%d",$recv)+$recvtotal;
-					$sendtotal=sprintf("%d",$send)+$sendtotal;
-            			}
+				if (-e "cat /proc/$pid/net/dev")
+				{	
+					my $network=`cat /proc/$pid/net/dev`;#####testing code
+      					my $recv;
+      					my $send;
+					foreach $interface (split(/\n/,$network)){
+						if ($interface =~ /^\s+(\w+):\s*(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/){
+                					$recv=$2;
+                					$send=$3;
+						}
+						$recvtotal=sprintf("%d",$recv)+$recvtotal;
+						$sendtotal=sprintf("%d",$send)+$sendtotal;
+            				}
+				}
+				else{$recvtotal=0;$sendtotal=0;}
 				#printing information into file
 				print TRACE "$timestamp $oarjobid $pid $cmdline $minorfaults $majorfaults $vmpeak $vmsize $vmrss $vmswap $msize $mresident $mshared $charread $charwrite $syscr $syscw $read_bytes $write_bytes $cpu $recvtotal $sendtotal \n"; 
 				if($isolated==1){print TRACE "Warning: There are more than one Job in the machine \n";}

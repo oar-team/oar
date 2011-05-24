@@ -9,6 +9,11 @@ fi
 
 case "$1" in
    start)
+	if [ -e "/var/run/oar/jobmonitor.pid" ]
+        then
+             echo "Monitoring is running" 
+             exit 0
+        fi
 	echo "Starting Job monitoring"
         mkdir -p /var/run/oar
 	$APP_DIR/clustermon.pl & 
@@ -18,6 +23,7 @@ case "$1" in
 	echo "Stopping Job monitoring"
 	pid=`cat /var/run/oar/jobmonitor.pid`
 	kill $pid
+	rm /var/run/oar/jobmonitor.pid
 	;;
    restart)
 	echo "Stopping Job monitoring"
