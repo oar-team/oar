@@ -50,6 +50,12 @@ version 2.5.0:
   - oaraccounting: --sql is now possible into a "oarstat --accounting" query
   - Add more logs to the command "oarnodes -e host" when a node turns into
     Suspected
+  - Execute user commands with /proc/self/oom_adj to 15. So the first processes
+    that will be killed when there is no more memory available is the user
+    ones.
+    Hence the system will remain up and running and the user job will finished.
+    Drawback: this file can be changed manually by the user so if someone knows
+    a method to do the same thing but only managed by root, we take???
 
 version 2.4.4:
 --------------

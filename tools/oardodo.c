@@ -114,6 +114,15 @@ int main(int ac, char **av){
         user_to_become = DEFAULTUSERTOBECOME;
     }
 
+    // Tell OOM to kill the user processes first except for root and oar
+    if ( (strcmp(user_to_become, "root") != 0) && (strcmp(user_to_become, OARUSER) != 0) ){
+        FILE *oom_file;
+        if ((oom_file = fopen("/proc/self/oom_adj", "w")) != NULL){
+            fprintf(oom_file, "15");
+            fclose(oom_file);
+        }
+    }
+
     // Change process owner
     passwd_user_to_become_pointer = getpwnam(user_to_become);
     if (passwd_user_to_become_pointer == NULL){
