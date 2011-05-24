@@ -8,8 +8,7 @@ OAR_JOB_ID=$1
 OAR_KEY=1
 OAR_NODE_FILE=$3
 
-
-mkdir -p /var/lib/oar/traces/
+mkdir -p $TRACEDIR
 
 echo $OAR_JOB_ID  >$TRACEDIR/$DEBUGFILE
 HOSTNAME=`cat /etc/hostname `
