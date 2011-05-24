@@ -173,6 +173,9 @@ readconf;
 #getting hostname
 chomp($hostname=`hostname `);
 
+# attempt to create TRACEDIR if it doesn't exist
+if (!-d $params{TRACEDIR}) { mkdir $params{TRACEDIR} or die "Unable to create $params{TRACEDIR}" ;}
+
 for (;;){
 # Getting directories
   my $temp; #### to keep the directories ####
