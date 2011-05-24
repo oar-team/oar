@@ -1,13 +1,15 @@
 #!/bin/sh
 
 #Some parameters
-TRACEDIR=/var/log/oar
-SERVER=adonis-5
+TRACEDIR=/var/lib/oar/traces/
+SERVER=gofree
 DEBUGFILE=epilogdebug.log
 OAR_JOB_ID=$1
 OAR_KEY=1
 OAR_NODE_FILE=$3
 
+
+mkdir -p /var/lib/oar/traces/
 
 echo $OAR_JOB_ID  >$TRACEDIR/$DEBUGFILE
 HOSTNAME=`cat /etc/hostname `
@@ -29,9 +31,9 @@ else
 		if [ "$HOSTNAME" != "$i" ]
 	        then
 			echo "copying  file : /var/log/oar/trace-$i-$OAR_JOB_ID.log" >>$TRACEDIR/$DEBUGFILE				
-			taktuk -m $i broadcast get [ $TRACEDIR/trace-$i-$OAR_JOB_ID.log ] [ $TRACEDIR/ ]
+			taktuk -c "/usr/bin/ssh -p 6667" -m $i broadcast get [ $TRACEDIR/trace-$i-$OAR_JOB_ID.log ] [ $TRACEDIR/ ]
 			#we erase the file
-			taktuk -m $i broadcast exec - rm $TRACEDIR/trace-$i-$OAR_JOB_ID.log -
+			taktuk -c "/usr/bin/ssh -p 6667" -m $i broadcast exec - rm $TRACEDIR/trace-$i-$OAR_JOB_ID.log -
 		else
 			echo "we dont tranfer to this node $i" >>$TRACEDIR/$DEBUGFILE
 		fi
@@ -40,7 +42,7 @@ fi
 
 for i in $(uniq $OAR_NODE_FILE)
 do
-	taktuk -m $SERVER broadcast put [ $TRACEDIR/trace-$i-$OAR_JOB_ID.log ] [ $TRACEDIR/ ]
+	taktuk -c "/usr/bin/ssh -p 6667" -m $SERVER broadcast put [ $TRACEDIR/trace-$i-$OAR_JOB_ID.log ] [ $TRACEDIR/ ]
 	rm $TRACEDIR/trace-$i-$OAR_JOB_ID.log
 done
 
