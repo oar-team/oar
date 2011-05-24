@@ -117,9 +117,14 @@ int main(int ac, char **av){
     // Tell OOM to kill the user processes first except for root and oar
     if ( (strcmp(user_to_become, "root") != 0) && (strcmp(user_to_become, OARUSER) != 0) ){
         FILE *oom_file;
-        if ((oom_file = fopen("/proc/self/oom_adj", "w")) != NULL){
-            fprintf(oom_file, "15");
+        if ((oom_file = fopen("/proc/self/oom_score_adj", "w")) != NULL){
+            fprintf(oom_file, "1000");
             fclose(oom_file);
+        }else{
+            if ((oom_file = fopen("/proc/self/oom_adj", "w")) != NULL){
+                fprintf(oom_file, "15");
+                fclose(oom_file);
+            }
         }
     }
 
