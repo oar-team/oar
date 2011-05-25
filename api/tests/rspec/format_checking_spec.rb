@@ -4,7 +4,7 @@
 
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://kameleon:kameleon@localhost/oarapi-priv" 
+APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
 
 $jobid=""
 $rjobid=""
@@ -22,7 +22,7 @@ describe OarApi do
   describe "INITIAL QUEUE" do
  
     it "should have an 'items' array " do
-      @api.get_hash('/jobs')
+      @api.get_hash('jobs')
       @api.value['items'].should_not == nil
     end
 
@@ -51,10 +51,10 @@ describe OarApi do
   #############################################################
 
   uris=[
-         "/jobs","/jobs/details","/jobs/table",
-         "/jobs?state=Running,Waiting,Launching","/jobs?state=Terminated&limit=10",
-         "/jobs?state=Running,Terminated&limit=10","/jobs?from=0&to=2147483647&limit=10",
-         "/resources","/resources/full"
+         "jobs","jobs/details","jobs/table",
+         "jobs?state=Running,Waiting,Launching","jobs?state=Terminated&limit=10",
+         "jobs?state=Running,Terminated&limit=10","jobs?from=0&to=2147483647&limit=10",
+         "resources","resources/full"
        ]
   uris.each do |uri|
     describe "#{uri} basic data structure" do
@@ -77,7 +77,7 @@ describe OarApi do
     
     context "(using state=Running,Launching,Waiting&limit=2)" do
       before(:all) do
-        $uri="/jobs?state=Running,Launching,Waiting&limit=2"
+        $uri="jobs?state=Running,Launching,Waiting&limit=2"
         @api.get_hash($uri)
       end
       it "should correctly limit the number of results" do
@@ -102,7 +102,7 @@ describe OarApi do
 
     context "(using /jobs?state=Running&limit=2&offset=3)" do
       before(:all) do
-        $uri="/jobs?state=Running,Waiting,Launching&limit=2&offset=3"
+        $uri="jobs?state=Running,Waiting,Launching&limit=2&offset=3"
         @api.get_hash($uri)
       end
       it "should correctly limit the number of results" do
@@ -130,7 +130,7 @@ describe OarApi do
 
     context "(using same as above plus Terminated jobs)" do
       before(:all) do
-        $uri="/jobs?state=Running,Waiting,Launching,Terminated&limit=15"
+        $uri="jobs?state=Running,Waiting,Launching,Terminated&limit=15"
         @api.get_hash($uri)
       end
       it "should return a total >= 20" do
@@ -140,7 +140,7 @@ describe OarApi do
 
     context "(with state=Terminated)" do
       before(:all) do
-        @api.get_hash("/jobs?state=Terminated")
+        @api.get_hash("jobs?state=Terminated")
       end
       it "should return only terminated jobs" do
         @api.value['items'].each do |item|
@@ -149,13 +149,9 @@ describe OarApi do
       end
     end
 
-    it "should sleep 30 seconds" do
-      sleep 30
-    end
- 
     context "(with state=Running [note: add a sleep if test jobs are not yet running])" do
       before(:all) do
-        @api.get_hash("/jobs?state=Running&user=kameleon")
+        @api.get_hash("jobs?state=Running&user=kameleon")
       end
       it "should return a few running jobs" do
         @api.value['items'].length.should > 0
@@ -182,7 +178,7 @@ describe OarApi do
 
     context "(with non-existent obiwankenobi user)" do
       before(:all) do
-        @api.get_hash("/jobs?state=Terminated&user=obiwankenobi")
+        @api.get_hash("jobs?state=Terminated&user=obiwankenobi")
       end
       it "should return no jobs" do
         @api.value['items'].length.should == 0
@@ -191,7 +187,7 @@ describe OarApi do
  
     context "(inside job)" do
       before(:all) do
-        @api.get_hash("/jobs?state=Running")
+        @api.get_hash("jobs?state=Running")
         @api.value=@api.value['items'][0]
       end
       it_should_behave_like "Job"
@@ -199,14 +195,14 @@ describe OarApi do
 
     context "(with limit=1)" do
       before(:all) do
-        @api.get_hash("/jobs?limit=1")
+        @api.get_hash("jobs?limit=1")
       end
       it_should_behave_like "All list structures"
     end
 
     context "(with limit=1, insider job)" do
       before(:all) do
-        @api.get_hash("/jobs?limit=1")
+        @api.get_hash("jobs?limit=1")
         @api.value=@api.value['items'][0]
       end
       it_should_behave_like "Job"
@@ -218,7 +214,7 @@ describe OarApi do
     context "(with normal job)" do
       before(:all) do
         @api = OarApi.new(APIURI)
-        @api.get_hash("/jobs/#{$jobid}")
+        @api.get_hash("jobs/#{$jobid}")
       end
       it_should_behave_like "Job"
       it "should be owned by the kameleon user" do
@@ -232,7 +228,7 @@ describe OarApi do
       it "should return a 404 error" do
         lambda {
           begin
-            @api.get_hash("/jobs/00")
+            @api.get_hash("jobs/00")
           rescue => e
             e.should respond_to('http_code')
             e.http_code.should == 404
@@ -245,7 +241,7 @@ describe OarApi do
   describe "JOB DETAILS CHECKING: /jobs/details data structure" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/jobs/details")
+      @api.get_hash("jobs/details")
     end
     context "(basic structure)" do
       it_should_behave_like "All list structures"
@@ -277,7 +273,7 @@ describe OarApi do
   describe "JOB RESOURCES: /jobs/<id>/resources" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/jobs/#{$jobid}/resources")
+      @api.get_hash("jobs/#{$jobid}/resources")
     end
     context "(basic data structure)" do
       it_should_behave_like "All list structures"
@@ -299,7 +295,7 @@ describe OarApi do
   describe "JOB NODES: /jobs/<id>/nodes" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/jobs/#{$jobid}/nodes")
+      @api.get_hash("jobs/#{$jobid}/nodes")
     end
     context "(basic data structure)" do
       it_should_behave_like "All list structures"
@@ -320,7 +316,7 @@ describe OarApi do
       before(:all) do
         from=Time.local(2036,"jan",1,1,1,1).to_i
         to=Time.local(2038,"jan",1,1,1,1).to_i
-        @api.get_hash("/jobs?from=#{from}&to=#{to}")
+        @api.get_hash("jobs?from=#{from}&to=#{to}")
       end
       it "should return only one job" do
         @api.value["items"].length.should == 1
@@ -338,7 +334,7 @@ describe OarApi do
 
     context "(with limit=2)" do
       before(:all) do
-        @api.get_hash("/resources?limit=2")
+        @api.get_hash("resources?limit=2")
       end
       it "should correctly limit the number of results" do
         @api.value['items'].length.should == 2
@@ -362,7 +358,7 @@ describe OarApi do
 
     context "(with limit=2&offset=2)" do
       before(:all) do
-        @api.get_hash("/resources?limit=2&offset=2")
+        @api.get_hash("resources?limit=2&offset=2")
       end
       it "should correctly limit the number of results" do
         @api.value['items'].length.should == 2
@@ -389,7 +385,7 @@ describe OarApi do
     
     context "(inside resource)" do
       before(:all) do
-        @api.get_hash("/resources?limit=2&offset=1")
+        @api.get_hash("resources?limit=2&offset=1")
         @api.value=@api.value['items'][0]
       end
       it_should_behave_like "Resource"
@@ -397,14 +393,14 @@ describe OarApi do
 
     context "(with limit=1)" do
       before(:all) do
-        @api.get_hash("/resources?limit=1")
+        @api.get_hash("resources?limit=1")
       end
       it_should_behave_like "All list structures"
     end
 
     context "(with limit=1, insider job)" do
       before(:all) do
-        @api.get_hash("/resources?limit=1")
+        @api.get_hash("resources?limit=1")
         @api.value=@api.value['items'][0]
       end
       it_should_behave_like "Resource"
@@ -414,7 +410,7 @@ describe OarApi do
   describe "RESOURCES DETAILS CHECKING: /resources/3 data structure" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/resources/3")
+      @api.get_hash("resources/3")
     end
     it_should_behave_like "Resource"
   end
@@ -422,7 +418,7 @@ describe OarApi do
   describe "NODE RESOURCES: /resources/nodes/<node>" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/resources?limit=1")
+      @api.get_hash("resources?limit=1")
       node_link=@api.get_link_href_from_array(@api.value["items"][0]["links"],"node")
       @api.get_hash(node_link)
     end
@@ -440,7 +436,7 @@ describe OarApi do
   describe "RESOURCES JOBS: /resources/3/jobs" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/resources/3/jobs")
+      @api.get_hash("resources/3/jobs")
     end
     context "(basic data structure)" do
       it_should_behave_like "All list structures"
@@ -456,7 +452,7 @@ describe OarApi do
   describe "NODE JOBS: /resources/nodes/<node>/jobs" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/resources?limit=1")
+      @api.get_hash("resources?limit=1")
       node_link=@api.get_link_href_from_array(@api.value["items"][0]["links"],"node")
       @api.get_hash(node_link+"/jobs")
     end
@@ -474,7 +470,7 @@ describe OarApi do
   describe "NODE JOBS: /resources/nodes/<node>/jobs with state=Running filter" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/resources?limit=1")
+      @api.get_hash("resources?limit=1")
       node_link=@api.get_link_href_from_array(@api.value["items"][0]["links"],"node")
       @api.get_hash(node_link+"/jobs?state=Running")
     end
@@ -492,7 +488,7 @@ describe OarApi do
   describe "NODE JOBS: /resources/nodes/<node>/jobs with state=Obiwan filter" do
     before(:all) do
       @api = OarApi.new(APIURI)
-      @api.get_hash("/resources?limit=1")
+      @api.get_hash("resources?limit=1")
       node_link=@api.get_link_href_from_array(@api.value["items"][0]["links"],"node")
       @api.get_hash(node_link+"/jobs?state=Obiwan")
     end
@@ -551,7 +547,7 @@ describe OarApi do
     before(:all) do
       sleep 5
       begin
-        @api.value=@api.post(@api.api,"/jobs/#{$jobid+1}/resubmissions/new",nil)
+        @api.value=@api.post(@api.api,"jobs/#{$jobid+1}/resubmissions/new",nil)
       rescue => e
         puts e.response.body
       end

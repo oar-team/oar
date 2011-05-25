@@ -2,9 +2,11 @@
 require 'rest_client'
 require 'json'
 require 'pp'
+require 'uri'
 
 #######################################################################
 #Coded By Narayanan K - GSOC Testsuites project  - RESTful API Library
+# Modified by B. Bzeznik 2010-2011
 #######################################################################
 
 
@@ -12,10 +14,17 @@ class OarApi
 attr_accessor :jobhash, :statushash, :specificjobdetails, :oarv, :oartz, :jobarray, :deletehash, :apiuri, :value
 attr_reader :deletestatus,:jobstatus,:api,:chkpointstatus,:holdjob,:rholdjob,:signalreturn,:resumejob,:resources,:resourcedetails,:resstatus,:specificres,:noderesources
 def initialize(apiuri,get_uri="")
-  @apiuri = apiuri
-  @api = RestClient::Resource.new @apiuri
+  @api = RestClient::Resource.new apiuri
+  @apiuri = URI.parse(apiuri)
 end
 
+# Converts the given uri, to something relative
+# to the base of the API
+def rel_uri(uri)
+  abs_uri=@apiuri.merge(uri).to_s
+  target_uri=URI.parse(abs_uri).to_s
+  @apiuri.route_to(target_uri).to_s
+end
 
 ########################################################################
 #
@@ -28,6 +37,7 @@ end
 ########################################################################
 
 def get(api,uri)
+  uri=rel_uri(uri)
   begin
         #puts api[uri]
         return JSON.parse(api[uri].get(:accept => 'application/json'))
@@ -53,6 +63,7 @@ end
 ########################################################################
 
 def post(api,uri,j)
+    uri=rel_uri(uri)
     j=j.to_json
     return JSON.parse(api[uri].post( j,:content_type  => 'application/json'))
 end
@@ -68,6 +79,7 @@ end
 ########################################################################
 
 def delete(api, uri)
+ uri=rel_uri(uri)
  begin
    return JSON.parse(api[uri].delete(:content_type => 'application/json'))
  rescue => e
@@ -235,7 +247,7 @@ end
 
 
 def submit_job(jhash)
-@jobstatus = post(@api, '/jobs', jhash)
+@jobstatus = post(@api, 'jobs', jhash)
 if !@jobstatus.is_a?(Hash) or @jobstatus.empty?
 	raise 'Error: In return value of POST /jobs API' 
 end
@@ -256,14 +268,14 @@ end
 
 
 def del_job(jobid)
-@deletestatus = post(@api,"/jobs/#{jobid}/deletions/new", '')
+@deletestatus = post(@api,"jobs/#{jobid}/deletions/new", '')
 if !@deletestatus.is_a?(Hash) or @deletestatus.empty?
 	raise 'Error: In return value of POST /jobs/<id>/deletions/new API' 
 end
 end
 
 def del_array_job(jobid)
-@deletestatus = post(@api,"/jobs/array/#{jobid}/deletions/new", '')
+@deletestatus = post(@api,"jobs/array/#{jobid}/deletions/new", '')
 if !@deletestatus.is_a?(Hash) or @deletestatus.empty?
 	raise 'Error: In return value of POST /jobs/array/<id>/deletions/new API' 
 end
@@ -286,7 +298,7 @@ end
 
 
 def send_checkpoint(jobid)
-@chkpointstatus = post(@api,"/jobs/#{jobid}/checkpoints/new", '')
+@chkpointstatus = post(@api,"jobs/#{jobid}/checkpoints/new", '')
 if !@chkpointstatus.is_a?(Hash) or @chkpointstatus.empty?
 	raise 'Error: In return value of POST /jobs/<id>/checkpoints/new API' 
 end
@@ -307,7 +319,7 @@ end
 
 
 def hold_waiting_job(jobid)
-@holdjob = post(@api,"/jobs/#{jobid}/holds/new", '')
+@holdjob = post(@api,"jobs/#{jobid}/holds/new", '')
 if !@holdjob.is_a?(Hash) or @holdjob.empty?
 	raise 'Error: In return value of POST /jobs/<id>/holds/new API' 
 end
@@ -328,7 +340,7 @@ end
 
 
 def hold_running_job(jobid)
-@rholdjob = post(@api,"/jobs/#{jobid}/rholds/new", '')
+@rholdjob = post(@api,"jobs/#{jobid}/rholds/new", '')
 if !@rholdjob.is_a?(Hash) or @rholdjob.empty?
 	raise 'Error: In return value of POST /jobs/<id>/rholds/new API' 
 end
@@ -349,7 +361,7 @@ end
 
 
 def resume_hold_job(jobid)
-@resumejob = post(@api,"/jobs/#{jobid}/resumption/new", '')
+@resumejob = post(@api,"jobs/#{jobid}/resumption/new", '')
 if !@resumejob.is_a?(Hash) or @resumejob.empty?
 	raise 'Error: In return value of POST /jobs/<id>/resumption/new API' 
 end
@@ -370,7 +382,7 @@ end
 
 
 def send_signal_job(jobid, signo)
-@signalreturn = post(@api,"/jobs/#{jobid}/signal/#{signo}", '')
+@signalreturn = post(@api,"jobs/#{jobid}/signal/#{signo}", '')
 if !@signalreturn.is_a?(Hash) or @signalreturn.empty?
 	raise 'Error: In return value of POST /jobs/<id>/signal/<signal> API' 
 end
@@ -391,7 +403,7 @@ end
 
 
 def update_job(jobid, actionhash)
-@updatehash = post(@api, "/jobs/#{jobid}",actionhash)
+@updatehash = post(@api, "jobs/#{jobid}",actionhash)
 if !@updatehash.is_a?(Hash) or @updatehash.empty?
 	raise 'Error: In return value of POST /jobs/<id>/ API' 
 end
@@ -487,14 +499,14 @@ end
 ########################################################################
 
 def create_resource(rhash)
-  @resstatus = post(@api,'/resources', rhash)
+  @resstatus = post(@api,'resources', rhash)
   if !@resstatus.is_a?(Hash) or @resstatus.empty?
 	raise 'Error: In return value of POST /resources API' 
   end
 end
 
 def create_resources(array)
-  @resstatus = post(@api,'/resources', array)
+  @resstatus = post(@api,'resources', array)
   if !@resstatus.is_a?(Hash) or @resstatus.empty?
 	raise 'Error: In return value of POST /resources API' 
   end
@@ -514,7 +526,7 @@ end
 
 
 def statechange_resource(jobid, hasharray)
-@statushash = post(@api, '/resources/#{jobid}/state', hasharray)
+@statushash = post(@api, 'resources/#{jobid}/state', hasharray)
 if !@statushash.is_a?(Hash) or @statushash.empty?
 	raise 'Error: In return value of POST /resources/<id>/state API' 
 end
