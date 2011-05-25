@@ -583,16 +583,46 @@ if !@deletehash.is_a?(Hash) or @deletehash.empty?
 end
 end
 
-def get_link_href(rel)
+def get_link_href(title)
   @value['links'].each do |link|
-    if link.is_a?(Hash) && link['rel'] == rel 
+    if link.is_a?(Hash) && link['title'] == title
+      return link['href']
+    end
+  end
+  raise "#{title} link not found!"
+end
+
+def get_link_href_by_rel(rel)
+  @value['links'].each do |link|
+    if link.is_a?(Hash) && link['rel'] == rel
       return link['href']
     end
   end
   raise "#{rel} link not found!"
 end
 
-def get_link_href_from_array(array,rel)
+def get_self_link_href
+  get_link_href_by_rel("self")
+end
+
+def get_next_link_href
+  get_link_href_by_rel("next")
+end
+
+def get_previous_link_href
+  get_link_href_by_rel("previous")
+end
+
+def get_link_href_from_array(array,title)
+  array.each do |link|
+    if link.is_a?(Hash) && link['title'] == title 
+      return link['href']
+    end
+  end
+  raise "#{title} link not found!"
+end
+
+def get_link_href_from_array_by_rel(array,rel)
   array.each do |link|
     if link.is_a?(Hash) && link['rel'] == rel 
       return link['href']
@@ -600,5 +630,7 @@ def get_link_href_from_array(array,rel)
   end
   raise "#{rel} link not found!"
 end
+
+
 
 end
