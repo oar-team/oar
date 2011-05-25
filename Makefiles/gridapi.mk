@@ -11,13 +11,13 @@ DOCDIR_FILES = api/oargridapi.txt \
 EXAMPLEDIR_FILES = api/oargridapi_examples.txt
 
 clean:
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oargridapi.pl 
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oargridapi.pl
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 	rm -f api/API_INSTALL api/API_TODO
 
 build:
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oargridapi.pl
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oargridapi.pl
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 	cp api/INSTALL api/API_INSTALL
 	cp api/TODO api/API_TODO
 
@@ -47,7 +47,7 @@ uninstall:
 	@for file in $(DOCDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/`basename $$file`; done
 	@for file in $(EXAMPLEDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/examples/`basename $$file`; done
 	
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi CMD_RIGHTS=6755
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi CMD_RIGHTS=6755
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi.cgi
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oargridapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oargridapi-debug.cgi
 
 

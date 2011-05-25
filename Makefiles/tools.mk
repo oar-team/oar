@@ -10,11 +10,11 @@ MANDIR_FILES = man/man1/oaradmin.1
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oaradmin.rb 
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
 build:
 	$(MAKE) -f Makefiles/man.mk build
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oaradmin.rb
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
 install: build
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
