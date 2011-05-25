@@ -3,6 +3,8 @@
 package oarsub;
 require Exporter;
 
+use lib $ENV{'OARDIR'};
+
 use strict;
 #use warnings;
 use POSIX qw(strftime);
