@@ -163,7 +163,7 @@ end
 
 
 def full_job_details
-@jobarray = get(@api,'/jobs/details')
+@jobarray = get(@api,'jobs/details')
 if !@jobarray.is_a?(Hash) 
 	raise 'Error: In return value of GET /jobs/details API' 
 end
@@ -184,7 +184,7 @@ end
 
 
 def run_job_details
-@jobarray = get(@api,'/jobs')
+@jobarray = get(@api,'jobs')
 if !@jobarray.is_a?(Hash) 
 	raise 'Error: In return value of GET /jobs API' 
 end
@@ -205,7 +205,7 @@ end
 
 
 def specific_job_details(jobid)
-@specificjobdetails = get(@api, "/jobs/#{jobid}")
+@specificjobdetails = get(@api, "jobs/#{jobid}")
 if !@specificjobdetails.is_a?(Hash) or @specificjobdetails.empty?
 	raise 'Error: In return value of GET /jobs/<jobid> API' 
 end
@@ -226,7 +226,7 @@ end
 
 
 def dump_job_table
-@jobarray = get(@api,'/jobs/table')
+@jobarray = get(@api,'jobs/table')
 if !@jobarray.is_a?(Hash) 
 	raise 'Error: In return value of GET /jobs/table API' 
 end
@@ -424,7 +424,7 @@ end
 
 
 def resource_list_state   	
-@resources = get(@api, '/resources')
+@resources = get(@api, 'resources')
 if !@resources.is_a?(Hash)
 	raise 'Error: In return value of GET /resources API' 
 end
@@ -445,7 +445,7 @@ end
 
 
 def list_resource_details
-@resourcedetails = get(@api, '/resources/full')
+@resourcedetails = get(@api, 'resources/full')
 if !@resourcedetails.is_a?(Hash) 
 	raise 'Error: In return value of GET /resources/full API' 
 end
@@ -466,7 +466,7 @@ end
 
 
 def specific_resource_details(jobid)   	
-@specificres = get(@api, "/jobs/#{jobid}/resources")
+@specificres = get(@api, "jobs/#{jobid}/resources")
 if !@specificres.is_a?(Hash) or @specificres.empty?
 	raise 'Error: In return value of GET /jobs/<id>/resources API' 
 end
@@ -487,7 +487,7 @@ end
 
 
 def resource_of_nodes(netaddr)
-@noderesources = get(@api,"/resources/nodes/#{netaddr}")
+@noderesources = get(@api,"resources/nodes/#{netaddr}")
 if !@noderesources.is_a?(Hash) or @noderesources.empty? 
 	raise 'Error: In return value of GET /resources/nodes/<netaddr> API' 
 end
@@ -568,7 +568,7 @@ end
 
 
 def delete_resource(resid)
-@deletehash = delete(@api,"/resources/#{resid}")
+@deletehash = delete(@api,"resources/#{resid}")
 if !@deletehash.is_a?(Hash) or @deletehash.empty?
 	raise 'Error: In return value of DELETE /resources/<id> API' 
 end

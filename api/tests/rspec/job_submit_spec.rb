@@ -1,7 +1,7 @@
 require 'oarrestapi_lib'
 
 $jobid = ""
-APIURI="http://kameleon:kameleon@localhost/oarapi-priv" 
+APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
 describe OarApi do
   before :all do
     # Custom variables
