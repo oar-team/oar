@@ -1114,7 +1114,7 @@ SWITCH: for ($q) {
     } 
     my $result=[];
     foreach my $id (@ids) {
-      push(@$result,{ id => $id, links => [ { rel => "self", href => "/resources/$id" } ] });
+      push(@$result,{ id => $id, links => [ { rel => "self", href => "resources/$id" } ] });
     }
     $result = apilib::add_pagination($result,@ids,$q->path_info,$q->query_string,$ext,0,0,$STRUCTURE);
     print $header;
