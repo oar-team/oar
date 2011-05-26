@@ -17,7 +17,7 @@ version 2.5.0:
     nodes of a job at the end of this one (pingchecker) 
   - REST API heavily updated: new data structures with paginated results, desktop
     computing functions, rspec tests, oaradmin resources management, admission
-    rules edition
+    rules edition, relative/absolutes uris fixed
   - New ruby desktop computing agent using REST API (experimental)
   - Experimental testsuite
   - Poar: web portal using the REST API (experimental)
@@ -56,6 +56,7 @@ version 2.5.0:
     Hence the system will remain up and running and the user job will finished.
     Drawback: this file can be changed manually by the user so if someone knows
     a method to do the same thing but only managed by root, we take???
+  - Bugfix API: quotes where badly escaped into job submission (Ugo.Meda@insa-rennes.fr)
 
 version 2.4.4:
 --------------
