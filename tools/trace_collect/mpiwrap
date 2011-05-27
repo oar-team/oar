@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+use Getopt::Long;
+
+
+
+#Getopt::Long::Configure("gnu_getopt");
+#$GetOptions("n=i" =>\$Numres,"hostfile=s" => \$hostfile,"mca=s"=>\$mca);
+
+$cont=0;
+foreach (@ARGV)
+{
+	#print $_."\n";
+	if( -B $_ ){
+		if(( -s $_)){
+		#print "its binary \n";
+	 	$ind=$cont;
+		}
+	}
+	$cont++;
+}
+splice(@ARGV,$ind,0,"mpi_trace");
+system("/usr/bin/mpirun @ARGV");
+#print " @ARGV \n";
+
