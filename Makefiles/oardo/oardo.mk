@@ -56,7 +56,7 @@ ifeq "$(CMD_TARGET)" ""
 	exit 1
 endif
 	install -m $(CMD_RIGHTS) $(CMD_BUILDTARGET) $(CMD_TARGET)
-	chown $(CMD_OWNER).$(CMD_GROUP) $(CMD_TARGET)
+	chown root.$(CMD_GROUP) $(CMD_TARGET)
 	chmod $(CMD_RIGHTS) $(CMD_TARGET)
 
 uninstall:
