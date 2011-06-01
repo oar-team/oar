@@ -17,7 +17,7 @@ OARDO_BECOME_USER.
 Here are the scripts/modules where "oardodo" is called and which user is used 
 during this call:
 
-  - oar_Judas:
+  - OAR::Modules::Judas:
 	  this module is used for logging and notification.
 	  
     * user notification: email or command execution.OARDO_BECOME_USER = user

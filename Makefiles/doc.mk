@@ -26,15 +26,15 @@ install: build
 	install -m 0644 docs/schemas/Almighty.fig $(DESTDIR)$(DOCDIR)/html
 	install -m 0644 docs/schemas/Almighty.ps $(DESTDIR)$(DOCDIR)/html
 	
-	install -m 0644 tools/job_resource_manager.pl $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/
+	install -m 0644 sources/core/tools/job_resource_manager.pl $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/
 	
-	install -m 0644 scripts/oar_prologue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 scripts/oar_epilogue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 scripts/oar_prologue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 scripts/oar_epilogue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 scripts/oar_diffuse_script $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 scripts/lock_user.sh $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install -m 0644 scripts/oar_server_proepilogue.pl $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_prologue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_epilogue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_prologue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_epilogue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_diffuse_script $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/lock_user.sh $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_server_proepilogue.pl $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 
 uninstall:
 	rm -rf \

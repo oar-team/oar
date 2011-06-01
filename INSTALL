@@ -40,6 +40,7 @@ installed:
 
     - Perl-Mysql | Perl-PostgreSQL
     - Perl-DBI
+    - Perl(Module::Util)
     - MySQL | PostgreSQL
     - libmysql | libpostgres
 

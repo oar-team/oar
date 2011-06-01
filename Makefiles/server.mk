@@ -2,43 +2,41 @@
 
 include Makefiles/shared/shared.mk
 
-OARDIR_BINFILES = modules/almighty.pl \
-	          modules/leon.pl \
-		  modules/runner/runner \
-	          modules/sarko.pl \
-	          modules/finaud.pl \
-	          modules/scheduler/oar_meta_sched \
-		  qfunctions/oarnotify \
-		  modules/node_change_state.pl \
-		  qfunctions/oarremoveresource \
-		  qfunctions/oaraccounting \
-		  qfunctions/oarproperty \
-		  qfunctions/oarmonitor \
-		  modules/runner/bipbip \
-		  tools/detect_resources \
-		  tools/oar_checkdb.pl
+SRCDIR=sources/core
+
+OARDIR_BINFILES = $(SRCDIR)/modules/almighty.pl \
+	          $(SRCDIR)/modules/leon.pl \
+		  $(SRCDIR)/modules/runner/runner \
+	          $(SRCDIR)/modules/sarko.pl \
+	          $(SRCDIR)/modules/finaud.pl \
+	          $(SRCDIR)/modules/scheduler/oar_meta_sched \
+		  $(SRCDIR)/qfunctions/oarnotify \
+		  $(SRCDIR)/modules/node_change_state.pl \
+		  $(SRCDIR)/qfunctions/oarremoveresource \
+		  $(SRCDIR)/qfunctions/oaraccounting \
+		  $(SRCDIR)/qfunctions/oarproperty \
+		  $(SRCDIR)/qfunctions/oarmonitor \
+		  $(SRCDIR)/modules/runner/bipbip \
+		  $(SRCDIR)/tools/detect_resources \
+		  $(SRCDIR)/tools/oar_checkdb.pl
 
 
-OARDIR_DATAFILES = modules/scheduler/data_structures/Gantt_hole_storage.pm \
-		   modules/scheduler/oar_scheduler.pm \
-		   modules/hulot.pm \
-		   libs/window_forker.pm \
-		   modules/runner/ping_checker.pm \
-		   modules/runner/oarexec
+OAR_PERLLIB = $(SRCDIR)/server/lib
+OARDIR_DATAFILES = $(SRCDIR)/modules/runner/oarexec
 
 	  
-OARSCHEDULER_BINFILES = modules/scheduler/oar_sched_gantt_with_timesharing \
-		        modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing \
-		        modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder 
-OARCONFDIR_BINFILES = tools/oar_phoenix.pl
+OARSCHEDULER_BINFILES = $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing \
+		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing \
+		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder  
+OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl
 
-MANDIR_FILES = man/man1/Almighty.1 \
-	       man/man1/oar_mysql_db_init.1 \
-	       man/man1/oaraccounting.1 \
-	       man/man1/oarmonitor.1 \
-	       man/man1/oarnotify.1 \
-	       man/man1/oarproperty.1 \
-	       man/man1/oarremoveresource.1 \
+MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
+	       $(SRCDIR)/man/man1/oar_mysql_db_init.1 \
+	       $(SRCDIR)/man/man1/oaraccounting.1 \
+	       $(SRCDIR)/man/man1/oarmonitor.1 \
+	       $(SRCDIR)/man/man1/oarnotify.1 \
+	       $(SRCDIR)/man/man1/oarproperty.1 \
+	       $(SRCDIR)/man/man1/oarremoveresource.1 \
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
@@ -70,10 +68,7 @@ build:
 
 
 
-install: build
-	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_BINFILES) 
-	install -m 0644 -t $(DESTDIR)$(OARDIR) $(OARDIR_DATAFILES)
+install: build install_perllib install_oarbin install_oardata install_man1
 	
 	install -m 0755 -d $(DESTDIR)$(OARDIR)/schedulers
 	install -m 0755 -t $(DESTDIR)$(OARDIR)/schedulers $(OARSCHEDULER_BINFILES) 
@@ -86,7 +81,6 @@ install: build
 	mv $(DESTDIR)$(OARDIR)/leon.pl $(DESTDIR)$(OARDIR)/Leon
 	mv $(DESTDIR)$(OARDIR)/sarko.pl $(DESTDIR)$(OARDIR)/sarko
 	mv $(DESTDIR)$(OARDIR)/finaud.pl $(DESTDIR)$(OARDIR)/finaud
-	mv $(DESTDIR)$(OARDIR)/hulot.pm $(DESTDIR)$(OARDIR)/oar_Hulot.pm
 	mv $(DESTDIR)$(OARDIR)/node_change_state.pl $(DESTDIR)$(OARDIR)/NodeChangeState
 	
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
@@ -101,29 +95,22 @@ install: build
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 	
-	install -m 0755 -d $(DESTDIR)$(MANDIR)/man1
-	install -m 0644 -t $(DESTDIR)$(MANDIR)/man1 $(MANDIR_FILES)
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/job_resource_manager.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/job_resource_manager.pl already exists, not overwriting it." ; else install -m 0644 $(SRCDIR)/tools/job_resource_manager.pl $(DESTDIR)$(OARCONFDIR); fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 $(SRCDIR)/tools/suspend_resume_manager.pl $(DESTDIR)$(OARCONFDIR); fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 $(SRCDIR)/tools/oarmonitor_sensor.pl $(DESTDIR)$(OARCONFDIR); fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_prologue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 $(SRCDIR)/scripts/server_prologue $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 $(SRCDIR)/scripts/server_epilogue $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/wake_up_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/wake_up_nodes.sh already exists, not overwriting it." ; else install -m 0755 $(SRCDIR)/tools/wake_up_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh already exists, not overwriting it." ; else install -m 0755 $(SRCDIR)/tools/shut_down_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
 	
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/job_resource_manager.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/job_resource_manager.pl already exists, not overwriting it." ; else install -m 0644 tools/job_resource_manager.pl $(DESTDIR)$(OARCONFDIR); fi
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/suspend_resume_manager.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/suspend_resume_manager.pl already exists, not overwriting it." ; else install -m 0644 tools/suspend_resume_manager.pl $(DESTDIR)$(OARCONFDIR); fi
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oarmonitor_sensor.pl already exists, not overwriting it." ; else install -m 0644 tools/oarmonitor_sensor.pl $(DESTDIR)$(OARCONFDIR); fi
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_prologue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_prologue already exists, not overwriting it." ; else install -m 0755 scripts/server_prologue $(DESTDIR)$(OARCONFDIR) ; fi
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/server_epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/server_epilogue already exists, not overwriting it." ; else install -m 0755 scripts/server_epilogue $(DESTDIR)$(OARCONFDIR) ; fi
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/wake_up_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/wake_up_nodes.sh already exists, not overwriting it." ; else install -m 0755 tools/wake_up_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/shut_down_nodes.sh already exists, not overwriting it." ; else install -m 0755 tools/shut_down_nodes.sh $(DESTDIR)$(OARCONFDIR) ; fi
-	
-uninstall:
-	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+uninstall: uninstall_oarbin uninstall_perllib uninstall_oardata uninstall_man1
 	@for file in $(OARCONFDIR_FILES); do rm -f $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
 	@for file in $(OARSCHEDULER_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/schedulers/`basename $$file`; done
-	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
 	rm -f $(DESTDIR)$(OARDIR)/Almighty
 	rm -f $(DESTDIR)$(OARDIR)/Leon
 	rm -f $(DESTDIR)$(OARDIR)/Pythia
 	rm -f $(DESTDIR)$(OARDIR)/sarko
 	rm -f $(DESTDIR)$(OARDIR)/finaud
-	rm -f $(DESTDIR)$(OARDIR)/hulot.pm $(DESTDIR)$(OARDIR)/oar_Hulot.pm
 	rm -f $(DESTDIR)$(OARDIR)/NodeChangeState
 	
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init

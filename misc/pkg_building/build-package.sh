@@ -182,8 +182,8 @@ if [ -d rpm ]; then
     exit 1
 fi
 
-if [ -e tools/oarversion.pm ]; then
-    OAR_VERSION_FILE=tools/oarversion.pm
+if [ -e sources/core/lib/OAR/Version.pm ]; then
+    OAR_VERSION_FILE=sources/core/lib/OAR/Version.pm
 elif [ -e Tools/oarversion.pm ]; then
     OAR_VERSION_FILE=Tools/oarversion.pm
 else

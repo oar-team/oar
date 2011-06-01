@@ -42,7 +42,7 @@ ifeq "$(CMD_TARGET)" ""
 	echo "no CMD_TARGET given. Fail !"
 	exit 1
 endif
-	cp tools/oardo.c $(CMD_BUILDTARGET).c
+	cp sources/core/tools/oardo.c $(CMD_BUILDTARGET).c
 	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
 			s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFFILE)\"#;;\
 			s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(OARXAUTHLOCATION)\"#;;\

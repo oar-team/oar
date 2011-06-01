@@ -63,7 +63,7 @@ $(TARGETS_BUILD):
 
 
 # Dependencies
-server-install: sanity-check common-install libs-install database-install 
+server-install: sanity-check common-install libs-install database-install	
 server-clean: common-clean libs-clean database-clean 
 server-build: common-build libs-build database-build 
 server-uninstall: common-uninstall libs-uninstall database-uninstall 
@@ -103,7 +103,7 @@ tools-clean: common-clean libs-clean
 tools-build: common-build libs-build 
 tools-uninstall: common-uninstall libs-uninstall 
 
-api-install: sanity-check common-install libs-install
+api-install: sanity-check common-install libs-install 
 api-build: common-build libs-build
 api-clean: common-clean libs-clean
 api-uninstall: common-uninstall libs-uninstall

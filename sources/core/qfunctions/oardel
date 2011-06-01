@@ -1,0 +1,304 @@
+#!/usr/bin/perl
+# $Id$
+# delete a job
+
+use strict;
+use warnings;
+use Data::Dumper;
+use DBI();
+use OAR::IO;
+#use IO::Socket::INET;
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Tools;
+use Getopt::Long;
+use OAR::Version;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+my $exitValue = 0;
+
+# Display command help
+sub usage {
+    print <<EOS;
+Usage: $0 [-c|-b|-s][--array][job_ids][-h][-V]
+Delete or send checkpoint signal to jobs.
+Options:
+  -h, --help              show this help screen
+  -c, --checkpoint        send checkpoint signal to the job_ids
+  -s, --signal		  send the signal given as parameter to the job_ids
+  -b, --besteffort        tag specified jobs as besteffort (or remove it
+                          if they are already besteffort)
+      --array             delete/checkpoint array job(s) passed as parameter 
+                          (all the sub-jobs)
+      --sql               delete/checkpoint jobs which respond to the SQL
+                          where clause on the table jobs
+                          (ex: "project = 'p1'")
+  -V, --version           print OAR version number
+EOS
+    exit(1);
+}
+
+# Retrieve informations from OAR configuration file
+init_conf($ENV{OARCONFFILE});
+my $remote_host = get_conf("SERVER_HOSTNAME");
+my $remote_port = get_conf("SERVER_PORT");
+
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
+if (is_conf("OAR_RUNTIME_DIRECTORY")){
+    OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
+}
+
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+    OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+}
+
+# Parse command line
+Getopt::Long::Configure("gnu_getopt");
+my $Checkpoint;
+my $signal;
+my $sos;
+my $Version;
+my $Sql_property;
+my $Besteffort;
+my $array;
+
+GetOptions ("checkpoint|c" => \$Checkpoint,
+	    "signal|s:s" => \$signal,
+            "besteffort|b" => \$Besteffort,
+            "help|h" => \$sos,
+            "array" => \$array,
+            "sql=s"   => \$Sql_property,
+            "version|V" => \$Version
+           );
+
+if (defined($sos)){
+    usage();
+    exit(0);
+}
+
+if (defined($Version)){
+    print("OAR version : ".OAR::Version::get_version()."\n");
+    exit(0);
+}
+
+if (($#ARGV < 0) and (!defined($Sql_property))){
+    usage();
+    exit(1);
+}
+
+my @job_ids;
+
+foreach my $j (@ARGV){
+    if ($j =~ m/^\d+$/m){
+        #if defined --array, delete all the sub-jobs
+        if(defined($array)){
+             my $db = OAR::IO::connect_ro();
+             my @tmp_jobs = OAR::IO::get_array_job_ids($db,$j);
+            if(scalar @tmp_jobs == 0){
+                warn("[ERROR] \"$j\" is not a valid array job\n");
+                $exitValue = 4;
+            }else{
+                foreach my $j (@tmp_jobs){
+                    push(@job_ids, $j);
+                 }
+            }
+            OAR::IO::disconnect($db);
+        }else{
+            push(@job_ids, $j);
+        }
+    }else{
+        if(defined($array)){
+            warn("[ERROR] \"$j\" is not a valid job array identifier\n");
+        }else{
+            warn("[ERROR] \"$j\" is not a valid job identifier\n");
+        }
+        $exitValue = 4;
+    }
+}
+
+
+if (defined($Sql_property)){
+    my $db = OAR::IO::connect_ro();
+    foreach my $j (OAR::IO::get_jobs_with_given_properties($db,$Sql_property)){
+        push(@job_ids, $j->{job_id});
+    }
+    OAR::IO::disconnect($db);
+}
+
+my $base = OAR::IO::connect();
+# oardel is used to checkpoint some jobs
+if (defined($Checkpoint)){
+    foreach my $idJob (@job_ids){
+        print("Checkpointing the job $idJob ...");
+        # Try to insert checkpoint information in the database
+        my $err = OAR::IO::ask_checkpoint_job($base,$idJob); 
+        if ($err > 0) {
+            print("ERROR.\n");
+            if ($err == 1){
+                warn("Cannot checkpoint $idJob ; You are not the right user.\n");
+                $exitValue = 1;
+            }elsif ($err == 3){
+                warn("Cannot checkpoint $idJob ; The job is Interactive.\n");
+                $exitValue = 7;
+            }else{
+                warn("Cannot checkpoint $idJob ; This job is not running.\n");
+                $exitValue = 5;
+            }
+        }else{
+            my $strComment;
+            # Retrieve node names used by the job
+            my @hosts = OAR::IO::get_job_current_hostnames($base,$idJob);
+            my $timeoutSSH = OAR::Tools::get_ssh_timeout();
+            # Timeout the ssh command
+            eval {
+                $SIG{ALRM} = sub { die "alarm\n" };
+                alarm($timeoutSSH);
+                OAR::Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base, $Openssh_cmd, '');
+                alarm(0);
+            };
+            if ($@){
+                print("ERROR.\n");
+                if ($@ eq "alarm\n"){
+                    $exitValue = 3;
+                    $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
+                    warn("$strComment\n");
+                    OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
+                }else{
+                    $strComment = "An unknown error occured.";
+                    warn("$strComment\n");
+                    OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
+                }
+            }else{
+                print("DONE.\n");
+                $strComment = "The job $idJob was notified to checkpoint itself.";
+                print("$strComment\n");
+                OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESS",$idJob,$strComment);
+            }
+        }
+    }
+}elsif (defined($signal)){
+    foreach my $idJob (@job_ids){
+        print("Signaling the job $idJob with $signal signal.\n");
+        # Try to insert signal information in the database
+        my $err = OAR::IO::ask_signal_job($base,$idJob,$signal);
+        if ($err > 0) {
+            print("ERROR.\n");
+            if ($err == 1){
+                warn("Cannot signal $idJob ; You are not the right user.\n");
+                $exitValue = 1;
+            }elsif ($err == 3){
+                warn("Cannot signal $idJob ; The job is Interactive.\n");
+                $exitValue = 7;
+            }else{
+                warn("Cannot signal $idJob ; This job is not running.\n");
+                $exitValue = 5;
+            }
+        }else{
+            my $strComment;
+            # Retrieve node names used by the job
+            my @hosts = OAR::IO::get_job_current_hostnames($base,$idJob);
+            my $timeoutSSH = OAR::Tools::get_ssh_timeout();
+            # Timeout the ssh command
+            eval {
+                $SIG{ALRM} = sub { die "alarm\n" };
+                alarm($timeoutSSH);
+                OAR::Tools::signal_oarexec($hosts[0],$idJob,"SIGURG",1, $base, $Openssh_cmd, $signal);
+                alarm(0);
+            };
+            if ($@){
+                print("ERROR.\n");
+                if ($@ eq "alarm\n"){
+                    $exitValue = 3;
+                    $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
+                    warn("$strComment\n");
+                    OAR::IO::add_new_event($base,"SIG_ERROR",$idJob,$strComment);
+                }else{
+                    $strComment = "An unknown error occured.";
+                    warn("$strComment\n");
+                    OAR::IO::add_new_event($base,"SIG_ERROR",$idJob,$strComment);
+                }
+            }else{
+                print("DONE.\n");
+                $strComment = "The job $idJob was notified to signal itself with $signal.";
+                print("$strComment\n");
+                OAR::IO::add_new_event($base,"SIG_SUCCESS",$idJob,$strComment);
+            }
+        }
+    }
+}elsif (defined($Besteffort)){
+    my $lusr= $ENV{OARDO_USER};
+    if (($lusr ne "oar") and ($lusr ne "root")){
+        $exitValue = 8;
+        warn("You must be oar or root to use the -b option\n");
+    }else{
+        foreach my $j (@job_ids){
+            OAR::IO::lock_table($base,["jobs","job_types","resources","assigned_resources","event_logs"]);
+            my $job = OAR::IO::get_job($base, $j);
+            if (defined($job->{state}) and ($job->{state} eq "Running")){ 
+                my $types = OAR::IO::get_current_job_types($base,$j);
+                if (defined($types->{besteffort})){
+                    OAR::IO::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"-2","STOP");
+                    OAR::IO::remove_current_job_types($base,$job->{job_id},"besteffort");
+                    OAR::IO::add_new_event($base,"DELETE_BESTEFFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr removed the besteffort type.");
+                    print("Remove besteffort type for the job $j.\n");
+                }else{
+                    OAR::IO::add_current_job_types($base,$job->{job_id},"besteffort");
+                    OAR::IO::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"+2","START");
+                    OAR::IO::add_new_event($base,"ADD_BESTEFFORT_JOB_TYPE",$job->{job_id},"[oardel] User $lusr added the besteffort type.");
+                    print("Add besteffort type for the job $j.\n");
+                }
+            }else{
+                $exitValue = 9;
+                warn("The job $j is not in the Running state.\n");
+            }
+            OAR::IO::unlock_table($base);
+        }
+        OAR::IO::disconnect($base);
+        my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+        if (defined($strError)){
+            warn("$strError\n");
+            $exitValue = 2;
+        }
+    }
+}else{
+    # oardel is used to delete some jobs
+    my @jobRegistered;
+    foreach my $idJob (@job_ids) {
+        print("Deleting the job = $idJob ...");
+        # Try to insert delete informations in the database
+        OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        my $err = OAR::IO::frag_job($base,$idJob);
+        OAR::IO::unlock_table($base);
+        if ($err == -1) {
+            print("ERROR.\n");
+            warn("Cannot frag $idJob ; You are not the right user.\n");
+            $exitValue = 1;
+        }elsif ($err == -2){
+            print("ERROR.\n");
+            warn("Cannot frag $idJob ; This job was already killed.\n");
+            $exitValue = 6;
+	}else{
+            print("REGISTERED.\n");
+            push(@jobRegistered,$idJob);
+        }
+
+    }
+    OAR::IO::disconnect($base);
+    if (@jobRegistered){
+        #Signal Almigthy
+        my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel") if (!defined($strError));
+        if (defined($strError)){
+            warn("$strError\n");
+            $exitValue = 2;
+        }else{
+            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n");
+        }
+    }
+}
+
+
+exit($exitValue);

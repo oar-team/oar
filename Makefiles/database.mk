@@ -2,14 +2,16 @@
 
 include Makefiles/shared/shared.mk
 
-OARDIR_DATAFILES = database/default_data.sql \
-		   database/mysql_default_admission_rules.sql \
-		   database/mysql_structure.sql \
-		   database/pg_default_admission_rules.sql \
-		   database/pg_structure.sql
+SRCDIR=sources/core
 
-OARDIR_BINFILES = database/oar_mysql_db_init.pl \
-		  database/oar_psql_db_init.pl
+OARDIR_DATAFILES = $(SRCDIR)/database/default_data.sql \
+		   $(SRCDIR)/database/mysql_default_admission_rules.sql \
+		   $(SRCDIR)/database/mysql_structure.sql \
+		   $(SRCDIR)/database/pg_default_admission_rules.sql \
+		   $(SRCDIR)/database/pg_structure.sql
+
+OARDIR_BINFILES = $(SRCDIR)/database/oar_mysql_db_init.pl \
+		  $(SRCDIR)/database/oar_psql_db_init.pl
 
 clean:
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
@@ -19,10 +21,7 @@ build:
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init
 
-install:
-	install -d -m 0755 $(DESTDIR)$(OARDIR)
-	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_BINFILES)
-	install -m 0644 -t $(DESTDIR)$(OARDIR) $(OARDIR_DATAFILES)
+install: install_oarbin install_oardata
 	
 	# Rename installed files
 	mv $(DESTDIR)$(OARDIR)/oar_mysql_db_init.pl $(DESTDIR)$(OARDIR)/oar_mysql_db_init
@@ -32,9 +31,7 @@ install:
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init
 
-uninstall:
-	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+uninstall: uninstall_oarbin uninstall_oardata
 	rm -f $(DESTDIR)$(OARDIR)/oar_mysql_db_init
 	rm -f $(DESTDIR)$(OARDIR)/oar_psql_db_init
 	

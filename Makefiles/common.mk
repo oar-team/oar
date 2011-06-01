@@ -2,23 +2,25 @@
 
 include Makefiles/shared/shared.mk
 
-OARDIR_FILES = tools/oarsh/oarsh_shell \
-	       tools/oarsh/oarsh \
+SRCDIR=sources/core
 
-MANDIR_FILES = man/man1/oarsh.1 \
-	       man/man1/oarprint.1 
+OARDIR_BINFILES = $(SRCDIR)/tools/oarsh/oarsh_shell \
+	          $(SRCDIR)/tools/oarsh/oarsh 
+
+MANDIR_FILES = $(SRCDIR)/man/man1/oarsh.1 \
+	       $(SRCDIR)/man/man1/oarprint.1 
 
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo 
 	rm -rf Makefiles/oardodo_tmp
-build:
+build: 
 	$(MAKE) -f Makefiles/man.mk build
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 	
 	mkdir -p Makefiles/oardodo_tmp
-	cp tools/oardodo.c Makefiles/oardodo_tmp/oardodo.c 
+	cp $(SRCDIR)/tools/oardodo.c Makefiles/oardodo_tmp/oardodo.c 
 	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
 			     s#define OARUSER .*#define OARUSER \"$(OAROWNER)\"#;;\
 			     s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFDIR)/oar.conf\"#;;\
@@ -26,9 +28,7 @@ build:
 				" Makefiles/oardodo_tmp/oardodo.c
 	$(CC) $(CFLAGS) -o Makefiles/oardodo_tmp/oardodo "Makefiles/oardodo_tmp/oardodo.c"
 	
-install: 
-	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_FILES)
+install: install_oarbin install_man1
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#;;\
 				 s#^OARDIR=.*#OARDIR=$(OARDIR)#;;\
 				" $(DESTDIR)$(OARDIR)/oarsh_shell
@@ -39,12 +39,12 @@ install:
 	
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
 	install -d -m 0755 $(DESTDIR)$(BINDIR)
-	install -m 0755 qfunctions/oarprint $(DESTDIR)$(BINDIR)
-	install -m 0755 tools/oarsh/oarsh_sudowrapper.sh $(DESTDIR)$(BINDIR)/oarsh
+	install -m 0755 $(SRCDIR)/qfunctions/oarprint $(DESTDIR)$(BINDIR)
+	install -m 0755 $(SRCDIR)/tools/oarsh/oarsh_sudowrapper.sh $(DESTDIR)$(BINDIR)/oarsh
 	perl -i -pe "s#^OARDIR=.*#OARDIR=$(OARDIR)#;;\
 				 s#^OARSHCMD=.*#OARSHCMD=oarsh_oardo#\
 				" $(DESTDIR)$(BINDIR)/oarsh
-	install -m 0755 tools/oarsh/oarcp $(DESTDIR)$(BINDIR)
+	install -m 0755 $(SRCDIR)/tools/oarsh/oarcp $(DESTDIR)$(BINDIR)
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(DESTDIR)$(BINDIR)/oarcp
 	
 	install -d -m 0755 $(DESTDIR)$(OARDIR)/oardodo
@@ -55,18 +55,14 @@ install:
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	
 	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/oar.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 tools/oar.conf $(DESTDIR)$(OARCONFDIR) ; chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/oar.conf || /bin/true ; fi
+	@if [ -f $(DESTDIR)$(OARCONFDIR)/oar.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/oar.conf already exists, not overwriting it." ; else install -m 0600 $(SRCDIR)/tools/oar.conf $(DESTDIR)$(OARCONFDIR) ; chown $(OAROWNER).root $(DESTDIR)$(OARCONFDIR)/oar.conf || /bin/true ; fi
 	
-	install -m 0755 -d $(DESTDIR)$(MANDIR)/man1
-	install -m 0644 -t $(DESTDIR)$(MANDIR)/man1 $(MANDIR_FILES)
 	cp -a $(DESTDIR)$(MANDIR)/man1/oarsh.1 $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	
 	install -d -m 0755 $(DESTDIR)$(OARDIR)/db_upgrade
-	cp -f database/*upgrade*.sql $(DESTDIR)$(OARDIR)/db_upgrade/
+	cp -f $(SRCDIR)/database/*upgrade*.sql $(DESTDIR)$(OARDIR)/db_upgrade/
 
-uninstall:
-	@for file in $(OARDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+uninstall: uninstall_oarbin uninstall_man1
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 	rm -f $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	rm -f $(DESTDIR)$(OARDIR)/db_upgrade/*upgrade*.sql

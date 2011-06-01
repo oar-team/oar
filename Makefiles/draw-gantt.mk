@@ -2,7 +2,7 @@
 
 include Makefiles/shared/shared.mk
 
-DRAWGANTT_DIR=visualization_interfaces/DrawGantt
+DRAWGANTT_DIR=sources/visualization_interfaces/DrawGantt
 
 clean:
 	# Nothing to do
@@ -31,9 +31,9 @@ uninstall:
 	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons/*.png \
 	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js/*.js
 	
-	rmdir --ignore-fail-on-non-empty \
+	@rmdir --ignore-fail-on-non-empty \
 	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache \
 	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js \
 	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files
+	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files || true
 
