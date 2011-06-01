@@ -19,11 +19,11 @@ MANDIR_FILES = man/man1/oarnodesetting.1
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodesetting 
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 build:
 	$(MAKE) -f Makefiles/man.mk build
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodesetting
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 install:
 	install -m 0755 -d $(DESTDIR)$(OARDIR)

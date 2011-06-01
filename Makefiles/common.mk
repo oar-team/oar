@@ -11,12 +11,10 @@ MANDIR_FILES = man/man1/oarsh.1 \
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsh
-
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo 
 build:
 	$(MAKE) -f Makefiles/man.mk build
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsh 
-
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 install: 
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
 	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_FILES)
@@ -25,7 +23,7 @@ install:
 				" $(DESTDIR)$(OARDIR)/oarsh_shell
 	perl -i -pe "s#^XAUTH_LOCATION=.*#XAUTH_LOCATION=$(XAUTHCMDPATH)#" $(DESTDIR)$(OARDIR)/oarsh
 	
-	$(OARDO_INSTALL) CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo CMD_WRAPPER=$(OARDIR)/oarsh CMD_RIGHTS=6755
+	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo CMD_RIGHTS=6755
 	chmod 6755 $(DESTDIR)$(OARDIR)/oarsh_oardo
 	
 	install -d -m 0755 $(DESTDIR)$(SBINDIR)
@@ -65,7 +63,7 @@ install:
 uninstall:
 	@for file in $(OARDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
 	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
-	$(OARDO_UNINSTALL) CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo CMD_WRAPPER=$(OARDIR)/oarsh CMD_RIGHTS=6755
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 	rm -f $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	rm -f $(DESTDIR)$(OARDIR)/db_upgrade/*upgrade*.sql
 
