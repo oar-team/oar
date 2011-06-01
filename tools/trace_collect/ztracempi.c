@@ -12,8 +12,9 @@
 #include <syslog.h>
 #include <string.h>
 #include "mpi.h"
+//#include <linux/dirent.h>
 #define  MPI_EVENTS 10
-#define  BUFFER_SIZE 100
+//#define  BUFFER_SIZE 100
 #define  TIME_INTERVAL 1
 
 /// Data structure for the MPICall ///
@@ -24,6 +25,7 @@ static int faketime=0;
 static int buffer=0;
 static char trace_dir[100];
 static FILE *trace;
+static int mpi_program=0;
 
 struct reg_trace {
 time_t  seconds;
@@ -41,7 +43,7 @@ int num;
 
 extern const char *__progname;
 
-static REG_TRACE BuffTrace[BUFFER_SIZE];
+//static REG_TRACE BuffTrace[BUFFER_SIZE];
 static EVENT_STATS mpistat[MPI_EVENTS];
 static time_t time_start_block;
 static time_t interval;
@@ -101,8 +103,9 @@ static int read_conf_file(void)
                 syslog (LOG_INFO,"Using /tmp/ to save the traces");
 		strcpy(trace_dir,"/tmp/");
                 closelog();
+		return 0;
 	}
-
+	
 	
 }
 static void initstats(void)
@@ -127,6 +130,7 @@ static reg_trace(int parameter,char *call)
 		printstats(time_start_block,tim.tv_sec);	
 		time_start_block=tim.tv_sec;	
 	}
+	/*
 	BuffTrace[buffer].seconds=tim.tv_sec;
         BuffTrace[buffer].useconds=tim.tv_usec;
         BuffTrace[buffer].call=call;
@@ -138,6 +142,7 @@ static reg_trace(int parameter,char *call)
 		//writetodisk();		
 		buffer=0;
 	}
+	*/
 }
 
 static void writetodisk()
@@ -146,7 +151,7 @@ static void writetodisk()
         //printf(" printing data node : %s \n",buf);
         int index;
 	for(index=0;index<buffer;index++){
-                fprintf(trace," data:  %lu.%lu \t%s\t%d\n",BuffTrace[index].seconds,BuffTrace[index].useconds,BuffTrace[index].call,BuffTrace[index].parameter);
+                //fprintf(trace," data:  %lu.%lu \t%s\t%d\n",BuffTrace[index].seconds,BuffTrace[index].useconds,BuffTrace[index].call,BuffTrace[index].parameter);
 		//printf("data:  %lu\t%s\t%d\n",BuffTrace[index].time,BuffTrace[index].call,BuffTrace[index].parameter);
                 }
 	
@@ -284,9 +289,19 @@ int MPI_Init(int * argc, char***argv)
   int ret = libMPI_Init(argc, argv);
   int rank = -1;
   int size = -1;
-  //libMPI_Comm_size(MPI_COMM_WORLD, &size);
-  //libMPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  //int rank; 
+  mpi_program=1;
+  read_conf_file();
+     mpistat[0].call="MPI_Send";
+     mpistat[1].call="MPI_Recv";
+     mpistat[2].call="MPI_Wait";
+     mpistat[3].call="MPI_Barrier";
+     mpistat[4].call="MPI_Irecv";
+     mpistat[5].call="MPI_Isend";
+     mpistat[6].call="MPI_Waitall";
+     mpistat[7].call="MPI_Bcast";
+     mpistat[8].call="MPI_Allreduce";
+     mpistat[9].call="MPI_Gather";    
+     interval=1;
   return ret;
 }
 
@@ -340,6 +355,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype,int source, int tag, M
 void libinit(void) __attribute__ ((constructor));
 void libinit(void)
 {
+    
     void * handle = RTLD_NEXT;
     char * error;
       
@@ -371,18 +387,7 @@ void libinit(void)
      time_start_block=time.tv_sec;
      //printf("Time star : %llu \n");
      ///end timer block
-     mpistat[0].call="MPI_Send";
-     mpistat[1].call="MPI_Recv";
-     mpistat[2].call="MPI_Wait";
-     mpistat[3].call="MPI_Barrier";
-     mpistat[4].call="MPI_Irecv";
-     mpistat[5].call="MPI_Isend";
-     mpistat[6].call="MPI_Waitall";
-     mpistat[7].call="MPI_Bcast";
-     mpistat[8].call="MPI_Allreduce";
-     mpistat[9].call="MPI_Gather";    
-     interval=1;
-     read_conf_file();
+     //read_conf_file();
 
 
      
@@ -398,12 +403,14 @@ void libinit(void)
 void libfinalize(void) __attribute__ ((destructor));
 void libfinalize(void)
 {
-   struct timeval tim;
-   gettimeofday(&tim, NULL);
-   printstats(time_start_block,tim.tv_sec);
-
+   if(mpi_program!=0)
+   {	struct timeval tim;
+   	gettimeofday(&tim, NULL);
+   	printstats(time_start_block,tim.tv_sec);
+	fclose(trace);
   //writetodisk();
-  fclose(trace);
+   }
+  
 
 }
 

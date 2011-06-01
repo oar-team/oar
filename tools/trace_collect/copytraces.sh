@@ -37,6 +37,7 @@ else
 			taktuk   -c "/usr/bin/ssh -p 6667" -m $i broadcast exec - rm $TRACEDIR/trace-$i-$OAR_JOB_ID.log -
 			#erasin the mpi trace 
 			taktuk   -c "/usr/bin/ssh -p 6667" -m $i broadcast exec - rm /tmp/tracempi$OAR_JOB_ID -
+			taktuk   -c "/usr/bin/ssh -p 6667" -m $i broadcast exec - 'rm '$TRACEDIR'/mpi-trace-write*' -
 		else
 			echo "we dont tranfer to this node $i" >>$TRACEDIR/$DEBUGFILE
 			if [ -w $TRACEDIR ]
@@ -51,8 +52,12 @@ else
 			do 
 				echo $k >> $TRACEDIR/$DEBUGFILE
 				cat $k >> $TRACEDIR/tracempi-$i-$OAR_JOB_ID.log
-			 	rm $i 
-			done
+			 	rm $k 
+			done			 
+			
+			###Erasing the mpi-trace-write
+                        rm $TRACEDIR/mpi-trace-write
+
 		fi
 		
 	done
