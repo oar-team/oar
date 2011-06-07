@@ -25,7 +25,7 @@ export VARLIBDIR=/var/lib
 	dh $@ 
 
 override_dh_auto_build:
-	$(MAKE) -e build
+	$(MAKE) -e packages-build   PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
 
 override_dh_auto_install:
 	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
