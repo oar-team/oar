@@ -20,7 +20,7 @@ clean:
 build:
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
-	cp api/BUILD api/API_INSTALL
+	cp api/INSTALL api/API_INSTALL
 	cp api/TODO api/API_TODO
 
 install:
