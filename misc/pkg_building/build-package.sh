@@ -82,6 +82,7 @@ gen_tarball() {
     mkdir -p $BUILD_AREA
     TARBALL=$BUILD_AREA/oar-$VERSION.tar.gz
     tar czf $TARBALL -C $TMPDIR .
+    [ -d "$TMPDIR" ] && rm -rf "$TMPDIR"
     echo "$BUILD_AREA/oar-$VERSION.tar.gz"
 }
 
