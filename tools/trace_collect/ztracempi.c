@@ -13,7 +13,7 @@
 #include <string.h>
 #include "mpi.h"
 //#include <linux/dirent.h>
-#define  MPI_EVENTS 10
+#define  MPI_EVENTS 11
 //#define  BUFFER_SIZE 100
 #define  TIME_INTERVAL 1
 
@@ -26,7 +26,6 @@ static int buffer=0;
 static char trace_dir[100];
 static FILE *trace;
 static int mpi_program=0;
-
 struct reg_trace {
 time_t  seconds;
 time_t  useconds;
@@ -51,6 +50,7 @@ static void writetodisk(void);
 static void initstats(void);
 static void printstats(time_t, time_t);
 
+//Declaration of MPI's Calls
 
 int ( *libMPI_Init) (int *, char ***);
 int ( *libMPI_Init_thread) (int *, char ***, int, int*);
@@ -66,6 +66,7 @@ int (* libMPI_Waitall) ( int count, MPI_Request array_of_requests[], MPI_Status 
 int (* libMPI_Bcast) ( void *buffer, int count, MPI_Datatype datatype, int root,MPI_Comm comm );
 int (* libMPI_Allreduce )( void *sendbuf, void *recvbuf, int count,MPI_Datatype datatype, MPI_Op op, MPI_Comm comm );
 int (* libMPI_Gather ) ( void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm );
+int (* libMPI_Reduce ) ( void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm);
 
 
 
@@ -73,7 +74,9 @@ static int read_conf_file(void)
 {
 	FILE *conf;
 	FILE *check;
+	//############## PATH to configuration file  ############################
 	conf=fopen("/etc/mpitrace.conf","r");
+	//######################################################################
 	char line[80];
 	//char prefix[200];
         if(conf==NULL)
@@ -196,6 +199,12 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
 	return libMPI_Allreduce(sendbuf,recvbuf,count,datatype,op,comm);
 }
 
+int MPI_Reduce(void *sendbuf, void *recvbuf, int count,MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm) 
+{
+	mpistat[10].num++;
+	mpistat[10].bytes+=count;
+	return libMPI_Reduce(sendbuf,recvbuf,count,datatype,op,root,comm);
+}
 int MPI_Gather ( void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm )
 {
 	mpistat[9].num++;
@@ -301,6 +310,7 @@ int MPI_Init(int * argc, char***argv)
      mpistat[7].call="MPI_Bcast";
      mpistat[8].call="MPI_Allreduce";
      mpistat[9].call="MPI_Gather";    
+     mpistat[10].call="MPI_Reduce";
      interval=1;
   return ret;
 }
@@ -370,6 +380,7 @@ void libinit(void)
     libMPI_Waitall = (typeof  (libMPI_Waitall)) (uintptr_t) dlsym (handle,"MPI_Waitall");
     libMPI_Bcast = (typeof (libMPI_Bcast)) (uintptr_t) dlsym (handle, "MPI_Bcast");
     libMPI_Allreduce = (typeof (libMPI_Allreduce)) (uintptr_t) dlsym (handle,"MPI_Allreduce");
+    libMPI_Reduce = (typeof (libMPI_Reduce)) (uintptr_t) dlsym (handle,"MPI_Reduce");
     libMPI_Gather = (typeof (libMPI_Gather)) (uintptr_t) dlsym (handle,"MPI_Gather");
     libMPI_Init = (typeof (libMPI_Init)) (uintptr_t) dlsym (handle,"MPI_Init");
 
