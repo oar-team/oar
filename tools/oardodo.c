@@ -29,10 +29,10 @@
 // Static conf to edit //
 /////////////////////////
 
-#define OARDIR "/usr/local/oar"
-#define OARCONFFILE "/etc/oar/oar.conf"
-#define OARXAUTHLOCATION "/usr/bin/xauth"
-#define OARUSER "oar"
+#define OARDIR "TT/usr/local/oar"
+#define OARCONFFILE "TT/etc/oar/oar.conf"
+#define OARXAUTHLOCATION "TT/usr/bin/xauth"
+#define OARUSER "TToar"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -112,6 +112,20 @@ int main(int ac, char **av){
         }
     }else{
         user_to_become = DEFAULTUSERTOBECOME;
+    }
+
+    // Tell OOM to kill the user processes first except for root and oar
+    if ( (strcmp(user_to_become, "root") != 0) && (strcmp(user_to_become, OARUSER) != 0) ){
+        FILE *oom_file;
+        if ((oom_file = fopen("/proc/self/oom_score_adj", "w")) != NULL){
+            fprintf(oom_file, "1000");
+            fclose(oom_file);
+        }else{
+            if ((oom_file = fopen("/proc/self/oom_adj", "w")) != NULL){
+                fprintf(oom_file, "15");
+                fclose(oom_file);
+            }
+        }
     }
 
     // Change process owner

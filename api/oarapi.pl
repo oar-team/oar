@@ -692,12 +692,15 @@ SWITCH: for ($q) {
     my $tmpfilename = "";
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
+        $job->{script_path} =~ s/("|'|\\|\x00)/\\$1/g;
         $command = " \"$job->{script_path}\"";
       }
       elsif ($option eq "command") {
+        $job->{command} =~ s/("|'|\\|\x00)/\\$1/g;
         $command = " \"$job->{command}\"";
       }
       elsif ($option eq "script") {
+        $job->{script} =~ s/("|'|\\|\x00)/\\$1/g;
         $script = $job->{script};
       }
       elsif ($option eq "workdir") {
@@ -709,16 +712,18 @@ SWITCH: for ($q) {
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
           $oarcmd .= " --$option";
+          $elem =~ s/("|'|\\|\x00)/\\$1/g;
           $oarcmd .= "=\"$elem\"" if $elem ne "";
          }
       }
       else {
         $oarcmd .= " --$option";
+        $job->{option} =~ s/("|'|\\|\x00)/\\$1/g;
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
     $oarcmd .= $command;
-    $oarcmd =~ s/\"/\\\"/g;
+    $oarcmd =~ s/("|'|\\|\x00)/\\$1/g;
     my $cmd;
     # If a script is provided, we create a file into the workdir and write
     # the script inside.
@@ -1114,7 +1119,7 @@ SWITCH: for ($q) {
     } 
     my $result=[];
     foreach my $id (@ids) {
-      push(@$result,{ id => $id, links => [ { rel => "self", href => "/resources/$id" } ] });
+      push(@$result,{ id => $id, links => [ { rel => "self", href => "resources/$id" } ] });
     }
     $result = apilib::add_pagination($result,@ids,$q->path_info,$q->query_string,$ext,0,0,$STRUCTURE);
     print $header;

@@ -1,0 +1,38 @@
+#!/bin/sh
+
+APP_DIR=/var/lib/oar
+
+if [ -f `dirname $0`/init.conf ]
+then
+  . `dirname $0`/init.conf
+fi
+
+case "$1" in
+   start)
+	if [ -e "/var/run/oar/jobmonitor.pid" ]
+        then
+             echo "Monitoring is running" 
+             exit 0
+        fi
+	echo "Starting Job monitoring"
+        mkdir -p /var/run/oar
+	$APP_DIR/clustermon.pl & 
+	echo $! >/var/run/oar/jobmonitor.pid
+	;;
+   stop)
+	echo "Stopping Job monitoring"
+	pid=`cat /var/run/oar/jobmonitor.pid`
+	kill $pid
+	rm /var/run/oar/jobmonitor.pid
+	;;
+   restart)
+	echo "Stopping Job monitoring"
+	pid=`cat /var/run/oar/jobmonitor.pid`
+        kill $pid
+        echo "Starting Job monitoring"
+        $APP_DIR/clustermon.pl &
+        echo $! >/var/run/oar/jobmonitor.pid
+	;;
+esac
+
+exit 0
