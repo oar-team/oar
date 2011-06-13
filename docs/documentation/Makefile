@@ -23,7 +23,7 @@ pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf pdf-api
 	rst2html -stg $< $@
 
 %.tex: %.rst
-	rst2newlatex $< $@
+	rst2newlatex --no-section-numbering $< $@
 
 %.pdf: %.tex
 	pdflatex $< $@
