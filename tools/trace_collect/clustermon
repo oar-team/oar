@@ -7,6 +7,12 @@ then
   . `dirname $0`/init.conf
 fi
 
+CONF=""
+if [ -f $APP_DIR/clustermon.conf ]
+then
+  CONF="-f $APP_DIR/clustermon.conf"
+fi
+
 case "$1" in
    start)
 	if [ -e "/var/run/oar/jobmonitor.pid" ]
@@ -16,7 +22,7 @@ case "$1" in
         fi
 	echo "Starting Job monitoring"
         mkdir -p /var/run/oar
-	$APP_DIR/clustermon.pl & 
+	$APP_DIR/clustermon.pl $CONF & 
 	echo $! >/var/run/oar/jobmonitor.pid
 	;;
    stop)
@@ -30,7 +36,7 @@ case "$1" in
 	pid=`cat /var/run/oar/jobmonitor.pid`
         kill $pid
         echo "Starting Job monitoring"
-        $APP_DIR/clustermon.pl &
+        $APP_DIR/clustermon.pl $CONF &
         echo $! >/var/run/oar/jobmonitor.pid
 	;;
 esac
