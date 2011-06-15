@@ -8,7 +8,8 @@ It manages resources of clusters as a traditional batch scheduler
 the resources but manages them (reservation, acces granting) in order to allow
 you to connect these resources and use them.
 
-Its design is based on high level tools: 
+Its design is based on high level tools:
+
   - relational database engine MySQL or PostgreSQL,
   - scripting language Perl,  
   - confinement system mechanism cpuset,
@@ -20,6 +21,7 @@ It currently manages over than 5000 nodes and has executed more than 5 million
 jobs.
 
 OAR advantages:
+
   - No specific daemon on nodes.
   - No dependence on specific computing libraries like MPI. We support all
     sort of parallel user applications.
@@ -40,6 +42,7 @@ OAR advantages:
     http://kadeploy.imag.fr/.
 
 Other more *common* features:
+
   - Batch and Interactive jobs.
   - Admission rules.
   - Walltime.

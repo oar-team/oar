@@ -11,7 +11,7 @@ TAKTUKCMD=0
 mkdir -p $TRACEDIR
 
 echo $OAR_JOB_ID  >$TRACEDIR/$DEBUGFILE
-HOSTNAME=`cat /etc/hostname `
+HOSTNAME=`hostname -a`
 
 echo "hostname : $HOSTNAME ">>$TRACEDIR/$DEBUGFILE
 uniq $OAR_NODE_FILE >>$TRACEDIR/$DEBUGFILE
