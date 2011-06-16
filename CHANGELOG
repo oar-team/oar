@@ -59,6 +59,8 @@ version 2.5.0:
   - Bugfix API: quotes where badly escaped into job submission (Ugo.Meda@insa-rennes.fr)
   - Add the possibility to automatically resubmit idempotent job which ends
     with an exit code of 99: oarsub -t idempotent "sleep 5; exit 99"
+  - Bugfix API: Some informations where missing into jobs/details, especially the 
+    scheduled resources.
 
 version 2.4.4:
 --------------
