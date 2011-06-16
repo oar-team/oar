@@ -11,7 +11,7 @@ TAKTUKCMD=0
 mkdir -p $TRACEDIR
 
 echo $OAR_JOB_ID  >$TRACEDIR/$DEBUGFILE
-HOSTNAME=`cat /etc/hostname `
+HOSTNAME=`hostname -a`
 
 echo "hostname : $HOSTNAME ">>$TRACEDIR/$DEBUGFILE
 uniq $OAR_NODE_FILE >>$TRACEDIR/$DEBUGFILE
@@ -30,11 +30,11 @@ else
 		if [ "$HOSTNAME" != "$i" ]
 	        then
 			echo "copying  file : /var/log/oar/trace-$i-$OAR_JOB_ID.log" >>$TRACEDIR/$DEBUGFILE				
-			taktuk  -m $i broadcast get [ $TRACEDIR/trace-$i-$OAR_JOB_ID.log ] [ $TRACEDIR/ ]
-			taktuk  -m $i broadcast exec [ 'for i in $(ls /tmp/trace-MPI.node-*'$OAR_JOB_ID'*); do cat $i >>/tmp/tracempi'$OAR_JOB_ID'; /usr/lib/oar/oardodo/oardodo rm $i ; done' ]
-			taktuk  -m $i broadcast get [ /tmp/tracempi$OAR_JOB_ID ] [ $TRACEDIR/tracempi-$i-$OAR_JOB_ID.log ]
+			taktuk  -c "/usr/bin/ssh -p 6667" -m $i broadcast get [ $TRACEDIR/trace-$i-$OAR_JOB_ID.log ] [ $TRACEDIR/ ]
+			taktuk  -c "/usr/bin/ssh -p 6667" -m $i broadcast exec [ 'for i in $(ls /tmp/trace-MPI.node-*'$OAR_JOB_ID'*); do cat $i >>/tmp/tracempi'$OAR_JOB_ID'; /usr/lib/oar/oardodo/oardodo rm $i ; done' ]
+			taktuk  -c "/usr/bin/ssh -p 6667" -m $i broadcast get [ /tmp/tracempi$OAR_JOB_ID ] [ $TRACEDIR/tracempi-$i-$OAR_JOB_ID.log ]
 			#Erasing the trace files
-			taktuk  -m $i broadcast exec [ 'rm $TRACEDIR/trace-$i-'$OAR_JOB_ID'.log ;  rm /tmp/tracempi'$OAR_JOB_ID'' ]
+			taktuk   -c "/usr/bin/ssh -p 6667" -m $i broadcast exec [ 'rm $TRACEDIR/trace-$i-'$OAR_JOB_ID'.log ;  rm /tmp/tracempi'$OAR_JOB_ID'' ]
 		else
 			echo "we dont tranfer to this node $i" >>$TRACEDIR/$DEBUGFILE
 			if [ -w $TRACEDIR ]
@@ -72,7 +72,7 @@ done
 
 
 bzip2 $TRACEDIR/trace-$OAR_JOB_ID.tar
-taktuk -m $SERVER broadcast put [ $TRACEDIR/trace-$OAR_JOB_ID.tar.bz2 ] [ $TRACEDIR/ ]
+taktuk   -c "/usr/bin/ssh -p 6667" -m $SERVER broadcast put [ $TRACEDIR/trace-$OAR_JOB_ID.tar.bz2 ] [ $TRACEDIR/ ]
 rm $TRACEDIR/trace-$OAR_JOB_ID.tar.bz2
 
 #ersaing the file in the node
