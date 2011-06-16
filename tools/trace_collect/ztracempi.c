@@ -69,34 +69,34 @@ int (* libMPI_Gather ) ( void *sendbuf, int sendcnt, MPI_Datatype sendtype, void
 int (* libMPI_Reduce ) ( void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm);
 
 
-
+/*
 static int read_conf_file(void)
 {
-	FILE *conf;
-	FILE *check;
+	//FILE *conf;
+	//FILE *check;
 	//############## PATH to configuration file  ############################
-	conf=fopen("/etc/mpitrace.conf","r");
+	//conf=fopen("/etc/mpitrace.conf","r");
 	//######################################################################
-	char line[80];
+	//char line[80];
 	//char prefix[200];
-        if(conf==NULL)
-	{
+        //if(conf==NULL)
+	//{
 		
-     		openlog("mpi-trace", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-     		syslog (LOG_INFO, "Can't Open Configuration file");
-		syslog (LOG_INFO,"Using /tmp/ to save the traces");
-     		closelog();	
+     	//	openlog("mpi-trace", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+     	//	syslog (LOG_INFO, "Can't Open Configuration file");
+	//	syslog (LOG_INFO,"Using /tmp/ to save the traces");
+     	//	closelog();	
 		strcpy(trace_dir,"/tmp/");
-		return 0;
-	}
-	 while(fgets(line, 80, conf) != NULL)
-   	{
-	 sscanf (line, "%s", &trace_dir);
-	 /* convert the string to a long int */
+	//	return 0;
+	//}
+	// while(fgets(line, 80, conf) != NULL)
+   	//{
+	 //sscanf (line, "%s", &trace_dir);
+	 // convert the string to a long int 
 	 //printf ("%s\n", trace_dir);
-   	}
+   	//}
 	//check if we can write into the directory
-	sprintf(line,"%smpi-trace-write",trace_dir);
+	//sprintf(line,"%smpi-trace-write",trace_dir);
 
 	check=fopen(line,"w");
 	if(check==NULL)
@@ -110,7 +110,9 @@ static int read_conf_file(void)
 	}
 	
 	
+	
 }
+*/
 static void initstats(void)
 {
 	int i;
@@ -299,7 +301,8 @@ int MPI_Init(int * argc, char***argv)
   int rank = -1;
   int size = -1;
   mpi_program=1;
-  read_conf_file();
+  //read_conf_file();
+   strcpy(trace_dir,"/tmp/");
      mpistat[0].call="MPI_Send";
      mpistat[1].call="MPI_Recv";
      mpistat[2].call="MPI_Wait";
