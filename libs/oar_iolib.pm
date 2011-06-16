@@ -3483,7 +3483,7 @@ sub get_jobs_for_user_query {
 
     my $req =
         "
-        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job
+        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type
         FROM jobs
         WHERE
              jobs.job_id IN (
@@ -3526,12 +3526,21 @@ sub get_jobs_for_user_query {
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
          $results{$ref[0]} = {
-            				'job_name' => $ref[1],
+            	            'job_name' => $ref[1],
                             'state' => $ref[2],
                             'job_user' => $ref[3],
                             'queue_name' => $ref[4],
                             'submission_time' => $ref[5],
-                            'assigned_moldable_job' => $ref[6]
+                            'assigned_moldable_job' => $ref[6],
+                            'reservation' => $ref[7],
+                            'project' => $ref[8],
+                            'properties' => $ref[9],
+                            'exit_code' => $ref[10],
+                            'command' => $ref[11],
+                            'initial_request' => $ref[12],
+                            'launching_directory' => $ref[13],
+                            'message' => $ref[14],
+                            'job_type' => $ref[15]
                               };
     }
     $sth->finish();
