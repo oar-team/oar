@@ -294,8 +294,9 @@ SWITCH: for ($q) {
     my $to = $q->param('to');
     my $state = $q->param('state');
     my $user = $q->param('user');
+    my $array = $q->param('array');
 
-    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('array'))) {
         my $param = qr{.*from=(.*?)(&|$)};
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$from = $1;
@@ -309,6 +310,8 @@ SWITCH: for ($q) {
         	$state = $1;
         }
     }
+    if (!defined($array)) { $array=""; };
+
     # GET max items from configuration parameter
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
@@ -328,8 +331,8 @@ SWITCH: for ($q) {
         $offset = $q->param('offset');
     }
     # requested user jobs
-    my $jobs = oarstatlib::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset);
-    my $total_jobs = oarstatlib::count_jobs_for_user_query($user,$from,$to,$state);
+    my $jobs = oarstatlib::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset,$array);
+    my $total_jobs = oarstatlib::count_jobs_for_user_query($user,$from,$to,$state,$array);
     
     if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);

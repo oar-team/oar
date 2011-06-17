@@ -381,6 +381,10 @@ GET /jobs
 
 :parameters:
   - **state**: comma separated list of states for filtering the jobs. Possible values: Terminated, Running, Error, Waiting, Launching, Hold,...
+  - **array** (integer): to get the jobs belonging to an array
+  - **from** (timestamp)
+  - **to** (timestamp)
+  - **user**: a specific username
 
 :output:
   *structure*: collection
