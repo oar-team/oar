@@ -689,7 +689,9 @@ SWITCH: for ($q) {
     my $workdir = "~$authenticated_user";
     my $command = "";
     my $script = "";
+    my $param_file = "";
     my $tmpfilename = "";
+    my $tmpparamfilename = "";
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
         $job->{script_path} =~ s/("|'|\\|\x00)/\\$1/g;
@@ -702,6 +704,10 @@ SWITCH: for ($q) {
       elsif ($option eq "script") {
         $job->{script} =~ s/("|'|\\|\x00)/\\$1/g;
         $script = $job->{script};
+      }
+      elsif ($option eq "param_file") {
+        $job->{param_file} =~ s/("|'|\\|\x00)/\\$1/g;
+        $param_file = $job->{param_file};
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
@@ -725,6 +731,16 @@ SWITCH: for ($q) {
     $oarcmd .= $command;
     $oarcmd =~ s/("|'|\\|\x00)/\\$1/g;
     my $cmd;
+
+    # If a parameters file is provided, we create a temporary file
+    # and write the parameters inside.
+    if ($param_file ne "") {
+      my $TMP;
+      ($TMP, $tmpparamfilename) = tempfile( "oarapi.paramfile.XXXXX", DIR => $TMPDIR, UNLINK => 1 );
+      print $TMP $param_file;
+      $oarcmd .= " --array-param-file=$tmpparamfilename";
+    }
+
     # If a script is provided, we create a file into the workdir and write
     # the script inside.
     if ($script ne "") {
@@ -744,6 +760,7 @@ SWITCH: for ($q) {
     }
     my $cmdRes = `$cmd 2>&1`;
     unlink $tmpfilename;
+    unlink $tmpparamfilename;
     if ( $? != 0 ) {
       my $err = $? >> 8;
       # Error codes corresponding to an error into the user's request
