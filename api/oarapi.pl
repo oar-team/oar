@@ -735,8 +735,6 @@ SWITCH: for ($q) {
     $oarcmd .= $command;
     # Escapes double quotes (one more time, for oardodo)
     $oarcmd =~ s/(\\*)"/$1$1\\"/g;
-    # Escapes some special characters (especially security fix with backquote)
-    $oarcmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
     my $cmd;
 
     # If a parameters file is provided, we create a temporary file
@@ -765,6 +763,8 @@ SWITCH: for ($q) {
     }else{ 
       $cmd = "$OARDODO_CMD \"cd $workdir && $oarcmd\"";
     }
+    # Escapes some special characters (especially security fix with backquote)
+    $cmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
     my $cmdRes = `$cmd 2>&1`;
     unlink $tmpfilename;
     unlink $tmpparamfilename;
