@@ -151,6 +151,8 @@ if ($#resources >= 0) {
     # First mark the nodes as dead
     foreach my $r (@resources) {
         iolib::set_resource_nextState($base, $r, 'Suspected');
+        my $rinfo = iolib::get_resource_info($base, $r);
+        iolib::add_new_event_with_host($base, "LOG_SUSPECTED", 0, "The DESKTOP COMPUTING resource $r has expired on node $rinfo->{network_address}", [$rinfo->{network_address}]);
     }
     # Then notify Almighty
     my $remote_host = get_conf("SERVER_HOSTNAME");

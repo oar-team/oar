@@ -114,6 +114,7 @@ sub get_jobs_for_user_query {
     my $state = shift;
     my $limit = shift;
     my $offset = shift;
+    my $array = shift;
 	
     if (defined($state)) {
         my @states = split(/,/,$state);
@@ -126,7 +127,7 @@ sub get_jobs_for_user_query {
         $state = $statement;
     }
 
-    my %jobs =  iolib::get_jobs_for_user_query($base,$from,$to,$state,$limit,$offset,$user);
+    my %jobs =  iolib::get_jobs_for_user_query($base,$from,$to,$state,$limit,$offset,$user,$array);
     return (\%jobs);
 }
 
@@ -135,6 +136,7 @@ sub count_jobs_for_user_query {
 	my $from = shift;
     my $to = shift;
     my $state = shift;
+    my $array = shift;
 	
 	if (defined($state)) {
 		my @states = split(/,/,$state);
@@ -147,7 +149,7 @@ sub count_jobs_for_user_query {
     $state = $statement;
 	}
 
-	my $total =  iolib::count_jobs_for_user_query($base,$from,$to,$state,$user);
+	my $total =  iolib::count_jobs_for_user_query($base,$from,$to,$state,$user,$array);
 	return $total;
 }
 

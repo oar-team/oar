@@ -9,12 +9,13 @@
 // Static conf to edit //
 /////////////////////////
 
-#define CMD_WRAPPER "/usr/local/oar/oarsub"
+#define CMD_WRAPPER "TT/usr/local/oar/oarsub"
 
-#define OARDIR "/usr/local/oar"
-#define OARCONFFILE "/etc/oar/oar.conf"
-#define OARXAUTHLOCATION "/usr/bin/xauth"
-#define USERTOBECOME "root"
+#define OARDIR "TT/usr/local/oar"
+#define OARCONFFILE "TT/etc/oar/oar.conf"
+#define OARXAUTHLOCATION "TT/usr/bin/xauth"
+#define USERTOBECOME "TToar"
+#define PATH2SET "TT/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/oar/oardodo"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -34,7 +35,6 @@ void error(char *error_str, int exit_code){
 int main(int ac, char **av){
     struct passwd *passwd_user_pointer;
     struct passwd *passwd_oar_user_pointer;
-    char str_tmp[256];
 
     // Get user information: effective user and oar
     passwd_user_pointer = getpwuid(getuid());
@@ -53,6 +53,7 @@ int main(int ac, char **av){
     if (setenv("OARDIR", OARDIR, 1)){
         error("Cannot change environment variable OARDIR", 2);
     }
+    char str_tmp[256];
     sprintf(str_tmp, "%i", passwd_user_pointer->pw_uid);
     if (setenv("OARDO_UID", str_tmp, 1)){
         error("Cannot change environment variable OARDO_UID", 2);
@@ -71,7 +72,7 @@ int main(int ac, char **av){
     }
 
     // Clean some environment variables
-    if (setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:"OARDIR"/../bin:"OARDIR"/../sbin:"OARDIR"/oardodo", 1)){
+    if (setenv("PATH", PATH2SET, 1)){
         error("Cannot change environment variable PATH", 2);
     }
     if (unsetenv("IFS")){

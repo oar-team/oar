@@ -233,7 +233,7 @@ if (defined($Version)){
     exit(0);
 }
 
-defined(@properties) || defined($state) || defined($new_resource) || defined($maintenance) or usage();
+($#properties >= 0) || defined($state) || defined($new_resource) || defined($maintenance) or usage();
 if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){
     warn("/!\\ Bad state value. Possibilities are : Alive | Absent | Dead \n");
     usage();
@@ -354,7 +354,7 @@ if (defined($new_resource)){
 }
 
 # Update properties
-if (defined(@properties)){
+if ($#properties >= 0){
     if (($#resource >= 0) or (defined($Sql_property))){
         foreach my $r (@resource){
             if (!defined(iolib::get_resource_info($base,$r))){

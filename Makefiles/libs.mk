@@ -19,11 +19,11 @@ MANDIR_FILES = man/man1/oarnodesetting.1
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodesetting 
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 build:
 	$(MAKE) -f Makefiles/man.mk build
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodesetting
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 install:
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
@@ -47,9 +47,10 @@ install:
 	install -m 0644 -t $(DESTDIR)$(MANDIR)/man1 $(MANDIR_FILES)
 
 uninstall:
-	@for file in $(OARDIR_BINFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(OARDIR_DATAFILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(MANDIR_FILES); do rm $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+	rm -f $(DESTDIR)$(OARDIR)/oar_Judas.pm
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 
