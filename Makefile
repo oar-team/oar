@@ -6,7 +6,7 @@ include Makefiles/shared/shared.mk
 
 
 # Modules that can be builded
-MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api gridapi poar scheduler-ocaml www-conf libs gridlibs common database  
+MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api poar scheduler-ocaml www-conf libs common database  
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
 OPTIONS_LIST= OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR
@@ -108,11 +108,6 @@ api-build: common-build libs-build
 api-clean: common-clean libs-clean
 api-uninstall: common-uninstall libs-uninstall
 
-gridapi-install: sanity-check common-install libs-install gridlibs-install
-gridapi-build: common-build libs-build gridlibs-build
-gridapi-clean: common-clean libs-clean gridlibs-clean
-gridapi-uninstall: common-uninstall libs-uninstall gridlibs-uninstall
-
 # Ugly hack because there isn't yet separate setup scripts.
 common-install: setup
 
@@ -131,8 +126,6 @@ packages-build:
 	$(MAKE) -e -f Makefiles/common.mk build \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 	$(MAKE) -e -f Makefiles/libs.mk build \
-	    DESTDIR=$(PACKAGES_DIR)/oar-common
-	$(MAKE) -e -f Makefiles/gridlibs.mk build \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
 	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
@@ -186,11 +179,6 @@ packages-build:
 	    DESTDIR=$(PACKAGES_DIR)/oar-api \
 	    DOCDIR=/usr/share/doc/oar-api
 	
-	# gridapi
-	$(MAKE) -e -f Makefiles/gridapi.mk build \
-	    DESTDIR=$(PACKAGES_DIR)/oar-gridapi \
-	    DOCDIR=/usr/share/doc/oar-gridapi
-	
 	# keyring
 	$(MAKE) -e -f Makefiles/keyring.mk build \
 	    DESTDIR=$(PACKAGES_DIR)/oar-keyring \
@@ -212,8 +200,6 @@ packages-install:
 	$(MAKE) -e -f Makefiles/common.mk install \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 	$(MAKE) -e -f Makefiles/libs.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-common
-	$(MAKE) -e -f Makefiles/gridlibs.mk install \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
 	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
@@ -266,11 +252,6 @@ packages-install:
 	$(MAKE) -e -f Makefiles/api.mk install \
 	    DESTDIR=$(PACKAGES_DIR)/oar-api \
 	    DOCDIR=/usr/share/doc/oar-api
-	
-	# gridapi
-	$(MAKE) -e -f Makefiles/gridapi.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-gridapi \
-	    DOCDIR=/usr/share/doc/oar-gridapi
 	
 	# keyring
 	$(MAKE) -e -f Makefiles/keyring.mk install \
