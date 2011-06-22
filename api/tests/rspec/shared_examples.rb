@@ -5,7 +5,7 @@ shared_examples_for "All structures" do
       specify { @api.value.should have_key('links') }
       specify('links should be an array') { @api.value['links'].should be_an(Array) }
       specify('links should not be empty') { @api.value['links'].should_not be_empty }
-      specify('self link should not be nil') { @api.get_link_href('self').should_not be_nil } 
+      specify('self link should not be nil') { @api.get_self_link_href.should_not be_nil } 
 end
 shared_examples_for "All list structures" do
       it_should_behave_like "All structures"
@@ -24,14 +24,14 @@ shared_examples_for "Item" do
       it_should_behave_like "All structures"
       specify { @api.value.should have_key('id') }
       specify('id should be an integer') { @api.value['id'].should be_a(Integer) }
-      specify('should have a self link') { @api.get_link_href('self').should be_a(String) }
+      specify('should have a self link') { @api.get_self_link_href.should be_a(String) }
 end
 
 # Job structure minimum requirements
 shared_examples_for "JobId" do
       it_should_behave_like "Item"
       specify('self link should be correct') { 
-           @api.get_link_href('self').should == "/jobs/#{@api.value['id']}"
+           @api.get_self_link_href.should == "/oarapi-priv/jobs/#{@api.value['id']}"
       }
 end 
 shared_examples_for "Job" do
@@ -45,7 +45,7 @@ shared_examples_for "Job" do
       specify { @api.value.should have_key('name') }
       specify('resources link should not be nil') { @api.get_link_href('resources').should_not be_nil } 
       specify('resources link should be correct') { 
-           @api.get_link_href('resources').should == "/jobs/#{@api.value['id']}/resources"
+           @api.get_link_href('resources').should == "/oarapi-priv/jobs/#{@api.value['id']}/resources"
       }
       specify('array_id should be an integer') {
         if not @api.value['array_id'].nil?
@@ -63,7 +63,7 @@ end
 shared_examples_for "ResourceId" do
       it_should_behave_like "Item"
       specify('self link should be correct') { 
-           @api.get_link_href('self').should == "/resources/#{@api.value['id']}"
+           @api.get_self_link_href.should == "/oarapi-priv/resources/#{@api.value['id']}"
       }
       specify('available_upto should be an integer') { 
         if not @api.value['available_upto'].nil?
@@ -86,7 +86,7 @@ end
 shared_examples_for "Node" do
       it_should_behave_like "Item"
       specify('self link should be correct') { 
-           @api.get_link_href('self').should == "/resources/nodes/#{@api.value['network_address']}"
+           @api.get_self_link_href.should == "/oarapi-priv/resources/nodes/#{@api.value['network_address']}"
       }
       
 end

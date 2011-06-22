@@ -195,6 +195,14 @@ SWITCH: for ($q) {
                         'title' => 'jobs'
                       } ,
                       { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs/details",$ext,0),$ext),
+                        'title' => 'detailed_jobs'
+                      } ,
+                      { 'rel' => 'collection', 
+                        'href' => apilib::htmlize_uri(apilib::make_uri("jobs/table",$ext,0),$ext),
+                        'title' => 'jobs_table'
+                      } ,
+                      { 'rel' => 'collection', 
                         'href' => apilib::htmlize_uri(apilib::make_uri("config",$ext,0),$ext),
                         'title' => 'config'
                       } ,
@@ -258,8 +266,13 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    my $header ; my $type; 
     my $more_infos=$1;
+    if (!defined($more_infos)) { 
+      ($header,$type)=apilib::set_output_format($ext,"GET, POST");
+    }else{
+      ($header,$type)=apilib::set_output_format($ext);
+    }
 
     # Get the id of the user as more details may be obtained for her jobs
     if ( $authenticated_user =~ /(\w+)/ ) {
@@ -281,8 +294,9 @@ SWITCH: for ($q) {
     my $to = $q->param('to');
     my $state = $q->param('state');
     my $user = $q->param('user');
+    my $array = $q->param('array');
 
-    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('array'))) {
         my $param = qr{.*from=(.*?)(&|$)};
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$from = $1;
@@ -296,6 +310,8 @@ SWITCH: for ($q) {
         	$state = $1;
         }
     }
+    if (!defined($array)) { $array=""; };
+
     # GET max items from configuration parameter
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
@@ -315,8 +331,8 @@ SWITCH: for ($q) {
         $offset = $q->param('offset');
     }
     # requested user jobs
-    my $jobs = oarstatlib::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset);
-    my $total_jobs = oarstatlib::count_jobs_for_user_query($user,$from,$to,$state);
+    my $jobs = oarstatlib::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset,$array);
+    my $total_jobs = oarstatlib::count_jobs_for_user_query($user,$from,$to,$state,$array);
     
     if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
@@ -371,7 +387,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST, DELETE");
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -442,7 +458,7 @@ SWITCH: for ($q) {
     my $jobid = $2;
     my $action = $3;
     my $ext=apilib::set_ext($q,$4);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -510,9 +526,9 @@ SWITCH: for ($q) {
         print apilib::export( {
                         'id' => int($1),
                         'links' => [ { 'rel' => 'self' , 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext) },
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$1",$ext,0),$ext) },
                                      { 'rel' => 'parent', 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext) } ],
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$jobid",$ext,0),$ext) } ],
                         'status' => "submitted",
                         'cmd_output' => "$cmdRes",
                         'api_timestamp' => time()
@@ -531,7 +547,7 @@ SWITCH: for ($q) {
                       'cmd_output' => "$cmdRes",
                       'api_timestamp' => time(),
                       'links' => [ { 'rel' => 'self' , 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext) } ]
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$jobid",$ext,0),$ext) } ]
                     } , $ext );
     }
     last;
@@ -547,7 +563,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -603,7 +619,7 @@ SWITCH: for ($q) {
                     'cmd_output' => "$cmdRes",
                     'api_timestamp' => time(),
                     'links' => [ { 'rel' => 'self' , 'href' => 
-                          apilib::htmlize_uri(apilib::make_uri("/jobs/$jobid",$ext,0),$ext) } ]
+                          apilib::htmlize_uri(apilib::make_uri("jobs/$jobid",$ext,0),$ext) } ]
                   } , $ext );
     last;
   };
@@ -617,7 +633,7 @@ SWITCH: for ($q) {
     my $jobid = $1;
     my $signal = $2;
     my $ext=apilib::set_ext($q,$3);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -649,7 +665,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -676,16 +692,24 @@ SWITCH: for ($q) {
     my $workdir = "~$authenticated_user";
     my $command = "";
     my $script = "";
+    my $param_file = "";
     my $tmpfilename = "";
+    my $tmpparamfilename = "";
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
+        $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{script_path}\"";
       }
       elsif ($option eq "command") {
+        # Escapes double quotes
+        $job->{command} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{command}\"";
       }
       elsif ($option eq "script") {
         $script = $job->{script};
+      }
+      elsif ($option eq "param_file") {
+        $param_file = $job->{param_file};
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
@@ -696,17 +720,32 @@ SWITCH: for ($q) {
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
           $oarcmd .= " --$option";
+          # Escapes double quotes
+          $elem =~ s/(\\*)"/$1$1\\"/g;
           $oarcmd .= "=\"$elem\"" if $elem ne "";
          }
       }
       else {
         $oarcmd .= " --$option";
+        # Escapes double quotes
+        $job->{$option}=~ s/(\\*)"/$1$1\\"/g;
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
     $oarcmd .= $command;
-    $oarcmd =~ s/\"/\\\"/g;
+    # Escapes double quotes (one more time, for oardodo)
+    $oarcmd =~ s/(\\*)"/$1$1\\"/g;
     my $cmd;
+
+    # If a parameters file is provided, we create a temporary file
+    # and write the parameters inside.
+    if ($param_file ne "") {
+      my $TMP;
+      ($TMP, $tmpparamfilename) = tempfile( "oarapi.paramfile.XXXXX", DIR => $TMPDIR, UNLINK => 1 );
+      print $TMP $param_file;
+      $oarcmd .= " --array-param-file=$tmpparamfilename";
+    }
+
     # If a script is provided, we create a file into the workdir and write
     # the script inside.
     if ($script ne "") {
@@ -724,8 +763,11 @@ SWITCH: for ($q) {
     }else{ 
       $cmd = "$OARDODO_CMD \"cd $workdir && $oarcmd\"";
     }
+    # Escapes some special characters (especially security fix with backquote)
+    $cmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
     my $cmdRes = `$cmd 2>&1`;
     unlink $tmpfilename;
+    unlink $tmpparamfilename;
     if ( $? != 0 ) {
       my $err = $? >> 8;
       # Error codes corresponding to an error into the user's request
@@ -746,8 +788,8 @@ SWITCH: for ($q) {
       }
     }
     elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
-      my $uri=apilib::htmlize_uri(apilib::make_uri("/jobs/$1",$ext,0),$ext);
-      my $abs_uri=apilib::make_uri("/jobs/$1",$ext,1);
+      my $uri=apilib::htmlize_uri(apilib::make_uri("jobs/$1",$ext,0),$ext);
+      my $abs_uri=apilib::make_uri("jobs/$1",$ext,1);
       print $q->header( -status => 201, -type => "$type" , -location => $abs_uri );
       print $HTML_HEADER if ($ext eq "html");
       print apilib::export( { 'id' => int($1),
@@ -820,7 +862,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
     my $fh = $q->upload('myfile');
     if (defined $fh) {
         my $io_handle = $fh->handle;
@@ -841,7 +883,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
+    (my $header, my $type)=apilib::set_output_format($ext,"GET, POST");
     print $q->header( -status => 200, -type => $type );
     my $json = decode_json $q->param('POSTDATA');
     my $state = $json->{'state'};
@@ -868,8 +910,17 @@ SWITCH: for ($q) {
   apilib::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$2);
-    (my $header, my $type)=apilib::set_output_format($ext);
-    
+    my $header, my $type;
+    if(defined($1)) {
+      if ($1 ne "/full") {
+        ($header, $type)=apilib::set_output_format($ext,"GET, DELETE");
+      }else{
+        ($header, $type)=apilib::set_output_format($ext,"GET");
+      }
+    }else{
+      ($header, $type)=apilib::set_output_format($ext,"GET, POST");
+    }
+ 
     # will the resources need be paged or not
     # by default resources results are paged
     my $paged = 1;
@@ -1053,7 +1104,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=apilib::set_ext($q,$1);
-    (my $header)=apilib::set_output_format($ext);
+    (my $header)=apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1092,7 +1143,7 @@ SWITCH: for ($q) {
     } 
     my $result=[];
     foreach my $id (@ids) {
-      push(@$result,{ id => $id, links => [ { rel => "self", href => "/resources/$id" } ] });
+      push(@$result,{ id => $id, links => [ { rel => "self", href => "resources/$id" } ] });
     }
     $result = apilib::add_pagination($result,@ids,$q->path_info,$q->query_string,$ext,0,0,$STRUCTURE);
     print $header;
@@ -1112,7 +1163,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $id=$1;
     my $ext=apilib::set_ext($q,$2);
-    (my $header)=apilib::set_output_format($ext);
+    (my $header)=apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1149,7 +1200,7 @@ SWITCH: for ($q) {
                       'status' => "Change state request registered",
                       'id' => "$id",
                       'api_timestamp' => time(),
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/resources/$id",$ext,0),$ext)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("resources/$id",$ext,0),$ext)
                     } , $ext );
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
     oar_Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
@@ -1250,7 +1301,7 @@ SWITCH: for ($q) {
   apilib::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
-    (my $header) = apilib::set_output_format($ext);
+    (my $header) = apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1391,7 +1442,7 @@ SWITCH: for ($q) {
   (apilib::POST( $_, $URI ) || apilib::PUT( $_, $URI )) && do {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$1);
-    (my $header) = apilib::set_output_format($ext);
+    (my $header) = apilib::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1433,7 +1484,7 @@ SWITCH: for ($q) {
                       'id' => "$id",
                       'rule' => apilib::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
-                      'uri' => apilib::htmlize_uri(apilib::make_uri("/admission_rules/$id",$ext,0),$ext)
+                      'uri' => apilib::htmlize_uri(apilib::make_uri("admission_rules/$id",$ext,0),$ext)
                     } , $ext );
       	oarstatlib::close_db_connection; 
     }
@@ -1504,7 +1555,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $rule_id = $1;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type) = apilib::set_output_format($ext);
+    (my $header, my $type) = apilib::set_output_format($ext,"GET, POST");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1644,7 +1695,7 @@ SWITCH: for ($q) {
   	$_->path_info =~ m/$URI/;
   	my $variable = $1;
     my $ext = apilib::set_ext($q,$2);
-    (my $header, my $type) = apilib::set_output_format($ext);
+    (my $header, my $type) = apilib::set_output_format($ext,"GET, POST");
     
     print $header;
     print $HTML_HEADER if ($ext eq "html");

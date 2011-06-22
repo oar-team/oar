@@ -1,6 +1,6 @@
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://oar:kameleon@localhost/oarapi-priv" 
+APIURI="http://oar:kameleon@localhost/oarapi-priv/" 
 
 describe OarApi do
   before :all do
@@ -42,13 +42,13 @@ describe OarApi do
     end
     it "should return the new resources links" do
       @oar_server.resstatus['items'].each do |item|
-         @oar_server.get_link_href_from_array(item["links"],"self").should be_a(String)
+         @oar_server.get_link_href_from_array_by_rel(item["links"],"self").should be_a(String)
       end
     end
     it "should have created resources having asked properties" do
       i=0
       @oar_server.resstatus['items'].each do |item|
-        link=@oar_server.get_link_href_from_array(item["links"],"self")
+        link=@oar_server.get_link_href_from_array_by_rel(item["links"],"self")
         @oar_server.get_hash(link)
         #puts @oar_server.value["network_address"]
         @oar_server.value["network_address"].should == $resources[i]["network_address"]
@@ -60,7 +60,7 @@ describe OarApi do
     it "should have created Alive resources" do
       i=0
       @oar_server.resstatus['items'].each do |item|
-        link=@oar_server.get_link_href_from_array(item["links"],"self")
+        link=@oar_server.get_link_href_from_array_by_rel(item["links"],"self")
         @oar_server.get_hash(link)
         @oar_server.value["state"].should == "Alive"
         i+=1
@@ -71,7 +71,7 @@ describe OarApi do
     # Cleaning
     it "should delete the test resources" do
       @oar_server.resstatus['items'].each do |item|
-        @oar_server.post(@oar_server.api,"/resources/#{item['id']}/state",{"state" => "Dead"})
+        @oar_server.post(@oar_server.api,"resources/#{item['id']}/state",{"state" => "Dead"})
         @oar_server.delete_resource(item["id"])
       end
     end
@@ -99,11 +99,11 @@ describe OarApi do
     end
     it "should return the new resource link" do
       links=@oar_server.resstatus['items'][0]["links"]
-      @oar_server.get_link_href_from_array(links,"self").should be_a(String)
+      @oar_server.get_link_href_from_array_by_rel(links,"self").should be_a(String)
     end
     it "should have created a resource having asked properties" do
       links=@oar_server.resstatus['items'][0]["links"]
-      link=@oar_server.get_link_href_from_array(links,"self")
+      link=@oar_server.get_link_href_from_array_by_rel(links,"self")
       @oar_server.get_hash(link)
       @oar_server.value["network_address"].should == $resource["network_address"]
       @oar_server.value["besteffort"].should == $resource["besteffort"]
@@ -111,7 +111,7 @@ describe OarApi do
     end
     it "should have created an Alive resource" do
       links=@oar_server.resstatus['items'][0]["links"]
-      link=@oar_server.get_link_href_from_array(links,"self")
+      link=@oar_server.get_link_href_from_array_by_rel(links,"self")
       @oar_server.get_hash(link)
       @oar_server.value["state"].should == "Alive"
     end
@@ -119,7 +119,7 @@ describe OarApi do
     # Cleaning
     it "should delete the test resource" do
       id=@oar_server.resstatus['items'][0]["id"]
-      @oar_server.post(@oar_server.api,"/resources/#{id}/state",{"state" => "Dead"})
+      @oar_server.post(@oar_server.api,"resources/#{id}/state",{"state" => "Dead"})
       @oar_server.delete_resource(id)
     end
   end 
@@ -189,7 +189,7 @@ describe OarApi do
                  }
       lambda {
         begin
-          @api.value=@api.post(@api.api,"/resources/generate",generate)
+          @api.value=@api.post(@api.api,"resources/generate",generate)
         rescue => e
           if e.respond_to?('http_code')
             puts "ERROR #{e.http_code}:\n #{e.response.body}"
@@ -240,7 +240,7 @@ describe OarApi do
       # Cleaning
       it "should delete the test resources" do
         @api.resstatus['items'].each do |item|
-          @api.post(@api.api,"/resources/#{item['id']}/state",{"state" => "Dead"})
+          @api.post(@api.api,"resources/#{item['id']}/state",{"state" => "Dead"})
           @api.delete_resource(item["id"])
         end
       end
@@ -254,7 +254,7 @@ describe OarApi do
                   'auto_offset' => 1 }
       lambda {
         begin
-          @api.value=@api.post(@api.api,"/resources/generate",generate)
+          @api.value=@api.post(@api.api,"resources/generate",generate)
         rescue => e
           if e.respond_to?('http_code')
             puts "ERROR #{e.http_code}:\n #{e.response.body}"

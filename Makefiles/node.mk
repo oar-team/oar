@@ -32,8 +32,8 @@ install: build
 	@if [ -f $(DESTDIR)$(OARCONFDIR)/epilogue ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/epilogue already exists, not overwriting it." ; else install -m 0755 scripts/epilogue $(DESTDIR)$(OARCONFDIR) ; fi
 
 uninstall:
-	@for file in $(OARDIR_FILES); do rm $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(BINDIR_FILES); do rm $(DESTDIR)$(BINDIR)/`basename $$file`; done
+	@for file in $(OARDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	@for file in $(BINDIR_FILES); do rm -f $(DESTDIR)$(BINDIR)/`basename $$file`; done
 	
 
 

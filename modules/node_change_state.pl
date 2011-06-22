@@ -32,6 +32,20 @@ foreach my $i (@events_to_check){
     my $job = iolib::get_job($base,$i->{job_id});
     
     ####################################################
+    # Check if we must resubmit the idempotent jobs    #
+    ####################################################
+    if ((($i->{type} eq "SWITCH_INTO_TERMINATE_STATE") or ($i->{type} eq "SWITCH_INTO_ERROR_STATE")) and (defined($job->{exit_code}) and ( ($job->{exit_code} >> 8) == 99))){
+        my $jobtypes = iolib::get_current_job_types($base, $i->{job_id});
+        if ((defined($jobtypes->{idempotent}))){
+            if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (iolib::is_job_already_resubmitted($base, $i->{job_id}) == 0) and (iolib::is_an_event_exists($base, $i->{job_id},"SEND_KILL_JOB") <= 0)){
+                my $new_job_id = iolib::resubmit_job($base,$i->{job_id});
+                oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because it is of the type idempotent and its exit code is 99.\n");
+                iolib::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"idempotent job type + exit code of 99 = resubmit it (new id = $new_job_id).");
+            }
+        }
+    }
+
+    ####################################################
     # Check if we must expressely change the job state #
     ####################################################
     if ($i->{type} eq "SWITCH_INTO_TERMINATE_STATE"){
@@ -131,6 +145,7 @@ foreach my $i (@events_to_check){
                     @hosts = ();
                 }
             }
+            iolib::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $i->{description}, \@hosts);
         }
 
         if ($#hosts >= 0){

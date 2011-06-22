@@ -82,7 +82,9 @@ Specify the signal to use when checkpointing. Use signal numbers (see kill -l), 
 
 =item B<-t, --type> <TYPE>
 
-Specify a specific type (I<deploy>, I<besteffort>, I<cosystem>, I<checkpoint>, I<timesharing>)
+Specify a specific type (I<besteffort>, I<cosystem>, I<checkpoint>, I<timesharing>, I<idempotent>)
+
+Note: a job with a type of B<idempotent> will be automatically resubmitted if its exit code is 99.
 
 =item B<-d, --directory> <DIR>
 

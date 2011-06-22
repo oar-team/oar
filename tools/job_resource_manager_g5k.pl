@@ -249,7 +249,7 @@ if ($ARGV[0] eq "init"){
         rename $Security_pam_file_tmp,$Security_pam_file or die "Cannot replace access.conf file.";
         if (defined($Cpuset->{types}->{$Allow_SSH_type}) and ! system('diff /dev/cpuset/'.$Cpuset_path_job.'/cpus /dev/cpuset/'.$Cpuset->{cpuset_path}.'/cpus > /dev/null 2>&1')){
             unless ($Cpuset->{user} eq "root" or $Cpuset->{user} eq "oar") {
-                system("OARDO_USE_USER_SHELL=$Cpuset->{user} oardodo kill -9 -1");
+                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo kill -9 -1");
             }
         }
     }
@@ -292,8 +292,10 @@ if ($ARGV[0] eq "init"){
 		            if (open(IPCMSG,"< /proc/sysvipc/msg")) {
 		                <IPCMSG>;
 		                while (<IPCMSG>) {
-		                    if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}$/) {
+		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}$/) {
 		                        $ipcrm_args .= " -q $1";
+				    } else {
+		                	print_log(3,"Cannot parse IPC MSG: $_.");
 		                    }
 		                }
 		                close (IPCMSG);
@@ -303,8 +305,10 @@ if ($ARGV[0] eq "init"){
 		            if (open(IPCSHM,"< /proc/sysvipc/shm")) {
 		                <IPCSHM>;
 		                while (<IPCSHM>) {
-		                    if (/\s+\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}$/) {
+		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}$/) {
 		                        $ipcrm_args .= " -m $1";
+				    } else {
+		                	print_log(3,"Cannot parse IPC SHM: $_.");
 		                    }
 		                }
 		                close (IPCSHM);
@@ -314,8 +318,10 @@ if ($ARGV[0] eq "init"){
 		            if (open(IPCSEM,"< /proc/sysvipc/sem")) {
 		                <IPCSEM>;
 		                while (<IPCSEM>) {
-		                    if (/\s+\d+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}$/) {
+		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}$/) {
 		                        $ipcrm_args .= " -s $1";
+				    } else {
+		                	print_log(3,"Cannot parse IPC SEM: $_.\n");
 		                    }
 		                }
 		                close (IPCSEM);
@@ -324,7 +330,7 @@ if ($ARGV[0] eq "init"){
 		            }
 		            if ($ipcrm_args) {
 		                print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
-		                system("OARDO_USE_USER_SHELL=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
+		                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
 		            }
 		            print_log (3,"Purging /tmp...");
 		            system("oardodo find /tmp/. -user $Cpuset->{user} -delete"); 
