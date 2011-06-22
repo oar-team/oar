@@ -91,7 +91,7 @@ if ($ARGV[0] eq "init"){
     if (defined($Cpuset_path_job)){
         if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            if (system('oardodo mount -t cpuset | grep " /dev/cpuset " > /dev/null 2>&1')){
+            if (system('oardodo grep " /dev/cpuset " /proc/mounts > /dev/null 2>&1')){
                 if (system('oardodo mkdir -p /dev/cpuset && oardodo mount -t cpuset none /dev/cpuset')){
                     exit_myself(4,"Failed to mount cpuset pseudo filesystem");
                 }
