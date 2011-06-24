@@ -136,7 +136,6 @@ if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
 $apilib::DEBUG_MODE=$DEBUG_MODE;
 
 # Check a possible extension
-sub set_ext($$); # defined later
 my $extension;
 if ( $q->path_info =~ /^$/ ) { $extension = "html"; }
 elsif ( $q->path_info =~ /.*\.(yaml|json|html|tgz|tar\.gz)$/ ) { $extension = $1; };
