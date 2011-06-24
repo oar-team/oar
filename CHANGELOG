@@ -68,6 +68,7 @@ version 2.5.0:
   - Remove any reference to gridlibs and gridapi as these components are obselete
   - Add stdout and stderr files of each job in oarstat output.
   - API now supports fastcgi (big performance raise!)
+  - Add "-f" option to oarnodesetting to read hostnames from a file.
 
 version 2.4.4:
 --------------
