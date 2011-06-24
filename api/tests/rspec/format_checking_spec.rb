@@ -30,13 +30,31 @@ describe OarApi do
       @api.value['items'].should be_empty
     end
 
-    it "should have an array of test jobs just submitted" do
+    it "should have an array of 10 test jobs just submitted" do
       jhash = { 'resource' => "/nodes=1/core=2" , 'script' => "ls;pwd;whoami;sleep 60" , 'array' => '10' }
       @api.submit_job(jhash)
       $jobid = @api.jobstatus['id']
       $jobid.should be_a(Integer)
       $jobid.should > 0
+      # Now, we wait for the 4th job to be running
+      # It is necessary for the rest of the tests to pass
+      timeout=60
+      t=0
+      c=0
+      while t<timeout and c == 0
+        @api.specific_job_details($jobid+3)
+        if @api.specificjobdetails["state"] == "Running"
+          c=1
+        else
+          printf "."
+          $stdout.flush
+        end
+        sleep 1
+        t+=1
+      end
+      t.should < timeout
     end
+
     it "should have a reservation job just submitted" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60" , 'reservation' => '2037-01-01 01:00:00' }
       @api.submit_job(jhash)
@@ -44,6 +62,7 @@ describe OarApi do
       $rjobid.should be_a(Integer)
       $rjobid.should > 0
     end
+
   end
 
   #############################################################
