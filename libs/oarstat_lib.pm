@@ -442,8 +442,9 @@ sub get_job_data($$){
             types => \@job_types,
             dependencies => \@job_dependencies,
             exit_code => $job_info->{exit_code},
+            stdout_file => oar_Tools::replace_jobid_tag_in_string($job_info->{stdout_file},$job_info->{job_id}),
+            stderr_file => oar_Tools::replace_jobid_tag_in_string($job_info->{stderr_file},$job_info->{job_id}),
             initial_request => ""
-
         );
         if (($ENV{OARDO_USER} eq $job_info->{job_user})
             or ($ENV{OARDO_USER} eq "oar")
@@ -464,6 +465,8 @@ sub get_job_data($$){
             queue => $job_info->{queue_name},
             command => $job_info->{command},
             launchingDirectory => $job_info->{launching_directory},
+            stdout_file => oar_Tools::replace_jobid_tag_in_string($job_info->{stdout_file},$job_info->{job_id}),
+            stderr_file => oar_Tools::replace_jobid_tag_in_string($job_info->{stderr_file},$job_info->{job_id}),
             jobType => $job_info->{job_type},
             properties => $job_info->{properties},
             reservation => $job_info->{reservation},

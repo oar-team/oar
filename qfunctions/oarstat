@@ -302,6 +302,8 @@ sub print_job_data($$){
                     print("    exit_code = $job_info->{exit_code} ($exit_code,$exit_num,$exit_core)\n");
                 }
                 print("    launchingDirectory = $job_info->{launching_directory}\n");
+                print("    stdout_file = $data->{$job_info->{job_id}}->{stdout_file}\n") ;
+                print("    stderr_file = $data->{$job_info->{job_id}}->{stderr_file}\n");
                 print("    jobType = $job_info->{job_type}\n");
                 print("    properties = $job_info->{properties}\n");
                 print("    reservation = $job_info->{reservation}\n");
