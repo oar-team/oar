@@ -74,7 +74,7 @@ my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
 my $OARADMIN_CMD = "oaradmin";
 my $OARNODES_CMD = "oarnodes";
-my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo sh -c";
+my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
 # OAR server
 my $remote_host = get_conf("SERVER_HOSTNAME");
@@ -474,32 +474,32 @@ SWITCH: for ($q) {
     # Delete (alternative way to DELETE request, for html forms)
     my $cmd; my $status;
     if ($action eq "deletions" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $array $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD $array $jobid";
       $status = "Delete request registered"; 
     }
     # Checkpoint
     elsif ( $action eq "checkpoints" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $array -c $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD $array -c $jobid";
       $status = "Checkpoint request registered"; 
     }
     # Hold
     elsif ( $action eq "holds" ) {
-      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $array $jobid'";
+      $cmd    = "$OARDODO_CMD $OARHOLD_CMD $array $jobid";
       $status = "Hold request registered";
     }
     # Hold a running job
     elsif ( $action eq "rholds" ) {
-      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $array -r $jobid'";
+      $cmd    = "$OARDODO_CMD $OARHOLD_CMD $array -r $jobid";
       $status = "Hold request registered";
     }
     # Resume
     elsif ( $action eq "resumptions" ) {
-      $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $array $jobid'";
+      $cmd    = "$OARDODO_CMD $OARRESUME_CMD $array $jobid";
       $status = "Resume request registered";
     }
     # Resubmit
     elsif ( $action eq "resubmissions" ) {
-      $cmd    = "$OARDODO_CMD '$OARSUB_CMD $array --resubmit $jobid'";
+      $cmd    = "$OARDODO_CMD $OARSUB_CMD $array --resubmit $jobid";
       $status = "Resubmit request registered";
     }
     # Impossible to get here!
@@ -588,22 +588,22 @@ SWITCH: for ($q) {
     # Delete (alternative way to DELETE request, for html forms)
     my $cmd; my $status;
     if ( $job->{method} eq "delete" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD $jobid";
       $status = "Delete request registered"; 
     }
     # Checkpoint
     elsif ( $job->{method} eq "checkpoint" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD -c $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD -c $jobid";
       $status = "Checkpoint request registered"; 
     }
     # Hold
     elsif ( $job->{method} eq "hold" ) {
-      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $jobid'";
+      $cmd    = "$OARDODO_CMD $OARHOLD_CMD $jobid";
       $status = "Hold request registered";
     }
     # Resume
     elsif ( $job->{method} eq "resume" ) {
-      $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $jobid'";
+      $cmd    = "$OARDODO_CMD $OARRESUME_CMD $jobid";
       $status = "Resume request registered";
     }
     else {
@@ -644,7 +644,7 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD '$OARDEL_CMD -s $signal $jobid'";
+    my $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $signal $jobid";
     my $status = "Signal sending request registered"; 
 
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
@@ -759,9 +759,9 @@ SWITCH: for ($q) {
       # performance cost.
       chmod 0755, $tmpfilename;
       $oarcmd .= " ./". basename($tmpfilename);
-      $cmd = "$OARDODO_CMD \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD sh -c \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
     }else{ 
-      $cmd = "$OARDODO_CMD \"cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD sh -c \"cd $workdir && $oarcmd\"";
     }
     # Escapes some special characters (especially security fix with backquote)
     $cmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
@@ -824,7 +824,7 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
+    my $cmd    = "$OARDODO_CMD $OARDEL_CMD $jobid";
     my $cmdRes = apilib::send_cmd($cmd,"Oardel");
     print $q->header( -status => 202, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
