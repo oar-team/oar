@@ -74,7 +74,7 @@ my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
 my $OARADMIN_CMD = "oaradmin";
 my $OARNODES_CMD = "oarnodes";
-my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
+my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo sh -c";
 
 # OAR server
 my $remote_host = get_conf("SERVER_HOSTNAME");
