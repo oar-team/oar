@@ -42,13 +42,15 @@ use JSON;
 use IO::Handle;
 use File::Temp qw/ tempfile  /;
 use File::Basename;
+use CGI::Fast qw/ standard /;
+
 
 #use Data::Dumper;
 
 my $VERSION="1.0.1alpha1";
 
 ##############################################################################
-# CONFIGURATION
+# CONFIGURATION AND INITIALIZATION STUFF
 ##############################################################################
 
 # Load config
@@ -63,9 +65,6 @@ if (defined($ENV{OARCONFFILE})){
 }else{
   init_conf("/etc/oar/oar.conf");
 }
-
-# CGI handler
-my $q=apilib::get_cgi_handler();
 
 # Oar commands
 my $OARSUB_CMD  = "oarsub";
@@ -99,18 +98,6 @@ if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_D
 my $MAX_ITEMS=500;
 if (is_conf("API_DEFAULT_MAX_ITEMS_NUMBER")){ $MAX_ITEMS = get_conf("API_DEFAULT_MAX_ITEMS_NUMBER"); }
 
-# Header for html version
-my $apiuri=apilib::get_api_uri_relative_base();
-$apiuri =~ s/\/$//;
-my $HTML_HEADER="";
-my $file;
-if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
-else { $file="/etc/oar/api_html_header.pl"; }
-open(FILE,$file);
-my(@lines) = <FILE>;
-eval join("\n",@lines);
-close(FILE);
-
 # Relative/absolute uris config variable
 $apilib::ABSOLUTE_URIS=1;
 if (is_conf("API_ABSOLUTE_URIS")){ $apilib::ABSOLUTE_URIS=get_conf("API_ABSOLUTE_URIS"); }
@@ -120,6 +107,53 @@ my $TMPDIR="/tmp";
 if (defined($ENV{TMPDIR})) {
   $TMPDIR=$ENV{TMPDIR};
 }
+
+# Load the html header file
+my $file;
+if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
+else { $file="/etc/oar/api_html_header.pl"; }
+open(FILE,$file);
+my(@html_header_lines) = <FILE>;
+close(FILE);
+
+
+##############################################################################
+# FastCGI loop starting
+##############################################################################
+my $q;
+while ($q = new CGI::Fast) {
+
+`echo "$q->path_info" > /tmp/oarapi`;
+
+# Sets the cgi handler of the apilib (global variable)
+$apilib::q=$q;
+
+# Activate debug mode when the script name contains "debug" or when a
+# debug parameter is found.
+my $DEBUG_MODE=0;
+if ( $q->url(-relative=>1) =~ /.*debug.*/ ) { $DEBUG_MODE = 1; };
+if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
+  $DEBUG_MODE = 1;
+}
+$apilib::DEBUG_MODE=$DEBUG_MODE;
+
+# Check a possible extension
+sub set_ext($$); # defined later
+my $extension;
+if ( $q->path_info =~ /^$/ ) { $extension = "html"; }
+elsif ( $q->path_info =~ /.*\.(yaml|json|html|tgz|tar\.gz)$/ ) { $extension = $1; };
+$extension=apilib::set_ext($q,$extension);
+$apilib::extension=$extension;
+
+# Base uri of the api
+my $apiuri=apilib::get_api_uri_relative_base();
+$apiuri =~ s/\/$//;
+$apilib::apiuri=$apiuri;
+
+# Header for html version
+my $HTML_HEADER="";
+eval join("\n",@html_header_lines);
+$apilib::HTML_HEADER=$HTML_HEADER;
 
 ##############################################################################
 # Authentication
@@ -413,7 +447,7 @@ SWITCH: for ($q) {
     apilib::add_job_uris($result,$ext);
     oarstatlib::close_db_connection; 
     print $header;
-    if ($ext eq "html") { job_html_header($job); };
+    if ($ext eq "html") { apilib::job_html_header($job); };
     print apilib::export($result,$ext);
     last;
   };
@@ -844,7 +878,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    jobStageIn($1);
+    apilib::jobStageIn($1);
 
     last;
   };
@@ -854,7 +888,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    jobStageInHead($1);
+    apilib::jobStageInHead($1);
     last;
   };
 
@@ -888,11 +922,11 @@ SWITCH: for ($q) {
     my $json = decode_json $q->param('POSTDATA');
     my $state = $json->{'state'};
     if ($state eq 'running'){
-        runJob($1);
+        apilib::runJob($1);
     } elsif($state eq 'terminated'){
-        terminateJob($1);
+        apilib::terminateJob($1);
     } elsif($state eq 'error'){
-        errorJob($1);
+        apilib::errorJob($1);
     } else {
         die "unknown state"
     }
@@ -1360,7 +1394,7 @@ SWITCH: for ($q) {
     print $header;
     if ($ext eq "html") {
       print $HTML_HEADER;
-      resources_commit_button($data->{"items"});
+      api_uri::resources_commit_button($data->{"items"});
     }
     print apilib::export($data,$ext);
     last;
@@ -1754,11 +1788,11 @@ SWITCH: for ($q) {
     if ($result) {
       $result = $result->{'description'};
       $result++;
-      sign_in($result);
+      apilib::sign_in($result,$remote_host,$remote_port,$expiry,$allow_create_node);
       iolib::add_new_event($db,"NEW_VIRTUAL_HOSTNAME",0,$result);
       $result = {'hostname' => $result};
     } else {
-      sign_in('vnode1');
+      apilib::sign_in('vnode1',$remote_host,$remote_port,$expiry,$allow_create_node);
       iolib::add_new_event($db,"NEW_VIRTUAL_HOSTNAME",0,'vnode1');
       $result = {'hostname' => 'vnode1'};
     }
@@ -1850,151 +1884,5 @@ SWITCH: for ($q) {
   apilib::ERROR( 404, "Not found", "No way to handle your request " . $q->path_info );
 }
 
+} # End of fastcgi loop
 
-##############################################################################
-# Functions
-##############################################################################
-
-#{{{ HTML functions
-#
-sub job_html_header($) {
-       my $job=shift;
-       my $jobid=$job->{id};
-       my $hold="holds";
-       if ($job->{state} eq "Running") { $hold="rholds";}
-       print $HTML_HEADER;
-       print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
-       print "</TD></TR><TR><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/deletions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
-       print "<INPUT TYPE=Submit VALUE=DELETE>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/$hold/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
-       print "<INPUT TYPE=Submit VALUE=HOLD>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resumptions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
-       print "<INPUT TYPE=Submit VALUE=RESUME>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
-       print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resubmissions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=resubmit>\n";
-       print "<INPUT TYPE=Submit VALUE=RESUBMIT>\n";
-       print "</FORM></TD>\n";
-       print "</TR></TABLE>\n";
-}
-
-sub resources_commit_button($) {
-  my $resources=shift;
-  my $yaml_array=apilib::export_yaml($resources);
-  print "<FORM METHOD=POST action=$apiuri/resources.html>\n";
-  print "<INPUT TYPE=hidden NAME=yaml_array VALUE=\"$yaml_array\">\n";
-  print "<INPUT TYPE=Submit VALUE=COMMIT>\n";
-  print "</FORM><p>";
-}
-
-#}}}
-
-#{{{ Other functions
-#
-
-sub message($) {
-    my $msg = shift;
-    warn $msg;
-}
-
-sub jobStageIn($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    my $stagein = iolib::get_job_stagein($base,$jobid);
-    iolib::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        print <F>;
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
-sub jobStageInHead($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    my $stagein = iolib::get_job_stagein($base,$jobid);
-    iolib::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
-sub terminateJob($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    iolib::set_job_state($base,$jobid,"Terminated");
-    
-    iolib::set_finish_date($base,$jobid);
-    iolib::set_job_message($base,$jobid,"ALL is GOOD");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-}
-
-sub runJob($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    #iolib::set_running_date($base,$jobid);
-    iolib::set_job_state($base,$jobid,"Running");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-}
-sub errorJob() {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    iolib::set_running_date($base,$jobid);
-    iolib::set_job_state($base,$jobid,"Error");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-}
-
-sub sign_in($) {
-    my $hostname = shift;
-    my $do_notify;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    my $is_desktop_computing = iolib::is_node_desktop_computing($base,$hostname);
-    if (defined $is_desktop_computing and $is_desktop_computing eq 'YES'){
-	    iolib::lock_table($base,["resources"]);
-	    if (iolib::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
-		$do_notify=1;
-	    }
-	    iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-	    iolib::unlock_table($base);
-    }
-    elsif ($allow_create_node) {
-        my $resource = iolib::add_resource($base, $hostname, "Alive");
-        iolib::set_resource_property($base,$resource,"desktop_computing","YES");
-        iolib::set_resource_nextState($base,$resource,"Alive");
-        iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-        $do_notify=1;        
-    } 
-    if ($do_notify) {
-	oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-    }
-
-    iolib::disconnect($base);
-}
-
-
-#}}}
