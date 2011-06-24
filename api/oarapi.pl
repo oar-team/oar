@@ -123,8 +123,6 @@ close(FILE);
 my $q;
 while ($q = new CGI::Fast) {
 
-`echo "$q->path_info" > /tmp/oarapi`;
-
 # Sets the cgi handler of the apilib (global variable)
 $apilib::q=$q;
 
