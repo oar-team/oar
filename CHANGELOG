@@ -67,6 +67,7 @@ version 2.5.0:
     This submits 3 sleep jobs with differents sleep values.
   - Remove any reference to gridlibs and gridapi as these components are obselete
   - Add stdout and stderr files of each job in oarstat output.
+  - API now supports fastcgi (big performance raise!)
 
 version 2.4.4:
 --------------
