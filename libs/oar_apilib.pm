@@ -1051,7 +1051,9 @@ sub ERROR($$$) {
                 };
 
     print export($error,$extension);
-    exit 0;
+    #exit 0;
+    local $^W = 0;
+    next FCGI;
   }
 }
 

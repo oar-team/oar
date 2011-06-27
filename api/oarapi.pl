@@ -93,6 +93,7 @@ if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 # Default data structure variant
 my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
+my $DEFAULT_STRUCTURE=$STRUCTURE;
 
 # Get the default maximum number of items
 my $MAX_ITEMS=500;
@@ -121,7 +122,7 @@ close(FILE);
 # FastCGI loop starting
 ##############################################################################
 my $q;
-while ($q = new CGI::Fast) {
+FCGI: while ($q = new CGI::Fast) {
 
 # Sets the cgi handler of the apilib (global variable)
 $apilib::q=$q;
@@ -175,14 +176,14 @@ else {
 ##############################################################################
 # Data structure variants
 ##############################################################################
-
+$STRUCTURE=$DEFAULT_STRUCTURE;
 if (defined $q->param('structure')) {
   $STRUCTURE=$q->param('structure');
 }
 if ($STRUCTURE ne "oar" && $STRUCTURE ne "simple") {
   apilib::ERROR 406, "Unknown $STRUCTURE format",
         "Unknown $STRUCTURE format for data structure";
-  exit 0;
+  last FCGI;
 }
 
 
