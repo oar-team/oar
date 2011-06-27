@@ -84,7 +84,7 @@ Description: OAR batch scheduler administration tools package
 
 Package: oar-api
 Architecture: any
-Depends: oar-common (>= 2.4.0), oar-user (>= 2.4.0), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl, libfcgi-perl
+Depends: oar-common (>= 2.4.0), oar-user (>= 2.4.0), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl
 Suggests: oar-doc
 Recommends: libxml-simple-perl, libyaml-perl
 Description: OAR RESTful API
