@@ -458,7 +458,7 @@ sub struct_empty($) {
 sub fix_job_integers($) {
   my $job = shift;
   foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","submissionTime","scheduledStart") {
-    $job->{$key}=int($job->{$key});
+    $job->{$key}=int($job->{$key}) if defined($job->{$key});
   }
   foreach my $event (@{$job->{"events"}}) {
     $event->{'job_id'}=int($event->{'job_id'});
