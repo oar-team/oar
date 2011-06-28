@@ -83,21 +83,24 @@ db_version 2.0
 #setup_users
 
 # Manage setuid bits
-chown oar:oar /usr/bin/oarnodes
+OARDO_USER=root
+OARDO_GROUP=oar
+
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarnodes
 chmod 6755 /usr/bin/oarnodes
-chown oar:oar /usr/bin/oarnodes.old
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarnodes.old
 chmod 6755 /usr/bin/oarnodes.old
-chown oar:oar /usr/bin/oardel
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oardel
 chmod 6755 /usr/bin/oardel
-chown oar:oar /usr/bin/oarstat
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarstat
 chmod 6755 /usr/bin/oarstat
-chown oar:oar /usr/bin/oarstat.old
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarstat.old
 chmod 6755 /usr/bin/oarstat.old
-chown oar:oar /usr/bin/oarsub
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarsub
 chmod 6755 /usr/bin/oarsub
-chown oar:oar /usr/bin/oarhold
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarhold
 chmod 6755 /usr/bin/oarhold
-chown oar:oar /usr/bin/oarresume
+chown $OARDO_USER:$OARDO_GROUP /usr/bin/oarresume
 chmod 6755 /usr/bin/oarresume
 
 

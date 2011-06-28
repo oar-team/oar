@@ -43,20 +43,23 @@ setup_oar_user_group() {
     fi
 }
 
+OARDO_USER=root
+OARDO_GROUP=oar
+
 setup_oar_user_group
 touch /var/log/oar.log && chown oar:root /var/log/oar.log && chmod 0644 /var/log/oar.log || true
 
 install -o oar -m 755 -d /var/run/oar
 
 # Manage setuid bits
-chown oar:oar /usr/lib/oar/oarsh_oardo
+chown $OARDO_USER:$OARDO_GROUP /usr/lib/oar/oarsh_oardo
 chmod 6755 /usr/lib/oar/oarsh_oardo
 chown root:oar /usr/lib/oar/oardodo/oardodo
 chmod 6750 /usr/lib/oar/oardodo/oardodo
 
 
 # Manage setuid bits
-chown oar:oar /usr/sbin/oarnodesetting
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oarnodesetting
 chmod 6750 /usr/sbin/oarnodesetting
 
 # set OAR Shell

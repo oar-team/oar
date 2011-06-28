@@ -44,22 +44,25 @@ EOF
 
 setup_oar_ssh
 
+OARDO_USER=root
+OARDO_GROUP=oar
+
 # Manage setuid bits
-chown oar:oar /usr/sbin/Almighty
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/Almighty
 chmod 6750 /usr/sbin/Almighty
-chown oar:oar /usr/sbin/oarnotify
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oarnotify
 chmod 6750 /usr/sbin/oarnotify
-chown oar:oar /usr/sbin/oarremoveresource
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oarremoveresource
 chmod 6750 /usr/sbin/oarremoveresource
-chown oar:oar /usr/sbin/oaraccounting
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oaraccounting
 chmod 6750 /usr/sbin/oaraccounting
-chown oar:oar /usr/sbin/oarproperty
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oarproperty
 chmod 6750 /usr/sbin/oarproperty
-chown oar:oar /usr/sbin/oarmonitor
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oarmonitor
 chmod 6750 /usr/sbin/oarmonitor
-chown oar:oar /usr/sbin/oar_resources_init
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oar_resources_init
 chmod 6750 /usr/sbin/oar_resources_init
-chown oar:oar /usr/sbin/oar_phoenix
+chown $OARDO_USER:$OARDO_GROUP /usr/sbin/oar_phoenix
 chmod 6750 /usr/sbin/oar_phoenix
 
 # Phoenix home

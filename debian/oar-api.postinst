@@ -31,11 +31,14 @@ reload_apache()
         fi
 }
 
+OARDO_USER=root
+OARDO_GROUP=oar
+
 # Manage permissions and setuid bits
-chown oar:www-data /usr/lib/cgi-bin/oarapi
+chown $OARDO_USER:www-data /usr/lib/cgi-bin/oarapi
 chmod 750 /usr/lib/cgi-bin/oarapi
-chown oar:oar /usr/lib/cgi-bin/oarapi/oarapi.cgi
-chown oar:oar /usr/lib/cgi-bin/oarapi/oarapi-debug.cgi
+chown $OARDO_USER:$OARDO_GROUP /usr/lib/cgi-bin/oarapi/oarapi.cgi
+chown $OARDO_USER:$OARDO_GROUP /usr/lib/cgi-bin/oarapi/oarapi-debug.cgi
 chmod a+s /usr/lib/cgi-bin/oarapi/oarapi.cgi
 chmod a+s /usr/lib/cgi-bin/oarapi/oarapi-debug.cgi
 
