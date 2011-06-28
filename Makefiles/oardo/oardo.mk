@@ -47,7 +47,7 @@ endif
 			s#define CMD_WRAPPER .*#define CMD_WRAPPER \"$(CMD_WRAPPER)\"#;;\
 			" "$(CMD_BUILDTARGET).c"
 
-	gcc -o $(CMD_BUILDTARGET) "$(CMD_BUILDTARGET).c"
+	$(CC) $(CFLAGS) -o $(CMD_BUILDTARGET) "$(CMD_BUILDTARGET).c"
 	
 
 install:

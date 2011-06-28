@@ -24,7 +24,7 @@ build:
 			     s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFDIR)/oar.conf\"#;;\
 			     s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(XAUTHCMDPATH)\"#;;\
 				" Makefiles/oardodo_tmp/oardodo.c
-	gcc -o Makefiles/oardodo_tmp/oardodo "Makefiles/oardodo_tmp/oardodo.c"
+	$(CC) $(CFLAGS) -o Makefiles/oardodo_tmp/oardodo "Makefiles/oardodo_tmp/oardodo.c"
 	
 install: 
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
