@@ -791,9 +791,9 @@ SWITCH: for ($q) {
       # performance cost.
       chmod 0755, $tmpfilename;
       $oarcmd .= " ./". basename($tmpfilename);
-      $cmd = "$OARDODO_CMD sh -c \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
     }else{ 
-      $cmd = "$OARDODO_CMD sh -c \"cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cd $workdir && $oarcmd\"";
     }
     # Escapes some special characters (especially security fix with backquote)
     $cmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
