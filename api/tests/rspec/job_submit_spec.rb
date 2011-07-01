@@ -38,9 +38,18 @@ sleep 120
       }.should_not raise_exception
     end
     it "should have id in current queue" do
+      timeout=60
       found=0
-      @oar_server.jobarray['items'].each do |j|
-        found=1 if j["id"] == $jobid
+      t=0
+      while found==0 && t < timeout do
+        @oar_server.jobarray['items'].each do |j|
+          found=1 if j["id"] == $jobid
+        end
+        @oar_server.full_job_details
+        sleep 1
+        t += 1
+        printf "."
+        $stdout.flush
       end
       found.should==1
     end  
