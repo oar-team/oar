@@ -149,7 +149,7 @@ sub count_jobs_for_user_query {
     $state = $statement;
 	}
 
-	my $total =  iolib::count_jobs_for_user_query($base,$from,$to,$state,$user,$array);
+	my $total =  iolib::count_jobs_for_user_query($base,$from,$to,$state,$user,undef,undef,$array);
 	return $total;
 }
 
