@@ -1383,7 +1383,7 @@ SWITCH: for ($q) {
       $auto_offset="--auto-offset ";
     }
     # command with arguments
-    $cmd = "$OARADMIN_CMD resources -a -Y $auto_offset".$description->{resources}.$cmd_properties;
+    $cmd = "PATH=\$PATH:/usr/sbin:/usr/local/sbin $OARADMIN_CMD resources -a -Y $auto_offset".$description->{resources}.$cmd_properties;
     # execute the command
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
     my $data = apilib::import($cmdRes,"yaml");
