@@ -1097,7 +1097,7 @@ SWITCH: for ($q) {
 
     # a "?state=" filter is possible, but prevent Terminated and Error state
     # because this result is not paginated and output may be too big
-    if ($q->param('state') eq "toKill"){
+    if (defined($q->param('state')) && $q->param('state') eq "toKill"){
       # This "toKill" state is virtual and implemented for the desktop
       # computing agent purpose.
       $job_array=oarnodeslib::get_jobs_running_on_node($1);
