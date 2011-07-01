@@ -109,7 +109,7 @@ api-clean: common-clean libs-clean
 api-uninstall: common-uninstall libs-uninstall
 
 # Ugly hack because there isn't yet separate setup scripts.
-common-install: setup
+# common-install: setup
 
 setup: sanity-setup-check
 	$(MAKE) -f Makefiles/setup.mk setup
