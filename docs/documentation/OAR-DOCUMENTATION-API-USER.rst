@@ -2001,6 +2001,28 @@ POST /config/<variable>
 :note:
   config.yaml contains the value of the variable.
 
+GET /media/<file_path>
+----------------------
+:description:
+  Get a file located on the API host, into the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. 
+
+:formats:
+  application/octet-stream
+
+:authentication:
+  user
+
+:output:
+  octet-stream
+
+:usage example:
+  ::
+
+   curl -i -H'Content-Type: application/octet-stream'  http://kameleon:kameleon@localhost/oarapi-priv/media/~/cigri-3/CHANGELOG
+   
+:note:
+  returns a 404 if the file does not exist, or a 403 if the file is not readable. Errors in debug mode (with ?debug=1) are formated into yaml.
+
 
 Some equivalences with oar command line
 =======================================
