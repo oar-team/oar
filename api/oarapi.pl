@@ -1830,7 +1830,7 @@ SWITCH: for ($q) {
     # Get the filename and replace "~" by the home directory
     my $file="/".$filename;
     my @user_infos=getpwnam($authenticated_user);
-    $file =~ s|/~/|@user_infos[7]/|;  
+    $file =~ s|/~/|$user_infos[7]/|;  
  
     # Check file existency
     if (system("$OARDODO_CMD","test","-f","$file") != 0) {
@@ -1850,7 +1850,65 @@ SWITCH: for ($q) {
     last;
   };
   #}}}
+  #
+  #{{{ POST /media/<file> : Upload a file and create underlying directories
+  #
+  $URI = qr{^/media/(.*)$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename=$1;
 
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting files" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;  
+
+    # Create the directories if necessary
+    my $path=dirname($file);
+    if (system("$OARDODO_CMD","mkdir","-p",$path) != 0) {
+      apilib::ERROR(500, "mkpath error", "Problem while creating path: $path");
+      last; 
+    }
+
+    # Upload the file if any 
+    #my $fh = $q->upload('file');
+    #if (defined $fh) {
+    #    my $io_handle = $fh->handle;
+    #    my $buffer;
+    #    open (OUTFILE, "|", "$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
+    #    while (my $bytesread = $io_handle->read($buffer, 1024)) {
+    #      print OUTFILE $buffer;
+    #    }
+    #    close(OUTFILE);
+    if ($q->param('POSTDATA')) {
+      if (system("$OARDODO_CMD","touch",$file) != 0) {
+        apilib::ERROR(500, "write error", "Error creating file: $file");
+        close(OUTFILE);
+        last; 
+      }
+      open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
+      print OUTFILE $q->param('POSTDATA');
+      close(OUTFILE);
+    }else{
+        # If no file is given, then create an empty one
+        `$OARDODO_CMD touch $file`;
+    }
+    print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
+    last;
+  };
+  #}}}
    
   ###########################################
   # Html stuff
