@@ -70,6 +70,8 @@ version 2.5.0:
   - API now supports fastcgi (big performance raise!)
   - Add "-f" option to oarnodesetting to read hostnames from a file.
   - API can get/upload files (GET or POST /media/<file_path>)
+  - Make "X11 forwarding" working even if the user XAUTHORITY environment
+    variable does not contain ~/.Xauthority (GDM issue).
 
 version 2.4.4:
 --------------
