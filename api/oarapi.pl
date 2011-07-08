@@ -1909,6 +1909,48 @@ SWITCH: for ($q) {
     last;
   };
   #}}}
+  #
+  #{{{ DELETE /media/<file> : Delete a file or a directory recursively
+  #
+  $URI = qr{^/media/(.*)$};
+  apilib::DELETE( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename=$1;
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting files" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;  
+ 
+    # Check file existency
+    if (system("$OARDODO_CMD","test","-e","$file") != 0) {
+      apilib::ERROR(404, "Not found", "File not found: $file");
+      last;  
+    }
+    
+    # Check file readability
+    if (system("$OARDODO_CMD","test","-w","$file") != 0) {
+      apilib::ERROR(403, "Forbidden","File or directory is not writeable: $file" );
+      last;  
+    }
+
+    # Delete the file
+    print $q->header( -status => 204, -type => "application/octet-stream" );
+    print `$OARDODO_CMD rm -rf $file`;
+    last;
+  };
    
   ###########################################
   # Html stuff

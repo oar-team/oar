@@ -2040,8 +2040,26 @@ POST /media/<file_path>
 :usage example:
   ::
 
-   -X POST -H'Content-Type: application/octet-stream' --data-binary @/etc/group http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir/testfile
+   curl -i -X POST -H'Content-Type: application/octet-stream' --data-binary @/etc/group http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir/testfile
 
+DELETE /media/<file_path>
+----------------------
+:description:
+  Delete the file or directory given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. If the path is a directory, then it is deleted recursively.
+
+:formats:
+  application/octet-stream
+
+:authentication:
+  user
+
+:output:
+  204 if ok
+
+:usage example:
+  ::
+
+   curl -i -X DELETE -H'Content-Type: application/octet-stream' http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir
 
 Some equivalences with oar command line
 =======================================
