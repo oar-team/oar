@@ -42,13 +42,15 @@ use JSON;
 use IO::Handle;
 use File::Temp qw/ tempfile  /;
 use File::Basename;
+use CGI::Fast qw/ standard /;
+
 
 #use Data::Dumper;
 
 my $VERSION="1.0.1alpha1";
 
 ##############################################################################
-# CONFIGURATION
+# CONFIGURATION AND INITIALIZATION STUFF
 ##############################################################################
 
 # Load config
@@ -63,9 +65,6 @@ if (defined($ENV{OARCONFFILE})){
 }else{
   init_conf("/etc/oar/oar.conf");
 }
-
-# CGI handler
-my $q=apilib::get_cgi_handler();
 
 # Oar commands
 my $OARSUB_CMD  = "oarsub";
@@ -94,22 +93,11 @@ if (is_conf("API_TRUST_IDENT")){ $TRUST_IDENT = get_conf("API_TRUST_IDENT"); }
 # Default data structure variant
 my $STRUCTURE="simple";
 if (is_conf("API_DEFAULT_DATA_STRUCTURE")){ $STRUCTURE = get_conf("API_DEFAULT_DATA_STRUCTURE"); }
+my $DEFAULT_STRUCTURE=$STRUCTURE;
 
 # Get the default maximum number of items
 my $MAX_ITEMS=500;
 if (is_conf("API_DEFAULT_MAX_ITEMS_NUMBER")){ $MAX_ITEMS = get_conf("API_DEFAULT_MAX_ITEMS_NUMBER"); }
-
-# Header for html version
-my $apiuri=apilib::get_api_uri_relative_base();
-$apiuri =~ s/\/$//;
-my $HTML_HEADER="";
-my $file;
-if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
-else { $file="/etc/oar/api_html_header.pl"; }
-open(FILE,$file);
-my(@lines) = <FILE>;
-eval join("\n",@lines);
-close(FILE);
 
 # Relative/absolute uris config variable
 $apilib::ABSOLUTE_URIS=1;
@@ -120,6 +108,50 @@ my $TMPDIR="/tmp";
 if (defined($ENV{TMPDIR})) {
   $TMPDIR=$ENV{TMPDIR};
 }
+
+# Load the html header file
+my $file;
+if (is_conf("API_HTML_HEADER")){ $file=get_conf("API_HTML_HEADER"); }
+else { $file="/etc/oar/api_html_header.pl"; }
+open(FILE,$file);
+my(@html_header_lines) = <FILE>;
+close(FILE);
+
+
+##############################################################################
+# FastCGI loop starting
+##############################################################################
+my $q;
+FCGI: while ($q = new CGI::Fast) {
+
+# Sets the cgi handler of the apilib (global variable)
+$apilib::q=$q;
+
+# Activate debug mode when the script name contains "debug" or when a
+# debug parameter is found.
+my $DEBUG_MODE=0;
+if ( $q->url(-relative=>1) =~ /.*debug.*/ ) { $DEBUG_MODE = 1; };
+if ( defined( $q->param('debug') ) && $q->param('debug') eq "1" ) {
+  $DEBUG_MODE = 1;
+}
+$apilib::DEBUG_MODE=$DEBUG_MODE;
+
+# Check a possible extension
+my $extension;
+if ( $q->path_info =~ /^$/ ) { $extension = "html"; }
+elsif ( $q->path_info =~ /.*\.(yaml|json|html|tgz|tar\.gz)$/ ) { $extension = $1; };
+$extension=apilib::set_ext($q,$extension);
+$apilib::extension=$extension;
+
+# Base uri of the api
+my $apiuri=apilib::get_api_uri_relative_base();
+$apiuri =~ s/\/$//;
+$apilib::apiuri=$apiuri;
+
+# Header for html version
+my $HTML_HEADER="";
+eval join("\n",@html_header_lines);
+$apilib::HTML_HEADER=$HTML_HEADER;
 
 ##############################################################################
 # Authentication
@@ -144,14 +176,14 @@ else {
 ##############################################################################
 # Data structure variants
 ##############################################################################
-
+$STRUCTURE=$DEFAULT_STRUCTURE;
 if (defined $q->param('structure')) {
   $STRUCTURE=$q->param('structure');
 }
 if ($STRUCTURE ne "oar" && $STRUCTURE ne "simple") {
   apilib::ERROR 406, "Unknown $STRUCTURE format",
         "Unknown $STRUCTURE format for data structure";
-  exit 0;
+  last FCGI;
 }
 
 
@@ -294,8 +326,9 @@ SWITCH: for ($q) {
     my $to = $q->param('to');
     my $state = $q->param('state');
     my $user = $q->param('user');
+    my $array = $q->param('array');
 
-    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state'))) {
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('array'))) {
         my $param = qr{.*from=(.*?)(&|$)};
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$from = $1;
@@ -309,6 +342,8 @@ SWITCH: for ($q) {
         	$state = $1;
         }
     }
+    if (!defined($array)) { $array=""; };
+
     # GET max items from configuration parameter
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
@@ -328,8 +363,8 @@ SWITCH: for ($q) {
         $offset = $q->param('offset');
     }
     # requested user jobs
-    my $jobs = oarstatlib::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset);
-    my $total_jobs = oarstatlib::count_jobs_for_user_query($user,$from,$to,$state);
+    my $jobs = oarstatlib::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset,$array);
+    my $total_jobs = oarstatlib::count_jobs_for_user_query($user,$from,$to,$state,$array);
     
     if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = apilib::struct_empty($STRUCTURE);
@@ -410,7 +445,7 @@ SWITCH: for ($q) {
     apilib::add_job_uris($result,$ext);
     oarstatlib::close_db_connection; 
     print $header;
-    if ($ext eq "html") { job_html_header($job); };
+    if ($ext eq "html") { apilib::job_html_header($job); };
     print apilib::export($result,$ext);
     last;
   };
@@ -471,32 +506,32 @@ SWITCH: for ($q) {
     # Delete (alternative way to DELETE request, for html forms)
     my $cmd; my $status;
     if ($action eq "deletions" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $array $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD $array $jobid";
       $status = "Delete request registered"; 
     }
     # Checkpoint
     elsif ( $action eq "checkpoints" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $array -c $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD $array -c $jobid";
       $status = "Checkpoint request registered"; 
     }
     # Hold
     elsif ( $action eq "holds" ) {
-      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $array $jobid'";
+      $cmd    = "$OARDODO_CMD $OARHOLD_CMD $array $jobid";
       $status = "Hold request registered";
     }
     # Hold a running job
     elsif ( $action eq "rholds" ) {
-      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $array -r $jobid'";
+      $cmd    = "$OARDODO_CMD $OARHOLD_CMD $array -r $jobid";
       $status = "Hold request registered";
     }
     # Resume
     elsif ( $action eq "resumptions" ) {
-      $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $array $jobid'";
+      $cmd    = "$OARDODO_CMD $OARRESUME_CMD $array $jobid";
       $status = "Resume request registered";
     }
     # Resubmit
     elsif ( $action eq "resubmissions" ) {
-      $cmd    = "$OARDODO_CMD '$OARSUB_CMD $array --resubmit $jobid'";
+      $cmd    = "$OARDODO_CMD $OARSUB_CMD $array --resubmit $jobid";
       $status = "Resubmit request registered";
     }
     # Impossible to get here!
@@ -585,22 +620,22 @@ SWITCH: for ($q) {
     # Delete (alternative way to DELETE request, for html forms)
     my $cmd; my $status;
     if ( $job->{method} eq "delete" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD $jobid";
       $status = "Delete request registered"; 
     }
     # Checkpoint
     elsif ( $job->{method} eq "checkpoint" ) {
-      $cmd    = "$OARDODO_CMD '$OARDEL_CMD -c $jobid'";
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD -c $jobid";
       $status = "Checkpoint request registered"; 
     }
     # Hold
     elsif ( $job->{method} eq "hold" ) {
-      $cmd    = "$OARDODO_CMD '$OARHOLD_CMD $jobid'";
+      $cmd    = "$OARDODO_CMD $OARHOLD_CMD $jobid";
       $status = "Hold request registered";
     }
     # Resume
     elsif ( $job->{method} eq "resume" ) {
-      $cmd    = "$OARDODO_CMD '$OARRESUME_CMD $jobid'";
+      $cmd    = "$OARDODO_CMD $OARRESUME_CMD $jobid";
       $status = "Resume request registered";
     }
     else {
@@ -641,7 +676,7 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD '$OARDEL_CMD -s $signal $jobid'";
+    my $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $signal $jobid";
     my $status = "Signal sending request registered"; 
 
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
@@ -689,19 +724,24 @@ SWITCH: for ($q) {
     my $workdir = "~$authenticated_user";
     my $command = "";
     my $script = "";
+    my $param_file = "";
     my $tmpfilename = "";
+    my $tmpparamfilename = "";
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
-        $job->{script_path} =~ s/("|'|\\|\x00)/\\$1/g;
+        $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{script_path}\"";
       }
       elsif ($option eq "command") {
-        $job->{command} =~ s/("|'|\\|\x00)/\\$1/g;
+        # Escapes double quotes
+        $job->{command} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{command}\"";
       }
       elsif ($option eq "script") {
-        $job->{script} =~ s/("|'|\\|\x00)/\\$1/g;
         $script = $job->{script};
+      }
+      elsif ($option eq "param_file") {
+        $param_file = $job->{param_file};
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
@@ -712,19 +752,32 @@ SWITCH: for ($q) {
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
           $oarcmd .= " --$option";
-          $elem =~ s/("|'|\\|\x00)/\\$1/g;
+          # Escapes double quotes
+          $elem =~ s/(\\*)"/$1$1\\"/g;
           $oarcmd .= "=\"$elem\"" if $elem ne "";
          }
       }
       else {
         $oarcmd .= " --$option";
-        $job->{option} =~ s/("|'|\\|\x00)/\\$1/g;
+        # Escapes double quotes
+        $job->{$option}=~ s/(\\*)"/$1$1\\"/g;
         $oarcmd .= "=\"$job->{$option}\"" if $job->{$option} ne "";
       }
     }
     $oarcmd .= $command;
-    $oarcmd =~ s/("|'|\\|\x00)/\\$1/g;
+    # Escapes double quotes (one more time, for oardodo)
+    $oarcmd =~ s/(\\*)"/$1$1\\"/g;
     my $cmd;
+
+    # If a parameters file is provided, we create a temporary file
+    # and write the parameters inside.
+    if ($param_file ne "") {
+      my $TMP;
+      ($TMP, $tmpparamfilename) = tempfile( "oarapi.paramfile.XXXXX", DIR => $TMPDIR, UNLINK => 1 );
+      print $TMP $param_file;
+      $oarcmd .= " --array-param-file=$tmpparamfilename";
+    }
+
     # If a script is provided, we create a file into the workdir and write
     # the script inside.
     if ($script ne "") {
@@ -738,12 +791,15 @@ SWITCH: for ($q) {
       # performance cost.
       chmod 0755, $tmpfilename;
       $oarcmd .= " ./". basename($tmpfilename);
-      $cmd = "$OARDODO_CMD \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
     }else{ 
-      $cmd = "$OARDODO_CMD \"cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cd $workdir && $oarcmd\"";
     }
+    # Escapes some special characters (especially security fix with backquote)
+    $cmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
     my $cmdRes = `$cmd 2>&1`;
     unlink $tmpfilename;
+    unlink $tmpparamfilename;
     if ( $? != 0 ) {
       my $err = $? >> 8;
       # Error codes corresponding to an error into the user's request
@@ -800,7 +856,7 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    my $cmd    = "$OARDODO_CMD '$OARDEL_CMD $jobid'";
+    my $cmd    = "$OARDODO_CMD $OARDEL_CMD $jobid";
     my $cmdRes = apilib::send_cmd($cmd,"Oardel");
     print $q->header( -status => 202, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
@@ -820,7 +876,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    jobStageIn($1);
+    apilib::jobStageIn($1);
 
     last;
   };
@@ -830,7 +886,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = apilib::set_ext($q,$2);
     (my $header, my $type)=apilib::set_output_format($ext);
-    jobStageInHead($1);
+    apilib::jobStageInHead($1);
     last;
   };
 
@@ -864,11 +920,11 @@ SWITCH: for ($q) {
     my $json = decode_json $q->param('POSTDATA');
     my $state = $json->{'state'};
     if ($state eq 'running'){
-        runJob($1);
+        apilib::runJob($1);
     } elsif($state eq 'terminated'){
-        terminateJob($1);
+        apilib::terminateJob($1);
     } elsif($state eq 'error'){
-        errorJob($1);
+        apilib::errorJob($1);
     } else {
         die "unknown state"
     }
@@ -1041,7 +1097,7 @@ SWITCH: for ($q) {
 
     # a "?state=" filter is possible, but prevent Terminated and Error state
     # because this result is not paginated and output may be too big
-    if ($q->param('state') eq "toKill"){
+    if (defined($q->param('state')) && $q->param('state') eq "toKill"){
       # This "toKill" state is virtual and implemented for the desktop
       # computing agent purpose.
       $job_array=oarnodeslib::get_jobs_running_on_node($1);
@@ -1327,7 +1383,7 @@ SWITCH: for ($q) {
       $auto_offset="--auto-offset ";
     }
     # command with arguments
-    $cmd = "$OARADMIN_CMD resources -a -Y $auto_offset".$description->{resources}.$cmd_properties;
+    $cmd = "PATH=\$PATH:/usr/sbin:/usr/local/sbin $OARADMIN_CMD resources -a -Y $auto_offset".$description->{resources}.$cmd_properties;
     # execute the command
     my $cmdRes = apilib::send_cmd($cmd,"Oar");
     my $data = apilib::import($cmdRes,"yaml");
@@ -1336,7 +1392,7 @@ SWITCH: for ($q) {
     print $header;
     if ($ext eq "html") {
       print $HTML_HEADER;
-      resources_commit_button($data->{"items"});
+      api_uri::resources_commit_button($data->{"items"});
     }
     print apilib::export($data,$ext);
     last;
@@ -1730,11 +1786,11 @@ SWITCH: for ($q) {
     if ($result) {
       $result = $result->{'description'};
       $result++;
-      sign_in($result);
+      apilib::sign_in($result,$remote_host,$remote_port,$expiry,$allow_create_node);
       iolib::add_new_event($db,"NEW_VIRTUAL_HOSTNAME",0,$result);
       $result = {'hostname' => $result};
     } else {
-      sign_in('vnode1');
+      apilib::sign_in('vnode1',$remote_host,$remote_port,$expiry,$allow_create_node);
       iolib::add_new_event($db,"NEW_VIRTUAL_HOSTNAME",0,'vnode1');
       $result = {'hostname' => 'vnode1'};
     }
@@ -1747,6 +1803,154 @@ SWITCH: for ($q) {
     last;
   };
   #}}}
+
+  ###########################################
+  # Media (files) download/upload
+  ###########################################
+  #
+  #{{{ GET /media/<file> : Get a file
+  #
+  $URI = qr{^/media/(.*)$};
+  apilib::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename=$1;
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting files" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;  
+ 
+    # Check file existency
+    if (system("$OARDODO_CMD","test","-f","$file") != 0) {
+      apilib::ERROR(404, "Not found", "File not found: $file");
+      last;  
+    }
+    
+    # Check file readability
+    if (system("$OARDODO_CMD","test","-r","$file") != 0) {
+      apilib::ERROR(403, "Forbidden","File could not be read: $file" );
+      last;  
+    }
+
+    # Output the file
+    print $q->header( -status => 200, -type => "application/octet-stream" );
+    print `$OARDODO_CMD cat $file`;
+    last;
+  };
+  #}}}
+  #
+  #{{{ POST /media/<file> : Upload a file and create underlying directories
+  #
+  $URI = qr{^/media/(.*)$};
+  apilib::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename=$1;
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting files" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;  
+
+    # Create the directories if necessary
+    my $path=dirname($file);
+    if (system("$OARDODO_CMD","mkdir","-p",$path) != 0) {
+      apilib::ERROR(500, "mkpath error", "Problem while creating path: $path");
+      last; 
+    }
+
+    # Upload the file if any 
+    #my $fh = $q->upload('file');
+    #if (defined $fh) {
+    #    my $io_handle = $fh->handle;
+    #    my $buffer;
+    #    open (OUTFILE, "|", "$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
+    #    while (my $bytesread = $io_handle->read($buffer, 1024)) {
+    #      print OUTFILE $buffer;
+    #    }
+    #    close(OUTFILE);
+    if ($q->param('POSTDATA')) {
+      if (system("$OARDODO_CMD","touch",$file) != 0) {
+        apilib::ERROR(500, "write error", "Error creating file: $file");
+        close(OUTFILE);
+        last; 
+      }
+      open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
+      print OUTFILE $q->param('POSTDATA');
+      close(OUTFILE);
+    }else{
+        # If no file is given, then create an empty one
+        `$OARDODO_CMD touch $file`;
+    }
+    print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
+    last;
+  };
+  #}}}
+  #
+  #{{{ DELETE /media/<file> : Delete a file or a directory recursively
+  #
+  $URI = qr{^/media/(.*)$};
+  apilib::DELETE( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename=$1;
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      apilib::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting files" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;  
+ 
+    # Check file existency
+    if (system("$OARDODO_CMD","test","-e","$file") != 0) {
+      apilib::ERROR(404, "Not found", "File not found: $file");
+      last;  
+    }
+    
+    # Check file readability
+    if (system("$OARDODO_CMD","test","-w","$file") != 0) {
+      apilib::ERROR(403, "Forbidden","File or directory is not writeable: $file" );
+      last;  
+    }
+
+    # Delete the file
+    print $q->header( -status => 204, -type => "application/octet-stream" );
+    print `$OARDODO_CMD rm -rf $file`;
+    last;
+  };
    
   ###########################################
   # Html stuff
@@ -1826,151 +2030,5 @@ SWITCH: for ($q) {
   apilib::ERROR( 404, "Not found", "No way to handle your request " . $q->path_info );
 }
 
+} # End of fastcgi loop
 
-##############################################################################
-# Functions
-##############################################################################
-
-#{{{ HTML functions
-#
-sub job_html_header($) {
-       my $job=shift;
-       my $jobid=$job->{id};
-       my $hold="holds";
-       if ($job->{state} eq "Running") { $hold="rholds";}
-       print $HTML_HEADER;
-       print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
-       print "</TD></TR><TR><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/deletions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
-       print "<INPUT TYPE=Submit VALUE=DELETE>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/$hold/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
-       print "<INPUT TYPE=Submit VALUE=HOLD>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resumptions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
-       print "<INPUT TYPE=Submit VALUE=RESUME>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
-       print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resubmissions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=resubmit>\n";
-       print "<INPUT TYPE=Submit VALUE=RESUBMIT>\n";
-       print "</FORM></TD>\n";
-       print "</TR></TABLE>\n";
-}
-
-sub resources_commit_button($) {
-  my $resources=shift;
-  my $yaml_array=apilib::export_yaml($resources);
-  print "<FORM METHOD=POST action=$apiuri/resources.html>\n";
-  print "<INPUT TYPE=hidden NAME=yaml_array VALUE=\"$yaml_array\">\n";
-  print "<INPUT TYPE=Submit VALUE=COMMIT>\n";
-  print "</FORM><p>";
-}
-
-#}}}
-
-#{{{ Other functions
-#
-
-sub message($) {
-    my $msg = shift;
-    warn $msg;
-}
-
-sub jobStageIn($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    my $stagein = iolib::get_job_stagein($base,$jobid);
-    iolib::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        print <F>;
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
-sub jobStageInHead($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    my $stagein = iolib::get_job_stagein($base,$jobid);
-    iolib::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
-sub terminateJob($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    iolib::set_job_state($base,$jobid,"Terminated");
-    
-    iolib::set_finish_date($base,$jobid);
-    iolib::set_job_message($base,$jobid,"ALL is GOOD");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-}
-
-sub runJob($) {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    #iolib::set_running_date($base,$jobid);
-    iolib::set_job_state($base,$jobid,"Running");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-}
-sub errorJob() {
-    my $jobid = shift;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    iolib::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    iolib::set_running_date($base,$jobid);
-    iolib::set_job_state($base,$jobid,"Error");
-    iolib::unlock_table($base);
-    iolib::disconnect($base);
-}
-
-sub sign_in($) {
-    my $hostname = shift;
-    my $do_notify;
-    my $base = iolib::connect() or die "cannot connect to the data base\n";
-    my $is_desktop_computing = iolib::is_node_desktop_computing($base,$hostname);
-    if (defined $is_desktop_computing and $is_desktop_computing eq 'YES'){
-	    iolib::lock_table($base,["resources"]);
-	    if (iolib::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
-		$do_notify=1;
-	    }
-	    iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-	    iolib::unlock_table($base);
-    }
-    elsif ($allow_create_node) {
-        my $resource = iolib::add_resource($base, $hostname, "Alive");
-        iolib::set_resource_property($base,$resource,"desktop_computing","YES");
-        iolib::set_resource_nextState($base,$resource,"Alive");
-        iolib::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-        $do_notify=1;        
-    } 
-    if ($do_notify) {
-	oar_Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-    }
-
-    iolib::disconnect($base);
-}
-
-
-#}}}

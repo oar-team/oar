@@ -29,6 +29,7 @@ my @properties;
 my $new_resource;
 my $sos;
 my @resource;
+my $file;
 my $Sql_property;
 
 # Get OAR configuration
@@ -190,6 +191,7 @@ Options:
 				 this means setting its state to Absent
 				 and its available_upto value to 0
  -h, --hostname=HOSTNAME         set the node hostname
+ -f, --file=FILENAME             get the hostname list from a file (1 hostname by line)
  -r, --resource                  set the resource
      --sql                       get resource identifiers which respond to the
                                  SQL where clause on the table jobs
@@ -214,8 +216,8 @@ my $Version;
 # Options on arg command line
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
-	    "maintenance|m=s" => \$maintenance,
-	    "care=s" => \$maintenance, # care is an alias for maintenance
+            "maintenance|m=s" => \$maintenance,
+            "care=s" => \$maintenance, # care is an alias for maintenance
             "hostname|h=s"   => \@hostnames,
             "no-wait|n" => \$nowaitMode,
             "property|p=s" => \@properties,
@@ -223,6 +225,7 @@ GetOptions ("state|s=s" => \$state,
             "help" => \$sos,
             "sql=s"   => \$Sql_property,
             "resource|r=i" => \@resource,
+            "file|f=s" => \$file,
             "version|V" => \$Version
            );
 
@@ -252,6 +255,23 @@ if (defined($Sql_property)){
     if ($#resource < 0){
         warn("/!\\ Your SQL clause returns nothing and there is no resource specified.\n");
         $exit_code = 12;
+    }
+}
+
+# Get hostnames from a file
+if (defined($file)){
+    if (open(FILE, "< $file")){
+        while (<FILE>) {
+            my $line = $_;
+            if ($line !~ m/^\s*$/m){
+                chop($line);
+                push(@hostnames, $line);
+            }
+        }
+        close(FILE);
+    }else{
+        warn("/!\\ Cannot open the file $file.\n");
+        $exit_code = 13;
     }
 }
 

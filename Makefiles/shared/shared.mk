@@ -4,6 +4,9 @@ export OARDO_CLEAN     = $(MAKE) -f Makefiles/oardo/oardo.mk clean
 export OARDO_INSTALL   = $(MAKE) -f Makefiles/oardo/oardo.mk install
 export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 
+ifndef CFLAGS
+export CFLAGS=-g
+endif
 
 ifndef OARCONFDIR
 export OARCONFDIR=/etc/oar
