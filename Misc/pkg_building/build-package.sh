@@ -59,11 +59,10 @@ gen_tarball() {
     #####################
     TMPDIR=$(mktemp -d /tmp/oar-tarball.XXXXXX)
     git archive --format=tar --prefix=oar/ $BRANCH_NAME | tar x -C $TMPDIR
-    SNAPSHOTVERSION=$(get_snapshot_version)
     OARVERSION=$(get_oar_version)
     cd $TMPDIR/oar
     if [ "$ACTION" = "snapshot" ]; then
-        VERSION=$SNAPSHOTVERSION
+        VERSION=$(get_snapshot_version)
         sed -e "s/$OARVERSION/$VERSION/" -i $TMPDIR/oar/$OAR_VERSION_FILE
     else 
         VERSION=$OARVERSION
