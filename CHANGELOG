@@ -11,6 +11,7 @@ version 2.4.5:
     So try to resend the exit code until oarexec is killed.
   - backport: oar_Tools: add in notify_almighty a check on the print and on the
     close of the socket connected to Almighty.
+  - backport: switch to /bin/bash as default (some scripts currently need bash).
 
 version 2.4.4:
 --------------
