@@ -127,29 +127,32 @@ foreach my $i (@events_to_check){
                 # then the CPUSET clean will tell us which nodes are dead
                 my $cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
                 if (defined($cpuset_field) && ($i->{type} eq "EXTERMINATE_JOB")){
-                    @hosts = ($hosts[0]);
+                    #@hosts = ($hosts[0]);
+                    @hosts = ();
                 }
             }
         }
 
-        my %already_treated_host;
-        foreach my $j (@hosts){
-            next if ((defined($already_treated_host{$j}) or ($j eq "")));
-            $already_treated_host{$j} = 1;
-            #my @free_resources = iolib::get_current_free_resources_of_node($base, $j);
-            #if ($#free_resources >= 0){
-            #    foreach my $r (@free_resources){
-                    #iolib::set_resource_state($base,$r,"Suspected",$finaud_tag);
-                    iolib::set_node_state($base,$j,"Suspected",$finaud_tag);
-                    foreach my $r (iolib::get_all_resources_on_node($base,$j)){
-                      push(@resources_to_heal,"$r $j");
-                    }
-                    $Exit_code = 1;
-            #    }
-            #}
+        if ($#hosts >= 0){
+            my %already_treated_host;
+            foreach my $j (@hosts){
+                next if ((defined($already_treated_host{$j}) or ($j eq "")));
+                $already_treated_host{$j} = 1;
+                #my @free_resources = iolib::get_current_free_resources_of_node($base, $j);
+                #if ($#free_resources >= 0){
+                #    foreach my $r (@free_resources){
+                        #iolib::set_resource_state($base,$r,"Suspected",$finaud_tag);
+                        iolib::set_node_state($base,$j,"Suspected",$finaud_tag);
+                        foreach my $r (iolib::get_all_resources_on_node($base,$j)){
+                          push(@resources_to_heal,"$r $j");
+                        }
+                        $Exit_code = 1;
+                #    }
+                #}
+            }
+            oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
+            send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
         }
-        oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
-        send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
     }
     
     ########################################

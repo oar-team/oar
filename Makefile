@@ -546,6 +546,7 @@ gridlibs:
 keyring-install:
 	install -d -m 0755 $(DESTDIR)/usr/share/keyrings
 	install -m 0644 Misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/keyrings
+	install -m 0644 Misc/pkg_building/oarmaster.gpg $(DESTDIR)/usr/share/keyrings
 
 common-install: common
 	@chsh -s $(OARDIR)/oarsh_shell $(OAROWNER)
