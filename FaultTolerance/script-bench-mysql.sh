@@ -27,15 +27,16 @@ eth="eth1"
 
 if [ "$ok" = y ]; then
 	mkdir benchtest
-
-	for ((i = 5000; i <= 640000; i=i*2))
+        i=5000
+        while [ $i -le 640000 ]; 
 	do
-		for ((j = 0; j < 10; j+=1))
+                for j in $(seq 0 9)
 		do
 			sysbench --test=oltp --oltp-table-size=200000 --mysql-user=root prepare
 			sysbench --test=oltp --num-threads=16 --max-requests=$i --mysql-user=root run > benchtest/max-requests-$i--iteration-$j
 			sysbench --test=oltp --mysql-user=root cleanup
-		done 
+		done
+                i=$((i*2)) 
 	done 
 fi
 
@@ -249,14 +250,16 @@ sleep 300
 #-----------------------TEST AVEC DRBD------#
 
 if [ "$ok" = y ]; then
-	for ((i = 5000; i <= 640000; i=i*2))
+        i=5000
+        while [ $i -le 640000 ]; 
 	do
-		for ((j = 0; j < 10; j+=1))
+                for j in $(seq 0 9)
 		do
 			sysbench --test=oltp --oltp-table-size=200000 --mysql-user=root prepare
 			sysbench --test=oltp --num-threads=16 --max-requests=$i --mysql-user=root run > benchtest/max-requests-$i--iteration-$j--DRBD
 			sysbench --test=oltp --mysql-user=root cleanup
 		done 
+                i=$((i*2)) 
 	done 
 fi
 

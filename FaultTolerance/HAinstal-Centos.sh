@@ -949,7 +949,7 @@ fi
 
 if [ "$USEFILEPARTITION" = "y" ]; then
 
-	echo '#!/bin/sh' > /etc/init.d/active-loop
+	echo '#!/bin/bash' > /etc/init.d/active-loop
 	echo '# chkconfig: 2345 60 01' >> /etc/init.d/active-loop
 	echo '# description: Auto associate loopback with the file image.img' >> /etc/init.d/active-loop
 	echo 'case "$1" in' >> /etc/init.d/active-loop
