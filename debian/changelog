@@ -1,10 +1,11 @@
-oar (2.4.5-1~3) UNRELEASED; urgency=low
+oar (2.4.5-1) unstable; urgency=low
 
   * New upstram version.
   * Added the new gnupg signing key for the oar repository.
-  * Switch the package format to quilt 3.0
+  * Switch the package format to quilt 3.0.
+  * Add Depends: bash to oar-common (for squeeze).
 
- -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 18 Jul 2011 14:25:20 +0200
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 20 Jul 2011 13:48:57 +0200
 
 oar (2.4.4-0~1.gbpxxxxxx) UNRELEASED; urgency=low
 
@@ -17,88 +18,17 @@ oar (2.4.3-1) stable; urgency=low
 
   [ Bruno Bzeznik ]
   * Releasing 2.4.3
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 24 Jun 2010 08:58:23 +0200
-
-oar (2.4.3-0~8.gbp3262da) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @3262daaf727d21cf97e6a35d1928a5b476a31604 **
-
-  [ bzizou ]
   * When CPUSET is enabled, disable checks during jobs.
-
-  [ Bruno Bzeznik ]
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 21 Jun 2010 14:24:53 +0200
-
-oar (2.4.3-0~7.gbpdb3666) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @db366656ed1f5639265afb3cd07206ec07394020 **
-
-  [ bzizou ]
   * Merge from trunk: Updated oaradmin doc
-
-  [ Bruno Bzeznik ]
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Wed, 16 Jun 2010 15:53:28 +0200
-
-oar (2.4.3-0~6.gbp905944) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @9059445e64f694ecae13af82b9e29434bf18270a **
-
-  [ bzizou ]
   * available_upto=0 means that all energy saving is disabled for a node
     (wake-up AND shutdown). available_upto=1 means the same thing as
     before (with 0)
-
-  [ Bruno Bzeznik ]
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 14 Jun 2010 14:56:58 +0200
-
-oar (2.4.3-0~5.gbp2b76c5) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @2b76c5ad6f66be39eec440dfbe888d410d1d0bfb **
-
-  [ bzizou ]
   * Hulot bugfix: prevent Hulot from trying to boot nodes that are not
     in the standby pseudo state to satisfy keepalive.
-
-  [ Bruno Bzeznik ]
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 10 Jun 2010 17:04:17 +0200
-
-oar (2.4.3-0~4.gbp006405) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @006405a201f20a7ce910c7771207037d720e623b **
-
   * Trunk merge: Better comments for Hulot and sample scripts
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Tue, 08 Jun 2010 16:27:28 +0200
-
-oar (2.4.3-0~3.gbpd7a188) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @d7a1887ac7e73fc9509cd4378dc6810386b15b1a **
-
   * Hulot event_logging bug fix
 
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 04 Jun 2010 18:07:10 +0200
-
-oar (2.4.3-0~2.gbp3fdefd) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @3fdefd1d68a05661f2892d3605af4f9b6c759c22 **
-
-  [ bzizou ]
-  * Backport from 2.5 (trunk) branch:
-
-  [ Bruno Bzeznik ]
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Fri, 04 Jun 2010 15:52:16 +0200
-
-oar (2.4.3-0~1.gbpe157bd) UNRELEASED; urgency=low
-
-  * Dummy changelog entry for version upgrade
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 07 Dec 2009 18:00:41 +0100
+ -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Thu, 24 Jun 2010 08:58:23 +0200
 
 oar (2.4.2-0~1.gbpe157bd) UNRELEASED; urgency=low
 
