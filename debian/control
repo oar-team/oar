@@ -11,7 +11,7 @@ Homepage: http://oar.imag.fr/
 
 Package: oar-common
 Architecture: all
-Depends: perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
+Depends: perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, bash
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  This package installs the common part of the OAR batch scheduler
