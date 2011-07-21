@@ -34,11 +34,11 @@ export PREFIX=/usr/local
 endif
 
 ifndef MANDIR 
-export MANDIR=$(PREFIX)/man
+export MANDIR=$(PREFIX)/share/man
 endif
 
 ifndef OARDIR
-export OARDIR=$(PREFIX)/oar
+export OARDIR=$(PREFIX)/lib/oar
 endif
 
 ifndef BINDIR
@@ -50,7 +50,7 @@ export SBINDIR=$(PREFIX)/sbin
 endif
 
 ifndef DOCDIR
-export DOCDIR=$(PREFIX)/doc/oar
+export DOCDIR=$(PREFIX)/share/doc/oar
 endif
 
 ifndef WWWDIR
