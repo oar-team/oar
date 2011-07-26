@@ -62,8 +62,10 @@ version 2.5.0:
   - Bugfix API: Some informations where missing into jobs/details, especially the 
     scheduled resources.
   - API: added support of "param_file" value for array job submissions. This value
-    is a string representing the content of a parameters file. Sample submission:
+    is a string representing the content of a parameters file. Sample submission::
+
        {"resource":"/cpu=1", "command":"sleep", "param_file":"60\n90\n30"}
+
     This submits 3 sleep jobs with differents sleep values.
   - Remove any reference to gridlibs and gridapi as these components are obselete
   - Add stdout and stderr files of each job in oarstat output.
