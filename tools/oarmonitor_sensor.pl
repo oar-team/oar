@@ -17,13 +17,19 @@ $Cpuset_name .= $ARGV[1] if (defined($ARGV[1]));
 
 # Get names of cpus inside into the cpuset
 my @Cpus;
-if (open(CPUS, "$Cpuset_name/cpus")){
-    my $str = <CPUS>;
-    chop($str);
-    $str =~ s/\-/\.\./g;
-    @Cpus = eval($str);
-    close(CPUS);
+if (!open(CPUS, "$Cpuset_name/cpus")){
+    if (!open(CPUS, "$Cpuset_name/cpuset.cpus")){
+        warn("ERROR: Cannot open $Cpuset_name/cpus neither $Cpuset_name/cpuset.cpus\n");
+        print("ERROR\n");
+        exit(3);
+    }
 }
+my $str = <CPUS>;
+chop($str);
+$str =~ s/\-/\.\./g;
+@Cpus = eval($str);
+close(CPUS);
+
 
 warn("Starting sensor on the cpuset $Cpuset_name for the job $Job_id\n");
 
