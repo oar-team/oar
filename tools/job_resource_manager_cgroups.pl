@@ -98,7 +98,7 @@ if ($ARGV[0] eq "init"){
         if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
             if (!(-r $Cgroup_mount_point.'/tasks')){
-                if (system('oardodo mkdir -p '.$Cgroup_mount_point.' && oardodo mount -t cgroup -o cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio none '.$Cgroup_mount_point)){
+                if (system('oardodo mkdir -p '.$Cgroup_mount_point.' && oardodo mount -t cgroup -o cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio none '.$Cgroup_mount_point.'; oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset')){
                     exit_myself(4,"Failed to mount cgroup pseudo filesystem");
                 }
             }
@@ -108,8 +108,7 @@ if ($ARGV[0] eq "init"){
                             '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
                             '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
                             'cat '.$Cgroup_mount_point.'/cpuset.mems > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.mems &&'.
-                            'cat '.$Cgroup_mount_point.'/cpuset.cpus > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpus &&'.
-                            'oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset'
+                            'cat '.$Cgroup_mount_point.'/cpuset.cpus > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpus'
                         )){
                     exit_myself(4,"Failed to create cgroup $Cpuset->{cpuset_path}");
                 }
