@@ -74,6 +74,8 @@ version 2.5.0:
   - API can get/upload files (GET or POST /media/<file_path>)
   - Make "X11 forwarding" working even if the user XAUTHORITY environment
     variable does not contain ~/.Xauthority (GDM issue).
+  - Add job_resource_manager_cgroups which handles cpuset + other cgroup
+    features like network packet tagging, IO disk shares, ...
 
 version 2.4.4:
 --------------

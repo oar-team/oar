@@ -6,7 +6,8 @@
 # In this script some cgroup Linux features are added in addition to cpuset:
 #     - Tag each network packet from processes of this job with the class id =
 #       $OAR_JOB_ID
-#     - 
+#     - Put an IO share corresponding to the ratio between reserved cpus and
+#       the number of the node
 #
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes
@@ -98,7 +99,7 @@ if ($ARGV[0] eq "init"){
         if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
             if (!(-r $Cgroup_mount_point.'/tasks')){
-                if (system('oardodo mkdir -p '.$Cgroup_mount_point.' && oardodo mount -t cgroup -o cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio none '.$Cgroup_mount_point.'; oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset')){
+                if (system('oardodo mkdir -p '.$Cgroup_mount_point.' && oardodo mount -t cgroup -o cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio none '.$Cgroup_mount_point.'; oardodo rm -f /dev/cpuset; oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset')){
                     exit_myself(4,"Failed to mount cgroup pseudo filesystem");
                 }
             }
@@ -108,7 +109,9 @@ if ($ARGV[0] eq "init"){
                             '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
                             '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
                             'cat '.$Cgroup_mount_point.'/cpuset.mems > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.mems &&'.
-                            'cat '.$Cgroup_mount_point.'/cpuset.cpus > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpus'
+                            'cat '.$Cgroup_mount_point.'/cpuset.cpus > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpus &&'.
+                            '/bin/echo 1000 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/blkio.weight'
+
                         )){
                     exit_myself(4,"Failed to create cgroup $Cpuset->{cpuset_path}");
                 }
@@ -135,6 +138,31 @@ if ($ARGV[0] eq "init"){
         if (system( '/bin/echo '.$Cpuset->{job_id}.' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/net_cls.classid'
             )){
             exit_myself(5,"Failed to tag network packets of the cgroup $Cpuset_path_job");
+        }
+        # Put a share for IO disk corresponding of the ratio between the number
+        # of cpus of this cgroup and the number of cpus of the node
+        my @cpu_cgroup_uniq_list;
+        my %cpu_cgroup_name_hash;
+        foreach my $i (@Cpuset_cpus){
+            if (!defined($cpu_cgroup_name_hash{$i})){
+                $cpu_cgroup_name_hash{$i} = 1;
+                push(@cpu_cgroup_uniq_list, $i);
+            }
+        }
+        # Get the whole cpus of the node
+        my @node_cpus;
+        if (open(CPUS, "$Cgroup_mount_point/cpuset.cpus")){
+            my $str = <CPUS>;
+            chop($str);
+            $str =~ s/\-/\.\./g;
+            @node_cpus = eval($str);
+            close(CPUS);
+        }else{
+            exit_myself(5,"Failed to retrieve the cpu list of the node $Cgroup_mount_point/cpuset.cpus");
+        }
+        my $IO_ratio = sprintf("%.0f",(($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * 1000)) ;
+        if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/blkio.weight')){
+            exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
         }
     }
 
