@@ -2001,6 +2001,65 @@ POST /config/<variable>
 :note:
   config.yaml contains the value of the variable.
 
+GET /media/<file_path>
+----------------------
+:description:
+  Get a file located on the API host, into the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. 
+
+:formats:
+  application/octet-stream
+
+:authentication:
+  user
+
+:output:
+  octet-stream
+
+:usage example:
+  ::
+
+   curl -i -H'Content-Type: application/octet-stream'  http://kameleon:kameleon@localhost/oarapi-priv/media/~/cigri-3/CHANGELOG
+   
+:note:
+  returns a 404 if the file does not exist, or a 403 if the file is not readable. Errors in debug mode (with ?debug=1) are formated into yaml.
+
+POST /media/<file_path>
+-----------------------
+:description:
+  Upload or create a file on the API host, into the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. If the path does not exists, the directories are automatically created. If no data is passed, an empty file is created. If binary data is sent as POSTDATA, then it is a file to upload.
+
+:formats:
+  application/octet-stream
+
+:authentication:
+  user
+
+:output:
+  201 if ok
+
+:usage example:
+  ::
+
+   curl -i -X POST -H'Content-Type: application/octet-stream' --data-binary @/etc/group http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir/testfile
+
+DELETE /media/<file_path>
+-------------------------
+:description:
+  Delete the file or directory given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. If the path is a directory, then it is deleted recursively.
+
+:formats:
+  application/octet-stream
+
+:authentication:
+  user
+
+:output:
+  204 if ok
+
+:usage example:
+  ::
+
+   curl -i -X DELETE -H'Content-Type: application/octet-stream' http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir
 
 Some equivalences with oar command line
 =======================================

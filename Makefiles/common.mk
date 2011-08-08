@@ -12,9 +12,20 @@ MANDIR_FILES = man/man1/oarsh.1 \
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo 
+	rm -rf Makefiles/oardodo_tmp
 build:
 	$(MAKE) -f Makefiles/man.mk build
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
+	
+	mkdir -p Makefiles/oardodo_tmp
+	cp tools/oardodo.c Makefiles/oardodo_tmp/oardodo.c 
+	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
+			     s#define OARUSER .*#define OARUSER \"$(OAROWNER)\"#;;\
+			     s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFDIR)/oar.conf\"#;;\
+			     s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(XAUTHCMDPATH)\"#;;\
+				" Makefiles/oardodo_tmp/oardodo.c
+	$(CC) $(CFLAGS) -o Makefiles/oardodo_tmp/oardodo "Makefiles/oardodo_tmp/oardodo.c"
+	
 install: 
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
 	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_FILES)
@@ -37,14 +48,7 @@ install:
 	perl -i -pe "s#^OARSHCMD=.*#OARSHCMD=$(BINDIR)/oarsh#" $(DESTDIR)$(BINDIR)/oarcp
 	
 	install -d -m 0755 $(DESTDIR)$(OARDIR)/oardodo
-	install -m 6750 tools/oardodo.c $(DESTDIR)$(OARDIR)/oardodo
-	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
-			     s#define OARUSER .*#define OARUSER \"$(OAROWNER)\"#;;\
-			     s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFDIR)/oar.conf\"#;;\
-			     s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(XAUTHCMDPATH)\"#;;\
-				" $(DESTDIR)$(OARDIR)/oardodo/oardodo.c
-	gcc -o $(DESTDIR)$(OARDIR)/oardodo/oardodo "$(DESTDIR)$(OARDIR)/oardodo/oardodo.c"
-	rm "$(DESTDIR)$(OARDIR)/oardodo/oardodo.c"
+	install -m 6750 Makefiles/oardodo_tmp/oardodo $(DESTDIR)$(OARDIR)/oardodo
 	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
 	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo
@@ -66,4 +70,5 @@ uninstall:
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 	rm -f $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	rm -f $(DESTDIR)$(OARDIR)/db_upgrade/*upgrade*.sql
+	rm -rf $(DESTDIR)$(OARDIR)/oardodo
 

@@ -3485,7 +3485,7 @@ sub get_jobs_for_user_query {
 
     my $req =
         "
-        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id
+        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time
         FROM jobs
         WHERE
              jobs.job_id IN (
@@ -3543,7 +3543,10 @@ sub get_jobs_for_user_query {
                             'launching_directory' => $ref[13],
                             'message' => $ref[14],
                             'job_type' => $ref[15],
-                            'array_id' => $ref[16]
+                            'array_id' => $ref[16],
+                            'stdout_file' => $ref[17],
+                            'stderr_file' => $ref[18],
+                            'start_time' => $ref[19]
                               };
     }
     $sth->finish();

@@ -1,3 +1,6 @@
+Since OAR 2.5, the cpuset feature is configured by default (the majotiry of the
+Linux distribution is compiled with cpuset and/or cgroups).
+
 What are "oarsh" and "oarsh_shell" scripts ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -8,8 +11,8 @@ This feature is very usefull to restrict processor consumption on
 multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
-If you want to configure this feature into OAR then take a look also in CPUSET
-and resources_.
+Moreover "oarsh" replaces the ssh or rsh commands in the user scripts (they
+don't have to configure ssh keys, oarsh works between all the nodes for a job). 
 
 CPUSET definition
 ~~~~~~~~~~~~~~~~~
@@ -37,35 +40,6 @@ In the kernel documentation, you can read::
     allocate a page on a node that is not allowed in the requesting tasks
     mems_allowed vector.
 
-    If a cpuset is cpu or mem exclusive, no other cpuset, other than a direct
-    ancestor or descendent, may share any of the same CPUs or Memory Nodes.
-    A cpuset that is cpu exclusive has a sched domain associated with it.
-    The sched domain consists of all cpus in the current cpuset that are not
-    part of any exclusive child cpusets.
-    This ensures that the scheduler load balacing code only balances
-    against the cpus that are in the sched domain as defined above and not
-    all of the cpus in the system. This removes any overhead due to
-    load balancing code trying to pull tasks outside of the cpu exclusive
-    cpuset only to be prevented by the tasks' cpus_allowed mask.
-
-    A cpuset that is mem_exclusive restricts kernel allocations for
-    page, buffer and other data commonly shared by the kernel across
-    multiple users.  All cpusets, whether mem_exclusive or not, restrict
-    allocations of memory for user space.  This enables configuring a
-    system so that several independent jobs can share common kernel
-    data, such as file system pages, while isolating each jobs user
-    allocation in its own cpuset.  To do this, construct a large
-    mem_exclusive cpuset to hold all the jobs, and construct child,
-    non-mem_exclusive cpusets for each individual job.  Only a small
-    amount of typical kernel memory, such as requests from interrupt
-    handlers, is allowed to be taken outside even a mem_exclusive cpuset.
-
-    User level code may create and destroy cpusets by name in the cpuset
-    virtual file system, manage the attributes and permissions of these
-    cpusets and which CPUs and Memory Nodes are assigned to each cpuset,
-    specify and query to which cpuset a task is assigned, and list the
-    task pids assigned to a cpuset.
-
 
 OARSH
 ~~~~~
@@ -76,46 +50,31 @@ Its goal is to propagate two environment variables:
     - OAR_CPUSET : The name of the OAR job cpuset
     - OAR_JOB_USER : The name of the user corresponding to the job
 
-So "oarsh" must be run by oar and a simple user must run it via the
-"sudowrapper" script to become oar.
-In this way each cluster user who can execute "oarsh" via "sudowrapper" can
-connect himself on each cluster nodes (if oarsh is installed everywhere).
-
+"oarsh" uses the oar ssh keys to do the ssh connection. That's why the ssh
+server used for OAR is configured to propagete the environment variables
+OAR_CPUSET and OAR_JOB_USER and only accepts the oar user.
 
 OARSH_SHELL
 ~~~~~~~~~~~
 
 "oarsh_shell" must be the shell of the oar user on each nodes where you want
-oarsh to work.
+"oarsh" to work.
 This script takes "OAR_CPUSET" and "OAR_JOB_USER" environment variables and
 adds its PID in OAR_CPUSET cpuset. Then it searches user shell and home and
 executes the right command (like ssh).
 
-
 Important notes
 ~~~~~~~~~~~~~~~
 
-    - On each node you must add in the SSH server configuration file (you
-      have to install an openssh server with a version >= **3.9**)::
-
-        AcceptEnv OAR_CPUSET OAR_JOB_USER
-        PermitUserEnvironment yes
-        UseLogin no
-        AllowUsers oar
-
-      In Debian the file is "/etc/ssh/sshd_config".
-
-      *AllowUsers* restricts the users which can connect directly on the
-      nodes. With cpuset enabled, only the user oar is needed but other logins
-      can be added with this syntax(it is safer)::
-      
-        AllowUsers oar admin1 admin2 ...
-
-      After that you have to restart the SSH server.
-    
     - the command "scp" can be used with oarsh. The syntax is::
 
-        scp -S /path/to/oarsh ...
+        scp -S /usr/bin/oarsh ...
+
+      See scp man page.
+
+      You can also use the "oarcp" command which do this for you.
+
+      See the oarsh man page.
     
     - If you want to use oarsh from the user frontale, you can. You have to
       define the environment OAR_JOB_ID and then launch oarsh on a node used
@@ -131,18 +90,13 @@ Important notes
 
       This command gives you a shell on the "node12" from the OAR job 42.
 
-      You can also copy files with a syntax like::
-
-        OAR_JOB_ID=42 scp -S /path/to/oarsh ...
-
-    - You can restrict the use of oarsh with the sudo configuration::
-
-        %oarsh ALL=(oar) NOPASSWD: /path/to/oarsh
-
-      Here only users from oarsh group can execute oarsh
-
     - You can disable the cpuset security mechanism by setting the 
       OARSH_BYPASS_WHOLE_SECURITY field to 1 in your oar.conf file. 
       WARNING: this is a critical functionality (this is only useful 
       if users want to have a command to connect on every nodes without 
       taking care of their ssh configuration and act like a ssh).
+      DO NOT USE THIS IF YOU ARE UNSURE.
+
+If you want more tips how to use oarsh with, for example, different MPI
+implementation then take a look at http://oar.imag.fr/TIPS.html .
+

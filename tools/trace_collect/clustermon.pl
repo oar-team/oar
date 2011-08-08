@@ -239,7 +239,7 @@ for (;;){
       				my $mshared=(split(/ /,$statm))[2];
       				
 				###reading /proc/pid/io file #######
-				if(-e "cat /proc/$pid/io")
+				if(-e "/proc/$pid/io")
 				{
        					my $iostatus=`cat /proc/$pid/io `;
       					chomp($charread=(split(/\n/,$iostatus))[0]);
@@ -261,7 +261,7 @@ for (;;){
       				chomp($cpu=`ps -p $pid -o "pcpu" | sed  '/CPU/d'`);
       			        
 				##### Network information /proc/PID/net/dev ####
-				if (-e "cat /proc/$pid/net/dev")
+				if (-e "/proc/$pid/net/dev")
 				{	
 					my $network=`cat /proc/$pid/net/dev`;#####testing code
       					my $recv;

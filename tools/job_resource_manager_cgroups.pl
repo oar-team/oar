@@ -1,7 +1,12 @@
 # $Id$
 # 
-# The job_resource_manager script is a perl script that oar server deploys on nodes 
-# to manage cpusets, users, job keys, ...
+# The job_resource_manager_cgroups script is a perl script that oar server
+# deploys on nodes to manage cpusets, users, job keys, ...
+#
+# In this script some cgroup Linux features are added in addition to cpuset:
+#     - Tag each network packet from processes of this job with the class id =
+#       $OAR_JOB_ID
+#     - 
 #
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes
@@ -22,6 +27,7 @@ sub print_log($$);
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
+my $Cgroup_mount_point = "/dev/oar_cgroups";
 my $Cpuset;
 my $Log_level;
 
@@ -91,20 +97,20 @@ if ($ARGV[0] eq "init"){
     if (defined($Cpuset_path_job)){
         if (open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            if (system('oardodo grep " /dev/cpuset " /proc/mounts > /dev/null 2>&1')){
-                if (system('oardodo mkdir -p /dev/cpuset && oardodo mount -t cpuset none /dev/cpuset')){
-                    exit_myself(4,"Failed to mount cpuset pseudo filesystem");
+            if (!(-r $Cgroup_mount_point.'/tasks')){
+                if (system('oardodo mkdir -p '.$Cgroup_mount_point.' && oardodo mount -t cgroup -o cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio none '.$Cgroup_mount_point.'; oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset')){
+                    exit_myself(4,"Failed to mount cgroup pseudo filesystem");
                 }
             }
-            if (!(-d '/dev/cpuset/'.$Cpuset->{cpuset_path})){
-                if (system( 'oardodo mkdir -p /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'. 
-                            'oardodo chown -R oar /dev/cpuset/'.$Cpuset->{cpuset_path}.' &&'.
-                            '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
-                            '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/cpu_exclusive && '.
-                            'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/mems &&'.
-                            'cat /dev/cpuset/cpus > /dev/cpuset/'.$Cpuset->{cpuset_path}.'/cpus'
+            if (!(-d $Cgroup_mount_point.'/'.$Cpuset->{cpuset_path})){
+                if (system( 'oardodo mkdir -p '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.' &&'. 
+                            'oardodo chown -R oar '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.' &&'.
+                            '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
+                            '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
+                            'cat '.$Cgroup_mount_point.'/cpuset.mems > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.mems &&'.
+                            'cat '.$Cgroup_mount_point.'/cpuset.cpus > '.$Cgroup_mount_point.'/'.$Cpuset->{cpuset_path}.'/cpuset.cpus'
                         )){
-                    exit_myself(4,"Failed to create cpuset $Cpuset->{cpuset_path}");
+                    exit_myself(4,"Failed to create cgroup $Cpuset->{cpuset_path}");
                 }
             }
             flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
@@ -115,14 +121,20 @@ if ($ARGV[0] eq "init"){
 #'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_path_job.'/mems; done && '.
 
 # Be careful with the physical_package_id. Is it corresponding to the memory banc?
-        if (system( 'oardodo mkdir -p /dev/cpuset/'.$Cpuset_path_job.' && '.
-                    'oardodo chown -R oar /dev/cpuset/'.$Cpuset_path_job.' && '.
-                    '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path_job.'/notify_on_release && '.
-                    '/bin/echo 0 | cat > /dev/cpuset/'.$Cpuset_path_job.'/cpu_exclusive && '.
-                    'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
-                    '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_path_job.'/cpus'
+        if (system( 'oardodo mkdir -p '.$Cgroup_mount_point.'/'.$Cpuset_path_job.' && '.
+                    'oardodo chown -R oar '.$Cgroup_mount_point.'/'.$Cpuset_path_job.' && '.
+                    '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/notify_on_release && '.
+                    '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
+                    'cat '.$Cgroup_mount_point.'/cpuset.mems > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.mems && '.
+                    '/bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.cpus'
                   )){
             exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
+        }
+
+        # Tag network packets from processes of this job
+        if (system( '/bin/echo '.$Cpuset->{job_id}.' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/net_cls.classid'
+            )){
+            exit_myself(5,"Failed to tag network packets of the cgroup $Cpuset_path_job");
         }
     }
 
@@ -210,21 +222,22 @@ if ($ARGV[0] eq "init"){
 
     # Clean cpuset on this node
     if (defined($Cpuset_path_job)){
-        system('PROCESSES=$(cat /dev/cpuset/'.$Cpuset_path_job.'/tasks)
+        system('PROCESSES=$(cat '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/tasks)
                 while [ "$PROCESSES" != "" ]
                 do
                     oardodo kill -9 $PROCESSES
-                    PROCESSES=$(cat /dev/cpuset/'.$Cpuset_path_job.'/tasks)
+                    PROCESSES=$(cat '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/tasks)
                 done'
               );
 
-        if (system('oardodo rmdir /dev/cpuset'.$Cpuset_path_job)){
+        if (system('oardodo rmdir '.$Cgroup_mount_point.'/'.$Cpuset_path_job)){
             # Uncomment this line if you want to use several network_address properties
             # which are the same physical computer (linux kernel)
             #exit(0);
-            exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
+            exit_myself(6,"Failed to delete the cgroup $Cpuset_path_job");
         }
     }
+    print("DEBUG $Cpuset->{job_uid} $Cpuset->{job_user} \n");
     if (defined($Cpuset->{job_uid})){
         my $ipcrm_args="";
         if (open(IPCMSG,"< /proc/sysvipc/msg")) {
@@ -288,7 +301,7 @@ sub exit_myself($$){
     my $exit_code = shift;
     my $str = shift;
 
-    warn("[job_resource_manager][$Cpuset->{job_id}][ERROR] ".$str."\n");
+    warn("[job_resource_manager_cgroups][$Cpuset->{job_id}][ERROR] ".$str."\n");
     exit($exit_code);
 }
 
@@ -298,7 +311,7 @@ sub print_log($$){
     my $str = shift;
 
     if ($l <= $Log_level){
-        print("[job_resource_manager][$Cpuset->{job_id}][DEBUG] $str\n");
+        print("[job_resource_manager_cgroups][$Cpuset->{job_id}][DEBUG] $str\n");
     }
 }
 

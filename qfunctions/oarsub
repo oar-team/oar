@@ -168,8 +168,9 @@ sub connect_job($$$){
             print("Initialize X11 forwarding...\n");
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
-            $ENV{XAUTHORITY} = $ENV{HOME}."/.Xauthority.$$";
-            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardodo bash --noprofile --norc -c "unset XAUTHORITY; '.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | '.$xauth_path.' -q merge - 2>/dev/null');
+            my $new_xauthority = $ENV{HOME}."/.Xauthority.$$";
+            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardodo bash --noprofile --norc -c "'.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY='.$new_xauthority.' '.$xauth_path.' -q merge - 2>/dev/null');
+            $ENV{XAUTHORITY} = $new_xauthority;
         }
         my $node_file = oarsublib::get_default_oarexec_directory()."/$job_id";
         my $res_file = oarsublib::get_default_oarexec_directory()."/$job_id"."_resources";

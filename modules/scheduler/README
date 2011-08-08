@@ -3,9 +3,9 @@ Definition of the scheduler's interface:
 The scheduler can be any executable file, stored in the schedulers repository
 (/usr/lib/oar/schedulers/ for installations using the Debian packages).
 The scheduler is executed by the "metascheduler", that handles sequentially the
-different queues by priority order and make the glue between them (besteffort
+different queues by priority order and makes the glue between them (besteffort
 jobs to kill, etc).
-THe scheduler executable has the following interface:
+The scheduler executable has the following interface:
 
   - it gets 3 arguments:
       1. queue name
