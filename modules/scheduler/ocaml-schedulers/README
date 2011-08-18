@@ -11,9 +11,8 @@ ocaml-schedulers have several goals
 * provide schedulers with incremental features between each version
 * test alternative design choice (by example use of resource intervals)
 * provide scheduler in native binary code for performance concerns
-* and to exercice author to code with a functional language (ocaml)
 
-This work borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). Sorry for the ugly ocaml code it's my first code.
+This work borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
 Directories details
 /schoolar:
@@ -21,10 +20,9 @@ Contains two classic schedulers : next-fit and first-fit. There are just example
 Codes come from: http://books.google.fr/books?id=vpDmaVUC6QIC&pg=PA110&lpg=PA110&dq=first-fit+ocaml+next-fit&source=bl&ots=xXK6POXo7b&sig=Lp6sKyODT6afhlAQzZ-ZFfDd_Pg&hl=fr&sa=X&oi=book_result&resnum=1&ct=result#PPA115,M1
 
 /test:
-Some codes to simplify testing (up to now only sql requests to initialize database 2.2.x properly)
-Hum will not support 2.2.x
+Some codes to simplify testing 
 
-/simple_cbf:
+/simple_cbf: 
 Contains a simple conservative backfilling scheduler. Can't be use directly in oar.
 
 /simple_cbf_oar:
@@ -63,20 +61,14 @@ Based on simple_cbf_mb_h it will provide container feature.
 Uses simple_cbf_mb_h_ct will be usable with oar's DB to perform some simple test performance (and perhaps it will
 be develop up for production usage after test)
 
-/simple_cbf_mb_h_ts: (not developed)
-Based on simple_cbf_mb_h it will provide timesharing feature
-
-/simple_cbf_mb_h_ts_oar: (not developed)
-Uses simple_cbf_mb_h_ts will be usable with oar's DB to perform some simple test performance (not suitable for production use)  
-
 Next:
 
  * testing testing 
   ** DB only testing
 
- * use Bolt to LOG facilities ("à la" log4j)  : http://bolt.x9c.fr/index.html
- * use cpp or m4 or cppo or c4same approach form LOG) for mysql / postgresql ??? 
- * ocamlopt -c -pp "cppo -D 'VERSION 1.0'" example.ml for (use cppo for preprocessinf phase)
+ * use Bolt to provide LOG facilities ("à la" log4j) ? : http://bolt.x9c.fr/index.html
+ * use cpp or m4 or cppo or c4same approach form LOG) for mysql / postgresql switch ??? 
+ * ocamlopt -c -pp "cppo -D 'VERSION 1.0'" example.ml for (use cppo for preprocessinrg phase)
 
  * BEST / ALL 
  * scheduler message (see perl version *)

@@ -8,7 +8,7 @@
 #ifdef POSTGRESQL
   #define DBD Postgresql_driver
   #define NoN
-  #define NoNStr Str 
+  #define NoNStr  
 #else
   #define DBD Mysql_driver
   #define NoN not_null
