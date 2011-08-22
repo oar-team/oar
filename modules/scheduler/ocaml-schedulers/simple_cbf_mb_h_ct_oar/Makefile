@@ -1,5 +1,7 @@
 #
-# Upto now only compilatioin with Mysql is supported (22/03/11)
+# By default simple_cbf_mb_h_ct_oar_mysql is built 
+# to obtain  simple_cbf_mb_h_ct_oar_postgresql use:
+# > make POSTGRESQL=true
 #
 OCAMLMAKEFILE := ../common/OCamlMakefile
 

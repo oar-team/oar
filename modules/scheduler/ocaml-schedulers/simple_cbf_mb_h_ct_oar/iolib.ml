@@ -45,7 +45,7 @@ let get_available_uptos dbh =
       map res get_one;;
 
 (*                                                                             *)
-(* get_job_list: retreive jobs to schedule with important relative information *)
+(* get_job_list: retrieve jobs to schedule with important relative information *)
 (*                                                                             *)
 
 let get_job_list dbh default_resources queue besteffort_duration =

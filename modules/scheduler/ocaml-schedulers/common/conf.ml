@@ -1,4 +1,4 @@
-(* file bored from oar 1.6 series, developped by Lionel Eyraud-Dubois*) 
+(* file borrowed from oar 1.6 series, developped by Lionel Eyraud-Dubois*) 
 let log_file = ref None
 
 let print_log s = 

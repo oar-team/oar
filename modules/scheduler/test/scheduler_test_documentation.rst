@@ -1,32 +1,46 @@
 
-Scheduler only Tests
+Schedulers Testing 
 ====================
 
-These documentation notes are only for testing scheduler core modules of OAR.
-Tests are ruby scripts which manipulate database and launch targed scheduler.
+These documentation notes are only for schedulers.
+Tests are set of ruby scripts which help to manipulate database and to launch targed scheduler.
 
 Requirements
 ------------
 
  Before testing, database must be initiated by *oar_mysql_db_init.pl* or/and *oar_psql_db_init.pl* script together with *oar.conf*. Scheduler to test *must* be in /usr/lib/oar/schedulers/ directory. Tests *must* be launched as oar or root. 
 
-Usage
------
+Scritps and files purposes
+--------------------------
 
-Launch all tests
+oar_db_setting.rb: 
+  provides function to manipulate oar tables. It uses ./oar_test_conf as oar.conf.
 
- $ ./scheduler_test.rb  scheduler
+oar_test_scheduler_helpers.rb:
 
-Interactive Use
+scheduler_test.rb:
+
+
+
+Usage and tips
 ---------------
 
-Session example:
+* irb enhancement with wirble (completion, color and so on)
+  http://pablotron.org/software/wirble/
 
- $ irb -r oar_db_setting -r oar_test_scheduler_helpers.rb
 
-*Note*: You can use irb tab-completion to access all oar_* helper functions. There are several ways to have completion enable in irb (irb/completion or wirble gem by example).  
+* halt oar server
+  $ sudo service oar-server stop
 
-Todo (for developer)
---------------------
- * more tests
- * more docs
+* time conversion in ruby
+  >> Time.now.to_i
+  => 1313765725
+  >> Time.at(1313765725)
+  => Fri Aug 19 16:55:25 0200 2011
+
+* launch irb with oar_db_setting.rb preloading (it uses ./oar_test_conf as oar.conf)
+ $ irb -r oar_db_setting.rb
+
+* launch tests
+ $ ./scheduler_test.rb  scheduler
+

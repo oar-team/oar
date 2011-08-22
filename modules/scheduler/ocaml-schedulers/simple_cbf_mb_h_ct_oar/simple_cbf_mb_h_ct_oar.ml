@@ -5,12 +5,9 @@ open Simple_cbf_mb_h_ct
 (*
 TODO
 2) Debug
-3) Besteffort (need resource reverse order => is not it's true need some discussion with scheduling en performance evaluation specialists)
-3.1) Suspend SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+3) Besteffort (need resource reverse order => not sure ?)
+3.1) Suspend SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE 
 4) Message scheduler/job (same and more than perl scheduler) (* need to be optimize vectorize*)
-5) Complete Tests infrastructure (automatic test / ruby) and add more tests...
-6) Doc
-7) Source cleanning (new directory ???)
 8) export OARCONFFILE=oar.conf as in perl version
 *)
 
@@ -113,12 +110,13 @@ let _ =
               else
                 prev_scheduled_job_ids_tmp
             in
-(*
              Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots)));
              Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
-*)
+
              set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids;
           else ();
+
+          Conf.log "go to make a schedule";
 
           (* get jobs' dependencies information *) 
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn in
@@ -133,11 +131,11 @@ let _ =
   				  Conf.log ( "Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) );        
 	  		    Conf.log ( "Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); 
 *)
-(*
+
             Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
 		        Conf.log ("Assigns:\n" ^  (Helpers.concatene_sep "\n\n" job_to_string assignement_jobs));
             Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );
-*)
+
             (* save assignements into db *)
             Iolib.save_assigns conn assignement_jobs;  
             Conf.log "Terminated";

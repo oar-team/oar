@@ -4,24 +4,27 @@ require 'yaml'
 DEFAULT_JOB_ARGS = {
   :queue => "default",
   :walltime => 7200,
-  :res = "resource_id=1",
+  :res => "resource_id=1",
   :propreties => "",
   :type => nil
 }
 
 def oar_load_test_config
-  puts "### Reading configuration oar_test_conf file..." 
-  $conf = YAML::load(IO::read('oar_test.conf'))
+  puts "### Reading configuration ./oar_test_conf file ..." 
+  $conf = YAML::load(IO::read('./oar_test.conf'))
   $db_type = $conf['DB_TYPE']
   puts "DB TYPE: #{$conf['DB_TYPE']}"
+  pp $conf
 end
 
 def oar_db_connect
 	if $db_type == "mysql"
-		$db_type == "Mysql"
-	end
+		$db_type = "Mysql"
+	else 
+    $db_type = "Pg" #postgresql
+  end 
 	$dbh = DBI.connect("dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
-										 "#{$conf['DB_BASE_LOGIN_RO']}","#{$conf['DB_BASE_PASSWD_RO']}")
+										 "#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}")
   puts "DB Connection Establised"
 end
 
@@ -138,12 +141,31 @@ def oar_update_visu
   multiple_requests_execute(requests)
 end
 
+def oar_truncate_gantt
+ requests = "
+    TRUNCATE gantt_jobs_predictions;
+    TRUNCATE gantt_jobs_predictions_log;
+    TRUNCATE gantt_jobs_predictions_visu;
+    TRUNCATE gantt_jobs_resources;
+    TRUNCATE gantt_jobs_resources_log;
+    TRUNCATE gantt_jobs_resources_visu;
+  "
+  multiple_requests_execute(requests)
+end
 
-#def oar_sql_file file_name
-#  DB << File.open(file_name, "r").read
-#end
 
-def oar_resource_insert(args={})i
+def oar_sql_file(file_name)
+  if $db_type == "Mysql"
+    puts "mysql --user=#{$conf['DB_BASE_LOGIN']} --password= #{$conf['DB_BASE_PASSWD']}  #{$conf['DB_BASE_NAME']}  < #{file_name}" 
+    system("mysql --user=#{$conf['DB_BASE_LOGIN']} --password=#{$conf['DB_BASE_PASSWD']}  #{$conf['DB_BASE_NAME']}  < #{file_name}")
+  else
+    puts "Sorry not implemented"
+  end
+#  requests =  File.open(file_name, "r").read
+#  multiple_requests_execute(requests)
+end
+
+def oar_resource_insert(args={})
 
   if (args.nil?)
     $dbh.execute("insert into resources (state) values ('Alive')").finish
@@ -152,6 +174,7 @@ def oar_resource_insert(args={})i
       args[:nb_resources].times do
          $dbh.execute("insert into resources (state) values ('Alive')").finish   
       end
+    end
   end
 end
 
@@ -169,10 +192,66 @@ def oar_db_clean
   oar_truncate_resources
 end
 
+def get_start_time(job_id)
+ $dbh.execute("select jobs.start_time from jobs where jobs.job_id=#{job_id}").first.first
+end
+
+def delete_assignements_from_start_time(start_time)
+# $dbh.execute("SELECT * FROM assigned_resources,jobs, moldable_job_descriptions WHERE
+#                jobs.start_time > #{start_time} AND
+#                jobs.assigned_moldable_job = assigned_resources.moldable_job_id )"
+
+  $dbh.execute("DELETE assigned_resources FROM assigned_resources,jobs, moldable_job_descriptions WHERE
+                jobs.start_time > #{start_time} AND
+                jobs.assigned_moldable_job = assigned_resources.moldable_job_id")
+end
+
+# limitations
+# * advance reservation
+# * submission time is not translated
+def reset_job_from_start_time(start_time, now, delay = 10)
+ 
+  # Running jobs:  
+  #   change state
+  #   change start time and stop time
+  delta = now - start_time
+  $dbh.execute("UPDATE jobs  
+    SET 
+      state='Running', 
+      start_time = #{delta} + jobs.start_time, 
+      stop_time = 0  
+    WHERE 
+      start_time < #{start_time} AND
+      stop_time > #{start_time}
+    ")
+
+  # Reset future jobs
+  #   delete_assignements
+  delete_assignements_from_start_time(start_time)
+  #   change state waiting 
+  $dbh.execute("UPDATE jobs SET state='Waiting' WHERE jobs.start_time > #{start_time}")
+
+end
+
+# reset all jobs to state=waiting,  remove assigned resources and switch index to CURRENT
+def oar_reset_all_jobs 
+ $dbh.execute("DELETE assigned_resources FROM assigned_resources,jobs, moldable_job_descriptions")
+ $dbh.execute("UPDATE jobs SET state='Waiting'")
+ $dbh.execute("UPDATE moldable_job_descriptions SET moldable_index = 'CURRENT'")
+ $dbh.execute("UPDATE job_resource_groups SET res_group_index = 'CURRENT'")
+ $dbh.execute("UPDATE job_resource_descriptions SET res_job_index = 'CURRENT'")
+ $dbh.execute("UPDATE job_resource_groups SET res_group_index = 'CURRENT'")
+ $dbh.execute("UPDATE job_resource_descriptions SET res_job_index = 'CURRENT'") 
+end
+
+
 if ($0=='irb')
   puts 'irb session detected, db connection launched'
   oar_load_test_config
-  oar_base_connect
+  oar_db_connect
 end
 # 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
+
+
+
 
