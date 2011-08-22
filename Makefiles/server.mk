@@ -28,7 +28,8 @@ OARDIR_DATAFILES = modules/scheduler/data_structures/Gantt_hole_storage.pm \
 
 	  
 OARSCHEDULER_BINFILES = modules/scheduler/oar_sched_gantt_with_timesharing \
-		        modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing 
+		        modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing \
+		        modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder 
 OARCONFDIR_BINFILES = tools/oar_phoenix.pl
 
 MANDIR_FILES = man/man1/Almighty.1 \
