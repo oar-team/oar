@@ -147,6 +147,8 @@ my %Container_gantt_hash;
 $Container_gantt_hash{0} = Gantt_hole_storage::new($max_resources, $minimum_hole_time);
 Gantt_hole_storage::add_new_resources($Container_gantt_hash{0}, $All_resource_list_vec);
 
+my %Placeholder_gantt_hash;
+
 sub parse_timesharing($$$){
     my $str = shift;
     my $job_user = shift;
@@ -198,13 +200,21 @@ foreach my $i (@{$order}){
             $gantt_to_use = $Container_gantt_hash{$i};
             $container_num = $i;
         }
+        my $placeholder_name = "0";
+        if (defined($types->{set_placeholder})){
+            if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
+                $Placeholder_gantt_hash{$types->{set_placeholder}} = dclone($gantt_to_use);
+                $placeholder_name = $types->{placeholder};
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
+            }
+        }
 
         my $user;
         my $name;
         if (defined($types->{timesharing})){
             ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
-            if (!defined($timesharing_gantts->{$container_num}->{$user}->{$name})){
-                $timesharing_gantts->{$container_num}->{$user}->{$name} = dclone($gantt_to_use);
+            if (!defined($timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name})){
+                $timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name} = dclone($gantt_to_use);
                 oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create new gantt for ($user, $name)\n");
             }
         }
@@ -223,16 +233,28 @@ foreach my $i (@{$order}){
             #Gantt_hole_storage::pretty_print($Container_gantt_hash{$g});
         }
         foreach my $c (keys(%{$timesharing_gantts})){
-            foreach my $u (keys(%{$timesharing_gantts->{$c}})){
-                foreach my $n (keys(%{$timesharing_gantts->{$c}->{$u}})){
-                    if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
-                        Gantt_hole_storage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
-                                                            $already_scheduled_jobs{$i}->[0],
-                                                            $job_duration + $security_time_overhead,
-                                                            $vec
-                                                          );
+            foreach my $p (keys(%{$timesharing_gantts->{$c}})){
+                foreach my $u (keys(%{$timesharing_gantts->{$c}->{$p}})){
+                    foreach my $n (keys(%{$timesharing_gantts->{$c}->{$p}->{$u}})){
+                        if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
+                            Gantt_hole_storage::set_occupation( $timesharing_gantts->{$c}->{$p}->{$u}->{$n},
+                                                                $already_scheduled_jobs{$i}->[0],
+                                                                $job_duration + $security_time_overhead,
+                                                                $vec
+                                                              );
+                        }
                     }
                 }
+            }
+        }
+        # For placeholder
+        foreach my $p (keys(%Placeholder_gantt_hash)){
+            if ((!defined($types->{set_placeholder})) or ($p ne $types->{set_placeholder})){
+                Gantt_hole_storage::set_occupation( $Placeholder_gantt_hash{$p},
+                                                    $already_scheduled_jobs{$i}->[0],
+                                                    $job_duration + $security_time_overhead,
+                                                    $vec
+                                                  );
             }
         }
     }
@@ -334,13 +356,24 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             next;
         }
     }
+    
+    my $placeholder_name = "0";
+    if (defined($types->{allow_placeholder})){
+        if (defined($Placeholder_gantt_hash{$types->{allow_placeholder}})){
+            $gantt_to_use = $Placeholder_gantt_hash{$types->{allow_placeholder}};
+            $placeholder_name = $types->{allow_placeholder};
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using placeholder $placeholder_name\n");
+        }else{
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Placeholder $types->{allow_placeholder} does not exist. So I use the default placeholder\n");
+        }
+    }
     if (defined($types->{timesharing})){
         my ($user, $name) = parse_timesharing($types->{timesharing}, $j->{job_user}, $j->{job_name});
-        if (!defined($timesharing_gantts->{$container_num}->{$user}->{$name})){
-            $timesharing_gantts->{$container_num}->{$user}->{$name} = dclone($gantt_to_use);
+        if (!defined($timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name})){
+            $timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name} = dclone($gantt_to_use);
             oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create new gantt in phase II for ($user, $name)\n");
         }
-        $gantt_to_use = $timesharing_gantts->{$container_num}->{$user}->{$name};
+        $gantt_to_use = $timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name};
         oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Use gantt for ($container_num,$user,$name)\n");
     }
     #oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Use gantt for $j->{job_id}:\n".Gantt_hole_storage::pretty_print($gantt_to_use)."\n");
@@ -467,17 +500,37 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
 
         foreach my $c (keys(%{$timesharing_gantts})){
-            foreach my $u (keys(%{$timesharing_gantts->{$c}})){
-#        print("[GANTT] 17 ".gettimeofday."\n");
-                foreach my $n (keys(%{$timesharing_gantts->{$c}->{$u}})){
-                    if (($gantt_to_use != $timesharing_gantts->{$c}->{$u}->{$n})){
-                        Gantt_hole_storage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
-                                                            $moldable_results[$index_to_choose]->{start_date},
-                                                            $moldable_results[$index_to_choose]->{duration},
-                                                            $vec
-                                                          );
+            foreach my $p (keys(%{$timesharing_gantts->{$c}})){
+                foreach my $u (keys(%{$timesharing_gantts->{$c}->{$p}})){
+                    foreach my $n (keys(%{$timesharing_gantts->{$c}->{$p}->{$u}})){
+                        if (($gantt_to_use != $timesharing_gantts->{$c}->{$p}->{$u}->{$n})){
+                            Gantt_hole_storage::set_occupation( $timesharing_gantts->{$c}->{$p}->{$u}->{$n},
+                                                                $moldable_results[$index_to_choose]->{start_date},
+                                                                $moldable_results[$index_to_choose]->{duration},
+                                                                $vec
+                                                              );
                         }
+                    }
                 }
+            }
+        }
+        
+        # For placeholder
+        foreach my $p (keys(%Placeholder_gantt_hash)){
+            if ((!defined($types->{set_placeholder})) or ($types->{set_placeholder} ne $p)){
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Add live occupation in the placeholder $p\n");
+                Gantt_hole_storage::set_occupation( $Placeholder_gantt_hash{$p},
+                                                    $moldable_results[$index_to_choose]->{start_date},
+                                                    $moldable_results[$index_to_choose]->{duration},
+                                                    $vec
+                                                  );
+            }
+        }
+        if (defined($types->{set_placeholder})){
+            if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
+                $Placeholder_gantt_hash{$types->{set_placeholder}} = dclone($gantt_to_use);
+                $placeholder_name = $types->{placeholder};
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
             }
         }
 
@@ -485,8 +538,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         iolib::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
-        iolib::set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
-        iolib::set_job_scheduler_info($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
+        iolib::set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j))." , container=$container_num , placeholder=$placeholder_name");
+        iolib::set_job_scheduler_info($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j))." , container=$container_num , placeholder=$placeholder_name");
     }else{
         my $message = "Cannot find enough resources which fit for the job $j->{job_id}";
         iolib::set_job_message($base,$j->{job_id},$message);
