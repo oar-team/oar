@@ -17,11 +17,11 @@ check_branch() {
 
 get_oar_version() {
     # Sets up the $OARVersion variable
-    perl -e "require '$OAR_VERSION_FILE'; print oarversion::get_version()" | sed -e "s/ .*//"
+    perl -e "require '$OAR_VERSION_FILE'; print $OAR_VERSION_FUNC" | sed -e "s/ .*//"
 }
 
 get_snapshot_version() {
-    OARVERSION=$(perl -e "require '$OAR_VERSION_FILE'; print oarversion::get_version()" | sed -e "s/ .*//")
+    OARVERSION=$(perl -e "require '$OAR_VERSION_FILE'; print $OAR_VERSION_FUNC" | sed -e "s/ .*//")
     REVISION=$(git log --oneline $OARVERSION..$BRANCH_NAME -- | wc -l)
     SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline --max-count=1 $BRANCH_NAME |sed 's/ /./'|cut -d. -f1`
     if [ "$BRANCH_NAME" != "2.5" ] && [ "$BRANCH_NAME" != "2.4" ]; then
@@ -182,10 +182,12 @@ if [ -d rpm ]; then
     exit 1
 fi
 
-if [ -e sources/core/lib/OAR/Version.pm ]; then
-    OAR_VERSION_FILE=sources/core/lib/OAR/Version.pm
+if [ -e sources/core/libs/lib/OAR/Version.pm ]; then
+    OAR_VERSION_FILE=sources/core/libs/lib/OAR/Version.pm
+    OAR_VERSION_FUNC="print OAR::Version::get_version()"
 elif [ -e Tools/oarversion.pm ]; then
     OAR_VERSION_FILE=Tools/oarversion.pm
+    OAR_VERSION_FUNC="print oarversion::get_version()"
 else
     echo "The branch $BRANCH_NAME seems to not be OAR"
     exit 1
