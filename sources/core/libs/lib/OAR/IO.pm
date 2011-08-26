@@ -3999,12 +3999,12 @@ sub add_resources($$) {
       $id++;
       push(@values,$id);
       push(@log_values,"($id,\'state\',\'Alive\',\'$date\')");
-      push(@values,"\"Alive\"");
+      push(@values,"\'Alive\'");
       push(@values,$State_to_num{"Alive"});
       push(@ids,$id);
       foreach my $p (@properties) {
         if (defined($r->{$p})) { 
-          push(@values,"\"".$r->{$p}."\"");
+          push(@values,"\'".$r->{$p}."\'");
           push(@log_values,"($id,\'$p\',\'$r->{$p}\',\'$date\')");
         }
         else { push(@values,"NULL");   }  
