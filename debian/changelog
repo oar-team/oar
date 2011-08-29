@@ -1,4 +1,4 @@
-oar (2.5.0+dev300.2009cdd-0) UNRELEASED; urgency=low
+oar (2.5.0+dev424.cf9a1be-1) UNRELEASED; urgency=low
 
   [ Bruno Bzeznik ]
   * Dummy version upgrade to sync with daily snapshots  
@@ -7,9 +7,9 @@ oar (2.5.0+dev300.2009cdd-0) UNRELEASED; urgency=low
   * the debian package use debhelper 7
   * Update the Makefile to separate build/install targets
   * Add myself as uploaders
-  * Snapshot version 2.5.0+dev300.2009cdd
+  * Snapshot version 2.5.0+dev424.cf9a1be
 
- -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 09 May 2011 14:06:13 +0200
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 29 Aug 2011 10:34:40 +0200
 
 oar (2.5.0-0~194.gbpb1f55b) UNRELEASED; urgency=low
 
