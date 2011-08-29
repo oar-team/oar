@@ -1,6 +1,6 @@
 
-Source strutures
-================
+Source structures
+=================
 
 sources/core/database/
     contains the sql data and the scrips to initialize and/or upgrade a oar server database. 
@@ -20,7 +20,7 @@ sources/core/libs/
 sources/core/qfunctions/
     contains the user/admin commands
 
-modules/
+sources/core/modules/
     contains the oar commands 
     q: pourquoi leon, finaud, sarko, node_change_state sont des scripts plutôt que des modules perl (.pm) ?
 
@@ -28,5 +28,7 @@ misc/
     contains oar related 
 
 sources/core/scripts/
+
 tests/
+
 third_party/
