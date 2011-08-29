@@ -1,11 +1,11 @@
 #!/bin/bash
 # $id$
 
-OARUSER=oar
+OARUSER=%%OAROWNER%%
 eval CHECKLOGDIR=~$OARUSER/checklogs
-CHECKSCRIPTDIR=/etc/oar/check.d
-OARNODECHECKRUN=/usr/lib/oar/oarnodecheckrun
-OARDODO=/usr/lib/oar/oardodo/oardodo
+CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
+OARNODECHECKRUN=%%OARDIR%%/oarnodecheckrun
+OARDODO=%%OARDIR%%/oardodo/oardodo
 STAMPFILE=$CHECKSCRIPTDIR/oarnodecheckrun.lastrun
 DELAY=3600 # seconds
 

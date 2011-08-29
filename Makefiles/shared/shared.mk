@@ -2,144 +2,267 @@
 export OARDO_BUILD     = $(MAKE) -f Makefiles/oardo/oardo.mk build
 export OARDO_CLEAN     = $(MAKE) -f Makefiles/oardo/oardo.mk clean
 export OARDO_INSTALL   = $(MAKE) -f Makefiles/oardo/oardo.mk install
+export OARDO_SETUP     = $(MAKE) -f Makefiles/oardo/oardo.mk setup
 export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 
-ifndef CFLAGS
-export CFLAGS=-g
-endif
+# == debian
+ifeq "$(TARGET_DIST)" "debian"
 
-ifndef OARCONFDIR
-export OARCONFDIR=/etc/oar
-endif
-# OARUSER and OAROWNER should be the same value except for special needs 
-# (Debian packaging) 
-ifndef OARUSER
-export OARUSER=oar
-endif
+ifeq "$(SETUP_TYPE)" "deb"
+include Makefiles/shared/dist/debian-deb.mk
+else
+include Makefiles/shared/dist/debian-tgz.mk
+endif 
 
-ifndef OAROWNER
-# OAROWNER is the variable expanded to set the ownership of the files
-export OAROWNER=$(OARUSER)
-endif
+endif 
+# == debian
 
-ifndef OAROWNERGROUP
-export OAROWNERGROUP=$(OAROWNER)
-endif
+# == redhat
+ifeq "$(TARGET_DIST)" "redhat"
 
-# Set the user of web server (for CGI installation)
-export WWWUSER=www-data
+ifeq "$(SETUP_TYPE)" "rpm"
+include Makefiles/shared/dist/redhat-rpm.mk
+else
+include Makefiles/shared/dist/redhat-tgz.mk
+endif 
 
-ifndef PREFIX
-export PREFIX=/usr/local
-endif
+endif 
+# == redhat
 
-ifndef MANDIR 
-export MANDIR=$(PREFIX)/share/man
-endif
+include Makefiles/shared/dist/common.mk
 
-ifndef OARDIR
-export OARDIR=$(PREFIX)/lib/oar
-endif
-
-ifndef BINDIR
-export BINDIR=$(PREFIX)/bin
-endif
-
-ifndef SBINDIR
-export SBINDIR=$(PREFIX)/sbin
-endif
-
-ifndef DOCDIR
-export DOCDIR=$(PREFIX)/share/doc/oar
-endif
-
-ifndef WWWDIR
-export WWWDIR=$(PREFIX)/share/oar-www
-endif
-
-ifndef CGIDIR
-export CGIDIR=$(PREFIX)/lib/cgi-bin
-endif
-
-ifndef PERLLIBDIR
-export PERLLIBDIR=$(PREFIX)/lib/site_perl
-endif
-
-ifndef VARLIBDIR
-export VARLIBDIR=/var/lib
-endif
-
-ifndef WWW_ROOTDIR
-export WWW_ROOTDIR=
-endif
-
-ifndef XAUTHCMDPATH
-export XAUTHCMDPATH=$(shell which xauth)
-endif
-
-ifndef
-export XAUTHCMDPATH=/usr/bin/xauth
-endif
 
 all:
 
 
+#
+# shared install (all the modules use the *_shared target)
+#
+MODULE_SETUP_FILES=$(wildcard setup/$(MODULE)*.in)
+MODULE_SETUP_FILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basename $(MODULE_SETUP_FILES))))
+PROCESS_TEMPLATE_FILES+=$(MODULE_SETUP_FILES_DEST)
+install_shared: install_perllib install_oardata install_oarbin install_doc install_man1 install_bin install_sbin install_examples
+	install -d $(DESTDIR)$(OARDIR)/Makefiles
+	install -m 0644 -t $(DESTDIR)$(OARDIR)/Makefiles  Makefiles/$(MODULE).mk
+	
+	if [ -n "$(wildcard setup/$(MODULE)*.in)" ]; then \
+		install -d $(DESTDIR)$(OARDIR)/setup; \
+		for file in $(wildcard setup/$(MODULE)*.in); do \
+	    		cp $$file $(DESTDIR)$(OARDIR)/setup/`basename $$file .in`; \
+		done ;\
+	fi
+ifdef PROCESS_TEMPLATE_FILES
+	for file in $(PROCESS_TEMPLATE_FILES); do \
+	    perl -i -pe "s#%%PREFIX%%#$(PREFIX)#g;;\
+	    		 s#%%BINDIR%%#$(BINDIR)#g;;\
+			 s#%%CGIDIR%%#$(CGIDIR)#g;;\
+			 s#%%DOCDIR%%#$(DOCDIR)#g;;\
+			 s#%%EXAMPLEDIR%%#$(EXAMPLEDIR)#g;;\
+			 s#%%ETCDIR%%#$(ETCDIR)#g;;\
+			 s#%%OARCONFDIR%%#$(OARCONFDIR)#g;;\
+			 s#%%OARDIR%%#$(OARDIR)#g;;\
+			 s#%%SHAREDIR%%#$(SHAREDIR)#g;;\
+			 s#%%PERLLIBDIR%%#$(PERLLIBDIR)#g;;\
+			 s#%%RUNDIR%%#$(RUNDIR)#g;;\
+			 s#%%LOGDIR%%#$(LOGDIR)#g;;\
+			 s#%%MANDIR%%#$(MANDIR)#g;;\
+			 s#%%SBINDIR%%#$(SBINDIR)#g;;\
+			 s#%%VARLIBDIR%%#$(VARLIBDIR)#g;;\
+			 s#%%OARHOMEDIR%%#$(OARHOMEDIR)#g;;\
+			 s#%%OARUSER%%#$(OARUSER)#g;;\
+			 s#%%OAROWNER%%#$(OAROWNER)#g;;\
+			 s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
+			 s#%%WWWUSER%%#$(WWWUSER)#g;;\
+			 s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
+			 s#%%WWWDIR%%#$(WWWDIR)#g;;\
+			 s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\
+			 s#%%OARSHCMD%%#$(OARSHCMD)#g;;\
+			 s#%%INITDIR%%#$(INITDIR)#g;;\
+			 s#%%DEFAULTDIR%%#$(DEFAULTDIR)#g;;\
+			 s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
+			 s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
+			 " "$$file"; \
+	   if [ "`basename $$file .in`" != "`basename $$file`" ]; then \
+	   	mv $$file "$$(dirname $$file)/$$(basename $$file .in)" ;\
+	   fi \
+	done
+endif
+
+uninstall_shared: uninstall_perllib uninstall_oardata uninstall_oarbin uninstall_doc uninstall_man1 uninstall_bin uninstall_sbin uninstall_examples
+	rm -f $(DESTDIR)$(OARDIR)/Makefiles/$(MODULE).mk
+	rm -f $(DESTDIR)$(OARDIR)/setup/$(MODULE).*
+
+
+MODULE_SETUP_FILE:=$(DESTDIR)$(OARDIR)/setup/$(MODULE).sh
+MODULE_SETUP_FUNC:=$(subst -,_,$(MODULE))_setup
+setup_shared: setup_perllib setup_oardata setup_oarbin setup_doc setup_man1 setup_bin setup_sbin setup_examples
+	if [ -f "$(MODULE_SETUP_FILE)" ]; then . $(MODULE_SETUP_FILE) && $(MODULE_SETUP_FUNC); fi
+
+
+#
+# OAR_PERLLIB
+#
+ifdef OAR_PERLLIB
 install_perllib:
-	install -m 755 -d $(DESTDIR)$(PERLLIBDIR)
+	install -m 0755 -d $(DESTDIR)$(PERLLIBDIR)
 	cp -r $(OAR_PERLLIB)/* $(DESTDIR)$(PERLLIBDIR)/
 
 uninstall_perllib:
-	CDIR=`pwd`; cd $(DESTDIR); DDIR=`pwd`; cd $${CDIR}/$(OAR_PERLLIB) && find . -type f -exec rm -f /$${DDIR}$(PERLLIBDIR)/{} \;
+	
+	(cd $(OAR_PERLLIB) && find . -type f -exec rm -f $(DESTDIR)$(PERLLIBDIR)/{} \;)
+	
 
+setup_perllib:
+	# nothing to do
+else
+install_perllib:
+uninstall_perllib:
+setup_perllib:
+endif
+
+#
+# OARDIR_DATAFILES
+#
+ifdef OARDIR_DATAFILES
+OARDIR_DATAFILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/,$(patsubst %.in,%,$(notdir $(OARDIR_DATAFILES))))
 install_oardata:
-	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0644 -t $(DESTDIR)$(OARDIR) $(OARDIR_DATAFILES) 
+	install         -d $(DESTDIR)$(OARDIR)
+	install -m 0644 -t $(DESTDIR)$(OARDIR) $(OARDIR_DATAFILES)
+
+setup_oardata:
+	chmod 0755 $(DESTDIR)$(OARDIR)
+	chmod 0644 -f $(OARDIR_DATAFILES_DEST) || true
 
 uninstall_oardata:
-	for file in $(OARDIR_DATAFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+	rm -f $(OARDIR_DATAFILES_DEST) || true
+else
+install_oardata:
+setup_oardata:
+uninstall_oardata:
+endif
 
-
+#
+# OARDIR_BINFILES
+#
+ifdef OARDIR_BINFILES
+OARDIR_BINFILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/,$(patsubst %.in,%,$(notdir $(OARDIR_BINFILES))))
 install_oarbin:
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
 	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_BINFILES)
 
-uninstall_oarbin:
-	for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
+setup_oarbin:
+	chmod 0755 $(DESTDIR)$(OARDIR)
+	chmod 0755 -f $(OARDIR_BINFILES_DEST) || true
 
+uninstall_oarbin:
+	rm -f $(OARDIR_BINFILES_DEST) || true
+else
+install_oarbin:
+setup_oarbin:
+uninstall_oarbin:
+endif
+
+#
+# DOCDIR_FILES
+#
+ifdef DOCDIR_FILES
+DOCDIR_FILES_DEST=$(addprefix $(DESTDIR)$(DOCDIR)/,$(patsubst %.in,%,$(notdir $(DOCDIR_FILES))))
 install_doc:
-	install -m 0755 -d $(DESTDIR)$(DOCDIR)
+	install         -d $(DESTDIR)$(DOCDIR)
 	install -m 0644 -t $(DESTDIR)$(DOCDIR) $(DOCDIR_FILES)
 
-uninstall_doc:
-	@for file in $(DOCDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/`basename $$file`; done
+setup_doc:
+	chmod 0755 $(DESTDIR)$(DOCDIR)
+	chmod 0644 -f $(DOCDIR_FILES_DEST) || true
 
+uninstall_doc:
+	rm -f $(DOCDIR_FILES_DEST) || true
+else
+install_doc:
+setup_doc:
+uninstall_doc:
+endif
+
+#
+# MANDIR_FILES
+#
+ifdef MANDIR_FILES
+MANDIR_FILES_DEST=$(addprefix $(DESTDIR)$(MANDIR)/man1/,$(patsubst %.in,%,$(notdir $(MANDIR_FILES))))
 install_man1:
-	install -m 0755 -d $(DESTDIR)$(MANDIR)/man1
+	install         -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 -t $(DESTDIR)$(MANDIR)/man1 $(MANDIR_FILES)
 
-uninstall_man1:
-	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+setup_man1:
+	chmod 0755 $(DESTDIR)$(MANDIR)/man1
+	chmod 0644 -f $(MANDIR_FILES_DEST) || true
 
+uninstall_man1:
+	rm -f $(MANDIR_FILES_DEST) || true
+else
+install_man1:
+setup_man1:
+uninstall_man1:
+endif
+
+#
+# BINDIR_FILES
+#
+ifdef BINDIR_FILES
+BINDIR_FILES_DEST=$(addprefix $(DESTDIR)$(BINDIR)/,$(patsubst %.in,%,$(notdir $(BINDIR_FILES))))
 install_bin:
 	install -m 0755 -d $(DESTDIR)$(BINDIR)
 	install -m 0755 -t $(DESTDIR)$(BINDIR) $(BINDIR_FILES)
 
-uninstall_bin:
-	@for file in $(BINDIR_FILES); do rm -f $(DESTDIR)$(BINDIR)/`basename $$file`; done
+setup_bin:
+	chmod 0755 -f $(BINDIR_FILES_DEST) || true
 
+uninstall_bin:
+	rm -f $(BINDIR_FILES_DEST) || true
+else
+install_bin:
+setup_bin:
+uninstall_bin:
+endif
+
+#
+# SBINDIR_FILES
+#
+ifdef SBINDIR_FILES
+SBINDIR_FILES_DEST=$(addprefix $(DESTDIR)$(SBINDIR)/,$(patsubst %.in,%,$(notdir $(SBINDIR_FILES))))
 install_sbin:
 	install -m 0755 -d $(DESTDIR)$(SBINDIR)
 	install -m 0755 -t $(DESTDIR)$(SBINDIR) $(SBINDIR_FILES)
 
+setup_sbin:
+	chmod 0755 -f $(SBINDIR_FILES_DEST) || true
+
 uninstall_sbin:
-	@for file in $(SBINDIR_FILES); do rm -f $(DESTDIR)$(SBINDIR)/`basename $$file`; done
+	rm -f $(SBINDIR_FILES_DEST) || true
+else
+install_sbin:
+setup_sbin:
+uninstall_sbin:
+endif
 
-
+#
+# EXAMPLEDIR_FILES
+#
+ifdef EXAMPLEDIR_FILES
+EXAMPLEDIR_FILES_DEST=$(addprefix $(DESTDIR)$(EXAMPLEDIR)/,$(patsubst %.in,%,$(notdir $(EXAMPLEDIR_FILES))))
 install_examples:
-	install -m 0755 -d $(DESTDIR)$(DOCDIR)/examples
-	install -m 0644 -t $(DESTDIR)$(DOCDIR)/examples $(EXAMPLEDIR_FILES)
+	install -m 0755 -d $(DESTDIR)$(EXAMPLEDIR)
+	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR) $(EXAMPLEDIR_FILES)
+
+setup_examples:
+	chmod 0644 -f $(EXAMPLEDIR_FILES_DEST) || true
 
 uninstall_examples:
-	@for file in $(EXAMPLEDIR_FILES); do rm -f $(DESTDIR)$(DOCDIR)/examples/`basename $$file`; done
+	rm -f $(EXAMPLEDIR_FILES_DEST) || true
+else
+install_examples:
+setup_examples:
+uninstall_examples:
+endif
 
+.PHONY: install setup uninstall build clean
 

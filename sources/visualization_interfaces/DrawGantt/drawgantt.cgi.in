@@ -1018,7 +1018,7 @@ end
 
 cgi = CGI.new("html3") # add HTML generation methods
 
-configfile = '/etc/oar/drawgantt.conf'
+configfile = '%%OARCONFDIR%%/drawgantt.conf'
 configfile = cgi.params['configfile'].to_s if (cgi.params['configfile'].length>0)
 $prefix= ""
 $prefix= cgi.params['prefix'].to_s if (cgi.params['prefix'].length>0)

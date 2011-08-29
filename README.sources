@@ -14,7 +14,7 @@ Makefiles/
 sources/core/man/
     contains manual page of the qfunctions / modules
 
-sources/core/libs/
+sources/core/common/
     contains the oar library. there is one subdirectory for each langage used.
 
 sources/core/qfunctions/

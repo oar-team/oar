@@ -1,9 +1,9 @@
 #!/bin/bash
 # $Id$
 
-OARUSER=oar
+OARUSER=%%OAROWNER%%
 eval CHECKLOGDIR=~$OARUSER/checklogs
-CHECKSCRIPTDIR=/etc/oar/check.d
+CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
 CPUSET_DIR=/dev/cpuset/oar
 LOCKFILE=$CHECKSCRIPTDIR/$(basename $0).lock
 STAMPFILE=$CHECKSCRIPTDIR/oarnodecheckrun.lastrun

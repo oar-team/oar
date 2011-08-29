@@ -1,0 +1,159 @@
+#! /bin/sh
+#
+# oar-server     OAR Server
+#
+#
+# --/--/----: Based on startup scripts from Bruno Bzeznik <bruno.bzeznik@imag.fr>
+# 02/09/2011: Merge RPM and Debian scripts by Philippe Le Brouster <philippe.le-brouster@imag.fr>
+#
+
+# chkconfig: 2345 90 10
+# description: This script starts or stops the OAR resource manager
+# processname: Almighty
+# config: /etc/oar/oar.conf
+# pidfile: /var/run/oar-server.pid
+
+### BEGIN INIT INFO
+# Provides:          oar-server
+# Required-Start:    $network $local_fs $remote_fs $all
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: OAR server
+# Description:       This script starts or stops the OAR resource manager
+### END INIT INFO
+
+# Author: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
+#
+
+PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/usr/sbin:/bin:/usr/bin:$PATH
+NAME=oar-server
+DESC="OAR resource manager (server)"
+DAEMON=%%SBINDIR%%/oar-server
+DAEMON_NAME=Almighty
+DAEMON_ARGS=""
+PIDFILE=%%RUNDIR%%/$NAME.pid
+SCRIPTNAME=%%INITDIR%%/$NAME
+NOLSB=
+
+[ -f /lib/lsb/init-functions ] || NOLSB=yes
+
+if [ -f /etc/debian_version ]; then
+    system=debian
+elif [ -f /etc/redhat-release ]; then
+    system=redhat
+elif [ -f /etc/SuSE-release ]; then
+    system=suse
+elif [ -f /etc/gentoo-release ]; then
+    system=gentoo
+fi
+
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
+
+# Read configuration variable file if it is present
+[ -r %%DEFAULTDIR%%/$NAME ] && . %%DEFAULTDIR%%/$NAME
+
+if [ -z "$NOLSB" ]; then
+    . /lib/lsb/init-functions
+    fail_msg() {
+        echo ""
+        log_failure_msg "$@"
+    }
+    warn_msg() {
+        log_warning_msg "$@"
+    }
+    succ_msg() {
+        log_success_msg "$@"
+    }
+    begin_msg() {
+        echo -n "$@:"
+    }
+else
+    echo "This system doesn't provide the LSB functions. Failing"
+    exit 2
+fi
+
+do_start()
+{
+        begin_msg "Starting $DESC"
+	CHECK_STRING=`oar_checkdb 2>&1` 
+	if [ "$?" -ne "0" ]
+        then
+            MSG= "Database is not ready! Maybe not initiated or no DBMS running?
+You must have a running MySQL or Postgres server.
+To init the DB, run oar_mysql_db_init or oar_psql_db_init
+Also check the DB_* variables in /etc/oar/oar.conf
+The error was: 
+$CHECK_STRING"
+            fail_msg "$MSG"
+            exit 2
+        fi
+        if pidofproc -p $PIDFILE > /dev/null; then
+            fail_msg " already running"
+            exit 1
+        fi
+
+        start_daemon -p "$PIDFILE" "$DAEMON" $DAEMON_ARGS
+        RET=$?
+        if [ "$RET" != 0 ]; then
+            fail_msg "Unable to start"
+        else
+            succ_msg
+        fi
+}
+
+
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+    begin_msg "Stopping $DESC"
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+    #   other if a failure occurred
+    killproc -p $PIDFILE
+    RETVAL="$?"
+    if [ "$RETVAL" = 2 ]; then
+        fail_msg "Unable to stop $DESC"
+        exit 2
+    fi
+    # Sarko is often frozed when the database is unreachable
+    killproc sarko
+    # Extermination...
+    killproc $DAEMON_NAME
+    if [ "$?" = 2 ]; then
+        fail_msg "Unable to stop $DESC"
+        exit 2
+    fi
+    # Many daemons don't delete their pidfiles when they exit.
+    rm -f $PIDFILE
+    
+    succ_msg
+    exit "$RETVAL"
+}
+
+case "$1" in
+    start)
+        do_start
+        ;;
+    stop)
+        do_stop
+	;;
+    reload|restart|force-reload)
+        if do_stop; then
+            sleep 1
+            do_start
+        fi
+        ;;
+    *)
+        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
+esac
+
+:

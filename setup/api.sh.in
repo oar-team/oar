@@ -1,0 +1,30 @@
+set -e
+
+. %%OARDIR%%/setup/shared/shared.sh
+
+api_setup() {
+    install_conffile \
+        %%EXAMPLEDIR%%/apache2.conf \
+        %%OARCONFDIR%%/apache-api.conf \
+        0600 %%WWWUSER%%
+
+    install_conffile \
+        %%EXAMPLEDIR%%/api_html_header.pl \
+        %%OARCONFDIR%%/api_html_header.pl \
+        0600 %%OAROWNER%%
+
+    install_conffile \
+        %%EXAMPLEDIR%%/api_html_postform.pl \
+        %%OARCONFDIR%%/api_html_postform.pl \
+        0644 %%OAROWNER%%
+
+    install_conffile \
+        %%EXAMPLEDIR%%/api_html_postform_resources.pl \
+        %%OARCONFDIR%%/api_html_postform_resources.pl \
+        0644 %%OAROWNER%%
+
+    install_conffile \
+        %%EXAMPLEDIR%%/api_html_postform_rule.pl \
+        %%OARCONFDIR%%/api_html_postform_rule.pl \
+        0644 %%OAROWNER%%
+}

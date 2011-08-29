@@ -5,9 +5,9 @@
 # the shell or the script of the user OAR_JOB_USER.
 
 DEFAULT_SHELL=/bin/bash
-XAUTH_LOCATION="/usr/bin/xauth"
+XAUTH_LOCATION="%%XAUTHCMDPATH%%"
 CPUSET_MOUNT_POINT="/dev/cpuset"
-OARDIR="/usr/lib/oar"
+OARDIR="%%OARDIR%%"
 
 export PATH=$OARDIR/oardodo:$PATH
 

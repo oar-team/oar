@@ -1,0 +1,74 @@
+set -e
+
+. %%OARDIR%%/setup/shared/shared.sh
+
+create_oar_group() {
+    if ! getent group %%OAROWNERGROUP%% > /dev/null 2>&1 ; then 
+        groupadd --system %%OAROWNERGROUP%% > /dev/null 2>&1 
+    fi
+}
+create_oar_user() {    
+    # Create oar user
+    if ! getent passwd %%OAROWNER%% > /dev/null 2>&1 ; then 
+        adduser --system --home %%OARHOMEDIR%% -g %%OAROWNERGROUP%% --shell /bin/bash %%OAROWNER%% > /dev/null 2>&1 
+        passwd -u %%OAROWNER%% >/dev/null 2>&1 
+        cd %%OARHOMEDIR%% 
+        echo '' >> .bash_profile 
+        echo "export PATH=\"%%OARDIR%%/oardodo:$PATH\"" >> .bash_profile 
+        chown %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%/.bash_profile 
+        ln -s -f .bash_profile .bashrc 
+        chown %%OAROWNER%%:%%OAROWNERGROUP%% .bashrc 
+    fi
+
+    # Unlock the oar user
+    usermod -p"*" %%OAROWNER%%
+    usermod -U %%OAROWNER%%
+
+    # Create home if needed
+    if [ ! -d %%OARHOMEDIR%% ]; then 
+        mkdir -p %%OARHOMEDIR%%
+    fi
+    chown -R %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%
+}
+
+install_run_dir() {
+    # Install run dir
+    install -o %%OAROWNER%% -m 755 -d %%RUNDIR%%/oar
+}
+
+set_oar_shell() {
+    # set OAR shell
+    if [ "`getent passwd %%OAROWNER%% |cut -f7 -d:`" != "%%OARDIR%%/oarsh_shell" ]; then 
+        chsh -s %%OARDIR%%/oarsh_shell %%OAROWNER%% 
+    fi 
+}
+
+create_log_file() {
+    # Log file
+    touch %%LOGDIR%%/oar.log && chown %%OAROWNER%%:root %%LOGDIR%%/oar.log && chmod 0644 %%LOGDIR%%/oar.log || true
+}
+
+common_setup() {
+    create_oar_group
+    create_oar_user
+    install_run_dir
+    set_oar_shell
+    create_log_file
+
+    mkdir -p %%OARCONFDIR%%/
+
+    install_conffile \
+        %%EXAMPLEDIR%%/oar.conf \
+        %%OARCONFDIR%%/oar.conf \
+        0600 %%OAROWNER%%.root    
+
+    install_conffile \
+        %%EXAMPLEDIR%%/oarnodesetting_ssh \
+        %%OARCONFDIR%%/oarnodesetting_ssh \
+        0755
+
+    install_conffile \
+        %%EXAMPLEDIR%%/update_cpuset_id.sh \
+        %%OARCONFDIR%%/update_cpuset_id.sh \
+        0755
+}

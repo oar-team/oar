@@ -1,0 +1,61 @@
+## Fix maximum number of open files to 8192 for all jobs
+#ulimit -n 8192
+
+
+
+## If you want to change the default umask
+#umask 0702
+#umask 0002
+
+
+#OAR_NODE_NAME=$(hostname -f)
+#OARSERVER="myserver"
+#
+#
+## This function is called when oar-node service is started.
+## You can change this to use another method to switch the node into the Alive state
+#start_oar_node() {
+#    test -n "$OARSERVER" || exit 0
+#    su - oar -c "/usr/bin/ssh $OARSERVER oarnodesetting -s Alive -h $OAR_NODE_NAME"
+#}
+#
+## This function is called when oar-node service is stopped.
+## You can change this to use another method to switch the node into the Absent state
+#stop_oar_node() {
+#    test -n "$OARSERVER" || exit 0
+#    su - oar -c "/usr/bin/ssh $OARSERVER oarnodesetting -s Absent -h $OAR_NODE_NAME"
+#}
+
+
+## Another example of initialization method:
+## This method uses a specific ssh key binded on the server to a specific
+## script(see comments in the "oarnodesetting_ssh" script in OAR installation
+## directory)
+#
+#OARSERVER="oar-server"
+#MODSLEEP=8
+#MINSLEEP=2
+#MAXRETRY=30
+#
+#start_oar_node() {
+#    test -n "$OARSERVER" || exit 0
+#    echo " * Set the ressources of this node to Alive"
+#    local retry=0
+#    local sleep=0
+#    until ssh -T -oStrictHostKeyChecking=no -oPasswordAuthentication=no -i %%OARHOMEDIR%%/.ssh/oarnodesetting_ssh.key oar@$OARSERVER
+#    do
+#        if [ $((retry+=sleep)) -gt $MAXRETRY ]; then
+#            echo "Failed."
+#        return 1
+#        fi
+#        ((sleep = $RANDOM % $MODSLEEP + $MINSLEEP))
+#        echo "Retrying in $sleep seconds..."
+#        sleep $sleep
+#    done
+#    return 0
+#}
+#
+#stop_oar_node() {
+#    :
+#}
+

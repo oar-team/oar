@@ -1,7 +1,7 @@
 #!/bin/bash
 # $Id$
 
-OARUSER=oar
+OARUSER=%%OAROWNER%%
 eval CHECKLOGDIR=~$OARUSER/checklogs
 if ! [ -d $CHECKLOGDIR ]; then
 	echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"

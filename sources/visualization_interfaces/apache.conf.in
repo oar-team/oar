@@ -1,0 +1,7 @@
+ScriptAlias /monika %%CGIDIR%%/monika.cgi
+ScriptAlias /drawgantt %%CGIDIR%%/drawgantt.cgi
+Alias /monika.css %%WWWDIR%%/monika.css
+Alias /drawgantt-files %%VARLIBDIR%%/drawgantt-files
+Alias /poar %%WWWDIR%%/poar
+
+

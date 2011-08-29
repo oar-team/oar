@@ -20,7 +20,7 @@ my $cgi = OAR::Monika::monikaCGI->new;
 my $file = $cgi->param("conf");
 
 ## first get nodes description from the configuration file
-my $Oardir = "/etc/oar";
+my $Oardir = "%%OARCONFDIR%%";
 my $conf = OAR::Monika::Conf->new;
 if ( defined $file and -r $file) {
   $conf->parse($file);

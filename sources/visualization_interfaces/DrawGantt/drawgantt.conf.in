@@ -78,7 +78,7 @@ drawBestEffortbox: no
 ##############################################################################
 ## directory for image, map, icons and javascript
 ##############################################################################
-web_root: '/var/lib'
+web_root: '%%OARHOMEDIR%%'
 directory: 'drawgantt-files'
 web_cache_directory: 'cache'
 web_icons_directory: 'Icons'

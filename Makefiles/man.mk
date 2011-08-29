@@ -1,3 +1,4 @@
+MODULE=man
 
 sources=$(wildcard sources/core/man/man1/*.pod)
 targets=$(patsubst %.pod,%.1,$(sources))
@@ -11,3 +12,4 @@ build: $(targets)
 	pod2man --section=1 --release="$(notdir $(basename $<))" --center "OAR commands" --name="$(notdir $(basename $<))" "$<" > $@
 
 
+.PHONY: install setup uninstall build clean
