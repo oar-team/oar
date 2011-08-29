@@ -2,7 +2,7 @@
 Source strutures
 ================
 
-database/
+sources/core/database/
     contains the sql data and the scrips to initialize and/or upgrade a oar server database. 
 
 docs/
@@ -11,13 +11,13 @@ docs/
 Makefiles/
     contains the makefile for each oar module
 
-man/
+sources/core/man/
     contains manual page of the qfunctions / modules
 
-lib/
+sources/core/libs/
     contains the oar library. there is one subdirectory for each langage used.
 
-qfunctions/
+sources/core/qfunctions/
     contains the user/admin commands
 
 modules/
@@ -27,6 +27,6 @@ modules/
 misc/
     contains oar related 
 
-scripts/
+sources/core/scripts/
 tests/
 third_party/
