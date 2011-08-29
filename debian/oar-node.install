@@ -1,2 +1,2 @@
-tools/oarnodecheck/README /usr/share/doc/oar-node/oarnodecheck/
-tools/oarnodecheck/template /usr/share/doc/oar-node/oarnodecheck/
+sources/core/tools/oarnodecheck/README /usr/share/doc/oar-node/oarnodecheck/
+sources/core/tools/oarnodecheck/template /usr/share/doc/oar-node/oarnodecheck/
