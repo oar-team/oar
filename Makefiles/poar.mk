@@ -2,7 +2,7 @@
 
 include Makefiles/shared/shared.mk
 
-POAR_DIR=visualization_interfaces/poar
+POAR_DIR=sources/visualization_interfaces/poar
 
 build: 
 	# Nohting to do

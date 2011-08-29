@@ -14,6 +14,10 @@ ifeq "$(CMD_OWNER)" ""
 CMD_OWNER=$(OAROWNER)
 endif
 
+ifeq "$(CMD_USERTOBECOME)" ""
+CMD_USERTOBECOME=$(OARUSER)
+endif
+
 ifeq "$(CMD_GROUP)" ""
 CMD_GROUP=$(OAROWNERGROUP)
 endif
@@ -38,16 +42,16 @@ ifeq "$(CMD_TARGET)" ""
 	echo "no CMD_TARGET given. Fail !"
 	exit 1
 endif
-	cp tools/oardo.c $(CMD_BUILDTARGET).c
+	cp sources/core/tools/oardo.c $(CMD_BUILDTARGET).c
 	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
 			s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFFILE)\"#;;\
 			s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(OARXAUTHLOCATION)\"#;;\
-			s#define USERTOBECOME .*#define USERTOBECOME \"$(CMD_OWNER)\"#;;\
+			s#define USERTOBECOME .*#define USERTOBECOME \"$(CMD_USERTOBECOME)\"#;;\
 			s#define PATH2SET .*#define PATH2SET \"/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo\"#;;\
 			s#define CMD_WRAPPER .*#define CMD_WRAPPER \"$(CMD_WRAPPER)\"#;;\
 			" "$(CMD_BUILDTARGET).c"
 
-	gcc -o $(CMD_BUILDTARGET) "$(CMD_BUILDTARGET).c"
+	$(CC) $(CFLAGS) -o $(CMD_BUILDTARGET) "$(CMD_BUILDTARGET).c"
 	
 
 install:

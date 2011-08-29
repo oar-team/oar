@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+##############################################################################
+## Monika is a small web interface to monitor OAR node reservations.
+## It tries to display a very synthetic view of the cluster usage.
+## Monika should work also with PBSPro or OpenPBS.
+## Author: pierre.neyron@imag.fr
+## Modified by: joseph.emeras@imag.fr
+##############################################################################
+
+use strict;
+#use warnings;
+use OAR::Monika::monikaCGI;
+use OAR::Monika::Conf;
+use OAR::Monika::OAR;
+use Data::Dumper;
+
+## begin CGI stuff
+my ($basename) = $0 =~ /([^\/]+)\.cgi$/;
+my $cgi = OAR::Monika::monikaCGI->new;
+my $file = $cgi->param("conf");
+
+## first get nodes description from the configuration file
+my $Oardir = "/etc/oar";
+my $conf = OAR::Monika::Conf->new;
+if ( defined $file and -r $file) {
+  $conf->parse($file);
+} elsif (-r "$Oardir/$basename.conf") {
+  $conf->parse("$Oardir/$basename.conf");
+} elsif (-r "./$basename.conf") {
+  $conf->parse("./$basename.conf");
+} elsif (-r "/etc/$basename.conf") {
+  $conf->parse("/etc/$basename.conf");
+} else {
+  die "Neither $Oardir/$basename.conf nor /etc/$basename.conf nor ./$basename.conf are readable. I need a configuration file !";
+}
+
+## then get nodes description
+my $oar = OAR::Monika::OAR->new;
+$oar->oarnodes;
+
+$oar->qstat($cgi);
+
+## my global node container...
+my %nodes;
+
+## ... filled in with previousely got nodes:
+## first with node descriptions from the configuration file
+foreach my $key ( keys %{$conf->allnodes()}) {
+  $nodes{$key}=$conf->allnodes->{$key};
+}
+
+## then with node descriptions (which may overwrite descriptions
+## from the configuration file, which is what we want for instance if the
+## configuration file define a default state (say "missing") for nodes
+## that may actually not be described)
+foreach my $key ( keys %{$oar->allnodes()}) {
+  $nodes{$key}=$oar->allnodes->{$key};
+}
+
+## set color scheme up
+my $colorHash = $conf->colorHash;
+while (my ($state,$color) = each %{$colorHash}) {
+  $cgi->setColor($state,$color);
+}
+$cgi->setColorPool($conf->colorPool());
+
+## begin html printing
+print $cgi->page_head($conf->clustername." - Monika");
+my $css_path = OAR::Monika::Conf::myself->css_path;
+print "<link rel=\"stylesheet\" type=\"text/css\" href=\"$css_path\">";
+print $cgi->h1({-align => "center"},
+	       $conf->clustername()." "." nodes");
+
+## if node param is present, show detailed view of the pointed node
+if (defined $cgi->param('node') and defined $nodes{$cgi->param('node')}) {
+  my $node = $cgi->param('node');
+  print $cgi->h2({-align => "center"},
+		 "Node ".$node." detailed status:");
+  print $nodes{$node}->htmlStatusTable($cgi);
+  print $cgi->h3({ -align => "center" },
+		 $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
+		"back to main page"
+	      ));
+## if job param is present, show detailed view of the pointed job
+} 
+elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param('job')}
+  my $job = $cgi->param('job');
+  print $cgi->h2({-align => "center"},
+		 "Job ".$job." detailed status:");
+	if(exists($oar->alljobs()->{$job})){
+	  print $oar->alljobs()->{$job}->htmlStatusTable($cgi);
+	}
+  else{
+    my $jobInfos = $oar->getJobProperties($job, $cgi);
+    print $jobInfos->htmlStatusTable($cgi);
+  }
+  print $cgi->h3({ -align => "center" },
+		 $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
+		"back to main page"
+	      ));
+## else show the main page
+} else {
+  ## print oar status summary
+  print $oar->htmlSummaryTable($cgi);
+  print $cgi->br();
+
+  ## print nodes reservations table
+  print $cgi->h2({-align => "center"}, "Reservations:");
+  ## print resources for each of the properties if asked in the CGI request, or all resources.
+  if (defined $cgi->param('props')) {
+    ## print resources property, for the properties selected in the CGI request
+    print $oar->htmlNodeByProperty($cgi);
+  } else {
+    ## print all resources
+    print $cgi->nodeReservationTable(\%nodes);
+  }
+  print $cgi->h5({-align => "center"}, "*: Running job but suspected resources.");
+  ## print oar node property chooser
+  print $cgi->br();
+  print $oar->htmlPropertyChooser($cgi);
+  ## print oar job status
+  print $cgi->br();
+  print $cgi->h2({-align => "center"},
+		 "Job details:");
+  print $oar->htmlJobTable($cgi);
+}
+#open VERSION, "<./monika/VERSION";
+#my $version="";
+#while (<VERSION>) {
+#  $version.=$_;
+#}
+#close VERSION;
+## print © stuff
+print $cgi->h6({ -align => "center",
+		 onmouseover => "popup('Link description here','yellow')",
+		 onmouseout => "kill()"
+	       },
+	       "- ".
+	       $cgi->a({ -href => 'http://ka-tools.sourceforge.net'},
+		       "Monika").
+	       " - &copy;".
+	       $cgi->a({ -href => 'http://www-id.imag.fr'},
+		       'Laboratoire d\'Informatique de Grenoble').
+	       " -"
+	      );
+print $cgi->end_html();

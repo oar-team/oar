@@ -1,0 +1,250 @@
+#!/usr/bin/perl
+# $Id: oarmonitor 598 2007-07-05 08:13:30Z neyron $
+# Feed the monitoring tables
+
+use strict;
+use warnings;
+use Data::Dumper;
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use Getopt::Long;
+use OAR::Version;
+use OAR::Tools;
+use OAR::IO;
+use Fcntl;
+use Storable qw(dclone);
+use Sys::Hostname;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+init_conf($ENV{OARCONFFILE});
+my $Monitor_file = get_conf("OARMONITOR_SENSOR_FILE");
+$Monitor_file = OAR::Tools::get_default_monitor_sensor_file() if (!defined($Monitor_file));
+$Monitor_file = "$ENV{OARDIR}/$Monitor_file" if ($Monitor_file !~ /^\//);
+
+my $Taktuk_cmd = get_conf("TAKTUK_CMD");
+if (!defined($Taktuk_cmd)){
+    warn("ERROR: TAKTUK_CMD must be defined in $ENV{OARCONFFILE}.\n");
+    exit(1);
+}
+
+my $Openssh_cmd = get_conf("OPENSSH_CMD");
+$Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
+
+my $Cpuset_path = get_conf("CPUSET_PATH");
+if (!defined($Cpuset_path) or (! is_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))){
+    warn("The CPUSET feature must be configured to use this command\n");
+    exit(6);
+}
+
+Getopt::Long::Configure("gnu_getopt");
+my $Version;
+my $Job_id;
+my $Frequency = 60;
+my $Default_frequency = $Frequency;
+my $Frequency_min = 1;
+my $Timeout = 120;
+my $sos;
+my $Verbose;
+GetOptions ("version|V" => \$Version,
+            "job_id|j=i" => \$Job_id,
+            "frequency|f=i" => \$Frequency,
+            "help|h" => \$sos,
+            "verbose|v" => \$Verbose
+           );
+
+# Display command help
+sub usage {
+    print <<EOS;
+Usage: $0 [-h] [-V] [-f seconds] -j jobid
+Feed the table monitoring from the database with data retrived on each nodes
+of the job.
+Options:
+  -j, --job_id              job id to monitor
+  -f, --frequency           number of seconds between each data collect
+                            (default is $Default_frequency s)
+  -h, --help                show this help screen
+  -V, --version             print OAR version number
+EOS
+}
+
+$Frequency = $Frequency_min if ($Frequency < $Frequency_min);
+
+if (defined($sos)){
+    usage();
+    exit(0);
+}
+
+if (defined($Version)){
+    print("OAR version : ".OAR::Version::get_version()."\n");
+    exit(0);
+}
+
+if (!defined($Job_id)){
+    usage();
+
+exit(2);
+}
+
+my $base = OAR::IO::connect();
+
+my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $Job_id);
+my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
+if ($#hosts < 0){
+    warn("The job $Job_id does not have currently assigned hostnames\n");
+    exit(4);
+}
+
+#############################
+# TAKTUK process management #
+###############################################################################
+pipe(tak_node_read,tak_node_write);
+pipe(tak_stdin_read,tak_stdin_write);
+pipe(tak_stdout_read,tak_stdout_write);
+my $pid = fork;
+if($pid == 0){
+    #CHILD
+    undef($base);
+    $SIG{CHLD} = 'DEFAULT';
+    $SIG{TERM} = 'DEFAULT';
+    $SIG{INT}  = 'DEFAULT';
+    $SIG{QUIT} = 'DEFAULT';
+    $SIG{USR1} = 'DEFAULT';
+    $SIG{USR2} = 'DEFAULT';
+    my $cmd = "$Taktuk_cmd -c '$Openssh_cmd' ".'-o error=\'"INFO on $host: $line\n"\' -o output=\'"OUTPUT $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $Job_id $Cpuset_path/$cpuset_name ], broadcast input file [ - ], broadcast input close";
+    fcntl(tak_node_read, F_SETFD, 0);
+    close(tak_node_write);
+    close(tak_stdout_read);
+    close(STDOUT);
+    # Redirect taktuk output into the pipe
+    open(STDOUT, ">& tak_stdout_write");
+
+    # Use the child STDIN to send the user command
+    close(tak_stdin_write);
+    close(STDIN);
+    open(STDIN, "<& tak_stdin_read");
+
+    exec($cmd);
+    warn("[ERROR] Cannot execute $cmd\n");
+    exit(-1);
+}
+close(tak_node_read);
+close(tak_stdin_read);
+close(tak_stdout_write);
+
+# Send node list
+my $hosts_hash;
+foreach my $n (@hosts){
+    $hosts_hash->{$n} = 1;
+    print(tak_node_write "$n\n");
+}
+close(tak_node_write);
+
+my $oldfh;
+$oldfh = select(tak_stdin_write); $| = 1; select($oldfh);
+$oldfh = select(tak_stdout_read); $| = 1; select($oldfh);
+
+###############################################################################
+
+# Send sensor perl script to all nodes
+if (open(SENSOR, $Monitor_file)){
+    while(<SENSOR>){
+        print(tak_stdin_write $_);
+    }
+    close(SENSOR);
+    print(tak_stdin_write "\n__END__\n");
+}else{
+    warn("Cannot read the monitor sensor file $Monitor_file\n");
+    exit(3);
+}
+
+# Signals management
+sub exit_monitor(){
+    print(tak_stdin_write "STOP\n");
+}
+
+$SIG{TERM} = \&exit_monitor;
+$SIG{INT} = \&exit_monitor;
+$SIG{QUIT} = \&exit_monitor;
+$SIG{USR2} = sub {return};
+
+# Node outputs parsing
+my $monitor_process_id = $Job_id.'_'.hostname().'_'.time().'_'.$$;
+my $tmp_hosts_hash;
+my $nb_end_nodes = $#hosts + 1;
+my $stop = 0;
+my $tic_time = 0;
+my $tic_time_prev = $tic_time;
+while (($stop == 0) and ($nb_end_nodes > $#hosts)){
+    my $sleep_time = $Frequency - (OAR::IO::get_date($base) - $tic_time);
+    if ($sleep_time > 0){
+        OAR::IO::disconnect($base);
+        sleep($sleep_time);
+        $base = OAR::IO::connect();
+    }
+    $tic_time_prev = $tic_time;
+    $tic_time = OAR::IO::get_date($base); $tic_time = $tic_time_prev if ($tic_time < $tic_time_prev);
+    eval{
+        $SIG{ALRM} = sub { die "alarm\n" };
+        alarm($Frequency + $Timeout);
+        
+        # Ask every nodes to print their monitoring values
+        print(tak_stdin_write "monitor_process_id=$monitor_process_id window_start=$tic_time_prev window_stop=$tic_time\n");
+
+        # Check the taktuk STDOUT
+        $tmp_hosts_hash = dclone($hosts_hash);
+        $nb_end_nodes = 0;
+        while (($nb_end_nodes <= $#hosts) and ($stop == 0) and ($_ = <tak_stdout_read>)){
+            chop;
+            if ($_ =~ /^OUTPUT\s+([\w\.\-\d]+)\s+END$/){
+                delete($tmp_hosts_hash->{$1}) if (defined($tmp_hosts_hash->{$1}));
+                $nb_end_nodes++;
+            }elsif ($_ =~ /^OUTPUT\s+([\w\.\-\d]+)\s+(\w+)\s*(.*)$/){
+                if (($2 eq "STOP") or ($2 eq "STOP_REQUESTED") or ($2 eq "ERROR")){
+                    warn("    $1 $2\n");
+                    $stop++;
+                }else{
+                    # Sensor gives the DB table name ($2) and the values for
+                    # each fields separated by spaces ($3)
+                    if ($tic_time_prev > 0){
+                        my @fields;
+                        my @values;
+                        my @tmp = split(" ",$3);
+                        foreach my $i (@tmp){
+                            my ($field,$value) = split('=',$i);
+                            if ((defined($field)) and (defined($value))){
+                                push(@fields, $field);
+                                push(@values, $value);
+                            }
+                        }
+                        if (defined($Verbose)){
+                            print("@fields\n");
+                            print("@values\n");
+                        }
+                        if (OAR::IO::register_monitoring_values($base,$2,\@fields,\@values) > 0){
+                            warn("[ERROR] Cannot register in the database: @fields, @values\n");
+                            $stop++;
+                        }
+                    }
+                }
+            }else{
+                warn("[TAKTUK] $_\n");
+            }
+        }
+        alarm(0);
+    };
+}
+close(tak_stdin_write);
+close(tak_stdout_read);
+
+if ($stop > 0){
+    warn("At least one sensor stopped to retrieve data.\n");
+    exit(0);
+}
+
+my @bads = keys(%{$tmp_hosts_hash});
+if ($#bads >= 0){
+    warn("Some nodes timeouted: @bads\n");
+    exit(5);
+}
+

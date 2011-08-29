@@ -1,7 +1,0 @@
-oargrid for Debian
-------------------
-
-This package installs oargrid. It also checks for an old manual install
-into /usr/local (the default of the Makefile) and may remove it.
-
- -- Bruno Bzeznik <Bruno.Bzeznik@imag.fr>  Mon, 22 Sep 2008 14:57:46 +0200

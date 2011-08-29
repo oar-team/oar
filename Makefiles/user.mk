@@ -2,24 +2,26 @@
 
 include Makefiles/shared/shared.mk
 
-OARDIR_BINFILES = qfunctions/oarnodes \
-		  qfunctions/oarnodes.v2_3 \
-		  qfunctions/oardel \
-		  qfunctions/oarstat \
-		  qfunctions/oarstat.v2_3 \
-		  qfunctions/oarsub \
-		  qfunctions/oarhold \
-		  qfunctions/oarresume
+SRCDIR=sources/core
 
-BINDIR_FILES = tools/oarmonitor_graph_gen.pl
+OARDIR_BINFILES = $(SRCDIR)/qfunctions/oarnodes \
+		  $(SRCDIR)/qfunctions/oarnodes.v2_3 \
+		  $(SRCDIR)/qfunctions/oardel \
+		  $(SRCDIR)/qfunctions/oarstat \
+		  $(SRCDIR)/qfunctions/oarstat.v2_3 \
+		  $(SRCDIR)/qfunctions/oarsub \
+		  $(SRCDIR)/qfunctions/oarhold \
+		  $(SRCDIR)/qfunctions/oarresume
 
-MANDIR_FILES = man/man1/oardel.1 \
-	       man/man1/oarnodes.1 \
-	       man/man1/oarresume.1 \
-	       man/man1/oarstat.1 \
-	       man/man1/oarsub.1 \
-	       man/man1/oarhold.1 \
-	       man/man1/oarmonitor_graph_gen.1
+BINDIR_FILES = $(SRCDIR)/tools/oarmonitor_graph_gen.pl
+
+MANDIR_FILES = $(SRCDIR)/man/man1/oardel.1 \
+	       $(SRCDIR)/man/man1/oarnodes.1 \
+	       $(SRCDIR)/man/man1/oarresume.1 \
+	       $(SRCDIR)/man/man1/oarstat.1 \
+	       $(SRCDIR)/man/man1/oarsub.1 \
+	       $(SRCDIR)/man/man1/oarhold.1 \
+	       $(SRCDIR)/man/man1/oarmonitor_graph_gen.1
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
@@ -45,16 +47,7 @@ build:
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 
 
-install:
-	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_BINFILES)
-	
-	install -m 0755 -d $(DESTDIR)$(BINDIR)
-	install -m 0755 -t $(DESTDIR)$(BINDIR) $(BINDIR_FILES)
-	
-	install -m 0755 -d $(DESTDIR)$(MANDIR)/man1
-	install -m 0644 -t $(DESTDIR)$(MANDIR)/man1 $(MANDIR_FILES)
-	
+install: install_oarbin install_bin install_man1
 	# Rename installed files
 	mv $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen.pl $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen	
 	
@@ -68,10 +61,7 @@ install:
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold CMD_RIGHTS=6755
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume CMD_RIGHTS=6755
 
-uninstall:
-	@for file in $(OARDIR_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/`basename $$file`; done
-	@for file in $(BINDIR_FILES); do rm -f $(DESTDIR)$(BINDIR)/`basename $$file`; done
-	@for file in $(MANDIR_FILES); do rm -f $(DESTDIR)$(MANDIR)/man1/`basename $$file`; done
+uninstall: uninstall_oarbin uninstall_bin uninstall_man1
 	rm -f $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen	
 	
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes.old 

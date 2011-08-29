@@ -1,5 +1,5 @@
 
-sources=$(wildcard man/man1/*.pod)
+sources=$(wildcard sources/core/man/man1/*.pod)
 targets=$(patsubst %.pod,%.1,$(sources))
 
 clean:

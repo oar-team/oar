@@ -167,7 +167,7 @@ if ($reservationField eq "toSchedule") {
 
 # Limit walltime for interactive jobs
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my $max_walltime = iolib::sql_to_duration("12:00:00");
+my $max_walltime = OAR::IO::sql_to_duration("12:00:00");
 if (($jobType eq "INTERACTIVE") and ($reservationField eq "None")){ 
     foreach my $mold (@{$ref_resource_list}){
         if ((defined($mold->[1])) and ($max_walltime < $mold->[1])){
@@ -180,7 +180,7 @@ if (($jobType eq "INTERACTIVE") and ($reservationField eq "None")){
 
 # specify the default walltime if it is not specified
 INSERT IGNORE INTO admission_rules (rule) VALUES ('
-my $default_wall = iolib::sql_to_duration("2:00:00");
+my $default_wall = OAR::IO::sql_to_duration("2:00:00");
 foreach my $mold (@{$ref_resource_list}){
     if (!defined($mold->[1])){
         print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
