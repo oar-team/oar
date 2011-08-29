@@ -1700,6 +1700,33 @@ sub get_moldable_job($$) {
     return $ref;
 }
 
+# get_scheduled_job_description
+# returns a ref to some hash containing data for the moldable job corresponding
+# to the waiting job given by the id passed in
+# parameter
+# parameters : base, moldable job id
+# return value : ref
+# side effects : /
+sub get_scheduled_job_description($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM moldable_job_descriptions,gantt_jobs_predictions_visu
+                                WHERE
+                                    moldable_job_descriptions.moldable_job_id = $job_id
+                                  AND gantt_jobs_predictions_visu.moldable_job_id = moldable_id
+                            ");
+    $sth->execute();
+
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return $ref;
+}
+
+
+
 
 # set_job_state
 # sets the state field of the job of id passed in parameter
@@ -3485,8 +3512,8 @@ sub get_jobs_for_user_query {
 
     my $req =
         "
-        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time
-        FROM jobs
+        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time,moldable_job_descriptions.moldable_walltime
+        FROM jobs LEFT JOIN moldable_job_descriptions ON jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id
         WHERE
              jobs.job_id IN (
          						 SELECT DISTINCT jobs.job_id
@@ -3546,7 +3573,8 @@ sub get_jobs_for_user_query {
                             'array_id' => $ref[16],
                             'stdout_file' => $ref[17],
                             'stderr_file' => $ref[18],
-                            'start_time' => $ref[19]
+                            'start_time' => $ref[19],
+                            'walltime' => $ref[20]
                               };
     }
     $sth->finish();
