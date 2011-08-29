@@ -1,0 +1,407 @@
+#!/usr/bin/perl
+# $Id$
+# change node state dynamically
+
+use strict;
+use DBI();
+use Data::Dumper;
+use OAR::IO;
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use Sys::Hostname;
+use Getopt::Long;
+use OAR::Tools;
+use OAR::Version;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+$| = 1;
+
+my $exit_code = 0;
+my @notify_server_tag_list;
+
+my @hostnames;
+my $base;
+my $state;
+my $maintenance;
+my $nowaitMode;
+my @properties;
+my $new_resource;
+my $sos;
+my @resource;
+my $file;
+my $Sql_property;
+
+# Get OAR configuration
+init_conf($ENV{OARCONFFILE});
+my $remote_host = get_conf("SERVER_HOSTNAME");
+my $remote_port = get_conf("SERVER_PORT");
+
+sub set_hostname_properties($$$){
+    my $base = shift;
+    my $hostname = shift;
+    my $arrayProp = shift;
+
+    foreach my $p (@{$arrayProp}){
+        if ($p =~ m/(.+)\s*=\s*(.+)/m){
+            if (OAR::Tools::check_resource_system_property($1) == 1){
+                warn("/!\\ Cannot update property $1 because it is a system field.\n");
+                $exit_code = 5;
+                next;
+            }
+            print("Update property $1 with value $2 on node $hostname ...");
+            my $ret = OAR::IO::set_node_property($base,$hostname,$1,$2);
+            if ($ret == 0){
+                print("DONE\n");
+            }else{
+                print("ERROR (wrong property or wrong value)\n");
+                $exit_code = 6;
+            }
+        }else{
+            warn("/!\\ Bad property syntax : -p property=value\n");
+            $exit_code = 7;
+        }
+    }
+}
+
+
+sub set_resource_properties($$$){
+    my $base = shift;
+    my $resource = shift;
+    my $arrayProp = shift;
+
+    foreach my $p (@{$arrayProp}){
+        if ($p =~ m/(.+)\s*=\s*(.+)/m){
+            if (OAR::Tools::check_resource_system_property($1) == 1){
+                warn("/!\\ Cannot update property $1 because it is a system field.\n");
+                $exit_code = 8;
+                next;
+            }
+            print("Update property $1 with value $2 ...");
+            my $ret = OAR::IO::set_resource_property($base,$resource,$1,$2);
+            if ($ret == 0){
+                print("DONE\n");
+            }elsif($ret == 2){
+                print("SAME (the property is already equal to the value)\n");
+            }else{
+                print("ERROR (wrong property or wrong value)\n");
+                $exit_code = 9;
+            }
+        }else{
+            warn("/!\\ Bad property syntax : -p property=value\n");
+            $exit_code = 10;
+        }
+    }
+}
+
+sub wait_end_of_running_jobs($$){
+    my $dbh = shift;
+    my $job_list = shift;
+
+    my $max_timeout = 30;
+    my $jobInfo;
+    foreach my $j (sort(@{$job_list})){
+        $jobInfo = {'state' => 'Running'};
+        # active waiting : it is not very nice but it works!!
+        print("\t$j ");
+        my $timeCount = 0;
+        while ((($jobInfo->{'state'} ne "Terminated") and ($jobInfo->{'state'} ne "Error")) and ($timeCount < $max_timeout)){
+            $jobInfo = OAR::IO::get_job($dbh,$j);
+            sleep(1);
+            print(".");
+            $timeCount++;
+        }
+        if ($timeCount >= $max_timeout){
+            print(" Timouted\n");
+            $exit_code = 11;
+        }else{
+            print(" Deleted\n");
+        }
+    }
+    print("Check done\n");
+}
+
+sub set_maintenance_on($$$$$){
+    my $base = shift;
+    my $resources_list = shift;
+    my $remote_host = shift;
+    my $remote_port = shift;
+    my $nowaitMode = shift;
+
+    foreach my $res (@{$resources_list}){
+	my $res_info = OAR::IO::get_resource_info($base,$res);
+	if (!defined($res_info)){
+	    warn("/!\\ The resource $res does not exist in OAR database.\n");
+	    $exit_code = 1;
+	}else{
+	    print "maintenance mode set to \"ON\" on resource $res\n";
+	    OAR::IO::add_event_maintenance_on($base, $res, OAR::IO::get_date($base));
+	    my @prop_to_set;
+	    my $last_available_upto = $res_info->{'available_upto'};
+	    push @prop_to_set, "available_upto=0";
+	    push @prop_to_set, "last_available_upto=$last_available_upto" if $last_available_upto != 0;
+	    set_resource_properties($base, $res, \@prop_to_set);
+	    OAR::IO::set_resource_nextState($base,$res,"Absent");
+	    OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+	    if (!$nowaitMode){
+		print("Check jobs to delete on resource $res :\n");
+		my @jobs = OAR::IO::get_resource_job_to_frag($base,$res);
+		wait_end_of_running_jobs($base,\@jobs);
+	    }
+	}
+    }   
+}
+
+sub set_maintenance_off($$$$$){
+    my $base = shift;    my $resources_list = shift;
+    my $remote_host = shift;
+    my $remote_port = shift;
+    my $nowaitMode = shift;
+
+    foreach my $res (@{$resources_list}){
+
+	my $res_info = OAR::IO::get_resource_info($base,$res);
+	if (!defined($res_info)){
+	    warn("/!\\ The resource $res does not exist in OAR database.\n");
+	    $exit_code = 1;
+	}else{
+	    print "maintenance mode set to \"OFF\" on resource $res\n";
+	    OAR::IO::add_event_maintenance_off($base, $res, OAR::IO::get_date($base));
+	    my @prop_to_set;
+	    my $available_upto = $res_info->{'last_available_upto'};
+	    push @prop_to_set, "available_upto=$available_upto" if $available_upto != 0;;
+	    set_resource_properties($base, $res, \@prop_to_set);
+	    OAR::IO::set_resource_nextState($base,$res,"Alive");
+	    OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+	}
+    }   
+}
+
+# print explanations for the user and exit
+sub usage {
+    print <<EOS;
+Usage: $0 [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_number] ||
+[--sql "sql syntax"] || [-h hostname]] [[-s state] || [-p "property=value"] || [-m on/off]]
+Change the state and properties of a node in OAR.
+You can also create a new resource.
+Options:
+ -a, --add                       add a new resource
+ -s, --state=STATE               set the new state of the node
+ -m, --maintenance [on, off]	 set the maintenance mode on/off for the resource
+				 this means setting its state to Absent
+				 and its available_upto value to 0
+ -h, --hostname=HOSTNAME         set the node hostname
+ -f, --file=FILENAME             get the hostname list from a file (1 hostname by line)
+ -r, --resource                  set the resource
+     --sql                       get resource identifiers which respond to the
+                                 SQL where clause on the table jobs
+                                 (ex: "type = 'default'")
+ -p, --property="PROPERTY=VALUE" set the property of the node to the given
+                                 value
+ -n, --no-wait                    do not wait for job end when the node
+                                 switches to Absent or Dead
+     --help                      display this help
+ -V, --version                   print OAR version number
+N.B.:
+ - The states allowed are: Alive, Absent or Dead.
+ - If not specified, the hostname will be retrieved via the 'hostname'
+   utility.
+ - You cannot specify "-a" and "-r" together.
+EOS
+    exit(1);
+}
+
+
+my $Version;
+# Options on arg command line
+Getopt::Long::Configure ("gnu_getopt");
+GetOptions ("state|s=s" => \$state,
+            "maintenance|m=s" => \$maintenance,
+            "care=s" => \$maintenance, # care is an alias for maintenance
+            "hostname|h=s"   => \@hostnames,
+            "no-wait|n" => \$nowaitMode,
+            "property|p=s" => \@properties,
+            "add|a" => \$new_resource,
+            "help" => \$sos,
+            "sql=s"   => \$Sql_property,
+            "resource|r=i" => \@resource,
+            "file|f=s" => \$file,
+            "version|V" => \$Version
+           );
+
+usage() if (defined($sos));
+
+if (defined($Version)){
+    print("OAR version : ".OAR::Version::get_version()."\n");
+    exit(0);
+}
+
+($#properties >= 0) || defined($state) || defined($new_resource) || defined($maintenance) or usage();
+if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){
+    warn("/!\\ Bad state value. Possibilities are : Alive | Absent | Dead \n");
+    usage();
+}
+if (defined($maintenance) && !(($maintenance eq 'on') || ($maintenance eq 'off'))){
+    warn("/!\\ Bad maintenance mode value. Possibilities are : on | off\n");
+    usage();
+}
+
+if (defined($Sql_property)){
+    my $db = OAR::IO::connect_ro();
+    foreach my $r (OAR::IO::get_resources_with_given_sql($db,$Sql_property)){
+        push(@resource, $r);
+    }
+    OAR::IO::disconnect($db);
+    if ($#resource < 0){
+        warn("/!\\ Your SQL clause returns nothing and there is no resource specified.\n");
+        $exit_code = 12;
+    }
+}
+
+# Get hostnames from a file
+if (defined($file)){
+    if (open(FILE, "< $file")){
+        while (<FILE>) {
+            my $line = $_;
+            if ($line !~ m/^\s*$/m){
+                chop($line);
+                push(@hostnames, $line);
+            }
+        }
+        close(FILE);
+    }else{
+        warn("/!\\ Cannot open the file $file.\n");
+        $exit_code = 13;
+    }
+}
+
+if (defined($new_resource)){
+    if (($#resource >= 0) or (defined($Sql_property))){
+        warn("/!\\ You cannot use -r|--resource and (-a|--add or --sql) options together\n");
+        usage();
+    }
+}
+
+defined($hostnames[0]) or $hostnames[0] = hostname();
+#print("$hostname\n");
+my $base = OAR::IO::connect() or die("Cannot connect to the database\n");
+
+if (defined($new_resource)){
+    # Create a new resources
+    $state = "Alive" if (!defined($state));
+    foreach my $h (@hostnames){
+        print("new resource\n");
+        print("$h added in the database\n");
+        push(@resource,OAR::IO::add_resource($base, $h, $state));
+    }
+    push(@notify_server_tag_list, "ChState");
+    push(@notify_server_tag_list, "Term");
+}else{
+    if (($#resource >= 0) or (defined($Sql_property))){
+        if (defined($state)){
+            my @resources_to_check;
+            foreach my $r (@resource){
+                #$base->do("LOCK TABLE resources WRITE");
+                if (OAR::IO::set_resource_nextState($base,$r,$state) > 0){
+                #$base->do("UNLOCK TABLES");
+                    print("$r --> $state\n");
+                    push(@resources_to_check, $r);
+                }else{
+                    warn("/!\\ The resource $r does not exist in OAR database.\n");
+                    $exit_code = 3;
+                }
+            }
+            OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            if (($state eq 'Dead') || ($state eq 'Absent')){
+                if (!$nowaitMode){
+                    foreach my $r (@resources_to_check){
+                        print("Check jobs to delete on resource $r :\n");
+                        my @jobs = OAR::IO::get_resource_job_to_frag($base,$r);
+                        wait_end_of_running_jobs($base,\@jobs);
+                    }
+                }
+            }elsif ($state eq 'Alive'){
+                print("Done\n");
+            }
+        }
+	if (defined($maintenance)){
+	    if ($maintenance eq 'on'){
+		set_maintenance_on($base, \@resource, $remote_host, $remote_port, $nowaitMode);
+	    }
+	    if ($maintenance eq 'off'){
+		set_maintenance_off($base, \@resource, $remote_host, $remote_port, $nowaitMode);
+	    }
+	}
+    }else{
+        # update all resources with netwokAdress = $hostname
+	if (defined($maintenance)){
+	    my @res_to_maintain;
+	    foreach my $h (@hostnames){
+		push @res_to_maintain, OAR::IO::get_all_resources_on_node($base, $h);
+	    }
+	    if ($maintenance eq 'on'){
+		set_maintenance_on($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
+	    }
+	    if ($maintenance eq 'off'){
+		set_maintenance_off($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
+	    }
+	}
+        if (defined($state)){
+            my @nodes_to_check;
+            foreach my $h (@hostnames){
+                #$base->do("LOCK TABLE resources WRITE");
+                if (OAR::IO::set_node_nextState($base,$h,$state) > 0){
+                #$base->do("UNLOCK TABLES");
+                    print("$h --> $state\n");
+                    push(@nodes_to_check, $h);
+                }else{
+                    warn("/!\\ The node $h does not exist in OAR database.\n");
+                    $exit_code = 4;
+                }
+            }
+            OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+            if (($state eq 'Dead') || ($state eq 'Absent')){
+                if (!$nowaitMode){
+                    foreach my $h (@nodes_to_check){
+                        print("Check jobs to delete on node $h :\n");
+                        my @jobs = OAR::IO::get_node_job_to_frag($base,$h);
+                        wait_end_of_running_jobs($base,\@jobs);
+                    }
+                }
+            }
+        }
+    }
+}
+
+# Update properties
+if ($#properties >= 0){
+    if (($#resource >= 0) or (defined($Sql_property))){
+        foreach my $r (@resource){
+            if (!defined(OAR::IO::get_resource_info($base,$r))){
+                warn("/!\\ The resource $r does not exist in OAR database.\n");
+                $exit_code = 1;
+            }else{
+                set_resource_properties($base,$r,\@properties);
+            }
+        }
+    }else{
+        foreach my $h (@hostnames){
+            if (OAR::IO::is_node_exists($base,$h) == 0){
+                warn("/!\\ The node $h does not exist in OAR database. First you must add it with -a|--add option.\n");
+                $exit_code = 2;
+            }else{
+                set_hostname_properties($base,$h,\@properties);
+            }
+        }
+    }
+    push(@notify_server_tag_list, "Term");
+}
+
+OAR::IO::disconnect($base);
+
+foreach my $t (@notify_server_tag_list){
+    OAR::Tools::notify_tcp_socket($remote_host,$remote_port,$t);
+}
+
+exit($exit_code);
+

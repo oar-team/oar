@@ -1,0 +1,32 @@
+
+Source strutures
+================
+
+database/
+    contains the sql data and the scrips to initialize and/or upgrade a oar server database. 
+
+docs/
+    contains the documentations of OAR
+
+Makefiles/
+    contains the makefile for each oar module
+
+man/
+    contains manual page of the qfunctions / modules
+
+lib/
+    contains the oar library. there is one subdirectory for each langage used.
+
+qfunctions/
+    contains the user/admin commands
+
+modules/
+    contains the oar commands 
+    q: pourquoi leon, finaud, sarko, node_change_state sont des scripts plutôt que des modules perl (.pm) ?
+
+misc/
+    contains oar related 
+
+scripts/
+tests/
+third_party/

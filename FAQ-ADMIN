@@ -29,7 +29,7 @@ into the "Alive" or "Absent" state.
 So when this script is called at boot time, it will change the state into
 "Alive". And when it is called at halt time, it will change into "Absent".
 
-There two ways to perform this action:
+There are two ways to perform this action:
 
  1. Install OAR "oar-libs" part on all nodes. Thus you will be able to launch
     the command oarnodesetting_ (be careful to right configure "oar.conf" with
@@ -44,7 +44,7 @@ There two ways to perform this action:
  2. You do not want to install anything else on each node. So you have to
     enable oar user to connect to the server via ssh (for security you
     can use another SSH key with restrictions on the command that oar can
-    launch with this one). Thus you will have in you init script
+    launch with this one). Thus you will have in your init script
     something like::
 
         sudo -u oar ssh oar-server "oarnodesetting -s Alive -h node_hostname"
@@ -52,6 +52,9 @@ There two ways to perform this action:
         sudo -u oar ssh oar-server "oarnodesetting -s Absent -h node_hostname"
 
     In this case, further OAR software upgrade will be more painless.
+
+Take a look in "/etc/default/oar-node" for Debian packaging and in
+"/etc/sysconfig/oar-node" for redhat.
 
 How can I manage scheduling queues?
 -----------------------------------
@@ -83,7 +86,7 @@ After this configuration, users can perform submissions like
 
     oarsub -I -l "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
 
-So users ask OAR to give them some other resource types but nothing block
+So users ask OAR to give them some other resource types but nothing blocks
 their program to take more licences than they asked.
 You can resolve this problem with the SERVER_SCRIPT_EXEC_FILE_ configuration.
 In these files you have to bind OAR allocated resources to the licence servers
@@ -108,31 +111,34 @@ These are the steps to follow:
         ...
 
  3. Then you have to restrict properties for new job type.
-    So an admission rule performs this job (this is a SQL syntax to use in a database interpreter)::
+    So an admission rule performs this job (you can insert this new rule with
+    the oaradmin_ command)::
 
-        INSERT IGNORE INTO admission_rules (rule) VALUES ('
-            my $cluster_constraint = 0;
-            if (grep(/^cluster1$/, @{$type_list})){
-                $cluster_constraint = 1;
-            }elsif (grep(/^cluster2$/, @{$type_list})){    
-                $cluster_constraint = 2;
-            }
+        my $cluster_constraint = 0;
+        if (grep(/^cluster1$/, @{$type_list})){
+            $cluster_constraint = 1;
+        }elsif (grep(/^cluster2$/, @{$type_list})){    
+            $cluster_constraint = 2;
+        }
         if ($cluster_constraint > 0){
             if ($jobproperties ne ""){
                 $jobproperties = "($jobproperties) AND cluster = $cluster_constraint";
             }else{
                 $jobproperties = "cluster = $cluster_constraint";
             }
-            print("[ADMISSION RULE] Added automatically cluster resource constraint\\n");
+            print("[ADMISSION RULE] Added automatically cluster resource constraint\n");
         }
-        ');
 
  4. Edit the admission rule which checks the right job types and add
     "cluster1" and "cluster2" in.
 
 So when you will use oarsub to submit a "cluster2" job type only resources
 with the property "cluster=2" is used. This is the same when you will use the
-"cluster1" type.
+"cluster1" type. For example::
+
+    oarsub -I -t cluster2
+    #is equivalent to 
+    oarsub -I -p "cluster = 2"
 
 How to configure a more ecological cluster (or how to make some power consumption economies)?
 ---------------------------------------------------------------------------------------------
@@ -177,43 +183,9 @@ without drawback for the users.
 Take a look at your cluster occupation and your electricity bill to know if it
 could be interesting for you ;-)
 
-How to configure temporary UID for each job?
---------------------------------------------
-For a better way to handle job processes we introduce the temporary user id
-feature.
-
-This feature creates a user for each job on assigned nodes. Hence it is
-possible to clean temporary files, IPC, every generated processes, ...
-Furthermore a lot of system features could be used like bandwidth management
-(iptables rules on the user id).
-
-To configure this feature, CPUSET must be activated and the tag
-JOB_RESOURCE_MANAGER_JOB_UID_TYPE has to be configured in the oar.conf file.
-The value is the content of the "type" field into the resources_ table. After
-that you have to add resources in the database with this type and fill the
-cpuset field with a unique UID (not used by real users). The maximum number of
-concurrent jobs is the number of resources of this type.
-
-For example, if you put this in your oar.onf::
-
-    JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD="cpuset"
-    JOB_RESOURCE_MANAGER_JOB_UID_TYPE="user"
-
-Then you can add temporary UID::
-
-    oarnodesetting -a -h fake -p cpuset=23000 -p type=user
-    oarnodesetting -a -h fake -p cpuset=23001 -p type=user
-    oarnodesetting -a -h fake -p cpuset=23002 -p type=user
-    ...
-
-You can put what you want in the place of the hostname (here "fake").
-
-The drawback of this feature is that users haven't their UID only their GID.
-
 How to enable jobs to connect to the frontales from the nodes using oarsh?
 --------------------------------------------------------------------------
 First you have to install the node part of OAR on the wanted nodes.
-
 
 After that you have to register the frontales into the database using
 oarnodesetting with the "frontal" (for example) type and assigned the desired
@@ -240,14 +212,14 @@ Notes:
 
 A job remains in the "Finishing" state, what can I do?
 ------------------------------------------------------
-If you have waited more than a couple of minutes (10mn for example) then
+If you have waited more than a couple of minutes (30mn for example) then
 something wrong occurred (frontal has crashed, out of memory, ...).
 
 So you are able to turn manually a job into the "Error" state by typing in
 the OAR install directory with the root user (example with a bash shell)::
 
     export OARCONFFILE=/etc/oar/oar.conf
-    perl -e 'use oar_iolib; $db = iolib::connect(); iolib::set_job_state($db,42,"Error")'
+    perl -e 'use oar_iolib; $db = OAR::IO::connect(); OAR::IO::set_job_state($db,42,"Error")'
 
 (Replace 42 by your job identifier)
 

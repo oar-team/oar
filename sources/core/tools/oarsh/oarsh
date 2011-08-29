@@ -1,0 +1,178 @@
+#!/bin/bash
+# $Id$
+# In sshd_config you must have this line :
+#     AcceptEnv OAR_CPUSET OAR_JOB_USER
+
+OLDUMASK=$(umask)
+umask 0022
+
+###############################################################################
+# Default variable definitions.
+# If you want to change them then make it in the configuration file (oar.conf)
+#
+#echo "OAR configuration file : $OARCONFFILE"
+
+OARSH_OARSTAT_CMD=
+OPENSSH_CMD=/usr/bin/ssh
+OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+CPUSET_PATH=
+
+# If you set this variable to something different from 0 then oarsh will act
+# like a normal ssh without CPUSET restriction
+OARSH_BYPASS_WHOLE_SECURITY="0"
+###############################################################################
+
+source "$OARCONFFILE" || exit 2
+
+# Add security option for X11 forwarding
+XAUTH_LOCATION="/usr/bin/xauth"
+if [ -x "$XAUTH_LOCATION" ]; then
+    OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=$XAUTH_LOCATION"
+else
+    OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=/bin/true"
+fi
+[ -n "$OAR_RUNTIME_DIRECTORY" ] || OAR_RUNTIME_DIRECTORY="/tmp/oar_runtime"
+
+# Manage display
+if [ -n "$DISPLAY" ]
+then
+    if [ -x "$XAUTH_LOCATION" ]
+    then
+        # first, get rid of remaining unused .Xautority.{pid} files if any...
+        for f in $HOME/.Xauthority.*; do
+            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
+        done
+        # set the .Xautority.{pid} file as the xauthority file.
+        NEW_XAUTHORITY=$HOME/.Xauthority.$$
+        # retrieve the X cookie from the user to user oar.
+        OARDO_BECOME_USER=${OARDO_USER%_*} oardodo bash --noprofile --norc -c "$XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY=$NEW_XAUTHORITY $XAUTH_LOCATION merge - 2> /dev/null
+        export XAUTHORITY=$NEW_XAUTHORITY
+        # ssh will push that cookie in the connection.
+    fi
+fi
+
+# -0- Check OARSH_BYPASS_WHOLE_SECURITY variable
+# (oarsh acts like a ssh and can connect on every nodes)
+if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
+    export OAR_CPUSET="undef"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
+    echo "oarsh: Failed to connect using cpuset environement"
+    exit 5
+fi
+
+# -1- try connection using a user provided job key file for a job using the job key mechanism
+if [ -n "$OAR_JOB_KEY_FILE" ] 
+then
+    # first, get rid of remaining unused .Xautority.{pid} files if any...
+    for f in $OAR_RUNTIME_DIRECTORY/oarsh.jobkey.*; do
+        [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
+    done
+    TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
+    TMPOLDUMASK=$(umask)
+    umask 0177
+    OARDO_BECOME_USER=$OAR_USER oardodo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
+    if [ $? -ne 0 ]; then
+        echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
+        rm -f $TMP_JOB_KEY_FILE
+        exit 3
+    fi
+    umask $TMPOLDUMASK
+
+    umask $OLDUMASK
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
+    echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"
+    exit 3
+fi
+
+
+# -2- try connection using a job key pushed by OAR for a job using the job key mechanism. 
+# (oarsh is run from one of the node of the job) 
+TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
+if [ -r $TMP_JOB_KEY_FILE ]; then
+    umask $OLDUMASK
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
+    echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE"
+    exit 4
+fi
+
+if [ "$CPUSET_PATH" != "" ]; then
+    if [ -r /proc/self/cpuset ]; then
+        OAR_CPUSET=$(< /proc/self/cpuset)
+        if [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH/" ]; then
+            JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
+            if [ -r $JOB_KEY_FILE ]; then
+                umask $OLDUMASK
+                exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
+                echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE"
+                exit 4
+            fi
+            export OAR_CPUSET
+            export OAR_JOB_USER=$OARDO_USER
+            umask $OLDUMASK
+            exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
+            echo "oarsh: Failed to connect using cpuset environement"
+            exit 5
+        fi
+    fi
+fi
+
+# -3- try connection using the job id information (job key mechanism not needed)
+if [ -n "$OAR_JOB_ID" ]; then
+    # dirty check to insure that OAR_JOB_ID is an integer
+    if ! [ "$OAR_JOB_ID" -gt 0 ] 2>/dev/null; then     # dirty check to insure that OAR_JOB_ID is an integer
+        echo "oarsh: Invalid job id: $OAR_JOB_ID" 1>&2
+        exit 5
+    fi
+    if [ ! -x "$OARSH_OARSTAT_CMD" ]; then
+        echo "oarsh: Cannot connect using job id from this host." 1>&2
+        exit 5
+    fi
+    STR=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | \
+            while read l; do
+                if [ "$l" != "" ]; then
+                    if [ "${l##cpuset_name*}" = "" ] ;then
+                        echo "OAR_CPUSET="${l/*cpuset_name = /}
+                    else
+                        if [ "${l##job_user*}" = "" ] ;then
+                            echo "OAR_JOB_USER="${l/*job_user = /}
+                            exit
+                        fi
+                    fi
+                fi
+            done)
+
+    eval $STR
+
+    if [ "$OAR_CPUSET" = "" ]; then
+        echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
+        exit 5
+    else
+        if [ "$OAR_CPUSET" != "$OARDO_USER"_"$OAR_JOB_ID" ]; then
+            echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
+            exit 5
+        fi
+    fi
+
+    # Check if we must use a tmp user id for this job
+    if [ "$OAR_JOB_USER" = "" ]; then
+        OAR_JOB_USER=$OARDO_USER
+    fi
+    if [ "$CPUSET_PATH" != "" ]; then
+        OAR_CPUSET="$CPUSET_PATH/$OAR_CPUSET"
+    else
+        OAR_CPUSET="undef"
+    fi
+    export OAR_JOB_USER
+    export OAR_CPUSET
+
+    umask $OLDUMASK
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
+    echo "oarsh: Failed to connect using cpuset environement"
+    exit 5
+fi
+
+cat 1>&2 <<EOF
+oarsh: Cannot connect. Please set either a job id or a job key in your
+oarsh: environment using the OAR_JOB_ID or the OAR_JOB_KEY_FILE variable.
+EOF
+exit 6
