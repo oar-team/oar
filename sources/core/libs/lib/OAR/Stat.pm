@@ -365,14 +365,17 @@ sub get_job_data($$){
 
     my $resources_string = "";
     my $reserved_resources;
-    if ($job_info->{assigned_moldable_job} ne ""){
+    if ($job_info->{assigned_moldable_job} ne "" && $job_info->{assigned_moldable_job} ne "0"){
         @nodes = OAR::IO::get_job_resources($dbh,$job_info->{assigned_moldable_job});
         @node_hostnames = OAR::IO::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
         $mold = OAR::IO::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
+    }else{
+      # Try to get the moldable description of a waiting job
+      $mold = OAR::IO::get_scheduled_job_description($dbh,$job_info->{job_id});
     }
     if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
         $reserved_resources = OAR::IO::get_gantt_visu_scheduled_job_resources($dbh,$job_info->{job_id});
-    } 
+    }
 	
 	if (defined($full_view)){
         @date_tmp = OAR::IO::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
