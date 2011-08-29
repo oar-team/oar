@@ -1700,6 +1700,33 @@ sub get_moldable_job($$) {
     return $ref;
 }
 
+# get_scheduled_job_description
+# returns a ref to some hash containing data for the moldable job corresponding
+# to the waiting job given by the id passed in
+# parameter
+# parameters : base, moldable job id
+# return value : ref
+# side effects : /
+sub get_scheduled_job_description($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM moldable_job_descriptions,gantt_jobs_predictions_visu
+                                WHERE
+                                    moldable_job_descriptions.moldable_job_id = $job_id
+                                  AND gantt_jobs_predictions_visu.moldable_job_id = moldable_id
+                            ");
+    $sth->execute();
+
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return $ref;
+}
+
+
+
 
 # set_job_state
 # sets the state field of the job of id passed in parameter
