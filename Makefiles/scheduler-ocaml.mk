@@ -18,7 +18,7 @@ install:
 	install -m 0755 $(SRCDIR)/misc/hierarchy_extractor.rb $(DESTDIR)$(OARDIR)
 	
 	install -d -m 0755 $(DESTDIR)$(OARDIR)/schedulers
-	install -m 0755 $(SRCDIR)/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_my $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
+	install -m 0755 $(SRCDIR)/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_mysql $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
 
 
 uninstall:
