@@ -120,8 +120,8 @@ def build_resources_list(dbh)
     resource_filter_property_index = $resource_properties_fields.index( $conf["resource_filter"]["property"] )
     resource_filter_regex = Regexp::compile( $conf["resource_filter"]["regex"] )
   else
-    prop_index = $resource_properties_fields.index( "network_address" )
-    regex = Regexp::compile( "(.*)" )
+    resource_filter_property_index = $resource_properties_fields.index( "network_address" )
+    resource_filter_regex = Regexp::compile( "(.*)" )
   end
 
   q = "SELECT * FROM resources"
