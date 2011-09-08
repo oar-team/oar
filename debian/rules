@@ -33,4 +33,37 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
+	# server
+	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/init.d/oar-server > debian/oar-server.init
+	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
+	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
+	# node
+	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
+	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
+	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
+	# desktop-computing-agent
+	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/share/doc/oar-desktop-computing-agent/examples/init.d/oar-desktop-computing-agent > debian/oar-desktop-computing-agent.init
+	# desktop-computing-cgi
+	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi > debian/oar-desktop-computing-cgi.cron.hourly
+	# common
+	cat $(CURDIR)/$(BUILDDIR)/oar-common/usr/share/doc/oar-common/examples/logrotate.d/oar-common > debian/oar-common.logrotate
+	
 	dh_install -i
+
+override_dh_clean:
+	dh_clean
+	
+	$(MAKE) -e packages-clean   PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
+		
+	# Cleaning package
+	rm -f debian/oar-server.init
+	rm -f debian/oar-node.init
+	rm -f debian/oar-desktop-computing-agent.init
+	rm -f debian/oar-server.default
+	rm -f debian/oar-node.default
+	rm -f debian/oar-common.logrotate
+	rm -f debian/oar-server.cron.d
+	rm -f debian/oar-node.cron.d
+	rm -f debian/oar-desktop-computing-cgi.cron.hourly
+
+

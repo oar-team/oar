@@ -91,20 +91,6 @@ Description: OAR RESTful API
  This package installs a RESTful API for oar users. 
  It works as a cgi into apache.
 
-Package: oar-gridapi
-Architecture: any
-Depends: oargrid-client | oar-grid, oar-common (>= 2.4.0), oar-api (= ${binary:Version}) , ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl
-Suggests: oar-doc
-Description: OAR RESTful grid api
- This package installs a RESTful API for oargrid users. 
- It works as a cgi into apache.
-
-Package: oar-fix-oldpkg
-Architecture: any
-Description: Package to fix a buggy postrm script in oar-common
- This package has to be installed only if you upgrade 
- from a version < 2.4.0
-
 Package: oar-keyring
 Architecture: all
 Description: GnuPG keys of OAR packages maintainers
