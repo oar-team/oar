@@ -12,14 +12,14 @@ Homepage: http://oar.imag.fr/
 
 Package: oar-common
 Architecture: any
-Depends: perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, bash
+Depends: ${misc:Depends}, ${shlibs:Depends}, perl, perl-suid, adduser, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  This package installs the common part of the OAR batch scheduler
 
 Package: oar-server
 Architecture: any
-Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base
+Depends: ${misc:Depends}, ${shlibs:Depends},  oar-common (= ${binary:Version}), ${perl:Depends}, openssh-client | ssh, cron, lsb-base
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk, mysql-client | postgresql-client, mysql-server | postgresql, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
@@ -27,20 +27,20 @@ Description: OAR batch scheduler server package
 
 Package: oar-scheduler-ocaml-mysql
 Architecture: any
-Depends: oar-server (= ${binary:Version}), ${misc:Depends}, libmysql-ocaml, libsequel-ruby
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-server (= ${binary:Version}), libmysql-ocaml, libsequel-ruby
 Description: OAR batch scheduler package for ocaml scheduler
  This package installs the OCAML scheduler
 
 Package: oar-node
 Architecture: any
-Depends: oar-common (= ${binary:Version}), openssh-client | ssh, openssh-server | ssh
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (= ${binary:Version}), openssh-client | ssh, openssh-server | ssh
 Suggests: oar-doc, xauth
 Description: OAR batch scheduler node package
  This package installs the execution node part of the OAR batch scheduler
 
 Package: oar-user
 Architecture: any
-Depends: oar-common (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (= ${binary:Version}), ${perl:Depends}
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xauth
 Description: OAR batch scheduler user package
@@ -48,7 +48,7 @@ Description: OAR batch scheduler user package
 
 Package: oar-web-status
 Architecture: any
-Depends: httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
  This package install the OAR batch scheduler Gantt reservation diagram CGI: 
@@ -56,27 +56,28 @@ Description: OAR batch scheduler Gantt reservation diagram
 
 Package: oar-desktop-computing-agent
 Architecture: all
-Depends: ruby, oar-common (= ${binary:Version}), libjson-ruby, librestclient-ruby, libdaemons-ruby
+Depends: ${misc:Depends}, ruby, oar-common (= ${binary:Version}), libjson-ruby, librestclient-ruby, libdaemons-ruby
 Suggests: oar-doc
 Description: OAR desktop computing agent
  This package install the OAR batch scheduler desktop computing agent
 
 Package: oar-desktop-computing-cgi
 Architecture: any
-Depends: oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, adduser
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, adduser
 Suggests: oar-doc
 Description: OAR desktop computing HTTP proxy CGI
  This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
 Package: oar-doc
 Section: doc
+Depends: ${misc:Depends}
 Architecture: all
 Description: OAR batch scheduler documentation package
  This package install some documentation for OAR batch scheduler
 
 Package: oar-admin
 Architecture: any
-Depends: oar-user (= ${binary:Version}), ${misc:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-user (= ${binary:Version}), ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl
 Suggests: oar-doc, oar-server
 Description: OAR batch scheduler administration tools package
  This package installs some useful tools to help the administrator
@@ -84,7 +85,7 @@ Description: OAR batch scheduler administration tools package
 
 Package: oar-api
 Architecture: any
-Depends: oar-common (>= 2.4.0), oar-user (>= 2.4.0), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (>= 2.4.0), oar-user (>= 2.4.0), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl
 Suggests: oar-doc
 Recommends: libxml-simple-perl, libyaml-perl
 Description: OAR RESTful API
@@ -93,6 +94,8 @@ Description: OAR RESTful API
 
 Package: oar-keyring
 Architecture: all
+Depends: ${misc:Depends}
 Description: GnuPG keys of OAR packages maintainers
  This package contains the public keys of the OAR packages
  maintainers.
+
