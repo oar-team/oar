@@ -63,7 +63,7 @@ Description: OAR batch scheduler user package
 
 Package: oar-web-status
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, httpd-cgi, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, httpd-cgi | apache2-mpm-itk , ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
  OAR is a versatile resource and task manager (also called a batch scheduler)
