@@ -63,7 +63,7 @@ Description: OAR batch scheduler user package
 
 Package: oar-web-status
 Architecture: all
-Depends: ${misc:Depends}, ${shlibs:Depends}, httpd-cgi | apache2-mpm-itk , ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery
+Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -84,7 +84,7 @@ Description: OAR desktop computing agent
 
 Package: oar-desktop-computing-cgi
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (= ${binary:Version}), ${perl:Depends}, httpd-cgi, perl-modules, adduser
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (= ${binary:Version}), ${perl:Depends}, apache2 | httpd-cgi, perl-modules, adduser
 Suggests: oar-doc
 Description: OAR desktop computing HTTP proxy CGI
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -115,7 +115,7 @@ Description: OAR batch scheduler administration tools package
 
 Package: oar-api
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (>= 2.4.0), oar-user (>= 2.4.0), ${perl:Depends}, httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, oar-common (>= 2.4.0), oar-user (>= 2.4.0), ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl
 Suggests: oar-doc
 Recommends: libxml-simple-perl, libyaml-perl
 Description: OAR RESTful API
@@ -123,7 +123,7 @@ Description: OAR RESTful API
  for clusters and other computing infrastructures
  .
  This package installs a RESTful API for oar users. 
- It works as a cgi into apache.
+ It works as a cgi into Apache.
 
 Package: oar-keyring
 Architecture: all
