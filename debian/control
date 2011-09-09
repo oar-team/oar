@@ -22,7 +22,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-server
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends},  oar-common (= ${binary:Version}), ${perl:Depends}, openssh-client | ssh, cron, lsb-base
+Depends: ${misc:Depends}, ${shlibs:Depends},  oar-common (= ${binary:Version}), ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libmodule-util-perl
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk, mysql-client | postgresql-client, mysql-server | postgresql, phpmyadmin, oar-user, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
