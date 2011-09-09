@@ -33,20 +33,24 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
-	# server
+	## oar-server
 	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/init.d/oar-server > debian/oar-server.init
 	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
 	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
-	# node
+	## oar-node
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
-	# desktop-computing-agent
+	## oar-desktop-computing-agent
 	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/share/doc/oar-desktop-computing-agent/examples/init.d/oar-desktop-computing-agent > debian/oar-desktop-computing-agent.init
-	# desktop-computing-cgi
+	## oar-desktop-computing-cgi
 	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi > debian/oar-desktop-computing-cgi.cron.hourly
-	# common
+	## oar-common
 	cat $(CURDIR)/$(BUILDDIR)/oar-common/usr/share/doc/oar-common/examples/logrotate.d/oar-common > debian/oar-common.logrotate
+	## oar-web-status
+	# use libjs-jquery instead of the embedded one.
+	rm $(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js  $(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
 	
 	dh_install -i
 
