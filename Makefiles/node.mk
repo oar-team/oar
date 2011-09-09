@@ -37,7 +37,11 @@ install_before:
 	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/default setup/default/oar-node.in
 		
 	install         -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/cron.d setup/cron.d/oar-node.in 
+	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/cron.d setup/cron.d/oar-node.in
+	
+	install         -d $(DESTDIR)$(DOCDIR)/oarnodecheck 
+	install -m 0644 -t $(DESTDIR)$(DOCDIR)/oarnodecheck sources/core/tools/oarnodecheck/README
+	install -m 0644 -t $(DESTDIR)$(DOCDIR)/oarnodecheck sources/core/tools/oarnodecheck/template
 	
 setup: setup_shared
 	for file in $(OARCONFDIR_FILES); do chmod 0600 $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
