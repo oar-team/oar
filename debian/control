@@ -62,7 +62,7 @@ Description: OAR batch scheduler user package
  This package install the submission and query part of the OAR batch scheduler
 
 Package: oar-web-status
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}, ${shlibs:Depends}, httpd-cgi | apache2-mpm-itk , ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl
 Suggests: oar-doc
 Description: OAR batch scheduler Gantt reservation diagram
