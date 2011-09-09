@@ -54,7 +54,7 @@ Some expressions does not match or are not allowed :
 Ex : -a /node=mycluster{12}/cpu={2}/core={2} --cpusetproperty=cpu means one cpuset per cpu.
 If the option is not used, one cpuset is created per resource_id. 
 
--p option is usefull to define other properties that are not in properties hierarchy : memory, project...
+-p option is useful to define other properties that are not in properties hierarchy : memory, project...
 With -p option <EXPR> form is as follows : property=value. Several expressions -p property=value can be used. -p is mandatory at the beginning of each <EXPR>. Ex :
 -p mem=1024 -p arch=amd_64 -p infiniband=YES. An operator {%} is available to increment by 1 a property value. Ex : -p ip=192.168.1.{%} 
 
