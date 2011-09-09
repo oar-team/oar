@@ -38,7 +38,7 @@ Description: OAR batch scheduler package for ocaml scheduler
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs the OCAML scheduler
+ This package installs the OCaml scheduler
 
 Package: oar-node
 Architecture: any
