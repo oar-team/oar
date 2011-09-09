@@ -1,0 +1,10 @@
+Document: oar-api-admin-manual
+Title: OAR API Administration Manual
+Author: OAR Team <oar-contact@lists.gforge.inria.fr>
+Abstract: This document describes how to install and configure the OAR API.
+Section: System/Administration
+
+Format: HTML
+Index: /usr/share/doc/oar-doc/html/OAR-DOCUMENTATION-API-ADMIN.html
+Files: /usr/share/doc/oar-doc/html/OAR-DOCUMENTATION-API-ADMIN.html
+
