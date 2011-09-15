@@ -1,8 +1,7 @@
 Source: oar
 Section: admin
 Priority: extra
-Maintainer: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
-Uploaders: Philippe Le Brouster <philippe.le-brouster@imag.fr>
+Maintainer: Philippe Le Brouster <philippe.le-brouster@imag.fr>
 Build-Depends: debhelper (>= 7.0.50~), po-debconf
 Build-Depends-Indep: python-docutils, perl
 Standards-Version: 3.9.1
