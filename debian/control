@@ -6,8 +6,7 @@ Uploaders: Philippe Le Brouster <philippe.le-brouster@imag.fr>
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, ocaml, libmysql-ocaml-dev, ocaml-findlib
 Build-Depends-Indep: python-docutils, perl
 Standards-Version: 3.9.1
-Vcs-Svn: svn://scm.gforge.inria.fr/svn/oar/Debian/trunk/
-Vcs-Browser: https://gforge.inria.fr/plugins/scmsvn/viewcvs.php/Debian/trunk/?root=oar
+Vcs-Git: git://scm.gforge.inria.fr/oar/oar.git/
 Homepage: http://oar.imag.fr/
 
 Package: oar-common
