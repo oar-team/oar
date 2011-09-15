@@ -200,8 +200,8 @@ packages-build:
 	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
 	
 	# scheduler-ocaml-mysql
-	$(MAKE) -f Makefiles/scheduler-ocaml.mk build \
-	    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql 
+	#$(MAKE) -f Makefiles/scheduler-ocaml.mk build \
+	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql 
 
 # Install target for packaging
 packages-install:
@@ -281,8 +281,8 @@ packages-install:
 	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
 	
 	# scheduler-ocaml-mysql
-	$(MAKE) -f Makefiles/scheduler-ocaml.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
+	# $(MAKE) -f Makefiles/scheduler-ocaml.mk install \
+	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
 
 # Clean target for packaging
 packages-clean:
@@ -362,6 +362,6 @@ packages-clean:
 	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
 	
 	# scheduler-ocaml-mysql
-	$(MAKE) -f Makefiles/scheduler-ocaml.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
+	# $(MAKE) -f Makefiles/scheduler-ocaml.mk clean \
+	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
 
