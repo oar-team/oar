@@ -30,6 +30,7 @@ export CFLAGS
 
 override_dh_auto_build:
 	$(MAKE) -e packages-build   PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
+	
 
 override_dh_auto_install:
 	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
@@ -37,6 +38,16 @@ override_dh_auto_install:
 	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/init.d/oar-server > debian/oar-server.init
 	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
 	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
+	
+	## oar-user-{mysql|pgsql}
+	cp -a $(CURDIR)/$(BUILDDIR)/oar-user/* $(CURDIR)/$(BUILDDIR)/oar-user-mysql/
+	mv    $(CURDIR)/$(BUILDDIR)/oar-user/* $(CURDIR)/$(BUILDDIR)/oar-user-pgsql/
+	
+	## oar-user-{mysql|pgsql}
+	cp debian/oar-user.postinst.in debian/oar-user-pgsql.postinst
+	cp debian/oar-user.postinst.in debian/oar-user-mysql.postinst
+	
+	
 	## oar-node
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
@@ -69,5 +80,7 @@ override_dh_clean:
 	rm -f debian/oar-server.cron.d
 	rm -f debian/oar-node.cron.d
 	rm -f debian/oar-desktop-computing-cgi.cron.hourly
+	rm -f debian/oar-user-mysql.postinst
+	rm -f debian/oar-user-pgsql.postinst
 
 
