@@ -25,6 +25,9 @@ export OARCONFDIR?=$(ETCDIR)/oar
 export SETUP_TYPE?=tgz
 export TARGET_DIST?=debian
 
+export ROOTUSER?=root
+export ROOTGROUP?=root
+
 export OARUSER?=oar
 export OAROWNER?=$(OARUSER)
 export OAROWNERGROUP?=$(OAROWNER)

@@ -5,4 +5,4 @@
 # $Id: oar-node.cron.d 1235 2008-03-18 10:03:12Z neyron $
 
 # By default, run every hours
-0 * * * * root [ -x %%OARDIR%%/oarnodecheckrun ] && %%OARDIR%%/oarnodecheckrun
+0 * * * * %%ROOTUSER%% [ -x %%OARDIR%%/oarnodecheckrun ] && %%OARDIR%%/oarnodecheckrun

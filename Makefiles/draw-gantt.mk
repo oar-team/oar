@@ -20,13 +20,13 @@ install_before:
 	install -d $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
 	
 	install -d $(DESTDIR)$(CGIDIR)
-	install -t $(DESTDIR)$(CGIDIR) $(SRCDIR)/drawgantt.cgi.in
+	install $(SRCDIR)/drawgantt.cgi.in $(DESTDIR)$(CGIDIR)
 	
-	install         -d $(DESTDIR)$(SHAREDIR)/drawgantt-files/Icons
-	install -m 0644 -t $(DESTDIR)$(SHAREDIR)/drawgantt-files/Icons $(SRCDIR)/Icons/*.png 
+	install -d $(DESTDIR)$(SHAREDIR)/drawgantt-files/Icons
+	install -m 0644  $(SRCDIR)/Icons/*.png $(DESTDIR)$(SHAREDIR)/drawgantt-files/Icons 
 	
-	install         -d $(DESTDIR)$(SHAREDIR)/drawgantt-files/js
-	install -m 0644 -t $(DESTDIR)$(SHAREDIR)/drawgantt-files/js $(SRCDIR)/js/*.js 
+	install -d $(DESTDIR)$(SHAREDIR)/drawgantt-files/js
+	install -m 0644  $(SRCDIR)/js/*.js $(DESTDIR)$(SHAREDIR)/drawgantt-files/js 
 
 setup:  setup_shared
 	chown $(WWWUSER) $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
@@ -39,11 +39,11 @@ uninstall: uninstall_shared
 	    $(DESTDIR)$(SHAREDIR)/drawgantt-files/Icons/*.png \
 	    $(DESTDIR)$(SHAREDIR)/drawgantt-files/js/*.js
 	
-	@rmdir --ignore-fail-on-non-empty \
+	-rmdir \
 	    $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache \
 	    $(DESTDIR)$(SHAREDIR)/drawgantt-files/js \
 	    $(DESTDIR)$(SHAREDIR)/drawgantt-files/Icons \
-	    $(DESTDIR)$(SHAREDIR)/drawgantt-files || true
+	    $(DESTDIR)$(SHAREDIR)/drawgantt-files
 
 .PHONY: install setup uninstall build clean
 

@@ -1,3 +1,6 @@
+export SETUP_TYPE?=tgz
+export TARGET_DIST?=redhat
+
 export PREFIX?=/usr/local
 
 export WWWDIR?=/usr/share/oar-web-status

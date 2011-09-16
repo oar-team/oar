@@ -31,21 +31,21 @@ install_before:
 	install -d $(DESTDIR)$(OARCONFDIR)/check.d
 	
 	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d	
-	install -t $(DESTDIR)$(EXAMPLEDIR)/init.d setup/init.d/oar-node.in
+	install setup/init.d/oar-node.in $(DESTDIR)$(EXAMPLEDIR)/init.d
 	
-	install         -d $(DESTDIR)$(EXAMPLEDIR)/default
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/default setup/default/oar-node.in
+	install -d $(DESTDIR)$(EXAMPLEDIR)/default
+	install -m 0644  setup/default/oar-node.in $(DESTDIR)$(EXAMPLEDIR)/default
 		
-	install         -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/cron.d setup/cron.d/oar-node.in
+	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
+	install -m 0644  setup/cron.d/oar-node.in $(DESTDIR)$(EXAMPLEDIR)/cron.d
 	
-	install         -d $(DESTDIR)$(DOCDIR)/oarnodecheck 
-	install -m 0644 -t $(DESTDIR)$(DOCDIR)/oarnodecheck sources/core/tools/oarnodecheck/README
-	install -m 0644 -t $(DESTDIR)$(DOCDIR)/oarnodecheck sources/core/tools/oarnodecheck/template
+	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck 
+	install -m 0644  sources/core/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
+	install -m 0644  sources/core/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
 	
 setup: setup_shared
 	for file in $(OARCONFDIR_FILES); do chmod 0600 $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
-	for file in $(OARCONFDIR_FILES); do chown $(OAROWNER):root $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
+	for file in $(OARCONFDIR_FILES); do chown $(OAROWNER):$(ROOTGROUP) $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
 	
 uninstall: uninstall_shared
 	rm -rf $(DESTDIR)$(EXAMPLEDIR)

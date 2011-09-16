@@ -59,26 +59,26 @@ install: install_before install_shared
 	install -d $(DESTDIR)$(OARDIR)/db_upgrade
 	cp -f $(SRCDIR)/database/*upgrade*.sql $(DESTDIR)$(OARDIR)/db_upgrade/
 	
-	install         -d $(DESTDIR)$(OARDIR)/Makefiles/shared
-	install -m 0644 -t $(DESTDIR)$(OARDIR)/Makefiles/shared Makefiles/shared/shared.mk
-	install         -d $(DESTDIR)$(OARDIR)/Makefiles/oardo
-	install -m 0644 -t $(DESTDIR)$(OARDIR)/Makefiles/oardo  Makefiles/oardo/oardo.mk
+	install -d $(DESTDIR)$(OARDIR)/Makefiles/shared
+	install -m 0644  Makefiles/shared/shared.mk $(DESTDIR)$(OARDIR)/Makefiles/shared
+	install -d $(DESTDIR)$(OARDIR)/Makefiles/oardo
+	install -m 0644  Makefiles/oardo/oardo.mk $(DESTDIR)$(OARDIR)/Makefiles/oardo
 	
 install_before:
-	install         -d $(DESTDIR)$(EXAMPLEDIR)/logrotate.d
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/logrotate.d setup/logrotate.d/oar-common.in
+	install -d $(DESTDIR)$(EXAMPLEDIR)/logrotate.d
+	install -m 0644  setup/logrotate.d/oar-common.in $(DESTDIR)$(EXAMPLEDIR)/logrotate.d
 	install -d $(DESTDIR)$(BINDIR)
 	install $(SRCDIR)/tools/oarsh/oarsh_sudowrapper.sh.in $(DESTDIR)$(BINDIR)/oarsh.in
 	install $(SRCDIR)/tools/oarsh/oarcp.in $(DESTDIR)$(BINDIR)/oarcp.in
-	install         -d $(DESTDIR)$(OARDIR)/setup/shared
-	install -m 0644 -t $(DESTDIR)$(OARDIR)/setup/shared setup/shared/shared.sh.in
+	install -d $(DESTDIR)$(OARDIR)/setup/shared
+	install -m 0644  setup/shared/shared.sh.in $(DESTDIR)$(OARDIR)/setup/shared
 
 setup: setup_shared
 	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo CMD_RIGHTS=6755
 	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 	
-	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
-	chown root.$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
+	chown $(ROOTUSER):$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo
+	chown $(ROOTUSER):$(OAROWNERGROUP) $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo
 	chmod 6750 $(DESTDIR)$(OARDIR)/oardodo/oardodo
 	chmod 0644 $(DESTDIR)$(MANDIR)/man1/oarcp.1

@@ -20,8 +20,8 @@ clean:
 install: install_before install_shared
 
 install_before:
-	install         -d $(DESTDIR)$(OARDIR)/desktop_computing
-	install -m 0644 -t $(DESTDIR)$(OARDIR)/desktop_computing $(AGENTDIR_FILES)
+	install -d $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644  $(AGENTDIR_FILES) $(DESTDIR)$(OARDIR)/desktop_computing
 	
 	install -d $(DESTDIR)$(BINDIR)
 	install $(SRCDIR)/lib/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
@@ -30,7 +30,7 @@ install_before:
 	install $(SRCDIR)/lib/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
 	
 	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d
-	install -t $(DESTDIR)$(EXAMPLEDIR)/init.d setup/init.d/oar-desktop-computing-agent.in 
+	install setup/init.d/oar-desktop-computing-agent.in $(DESTDIR)$(EXAMPLEDIR)/init.d
 
 
 setup: setup_shared

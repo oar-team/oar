@@ -22,7 +22,6 @@ setup_oar_ssh() {
 create_phoenix_home() {
     mkdir -p %%OARHOMEDIR%%/phoenix
     chown %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%/phoenix
-
 }
 
 server_setup() {

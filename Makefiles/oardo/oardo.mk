@@ -66,7 +66,7 @@ ifeq "$(CMD_TARGET)" ""
 	echo "no CMD_TARGET given. Fail !"
 	exit 1
 endif
-	chown root.$(CMD_GROUP) $(CMD_TARGET)
+	chown $(ROOTUSER):$(CMD_GROUP) $(CMD_TARGET)
 	chmod $(CMD_RIGHTS) $(CMD_TARGET)
 
 uninstall:

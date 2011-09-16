@@ -43,7 +43,7 @@ MODULE_SETUP_FILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basena
 PROCESS_TEMPLATE_FILES+=$(MODULE_SETUP_FILES_DEST)
 install_shared: install_perllib install_oardata install_oarbin install_doc install_man1 install_bin install_sbin install_examples
 	install -d $(DESTDIR)$(OARDIR)/Makefiles
-	install -m 0644 -t $(DESTDIR)$(OARDIR)/Makefiles  Makefiles/$(MODULE).mk
+	install -m 0644  Makefiles/$(MODULE).mk $(DESTDIR)$(OARDIR)/Makefiles
 	
 	if [ -n "$(wildcard setup/$(MODULE)*.in)" ]; then \
 		install -d $(DESTDIR)$(OARDIR)/setup; \
@@ -69,6 +69,8 @@ ifdef PROCESS_TEMPLATE_FILES
 			 s#%%SBINDIR%%#$(SBINDIR)#g;;\
 			 s#%%VARLIBDIR%%#$(VARLIBDIR)#g;;\
 			 s#%%OARHOMEDIR%%#$(OARHOMEDIR)#g;;\
+			 s#%%ROOTUSER%%#$(ROOTUSER)#g;;\
+			 s#%%ROOTGROUP%%#$(ROOTGROUP)#g;;\
 			 s#%%OARUSER%%#$(OARUSER)#g;;\
 			 s#%%OAROWNER%%#$(OAROWNER)#g;;\
 			 s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
@@ -126,15 +128,15 @@ endif
 ifdef OARDIR_DATAFILES
 OARDIR_DATAFILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/,$(patsubst %.in,%,$(notdir $(OARDIR_DATAFILES))))
 install_oardata:
-	install         -d $(DESTDIR)$(OARDIR)
-	install -m 0644 -t $(DESTDIR)$(OARDIR) $(OARDIR_DATAFILES)
+	install -d $(DESTDIR)$(OARDIR)
+	install -m 0644  $(OARDIR_DATAFILES) $(DESTDIR)$(OARDIR)
 
 setup_oardata:
 	chmod 0755 $(DESTDIR)$(OARDIR)
-	chmod 0644 -f $(OARDIR_DATAFILES_DEST) || true
+	-chmod 0644 -f $(OARDIR_DATAFILES_DEST)
 
 uninstall_oardata:
-	rm -f $(OARDIR_DATAFILES_DEST) || true
+	-rm -f $(OARDIR_DATAFILES_DEST)
 else
 install_oardata:
 setup_oardata:
@@ -148,14 +150,14 @@ ifdef OARDIR_BINFILES
 OARDIR_BINFILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/,$(patsubst %.in,%,$(notdir $(OARDIR_BINFILES))))
 install_oarbin:
 	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0755 -t $(DESTDIR)$(OARDIR) $(OARDIR_BINFILES)
+	install -m 0755  $(OARDIR_BINFILES) $(DESTDIR)$(OARDIR)
 
 setup_oarbin:
-	chmod 0755 $(DESTDIR)$(OARDIR)
-	chmod 0755 -f $(OARDIR_BINFILES_DEST) || true
+	-chmod 0755 $(DESTDIR)$(OARDIR)
+	-chmod 0755 -f $(OARDIR_BINFILES_DEST)
 
 uninstall_oarbin:
-	rm -f $(OARDIR_BINFILES_DEST) || true
+	-rm -f $(OARDIR_BINFILES_DEST)
 else
 install_oarbin:
 setup_oarbin:
@@ -168,15 +170,15 @@ endif
 ifdef DOCDIR_FILES
 DOCDIR_FILES_DEST=$(addprefix $(DESTDIR)$(DOCDIR)/,$(patsubst %.in,%,$(notdir $(DOCDIR_FILES))))
 install_doc:
-	install         -d $(DESTDIR)$(DOCDIR)
-	install -m 0644 -t $(DESTDIR)$(DOCDIR) $(DOCDIR_FILES)
+	install -d $(DESTDIR)$(DOCDIR)
+	install -m 0644  $(DOCDIR_FILES) $(DESTDIR)$(DOCDIR)
 
 setup_doc:
-	chmod 0755 $(DESTDIR)$(DOCDIR)
-	chmod 0644 -f $(DOCDIR_FILES_DEST) || true
+	-chmod 0755 $(DESTDIR)$(DOCDIR)
+	-chmod 0644 -f $(DOCDIR_FILES_DEST)
 
 uninstall_doc:
-	rm -f $(DOCDIR_FILES_DEST) || true
+	-rm -f $(DOCDIR_FILES_DEST)
 else
 install_doc:
 setup_doc:
@@ -189,15 +191,15 @@ endif
 ifdef MANDIR_FILES
 MANDIR_FILES_DEST=$(addprefix $(DESTDIR)$(MANDIR)/man1/,$(patsubst %.in,%,$(notdir $(MANDIR_FILES))))
 install_man1:
-	install         -d $(DESTDIR)$(MANDIR)/man1
-	install -m 0644 -t $(DESTDIR)$(MANDIR)/man1 $(MANDIR_FILES)
+	install -d $(DESTDIR)$(MANDIR)/man1
+	install -m 0644  $(MANDIR_FILES) $(DESTDIR)$(MANDIR)/man1
 
 setup_man1:
-	chmod 0755 $(DESTDIR)$(MANDIR)/man1
-	chmod 0644 -f $(MANDIR_FILES_DEST) || true
+	-chmod 0755 $(DESTDIR)$(MANDIR)/man1
+	-chmod 0644 -f $(MANDIR_FILES_DEST)
 
 uninstall_man1:
-	rm -f $(MANDIR_FILES_DEST) || true
+	-rm -f $(MANDIR_FILES_DEST)
 else
 install_man1:
 setup_man1:
@@ -211,13 +213,13 @@ ifdef BINDIR_FILES
 BINDIR_FILES_DEST=$(addprefix $(DESTDIR)$(BINDIR)/,$(patsubst %.in,%,$(notdir $(BINDIR_FILES))))
 install_bin:
 	install -m 0755 -d $(DESTDIR)$(BINDIR)
-	install -m 0755 -t $(DESTDIR)$(BINDIR) $(BINDIR_FILES)
+	install -m 0755  $(BINDIR_FILES) $(DESTDIR)$(BINDIR)
 
 setup_bin:
-	chmod 0755 -f $(BINDIR_FILES_DEST) || true
+	-chmod 0755 -f $(BINDIR_FILES_DEST)
 
 uninstall_bin:
-	rm -f $(BINDIR_FILES_DEST) || true
+	-rm -f $(BINDIR_FILES_DEST)
 else
 install_bin:
 setup_bin:
@@ -231,13 +233,13 @@ ifdef SBINDIR_FILES
 SBINDIR_FILES_DEST=$(addprefix $(DESTDIR)$(SBINDIR)/,$(patsubst %.in,%,$(notdir $(SBINDIR_FILES))))
 install_sbin:
 	install -m 0755 -d $(DESTDIR)$(SBINDIR)
-	install -m 0755 -t $(DESTDIR)$(SBINDIR) $(SBINDIR_FILES)
+	install -m 0755  $(SBINDIR_FILES) $(DESTDIR)$(SBINDIR)
 
 setup_sbin:
-	chmod 0755 -f $(SBINDIR_FILES_DEST) || true
+	-chmod 0755 -f $(SBINDIR_FILES_DEST)
 
 uninstall_sbin:
-	rm -f $(SBINDIR_FILES_DEST) || true
+	-rm -f $(SBINDIR_FILES_DEST)
 else
 install_sbin:
 setup_sbin:
@@ -251,13 +253,13 @@ ifdef EXAMPLEDIR_FILES
 EXAMPLEDIR_FILES_DEST=$(addprefix $(DESTDIR)$(EXAMPLEDIR)/,$(patsubst %.in,%,$(notdir $(EXAMPLEDIR_FILES))))
 install_examples:
 	install -m 0755 -d $(DESTDIR)$(EXAMPLEDIR)
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR) $(EXAMPLEDIR_FILES)
+	install -m 0644  $(EXAMPLEDIR_FILES) $(DESTDIR)$(EXAMPLEDIR)
 
 setup_examples:
-	chmod 0644 -f $(EXAMPLEDIR_FILES_DEST) || true
+	-chmod 0644 -f $(EXAMPLEDIR_FILES_DEST)
 
 uninstall_examples:
-	rm -f $(EXAMPLEDIR_FILES_DEST) || true
+	-rm -f $(EXAMPLEDIR_FILES_DEST)
 else
 install_examples:
 setup_examples:

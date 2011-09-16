@@ -1,3 +1,6 @@
+export SETUP_TYPE?=rpm
+export TARGET_DIST?=redhat
+
 export PREFIX?=/usr
 
 export CGIDIR?=/var/www/cgi-bin

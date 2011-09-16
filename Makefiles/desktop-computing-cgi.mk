@@ -26,8 +26,8 @@ install_before:
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
 	
-	install         -d $(DESTDIR)$(EXAMPLEDIR)/cron.hourly
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/cron.hourly setup/cron.hourly/oar-desktop-computing-cgi.in 
+	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.hourly
+	install -m 0644  setup/cron.hourly/oar-desktop-computing-cgi.in $(DESTDIR)$(EXAMPLEDIR)/cron.hourly 
 
 setup: setup_shared
 	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache

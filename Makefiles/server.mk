@@ -79,10 +79,10 @@ install: build install_before install_shared
 
 install_before:
 	install -d $(DESTDIR)$(OARDIR)/schedulers
-	install -t $(DESTDIR)$(OARDIR)/schedulers $(OARSCHEDULER_BINFILES) 
+	install $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers 
 	
 	install -d $(DESTDIR)$(OARCONFDIR)
-	install -t $(DESTDIR)$(OARCONFDIR) $(OARCONFDIR_BINFILES)
+	install $(OARCONFDIR_BINFILES) $(DESTDIR)$(OARCONFDIR)
 	
 	install $(SRCDIR)/modules/almighty.pl $(DESTDIR)$(OARDIR)/Almighty
 	install $(SRCDIR)/modules/leon.pl $(DESTDIR)$(OARDIR)/Leon
@@ -102,13 +102,13 @@ install_before:
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
 	
 	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d	
-	install -t $(DESTDIR)$(EXAMPLEDIR)/init.d setup/init.d/oar-server.in
+	install setup/init.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/init.d
 	
-	install         -d $(DESTDIR)$(EXAMPLEDIR)/default
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/default setup/default/oar-server.in
+	install -d $(DESTDIR)$(EXAMPLEDIR)/default
+	install -m 0644  setup/default/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/default
 	
-	install         -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
-	install -m 0644 -t $(DESTDIR)$(EXAMPLEDIR)/cron.d setup/cron.d/oar-server.in
+	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
+	install -m 0644  setup/cron.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/cron.d
 
 setup: setup_shared
 	for file in $(OARCONFDIR_BINFILES); do chmod 0750 $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done

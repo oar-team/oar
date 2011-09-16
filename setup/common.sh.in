@@ -45,7 +45,7 @@ set_oar_shell() {
 
 create_log_file() {
     # Log file
-    touch %%LOGDIR%%/oar.log && chown %%OAROWNER%%:root %%LOGDIR%%/oar.log && chmod 0644 %%LOGDIR%%/oar.log || true
+    touch %%LOGDIR%%/oar.log && chown %%OAROWNER%%:%%ROOTGROUP%% %%LOGDIR%%/oar.log && chmod 0644 %%LOGDIR%%/oar.log || true
 }
 
 common_setup() {
@@ -60,7 +60,7 @@ common_setup() {
     install_conffile \
         %%EXAMPLEDIR%%/oar.conf \
         %%OARCONFDIR%%/oar.conf \
-        0600 %%OAROWNER%%.root    
+        0600 %%OAROWNER%%:%%ROOTGROUP%%
 
     install_conffile \
         %%EXAMPLEDIR%%/oarnodesetting_ssh \

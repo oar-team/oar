@@ -21,20 +21,19 @@ install: install_before install_shared
 
 install_before:
 	install -d $(DESTDIR)$(CGIDIR)
-	install -t $(DESTDIR)$(CGIDIR) $(SRCDIR)/monika.cgi.in
+	install $(SRCDIR)/monika.cgi.in $(DESTDIR)$(CGIDIR)
 	
-	install         -d $(DESTDIR)$(WWWDIR)
-	install -m 0644 -t $(DESTDIR)$(WWWDIR) $(SRCDIR)/monika.css
+	install -d $(DESTDIR)$(WWWDIR)
+	install -m 0644  $(SRCDIR)/monika.css $(DESTDIR)$(WWWDIR)
 
 setup: setup_shared
 	chmod 0644 $(DESTDIR)$(WWWDIR)/monika.css
 
 uninstall: uninstall_shared
-	@rm -f \
+	rm -f \
 	    $(DESTDIR)$(CGIDIR)/monika.cgi \
 	    $(DESTDIR)$(WWWDIR)/monika.css
 	
-	@rmdir --ignore-fail-on-non-empty \
-	    $(DESTDIR)$(EXAMPLEDIR) || true
+	-rmdir $(DESTDIR)$(EXAMPLEDIR)
 
 .PHONY: install setup uninstall build clean

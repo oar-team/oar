@@ -19,7 +19,7 @@ build:
 
 install: build install_shared
 	install -d $(DESTDIR)$(OARDIR)
-	install -t $(DESTDIR)$(OARDIR) $(OARDIR_BINFILES)
+	install $(OARDIR_BINFILES) $(DESTDIR)$(OARDIR)
 	
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
