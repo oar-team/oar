@@ -5852,7 +5852,7 @@ sub get_gantt_visu_scheduled_job_resources($$){
     $sth->execute();
     my %h;
     while (my @ref = $sth->fetchrow_array()) {
-        $h{$ref[0]}->{'network_addess'}=$ref[1];
+        $h{$ref[0]}->{'network_address'}=$ref[1];
         $h{$ref[0]}->{'current_state'}=$ref[2];
     }
     $sth->finish();
