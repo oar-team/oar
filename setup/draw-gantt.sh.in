@@ -11,9 +11,9 @@ draw_gantt_setup() {
         %%WWWUSER%%
     
     if [ ! -e "%%OARHOMEDIR%%/drawgantt-files/js" ]; then
-        ln -sf %%SHAREDIR%%/drawgantt-files/js %%OARHOMEDIR%%/drawgantt-files/js
+        ln -sf %%WWWDIR%%/drawgantt-files/js %%OARHOMEDIR%%/drawgantt-files/js
     fi
     if [ ! -e "%%OARHOMEDIR%%/drawgantt-files/Icons" ]; then
-        ln -sf %%SHAREDIR%%/drawgantt-files/Icons %%OARHOMEDIR%%/drawgantt-files/Icons
+        ln -sf %%WWWDIR%%/drawgantt-files/Icons %%OARHOMEDIR%%/drawgantt-files/Icons
     fi
 }
