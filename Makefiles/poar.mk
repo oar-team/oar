@@ -27,8 +27,7 @@ install: install_shared
 	    $(DESTDIR)$(WWWDIR)/poar 
 
 setup:  setup_shared
-	chown $(WWWUSER) $(DESTDIR)$(WWWDIR)/poar/*
-	chmod 0644 $(DESTDIR)$(WWWDIR)/poar/*
+	-chown -R $(WWWUSER) $(DESTDIR)$(WWWDIR)/poar/*
 
 uninstall: uninstall_shared
 	rm -rf "$(DESTDIR)$(WWWDIR)/poar/"
