@@ -112,7 +112,6 @@ if ($ARGV[0] eq "init"){
         }else{
             exit_myself(16,"Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file");
         }
-#'for c in '."@Cpuset_cpus".';do cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id > /dev/cpuset/'.$Cpuset_path_job.'/mems; done && '.
 
 # Be careful with the physical_package_id. Is it corresponding to the memory banc?
         if (system( 'oardodo mkdir -p /dev/cpuset/'.$Cpuset_path_job.' && '.
@@ -122,6 +121,7 @@ if ($ARGV[0] eq "init"){
                     'cat /dev/cpuset/mems > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
                     '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_path_job.'/cpus'
                   )){
+#'MEM= ;for c in '."@Cpuset_cpus".';do MEM=$(cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id),$MEM; done; echo $MEM > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
             exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
         }
     }
