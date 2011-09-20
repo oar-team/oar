@@ -11,18 +11,23 @@ docs/
 Makefiles/
     contains the makefile for each oar module
 
+setup/
+    contains the setup scripts executed on the target operating system
+
 sources/core/man/
     contains manual page of the qfunctions / modules
 
 sources/core/common/
-    contains the oar library. there is one subdirectory for each langage used.
+    contains the common oar stuff.
+
+sources/core/common-libs/
+    contains the common oar libraries. There is one subdirectory for each langage used.
 
 sources/core/qfunctions/
     contains the user/admin commands
 
 sources/core/modules/
     contains the oar commands 
-    q: pourquoi leon, finaud, sarko, node_change_state sont des scripts plutôt que des modules perl (.pm) ?
 
 misc/
     contains oar related 
