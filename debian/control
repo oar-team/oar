@@ -10,7 +10,7 @@ Homepage: http://oar.imag.fr/
 
 Package: liboar-perl
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, perl, perl-suid, adduser, libdbi-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, perl, libdbi-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -20,7 +20,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-common
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, perl, perl-suid, adduser, libdbi-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, perl, adduser, libdbi-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  OAR is a versatile resource and task manager (also called a batch scheduler)
