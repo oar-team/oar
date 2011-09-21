@@ -7,8 +7,8 @@ set -e
 # This script is intented to be inserted into the oarnodesetting_ssh
 # script that makes a node alive at boot time.
  
-OARNODESETTINGCMD=/usr/sbin/oarnodesetting
-OARNODESCMD=/usr/bin/oarnodes
+OARNODESETTINGCMD=%%SBINDIR%%/oarnodesetting
+OARNODESCMD=%%BINDIR%%/oarnodes
 
 if [ $# != 1 ]
 then

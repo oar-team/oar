@@ -1,8 +1,12 @@
-#! /usr/bin/make
+MODULE=draw-gantt
+SRCDIR=sources/visualization_interfaces/DrawGantt
+
+EXAMPLEDIR_FILES=$(SRCDIR)/drawgantt.conf.in
+
+PROCESS_TEMPLATE_FILES= $(DESTDIR)$(EXAMPLEDIR)/drawgantt.conf.in \
+			$(DESTDIR)$(CGIDIR)/drawgantt.cgi.in
 
 include Makefiles/shared/shared.mk
-
-DRAWGANTT_DIR=sources/visualization_interfaces/DrawGantt
 
 clean:
 	# Nothing to do
@@ -10,30 +14,36 @@ clean:
 build: 
 	# Nothing to do
 
-install:
-	install -d -m 0755 $(DESTDIR)$(CGIDIR)
-	install -d -m 0755 $(DESTDIR)$(WWWDIR)
-	install -d -m 0755 $(DESTDIR)$(OARCONFDIR)
-	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)
-	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons
-	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js
-	install -d -m 0755 $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
-	-chown $(WWWUSER) $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache
-	
-	install -m 0755 $(DRAWGANTT_DIR)/drawgantt.cgi $(DESTDIR)$(CGIDIR)
-	@if [ -f $(DESTDIR)$(OARCONFDIR)/drawgantt.conf ]; then echo "Warning: $(DESTDIR)$(OARCONFDIR)/drawgantt.conf already exists, not overwriting it." ; else install -m 0600 $(DRAWGANTT_DIR)/drawgantt.conf $(DESTDIR)$(OARCONFDIR) ; chown $(WWWUSER) $(DESTDIR)$(OARCONFDIR)/drawgantt.conf || /bin/true ; perl -i -pe "s#^web_root: .*#web_root: '$(VARLIBDIR)'#" $(DESTDIR)$(OARCONFDIR)/drawgantt.conf ; perl -i -pe "s#^directory: .*#directory: 'drawgantt-files'#" $(DESTDIR)$(OARCONFDIR)/drawgantt.conf ; fi
-	install -m 0644 $(DRAWGANTT_DIR)/Icons/*.png $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons
-	install -m 0644 $(DRAWGANTT_DIR)/js/*.js $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js
+install: install_before install_shared
 
-uninstall:
+install_before:
+	install -d $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
+	
+	install -d $(DESTDIR)$(CGIDIR)
+	install $(SRCDIR)/drawgantt.cgi.in $(DESTDIR)$(CGIDIR)
+	
+	install -d $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons
+	install -m 0644  $(SRCDIR)/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons 
+	
+	install -d $(DESTDIR)$(WWWDIR)/drawgantt-files/js
+	install -m 0644  $(SRCDIR)/js/*.js $(DESTDIR)$(WWWDIR)/drawgantt-files/js 
+
+setup:  setup_shared
+	chown $(WWWUSER) $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
+	chmod 0644       $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons/*.png
+	chmod 0644       $(DESTDIR)$(WWWDIR)/drawgantt-files/js/*.js
+
+uninstall: uninstall_shared
 	rm -f \
 	    $(DESTDIR)$(CGIDIR)/drawgantt.cgi \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons/*.png \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js/*.js
+	    $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons/*.png \
+	    $(DESTDIR)$(WWWDIR)/drawgantt-files/js/*.js
 	
-	@rmdir --ignore-fail-on-non-empty \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/cache \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/js \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files/Icons \
-	    $(DESTDIR)$(VARLIBDIR)/drawgantt-files || true
+	-rmdir \
+	    $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache \
+	    $(DESTDIR)$(WWWDIR)/drawgantt-files/js \
+	    $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons \
+	    $(DESTDIR)$(WWWDIR)/drawgantt-files
+
+.PHONY: install setup uninstall build clean
 

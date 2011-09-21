@@ -7,8 +7,8 @@ Port 6667
 #ListenAddress 0.0.0.0
 Protocol 2
 # HostKeys for protocol version 2
-HostKey /etc/oar/oar_ssh_host_rsa_key
-HostKey /etc/oar/oar_ssh_host_dsa_key
+HostKey %%OARCONFDIR%%/oar_ssh_host_rsa_key
+HostKey %%OARCONFDIR%%/oar_ssh_host_dsa_key
 #Privilege Separation is turned on for security
 UsePrivilegeSeparation yes
 
@@ -55,6 +55,6 @@ TCPKeepAlive yes
 AcceptEnv OAR_CPUSET OAR_JOB_USER
 PermitUserEnvironment yes
 UseLogin no
-AllowUsers oar
-XAuthLocation /usr/bin/xauth
+AllowUsers %%OAROWNER%%
+XAuthLocation %%XAUTHCMDPATH%%
 

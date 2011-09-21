@@ -1,4 +1,3 @@
-#! /usr/bin/make
 
 include Makefiles/shared/shared.mk
 
@@ -59,8 +58,15 @@ ifeq "$(CMD_TARGET)" ""
 	echo "no CMD_TARGET given. Fail !"
 	exit 1
 endif
-	install -m $(CMD_RIGHTS) $(CMD_BUILDTARGET) $(CMD_TARGET)
-	chown root.$(CMD_GROUP) $(CMD_TARGET)
+	install -d `dirname $(CMD_TARGET)`
+	install $(CMD_BUILDTARGET) $(CMD_TARGET)
+
+setup:
+ifeq "$(CMD_TARGET)" ""
+	echo "no CMD_TARGET given. Fail !"
+	exit 1
+endif
+	chown $(ROOTUSER):$(CMD_GROUP) $(CMD_TARGET)
 	chmod $(CMD_RIGHTS) $(CMD_TARGET)
 
 uninstall:
@@ -70,3 +76,4 @@ ifeq "$(CMD_TARGET)" ""
 endif
 	rm -f $(CMD_TARGET)
 
+.PHONY: install setup uninstall build clean

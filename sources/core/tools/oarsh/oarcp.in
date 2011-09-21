@@ -1,6 +1,6 @@
 #!/bin/bash
 # $Id$
-OARSHCMD=/usr/bin/oarsh
+OARSHCMD=%%BINDIR%%/oarsh
 SCPCMD=/usr/bin/scp
 
 unset DISPLAY

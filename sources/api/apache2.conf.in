@@ -4,16 +4,16 @@
     # Be aware that the oarapi directory should only be readable by the httpd 
     # daemon and that the cgi inside are sgid oar. Any change to this permissions
     # may cause your system to be vulnerable. 
-    ScriptAlias /oarapi /usr/lib/cgi-bin/oarapi/oarapi.cgi
-    ScriptAlias /oarapi-debug /usr/lib/cgi-bin/oarapi/oarapi-debug.cgi
+    ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
+    ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi/oarapi-debug.cgi
 
     # FastCGI server
     <IfModule mod_fastcgi.c>
-    FastCgiServer /usr/lib/cgi-bin/oarapi/oarapi.cgi
+    FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi
     </IfModule>
 
     # Authentication configuration for access to the API    
-    <Directory /usr/lib/cgi-bin/oarapi>
+    <Directory %%CGIDIR%%/oarapi>
           Options ExecCGI -MultiViews FollowSymLinks
 
          # FastCGI handler

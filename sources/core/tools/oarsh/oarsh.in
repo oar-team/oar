@@ -25,7 +25,7 @@ OARSH_BYPASS_WHOLE_SECURITY="0"
 source "$OARCONFFILE" || exit 2
 
 # Add security option for X11 forwarding
-XAUTH_LOCATION="/usr/bin/xauth"
+XAUTH_LOCATION="%%XAUTHCMDPATH%%"
 if [ -x "$XAUTH_LOCATION" ]; then
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=$XAUTH_LOCATION"
 else

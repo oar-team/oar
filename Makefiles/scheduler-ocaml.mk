@@ -1,8 +1,7 @@
-#! /usr/bin/make
+MODULE=scheduler-ocaml
+SRCDIR=sources/extra/ocaml-schedulers
 
 include Makefiles/shared/shared.mk
-
-SRCDIR=sources/extra/ocaml-schedulers
 
 clean:
 	$(MAKE) -C $(SRCDIR)/simple_cbf_mb_h_ct_oar clean
@@ -13,17 +12,22 @@ clean:
 build:
 	$(MAKE) -C $(SRCDIR)/simple_cbf_mb_h_ct_oar 
 
-install:
-	install -d -m 0755 $(DESTDIR)$(OARDIR)
-	install -m 0755 $(SRCDIR)/misc/hierarchy_extractor.rb $(DESTDIR)$(OARDIR)
+install: install_shared
+	install -d $(DESTDIR)$(OARDIR)
+	install $(SRCDIR)/misc/hierarchy_extractor.rb $(DESTDIR)$(OARDIR)
 	
-	install -d -m 0755 $(DESTDIR)$(OARDIR)/schedulers
-	install -m 0755 $(SRCDIR)/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_mysql $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
+	install -d $(DESTDIR)$(OARDIR)/schedulers
+	install \
+	    $(SRCDIR)/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_mysql \
+	    $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
 
+setup: setup_shared
+	#Nothing to do
 
-uninstall:
+uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(OARDIR)/hierarchy_extractor.rb
 	rm -f $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
 
 
 
+.PHONY: install setup uninstall build clean

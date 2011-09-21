@@ -7,8 +7,8 @@ OARSH_HOSTS_EXCLUDE_FILE=~/.oarsh-hosts-exclude
 # SSH command location
 SSHCMD=/usr/bin/ssh
 # OAR variables
-OARDIR=/usr/lib/oar
-OARSHCMD=oarsh
+OARDIR=%%OARDIR%%
+OARSHCMD=%%OARSHCMD%%
 DEBUGFILE=
 
 # unset bash glob expension 
