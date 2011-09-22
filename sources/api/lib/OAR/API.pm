@@ -276,14 +276,15 @@ sub add_resources_uris($$$) {
       $node=OAR::API::htmlize_uri($node,$ext);
       push (@$links, { href => $node, title => "node", rel => "member" });
     }
-    my $self=OAR::API::make_uri($prefix."resources/".$resource->{resource_id},$ext,0);
-    my $jobs=OAR::API::make_uri($prefix."resources/".$resource->{resource_id}."/jobs",$ext,0);
+    my $self=OAR::API::make_uri($prefix."resources/".$resource->{id},$ext,0);
+    my $jobs=OAR::API::make_uri($prefix."resources/".$resource->{id}."/jobs",$ext,0);
     $self=OAR::API::htmlize_uri($self,$ext);
     $jobs=OAR::API::htmlize_uri($jobs,$ext);
     push (@$links, { href => $self, rel => "self" });
     push (@$links, { href => $jobs, title => "jobs" , rel => "collection"});
     $resource->{links}=$links;
     $resource->{api_timestamp}=time();
+    $resource->{id}=int($resource->{id}); #why the hell do I need to do that??
   }
 }
 # Add uris to a list of nodes
@@ -308,11 +309,11 @@ sub add_job_resources_uris($$$) {
   my $ext = shift;
   my $prefix = shift;
   foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    $assigned_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$assigned_resource->{resource_id},$ext,0);
+    $assigned_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$assigned_resource->{id},$ext,0);
     $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
   }
   foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    $reserved_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$reserved_resource->{resource_id},$ext,0);
+    $reserved_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$reserved_resource->{id},$ext,0);
     $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
   }
   foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
@@ -569,16 +570,16 @@ sub struct_job_resources($$) {
   my $structure=shift;
   my $result=[];
   foreach my $r (@{$resources->{assigned_resources}}) {
-    push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'assigned'});
+    push(@$result,{'id' => int($r), 'status' => 'assigned'});
   }
   if (ref($resources->{reserved_resources}) eq "HASH") {
     foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'reserved'});
+      push(@$result,{'id' => int($r), 'status' => 'reserved'});
     }
   }
   if (ref($resources->{scheduled_resources}) eq "HASH") {
     foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      push(@$result,{'id' => int($r), 'resource_id' => int($r), 'status' => 'scheduled'});
+      push(@$result,{'id' => int($r), 'status' => 'scheduled'});
     }
   }
   return $result;
@@ -600,7 +601,7 @@ sub filter_resource_list($) {
   my $resources = shift;
   my $filtered_resources;
   foreach my $resource (@$resources) {
-    push(@$filtered_resources,{ resource_id => int($resource->{resource_id}),
+    push(@$filtered_resources,{ id => int($resource->{resource_id}),
                                 state => $resource->{state},
                                 available_upto => int($resource->{available_upto}),
                                 network_address => $resource->{network_address}
@@ -619,7 +620,7 @@ sub struct_resource_list_hash_to_array($) {
     }else{
       foreach my $id ( keys (%{$resources->{$r}})) {
         push (@$array,{ 'state' => $resources->{$r}->{$id},
-                        'resource_id' => int($id),
+                        'id' => int($id),
                         'network_address' => $r});
       }
     }
@@ -627,12 +628,31 @@ sub struct_resource_list_hash_to_array($) {
   return $array;
 }
 
+# Replace resource_id by id
+sub fix_resource_id($) {
+  my $resource=shift;
+  if (defined($resource->{resource_id}) && !defined($resource->{id})) {
+    $resource->{id}=int($resource->{resource_id});
+    delete $resource->{resource_id};
+  }
+}
+
+# Replace resource_id by id into a resources list
+sub fix_resource_ids($) {
+  my $resources=shift;
+  foreach my $resource (@$resources) {
+    fix_resource_id($resource);
+  }
+}
+
 sub struct_resource_list_fix_ints($) {
   my $resources = shift;
   foreach my $resource (@$resources)  {
     if (defined($resource->{resource_id})) { 
       $resource->{id}=int($resource->{resource_id}); 
-      $resource->{resource_id}=int($resource->{resource_id}); 
+    }
+    if (defined($resource->{id})) { 
+      $resource->{id}=int($resource->{id}); 
     }
     if (defined($resource->{available_upto})) { $resource->{available_upto}=int($resource->{available_upto}); }
     if (defined($resource->{cpuset})) { $resource->{cpuset}=int($resource->{cpuset}); }
@@ -653,7 +673,7 @@ sub struct_resource_list($$$) {
   }
   elsif ($structure eq 'oar') {
     foreach my $resource (@$resources)  {
-      $result->{$resource->{resource_id}}=int($resource);
+      $result->{$resource->{id}}=int($resource);
     }
     return $result; 
   }
