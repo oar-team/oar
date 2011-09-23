@@ -2,25 +2,20 @@
 
 set -e
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
-
 case "${1}" in
-        configure)
-                $MAKE -C $OARDIR -f $OARDIR/Makefiles/keyring.mk setup
+    configure)
+        apt-key add /usr/share/oar-keyring/oar.gpg || true
+        apt-key add /usr/share/oar-keyring/oarmaster.gpg || true
+        ;;
 
-                apt-key add /usr/share/oar-keyring/oar.gpg || true
-                apt-key add /usr/share/oar-keyring/oarmaster.gpg || true
-                ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        :
+        ;;
 
-        abort-upgrade|abort-remove|abort-deconfigure)
-
-                ;;
-
-        *)
-                echo "postinst called with unknown argument \`${1}'" >&2
-                exit 1
-                ;;
+    *)
+        echo "postinst called with unknown argument \`${1}'" >&2
+        exit 1
+        ;;
 esac
 
 #DEBHELPER#
