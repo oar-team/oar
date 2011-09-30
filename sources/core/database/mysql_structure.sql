@@ -201,6 +201,8 @@ INDEX resource (resource_id),
 INDEX attribute (attribute),
 INDEX finaud (finaud_decision),
 INDEX val (value),
+INDEX date_stop (date_stop),
+INDEX date_start (date_start),
 PRIMARY KEY (resource_log_id)
 );
 
