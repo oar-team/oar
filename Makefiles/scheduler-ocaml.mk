@@ -21,9 +21,6 @@ install: install_shared
 	    $(SRCDIR)/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_mysql \
 	    $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql
 
-setup: setup_shared
-	#Nothing to do
-
 uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(OARDIR)/hierarchy_extractor.rb
 	rm -f $(DESTDIR)$(OARDIR)/schedulers/oar_sched_ocaml_simple_cbf_mysql

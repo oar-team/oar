@@ -1,6 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 monika_setup() {
     install_conffile \

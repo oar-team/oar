@@ -1,7 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
-
 install_ssh_host_keys() {
     if [ ! -r %%OARCONFDIR%%/oar_ssh_host_rsa_key ]; then 
         rm -f %%OARCONFDIR%%/oar_ssh_host_rsa_key.pub

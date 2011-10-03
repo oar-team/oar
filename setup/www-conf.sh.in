@@ -1,6 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 www_conf_setup() {
     install_conffile \

@@ -1,3 +1,4 @@
+MODULE=oardo
 
 include Makefiles/shared/shared.mk
 
@@ -59,15 +60,7 @@ ifeq "$(CMD_TARGET)" ""
 	exit 1
 endif
 	install -d `dirname $(CMD_TARGET)`
-	install $(CMD_BUILDTARGET) $(CMD_TARGET)
-
-setup:
-ifeq "$(CMD_TARGET)" ""
-	echo "no CMD_TARGET given. Fail !"
-	exit 1
-endif
-	chown $(ROOTUSER):$(CMD_GROUP) $(CMD_TARGET)
-	chmod $(CMD_RIGHTS) $(CMD_TARGET)
+	install -m 0750 $(CMD_BUILDTARGET) $(CMD_TARGET)
 
 uninstall:
 ifeq "$(CMD_TARGET)" ""

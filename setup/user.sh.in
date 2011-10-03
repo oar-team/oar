@@ -1,0 +1,11 @@
+
+user_setup() {
+    set_rights %%BINDIR%%/oarnodes.old 6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oarnodes     6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oardel       6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oarstat.old  6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oarstat      6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oarsub       6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oarhold      6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%BINDIR%%/oarresume    6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+}

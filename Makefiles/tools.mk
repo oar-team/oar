@@ -19,13 +19,10 @@ build:
 
 install: build install_shared
 	install -d $(DESTDIR)$(OARDIR)
-	install $(OARDIR_BINFILES) $(DESTDIR)$(OARDIR)
+	install -m 0755 $(OARDIR_BINFILES) $(DESTDIR)$(OARDIR)
 	
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
-setup:  setup_shared
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
-	
 uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 

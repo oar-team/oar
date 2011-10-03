@@ -14,8 +14,6 @@ build:
 
 install: install_shared
 
-setup: setup_shared
-
 uninstall: uninstall_shared
 	# Nothing to do
 

@@ -1,6 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 create_oar_group() {
     if ! getent group %%OAROWNERGROUP%% > /dev/null 2>&1 ; then 
@@ -71,4 +68,11 @@ common_setup() {
         %%EXAMPLEDIR%%/update_cpuset_id.sh \
         %%OARCONFDIR%%/update_cpuset_id.sh \
         0755
+
+    set_rights %%OARDIR%%/oarsh_oardo     6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oarnodesetting 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+
+    set_rights %%OARDIR%%/oardodo/oardodo 6754 %%ROOTUSER%% %%OAROWNERGROUP%%
+    set_rights %%OARDIR%%/oardodo         0755 %%ROOTUSER%% %%OAROWNERGROUP%%
+    set_rights %%MANDIR%%/man1/oarcp.1    0644
 }

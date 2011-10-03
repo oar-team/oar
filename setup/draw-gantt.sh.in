@@ -1,6 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 draw_gantt_setup() {
 
@@ -16,4 +13,6 @@ draw_gantt_setup() {
     if [ ! -e "%%OARHOMEDIR%%/drawgantt-files/Icons" ]; then
         ln -sf %%WWWDIR%%/drawgantt-files/Icons %%OARHOMEDIR%%/drawgantt-files/Icons
     fi
+
+    set_rights %%OARHOMEDIR%%/drawgantt-files/cache 0755 %%WWWUSER%%
 }

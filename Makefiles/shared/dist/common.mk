@@ -31,11 +31,14 @@ export ROOTGROUP?=root
 export OARUSER?=oar
 export OAROWNER?=$(OARUSER)
 export OAROWNERGROUP?=$(OAROWNER)
+
+export OARDO_DEFAULTUSER?=$(ROOTUSER)
+export OARDO_DEFAULTGROUP?=$(OAROWNERGROUP)
+
 export WWWUSER?=www-data
 
 export WWW_ROOTDIR?=
 export XAUTHCMDPATH?=$(shell which xauth)
 export XAUTHCMDPATH?=/usr/bin/xauth
 export OARSHCMD?=oarsh_oardo
-
 

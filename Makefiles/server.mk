@@ -79,16 +79,16 @@ install: build install_before install_shared
 
 install_before:
 	install -d $(DESTDIR)$(OARDIR)/schedulers
-	install $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers 
+	install -m 0755 $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers 
 	
 	install -d $(DESTDIR)$(OARCONFDIR)
-	install $(OARCONFDIR_BINFILES) $(DESTDIR)$(OARCONFDIR)
+	install -m 0750 $(OARCONFDIR_BINFILES) $(DESTDIR)$(OARCONFDIR)
 	
-	install $(SRCDIR)/modules/almighty.pl $(DESTDIR)$(OARDIR)/Almighty
-	install $(SRCDIR)/modules/leon.pl $(DESTDIR)$(OARDIR)/Leon
-	install $(SRCDIR)/modules/sarko.pl $(DESTDIR)$(OARDIR)/sarko
-	install $(SRCDIR)/modules/finaud.pl $(DESTDIR)$(OARDIR)/finaud
-	install $(SRCDIR)/modules/node_change_state.pl $(DESTDIR)$(OARDIR)/NodeChangeState
+	install -m 0755 $(SRCDIR)/modules/almighty.pl $(DESTDIR)$(OARDIR)/Almighty
+	install -m 0755 $(SRCDIR)/modules/leon.pl $(DESTDIR)$(OARDIR)/Leon
+	install -m 0755 $(SRCDIR)/modules/sarko.pl $(DESTDIR)$(OARDIR)/sarko
+	install -m 0755 $(SRCDIR)/modules/finaud.pl $(DESTDIR)$(OARDIR)/finaud
+	install -m 0755 $(SRCDIR)/modules/node_change_state.pl $(DESTDIR)$(OARDIR)/NodeChangeState
 	
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
@@ -102,7 +102,7 @@ install_before:
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
 	
 	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d	
-	install setup/init.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/init.d
+	install -m 0755 setup/init.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/init.d
 	
 	install -d $(DESTDIR)$(EXAMPLEDIR)/default
 	install -m 0644  setup/default/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/default
@@ -110,20 +110,6 @@ install_before:
 	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
 	install -m 0644  setup/cron.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/cron.d
 
-setup: setup_shared
-	for file in $(OARCONFDIR_BINFILES); do chmod 0750 $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
-	
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarnotify CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnotify
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
-	
 uninstall: uninstall_shared
 	@for file in $(OARCONFDIR_FILES); do rm -f $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
 	@for file in $(OARSCHEDULER_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/schedulers/`basename $$file`; done

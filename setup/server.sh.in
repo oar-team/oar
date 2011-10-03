@@ -1,6 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 setup_oar_ssh() {
     if [ ! -e %%OARHOMEDIR%%/.ssh ]; then
@@ -58,5 +55,16 @@ server_setup() {
 
     setup_oar_ssh
     create_phoenix_home
+
+    set_rights %%SBINDIR%%/oar_resources_init 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/Almighty           6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oarnotify          6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oarremoveresource  6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oaraccounting      6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oarproperty        6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oarmonitor         6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oar_resources_init 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oar_checkdb        6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%SBINDIR%%/oar_phoenix        6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
 
 }

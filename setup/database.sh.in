@@ -1,3 +1,7 @@
+
 database_setup() {
+    set_rights %%SBINDIR%%/oar_mysql_db_init 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights %%SBINDIR%%/oar_psql_db_init  6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+
     echo "Currently, the oar database isn't setup automatically. Please install the database manually (using %%SBINDIR%%/oar_{mysql,psql}_db_init scripts)."
 }

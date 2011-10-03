@@ -29,11 +29,6 @@ install_before:
 	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.hourly
 	install -m 0644  setup/cron.hourly/oar-desktop-computing-cgi.in $(DESTDIR)$(EXAMPLEDIR)/cron.hourly 
 
-setup: setup_shared
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres CMD_RIGHTS=6755
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi CMD_GROUP=$(WWWUSER)
-
 uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres

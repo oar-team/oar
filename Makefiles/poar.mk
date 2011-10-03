@@ -26,9 +26,6 @@ install: install_shared
 	    $(SRCDIR)/variables.js \
 	    $(DESTDIR)$(WWWDIR)/poar 
 
-setup:  setup_shared
-	-chown -R $(WWWUSER) $(DESTDIR)$(WWWDIR)/poar/*
-
 uninstall: uninstall_shared
 	rm -rf "$(DESTDIR)$(WWWDIR)/poar/"
 

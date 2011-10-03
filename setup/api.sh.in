@@ -1,6 +1,3 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 api_setup() {
     install_conffile \
@@ -27,4 +24,8 @@ api_setup() {
         %%EXAMPLEDIR%%/api_html_postform_rule.pl \
         %%OARCONFDIR%%/api_html_postform_rule.pl \
         0644 %%OAROWNER%%
+    
+    set_rights %%CGIDIR%%/oarapi                  0750 %%OAROWNER%% %%WWWUSER%%
+    set_rights %%CGIDIR%%/oarapi/oarapi.cgi       6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights %%CGIDIR%%/oarapi/oarapi-debug.cgi 6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
 }

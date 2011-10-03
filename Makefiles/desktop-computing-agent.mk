@@ -24,17 +24,13 @@ install_before:
 	install -m 0644  $(AGENTDIR_FILES) $(DESTDIR)$(OARDIR)/desktop_computing
 	
 	install -d $(DESTDIR)$(BINDIR)
-	install $(SRCDIR)/lib/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
+	install -m 0755 $(SRCDIR)/lib/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
 	
 	install -d $(DESTDIR)$(SBINDIR)
-	install $(SRCDIR)/lib/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
+	install -m 0755 $(SRCDIR)/lib/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
 	
 	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d
-	install setup/init.d/oar-desktop-computing-agent.in $(DESTDIR)$(EXAMPLEDIR)/init.d
-
-
-setup: setup_shared
-	for file in $(AGENTDIR_FILES); do chmod 0644 $(DESTDIR)$(OARDIR)/desktop_computing/`basename $$file`; done
+	install -m 0755 setup/init.d/oar-desktop-computing-agent.in $(DESTDIR)$(EXAMPLEDIR)/init.d
 
 uninstall: uninstall_shared
 	for file in $(AGENTDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/desktop_computing/`basename $$file`; done

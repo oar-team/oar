@@ -20,18 +20,13 @@ install_before:
 	install -d $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
 	
 	install -d $(DESTDIR)$(CGIDIR)
-	install $(SRCDIR)/drawgantt.cgi.in $(DESTDIR)$(CGIDIR)
+	install -m 0755 $(SRCDIR)/drawgantt.cgi.in $(DESTDIR)$(CGIDIR)
 	
 	install -d $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons
 	install -m 0644  $(SRCDIR)/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons 
 	
 	install -d $(DESTDIR)$(WWWDIR)/drawgantt-files/js
 	install -m 0644  $(SRCDIR)/js/*.js $(DESTDIR)$(WWWDIR)/drawgantt-files/js 
-
-setup:  setup_shared
-	chown $(WWWUSER) $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
-	chmod 0644       $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons/*.png
-	chmod 0644       $(DESTDIR)$(WWWDIR)/drawgantt-files/js/*.js
 
 uninstall: uninstall_shared
 	rm -f \

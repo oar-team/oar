@@ -21,13 +21,10 @@ install: install_before install_shared
 
 install_before:
 	install -d $(DESTDIR)$(CGIDIR)
-	install $(SRCDIR)/monika.cgi.in $(DESTDIR)$(CGIDIR)
+	install -m 0755 $(SRCDIR)/monika.cgi.in $(DESTDIR)$(CGIDIR)
 	
 	install -d $(DESTDIR)$(WWWDIR)
-	install -m 0644  $(SRCDIR)/monika.css $(DESTDIR)$(WWWDIR)
-
-setup: setup_shared
-	chmod 0644 $(DESTDIR)$(WWWDIR)/monika.css
+	install -m 0644 $(SRCDIR)/monika.css $(DESTDIR)$(WWWDIR)
 
 uninstall: uninstall_shared
 	rm -f \

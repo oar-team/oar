@@ -1,0 +1,103 @@
+#! /bin/sh
+
+set -e
+
+PREFIX="%%PREFIX%%"
+BINDIR="%%BINDIR%%"
+CGIDIR="%%CGIDIR%%"
+DOCDIR="%%DOCDIR%%"
+EXAMPLEDIR="%%EXAMPLEDIR%%"
+ETCDIR="%%ETCDIR%%"
+OARCONFDIR="%%OARCONFDIR%%"
+OARDIR="%%OARDIR%%"
+SHAREDIR="%%SHAREDIR%%"
+PERLLIBDIR="%%PERLLIBDIR%%"
+RUNDIR="%%RUNDIR%%"
+LOGDIR="%%LOGDIR%%"
+MANDIR="%%MANDIR%%"
+SBINDIR="%%SBINDIR%%"
+VARLIBDIR="%%VARLIBDIR%%"
+OARHOMEDIR="%%OARHOMEDIR%%"
+ROOTUSER="%%ROOTUSER%%"
+ROOTGROUP="%%ROOTGROUP%%"
+OARDO_DEFAULTUSER="%%OARDO_DEFAULTUSER%%"
+OARDO_DEFAULTGROUP="%%OARDO_DEFAULTGROUP%%"
+OARUSER="%%OARUSER%%"
+OAROWNER="%%OAROWNER%%"
+OAROWNERGROUP="%%OAROWNERGROUP%%"
+WWWUSER="%%WWWUSER%%"
+WWW_ROOTDIR="%%WWW_ROOTDIR%%"
+WWWDIR="%%WWWDIR%%"
+XAUTHCMDPATH="%%XAUTHCMDPATH%%"
+OARSHCMD="%%OARSHCMD%%"
+INITDIR="%%INITDIR%%"
+DEFAULTDIR="%%DEFAULTDIR%%"
+SETUP_TYPE="%%SETUP_TYPE%%"
+TARGET_DIST="%%TARGET_DIST%%"
+
+#
+# shared functions for oar setup files.
+#
+
+
+install_conffile() {
+    local src dst rights owner
+    src=$1
+    dst=$2
+    rights=$3
+    owner=$4
+
+
+    case "%%SETUP_TYPE%%" in
+
+        "deb")
+            ucf --debconf-ok $src $dst 
+            if [ -n "$rights" ]; then
+                chmod $rights $dst
+            fi
+            if [ -n "$owner" ]; then
+                chown $owner $dst
+            fi
+            ;;
+        "rpm")
+            : # Don't known how to handle it
+            ;;
+        "tgz"|*)
+            install_if_not_exist $*
+            ;;
+    esac
+}
+
+
+install_if_not_exist() {
+    local src dst rights owner
+    src=$1
+    dst=$2
+    rights=$3
+    owner=$4
+
+        
+    if [ -f "$dst" ]; then 
+        :
+    else 
+        install $src $dst
+        if [ -n "$rights" ]; then
+            chmod $rights $dst
+        fi
+        if [ -n "$owner" ]; then
+            chown $owner $dst
+        fi
+    fi
+}
+
+set_rights() {
+  file=$1
+  perms=$2
+  owner=$3
+  group=$4
+
+  [ -n "$owner" ] && chown $owner $file
+  [ -n "$group" ] && chgrp $group $file
+  [ -n "$perms" ] && chmod $perms $file
+}
+
