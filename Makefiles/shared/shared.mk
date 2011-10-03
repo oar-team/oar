@@ -5,6 +5,12 @@ export OARDO_INSTALL   = $(MAKE) -f Makefiles/oardo/oardo.mk install
 export OARDO_SETPERMS     = $(MAKE) -f Makefiles/oardo/oardo.mk setup
 export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 
+# == 
+TARGET_DIST?=$(shell if [ -f /etc/debian_version ]; then echo "debian"; fi; \
+	             if [ -f /etc/redhat-release ]; then echo "redhat"; fi; \
+	      ) 
+# ==
+
 # == debian
 ifeq "$(TARGET_DIST)" "debian"
 
