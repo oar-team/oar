@@ -2,10 +2,8 @@ MODULE=user
 SRCDIR=sources/core
 
 OARDIR_BINFILES = $(SRCDIR)/qfunctions/oarnodes \
-		  $(SRCDIR)/qfunctions/oarnodes.v2_3 \
 		  $(SRCDIR)/qfunctions/oardel \
 		  $(SRCDIR)/qfunctions/oarstat \
-		  $(SRCDIR)/qfunctions/oarstat.v2_3 \
 		  $(SRCDIR)/qfunctions/oarsub \
 		  $(SRCDIR)/qfunctions/oarhold \
 		  $(SRCDIR)/qfunctions/oarresume
@@ -22,10 +20,8 @@ include Makefiles/shared/shared.mk
 
 clean:
 	$(MAKE) -f Makefiles/man.mk clean
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodes.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes.old 
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarstat.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat.old
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
@@ -33,10 +29,8 @@ clean:
 
 build:
 	$(MAKE) -f Makefiles/man.mk build
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodes.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes.old 
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarstat.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat.old
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
@@ -47,10 +41,8 @@ install: install_shared
 	install -m 0755 $(SRCDIR)/tools/oarmonitor_graph_gen.pl $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen
 	
 	# Install wrappers
-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes.old
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarstat.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat.old
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
@@ -59,10 +51,8 @@ install: install_shared
 uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen	
 	
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes.old 
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarstat.v2_3 CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat.old
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
