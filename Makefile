@@ -132,9 +132,6 @@ packages-build:
 	$(MAKE) -f Makefiles/common.mk build \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 	
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
 	$(MAKE) -f Makefiles/common-libs.mk build \
@@ -214,9 +211,6 @@ packages-install:
 	$(MAKE) -f Makefiles/common.mk install \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common 
 	
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
 	$(MAKE) -f Makefiles/common-libs.mk install \
@@ -294,9 +288,6 @@ packages-clean:
 	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar	
 	$(MAKE) -f Makefiles/common.mk clean \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common 
-	
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
 	
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
