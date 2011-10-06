@@ -16,7 +16,7 @@ Description: OAR batch scheduler common package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs the common part of the OAR batch scheduler
+ This package installs the common libraries of the OAR batch scheduler
 
 Package: oar-common
 Architecture: any
