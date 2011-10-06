@@ -9,6 +9,9 @@ EXAMPLEDIR_FILES= $(SRCDIR)/scripts/prologue \
 		  $(SRCDIR)/scripts/epilogue \
 		  $(SRCDIR)/tools/sshd_config.in
 
+MANDIR_FILES = $(SRCDIR)/man/man1/oarnodechecklist.1 \
+	       $(SRCDIR)/man/man1/oarnodecheckquery.1
+
 PROCESS_TEMPLATE_FILES = $(DESTDIR)$(EXAMPLEDIR)/init.d/oar-node.in \
 		 $(DESTDIR)$(EXAMPLEDIR)/cron.d/oar-node.in \
 		 $(DESTDIR)$(EXAMPLEDIR)/default/oar-node.in \

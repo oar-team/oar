@@ -7,6 +7,9 @@ OARDIR_DATAFILES = $(SRCDIR)/database/default_data.sql \
 		   $(SRCDIR)/database/pg_default_admission_rules.sql \
 		   $(SRCDIR)/database/pg_structure.sql
 
+MANDIR_FILES = $(SRCDIR)/man/man1/oar_mysql_db_init.1 \
+	       $(SRCDIR)/man/man1/oar_psql_db_init.1
+
 include Makefiles/shared/shared.mk
 
 clean:

@@ -23,12 +23,15 @@ OARSCHEDULER_BINFILES = $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesha
 OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl
 
 MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
-	       $(SRCDIR)/man/man1/oar_mysql_db_init.1 \
 	       $(SRCDIR)/man/man1/oaraccounting.1 \
 	       $(SRCDIR)/man/man1/oarmonitor.1 \
 	       $(SRCDIR)/man/man1/oarnotify.1 \
 	       $(SRCDIR)/man/man1/oarproperty.1 \
-	       $(SRCDIR)/man/man1/oarremoveresource.1
+	       $(SRCDIR)/man/man1/oarremoveresource.1 \
+	       $(SRCDIR)/man/man1/oar-server.1 \
+	       $(SRCDIR)/man/man1/oar_resources_init.1 \
+	       $(SRCDIR)/man/man1/oar_phoenix.1 \
+	       $(SRCDIR)/man/man1/oar_checkdb.1
 
 SBINDIR_FILES = $(SRCDIR)/server/sbin/oar-server.in
 

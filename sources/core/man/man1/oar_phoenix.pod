@@ -1,0 +1,23 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oar_phoenix - Check and automatically reboot Suspected nodes.
+
+=head1 SYNOPSIS
+
+B<oar_phoenix>
+
+=head1 DESCRIPTION
+
+This script check and automatically reboot Suspected nodes. This script is
+intended to be started periodically from cron.
+
+=head1 EXAMPLES
+
+You can add into the crontab :
+
+ */10 * * * *       root /usr/sbin/oar_phoenix
+
+=cut
+

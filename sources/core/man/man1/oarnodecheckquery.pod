@@ -1,0 +1,23 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oarnodecheckquery
+
+=head1 SYNOPSIS
+
+B<oarnodecheckquery>
+
+=head1 DESCRIPTION
+
+This command checks for the existence of the oarnodecheckrun stamp file and if
+it is older than one hour, then it runs oarnodecheckrun before looking into the
+checklog directory (NB: the OAR ping checker is not called while at least one
+job is running on a node)
+
+=head1 SEE ALSO
+
+see %%DOCIR%%/oarnodecheck/README
+
+=cut
+
