@@ -5,34 +5,30 @@ OARDIR_BINFILES = $(SRCDIR)/oarcache.pl \
 		  $(SRCDIR)/oarres.pl \
 		  $(SRCDIR)/oar-cgi.pl
 
-PROCESS_TEMPLATE_FILES = $(DESTDIR)$(EXAMPLEDIR)/cron.hourly/oar-desktop-computing-cgi.in
+CRONHOURLYDIR_FILES = setup/cron.hourly/oar-desktop-computing-cgi.in
+
+MANDIR_FILES = $(SRCDIR)/agent/man/man1/oarcache.pod
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres 
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
 
-build:
+build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
 
-install: install_before install_shared
-
-install_before:
+install: install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
-	
-	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.hourly
-	install -m 0644  setup/cron.hourly/oar-desktop-computing-cgi.in $(DESTDIR)$(EXAMPLEDIR)/cron.hourly 
 
 uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
-	rm -rf $(DESTDIR)$(EXAMPLEDIR)
 
 .PHONY: install setup uninstall build clean

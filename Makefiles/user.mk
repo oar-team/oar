@@ -18,7 +18,7 @@ MANDIR_FILES = $(SRCDIR)/man/man1/oardel.1 \
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(MAKE) -f Makefiles/man.mk clean
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
@@ -27,7 +27,7 @@ clean:
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 
-build:
+build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel

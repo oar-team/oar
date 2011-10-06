@@ -1,14 +1,14 @@
 =head1 NAME
 
-oaragent
+oar-agent-daemon - OAR agent daemon
 
 =head1 SYNOPSIS
 
-B<oaragent>
+B<oar-agent-daemon>
 
 =head1 DESCRIPTION
 
-
+oar-agent-daemon
 
 =head1 COPYRIGHTS
 

@@ -12,11 +12,11 @@ MANDIR_FILES = $(SRCDIR)/man/man1/oar_mysql_db_init.1 \
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init
 
-build:
+build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init CMD_USERTOBECOME=root
 

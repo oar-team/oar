@@ -17,7 +17,7 @@ intended to be started periodically from cron.
 
 You can add into the crontab :
 
- */10 * * * *       root /usr/sbin/oar_phoenix
+ */10 * * * *       root %%SBINDIR%%/oar_phoenix
 
 =cut
 

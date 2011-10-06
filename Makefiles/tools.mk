@@ -9,18 +9,15 @@ MANDIR_FILES = $(SRCDIR)/man/man1/oaradmin.1
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(MAKE) -f Makefiles/man.mk clean
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
-build:
+build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
 install: build install_shared
-	install -d $(DESTDIR)$(OARDIR)
-	install -m 0755 $(OARDIR_BINFILES) $(DESTDIR)$(OARDIR)
-	
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oaradmin.rb CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmin 
 
 uninstall: uninstall_shared

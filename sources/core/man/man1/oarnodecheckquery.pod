@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-oarnodecheckquery
+oarnodecheckquery - node checking
 
 =head1 SYNOPSIS
 
@@ -17,7 +17,7 @@ job is running on a node)
 
 =head1 SEE ALSO
 
-see %%DOCIR%%/oarnodecheck/README
+See %%DOCIR%%/oarnodecheck/README
 
 =cut
 

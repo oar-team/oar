@@ -43,15 +43,15 @@ EXAMPLEDIR_FILES = $(SRCDIR)/tools/job_resource_manager.pl \
 		   $(SRCDIR)/tools/wake_up_nodes.sh \
 		   $(SRCDIR)/tools/shut_down_nodes.sh
 
-PROCESS_TEMPLATE_FILES = $(DESTDIR)$(EXAMPLEDIR)/default/oar-server.in \
-			 $(DESTDIR)$(EXAMPLEDIR)/init.d/oar-server.in \
-			 $(DESTDIR)$(EXAMPLEDIR)/cron.d/oar-server.in \
-			 $(DESTDIR)$(SBINDIR)/oar-server.in 
+DEFAULTDIR_FILES = setup/default/oar-server.in
 
+INITDIR_FILES = setup/init.d/oar-server.in
+
+CRONDIR_FILES = setup/cron.d/oar-server.in
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(MAKE) -f Makefiles/man.mk clean
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
@@ -65,7 +65,7 @@ clean:
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 	
 
-build:
+build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
@@ -78,9 +78,7 @@ build:
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 	
-install: build install_before install_shared
-
-install_before:
+install: build install_shared
 	install -d $(DESTDIR)$(OARDIR)/schedulers
 	install -m 0755 $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers 
 	
@@ -103,15 +101,6 @@ install_before:
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
-	
-	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d	
-	install -m 0755 setup/init.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/init.d
-	
-	install -d $(DESTDIR)$(EXAMPLEDIR)/default
-	install -m 0644  setup/default/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/default
-	
-	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
-	install -m 0644  setup/cron.d/oar-server.in $(DESTDIR)$(EXAMPLEDIR)/cron.d
 
 uninstall: uninstall_shared
 	@for file in $(OARCONFDIR_FILES); do rm -f $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done

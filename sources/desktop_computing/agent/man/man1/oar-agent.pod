@@ -1,14 +1,14 @@
 =head1 NAME
 
-oar-agent-daemon
+oaragent - OAR Desktop Computing Agent
 
 =head1 SYNOPSIS
 
-B<oar-agent-daemon>
+B<oaragent>
 
 =head1 DESCRIPTION
 
-oar-agent-daemon
+
 
 =head1 COPYRIGHTS
 

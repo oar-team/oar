@@ -17,15 +17,13 @@ EXAMPLEDIR_FILES = $(SRCDIR)/oarapi_examples.txt \
 		   $(SRCDIR)/INSTALL \
 		   $(SRCDIR)/TODO
 
-PROCESS_TEMPLATE_FILES = $(DESTDIR)$(EXAMPLEDIR)/apache2.conf.in
-
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 
-build:
+build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 

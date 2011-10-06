@@ -3,11 +3,11 @@ SRCDIR=
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared 
 	$(MAKE) -C docs/documentation clean
 	rm -f docs/documentation/oar-documentation-devel.html
 
-build: build-html-doc
+build: build_shared build-html-doc
 
 install: build install_shared
 	install -d $(DESTDIR)$(DOCDIR)

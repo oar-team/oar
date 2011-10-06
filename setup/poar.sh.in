@@ -1,4 +1,0 @@
-
-poar_setup() {
-    chown -R %%WWWUSER%% %%WWWDIR%%/poar/*
-}

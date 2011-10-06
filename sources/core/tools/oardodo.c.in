@@ -29,14 +29,14 @@
 // Static conf to edit //
 /////////////////////////
 
-#define OARDIR "TT/usr/local/oar"
-#define OARCONFFILE "TT/etc/oar/oar.conf"
-#define OARXAUTHLOCATION "TT/usr/bin/xauth"
-#define OARUSER "TToar"
+#define OARDIR "TT%%OARDIR%%"
+#define OARCONFFILE "TT%%OARCONFDIR%%/oar.conf"
+#define OARXAUTHLOCATION "TT%%XAUTHCMDPATH%%"
+#define OARUSER "TT%%OAROWNER%%"
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define DEFAULTUSERTOBECOME "root"
+#define DEFAULTUSERTOBECOME "%%ROOTUSER%%"
 #define MAX_NB_SECONDARY_GROUPS 65536
 
 #include <stdlib.h>

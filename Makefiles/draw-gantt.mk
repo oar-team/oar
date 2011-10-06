@@ -1,26 +1,24 @@
 MODULE=draw-gantt
 SRCDIR=sources/visualization_interfaces/DrawGantt
 
-EXAMPLEDIR_FILES=$(SRCDIR)/drawgantt.conf.in
+EXAMPLEDIR_FILES=$(SRCDIR)/drawgantt.conf
 
-PROCESS_TEMPLATE_FILES= $(DESTDIR)$(EXAMPLEDIR)/drawgantt.conf.in \
-			$(DESTDIR)$(CGIDIR)/drawgantt.cgi.in
+PROCESS_TEMPLATE_FILES= $(SRCDIR)/drawgantt.conf.in \
+			$(SRCDIR)/drawgantt.cgi.in
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	# Nothing to do
 
-build: 
+build: build_shared
 	# Nothing to do
 
-install: install_before install_shared
-
-install_before:
+install: install_shared
 	install -d $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
 	
 	install -d $(DESTDIR)$(CGIDIR)
-	install -m 0755 $(SRCDIR)/drawgantt.cgi.in $(DESTDIR)$(CGIDIR)
+	install -m 0755 $(SRCDIR)/drawgantt.cgi $(DESTDIR)$(CGIDIR)
 	
 	install -d $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons
 	install -m 0644  $(SRCDIR)/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons 

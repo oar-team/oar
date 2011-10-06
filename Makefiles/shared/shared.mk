@@ -2,8 +2,10 @@
 export OARDO_BUILD     = $(MAKE) -f Makefiles/oardo/oardo.mk build
 export OARDO_CLEAN     = $(MAKE) -f Makefiles/oardo/oardo.mk clean
 export OARDO_INSTALL   = $(MAKE) -f Makefiles/oardo/oardo.mk install
-export OARDO_SETPERMS     = $(MAKE) -f Makefiles/oardo/oardo.mk setup
 export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
+
+SHARED_INSTALL   = $(MAKE) -f Makefiles/shared/common_target.mk install
+SHARED_UNINSTALL = $(MAKE) -f Makefiles/shared/common_target.mk uninstall
 
 # == 
 TARGET_DIST?=$(shell if [ -f /etc/debian_version ]; then echo "debian"; fi; \
@@ -37,86 +39,113 @@ endif
 
 include Makefiles/shared/dist/common.mk
 
-
 all:
 
+setup: setup_shared
+
+SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts init logrotate default cron cgi www
+
+
+clean_shared: clean_templates clean_man1
+build_shared: build_templates build_man1
+install_shared: $(patsubst %, install_%,$(SHARED_ACTIONS))
+setup_shared: run_setup_scripts
+uninstall_shared: $(patsubst %, uninstall_%,$(SHARED_ACTIONS))
+
 
 #
-# shared install (all the modules use the *_shared target)
+# template processing (*.in)
 #
-MODULE_SETUP_FILES=$(wildcard setup/$(MODULE)*.in)
-MODULE_SETUP_FILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basename $(MODULE_SETUP_FILES))))
-PROCESS_TEMPLATE_FILES+=$(MODULE_SETUP_FILES_DEST)
-install_shared: install_perllib install_oardata install_oarbin install_doc install_man1 install_bin install_sbin install_examples
-	if [ -n "$(wildcard setup/$(MODULE)*.in)" ]; then \
-		install -d $(DESTDIR)$(OARDIR)/setup; \
-		for file in $(wildcard setup/$(MODULE)*.in); do \
-			target_file=$(DESTDIR)$(OARDIR)/setup/`basename $$file .in`; \
-			cat setup/templates/header.sh.in $$file > $$target_file; \
-			chmod 0755 $$target_file; \
-		done ;\
-	fi
-ifdef PROCESS_TEMPLATE_FILES
-	for file in $(PROCESS_TEMPLATE_FILES); do \
-	    perl -i -pe "s#%%PREFIX%%#$(PREFIX)#g;;\
-	    		 s#%%BINDIR%%#$(BINDIR)#g;;\
-			 s#%%CGIDIR%%#$(CGIDIR)#g;;\
-			 s#%%DOCDIR%%#$(DOCDIR)#g;;\
-			 s#%%EXAMPLEDIR%%#$(EXAMPLEDIR)#g;;\
-			 s#%%ETCDIR%%#$(ETCDIR)#g;;\
-			 s#%%OARCONFDIR%%#$(OARCONFDIR)#g;;\
-			 s#%%OARDIR%%#$(OARDIR)#g;;\
-			 s#%%SHAREDIR%%#$(SHAREDIR)#g;;\
-			 s#%%PERLLIBDIR%%#$(PERLLIBDIR)#g;;\
-			 s#%%RUNDIR%%#$(RUNDIR)#g;;\
-			 s#%%LOGDIR%%#$(LOGDIR)#g;;\
-			 s#%%MANDIR%%#$(MANDIR)#g;;\
-			 s#%%SBINDIR%%#$(SBINDIR)#g;;\
-			 s#%%VARLIBDIR%%#$(VARLIBDIR)#g;;\
-			 s#%%OARHOMEDIR%%#$(OARHOMEDIR)#g;;\
-			 s#%%ROOTUSER%%#$(ROOTUSER)#g;;\
-			 s#%%ROOTGROUP%%#$(ROOTGROUP)#g;;\
-			 s#%%OARDO_DEFAULTUSER%%#$(OARDO_DEFAULTUSER)#g;;\
-			 s#%%OARDO_DEFAULTGROUP%%#$(OARDO_DEFAULTGROUP)#g;;\
-			 s#%%OARUSER%%#$(OARUSER)#g;;\
-			 s#%%OAROWNER%%#$(OAROWNER)#g;;\
-			 s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
-			 s#%%WWWUSER%%#$(WWWUSER)#g;;\
-			 s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
-			 s#%%WWWDIR%%#$(WWWDIR)#g;;\
-			 s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\
-			 s#%%OARSHCMD%%#$(OARSHCMD)#g;;\
-			 s#%%INITDIR%%#$(INITDIR)#g;;\
-			 s#%%DEFAULTDIR%%#$(DEFAULTDIR)#g;;\
-			 s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
-			 s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
-			 " "$$file"; \
-	   if [ "`basename $$file .in`" != "`basename $$file`" ]; then \
-	   	mv $$file "$$(dirname $$file)/$$(basename $$file .in)" ;\
-	   fi \
-	done
-endif
+MODULE_SETUP_SOURCE_FILES  = $(wildcard setup/$(MODULE)*.in)
+MODULE_SETUP_TARGET_FILES  = $(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basename $(MODULE_SETUP_SOURCE_FILES))))
+
+TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
+                                     $(MANDIR_FILES) \
+                                     $(INITDIR_FILES) \
+                                     $(DEFAULTDIR_FILES) \
+                                     $(LOGROTATEDIR_FILES) \
+                                     $(CRONDIR_FILES) \
+                                     $(CRONHOURLYDIR_FILES) \
+				     $(OARDIR_BINFILES) \
+				     $(OARDIR_DATAFILES) \
+				     $(DOCDIR_FILES) \
+				     $(BINDIR_FILES) \
+				     $(SBINDIR_FILES) \
+				     $(EXAMPLEDIR_FILES) \
+				     $(CGIDIR_FILES) \
+				     $(WWWDIR_FILES) \
+				     $(MODULE_SETUP_SOURCE_FILES) \
+				     setup/templates/header.sh.in \
+			)
+TEMPLATE_BUILDED_FILES=$(patsubst %.in,%,$(TEMPLATE_SOURCE_FILES))
+
+
+build_templates: $(TEMPLATE_BUILDED_FILES)
+
+$(TEMPLATE_BUILDED_FILES) : $(patsubst %, %.in,$*)
+	perl -pe "s#%%PREFIX%%#$(PREFIX)#g;;\
+	    s#%%BINDIR%%#$(BINDIR)#g;;\
+	    s#%%CGIDIR%%#$(CGIDIR)#g;;\
+	    s#%%DOCDIR%%#$(DOCDIR)#g;;\
+	    s#%%EXAMPLEDIR%%#$(EXAMPLEDIR)#g;;\
+	    s#%%ETCDIR%%#$(ETCDIR)#g;;\
+	    s#%%OARCONFDIR%%#$(OARCONFDIR)#g;;\
+	    s#%%OARDIR%%#$(OARDIR)#g;;\
+	    s#%%SHAREDIR%%#$(SHAREDIR)#g;;\
+	    s#%%PERLLIBDIR%%#$(PERLLIBDIR)#g;;\
+	    s#%%RUNDIR%%#$(RUNDIR)#g;;\
+	    s#%%LOGDIR%%#$(LOGDIR)#g;;\
+	    s#%%MANDIR%%#$(MANDIR)#g;;\
+	    s#%%SBINDIR%%#$(SBINDIR)#g;;\
+	    s#%%VARLIBDIR%%#$(VARLIBDIR)#g;;\
+	    s#%%OARHOMEDIR%%#$(OARHOMEDIR)#g;;\
+	    s#%%ROOTUSER%%#$(ROOTUSER)#g;;\
+	    s#%%ROOTGROUP%%#$(ROOTGROUP)#g;;\
+	    s#%%OARDO_DEFAULTUSER%%#$(OARDO_DEFAULTUSER)#g;;\
+	    s#%%OARDO_DEFAULTGROUP%%#$(OARDO_DEFAULTGROUP)#g;;\
+	    s#%%OARUSER%%#$(OARUSER)#g;;\
+	    s#%%OAROWNER%%#$(OAROWNER)#g;;\
+	    s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
+	    s#%%WWWUSER%%#$(WWWUSER)#g;;\
+	    s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
+	    s#%%WWWDIR%%#$(WWWDIR)#g;;\
+	    s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\
+	    s#%%OARSHCMD%%#$(OARSHCMD)#g;;\
+	    s#%%INITDIR%%#$(INITDIR)#g;;\
+	    s#%%DEFAULTDIR%%#$(DEFAULTDIR)#g;;\
+	    s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
+	    s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
+	    " "$@.in" > $@ 
+
+clean_templates:
+	-rm -f $(TEMPLATE_BUILDED_FILES)
+
 
 #
-# shared uninstall 
+# setup scripts
 #
-uninstall_shared: uninstall_perllib uninstall_oardata uninstall_oarbin uninstall_doc uninstall_man1 uninstall_bin uninstall_sbin uninstall_examples
-	rm -f $(DESTDIR)$(OARDIR)/Makefiles/$(MODULE).mk
-	rm -f $(DESTDIR)$(OARDIR)/setup/$(MODULE).*
 
-#
-# shared setup (for tarball install)
-#
 MODULE_SETUP_FILE:=$(DESTDIR)$(OARDIR)/setup/$(MODULE).sh
 MODULE_SETUP_FUNC:=$(subst -,_,$(MODULE))_setup
-setup_shared:
+run_setup_scripts:
 	if [ -f "$(MODULE_SETUP_FILE)" ]; then . $(MODULE_SETUP_FILE) && $(MODULE_SETUP_FUNC); fi
 
-setup: setup_shared
+install_setup_scripts: $(MODULE_SETUP_TARGET_FILES)
+
+uninstall_setup_scripts:
+	-rm -f $(MODULE_SETUP_TARGET_FILES)
+
+$(MODULE_SETUP_TARGET_FILES): setup/$(@F)
+	install -d $(DESTDIR)$(OARDIR)/setup
+	cat setup/templates/header.sh setup/$(@F) > $(DESTDIR)$(OARDIR)/setup/$(@F)
+	chmod 0755 $(DESTDIR)$(OARDIR)/setup/$(@F)
+
+
 
 #
 # OAR_PERLLIB
 #
+
 ifdef OAR_PERLLIB
 install_perllib:
 	install -m 0755 -d $(DESTDIR)$(PERLLIBDIR)
@@ -130,116 +159,148 @@ install_perllib:
 uninstall_perllib:
 endif
 
+
+
+
 #
 # OARDIR_DATAFILES
 #
-ifdef OARDIR_DATAFILES
-OARDIR_DATAFILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/,$(patsubst %.in,%,$(notdir $(OARDIR_DATAFILES))))
 install_oardata:
-	install -d $(DESTDIR)$(OARDIR)
-	install -m 0644  $(OARDIR_DATAFILES) $(DESTDIR)$(OARDIR)
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(OARDIR)" SOURCE_FILES="$(OARDIR_DATAFILES)" TARGET_FILE_RIGHTS=0644
+
 uninstall_oardata:
-	-rm -f $(OARDIR_DATAFILES_DEST)
-else
-install_oardata:
-uninstall_oardata:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(OARDIR)" SOURCE_FILES="$(OARDIR_DATAFILES)" TARGET_FILE_RIGHTS=0644
 
 #
 # OARDIR_BINFILES
 #
-ifdef OARDIR_BINFILES
-OARDIR_BINFILES_DEST=$(addprefix $(DESTDIR)$(OARDIR)/,$(patsubst %.in,%,$(notdir $(OARDIR_BINFILES))))
 install_oarbin:
-	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0755  $(OARDIR_BINFILES) $(DESTDIR)$(OARDIR)
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(OARDIR)" SOURCE_FILES="$(OARDIR_BINFILES)" TARGET_FILE_RIGHTS=0755
 
 uninstall_oarbin:
-	-rm -f $(OARDIR_BINFILES_DEST)
-else
-install_oarbin:
-uninstall_oarbin:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(OARDIR)" SOURCE_FILES="$(OARDIR_BINFILES)" TARGET_FILE_RIGHTS=0755
 
 #
 # DOCDIR_FILES
 #
-ifdef DOCDIR_FILES
-DOCDIR_FILES_DEST=$(addprefix $(DESTDIR)$(DOCDIR)/,$(patsubst %.in,%,$(notdir $(DOCDIR_FILES))))
 install_doc:
-	install -d $(DESTDIR)$(DOCDIR)
-	install -m 0644  $(DOCDIR_FILES) $(DESTDIR)$(DOCDIR)
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(DOCDIR)" SOURCE_FILES="$(DOCDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_doc:
-	-rm -f $(DOCDIR_FILES_DEST)
-else
-install_doc:
-uninstall_doc:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(DOCDIR)" SOURCE_FILES="$(DOCDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 #
 # MANDIR_FILES
 #
-ifdef MANDIR_FILES
-MANDIR_FILES_DEST=$(addprefix $(DESTDIR)$(MANDIR)/man1/,$(patsubst %.in,%,$(notdir $(MANDIR_FILES))))
-install_man1:
-	install -d $(DESTDIR)$(MANDIR)/man1
-	install -m 0644  $(MANDIR_FILES) $(DESTDIR)$(MANDIR)/man1
+SOURCE_MANDIR_FILES = $(filter %.pod, $(patsubst %.pod.in, %.pod, $(MANDIR_FILES)))
+BUILD_MANDIR_FILES = $(patsubst %.pod, %.1, $(SOURCE_MANDIR_FILES)) $(filter %.1,$(MANDIR_FILES))
+TARGET_MANDIR_FILES = $(addprefix $(DESTDIR)$(MANDIR)/man1, $(notdir $(BUILD_MANDIR_FILES)))
+
+install_man1: 
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MANDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_man1:
-	-rm -f $(MANDIR_FILES_DEST)
-else
-install_man1:
-uninstall_man1:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MANDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+build_man1: $(BUILD_MANDIR_FILES)
+
+clean_man1:
+	-rm -f $(BUILD_MANDIR_FILES)
+
+%.1: %.pod
+	pod2man --section=1 --release="$(notdir $(basename $<))" --center "OAR commands" --name="$(notdir $(basename $<))" "$<" > $@
+
 
 #
 # BINDIR_FILES
 #
-ifdef BINDIR_FILES
-BINDIR_FILES_DEST=$(addprefix $(DESTDIR)$(BINDIR)/,$(patsubst %.in,%,$(notdir $(BINDIR_FILES))))
 install_bin:
-	install -m 0755 -d $(DESTDIR)$(BINDIR)
-	install -m 0755  $(BINDIR_FILES) $(DESTDIR)$(BINDIR)
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(BINDIR)" SOURCE_FILES="$(BINDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 uninstall_bin:
-	-rm -f $(BINDIR_FILES_DEST)
-else
-install_bin:
-uninstall_bin:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(BINDIR)" SOURCE_FILES="$(BINDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 #
 # SBINDIR_FILES
 #
-ifdef SBINDIR_FILES
-SBINDIR_FILES_DEST=$(addprefix $(DESTDIR)$(SBINDIR)/,$(patsubst %.in,%,$(notdir $(SBINDIR_FILES))))
 install_sbin:
-	install -m 0755 -d $(DESTDIR)$(SBINDIR)
-	install -m 0755  $(SBINDIR_FILES) $(DESTDIR)$(SBINDIR)
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SBINDIR)" SOURCE_FILES="$(SBINDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 uninstall_sbin:
-	-rm -f $(SBINDIR_FILES_DEST)
-else
-install_sbin:
-uninstall_sbin:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SBINDIR)" SOURCE_FILES="$(SBINDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 #
 # EXAMPLEDIR_FILES
 #
-ifdef EXAMPLEDIR_FILES
-EXAMPLEDIR_FILES_DEST=$(addprefix $(DESTDIR)$(EXAMPLEDIR)/,$(patsubst %.in,%,$(notdir $(EXAMPLEDIR_FILES))))
 install_examples:
-	install -m 0755 -d $(DESTDIR)$(EXAMPLEDIR)
-	install -m 0644  $(EXAMPLEDIR_FILES) $(DESTDIR)$(EXAMPLEDIR)
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)" SOURCE_FILES="$(EXAMPLEDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_examples:
-	-rm -f $(EXAMPLEDIR_FILES_DEST)
-else
-install_examples:
-uninstall_examples:
-endif
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)" SOURCE_FILES="$(EXAMPLEDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+#
+# INITDIR_FILES
+#
+install_init:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/init.d" SOURCE_FILES="$(INITDIR_FILES)" TARGET_FILE_RIGHTS=0755
+
+uninstall_init:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/init.d" SOURCE_FILES="$(INITDIR_FILES)" TARGET_FILE_RIGHTS=0755
+
+
+#
+# CRONDIR_FILES
+#
+install_cron:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/cron.d" SOURCE_FILES="$(CRONDIR_FILES)" TARGET_FILE_RIGHTS=0644
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/cron.hourly" SOURCE_FILES="$(CRONHOURLYDIR_FILES)" TARGET_FILE_RIGHTS=0755
+
+uninstall_cron:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/cron.d" SOURCE_FILES="$(CRONDIR_FILES)" TARGET_FILE_RIGHTS=0644
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/cron.hourly" SOURCE_FILES="$(CRONHOURLYDIR_FILES)" TARGET_FILE_RIGHTS=0755
+
+
+#
+# DEFAULTDIR_FILES
+#
+install_default:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/default" SOURCE_FILES="$(DEFAULTDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+uninstall_default:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/default" SOURCE_FILES="$(DEFAULTDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+
+#
+# LOGROTATEDIR_FILES
+#
+install_logrotate:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/logrotate.d" SOURCE_FILES="$(LOGROTATEDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+uninstall_logrotate:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(EXAMPLEDIR)/logrotate.d" SOURCE_FILES="$(LOGROTATEDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+#
+# CGIDIR_FILES
+#
+install_cgi:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(CGIDIR)" SOURCE_FILES="$(CGIDIR_FILES)" TARGET_FILE_RIGHTS=0755
+
+uninstall_cgi:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(CGIDIR)" SOURCE_FILES="$(CGIDIR_FILES)" TARGET_FILE_RIGHTS=0755
+
+#
+# WWWDIR_FILES
+#
+install_www:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(WWWDIR)" SOURCE_FILES="$(WWWDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+uninstall_www:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(WWWDIR)" SOURCE_FILES="$(WWWDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+
+
+
+
 
 .PHONY: install setup uninstall build clean
 

@@ -12,42 +12,28 @@ EXAMPLEDIR_FILES= $(SRCDIR)/scripts/prologue \
 MANDIR_FILES = $(SRCDIR)/man/man1/oarnodechecklist.1 \
 	       $(SRCDIR)/man/man1/oarnodecheckquery.1
 
-PROCESS_TEMPLATE_FILES = $(DESTDIR)$(EXAMPLEDIR)/init.d/oar-node.in \
-		 $(DESTDIR)$(EXAMPLEDIR)/cron.d/oar-node.in \
-		 $(DESTDIR)$(EXAMPLEDIR)/default/oar-node.in \
-		 $(DESTDIR)$(EXAMPLEDIR)/sshd_config.in \
-		 $(DESTDIR)$(OARDIR)/oarnodecheckrun.in \
-		 $(DESTDIR)$(BINDIR)/oarnodechecklist.in \
-		 $(DESTDIR)$(BINDIR)/oarnodecheckquery.in 
+INITDIR_FILES = setup/init.d/oar-node.in
+
+CRONDIR_FILES = setup/cron.d/oar-node.in
+
+DEFAULTDIR_FILES = setup/default/oar-node.in
 
 include Makefiles/shared/shared.mk
 
-build:
+build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
 
-clean:
+clean: clean_shared
 	$(MAKE) -f Makefiles/man.mk clean
 
-install: build install_before install_shared
-
-install_before:
+install: install_shared
 	install -d $(DESTDIR)$(OARCONFDIR)/check.d
-	
-	install -d $(DESTDIR)$(EXAMPLEDIR)/init.d	
-	install -m 0755 setup/init.d/oar-node.in $(DESTDIR)$(EXAMPLEDIR)/init.d
-	
-	install -d $(DESTDIR)$(EXAMPLEDIR)/default
-	install -m 0644 setup/default/oar-node.in $(DESTDIR)$(EXAMPLEDIR)/default
-		
-	install -d $(DESTDIR)$(EXAMPLEDIR)/cron.d
-	install -m 0644 setup/cron.d/oar-node.in $(DESTDIR)$(EXAMPLEDIR)/cron.d
 	
 	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck 
 	install -m 0644 sources/core/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 sources/core/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
 	
 uninstall: uninstall_shared
-	rm -rf $(DESTDIR)$(EXAMPLEDIR)
 	
 
 

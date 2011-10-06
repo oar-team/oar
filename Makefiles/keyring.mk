@@ -3,10 +3,10 @@ MODULE=keyring
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	# Nothing to do
 
-build:
+build: build_shared
 	# Nothing to do
 
 uninstall: uninstall_shared

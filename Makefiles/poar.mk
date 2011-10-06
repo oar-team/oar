@@ -3,10 +3,10 @@ SRCDIR=sources/visualization_interfaces/poar
 
 include Makefiles/shared/shared.mk
 
-build: 
+build: build_shared 
 	# Nohting to do
 
-clean:
+clean: clean_shared
 	# Nothing to do
 
 install: install_shared
