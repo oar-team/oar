@@ -76,6 +76,7 @@ version 2.5.0:
     variable does not contain ~/.Xauthority (GDM issue).
   - Add job_resource_manager_cgroups which handles cpuset + other cgroup
     features like network packet tagging, IO disk shares, ...
+  - Bugfix #13351: now oar_psql_db_init is executed with root privileges
 
 version 2.4.4:
 --------------

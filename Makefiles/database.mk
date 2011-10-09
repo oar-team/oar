@@ -15,7 +15,7 @@ clean:
 
 build:
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_mysql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_mysql_db_init
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_psql_db_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_psql_db_init CMD_USERTOBECOME=root
 
 install: install_shared
 	install $(SRCDIR)/database/oar_mysql_db_init.pl $(DESTDIR)$(OARDIR)/oar_mysql_db_init
