@@ -77,6 +77,8 @@ version 2.5.0:
   - Add job_resource_manager_cgroups which handles cpuset + other cgroup
     features like network packet tagging, IO disk shares, ...
   - Bugfix #13351: now oar_psql_db_init is executed with root privileges
+  - Bugfix #13434: reservation were not handled correctly with the energy
+    saving feature
 
 version 2.4.4:
 --------------
