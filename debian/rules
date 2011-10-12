@@ -65,7 +65,7 @@ override_dh_auto_install:
 	# use libjs-jquery instead of the embedded one.
 	rm $(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
 	ln -s /usr/share/javascript/jquery/jquery.js  $(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
-	
+		
 	dh_install -i
 
 override_dh_clean:

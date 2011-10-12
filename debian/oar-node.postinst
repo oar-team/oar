@@ -4,8 +4,7 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
+. /usr/lib/oar/setup/node.sh
 
 print_install_message() {
     cat << EOF
@@ -25,7 +24,7 @@ EOF
 
 case "$1" in
     configure)
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/node.mk setup
+        node_setup
         print_install_message
         ;;
 

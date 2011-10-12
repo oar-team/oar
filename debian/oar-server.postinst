@@ -4,13 +4,13 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
+. /usr/lib/oar/setup/server.sh
+. /usr/lib/oar/setup/database.sh
 
 case "$1" in
     configure)
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/server.mk setup
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/database.mk setup
+        server_setup
+        database_setup
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

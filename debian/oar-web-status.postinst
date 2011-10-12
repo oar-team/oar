@@ -4,15 +4,15 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
+. /usr/lib/oar/setup/www-conf.sh
+. /usr/lib/oar/setup/monika.sh
+. /usr/lib/oar/setup/draw-gantt.sh
 
 case "$1" in
     configure)
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/www-conf.mk setup
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/monika.mk setup
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/draw-gantt.mk setup
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/poar.mk setup
+        www_conf_setup
+        monika_setup
+        draw_gantt_setup
 
         ln -s /etc/oar/apache.conf /etc/apache2/conf.d/oar-web-status.conf || true
 

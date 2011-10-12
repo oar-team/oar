@@ -4,13 +4,11 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
-
+. /usr/lib/oar/setup/common.sh
 
 case "$1" in
     configure)
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/common.mk setup
+        common_setup
         if [ -n "$2" ]; then
             # Upgrading a package
             if dpkg --compare-versions "$2" le 2.3.4; then

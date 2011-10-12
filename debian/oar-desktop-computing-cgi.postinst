@@ -4,13 +4,12 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
+. /usr/lib/oar/setup/desktop-computing-cgi.sh
 
 case "$1" in
     configure)
         adduser www-data oar || true
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/desktop-computing-cgi.mk setup
+        desktop_computing_cgi_setup
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

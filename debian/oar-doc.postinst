@@ -4,12 +4,8 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
-
 case "$1" in
     configure)
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/doc.mk setup
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

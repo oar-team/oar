@@ -4,9 +4,7 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-MAKE="make TARGET_DIST=debian SETUP_TYPE=deb DESTDIR="
-OARDIR=/usr/lib/oar
-
+. /usr/lib/oar/setup/api.sh
 
 print_api_installation_message () {
     echo "
@@ -26,7 +24,7 @@ and activated into your system (generally through xinetd).
 
 case "$1" in
     configure)
-        $MAKE -C $OARDIR -f $OARDIR/Makefiles/api.mk setup
+        api_setup
 
         ln -s /etc/oar/apache-api.conf /etc/apache2/conf.d/oar-api.conf
         print_api_installation_message
