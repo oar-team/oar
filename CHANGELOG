@@ -7,6 +7,8 @@ Not yet released
   - Fix the user variable used in oarsh. When using oarsh from the frontal, the
     variable OAR_USER was not defined in the environment, and make oarsh unable
     to read the user private key file.
+  - Backport: Bugfix #13434: reservation were not handled correctly with the 
+    energy saving feature
 
 version 2.4.5:
 -------------
