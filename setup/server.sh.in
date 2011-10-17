@@ -1,70 +1,70 @@
 
 setup_oar_ssh() {
-    if [ ! -e %%OARHOMEDIR%%/.ssh ]; then
-        mkdir -p %%OARHOMEDIR%%/.ssh
-        ssh-keygen -t rsa -q -f %%OARHOMEDIR%%/.ssh/id_rsa -N '' || true
-        echo -n 'environment="OAR_KEY=1" ' > %%OARHOMEDIR%%/.ssh/authorized_keys || true
-        cat %%OARHOMEDIR%%/.ssh/id_rsa.pub >> %%OARHOMEDIR%%/.ssh/authorized_keys || true
-        cat <<-EOF > %%OARHOMEDIR%%/.ssh/config || true
+    if [ ! -e ${OARHOMEDIR}/.ssh ]; then
+        mkdir -p ${OARHOMEDIR}/.ssh
+        ssh-keygen -t rsa -q -f ${OARHOMEDIR}/.ssh/id_rsa -N '' || true
+        echo -n 'environment="OAR_KEY=1" ' > ${OARHOMEDIR}/.ssh/authorized_keys || true
+        cat ${OARHOMEDIR}/.ssh/id_rsa.pub >> ${OARHOMEDIR}/.ssh/authorized_keys || true
+        cat <<-EOF > ${OARHOMEDIR}/.ssh/config || true
 	Host *
 	ForwardX11 no
 	StrictHostKeyChecking no
 	PasswordAuthentication no
 	AddressFamily inet
 	EOF
-        chown %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%/.ssh -R || true
+        chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.ssh -R || true
     fi
 }
 
 create_phoenix_home() {
-    mkdir -p %%OARHOMEDIR%%/phoenix
-    chown %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%/phoenix
+    mkdir -p ${OARHOMEDIR}/phoenix
+    chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/phoenix
 }
 
 server_setup() {
     install_conffile \
-        %%EXAMPLEDIR%%/job_resource_manager.pl \
-        %%OARCONFDIR%%/job_resource_manager.pl \
+        ${EXAMPLEDIR}/job_resource_manager.pl \
+        ${OARCONFDIR}/job_resource_manager.pl \
         0644
 
     install_conffile \
-        %%EXAMPLEDIR%%/suspend_resume_manager.pl \
-        %%OARCONFDIR%%/suspend_resume_manager.pl \
+        ${EXAMPLEDIR}/suspend_resume_manager.pl \
+        ${OARCONFDIR}/suspend_resume_manager.pl \
         0644
 
     install_conffile \
-        %%EXAMPLEDIR%%/oarmonitor_sensor.pl \
-        %%OARCONFDIR%%/oarmonitor_sensor.pl \
+        ${EXAMPLEDIR}/oarmonitor_sensor.pl \
+        ${OARCONFDIR}/oarmonitor_sensor.pl \
         0644
 
     install_conffile \
-        %%EXAMPLEDIR%%/wake_up_nodes.sh \
-        %%OARCONFDIR%%/wake_up_nodes.sh
+        ${EXAMPLEDIR}/wake_up_nodes.sh \
+        ${OARCONFDIR}/wake_up_nodes.sh
 
     install_conffile \
-        %%EXAMPLEDIR%%/shut_down_nodes.sh \
-        %%OARCONFDIR%%/shut_down_nodes.sh
+        ${EXAMPLEDIR}/shut_down_nodes.sh \
+        ${OARCONFDIR}/shut_down_nodes.sh
 
     install_conffile \
-        %%EXAMPLEDIR%%/server_prologue \
-        %%OARCONFDIR%%/server_prologue
+        ${EXAMPLEDIR}/server_prologue \
+        ${OARCONFDIR}/server_prologue
 
     install_conffile \
-        %%EXAMPLEDIR%%/server_epilogue \
-        %%OARCONFDIR%%/server_epilogue
+        ${EXAMPLEDIR}/server_epilogue \
+        ${OARCONFDIR}/server_epilogue
 
     setup_oar_ssh
     create_phoenix_home
 
-    set_rights %%SBINDIR%%/oar_resources_init 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/Almighty           6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oarnotify          6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oarremoveresource  6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oaraccounting      6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oarproperty        6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oarmonitor         6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oar_resources_init 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oar_checkdb        6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oar_phoenix        6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights ${SBINDIR}/oar_resources_init 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/Almighty           6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarnotify          6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarremoveresource  6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oaraccounting      6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarproperty        6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarmonitor         6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_resources_init 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_checkdb        6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_phoenix        6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
 }

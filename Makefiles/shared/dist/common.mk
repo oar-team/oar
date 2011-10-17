@@ -41,7 +41,6 @@ export OARDO_DEFAULTGROUP?=$(OAROWNERGROUP)
 export WWWUSER?=www-data
 
 export WWW_ROOTDIR?=
-export XAUTHCMDPATH?=$(shell which xauth)
 export XAUTHCMDPATH?=/usr/bin/xauth
 export OARSHCMD?=oarsh_oardo
 

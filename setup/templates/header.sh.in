@@ -42,25 +42,12 @@ TARGET_DIST="%%TARGET_DIST%%"
 # shared functions for oar setup files.
 #
 
-
 install_conffile() {
-    local src dst rights owner
-    src=$1
-    dst=$2
-    rights=$3
-    owner=$4
 
-
-    case "%%SETUP_TYPE%%" in
-
+    
+    case "${SETUP_TYPE}" in
         "deb")
-            ucf --debconf-ok $src $dst 
-            if [ -n "$rights" ]; then
-                chmod $rights $dst
-            fi
-            if [ -n "$owner" ]; then
-                chown $owner $dst
-            fi
+            install_deb_conffile $*
             ;;
         "rpm")
             : # Don't known how to handle it
@@ -69,8 +56,37 @@ install_conffile() {
             install_if_not_exist $*
             ;;
     esac
+
 }
 
+
+install_deb_conffile() {
+    local src dst rights owner tmpfile
+    src=$1
+    dst=$2
+    rights=$3
+    owner=$4
+
+    # Decompress the file, if compressed
+    tmpfile=
+    if [ ! -f "$src" ] && [ -f "${src}.gz" ]; then
+        tmpfile=$(tempfile)
+        zcat ${src}.gz > $tmpfile
+        src=$tmpfile
+    fi
+
+    ucf --debconf-ok $src $dst 
+    if [ -n "$rights" ]; then
+        chmod $rights $dst
+    fi
+    if [ -n "$owner" ]; then
+        chown $owner $dst
+    fi
+    
+    if [ -f "$tmpfile" ]; then
+        rm -f "$tmpfile"
+    fi
+}
 
 install_if_not_exist() {
     local src dst rights owner
@@ -80,6 +96,14 @@ install_if_not_exist() {
     owner=$4
 
         
+    # Decompress the file, if compressed
+    tmpfile=
+    if [ ! -f "$src" ] && [ -f "${src}.gz" ]; then
+        tmpfile=$(tempfile)
+        zcat ${src}.gz > $tmpfile
+        src=$tmpfile
+    fi
+
     if [ -f "$dst" ]; then 
         :
     else 
@@ -90,6 +114,10 @@ install_if_not_exist() {
         if [ -n "$owner" ]; then
             chown $owner $dst
         fi
+    fi
+    
+    if [ -f "$tmpfile" ]; then
+        rm -f "$tmpfile"
     fi
 }
 

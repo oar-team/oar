@@ -1,4 +1,4 @@
 
 tools_setup() {
-    set_rights %%SBINDIR%%/oaradmin 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%% 
+    set_rights ${SBINDIR}/oaradmin 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
 }

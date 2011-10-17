@@ -10,7 +10,7 @@ SHARED_UNINSTALL = $(MAKE) -f Makefiles/shared/common_target.mk uninstall
 # == 
 TARGET_DIST?=$(shell if [ -f /etc/debian_version ]; then echo "debian"; fi; \
 	             if [ -f /etc/redhat-release ]; then echo "redhat"; fi; \
-	      ) 
+	      )
 # ==
 
 # == debian
@@ -46,17 +46,21 @@ setup: setup_shared
 SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts init logrotate default cron cgi www
 
 
-clean_shared: clean_templates clean_man1
-build_shared: build_templates build_man1
-install_shared: $(patsubst %, install_%,$(SHARED_ACTIONS))
+clean_shared: clean_templates clean_man1 clean_setup_scripts
+build_shared: build_templates build_man1 build_setup_scripts
+	rm -f setup/templates/header.sh
+
+install_shared: $(patsubst %, install_%,$(SHARED_ACTIONS)) install_setup_scripts
 setup_shared: run_setup_scripts
-uninstall_shared: $(patsubst %, uninstall_%,$(SHARED_ACTIONS))
+uninstall_shared: $(patsubst %, uninstall_%,$(SHARED_ACTIONS)) uninstall_setup_scripts
 
 
 #
 # template processing (*.in)
 #
 MODULE_SETUP_SOURCE_FILES  = $(wildcard setup/$(MODULE)*.in)
+MODULE_SETUP_TOBUILD_FILES  = $(patsubst %.in, %, $(MODULE_SETUP_SOURCE_FILES))
+MODULE_SETUP_BUILDED_FILES  = $(patsubst %.in, %.out, $(MODULE_SETUP_SOURCE_FILES))
 MODULE_SETUP_TARGET_FILES  = $(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basename $(MODULE_SETUP_SOURCE_FILES))))
 
 TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
@@ -132,15 +136,20 @@ run_setup_scripts:
 
 install_setup_scripts: $(MODULE_SETUP_TARGET_FILES)
 
+build_setup_scripts: $(MODULE_SETUP_BUILDED_FILES)
+
+$(MODULE_SETUP_BUILDED_FILES): $(MODULE_SETUP_TOBUILD_FILES)
+	cat setup/templates/header.sh $< > $@
+
+clean_setup_scripts:
+	-rm -f $(MODULE_SETUP_BUILDED_FILES)
+
 uninstall_setup_scripts:
 	-rm -f $(MODULE_SETUP_TARGET_FILES)
 
-$(MODULE_SETUP_TARGET_FILES): setup/$(@F)
+$(MODULE_SETUP_TARGET_FILES): $(MODULE_SETUP_BUILDED_FILES)
 	install -d $(DESTDIR)$(OARDIR)/setup
-	cat setup/templates/header.sh setup/$(@F) > $(DESTDIR)$(OARDIR)/setup/$(@F)
-	chmod 0755 $(DESTDIR)$(OARDIR)/setup/$(@F)
-
-
+	install -m 0755 $< $@
 
 #
 # OAR_PERLLIB

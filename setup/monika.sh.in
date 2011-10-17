@@ -1,8 +1,8 @@
 
 monika_setup() {
     install_conffile \
-        %%EXAMPLEDIR%%/monika.conf \
-        %%OARCONFDIR%%/monika.conf \
+        ${EXAMPLEDIR}/monika.conf \
+        ${OARCONFDIR}/monika.conf \
         0600 \
-        %%WWWUSER%%
+        ${WWWUSER}
 }

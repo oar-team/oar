@@ -1,48 +1,57 @@
 
 create_oar_group() {
-    if ! getent group %%OAROWNERGROUP%% > /dev/null 2>&1 ; then 
-        groupadd --system %%OAROWNERGROUP%% > /dev/null 2>&1 
+    if ! getent group ${OAROWNERGROUP} > /dev/null 2>&1 ; then 
+        groupadd --system ${OAROWNERGROUP} > /dev/null 2>&1 
     fi
 }
 create_oar_user() {    
     # Create oar user
-    if ! getent passwd %%OAROWNER%% > /dev/null 2>&1 ; then 
-        adduser --system --home %%OARHOMEDIR%% -g %%OAROWNERGROUP%% --shell /bin/bash %%OAROWNER%% > /dev/null 2>&1 
-        passwd -u %%OAROWNER%% >/dev/null 2>&1 
-        cd %%OARHOMEDIR%% 
+    if ! getent passwd ${OAROWNER} > /dev/null 2>&1 ; then 
+        case "$TARGET_DIST" in
+            "debian")
+                adduser --system --home ${OARHOMEDIR} --group ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
+                ;;
+            *)
+                useradd --system --home ${OARHOMEDIR} -g ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
+                ;;
+        esac
+
+
+        passwd -u ${OAROWNER} >/dev/null 2>&1 
+        cd ${OARHOMEDIR} 
         echo '' >> .bash_profile 
-        echo "export PATH=\"%%OARDIR%%/oardodo:$PATH\"" >> .bash_profile 
-        chown %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%/.bash_profile 
+        echo "export PATH=\"${OARDIR}/oardodo:$PATH\"" >> .bash_profile 
+        chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bash_profile 
         ln -s -f .bash_profile .bashrc 
-        chown %%OAROWNER%%:%%OAROWNERGROUP%% .bashrc 
+        chown ${OAROWNER}:${OAROWNERGROUP} .bashrc 
     fi
 
     # Unlock the oar user
-    usermod -p"*" %%OAROWNER%%
-    usermod -U %%OAROWNER%%
+    usermod -p"*" ${OAROWNER}
+    usermod -U ${OAROWNER}
 
     # Create home if needed
-    if [ ! -d %%OARHOMEDIR%% ]; then 
-        mkdir -p %%OARHOMEDIR%%
+    if [ ! -d ${OARHOMEDIR} ]; then 
+        mkdir -p ${OARHOMEDIR}
     fi
-    chown -R %%OAROWNER%%:%%OAROWNERGROUP%% %%OARHOMEDIR%%
+    chown -R ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}
 }
 
 install_run_dir() {
     # Install run dir
-    install -o %%OAROWNER%% -m 755 -d %%RUNDIR%%/oar
+    install -o ${OAROWNER} -m 755 -d ${RUNDIR}/oar
 }
 
 set_oar_shell() {
     # set OAR shell
-    if [ "`getent passwd %%OAROWNER%% |cut -f7 -d:`" != "%%OARDIR%%/oarsh_shell" ]; then 
-        chsh -s %%OARDIR%%/oarsh_shell %%OAROWNER%% 
+    if [ "`getent passwd ${OAROWNER} |cut -f7 -d:`" != "${OARDIR}/oarsh_shell" ]; then 
+        chsh -s ${OARDIR}/oarsh_shell ${OAROWNER} 
     fi 
 }
 
 create_log_file() {
     # Log file
-    touch %%LOGDIR%%/oar.log && chown %%OAROWNER%%:%%ROOTGROUP%% %%LOGDIR%%/oar.log && chmod 0644 %%LOGDIR%%/oar.log || true
+    touch ${LOGDIR}/oar.log && chown ${OAROWNER}:${ROOTGROUP} ${LOGDIR}/oar.log && chmod 0644 ${LOGDIR}/oar.log || true
 }
 
 common_setup() {
@@ -52,27 +61,26 @@ common_setup() {
     set_oar_shell
     create_log_file
 
-    mkdir -p %%OARCONFDIR%%/
+    mkdir -p ${OARCONFDIR}/
 
     install_conffile \
-        %%EXAMPLEDIR%%/oar.conf \
-        %%OARCONFDIR%%/oar.conf \
-        0600 %%OAROWNER%%:%%ROOTGROUP%%
+        ${EXAMPLEDIR}/oar.conf \
+        ${OARCONFDIR}/oar.conf \
+        0600 ${OAROWNER}:${ROOTGROUP}
 
     install_conffile \
-        %%EXAMPLEDIR%%/oarnodesetting_ssh \
-        %%OARCONFDIR%%/oarnodesetting_ssh \
+        ${EXAMPLEDIR}/oarnodesetting_ssh \
+        ${OARCONFDIR}/oarnodesetting_ssh \
         0755
 
     install_conffile \
-        %%EXAMPLEDIR%%/update_cpuset_id.sh \
-        %%OARCONFDIR%%/update_cpuset_id.sh \
+        ${EXAMPLEDIR}/update_cpuset_id.sh \
+        ${OARCONFDIR}/update_cpuset_id.sh \
         0755
 
-    set_rights %%OARDIR%%/oarsh_oardo     6755 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
-    set_rights %%SBINDIR%%/oarnodesetting 6754 %%OARDO_DEFAULTUSER%% %%OARDO_DEFAULTGROUP%%
+    set_rights ${OARDIR}/oarsh_oardo     6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarnodesetting 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
-    set_rights %%OARDIR%%/oardodo/oardodo 6754 %%ROOTUSER%% %%OAROWNERGROUP%%
-    set_rights %%OARDIR%%/oardodo         0755 %%ROOTUSER%% %%OAROWNERGROUP%%
-    set_rights %%MANDIR%%/man1/oarcp.1    0644
+    set_rights ${OARDIR}/oardodo/oardodo 6754 ${ROOTUSER} ${OAROWNERGROUP}
+    set_rights ${OARDIR}/oardodo         0755 ${ROOTUSER} ${OAROWNERGROUP}
 }
