@@ -54,7 +54,9 @@ override_dh_auto_install:
 	## oar-node
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
 	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
-	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
+	# disable the automatic installation of this cron, by default 
+	#cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
+		
 	## oar-desktop-computing-agent
 	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/share/doc/oar-desktop-computing-agent/examples/init.d/oar-desktop-computing-agent > debian/oar-desktop-computing-agent.init
 	## oar-desktop-computing-cgi
