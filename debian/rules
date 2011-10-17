@@ -9,7 +9,6 @@ export DH_OPTIONS
 BUILDDIR=debian
 
 export OARUSER=oar
-export OAROWNER=root
 export OARCONFDIR=/etc/oar
 export PREFIX=/usr
 export MANDIR=/usr/share/man
