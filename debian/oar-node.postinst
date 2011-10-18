@@ -6,26 +6,9 @@ set -e
 
 . /usr/lib/oar/setup/node.sh
 
-print_install_message() {
-    cat << EOF
-
-##########################################################################
-# oar-node #
-############
-    You need to install the ssh keys (private and public) of the oar user
-    into /var/lib/oar/.ssh.
-    A common way is to copy the entire .ssh directory from the server on 
-    all the nodes of your cluster.
-    ##########################################################################
-
-EOF
-
-}
-
 case "$1" in
     configure)
         node_setup
-        print_install_message
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
