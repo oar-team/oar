@@ -77,20 +77,15 @@ fi
 do_start()
 {
         begin_msg "Starting $DESC"
-	CHECK_STRING=`oar_checkdb 2>&1` 
+	CHECK_STRING=`oar_checkdb > /dev/null 2>&1` 
 	if [ "$?" -ne "0" ]
         then
-            MSG= "Database is not ready! Maybe not initiated or no DBMS running?
-You must have a running MySQL or Postgres server.
-To init the DB, run oar_mysql_db_init or oar_psql_db_init
-Also check the DB_* variables in /etc/oar/oar.conf
-The error was: 
-$CHECK_STRING"
+            MSG="Database is not ready! Maybe not initiated or no DBMS running? You must have a running MySQL or Postgres server. To init the DB, run oar_mysql_db_init or oar_psql_db_init. Also check the DB_* variables in /etc/oar/oar.conf"
             fail_msg "$MSG"
             exit 2
         fi
         if pidofproc -p $PIDFILE > /dev/null; then
-            fail_msg " already running"
+            fail_msg "already running"
             exit 1
         fi
 
