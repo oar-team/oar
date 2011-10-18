@@ -1,4 +1,4 @@
-
+set -x
 create_oar_group() {
     if ! getent group ${OAROWNERGROUP} > /dev/null 2>&1 ; then 
         groupadd --system ${OAROWNERGROUP} > /dev/null 2>&1 
@@ -9,10 +9,10 @@ create_oar_user() {
     if ! getent passwd ${OAROWNER} > /dev/null 2>&1 ; then 
         case "$TARGET_DIST" in
             "debian")
-                adduser --system --home ${OARHOMEDIR} --group ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
+                adduser --system --home ${OARHOMEDIR} --ingroup ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
                 ;;
             *)
-                useradd --system --home ${OARHOMEDIR} -g ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
+                useradd --system -m --home ${OARHOMEDIR} --gid ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
                 ;;
         esac
 
