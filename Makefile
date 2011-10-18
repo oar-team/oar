@@ -25,9 +25,14 @@ clean:     $(TARGETS_CLEAN)
 uninstall: $(TARGETS_UNINSTALL)
 setup:     $(TARGETS_SETUP)
 
+tarball: 
+	./misc/make_tarball
+
 usage:
-	@echo "Usage: make [ OPTIONS=<...> ] { MODULES-install | MODULES-build | MODULES-clean | MODULES-uninstall | MODULES-setup }"
+	@echo "Usage: make [ OPTIONS=<...> ] [MODULES-]{install|build|clean|uninstall|setup}"
+	@echo ""
 	@echo "Where MODULES := { $(MODULES_LIST:||=) }"
+	@echo ""
 	@echo "      OPTIONS := { $(OPTIONS_LIST) }"
 
 sanity-check:
