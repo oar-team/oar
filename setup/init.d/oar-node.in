@@ -19,7 +19,7 @@
 # Short-Description:    OAR Dedicated Node (launch its own sshd)
 ### END INIT INFO
 
-PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin;$PATH
+PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 NAME=oar-node
 DESC=oar-node
 OAR_SSHD_CONF="%%OARCONFDIR%%/sshd_config"
