@@ -25,8 +25,12 @@ clean:     $(TARGETS_CLEAN)
 uninstall: $(TARGETS_UNINSTALL)
 setup:     $(TARGETS_SETUP)
 
-tarball: 
+tarball: .git
 	./misc/make_tarball
+
+.git:
+	@echo "Must be used from a git repository!"
+	exit 1
 
 usage:
 	@echo "Usage: make [ OPTIONS=<...> ] [MODULES-]{install|build|clean|uninstall|setup}"
