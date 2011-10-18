@@ -18,6 +18,8 @@ export SBINDIR=/usr/sbin
 export CGIDIR=/usr/lib/cgi-bin
 export PERLLIBDIR=/usr/share/perl5
 export VARLIBDIR=/var/lib
+export SETUP_TYPE=deb
+export TARGET_DIST=debian
 
 ifdef DEB_HOST_ARCH_BITS
 CFLAGS:=$(CFLAGS) -m$(DEB_HOST_ARCH_BITS)
