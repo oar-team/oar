@@ -89,4 +89,6 @@ override_dh_clean:
 	rm -f debian/oar-user-mysql.postinst
 	rm -f debian/oar-user-pgsql.postinst
 
+override_dh_installinit:
+	dh_installinit --no-start
 
