@@ -4,7 +4,6 @@
 # Simple example ruby script using the OAR RESTFUL API
 # It prints a colored textmode status of the cluster
 
-require 'rubygems'
 require 'rest_client'
 require 'json'
 require 'pp'
