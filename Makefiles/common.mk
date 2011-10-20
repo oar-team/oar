@@ -52,14 +52,10 @@ install: install_shared
 	
 	cp -f $(DESTDIR)$(MANDIR)/man1/oarsh.1 $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	
-	install -d $(DESTDIR)$(OARDIR)/db_upgrade
-	cp -f $(SRCDIR)/database/*upgrade*.sql $(DESTDIR)$(OARDIR)/db_upgrade/
-	
 uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 	rm -f $(DESTDIR)$(MANDIR)/man1/oarcp.1
-	rm -f $(DESTDIR)$(OARDIR)/db_upgrade/*upgrade*.sql
 	rm -rf $(DESTDIR)$(OARDIR)/oardodo
 	rm -rf $(DESTDIR)$(EXAMPLEDIR)
 	

@@ -1,0 +1,547 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use DBI;
+use OAR::Conf qw(init_conf get_conf is_conf set_value);
+use File::Basename;
+use Getopt::Long;
+use Sort::Versions;
+use Term::UI;
+use Term::ReadLine;
+
+Getopt::Long::Configure ("gnu_getopt");
+
+#
+# Default values used in this script.
+#
+my $DEFAULT_CONFFILE = "%%OARCONFDIR%%/oar.conf";
+my $DEFAULT_MYSQL_PORT = 3306;
+my $DEFAULT_PGSQL_PORT = 5432;
+my $DEFAULT_DB_NAME = "oar";
+my $DEFAULT_DB_HOST = "localhost";
+my $DEFAULT_DB_USER = "oar";
+my $DEFAULT_DB_RO_USER = "oar_ro";
+
+my $DEFAULT_MYSQL_STRUCTURE="%%OARDIR%%/database/mysql_structure.sql";
+my $DEFAULT_MYSQL_ADMISSION_RULES="%%OARDIR%%/database/mysql_default_admission_rules.sql";
+my $DEFAULT_MYSQL_DEFAULT_DATA="%%OARDIR%%/database/default_data.sql";
+my $DEFAULT_MYSQL_RESET="%%OARDIR%%/database/mysql_reset_structure.sql";
+
+my $DEFAULT_PGSQL_STRUCTURE="%%OARDIR%%/database/pg_structure.sql";
+my $DEFAULT_PGSQL_ADMISSION_RULES="%%OARDIR%%/database/pg_default_admission_rules.sql";
+my $DEFAULT_PGSQL_DEFAULT_DATA="%%OARDIR%%/database/default_data.sql";
+my $DEFAULT_PGSQL_RESET="%%OARDIR%%/database/pg_reset_structure.sql";
+
+my %DEFAULT_PGSQL_UPGRADES = ();
+my $DEFAULT_PGSQL_LAST_VERSION;
+
+my %DEFAULT_MYSQL_UPGRADES = ();
+my $DEFAULT_MYSQL_LAST_VERSION;
+
+#
+# meta functions/parameters defined during the execution (depending on the db type)
+#
+my $exec_sql;
+my $exec_sql_file;
+my %DEFAULT_UPGRADES;
+my $DEFAULT_LAST_VERSION;
+my $DEFAULT_STRUCTURE;
+my $DEFAULT_ADMISSION_RULES;
+my $DEFAULT_DATA;
+my $DEFAULT_RESET;
+
+#
+# Options from the command line
+#
+my $usage;
+my $debug;
+my $force_sql;
+my $force_yes;
+my $db_type;
+my $db_host;
+my $db_port;
+my $db_name;
+my $db_user;
+my $db_pass;
+my $db_ro_user;
+my $db_ro_pass;
+my $db_admin_user;
+my $db_admin_pass;
+my $db_is_local;
+my $action;
+my $conffile;
+
+#
+# database handler
+#
+my $dbh;
+
+#
+# Gather the sql file information for upgrading the database
+#
+open LIST, "find %%OARDIR%%/database -name '*_structure_upgrade_*-*.sql' |" or die "Unable to list the upstructure upgrade sql file";
+while (<LIST>) {
+    my ($line) = $_;
+    chomp($line);
+    if ($line =~ /.*\/(mysql|pg)_structure_upgrade_([\d\.]+)-([\d\.]+)\.sql$/) {
+        my ($type, $version_from, $version_to) = ($1,$2,$3);
+        if ($type eq "mysql") {
+            $DEFAULT_MYSQL_UPGRADES{$version_from} = [$version_to,$line];
+            # process the last existing version
+            if ($DEFAULT_MYSQL_LAST_VERSION) {
+                if (versioncmp($version_to,$DEFAULT_MYSQL_LAST_VERSION) > 0) {
+                    $DEFAULT_MYSQL_LAST_VERSION = $version_to;
+                }
+
+            } else {
+                $DEFAULT_MYSQL_LAST_VERSION = $version_to;
+            }
+        } elsif ($type eq "pg") {
+            $DEFAULT_PGSQL_UPGRADES{$version_from} = [$version_to,$line];
+            # process the last existing version
+            if ($DEFAULT_PGSQL_LAST_VERSION) {
+                if (versioncmp($version_to,$DEFAULT_PGSQL_LAST_VERSION) > 0) {
+                    $DEFAULT_PGSQL_LAST_VERSION = $version_to;
+                }
+
+            } else {
+                $DEFAULT_PGSQL_LAST_VERSION = $version_to;
+            }
+        }
+    }
+}
+
+
+#
+# Display usage
+#
+sub print_usage() {
+    print <<EOS;
+Usage: $0 [-h|--help]
+       $0 --init [OPTIONS]
+       $0 --reset [OPTIONS]
+       $0 --create [OPTIONS]
+       $0 --drop [OPTIONS]
+
+Setup the database used by OAR
+
+Actions:
+     --create                       create a new db user / database
+     --drop                         drop the current db user / database
+     --setup                        Setup the oar database with an exisiting db user / database
+     --reset                        Reset the oar database with an exisiting db user / database
+
+Options:
+ -h, --help                         Show this help screen
+ -d, --debug                        Print debug information
+ -f, --force-sql                    Force the execution even if an sql instruction fails
+ -y, --force-yes                    This option will cause oar-database to continue without prompting if it is doins something potentially harmful
+     --conf=OAR_CONF_FILE           Use the configuration file given in parameters. Default '%%OARCONFDIR%%/oar.conf'
+     --db-type=DB_TYPE              Specify the database type ('mysql' oar 'Pg')
+     --db-host=DB_HOST              Specify the database hostname
+     --db-port=DB_PORT              Specify the database port
+     --db-user=DB_USER              Specify the database user
+     --db-pass=DB_PASS              Specify the database password
+     --db-name=DB_NAME              Specify the database name
+     --db-ro-user=DB_RO_USER        Specify the read-only database user 
+     --db-ro-pass=DB_RO_PASS        Specify the read-only database pass 
+
+     --db-is-local                  Tell that the database is local. oar-database can use local admin account to execute command (usefull for postgres). Only used when using --create
+     --db-admin-user=DB_ADMIN_USER  Specify the database admin user needed to create user/database. Only used when using --create
+     --db-admin-pass=DB_ADMIN_PASS  Specify the database admin user needed to create user/database. Only used when using --create
+
+For more information, see the manual page.
+EOS
+}
+
+sub get_current_schema_version() {
+    my $query;
+
+    if ($db_type eq "Pg") {
+        $query="select version from schema limit 1;";
+    } else {
+        $query="select version from `schema` limit 1;";
+    }
+     
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my $ver = $sth->fetchrow_hashref;
+
+    unless ($ver) { return ""; }
+    return $ver->{'version'};
+}
+
+
+sub init_database() {
+    check_user_db_access($db_user,$db_pass);
+    print "initializing the database '$db_name'...\n";
+    &$exec_sql_file($DEFAULT_STRUCTURE) == 0       or die "Fail to execute $DEFAULT_STRUCTURE.\n";
+    &$exec_sql_file($DEFAULT_DATA) == 0            or die "Fail to execute $DEFAULT_DATA.\n";
+    &$exec_sql_file($DEFAULT_ADMISSION_RULES) == 0 or die "Fail to execute $DEFAULT_ADMISSION_RULES.\n";
+}
+
+sub reset_database() {
+    print "resetting the database '$db_name'...\n";
+    &$exec_sql_file($DEFAULT_RESET) == 0  or die "Fail to execute $DEFAULT_RESET\n.";
+    init_database();
+}
+
+sub upgrade_database() {
+    my ($to_version, $to_file);
+
+    my $current_version = get_current_schema_version();
+    while($current_version ne $DEFAULT_LAST_VERSION) {
+	if ($DEFAULT_UPGRADES{$current_version}) {
+		($to_version, $to_file) = @{$DEFAULT_UPGRADES{$current_version}};
+                print "uprgading from '$current_version' to '$to_version'...\n";
+		&$exec_sql_file($to_file) == 0 or die "Fail to upgrade the database from $current_version to $to_file with $to_file\n.";
+	} else {
+		die "Unable to upgrade from the version '$current_version'\n";
+	}
+        $current_version = get_current_schema_version();
+    }
+}
+
+sub setup_database() {
+    check_user_db_access($db_user,$db_pass);
+    # Retrieve the current version (check if shema table exist before)
+    my $db_version = get_current_schema_version();
+
+    if (!$db_version) {
+        print "No schema version found. Initialising the database.\n";
+        init_database();
+    } elsif ($db_version eq $DEFAULT_LAST_VERSION) {
+        print "The database is up to date (version $db_version).\n";
+    } else {
+        print "The current schema version is $db_version. Upgrading to $DEFAULT_LAST_VERSION.\n"; 
+        upgrade_database();
+    }
+}
+
+sub create_database() {
+    print "Creating the database...\n";
+    if ($db_type eq "mysql") {
+        mysql_admin_exec_sql("CREATE DATABASE $db_name CHARACTER SET latin1") ;
+        mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' . "'localhost' IDENTIFIED BY '$db_pass'") ;
+        mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' ."'%' IDENTIFIED BY '$db_pass'");
+        mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
+        mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
+
+    } elsif ($db_type eq "Pg") {
+        pgsql_admin_exec_sql("CREATE ROLE $db_user LOGIN PASSWORD '$db_pass';");
+        pgsql_admin_exec_sql("CREATE ROLE $db_ro_user LOGIN PASSWORD '$db_ro_pass';");
+        pgsql_admin_exec_sql("CREATE DATABASE $db_name OWNER $db_user");
+        pgsql_admin_exec_sql("GRANT ALL PRIVILEGES ON DATABASE $db_name TO $db_user");
+    }
+
+
+    init_database();
+
+    if ($db_type eq "Pg")  {
+        pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+    }
+}
+
+sub drop_database() {
+    print "Removing the database...\n";
+    if ($db_type eq "mysql") {
+        mysql_admin_exec_sql("DROP DATABASE $db_name");
+        mysql_admin_exec_sql("DROP USER $db_user". '@' . "'%'");
+        mysql_admin_exec_sql("DROP USER $db_user" . '@localhost');
+        if ($db_ro_user) {
+            mysql_admin_exec_sql("DROP USER $db_ro_user" .'@'. "'%'");
+            mysql_admin_exec_sql("DROP USER $db_ro_user" . '@localhost');
+        }
+    } elsif ($db_type eq "Pg") {
+        pgsql_admin_exec_sql("DROP DATABASE $db_name");
+            pgsql_admin_exec_sql("DROP USER $db_user");
+        if ($db_ro_user) {
+            pgsql_admin_exec_sql("DROP USER $db_ro_user");
+        }
+    }
+}
+
+sub mysql_exec_sql_file {
+    my ($file) = @_;
+    if ($debug) { 
+        print "executing '$file'\n";
+    }
+    if ($force_sql) {
+        return system("mysql --force --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name < $file");
+    } else {
+        return system("mysql --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name < $file");
+    }
+}
+
+sub pgsql_exec_sql_file {
+    my ($file) = @_;
+    if ($debug) { 
+        print "executing '$file'\n";
+    }
+    return system("PGUSER='$db_user' PGPASSWORD='$db_pass' PGHOST='$db_host' PGPORT='$db_port' psql -q $db_name < $file");
+    
+}
+
+sub mysql_exec_sql {
+    my ($query) = @_;
+    if ($debug) {
+        print "executing '$query'\n";
+    }
+    if ($force_sql) {
+        return system("mysql --force --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name -e \"$query\"");
+    } else {
+        return system("mysql --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name -e \"$query\"");
+    }
+}
+
+sub mysql_admin_exec_sql {
+    my ($query) = @_;
+    if ($debug) {
+        print "executing '$query'\n";
+    }
+    return system("mysql --user='$db_admin_user' --password='$db_admin_pass' --host='$db_host' --port='$db_port' -e \"$query\"");
+}
+sub pgsql_exec_sql {
+    my ($query) = @_;
+    if ($debug) {
+        print "executing '$query'\n";
+    }
+    return system("PGUSER='$db_user' PGPASSWORD='$db_pass' PGHOST='$db_host' PGPORT='$db_port' psql -q $db_name -c \"$query\"");
+
+}
+
+sub pgsql_admin_exec_sql {
+    my ($query,$db) = @_;
+    unless ($db) {
+        $db="";
+    }
+    if ($debug) {
+        print "executing '$query'\n";
+    }
+    if ($db_is_local) {
+        return system("echo \"$query\" | su - postgres -c \"psql $db\"");
+    } else { 
+        return system("PGUSER='$db_admin_user' PGPASSWORD='$db_admin_pass' PGHOST='$db_host' PGPORT='$db_port' psql $db -c \"$query\"");
+    }
+}
+
+
+GetOptions ("help|h"                => \$usage,
+            "debug|d"               => \$debug,
+            "force-sql|f"           => \$force_sql,
+            "force-yes|y"           => \$force_yes,
+            "setup|s"               => sub { $action = 'setup' },
+            "reset|r"               => sub { $action = 'reset' },
+            "create|c"              => sub { $action = 'create' },
+            "drop"                  => sub { $action = 'drop' },
+            "conf=s"                => \$conffile,
+#            "update-conf"           => sub { $action = 'update-conf' },
+            "db-type=s"             => \$db_type,
+            "db-host=s"             => \$db_host,
+            "db-port=i"             => \$db_port,
+            "db-user=s"             => \$db_user,
+            "db-pass=s"             => \$db_pass,
+            "db-ro-user=s"          => \$db_ro_user,
+            "db-ro-pass=s"          => \$db_ro_pass,
+            "db-name=s"             => \$db_name,
+            "db-admin-user=s"       => \$db_admin_user,
+            "db-admin-pass=s"       => \$db_admin_pass,
+            "db-is-local"           => \$db_is_local
+);
+
+
+#
+# Usage
+#
+if ($usage){ print_usage(); exit(0); }
+
+
+#
+# Check the action
+#
+if ( !$action ) {
+    print "You must specify the action do be done.\n";
+    print_usage();
+    exit(1);
+}
+
+
+#
+# Check if the given conffile.
+#
+if ( ! $conffile ) { 
+    $conffile=$DEFAULT_CONFFILE; 
+
+}
+unless ( -r $conffile ) {
+    print "The configuration file isn't readable ! Failing.\n";
+    print_usage();
+    exit(1);
+}
+
+
+#
+# Set the parameters to use
+#
+OAR::Conf::init_conf($conffile);
+
+if (! $db_type) {
+    if (OAR::Conf::is_conf("DB_TYPE")) {
+        $db_type = OAR::Conf::get_conf("DB_TYPE");
+
+        if (OAR::Conf::is_conf("DB_PORT")) {
+            $db_port = OAR::Conf::get_conf("DB_PORT");
+        }
+    } else {
+        print "Your must set the database type ! Failing \n";
+        print_usage();
+        exit(1);
+    }
+} elsif ( $db_type ne "Pg" && $db_type ne "mysql") {
+    print "The database type must be 'Pg' or 'mysql'. Failing.\n";
+    print_usage();
+    exit(1);
+}
+
+if (! $db_port ) {
+    if ($db_type eq "mysql") { $db_port = $DEFAULT_MYSQL_PORT; }
+    if ($db_type eq "Pg") { $db_port = $DEFAULT_PGSQL_PORT; }
+}
+
+unless ($db_host) {
+    $db_host = (OAR::Conf::is_conf("DB_HOSTNAME") ? OAR::Conf::get_conf("DB_HOSTNAME") : $DEFAULT_DB_HOST);
+}
+
+unless ($db_user) {
+    $db_user = (OAR::Conf::is_conf("DB_BASE_LOGIN") ? OAR::Conf::get_conf("DB_BASE_LOGIN") : $DEFAULT_DB_USER);
+}
+unless ($db_pass) {
+    $db_pass = (OAR::Conf::is_conf("DB_BASE_PASSWD") ? OAR::Conf::get_conf("DB_BASE_PASSWD") : "");
+
+    if ($db_pass eq "") {
+        print "The user password is empty. Please choose a password. Failing.\n";
+        exit(1);
+    }
+}
+
+unless ($db_ro_user) {
+    if (OAR::Conf::is_conf("DB_BASE_LOGIN_RO")) {
+        $db_ro_user = OAR::Conf::get_conf("DB_BASE_LOGIN_RO");
+    }
+}
+
+unless ($db_ro_pass) {
+    if (OAR::Conf::is_conf("DB_BASE_PASSWD_RO")) {
+        $db_ro_pass = OAR::Conf::get_conf("DB_BASE_PASSWD_RO");
+    }
+}
+
+unless ($db_name) {
+    $db_name = (OAR::Conf::is_conf("DB_BASE_NAME") ? OAR::Conf::get_conf("DB_BASE_NAME") : $DEFAULT_DB_NAME);
+}
+
+if ($action eq "create" or $action eq "drop") {
+    unless ($db_is_local and $db_type eq "Pg") {
+        unless ($db_admin_user and $db_admin_pass ) {
+            print "You need to specify the admin user and password to use. Failing.\n";
+            exit(1);
+        }
+    }
+}
+
+
+#
+# Set the meta function depending on the db type
+#
+if ($db_type eq "mysql") {
+    $exec_sql                = \&mysql_exec_sql;
+    $exec_sql_file           = \&mysql_exec_sql_file;
+    $DEFAULT_LAST_VERSION    = $DEFAULT_MYSQL_LAST_VERSION;
+    %DEFAULT_UPGRADES        = %DEFAULT_MYSQL_UPGRADES;
+    $DEFAULT_RESET           = $DEFAULT_MYSQL_RESET;
+    $DEFAULT_STRUCTURE       = $DEFAULT_MYSQL_STRUCTURE;
+    $DEFAULT_ADMISSION_RULES = $DEFAULT_MYSQL_ADMISSION_RULES;
+    $DEFAULT_DATA            = $DEFAULT_MYSQL_DEFAULT_DATA;
+} elsif ($db_type eq "Pg") {
+    $exec_sql                = \&pgsql_exec_sql;
+    $exec_sql_file           = \&pgsql_exec_sql_file;
+    $DEFAULT_LAST_VERSION    = $DEFAULT_PGSQL_LAST_VERSION;
+    %DEFAULT_UPGRADES        = %DEFAULT_PGSQL_UPGRADES;
+    $DEFAULT_RESET           = $DEFAULT_PGSQL_RESET;
+    $DEFAULT_STRUCTURE       = $DEFAULT_PGSQL_STRUCTURE;
+    $DEFAULT_ADMISSION_RULES = $DEFAULT_PGSQL_ADMISSION_RULES;
+    $DEFAULT_DATA            = $DEFAULT_PGSQL_DEFAULT_DATA;
+} else {
+    die "You shouldn't execute this part of the code. Contact the developper\n";
+}
+
+
+#
+# try a connection to the database
+#
+sub check_user_db_access {
+    my ($user,$pass) = @_;
+
+    my $dbc = "DBI:$db_type:database=$db_name;host=$db_host;port=$db_port";
+    $dbh = DBI->connect($dbc, $user,$pass, {'InactiveDestroy' => 1, 'PrintError' => 1});
+    if (!defined($dbh)) {
+        print "The connection to the database has failed (user=$user,host=$db_host,port=$db_port,database=$db_name). Please check if the database server is up and ready.\n";
+        print "Please see the file %%DOCDIR%%/README.database for the instructions.\n";
+        exit(1);
+    }
+}
+
+#
+# update oar.conf if asked
+#
+if ($action eq "update-conf") {
+    print "Updating $conffile with the given parameters.\n";
+    OAR::Conf::set_value("DB_HOSTNAME",$db_host);
+    OAR::Conf::set_value("DB_PORT",$db_port);
+    OAR::Conf::set_value("DB_BASE_NAME",$db_name);
+    OAR::Conf::set_value("DB_BASE_LOGIN",$db_user);
+    OAR::Conf::set_value("DB_BASE_PASSWD",$db_pass);
+    OAR::Conf::set_value("DB_BASE_LOGIN_RO",$db_ro_user);
+    OAR::Conf::set_value("DB_BASE_PASSWD_RO",$db_ro_pass);
+    OAR::Conf::set_value("DB_TYPE",$db_type);
+}
+
+
+#
+# setup the database
+#
+my $term = Term::ReadLine->new("brand");
+$Term::UI::VERBOSE = 0;
+
+if ($action eq "setup") {
+    check_user_db_access($db_user,$db_pass);
+    if($force_yes || $term->ask_yn(
+            prompt => "Are you sure you want to upgrade your database ? (Please backup the database before)", 
+            default => 'n')) {
+        setup_database();
+    } else {
+        print "The database hasn't been changed\n."
+    }
+
+} elsif ($action eq "reset") {
+    check_user_db_access($db_user,$db_pass);
+    if ($force_yes || $term->ask_yn(
+            prompt => "Are you sure you want to reset your database ? (The database content will be lost)",
+            default => 'n')) {
+        reset_database();
+    } else {
+        print "The database hasn't been changed\n."
+    }
+} elsif ($action eq "create") {
+    unless ($db_ro_user and $db_ro_pass) {
+        print "You need to specify the user/pass for the read-only access.\n";
+        exit(1);
+    }
+    create_database();
+} elsif ($action eq "drop") {
+    drop_database();
+}
+
+
+
