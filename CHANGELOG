@@ -79,6 +79,9 @@ version 2.5.0:
   - Bugfix #13351: now oar_psql_db_init is executed with root privileges
   - Bugfix #13434: reservation were not handled correctly with the energy
     saving feature
+  - Add cgroups FREEZER feature to the suspend/resume script (better than kill
+    SIGSTOP/SIGCONT).
+    This is doable thanks to the new job_resource_manager_cgroups.
 
 version 2.4.4:
 --------------
