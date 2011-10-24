@@ -250,7 +250,8 @@ if ($ARGV[0] eq "init"){
 
     # Clean cpuset on this node
     if (defined($Cpuset_path_job)){
-        system('PROCESSES=$(cat '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/tasks)
+        system('echo THAWED > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/freezer.state
+                PROCESSES=$(cat '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/tasks)
                 while [ "$PROCESSES" != "" ]
                 do
                     oardodo kill -9 $PROCESSES
