@@ -1,6 +1,6 @@
 /* This file contains all the Global Variables to be Used by the Portal */
 
-var API_URI="http://localhost/oarapi/";
-var API_Priv_URI="http://localhost/oarapi-priv/";
-var Drawgantt_URI="http://localhost/drawgantt";
-var Monika_URI="http://localhost/monika";
+var API_URI="/oarapi/";
+var API_Priv_URI="/oarapi-priv/";
+var Drawgantt_URI="/cgi-bin/drawgantt.cgi";
+var Monika_URI="/cgi-bin/monika.cgi";
