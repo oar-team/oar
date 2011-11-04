@@ -191,13 +191,13 @@ foreach my $mold (@{$ref_resource_list}){
 
 -- Check if types given by the user are right
 INSERT INTO admission_rules (rule) VALUES ('
-my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh");
+my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh","token\\:xxx=yy");
 foreach my $t (@{$type_list}){
     my $i = 0;
     while (($types[$i] ne $t) and ($i <= $#types)){
         $i++;
     }
-    if (($i > $#types) and ($t !~ /^(timesharing|inner|token)/)){
+    if (($i > $#types) and ($t !~ /^(timesharing|inner|token\\:\\w+\\=\\d+)/)){
         die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
     }
 }
