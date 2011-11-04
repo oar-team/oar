@@ -197,7 +197,7 @@ foreach my $t (@{$type_list}){
     while (($types[$i] ne $t) and ($i <= $#types)){
         $i++;
     }
-    if (($i > $#types) and ($t !~ /^(timesharing|inner)/)){
+    if (($i > $#types) and ($t !~ /^(timesharing|inner|token)/)){
         die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
     }
 }

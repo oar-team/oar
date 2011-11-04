@@ -2750,7 +2750,9 @@ sub get_current_job_types($$){
     $sth->execute();
     my %res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        if ($ref->{type} =~ m/^\s*(\w+)\s*=\s*(.+)$/m){
+        if ($ref->{type} =~ m/^\s*(token)\s*\:\s*(\w+)\s*=\s*(\d+)\s*$/m){
+            $res{$1}->{$2} = $3;
+        }elsif ($ref->{type} =~ m/^\s*(\w+)\s*=\s*(.+)$/m){
             $res{$1} = $2;
         }else{
             $res{$ref->{type}} = "true";
