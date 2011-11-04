@@ -319,6 +319,28 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 
 ##############################################
 
+##############################################################
+# TOKEN feature                                              #
+# Parameters available if you are using the                  #
+# oar_sched_gantt_with_timesharing_and_fairsharing scheduler #
+###############################################################################
+#
+# With this token feature you are able to filter which jobs can be scheduled
+# depending on outside resources (like licence server for some proprietary
+# softwares)
+# So the users can do:
+#   oarsub -l nodes=2 -t token:fluent=12 ./script.sh
+# This job will be launched only if the script corresponding to the "fluent"
+# token returns a value greater or equal than 12.
+# You can use several "-t token:..." arguments (all token constraints must be
+# ok)
+
+# Specify the scripts to use for each token
+# The scripts MUST print only 1 line with a number
+#SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh arg1 arg2', soft2 => '/usr/local/bin/check_soft2.sh arg1' }"
+
+###############################################################################
+
 ###########################################################################
 # ENERGY SAVING                                                           #
 # (Management of automatic wake-up and shut-down of the nodes when they   #
