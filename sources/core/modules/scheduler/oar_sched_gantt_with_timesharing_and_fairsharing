@@ -361,31 +361,31 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if (defined($types->{token})){
         foreach my $t (keys(%{$types->{token}})){
             next if ($skip_job == 1);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Check token: $t ($types->{token}->{$t}).\n");
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Check token: $t ($types->{token}->{$t}).\n");
             # Check if we must execute the corresponding script
             if ((!defined($Token_values{$t})) and (defined($Token_scripts->{$t}))){
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Execute $Token_scripts->{$t}\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Execute $Token_scripts->{$t}\n");
                 if (open(TOKSCRIPT, "$Token_scripts->{$t} |")){
                     my $num = <TOKSCRIPT>;
                     chop($num);
                     if ($num =~ /^\d+$/){
                         $Token_values{$t} = $num;
-                        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}]  $Token_scripts->{$t} returns $num\n");
+                        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}]  $Token_scripts->{$t} returns $num\n");
                     }else{
-                        oar_warn("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] The token script $Token_scripts->{$t} does not return a number ($num).\n");
+                        oar_warn("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] The token script $Token_scripts->{$t} does not return a number ($num).\n");
                     }
                     close(TOKSCRIPT);
                 }
             }
             if (defined($Token_values{$t})){
                 if ($Token_values{$t} < $types->{token}->{$t}){
-                    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] No enough Tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
+                    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] No enough Tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
                     OAR::IO::set_job_message($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
                     OAR::IO::set_job_scheduler_info($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
                     $skip_job = 1;
                 }
             }else{
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Token value cannot be retrieved ($t).\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [$j->{job_id}] Token value cannot be retrieved ($t).\n");
                 OAR::IO::set_job_message($base,$j->{job_id},"Token value cannot be retrieved ($t)");
                 OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Token value cannot be retrieved ($t)");
                 $skip_job = 1;
@@ -542,7 +542,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         if (defined($types->{token}) and ($moldable_results[$index_to_choose]->{start_date} <= $current_time)){
             foreach my $t (keys(%{$types->{token}})){
                 $Token_values{$t} = $Token_values{$t} - $types->{token}->{$t};
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_fairsharing_and_placeholder] Update TOKEN $t to $Token_values{$t}\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Update TOKEN $t to $Token_values{$t}\n");
             }
         }
     }else{
@@ -560,7 +560,7 @@ OAR::IO::disconnect($base);
 OAR::IO::disconnect($base_ro);
 
 if ($job_index <= $#jobs){
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_fairsharing] I am not able to schedule all waiting jobs in the specified time : $timeout s\n");
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] I am not able to schedule all waiting jobs in the specified time : $timeout s\n");
 }
 
 oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] End of scheduler for queue $queue\n");
