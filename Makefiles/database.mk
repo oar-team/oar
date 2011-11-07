@@ -3,7 +3,7 @@ SRCDIR=sources/core
 
 MANDIR_FILES = $(SRCDIR)/man/man1/oar-database.pod.in
 
-BINDIR_FILES = $(SRCDIR)/database/oar-database.in
+SBINDIR_FILES = $(SRCDIR)/database/oar-database.in
 
 include Makefiles/shared/shared.mk
 
