@@ -130,6 +130,67 @@ same as B<--db-pass> except that it is for the read only access.
 
 =back
 
+=head1 EXAMPLES
 
+=head2 Mysql
+
+First you need to specify the sql parameters in %%OARCONFDIR%%/oar.conf. These parameters will be used by B<oar-database>.
+
+To create a new database (assuming that the sql root password is B<PASS>):
+
+B<oar-database --create --db-admin-user root --db-admin-pass PASS>
+
+To upgrade an existing database:
+
+B<oar-database --setup>
+
+=head2 Postgresql
+
+First you need to specify the sql parameters in %%OARCONFDIR%%/oar.conf. These parameters will be used by B<oar-database>. Then if your postgresql database is on the local system, you can use the option B<--db-is-local> (otherwise, the procedure is the same as Mysql). So B<oar-database> will use the postgres unix user to administrate the database (you need privilegied access to the local system).
+
+To create a new database:
+
+B<oar-database --create --db-is-local>
+
+To upgrade an existing database:
+
+B<oar-database --setup>
+
+=head2 Advanced usages
+
+To make some tests or to administrate several databases, you can also specify the sql parameters on the command line. For example:
+
+B<oar-database --create --db-type=Pg --db-host=HOST \
+               --db-user=oar --db-pass=PASS \
+               --db-admin-user=ADMIN_USER --db-admin-pass=ADMIN_PASS>
+
+will create the oar database and the oar user on the postgresql system hosted by B<HOST>. The user B<ADMIN_USER> must have the right to create new databases and new roles on this system.
+
+=head1 FILES
+
+=over 
+
+=item %%OARDIR%%/database/mysql_structure.sql, %%OARDIR%%/database/pg_structure.sql
+
+SQL instructions for creating the structure of the oar database.
+
+=item %%OARDIR%%/database/mysql_default_admission_rules.sql, %%OARDIR%%/database/pg_default_admission_rules.sql
+
+SQL instructions for inserting the default admission rules in the oar database.
+
+=item %%OARDIR%%/database/default_data.sql
+
+SQL instructions for inserting the default data in the oar database.
+
+=item %%OARDIR%%/database/mysql_reset_structure.sql, %%OARDIR%%/database/pg_reset_structure.sql
+
+SQL instruction for emptying an existing oar database.
+
+=item %%OARDIR%%/database/mysql_structure_upgrade_*.sql, %%OARDIR%%/database/pg_structure_upgrade_*.sql
+
+SQL instructions for upgrading an existing database.
+
+=back
+ 
 =cut
 

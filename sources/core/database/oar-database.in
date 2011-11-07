@@ -420,7 +420,7 @@ unless ($db_pass) {
     $db_pass = (OAR::Conf::is_conf("DB_BASE_PASSWD") ? OAR::Conf::get_conf("DB_BASE_PASSWD") : "");
 
     if ($db_pass eq "") {
-        print "The user password is empty. Please choose a password. Failing.\n";
+        print "The user password is empty. Please define a password. Failing.\n";
         exit(1);
     }
 }
@@ -444,7 +444,7 @@ unless ($db_name) {
 if ($action eq "create" or $action eq "drop") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user and $db_admin_pass ) {
-            print "You need to specify the admin user and password to use. Failing.\n";
+            print "You need to specify the admin user (--db-admin-user) and password (--db-admin-pass) to use. See the manuel for more information. Failing.\n";
             exit(1);
         }
     }
@@ -535,7 +535,7 @@ if ($action eq "setup") {
     }
 } elsif ($action eq "create") {
     unless ($db_ro_user and $db_ro_pass) {
-        print "You need to specify the user/pass for the read-only access.\n";
+        print "You need to specify the user/pass for the read-only access (--db-ro-user / --db-ro-pass). See the manual for more information. Failing\n";
         exit(1);
     }
     create_database();
