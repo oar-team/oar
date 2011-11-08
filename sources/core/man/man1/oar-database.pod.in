@@ -1,4 +1,4 @@
-=head1 oar-database
+=head1 NAME
 
 oar-database - create/initialize/upgrade/reset/drop the oar database
 
