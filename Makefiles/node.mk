@@ -16,7 +16,9 @@ INITDIR_FILES = setup/init.d/oar-node.in
 
 CRONDIR_FILES = setup/cron.d/oar-node.in
 
-DEFAULTDIR_FILES = setup/default/oar-node.in
+DEFAULTDIR_FILES = setup/default/oar-node.in \
+                   setup/default/oar-node.exemple1.in 
+
 
 include Makefiles/shared/shared.mk
 
