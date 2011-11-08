@@ -76,7 +76,7 @@ These parameters are only needed for database/user creation or removing.
 
 =item B<--db-is-local>
 
-For B<--create> or B<--drop>, this option tells that the database is local. oar-database can use local admin account to execute command (usefull for postgres).
+For B<--create> or B<--drop>, this option tells that the database is local. oar-database can use local admin account to execute command (useful for postgres).
 
 =item B<--db-admin-user>=I<DB_ADMIN_USER>
 
