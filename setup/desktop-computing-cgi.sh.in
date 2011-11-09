@@ -1,0 +1,6 @@
+
+desktop_computing_cgi_setup() {
+    set_rights ${SBINDIR}/oarcache 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
+    set_rights ${OARDIR}/oarres    6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
+    set_rights ${CGIDIR}/oar-cgi   6754 ${OARDO_DEFAULTUSER} ${WWWUSER} 
+}

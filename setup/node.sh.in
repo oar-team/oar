@@ -1,0 +1,62 @@
+install_ssh_host_keys() {
+    if [ ! -r ${OARCONFDIR}/oar_ssh_host_rsa_key ]; then 
+        rm -f ${OARCONFDIR}/oar_ssh_host_rsa_key.pub
+
+        if [ -e "${ETCDIR}/ssh/ssh_host_rsa_key" ]; then
+            install_if_not_exist \
+                ${ETCDIR}/ssh/ssh_host_rsa_key \
+                ${OARCONFDIR}/oar_ssh_host_rsa_key \
+                0600
+        
+            install_if_not_exist \
+                ${ETCDIR}/ssh/ssh_host_rsa_key.pub \
+                ${OARCONFDIR}/oar_ssh_host_rsa_key.pub 
+        fi
+
+    fi
+
+    if [ ! -r ${OARCONFDIR}/oar_ssh_host_dsa_key ]; then 
+        rm -f ${OARCONFDIR}/oar_ssh_host_dsa_key.pub 
+
+        if [ -e "${ETCDIR}/ssh/ssh_host_dsa_key" ]; then
+            install_if_not_exist \
+                ${ETCDIR}/ssh/ssh_host_dsa_key \
+                ${OARCONFDIR}/oar_ssh_host_dsa_key \
+                0600
+
+            install_if_not_exist \
+                ${ETCDIR}/ssh/ssh_host_dsa_key.pub \
+                ${OARCONFDIR}/oar_ssh_host_dsa_key.pub
+        fi 
+    fi
+
+    if [ ! "-d ${VARLIBDIR}/oar/.ssh/id_rsa" ] && [ ! "-d ${VARLIBDIR}/oar/.ssh/id_dsa" ]; then
+        echo "
+    ##########################################################################
+    # node #
+    ########
+    #   You need to install the ssh keys (private and public) of the oar user
+    #   into ${VARLIBDIR}/oar/.ssh.
+    #   A common way is to copy the entire .ssh directory from the server on 
+    #   all the nodes of your cluster.
+    ##########################################################################
+    "
+    fi
+}
+
+node_setup() {
+    install_conffile \
+        ${EXAMPLEDIR}/epilogue \
+        ${OARCONFDIR}/epilogue
+    
+    install_conffile \
+        ${EXAMPLEDIR}/prologue \
+        ${OARCONFDIR}/prologue
+
+    install_conffile \
+        ${EXAMPLEDIR}/sshd_config \
+        ${OARCONFDIR}/sshd_config \
+        0600 ${OAROWNER}
+
+    install_ssh_host_keys
+}

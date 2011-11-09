@@ -1,19 +1,20 @@
-#! /usr/bin/make
+MODULE=keyring
+
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	# Nothing to do
 
-build:
+build: build_shared
 	# Nothing to do
 
-uninstall:
+uninstall: uninstall_shared
 	# Nothing to do
 
-install: 
-	install -d -m 0755 $(DESTDIR)/usr/share/oar-keyring
-	install -m 0644 misc/pkg_building/oar.gpg $(DESTDIR)/usr/share/oar-keyring
-	install -m 0644 misc/pkg_building/oarmaster.gpg $(DESTDIR)/usr/share/oar-keyring
+install: install_shared 
+	install -d $(DESTDIR)/usr/share/oar-keyring
+	install -m 0644 misc/apt_keyring/oar.gpg $(DESTDIR)/usr/share/oar-keyring
+	install -m 0644 misc/apt_keyring/oarmaster.gpg $(DESTDIR)/usr/share/oar-keyring
 
-
+.PHONY: install setup uninstall build clean

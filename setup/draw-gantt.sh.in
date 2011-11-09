@@ -1,0 +1,18 @@
+
+draw_gantt_setup() {
+
+    install_conffile \
+        ${EXAMPLEDIR}/drawgantt.conf \
+        ${OARCONFDIR}/drawgantt.conf \
+        0600 \
+        ${WWWUSER}
+    
+    if [ ! -e "${OARHOMEDIR}/drawgantt-files/js" ]; then
+        ln -sf ${WWWDIR}/drawgantt-files/js ${OARHOMEDIR}/drawgantt-files/js
+    fi
+    if [ ! -e "${OARHOMEDIR}/drawgantt-files/Icons" ]; then
+        ln -sf ${WWWDIR}/drawgantt-files/Icons ${OARHOMEDIR}/drawgantt-files/Icons
+    fi
+
+    set_rights ${OARHOMEDIR}/drawgantt-files/cache 0755 ${WWWUSER}
+}

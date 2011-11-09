@@ -1,0 +1,65 @@
+# Example Apache2 configuration for the OAR API
+
+    # Aliases to the API.
+    # Be aware that the oarapi directory should only be readable by the httpd 
+    # daemon and that the cgi inside are sgid oar. Any change to this permissions
+    # may cause your system to be vulnerable. 
+    ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
+    ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi/oarapi-debug.cgi
+
+    # FastCGI server
+    <IfModule mod_fastcgi.c>
+    FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi
+    </IfModule>
+
+    # Authentication configuration for access to the API    
+    <Directory %%CGIDIR%%/oarapi>
+          Options ExecCGI -MultiViews FollowSymLinks
+
+         # FastCGI handler
+         <IfModule mod_fastcgi.c>
+         AddHandler fcgid-script .cgi
+         </IfModule>
+
+         # Deny access by default, except from localhost
+          Order deny,allow
+          Deny from all
+          #Allow from             trusted.host.mydomain
+          Allow from             localhost
+          Allow from             localhost.localdomain
+         # Pidentd may be useful for testing without a login/passwd or when you
+         # fully trust some hosts (ie users have no way to fake their login name).
+         # Ident trust may be disabled into the api itself.
+         <IfModule ident_module>
+           IdentityCheck On
+
+           <IfModule headers_module>
+             # Set the X-REMOTE_IDENT http header value to REMOTE_IDENT env value
+             RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}e
+             # or For https:
+             #RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}s
+             # Or if it doesn't work, enable mod_rewrite and try this:
+             <IfModule rewrite_module>
+                RewriteEngine On
+                RewriteCond %{REMOTE_IDENT} (.*)
+                RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+                RequestHeader add X-REMOTE_IDENT %{MY_REMOTE_IDENT}e
+             </IfModule>
+           </IfModule>
+
+         </IfModule>
+ 
+         # Ldap auth, except for some local hosts that we trust with pident.
+         # In this example, we suppose that the users have an ldap account
+         # common to the authentication used by the oar server.
+         <IfModule authnz_ldap_module>
+           AuthType               basic
+           AuthBasicProvider      ldap
+           AuthName               "Authorized Users Only"
+           AuthzLDAPAuthoritative  off
+           AuthLDAPURL            "ldaps://myldaphost.mydomain/dc=mydomain,dc=fr?uid?sub?(objectClass=posixAccount)"
+           Require valid-user
+           Satisfy any
+         </IfModule> 
+    </Directory>
+

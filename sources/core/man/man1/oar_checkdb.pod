@@ -1,0 +1,16 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oar_checkdb - Check the database connection
+
+=head1 SYNOPSIS
+
+B<oar_checkdb>
+
+=head1 DESCRIPTION
+
+Check the database connection. Return 0 if it is ok, an exit code >0 otherwise.
+
+=cut
+

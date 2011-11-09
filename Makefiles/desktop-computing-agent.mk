@@ -1,7 +1,4 @@
-#! /usr/bin/make
-
-include Makefiles/shared/shared.mk
-
+MODULE=desktop-computing-agent
 SRCDIR=sources/desktop_computing/agent
 
 AGENTDIR_FILES = $(SRCDIR)/lib/job.rb \
@@ -10,27 +7,34 @@ AGENTDIR_FILES = $(SRCDIR)/lib/job.rb \
 		 $(SRCDIR)/lib/job_execution_exception.rb \
 		 $(SRCDIR)/lib/job_resource.rb
 
-BINDIR_FILES =  $(SRCDIR)/lib/agent.rb
+INITDIR_FILES = setup/init.d/oar-desktop-computing-agent.in
 
-SBINDIR_FILES = $(SRCDIR)/lib/daemon.rb
+MANDIR_FILES = $(SRCDIR)/man/man1/oar-agent.pod \
+	       $(SRCDIR)/man/man1/oar-agent-daemon.pod
 
-build:
+include Makefiles/shared/shared.mk
+
+build: build_shared
 	# Nothing to do
 
-clean:
+clean: clean_shared
 	# Nothing to do
 
-install: install_bin install_sbin
-	install -m 0755 -d $(DESTDIR)$(OARDIR)
-	install -m 0755 -d $(DESTDIR)$(OARDIR)/desktop_computing
-	install -m 0644 -t $(DESTDIR)$(OARDIR)/desktop_computing $(AGENTDIR_FILES)
+install: install_shared
+	install -d $(DESTDIR)$(OARDIR)/desktop_computing
+	install -m 0644  $(AGENTDIR_FILES) $(DESTDIR)$(OARDIR)/desktop_computing
 	
-	# Rename files 
-	mv $(DESTDIR)$(BINDIR)/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
-	mv $(DESTDIR)$(SBINDIR)/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
+	install -d $(DESTDIR)$(BINDIR)
+	install -m 0755 $(SRCDIR)/lib/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
 	
-uninstall: uninstall_bin uninstall_sbin
+	install -d $(DESTDIR)$(SBINDIR)
+	install -m 0755 $(SRCDIR)/lib/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
+
+uninstall: uninstall_shared
 	for file in $(AGENTDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/desktop_computing/`basename $$file`; done
 	rm -f $(DESTDIR)$(BINDIR)/oar-agent
 	rm -f $(DESTDIR)$(SBINDIR)/oar-agent-daemon
-	   
+	rm -rf $(DESTDIR)$(EXAMPLEDIR)
+	  
+.PHONY: install setup uninstall build clean
+	 

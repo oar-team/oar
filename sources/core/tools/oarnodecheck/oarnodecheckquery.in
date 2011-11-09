@@ -1,0 +1,26 @@
+#!/bin/bash
+# $id$
+
+OARUSER=%%OAROWNER%%
+eval CHECKLOGDIR=~$OARUSER/checklogs
+CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
+OARNODECHECKRUN=%%OARDIR%%/oarnodecheckrun
+OARDODO=%%OARDIR%%/oardodo/oardodo
+STAMPFILE=$CHECKSCRIPTDIR/oarnodecheckrun.lastrun
+DELAY=3600 # seconds
+
+shopt -s nullglob
+
+if [ -f $STAMPFILE ]; then
+  if [ $(expr `date +"%s"` - `stat --printf="%Y" $STAMPFILE`) -ge $DELAY  ]; then
+    SUDO=""
+    # User $OARUSER MUST be sudoer !
+    [ "$UID" -eq 0 ] || SUDO="$OARDODO"
+    $SUDO $OARNODECHECKRUN || exit 1
+  fi
+fi
+
+for f in $CHECKLOGDIR/*; do
+	exit 2
+done
+exit 0

@@ -1003,6 +1003,7 @@ SWITCH: for ($q) {
     	$resources = OAR::Nodes::get_requested_resources($MAX_ITEMS,$offset); 
         $resources = OAR::API::filter_resource_list($resources); 
     }
+    OAR::API::fix_resource_ids($resources);
     OAR::API::add_resources_uris($resources,$ext,'');
     $resources = OAR::API::struct_resource_list($resources,$STRUCTURE,$compact);
     
@@ -1093,7 +1094,7 @@ SWITCH: for ($q) {
     my $jobs;
     my $job_array;
 
-    OAR::Nodes::heartbeat($1);
+    #OAR::Nodes::heartbeat($1); <-- what the hell is that????
 
     # a "?state=" filter is possible, but prevent Terminated and Error state
     # because this result is not paginated and output may be too big
