@@ -1,6 +1,7 @@
-# $Id: oar.spec 1761 2008-11-28 14:48:25Z bzizou $
-%define version 2.5.0
-%define release 3
+%define version 2.5.0+dev503.2e6deef
+%define release 1centos6
+
+%define oaruser  oar
 
 Name: 		oar
 Version:        %{version}
@@ -16,35 +17,53 @@ Url:            http://oar.imag.fr
 
 Source0: 	oar-%version.tar.gz
 #Source1:	Makefile.install
-Source2:	oar-common.logrotate
-Source3:	oar-server.init.d
-Source4:	oar-server.cron.d
-Source5:	oar-server
-Source6:	oar-node.init.d
-Source7:	oar-node.cron.d
-Source8:	oar-node.sysconfig
-Source9:	oar-server.sysconfig
+#Source2:	oar-common.logrotate
+#Source3:	oar-server.init.d
+#Source4:	oar-server.cron.d
+#Source5:	oar-server
+#Source6:	oar-node.init.d
+#Source7:	oar-node.cron.d
+#Source8:	oar-node.sysconfig
+#Source9:	oar-server.sysconfig
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 #BuildRequires:  perl sed make tar xauth
-BuildArch: 	noarch
 %description
 OAR is a resource manager (or batch scheduler) for large computing clusters.
 
 %package common
 Summary:        OAR batch scheduler common package
 Group:          System/Servers
-BuildArch: 	noarch
-Requires:       perl, perl-suidperl, shadow-utils, perl-DBI
+Requires:       perl, shadow-utils, perl-DBI
   # How could we do (libdbd-mysql-perl | libdbd-pg-perl) ?
-Provides: 	perl(oar_iolib), perl(oar_Judas), perl(oar_Tools), perl(oar_conflib), perl(oar_resource_tree), perl(oarversion), perl(oarstat_lib), perl(oarnodes_lib), perl(oarsub_lib), perl(oar_apilib)
 %description common
 This package installs the common part or the OAR batch scheduler
+
+%package -n perl-OAR
+Summary:        OAR batch scheduler common perl library package
+Group:          System/Servers
+Requires:       perl(DBI)
+Provides:       perl(OAR::IO), perl(OAR::Modules::Judas), perl(OAR::Tools), perl(OAR::Conf), perl(OAR::Schedulers::ResourceTree), perl(OAR::Version), perl(OAR::Stat), perl(OAR::Nodes), perl(OAR::Sub)
+%description -n perl-OAR
+This package installs the common libraries of the OAR batch scheduler
+
+%package server-mysql
+Summary:        OAR batch scheduler MySQL backend package for the server
+Group:          System/Servers
+Requires:       oar-server, perl-DBD-MySQL
+%description server-mysql
+This package installs the MySQL backend for the server part or the OAR batch scheduler
+
+%package server-pgsql
+Summary:        OAR batch scheduler PostgreSQL backend package for the server
+Group:          System/Servers
+Requires:       oar-server, perl-DBD-Pg
+%description server-pgsql
+This package installs the PostgreSQL backend for the server part or the OAR batch scheduler
 
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions
-BuildArch: 	noarch
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions
 %description server
 This package installs the server part or the OAR batch scheduler
 
@@ -52,15 +71,27 @@ This package installs the server part or the OAR batch scheduler
 Summary:	OAR batch scheduler node package
 Group:          System/Servers
 Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /lib/lsb/init-functions
-BuildArch: 	noarch
 %description node
 This package installs the execution node part of the OAR batch scheduler
+
+%package user-mysql
+Summary:	OAR batch scheduler user MySQL backend package
+Group:          System/Servers
+Requires:       oar-user, perl-DBD-MySQL
+%description user-mysql
+This package install the MySQL backend for the submission and query part of the OAR batch scheduler
+
+%package user-pgsql
+Summary:	OAR batch scheduler user PostgreSQL backend package
+Group:          System/Servers
+Requires:       oar-user, perl-DBD-Pg
+%description user-pgsql
+This package install the PostgreSQL backend for the submission and query part of the OAR batch scheduler
 
 %package user
 Summary:	OAR batch scheduler user package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, /usr/bin/ssh
-BuildArch: 	noarch
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
@@ -69,8 +100,7 @@ Summary:	OAR batch scheduler web-status package
 Group:          System/Servers
 Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally), httpd
  # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby)
-BuildArch: 	noarch
-Provides:       Monika, DrawGantt
+Provides:       Perl(OAR::Monika), DrawGantt
 %description web-status
 This package installs the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
 
@@ -78,7 +108,6 @@ This package installs the OAR batch scheduler Gantt reservation diagram CGI: Dra
 Summary:	OAR batch scheduler doc package
 Group:          System/Servers
 Requires:       man, httpd
-BuildArch: 	noarch
 #BuildRequires:  python-docutils, httpd
 %description doc
 This package installs some documentation for OAR batch scheduler
@@ -87,7 +116,6 @@ This package installs some documentation for OAR batch scheduler
 Summary:	OAR batch scheduler administration tools package
 Group:          System/Servers
 Requires:       oar-common = %version-%release, ruby, ruby-DBI, perl(YAML)
-BuildArch: 	noarch
 %description admin
 This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
 
@@ -95,7 +123,6 @@ This package installs some useful tools to help the administrator of a oar serve
 Summary:        OAR desktop computing agent
 Group:          System/Servers
 Requires:	oar-common = %version-%release, ruby
-BuildArch:	noarch
 %description desktop-computing-agent
 This package install the OAR batch scheduler desktop computing agent
 
@@ -103,7 +130,6 @@ This package install the OAR batch scheduler desktop computing agent
 Summary:	OAR desktop computing HTTP proxy CGI
 Group:          System/Servers
 Requires:	perl(CGI), oar-common = %version-%release, httpd
-BuildArch:      noarch
 %description    desktop-computing-cgi	
 This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
@@ -111,17 +137,9 @@ This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 Summary:	OAR RESTful user API
 Group:          System/Servers
 Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd
-BuildArch:      noarch
+Provides:       perl(OAR::API)
 %description    api
 This package installs the RESTful OAR user API.
-
-%package gridapi
-Summary:	OARGRID RESTful user API
-Group:          System/Servers
-Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd, oar-api = %version-%release
-BuildArch:      noarch
-%description    gridapi
-This package installs the RESTful OARGRID user API.
 
 #%package scheduler-ocaml-mysql
 #Summary:        OAR batch scheduler package for ocaml schedular
@@ -144,64 +162,115 @@ This package installs the RESTful OARGRID user API.
 #perl -i -pe "s/-g root//" Makefile
 #
 %build
-
-export OARUSER=oar
-export OAROWNER=root
-export OARCONFDIR=/etc/oar
-export PREFIX=/usr
-export MANDIR=/usr/share/man
-export OARDIR=/usr/lib/oar
-export BINDIR=/usr/bin
-export SBINDIR=/usr/sbin
-export CGIDIR=/var/www/cgi-bin
-export PERLLIBDIR=/usr/share/perl5/site_perl
-export VARLIBDIR=/var/lib
-export WWWUSER=root
-export WWWDIR=/usr/share/oar-web-status
-
-# build
-make build
-
-# Install into separated directories using the provided makefile
+export OARUSER=%{oaruser}
+export SETUP_TYPE=rpm
+export TARGET_DIST=redhat
 mkdir tmp/
+make packages-build PACKAGES_DIR=tmp
+
+%install
+export SETUP_TYPE=rpm
+export TARGET_DIST=redhat
+# Install into separated directories using the provided makefile
 make packages-install PACKAGES_DIR=tmp
+
+# Get the file lists for every package (except those explicitely listed later)
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api liboar-perl
+do
+  ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
+    | sed -e "s/\.1$/.1.gz/g" > $package.files
+done
+
+# common
+TMP=tmp/oar-common
+mkdir -p $TMP/etc/oar
+mkdir -p $TMP/etc/logrotate.d
+cp $TMP/usr/share/doc/oar-common/examples/oar.conf \
+   $TMP/usr/share/doc/oar-common/examples/oarnodesetting_ssh \
+   $TMP/usr/share/doc/oar-common/examples/update_cpuset_id.sh \
+     $TMP/etc/oar/
+
+cp $TMP/usr/share/doc/oar-common/examples/logrotate.d/oar-common \
+      $TMP/etc/logrotate.d/oar
+
+# api
+TMP=tmp/oar-api
+mkdir -p $TMP/etc/oar
+cp $TMP/usr/share/doc/oar-api/examples/apache2.conf \
+     $TMP/etc/oar/apache-api.conf
+cp $TMP/usr/share/doc/oar-api/examples/api_html_header.pl \
+   $TMP/usr/share/doc/oar-api/examples/api_html_postform.pl \
+   $TMP/usr/share/doc/oar-api/examples/api_html_postform_resources.pl \
+   $TMP/usr/share/doc/oar-api/examples/api_html_postform_rule.pl \
+     $TMP/etc/oar/
+
+# web-status
+TMP=tmp/oar-web-status
+mkdir -p $TMP/etc/oar
+cp $TMP/usr/share/doc/oar-web-status/examples/drawgantt.conf \
+   $TMP/usr/share/doc/oar-web-status/examples/monika.conf \
+   $TMP/usr/share/doc/oar-web-status/examples/apache.conf \
+     $TMP/etc/oar
+
+# node
+TMP=tmp/oar-node
+mkdir -p $TMP/etc/oar
+mkdir -p $TMP/etc/cron.d
+mkdir -p $TMP/etc/rc.d/init.d
+mkdir -p $TMP/etc/sysconfig
+cp $TMP/usr/share/doc/oar-node/examples/epilogue \
+   $TMP/usr/share/doc/oar-node/examples/prologue \
+   $TMP/usr/share/doc/oar-node/examples/sshd_config \
+     $TMP/etc/oar
+
+#cp $TMP/usr/share/doc/oar-node/examples/cron.d/oar-node \
+#     $TMP/etc/cron.d/oar-node
+cp $TMP/usr/share/doc/oar-node/examples/init.d/oar-node \
+     $TMP/etc/rc.d/init.d/oar-node
+cp $TMP/usr/share/doc/oar-node/examples/default/oar-node \
+     $TMP/etc/sysconfig/oar-node
+ 
+# server 
+TMP=tmp/oar-server
+mkdir -p $TMP/etc/oar
+mkdir -p $TMP/etc/sysconfig
+mkdir -p $TMP/etc/rc.d/init.d
+mkdir -p $TMP/etc/cron.d
+cp $TMP/usr/share/doc/oar-server/examples/job_resource_manager.pl \
+   $TMP/usr/share/doc/oar-server/examples/suspend_resume_manager.pl \
+   $TMP/usr/share/doc/oar-server/examples/oarmonitor_sensor.pl \
+   $TMP/usr/share/doc/oar-server/examples/wake_up_nodes.sh \
+   $TMP/usr/share/doc/oar-server/examples/shut_down_nodes.sh \
+   $TMP/usr/share/doc/oar-server/examples/server_prologue \
+   $TMP/usr/share/doc/oar-server/examples/server_epilogue \
+     $TMP/etc/oar
+
+cp $TMP/usr/share/doc/oar-server/examples/cron.d/oar-server \
+     $TMP/etc/cron.d/oar-server
+cp $TMP/usr/share/doc/oar-server/examples/init.d/oar-server \
+     $TMP/etc/rc.d/init.d/oar-server
+cp $TMP/usr/share/doc/oar-server/examples/default/oar-server \
+     $TMP/etc/sysconfig/oar-server
+
+# desktop-computing-cgi
+TMP=tmp/oar-desktop-computing-cgi
+mkdir -p $TMP/etc/oar
+mkdir -p $TMP/etc/cron.hourly
+cp $TMP/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi \
+     $TMP/etc/cron.hourly/oar-desktop-computing-cgi  
 
 # Reconstruct the whole system
 mkdir -p $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROOT/*
 cp -a tmp/*/* $RPM_BUILD_ROOT/
-# Get the file lists for every package (except those explicitely listed later)
-EXCEPTS="oar.conf\$|oarsh_oardo\$|bin/oarnodesetting\$|oar/job_resource_manager.pl\$\
-|oar/oardodo/oardodo\$|oarmonitor_sensor.pl\$|server_epilogue\$|server_prologue\$\
-|suspend_resume_manager.pl\$|bin/oarnotify\$|bin/oarremoveresource\$|bin/oaraccounting\$\
-|bin/Almighty\$|bin/oarnotify\$|bin/oarremoveresource\$|bin/oaraccounting\$\
-|bin/oarproperty\$|bin/oarmonitor\$|drawgantt.conf\$|monika.conf\$|oar/epilogue\$\
-|oar/prologue\$|oar/sshd_config\$|bin/oarnodes\$|bin/oardel\$|bin/oarstat\$\
-|bin/oarsub\$|bin/oarhold\$|bin/oarresume\$|sbin/oaradmin\$\
-|sbin/oarcache\$|sbin/oarres\$|oar/oarres\$|bin/oar-cgi\$|apache.conf\$|bin/oar_resources_init\$\
-|sbin/oar_phoenix\$"
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api oar-gridapi oar-scheduler-ocaml-mysql
-do
-  ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
-    | egrep -v "$EXCEPTS" > $package.files
-done
+
 # Additional distribution dependent files
-install -D -m 755 %{_topdir}/SOURCES/oar-common.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/oar
-install -D -m 755 %{_topdir}/SOURCES/oar-server.init.d $RPM_BUILD_ROOT/etc/init.d/oar-server
-install -D -m 755 %{_topdir}/SOURCES/oar-node.init.d $RPM_BUILD_ROOT/etc/init.d/oar-node
-install -D -m 755 %{_topdir}/SOURCES/oar-server $RPM_BUILD_ROOT/usr/sbin/oar-server
-install -D -m 755 %{_topdir}/SOURCES/oar-server.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-server
-install -D -m 755 %{_topdir}/SOURCES/oar-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/oar-node
-install -D -m 755 %{_topdir}/SOURCES/oar-node.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-node
-install -D -m 755 %{_topdir}/SOURCES/oar-server.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/oar-server
-install -D -m 644 %{_topdir}/SOURCES/oar-node.sshd_config $RPM_BUILD_ROOT/etc/oar/sshd_config
-install -D -m 644 %{_topdir}/SOURCES/apache.conf $RPM_BUILD_ROOT/etc/oar/apache.conf
-install -D -m 644 %{_topdir}/SOURCES/apache-api.conf $RPM_BUILD_ROOT/etc/oar/apache-api.conf
-install -D -m 644 %{_topdir}/SOURCES/apache2-grid.conf $RPM_BUILD_ROOT/etc/oar/apache-gridapi.conf
-install -D -m 644 %{_topdir}/SOURCES/oar-desktop-computing-cgi.cron.hourly $RPM_BUILD_ROOT/etc/cron.hourly/oar-desktop-computing-cgi
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
 
+
+
 %clean
-make clean
+make packages-clean PACKAGES_DIR=tmp
 rm -rf $RPM_BUILD_ROOT/*
 rm -rf tmp
 
@@ -209,51 +278,43 @@ rm -rf tmp
 ###### files and permissions ######
 
 %files common -f oar-common.files
-%config %attr(0600,oar,root) /etc/oar/oar.conf 
+%config /etc/oar/oar.conf 
+%config /etc/oar/oarnodesetting_ssh
+%config /etc/oar/update_cpuset_id.sh
 %config %attr(0755,root,root) /etc/logrotate.d/oar
-%attr(6755,oar,oar) /usr/lib/oar/oarsh_oardo
-%attr(6750,root,oar) /usr/lib/oar/oardodo/oardodo
-%attr(6750,oar,oar) /usr/sbin/oarnodesetting
 
 %files server -f oar-server.files
-%attr(0755,root,root) /etc/init.d/oar-server
+%config %attr(0755,root,root) /etc/rc.d/init.d/oar-server
+%config %attr(0644,root,root) /etc/sysconfig/oar-server
+%config %attr(0644,root,root) /etc/cron.d/oar-server
 %config /etc/oar/job_resource_manager.pl
 %config /etc/oar/oarmonitor_sensor.pl
 %config /etc/oar/server_epilogue
 %config /etc/oar/server_prologue
 %config /etc/oar/suspend_resume_manager.pl
-%config %attr(0644,root,root) /etc/cron.d/oar-server
-%attr (6750,oar,oar) /usr/sbin/Almighty
-%attr (6750,oar,oar) /usr/sbin/oarnotify
-%attr (6750,oar,oar) /usr/sbin/oarremoveresource
-%attr (6750,oar,oar) /usr/sbin/oaraccounting
-%attr (6750,oar,oar) /usr/sbin/oarproperty
-%attr (6750,oar,oar) /usr/sbin/oarmonitor
-%attr (0750,oar,oar) /usr/sbin/oar-server
-%attr (6750,oar,oar) /usr/sbin/oar_resources_init
-%attr (6750,oar,oar) /usr/sbin/oar_phoenix
-%config /etc/sysconfig/oar-server
 %config /etc/oar/oar_phoenix.pl
+%config /etc/oar/shut_down_nodes.sh
+%config /etc/oar/wake_up_nodes.sh
+
+%files server-mysql
+
+%files server-pgsql
 
 %files node -f oar-node.files
-%attr(0755,root,root) /etc/init.d/oar-node
+%config %attr(0755,root,root) /etc/rc.d/init.d/oar-node
+%config %attr(0644,root,root) /etc/sysconfig/oar-node
+#%config %attr(0644,root,root) /etc/cron.d/oar-node
 %config /etc/oar/epilogue
 %config /etc/oar/prologue
 %config /etc/oar/sshd_config
 %config /etc/oar/check.d
-%config %attr(0644,root,root) /etc/cron.d/oar-node
 %config /var/lib/oar/checklogs
-%config /etc/sysconfig/oar-node
 
 %files user -f oar-user.files
-%attr (6755,oar,oar) /usr/bin/oarnodes
-%attr (6755,oar,oar) /usr/bin/oarnodes.old
-%attr (6755,oar,oar) /usr/bin/oardel
-%attr (6755,oar,oar) /usr/bin/oarstat
-%attr (6755,oar,oar) /usr/bin/oarstat.old
-%attr (6755,oar,oar) /usr/bin/oarsub
-%attr (6755,oar,oar) /usr/bin/oarhold
-%attr (6755,oar,oar) /usr/bin/oarresume
+
+%files user-mysql
+
+%files user-pgsql
 
 %files web-status -f oar-web-status.files
 %config %attr (0600,apache,root) /etc/oar/drawgantt.conf
@@ -264,66 +325,27 @@ rm -rf tmp
 %docdir /usr/share/doc/oar-doc 
 
 %files admin -f oar-admin.files
-%attr(6750,oar,oar) /usr/sbin/oaradmin
 
 %files desktop-computing-agent -f oar-desktop-computing-agent.files
 
 %files desktop-computing-cgi -f oar-desktop-computing-cgi.files
 %config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
-%attr(6750,oar,oar) /usr/sbin/oarcache
-%attr(6750,oar,oar) /usr/lib/oar/oarres
-%attr(6750,oar,apache) /var/www/cgi-bin/oar-cgi
 
 %files api -f oar-api.files
-%config %attr (0600,apache,root) /etc/oar/apache-api.conf
-%config %attr (0640,oar,apache) /etc/oar/api_html_header.pl
-%config %attr (0640,oar,apache) /etc/oar/api_html_postform.pl
-%attr(0750,oar,apache) /var/www/cgi-bin/oarapi
-%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi.cgi
-%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
+%config /etc/oar/apache-api.conf
+%config /etc/oar/api_html_header.pl
+%config /etc/oar/api_html_postform.pl
+%config /etc/oar/api_html_postform_resources.pl
+%config /etc/oar/api_html_postform_rule.pl
 
-%files gridapi -f oar-gridapi.files
-%config %attr (0600,apache,root) /etc/oar/apache-gridapi.conf
-%config %attr (0640,oar,apache) /etc/oar/gridapi_html_header.pl
-%config %attr (0640,oar,apache) /etc/oar/gridapi_html_postform.pl
-%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi.cgi
-%attr(6755,oar,oar) /var/www/cgi-bin/oarapi/oargridapi-debug.cgi
+%files -n perl-OAR -f liboar-perl.files
 
 #%files scheduler-ocaml-mysql -f oar-scheduler-ocaml-mysql
+
 ###### oar-common scripts ######
-
-%pre common
-# Set up the oar user
-if ! getent group oar > /dev/null 2>&1 ; then
-    groupadd -r oar
-fi
-if ! getent passwd oar > /dev/null 2>&1 ; then
-    mkdir -p /var/lib/oar
-    useradd -r -m -d /var/lib/oar -g oar -s /bin/bash oar
-    usermod -U oar
-    cd /var/lib/oar
-    echo '' >> .bash_profile
-    echo 'export PATH="/usr/lib/oar/oardodo:$PATH"' >> .bash_profile
-    chown oar:oar /var/lib/oar/.bash_profile
-    ln -s -f .bash_profile .bashrc
-    chown oar:oar .bashrc
-fi
-chown oar:oar /var/lib/oar -R > /dev/null 2>&1
-# Create log and status files
-touch /var/log/oar.log && chown oar:root /var/log/oar.log && chmod 0644 /var/log/oar.log || true
-install -o oar -m 755 -d /var/run/oar
-
 %post common
-# set OAR Shell
-chsh -s /usr/lib/oar/oarsh_shell oar
-if [ "$1" != "1" ]
-then
-  echo
-  echo "WARNING! If you upgraded from 2.3.4 or earlier, you have to upgrade the"
-  echo "database scheme (stop OAR before)!"
-  echo " Upgrade SQL scripts are available in the /usr/lib/oar/db_upgrade directory"
-  echo
-fi
+. /usr/lib/oar/setup/common.sh
+common_setup
 
 %postun common
 if [ "$1" = 0 ];
@@ -335,49 +357,20 @@ then
 fi
 
 ###### oar-server scripts ######
-
 %post server
-# Set up ssh configuration
-if [ -e /var/lib/oar/.ssh ]; then
-    # Do nothing
-    :
-else
-    mkdir -p /var/lib/oar/.ssh
-    ssh-keygen -t rsa -q -f /var/lib/oar/.ssh/id_rsa -N '' || true
-    echo -n 'environment="OAR_KEY=1 "' > /var/lib/oar/.ssh/authorized_keys || true
-    cat /var/lib/oar/.ssh/id_rsa.pub >> /var/lib/oar/.ssh/authorized_keys || true
-    cat <<EOF > /var/lib/oar/.ssh/config || true
-Host *
-    ForwardX11 no
-    StrictHostKeyChecking no
-    PasswordAuthentication no
-    AddressFamily inet
-EOF
-    chown oar:oar /var/lib/oar/.ssh -R || true
-fi
+. /usr/lib/oar/setup/server.sh
+. /usr/lib/oar/setup/database.sh
+server_setup
+database_setup
 chkconfig --add oar-server
-mkdir -p /var/lib/oar/phoenix
-chown oar:oar /var/lib/oar/phoenix
 
 %preun server
 /etc/init.d/oar-server stop 2>/dev/null || true
 
-
 ###### oar-node scripts ######
-
 %post node
-# create oar sshd keys
-if [ ! -r /etc/oar/oar_ssh_host_rsa_key ]; then
-    rm -f /etc/oar/oar_ssh_host_rsa_key.pub
-    cp /etc/ssh/ssh_host_rsa_key /etc/oar/oar_ssh_host_rsa_key
-    cp /etc/ssh/ssh_host_rsa_key.pub /etc/oar/oar_ssh_host_rsa_key.pub
-fi
-
-if [ ! -r /etc/oar/oar_ssh_host_dsa_key ]; then
-    rm -f /etc/oar/oar_ssh_host_dsa_key.pub
-    cp /etc/ssh/ssh_host_dsa_key /etc/oar/oar_ssh_host_dsa_key
-    cp /etc/ssh/ssh_host_dsa_key.pub /etc/oar/oar_ssh_host_dsa_key.pub
-fi
+. /usr/lib/oar/setup/node.sh
+node_setup
 chkconfig --add oar-node
 
 %preun node
@@ -390,9 +383,13 @@ then
 fi
 
 ###### oar-web-status scripts ######
-
 %post web-status
-mkdir -p /var/lib/drawgantt-files/cache && chown apache /var/lib/drawgantt-files/cache || true
+. /usr/lib/oar/setup/www-conf.sh
+. /usr/lib/oar/setup/monika.sh
+. /usr/lib/oar/setup/draw-gantt.sh
+www_conf_setup
+monika_setup
+draw_gantt_setup
 ln -s /etc/oar/apache.conf /etc/httpd/conf.d/oar-web-status.conf || true
 service httpd reload || true
 
@@ -403,13 +400,12 @@ if [ "$1" = "0" ] ; then # last uninstall
 fi
 
 ###### oar-api scripts ######
-
 %post api
-ln -s /etc/oar/apache-api.conf /etc/httpd/conf.d/oar-api.conf || true
-service httpd reload || true
-
-%post gridapi
-ln -s /etc/oar/apache-gridapi.conf /etc/httpd/conf.d/oar-gridapi.conf || true
+. /usr/lib/oar/setup/api.sh
+api_setup
+if [ ! -e /etc/httpd/conf.d/oar-api.conf ]; then
+    ln -s /etc/oar/apache-api.conf /etc/httpd/conf.d/oar-api.conf || true
+fi
 service httpd reload || true
 
 %postun api
@@ -418,13 +414,27 @@ if [ "$1" = "0" ] ; then # last uninstall
   service httpd reload || true
 fi
 
-%postun gridapi
-if [ "$1" = "0" ] ; then # last uninstall
-  rm -f /etc/httpd/conf.d/oar-gridapi.conf || true
-  service httpd reload || true
-fi
+###### oar-admin scripts ######
+%post admin
+. /usr/lib/oar/setup/tools.sh
+tools_setup
+
+###### oar-user scripts ######
+%post user
+. /usr/lib/oar/setup/user.sh
+user_setup
+
+
+###### oar-desktop-computing-cgi scripts ######
+%post desktop-computing-cgi
+. /usr/lib/oar/setup/desktop-computing-cgi.sh
+desktop_computing_cgi_setup
+
 
 %changelog
+* Thu Nov 10 2011 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.0+dev487.f014a74-1
+- Use the setup scripts.
+
 * Thu Jun 17 2010 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.5.0-3
 - added poar
 
