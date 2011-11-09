@@ -1,0 +1,21 @@
+#!/bin/bash
+# $Id$
+
+OARUSER=%%OAROWNER%%
+eval CHECKLOGDIR=~$OARUSER/checklogs
+if ! [ -d $CHECKLOGDIR ]; then
+	echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
+	exit 1
+fi 
+	
+echo "Checklogs list in $CHECKLOGDIR:"
+shopt -s nullglob
+cd $CHECKLOGDIR/
+for t in *; do
+	for f in *; do
+		echo "  $f"
+	done
+	exit 0
+done
+echo "  <empty>"
+exit 0

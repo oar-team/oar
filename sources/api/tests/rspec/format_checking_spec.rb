@@ -26,6 +26,31 @@ describe OarApi do
       @api.value['items'].should_not == nil
     end
 
+    it "should submit some jobs to populate the database" do
+      jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "id" , 'array' => '15' }
+      @api.submit_job(jhash)
+      $jobid = @api.jobstatus['id']
+      $jobid.should be_a(Integer)
+      $jobid.should > 0
+      # Now, we wait for the 15th job to be terminated
+      # It is necessary for the rest of the tests to pass
+      timeout=60
+      t=0
+      c=0
+      while t<timeout and c == 0
+        @api.specific_job_details($jobid+14)
+        if @api.specificjobdetails["state"] == "Terminated"
+          c=1
+        else
+          printf "."
+          $stdout.flush
+        end
+        sleep 1
+        t+=1
+      end
+      t.should < timeout
+    end
+
     it "should have an empty queue before running this tests " do
       @api.value['items'].should be_empty
     end

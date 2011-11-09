@@ -1,0 +1,39 @@
+# Fix maximum number of open files to 8192 for all jobs
+#
+# ulimit -n 8192
+
+# If you want to change the default umask
+#
+# umask 0702
+# umask 0002
+
+
+# hostname used in the oar database to identify this node
+#
+# OAR_NODE_NAME=$(hostname -f)
+
+
+# OAR server hostname
+#
+# OARSERVER="myserver"
+
+
+# This function is called when oar-node service is started.
+# You can change this to use another method to switch the node into the Alive state
+#
+# start_oar_node() {
+#     test -n "$OARSERVER" || exit 0
+#     su - oar -c "/usr/bin/ssh $OARSERVER oarnodesetting -s Alive -h $OAR_NODE_NAME"
+# }
+
+
+# This function is called when oar-node service is stopped.
+# You can change this to use another method to switch the node into the Absent state
+#
+# stop_oar_node() {
+#     test -n "$OARSERVER" || exit 0
+#     su - oar -c "/usr/bin/ssh $OARSERVER oarnodesetting -s Absent -h $OAR_NODE_NAME"
+# }
+
+
+

@@ -4,7 +4,6 @@
 # Simple example ruby script using the OAR RESTFUL API
 # It prints a colored textmode status of the cluster
 
-require 'rubygems'
 require 'rest_client'
 require 'json'
 require 'pp'
@@ -50,7 +49,7 @@ printf ("\033[2K")
 used_resources={}
 jobs['items'].each do |job|
   job['resources'].each do |r|
-    used_resources[r]=1
+    used_resources[r['id']]=1
   end
 end
 
@@ -74,7 +73,7 @@ resources['items'].collect{|r| r['network_address']}.uniq.each do |node|
     elsif resource['state'] == "Alive"
       #jobs=get(api,resource['jobs_uri'])
       #if jobs.nil?
-      if used_resources[resource['resource_id']].nil?
+      if used_resources[resource['id']].nil?
         printf("\033[42m \033[0m")
       else
         printf("\033[47m\033[30mJ\033[0m")

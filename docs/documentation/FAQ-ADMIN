@@ -243,11 +243,10 @@ A job remains in the "Finishing" state, what can I do?
 If you have waited more than a couple of minutes (10mn for example) then
 something wrong occurred (frontal has crashed, out of memory, ...).
 
-So you are able to turn manually a job into the "Error" state by typing in
-the OAR install directory with the root user (example with a bash shell)::
+So you are able to turn manually a job into the "Error" state by typing with the root user (example with a bash shell)::
 
     export OARCONFFILE=/etc/oar/oar.conf
-    perl -e 'use oar_iolib; $db = OAR::IO::connect(); OAR::IO::set_job_state($db,42,"Error")'
+    perl -e 'use OAR::IO; $db = OAR::IO::connect(); OAR::IO::set_job_state($db,42,"Error")'
 
 (Replace 42 by your job identifier)
 

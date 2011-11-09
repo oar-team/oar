@@ -1,0 +1,16 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oar-server - daemon wrapper to start the oar server (Almighty)
+
+=head1 SYNOPSIS
+
+B<oar-server>
+
+=head1 DESCRIPTION
+
+Start the oar server (Almighty) as a daemon process
+
+=cut
+

@@ -1,0 +1,181 @@
+--- 
+############################
+# DrawGrantt configuration.
+############################
+#
+# This is a YAML formated file
+#
+
+
+#
+# oar DB parameters
+#
+
+# Database type ("mysql" or "Pg")
+DB_TYPE: mysql
+
+# Database connection port (default 3306 for mysql or 5432 for Pg)
+DB_PORT: 3306
+
+# DataBase hostname
+DB_HOSTNAME: localhost
+
+# Database base name
+DB_BASE_NAME: oar
+
+# DataBase read only user name
+DB_BASE_LOGIN_RO: oar
+
+# DataBase read only user password
+DB_BASE_PASSWD_RO: oar
+
+##############################################################################
+## visual settings
+##############################################################################
+
+title: 'Gantt Chart'
+
+sizex: 1000
+# sizey: 600
+offsetgridy: 50
+left_offsetgridx: 190
+right_offsetgridx: 10
+
+tics_node: 1
+points_per_cpu: 10 
+
+#background: '#000000' 
+#gridcolor: '#C0C0C0'
+background: '#FFFFFF'
+gridcolor: '#101010'
+
+default_range: '1 day'
+#default_range: '3 days'
+#default_hour: '12:00' #NOT YET IMPLEMENTED
+
+##############################################################################
+## control job display by size area 
+##############################################################################
+#xratio: ratio between  sizex / jobx  
+xratio: 1000
+#number of contiguous resources
+nb_cont_res: 0
+
+##############################################################################
+## box and default BestEffort Job drawing setting 
+##############################################################################
+#NOT YET IMPLEMENTED
+#drawBestEffortbox: yes
+drawBestEffortbox: no
+#drawBestEffortDefault: BestEffort
+
+##############################################################################
+## color setting and disabling diplaying job id for cosystem Job
+##############################################################################
+#cosystem: true
+#cosystem_color: '#D0D0D0'
+
+##############################################################################
+## directory for image, map, icons and javascript
+##############################################################################
+web_root: '%%OARHOMEDIR%%'
+directory: 'drawgantt-files'
+web_cache_directory: 'cache'
+web_icons_directory: 'Icons'
+web_path_js_directory: 'js'
+
+##############################################################################
+## number file limit in cache
+##############################################################################
+# 
+# principle: when the limit is reach the cache is empty with half  
+# note: nb_file = image and map files 
+#NOT YET TESTED
+nb_file_cache_limit: 100
+
+
+##############################################################################
+## resources sorting and labelling label  displaying and sorting
+##############################################################################
+#
+resource_filter:
+  property: "network_address"
+  regex: "(.*)"
+
+##############################################################################
+## resources sorting and labelling label  displaying and sorting
+##############################################################################
+#
+#	Principles:
+#
+#  First, you need sorting and labelling parameter for each type of resource 
+#  (the type be default is "default")
+#		
+#	 Second, groups of even typed resources is order according to the order  
+#	 of parameter subsections below.  
+#
+#	 Third : two resource field properties (from oar database) can be used for 
+#	 resources sorting and labbelling. 
+#
+#  Fourth for sorting, regular expressions must be given to extract 
+#  matching expressions for sorting. Sorting can be numerical, string or
+#  natural ordered. Default setting is natural order.
+#
+#  Fifth for labelling,  regular expressions must be also given to extract 
+#  matching expressions for display.
+#
+#  Popular regular expressions 
+## - ex: regex: "(\d+)" ie extract the first number from the left in nodenames
+## - ex: regex: ([^.]+) ie to extract the short hostname.
+## - ex: regex: (.+) ie to keep the whole word if really needed.
+##
+## sub-subsection is separated by "-", indentation is sensitive and must be 
+## provide by space and NOT tab character.
+##
+
+sort_label_conf:
+ -
+  type: "default"
+  # the two resource field properties
+  first_field_property: "network_address"
+  second_field_property: "cpu"
+
+  #sorting
+  first_sorting_order: "natural"
+  first_sorting_regex: "(.+)"
+
+  second_sorting_order: "numerical"
+  second_sorting_regex: "(\d+)"
+
+  #labelling
+  first_displaying_regex: "(.+)"
+  separator: "/"
+  second_displaying_regex: "(\d+)"
+ -
+  type: "mathlab"
+  # the two resource field properties
+  first_field_property: "type"
+  second_field_property: "cpu"
+
+  #sorting
+  first_sorting_order: "string"
+  first_sorting_regex: "(.+)"
+
+  second_sorting_order: "numerical"
+  second_sorting_regex: "(\d+)"
+
+  #labelling
+  first_displaying_regex: "(.+)"
+  separator: "#"
+  second_displaying_regex: "(\d+)"
+
+##############################################################################
+## display properties' resource hierarchy 
+##############################################################################
+#
+# Select properties to display
+prop_hierarchy: 
+#-  cluster
+ - network_address
+ - cpu
+# - core

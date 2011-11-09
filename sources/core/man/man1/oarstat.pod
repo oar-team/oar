@@ -16,7 +16,7 @@ B<oarstat> --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
 =head1 DESCRIPTION
 
-This command is used to show informations of jobs in OAR batch scheduler.
+This command is used to show information of jobs in OAR batch scheduler.
 
 =head1 OPTIONS
 
@@ -28,7 +28,7 @@ Very detailed display.
 
 =item B<-j, --job> job_id
 
-Print informations from a specific job.
+Print information from a specific job.
 
 =item B<-e, --events>
 
@@ -44,12 +44,12 @@ Print only the state of a specified job. It makes a minimal query to the databas
 
 =item B<-u, --user> [login]
 
-Print informations for the current user or the one given.
+Print information for the current user or the one given.
 If used with --accounting, print a more detailed accounting report for the user.
 
 =item B<--array> [array_id]
  
-Toggle the visualization of array information on.  If an array_id is provided, print informations relative to the subjobs of the given array job.
+Toggle the visualization of array information on.  If an array_id is provided, print information relative to the subjobs of the given array job.
  
 =item B<--sql>
 
@@ -77,7 +77,7 @@ Print history of jobs and state of resources between two dates like "2006-03-30 
 
 =item B<--accounting> "date_start,date_stop"
 
-Shows accounting informations between two dates like "2006-03-30, 2006-04-30".
+Shows accounting information between two dates like "2006-03-30, 2006-04-30".
  If --user is also used, more details are shown for this particular user.
  Warning: the accounting table must be up to date. The update must be done at superuser level with the oaraccounting command. 
 
