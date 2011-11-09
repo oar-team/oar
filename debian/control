@@ -42,7 +42,8 @@ Description: OAR batch scheduler server package
 Package: oar-server-mysql
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-mysql-perl, oar-server (= ${binary:Version})
-Suggests: mysql-client, mysql-server , phpmyadmin, oar-user-mysql, 
+Recommends: mysql-client
+Suggests: mysql-server , phpmyadmin, oar-user-mysql, 
 Conflicts: oar-server-pgsql
 Description: OAR batch scheduler server package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -54,7 +55,8 @@ Description: OAR batch scheduler server package
 Package: oar-server-pgsql
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-pg-perl, oar-server (= ${binary:Version})
-Suggests: postgresql-client, postgresql, oar-user-pgsql 
+Recommends: postgresql-client
+Suggests: postgresql, oar-user-pgsql 
 Conflicts: oar-server-mysql
 Description: OAR batch scheduler server package
  OAR is a versatile resource and task manager (also called a batch scheduler)
