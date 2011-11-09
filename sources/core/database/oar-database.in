@@ -444,7 +444,7 @@ unless ($db_name) {
 if ($action eq "create" or $action eq "drop") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user and $db_admin_pass ) {
-            print "You need to specify the admin user (--db-admin-user) and password (--db-admin-pass) to use. See the manuel for more information. Failing.\n";
+            print "You need to specify the admin user (--db-admin-user) and password (--db-admin-pass) to use. See the manual for more information. Failing.\n";
             exit(1);
         }
     }
