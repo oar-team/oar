@@ -1,4 +1,4 @@
 
 database_setup() {
-    echo "Currently, the oar database isn't setup automatically. Please install the database manually (using ${SBINDIR}/oar_{mysql,psql}_db_init scripts)."
+    echo "Currently, the oar database isn't setup automatically. Please install the database manually (using the ${SBINDIR}/oar-database script)."
 }
