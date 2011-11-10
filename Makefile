@@ -5,6 +5,7 @@ export SHELL=/bin/bash
 # Modules that can be builded
 MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api poar scheduler-ocaml www-conf common common-libs database  
 
+
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
 OPTIONS_LIST= OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR 
 
@@ -19,11 +20,11 @@ TARGETS_UNINSTALL = $(MODULES:=-uninstall)
 TARGETS = $(TARGETS_BUILD) $(TARGETS_CLEAN) $(TARGETS_INSTALL) $(TARGETS_UNINSTALL) $(TARGETS_SETUP)
 
 all:       usage
-build:     $(TARGETS_BUILD)
-install:   $(TARGETS_INSTALL)
-clean:     $(TARGETS_CLEAN)
-uninstall: $(TARGETS_UNINSTALL)
-setup:     $(TARGETS_SETUP)
+build:     $(filter-out scheduler-ocaml% , $(TARGETS_BUILD))
+install:   $(filter-out scheduler-ocaml% , $(TARGETS_INSTALL))
+clean:     $(filter-out scheduler-ocaml% , $(TARGETS_CLEAN))
+uninstall: $(filter-out scheduler-ocaml% , $(TARGETS_UNINSTALL))
+setup:     $(filter-out scheduler-ocaml% , $(TARGETS_SETUP))
 
 tarball: .git
 	./misc/make_tarball
