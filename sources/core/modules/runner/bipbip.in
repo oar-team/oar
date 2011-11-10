@@ -10,7 +10,8 @@ use OAR::PingChecker;
 use OAR::Tools;
 use Data::Dumper;
 use IPC::Open2;
-use Module::Info;
+
+my $OAR_Tools_module_filepath="%%PERLLIBDIR%%/OAR/Tools.pm";
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity = 1;
@@ -353,7 +354,7 @@ if (is_conf("EPILOGUE_EXEC_FILE")){
    $epilogue_exec_file = get_conf("EPILOGUE_EXEC_FILE"); 
 }
 
-my @oarexec_files = (Module::Info->new_from_module("OAR::Tools")->file,"$ENV{OARDIR}/oarexec");
+my @oarexec_files = ($OAR_Tools_module_filepath,"$ENV{OARDIR}/oarexec");
 
 my $host_to_connect_via_ssh = $hosts[0];
 #deploy, cosystem and no host part

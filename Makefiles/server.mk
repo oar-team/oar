@@ -8,7 +8,7 @@ OARDIR_BINFILES = $(SRCDIR)/modules/runner/runner \
 		  $(SRCDIR)/qfunctions/oaraccounting \
 		  $(SRCDIR)/qfunctions/oarproperty \
 		  $(SRCDIR)/qfunctions/oarmonitor \
-		  $(SRCDIR)/modules/runner/bipbip \
+		  $(SRCDIR)/modules/runner/bipbip.in \
 		  $(SRCDIR)/tools/detect_resources \
 		  $(SRCDIR)/tools/oar_checkdb.pl
 
