@@ -138,7 +138,7 @@ Options:
  -f, --force-sql                    Force the execution even if an sql instruction fails
  -y, --force-yes                    This option will cause oar-database to continue without prompting if it is doins something potentially harmful
      --conf=OAR_CONF_FILE           Use the configuration file given in parameters. Default '%%OARCONFDIR%%/oar.conf'
-     --db-type=DB_TYPE              Specify the database type ('mysql' oar 'Pg')
+     --db-type=DB_TYPE              Specify the database type ('mysql' or 'Pg')
      --db-host=DB_HOST              Specify the database hostname
      --db-port=DB_PORT              Specify the database port
      --db-user=DB_USER              Specify the database user
@@ -225,12 +225,16 @@ sub create_database() {
         mysql_admin_exec_sql("CREATE DATABASE $db_name CHARACTER SET latin1") ;
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' . "'localhost' IDENTIFIED BY '$db_pass'") ;
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' ."'%' IDENTIFIED BY '$db_pass'");
-        mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
-        mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
+        if ($db_ro_user and $db_ro_pass) {
+            mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
+            mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
+        }
 
     } elsif ($db_type eq "Pg") {
         pgsql_admin_exec_sql("CREATE ROLE $db_user LOGIN PASSWORD '$db_pass';");
-        pgsql_admin_exec_sql("CREATE ROLE $db_ro_user LOGIN PASSWORD '$db_ro_pass';");
+        if ($db_ro_user and $db_ro_pass) {
+            pgsql_admin_exec_sql("CREATE ROLE $db_ro_user LOGIN PASSWORD '$db_ro_pass';");
+        }
         pgsql_admin_exec_sql("CREATE DATABASE $db_name OWNER $db_user");
         pgsql_admin_exec_sql("GRANT ALL PRIVILEGES ON DATABASE $db_name TO $db_user");
     }
@@ -239,7 +243,9 @@ sub create_database() {
     init_database();
 
     if ($db_type eq "Pg")  {
-        pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+        if ($db_ro_user and $db_ro_pass) {
+            pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+        }
     }
 }
 
@@ -534,10 +540,6 @@ if ($action eq "setup") {
         print "The database hasn't been changed\n."
     }
 } elsif ($action eq "create") {
-    unless ($db_ro_user and $db_ro_pass) {
-        print "You need to specify the user/pass for the read-only access (--db-ro-user / --db-ro-pass). See the manual for more information. Failing\n";
-        exit(1);
-    }
     create_database();
 } elsif ($action eq "drop") {
     drop_database();
