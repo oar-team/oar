@@ -54,13 +54,16 @@ if [ -z "$NOLSB" ]; then
     . /lib/lsb/init-functions
     fail_msg() {
         echo ""
-        log_failure_msg "$1"
+        log_failure_msg "$@"
+    }
+    warn_msg() {
+        log_warning_msg "$@"
     }
     succ_msg() {
-        log_end_msg 0
+        log_success_msg "$@"
     }
     begin_msg() {
-        log_daemon_msg "$@"
+        echo -n "$@:"
     }
 else
     echo "This system doesn't provide the LSB functions. Failing"
