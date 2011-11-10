@@ -11,12 +11,11 @@ create_oar_user() {
                 adduser --system --home ${OARHOMEDIR} --ingroup ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
                 ;;
             *)
-                useradd --system -m --home ${OARHOMEDIR} --gid ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} > /dev/null 2>&1
+                useradd --system -m --home ${OARHOMEDIR} --gid ${OAROWNERGROUP} --shell /bin/bash ${OAROWNER} --password "*" > /dev/null 2>&1
                 ;;
         esac
 
 
-        passwd -u ${OAROWNER} >/dev/null 2>&1 
         cd ${OARHOMEDIR} 
         echo '' >> .bash_profile 
         echo "export PATH=\"${OARDIR}/oardodo:$PATH\"" >> .bash_profile 
