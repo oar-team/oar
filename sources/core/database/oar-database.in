@@ -2,8 +2,9 @@
 
 use strict;
 use warnings;
-use DBI;
-use OAR::Conf qw(init_conf get_conf is_conf set_value);
+use DBI();
+use OAR::IO;
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf set_value);
 use File::Basename;
 use Getopt::Long;
 use Sort::Versions;
@@ -128,6 +129,7 @@ Setup the database used by OAR
 
 Actions:
      --create                       create a new db user / database
+     --check                        check if the database is ready to be used
      --drop                         drop the current db user / database
      --setup                        Setup the oar database with an exisiting db user / database
      --reset                        Reset the oar database with an exisiting db user / database
@@ -348,6 +350,7 @@ GetOptions ("help|h"                => \$usage,
             "reset|r"               => sub { $action = 'reset' },
             "create|c"              => sub { $action = 'create' },
             "drop"                  => sub { $action = 'drop' },
+            "check"                 => sub { $action = 'check' },
             "conf=s"                => \$conffile,
 #            "update-conf"           => sub { $action = 'update-conf' },
             "db-type=s"             => \$db_type,
@@ -527,7 +530,17 @@ if ($action eq "update-conf") {
 my $term = Term::ReadLine->new("brand");
 $Term::UI::VERBOSE = 0;
 
-if ($action eq "setup") {
+if ($action eq "check") {
+    $ENV{'OARCONFFILE'} = "%%OARCONFDIR%%/oar.conf";
+    if (defined(OAR::IO::connect_ro_one_log("log"))) {
+        print "The OAR database is accessible and ready to be used.\n";
+        exit 0;
+    }
+    elsei {
+        print "The OAR database isn't ready.\n";
+        exit 1;
+    }
+} elsif ($action eq "setup") {
     check_user_db_access($db_user,$db_pass);
     if($force_yes || $term->ask_yn(
             prompt => "Are you sure you want to upgrade your database ? (Please backup the database before)", 
@@ -536,7 +549,6 @@ if ($action eq "setup") {
     } else {
         print "The database hasn't been changed\n."
     }
-
 } elsif ($action eq "reset") {
     check_user_db_access($db_user,$db_pass);
     if ($force_yes || $term->ask_yn(
