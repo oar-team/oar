@@ -220,21 +220,28 @@ sub setup_database() {
 }
 
 sub create_database() {
-    print "Creating the database...\n";
+
     if ($db_type eq "mysql") {
+        print "Creating the database...\n";
         mysql_admin_exec_sql("CREATE DATABASE $db_name CHARACTER SET latin1") ;
+
+        print "Creating the database user...\n";
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' . "'localhost' IDENTIFIED BY '$db_pass'") ;
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' ."'%' IDENTIFIED BY '$db_pass'");
         if ($db_ro_user and $db_ro_pass) {
+            print "Creating the database read-only user...\n";
             mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
             mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
         }
 
     } elsif ($db_type eq "Pg") {
+        print "Creating the database user...\n";
         pgsql_admin_exec_sql("CREATE ROLE $db_user LOGIN PASSWORD '$db_pass';");
         if ($db_ro_user and $db_ro_pass) {
+            print "Creating the database read-only user...\n";
             pgsql_admin_exec_sql("CREATE ROLE $db_ro_user LOGIN PASSWORD '$db_ro_pass';");
         }
+        print "Creating the database...\n";
         pgsql_admin_exec_sql("CREATE DATABASE $db_name OWNER $db_user");
         pgsql_admin_exec_sql("GRANT ALL PRIVILEGES ON DATABASE $db_name TO $db_user");
     }
