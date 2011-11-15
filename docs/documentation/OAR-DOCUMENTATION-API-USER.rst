@@ -1505,7 +1505,7 @@ GET /resources/nodes/<network_address>
 POST /resources/generate
 ------------------------
 :description:
-  Generates a set of resources
+  Generates (outputs) a set of resources using oaradmin. The result may then be directly sent to /resources for actual creation.
 
 :formats:
   html , yaml , json
@@ -1516,65 +1516,72 @@ POST /resources/generate
 :input:
   [resources] and [properties] entries are mandatory
 
-  *structure*: hash describing the resource to be created
+  *structure*: hash describing the resources to generate
 
   *fields*:
-     - **resources** : network(s) address(es) given to the resource(s)
-     - **properties** (*hash*): an optional hash defining some properties for these new resources
+     - **resources** (*string*): A string corresponding to the resources definition as it could have been passed to the "oaradmin resources -a" command (see man oaradmin).
+     - **properties** (*hash*): an optional hash defining some common properties for these new resources
 
   *yaml example*:
     ::
 
      ---
-     ressources: /node=node747
+     ressources: /nodes=node{2}.test.generate/cpu={2}/core={2}
      properties:
        memnode: 1050
        cpufreq: 5
 
 :output:
-  *structure*: hash returning the id of the newly created resources details
+  *structure*: an array of hashes containing the generated resources that may be pushed to POST /resources for actual creation
 
   *yaml example*:
     ::
 
-     ---
-     25:
-     	available_upto: 0
-  	 	besteffort: YES
-  	 	core: ~
-  	 	cpu: ~
-  	 	cpufreq: 5
-  	 	cpuset: 0
-  	 	cputype: ~
-  	 	deploy: NO
-  	 	desktop_computing: NO
-  	 	expiry_date: 0
-  	 	finaud_decision: NO
-  	 	last_available_upto: 0
-  	 	last_job_date: 0
-  	 	memnode: 1050
-  	 	network_address: node747
-  	 	next_finaud_decision: NO
-  	 	next_state: UnChanged
-  	 	resource_id: 25
-  	 	scheduler_priority: 0
-  	 	state: Alive
-  	 	state_num: 1
-  	 	suspended_jobs: NO
-  	 	type: default
+     --- 
+     - network_address: node1.test.generate
+       cpu: "1"
+       cpuset: 0
+       core: "1"
+     - network_address: node1.test.generate
+       cpu: "1"
+       cpuset: 1
+       core: "2"
+     - network_address: node1.test.generate
+       cpu: "2"
+       cpuset: 2
+       core: "3"
+     - network_address: node1.test.generate
+       cpu: "2"
+       cpuset: 3
+       core: "4"
+     - network_address: node2.test.generate
+       cpu: "3"
+       cpuset: 0
+       core: "5"
+     - network_address: node2.test.generate
+       cpu: "3"
+       cpuset: 1
+       core: "6"
+     - network_address: node2.test.generate
+       cpu: "4"
+       cpuset: 2
+       core: "7"
+     - network_address: node2.test.generate
+       cpu: "4"
+       cpuset: 3
+       core: "8"
      
 :usage example:
   ::
 
-   # Adding a new resource with the ruby rest client (oar user only)
-   irb(main):078:0> r={ 'hostname'=>'/node=node747', 'properties'=> { 'memnode'=>'1050' , 'cpufreq' => '5' } }
-   irb(main):078:0> puts post('/resources', r.to_json , :content_type => 'application/json')
+   # Generating new resources with curl
+   curl -i -X POST http://oar:kameleon@localhost/oarapi-priv/resources/generate -H'Content-Type: application/json' -d '{"resources":"/nodes=node{2}.test.generate/cpu={2}/core={2}"}'
 
 
 POST /resources
 ---------------
 :description:
-  Creates a new resource
+  Creates a new resource or a set of new resources
 
 :formats:
   html , yaml , json
@@ -1585,7 +1592,7 @@ POST /resources
 :input:
   A [hostname] or [network_address] entry is mandatory
 
-  *structure*: hash describing the resource to be created
+  *structure*: A hash describing the resource to be created. An array of hashes may be given for creating a set of new resources. The result of a /resources/generate query may be directly posted to /resources.
 
   *fields*:
      - **hostname** alias **network_address** (*string*): the network address given to the resource
@@ -1601,7 +1608,7 @@ POST /resources
        cpu: "10"
 
 :output:
-  *structure*: hash returning the id of the newly created resource and status
+  *structure*: hash returning the id of the newly created resource and status (or an array of hashes if a set of resources has been given on the input)
 
   *yaml example*:
     ::
