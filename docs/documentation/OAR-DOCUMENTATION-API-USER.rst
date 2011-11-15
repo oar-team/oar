@@ -1537,39 +1537,46 @@ POST /resources/generate
   *yaml example*:
     ::
 
-     --- 
-     - network_address: node1.test.generate
-       cpu: "1"
-       cpuset: 0
-       core: "1"
-     - network_address: node1.test.generate
-       cpu: "1"
-       cpuset: 1
-       core: "2"
-     - network_address: node1.test.generate
-       cpu: "2"
-       cpuset: 2
-       core: "3"
-     - network_address: node1.test.generate
-       cpu: "2"
-       cpuset: 3
-       core: "4"
-     - network_address: node2.test.generate
-       cpu: "3"
-       cpuset: 0
-       core: "5"
-     - network_address: node2.test.generate
-       cpu: "3"
-       cpuset: 1
-       core: "6"
-     - network_address: node2.test.generate
-       cpu: "4"
-       cpuset: 2
-       core: "7"
-     - network_address: node2.test.generate
-       cpu: "4"
-       cpuset: 3
-       core: "8"
+     ---
+     api_timestamp: 1321366378
+     items:
+       - core: 1
+         cpu: 1
+         cpuset: 0
+         network_address: node1.test.generate
+       - core: 2
+         cpu: 1
+         cpuset: 1
+         network_address: node1.test.generate
+       - core: 3
+         cpu: 2
+         cpuset: 2
+         network_address: node1.test.generate
+       - core: 4
+         cpu: 2
+         cpuset: 3
+         network_address: node1.test.generate
+       - core: 5
+         cpu: 3
+         cpuset: 0
+         network_address: node2.test.generate
+       - core: 6
+         cpu: 3
+         cpuset: 1
+         network_address: node2.test.generate
+       - core: 7
+         cpu: 4
+         cpuset: 2
+         network_address: node2.test.generate
+       - core: 8
+         cpu: 4
+         cpuset: 3
+         network_address: node2.test.generate
+     links:
+       - href: /oarapi-priv/resources/generate.yaml
+         rel: self
+     offset: 0
+     total: 8
      
 :usage example:
   ::
