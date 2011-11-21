@@ -2,164 +2,208 @@ Installing the OAR batch system
 ===============================
 
 
-What do you need?
-    - a cluster (at least 1 node)
-    - to be an admin of this cluster
-    - to get the install package of OAR
 
-Requirements
-------------
+Overview
+========
 
-There a three kinds of nodes, each requiring a specific software configuration.
+There are currently 3 methods to install OAR (All of them are documented in this page) :
 
-These are :
-
-    - the server node, which will hold all of OAR "smartness" ;
-    - the login nodes, on which you will be allowed to login, then reserve some
-      computational nodes ;
-    - the computational nodes (a.k.a. the nodes), on which the jobs will run.
-
-So there are three different groups of installation :
-
-    - server:  install the daemon which must be running on the server
-    - user:    install all the tools needed to submit and manage jobs for the
-      users (oarsub, oarstat, oarnodes, ...)
-    - node:    install the tools for a computing node
-
-(Note: The same machine may host several or even all modules)
-
-On every nodes (server, login, computational), the following packages must be
-installed :
-
-    - Perl
-    - Perl-base
-    - openssh (server and client)
-
-On the OAR server and on the login nodes, the following packages must be
-installed:
-
-    - Perl-Mysql | Perl-PostgreSQL
-    - Perl-DBI
-    - Perl(Module::Info)
-    - MySQL | PostgreSQL
-    - libmysql | libpostgres
-
-From now on, we will suppose all the packages are correctly installed and
-configured and the database is started.
+ - with the debian packages
+ - with the rpm packages
+ - with the sources
 
 
-OAR installation from packaging
--------------------------------
-If you are using the Debian or Redhat packaging then you have to follow what
-they are saying.
+The first thing you have to know is about the OAR architecture. A common OAR
+installation is composed of:
 
-You will have to perform some manual tasks:
+    - a **server node** which will hold all of OAR "smartness". This node will run the oar server daemon;
+    - a **frontend nodes** on which you will be allowed to login, then reserve some
+      computing nodes (oarsub, oarstat, oarnodes, ...);
+    - severals **computing nodes** (a.k.a. the nodes), on which the jobs will run.
+    - and optionnaly a **vizualisation node** on which all the vizualisation web interfaces (monika, draw-gantt, ...)  will accessible ;
 
-  - configure/initialize the database on the server.
-  - copy/configure the ssh key of the oar user on each nodes (server, login,
-    computing).
-  - after installing packages, you have to edit the `configuration file`_ on
-    the server, submission nodes and computing nodes to fit your needs.
+Server node
+===========
 
-Debian notes
-~~~~~~~~~~~~
+Installation from the packages
+------------------------------
 
-RedHat notes
-~~~~~~~~~~~~
+**Instructions**
 
-OAR installation from sources
------------------------------
-The following steps have to be done, prior to installing OAR:
+*For redhat like systems*::
 
-    - add a user named "oar" in the group "oar" on every node
-
-    - let the user "oar" connect through ssh from any node to any node WITHOUT
-      password. To achieve this, here is some standard procedure for OpenSSH:
-      
-        * create a set of ssh keys for the user "oar" with ssh-keygen (for
-          instance 'id_dsa.pub' and 'id_dsa')
-        * copy these keys on each node of the cluster in the ".ssh" folder of
-          the user "oar"
-        * append the contents of 'id_dsa.pub' to the file
-          "~/.ssh/authorized_keys"
-        * the default oar ssh public key in the authorized_keys file must be
-          tagged for security. So this prefix must be set in front of
-          the public key::
-
-                environment="OAR_KEY=1"
-
-          So if the oar public key is::
-
-                ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP91oLdZu68JVvYcHKl/u5avb4b
-                zkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM268p00D00ic4fuDwZADpgZMPW
-                FOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr
-
-
-          Then it must be switched into::
-
-                environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsatv3+4HjaP9
-                1oLdZu68JVvYcHKl/u5avb4bzkc3ut3W6FXz5qZYknDW99/R7VYaaZ+VFG5vt6ZCZvJReyM2
-                68p00D00ic4fuDwZADpgZMPWFOGHJM5ga8cTPaczg88XMUx/cVGfnm1LaK5nSrymHZdMsxXr
-
-        * in "~/.ssh/config" add the lines::
+        # Add the epel repository (choose the right version depending on your operating system)
+        rpm -i http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
         
-            Host *
-                ForwardX11 no
-                StrictHostKeyChecking no
-                PasswordAuthentication no
-                AddressFamily inet
+        # Add the oar repository
+        FIXME: 
+        
+        # Install OAR server for the PostgreSQL backend
+        yum install oar-server-pgsql
+        
+        # or Install OAR server for the MySQL backend
+        yum install oar-server-mysql
 
-        * test the ssh connection between (every) two nodes : there should not
-          be any prompt.
+*For the debian like systems*::
+  
+        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
+        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        apt-get update
 
-The installation is straightforward:
+        # Install OAR server for the PostgreSQL backend
+        apt-get install oar-server-pgsql
+        
+        # or Install OAR server for the MySQL backend
+        apt-get install oar-server-mysql
 
-    - become root
-    - go to OAR source repository
-    - You can set Makefile variables in the command line to suit your configuration
-      (change "PREFIX" where you want to copy all OAR files).
-    - run make  <module> [module] ...
-        where module := { server-install | user-install | node-install | doc-install }
-              OPTIONS := { OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR |
-                           OARDIR | BINDIR | SBINDIR | DOCDIR }
-    - Edit /etc/oar/oar.conf file to match your cluster configuration.
-    - Make sure that the PATH environment variable contains $PREFIX/$BINDIR of
-      your installation (default is /usr/local/bin).
+Installation from the tarball
+-----------------------------
+
+**Requirements**
+
+*For redhat like systems*::
+
+          # Add the epel repository (choose the right version depending on your operating system)
+          rpm -i http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+
+          # Build dependencies
+          yum install gcc make tar python-docutils
+
+          # Common dependencies
+          yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions
+          
+          # MySQL dependencies
+          yum install mysql-server mysql perl-DBD-MySQL
+          
+          # PostgreSQL dependencies
+          yum install postgresql-server postgresql perl-DBD-Pg
 
 
-Initialization of OAR database (MySQL) is achieved using oar_mysql_db_init
-script provided with the server module installation and located in $PREFIX/sbin
-(/usr/local/sbin in default Makefile). You must run it as root.
+*For debian like system*::
 
-If you want to use a postgres SQL server then you can call the oar_psql_db_init.pl
-script that will do all the users and tables creation for you. Be careful, with
-postgres you have to edit the *postgresql.conf* to enable the connections to
-this database. Your file must be like::
+          # Build dependencies
+          apt-get install gcc make tar python-docutils
+          
+          # Common dependencies
+          apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl
+          
+          # MySQL dependencies
+          apt-get install mysql-server mysql-client libdbd-mysql-perl
+          
+          # PostgreSQL dependencies
+          apt-get install postgresql-server postgresql-client libdbd-pg-perl
 
-    # in /etc/postgresql/8.1/main/pg_hba.conf
+**Instructions**
+
+Get the sources::
+
+        OAR_VERSION=2.5.1
+        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        cd oar-${OAR_VERSION}/
+
+Build/Install/Setup the OAR server::
+
+        # build
+        make server-build
+        # install
+        make server-install
+        # setup
+        make server-setup
+
+Configuration
+-------------
+
+The oar database
+________________
+
+Define the database configuration in /etc/oar/oar.conf. You need to set the
+variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN, DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
+
+        vi /etc/oar/oar.conf
+
+Create the database and the databse users::
+
+        oar-database --create --db-admin-user <ADMIN_USER> --db-admin-pass <ADMIN_PASS>
+
+Init.d scripts
+______________
+
+
+If you have installed OAR from sources, you need to become root user and
+install manually the init.d/default/sysconfig scripts present in the folders::
+
+    $PREFIX/share/doc/oar-server/examples/scripts/{init.d,default,sysconfig}
+    
+Then use the script ``/etc/init.d/oar-server`` to start the OAR server daemon.
+
+Adding resources to the system
+______________________________
+
+If you want to **automatically** initialize your cluster then you just need to
+launch ``oar_resources_init``. It will detect the resources from the nodes that
+you put in a file and store right OAR commands to initialize the database with
+the appropriate values for the memory and the cpuset properties. Just try...
+
+There is also a tool to help you managing your oar resources and admission 
+rules : ``oaradmin``.
+Take a look at the oaradmin documentation in the administrator commands section 
+for more details.
+
+*Otherwise:*
+
+To add resources to your system, you can use (as root) the command oarnodesetting.
+For a complete comprehension of what does this command, type man
+oarnodesetting. For now, the two options you will need will be **-a** (means
+add a resource) and **-h** (defines the resource hostname or ip adress).
+
+For example, to add a computing resource locally to test OAR installation type::
+
+        oarnodesetting -a -h 127.0.10.1
+
+This will add a resource with 127.0.10.1 as host IP address.
+
+
+You also can modify resources properties with **-p** option, for example::
+
+        oarnodesetting -r 1 -p "deploy=YES"
+
+will allow the resource #1 to accept jobs of the type deploy.
+
+
+Notes
+-----
+
+Security issues
+_______________
+
+For security reasons it is hardly **recommended** to configure a read only
+account for the OAR database (like the above example).  Thus you will be able
+to add this data in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*. 
+
+PostgreSQL : autovacuum
+_______________________
+Be sure to activate the "autovacuum" feature in the "postgresql.conf" file (OAR
+creates and deletes a lot of records and this setting cleans the postgres
+database from unneeded records).
+
+PostgreSQL : authentication
+___________________________
+
+With postgres you probably have to edit the ``pg_hba.conf`` to enable the connections to
+this database. Your file must contains at its beginning the following lines::
+
+    # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
         host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
         host    oar         oar               127.0.0.1          255.255.255.255    md5
-    # Be careful to put these two lines at the top of the file or it won't work
 
-    # You can test it with
-    psql oar oar_ro -h127.0.0.1
+About X11 usage in OAR
+______________________
 
-IMPORTANT: be sure to activate the "autovacuum" feature in the
-"postgresql.conf" file (OAR creates and deletes a lot of records and this
-setting cleans the postgres database from unneeded records).
-
-For more information about postgresql, go to http://www.postgresql.org/.
-
-**Security issue**: For security reasons it is hardly **recommended** to
-configure a read only account for the OAR database (like the above example).
-Thus you will be able to add this data in DB_BASE_LOGIN_RO_ and
-DB_BASE_PASSWD_RO_ in *oar.conf*. 
-
-
-Note about X11: The easiest and scalable way to use X11 application on cluster
-nodes is to open X11 ports and set the right DISPLAY environment variable by
-hand.  Otherwise users can use X11 forwarding via ssh to access cluster
-frontal. After that you must configure ssh server on this frontal with ::
+The easiest and scalable way to use X11 application on cluster nodes is to open
+X11 ports and set the right DISPLAY environment variable by hand.  Otherwise
+users can use X11 forwarding via ssh to access cluster frontal. After that you
+must configure ssh server on this frontal with ::
 
     X11Forwarding yes
     X11UseLocalhost no
@@ -167,17 +211,8 @@ frontal. After that you must configure ssh server on this frontal with ::
 With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node or "oarsh -X node12".
 
-CPUSET feature
---------------
-
-..  OAR uses the CPUSET features provided with the Linux kernel >= 2.6. This
-    enables to restrict user processes only on reserved processors and clean
-    correctly the nodes after the end of the jobs.
-
-.. include:: CPUSET
-
 Using Taktuk
-------------
+____________
 
 If you want to use taktuk to manage remote admnistration commands, you have to
 install it. You can find information about taktuk from its website: 
@@ -190,60 +225,17 @@ related parameters:
   - PINGCHECKER_TAKTUK_ARG_COMMAND (the command used to check resources states)
   - SCHEDULER_NODE_MANAGER_SLEEP_CMD (command used for halting nodes)
 
-Visualization tools installation
---------------------------------
+CPUSET feature
+______________
 
-There are two different tools. One, named Monika, displays the current cluster
-state with all active and waiting jobs. The other, named drawgantt, displays
-node occupation in a lapse of time.  These tools are CGI scripts and generate
-HTML pages.
+OAR uses the CPUSET features provided with the Linux kernel >= 2.6. This
+enables to restrict user processes only on reserved processors and clean
+correctly the nodes after the end of the jobs.
 
-You can install these in this way:
-    drawgantt:
-    
-        - Make sure you installed "ruby", "libdbd-mysql-ruby" or
-          "libdbd-pg-ruby" and "libgd-ruby1.8" packages.
-        - Type::
-
-            make draw-gantt-install
-
-        - Edit "/etc/oar/drawgantt.conf" and change tags to fit your configuration.
-
-    Monika:
-    
-        - The packages "libdbd-mysql-perl" or
-          "libdbd-pg-perl" and "perl-AppConfig" are required.
-        - Type::
-
-            monika-install
-
-        - Edit the configuration file "/etc/oar/minka.conf" to fit to your system.
-
-Starting
---------
-
-First, you must start OAR daemon on the server (its name is "Almighty").
-
-    - if you have installed OAR from sources, become root user and launch
-      command "Almighty" (it stands in $PREFIX/sbin).
-    - if you have installed OAR from the packages, use the script
-      "/etc/init.d/oar-server" to start the daemon.
-
-Then you have to insert new resources in the database via the command
-oarnodesetting_.
-
-If you want to **automatically** initialize your cluster then you just need to
-launch *oar_resources_init*. It will detect the resources from the nodes that
-you put in a file and store right OAR commands to initialize the database with
-the appropriate values for the memory and the cpuset properties. Just try...
-
-There is also a tool to help you managing your oar resources and admission 
-rules : oaradmin.
-Take a look at the oaradmin documentation in the administrator commands section 
-for more details.
+For more information, look at the CPUSET file.
 
 Energy saving
--------------
+_____________
 
 Starting with version 2.4.3, OAR provides a module responsible of advanced
 management of wake-up/shut-down of nodes when they are not used.
@@ -273,8 +265,385 @@ You need to restart OAR each time you change an ENERGY_* variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
-Further informations
+
+
+Frontend nodes
+==============
+
+Installation from the packages
+------------------------------
+
+**Instructions**
+
+*For redhat like systems*::
+
+        # Add the epel repository (choose the right version depending on your operating system)
+        rpm -i http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+
+        # Add the oar repository
+        FIXME: 
+
+        # Install OAR user for the PostgreSQL backend
+        yum install oar-user-pgsql
+        
+        # or Install OAR user for the MySQL backend
+        yum install oar-user-mysql
+
+*For the debian like systems*::
+  
+        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
+        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        apt-get update
+
+        # Install OAR server for the PostgreSQL backend
+        apt-get install oar-user-pgsql
+        
+        # or Install OAR server for the MySQL backend
+        apt-get install oar-user-mysql
+
+
+Installation from the tarball
+-----------------------------
+
+**Requirements**
+
+*For redhat like systems*::
+
+          # Build dependencies
+          yum install gcc make tar python-docutils
+
+          # Common dependencies
+          yum install Perl Perl-base openssh Perl-DBI
+          
+          # MySQL dependencies
+          yum install mysql perl-DBD-MySQL
+          
+          # PostgreSQL dependencies
+          yum install postgresql perl-DBD-Pg
+
+
+*For debian like system*::
+
+          # Build dependencies
+          apt-get install gcc make tar python-docutils
+          
+          # Common dependencies
+          apt-get install perl perl-base openssh-client openssh-server libdbi-perl
+          
+          # MySQL dependencies
+          apt-get install mysql-client libdbd-mysql-perl
+          
+          # PostgreSQL dependencies
+          apt-get install postgresql-client libdbd-pg-perl
+
+**Instructions**
+
+Get the sources::
+
+        OAR_VERSION=2.5.1
+        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        cd oar-${OAR_VERSION}/
+
+Build/Install/setup::
+
+        # build
+        make user-build
+        # install
+        make user-install
+        # setup
+        make user-setup
+
+
+Configuration
+-------------
+
+Coherent configuration files between server node and user nodes
+_______________________________________________________________
+
+You need to have a coherent oar configuration between the server node and the
+user nodes. So you can just copy the /etc/oar directory from to server node to
+the user nodes.
+
+
+OAR API Installation
 --------------------
 
-For further information, please check http://oar.imag.fr/.
+Since the version 2.5.1, OAR propose an API to control the oar server. This api must be installed on a frontend node (with the user module installed).
+
+From the packaging
+__________________
+
+*For redhat like systems*::
+
+        # Add the oar repository
+        FIXME: 
+
+        # Install OAR api for the PostgreSQL backend
+        yum install oar-api-pgsql
+        
+        # or Install OAR api for the MySQL backend
+        yum install oar-api-mysql
+
+*For the debian like systems*::
+  
+        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
+        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        apt-get update
+
+        # Install OAR api for the PostgreSQL backend
+        apt-get install oar-api-pgsql
+        
+        # or Install OAR api for the MySQL backend
+        apt-get install oar-api-mysql
+
+
+From the sources
+________________
+
+**Requirements**:
+
+*For redhat like systems*::
+
+          # Build dependencies
+          yum install gcc make tar python-docutils
+
+          # Common dependencies
+          yum install perl perl-base perl-DBI perl-CGI perl-JSON perl-YAML perl-libwww-perl httpd
+          
+          # MySQL dependencies
+          yum install mysql perl-DBD-MySQL
+          
+          # PostgreSQL dependencies
+          yum install postgresql perl-DBD-Pg
+
+
+*For debian like system*::
+
+          # Build dependencies
+          apt-get install gcc make tar python-docutils
+          
+          # Common dependencies
+          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl httpd-cgi
+          
+          # MySQL dependencies
+          apt-get install mysql-server mysql-client libdbd-mysql-perl
+          
+          # PostgreSQL dependencies
+          apt-get install postgresql-server postgresql-client libdbd-pg-perl
+
+**Instructions**
+
+Get the sources::
+
+        OAR_VERSION=2.5.1
+        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        cd oar-${OAR_VERSION}/
+
+build/install/setup::
+
+        # build
+        make api-build
+        # install
+        make api-install
+        # setup
+        make api-setup
+
+
+
+Computing nodes
+===============
+
+Installation from the packages
+------------------------------
+
+**Instructions**
+
+*For redhat like systems*::
+
+        # Add the oar repository
+        FIXME: 
+
+        # Install OAR node
+        yum install oar-node
+
+*For the debian like systems*::
+  
+        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
+        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        apt-get update
+
+        # Install OAR node
+        apt-get install oar-node
+
+Installation from the tarball
+-----------------------------
+
+**Requirements**
+
+*For redhat like systems*::
+
+          # Build dependencies
+          yum install gcc make tar python-docutils
+
+          # Common dependencies
+          yum install Perl Perl-base openssh 
+          
+*For debian like system*::
+
+          # Build dependencies
+          apt-get install gcc make tar python-docutils
+          
+          # Common dependencies
+          apt-get install perl perl-base openssh-client openssh-server 
+          
+**Instructions**
+
+Get the sources::
+
+        OAR_VERSION=2.5.1
+        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        cd oar-${OAR_VERSION}/
+
+build/install/setup::
+
+        # build
+        make node-build
+        # install
+        make node-install
+        # setup
+        make node-setup
+
+
+Configuration
+-------------
+ 
+oar node ssh access
+___________________
+
+You need to ensure that the oar user can access to each nodes through ssh. To
+ensure that, you can just copy the ``/var/lib/oar/.ssh`` folder from the oar
+server to each nodes (ensure that ``/var/lib/oar/.ssh`` has the right
+permissions).
+
+Init.d scripts
+______________
+
+If you have installed OAR from sources, you need to become root user and
+install manually the {init.d,default,sysconfig} scripts present in the folders::
+
+    $PREFIX/share/doc/oar-node/examples/scripts/{init.d,default,sysconfig}
+
+Then you juste need to use the script ``/etc/init.d/oar-node`` to start
+the ssh daemon dedicated to oar-node.
+
+
+
+Visualization node
+==================
+
+Description
+-----------
+
+There are two different tools. One, named Monika, displays the current cluster
+state with all active and waiting jobs. The other, named drawgantt, displays
+node occupation in a lapse of time.  These tools are CGI scripts and generate
+HTML pages.
+
+Installation from the packages
+------------------------------
+
+**Instructions**
+
+*For redhat like systems*::
+
+        # Add the oar repository
+        FIXME: 
+
+        yum install oar-web-status
+
+*For the debian like systems*::
+  
+        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
+        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        apt-get update
+
+        apt-get install oar-web-status
+
+
+Installation from the tarball
+-----------------------------
+
+**Requirements**:
+
+*For redhat like systems*::
+
+          # Build dependencies
+          yum install gcc make tar python-docutils
+
+          # Common dependencies
+          yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig
+          
+          # MySQL dependencies
+          yum install mysql perl-DBD-MySQL ruby-mysql
+          
+          # PostgreSQL dependencies
+          yum install postgresql perl-DBD-Pg ruby-pg
+
+
+*For debian like system*::
+
+          # Build dependencies
+          apt-get install gcc make tar python-docutils
+          
+          # Common dependencies
+          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
+          
+          # MySQL dependencies
+          apt-get install libdbd-mysql-perl libdbd-mysql-ruby
+          
+          # PostgreSQL dependencies
+          apt-get install libdbd-pg-perl libdbd-pg-ruby
+
+**Instructions**
+
+Get the sources::
+
+        OAR_VERSION=2.5.1
+        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        cd oar-${OAR_VERSION}/
+
+build/install/setup::
+
+        # build
+        make monika-build draw-gantt-build www-conf-build
+        # install
+        make monika-install draw-gantt-install www-conf-install
+        # setup
+        make monika-setup draw-gantt-setup www-conf-setup
+
+Configuration
+-------------
+
+**Drawgantt configuration**
+
+ - Edit ``/etc/oar/drawgantt.conf`` to fit your configuration.
+
+**Monika configuration**
+
+ - Edit ``/etc/oar/monika.conf`` to fit your configuration.
+ 
+**httpd configuration**
+
+ - You need to edit ``/etc/oar/apache.conf`` to fit your needs and verify that you
+   http server configured.
+
+
+Further informations
+====================
+
+For further information, please check the documentation section on the OAR website http://oar.imag.fr/.
 
