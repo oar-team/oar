@@ -1,10 +1,8 @@
 Installing the OAR batch system
 ===============================
 
-
-
 Overview
-========
+--------
 
 There are currently 3 methods to install OAR (All of them are documented in this page) :
 
@@ -23,10 +21,10 @@ installation is composed of:
     - and optionnaly a **vizualisation node** on which all the vizualisation web interfaces (monika, draw-gantt, ...)  will accessible ;
 
 Server node
-===========
+-----------
 
 Installation from the packages
-------------------------------
+______________________________
 
 **Instructions**
 
@@ -58,7 +56,7 @@ Installation from the packages
         apt-get install oar-server-mysql
 
 Installation from the tarball
------------------------------
+_____________________________
 
 **Requirements**
 
@@ -112,10 +110,10 @@ Build/Install/Setup the OAR server::
         make server-setup
 
 Configuration
--------------
+_____________
 
 The oar database
-________________
+~~~~~~~~~~~~~~~~
 
 Define the database configuration in /etc/oar/oar.conf. You need to set the
 variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN, DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
@@ -127,7 +125,7 @@ Create the database and the databse users::
         oar-database --create --db-admin-user <ADMIN_USER> --db-admin-pass <ADMIN_PASS>
 
 Init.d scripts
-______________
+~~~~~~~~~~~~~~
 
 
 If you have installed OAR from sources, you need to become root user and
@@ -138,7 +136,7 @@ install manually the init.d/default/sysconfig scripts present in the folders::
 Then use the script ``/etc/init.d/oar-server`` to start the OAR server daemon.
 
 Adding resources to the system
-______________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to **automatically** initialize your cluster then you just need to
 launch ``oar_resources_init``. It will detect the resources from the nodes that
@@ -172,23 +170,23 @@ will allow the resource #1 to accept jobs of the type deploy.
 
 
 Notes
------
+_____
 
 Security issues
-_______________
+~~~~~~~~~~~~~~~
 
 For security reasons it is hardly **recommended** to configure a read only
 account for the OAR database (like the above example).  Thus you will be able
 to add this data in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*. 
 
 PostgreSQL : autovacuum
-_______________________
+~~~~~~~~~~~~~~~~~~~~~~~
 Be sure to activate the "autovacuum" feature in the "postgresql.conf" file (OAR
 creates and deletes a lot of records and this setting cleans the postgres
 database from unneeded records).
 
 PostgreSQL : authentication
-___________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 With postgres you probably have to edit the ``pg_hba.conf`` to enable the connections to
 this database. Your file must contains at its beginning the following lines::
@@ -198,7 +196,7 @@ this database. Your file must contains at its beginning the following lines::
         host    oar         oar               127.0.0.1          255.255.255.255    md5
 
 About X11 usage in OAR
-______________________
+~~~~~~~~~~~~~~~~~~~~~~
 
 The easiest and scalable way to use X11 application on cluster nodes is to open
 X11 ports and set the right DISPLAY environment variable by hand.  Otherwise
@@ -212,7 +210,7 @@ With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node or "oarsh -X node12".
 
 Using Taktuk
-____________
+~~~~~~~~~~~~
 
 If you want to use taktuk to manage remote admnistration commands, you have to
 install it. You can find information about taktuk from its website: 
@@ -226,7 +224,7 @@ related parameters:
   - SCHEDULER_NODE_MANAGER_SLEEP_CMD (command used for halting nodes)
 
 CPUSET feature
-______________
+~~~~~~~~~~~~~~
 
 OAR uses the CPUSET features provided with the Linux kernel >= 2.6. This
 enables to restrict user processes only on reserved processors and clean
@@ -235,7 +233,7 @@ correctly the nodes after the end of the jobs.
 For more information, look at the CPUSET file.
 
 Energy saving
-_____________
+~~~~~~~~~~~~~
 
 Starting with version 2.4.3, OAR provides a module responsible of advanced
 management of wake-up/shut-down of nodes when they are not used.
@@ -268,10 +266,10 @@ details about the mechanism, take a look at the "Hulot" module documentation.
 
 
 Frontend nodes
-==============
+--------------
 
 Installation from the packages
-------------------------------
+______________________________
 
 **Instructions**
 
@@ -304,7 +302,7 @@ Installation from the packages
 
 
 Installation from the tarball
------------------------------
+_____________________________
 
 **Requirements**
 
@@ -356,10 +354,10 @@ Build/Install/setup::
 
 
 Configuration
--------------
+_____________
 
 Coherent configuration files between server node and user nodes
-_______________________________________________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You need to have a coherent oar configuration between the server node and the
 user nodes. So you can just copy the /etc/oar directory from to server node to
@@ -367,12 +365,12 @@ the user nodes.
 
 
 OAR API Installation
---------------------
+____________________
 
 Since the version 2.5.1, OAR propose an API to control the oar server. This api must be installed on a frontend node (with the user module installed).
 
 From the packaging
-__________________
+~~~~~~~~~~~~~~~~~~
 
 *For redhat like systems*::
 
@@ -400,7 +398,7 @@ __________________
 
 
 From the sources
-________________
+~~~~~~~~~~~~~~~~
 
 **Requirements**:
 
@@ -453,10 +451,10 @@ build/install/setup::
 
 
 Computing nodes
-===============
+---------------
 
 Installation from the packages
-------------------------------
+______________________________
 
 **Instructions**
 
@@ -479,7 +477,7 @@ Installation from the packages
         apt-get install oar-node
 
 Installation from the tarball
------------------------------
+_____________________________
 
 **Requirements**
 
@@ -518,10 +516,10 @@ build/install/setup::
 
 
 Configuration
--------------
+_____________
  
 oar node ssh access
-___________________
+~~~~~~~~~~~~~~~~~~~
 
 You need to ensure that the oar user can access to each nodes through ssh. To
 ensure that, you can just copy the ``/var/lib/oar/.ssh`` folder from the oar
@@ -529,7 +527,7 @@ server to each nodes (ensure that ``/var/lib/oar/.ssh`` has the right
 permissions).
 
 Init.d scripts
-______________
+~~~~~~~~~~~~~~
 
 If you have installed OAR from sources, you need to become root user and
 install manually the {init.d,default,sysconfig} scripts present in the folders::
@@ -542,10 +540,10 @@ the ssh daemon dedicated to oar-node.
 
 
 Visualization node
-==================
+------------------
 
 Description
------------
+___________
 
 There are two different tools. One, named Monika, displays the current cluster
 state with all active and waiting jobs. The other, named drawgantt, displays
@@ -553,7 +551,7 @@ node occupation in a lapse of time.  These tools are CGI scripts and generate
 HTML pages.
 
 Installation from the packages
-------------------------------
+______________________________
 
 **Instructions**
 
@@ -575,7 +573,7 @@ Installation from the packages
 
 
 Installation from the tarball
------------------------------
+_____________________________
 
 **Requirements**:
 
@@ -626,7 +624,7 @@ build/install/setup::
         make monika-setup draw-gantt-setup www-conf-setup
 
 Configuration
--------------
+_____________
 
 **Drawgantt configuration**
 
@@ -643,7 +641,7 @@ Configuration
 
 
 Further informations
-====================
+--------------------
 
 For further information, please check the documentation section on the OAR website http://oar.imag.fr/.
 
