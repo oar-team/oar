@@ -28,6 +28,18 @@ if ($Leon_walltime <= $Leon_soft_walltime){
     oar_warn("[sarko] (JOBDEL_WALLTIME <= JOBDEL_SOFTWALLTIME) so I must set JOBDEL_WALLTIME to $Leon_walltime\n");
 }
 
+my $Server_hostname = get_conf("SERVER_HOSTNAME");
+
+my $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
+if (!defined($Deploy_hostname)){
+    $Deploy_hostname = $Server_hostname;
+}
+
+my $Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
+if (!defined($Cosystem_hostname)){
+    $Cosystem_hostname = $Server_hostname;
+}
+
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
@@ -107,34 +119,40 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         oar_debug("[sarko] Send checkpoint signal to the job $job->{job_id}\n");
         # Retrieve node names used by the job
         my @hosts = OAR::IO::get_job_current_hostnames($base,$job->{job_id});
-        OAR::IO::add_new_event($base,"CHECKPOINT",$job->{job_id},"User oar (sarko) requested a checkpoint on the job $job->{job_id}");
+        my $types = OAR::IO::get_current_job_types($base,$job->{job_id});
+        my $host_to_connect = $hosts[0];
+        if ((defined($types->{cosystem})) or ($#hosts < 0)){
+            $host_to_connect = $Cosystem_hostname;
+        }elsif (defined($types->{deploy})){
+            $host_to_connect = $Deploy_hostname;
+        }
+        OAR::IO::add_new_event($base,"CHECKPOINT",$job->{job_id},"User oar (sarko) requested a checkpoint on the job $job->{job_id} on $host_to_connect");
         my $str_comment;
         my @exit_codes;
         # Timeout the ssh command
         eval {
             $SIG{ALRM} = sub { die "alarm\n" };
             alarm(OAR::Tools::get_ssh_timeout());
-            @exit_codes = OAR::Tools::signal_oarexec($hosts[0],$job->{job_id},"SIGUSR2",1,$base, $Openssh_cmd, '');
+            @exit_codes = OAR::Tools::signal_oarexec($host_to_connect,$job->{job_id},"SIGUSR2",1,$base, $Openssh_cmd, '');
             alarm(0);
         };
         if ($@){
             if ($@ eq "alarm\n"){
-                $str_comment = "[sarko] Cannot contact $hosts[0], operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $job->{job_id}";
+                $str_comment = "[sarko] Cannot contact $hosts[0], operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $job->{job_id} on $host_to_connect";
                 oar_warn("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }else{
-                $str_comment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $hosts[0]";
+                $str_comment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $host_to_connect";
                 oar_warn("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }
         }else{
             if ($exit_codes[0] == 0){
-                OAR::IO::set_job_autoCheckpointed($base, $job->{job_id});
-                $str_comment = "[sarko] The job $job->{job_id} was notified to checkpoint itself (send SIGUSR2) on the node $hosts[0]";
+                $str_comment = "[sarko] The job $job->{job_id} was notified to checkpoint itself on the node $host_to_connect";
                 oar_debug("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$str_comment);
             }else{
-                $str_comment = "[sarko] The kill command return a bad exit code (@exit_codes) for the job $job->{job_id} on the node $hosts[0]";
+                $str_comment = "[sarko] The kill command return a bad exit code (@exit_codes) for the job $job->{job_id} on the node $host_to_connect";
                 oar_warn("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }
