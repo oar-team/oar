@@ -1,15 +1,11 @@
 MODULE=man
 
-sources=$(wildcard sources/core/man/man1/*.pod)
-targets=$(patsubst %.pod,%.1,$(sources))
+MANDIR_FILES=$(wildcard sources/core/man/man1/*.pod) $(wildcard sources/core/man/man1/*.pod.in)
 
-clean:
-	rm -f $(targets)
+include Makefiles/shared/shared.mk
 
-build: $(targets)
+clean: clean_shared
 
-%.1: %.pod
-	pod2man --section=1 --release="$(notdir $(basename $<))" --center "OAR commands" --name="$(notdir $(basename $<))" "$<" > $@
-
+build: build_shared
 
 .PHONY: install setup uninstall build clean

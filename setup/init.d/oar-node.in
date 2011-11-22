@@ -19,7 +19,7 @@
 # Short-Description:    OAR Dedicated Node (launch its own sshd)
 ### END INIT INFO
 
-PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin;$PATH
+PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 NAME=oar-node
 DESC=oar-node
 OAR_SSHD_CONF="%%OARCONFDIR%%/sshd_config"
@@ -54,13 +54,16 @@ if [ -z "$NOLSB" ]; then
     . /lib/lsb/init-functions
     fail_msg() {
         echo ""
-        log_failure_msg "$1"
+        log_failure_msg "$@"
+    }
+    warn_msg() {
+        log_warning_msg "$@"
     }
     succ_msg() {
-        log_end_msg 0
+        log_success_msg "$@"
     }
     begin_msg() {
-        log_daemon_msg "$@"
+        echo -n "$@: "
     }
 else
     echo "This system doesn't provide the LSB functions. Failing"
@@ -85,9 +88,9 @@ do_start() {
     begin_msg "Starting $DESC"
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start_daemon -p "%%OARHOMEDIR%%/oar_sshd.pid" -n "-20" /usr/sbin/sshd $SSHD_OPTS; then
-            succ_msg " * OAR dedicated SSH server started."
+            succ_msg "OAR dedicated SSH server started."
         else
-            fail_msg " * Failed to start OAR dedicated SSH server."
+            fail_msg "Failed to start OAR dedicated SSH server."
             exit 2
         fi
     fi
@@ -97,9 +100,9 @@ do_stop() {
     begin_msg "Stopping $DESC "
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if killproc -p  "%%OARHOMEDIR%%/oar_sshd.pid"; then
-            succ_msg " * OAR dedicated SSH server stopped."
+            succ_msg "OAR dedicated SSH server stopped."
         else
-            fail_msg " * Failed to stop OAR dedicated SSH server."
+            fail_msg "Failed to stop OAR dedicated SSH server."
             exit 2
         fi
     fi

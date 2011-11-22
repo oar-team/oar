@@ -5,17 +5,15 @@ OAR_PERLLIB= $(SRCDIR)/common-libs/lib
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	# Nothing to do
-build: 
+
+build:  build_shared
 	# Nothing to do
 	
 install: install_shared
 	# Nothing to do
 	
-setup: setup_shared
-	# Nothing to do
-
 uninstall: uninstall_shared
 	# Nothing to do
 

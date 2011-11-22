@@ -2750,7 +2750,9 @@ sub get_current_job_types($$){
     $sth->execute();
     my %res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        if ($ref->{type} =~ m/^\s*(\w+)\s*=\s*(.+)$/m){
+        if ($ref->{type} =~ m/^\s*(token)\s*\:\s*(\w+)\s*=\s*(\d+)\s*$/m){
+            $res{$1}->{$2} = $3;
+        }elsif ($ref->{type} =~ m/^\s*(\w+)\s*=\s*(.+)$/m){
             $res{$1} = $2;
         }else{
             $res{$ref->{type}} = "true";
@@ -5746,6 +5748,7 @@ sub get_gantt_hostname_to_wake_up($$$){
                    AND resources.state = \'Absent\'
                    AND resources.network_address != \'\'
                    AND resources.type = \'default\'
+                   AND (g2.start_time + m.moldable_walltime) <= resources.available_upto
                GROUP BY resources.network_address
               ";
     

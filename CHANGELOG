@@ -76,6 +76,21 @@ version 2.5.0:
     variable does not contain ~/.Xauthority (GDM issue).
   - Add job_resource_manager_cgroups which handles cpuset + other cgroup
     features like network packet tagging, IO disk shares, ...
+  - Bugfix #13351: now oar_psql_db_init is executed with root privileges
+  - Bugfix #13434: reservation were not handled correctly with the energy
+    saving feature
+  - Add cgroups FREEZER feature to the suspend/resume script (better than kill
+    SIGSTOP/SIGCONT).
+    This is doable thanks to the new job_resource_manager_cgroups.
+  - Implement a new script 'oar-database' to manage the oar database.
+    oar_mysql_init & oar_psql_init are dropped.
+  - Huge code reorganisation to allow a better packaging and system integration
+  - Drop the oarsub/oarstat 2.3 version that was kept for compatiblity issues
+    during the 2.4.x branch.
+  - By default the oar scheduler is now
+    'oar_sched_gantt_with_timesharing_and_fairsharing' and the following values
+    has been set in oar.conf: SCHEDULER_TIMEOUT to 30, SCHEDULER_NB_PROCESSES to 4
+    and SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER to 30
 
 version 2.4.4:
 --------------

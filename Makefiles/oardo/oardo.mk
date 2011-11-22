@@ -1,3 +1,4 @@
+MODULE=oardo
 
 include Makefiles/shared/shared.mk
 
@@ -31,43 +32,38 @@ exit 1
 endif
 
 
-CMD_BUILDTARGET=Makefiles/oardo/$(subst /,%,$(CMD_TARGET))
+CMD_BUILDTARGET=Makefiles/oardo/build/$(subst /,%,$(CMD_TARGET))
 
 clean:
-	rm -f $(CMD_BUILDTARGET) $(CMD_BUILDTARGET).c
+	-rm -rf $$(dirname $(CMD_BUILDTARGET))
 
-build: 
-ifeq "$(CMD_TARGET)" ""
-	echo "no CMD_TARGET given. Fail !"
-	exit 1
-endif
-	cp sources/core/tools/oardo.c $(CMD_BUILDTARGET).c
-	perl -i -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
+build: $(CMD_BUILDTARGET)
+	# Nothing to do
+
+$(CMD_BUILDTARGET).c:
+	mkdir -p $$(dirname $(CMD_BUILDTARGET))
+	perl -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
 			s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFFILE)\"#;;\
 			s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(OARXAUTHLOCATION)\"#;;\
 			s#define USERTOBECOME .*#define USERTOBECOME \"$(CMD_USERTOBECOME)\"#;;\
 			s#define PATH2SET .*#define PATH2SET \"/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo\"#;;\
 			s#define CMD_WRAPPER .*#define CMD_WRAPPER \"$(CMD_WRAPPER)\"#;;\
-			" "$(CMD_BUILDTARGET).c"
+			" sources/core/tools/oardo.c > "$(CMD_BUILDTARGET).c"
 
+$(CMD_BUILDTARGET): $(CMD_BUILDTARGET).c
+ifeq "$(CMD_TARGET)" ""
+	echo "no CMD_TARGET given. Fail !"
+	exit 1
+endif
+	
 	$(CC) $(CFLAGS) -o $(CMD_BUILDTARGET) "$(CMD_BUILDTARGET).c"
 	
 
-install:
-ifeq "$(CMD_TARGET)" ""
-	echo "no CMD_TARGET given. Fail !"
-	exit 1
-endif
-	install -d `dirname $(CMD_TARGET)`
-	install $(CMD_BUILDTARGET) $(CMD_TARGET)
+install: $(CMD_TARGET)
 
-setup:
-ifeq "$(CMD_TARGET)" ""
-	echo "no CMD_TARGET given. Fail !"
-	exit 1
-endif
-	chown $(ROOTUSER):$(CMD_GROUP) $(CMD_TARGET)
-	chmod $(CMD_RIGHTS) $(CMD_TARGET)
+$(CMD_TARGET): $(CMD_BUILDTARGET)
+	install -d `dirname $(CMD_TARGET)`
+	install -m 0750 $(CMD_BUILDTARGET) $(CMD_TARGET)
 
 uninstall:
 ifeq "$(CMD_TARGET)" ""

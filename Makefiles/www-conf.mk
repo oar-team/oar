@@ -3,18 +3,16 @@ SRCDIR=sources
 
 EXAMPLEDIR_FILES= $(SRCDIR)/visualization_interfaces/apache.conf.in
 
-PROCESS_TEMPLATE_FILES= $(EXAMPLEDIR)/apache.conf.in
-
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	# nothing to do
-build:
+
+build: build_shared
 	# nothing to do
 
 install: install_shared
-
-setup: setup_shared
+	# nothing to do
 
 uninstall: uninstall_shared
 	# Nothing to do

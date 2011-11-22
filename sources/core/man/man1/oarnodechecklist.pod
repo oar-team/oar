@@ -1,0 +1,20 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oarnodechecklist - a simple local node check mechanism
+
+=head1 SYNOPSIS
+
+B<oarnodechecklist>
+
+=head1 DESCRIPTION
+
+This command lists the currently recorder check logs for this node.
+
+=head1 SEE ALSO
+
+see %%DOCIR%%/oarnodecheck/README
+
+=cut
+

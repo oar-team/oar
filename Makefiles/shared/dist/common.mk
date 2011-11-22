@@ -5,6 +5,9 @@ export PREFIX?=/usr/local
 export RUNDIR?=/var/run
 export LOGDIR?=/var/log
 export INITDIR?=$(ETCDIR)/init.d
+export CRONDIR?=$(ETCDIR)/cron.d
+export CRONHOURLYDIR?=$(ETCDIR)/cron.hourly
+export LOGROTATEDIR?=$(ETCDIR)/logrotate.d
 export DEFAULTDIR?=$(ETCDIR)/default
 export SHAREDIR?=$(PREFIX)/share/oar-$(strip $(MODULE))
 export MANDIR?=$(PREFIX)/share/man
@@ -31,11 +34,13 @@ export ROOTGROUP?=root
 export OARUSER?=oar
 export OAROWNER?=$(OARUSER)
 export OAROWNERGROUP?=$(OAROWNER)
+
+export OARDO_DEFAULTUSER?=$(ROOTUSER)
+export OARDO_DEFAULTGROUP?=$(OAROWNERGROUP)
+
 export WWWUSER?=www-data
 
 export WWW_ROOTDIR?=
-export XAUTHCMDPATH?=$(shell which xauth)
 export XAUTHCMDPATH?=/usr/bin/xauth
 export OARSHCMD?=oarsh_oardo
-
 

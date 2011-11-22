@@ -3,11 +3,11 @@ SRCDIR=
 
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared 
 	$(MAKE) -C docs/documentation clean
 	rm -f docs/documentation/oar-documentation-devel.html
 
-build: build-html-doc
+build: build_shared build-html-doc
 
 install: build install_shared
 	install -d $(DESTDIR)$(DOCDIR)
@@ -16,31 +16,26 @@ install: build install_shared
 	install -d $(DESTDIR)$(DOCDIR)/scripts
 	install -d $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager
 	
-	install docs/documentation/OAR-DOCUMENTATION-USER.html $(DESTDIR)$(DOCDIR)/html
-	install docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DESTDIR)$(DOCDIR)/html
-	install docs/documentation/OAR-DOCUMENTATION-API-USER.html $(DESTDIR)$(DOCDIR)/html
-	install docs/documentation/OAR-DOCUMENTATION-API-ADMIN.html $(DESTDIR)$(DOCDIR)/html
-	install docs/documentation/OAR-DOCUMENTATION-API-DEVEL.html $(DESTDIR)$(DOCDIR)/html
-	install docs/schemas/oar_logo.png $(DESTDIR)$(DOCDIR)/html
-	install docs/schemas/db_scheme.png $(DESTDIR)$(DOCDIR)/html
-	install docs/schemas/interactive_oarsub_scheme.png $(DESTDIR)$(DOCDIR)/html
-	install docs/schemas/Almighty.fig $(DESTDIR)$(DOCDIR)/html
-	install docs/schemas/Almighty.ps $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-USER.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-ADMIN.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API-USER.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API-ADMIN.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/documentation/OAR-DOCUMENTATION-API-DEVEL.html $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/schemas/oar_logo.png $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/schemas/db_scheme.png $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/schemas/interactive_oarsub_scheme.png $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/schemas/Almighty.fig $(DESTDIR)$(DOCDIR)/html
+	install -m 0644 docs/schemas/Almighty.ps $(DESTDIR)$(DOCDIR)/html
 	
-	install sources/core/tools/job_resource_manager.pl $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/
+	install -m 0644 sources/core/tools/job_resource_manager.pl $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/
 	
-	install sources/core/scripts/oar_prologue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install sources/core/scripts/oar_epilogue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install sources/core/scripts/oar_prologue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install sources/core/scripts/oar_epilogue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install sources/core/scripts/oar_diffuse_script $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install sources/core/scripts/lock_user.sh $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-	install sources/core/scripts/oar_server_proepilogue.pl $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
-
-setup: setup_shared
-	chmod 0644 $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/*
-	chmod 0644 $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/*
-	chmod 0644 $(DESTDIR)$(DOCDIR)/html/*
+	install -m 0644 sources/core/scripts/oar_prologue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_epilogue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_prologue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_epilogue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_diffuse_script $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/lock_user.sh $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
+	install -m 0644 sources/core/scripts/oar_server_proepilogue.pl $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 
 uninstall: uninstall_shared
 	rm -rf \

@@ -1,0 +1,196 @@
+=head1 NAME
+
+oar-database - create/initialize/upgrade/reset/drop the oar database
+
+=head1 SYNOPSIS
+
+B<oar-database> I<--create>  [I<OPTIONS>] 
+
+B<oar-database> I<--drop>    [I<OPTIONS>] 
+
+B<oar-database> I<--setup>   [I<OPTIONS>] 
+
+B<oar-database> I<--reset>   [I<OPTIONS>] 
+
+=head1 DESCRIPTION
+
+Manage the oar database.
+
+=over
+
+=item B<--setup>
+
+Initialize/Upgrade an existing database.
+
+=item B<--reset>
+
+Reset an existing database.
+
+=item B<--create>
+
+Create and initialize a new database/user.
+
+=item B<--drop>
+
+Drop an existing database/user.
+
+=back
+
+=head1 OPTIONS
+
+=head2 General parameters
+
+=over
+
+=item B<--conf>=I<OAR_CONF_FILE>
+
+Define the oar configuration file to use. By default I<%%OARCONFDIR%%/oar.conf> is used. This file doesn't exist, the default parameters for each value are used.
+
+=item B<--update-conf>
+
+The database parameters given in the command line are writen to the OAR_CONF_FILE
+
+=item B<-h,--help>
+
+Display this help.
+
+=item B<-d,--debug>
+
+Display more information during the script execution
+
+=item B<-f,--force-sql>
+
+Force to resume the execution even if an sql instruction fails
+
+=item B<-y,--force-yes>
+
+This option will cause oar-database to continue without prompting if it is doins something potentially harmful
+
+=back
+
+=head2 Database admin parameters
+
+These parameters are only needed for database/user creation or removing.
+
+=over
+
+=item B<--db-is-local>
+
+For B<--create> or B<--drop>, this option tells that the database is local. oar-database can use local admin account to execute command (useful for postgres).
+
+=item B<--db-admin-user>=I<DB_ADMIN_USER>
+
+For B<--create> or B<--drop>, this option gives the privilegied user to use.
+
+=item B<--db-admin-pass>=I<DB_ADMIN_PASS>
+
+For B<--create> or B<--drop>, this option gives the privilegied user pass to use.
+
+=back
+
+=head2 SQL parameters
+
+By default, if not specified, all the sql parameters are taken from the I<OAR_CONF_FILE>. It is preferable to set these values directly to this file. 
+
+=over
+
+=item B<--db-type>=I<DB_TYPE>
+
+The type of the SQL database. It can be currently, I<mysql> or I<Pg> (for postgresql).
+
+=item B<--db-user>=I<DB_USER>
+
+Connect to the database as the user DB_USER instead of the one given in OAR_CONF_FILE. By default, if OAR_CONF_FILE doesn't specify a user, it is I<%%OARUSER%%>.
+
+=item B<--db-pass>=I<DB_PASS>
+
+Connect to the database with the password DB_PASS instead of the one given in OAR_CONF_FILE.
+
+=item B<--db-host>=I<DB_HOST>
+
+Connect to the database on the host DB_HOST, By default, if OAR_CONF_FILE doesn't specify a host, it is I<localhost>.
+
+=item B<--db-port>=I<DB_PORT>
+
+Connect to the database on the port DB_PORT, By default, if OAR_CONF_FILE
+doesn't specify a port, the value depend on the DB_TYPE. if DB_TYPE is
+I<mysql>, DB_PORT is I<3306>. If DB_TYPE is I<postgresql>, DB_PORT is I<5432>.
+
+=item B<--db-name>=I<DB_NAME>
+
+Connect to the database on the host DB_HOST, By default, if OAR_CONF_FILE doesn't specify a database name, it is I<oar>.
+
+=item B<--db-ro-user>=I<DB_RO_USER>
+
+same as B<--db-user> except that it is for the read only access.
+
+=item B<--db-ro-pass>=I<DB_RO_PASS>
+
+same as B<--db-pass> except that it is for the read only access.
+
+=back
+
+=head1 EXAMPLES
+
+=head2 Mysql
+
+First you need to specify the sql parameters in %%OARCONFDIR%%/oar.conf. These parameters will be used by B<oar-database>.
+
+To create a new database (assuming that the sql root password is B<PASS>):
+
+B<oar-database --create --db-admin-user root --db-admin-pass PASS>
+
+To upgrade an existing database:
+
+B<oar-database --setup>
+
+=head2 Postgresql
+
+First you need to specify the sql parameters in %%OARCONFDIR%%/oar.conf. These parameters will be used by B<oar-database>. Then if your postgresql database is on the local system, you can use the option B<--db-is-local> (otherwise, the procedure is the same as Mysql). So B<oar-database> will use the postgres unix user to administrate the database (you need privilegied access to the local system).
+
+To create a new database:
+
+B<oar-database --create --db-is-local>
+
+To upgrade an existing database:
+
+B<oar-database --setup>
+
+=head2 Advanced usages
+
+To make some tests or to administrate several databases, you can also specify the sql parameters on the command line. For example:
+
+B<oar-database --create --db-type=Pg --db-host=HOST \
+               --db-user=oar --db-pass=PASS \
+               --db-admin-user=ADMIN_USER --db-admin-pass=ADMIN_PASS>
+
+will create the oar database and the oar user on the postgresql system hosted by B<HOST>. The user B<ADMIN_USER> must have the right to create new databases and new roles on this system.
+
+=head1 FILES
+
+=over 
+
+=item %%OARDIR%%/database/mysql_structure.sql, %%OARDIR%%/database/pg_structure.sql
+
+SQL instructions for creating the structure of the oar database.
+
+=item %%OARDIR%%/database/mysql_default_admission_rules.sql, %%OARDIR%%/database/pg_default_admission_rules.sql
+
+SQL instructions for inserting the default admission rules in the oar database.
+
+=item %%OARDIR%%/database/default_data.sql
+
+SQL instructions for inserting the default data in the oar database.
+
+=item %%OARDIR%%/database/mysql_reset_structure.sql, %%OARDIR%%/database/pg_reset_structure.sql
+
+SQL instruction for emptying an existing oar database.
+
+=item %%OARDIR%%/database/mysql_structure_upgrade_*.sql, %%OARDIR%%/database/pg_structure_upgrade_*.sql
+
+SQL instructions for upgrading an existing database.
+
+=back
+ 
+=cut
+

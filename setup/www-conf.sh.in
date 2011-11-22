@@ -1,11 +1,8 @@
-set -e
-
-. %%OARDIR%%/setup/shared/shared.sh
 
 www_conf_setup() {
     install_conffile \
-        %%EXAMPLEDIR%%/apache.conf \
-        %%OARCONFDIR%%/apache.conf \
+        ${EXAMPLEDIR}/apache.conf \
+        ${OARCONFDIR}/apache.conf \
         0644 \
-        %%WWWUSER%%
+        ${WWWUSER}
 }

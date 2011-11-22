@@ -5,6 +5,7 @@ export SHELL=/bin/bash
 # Modules that can be builded
 MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api poar scheduler-ocaml www-conf common common-libs database  
 
+
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
 OPTIONS_LIST= OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR 
 
@@ -19,15 +20,24 @@ TARGETS_UNINSTALL = $(MODULES:=-uninstall)
 TARGETS = $(TARGETS_BUILD) $(TARGETS_CLEAN) $(TARGETS_INSTALL) $(TARGETS_UNINSTALL) $(TARGETS_SETUP)
 
 all:       usage
-build:     $(TARGETS_BUILD)
-install:   $(TARGETS_INSTALL)
-clean:     $(TARGETS_CLEAN)
-uninstall: $(TARGETS_UNINSTALL)
-setup:     $(TARGETS_SETUP)
+build:     $(filter-out scheduler-ocaml% , $(TARGETS_BUILD))
+install:   $(filter-out scheduler-ocaml% , $(TARGETS_INSTALL))
+clean:     $(filter-out scheduler-ocaml% , $(TARGETS_CLEAN))
+uninstall: $(filter-out scheduler-ocaml% , $(TARGETS_UNINSTALL))
+setup:     $(filter-out scheduler-ocaml% , $(TARGETS_SETUP))
+
+tarball: .git
+	./misc/make_tarball
+
+.git:
+	@echo "Must be used from a git repository!"
+	exit 1
 
 usage:
-	@echo "Usage: make [ OPTIONS=<...> ] { MODULES-install | MODULES-build | MODULES-clean | MODULES-uninstall | MODULES-setup }"
+	@echo "Usage: make [ OPTIONS=<...> ] [MODULES-]{install|build|clean|uninstall|setup}"
+	@echo ""
 	@echo "Where MODULES := { $(MODULES_LIST:||=) }"
+	@echo ""
 	@echo "      OPTIONS := { $(OPTIONS_LIST) }"
 
 sanity-check:
@@ -63,7 +73,7 @@ $(TARGETS_BUILD):
 	$(MAKE) -f Makefiles/$(strip $(MODULE)).mk build
 
 $(TARGETS_SETUP):
-	$(MAKE) -f Makefiles/$(strip $(MODULE)).mk setup
+	-$(MAKE) -s -f Makefiles/$(strip $(MODULE)).mk setup
 
 
 # Dependencies
@@ -121,247 +131,90 @@ api-build: common-build common-libs-build
 api-clean: common-clean common-libs-clean
 api-uninstall: common-uninstall common-libs-uninstall
 
-# Build packages structures for debian/rpm packaging tools
-packages-build:
+
+P_ACTIONS = build install clean
+P_TARGETS = $(patsubst %,packages-%,$(P_ACTIONS))
+
+packages-build:    P_ACTION = build
+packages-install:  P_ACTION = install
+packages-clean:    P_ACTION = clean 
+
+$(P_TARGETS):
 	# oar-doc
-	$(MAKE) -f Makefiles/doc.mk build \
+	$(MAKE) -f Makefiles/doc.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-doc
 	
 	# oar-common
 	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar	
-	$(MAKE) -f Makefiles/common.mk build \
+	$(MAKE) -f Makefiles/common.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 	
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
 	
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
-	$(MAKE) -f Makefiles/common-libs.mk build \
+	$(MAKE) -f Makefiles/common-libs.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/liboar-perl
 	
 	# oar-server
 	mkdir -p $(PACKAGES_DIR)/oar-server/var/lib/oar
-	$(MAKE) -f Makefiles/server.mk build\
+	$(MAKE) -f Makefiles/server.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server
 	
-	$(MAKE) -f Makefiles/database.mk build\
+	$(MAKE) -f Makefiles/database.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server \
 		DOCDIR=/usr/share/doc/oar-server
 	
 	# oar-node
 	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
 	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
-	$(MAKE) -f Makefiles/node.mk build\
+	$(MAKE) -f Makefiles/node.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-node
 	
 	# oar-user
 	mkdir -p $(PACKAGES_DIR)/oar-user/var/lib/oar
-	$(MAKE) -f Makefiles/user.mk build\
+	$(MAKE) -f Makefiles/user.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-user 
 	
 	# oar-web-status
-	$(MAKE) -f Makefiles/monika.mk build \
+	$(MAKE) -f Makefiles/monika.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/poar.mk build \
+	$(MAKE) -f Makefiles/poar.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/draw-gantt.mk build \
+	$(MAKE) -f Makefiles/draw-gantt.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/www-conf.mk build \
+	$(MAKE) -f Makefiles/www-conf.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
 	
 	# oar-admin
-	$(MAKE) -f Makefiles/tools.mk build \
+	$(MAKE) -f Makefiles/tools.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-admin \
 		DOCDIR=/usr/share/doc/oar-admin
 	
 	# oar-desktop-computing-agent
-	$(MAKE) -f Makefiles/desktop-computing-agent.mk build \
+	$(MAKE) -f Makefiles/desktop-computing-agent.mk $(P_ACTION) \
 		DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
 	
 	# oar-desktop-computing-cgi
-	$(MAKE) -f Makefiles/desktop-computing-cgi.mk build \
+	$(MAKE) -f Makefiles/desktop-computing-cgi.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
 	
 	# api
-	$(MAKE) -f Makefiles/api.mk build \
+	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-api 
 	
 	# keyring
-	$(MAKE) -f Makefiles/keyring.mk build \
+	$(MAKE) -f Makefiles/keyring.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
 	
 	# scheduler-ocaml-mysql
-	#$(MAKE) -f Makefiles/scheduler-ocaml.mk build \
+	#$(MAKE) -f Makefiles/scheduler-ocaml.mk $(P_ACTION) \
 	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql 
-
-# Install target for packaging
-packages-install:
-	# oar-doc
-	$(MAKE) -f Makefiles/doc.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-doc 
-	
-	# oar-common
-	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar	
-	$(MAKE) -f Makefiles/common.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-common 
-	
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	
-	# liboar-perl
-	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
-	$(MAKE) -f Makefiles/common-libs.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/liboar-perl
-	
-	# oar-server
-	mkdir -p $(PACKAGES_DIR)/oar-server/var/lib/oar
-	$(MAKE) -f Makefiles/server.mk install\
-                DESTDIR=$(PACKAGES_DIR)/oar-server
-	$(MAKE) -f Makefiles/database.mk install\
-		DOCDIR=/usr/share/doc/oar-server \
-                DESTDIR=$(PACKAGES_DIR)/oar-server
-	
-	# oar-node
-	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
-	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
-	$(MAKE) -f Makefiles/node.mk install\
-                DESTDIR=$(PACKAGES_DIR)/oar-node
-	
-	# oar-user
-	mkdir -p $(PACKAGES_DIR)/oar-user/var/lib/oar
-	$(MAKE) -f Makefiles/user.mk install\
-                DESTDIR=$(PACKAGES_DIR)/oar-user
-	
-	# oar-web-status
-	$(MAKE) -f Makefiles/monika.mk install \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/poar.mk install \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/draw-gantt.mk install \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/www-conf.mk install \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	
-	# oar-admin
-	$(MAKE) -f Makefiles/tools.mk install \
-		DOCDIR=/usr/share/doc/oar-admin \
-                DESTDIR=$(PACKAGES_DIR)/oar-admin
-	
-	# oar-desktop-computing-agent
-	$(MAKE) -f Makefiles/desktop-computing-agent.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
-	
-	# oar-desktop-computing-cgi
-	$(MAKE) -f Makefiles/desktop-computing-cgi.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
-	
-	# api
-	$(MAKE) -f Makefiles/api.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-api 
-	
-	# keyring
-	$(MAKE) -f Makefiles/keyring.mk install \
-	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
-	
-	# scheduler-ocaml-mysql
-	# $(MAKE) -f Makefiles/scheduler-ocaml.mk install \
-	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
-
-# Clean target for packaging
-packages-clean:
-	# oar-doc
-	$(MAKE) -f Makefiles/doc.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-doc 
-	
-	# oar-common
-	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar	
-	$(MAKE) -f Makefiles/common.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-common 
-	
-	perl -i -pe 's#^\#?OAR_RUNTIME_DIRECTORY=.*#OAR_RUNTIME_DIRECTORY="/var/lib/oar"#' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	perl -i -pe 's/^\#*OPENSSH_CMD=.*/OPENSSH_CMD="\/usr\/bin\/ssh -p 6667"/' $(PACKAGES_DIR)/oar-common/etc/oar/oar.conf
-	
-	# liboar-perl
-	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
-	$(MAKE) -f Makefiles/common-libs.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/liboar-perl
-	
-	# oar-server
-	mkdir -p $(PACKAGES_DIR)/oar-server/var/lib/oar
-	$(MAKE) -f Makefiles/server.mk clean\
-                DESTDIR=$(PACKAGES_DIR)/oar-server
-	$(MAKE) -f Makefiles/database.mk clean\
-		DOCDIR=/usr/share/doc/oar-server \
-                DESTDIR=$(PACKAGES_DIR)/oar-server
-	
-	# oar-node
-	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
-	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
-	$(MAKE) -f Makefiles/node.mk clean\
-                DESTDIR=$(PACKAGES_DIR)/oar-node
-	
-	# oar-user
-	mkdir -p $(PACKAGES_DIR)/oar-user/var/lib/oar
-	$(MAKE) -f Makefiles/user.mk clean\
-                DESTDIR=$(PACKAGES_DIR)/oar-user
-	
-	# oar-web-status
-	$(MAKE) -f Makefiles/monika.mk clean \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/poar.mk clean \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/draw-gantt.mk clean \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/www-conf.mk clean \
-		DOCDIR=/usr/share/doc/oar-web-status \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
-	
-	# oar-admin
-	$(MAKE) -f Makefiles/tools.mk clean \
-		DOCDIR=/usr/share/doc/oar-admin \
-                DESTDIR=$(PACKAGES_DIR)/oar-admin
-	
-	# oar-desktop-computing-agent
-	$(MAKE) -f Makefiles/desktop-computing-agent.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
-	
-	# oar-desktop-computing-cgi
-	$(MAKE) -f Makefiles/desktop-computing-cgi.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
-	
-	# api
-	$(MAKE) -f Makefiles/api.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-api 
-	
-	# keyring
-	$(MAKE) -f Makefiles/keyring.mk clean \
-	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
-	
-	# scheduler-ocaml-mysql
-	# $(MAKE) -f Makefiles/scheduler-ocaml.mk clean \
-	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql
 

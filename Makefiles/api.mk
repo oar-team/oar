@@ -17,28 +17,19 @@ EXAMPLEDIR_FILES = $(SRCDIR)/oarapi_examples.txt \
 		   $(SRCDIR)/INSTALL \
 		   $(SRCDIR)/TODO
 
-PROCESS_TEMPLATE_FILES = $(DESTDIR)$(EXAMPLEDIR)/apache2.conf.in
-
 include Makefiles/shared/shared.mk
 
-clean:
+clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 
-build:
+build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
 
 install: install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi
-
-setup: setup_shared
-	chmod 0755 $(DESTDIR)$(EXAMPLEDIR)/chandler.rb
-	chown $(OAROWNER):$(WWWUSER) $(DESTDIR)$(CGIDIR)/oarapi
-	chmod 0750 $(DESTDIR)$(CGIDIR)/oarapi
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi CMD_RIGHTS=6755
-	$(OARDO_SETUP) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi-debug.cgi CMD_RIGHTS=6755
 
 uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarapi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oarapi/oarapi.cgi

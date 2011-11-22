@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `schema` (
 version VARCHAR( 255 ) NOT NULL,
 name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO `schema` VALUES ('2.4.0', 'Thriller');
+INSERT INTO `schema` VALUES ('2.5.0', '');
 
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (

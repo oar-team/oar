@@ -1,0 +1,34 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oar_resource_init - Help to define the resources provided by a given set of
+nodes.
+
+=head1 SYNOPSIS
+
+B<oar_resource_init> I<host_list_file>
+
+=head1 DESCRIPTION
+
+This script take a list of hosts from a file given in the parameter
+and write the OAR commands to execute to add the corresponding
+resources in the oar database to the file
+/tmp/oar_resources_init.txt
+
+The <host_list_file> must contain one host per line and the
+corresponding hosts must be configured to allow OAR to access by
+ssh.
+
+=head1 OPTIONS
+
+=over 
+
+=item B<host_list_file>
+
+The path of the file containing the host list.
+
+=back
+
+=cut
+
