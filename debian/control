@@ -1,5 +1,5 @@
 Source: oar
-Section: admin
+Section: science
 Priority: extra
 Maintainer: Philippe Le Brouster <philippe.le-brouster@imag.fr>
 Build-Depends: debhelper (>= 7.0.50~), po-debconf
