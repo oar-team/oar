@@ -87,6 +87,10 @@ version 2.5.0:
   - Huge code reorganisation to allow a better packaging and system integration
   - Drop the oarsub/oarstat 2.3 version that was kept for compatiblity issues
     during the 2.4.x branch.
+  - By default the oar scheduler is now
+    'oar_sched_gantt_with_timesharing_and_fairsharing' and the following values
+    has been set in oar.conf: SCHEDULER_TIMEOUT to 30, SCHEDULER_NB_PROCESSES to 4
+    and SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER to 30
 
 version 2.4.4:
 --------------
