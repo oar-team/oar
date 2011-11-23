@@ -9,6 +9,7 @@ Vcs-Git: git://scm.gforge.inria.fr/oar/oar.git/
 Homepage: http://oar.imag.fr/
 
 Package: liboar-perl
+Section: perl
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, perl, libdbi-perl
 Suggests: oar-server, oar-user, oar-node, oar-doc

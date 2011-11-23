@@ -1,4 +1,0 @@
-# This package contains a perl library but belong to the oar project and will
-# be only used by project surrounding the OAR project (so in the section
-# admin).
-liboar-perl binary: wrong-section-according-to-package-name
