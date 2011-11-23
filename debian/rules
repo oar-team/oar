@@ -6,7 +6,7 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-BUILDDIR=debian
+INSTALLDIR=debian
 
 export OARUSER=oar
 export OARCONFDIR=/etc/oar
@@ -30,22 +30,22 @@ export CFLAGS
 	dh $@ 
 
 override_dh_auto_build:
-	$(MAKE) -e packages-build   PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
+	$(MAKE) -e packages-build   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 	
 
 override_dh_auto_install:
-	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
+	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 	## oar-server
-	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/init.d/oar-server > debian/oar-server.init
-	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
-	cat $(CURDIR)/$(BUILDDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/init.d/oar-server > debian/oar-server.init
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
 	
 	## oar-user-{mysql|pgsql}
-	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-user-mysql/
-	mkdir -p $(CURDIR)/$(BUILDDIR)/oar-user-pgsql/
+	mkdir -p $(CURDIR)/$(INSTALLDIR)/oar-user-mysql/
+	mkdir -p $(CURDIR)/$(INSTALLDIR)/oar-user-pgsql/
 	
-	cp -a $(CURDIR)/$(BUILDDIR)/oar-user/* $(CURDIR)/$(BUILDDIR)/oar-user-mysql/
-	mv    $(CURDIR)/$(BUILDDIR)/oar-user/* $(CURDIR)/$(BUILDDIR)/oar-user-pgsql/
+	cp -a $(CURDIR)/$(INSTALLDIR)/oar-user/* $(CURDIR)/$(INSTALLDIR)/oar-user-mysql/
+	mv    $(CURDIR)/$(INSTALLDIR)/oar-user/* $(CURDIR)/$(INSTALLDIR)/oar-user-pgsql/
 	
 	## oar-user-{mysql|pgsql}
 	cp debian/oar-user.postinst.in debian/oar-user-pgsql.postinst
@@ -53,28 +53,28 @@ override_dh_auto_install:
 	
 	
 	## oar-node
-	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
-	cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
 	# disable the automatic installation of this cron, by default 
-	#cat $(CURDIR)/$(BUILDDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
+	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
 		
 	## oar-desktop-computing-agent
-	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-agent/usr/share/doc/oar-desktop-computing-agent/examples/init.d/oar-desktop-computing-agent > debian/oar-desktop-computing-agent.init
+	cat $(CURDIR)/$(INSTALLDIR)/oar-desktop-computing-agent/usr/share/doc/oar-desktop-computing-agent/examples/init.d/oar-desktop-computing-agent > debian/oar-desktop-computing-agent.init
 	## oar-desktop-computing-cgi
-	cat $(CURDIR)/$(BUILDDIR)/oar-desktop-computing-cgi/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi > debian/oar-desktop-computing-cgi.cron.hourly
+	cat $(CURDIR)/$(INSTALLDIR)/oar-desktop-computing-cgi/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi > debian/oar-desktop-computing-cgi.cron.hourly
 	## oar-common
-	cat $(CURDIR)/$(BUILDDIR)/oar-common/usr/share/doc/oar-common/examples/logrotate.d/oar-common > debian/oar-common.logrotate
+	cat $(CURDIR)/$(INSTALLDIR)/oar-common/usr/share/doc/oar-common/examples/logrotate.d/oar-common > debian/oar-common.logrotate
 	## oar-web-status
 	# use libjs-jquery instead of the embedded one.
-	rm $(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
-	ln -s /usr/share/javascript/jquery/jquery.js  $(CURDIR)/$(BUILDDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
+	rm $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js  $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
 		
 	dh_install -i
 
 override_dh_clean:
 	dh_clean
 	
-	$(MAKE) -e packages-clean   PACKAGES_DIR=$(CURDIR)/$(BUILDDIR)
+	$(MAKE) -e packages-clean   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 		
 	# Cleaning package
 	rm -f debian/oar-server.init
