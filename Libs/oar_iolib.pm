@@ -5216,6 +5216,7 @@ sub get_gantt_hostname_to_wake_up($$$){
                    AND resources.state = \'Absent\'
                    AND resources.network_address != \'\'
                    AND resources.type = \'default\'
+                   AND (g2.start_time + m.moldable_walltime) <= resources.available_upto
                GROUP BY resources.network_address
               ";
     
@@ -5322,7 +5323,7 @@ sub get_gantt_visu_resources_for_resa($$){
     $sth->execute();
     my %h;
     while (my @ref = $sth->fetchrow_array()) {
-        $h{$ref[0]}->{'network_addess'}=$ref[1];
+        $h{$ref[0]}->{'network_address'}=$ref[1];
         $h{$ref[0]}->{'current_state'}=$ref[2];
     }
     $sth->finish();
