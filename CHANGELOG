@@ -9,6 +9,8 @@ Not yet released
     to read the user private key file.
   - Backport: Bugfix #13434: reservation were not handled correctly with the 
     energy saving feature
+  - Draw-Gantt: Do not display Absent node in the future that are in the stanby "sub-state".
+  - Bugfix: spelling error (network_addess > network_address)
 
 version 2.4.5:
 -------------
