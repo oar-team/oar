@@ -1,8 +1,8 @@
 OAR CHANGELOG
 =============
 
-Not yet released
-----------------
+version 2.4.6:
+--------------
 
   - Fix the user variable used in oarsh. When using oarsh from the frontal, the
     variable OAR_USER was not defined in the environment, and make oarsh unable
@@ -13,7 +13,7 @@ Not yet released
   - Bugfix: spelling error (network_addess > network_address)
 
 version 2.4.5:
--------------
+--------------
   - backport: node_change_state: do not Suspect the first node of a job which
     was EXTERMINATED by Leon if the cpuset feature is configured (let do the
     job by the cpuset)
