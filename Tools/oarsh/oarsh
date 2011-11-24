@@ -69,7 +69,7 @@ then
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
     TMPOLDUMASK=$(umask)
     umask 0177
-    OARDO_BECOME_USER=$OAR_USER oardodo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
+    OARDO_BECOME_USER=${OARDO_USER%_*} oardodo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
         rm -f $TMP_JOB_KEY_FILE

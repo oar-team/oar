@@ -197,33 +197,56 @@ end
 #get the range when nodes are dead between two dates
 # arg : dbh, start date, end date
 def get_resource_dead_range_date(dbh,date_begin,date_end)
-	q = "SELECT resource_id, date_start, date_stop, value
-               FROM resource_logs
-               WHERE
-                   attribute = 'state' AND
-                   (
-                       value = 'Absent' OR
-                       value = 'Dead' OR
-                       value = 'Suspected'
-                   ) AND
-                   date_start <= #{date_end} AND
-                   (
-                       date_stop = 0 OR
-                       date_stop >= #{date_begin}
-                   )"
-	res = dbh.execute(q)
+  current_date = get_date(dbh).to_i
+  q = "SELECT resource_id, date_start, date_stop, value, attribute
+       FROM resource_logs
+       WHERE
+         date_start <= #{date_end} 
+         AND (
+              date_stop = 0 
+              OR
+              date_stop >= #{date_begin}
+             )
+         AND (
+               (attribute = 'available_upto' AND value > #{current_date} AND date_stop = 0) 
+               OR
+               (attribute = 'state' AND value IN ('Absent', 'Dead', 'Suspected'))
+             )"
+             
+	resources = dbh.select_all(q)
 	
+  # Split the results: we want the state and the available_upto
+  partition = resources.partition{ |r| r[4] == 'state' }
+  resources, available_upto_resources = partition
+
 	results = {}
-	res.each do |r|
-		interval_stopDate = r[2]
-		if (interval_stopDate == nil)
-      interval_stopDate = date_end;
+
+  # Parse each state change for each resource
+  resources.each do |r|
+    interval_stopDate = r[2].nil? ? date_end : r[2]
+    results[r[0]] = [] if results[r[0]].nil?
+    results[r[0]].push([r[1], interval_stopDate, r[3]])
+  end
+
+  if current_date < date_end
+    available_upto_resources.each do |standby_candidate|
+      resource = results[standby_candidate[0]]
+      if resource
+        resource.each do |resource_state|
+          if current_date < date_begin
+            results.delete(standby_candidate[0])
+          else
+            if resource_state[1] == 0 and resource_state[2] == 'Absent'
+              resource_state[2] = 'Standby'
+              resource_state[1] = current_date
+            end
+          end
+        end
+      end
     end
-		results[r[0]]=[]	if (results[r[0]]==nil)
-  	results[r[0]].push([r[1],interval_stopDate,r[3]])
-	end
-	res.finish
-	return results
+  end
+  
+  results
 end
 
 # list property fields of the resource_properties table
@@ -522,6 +545,7 @@ def build_image(origin, year, month, wday, day, hour, range, file_img, file_map)
 	$state_color['Dead'] =  $red
 	$state_color['Suspected'] =  img.colorAllocate(0xFF,0x7B,0x7B)
 	$state_color['Absent'] =  img.colorAllocate(0xC2,0x22,0x00)
+	$state_color['Standby'] =  img.colorAllocate(0x00,0xCC,0xFF)
 
 	$color=[]
 	$color[0] = $white
