@@ -1,4 +1,4 @@
-%define version 2.5.0+dev503.2e6deef
+%define version 2.5.0+dev504.051c245
 %define release 1centos6
 
 %define oaruser  oar
