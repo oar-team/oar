@@ -67,12 +67,23 @@ create_oar_user() {
     fi 
 
     # Fix the bash profile
-    echo '' >> ${OARHOMEDIR}/.bash_profile 
-    echo "export PATH=\"${OARDIR}/oardodo:$PATH\"" >> ${OARHOMEDIR}/.bash_profile 
-    chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bash_profile 
-    chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bashrc 
-    cd ${OARHOMEDIR} 
-    ln -s -f .bash_profile .bashrc 
+    if [ ! -e ${OARHOMEDIR}/.bash_oar ]; then
+        echo > ${OARHOMEDIR}/.bash_oar <<EOF
+# Prevent to be included twice or more
+[ -n "\$OAR_BASHRC" ] && exit
+\$OAR_BASHRC=yes
+
+export PATH="${OARDIR}/oardodo:\$PATH"
+EOF
+        echo '' >> ${OARHOMEDIR}/.bash_profile
+        echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bash_profile
+        echo '' >> ${OARHOMEDIR}/.bashrc
+        echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bashrc
+    fi
+
+    chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.oar_profile
+    chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bash_profile
+    chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bashrc
 }
 
 install_run_dir() {
