@@ -206,9 +206,10 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/desktop-computing-cgi.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
 	
-	# api
+	# oar-restful-api
 	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \
-	    DESTDIR=$(PACKAGES_DIR)/oar-api 
+	    DOCDIR=/usr/share/doc/oar-restful-api \
+	    DESTDIR=$(PACKAGES_DIR)/oar-restful-api 
 	
 	# keyring
 	$(MAKE) -f Makefiles/keyring.mk $(P_ACTION) \
