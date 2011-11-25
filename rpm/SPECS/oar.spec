@@ -40,21 +40,21 @@ This package installs the common libraries of the OAR batch scheduler
 %package server-mysql
 Summary:        OAR batch scheduler MySQL backend package for the server
 Group:          System/Servers
-Requires:       oar-server, perl-DBD-MySQL
+Requires:       perl-DBD-MySQL
 %description server-mysql
 This package installs the MySQL backend for the server part or the OAR batch scheduler
 
 %package server-pgsql
 Summary:        OAR batch scheduler PostgreSQL backend package for the server
 Group:          System/Servers
-Requires:       oar-server, perl-DBD-Pg
+Requires:       perl-DBD-Pg
 %description server-pgsql
 This package installs the PostgreSQL backend for the server part or the OAR batch scheduler
 
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions, server-mysql | server-pgsql
 %description server
 This package installs the server part or the OAR batch scheduler
 
@@ -68,21 +68,21 @@ This package installs the execution node part of the OAR batch scheduler
 %package user-mysql
 Summary:	OAR batch scheduler user MySQL backend package
 Group:          System/Servers
-Requires:       oar-user, perl-DBD-MySQL
+Requires:       perl-DBD-MySQL
 %description user-mysql
 This package install the MySQL backend for the submission and query part of the OAR batch scheduler
 
 %package user-pgsql
 Summary:	OAR batch scheduler user PostgreSQL backend package
 Group:          System/Servers
-Requires:       oar-user, perl-DBD-Pg
+Requires:       perl-DBD-Pg
 %description user-pgsql
 This package install the PostgreSQL backend for the submission and query part of the OAR batch scheduler
 
 %package user
 Summary:	OAR batch scheduler user package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, user-mysql | user-pgsql, /usr/bin/ssh
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
