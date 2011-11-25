@@ -31,7 +31,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-server
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version})
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk , phpmyadmin, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
@@ -42,10 +42,9 @@ Description: OAR batch scheduler server package
 
 Package: oar-server-mysql
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-mysql-perl, oar-server (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-mysql-perl
 Recommends: mysql-client
 Suggests: mysql-server , phpmyadmin, oar-user-mysql, 
-Conflicts: oar-server-pgsql
 Description: OAR batch scheduler server package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
@@ -55,10 +54,9 @@ Description: OAR batch scheduler server package
 
 Package: oar-server-pgsql
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-pg-perl, oar-server (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-pg-perl
 Recommends: postgresql-client
 Suggests: postgresql, oar-user-pgsql 
-Conflicts: oar-server-mysql
 Description: OAR batch scheduler server package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
@@ -76,33 +74,36 @@ Description: OAR batch scheduler node package
  .
  This package installs the execution node part of the OAR batch scheduler
 
-Package: oar-user-mysql
+Package: oar-user
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-mysql-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version})
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xauth
-Conflicts: oar-user-pgsql
-Provides: oar-user
 Description: OAR batch scheduler user package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package install the submission and query part of the OAR batch scheduler
- for the MySQL backend
+ This package install the submission and query part of the OAR batch scheduler.
+
+Package: oar-user-mysql
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-mysql-perl, oar-user (= ${binary:Version})
+Description: OAR batch scheduler user package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package install the MySQL backend for the submission and query part of
+ the OAR batch scheduler.
 
 Package: oar-user-pgsql
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-pg-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version})
-Recommends: libxml-dumper-perl, libyaml-perl
-Suggests: oar-doc, openssh-client | ssh, xauth
-Conflicts: oar-user-mysql
-Provides: oar-user
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, libdbd-pg-perl, oar-user (= ${binary:Version})
 Description: OAR batch scheduler user package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package install the submission and query part of the OAR batch scheduler
- for the PostgreSQL backend
+ This package install the PostgreSQL backend for the submission and query part
+ of the OAR batch scheduler.
 
 Package: oar-web-status
 Architecture: all
@@ -147,7 +148,7 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-admin
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl, oar-user-pgsql (>2.4.0) | oar-user-mysql (>= 2.4.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl, oar-user (> 2.5.0)
 Suggests: oar-doc, oar-server
 Description: OAR batch scheduler administration tools package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -158,7 +159,7 @@ Description: OAR batch scheduler administration tools package
 
 Package: oar-api
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl, oar-common (>= 2.4.0), oar-user-pgsql (>=2.4.0) | oar-user-mysql (>= 2.4.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl, oar-user (> 2.5.0)
 Suggests: oar-doc, oar-server
 Recommends: libxml-simple-perl, libyaml-perl
 Description: OAR RESTful API
