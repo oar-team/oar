@@ -16,17 +16,8 @@ Url:            http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source0: 	oar-%version.tar.gz
-#Source1:	Makefile.install
-#Source2:	oar-common.logrotate
-#Source3:	oar-server.init.d
-#Source4:	oar-server.cron.d
-#Source5:	oar-server
-#Source6:	oar-node.init.d
-#Source7:	oar-node.cron.d
-#Source8:	oar-node.sysconfig
-#Source9:	oar-server.sysconfig
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
-#BuildRequires:  perl sed make tar xauth
+BuildRequires:  perl sed make tar python-docutils
 %description
 OAR is a resource manager (or batch scheduler) for large computing clusters.
 
