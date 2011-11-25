@@ -169,13 +169,3 @@ Description: OAR RESTful API
  This package installs a RESTful API for oar users. 
  It works as a cgi into Apache.
 
-Package: oar-keyring
-Architecture: all
-Depends: ${misc:Depends}
-Description: GnuPG keys of OAR packages maintainers
- OAR is a versatile resource and task manager (also called a batch scheduler)
- for clusters and other computing infrastructures
- .
- This package contains the public keys of the OAR packages
- maintainers.
-
