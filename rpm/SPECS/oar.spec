@@ -124,12 +124,13 @@ Requires:	perl(CGI), oar-common = %version-%release, httpd
 %description    desktop-computing-cgi	
 This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
-%package api
+%package restful-api
 Summary:	OAR RESTful user API
 Group:          System/Servers
 Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd
-Provides:       perl(OAR::API)
-%description    api
+Provides:       perl(OAR::API), oar-api
+Obsoletes:      oar-api
+%description    restful-api
 This package installs the RESTful OAR user API.
 
 #%package scheduler-ocaml-mysql
@@ -166,7 +167,7 @@ export TARGET_DIST=redhat
 make packages-install PACKAGES_DIR=tmp
 
 # Get the file lists for every package (except those explicitely listed later)
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-api liboar-perl
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-restful-api liboar-perl
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | sed -e "s/\.1$/.1.gz/g" > $package.files
@@ -184,15 +185,15 @@ cp $TMP/usr/share/doc/oar-common/examples/oar.conf \
 cp $TMP/usr/share/doc/oar-common/examples/logrotate.d/oar-common \
       $TMP/etc/logrotate.d/oar
 
-# api
-TMP=tmp/oar-api
+# restful-api
+TMP=tmp/oar-restful-api
 mkdir -p $TMP/etc/oar
-cp $TMP/usr/share/doc/oar-api/examples/apache2.conf \
+cp $TMP/usr/share/doc/oar-restful-api/examples/apache2.conf \
      $TMP/etc/oar/apache-api.conf
-cp $TMP/usr/share/doc/oar-api/examples/api_html_header.pl \
-   $TMP/usr/share/doc/oar-api/examples/api_html_postform.pl \
-   $TMP/usr/share/doc/oar-api/examples/api_html_postform_resources.pl \
-   $TMP/usr/share/doc/oar-api/examples/api_html_postform_rule.pl \
+cp $TMP/usr/share/doc/oar-restful-api/examples/api_html_header.pl \
+   $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform.pl \
+   $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform_resources.pl \
+   $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform_rule.pl \
      $TMP/etc/oar/
 
 # web-status
@@ -322,7 +323,7 @@ rm -rf tmp
 %files desktop-computing-cgi -f oar-desktop-computing-cgi.files
 %config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
 
-%files api -f oar-api.files
+%files restful-api -f oar-restful-api.files
 %config /etc/oar/apache-api.conf
 %config /etc/oar/api_html_header.pl
 %config /etc/oar/api_html_postform.pl
@@ -390,8 +391,8 @@ if [ "$1" = "0" ] ; then # last uninstall
   rm -rf /var/lib/drawgantt-files/cache
 fi
 
-###### oar-api scripts ######
-%post api
+###### oar-restful-api scripts ######
+%post restful-api
 . /usr/lib/oar/setup/api.sh
 api_setup
 if [ ! -e /etc/httpd/conf.d/oar-api.conf ]; then
@@ -399,7 +400,7 @@ if [ ! -e /etc/httpd/conf.d/oar-api.conf ]; then
 fi
 service httpd reload || true
 
-%postun api
+%postun restful-api
 if [ "$1" = "0" ] ; then # last uninstall
   rm -f /etc/httpd/conf.d/oar-api.conf || true
   service httpd reload || true
