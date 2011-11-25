@@ -38,10 +38,10 @@ ______________________________
         FIXME: 
         
         # Install OAR server for the PostgreSQL backend
-        yum install oar-server-pgsql
+        yum install oar-server oar-server-pgsql
         
         # or Install OAR server for the MySQL backend
-        yum install oar-server-mysql
+        yum install oar-server oar-server-mysql
 
 *For the debian like systems*::
   
@@ -51,10 +51,10 @@ ______________________________
         apt-get update
 
         # Install OAR server for the PostgreSQL backend
-        apt-get install oar-server-pgsql
+        apt-get install oar-server oar-server-pgsql
         
         # or Install OAR server for the MySQL backend
-        apt-get install oar-server-mysql
+        apt-get install oar-server oar-server-mysql
 
 Installation from the tarball
 _____________________________
@@ -289,10 +289,10 @@ ______________________________
         FIXME: 
 
         # Install OAR user for the PostgreSQL backend
-        yum install oar-user-pgsql
+        yum install oar-user oar-user-pgsql
         
         # or Install OAR user for the MySQL backend
-        yum install oar-user-mysql
+        yum install oar-user oar-user-mysql
 
 *For the debian like systems*::
   
@@ -302,10 +302,10 @@ ______________________________
         apt-get update
 
         # Install OAR server for the PostgreSQL backend
-        apt-get install oar-user-pgsql
+        apt-get install oar-user oar-user-pgsql
         
         # or Install OAR server for the MySQL backend
-        apt-get install oar-user-mysql
+        apt-get install oar-user oar-user-mysql
 
 
 Installation from the tarball
@@ -385,11 +385,8 @@ From the packaging
         # Add the oar repository
         FIXME: 
 
-        # Install OAR api for the PostgreSQL backend
-        yum install oar-api-pgsql
-        
-        # or Install OAR api for the MySQL backend
-        yum install oar-api-mysql
+        # Install OAR api
+        yum install oar-api
 
 *For the debian like systems*::
   
@@ -398,12 +395,8 @@ From the packaging
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
-        # Install OAR api for the PostgreSQL backend
-        apt-get install oar-api-pgsql
-        
-        # or Install OAR api for the MySQL backend
-        apt-get install oar-api-mysql
-
+        # Install OAR api
+        apt-get install oar-api
 
 From the sources
 ~~~~~~~~~~~~~~~~
