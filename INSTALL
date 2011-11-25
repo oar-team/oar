@@ -15,10 +15,11 @@ The first thing you have to know is about the OAR architecture. A common OAR
 installation is composed of:
 
     - a **server node** which will hold all of OAR "smartness". This node will run the oar server daemon;
-    - a **frontend nodes** on which you will be allowed to login, then reserve some
+    - **frontend nodes** on which you will be allowed to login, then reserve some
       computing nodes (oarsub, oarstat, oarnodes, ...);
-    - severals **computing nodes** (a.k.a. the nodes), on which the jobs will run.
-    - and optionnaly a **vizualisation node** on which all the vizualisation web interfaces (monika, draw-gantt, ...)  will accessible ;
+    - several **computing nodes** (a.k.a. the nodes), on which the jobs will run.
+    - and optionally a **visualisation node** on which all the visualisation
+      web interfaces (monika, draw-gantt, ...)  will be accessible ;
 
 Server node
 -----------
@@ -116,11 +117,12 @@ The oar database
 ~~~~~~~~~~~~~~~~
 
 Define the database configuration in /etc/oar/oar.conf. You need to set the
-variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN, DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
+variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN,
+DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
 
         vi /etc/oar/oar.conf
 
-Create the database and the databse users::
+Create the database and the database users::
 
         oar-database --create --db-admin-user <ADMIN_USER> --db-admin-pass <ADMIN_PASS>
 
@@ -188,8 +190,9 @@ database from unneeded records).
 PostgreSQL : authentication
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With postgres you probably have to edit the ``pg_hba.conf`` to enable the connections to
-this database. Your file must contains at its beginning the following lines::
+With postgres you probably have to edit the ``pg_hba.conf`` to enable the
+connections to this database. Your file must contain at its beginning the
+following lines::
 
     # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
         host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
@@ -212,9 +215,13 @@ on the given node or "oarsh -X node12".
 Using Taktuk
 ~~~~~~~~~~~~
 
-If you want to use taktuk to manage remote admnistration commands, you have to
+If you want to use taktuk to manage remote administration commands, you have to
 install it. You can find information about taktuk from its website: 
 http://taktuk.gforge.inria.fr.
+
+**Note**: Taktuk is scalable remote command execution without the need to
+install special stuffs on nodes. So it is very useful to administer a large
+amount of server.
 
 Then, you have to edit your oar configuration file and to fill in the different 
 related parameters: 
@@ -227,7 +234,7 @@ CPUSET feature
 ~~~~~~~~~~~~~~
 
 OAR uses the CPUSET features provided with the Linux kernel >= 2.6. This
-enables to restrict user processes only on reserved processors and clean
+enables to restrict user processes only on reserved processors and to clean
 correctly the nodes after the end of the jobs.
 
 For more information, look at the CPUSET file.
@@ -239,11 +246,12 @@ Starting with version 2.4.3, OAR provides a module responsible of advanced
 management of wake-up/shut-down of nodes when they are not used.
 To activate this feature, you have to:
 
-    - provide 2 commands or scripts that are to be executed on the oar server
+    - provide 2 commands or scripts which will be executed on the oar server
       to shutdown (or set into standby) some nodes and to wake-up some nodes
-      (configure the path of those commands into the ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD
-      and ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
-    - configure the available_upto property of all your nodes:
+      (configure the path of those commands into the
+      ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD and
+      ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
+    - configure the "available_upto" property of all your nodes:
 
       - available_upto=0           : to disable the wake-up and halt      
       - available_upto=1           : to disable the wake-up (but not the halt) 
@@ -262,7 +270,6 @@ To activate this feature, you have to:
 You need to restart OAR each time you change an ENERGY_* variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
-
 
 
 Frontend nodes
@@ -367,7 +374,8 @@ the user nodes.
 OAR API Installation
 ____________________
 
-Since the version 2.5.1, OAR propose an API to control the oar server. This api must be installed on a frontend node (with the user module installed).
+Since the version 2.5.1, OAR propose an API to control the oar server. This api
+must be installed on a frontend node (with the user module installed).
 
 From the packaging
 ~~~~~~~~~~~~~~~~~~
@@ -534,9 +542,8 @@ install manually the {init.d,default,sysconfig} scripts present in the folders::
 
     $PREFIX/share/doc/oar-node/examples/scripts/{init.d,default,sysconfig}
 
-Then you juste need to use the script ``/etc/init.d/oar-node`` to start
+Then you just need to use the script ``/etc/init.d/oar-node`` to start
 the ssh daemon dedicated to oar-node.
-
 
 
 Visualization node
@@ -545,10 +552,10 @@ Visualization node
 Description
 ___________
 
-There are two different tools. One, named Monika, displays the current cluster
-state with all active and waiting jobs. The other, named drawgantt, displays
-node occupation in a lapse of time.  These tools are CGI scripts and generate
-HTML pages.
+There are two different tools. One, named Monika which displays the current
+cluster state with all active and waiting jobs. The other, named drawgantt
+which displays node occupation in a lapse of time.  These tools are CGI scripts
+and generate HTML pages.
 
 Installation from the packages
 ______________________________
@@ -643,5 +650,6 @@ _____________
 Further informations
 --------------------
 
-For further information, please check the documentation section on the OAR website http://oar.imag.fr/.
+For further information, please check the documentation section on the OAR
+website http://oar.imag.fr/.
 

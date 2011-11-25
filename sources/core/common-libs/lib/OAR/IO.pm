@@ -62,7 +62,6 @@ sub get_current_moldable_job($$);
 sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
-sub set_job_autoCheckpointed($$);
 sub frag_job($$);
 sub ask_checkpoint_job($$);
 sub ask_signal_job($$$);
@@ -2198,19 +2197,6 @@ sub set_job_scheduler_info($$$) {
                 WHERE
                     job_id = $idJob
              ");
-}
-
-
-# set_job_autoCheckpointed
-# sets the autoCheckpointed field into YES of the job of id passed in parameter
-# parameters : base, jobid
-# return value : /
-sub set_job_autoCheckpointed($$) {
-    my $dbh = shift;
-    my $idJob = shift;
-    $dbh->do("UPDATE jobs
-                SET autoCheckpointed = \'YES\'
-                WHERE job_id = $idJob");
 }
 
 
