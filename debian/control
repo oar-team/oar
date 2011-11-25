@@ -158,15 +158,22 @@ Description: OAR batch scheduler administration tools package
  This package installs some useful tools to help the administrator
  of a oar server (resources manipulation, admission rules edition, ...)
 
-Package: oar-api
+Package: oar-restful-api
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl, oar-user (> 2.5.0)
 Suggests: oar-doc, oar-server
 Recommends: libxml-simple-perl, libyaml-perl
+Replaces: oar-api (<< 2.5.0+dev515.519ec70-63)
+Breaks: oar-api (<< 2.5.0+dev515.519ec70-63)
 Description: OAR RESTful API
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
  This package installs a RESTful API for oar users. 
  It works as a cgi into Apache.
+
+Package: oar-api
+Depends: oar-restful-api, ${misc:Depends}
+Architecture: all
+Description: transitional dummy package
 
