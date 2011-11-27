@@ -7,6 +7,7 @@ use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_cu
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Tools;
 use OAR::Modules::Hulot;
+use POSIX qw(:signal_h :errno_h :sys_wait_h);
 
 # Log category
 set_current_log_category('main');
@@ -96,6 +97,10 @@ my $villainstimeout = 10;
 
 # Max waiting time before check node states
 my $checknodestimeout = get_conf_with_default_param("FINAUD_FREQUENCY", 300);
+
+# Max number of concurrent bipbip processes
+my $Max_bipbip_processes = 100;
+my %bipbip_children = ();
 
 # Internal stuff, not relevant for average user
 my $lastscheduler;
@@ -201,6 +206,23 @@ sub comportement_appendice(){
         while (1){
             my $answer = qget_appendice();
             if ($answer =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
+                # Check if there are not too many bipbip processes already
+                # running to not overload the server
+                my $wait_bipbip = 1;
+                while ($wait_bipbip == 1){
+                    foreach my $b (keys(%bipbip_children)){
+                        my $wpid_res = waitpid($b, WNOHANG);
+                        if (($wpid_res == -1) or ($wpid_res == $b)){
+                            delete($bipbip_children{$b});
+                        }
+                    }
+                    if (keys(%bipbip_children) >= $Max_bipbip_processes){
+                        oar_warn("[Almighty] Wait the end of bipbip processes (nb children: ".keys(%bipbip_children)."/$Max_bipbip_processes)\n");
+                        sleep(1);
+                    }else{
+                        $wait_bipbip = 0;
+                    }
+                }
                 my $pid=0;
                 $pid=fork;
                 if($pid==0){
@@ -208,10 +230,12 @@ sub comportement_appendice(){
                     $SIG{USR1} = 'IGNORE';
                     $SIG{INT}  = 'IGNORE';
                     $SIG{TERM} = 'IGNORE';
+                    $SIG{CHLD} = 'IGNORE';
                     $0="Almighty: bipbip";
                     exec("$bipbip_command $1 $2 $3 $4");
                 }
-                oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4\n");
+                $bipbip_children{$pid} = 1;
+                oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4 (nb concurrent bipbip = ".keys(%bipbip_children).")\n");
                 #launch_command("$bipbip_command $1 ATTACH &");
             }elsif ($answer ne ""){
                 oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
