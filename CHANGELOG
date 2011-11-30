@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version 2.4.7:
+--------------
+
+  - Backport: Debug checkpoint feature with cosystem or deploy jobs.    
+
 version 2.4.6:
 --------------
 
