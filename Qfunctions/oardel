@@ -55,6 +55,16 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
     oar_Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
+my $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
+if (!defined($Deploy_hostname)){
+    $Deploy_hostname = $remote_host;
+}
+
+my $Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
+if (!defined($Cosystem_hostname)){
+    $Cosystem_hostname = $remote_host;
+}
+
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
 my $Checkpoint;
@@ -66,7 +76,7 @@ my $Besteffort;
 my $array;
 
 GetOptions ("checkpoint|c" => \$Checkpoint,
-	    "signal|s:s" => \$signal,
+            "signal|s:s" => \$signal,
             "besteffort|b" => \$Besteffort,
             "help|h" => \$sos,
             "array" => \$array,
@@ -151,19 +161,26 @@ if (defined($Checkpoint)){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = iolib::get_job_current_hostnames($base,$idJob);
+            my $types = iolib::get_current_job_types($base,$idJob);
+            my $host_to_connect = $hosts[0];
+            if ((defined($types->{cosystem})) or ($#hosts < 0)){
+                $host_to_connect = $Cosystem_hostname;
+            }elsif (defined($types->{deploy})){
+                $host_to_connect = $Deploy_hostname;
+            }
             my $timeoutSSH = oar_Tools::get_ssh_timeout();
             # Timeout the ssh command
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGUSR2",1, $base, $Openssh_cmd, '');
+                oar_Tools::signal_oarexec($host_to_connect,$idJob,"SIGUSR2",1, $base, $Openssh_cmd, '');
                 alarm(0);
             };
             if ($@){
                 print("ERROR.\n");
                 if ($@ eq "alarm\n"){
                     $exitValue = 3;
-                    $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
+                    $strComment = "Cannot contact $host_to_connect, operation timouted ($timeoutSSH s).";
                     warn("$strComment\n");
                     iolib::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
                 }else{
@@ -173,7 +190,7 @@ if (defined($Checkpoint)){
                 }
             }else{
                 print("DONE.\n");
-                $strComment = "The job $idJob was notified to checkpoint itself.";
+                $strComment = "The job $idJob was notified to checkpoint itself on $host_to_connect.";
                 print("$strComment\n");
                 iolib::add_new_event($base,"CHECKPOINT_SUCCESS",$idJob,$strComment);
             }
@@ -200,19 +217,27 @@ if (defined($Checkpoint)){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = iolib::get_job_current_hostnames($base,$idJob);
+            my $types = iolib::get_current_job_types($base,$idJob);
+            my $host_to_connect = $hosts[0];
+            if ((defined($types->{cosystem})) or ($#hosts < 0)){
+                $host_to_connect = $Cosystem_hostname;
+            }elsif (defined($types->{deploy})){
+                $host_to_connect = $Deploy_hostname;
+            }
+
             my $timeoutSSH = oar_Tools::get_ssh_timeout();
             # Timeout the ssh command
             eval {
                 $SIG{ALRM} = sub { die "alarm\n" };
                 alarm($timeoutSSH);
-                oar_Tools::signal_oarexec($hosts[0],$idJob,"SIGURG",1, $base, $Openssh_cmd, $signal);
+                oar_Tools::signal_oarexec($host_to_connect,$idJob,"SIGURG",1, $base, $Openssh_cmd, $signal);
                 alarm(0);
             };
             if ($@){
                 print("ERROR.\n");
                 if ($@ eq "alarm\n"){
                     $exitValue = 3;
-                    $strComment = "Cannot contact $hosts[0], operation timouted ($timeoutSSH s).";
+                    $strComment = "Cannot contact $host_to_connect, operation timouted ($timeoutSSH s).";
                     warn("$strComment\n");
                     iolib::add_new_event($base,"SIG_ERROR",$idJob,$strComment);
                 }else{
@@ -222,7 +247,7 @@ if (defined($Checkpoint)){
                 }
             }else{
                 print("DONE.\n");
-                $strComment = "The job $idJob was notified to signal itself with $signal.";
+                $strComment = "The job $idJob was notified to signal itself with $signal on $host_to_connect.";
                 print("$strComment\n");
                 iolib::add_new_event($base,"SIG_SUCCESS",$idJob,$strComment);
             }
