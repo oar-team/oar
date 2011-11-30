@@ -1,3 +1,9 @@
+oar (2.4.7-1) unstable; urgency=low
+
+  * New upstream version. 
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 30 Nov 2011 16:04:19 +0100
+
 oar (2.4.6-1) unstable; urgency=low
 
   * New upstream version. 
