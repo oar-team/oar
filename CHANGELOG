@@ -93,6 +93,8 @@ version 2.5.0:
     and SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER to 30
   - Add a limitation on the number of concurrent bipbip processes on the server
     (for detached jobs).
+  - Add IPC cleaning to the job_resource_manager* when there is no other job of
+    the same user on the nodes.
 
 version 2.4.4:
 --------------
