@@ -149,7 +149,7 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-admin
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl, oar-user (> 2.5.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl, oar-user (>> 2.5.0)
 Suggests: oar-doc, oar-server
 Description: OAR batch scheduler administration tools package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -160,7 +160,7 @@ Description: OAR batch scheduler administration tools package
 
 Package: oar-restful-api
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl, oar-user (> 2.5.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0)
 Suggests: oar-doc, oar-server
 Recommends: libxml-simple-perl, libyaml-perl
 Replaces: oar-api (<< 2.5.0+dev515.519ec70-63)
