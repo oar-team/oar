@@ -176,4 +176,5 @@ Package: oar-api
 Depends: oar-restful-api, ${misc:Depends}
 Architecture: all
 Description: transitional dummy package
+ Transitional dummy package.
 
