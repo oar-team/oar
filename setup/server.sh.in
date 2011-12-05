@@ -28,6 +28,11 @@ server_setup() {
         0644
 
     install_conffile \
+        ${EXAMPLEDIR}/job_resource_manager_cgroups.pl \
+        ${OARCONFDIR}/job_resource_manager_cgroups.pl \
+        0644
+
+    install_conffile \
         ${EXAMPLEDIR}/suspend_resume_manager.pl \
         ${OARCONFDIR}/suspend_resume_manager.pl \
         0644
