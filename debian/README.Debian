@@ -1,0 +1,9 @@
+OAR for Debian
+==============
+
+Installation & Configuration
+----------------------------
+After installing the oar debian packages, for each installed components, you
+need to follow the instructions in the subsection "configuration" in the
+INSTALL file. You'll find it in /usr/share/doc/oar-common/INSTALL
+
