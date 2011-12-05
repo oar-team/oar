@@ -374,7 +374,7 @@ the user nodes.
 OAR API Installation
 ____________________
 
-Since the version 2.5.1, OAR propose an API to control the oar server. This api
+Since the version 2.5.1, OAR offers an API for users and admins interactions. This api
 must be installed on a frontend node (with the user module installed).
 
 From the packaging
@@ -385,6 +385,9 @@ From the packaging
         # Add the oar repository
         FIXME: 
 
+        # Install apache FastCGI module (optional but highly recommended)
+        FIXME:
+
         # Install OAR api
         yum install oar-api
 
@@ -394,6 +397,9 @@ From the packaging
         echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
+ 
+        # Install apache FastCGI module (optional but highly recommended)
+        apt-get install libapache2-mod-fastcgi
 
         # Install OAR api
         apt-get install oar-api
@@ -410,6 +416,9 @@ From the sources
 
           # Common dependencies
           yum install perl perl-base perl-DBI perl-CGI perl-JSON perl-YAML perl-libwww-perl httpd
+
+          # FastCGI dependency (optional but highly recommended)
+          FIXME:
           
           # MySQL dependencies
           yum install mysql perl-DBD-MySQL
@@ -426,6 +435,9 @@ From the sources
           # Common dependencies
           apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl httpd-cgi
           
+          # FastCGI dependency (optional but highly recommended)
+          apt-get install libapache2-mod-fastcgi
+
           # MySQL dependencies
           apt-get install mysql-server mysql-client libdbd-mysql-perl
           
@@ -450,6 +462,20 @@ build/install/setup::
         make api-setup
 
 
+Configuration
+~~~~~~~~~~~~~
+
+The API makes use of apache2 for the http layer. You may have to edit the configuration to suit your needs, especially regarding authentication issues. Please, check and customize the /etc/oar/apache-api.conf file.
+You can test your API basic operation with the following example query::
+
+       curl http://localhost/oarapi/version.yaml
+
+For a more advanced usage, you can test a job submission through the API (the first part of the URI may differ, depending on the authentication mechanism you configured into apache)::
+
+       curl -i -X POST http://localhost/oarapi/jobs.json \
+      -H'Content-Type: application/json' \
+      -d '{"resource":"/nodes=1,walltime=00:10:00", "command":"sleep 600"}' 
+  
 
 Computing nodes
 ---------------
