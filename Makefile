@@ -180,10 +180,10 @@ $(P_TARGETS):
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/poar.mk $(P_ACTION) \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		DOCDIR=/usr/share/doc/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
+#	$(MAKE) -f Makefiles/poar.mk $(P_ACTION) \
+#                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+#		DOCDIR=/usr/share/doc/oar-web-status \
+#		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/draw-gantt.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
