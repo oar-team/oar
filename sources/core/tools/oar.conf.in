@@ -81,7 +81,7 @@ COSYSTEM_HOSTNAME="127.0.0.1"
 # If you want to free a process per job on the server you can change this tag
 # into 1 (you must enable all nodes to connect to SERVER_PORT on the
 # SERVER_HOSTNAME)
-DETACH_JOB_FROM_SERVER="0"
+DETACH_JOB_FROM_SERVER="1"
 
 # If DETACH_JOB_FROM_SERVER=1 then OAR is able to launch jobs with a sliding
 # window to avoid the overload of the server (default is 5).
@@ -139,7 +139,7 @@ FINAUD_FREQUENCY="300"
 # (sentinelle.pl is like a "for" of ssh but it adds timeout and window to 
 # avoid overloading the server)
 # (sentinelle.pl is provided with OAR in the install directory)
-#PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/usr/lib/oar/sentinelle.pl -t 5 -w 20"
+PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/usr/lib/oar/sentinelle.pl -t 5 -w 20"
 
 # Taktuk
 # taktuk may be used to check aliveness of nodes.
