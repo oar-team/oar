@@ -1,0 +1,42 @@
+Upgrading the OAR batch system
+==============================
+
+This part explains the important issues when upgrading the OAR Bach system from 2.4.x to 2.5.x.
+
+Updating the Perl admission rules
+---------------------------------
+
+Due to a perl module renaming, you need to update the perl module name used in
+the admission rules. Here are the correspondance :
+
+     - oarstat_lib        -> OAR::Stat
+     - oarnodes_lib       -> OAR::Nodes
+     - oarapi_lib         -> OAR::API
+     - oarconf_lib        -> OAR::Conf
+     - oario_lib          -> OAR::IO
+     - oarsub_lib         -> OAR::Sub
+     - oar_Tools          -> OAR::Tools
+     - oar_Version        -> OAR::Version
+     - window_forker      -> OAR::WindowForker
+     - ping_checker       -> OAR::PingChecker
+     - oar_hulot          -> OAR::Modules::Hulot
+     - Judas              -> OAR::Modules::Judas
+     - resource_tree      -> OAR::Schedulers::ResourceTree
+     - gantt_hole_storage -> OAR::Schedulers::GanttHoleStorage
+
+The OAR default values
+----------------------
+
+Please take a look on the default oar.conf (in the
+/usr/share/doc/oar-common/exemples/). Some default values has changed.
+
+Upgrading the sql database scheme
+---------------------------------
+
+Before restarting the OAR server, you need to upgrade your database scheme.
+This can be done, with the following instruction (don't forget to make a copy
+of your database before):
+
+      oar-database --setup
+
+
