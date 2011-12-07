@@ -435,7 +435,7 @@ unless ($db_user) {
 unless ($db_pass) {
     $db_pass = (OAR::Conf::is_conf("DB_BASE_PASSWD") ? OAR::Conf::get_conf("DB_BASE_PASSWD") : "");
 
-    if ($db_pass eq "") {
+    if (($db_pass eq "") or ($db_pass eq '""')) {
         print "The user password is empty. Please define a password. Failing.\n";
         exit(1);
     }
@@ -451,6 +451,10 @@ unless ($db_ro_pass) {
     if (OAR::Conf::is_conf("DB_BASE_PASSWD_RO")) {
         $db_ro_pass = OAR::Conf::get_conf("DB_BASE_PASSWD_RO");
     }
+    if (($db_ro_pass eq "") or ($db_ro_pass eq '""')) {
+        print "The user read-only password is empty. Please define a password. Failing.\n";
+        exit(1);
+    }
 }
 
 unless ($db_name) {
@@ -463,8 +467,13 @@ if ($action eq "create" or $action eq "drop") {
             print "You need to specify the admin user (--db-admin-user) and probably the password (--db-admin-pass) to use. See the manual for more information. Failing.\n";
             exit(1);
         }
+        unless ($db_admin_pass) {
+            print "The admin password is empty. Proceeding with an empty password.\n";
+            $db_admin_pass="";
+        }
     }
 }
+
 
 
 #
