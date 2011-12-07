@@ -32,10 +32,16 @@ ______________________________
 *For redhat like systems*::
 
         # Add the epel repository (choose the right version depending on your operating system)
-        rpm -i http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+        rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
         
         # Add the oar repository
-        FIXME: 
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR Packages for Enterprise Linux 6 - \$basearch
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
+        enabled=1
+        gpgcheck=0
+        EOF
         
         # Install OAR server for the PostgreSQL backend
         yum install oar-server oar-server-pgsql
@@ -64,7 +70,7 @@ _____________________________
 *For redhat like systems*::
 
           # Add the epel repository (choose the right version depending on your operating system)
-          rpm -i http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+          rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
 
           # Build dependencies
           yum install gcc make tar python-docutils
@@ -271,6 +277,12 @@ You need to restart OAR each time you change an ENERGY_* variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
+Disabling SELinux
+~~~~~~~~~~~~~~~~~
+
+On some distributions, SELinux is enabled by default. There is currently no OAR
+support for SELinux. So, you need to disable SELinux, if enabled.
+
 
 Frontend nodes
 --------------
@@ -283,10 +295,16 @@ ______________________________
 *For redhat like systems*::
 
         # Add the epel repository (choose the right version depending on your operating system)
-        rpm -i http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+        rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
 
         # Add the oar repository
-        FIXME: 
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR Packages for Enterprise Linux 6 - \$basearch
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
+        enabled=1
+        gpgcheck=0
+        EOF
 
         # Install OAR user for the PostgreSQL backend
         yum install oar-user oar-user-pgsql
@@ -383,7 +401,13 @@ From the packaging
 *For redhat like systems*::
 
         # Add the oar repository
-        FIXME: 
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR Packages for Enterprise Linux 6 - \$basearch
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
+        enabled=1
+        gpgcheck=0
+        EOF
 
         # Install apache FastCGI module (optional but highly recommended)
         FIXME:
@@ -488,7 +512,13 @@ ______________________________
 *For redhat like systems*::
 
         # Add the oar repository
-        FIXME: 
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR Packages for Enterprise Linux 6 - \$basearch
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
+        enabled=1
+        gpgcheck=0
+        EOF
 
         # Install OAR node
         yum install oar-node
@@ -584,7 +614,13 @@ ______________________________
 *For redhat like systems*::
 
         # Add the oar repository
-        FIXME: 
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR Packages for Enterprise Linux 6 - \$basearch
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
+        enabled=1
+        gpgcheck=0
+        EOF
 
         yum install oar-web-status
 
