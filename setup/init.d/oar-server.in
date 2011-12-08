@@ -129,7 +129,7 @@ do_stop()
     rm -f $PIDFILE
     
     succ_msg
-    exit "$RETVAL"
+    return 0
 }
 
 case "$1" in

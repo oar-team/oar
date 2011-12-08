@@ -175,7 +175,7 @@ in the database and update all visualization tables
 (gantt_jobs_predictions_visu_ and gantt_jobs_resources_visu_).
 
 oar_sched_gantt_with_timesharing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+________________________________
 
 This is the default OAR scheduler. It implements all functionalities like
 timesharing, moldable jobs, `besteffort jobs`, ...
@@ -188,7 +188,7 @@ SCHEDULER_JOB_SECURITY_TIME_, SCHEDULER_GANTT_HOLE_MINIMUM_TIME_,
 SCHEDULER_RESOURCE_ORDER_).
 
 oar_sched_gantt_with_timesharing_and_fairsharing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+________________________________________________
 
 This scheduler is the same than oar_sched_gantt_with_timesharing_ but it looks
 at the consumption past and try to order waiting jobs with fairsharing in mind.

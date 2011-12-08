@@ -34,7 +34,7 @@ describe OarApi do
       $jobid.should > 0
       # Now, we wait for the 15th job to be terminated
       # It is necessary for the rest of the tests to pass
-      timeout=60
+      timeout=180
       t=0
       c=0
       while t<timeout and c == 0
@@ -56,7 +56,10 @@ describe OarApi do
     end
 
     it "should have an array of 10 test jobs just submitted" do
-      jhash = { 'resource' => "/nodes=1/core=2" , 'script' => "ls;pwd;whoami;sleep 60" , 'array' => '10' }
+      jhash = { 'resource' => "/nodes=1/core=2" , 
+                'property' => 'network_address like "node%"', 
+                'script' => "ls;pwd;whoami;sleep 60" , 
+                'array' => '10' }
       @api.submit_job(jhash)
       $jobid = @api.jobstatus['id']
       $jobid.should be_a(Integer)
@@ -589,7 +592,22 @@ describe OarApi do
   #############################################################
   describe "Re-submission of a terminated job" do
     before(:all) do
-      sleep 5
+      # Wait for the 2nd job to be terminated
+      timeout=180
+      t=0
+      c=0
+      while t<timeout and c == 0
+        @api.specific_job_details($jobid+1)
+        if @api.specificjobdetails["state"] == "Terminated" || @api.specificjobdetails["state"] == "Error"
+          c=1
+        else
+          printf "."
+          $stdout.flush
+        end
+        sleep 1
+        t+=1
+      end
+      t.should < timeout
       begin
         @api.value=@api.post(@api.api,"jobs/#{$jobid+1}/resubmissions/new",nil)
       rescue => e

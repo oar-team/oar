@@ -50,7 +50,7 @@ install_conffile() {
             install_deb_conffile $*
             ;;
         "rpm")
-            : # Don't known how to handle it
+            install_rpm_conffile $*
             ;;
         "tgz"|*)
             install_if_not_exist $*
@@ -85,6 +85,25 @@ install_deb_conffile() {
     
     if [ -f "$tmpfile" ]; then
         rm -f "$tmpfile"
+    fi
+}
+
+install_rpm_conffile() {
+    # I've not found ucf or equivalent to install config file during postinst
+    # in the rpm world. So the config file are nstalled manually in the spec
+    # file.
+
+    local src dst rights owner tmpfile
+    src=$1
+    dst=$2
+    rights=$3
+    owner=$4
+    
+    if [ -n "$rights" ]; then
+        chmod $rights $dst
+    fi
+    if [ -n "$owner" ]; then
+        chown $owner $dst
     fi
 }
 

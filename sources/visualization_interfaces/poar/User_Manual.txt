@@ -46,7 +46,7 @@ This Web Portal was developed as a part of Google Summer of Code 2010 project. M
 
 2. Pre-requisites:
 ==================
-The list of pre-requisites is as follows:-
+The list of pre-requisites is as follows:
 
 	(a) OAR should be installed.
 	(b) OAR-Restfull API should be installed.
@@ -56,18 +56,21 @@ The list of pre-requisites is as follows:-
 
 3. Setting up the Web Portal:
 =============================
-Any user can set up the portal by using following instructions:-
+Any user can set up the portal by using following instructions:
 
 	3.1 Putting up the Web Portal Directory:
 	========================================
-	    Put the poar directory (Web Portal Directory) in /var/www.
+	    Put the poar directory (Web Portal Directory) in /usr/local/share/oar-web-status/.
 
 	3.2 Using oar_devel appliance: 
 	==============================
-	    If you are using oar_devel appliance, then every thing will automatically work. oar_devel appliance have two users 'oar' and 'kameleon' both 		    having password 'kameleon'. If you want to add any new user follow the point 3.3.
+	    If you are using oar_devel appliance, then every thing will automatically work. oar_devel appliance have two users 'oar' and 'kameleon' both  having password 'kameleon'. If you want to add any new user follow the point 3.3.
 
 	3.3 Adding new Users:
 	=====================
+
+      If not already done create user on machine which hosts oarapi with adduser command.
+
 	    If no other user is present in '/etc/oar/api-users' , execute following command as root to add a new user:-
 				htpasswd -b -c /etc/oar/api-users username password
 
@@ -77,7 +80,7 @@ Any user can set up the portal by using following instructions:-
 
 	3.4 Configuring the apache server:
 	==================================
-	   Add following lines in apache2/sites-available/default :-
+	   Add following lines in apache2/sites-available/default :
 	   
 			       ScriptAlias /oarapi /usr/lib/cgi-bin/oarapi/oarapi.cgi
 			       ScriptAlias /oarapi-debug /usr/lib/cgi-bin/oarapi/oarapi-debug.cgi
@@ -105,12 +108,10 @@ Any user can set up the portal by using following instructions:-
 	3.5 Setting up the variables in variable.js:
 	============================================
 	There is a file variable.js in the Web Portal directory. It contains the location variables where oarapi,monika,drawgantt and monika is present. 		If these api's are present at a diffrent location in your machine. Change the location.
-	If you are using port redirection kindly change http://localhost to http://localhost:portnumber
-
 
 	3.6 Changes in oar.conf:
 	========================
-	Change the value of API_JOBS_URI_DEFAULT_PARAMS as follows:-
+	Change the value of API_JOBS_URI_DEFAULT_PARAMS as follows:
 
 	API_JOBS_URI_DEFAULT_PARAMS="state=Finishing,Running,Resuming,Suspended,Launching,toLaunch,Waiting,toAckReservation,Hold,Error,Terminated"
 
@@ -235,5 +236,5 @@ Hope you enjoy using Web Portal for OAR.
 
 
 					      		**********************
-				              		* End of User Manual *
+				            * End of User Manual *
 					      		**********************

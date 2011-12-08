@@ -21,13 +21,13 @@ DB_BASE_NAME="oar"
 DB_BASE_LOGIN="oar"
 
 # DataBase user password
-DB_BASE_PASSWD="oar"
+DB_BASE_PASSWD=""
 
 # DataBase read only user name
-#DB_BASE_LOGIN_RO="oar_ro"
+DB_BASE_LOGIN_RO="oar_ro"
 
 # DataBase read only user password
-#DB_BASE_PASSWD_RO="oar_ro"
+DB_BASE_PASSWD_RO=""
 
 # OAR server hostname
 SERVER_HOSTNAME="localhost"
@@ -81,7 +81,7 @@ COSYSTEM_HOSTNAME="127.0.0.1"
 # If you want to free a process per job on the server you can change this tag
 # into 1 (you must enable all nodes to connect to SERVER_PORT on the
 # SERVER_HOSTNAME)
-DETACH_JOB_FROM_SERVER="0"
+DETACH_JOB_FROM_SERVER="1"
 
 # If DETACH_JOB_FROM_SERVER=1 then OAR is able to launch jobs with a sliding
 # window to avoid the overload of the server (default is 5).
@@ -139,7 +139,7 @@ FINAUD_FREQUENCY="300"
 # (sentinelle.pl is like a "for" of ssh but it adds timeout and window to 
 # avoid overloading the server)
 # (sentinelle.pl is provided with OAR in the install directory)
-#PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/usr/lib/oar/sentinelle.pl -t 5 -w 20"
+PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/usr/lib/oar/sentinelle.pl -t 5 -w 20"
 
 # Taktuk
 # taktuk may be used to check aliveness of nodes.
@@ -220,11 +220,11 @@ FINAUD_FREQUENCY="300"
 ###############################################################################
 #
 # Maximum of seconds used by a scheduler
-SCHEDULER_TIMEOUT="10"
+SCHEDULER_TIMEOUT="30"
 
 # Number of processes to use when performing scheduling calculations
 # (default is 1)
-#SCHEDULER_NB_PROCESSES=4
+SCHEDULER_NB_PROCESSES=4
 
 # Time to add between each jobs (for example: time for administration tasks or
 # time to let computers to reboot)
@@ -292,7 +292,7 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 #
 # Specify the number of job to take care at each time
 # Default is 30
-#SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
+SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 
 # Number of seconds to consider for the fairsharing
 # Default is 30 days

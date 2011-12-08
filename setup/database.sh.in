@@ -1,4 +1,6 @@
 
 database_setup() {
-    echo "Currently, the oar database isn't setup automatically. Please install the database manually (using the ${SBINDIR}/oar-database script)."
+    if ! oar-database --check >/dev/null 2>/dev/null; then
+        echo "Currently, the oar database isn't setup automatically. Please install the database manually (using the ${SBINDIR}/oar-database script)."
+    fi
 }

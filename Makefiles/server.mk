@@ -8,7 +8,7 @@ OARDIR_BINFILES = $(SRCDIR)/modules/runner/runner \
 		  $(SRCDIR)/qfunctions/oaraccounting \
 		  $(SRCDIR)/qfunctions/oarproperty \
 		  $(SRCDIR)/qfunctions/oarmonitor \
-		  $(SRCDIR)/modules/runner/bipbip \
+		  $(SRCDIR)/modules/runner/bipbip.in \
 		  $(SRCDIR)/tools/detect_resources \
 		  $(SRCDIR)/tools/oar_checkdb.pl
 
@@ -36,6 +36,7 @@ MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
 SBINDIR_FILES = $(SRCDIR)/server/sbin/oar-server.in
 
 EXAMPLEDIR_FILES = $(SRCDIR)/tools/job_resource_manager.pl \
+                   $(SRCDIR)/tools/job_resource_manager_cgroups.pl \
 		   $(SRCDIR)/tools/suspend_resume_manager.pl \
 		   $(SRCDIR)/tools/oarmonitor_sensor.pl \
 		   $(SRCDIR)/scripts/server_epilogue \
