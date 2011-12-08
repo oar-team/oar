@@ -1,5 +1,5 @@
-%define version 2.5.0+dev504.051c245
-%define release 1centos6
+%define version 2.5.0+rc1
+%define release 1
 
 %define oaruser  oar
 
@@ -54,7 +54,7 @@ This package installs the PostgreSQL backend for the server part or the OAR batc
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions, server-mysql | server-pgsql
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions, oar-server-mysql or oar-server-pgsql
 %description server
 This package installs the server part or the OAR batch scheduler
 
@@ -82,7 +82,7 @@ This package install the PostgreSQL backend for the submission and query part of
 %package user
 Summary:	OAR batch scheduler user package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, user-mysql | user-pgsql, /usr/bin/ssh
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-mysql or oar-user-pgsql, /usr/bin/ssh
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
