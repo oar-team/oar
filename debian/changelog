@@ -1,40 +1,5 @@
-oar (2.5.0+dev487.f014a74-1~1.gbp525d12) UNRELEASED; urgency=low
+oar (2.5.0+rc1-1) unstable; urgency=low
 
-  ** SNAPSHOT build @525d12e769ed971dc006f505914162fbc95546ca **
+  * Initial Release.
 
-  * Imported Upstream version 2.5.0+dev487.f014a74
-  * Remove the old templates
-  * Add the debhelper token in the oar-keyring postinst
-  * Fix a package description (capitalization)
-  * Adding ruby to oar-scheduler-ocaml-mysql Depends
-  * Add the preferred alternative to httpd-cgi
-  * The oar-web-status package has to be architecture-independent
-  * Use the libjs-jquery package instead of embedding it in oar-web-status
-  * Add an alternative to httpd-cgi
-  * Not installing all the docs/ contents by default
-  * Remove some uneeded debian files
-  * Add the doc-base registrations
-  * Add libmodule-util-perl to oar-server Depends:
-  * Disable the ocaml-scheduler package (experimental feature)
-  * Update the Vcs-* fields in the debian/control
-  * Remove uneeded packages in Build-Depends
-  * Set myself as the package maintainer
-  * Change the debian package structure
-  * Add lintian overrides to liboar-perl
-  * Fix the install rules for oar-user-{mysql,pgsql}
-  * Remove some useless Depends (perl-suid, adduser).
-  * Remove the target setup for the oar-keyring package
-  * Fix the liboar-perl description.
-  * Update the installation to not depend to the makefile
-  * Disable the automatic installation of the cron starting oarnodecheck.
-  * Fix some spelling errors.
-  * the default owner for oar is $OARUSER
-  * Fix the target dist and the setup type fot the debian packaging.
-  * Disable init.d start during installation/upgrade
-  * Clean the debian/control file.
-  * Remove some duplicated code
-  * Add libsort-versions-perl to oar-server Depends.
-  * Put {postgresql|msyql}-client to Recommends instead of Suggest for oar-server.
-  * Some rewording.
-
- -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 09 Nov 2011 15:41:11 +0100
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Thu, 08 Dec 2011 11:06:45 +0100
