@@ -2,8 +2,9 @@
 
 use strict;
 use warnings;
-use DBI;
-use OAR::Conf qw(init_conf get_conf is_conf set_value);
+use DBI();
+use OAR::IO;
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf set_value);
 use File::Basename;
 use Getopt::Long;
 use Sort::Versions;
@@ -128,6 +129,7 @@ Setup the database used by OAR
 
 Actions:
      --create                       create a new db user / database
+     --check                        check if the database is ready to be used
      --drop                         drop the current db user / database
      --setup                        Setup the oar database with an exisiting db user / database
      --reset                        Reset the oar database with an exisiting db user / database
@@ -138,7 +140,7 @@ Options:
  -f, --force-sql                    Force the execution even if an sql instruction fails
  -y, --force-yes                    This option will cause oar-database to continue without prompting if it is doins something potentially harmful
      --conf=OAR_CONF_FILE           Use the configuration file given in parameters. Default '%%OARCONFDIR%%/oar.conf'
-     --db-type=DB_TYPE              Specify the database type ('mysql' oar 'Pg')
+     --db-type=DB_TYPE              Specify the database type ('mysql' or 'Pg')
      --db-host=DB_HOST              Specify the database hostname
      --db-port=DB_PORT              Specify the database port
      --db-user=DB_USER              Specify the database user
@@ -220,17 +222,28 @@ sub setup_database() {
 }
 
 sub create_database() {
-    print "Creating the database...\n";
+
     if ($db_type eq "mysql") {
+        print "Creating the database...\n";
         mysql_admin_exec_sql("CREATE DATABASE $db_name CHARACTER SET latin1") ;
+
+        print "Creating the database user...\n";
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' . "'localhost' IDENTIFIED BY '$db_pass'") ;
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' ."'%' IDENTIFIED BY '$db_pass'");
-        mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
-        mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
+        if ($db_ro_user and $db_ro_pass) {
+            print "Creating the database read-only user...\n";
+            mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
+            mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
+        }
 
     } elsif ($db_type eq "Pg") {
+        print "Creating the database user...\n";
         pgsql_admin_exec_sql("CREATE ROLE $db_user LOGIN PASSWORD '$db_pass';");
-        pgsql_admin_exec_sql("CREATE ROLE $db_ro_user LOGIN PASSWORD '$db_ro_pass';");
+        if ($db_ro_user and $db_ro_pass) {
+            print "Creating the database read-only user...\n";
+            pgsql_admin_exec_sql("CREATE ROLE $db_ro_user LOGIN PASSWORD '$db_ro_pass';");
+        }
+        print "Creating the database...\n";
         pgsql_admin_exec_sql("CREATE DATABASE $db_name OWNER $db_user");
         pgsql_admin_exec_sql("GRANT ALL PRIVILEGES ON DATABASE $db_name TO $db_user");
     }
@@ -239,7 +252,9 @@ sub create_database() {
     init_database();
 
     if ($db_type eq "Pg")  {
-        pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+        if ($db_ro_user and $db_ro_pass) {
+            pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+        }
     }
 }
 
@@ -335,6 +350,7 @@ GetOptions ("help|h"                => \$usage,
             "reset|r"               => sub { $action = 'reset' },
             "create|c"              => sub { $action = 'create' },
             "drop"                  => sub { $action = 'drop' },
+            "check"                 => sub { $action = 'check' },
             "conf=s"                => \$conffile,
 #            "update-conf"           => sub { $action = 'update-conf' },
             "db-type=s"             => \$db_type,
@@ -419,7 +435,7 @@ unless ($db_user) {
 unless ($db_pass) {
     $db_pass = (OAR::Conf::is_conf("DB_BASE_PASSWD") ? OAR::Conf::get_conf("DB_BASE_PASSWD") : "");
 
-    if ($db_pass eq "") {
+    if (($db_pass eq "") or ($db_pass eq '""')) {
         print "The user password is empty. Please define a password. Failing.\n";
         exit(1);
     }
@@ -435,6 +451,10 @@ unless ($db_ro_pass) {
     if (OAR::Conf::is_conf("DB_BASE_PASSWD_RO")) {
         $db_ro_pass = OAR::Conf::get_conf("DB_BASE_PASSWD_RO");
     }
+    if (($db_ro_pass eq "") or ($db_ro_pass eq '""')) {
+        print "The user read-only password is empty. Please define a password. Failing.\n";
+        exit(1);
+    }
 }
 
 unless ($db_name) {
@@ -443,12 +463,17 @@ unless ($db_name) {
 
 if ($action eq "create" or $action eq "drop") {
     unless ($db_is_local and $db_type eq "Pg") {
-        unless ($db_admin_user and $db_admin_pass ) {
-            print "You need to specify the admin user (--db-admin-user) and password (--db-admin-pass) to use. See the manual for more information. Failing.\n";
+        unless ($db_admin_user) {
+            print "You need to specify the admin user (--db-admin-user) and probably the password (--db-admin-pass) to use. See the manual for more information. Failing.\n";
             exit(1);
+        }
+        unless ($db_admin_pass) {
+            print "The admin password is empty. Proceeding with an empty password.\n";
+            $db_admin_pass="";
         }
     }
 }
+
 
 
 #
@@ -514,7 +539,17 @@ if ($action eq "update-conf") {
 my $term = Term::ReadLine->new("brand");
 $Term::UI::VERBOSE = 0;
 
-if ($action eq "setup") {
+if ($action eq "check") {
+    $ENV{'OARCONFFILE'} = "%%OARCONFDIR%%/oar.conf";
+    if (defined(OAR::IO::connect_ro_one_log("log"))) {
+        print "The OAR database is accessible and ready to be used.\n";
+        exit 0;
+    }
+    elsei {
+        print "The OAR database isn't ready.\n";
+        exit 1;
+    }
+} elsif ($action eq "setup") {
     check_user_db_access($db_user,$db_pass);
     if($force_yes || $term->ask_yn(
             prompt => "Are you sure you want to upgrade your database ? (Please backup the database before)", 
@@ -523,7 +558,6 @@ if ($action eq "setup") {
     } else {
         print "The database hasn't been changed\n."
     }
-
 } elsif ($action eq "reset") {
     check_user_db_access($db_user,$db_pass);
     if ($force_yes || $term->ask_yn(
@@ -534,10 +568,6 @@ if ($action eq "setup") {
         print "The database hasn't been changed\n."
     }
 } elsif ($action eq "create") {
-    unless ($db_ro_user and $db_ro_pass) {
-        print "You need to specify the user/pass for the read-only access (--db-ro-user / --db-ro-pass). See the manual for more information. Failing\n";
-        exit(1);
-    }
     create_database();
 } elsif ($action eq "drop") {
     drop_database();

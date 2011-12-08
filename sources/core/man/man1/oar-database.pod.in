@@ -96,7 +96,7 @@ By default, if not specified, all the sql parameters are taken from the I<OAR_CO
 
 =item B<--db-type>=I<DB_TYPE>
 
-The type of the SQL database. It can be currently, I<mysql> or I<postgresql>.
+The type of the SQL database. It can be currently, I<mysql> or I<Pg> (for postgresql).
 
 =item B<--db-user>=I<DB_USER>
 

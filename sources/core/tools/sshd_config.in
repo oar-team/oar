@@ -43,7 +43,7 @@ PermitEmptyPasswords no
 PasswordAuthentication no
 
 # With nodes with a lot of core, 10 // connections could be too few
-MaxStartups 32
+MaxStartups 1024
 
 X11Forwarding yes
 X11DisplayOffset 10

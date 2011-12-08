@@ -62,7 +62,6 @@ sub get_current_moldable_job($$);
 sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
-sub set_job_autoCheckpointed($$);
 sub frag_job($$);
 sub ask_checkpoint_job($$);
 sub ask_signal_job($$$);
@@ -2198,19 +2197,6 @@ sub set_job_scheduler_info($$$) {
                 WHERE
                     job_id = $idJob
              ");
-}
-
-
-# set_job_autoCheckpointed
-# sets the autoCheckpointed field into YES of the job of id passed in parameter
-# parameters : base, jobid
-# return value : /
-sub set_job_autoCheckpointed($$) {
-    my $dbh = shift;
-    my $idJob = shift;
-    $dbh->do("UPDATE jobs
-                SET autoCheckpointed = \'YES\'
-                WHERE job_id = $idJob");
 }
 
 
@@ -5303,7 +5289,6 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[0] = $ref[1];
             $res{$ref[0]}->[1] = $ref[2];
             $res{$ref[0]}->[2] = $ref[4];
-#            $res{$ref[0]}->[3] = $ref[3];
             $res{$ref[0]}->[4] = $ref[5];
             $res{$ref[0]}->[5] = $ref[6];
             $res{$ref[0]}->[6] = $ref[7];

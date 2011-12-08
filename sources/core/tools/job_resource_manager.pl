@@ -24,6 +24,7 @@ umask(oct("022"));
 
 my $Cpuset;
 my $Log_level;
+my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
 
 # Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
 # $Cpuset = {
@@ -122,6 +123,7 @@ if ($ARGV[0] eq "init"){
                     '/bin/echo '.join(",",@Cpuset_cpus).' | cat > /dev/cpuset/'.$Cpuset_path_job.'/cpus'
                   )){
 #'MEM= ;for c in '."@Cpuset_cpus".';do MEM=$(cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id),$MEM; done; echo $MEM > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
+#'MEM= ;for c in '."@Cpuset_cpus".';do for n in /sys/devices/system/node/node* ;do if [ -r "$n/cpu$c" ]; then MEM=$(basename $n | sed s/node//g),$MEM; fi; done; done;echo $MEM > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
             exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
         }
     }
@@ -218,13 +220,80 @@ if ($ARGV[0] eq "init"){
                 done'
               );
 
-        if (system('oardodo rmdir /dev/cpuset'.$Cpuset_path_job)){
-            # Uncomment this line if you want to use several network_address properties
-            # which are the same physical computer (linux kernel)
-            #exit(0);
-            exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
-        }
+        # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
+        # which would allow race condition for the dirty-user-based clean-up mechanism
+        if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
+            flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
+            if (system('oardodo rmdir /dev/cpuset'.$Cpuset_path_job)){
+                # Uncomment this line if you want to use several network_address properties
+                # which are the same physical computer (linux kernel)
+                #exit(0);
+                exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
+            }
+            if (not defined($Cpuset->{job_uid})){
+                # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
+                my @cpusets = ();
+                if (opendir(DIR, "/dev/cpuset/".$Cpuset->{cpuset_path}.'/')) {
+                    @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
+		            closedir DIR;
+		        } else {
+		            exit_myself(18,"Can't opendir: /dev/cpuset/$Cpuset->{cpuset_path}");
+		        }
+		        if ($#cpusets < 0) {
+                    # No other jobs on this node at this time
+		            my $useruid=getpwnam($Cpuset->{user});
+		            my $ipcrm_args="";
+		            if (open(IPCMSG,"< /proc/sysvipc/msg")) {
+		                <IPCMSG>;
+		                while (<IPCMSG>) {
+		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+                                $ipcrm_args .= " -q $1";
+		                	    print_log(3,"Found IPC MSG for user $useruid: $1.");
+		                    }
+		                }
+		                close (IPCMSG);
+		            } else {
+		                print_log(3,"Cannot open /proc/sysvipc/msg: $!.");
+		            }
+		            if (open(IPCSHM,"< /proc/sysvipc/shm")) {
+		                <IPCSHM>;
+		                while (<IPCSHM>) {
+		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+		                        $ipcrm_args .= " -m $1";
+		                	    print_log(3,"Found IPC SHM for user $useruid: $1.");
+		                    }
+		                }
+		                close (IPCSHM);
+		            } else {
+		                print_log(3,"Cannot open /proc/sysvipc/shm: $!.");
+		            }
+		            if (open(IPCSEM,"< /proc/sysvipc/sem")) {
+		                <IPCSEM>;
+		                while (<IPCSEM>) {
+		                    if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}/) {
+		                        $ipcrm_args .= " -s $1";
+		                	    print_log(3,"Found IPC SEM for user $useruid: $1.");
+		                    }
+		                }
+		                close (IPCSEM);
+		            } else {
+		                print_log(3,"Cannot open /proc/sysvipc/sem: $!.");
+		            }
+		            if ($ipcrm_args) {
+		                print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
+		                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
+		            }
+		            print_log (3,"Purging /tmp...");
+		            system("oardodo find /tmp/. -user $Cpuset->{user} -delete"); 
+		        } else {
+		            print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
+		        }
+            }
+	        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
+	        close(LOCK);
+        } 
     }
+
     if (defined($Cpuset->{job_uid})){
         my $ipcrm_args="";
         if (open(IPCMSG,"< /proc/sysvipc/msg")) {
@@ -259,7 +328,7 @@ if ($ARGV[0] eq "init"){
                 if (/^\s*\d+\s+(\d+)(?:\s+\d+){2}\s+$Cpuset->{job_uid}(?:\s+\d+){5}$/) {
                     $ipcrm_args .= " -s $1";
                 } else {
-                    print_log(3,"Cannot parse IPC SEM: $_.\n");
+                    print_log(3,"Cannot parse IPC SEM: $_.");
                 }
             }
             close (IPCSEM);

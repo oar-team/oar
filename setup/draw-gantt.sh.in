@@ -6,7 +6,12 @@ draw_gantt_setup() {
         ${OARCONFDIR}/drawgantt.conf \
         0600 \
         ${WWWUSER}
-    
+
+    if [ ! -d "${OARHOMEDIR}/drawgantt-files" ]; then
+       mkdir -p ${OARHOMEDIR}/drawgantt-files
+       set_rights ${OARHOMEDIR}/drawgantt-files 0755
+    fi
+
     if [ ! -e "${OARHOMEDIR}/drawgantt-files/js" ]; then
         ln -sf ${WWWDIR}/drawgantt-files/js ${OARHOMEDIR}/drawgantt-files/js
     fi
@@ -14,5 +19,8 @@ draw_gantt_setup() {
         ln -sf ${WWWDIR}/drawgantt-files/Icons ${OARHOMEDIR}/drawgantt-files/Icons
     fi
 
-    set_rights ${OARHOMEDIR}/drawgantt-files/cache 0755 ${WWWUSER}
+    if [ ! -d "${OARHOMEDIR}/drawgantt-files/cache" ]; then
+       mkdir -p ${OARHOMEDIR}/drawgantt-files/cache
+       set_rights ${OARHOMEDIR}/drawgantt-files/cache 0755 ${WWWUSER}
+    fi
 }

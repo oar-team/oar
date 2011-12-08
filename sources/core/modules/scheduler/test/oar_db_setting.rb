@@ -1,5 +1,6 @@
 require 'dbi'
 require 'yaml'
+require 'rest_client'
 
 DEFAULT_JOB_ARGS = {
   :queue => "default",
@@ -196,6 +197,13 @@ def get_start_time(job_id)
  $dbh.execute("select jobs.start_time from jobs where jobs.job_id=#{job_id}").first.first
 end
 
+def get_start_stop_time(job_id)
+  res=$dbh.execute("select jobs.start_time, jobs.stop_time from jobs where jobs.job_id=#{job_id}")
+  r = res.first
+  res.finish
+  return r
+end
+
 def delete_assignements_from_start_time(start_time)
 # $dbh.execute("SELECT * FROM assigned_resources,jobs, moldable_job_descriptions WHERE
 #                jobs.start_time > #{start_time} AND
@@ -234,15 +242,140 @@ def reset_job_from_start_time(start_time, now, delay = 10)
 end
 
 # reset all jobs to state=waiting,  remove assigned resources and switch index to CURRENT
-def oar_reset_all_jobs 
- $dbh.execute("DELETE assigned_resources FROM assigned_resources,jobs, moldable_job_descriptions")
- $dbh.execute("UPDATE jobs SET state='Waiting'")
+def oar_reset_all_jobs(state="'Waiting'")
+ $dbh.execute("TRUNCATE assigned_resources")
+ $dbh.execute("UPDATE jobs SET state=#{state}")
  $dbh.execute("UPDATE moldable_job_descriptions SET moldable_index = 'CURRENT'")
  $dbh.execute("UPDATE job_resource_groups SET res_group_index = 'CURRENT'")
  $dbh.execute("UPDATE job_resource_descriptions SET res_job_index = 'CURRENT'")
  $dbh.execute("UPDATE job_resource_groups SET res_group_index = 'CURRENT'")
  $dbh.execute("UPDATE job_resource_descriptions SET res_job_index = 'CURRENT'") 
 end
+
+
+#
+# oar_jobs_sleepify:
+# Remove previous allocations 
+# Sets command field by sleep with job execution time as argument and jobs' state to hold.
+# Returns array which contains job_ids and corresponding submission times begin from 0 (first submitted job)
+
+def oar_jobs_sleepify()
+  resume_seq=[]
+  # Remove previous allocations 
+  requests = "
+    TRUNCATE accounting;
+    TRUNCATE assigned_resources;
+    TRUNCATE challenges;
+    TRUNCATE event_logs;
+    TRUNCATE event_log_hostnames;
+    TRUNCATE files;
+    TRUNCATE frag_jobs;
+    TRUNCATE gantt_jobs_predictions;
+    TRUNCATE gantt_jobs_predictions_log;
+    TRUNCATE gantt_jobs_predictions_visu;
+    TRUNCATE gantt_jobs_resources;
+    TRUNCATE gantt_jobs_resources_log;
+    TRUNCATE gantt_jobs_resources_visu;
+    TRUNCATE job_state_logs;
+    TRUNCATE resource_logs;
+"
+  multiple_requests_execute(requests)
+
+  oar_reset_all_jobs("'Hold'")
+ 
+  q = "SELECT job_id, submission_time, start_time, stop_time FROM jobs"
+  puts "Be careful we're scanning all jobs"
+  res = $dbh.execute(q)
+  orig_subtime = 0
+  res.each do |j|
+    execution_time = j[3]-j[2]
+    if orig_subtime == 0
+      orig_subtime = j[1]
+    end
+    subtime =  j[1] - orig_subtime
+    puts "job_id: #{j[0]} start_time: #{j[1]} modify_subtime: #{subtime} execution_time: #{execution_time}"
+    resume_seq.push([j[0],subtime])
+
+    $dbh.execute("UPDATE jobs  
+      SET
+        command = 'sleep #{execution_time}',
+        launching_directory = '/tmp',
+        stdout_file= '/tmp/oar.#{j[0]}.out',
+        stderr_file= '/tmp/oar.#{j[0]}.err',
+        job_user = 'kameleon' 
+      WHERE
+        job_id =  #{j[0]}")
+  end
+  res.finish
+  return resume_seq
+end
+
+def oar_replay(sequence)
+  #  RestClient.post 'http://kameleon:kameleon@localhost/oarapi-priv/jobs/1/resumptions/new.yaml','' 
+  ref_time = Time.now.to_f + 1
+  #puts "ref_time: #{ref_time}"
+  sequence.each do |step|
+    job_id, release_time = step
+    time2sleep =  release_time - (Time.now.to_f - ref_time)
+    sleep time2sleep if (time2sleep > 0)
+    puts  "Release job:#{job_id} error_release_time: #{Time.now.to_f - ref_time - release_time}"
+    #puts "Release job:#{job_id} release_time: #{release_time} effective_release_time: #{Time.now.to_f - ref_time}" 
+    RestClient.post "http://kameleon:kameleon@localhost/oarapi-priv/jobs/#{job_id}/resumptions/new.yaml",''
+  end
+end
+
+
+#SELECT assigned_resources.resource_id
+#FROM jobs, assigned_resources, moldable_job_descriptions, resources
+#WHERE
+# jobs.job_id = 2 AND
+# jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+# moldable_job_descriptions.moldable_job_id = 2 AND
+# resources.resource_id = assigned_resources.resource_id
+
+def oar_job_times(job_id)
+end
+
+def oar_job_resources(job_id)
+  q = " SELECT assigned_resources.resource_id
+    FROM jobs, assigned_resources, moldable_job_descriptions
+    WHERE
+      jobs.job_id = #{job_id} AND
+      jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+      moldable_job_descriptions.moldable_job_id = #{job_id}" 
+  res = $dbh.execute(q)
+  r=[]
+  res.each do |r_id|
+    r << r_id.first
+  end
+  res.finish
+  return r   
+end
+
+def oar_jobs_overlap?
+  q = "SELECT job_id, start_time, stop_time FROM jobs"
+  puts "Be careful we're scanning all jobs"
+  res = $dbh.execute(q)
+  previous_jobs = []
+  print "Test job:"
+  res.each do |j|
+    print "#{j[0]} "
+    r =  oar_job_resources(j[0]) 
+    previous_jobs.each do |k|
+      if ((j[1]>k[1]) and (j[1]<k[2])) or ((j[2]>k[1]) and (j[2]<k[2])) or  ((j[1]<k[1]) and (j[2]>k[2]))
+        if (r&k[3])!=[]
+          puts
+          puts "Jobs overlap: #{j[0]} #{k[0]}"
+          pp [j[0],j[1],j[2],r]
+          pp k
+        end
+      end
+    end
+    previous_jobs.push([j[0],j[1],j[2], oar_job_resources(j[0])]) #oar_job_resources ugly (bad performance)  
+  end
+end
+
+
 
 
 if ($0=='irb')
