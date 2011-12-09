@@ -15,6 +15,7 @@ create_oar_group() {
 
 create_oar_home() {
     test -d "${OARHOMEDIR}" || mkdir -p ${OARHOMEDIR}
+    set_rights ${OARHOMEDIR} 0755 ${OARUSER} ${OAROWNERGROUP}
 }
 
 create_oar_user() {    
