@@ -259,7 +259,7 @@ end
 # Sets command field by sleep with job execution time as argument and jobs' state to hold.
 # Returns array which contains job_ids and corresponding submission times begin from 0 (first submitted job)
 
-def oar_jobs_sleepify()
+def oar_jobs_sleepify(user=ENV['USER'])
   resume_seq=[]
   # Remove previous allocations 
   requests = "
@@ -295,14 +295,14 @@ def oar_jobs_sleepify()
     subtime =  j[1] - orig_subtime
     puts "job_id: #{j[0]} start_time: #{j[1]} modify_subtime: #{subtime} execution_time: #{execution_time}"
     resume_seq.push([j[0],subtime])
-
+# new to add user switching
     $dbh.execute("UPDATE jobs  
       SET
         command = 'sleep #{execution_time}',
         launching_directory = '/tmp',
         stdout_file= '/tmp/oar.#{j[0]}.out',
         stderr_file= '/tmp/oar.#{j[0]}.err',
-        job_user = 'kameleon' 
+        job_user = '#{user}' 
       WHERE
         job_id =  #{j[0]}")
   end
@@ -319,8 +319,12 @@ def oar_replay(sequence)
     time2sleep =  release_time - (Time.now.to_f - ref_time)
     sleep time2sleep if (time2sleep > 0)
     puts  "Release job:#{job_id} error_release_time: #{Time.now.to_f - ref_time - release_time}"
-    #puts "Release job:#{job_id} release_time: #{release_time} effective_release_time: #{Time.now.to_f - ref_time}" 
-    RestClient.post "http://kameleon:kameleon@localhost/oarapi-priv/jobs/#{job_id}/resumptions/new.yaml",''
+    #puts "Release job:#{job_id} release_time: #{release_time} effective_release_time: #{Time.now.to_f - ref_time}"
+    if user=="kameleon" 
+      RestClient.post "http://kameleon:kameleon@localhost/oarapi-priv/jobs/#{job_id}/resumptions/new.yaml",''
+    else
+      RestClient.post "http://localhost/oarapi/jobs/#{job_id}/resumptions/new.yaml",''
+    end
   end
 end
 

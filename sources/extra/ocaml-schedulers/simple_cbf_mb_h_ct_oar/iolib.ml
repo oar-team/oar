@@ -15,6 +15,7 @@
   #define NoNStr not_null str2ml
 #endif
 
+open Int64
 open DBD
 open Types
 open Interval
@@ -48,7 +49,7 @@ let get_available_uptos dbh =
 (* get_job_list: retrieve jobs to schedule with important relative information *)
 (*                                                                             *)
 
-let get_job_list dbh default_resources queue besteffort_duration =
+let get_job_list dbh default_resources queue besteffort_duration security_time_overhead =
   let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
@@ -101,7 +102,6 @@ let get_job_list dbh default_resources queue besteffort_duration =
     NoN int_of_string a.(0), (* job_id *) 
     (if flag_besteffort then besteffort_duration else 
       NoN Int64.of_string a.(1)), (* moldable_walltime *)
-
       NoN int_of_string a.(3), (* moldable_id *)
       NoNStr a.(2),(* properties *)
       NoNStr a.(4), (* res_job_resource_type *)
@@ -141,7 +141,7 @@ let get_job_list dbh default_resources queue besteffort_duration =
                           jobid = j_id;
                           moldable_id = j_moldable_id;
                           time_b = Int64.zero;
-                          walltime = j_walltime;
+                          walltime = add j_walltime security_time_overhead; (* add security_time_overhead *)
                           types = [];
                           constraints = [];
                           hy_level_rqt = [];
@@ -172,7 +172,7 @@ let get_job_list dbh default_resources queue besteffort_duration =
 (* OAR::IO::get_gantt_scheduled_jobs in perl version                *)
 (* TODO Remove used field in query ??? *)
 
-let get_scheduled_jobs dbh =
+let get_scheduled_jobs dbh security_time_overhead =
    let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
@@ -203,7 +203,7 @@ let get_scheduled_jobs dbh =
                   jobid = j_id;
                   moldable_id = j_moldable_id;
 	                time_b = j_start_time;
-	                walltime = j_walltime;
+	                walltime = add j_walltime security_time_overhead; (* add security_time_overhead *)
                   types = [];
                   constraints = []; (* constraints irrelevant fortest_container already scheduled job *)
                   hy_level_rqt = [];(*  *)
