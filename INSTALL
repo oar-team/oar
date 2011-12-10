@@ -423,7 +423,7 @@ From the packaging
         apt-get update
  
         # Install apache FastCGI module (optional but highly recommended)
-        apt-get install libapache2-mod-fastcgi
+        apt-get install libapache2-mod-fastcgi 
 
         # Install OAR api
         apt-get install oar-api
@@ -457,7 +457,7 @@ From the sources
           apt-get install gcc make tar python-docutils
           
           # Common dependencies
-          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl httpd-cgi
+          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl httpd-cgi libcgi-fast-perl 
           
           # FastCGI dependency (optional but highly recommended)
           apt-get install libapache2-mod-fastcgi
