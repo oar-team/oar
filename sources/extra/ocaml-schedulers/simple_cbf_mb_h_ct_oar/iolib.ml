@@ -26,7 +26,7 @@ let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
 
-let get_resource_list (dbh)  = 
+let get_resource_list dbh  = 
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
   let get_one_resource a =
@@ -421,4 +421,127 @@ let set_job_and_scheduler_message_range dbh job_ids message =
   let query =  Printf.sprintf "UPDATE jobs SET  message = '%s', scheduler_info = '%s',   WHERE IN ('%s');" message message job_ids_str in
     ignore (execQuery dbh query)
 
+
+(* get the amount of time in the suspended state of a job
+   args : base, job id, time in seconds
+   adapted from  OAR::IO::get_job_suspended_sum_duration
+*)
+let get_job_suspended_sum_duration dbh job_id now = 
+  let query =  Printf.sprintf "SELECT date_start, date_stop
+               FROM job_state_logs
+               WHERE
+                job_id = %d AND
+                (job_state = 'Suspended' OR job_state = 'Resuming')" job_id in
+  let res = execQuery dbh query in
+    let rec summation sum next_rest = match next_rest with
+      | None -> sum
+      | Some a -> let date_start = NoN Int64.of_string  a.(0) and date_stop = NoN Int64.of_string  a.(1) in
+                  let res_time = if  (date_stop = 0L) then sub now date_start else sub date_stop date_start in
+                  if (res_time > 0L) then
+                    add sum res_time
+                  else
+                    sum
+    in
+      summation 0L (fetch res);;
+
+(*
+sub get_job_suspended_sum_duration($$$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $current_time = shift;
+
+    my $sth = $dbh->prepare("   SELECT date_start, date_stop
+                                FROM job_state_logs
+                                WHERE
+                                    job_id = $job_id AND
+                                    (job_state = \'Suspended\' OR
+                                     job_state = \'Resuming\')
+                            ");
+    $sth->execute();
+    my $sum = 0;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $tmp_sum = 0;
+        if ($ref->{date_stop} == 0){
+            $tmp_sum = $current_time - $ref->{date_start};
+        }else{
+            $tmp_sum += $ref->{date_stop} - $ref->{date_start};
+        }
+        $sum += $tmp_sum if ($tmp_sum > 0);
+    }
+    $sth->finish();
+
+    return($sum);
+}
+*)
+(*
+ get_job_current_resources
+ returns the list of resources associated to the job passed in parameter
+ parameters : base, jobid
+ return value : list of resources
+*)
+
+let get_job_current_resources dbh job_id no_type_lst =
+
+  let partial_query = function 
+    | None -> Printf.sprintf "FROM assigned_resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = 'CURRENT' AND
+                        assigned_resources.moldable_job_id = %d" job_id
+
+    | Some x -> let str_t_lst = String.concat "," x in
+              Printf.sprintf "FROM assigned_resources,resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = 'CURRENT' AND
+                        assigned_resources.moldable_job_id = %d AND
+                        resources.resource_id = assigned_resources.resource_id AND
+                        resources.type NOT IN ('%s')" job_id str_t_lst
+  in 
+  let query = "SELECT assigned_resources.resource_id " ^ (partial_query no_type_lst) ^ 
+                 "ORDER BY assigned_resources.resource_id ASC" 
+  in
+  let res = execQuery dbh query in
+    map res (function a -> NoN int_of_string a.(0));;
+ 
+(*
+ get_job_current_resources
+ returns the list of resources associated to the job passed in parameter
+ parameters : base, jobid
+ return value : list of resources
+ side effects : /
+sub get_job_current_resources($$$) {
+    my $dbh = shift;
+    my $jobid= shift;
+    my $not_type_list = shift;
+
+    my $tmp_str;
+    if (!defined($not_type_list)){
+        $tmp_str = "FROM assigned_resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resources.moldable_job_id = $jobid";
+    }else{
+        my $type_str;
+        foreach my $t (@{$not_type_list}){
+            $type_str .= $dbh->quote($t);
+            $type_str .= ',';
+        }
+        chop($type_str);
+        $tmp_str = "FROM assigned_resources,resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resources.moldable_job_id = $jobid AND
+                        resources.resource_id = assigned_resources.resource_id AND
+                        resources.type NOT IN (".$type_str.")";
+    }
+    my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
+                                $tmp_str
+                             ORDER BY assigned_resources.resource_id ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource});
+    }
+    return(@res);
+}
+*)
 
