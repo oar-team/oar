@@ -15,8 +15,6 @@ build: build_shared
 	# Nothing to do
 
 install: install_shared
-	install -d $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache
-	
 	install -d $(DESTDIR)$(CGIDIR)
 	install -m 0755 $(SRCDIR)/drawgantt.cgi $(DESTDIR)$(CGIDIR)
 	
