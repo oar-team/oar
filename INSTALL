@@ -261,11 +261,11 @@ For a complete comprehension of what does this command, type man
 oarnodesetting. For now, the two options you will need will be **-a** (means
 add a resource) and **-h** (defines the resource hostname or ip adress).
 
-For example, to add a computing resource locally to test OAR installation type::
+For example, to add a computing resource on the node <NODE_IP> to OAR installation, you can type::
 
-        oarnodesetting -a -h 127.0.10.1
+        oarnodesetting -a -h <NODE_IP>
 
-This will add a resource with 127.0.10.1 as host IP address.
+This will add a resource with <NODE_IP> as host IP address.
 
 
 You also can modify resources properties with **-p** option, for example::
