@@ -21,6 +21,99 @@ installation is composed of:
     - and optionally a **visualisation node** on which all the visualisation
       web interfaces (monika, draw-gantt, ...)  will be accessible ;
 
+Computing nodes
+---------------
+
+Installation from the packages
+______________________________
+
+**Instructions**
+
+*For redhat like systems*::
+
+        # Add the oar repository
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR Packages for Enterprise Linux 6 - \$basearch
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
+        enabled=1
+        gpgcheck=0
+        EOF
+
+        # Install OAR node
+        yum install oar-node
+
+*For the debian like systems*::
+  
+        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
+        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        apt-get update
+
+        # Install OAR node
+        apt-get install oar-node
+
+Installation from the tarball
+_____________________________
+
+**Requirements**
+
+*For redhat like systems*::
+
+          # Build dependencies
+          yum install gcc make tar python-docutils
+
+          # Common dependencies
+          yum install Perl Perl-base openssh 
+          
+*For debian like system*::
+
+          # Build dependencies
+          apt-get install gcc make tar python-docutils
+          
+          # Common dependencies
+          apt-get install perl perl-base openssh-client openssh-server 
+          
+**Instructions**
+
+Get the sources::
+
+        OAR_VERSION=2.5.1
+        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        cd oar-${OAR_VERSION}/
+
+build/install/setup::
+
+        # build
+        make node-build
+        # install
+        make node-install
+        # setup
+        make node-setup
+
+
+Configuration
+_____________
+ 
+oar node ssh access
+~~~~~~~~~~~~~~~~~~~
+
+You need to ensure that the oar user can access to each nodes through ssh. To
+ensure that, you can just copy the ``/var/lib/oar/.ssh`` folder from the oar
+server to each nodes (ensure that ``/var/lib/oar/.ssh`` has the right
+permissions).
+
+Init.d scripts
+~~~~~~~~~~~~~~
+
+If you have installed OAR from sources, you need to become root user and
+install manually the {init.d,default,sysconfig} scripts present in the folders::
+
+    $PREFIX/share/doc/oar-node/examples/scripts/{init.d,default,sysconfig}
+
+Then you just need to use the script ``/etc/init.d/oar-node`` to start
+the ssh daemon dedicated to oar-node.
+
 Server node
 -----------
 
@@ -507,99 +600,6 @@ For a more advanced usage, you can test a job submission through the API (the fi
       -H'Content-Type: application/json' \
       -d '{"resource":"/nodes=1,walltime=00:10:00", "command":"sleep 600"}' 
   
-
-Computing nodes
----------------
-
-Installation from the packages
-______________________________
-
-**Instructions**
-
-*For redhat like systems*::
-
-        # Add the oar repository
-        cat <<EOF > /etc/yum.repos.d/oar.repo
-        [oar]
-        name=OAR Packages for Enterprise Linux 6 - \$basearch
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
-        enabled=1
-        gpgcheck=0
-        EOF
-
-        # Install OAR node
-        yum install oar-node
-
-*For the debian like systems*::
-  
-        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
-        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-        apt-get update
-
-        # Install OAR node
-        apt-get install oar-node
-
-Installation from the tarball
-_____________________________
-
-**Requirements**
-
-*For redhat like systems*::
-
-          # Build dependencies
-          yum install gcc make tar python-docutils
-
-          # Common dependencies
-          yum install Perl Perl-base openssh 
-          
-*For debian like system*::
-
-          # Build dependencies
-          apt-get install gcc make tar python-docutils
-          
-          # Common dependencies
-          apt-get install perl perl-base openssh-client openssh-server 
-          
-**Instructions**
-
-Get the sources::
-
-        OAR_VERSION=2.5.1
-        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
-        cd oar-${OAR_VERSION}/
-
-build/install/setup::
-
-        # build
-        make node-build
-        # install
-        make node-install
-        # setup
-        make node-setup
-
-
-Configuration
-_____________
- 
-oar node ssh access
-~~~~~~~~~~~~~~~~~~~
-
-You need to ensure that the oar user can access to each nodes through ssh. To
-ensure that, you can just copy the ``/var/lib/oar/.ssh`` folder from the oar
-server to each nodes (ensure that ``/var/lib/oar/.ssh`` has the right
-permissions).
-
-Init.d scripts
-~~~~~~~~~~~~~~
-
-If you have installed OAR from sources, you need to become root user and
-install manually the {init.d,default,sysconfig} scripts present in the folders::
-
-    $PREFIX/share/doc/oar-node/examples/scripts/{init.d,default,sysconfig}
-
-Then you just need to use the script ``/etc/init.d/oar-node`` to start
-the ssh daemon dedicated to oar-node.
 
 
 Visualization node
