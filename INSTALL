@@ -274,7 +274,6 @@ You also can modify resources properties with **-p** option, for example::
 
 will allow the resource #1 to accept jobs of the type deploy.
 
-
 Notes
 _____
 
@@ -377,11 +376,30 @@ You need to restart OAR each time you change an ENERGY_* variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
+
 Disabling SELinux
 ~~~~~~~~~~~~~~~~~
 
 On some distributions, SELinux is enabled by default. There is currently no OAR
 support for SELinux. So, you need to disable SELinux, if enabled.
+
+
+Intel cpuset id issue
+~~~~~~~~~~~~~~~~~~~~~
+The cpuset ids on an intel platform are not persistent across reboot. So you need
+to update the cpuset ids in the resource database at startup for each computing
+node. You can do this by using the ``/etc/oar/update_cpuset_id.sh`` script. The
+following page give more informations on how configuring it:
+
+    http://wiki-oar.imag.fr/index.php/Configuration_tips#Start.2Fstop_of_nodes_using_ssh_keys
+
+
+Other issues
+~~~~~~~~~~~~
+
+You can take a look at the "Customizaion tips" on the OAR Wiki:
+    
+    http://wiki-oar.imag.fr/index.php/Customization_tips
 
 
 Frontend nodes
