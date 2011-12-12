@@ -201,13 +201,15 @@ database from unneeded records).
 PostgreSQL : authentication
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With postgres you probably have to edit the ``pg_hba.conf`` to enable the
-connections to this database. Your file must contain at its beginning the
-following lines::
+In case you've installed a PostgreSQL database remotly, if your PostgreSQL
+installation doesn't authorize the local connections by default, you need to
+enable the connections to this database for the oar users. Supposing the OAR
+server has the address <OAR_SERVER>, you can add the following lines in the
+``pg_hba.conf``:
 
     # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
-        host    oar         oar_ro            127.0.0.1          255.255.255.255    md5
-        host    oar         oar               127.0.0.1          255.255.255.255    md5
+        host    oar         oar_ro            <OAR_SERVER>/32    md5
+        host    oar         oar               <OAR_SERVER>/32    md5
 
 About X11 usage in OAR
 ~~~~~~~~~~~~~~~~~~~~~~
