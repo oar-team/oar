@@ -252,7 +252,9 @@ the appropriate values for the memory and the cpuset properties. Just try...
 There is also a tool to help you managing your oar resources and admission 
 rules : ``oaradmin``.
 Take a look at the oaradmin documentation in the administrator commands section 
-for more details.
+for more details. You can also read this tips::
+    
+    http://wiki-oar.imag.fr/index.php/Customization_tips#Using_oaradmin_to_initiate_the_resources
 
 *Otherwise:*
 
@@ -261,7 +263,8 @@ For a complete comprehension of what does this command, type man
 oarnodesetting. For now, the two options you will need will be **-a** (means
 add a resource) and **-h** (defines the resource hostname or ip adress).
 
-For example, to add a computing resource on the node <NODE_IP> to OAR installation, you can type::
+For example, to add a computing resource on the node <NODE_IP> to OAR
+installation, you can type::
 
         oarnodesetting -a -h <NODE_IP>
 
