@@ -239,9 +239,10 @@ let get_scheduled_jobs dbh security_time_overhead =
     in
       first_res (fetch res)
  
-
-(* NOT USED only ONE job see save_assignS to job list assignement*)
-let save_assign dbh job =
+(*                                             *)
+(* Save ONE job assign                         *)
+(*                                             *)
+let save_assignt_one_job dbh job =
   let moldable_job_id = string_of_int job.moldable_id in 
     let  moldable_job_id_start_time j = 
 (*      Printf.sprintf "(%s, %s)" moldable_job_id  (Int64.to_string j.time_b) in *)
@@ -266,7 +267,17 @@ let save_assign dbh job =
       ignore (execQuery dbh query_pred);
       ignore (execQuery dbh query_job_resources)
 
-let save_assigns conn jobs = (* TODO  ???*)
+(*                        *)
+(* Save jobs' assignemnts *)
+(*                        *)
+let save_assigns dbh jobs =
+  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; 
+
+(*                                                                                           *)
+(* Save jobs assignements into 2 SQL request                                                 *)
+(* Be careful this does not scale after beyond 1 millions of  (moldable_job_id,start_time)   *)
+(*                                                                                           *)
+let save_assigns_2_rqts conn jobs =
   let  moldable_job_id_start_time j =
     (* Printf.sprintf "(%s, %s)" (ml2int j.moldable_id) (ml642int j.time_b) in *)
     "(" ^ (string_of_int j.moldable_id) ^ "," ^ (Int64.to_string j.time_b) ^ ")" in
