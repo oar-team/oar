@@ -26,7 +26,6 @@ case "$1" in
     configure)
         api_setup
 
-        ln -s /etc/oar/apache-api.conf /etc/apache2/conf.d/oar-api.conf
         print_api_installation_message
         ;;
 

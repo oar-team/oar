@@ -13,9 +13,6 @@ case "$1" in
         www_conf_setup
         monika_setup
         draw_gantt_setup
-
-        ln -s /etc/oar/apache.conf /etc/apache2/conf.d/oar-web-status.conf || true
-
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
