@@ -510,7 +510,7 @@ user nodes. So you can just copy the /etc/oar directory from to server node to
 the user nodes.
 
 
-OAR Restful API Installation
+OAR RESTful API Installation
 ____________________________
 
 Since the version 2.5.1, OAR offers an API for users and admins interactions. This api
@@ -610,17 +610,40 @@ build/install/setup::
 Configuration
 ~~~~~~~~~~~~~
 
-The API makes use of apache2 for the http layer. You may have to edit the configuration to suit your needs, especially regarding authentication issues. Please, check and customize the /etc/oar/apache-api.conf file.
-You can test your API basic operation with the following example query::
+*Configuring OAR*
 
-       curl http://localhost/oarapi/version.yaml
+    For the moment, the API needs the user tools to be installed on the same host
+    ('``make user-install``' or oar-user package). A suitable ``/etc/oar/oar.conf`` should
+    be present. For the API to work, you should have the oarstat/oarnodes/oarsub
+    commands to work (on the same host you installed the API)
 
-For a more advanced usage, you can test a job submission through the API (the first part of the URI may differ, depending on the authentication mechanism you configured into apache)::
+*Configuring Apache*
 
-       curl -i -X POST http://localhost/oarapi/jobs.json \
-      -H'Content-Type: application/json' \
-      -d '{"resource":"/nodes=1,walltime=00:10:00", "command":"sleep 600"}' 
-  
+    The api provides a default configuration file (``/etc/oar/apache-api.conf``) that
+    is using a identd user identification enabled only from localhost.  Edit the
+    ``/etc/oar/apache-api.conf`` file and customize it to reflect the authentication
+    mechanism you want to use. For ident, you may have to install a "identd" daemon
+    on your distrib. The steps may be:
+
+        - Install and run a identd daemon on your server
+        - Activate the ident auth mechanism into apache (``a2enmod ident``)
+        - Activate the headers apache module (``a2enmod headers``)
+        - Customize apache-api.conf to allow the hosts you trust for ident
+
+*YAML, JSON, XML*
+
+    You need at least one of the YAML or JSON perl module to be installed on the host running the API.
+
+*Test*
+
+    You may test the API with a simple wget::
+
+        wget -O - http://localhost/oarapi/resources.html
+
+    It should give you the list of resources in the yaml format but enclosed in an
+    html page.  To test if the authentication works, you need to post a new job.
+    See the example.txt file that gives you example queries with a ruby rest
+    client.
 
 
 Visualization node
@@ -631,7 +654,7 @@ ___________
 
 There are two different tools. One, named Monika which displays the current
 cluster state with all active and waiting jobs. The other, named drawgantt
-which displays node occupation in a lapse of time.  These tools are CGI scripts
+which displays node occupation in a lapse of time. These tools are CGI scripts
 and generate HTML pages.
 
 Installation from the packages
