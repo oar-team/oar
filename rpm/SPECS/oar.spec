@@ -382,7 +382,6 @@ fi
 www_conf_setup
 monika_setup
 draw_gantt_setup
-ln -s /etc/oar/apache.conf /etc/httpd/conf.d/oar-web-status.conf || true
 service httpd reload || true
 
 %postun web-status
@@ -395,9 +394,6 @@ fi
 %post restful-api
 . /usr/lib/oar/setup/api.sh
 api_setup
-if [ ! -e /etc/httpd/conf.d/oar-api.conf ]; then
-    ln -s /etc/oar/apache-api.conf /etc/httpd/conf.d/oar-api.conf || true
-fi
 service httpd reload || true
 
 %postun restful-api
