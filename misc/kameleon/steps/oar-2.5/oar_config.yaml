@@ -10,7 +10,9 @@ oar_config:
  - config_oar_log_level:
    - exec_chroot: sed -e 's/^LOG_LEVEL\=\"2\"/LOG_LEVEL\=\"3\"/' -i /etc/oar/oar.conf
  - oar_init:
-   - exec_chroot: oar-database --create --db-admin-user root --db-admin-pass kameleon --db-ro-user oar_ro --db-ro-pass oar_ro
+   - exec_chroot: sed -e 's/^DB_BASE_PASSWD=.*/DB_BASE_PASSWD="oar"/' -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^DB_BASE_PASSWD_RO=.*/DB_BASE_PASSWD_RO="oar_ro"/' -i /etc/oar/oar.conf
+   - exec_chroot: oar-database --create --db-admin-user root --db-admin-pass kameleon
  - update_hostfile:
    - append_file:
      - /etc/hosts
