@@ -45,7 +45,8 @@ global:
  #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
  # 
  # OAR specific
- oar_tgz: "http://oar-ftp.imag.fr/oar/2.5/sources/snapshots/last.tar.gz"
+ #oar_tgz: "http://oar-ftp.imag.fr/oar/2.5/sources/snapshots/last.tar.gz"
+ oar_tgz: "file:///home/plb/depots/imag/oar/build-area/2.5.0+rc1+dev22.f5f6297/oar-2.5.0+rc1+dev22.f5f6297.tar.gz"
 
  
 steps:
@@ -54,7 +55,7 @@ steps:
    - rsync
    - building_appliance
    - building_kvm_images
- - oar/oar_precheck
+ - oar-2.5/oar_precheck
 # - checkpoint_resume
  - bootstrap
  - system_config
@@ -65,17 +66,17 @@ steps:
    - extra_packages
  - kernel_install
 # - checkpoint
-# - oar/oar_debian_install
- - oar/oar_tgz_install
- - oar/oar_system_config
- - oar/oar_config
- - oar/oar_devel
- - oar/oar_clean
+# - oar-2.5/oar_debian_install
+ - oar-2.5/oar_tgz_install
+ - oar-2.5/oar_system_config
+ - oar-2.5/oar_config
+ - oar-2.5/oar_devel
+ - oar-2.5/oar_clean
 # - kameleon/kameleon_debian_install
  - autologin
  - strip
 # - xen_domu
-# - oar/oar_build_tgz
+# - oar-2.5/oar_build_tgz
  - build_appliance:
    - clean_udev
 #   - save_as_tgz

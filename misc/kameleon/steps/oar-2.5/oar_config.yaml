@@ -4,7 +4,7 @@ oar_config:
    - exec_on_clean: chroot $$chroot bash -c "/etc/init.d/mysql stop || service mysql stop || true"
    - exec_chroot: mysqladmin password kameleon
  - config_taktuk:
-   - exec_chroot: mv /etc/oar/oar.conf /etc/oar/oar.conf.or
+   - exec_chroot: cp /etc/oar/oar.conf /etc/oar/oar.conf.orig
    - exec_chroot: sed -e 's/^#\(TAKTUK_CMD\=\"\/usr\/bin\/taktuk \-t 30 \-s\".*\)/\1/' -i /etc/oar/oar.conf
    - exec_chroot: sed -e 's/^#\(PINGCHECKER_TAKTUK_ARG_COMMAND\=\"broadcast exec timeout 5 kill 9 \[ true \]\".*\)/\1/' -i /etc/oar/oar.conf
  - config_oar_log_level:
