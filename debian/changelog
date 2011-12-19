@@ -1,3 +1,11 @@
+oar (2.5.0+rc2-1) unstable; urgency=low
+
+  * New upstream release. 
+  * Remove the symlink creation for the apache2 configuration. (already done
+    by the setup scripts).
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 19 Dec 2011 22:59:22 +0100
+
 oar (2.5.0+rc1-1) unstable; urgency=low
 
   * Initial Release.
