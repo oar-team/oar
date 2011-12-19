@@ -14,12 +14,13 @@ describe OarApi do
     it "should submit a job successfully " do
       script="#!/bin/bash
 #OAR --name rspec_test
+wc -l $OAR_FILE_NODES > /tmp/$OAR_JOB_ID.count
 echo \"Hello World\"
 pwd
 whoami
 sleep 120
 "
-      job = { 'resource' => "/nodes=1/core=1" , 'script' => script, 'scanscript' => 1 }
+      job = { 'resource' => "/nodes=1/core=2" , 'script' => script, 'scanscript' => 1 }
       lambda {
          @oar_server.submit_job(job)
       }.should_not raise_exception
@@ -43,7 +44,7 @@ sleep 120
       t=0
       while found==0 && t < timeout do
         @oar_server.jobarray['items'].each do |j|
-          found=1 if j["id"] == $jobid
+          found=1 if j["id"] == $jobid && j["state"] == "Running"
         end
         @oar_server.full_job_details
         sleep 1
@@ -56,6 +57,14 @@ sleep 120
     it "should be named 'rspec_test'" do
       @oar_server.specific_job_details($jobid)
       @oar_server.specificjobdetails["name"].should == "rspec_test"
+    end
+    it "should have created a file into /tmp" do
+      sleep 1
+      File.exists?("/tmp/#{$jobid}.count").should == true
+    end
+    it "should return the good number of resources into the created file" do
+      f = File.open("/tmp/#{$jobid}.count")
+      f.gets.to_i.should == 2
     end
   end 
  

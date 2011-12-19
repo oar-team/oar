@@ -95,6 +95,7 @@ version 2.5.0:
     (for detached jobs).
   - Add IPC cleaning to the job_resource_manager* when there is no other job of
     the same user on the nodes.
+  - make better scheduling behaviour for dependency jobs
 
 version 2.4.4:
 --------------

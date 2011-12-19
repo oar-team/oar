@@ -15,6 +15,7 @@
   #define NoNStr not_null str2ml
 #endif
 
+open Int64
 open DBD
 open Types
 open Interval
@@ -25,7 +26,7 @@ let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
 
-let get_resource_list (dbh)  = 
+let get_resource_list dbh  = 
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
   let get_one_resource a =
@@ -48,7 +49,7 @@ let get_available_uptos dbh =
 (* get_job_list: retrieve jobs to schedule with important relative information *)
 (*                                                                             *)
 
-let get_job_list dbh default_resources queue besteffort_duration =
+let get_job_list dbh default_resources queue besteffort_duration security_time_overhead =
   let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
@@ -101,7 +102,6 @@ let get_job_list dbh default_resources queue besteffort_duration =
     NoN int_of_string a.(0), (* job_id *) 
     (if flag_besteffort then besteffort_duration else 
       NoN Int64.of_string a.(1)), (* moldable_walltime *)
-
       NoN int_of_string a.(3), (* moldable_id *)
       NoNStr a.(2),(* properties *)
       NoNStr a.(4), (* res_job_resource_type *)
@@ -141,7 +141,7 @@ let get_job_list dbh default_resources queue besteffort_duration =
                           jobid = j_id;
                           moldable_id = j_moldable_id;
                           time_b = Int64.zero;
-                          walltime = j_walltime;
+                          walltime = add j_walltime security_time_overhead; (* add security_time_overhead *)
                           types = [];
                           constraints = [];
                           hy_level_rqt = [];
@@ -172,7 +172,7 @@ let get_job_list dbh default_resources queue besteffort_duration =
 (* OAR::IO::get_gantt_scheduled_jobs in perl version                *)
 (* TODO Remove used field in query ??? *)
 
-let get_scheduled_jobs dbh =
+let get_scheduled_jobs dbh security_time_overhead =
    let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
@@ -203,7 +203,7 @@ let get_scheduled_jobs dbh =
                   jobid = j_id;
                   moldable_id = j_moldable_id;
 	                time_b = j_start_time;
-	                walltime = j_walltime;
+	                walltime = add j_walltime security_time_overhead; (* add security_time_overhead *)
                   types = [];
                   constraints = []; (* constraints irrelevant fortest_container already scheduled job *)
                   hy_level_rqt = [];(*  *)
@@ -239,9 +239,10 @@ let get_scheduled_jobs dbh =
     in
       first_res (fetch res)
  
-
-(* NOT USED only ONE job see save_assignS to job list assignement*)
-let save_assign dbh job =
+(*                                             *)
+(* Save ONE job assign                         *)
+(*                                             *)
+let save_assignt_one_job dbh job =
   let moldable_job_id = string_of_int job.moldable_id in 
     let  moldable_job_id_start_time j = 
 (*      Printf.sprintf "(%s, %s)" moldable_job_id  (Int64.to_string j.time_b) in *)
@@ -266,7 +267,17 @@ let save_assign dbh job =
       ignore (execQuery dbh query_pred);
       ignore (execQuery dbh query_job_resources)
 
-let save_assigns conn jobs = (* TODO  ???*)
+(*                        *)
+(* Save jobs' assignemnts *)
+(*                        *)
+let save_assigns dbh jobs =
+  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; 
+
+(*                                                                                           *)
+(* Save jobs assignements into 2 SQL request                                                 *)
+(* Be careful this does not scale after beyond 1 millions of  (moldable_job_id,start_time)   *)
+(*                                                                                           *)
+let save_assigns_2_rqts conn jobs =
   let  moldable_job_id_start_time j =
     (* Printf.sprintf "(%s, %s)" (ml2int j.moldable_id) (ml642int j.time_b) in *)
     "(" ^ (string_of_int j.moldable_id) ^ "," ^ (Int64.to_string j.time_b) ^ ")" in
@@ -421,4 +432,127 @@ let set_job_and_scheduler_message_range dbh job_ids message =
   let query =  Printf.sprintf "UPDATE jobs SET  message = '%s', scheduler_info = '%s',   WHERE IN ('%s');" message message job_ids_str in
     ignore (execQuery dbh query)
 
+
+(* get the amount of time in the suspended state of a job
+   args : base, job id, time in seconds
+   adapted from  OAR::IO::get_job_suspended_sum_duration
+*)
+let get_job_suspended_sum_duration dbh job_id now = 
+  let query =  Printf.sprintf "SELECT date_start, date_stop
+               FROM job_state_logs
+               WHERE
+                job_id = %d AND
+                (job_state = 'Suspended' OR job_state = 'Resuming')" job_id in
+  let res = execQuery dbh query in
+    let rec summation sum next_rest = match next_rest with
+      | None -> sum
+      | Some a -> let date_start = NoN Int64.of_string  a.(0) and date_stop = NoN Int64.of_string  a.(1) in
+                  let res_time = if  (date_stop = 0L) then sub now date_start else sub date_stop date_start in
+                  if (res_time > 0L) then
+                    add sum res_time
+                  else
+                    sum
+    in
+      summation 0L (fetch res);;
+
+(*
+sub get_job_suspended_sum_duration($$$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $current_time = shift;
+
+    my $sth = $dbh->prepare("   SELECT date_start, date_stop
+                                FROM job_state_logs
+                                WHERE
+                                    job_id = $job_id AND
+                                    (job_state = \'Suspended\' OR
+                                     job_state = \'Resuming\')
+                            ");
+    $sth->execute();
+    my $sum = 0;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $tmp_sum = 0;
+        if ($ref->{date_stop} == 0){
+            $tmp_sum = $current_time - $ref->{date_start};
+        }else{
+            $tmp_sum += $ref->{date_stop} - $ref->{date_start};
+        }
+        $sum += $tmp_sum if ($tmp_sum > 0);
+    }
+    $sth->finish();
+
+    return($sum);
+}
+*)
+(*
+ get_job_current_resources
+ returns the list of resources associated to the job passed in parameter
+ parameters : base, jobid
+ return value : list of resources
+*)
+
+let get_job_current_resources dbh job_id no_type_lst =
+
+  let partial_query = function 
+    | None -> Printf.sprintf "FROM assigned_resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = 'CURRENT' AND
+                        assigned_resources.moldable_job_id = %d" job_id
+
+    | Some x -> let str_t_lst = String.concat "," x in
+              Printf.sprintf "FROM assigned_resources,resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = 'CURRENT' AND
+                        assigned_resources.moldable_job_id = %d AND
+                        resources.resource_id = assigned_resources.resource_id AND
+                        resources.type NOT IN ('%s')" job_id str_t_lst
+  in 
+  let query = "SELECT assigned_resources.resource_id " ^ (partial_query no_type_lst) ^ 
+                 "ORDER BY assigned_resources.resource_id ASC" 
+  in
+  let res = execQuery dbh query in
+    map res (function a -> NoN int_of_string a.(0));;
+ 
+(*
+ get_job_current_resources
+ returns the list of resources associated to the job passed in parameter
+ parameters : base, jobid
+ return value : list of resources
+ side effects : /
+sub get_job_current_resources($$$) {
+    my $dbh = shift;
+    my $jobid= shift;
+    my $not_type_list = shift;
+
+    my $tmp_str;
+    if (!defined($not_type_list)){
+        $tmp_str = "FROM assigned_resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resources.moldable_job_id = $jobid";
+    }else{
+        my $type_str;
+        foreach my $t (@{$not_type_list}){
+            $type_str .= $dbh->quote($t);
+            $type_str .= ',';
+        }
+        chop($type_str);
+        $tmp_str = "FROM assigned_resources,resources
+                    WHERE 
+                        assigned_resources.assigned_resource_index = \'CURRENT\' AND
+                        assigned_resources.moldable_job_id = $jobid AND
+                        resources.resource_id = assigned_resources.resource_id AND
+                        resources.type NOT IN (".$type_str.")";
+    }
+    my $sth = $dbh->prepare("SELECT assigned_resources.resource_id as resource
+                                $tmp_str
+                             ORDER BY assigned_resources.resource_id ASC");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref->{resource});
+    }
+    return(@res);
+}
+*)
 
