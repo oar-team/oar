@@ -1,8 +1,21 @@
 
 www_conf_setup() {
+    mkdir -p ${OARCONFDIR}/apache2 || true
+
+    # Check for an old configuration file.
+    if [ -f ${OARCONFDIR}/apache.conf ]; then
+        mv ${OARCONFDIR}/apache.conf ${OARCONFDIR}/apache2/oar-web-status.conf
+    fi
     install_conffile \
         ${EXAMPLEDIR}/apache.conf \
-        ${OARCONFDIR}/apache.conf \
+        ${OARCONFDIR}/apache2/oar-web-status.conf \
         0644 \
         ${WWWUSER}
+
+    # install the apache2 configuration file
+    if [ -d ${APACHECONFDIR}/conf.d ]; then
+        if [ ! -e ${APACHECONFDIR}/conf.d/oar-web-status.conf ]; then
+            ln -s ${OARCONFDIR}/apache2/oar-web-status.conf ${APACHECONFDIR}/conf.d/oar-web-status.conf
+        fi 
+    fi
 }

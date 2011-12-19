@@ -124,6 +124,10 @@ let get_optional_value s =
     ( warn (Printf.sprintf "Value %s not found in confFile %s\n" s conf_file); 
       None )
 
+let get_default_value s d = 
+  try Hashtbl.find conf_values s
+  with Not_found -> 
+   d
 
 let get_hierarchy_info = 
   let hierarchy_labels = Helpers.split "," (Helpers.replace " " "" (get_value "HIERARCHY_LABELS")) in

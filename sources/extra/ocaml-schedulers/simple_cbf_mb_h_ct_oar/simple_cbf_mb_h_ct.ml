@@ -13,7 +13,7 @@
 (* Not supported features: *)
 (* - moldable jobs (use only first request set*)
 (* - timesharing *)
-(* - job array*)
+(* - job array *)
 (* - fairesharing *)
 (* - suspend/resume, time guards, desktop compting feature do we need do address them in main scheduler ??? *)
 (* - no errors catching/namming *)
@@ -227,7 +227,7 @@ let schedule_id_jobs jids h_jobs slots =
 (* Schedule loop with support for jobs container - can be recursive (recursivity has not be tested) *)
 (*                                                                                                  *)
 (* let schedule_id_jobs_ct jids h_jobs h_slots = *)
- let schedule_id_jobs_ct h_slots h_jobs jids =
+ let schedule_id_jobs_ct h_slots h_jobs jids security_time_overhead =
 
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
   let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
@@ -244,8 +244,11 @@ let schedule_id_jobs jids h_jobs slots =
                       let (job, updated_slots ) = assign_resources_job_split_slots j (find_slots num_set_slots) in 
                         Hashtbl.replace h_slots num_set_slots updated_slots;
                       if test_container then
-                        (* create new slot / container *)
-                        Hashtbl.add h_slots jid [{time_s = job.time_b; time_e = (add job.time_b job.walltime) ; set_of_res = job.set_of_rs}]; 
+                        (* create new slot / container *) (* substract j.walltime security_time_overhead *)
+                        Hashtbl.add h_slots jid [{
+                              time_s = job.time_b; 
+                              time_e =  add job.time_b (sub job.walltime security_time_overhead) ; 
+                              set_of_res = job.set_of_rs}]; 
                       assign_res_jobs n  (job::scheduled_jobs)
                   end 
   in
@@ -256,7 +259,7 @@ let schedule_id_jobs jids h_jobs slots =
 (* plus dependencies support                                                                        *)
 (* let schedule_id_jobs_ct jids h_jobs h_slots = *)
 
- let schedule_id_jobs_ct_dep h_slots h_jobs h_jobs_dependencies h_req_jobs_status jids =
+ let schedule_id_jobs_ct_dep h_slots h_jobs h_jobs_dependencies h_req_jobs_status jids security_time_overhead =
 
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
   let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
@@ -317,15 +320,17 @@ let schedule_id_jobs jids h_jobs slots =
                       let current_slots = find_slots num_set_slots in
                       let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_job_split_slots j current_slots) 
                                                         with _ -> (false, (jid::nosched_jids), (j_init, current_slots)) 
-                      
+
                       in
                         if ok then
                           begin 
                             Hashtbl.replace h_slots num_set_slots updated_slots;
                             if test_container then
-                              (* create new slot / container *)
-                              Hashtbl.add h_slots jid [{time_s = job.time_b; time_e = (add job.time_b job.walltime) ; set_of_res = job.set_of_rs}];
-
+                              (* create new slot / container *) (* substract j.walltime security_time_overhead *)
+                              Hashtbl.add h_slots jid [{
+                                time_s = job.time_b; 
+                                time_e = add job.time_b (sub job.walltime security_time_overhead); 
+                                set_of_res=job.set_of_rs}];
                               (* replace updated/assgined job in job hashtable *) 
                               Hashtbl.replace h_jobs jid job; 
 
@@ -378,7 +383,7 @@ let split_slots_prev_scheduled_jobs slots jobs =
 
 (* loop across ordered jobs' id and create new set_slots or split slots when needed *) 
 
-let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs =
+let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs security_time_overhead =
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (set_slots_with_prev_scheduled_jobs)" in 
   let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (set_slots_with_prev_scheduled_jobs)" in 
   let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"0") in
@@ -390,8 +395,11 @@ let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs =
                 begin
                   let (test_container, value) = test_type j "container" in
                   if test_container then
-                      (* create new slot / container *)
-                      Hashtbl.add h_slots jid [{time_s = j.time_b; time_e = (add j.time_b j.walltime) ; set_of_res = j.set_of_rs}];
+                    (* create new slot / container *) (* substract j.walltime security_time_overhead *)
+                    Hashtbl.add h_slots jid [{
+                      time_s = j.time_b; 
+                      time_e = add j.time_b (sub j.walltime security_time_overhead); 
+                      set_of_res = j.set_of_rs}];
                   (* TODO perhaps we'll need to optimize split_slots_prev_scheduled_jobs...made for jobs list *) 
                   Hashtbl.replace h_slots num_set_slots (split_slots_prev_scheduled_jobs (find_slots num_set_slots) [j]);
                   loop_jobs m

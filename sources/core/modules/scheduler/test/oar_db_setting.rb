@@ -167,16 +167,44 @@ def oar_sql_file(file_name)
 end
 
 def oar_resource_insert(args={})
-
   if (args.nil?)
     $dbh.execute("insert into resources (state) values ('Alive')").finish
   else
     if !args[:nb_resources].nil?
-      args[:nb_resources].times do
-         $dbh.execute("insert into resources (state) values ('Alive')").finish   
+      nb_res =  args[:nb_resources].to_i
+      nb_100 = nb_res/100
+      nb_residual = nb_res - 100 * nb_100
+      puts "nb_100: #{nb_100} , nb_residual: #{nb_residual}"
+      if (nb_100>0)
+        ressources_100 = ("('localhost','Alive')," * 100).chop
+        nb_100.times do
+           $dbh.execute("insert into resources (network_address, state) values #{ressources_100}").finish   
+        end
+      end
+      if (nb_residual>0)
+        nb_residual_ressources = ("('localhost','Alive')," * nb_residual).chop
+        $dbh.execute("insert into resources (network_address, state) values #{nb_residual_ressources}").finish   
       end
     end
   end
+end
+
+def test_insert(k,x)
+  oar_truncate_resources
+  puts "nb_insert: #{k}, size of insert in nb_resources: #{x}  nb_ressources: #{k*x}"
+  t0 = Time.now
+  ressources = ("('localhost','Alive')," * x).chop
+  t_string = Time.now - t0
+  puts "t_string: #{t_string}"
+  
+  t0 = Time.now 
+  k.times do
+    $dbh.execute("insert into resources (network_address, state) values #{ressources}").finish   
+  end
+  t_insert = Time.now - t0
+  puts "t_insert: #{t_insert}"
+
+  puts "t_total:  #{t_string+t_insert} t_string: #{t_string} t_insert: #{t_insert}"
 end
 
 def oar_truncate_resources
@@ -259,7 +287,7 @@ end
 # Sets command field by sleep with job execution time as argument and jobs' state to hold.
 # Returns array which contains job_ids and corresponding submission times begin from 0 (first submitted job)
 
-def oar_jobs_sleepify()
+def oar_jobs_sleepify(user=ENV['USER'])
   resume_seq=[]
   # Remove previous allocations 
   requests = "
@@ -295,14 +323,14 @@ def oar_jobs_sleepify()
     subtime =  j[1] - orig_subtime
     puts "job_id: #{j[0]} start_time: #{j[1]} modify_subtime: #{subtime} execution_time: #{execution_time}"
     resume_seq.push([j[0],subtime])
-
+# new to add user switching
     $dbh.execute("UPDATE jobs  
       SET
         command = 'sleep #{execution_time}',
         launching_directory = '/tmp',
         stdout_file= '/tmp/oar.#{j[0]}.out',
         stderr_file= '/tmp/oar.#{j[0]}.err',
-        job_user = 'kameleon' 
+        job_user = '#{user}' 
       WHERE
         job_id =  #{j[0]}")
   end
@@ -319,8 +347,12 @@ def oar_replay(sequence)
     time2sleep =  release_time - (Time.now.to_f - ref_time)
     sleep time2sleep if (time2sleep > 0)
     puts  "Release job:#{job_id} error_release_time: #{Time.now.to_f - ref_time - release_time}"
-    #puts "Release job:#{job_id} release_time: #{release_time} effective_release_time: #{Time.now.to_f - ref_time}" 
-    RestClient.post "http://kameleon:kameleon@localhost/oarapi-priv/jobs/#{job_id}/resumptions/new.yaml",''
+    #puts "Release job:#{job_id} release_time: #{release_time} effective_release_time: #{Time.now.to_f - ref_time}"
+    if user=="kameleon" 
+      RestClient.post "http://kameleon:kameleon@localhost/oarapi-priv/jobs/#{job_id}/resumptions/new.yaml",''
+    else
+      RestClient.post "http://localhost/oarapi/jobs/#{job_id}/resumptions/new.yaml",''
+    end
   end
 end
 

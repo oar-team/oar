@@ -1,15 +1,23 @@
 open Types
 open Interval 
 open Simple_cbf_mb_h_ct
-(* open Mysql *)
 (*
 TODO
-2) Debug
+
+1) Add security_time_overhead = SCHEDULER_JOB_SECURITY_TIME | 60
+1.1) Suspend / SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE 
+1.2) Fairsharing
+1.0.1) Test SCHEDULER_JOB_SECURITY_TIME in container context
 3) Besteffort (need resource reverse order => not sure ?)
-3.1) Suspend SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE 
 4) Message scheduler/job (same and more than perl scheduler) (* need to be optimize vectorize*)
 8) export OARCONFFILE=oar.conf as in perl version
+
+Done but not tested
+--------------------
+1) Add security_time_overhead = SCHEDULER_JOB_SECURITY_TIME | 60
+
 *)
+
 
 let besteffort_duration = Int64.of_int (5*60)
 
@@ -17,17 +25,23 @@ let besteffort_duration = Int64.of_int (5*60)
 >> 2**31 => 2147483648
 >> 2**31 -1 => 2147483647
 *)
+
 let max_time = 2147483648L
 let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
+
 
 let argv = if (Array.length(Sys.argv) > 2) then
       (Sys.argv.(1), (Int64.of_string Sys.argv.(2)))
     else
       ("default", Int64.of_float (Unix.time ()))
 
-(* Determine global resource intervals and init_slots with or without resource availabilty (fied available_upto in resources table *)
+(*                                                                                *)
+(* Determine Global Resource Intervals and Initial Slot                           *)
+(* with or without resource availabilty (field available_upto in resources table) *)
+(*                                                                                *)
+
 let resources_init_slots_determination dbh now =
   let potential_resources = Iolib.get_resource_list dbh in
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") in 
@@ -76,24 +90,25 @@ let _ =
     Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
 
     let (queue,now) = argv in
+    let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
 
-  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn resource_intervals queue besteffort_duration in (* TODO 
+  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn resource_intervals queue besteffort_duration security_time_overhead in (* TODO 
       false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
       Conf.log ("Job waiting ids"^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
-      if (List.length waiting_j_ids) > 0 then
+      if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
 
           (* get types attributs of wating jobs *)
           ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
           
           (* fill slots with prev scheduled jobs  *)
-          let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn in
+          let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn security_time_overhead in
           if not ( prev_scheduled_jobs = []) then
             let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
@@ -113,7 +128,7 @@ let _ =
              Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots)));
              Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
 
-             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids;
+             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids security_time_overhead; 
           else ();
 
           Conf.log "go to make a schedule";
@@ -123,7 +138,7 @@ let _ =
           let h_req_jobs_status = Iolib.get_current_jobs_required_status conn in
 
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
-          let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status waiting_j_ids
+          let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
 (*          Conf.log ("slot_init:\n  " ^  slot_to_string slot_init); 

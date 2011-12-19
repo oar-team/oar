@@ -335,7 +335,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 my $mold_dep = OAR::IO::get_current_moldable_job($base,$date_tmp[1]);
                 my $sched_tmp = $date_tmp[0] + $mold_dep->{moldable_walltime};
                 if ($scheduler_init_date < $sched_tmp){
-                    $scheduler_init_date = $sched_tmp;
+                    $scheduler_init_date = $sched_tmp + (2 * $security_time_overhead);
                 }
             }else{
                 my $message = "Cannot determine scheduling time due to dependency with the job $d";

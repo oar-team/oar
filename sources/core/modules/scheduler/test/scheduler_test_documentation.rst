@@ -8,7 +8,7 @@ Tests are set of ruby scripts which help to manipulate database and to launch ta
 Requirements
 ------------
 
- Before testing, database must be initiated by *oar_mysql_db_init.pl* or/and *oar_psql_db_init.pl* script together with *oar.conf*. Scheduler to test *must* be in /usr/lib/oar/schedulers/ directory. Tests *must* be launched as oar or root. 
+ Before testing, database must be initiated by *oar_mysql_db_init.pl* or/and *oar_psql_db_init.pl* script together with *oar.conf*. Scheduler to test must located accordingly to your installation, by example  in /usr/lib/oar/schedulers/ or /usr/local/lib/oar/schedulers/ directory. Tests *must* be launched as oar or root. 
 
 Scritps and files purposes
 --------------------------

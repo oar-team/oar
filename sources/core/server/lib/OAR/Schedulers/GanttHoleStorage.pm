@@ -283,7 +283,7 @@ sub find_hole($$$){
 
     my $end_date = $begin_date + $duration;
     my $g = 0;
-    while (($g <= $#{$gantt}) and ($gantt->[$g]->[0] < $begin_date) and ($gantt->[$g]->[1]->[$#{$gantt->[$g]->[1]}]->[0] < $end_date)){
+    while (($g < $#{$gantt}) and (($gantt->[$g+1]->[0] <= $begin_date) or (($g <= $#{$gantt}) and ($gantt->[$g]->[0] < $begin_date) and ($gantt->[$g]->[1]->[$#{$gantt->[$g]->[1]}]->[0] < $end_date)))){
         $g++
     }
 
