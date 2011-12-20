@@ -157,11 +157,12 @@ sub treate_mail_error($$$$$$$){
     my $error = shift;
     my $job_id = shift;
 
-    my $base = OAR::IO::connect();
-
-    OAR::IO::add_new_event($base,"MAIL_NOTIFICATION_ERROR",$job_id,"$error --> SMTP server used : $smtpServer, sender : $mailSenderAddress, recipients : $mailRecipientAddress, object : $object, body : $body");
-
-    OAR::IO::disconnect($base);
+    #my $base = OAR::IO::connect();
+    #
+    #OAR::IO::add_new_event($base,"MAIL_NOTIFICATION_ERROR",$job_id,"$error --> SMTP server used : $smtpServer, sender : $mailSenderAddress, recipients : $mailRecipientAddress, object : $object, body : $body");
+    #
+    #OAR::IO::disconnect($base);
+    oar_debug("[Judas] Mail ERROR: $job_id $error --> SMTP server used : $smtpServer, sender : $mailSenderAddress, recipients : $mailRecipientAddress, object : $object, body : $body\n");
     exit(1);
 }
 
