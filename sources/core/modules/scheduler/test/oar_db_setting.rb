@@ -19,11 +19,14 @@ def oar_load_test_config
 end
 
 def oar_db_connect
-	if $db_type == "mysql"
-		$db_type = "Mysql"
-	else 
-    $db_type = "Pg" #postgresql
-  end 
+#	if $db_type == "mysql"
+#		$db_type = "mysql"
+#	else 
+#    $db_type = "Pg" #postgresql
+#  end
+  puts  "dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
+				"#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}"
+
 	$dbh = DBI.connect("dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
 										 "#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}")
   puts "DB Connection Establised"
@@ -50,6 +53,9 @@ end
 #$job_types = DB[:job_types]
 #$resources = DB[:resources]
 
+# "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
+# "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+#  oar_job_insert({:res=>"host=1/cpu=2/core=2+cpu=1/core=2"})
 def oar_job_insert(j_args={})
   args = {}
   DEFAULT_JOB_ARGS.each do |k,v|
@@ -189,18 +195,21 @@ def oar_resource_insert(args={})
   end
 end
 
-def test_insert(k,x)
+def test_insert(k,x, alter=false)
   oar_truncate_resources
-  puts "nb_insert: #{k}, size of insert in nb_resources: #{x}  nb_ressources: #{k*x}"
+  puts "nb_insert: #{k}, size of insert in nb_resources: #{x}  nb_ressources: #{k*x} alter: #{alter}"
   t0 = Time.now
   ressources = ("('localhost','Alive')," * x).chop
   t_string = Time.now - t0
   puts "t_string: #{t_string}"
-  
-  t0 = Time.now 
+ 
+  t0 = Time.now
+  $dbh.execute("ALTER TABLE resources DISABLE KEYS").finish if alter
   k.times do
     $dbh.execute("insert into resources (network_address, state) values #{ressources}").finish   
-  end
+  end 
+  $dbh.execute("ALTER TABLE resources ENABLE KEYS").finish if alter
+
   t_insert = Time.now - t0
   puts "t_insert: #{t_insert}"
 

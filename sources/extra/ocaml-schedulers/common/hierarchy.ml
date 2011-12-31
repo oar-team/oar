@@ -1,18 +1,9 @@
 open Interval 
 
-(*
-vim regular / replace expression to manage comment around Printf debug fonctions
-#add ocaml comments
-:%s/\(.*Printf\.printf.*\)/(* \1 *)/
-#remove ocaml comments
-
-(*
-:%s/^(\*\(.*Printf\.printf.*\)\*)/\1/ 
-
-*)
-
-
-let master_top = {b = 1; e = 32} ;; (* TODO to modify *) 
+(* hierarchy_levels and master_top is updated a runtime *)
+(* let hierarchy_levels = ref (h_desc_to_h_levels [ ("resource_id",[(1,1,1)]) ] ) ;;*)
+let hierarchy_levels = ref  [ ("resource_id",[{b = 1; e = 1}]) ];;
+let toplevel_itv = ref {b = 1; e = 64} ;; 
 
 let h_triplets_to_itvs h_triplets =
   let rec h_t_itvs ht itvs = match ht with
@@ -32,9 +23,7 @@ let h_desc_to_h_levels h_desc =
     | (x::n) -> let (label,triplets) = x in desc_to_itvs n ((label, (h_triplets_to_itvs triplets))::h_l)
   in desc_to_itvs h_desc [];;
 
-let hierarchy_levels = ref (h_desc_to_h_levels [ ("resource_id",[(1,1,40)]) ] ) ;;
-
-let find_resource_hierarchies master_top itv_l hy r_rqt_l =
+let find_resource_hierarchies itv_l hy r_rqt_l =
  let rec find_resource_n_h (top: Interval.interval) h r = match (h, r) with
   | ([],_) | (_,[]) -> failwith "Bug ??- need to raise exception ???\n"; (* TODO *)
   | (tops::tl_h, n0::m) ->
@@ -74,9 +63,7 @@ let find_resource_hierarchies master_top itv_l hy r_rqt_l =
       if (List.length hy) = 1 then
         extract_n_block_itv itv_l (List.hd hy) (List.hd r_rqt_l) 
       else
-        List.flatten (find_resource_n_h  master_top hy r_rqt_l);;
- 
-
+        List.flatten (find_resource_n_h !toplevel_itv hy r_rqt_l);;
 
 (*
 let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;

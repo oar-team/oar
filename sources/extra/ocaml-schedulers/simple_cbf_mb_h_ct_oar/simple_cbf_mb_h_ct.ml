@@ -9,13 +9,14 @@
 (* - multiple resource types *) (* NOT TESTED *)
 (* - job container *) (* NOT TESTED *)
 (* - dependencies *) (* NOT TESTED *)
+(* - security_time_overhead *) 
 (* *)
 (* Not supported features: *)
 (* - moldable jobs (use only first request set*)
 (* - timesharing *)
 (* - job array *)
 (* - fairesharing *)
-(* - suspend/resume, time guards, desktop compting feature do we need do address them in main scheduler ??? *)
+(* - suspend/resume, desktop compting feature do we need do address them in main scheduler ??? *)
 (* - no errors catching/namming *)
 (* - ordering in resources selection *)
 
@@ -68,7 +69,7 @@ let find_resource_hierarchies_job itv_slot job =
       begin 
         let h = List.map (fun k -> try List.assoc k !hierarchy_levels with  Not_found -> failwith ("Can't find coresponding hierarchy level: "^k)) x in
         let itv_cts_slot = inter_intervals itv_slot z in
-        let sub_result = find_resource_hierarchies master_top itv_cts_slot h y in
+        let sub_result = find_resource_hierarchies itv_cts_slot h y in
         match sub_result with
           | [] -> []
           | res -> requests_iter (res::result) n m o
