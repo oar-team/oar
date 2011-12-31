@@ -111,6 +111,7 @@ $(TEMPLATE_BUILDED_FILES) : $(patsubst %, %.in,$*)
 	    s#%%OAROWNER%%#$(OAROWNER)#g;;\
 	    s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
 	    s#%%WWWUSER%%#$(WWWUSER)#g;;\
+	    s#%%APACHECONFDIR%%#$(APACHECONFDIR)#g;;\
 	    s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
 	    s#%%WWWDIR%%#$(WWWDIR)#g;;\
 	    s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\

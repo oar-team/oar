@@ -15,7 +15,6 @@ create_oar_group() {
 
 create_oar_home() {
     test -d "${OARHOMEDIR}" || mkdir -p ${OARHOMEDIR}
-    set_rights ${OARHOMEDIR} 0755 ${OARUSER} ${OAROWNERGROUP}
 }
 
 create_oar_user() {    
@@ -82,6 +81,7 @@ EOF
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bashrc
     fi
 
+    set_rights ${OARHOMEDIR} 0755 ${OARUSER} ${OAROWNERGROUP}
     chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bash_oar
     chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bash_profile
     chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/.bashrc

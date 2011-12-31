@@ -39,7 +39,7 @@ export OARDO_DEFAULTUSER?=$(ROOTUSER)
 export OARDO_DEFAULTGROUP?=$(OAROWNERGROUP)
 
 export WWWUSER?=www-data
-
+export APACHECONFDIR?=$(ETCDIR)/apache2
 export WWW_ROOTDIR?=
 export XAUTHCMDPATH?=/usr/bin/xauth
 export OARSHCMD?=oarsh_oardo

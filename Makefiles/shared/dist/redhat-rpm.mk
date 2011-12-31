@@ -9,4 +9,5 @@ export INITDIR?=$(ETCDIR)/rc.d/init.d
 export DEFAULTDIR?=$(ETCDIR)/sysconfig
 
 export WWWUSER?=apache
+export APACHECONFDIR?=$(ETCDIR)/httpd
 

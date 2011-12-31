@@ -1,0 +1,19 @@
+oar_debian_install:
+ - install_oar:
+   - append_file:
+     - /etc/apt/sources.list
+     - |
+       $$oar_repository
+   - exec_chroot: curl http://oar-ftp.imag.fr/oar/oarmaster.asc | apt-key add -
+   - exec_chroot: apt-get update
+   - exec_chroot: apt-get -f install -y --force-yes mime-support || true
+   - exec_appliance: rm $$chroot/var/lib/dpkg/info/mime-support.*
+   - exec_chroot: apt-get -f install -y --force-yes mime-support
+   - exec_chroot: apt-get install -y --force-yes oar-server oar-server-mysql oar-user oar-user-mysql oar-node oar-doc oar-admin oar-web-status
+ - install_oar_api:
+   - exec_chroot: apt-get install -y --force-yes oar-api
+   - exec_chroot: apt-get install -y --force-yes libapache2-mod-fastcgi
+   - exec_chroot: a2enmod ident
+   - exec_chroot: a2enmod headers
+   - exec_chroot: a2enmod rewrite
+   - exec_chroot: a2enmod fastcgi
