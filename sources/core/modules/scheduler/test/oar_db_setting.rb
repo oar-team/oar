@@ -20,7 +20,7 @@ end
 
 def oar_db_connect
 #	if $db_type == "mysql"
-#		$db_type = "mysql"
+#		$db_type = "Mysql"
 #	else 
 #    $db_type = "Pg" #postgresql
 #  end
@@ -162,7 +162,7 @@ end
 
 
 def oar_sql_file(file_name)
-  if $db_type == "Mysql"
+  if $db_type == "mysql"
     puts "mysql --user=#{$conf['DB_BASE_LOGIN']} --password= #{$conf['DB_BASE_PASSWD']}  #{$conf['DB_BASE_NAME']}  < #{file_name}" 
     system("mysql --user=#{$conf['DB_BASE_LOGIN']} --password=#{$conf['DB_BASE_PASSWD']}  #{$conf['DB_BASE_NAME']}  < #{file_name}")
   else
@@ -195,7 +195,7 @@ def oar_resource_insert(args={})
   end
 end
 
-def test_insert(k,x, alter=false)
+def oar_test_insert(k,x, alter=false)
   oar_truncate_resources
   puts "nb_insert: #{k}, size of insert in nb_resources: #{x}  nb_ressources: #{k*x} alter: #{alter}"
   t0 = Time.now
@@ -347,7 +347,7 @@ def oar_jobs_sleepify(user=ENV['USER'])
   return resume_seq
 end
 
-def oar_replay(sequence)
+def oar_replay(sequence,user=ENV['USER'])
   #  RestClient.post 'http://kameleon:kameleon@localhost/oarapi-priv/jobs/1/resumptions/new.yaml','' 
   ref_time = Time.now.to_f + 1
   #puts "ref_time: #{ref_time}"
