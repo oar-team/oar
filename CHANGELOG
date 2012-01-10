@@ -1,7 +1,10 @@
 OAR CHANGELOG
 =============
 
-version 2.5.0:
+version 2.5.2:
+  - API: added missing stop_time into /jobs/details
+
+version 2.5.1:
 --------------
   - Sources directories reorganized
   - New "Phoenix" tool to try to reboot automatically broken nodes

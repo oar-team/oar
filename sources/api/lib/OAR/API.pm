@@ -458,7 +458,7 @@ sub struct_empty($) {
 # OAR JOB
 sub fix_job_integers($) {
   my $job = shift;
-  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","submissionTime","scheduledStart") {
+  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","stopTime","submissionTime","scheduledStart") {
     $job->{$key}=int($job->{$key}) if defined($job->{$key});
   }
   foreach my $event (@{$job->{"events"}}) {
@@ -482,6 +482,8 @@ sub struct_job($$) {
     delete $job->{Job_Id};
     $job->{start_time}=$job->{startTime};
     delete $job->{startTime};
+    $job->{stop_time}=$job->{stopTime};
+    delete $job->{stopTime};
     $job->{scheduled_start}=$job->{scheduledStart};
     delete $job->{scheduledStart};
     $job->{submission_time}=$job->{submissionTime};
