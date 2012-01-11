@@ -1,9 +1,6 @@
 OAR CHANGELOG
 =============
 
-version 2.5.2:
-  - API: added missing stop_time into /jobs/details
-
 version 2.5.1:
 --------------
   - Sources directories reorganized
@@ -99,6 +96,7 @@ version 2.5.1:
   - Add IPC cleaning to the job_resource_manager* when there is no other job of
     the same user on the nodes.
   - make better scheduling behaviour for dependency jobs
+  - API: added missing stop_time into /jobs/details
 
 version 2.4.4:
 --------------
