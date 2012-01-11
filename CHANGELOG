@@ -316,7 +316,6 @@ version 2.3.1:
   - Add new oaradmin command. This will permit to create resources and 
     manage admission rules more easily.
   - Bug #5692: change source code into a right Perl 5.10 syntax.
-    (change "$#{@{$array}}" into "$#{$array}")
 
 version 2.2.12:
 ---------------
