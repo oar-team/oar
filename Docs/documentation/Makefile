@@ -1,6 +1,10 @@
 #!/usr/bin/make
 #Under Debian or Ubuntu you must install the package "python-docutils"
 
+RST2LATEX := $(shell if which "rst2newlatex" > /dev/null 2>/dev/null; then echo "rst2newlatex"; else echo "rst2latex"; fi)
+RST2HTML := rst2html
+PDFLATEX := pdflatex
+
 all: doc-admin doc-user doc-usecases doc-api
 	
 doc-admin: OAR-DOCUMENTATION-ADMIN.html
@@ -16,15 +20,15 @@ latex: OAR-DOCUMENTATION-ADMIN.tex OAR-DOCUMENTATION-USER.tex OAR-DOCUMENTATION-
 pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf OAR-DOCUMENTATION-API.pdf
 
 %.html: %.rst
-	rst2html -stg $< $@
+	$(RST2HTML) -stg $< $@
 
 %.tex: %.rst
-	rst2newlatex $< $@
+	$(RST2LATEX) $< $@
 
 %.pdf: %.tex
-	pdflatex $< $@
-	pdflatex $< $@
+	$(PDFLATEX) $< $@
+	$(PDFLATEX) $< $@
 
 clean:
-	rm -f *.pdf *.html *.tex *.aux *.log *.out
+	rm -f *.pdf *.html *.tex *.aux *.log *.out *.toc
 
