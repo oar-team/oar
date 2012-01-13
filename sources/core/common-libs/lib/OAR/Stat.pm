@@ -435,6 +435,7 @@ sub get_job_data($$){
             walltime => $mold->{moldable_walltime},
             submissionTime => $job_info->{submission_time},
             startTime => $job_info->{start_time},
+            stopTime => $job_info->{stop_time},
             message => $job_info->{message},
             scheduledStart => $date_tmp[0],
             resubmit_job_id => $job_info->{resubmit_job_id},

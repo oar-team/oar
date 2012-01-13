@@ -88,6 +88,10 @@ do_start() {
     begin_msg "Starting $DESC"
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if start_daemon -p "%%OARHOMEDIR%%/oar_sshd.pid" -n "-20" /usr/sbin/sshd $SSHD_OPTS; then
+            
+            # redhat world
+            [ -d /var/lock/subsys/ ] && touch  /var/lock/subsys/$NAME
+            
             succ_msg "OAR dedicated SSH server started."
         else
             fail_msg "Failed to start OAR dedicated SSH server."
@@ -100,6 +104,8 @@ do_stop() {
     begin_msg "Stopping $DESC "
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if killproc -p  "%%OARHOMEDIR%%/oar_sshd.pid"; then
+            # redhat world
+            [ -d /var/lock/subsys/ ] && rm -f /var/lock/subsys/$NAME
             succ_msg "OAR dedicated SSH server stopped."
         else
             fail_msg "Failed to stop OAR dedicated SSH server."

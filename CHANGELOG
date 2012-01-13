@@ -1,7 +1,7 @@
 OAR CHANGELOG
 =============
 
-version 2.5.0:
+version 2.5.1:
 --------------
   - Sources directories reorganized
   - New "Phoenix" tool to try to reboot automatically broken nodes
@@ -96,6 +96,7 @@ version 2.5.0:
   - Add IPC cleaning to the job_resource_manager* when there is no other job of
     the same user on the nodes.
   - make better scheduling behaviour for dependency jobs
+  - API: added missing stop_time into /jobs/details
 
 version 2.4.4:
 --------------
@@ -313,7 +314,6 @@ version 2.3.1:
   - Add new oaradmin command. This will permit to create resources and 
     manage admission rules more easily.
   - Bug #5692: change source code into a right Perl 5.10 syntax.
-    (change "$#{@{$array}}" into "$#{$array}")
 
 version 2.2.12:
 ---------------

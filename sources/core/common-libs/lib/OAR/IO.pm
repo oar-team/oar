@@ -3500,7 +3500,7 @@ sub get_jobs_for_user_query {
 
     my $req =
         "
-        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time,moldable_job_descriptions.moldable_walltime
+        SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time,moldable_job_descriptions.moldable_walltime,jobs.stop_time
         FROM jobs LEFT JOIN moldable_job_descriptions ON jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id
         WHERE
              jobs.job_id IN (
@@ -3562,7 +3562,8 @@ sub get_jobs_for_user_query {
                             'stdout_file' => $ref[17],
                             'stderr_file' => $ref[18],
                             'start_time' => $ref[19],
-                            'walltime' => $ref[20]
+                            'walltime' => $ref[20],
+                            'stop_time' => $ref[21]
                               };
     }
     $sth->finish();

@@ -1,6 +1,10 @@
 #!/usr/bin/make
 #Under Debian or Ubuntu you must install the package "python-docutils tetex-latex-recommended texlive-fonts-recommended make"
 
+RST2LATEX := $(shell if which "rst2newlatex" > /dev/null 2>/dev/null; then echo "rst2newlatex"; else echo "rst2latex"; fi)
+RST2HTML := rst2html
+PDFLATEX := pdflatex
+
 all: doc-admin doc-user doc-usecases doc-api doc-devel
 	
 doc-admin: OAR-DOCUMENTATION-ADMIN.html
@@ -20,15 +24,16 @@ pdf-api: OAR-DOCUMENTATION-API-USER.pdf OAR-DOCUMENTATION-API-ADMIN.pdf OAR-DOCU
 pdf: OAR-DOCUMENTATION-ADMIN.pdf OAR-DOCUMENTATION-USER.pdf pdf-api
 
 %.html: %.rst
-	rst2html -stg $< $@
+	$(RST2HTML) -stg $< $@
+
 
 %.tex: %.rst
-	rst2newlatex --no-section-numbering $< $@
+	$(RST2LATEX) --no-section-numbering $< $@
 
 %.pdf: %.tex
-	pdflatex $< $@
-	pdflatex $< $@
+	$(PDFLATEX) $< $@
+	$(PDFLATEX) $< $@
 
 clean:
-	for i in OAR-DOCUMENTATION-ADMIN OAR-DOCUMENTATION-USER OAR-DOCUMENTATION-API-USER OAR-DOCUMENTATION-API-ADMIN OAR-DOCUMENTATION-API-DEVEL doc_usecases oar-documentation-devel; do rm -f $$i.pdf $$i.html $$i.tex $$i.aux $$i.log $$i.out; done
+	for i in OAR-DOCUMENTATION-ADMIN OAR-DOCUMENTATION-USER OAR-DOCUMENTATION-API-USER OAR-DOCUMENTATION-API-ADMIN OAR-DOCUMENTATION-API-DEVEL doc_usecases oar-documentation-devel; do rm -f $$i.pdf $$i.html $$i.tex $$i.aux $$i.log $$i.out $$i.toc; done
 

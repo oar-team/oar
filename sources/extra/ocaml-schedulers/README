@@ -104,6 +104,9 @@ To test:
  * available_upto (???)
  * multi-resource-type
  * multi-request with non exclusive resource selection
+
+ToDo:
+  With 64 bits machine we can use ocaml's int with 63 bits instead of Int64. 
  
 Done:
 
