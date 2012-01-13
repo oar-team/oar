@@ -1,32 +1,47 @@
 oar_config:
- - config_mysql:
+ - configure_mysql:
    - exec_chroot: /etc/init.d/mysql start || service mysql start || true
-   - exec_on_clean: chroot $$chroot bash -c "/etc/init.d/mysql stop || service mysql stop || true"
-   - exec_chroot: mysqladmin password kameleon
- - config_taktuk:
-   - exec_chroot: cp /etc/oar/oar.conf /etc/oar/oar.conf.orig
+   - exec_chroot: echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('kameleon')" | chroot $$chroot mysql --user=root
+
+ - configure_apache2:
+   - exec_chroot: a2enmod ident
+   - exec_chroot: a2enmod headers
+   - exec_chroot: a2enmod rewrite
+
+ - configure_oar_log_level:
+   - exec_chroot: sed -e 's/^LOG_LEVEL\=\"2\"/LOG_LEVEL\=\"3\"/' -i /etc/oar/oar.conf
+
+ - configure_taktuk:
    - exec_chroot: sed -e 's/^#\(TAKTUK_CMD\=\"\/usr\/bin\/taktuk \-t 30 \-s\".*\)/\1/' -i /etc/oar/oar.conf
    - exec_chroot: sed -e 's/^#\(PINGCHECKER_TAKTUK_ARG_COMMAND\=\"broadcast exec timeout 5 kill 9 \[ true \]\".*\)/\1/' -i /etc/oar/oar.conf
- - config_oar_log_level:
-   - exec_chroot: sed -e 's/^LOG_LEVEL\=\"2\"/LOG_LEVEL\=\"3\"/' -i /etc/oar/oar.conf
- - oar_init:
-   - exec_chroot: sed -e 's/^DB_BASE_PASSWD=.*/DB_BASE_PASSWD="oar"/' -i /etc/oar/oar.conf
-   - exec_chroot: sed -e 's/^DB_BASE_PASSWD_RO=.*/DB_BASE_PASSWD_RO="oar_ro"/' -i /etc/oar/oar.conf
+
+ - configure_cpuset:
+   - exec_chroot: sed -e 's/^#\(JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD\=\"cpuset\".*\)/\1/' -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^#\(JOB_RESOURCE_MANAGER_FILE\=\"\/etc\/oar\/job_resource_manager\.pl\".*\)/\1/' -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^#\(CPUSET_PATH\=\"\/oar\".*\)/\1/' -i /etc/oar/oar.conf
+
+ - configure_database:
+   - exec_chroot: sed -e 's/^\(DB_BASE_PASSWD\)=.*/\1="oar"/' -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^\(DB_BASE_LOGIN\)=.*/\1="oar"/' -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^\(DB_BASE_LOGIN_RO\)=.*/\1="oar_ro"/' -i /etc/oar/oar.conf
    - exec_chroot: oar-database --create --db-admin-user root --db-admin-pass kameleon
+
  - update_hostfile:
    - append_file:
      - /etc/hosts
      - |
        127.0.0.2 node1 node2
+
  - hosts_check_startup:
    - append_file: 
      - /etc/default/oar-server
      - |
-       cat /etc/hosts | grep node1 2>/dev/null|| echo '127.0.0.2 node1 node2' >> /etc/hosts
- - add_properties:
+       cat /etc/hosts | grep node1 2>/dev/null || echo '127.0.0.2 node1 node2' >> /etc/hosts
+
+ - create_resources:
    - exec_chroot: oarproperty -a core
    - exec_chroot: oarproperty -a cpu
- - create_resources:
    - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 -p core=0 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node1 -p cpu=0 -p core=1 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node1 -p cpu=1 -p core=2 -p cpuset=0
@@ -35,7 +50,33 @@ oar_config:
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=2 -p core=5 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=3 -p core=6 -p cpuset=0
    - exec_chroot: oarnodesetting -a -h node2 -p cpu=3 -p core=7 -p cpuset=0
+
  - modify_job_resource_manager:
    - exec_chroot: sed -e 's/#exit/exit/' -i /etc/oar/job_resource_manager.pl
 
+ - configure_open_api:
+   - exec_chroot: perl -pi -e "s/Deny from all/#Deny from all/" /etc/oar/apache2/oar-restful-api.conf
+
+ - configure_basic_auth_api-priv:
+   - write_file:
+     - /etc/oar/apache2/oar-restful-api-priv.conf
+     - |
+       ScriptAlias /oarapi-priv /usr/local/lib/cgi-bin/oarapi/oarapi.cgi
+       ScriptAlias /oarapi-priv-debug /usr/local/lib/cgi-bin/oarapi/oarapi.cgi
+
+       <Location /oarapi-priv>
+         Options ExecCGI -MultiViews FollowSymLinks
+         AuthType      basic
+         AuthUserfile  /etc/oar/api-users
+         AuthName      \"OAR API authentication\"
+         Require valid-user
+         #RequestHeader set X_REMOTE_IDENT %{REMOTE_USER}e
+         RewriteEngine On
+         RewriteCond %{REMOTE_USER} (.*)
+         RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+         RequestHeader add X-REMOTE_IDENT %{MY_REMOTE_IDENT}e
+       </Location>
+   - exec_chroot: htpasswd -b -c /etc/oar/api-users kameleon kameleon
+   - exec_chroot: htpasswd -b /etc/oar/api-users oar kameleon
+   - exec_chroot: ln -s /etc/oar/apache2/oar-restful-api-priv.conf /etc/apache2/conf.d/oar-restful-api-priv.conf
 

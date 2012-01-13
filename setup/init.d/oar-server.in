@@ -95,6 +95,9 @@ do_start()
             fail_msg "Unable to start"
         else
             succ_msg
+
+            # redhat world
+            [ -d /var/lock/subsys/ ] && touch  /var/lock/subsys/$NAME
         fi
 }
 
@@ -127,6 +130,9 @@ do_stop()
     fi
     # Many daemons don't delete their pidfiles when they exit.
     rm -f $PIDFILE
+
+    # redhat world
+    [ -d /var/lock/subsys/ ] && rm -f /var/lock/subsys/$NAME
     
     succ_msg
     return 0

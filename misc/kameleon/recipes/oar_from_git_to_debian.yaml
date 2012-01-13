@@ -17,15 +17,13 @@ global:
  output_environment_file_system_type: ext4
  #
  # Architecture
- #arch: i386
  arch: amd64
- #kernel_arch: "686"
  kernel_arch: "amd64"
  #
  # Extra packages to install on the minimal base system
  #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
  # If you're building a OAR appliance, use this package list:
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd console-tools mingetty curl librestclient-ruby librspec-ruby libjson-ruby apache2-utils apache2 libapache2-mod-fastcgi libcgi-fast-perl libwww-perl libsort-naturally-perl libsort-versions-perl libappconfig-perl libtie-ixhash-perl libgd-ruby libdbd-mysql-ruby libmodule-util-perl make"
+ extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk oidentd console-tools mingetty curl git-core make python-docutils ocaml-findlib libmysql-ocaml libmysql-ocaml-dev apache2-mpm-prefork libjson-perl libwww-perl ntp libdbd-mysql-ruby libgd-ruby1.8 perl libdbi-perl libdbd-mysql-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libsort-versions-perl openjdk-6-jre libcgi-fast-perl"
  #
  # Network configuration
  network_hostname: oar
@@ -45,9 +43,9 @@ global:
  #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
  # 
  # OAR specific
- #oar_tgz: "http://oar-ftp.imag.fr/oar/2.5/sources/snapshots/last.tar.gz"
- oar_tgz: "file:///home/plb/depots/imag/oar/build-area/2.5.0+rc1+dev22.f5f6297/oar-2.5.0+rc1+dev22.f5f6297.tar.gz"
-
+ oar_git_repository: git://scm.gforge.inria.fr/oar/oar.git
+ oar_git_treeish: "2.5"
+ oar_source_install_directory: /root/oar_install/oar_snapshot
  
 steps:
  - debian_check_deps
@@ -66,17 +64,16 @@ steps:
    - extra_packages
  - kernel_install
 # - checkpoint
-# - oar-2.5/oar_debian_install
- - oar-2.5/oar_tgz_install
+ - oar-2.5/oar_install_from_git
  - oar-2.5/oar_system_config
  - oar-2.5/oar_config
- - oar-2.5/oar_devel
  - oar-2.5/oar_clean
 # - kameleon/kameleon_debian_install
  - autologin
  - strip
+ - umount_proc
 # - xen_domu
-# - oar-2.5/oar_build_tgz
+# - oar/oar_build_tgz
  - build_appliance:
    - clean_udev
 #   - save_as_tgz
@@ -88,10 +85,10 @@ steps:
 #   - grub_197_workaround
    - install_grub
    - umount_image
-   - save_as_raw
+#   - save_as_raw
 #   - save_as_vmdk
-#   - save_as_qcow2
+   - save_as_qcow2
 #   - save_as_vdi
 #   - save_as_iso
-# - clean
+ - clean
 

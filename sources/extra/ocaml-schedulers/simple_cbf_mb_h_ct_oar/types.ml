@@ -28,6 +28,7 @@ type resource = {
 type job =  {
   jobid : jobid_t;
   moldable_id : int;
+  jobstate : string;
 	mutable time_b : time_t;
 	mutable walltime : time_t; (* mutable need to reset besteffort's one*)
   mutable types : (string * string) list;
