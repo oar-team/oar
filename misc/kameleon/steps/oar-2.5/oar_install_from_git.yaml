@@ -1,0 +1,23 @@
+oar_install_from_git:
+ - get_git_snapshot:
+   - exec_chroot: mkdir -p $$oar_source_install_directory
+   - exec_chroot: git init $$oar_source_install_directory
+   - exec_appliance: git --git-dir $$chroot/$$oar_source_install_directory/.git --work-tree $$chroot/$$oar_source_install_directory fetch --depth 0 $$oar_git_repository $$oar_git_treeish
+   - exec_appliance: git --git-dir $$chroot/$$oar_source_install_directory/.git --work-tree $$chroot/$$oar_source_install_directory checkout FETCH_HEAD
+
+ - install_oar:
+   - exec_chroot: apt-get -f install -y --force-yes mime-support || true
+   - exec_appliance: rm $$chroot/var/lib/dpkg/info/mime-support.*
+   - exec_chroot: apt-get -f install -y --force-yes mime-support
+   - exec_chroot: make -C $$oar_source_install_directory build
+   - exec_chroot: make -C $$oar_source_install_directory server-install user-install node-install doc-install draw-gantt-install monika-install www-conf-install api-install
+   - exec_chroot: make -C $$oar_source_install_directory server-setup user-setup node-setup doc-setup draw-gantt-setup monika-setup www-conf-setup api-setup
+   - exec_chroot: cp /usr/local/share/doc/oar-server/examples/init.d/oar-server /etc/init.d/
+   - exec_chroot: cp /usr/local/share/doc/oar-node/examples/init.d/oar-node /etc/init.d/
+   - exec_chroot: cp /usr/local/share/doc/oar-server/examples/default/oar-server /etc/default/
+   - exec_chroot: cp /usr/local/share/doc/oar-node/examples/default/oar-node /etc/default/
+   - exec_chroot: update-rc.d oar-server defaults
+   - exec_chroot: update-rc.d oar-node defaults
+
+
+
