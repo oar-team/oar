@@ -43,7 +43,7 @@ global:
  #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
  # 
  # OAR specific
- oar_repository: "deb http://oar.imag.fr/mirror/oar/2.5/debian squeeze-snapshots main"
+ oar_repository: "deb http://oar.imag.fr/mirror/oar/2.5/debian squeeze-unstable main"
  
 steps:
  - debian_check_deps
@@ -62,7 +62,7 @@ steps:
    - extra_packages
  - kernel_install
 # - checkpoint
- - oar-2.5/oar_debian_install
+ - oar-2.5/oar_install_from_deb
  - oar-2.5/oar_system_config
  - oar-2.5/oar_config
  - oar-2.5/oar_devel

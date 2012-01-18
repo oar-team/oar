@@ -1,12 +1,6 @@
 oar_config:
  - configure_mysql:
-   - exec_chroot: /etc/init.d/mysql start || service mysql start || true
    - exec_chroot: echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('kameleon')" | chroot $$chroot mysql --user=root
-
- - configure_apache2:
-   - exec_chroot: a2enmod ident
-   - exec_chroot: a2enmod headers
-   - exec_chroot: a2enmod rewrite
 
  - configure_oar_log_level:
    - exec_chroot: sed -e 's/^LOG_LEVEL\=\"2\"/LOG_LEVEL\=\"3\"/' -i /etc/oar/oar.conf
@@ -32,12 +26,6 @@ oar_config:
      - /etc/hosts
      - |
        127.0.0.2 node1 node2
-
- - hosts_check_startup:
-   - append_file: 
-     - /etc/default/oar-server
-     - |
-       cat /etc/hosts | grep node1 2>/dev/null || echo '127.0.0.2 node1 node2' >> /etc/hosts
 
  - create_resources:
    - exec_chroot: oarproperty -a core
@@ -78,5 +66,4 @@ oar_config:
        </Location>
    - exec_chroot: htpasswd -b -c /etc/oar/api-users kameleon kameleon
    - exec_chroot: htpasswd -b /etc/oar/api-users oar kameleon
-   - exec_chroot: ln -s /etc/oar/apache2/oar-restful-api-priv.conf /etc/apache2/conf.d/oar-restful-api-priv.conf
 

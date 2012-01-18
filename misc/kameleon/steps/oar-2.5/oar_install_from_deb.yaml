@@ -1,4 +1,4 @@
-oar_debian_install:
+oar_install_from_deb:
  - install_oar:
    - append_file:
      - /etc/apt/sources.list
