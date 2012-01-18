@@ -6,7 +6,7 @@ create_oar_group() {
                 addgroup --quiet --system ${OAROWNERGROUP} 2>/dev/null || true
                 ;;
             *)
-                groupadd --quiet --system ${OAROWNERGROUP} 2> /dev/null || true
+                groupadd --system ${OAROWNERGROUP} 2>/dev/null  >/dev/null || true
                 ;;
         esac
         echo "..done"
