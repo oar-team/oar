@@ -1,5 +1,5 @@
 %define version 2.5.1
-%define release 1.el6
+%define release 2.el6
 
 %define oaruser  oar
 
@@ -41,6 +41,7 @@ This package installs the common libraries of the OAR batch scheduler
 Summary:        OAR batch scheduler MySQL backend package for the server
 Group:          System/Servers
 Requires:       perl-DBD-MySQL
+Provides:       oar-server-backend
 %description server-mysql
 This package installs the MySQL backend for the server part or the OAR batch scheduler
 
@@ -48,13 +49,14 @@ This package installs the MySQL backend for the server part or the OAR batch sch
 Summary:        OAR batch scheduler PostgreSQL backend package for the server
 Group:          System/Servers
 Requires:       perl-DBD-Pg
+Provides:       oar-server-backend
 %description server-pgsql
 This package installs the PostgreSQL backend for the server part or the OAR batch scheduler
 
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions, oar-server-mysql or oar-server-pgsql
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions, oar-server-backend
 %description server
 This package installs the server part or the OAR batch scheduler
 
@@ -69,6 +71,7 @@ This package installs the execution node part of the OAR batch scheduler
 Summary:	OAR batch scheduler user MySQL backend package
 Group:          System/Servers
 Requires:       perl-DBD-MySQL
+Provides:       oar-user-backend
 %description user-mysql
 This package install the MySQL backend for the submission and query part of the OAR batch scheduler
 
@@ -76,13 +79,14 @@ This package install the MySQL backend for the submission and query part of the 
 Summary:	OAR batch scheduler user PostgreSQL backend package
 Group:          System/Servers
 Requires:       perl-DBD-Pg
+Provides:       oar-user-backend
 %description user-pgsql
 This package install the PostgreSQL backend for the submission and query part of the OAR batch scheduler
 
 %package user
 Summary:	OAR batch scheduler user package
 Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-mysql or oar-user-pgsql, /usr/bin/ssh
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-backend, /usr/bin/ssh
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
@@ -185,6 +189,9 @@ cp $TMP/usr/share/doc/oar-common/examples/oar.conf \
 cp $TMP/usr/share/doc/oar-common/examples/logrotate.d/oar-common \
       $TMP/etc/logrotate.d/oar
 
+# bug fix
+sed -e "s/groupadd --quiet/groupadd/" -i $TMP/usr/lib/oar/setup/common.sh
+
 # restful-api
 TMP=tmp/oar-restful-api
 mkdir -p $TMP/etc/oar
@@ -229,6 +236,7 @@ mkdir -p $TMP/etc/sysconfig
 mkdir -p $TMP/etc/rc.d/init.d
 mkdir -p $TMP/etc/cron.d
 cp $TMP/usr/share/doc/oar-server/examples/job_resource_manager.pl \
+   $TMP/usr/share/doc/oar-server/examples/job_resource_manager_cgroups.pl \
    $TMP/usr/share/doc/oar-server/examples/suspend_resume_manager.pl \
    $TMP/usr/share/doc/oar-server/examples/oarmonitor_sensor.pl \
    $TMP/usr/share/doc/oar-server/examples/wake_up_nodes.sh \
@@ -280,6 +288,7 @@ rm -rf tmp
 %config %attr(0644,root,root) /etc/sysconfig/oar-server
 %config %attr(0644,root,root) /etc/cron.d/oar-server
 %config /etc/oar/job_resource_manager.pl
+%config /etc/oar/job_resource_manager_cgroups.pl
 %config /etc/oar/oarmonitor_sensor.pl
 %config /etc/oar/server_epilogue
 %config /etc/oar/server_prologue
@@ -420,6 +429,10 @@ desktop_computing_cgi_setup
 
 
 %changelog
+* Thu Jan 18 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.1-2.el6
+- Fix require bug for oar-server and oar-user.
+- Install the file 'job_resource_manager_cgroups.pl'
+
 * Thu Nov 10 2011 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.0+dev487.f014a74-1
 - Use the setup scripts.
 
