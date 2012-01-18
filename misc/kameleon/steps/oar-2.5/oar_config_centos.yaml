@@ -1,6 +1,7 @@
 oar_config_centos:
  - configure_mysql:
    - exec_chroot: service mysqld start
+   - exec_chroot: chkconfig --add mysqld
 
  - configure_apache2:
    - write_file:
