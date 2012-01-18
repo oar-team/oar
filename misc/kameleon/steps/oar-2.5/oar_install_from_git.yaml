@@ -8,6 +8,11 @@ oar_install_from_git:
  - rpm_fix_sudo:
    - exec_chroot: groupadd sudo || true
 
+ - rpm_fix_sshkeys:
+   - exec_chroot: service sshd start || true
+   - exec_chroot: service sshd stop || true
+
+
  - get_git_snapshot:
    - exec_chroot: mkdir -p $$oar_source_install_directory
    - exec_chroot: git init $$oar_source_install_directory

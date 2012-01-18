@@ -60,6 +60,7 @@ steps:
 # - network_config_static
  - root_passwd
  - mount_proc
+ - mount_dev
  - software_install:
    - extra_packages
  - kernel_install
@@ -77,6 +78,7 @@ steps:
  - autologin
  - strip
  - umount_proc
+ - umount_dev
 # - xen_domu
 # - oar/oar_build_tgz
  - build_appliance:
@@ -90,7 +92,7 @@ steps:
 #   - grub_197_workaround
    - install_grub
    - umount_image
-#   - save_as_raw
+   - save_as_raw
 #   - save_as_vmdk
    - save_as_qcow2
 #   - save_as_vdi

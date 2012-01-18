@@ -58,6 +58,7 @@ steps:
 # - network_config_static
  - root_passwd
  - mount_proc
+ - mount_dev
  - software_install:
    - extra_packages
  - kernel_install
@@ -70,6 +71,8 @@ steps:
 # - kameleon/kameleon_debian_install
  - autologin
  - strip
+ - umount_proc
+ - umount_dev
 # - xen_domu
 # - oar-2.5/oar_build_tgz
  - build_appliance:
@@ -85,7 +88,7 @@ steps:
    - umount_image
    - save_as_raw
 #   - save_as_vmdk
-#   - save_as_qcow2
+   - save_as_qcow2
 #   - save_as_vdi
 #   - save_as_iso
 # - clean

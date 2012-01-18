@@ -42,9 +42,7 @@ global:
  #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
  # 
  # OAR specific
- oar_git_repository: git://scm.gforge.inria.fr/oar/oar.git
- oar_git_treeish: "2.5"
- oar_source_install_directory: /root/oar_install/oar_snapshot
+ oar_repository: http://oar-ftp.imag.fr/oar/2.5/rpm/beta/
  
 steps:
  - rpm_check_deps
@@ -59,6 +57,7 @@ steps:
 # - network_config_static
  - root_passwd
  - mount_proc
+ - mount_dev
  - software_install:
    - epel_repository
    - extra_packages
@@ -66,10 +65,7 @@ steps:
 # - checkpoint
  - oar-2.5/oar_install_from_git:
    - rpm_fix_sudo
-   - rpm_fix_sshkeys
-   - get_git_snapshot
-   - install_oar
-   - rpm_install_initd
+ - oar-2.5/oar_install_from_rpm
  - oar-2.5/oar_system_config
  - oar-2.5/oar_config_centos
  - oar-2.5/oar_config
