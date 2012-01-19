@@ -16,8 +16,8 @@ oar_install_from_git:
 
  - install_oar:
    - exec_chroot: make -C $$oar_source_install_directory build
-   - exec_chroot: make -C $$oar_source_install_directory server-install user-install node-install doc-install draw-gantt-install monika-install www-conf-install api-install
-   - exec_chroot: make -C $$oar_source_install_directory server-setup user-setup node-setup doc-setup draw-gantt-setup monika-setup www-conf-setup api-setup
+   - exec_chroot: make -C $$oar_source_install_directory server-install user-install node-install doc-install draw-gantt-install monika-install www-conf-install api-install tools-install
+   - exec_chroot: make -C $$oar_source_install_directory server-setup user-setup node-setup doc-setup draw-gantt-setup monika-setup www-conf-setup api-setup tools-setup
 
  - debian_install_initd:
    - exec_chroot: cp /usr/local/share/doc/oar-server/examples/init.d/oar-server /etc/init.d/
