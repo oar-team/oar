@@ -45,7 +45,7 @@ global:
  # OAR specific
  oar_git_repository: git://scm.gforge.inria.fr/oar/oar.git
  oar_git_treeish: "2.5"
- oar_source_install_directory: /root/oar_install/oar_snapshot
+ oar_source_install_directory: /home/kameleon/oar_install
  
 steps:
  - debian_check_deps
