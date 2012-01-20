@@ -63,6 +63,7 @@ steps:
    - extra_packages
  - kernel_install
 # - checkpoint
+ - oar-2.5/taktuk_install
  - oar-2.5/oar_install_from_git:
    - rpm_fix_sudo
  - oar-2.5/oar_install_from_rpm
