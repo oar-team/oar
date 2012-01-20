@@ -6,7 +6,7 @@ oar_config:
    - exec_chroot: sed -e 's/^LOG_LEVEL\=\"2\"/LOG_LEVEL\=\"3\"/' -i /etc/oar/oar.conf
 
  - configure_taktuk:
-   - exec_chroot: sed -e "s/^#\(TAKTUK_CMD\=\"\)\(\/usr\/bin\/taktuk\) \(\-t 30 \-s\".*\)/\1$(which taktuk) \3/" -i /etc/oar/oar.conf
+   - exec_chroot: sed -e 's/^#\(TAKTUK_CMD\=\"\/usr\/bin\/taktuk \-t 30 \-s\".*\)/\1/' -i /etc/oar/oar.conf
    - exec_chroot: sed -e 's/^#\(PINGCHECKER_TAKTUK_ARG_COMMAND\=\"broadcast exec timeout 5 kill 9 \[ true \]\".*\)/\1/' -i /etc/oar/oar.conf
 
  - configure_cpuset:

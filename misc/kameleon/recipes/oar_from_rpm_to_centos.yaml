@@ -44,6 +44,10 @@ global:
  # OAR specific
  oar_repository: http://oar-ftp.imag.fr/oar/2.5/rpm/beta/
  
+ oar_git_repository: git://scm.gforge.inria.fr/oar/oar.git
+ oar_git_treeish: "2.5"
+ oar_source_install_directory: /root/oar_install/oar_snapshot
+ 
 steps:
  - rpm_check_deps
  - check_deps:
@@ -63,9 +67,10 @@ steps:
    - extra_packages
  - kernel_install
 # - checkpoint
- - oar-2.5/taktuk_install
  - oar-2.5/oar_install_from_git:
    - rpm_fix_sudo
+   - get_git_snapshot
+ - oar-2.5/taktuk_install
  - oar-2.5/oar_install_from_rpm
  - oar-2.5/oar_system_config
  - oar-2.5/oar_config_centos
