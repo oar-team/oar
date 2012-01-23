@@ -77,8 +77,6 @@ steps:
 # - kameleon/kameleon_debian_install
  - autologin
  - strip
- - umount_proc
- - umount_dev
 # - xen_domu
 # - oar/oar_build_tgz
  - build_appliance:

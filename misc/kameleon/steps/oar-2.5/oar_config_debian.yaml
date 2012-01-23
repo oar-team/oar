@@ -1,7 +1,7 @@
 oar_config_debian:
  - configure_mysql:
    - exec_chroot: /etc/init.d/mysql start || service mysql start
-   - exec_on_clean: /etc/init.d/mysql stop || service mysql stop || true
+   - exec_on_clean: chroot $$chroot bash -c "/etc/init.d/mysql stop || service mysql stop || true"
 
  - configure_apache2:
    - exec_chroot: a2enmod ident
