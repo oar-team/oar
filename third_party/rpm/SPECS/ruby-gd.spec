@@ -1,6 +1,12 @@
 %define name	ruby-gd
 %define version	0.8.0
-%define release	%mkrel 2
+%define release 3%{?dist}
+
+# Be backportable
+%if %(test -n "%ruby_sitearchdir" && echo 1 || echo 0)
+%define ruby_sitearchdir %(ruby -rrbconfig -e "puts Config::CONFIG['sitearchdir']")
+%endif 
+
 
 Name:		%{name}
 Version:	%{version}
@@ -13,7 +19,7 @@ Source:     http://rubyforge.org/frs/download.php/39577/%{name}-%{version}.gem
 Provides:   ruby-GD
 BuildRequires:  gd-devel
 BuildRequires:  ruby-devel
-BuildRequires:  freetype2-devel
+BuildRequires:  freetype-devel
 BuildRequires:  libpng-devel
 BuildRequires:  zlib-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}
@@ -31,7 +37,7 @@ tar xzf data.tar.gz
 ruby extconf.rb --with-jpeg --with-freetype --with-ttf --enable-gd2_0
 
 %install
-%makeinstall_std
+%makeinstall
 
 %files
 %defattr(-,root,root)
@@ -40,6 +46,9 @@ ruby extconf.rb --with-jpeg --with-freetype --with-ttf --enable-gd2_0
 
 
 %changelog
+* Mon Jan 23 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 0.8.0-3el6
+- make the sitearchdir definition compatible for centos6/el6.
+
 * Tue Sep 08 2009 Thierry Vignaud <tvignaud@mandriva.com> 0.8.0-2mdv2010.0
 + Revision: 433513
 - rebuild
