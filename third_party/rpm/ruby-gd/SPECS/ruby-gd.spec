@@ -10,6 +10,7 @@ Group:      Development/Ruby
 License:    BSD-like
 URL:        http://rubyforge.org/projects/ruby-gd/
 Source:     http://rubyforge.org/frs/download.php/39577/%{name}-%{version}.gem
+Provides:   ruby-GD
 BuildRequires:  gd-devel
 BuildRequires:  ruby-devel
 BuildRequires:  freetype2-devel
