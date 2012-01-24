@@ -2,17 +2,17 @@ Summary: A database independent API to access databases
 Name: ruby-DBI
 %define tarname dbi
 Version: 0.2.0
-Release: 1
+Release: 2%{?dist}
 License: public domain
 Group: Applications/Ruby
 Source: http://rubyforge.org/frs/download.php/12368/ruby-dbi/%{tarname}-%{version}.tar.gz
 URL: http://ruby-dbi.rubyforge.org/
 Packager: Ian Macdonald <ian@caliban.org>
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-#BuildRequires: ruby
-#Requires: ruby >= 1.8.0
+BuildArch: noarch
+BuildRequires: ruby
+Requires: ruby >= 1.8.0
 Provides: ruby-DBI, ruby-dbi, ruby-dbd-mysql, ruby-DBD-Mysql, ruby-dbd-pg, ruby-DBD-Pg
-
 %define _topdir %(pwd)
 
 %description
@@ -46,6 +46,9 @@ find $RPM_BUILD_ROOT%{_prefix} -type f -print | \
 %doc examples/ test/
 
 %changelog
+* Tue Jan 24 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 0.2.0-2
+- update the revision scheme (add the dist as suffix).
+
 * Tue May 13 2008 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 0.2.0-1
 - 0.2.0
 - builds from local directory
