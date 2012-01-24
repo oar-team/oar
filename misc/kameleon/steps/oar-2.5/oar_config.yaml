@@ -21,6 +21,14 @@ oar_config:
    - exec_chroot: sed -e 's/^\(DB_BASE_LOGIN_RO\)=.*/\1="oar_ro"/' -i /etc/oar/oar.conf
    - exec_chroot: oar-database --create --db-admin-user root --db-admin-pass kameleon
 
+ - configure_drawgantt:
+   - exec_chroot: sed -e "s/^\(DB_BASE_LOGIN_RO.*\)oar.*/\1oar_ro/" -i /etc/oar/drawgantt.conf
+   - exec_chroot: sed -e "s/^\(DB_BASE_PASSWD_RO.*\)oar.*/\1oar_ro/" -i /etc/oar/drawgantt.conf
+
+ - configure_monika:
+   - exec_chroot: sed -e 's/^\(username\) ?\=.*/\1 = oar_ro/' -i /etc/oar/monika.conf
+   - exec_chroot: sed -e 's/^\(password\) ?\=.*/\1 = oar_ro/' -i /etc/oar/monika.conf
+
  - update_hostfile:
    - append_file:
      - /etc/hosts
