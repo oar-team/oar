@@ -10,3 +10,5 @@ oar_clean:
    - exec_chroot: service httpd stop || true
    - exec_chroot: service dbus stop || true
    - exec_chroot: /etc/init.d/dbus stop || true
+   - exec_chroot: service ntp stop || true
+   - exec_chroot: /etc/init.d/ntp stop || true

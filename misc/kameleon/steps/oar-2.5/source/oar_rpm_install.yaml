@@ -1,0 +1,19 @@
+oar_rpm_install:
+ - fetch_repository:
+   - write_file:
+     - /etc/yum.repos.d/oar.repo
+     - |
+       [oar]
+       name=OAR
+       baseurl=$$oar_rpm_repository
+       gpgcheck=0
+       enabled=1
+ - server:
+   - exec_chroot: yum -y install oar-server oar-server-mysql oar-doc
+
+ - frontend:
+   - exec_chroot: yum -y install oar-api oar-user oar-user-mysql oar-web-status oar-admin
+
+ - node:
+   - exec_chroot: yum -y install oar-node
+ 

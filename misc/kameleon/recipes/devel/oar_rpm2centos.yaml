@@ -42,12 +42,16 @@ global:
  #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
  # 
  # OAR specific
- oar_repository: http://oar-ftp.imag.fr/oar/2.5/rpm/beta/
- 
+ oar_rpm_repository: http://oar-ftp.imag.fr/oar/2.5/rpm/beta/
+
+ # Needed for taktul install from the third_party folder. 
  oar_git_repository: git://scm.gforge.inria.fr/oar/oar.git
  oar_git_treeish: "2.5"
- oar_source_install_directory: /root/oar_install/oar_snapshot
+ oar_git_directory: /home/kameleon/oar_install
  
+ # OAR specific (you probably don't need to change those)
+ oar_prefix_install: /usr
+
 steps:
  - rpm_check_deps
  - check_deps:
@@ -67,20 +71,27 @@ steps:
    - extra_packages
  - kernel_install
 # - checkpoint
- - oar-2.5/oar_install_from_git:
-   - rpm_fix_sudo
-   - get_git_snapshot
- - oar-2.5/taktuk_install
- - oar-2.5/oar_install_from_rpm
- - oar-2.5/oar_system_config
- - oar-2.5/oar_config_centos
- - oar-2.5/oar_config
+ - oar-2.5/target/debian/oar_centos_preinstall
+ - oar-2.5/source/oar_rpm_install:
+   - fetch_repository
+   - node
+   - server
+   - frontend
+ - oar-2.5/target/centos/oar_centos_config_node
+ - oar-2.5/target/centos/oar_centos_config_server
+ - oar-2.5/target/centos/oar_centos_config_frontend
+ - oar-2.5/oar_config_node
+ - oar-2.5/oar_config_server
+ - oar-2.5/oar_config_frontend
+ - oar-2.5/oar_config_system
+ - oar-2.5/oar_config_devel
+ - oar-2.5/oar_install_from_git: # Install taktuk
+   - get_git_snapshot            # Install taktuk
+ - oar-2.5/taktuk_install        # Install taktuk
  - oar-2.5/oar_clean
-# - kameleon/kameleon_debian_install
  - autologin
  - strip
 # - xen_domu
-# - oar/oar_build_tgz
  - build_appliance:
    - clean_udev
 #   - save_as_tgz

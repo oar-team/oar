@@ -1,0 +1,24 @@
+oar_git_install:
+
+ - fetch_repository:
+   - exec_chroot: mkdir -p $$oar_git_directory
+   - exec_chroot: git init $$oar_git_directory
+   - exec_appliance: git --git-dir $$chroot/$$oar_git_directory/.git --work-tree $$chroot/$$oar_git_directory fetch --depth 0 $$oar_git_repository $$oar_git_treeish
+   - exec_appliance: git --git-dir $$chroot/$$oar_git_directory/.git --work-tree $$chroot/$$oar_git_directory checkout FETCH_HEAD
+
+ - node:
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-install
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-setup 
+   
+ - frontend:
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-install draw-gantt-install monika-install www-conf-install api-install tools-install
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-setup draw-gantt-setup monika-setup www-conf-setup api-setup tools-setup
+
+ - server:
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install server-install doc-install
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install server-setup doc-setup
+
+

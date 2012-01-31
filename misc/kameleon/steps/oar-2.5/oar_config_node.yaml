@@ -1,0 +1,5 @@
+oar_config_node:
+ - configure_nothing:
+   - exec_chroot: echo "There is nothing to do to configure the node"
+
+

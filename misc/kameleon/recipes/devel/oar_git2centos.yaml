@@ -10,20 +10,19 @@ global:
  # Where Kameleon stores tmp files and appliances
  workdir_base: /var/tmp/kameleon
  # 
- # Debian specific
- distrib: debian
- debian_version_name: squeeze
- distrib_repository: http://ftp.fr.debian.org/debian/
+ # Centos specific
+ distrib: rpm
+ rpm_distrib_name: centos-6
  output_environment_file_system_type: ext4
  #
  # Architecture
  arch: amd64
- kernel_arch: "amd64"
  #
  # Extra packages to install on the minimal base system
  #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
+ extra_packages: "redhat-lsb vim-enhanced less bzip2 openssh-server rsync gnupg perl man gcc make tar python-docutils git oidentd mysql-server mysql perl-DBD-MySQL Perl Perl-base openssh Perl-DBI perl-Sort-Versions sudo httpd perl-Time-HiRes perl-Term-UI ruby-mysql"
  # If you're building a OAR appliance, use this package list:
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk oidentd console-tools mingetty curl git-core make python-docutils ocaml-findlib libmysql-ocaml libmysql-ocaml-dev apache2-mpm-prefork libjson-perl libwww-perl ntp libdbd-mysql-ruby libgd-ruby1.8 perl libdbi-perl libdbd-mysql-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libsort-versions-perl openjdk-6-jre libcgi-fast-perl"
+ #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk oidentd console-tools mingetty curl git-core make python-docutils ocaml-findlib libmysql-ocaml libmysql-ocaml-dev apache2-mpm-prefork libjson-perl libwww-perl ntp libdbd-mysql-ruby libgd-ruby1.8 perl libdbi-perl libdbd-mysql-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libsort-versions-perl openjdk-6-jre libcgi-fast-perl"
  #
  # Network configuration
  network_hostname: oar
@@ -45,40 +44,47 @@ global:
  # OAR specific
  oar_git_repository: git://scm.gforge.inria.fr/oar/oar.git
  oar_git_treeish: "2.5"
- oar_source_install_directory: /home/kameleon/oar_install
- 
+ oar_git_directory: /home/kameleon/oar_install
+
+ # OAR specific (you probably don't need to change those)
+ oar_prefix_install: /usr/local
+
 steps:
- - debian_check_deps
+ - rpm_check_deps
  - check_deps:
    - rsync
    - building_appliance
    - building_kvm_images
  - oar-2.5/oar_precheck
 # - checkpoint_resume
- - bootstrap
+ - bootstrap2
  - system_config
 # - network_config_static
  - root_passwd
  - mount_proc
  - mount_dev
  - software_install:
+   - epel_repository
    - extra_packages
  - kernel_install
 # - checkpoint
- - oar-2.5/oar_install_from_git:
-    - debian_fix_mime_support
-    - get_git_snapshot
-    - install_oar
-    - debian_install_initd
- - oar-2.5/oar_system_config
- - oar-2.5/oar_config_debian
- - oar-2.5/oar_config
+ - oar-2.5/target/centos/oar_centos_preinstall
+ - oar-2.5/source/oar_git_install:
+   - fetch_repository
+   - node
+   - server
+   - frontend
+ - oar-2.5/target/centos/oar_centos_config_server
+ - oar-2.5/target/centos/oar_centos_config_frontend
+ - oar-2.5/oar_config_node
+ - oar-2.5/oar_config_server
+ - oar-2.5/oar_config_frontend
+ - oar-2.5/oar_config_system
+ - oar-2.5/oar_config_devel
  - oar-2.5/oar_clean
-# - kameleon/kameleon_debian_install
  - autologin
  - strip
 # - xen_domu
-# - oar/oar_build_tgz
  - build_appliance:
    - clean_udev
 #   - save_as_tgz

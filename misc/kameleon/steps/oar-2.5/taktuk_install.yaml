@@ -1,7 +1,7 @@
 taktuk_install:
    - extract_tgz:
        - exec_chroot: mkdir -p /root/install/taktuk
-       - exec_chroot: tar xzf $$oar_source_install_directory/third_party/tarball/taktuk-3.7.3.tar.gz -C /root/install/taktuk
+       - exec_chroot: tar xzf $$oar_git_directory/third_party/tarball/taktuk-3.7.3.tar.gz -C /root/install/taktuk
        - exec_chroot: chown -R root:root /root/install/taktuk
        - exec_chroot: chmod -R o-w /root/install/taktuk
        - exec_chroot: sh -c "cd /root/install/taktuk/taktuk-3.7.3/ && ./configure"
