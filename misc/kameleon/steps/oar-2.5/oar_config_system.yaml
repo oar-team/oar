@@ -1,6 +1,7 @@
 oar_config_system:
  - adduser:
    - exec_chroot: useradd -m -p '$1$f/W7v.Ze$LMPAjbXywS/f1dHzrmXpg/' -s /bin/bash kameleon
+   - exec_chroot: chown kameleon:kameleon /home/kameleon
  - sudo:
    - append_file:
      - /etc/sudoers
