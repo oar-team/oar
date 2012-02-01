@@ -13,7 +13,7 @@ global:
  # Debian specific
  distrib: debian
  debian_version_name: squeeze
- distrib_repository: http://ftp.u-picardie.fr/mirror/debian
+ distrib_repository: http://ftp.fr.debian.org/debian
  output_environment_file_system_type: ext4
  #
  # Architecture
