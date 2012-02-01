@@ -128,6 +128,8 @@ let y4 =  {b = 12; e = 25};;
 let y5 =  {b = 5; e = 15};; 
 let y6 =  {b = 5; e = 25};; 
 
+let x2 = [{b = 1; e = 2}; {b = 5; e = 5}] 
+
 let yl1 = [{b = 5; e = 13};{b = 15; e = 16 };{b = 19; e = 19}];;
 
 
@@ -159,7 +161,7 @@ let itva2str itva = "[|"^(String.concat ", " (List.map itv2str (Array.to_list it
 
 
 (* compute substraction of 2 resource intervals *)
-let sub_intervals x_l y_l = 
+let sub_intervals_orig x_l y_l = 
 	let rec sub_interval_l itv_l_1 itv_l_2 sub_itv_l = 
 		match (itv_l_1,itv_l_2) with
 		| (x::n,y::m) ->
@@ -179,6 +181,34 @@ let sub_intervals x_l y_l =
 		| (_,_) -> List.rev sub_itv_l
 
 	in  sub_interval_l x_l y_l [];;
+
+(* compute substraction of 2 resource intervals *)
+let sub_intervals x_l y_l = 
+	let rec sub_interval_l itv_l_1 itv_l_2 sub_itv_l = 
+		match (itv_l_1,itv_l_2) with
+		| (x::n,y::m) ->
+				if (y.e < x.b) then sub_interval_l (x::n) m sub_itv_l else (* y before x w/ no overlap *)
+				if (y.b > x.e) then sub_interval_l n (y::m) (x::sub_itv_l) else (* x before y w/ no overlap *)
+				if (y.b > x.b) then 
+					if (y.e <  x.e) then  (* x overlap totaly y*)
+						sub_interval_l ({b=y.e+1;e=x.e}::n) m ({b=x.b;e=y.b-1}::sub_itv_l) (* x overlap totally y*)
+					else 
+						sub_interval_l n (y::m) ({b=x.b;e=y.b-1}::sub_itv_l) (* x overlap partially y*)
+				else
+					if (y.e <  x.e) then
+						sub_interval_l ({b=y.e+1;e=x.e}::n) m sub_itv_l
+					else
+						sub_interval_l n (y::m) sub_itv_l
+		| (x_l,[]) ->  (List.rev sub_itv_l) @ x_l
+		| (_,_) -> List.rev sub_itv_l
+
+	in  sub_interval_l x_l y_l [];;
+
+
+
+sub_intervals [{b = 1; e = 5}] [{b = 3; e = 4}; {b = 12; e = 12}];;
+
+
 (*
 sub_intervals [x1] [y1] ;; [x1]
 sub_intervals [x1] [y2] ;; [x1]
@@ -190,6 +220,9 @@ sub_intervals [x1] [x1] ;; []
 sub_intervals [x1] [];; [x1]
 sub_intervals [x1] yl1 ;;  [{b = 14; e = 14}; {b = 17; e = 18}; {b = 20; e = 20}]
 sub_intervals [y5] [x1];;  [{b = 5; e = 10}]
+
+sub_intervals x2 [y3];; [{b = 1; e = 2}; {b = 5; e = 5}]
+
 *)
 
 (* return [] *)

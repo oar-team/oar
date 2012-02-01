@@ -1,7 +1,7 @@
 (*pp cpp -P -w *)
 (* previous line is to ask OcamlMakefile to preprocess this file with cpp preprocesseur *)
 
-(* Postgresql very sensible ? "type = \"default\""    "type = 'default'" *)
+(* Postgresql very sensitive ? "type = \"default\""    "type = 'default'" *)
 
 (* preprocessor part *)
 
@@ -276,7 +276,8 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
         AND g1.moldable_job_id = g2.moldable_job_id
         AND m.moldable_id = g2.moldable_job_id
         AND j.job_id = m.moldable_job_id
-      ORDER BY j.start_time, j.job_id;" in
+        ORDER BY j.start_time, j.job_id;" in
+(*        ORDER BY j.start_time; in *)
 
   let res = execQuery dbh query in
     let first_res = function
@@ -325,7 +326,9 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
       let rec aux result job_l current_job_res = match result with
         | None ->   let job = fst current_job_res in 
                       job.set_of_rs <- job_itv_res_setting job.jobstate (snd current_job_res);
-                      List.rev (job::job_l) 
+(* TODO VERIFY-TEST_overlapping_bug                     List.rev (job::job_l)  *)
+                        job::job_l
+                      
         | Some x -> let j_r = get_job_res x in 
                     let j_current = fst current_job_res in
                       if ((fst j_r) = j_current.jobid) then

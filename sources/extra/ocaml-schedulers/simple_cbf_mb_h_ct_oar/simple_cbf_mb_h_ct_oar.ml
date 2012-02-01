@@ -178,7 +178,7 @@ let _ =
 
   		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn resource_intervals queue besteffort_duration security_time_overhead in (* TODO 
       false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
-      Conf.log ("Job waiting ids"^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
+      Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
@@ -204,10 +204,22 @@ let _ =
               else
                 prev_scheduled_job_ids_tmp
             in
-             Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots)));
+             
+            (* display previous scheduled jobs 
+             Hashtbl.iter (fun k v -> printf "prev job: %s,  %s\n" k ) h_prev_scheduled_jobs_types; 
+            *)
+             (* Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); *) 
+             let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+             Conf.log ("slots_with_scheduled_jobs_before #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
+         
              Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
 
-             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids security_time_overhead; 
+             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids security_time_overhead;
+             
+             let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+             Conf.log ("slots_with_scheduled_jobs after #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
+  
+
           else ();
 
           Conf.log "go to make a schedule";
@@ -220,11 +232,11 @@ let _ =
           let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
-(*          Conf.log ("slot_init:\n  " ^  slot_to_string slot_init); 
-            Conf.log ("slots_with_scheduled_jobs:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
-  				  Conf.log ( "Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) );        
-	  		    Conf.log ( "Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); 
-*)
+            (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)
+            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+            Conf.log ("slots_with_scheduled_jobs #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
+  				  (* Conf.log ("Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) ); *)     
+	  		    (* Conf.log ("Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); *)
 
             Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
 		        Conf.log ("Assigns:\n" ^  (Helpers.concatene_sep "\n\n" job_to_string assignement_jobs));

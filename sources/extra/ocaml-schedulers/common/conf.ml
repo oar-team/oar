@@ -76,7 +76,7 @@ let conf_values =
 	  with End_of_file -> t)
     with Sys_error s -> error ("Cannot open conf file "^conf_file^" : "^s)
 let _ = 
-  let f = try Hashtbl.find conf_values "LOG_FILE"
+  let f = try Hashtbl.find conf_values "LOG_FILE_SCHED" (* TODO revert to LOG_FILE *)
   with Not_found -> "/var/log/oar.log" in 
     try let d = open_out_gen [ Open_append; Open_text] 0o600 f in 
       log_file := Some d;
