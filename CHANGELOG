@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+next version
+------------
+
+  - Bugfix: Fix a regression (only for PostgreSQL) in Drawgantt introduced in
+    the version 2.4.6 (thanks to Yann Genevois). 
+
 version 2.4.7:
 --------------
 

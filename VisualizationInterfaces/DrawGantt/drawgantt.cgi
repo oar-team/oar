@@ -208,7 +208,7 @@ def get_resource_dead_range_date(dbh,date_begin,date_end)
               date_stop >= #{date_begin}
              )
          AND (
-               (attribute = 'available_upto' AND value > #{current_date} AND date_stop = 0) 
+               (attribute = 'available_upto' AND CAST(value AS DECIMAL) > #{current_date} AND date_stop = 0)
                OR
                (attribute = 'state' AND value IN ('Absent', 'Dead', 'Suspected'))
              )"
