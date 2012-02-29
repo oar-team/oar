@@ -71,7 +71,7 @@ create_oar_user() {
         cat > ${OARHOMEDIR}/.bash_oar <<EOF
 # Prevent to be included twice or more
 [ -n "\$OAR_BASHRC" ] && exit
-\$OAR_BASHRC=yes
+OAR_BASHRC=yes
 
 export PATH="${OARDIR}/oardodo:\$PATH"
 EOF
