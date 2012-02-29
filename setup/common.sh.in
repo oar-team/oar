@@ -68,7 +68,7 @@ create_oar_user() {
 
     # Fix the bash profile
     if [ ! -e ${OARHOMEDIR}/.bash_oar ]; then
-        echo > ${OARHOMEDIR}/.bash_oar <<EOF
+        cat > ${OARHOMEDIR}/.bash_oar <<EOF
 # Prevent to be included twice or more
 [ -n "\$OAR_BASHRC" ] && exit
 \$OAR_BASHRC=yes
@@ -98,6 +98,12 @@ create_log_file() {
 }
 
 common_setup() {
+
+    # Update before 2.5.2: Fix a bug causing an empty ${OARHOMEDIR}/.bash_oar
+    if [ -e ${OARHOMEDIR}/.bash_oar ] && [ -z "$(cat ${OARHOMEDIR}/.bash_oar)" ]; then
+        rm -f ${OARHOMEDIR}/.bash_oar
+    fi
+
     create_oar_group
     create_oar_home
     create_oar_user
