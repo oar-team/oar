@@ -4,6 +4,7 @@ OAR CHANGELOG
 version 2.5.x:
 --------------
   - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common setup script.
+  - Bugfix: the PINGCHECKER_COMMAND in oar.conf depends now on %%OARDIR%%.
 
 version 2.5.1:
 --------------
