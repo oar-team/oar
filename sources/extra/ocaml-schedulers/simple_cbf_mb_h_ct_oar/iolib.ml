@@ -102,7 +102,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
         job_resource_descriptions.res_job_resource_type,
         job_resource_descriptions.res_job_value,
         job_resource_descriptions.res_job_order, 	
-        job_resource_groups.res_group_property  
+        job_resource_groups.res_group_property,
+        jobs.job_user, 
+        jobs.project
     FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
     WHERE
       moldable_job_descriptions.moldable_index = 'CURRENT'
@@ -129,7 +131,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
       NoNStr a.(4),                                   (* res_job_resource_type *)
       NoN int_of_string a.(5),                        (* res_job_value *)
       NoN int_of_string a.(6),                        (* res_job_order *)
-      NoNStr a.(7)                                    (* res_group_property *)
+      NoNStr a.(7),                                   (* res_group_property *)
+      NoNStr a.(8),                                   (* job_user *)   
+      NoNStr a.(9)                                    (* job_project *)
   )
 
   in let result = map res get_one_row in
@@ -145,7 +149,7 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
               (List.rev jids, jobs) (* return list of job_ids jobs' hashtable *)
             end 
       | row::m ->
-                let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties) = row in
+                let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties, user, project) = row in
                 if (prev_job.jobid != j_id) then (* next job *)
                   begin
                     (* complete prev job *)
@@ -170,6 +174,8 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
                           hy_level_rqt = [];
                           hy_nb_rqt = [];
                           set_of_rs = [];
+                          user = user;
+                          project = project;
                       } in
                     scan_res m j r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)] (j_id::jids)
                   end                    
@@ -184,9 +190,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
                                            cts
                                            jids
                   end
-  in  scan_res result {jobid=0;jobstate="";moldable_id =0;time_b=Int64.zero;walltime=Int64.zero;
-                      types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[];
-                      set_of_rs =[];} 
+  in  scan_res result {jobid=0;jobstate="";moldable_id =0;time_b=Int64.zero;walltime=Int64.zero; (* the job is used *)
+                      types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[]; set_of_rs =[];
+                      user="";project=""} 
                0 [] [] [] [];; 
 
 
@@ -194,10 +200,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
 (* get_scheduled_jobs_no_suspend : retrieve already previously scheduled jobs *)
 (* OAR::IO::get_gantt_scheduled_jobs            in perl version               *)
 (* without suspend jobs support                                               *)
-(* TODO Remove used field in query ??? *)
 
 let get_scheduled_jobs_no_suspend dbh security_time_overhead =
-   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
+   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended, j.project
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
         m.moldable_index = 'CURRENT'
@@ -220,7 +225,9 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
               and j_walltime = NoN Int64.of_string a.(2)   (* moldable_walltime *)
               and j_moldable_id = NoN int_of_string a.(8)  (* moldable_id *)
               and j_start_time = NoN Int64.of_string a.(1) (* start_time *)
-              and j_nb_res = NoN int_of_string a.(3) in    (*resource_id *)  
+              and j_nb_res = NoN int_of_string a.(3)       (* resource_id *)
+              and j_user =  NoNStr a.(4)                   (* job_user *)
+              and j_project = NoNStr a.(9) in              (* project *)
             
                 ( {
                   jobid = j_id;
@@ -233,6 +240,8 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
                   hy_level_rqt = []; (*  *)
                   hy_nb_rqt = [];    (*  *)
                   set_of_rs = [];    (* will be set when all resource_id are fetched *)
+                  user = j_user;
+                  project = j_project;
                 }, 
                   [j_nb_res]) 
        in
@@ -269,7 +278,7 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
 (* TODO Remove used field in query ??? *)
 
 let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead now =
-   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
+   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended, j.project
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
         m.moldable_index = 'CURRENT'
@@ -294,7 +303,9 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                     j_walltime_init
                 and j_state = NoNStr a.(5)                         (* job state *)
                 and j_moldable_id = NoN int_of_string a.(8)        (* moldable_id *)
-                and j_nb_res = NoN int_of_string a.(3) in          (*resource_id *)  
+                and j_nb_res = NoN int_of_string a.(3)             (*resource_id *)
+                and j_user =  NoNStr a.(4)                         (* job_user *)
+                and j_project = NoNStr a.(9) in                    (* project *)
                 ( {
                   jobid = j_id;
                   jobstate =  j_state;
@@ -306,6 +317,8 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                   hy_level_rqt = [];                                (*  *)
                   hy_nb_rqt = [];                                   (*  *)
                   set_of_rs = [];                                   (* will be set when all resource_id are fetched *)
+                  user = j_user;
+                  project = j_project;
                 }, 
                   [j_nb_res]) 
        in
@@ -579,12 +592,12 @@ let get_job_current_resources dbh job_id no_type_lst =
 
 let get_sum_accounting_window dbh queue start_window stop_window =
   let query = Printf.sprintf " SELECT consumption_type, SUM(consumption)
-                                FROM accounting
-                                WHERE
-                                    queue_name = '%s' AND
-                                    window_start >= %lld AND
-                                    window_start < %lld
-                                GROUP BY consumption_type" queue start_window stop_window 
+                               FROM accounting
+                               WHERE
+                                   queue_name = '%s' AND
+                                   window_start >= %Lu AND
+                                   window_start < %Lu
+                               GROUP BY consumption_type" queue start_window stop_window 
   in
   let res = execQuery dbh query in
   let get_one a =  (NoNStr a.(0), NoN float_of_string a.(1)) in
@@ -593,8 +606,8 @@ let get_sum_accounting_window dbh queue start_window stop_window =
   let rec scan_results r asked used = match r with
     | []   -> (asked, used)
     | x::m -> let extract = function 
-                | ("ASKED", a) ->  scan_results m a used
-                | ("USED", u)  ->  scan_results m asked u
+                | ("ASKED", a) -> scan_results m a used
+                | ("USED", u)  -> scan_results m asked u
                 | (_,_)        -> failwith "Consumption type is not supported: " 
               in extract x     
   in scan_results results 1.0 1.0 ;;
@@ -610,8 +623,8 @@ let get_sum_accounting_for_param dbh queue param_name start_window stop_window =
                                 FROM accounting
                                 WHERE
                                     queue_name = '%s' AND
-                                    window_start >= %lld AND
-                                    window_start < %lld
+                                    window_start >= %Lu AND
+                                    window_start < %Lu
                                 GROUP BY %s,consumption_type" param_name queue start_window stop_window param_name
   in
   let res = execQuery dbh query in

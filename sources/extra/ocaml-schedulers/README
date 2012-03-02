@@ -1,20 +1,12 @@
 
-Simple schedulers in ocaml
+OAR's scheduler in ocaml
 ---------------------------
 
+The main goal of this scheduler is to provide a better scalabily in comparaison to the schedulers in Perl.Up to now some features are missing see below.
 
-* Actual developed version is simple_cbf_mb_h_ct_oar * 
+This developement of this scheduler borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
-ocaml-schedulers have several goals
-
-* provide scheduler examples
-* provide schedulers with incremental features between each version
-* test alternative design choice (by example use of resource intervals)
-* provide scheduler in native binary code for performance concerns
-
-This work borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
-
-features:
+Features:
  * conservative backfilling
  * resources properties matching
  * besteffort
@@ -27,11 +19,19 @@ features:
  * job container  
  * fairesharing [TO FINALIZE]
 
-no implemented:
- * timesharing
+Missing:
+ * Timesharing
+ * Placeholder
+ * Best / All resource expression in submission requests
+ * Fairsharing (in progress)
+ * Extensive test (no yet running on production cluster)
+ * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
-Next:
+Next (becarefull outdated list) :
 
+ * unit test
+ * better compilation process (for unit tests)
+ * simple performance optimisation (threshold on percent of idle ressource at now and number of scheduled jobs)
  * BEST / ALL 
  * scheduler message (see perl version *)
  * job_error / job_message / scheduler message
@@ -58,6 +58,9 @@ To test:
  * multi-request with non exclusive resource selection
 
 ToDo:
+  * switch name to kamelot
+  * complete fairsharing
+  * test_unit: better compilation process
   * Ounit (cf archive)
     * test sub_intevals
   * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64. 
@@ -77,5 +80,6 @@ Remarks and misc:
 Bugs:
 
 Debug:
+  make bc
   ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/interval.cmo ../common/helpers.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo ./simple_cbf_mb_h_ct.cmo
  rlwrap ./yop -I ../common -I .

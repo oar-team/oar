@@ -34,10 +34,10 @@ let concatene_sep sep transforme =
     | x::xs -> aux (buf ^ (transforme x) ^ sep) xs in 
     aux ""
 
-(** [arrange p arr l] : examine dans l'ordre les éléments de [l],
-  arrange les deux premiers entre eux par la fonction [arr], enlève le
-  resultat s'il vérifie le prédicat [p]. Renvoie la liste des éléments
-  arrangés. *)
+(** [arrange p arr l] : examine dans l'ordre les Ã©lÃ©ments de [l],
+  arrange les deux premiers entre eux par la fonction [arr], enlÃ¨ve le
+  resultat s'il vÃ©rifie le prÃ©dicat [p]. Renvoie la liste des Ã©lÃ©ments
+  arrangÃ©s. *)
 let arrange p arr l = 
   let rec aux buffer = function
       [] -> buffer
@@ -200,4 +200,5 @@ let filter_map f_filter f_map =
     | x :: l -> if (f_filter x) then find ((f_map x) :: accu) l else find accu l in
     find []
 
-(* *) 
+(* remove quotes from string *)
+let remove_quotes str = replace " " "" str

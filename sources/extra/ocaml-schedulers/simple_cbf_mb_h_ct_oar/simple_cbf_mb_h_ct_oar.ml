@@ -49,27 +49,33 @@ let besteffort_duration = 300L
 (* Karma *)
 (*       *)
 
-let karma_window_size = 3600 * 30 * 24
-
-let karma_proj_targets =  [| ("first", 75);  ("default", 25) |]  (* TODO Config SCHEDULER_FAIRSHARING_PROJECT_TARGETS *)
-let karma_user_targets = [| ("oar", 100) |] (* TODO Config SCHEDULER_FAIRSHARING_USER_TARGETS *) 
-let karma_coeff_proj_consumption = float_of_int 0 (* TODO Config SCHEDULER_FAIRSHARING_COEF_PROJECT *)
-let karma_coeff_user_consumption = float_of_int 2 (* TODO Config SCHEDULER_FAIRSHARING_COEF_USER *)
-let karma_coeff_user_asked_consumption = float_of_int 1 (* TODO Config SCHEDULER_FAIRSHARING_COEF_USER_ASK *)
+let karma_window_size = Int64.of_int ( 3600 * 30 * 24 ) (* 30 days *)
+(* defaults values for fairsharing *)
+let k_proj_targets = "\"{default => 25.0}\""
+let k_user_targets = "\"{default => 25.0}\""
+let k_coeff_proj_consumption = "0"
+let k_coeff_user_consumption = "1"
+let k_karma_coeff_user_asked_consumption = "1"
+(* get fairsharing config if any *)
+let karma_proj_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_PROJECT_TARGETS" k_proj_targets) float_of_string 
+let karma_user_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_USER_TARGETS" k_user_targets) float_of_string 
+let karma_coeff_proj_consumption = float_of_string (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_PROJECT" k_coeff_proj_consumption) 
+let karma_coeff_user_consumption = float_of_string (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER" k_coeff_user_consumption) 
+let karma_coeff_user_asked_consumption = float_of_string (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER_ASK" k_karma_coeff_user_asked_consumption)
 
 let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
-  let start_window = now - karma_window_size and stop_window = now in
+  let start_window = Int64.sub now karma_window_size and stop_window = now in
     let karma_sum_time_asked, karma_sum_time_used = Iolib.get_sum_accounting_window dbh queue start_window stop_window
     and karma_projects_asked, karma_projects_used = Iolib.get_sum_accounting_for_param dbh queue "accounting_project" start_window stop_window
     and karma_users_asked, karma_users_used       = Iolib.get_sum_accounting_for_param dbh queue "accounting_user" start_window stop_window 
     in
-      let karma j = let user = "yop" (*TODO j.user *) and proj = "poy" (*TODO j.project *) in
+      let karma j = let job = try Hashtbl.find h_jobs j  with Not_found -> failwith "Karma: not found job" in
+        let user = job.user and proj = job.project in
         let karma_proj_used_j = try Hashtbl.find karma_projects_used proj  with Not_found -> 0.0
-        (* and karma_proj_asked_j = try Hashtbl.find karma_projects_asked proj  with Not_found -> 0.0 *) (* TODO Not used ???*)
         and karma_user_used_j = try Hashtbl.find karma_users_used user  with Not_found -> 0.0
         and karma_user_asked_j = try Hashtbl.find karma_users_asked user  with Not_found -> 0.0
-        and karma_proj_target = 1.0 (* TODO   ($Karma_project_targets->{$j->{project}} *)
-        and karma_user_target = 1.0 (* TODO  $Karma_user_targets->{$j->{job_user}} / 100))  *)
+        and karma_proj_target = List.assoc proj karma_proj_targets (* TODO   ($Karma_project_targets->{$j->{project}} *)
+        and karma_user_target = (List.assoc user karma_user_targets) /. 100.0 (* TODO  $Karma_user_targets->{$j->{job_user}} / 100))  *)
         in
           karma_coeff_proj_consumption *. ((karma_proj_used_j /. karma_sum_time_used) -. (karma_proj_target /. 100.0)) +.
           karma_coeff_user_consumption *. ((karma_user_used_j /. karma_sum_time_used) -. (karma_user_target /. 100.0)) +.
@@ -145,7 +151,10 @@ let resources_init_slots_determination dbh now =
                                       constraints = [];
                                       hy_level_rqt = [];
                                       hy_nb_rqt = [];
-                                      set_of_rs = (ints2intervals (Helpers.filter_map (fun n -> n.available_upto = a_upto) (fun n -> n.resource_id) resources));} 
+                                      set_of_rs = (ints2intervals (Helpers.filter_map (fun n -> n.available_upto = a_upto) (fun n -> n.resource_id) resources));
+                                      user = "";
+                                      project = "";
+                                    } 
           in
         let pseudo_jobs_resources_available_upto = Helpers.filter_map (fun n -> n < max_time_minus_one) (fun n -> pseudo_job_av_upto n) available_uptos in
 
@@ -228,8 +237,16 @@ let _ =
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
+          (* Fairsharing  is setted*)
+          let flag_fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") in 
+            let ordered_waiting_j_ids =
+              if flag_fairsharing_flag then
+                waiting_j_ids (* ordering jobs indexes accordingly to fairsharing functions *)   
+              else
+                jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
+            in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
-          let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status waiting_j_ids security_time_overhead
+          let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
             (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)
