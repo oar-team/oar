@@ -5,6 +5,9 @@ version 2.5.x:
 --------------
   - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common setup script.
   - Bugfix: the PINGCHECKER_COMMAND in oar.conf depends now on %%OARDIR%%.
+  - Bug #13939: the job_resource_manager.pl and job_resource_manager_cgroups.pl
+                now deletes the user files in /tmp, /var/tmp and /dev/shm at
+                the end of the jobs.
 
 version 2.5.1:
 --------------
