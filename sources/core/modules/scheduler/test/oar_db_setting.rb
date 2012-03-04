@@ -9,8 +9,13 @@ DEFAULT_JOB_ARGS = {
   :walltime => 7200,
   :res => "resource_id=1",
   :propreties => "",
-  :type => nil
+  :type => nil,
+  :user => "toto"
 }
+
+SCHED_PERL_FS = "/usr/local/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing"
+SCHED_OCAML = "/usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
+SCHED_KAMELOT = "/usr/local/lib/oar/schedulers/kamelot_mysql"
 
 def oar_load_test_config
   puts "### Reading configuration ./oar_test_conf file ..." 
@@ -67,8 +72,8 @@ def oar_job_insert(j_args={})
       args[k]=j_args[k]
     end
   end
-  sth = $dbh.execute("insert into jobs (job_name,state,queue_name,properties,launching_directory,checkpoint_signal) values 
-                                      ('yop','Waiting','#{args[:queue]}','#{args[:properties]}','yop',0)")
+  sth = $dbh.execute("insert into jobs (job_name,state,queue_name,properties,launching_directory,checkpoint_signal,job_user) values 
+                                      ('yop','Waiting','#{args[:queue]}','#{args[:properties]}','yop',0,'#{args[:user]}')")
   sth.finish
 
   job_id= get_last_insert_id('jobs_job_id_seq') 
@@ -175,7 +180,7 @@ def oar_sql_file(file_name)
 end
 
 def oar_resource_insert(args={})
-  if (args.nil?)
+  if (args=={})
     $dbh.execute("insert into resources (state) values ('Alive')").finish
   else
     if !args[:nb_resources].nil?
@@ -483,12 +488,97 @@ def oar_jobs_overlap_after_scheduling?(security_time=60)
   puts "oar_jobs_overlap_after_scheduling? end"
 end
 
+#
+# oar_sleepy: populate db from dump (oar.ocaml.12res.20110323.sql), reset jobs' state to wainting, set scheduler to ocaml and re
+#
 def oar_sleepfy 
   puts "/!\\ BE CAREFULL, not portable action...surely it'll fail /!\\"
   oar_sql_file("/home/auguste/prog/test_oar_sched/oar.ocaml.12res.20110323.sql")
   oar_sql_file("/home/auguste/oar/sources/core/database/mysql_default_admission_rules.sql")
   $dbh.execute("UPDATE queues SET scheduler_policy='simple_cbf_mb_h_ct_oar_mysql', state='Active' WHERE queue_name='default'").finish
   return oar_jobs_sleepify
+end
+
+
+#
+# Test fairsharing
+#
+#debreu     2012-01-14 01:00:00  2012-02-09 00:59:59            609600           262660
+#pianezj    2011-12-31 01:00:00  2012-02-19 00:59:59          52789936          9409854
+#lebacq     2011-12-31 01:00:00  2012-02-20 00:59:59        8936481424          7225892
+#gallee     2012-01-02 01:00:00  2012-02-20 00:59:59          71454242         22540142
+#drouet     2011-12-31 01:00:00  2012-02-20 00:59:59         350180065         20993175
+#wiesenfe   2012-01-03 01:00:00  2012-02-15 00:59:59          52956000          7462145
+#meunie8x   2012-01-04 01:00:00  2012-02-04 00:59:59          56563200         35723840
+#thibert    2012-01-12 01:00:00  2012-01-30 00:59:59          43200000            44256
+#chardon    2012-01-18 01:00:00  2012-02-03 00:59:59            547420           182254
+#lafaysse   2011-12-31 01:00:00  2012-02-04 00:59:59         141912000         23912980
+#
+# TODO annonymze accounting table
+def oar_fairsharing_test sched
+  #TODO test if oar running
+  puts "Be carefull be sure to oar-server is stopped"
+  now = Time.now.to_i
+  oar_db_clean
+  users = []
+  if false
+    oar_sql_file("/home/auguste/prog/test_oar_sched/oar_foehn+nanostar-accounting.sql")
+    users = ["debreu","pianezj","lebacq","gallee","drouet","wiesenfe","meunie8x","thibert","chardon","lafaysse"]
+  else
+    10.times do |u|
+      user = "zozo"+u.to_s
+      users.push user
+      10.times do |i|
+        j = 24 * 36000
+        w_start = now - j*(i+1)
+        w_stop = now -  j*(i+1) + j/10
+        consum = 100000 * (10-u)   
+        sth = $dbh.execute("insert into accounting (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type,consumption) values (#{w_start},#{w_stop},'#{user}','default','default','USED',#{consum})")
+        sth.finish
+        sth = $dbh.execute("insert into accounting (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type, consumption) values (#{w_start},#{w_stop},'#{user}','default','default','ASKED',#{consum})")
+        sth.finish
+      end 
+    end
+  end
+  #add ressources
+  nb_r = 12
+  oar_resource_insert({:nb_resources=>nb_r})
+  #add jobs
+  jids = []
+  users.each do |u|
+    puts "add job for user: #{u}"
+    jids.push oar_job_insert(:res=>"resource_id=#{nb_r}",:walltime=> 300, :user=>u)
+  end
+  puts jids
+  #execute sched
+  sched_cmd = 'OARCONFFILE="/etc/oar/oar.conf" '+ sched + " default #{Time.now.to_i}" 
+  puts "Launch sched: #{sched}"
+  puts "cmd: #{sched_cmd}"
+  system sched_cmd
+
+  res=$dbh.execute("SELECT * FROM gantt_jobs_predictions")
+  h_job_time = {}
+  res.each do |r|
+    h_job_time[r[0]]=r[1]
+  end
+  job_time_sorted = h_job_time.sort_by { |id, t_start| t_start }
+  return job_time_sorted
+end
+
+#
+# strip oar.conf: remove test config from /etc/oar/oar.conf to /tmp/oar.conf
+#
+def oar_strip_config
+  system("rm /tmp/oar.conf")
+  oar_tmp = File.open("/tmp/oar.conf", "w")
+  end_tag = "#BEGIN TEST CONFIGURATION"
+  File.open("/etc/oar/oar.conf").each do |line|
+    break if line =~ /#{end_tag}/
+    oar_tmp.puts line
+  end
+  oar_tmp.puts end_tag
+  oar_tmp.close
+  system "sudo sh -c 'cat /tmp/oar.conf_tmp >  /etc/oar/oar.conf'"
 end
 
 oar_load_test_config

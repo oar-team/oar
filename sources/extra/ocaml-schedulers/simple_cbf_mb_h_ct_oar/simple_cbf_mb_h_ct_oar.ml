@@ -1,5 +1,6 @@
 open Types
-open Interval 
+open Interval
+open Conf
 open Simple_cbf_mb_h_ct
 (*
 TODO
@@ -51,17 +52,17 @@ let besteffort_duration = 300L
 
 let karma_window_size = Int64.of_int ( 3600 * 30 * 24 ) (* 30 days *)
 (* defaults values for fairsharing *)
-let k_proj_targets = "\"{default => 25.0}\""
-let k_user_targets = "\"{default => 25.0}\""
+let k_proj_targets = "{default => 21.0}"
+let k_user_targets = "{default => 22.0}"
 let k_coeff_proj_consumption = "0"
 let k_coeff_user_consumption = "1"
 let k_karma_coeff_user_asked_consumption = "1"
 (* get fairsharing config if any *)
-let karma_proj_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_PROJECT_TARGETS" k_proj_targets) float_of_string 
-let karma_user_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_USER_TARGETS" k_user_targets) float_of_string 
-let karma_coeff_proj_consumption = float_of_string (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_PROJECT" k_coeff_proj_consumption) 
-let karma_coeff_user_consumption = float_of_string (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER" k_coeff_user_consumption) 
-let karma_coeff_user_asked_consumption = float_of_string (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER_ASK" k_karma_coeff_user_asked_consumption)
+let karma_proj_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_PROJECT_TARGETS" k_proj_targets) float_of_string_e
+let karma_user_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_USER_TARGETS" k_user_targets) float_of_string_e
+let karma_coeff_proj_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_PROJECT" k_coeff_proj_consumption) 
+let karma_coeff_user_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER" k_coeff_user_consumption) 
+let karma_coeff_user_asked_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER_ASK" k_karma_coeff_user_asked_consumption)
 
 let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
   let start_window = Int64.sub now karma_window_size and stop_window = now in
@@ -74,8 +75,9 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
         let karma_proj_used_j = try Hashtbl.find karma_projects_used proj  with Not_found -> 0.0
         and karma_user_used_j = try Hashtbl.find karma_users_used user  with Not_found -> 0.0
         and karma_user_asked_j = try Hashtbl.find karma_users_asked user  with Not_found -> 0.0
-        and karma_proj_target = List.assoc proj karma_proj_targets (* TODO   ($Karma_project_targets->{$j->{project}} *)
-        and karma_user_target = (List.assoc user karma_user_targets) /. 100.0 (* TODO  $Karma_user_targets->{$j->{job_user}} / 100))  *)
+        (* TODO test *)
+        and karma_proj_target = try List.assoc proj karma_proj_targets with Not_found -> 0.0 (* TODO  verify in perl 0 also ? *)
+        and karma_user_target = (try List.assoc user karma_user_targets with Not_found -> 0.0  ) /. 100.0 (* TODO   verify in perl 0 also ? *)
         in
           karma_coeff_proj_consumption *. ((karma_proj_used_j /. karma_sum_time_used) -. (karma_proj_target /. 100.0)) +.
           karma_coeff_user_consumption *. ((karma_user_used_j /. karma_sum_time_used) -. (karma_user_target /. 100.0)) +.
@@ -83,24 +85,6 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
       in
       let kompare x y = let kdiff = (karma x) -. (karma y) in if kdiff = 0.0 then 0 else if kdiff > 0.0 then 1 else -1 in
         List.sort kompare jobs_ids;;
-
-(*
-
-my $Karma_projects = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
-my $Karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
-
-sub karma($){
-    my $j = shift;
-
-    my $note = 0;
-    $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-
-    return($note);
-}
-@jobs = sort({karma($a) <=> karma($b)} @jobs);
-*)
 
 (*               *)
 (* Suspend stuff *)
@@ -237,13 +221,14 @@ let _ =
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
-          (* Fairsharing  is setted*)
-          let flag_fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") in 
+          (* test if Fairsharing  is enabled*)
+          let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") in 
             let ordered_waiting_j_ids =
-              if flag_fairsharing_flag then
-                waiting_j_ids (* ordering jobs indexes accordingly to fairsharing functions *)   
-              else
+              if fairsharing_flag then
+                (* ordering jobs indexes accordingly to fairsharing functions *) 
                 jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
+              else
+                waiting_j_ids
             in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead

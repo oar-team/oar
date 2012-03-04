@@ -628,7 +628,7 @@ let get_sum_accounting_for_param dbh queue param_name start_window stop_window =
                                 GROUP BY %s,consumption_type" param_name queue start_window stop_window param_name
   in
   let res = execQuery dbh query in
-  let get_one a = (NoNStr a.(0), NoNStr a.(1), NoN float_of_string a.(2)) in
+  let get_one a = (NoNStr a.(1), NoNStr a.(0), NoN float_of_string a.(2)) in
   let results = map res get_one in
 
   let rec scan_results r  = match r with
@@ -642,7 +642,7 @@ let get_sum_accounting_for_param dbh queue param_name start_window stop_window =
                                         Hashtbl.add karma_asked k v; 
                                         scan_results m
                                       end  
-                | (_,_,_)        -> failwith "Consumption type is not supported: " 
+                | (_,_,_)        -> failwith ("Consumption type is not supported (with param) : " ^ param_name)
               in extract x     
   in scan_results results ;;
 
