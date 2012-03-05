@@ -345,7 +345,7 @@ GET /version
 GET /timezone
 -------------
 :description:
-  Gives the timezone of the OAR API server
+  Gives the timezone of the OAR API server. The api_timestamp given in each query is an UTC timestamp (epoch unix time). This timezone information allows you to re-construct the local time.
 
 :formats:
   html , yaml , json
