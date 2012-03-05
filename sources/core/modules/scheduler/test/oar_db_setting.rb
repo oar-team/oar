@@ -499,22 +499,6 @@ def oar_sleepfy
   return oar_jobs_sleepify
 end
 
-
-#
-# Test fairsharing
-#
-#debreu     2012-01-14 01:00:00  2012-02-09 00:59:59            609600           262660
-#pianezj    2011-12-31 01:00:00  2012-02-19 00:59:59          52789936          9409854
-#lebacq     2011-12-31 01:00:00  2012-02-20 00:59:59        8936481424          7225892
-#gallee     2012-01-02 01:00:00  2012-02-20 00:59:59          71454242         22540142
-#drouet     2011-12-31 01:00:00  2012-02-20 00:59:59         350180065         20993175
-#wiesenfe   2012-01-03 01:00:00  2012-02-15 00:59:59          52956000          7462145
-#meunie8x   2012-01-04 01:00:00  2012-02-04 00:59:59          56563200         35723840
-#thibert    2012-01-12 01:00:00  2012-01-30 00:59:59          43200000            44256
-#chardon    2012-01-18 01:00:00  2012-02-03 00:59:59            547420           182254
-#lafaysse   2011-12-31 01:00:00  2012-02-04 00:59:59         141912000         23912980
-#
-# TODO annonymze accounting table
 def oar_fairsharing_test sched
   #TODO test if oar running
   puts "Be carefull be sure to oar-server is stopped"
@@ -547,7 +531,9 @@ def oar_fairsharing_test sched
   jids = []
   users.each do |u|
     puts "add job for user: #{u}"
-    jids.push oar_job_insert(:res=>"resource_id=#{nb_r}",:walltime=> 300, :user=>u)
+    5.times do
+      jids.push oar_job_insert(:res=>"resource_id=#{nb_r}",:walltime=> 300, :user=>u)
+    end
   end
   puts jids
   #execute sched

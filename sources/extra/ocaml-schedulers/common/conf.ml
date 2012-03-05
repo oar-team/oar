@@ -133,7 +133,7 @@ let get_default_value s d =
    d
 
 let get_hierarchy_info =
-  Printf.sprintf "get_hierarchy_info HIERARCHY_LABELS\n";
+(* ignore(Printf.sprintf "get_hierarchy_info HIERARCHY_LABELS\n"); *)
   let hierarchy_labels = Helpers.split "," (Helpers.replace " " "" (get_value "HIERARCHY_LABELS")) in
     let str_to_triplet y = let z = List.map (fun x-> int_of_string x ) (Helpers.split "," y) in 
       (List.nth z 0,List.nth z 1,List.nth z 2) 
@@ -162,7 +162,7 @@ let str_perl_hash_to_pairs str =
 (* function which transform a perl string hash in list of couple with conversion application function*)
 (* ex { first => 75, default => 25 } : (string * int) list = [("first", 75); ("default", 25)] *) 
 let str_perl_hash_to_pairs_w_convert str convert=
-  Printf.sprintf "Str_perl_hash_to_pairs_w_convert: %s" str; 
+  (* ignore(Printf.sprintf "Str_perl_hash_to_pairs_w_convert: %s" str;) *)
   let str_pairs =  Helpers.split "," (Helpers.replace_regexp "{\\|}\\| " "" str) in
     let extraxt_pair s = let str_lpair = Helpers.split "=>" s in
       (List.hd str_lpair), (convert (List.hd (List.tl str_lpair)))

@@ -46,9 +46,13 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
-(*       *)
-(* Karma *)
-(*       *)
+(*                             *)
+(* Karma and Fairsharing stuff *)
+(*                             *)
+
+(* test if Fairsharing  is enabled*)
+let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") 
+let fairsharing_nb_job_limit = Conf.get_default_value "SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER" "30"
 
 let karma_window_size = Int64.of_int ( 3600 * 30 * 24 ) (* 30 days *)
 (* defaults values for fairsharing *)
@@ -169,8 +173,14 @@ let _ =
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
 
-  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn resource_intervals queue besteffort_duration security_time_overhead in (* TODO 
-      false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
+      
+  		let (waiting_j_ids,h_waiting_jobs) =
+        if fairsharing_flag then
+          let limited_job_ids = Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit in
+          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
+        else
+          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag []
+      in (* TODOfalse -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
       Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
@@ -221,14 +231,12 @@ let _ =
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
-          (* test if Fairsharing  is enabled*)
-          let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") in 
-            let ordered_waiting_j_ids =
-              if fairsharing_flag then
-                (* ordering jobs indexes accordingly to fairsharing functions *) 
-                jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
-              else
-                waiting_j_ids
+          let ordered_waiting_j_ids =
+            if fairsharing_flag then
+              (* ordering jobs indexes accordingly to fairsharing functions *) 
+              jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
+            else
+              waiting_j_ids
             in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead

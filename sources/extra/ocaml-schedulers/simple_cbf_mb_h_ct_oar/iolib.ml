@@ -68,10 +68,10 @@ let get_job_suspended_sum_duration dbh job_id now =
       summation 0L (fetch res);;
 
 (*                                                                             *)
-(* get_job_list: retrieve jobs to schedule with important relative information *)
+(* get_job_list_fairsharing: retrieve jobs to schedule with important relative information *)
 (*                                                                             *)
 
-let get_job_list dbh default_resources queue besteffort_duration security_time_overhead =
+let get_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids =
   let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in      (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
@@ -96,7 +96,7 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
               itv_cts
           end  
   in 
-  let query = Printf.sprintf "
+  let query_base = Printf.sprintf "
     SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties,
         moldable_job_descriptions.moldable_id,  
         job_resource_descriptions.res_job_resource_type,
@@ -109,9 +109,8 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
     WHERE
       moldable_job_descriptions.moldable_index = 'CURRENT'
       AND job_resource_groups.res_group_index = 'CURRENT'
-      AND job_resource_descriptions.res_job_index = 'CURRENT'
-      AND jobs.state = 'Waiting'
-      AND jobs.queue_name =  '%s'
+      AND job_resource_descriptions.res_job_index = 'CURRENT' "
+  and query_end = "
       AND jobs.reservation = 'None'
       AND jobs.job_id = moldable_job_descriptions.moldable_job_id
       AND job_resource_groups.res_group_index = 'CURRENT'
@@ -119,7 +118,13 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
       AND job_resource_descriptions.res_job_index = 'CURRENT'
       AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
       ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
-    queue in
+  in
+    let query =
+      if fairsharing_flag then
+        query_base ^ " AND jobs.job_id IN (" ^ (Helpers.concatene_sep "," id fs_jobids) ^ ") " ^ query_end 
+      else
+        query_base ^ " AND jobs.state = 'Waiting' AND jobs.queue_name = '" ^ queue ^"' "^ query_end 
+    in
   let res = execQuery dbh query in 
 
   let get_one_row a = ( 
@@ -646,91 +651,43 @@ let get_sum_accounting_for_param dbh queue param_name start_window stop_window =
               in extract x     
   in scan_results results ;;
 
-(*
-sub get_sum_accounting_window($$$$){
-    my $dbh = shift;
-    my $queue = shift;
-    my $start_window = shift;
-    my $stop_window = shift;
-    
-    my $sth = $dbh->prepare("   SELECT consumption_type, SUM(consumption)
-                                FROM accounting
-                                WHERE
-                                    queue_name = \'$queue\' AND
-                                    window_start >= $start_window AND
-                                    window_start < $stop_window
-                                GROUP BY consumption_type
-                            ");
-    $sth->execute();
-
-    my $results;
-    while (my @r = $sth->fetchrow_array()) {
-        $results->{$r[0]} = $r[1];
-    }
-    $sth->finish();
-
-    return($results);
-}
-
-
-sub get_sum_accounting_for_param($$$$$){
-    my $dbh = shift;
-    my $queue = shift;
-    my $param_name = shift;
-    my $start_window = shift;
-    my $stop_window = shift;
-    
-    my $sth = $dbh->prepare("   SELECT $param_name,consumption_type, SUM(consumption)
-                                FROM accounting
-                                WHERE
-                                    queue_name = \'$queue\' AND
-                                    window_start >= $start_window AND
-                                    window_start < $stop_window
-                                GROUP BY $param_name,consumption_type
-                            ");
-    $sth->execute();
-
-    my $results;
-    while (my @r = $sth->fetchrow_array()) {
-        $results->{$r[0]}->{$r[1]} = $r[2];
-    }
-    $sth->finish();
-
-    return($results);
-}
+(*                                                                *)
+(* get_limited_by_user_job_ids_to_schedule                        *)
+(* Adapted form  OAR::IO::get_fairsharing_jobs_to_schedule        *)
+(* return job indices with limited number of job by user          *)
+(*                                                                *)
+let get_limited_by_user_job_ids_to_schedule dbh queue limit =
+  (* get a limit number of job ids for a given user *)
+  let get_job_ids_user user =
+    let query = Printf.sprintf "
+      SELECT *
+      FROM jobs
+      WHERE
+        state = 'Waiting'
+        AND reservation = 'None'
+        AND queue_name = '%s'
+        AND job_user = '%s'
+        ORDER BY job_id
+        LIMIT %s;"
+    queue user limit in
+  let res = execQuery dbh query in
+  (* let get_one a = NoNStr a.(0) in *)
+    map res (function a ->  NoNStr a.(0) )  
+  in
+  let get_waiting_users =  
+    (* get all users with a waiting job *)
+    let query = Printf.sprintf "
+      SELECT distinct(job_user)
+      FROM jobs
+      WHERE
+        state = 'Waiting'
+        AND reservation = 'None'
+        AND queue_name = '%s';"
+      queue in
+    let res = execQuery dbh query in
+      map res (function a ->  NoNStr a.(0) )
+  in 
+  List.flatten (List.map get_job_ids_user get_waiting_users)
 
 
-
- OAR::IO::get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
-
-*)
-
-
-(*
-my @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
-
- Sort jobs depending on their previous usage
- Karma sort algorithm
-
-my $Karma_sum_time = OAR::IO::get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
-$Karma_sum_time->{ASKED} = 1 if (!defined($Karma_sum_time->{ASKED}));
-$Karma_sum_time->{USED} = 1 if (!defined($Karma_sum_time->{USED}));
-
-my $Karma_projects = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
-my $Karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
-
-sub karma($){
-    my $j = shift;
-
-    my $note = 0;
-    $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-
-    return($note);
-}
-
-@jobs = sort({karma($a) <=> karma($b)} @jobs);
-
-*)
 
