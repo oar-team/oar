@@ -521,7 +521,7 @@ sub show_accounting {
         # All users array output
         }else{
             print <<EOS;
-    User       First window starts  Last window ends     Asked (seconds)  Used seconds)
+    User       First window starts  Last window ends     Asked (seconds)  Used (seconds)
     ---------- -------------------- -------------------- ---------------- ----------------
 EOS
             foreach $login (keys %{$Consumptions}) {
