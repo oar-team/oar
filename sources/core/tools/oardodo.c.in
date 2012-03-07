@@ -29,10 +29,10 @@
 // Static conf to edit //
 /////////////////////////
 
-#define OARDIR "TT%%OARDIR%%"
-#define OARCONFFILE "TT%%OARCONFDIR%%/oar.conf"
-#define OARXAUTHLOCATION "TT%%XAUTHCMDPATH%%"
-#define OARUSER "TT%%OAROWNER%%"
+#define OARDIR "%%OARDIR%%"
+#define OARCONFFILE "%%OARCONFDIR%%/oar.conf"
+#define OARXAUTHLOCATION "%%XAUTHCMDPATH%%"
+#define OARUSER "%%OAROWNER%%"
 
 ///////////////////////////////////////////////////////////////////////////////
 

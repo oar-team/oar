@@ -8,6 +8,7 @@ version 2.5.x:
   - Bug #13939: the job_resource_manager.pl and job_resource_manager_cgroups.pl
                 now deletes the user files in /tmp, /var/tmp and /dev/shm at
                 the end of the jobs.
+  - Bugfix: in oardodo.c, the preprocessed variables was not defined correclty.
 
 version 2.5.1:
 --------------
