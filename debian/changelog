@@ -2,6 +2,7 @@ oar (2.5.1-2) unstable; urgency=low
 
   * First upload to the debian archive (Closes: #663558)  
   * Bump the standards version.
+  * Change the oar-api package description.
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 12 Mar 2012 11:07:52 +0100
 
