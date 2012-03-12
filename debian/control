@@ -1,7 +1,7 @@
 Source: oar
 Section: science
 Priority: extra
-Maintainer: Philippe Le Brouster <philippe.le-brouster@imag.fr>
+Maintainer: Philippe Le Brouster <plb@nebkha.net>
 DM-Upload-Allowed: yes
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, python-docutils, perl
 Standards-Version: 3.9.3
