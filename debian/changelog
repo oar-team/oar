@@ -1,10 +1,16 @@
-oar (2.5.1-1) unstable; urgency=low
+oar (2.5.1-2) UNRELEASED; urgency=low
+
+  * First upload to the debian archive (Closes: #663558)  
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 12 Mar 2012 09:43:29 +0100
+
+oar (2.5.1-1) UNRELEASED; urgency=low
 
   * New upstream release. 
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Fri, 13 Jan 2012 18:15:09 +0100
 
-oar (2.5.0+rc2-1) unstable; urgency=low
+oar (2.5.0+rc2-1) UNRELEASED; urgency=low
 
   * New upstream release. 
   * Remove the symlink creation for the apache2 configuration. (already done
@@ -12,7 +18,7 @@ oar (2.5.0+rc2-1) unstable; urgency=low
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 19 Dec 2011 22:59:22 +0100
 
-oar (2.5.0+rc1-1) unstable; urgency=low
+oar (2.5.0+rc1-1) UNRELEASED; urgency=low
 
   * Initial Release.
 
