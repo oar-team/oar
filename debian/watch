@@ -1,2 +1,2 @@
 version=3
-http://oar-ftp.imag.fr/oar .*/sources/stable/oar-(.*).tar.gz
+http://oar-ftp.imag.fr/oar/2.5/sources/stable oar-(.+)\.tar\.gz
