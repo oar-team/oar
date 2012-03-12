@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: Philippe Le Brouster <philippe.le-brouster@imag.fr>
 DM-Upload-Allowed: yes
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, python-docutils, perl
-Standards-Version: 3.9.1
+Standards-Version: 3.9.3
 Vcs-Git: git://scm.gforge.inria.fr/oar/oar.git/
 Homepage: http://oar.imag.fr/
 
