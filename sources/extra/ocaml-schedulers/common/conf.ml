@@ -8,8 +8,8 @@
 let log_file = ref None
 
 let print_log s = 
-  prerr_endline s;
-  flush stderr;
+  prerr_string s;
+  flush stderr; 
   match !log_file with 
       Some d -> output_string d s; flush d
     | None -> ()
@@ -77,14 +77,19 @@ let conf_values =
 	  try parse () 
 	  with End_of_file -> t)
     with Sys_error s -> error ("Cannot open conf file "^conf_file^" : "^s)
+
+(* Log is automatically redirected in /var/log/oar.log by metascheduler *)
+(* Use LOG_SCHED_FILE is a separed log file is wished *)
+(*
 let _ = 
-  let f = try Hashtbl.find conf_values "LOG_FILE_SCHED" (* TODO revert to LOG_FILE *)
+  let f = try Hashtbl.find conf_values "LOG_SCHED_FILE" 
   with Not_found -> "/var/log/oar.log" in 
     try let d = open_out_gen [ Open_append; Open_text] 0o600 f in 
       log_file := Some d;
       at_exit (fun () -> close_out d);
     with Sys_error s -> 
       ( do_message "Warn" (Printf.sprintf "Cannot open log file '%s': %s" f s) )     
+*)
 
 (* 
 let now, queueName = 
