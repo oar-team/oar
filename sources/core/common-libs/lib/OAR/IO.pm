@@ -6433,7 +6433,7 @@ sub add_new_event_with_host($$$$$){
     my $dbh = shift;
     my $type = shift;
     my $idJob = shift;
-    my $description = shift;
+    my $description = substr(shift,0,254);
     my $hostnames = shift;
     
     my $date = get_date($dbh);
