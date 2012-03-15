@@ -4437,7 +4437,8 @@ sub set_node_state($$$$) {
                     SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
                     WHERE
                         network_address = \'$hostname\'
-                        AND state = \'Alive\'
+                        AND (state = \'Alive\'
+                             OR (state = \'Suspected\' AND \'$finaud\' = \'NO\' AND finaud_decision = \'YES\'))
                 ") <= 0){
             # OAR wants to turn the node into Suspected state but it is not in
             # the Alive state --> so we do nothing
