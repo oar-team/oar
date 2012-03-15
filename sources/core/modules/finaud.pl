@@ -20,19 +20,13 @@ my $base = OAR::IO::connect();
 
 my @node_list_tmp = OAR::IO::get_finaud_nodes($base);
 my $Occupied_nodes;
-my $check_occupied_nodes;
+my $check_occupied_nodes = 'no';
 
 # get in conf the options that tells if we have to check nodes
 # that are running jobs.
 init_conf($ENV{OARCONFFILE});
 if (is_conf("CHECK_NODES_WITH_RUNNING_JOB")){
     $check_occupied_nodes = get_conf("CHECK_NODES_WITH_RUNNING_JOB");
-}else {
-    $check_occupied_nodes = 'no';
-}
-# if the value we got from conf is not yes or no, set it to default (no)
-if ($Occupied_nodes ne 'yes' && $Occupied_nodes ne 'no'){
-    $Occupied_nodes = 'no';
 }
 
 if ($check_occupied_nodes eq 'no'){
@@ -41,7 +35,11 @@ if ($check_occupied_nodes eq 'no'){
 
 my %Nodes_hash;
 foreach my $i (@node_list_tmp){
-    if (($check_occupied_nodes eq 'no') && !defined($Occupied_nodes->{$i->{network_address}})){
+    if ($check_occupied_nodes eq 'no'){
+        if (!defined($Occupied_nodes->{$i->{network_address}})){
+            $Nodes_hash{$i->{network_address}} = $i;
+        }
+    }else{
         $Nodes_hash{$i->{network_address}} = $i;
     }
 }

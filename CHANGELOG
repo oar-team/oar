@@ -12,6 +12,7 @@ version 2.5.x:
   - Finaud: fix race condition when there was a PINGCHECKER error jsut before
     another problem. The node became Alive again when the PINGCHECKER said OK
     BUT there was another error to resolve.
+  - Bugfix: The feature CHECK_NODES_WITH_RUNNING_JOB=yes never worked before.
 
 version 2.5.1:
 --------------
