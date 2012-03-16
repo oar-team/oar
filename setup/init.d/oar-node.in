@@ -130,7 +130,7 @@ case "$1" in
         ;;
     *)
         N=%%INITDIR%%/$NAME
-        echo "Usage: $N {start|stop|reload|force-reload|restarti|status}"
+        echo "Usage: $N {start|stop|reload|force-reload|restart}"
         exit 1
     ;;
 esac
