@@ -13,6 +13,7 @@ version 2.5.x:
     another problem. The node became Alive again when the PINGCHECKER said OK
     BUT there was another error to resolve.
   - Bugfix: The feature CHECK_NODES_WITH_RUNNING_JOB=yes never worked before.
+  - Speedup monika (X5).
 
 version 2.5.1:
 --------------
