@@ -160,7 +160,13 @@ sub htmlTable {
   $output .= $cgi->start_Tr({-align => "center"});
 
   my $cgiName = File::Basename::basename($cgi->self_url(-query=>0));
+  my $max_cores_per_line = OAR::Monika::Conf::myself()->max_cores_per_line();
+  my $nb_cells = 0;
   foreach my $currentRessource (sort keys %{$self->{Ressources}}){
+    if (($nb_cells++ % $max_cores_per_line) == 0){
+        $output .= $cgi->end_Tr();
+        $output .= $cgi->start_Tr({-align => "center"});
+    }
     #my $ressourceState= $self->{Ressources}->{$currentRessource}->{infos}->{state};
     my $ressourceState= $self->ressourceState($currentRessource);
 
@@ -188,7 +194,8 @@ sub htmlTable {
 
       my $available_upto = $self->{Ressources}->{$currentRessource}->{infos}->{available_upto};
       if(defined($available_upto) && $available_upto ne '0'){
-        my $now= `date +%s`;
+        #my $now= `date +%s`;
+        my $now= time();
         if($now < $available_upto && $available_upto ne '2147483647'){
           $output .= $cgi->colorTd("StandBy",100/$self->cpus."%");
         }else{
