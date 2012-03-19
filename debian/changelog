@@ -1,6 +1,7 @@
 oar (2.5.1-3) UNRELEASED; urgency=low
 
   * Fix the debian watch file.
+  * oar-server-mysql: Remove phpmyadmin as suggestion.
 
  -- Philippe Le Brouster <plb@nebkha.net>  Mon, 12 Mar 2012 13:12:17 +0100
 
