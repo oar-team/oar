@@ -21,7 +21,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-common
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, perl, adduser, libdbi-perl, ucf
+Depends: ${misc:Depends}, ${shlibs:Depends}, perl, adduser, ucf
 Suggests: oar-server, oar-user, oar-node, oar-doc
 Description: OAR batch scheduler common package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -31,7 +31,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-server
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, libdbi-perl,  oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version})
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk , phpmyadmin, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
@@ -76,7 +76,7 @@ Description: OAR batch scheduler node package
 
 Package: oar-user
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version})
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xauth
 Description: OAR batch scheduler user package
