@@ -5347,11 +5347,14 @@ sub add_gantt_scheduled_jobs($$$$){
               VALUES ($id_moldable_job,\'$start_time\')
              ");
 
+    my $str = "";
     foreach my $i (@{$resource_list}){
-        $dbh->do("INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)
-                  VALUES ($id_moldable_job,$i)
-                 ");
+        $str .= "($id_moldable_job,$i),";
     }
+    chop($str);
+    $dbh->do("INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)
+              VALUES $str
+             ");
 }
 
 
