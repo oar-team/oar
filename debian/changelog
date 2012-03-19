@@ -4,6 +4,7 @@ oar (2.5.1-3) UNRELEASED; urgency=low
   * oar-server-mysql: Remove phpmyadmin as suggestion.
   * Fix the dependencies on libdbi-perl. 
   * Fix the binaries conflict between oar-user-{mysql,pgsql}. 
+  * Improve the short descriptions.
 
  -- Philippe Le Brouster <plb@nebkha.net>  Mon, 12 Mar 2012 13:12:17 +0100
 
