@@ -12,3 +12,5 @@ oar_clean:
    - exec_chroot: /etc/init.d/dbus stop || true
    - exec_chroot: service ntp stop || true
    - exec_chroot: /etc/init.d/ntp stop || true
+   - exec_chroot: service openbsd-inetd stop || true
+   - exec_chroot: /etc/init.d/openbsd-inetd stop || true
