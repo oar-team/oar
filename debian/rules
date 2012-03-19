@@ -40,13 +40,6 @@ override_dh_auto_install:
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
 	
-	## oar-user-{mysql|pgsql}
-	mkdir -p $(CURDIR)/$(INSTALLDIR)/oar-user-mysql/
-	mkdir -p $(CURDIR)/$(INSTALLDIR)/oar-user-pgsql/
-	
-	cp -a $(CURDIR)/$(INSTALLDIR)/oar-user/* $(CURDIR)/$(INSTALLDIR)/oar-user-mysql/
-	mv    $(CURDIR)/$(INSTALLDIR)/oar-user/* $(CURDIR)/$(INSTALLDIR)/oar-user-pgsql/
-	
 	## oar-node
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
