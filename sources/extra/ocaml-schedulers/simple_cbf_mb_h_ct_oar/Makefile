@@ -36,7 +36,7 @@ export PROJ_test_unit
 
 ifndef SUBPROJS
 #  export SUBPROJS = simple_cbf_mb_h_ct test_unit 
-  export SUBPROJS = test_unit
+#  export SUBPROJS = test_unit
 endif
 
 # Default target to use

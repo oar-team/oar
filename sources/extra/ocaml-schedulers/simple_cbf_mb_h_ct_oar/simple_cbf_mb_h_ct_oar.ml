@@ -211,9 +211,9 @@ let _ =
             (* display previous scheduled jobs 
              Hashtbl.iter (fun k v -> printf "prev job: %s,  %s\n" k ) h_prev_scheduled_jobs_types; 
             *)
-             (* Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); *) 
+             (* Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); *)
+(* 
              let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
-(*
              Conf.log ("slots_with_scheduled_jobs_before #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
          
              Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
@@ -245,8 +245,7 @@ let _ =
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
             (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)
-            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
-(*
+(*            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
             Conf.log ("slots_with_scheduled_jobs #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));*)
 
   				  (* Conf.log ("Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) ); *)     

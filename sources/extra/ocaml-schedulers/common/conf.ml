@@ -132,7 +132,7 @@ let get_optional_value s =
       None )
 
 let get_default_value s d = 
-   Printf.sprintf "get_default_value: %s\n" s;
+  (*Printf.sprintf "get_default_value: %s\n" s; *)
   try Hashtbl.find conf_values s
   with Not_found -> 
    d
