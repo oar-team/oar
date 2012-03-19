@@ -19,6 +19,9 @@
 # Short-Description:    OAR Dedicated Node (launch its own sshd)
 ### END INIT INFO
 
+LANG=C
+export LANG
+
 PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 NAME=oar-node
 DESC=oar-node
