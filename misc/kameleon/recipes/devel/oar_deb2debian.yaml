@@ -12,7 +12,7 @@ global:
  # 
  # Debian specific
  distrib: debian
- debian_version_name: squeeze
+ debian_version_name: sid
  distrib_repository: http://ftp.fr.debian.org/debian
  output_environment_file_system_type: ext4
  #
@@ -23,7 +23,7 @@ global:
  # Extra packages to install on the minimal base system
  #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
  # If you're building a OAR appliance, use this package list:
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd console-tools mingetty curl librestclient-ruby librspec-ruby libjson-ruby"
+ extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl taktuk pidentd console-tools mingetty curl librestclient-ruby librspec-ruby libjson-ruby"
  #
  # Network configuration
  network_hostname: oar
