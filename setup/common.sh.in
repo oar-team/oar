@@ -67,16 +67,29 @@ create_oar_user() {
     fi 
 
     # Fix the bash profile
-    if [ ! -e ${OARHOMEDIR}/.bash_oar ]; then
-        cat > ${OARHOMEDIR}/.bash_oar <<EOF
-# Prevent to be included twice or more
-[ -n "\$OAR_BASHRC" ] && exit
-OAR_BASHRC=yes
+    cat > ${OARHOMEDIR}/.bash_oar <<EOF
+#
+# OAR bash environnement file for the oar user
+#
+# /!\ This file is automatically created at update installation/upgrade. 
+#     Do not modify this file.
+#
 
-export PATH="${OARDIR}/oardodo:\$PATH"
+bash_oar() {
+    # Prevent to be executed twice or more
+    [ -n "\$OAR_BASHRC" ] && return
+
+    export PATH="%%OARDIR%%/oardodo:\$PATH"
+    OAR_BASHRC=yes
+}
+
+bash_oar
 EOF
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile; then
         echo '' >> ${OARHOMEDIR}/.bash_profile
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bash_profile
+    fi
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc then
         echo '' >> ${OARHOMEDIR}/.bashrc
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bashrc
     fi
