@@ -23,7 +23,7 @@ global:
  # Extra packages to install on the minimal base system
  #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
  # If you're building a OAR appliance, use this package list:
- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk oidentd console-tools mingetty curl git-core make python-docutils ocaml-findlib libmysql-ocaml libmysql-ocaml-dev apache2-mpm-prefork libjson-perl libwww-perl ntp libdbd-mysql-ruby libgd-ruby1.8 perl libdbi-perl libdbd-mysql-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libsort-versions-perl openjdk-6-jre libcgi-fast-perl"
+ extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl taktuk oidentd console-tools mingetty curl git-core make python-docutils ocaml-findlib libmysql-ocaml libmysql-ocaml-dev apache2-mpm-prefork libjson-perl libwww-perl ntp libdbd-mysql-ruby libgd-ruby1.8 perl libdbi-perl libdbd-mysql-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libsort-versions-perl openjdk-6-jre libcgi-fast-perl"
  #
  # Network configuration
  network_hostname: oar
