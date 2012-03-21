@@ -5,18 +5,20 @@ type time_t = int64 (* 64 bits int because of unix_time use *)
 type jobid_t = int
 
 (* type job_state_t = Running | ToLaunch | Waiting (* Do we need it for simple_cbf_oar ? *) *)
-type resource_state_t = Alive | Suspected | Absent 
+type resource_state_t = Alive | Suspected | Absent | Dead 
 
 let rstate_of_string = function
     "Alive" -> Alive
   | "Suspected" -> Suspected
   | "Absent" -> Absent
+  | "Dead" -> Dead
   | s -> Conf.error (Printf.sprintf "rstate_of_string : unknown state %s" s)
 
 let rstate_to_string  = function 
     Alive -> "Alive"
   | Suspected -> "Suspected"
-  | Absent -> "Absent" 
+  | Absent -> "Absent"
+  | Dead -> "Dead" 
 
 type resource = {
 	resource_id: int;
