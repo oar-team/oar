@@ -1056,10 +1056,14 @@ POST /jobs
     ::
 
      ---
-     api_timestamp: 1245858042
-     id: 551
-     status: submitted
-     uri: /jobs/551
+     api_timestamp: 1332323792
+     cmd_output: |
+       [ADMISSION RULE] Modify resource description with type constraints
+       OAR_JOB_ID=4
+     id: 4
+     links:
+       - href: /oarapi-priv/jobs/4
+         rel: self
 
   *note*: more informations about the submited job may be obtained with a GET on the provided *uri*.
 

@@ -17,6 +17,8 @@ version 2.5.x:
   - Speedup monika (X5).
   - Monika: Add the conf max_cores_per_line to have several lines if the number
     of cores are too big.
+  - Minor changes into API:
+      - added cmd_output into POST /jobs
 
 version 2.5.1:
 --------------

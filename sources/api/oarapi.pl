@@ -827,7 +827,8 @@ SWITCH: for ($q) {
       print OAR::API::export( { 'id' => int($1),
                       'links' => [ { 'href' => $uri,
                                      'rel' => "self"} ],
-                      'api_timestamp' => time()
+                      'api_timestamp' => time(),
+                      'cmd_output' => "$cmdRes",
                     } , $ext );
     }
     else {
