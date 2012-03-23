@@ -37,7 +37,12 @@ let get_resource_list dbh  =
   in
     map res get_one_resource ;;
 
-let get_available_uptos dbh =
+(*                                              *)
+(* get distinct availableupto                   *)
+(* to remove, can be obtain from resources list *)
+(*                                              *)
+
+let get_group_available_uptos dbh =
   let query = "SELECT available_upto FROM resources GROUP BY available_upto" in
   let res = execQuery dbh query in 
   let get_one a = NoN Int64.of_string a.(0)  (* available_upto *)
