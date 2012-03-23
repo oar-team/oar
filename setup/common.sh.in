@@ -89,7 +89,7 @@ EOF
         echo '' >> ${OARHOMEDIR}/.bash_profile
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bash_profile
     fi
-    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc then
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc; then
         echo '' >> ${OARHOMEDIR}/.bashrc
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bashrc
     fi
