@@ -230,7 +230,8 @@ sub comportement_appendice(){
                     $SIG{USR1} = 'IGNORE';
                     $SIG{INT}  = 'IGNORE';
                     $SIG{TERM} = 'IGNORE';
-                    $SIG{CHLD} = 'IGNORE';
+                    #$SIG{CHLD} = 'IGNORE';
+                    $SIG{CHLD} = 'DEFAULT';
                     $0="Almighty: bipbip";
                     exec("$bipbip_command $1 $2 $3 $4");
                 }
