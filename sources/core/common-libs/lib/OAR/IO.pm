@@ -3332,6 +3332,30 @@ sub get_resources_that_will_be_out($$) {
     return(@res);
 }
 
+# get_energy_saving_resources_availability
+# returns a list of resources and when they will be available
+# parameters : base, min_start_date
+# return value : end_date_availability => [resource id list]
+sub get_energy_saving_resources_availability($$) {
+    my $dbh = shift;
+    my $current_time = shift;
+    
+    my $sth = $dbh->prepare("   SELECT resource_id, available_upto
+                                FROM resources
+                                WHERE
+                                    (state = \'Absent\' AND
+                                     available_upto > $current_time)
+                                    OR
+                                    (state = \'Alive\' AND
+                                     available_upto < 2147483646)
+                            ");
+    $sth->execute();
+    my %res = ();
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@{$res{$ref[1]}}, $ref[0]);
+    }
+    return(\%res);
+}
 
 # add_resource_job_pair
 # adds a new pair (jobid, resource) to the table assigned_resources

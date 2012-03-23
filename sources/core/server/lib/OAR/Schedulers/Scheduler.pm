@@ -176,15 +176,15 @@ sub init_scheduler($$$$$$){
     OAR::IO::unlock_table($dbh);
 
     #Add in Gantt reserved jobs already scheduled
-    my $str_tmp = "state_num ASC";
-    if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-        $str_tmp .= ", available_upto DESC";
-    }
-    if (!defined($order_part) or ($order_part eq "")){
-        $order_part = $str_tmp;
-    }else{
-        $order_part = "$str_tmp, $order_part";
-    }
+#    my $str_tmp = "state_num ASC";
+#    if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+#        $str_tmp .= ", available_upto DESC";
+#    }
+#    if (!defined($order_part) or ($order_part eq "")){
+#        $order_part = $str_tmp;
+#    }else{
+#        $order_part = "$str_tmp, $order_part";
+#    }
     my @Rjobs = OAR::IO::get_waiting_reservation_jobs($dbh);
     foreach my $job (@Rjobs){
         my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($dbh,$job->{job_id});
@@ -445,15 +445,15 @@ sub check_reservation_jobs($$$$){
                 push(@dead_resources, $r->{resource_id});
             }
             
-            my $str_tmp = "state_num ASC";
-            if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-                $str_tmp .= ", available_upto DESC";
-            }
-            if (!defined($order_part) or ($order_part eq "")){
-                $order_part = $str_tmp;
-            }else{
-                $order_part = "$str_tmp, $order_part";
-            }
+#            my $str_tmp = "state_num ASC";
+#            if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
+#                $str_tmp .= ", available_upto DESC";
+#            }
+#            if (!defined($order_part) or ($order_part eq "")){
+#                $order_part = $str_tmp;
+#            }else{
+#                $order_part = "$str_tmp, $order_part";
+#            }
             
             my $job_properties = "\'1\'";
             if ((defined($job->{properties})) and ($job->{properties} ne "")){
