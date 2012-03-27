@@ -126,6 +126,8 @@ let resources_init_slots_determination dbh now =
       (*                                                                                                             *)
       (* generate initial slot with no dead and suspected resources and with resources (nodes) which can be waked up *)
       (*                                                                                                             *)
+    begin
+      Conf.log "Energy Saving and Wakeup Mode are enabled";
       let hash_available_upto_by_resources =  Hashtbl.create 10 in
       let hash_available_upto_by_resources_populate r =
           let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
@@ -182,6 +184,7 @@ let resources_init_slots_determination dbh now =
         let slot_init = {time_s = now; time_e = max_time; set_of_res = resource_intervals} in
         let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
           (resource_intervals,slots_init_available_upto_resources)
+    end
     else
       let resources = List.filter (fun n -> n.state = Alive) potential_resources in
       let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
