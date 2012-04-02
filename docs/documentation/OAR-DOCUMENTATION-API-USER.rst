@@ -383,8 +383,7 @@ GET /jobs
   - **state**: comma separated list of states for filtering the jobs. Possible values: Terminated, Running, Error, Waiting, Launching, Hold,...
   - **array** (integer): to get the jobs belonging to an array
   - **from** (timestamp): restrict the list to the jobs that are running or not yet started before this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
-  - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavio
-r of listing only the jobs that are in queue.
+  - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **user**: restrict the list to the jobs owned by this username
 
 :output:

@@ -868,7 +868,7 @@ challenge         VARCHAR(255)          challenge string
 ssh_private_key   TEXT DEFAULT NULL     ssh private key given by the user
                                         (in grid usage it enables to connect
                                         onto all nodes of the job of all
-                                        clusers with oarsh_)
+                                        clusers with oarsh)
 ssh_public_key    TEXT DEFAULT NULL     ssh public key
 ================  ====================  =======================================
 
@@ -1145,7 +1145,7 @@ Each configuration tag found in /etc/oar.conf is now described:
 .. _JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD:
 
   - Indicate the name of the database field that contains the cpu number of
-    the node. If this option is set then users must use `OARSH`_ instead of
+    the node. If this option is set then users must use oarsh instead of
     ssh to walk on each nodes that they have reserved via oarsub.
     ::
 
