@@ -278,24 +278,24 @@ rm -rf tmp
 ###### files and permissions ######
 
 %files common -f oar-common.files
-%config /etc/oar/oar.conf 
-%config /etc/oar/oarnodesetting_ssh
-%config /etc/oar/update_cpuset_id.sh
+%config(noreplace) /etc/oar/oar.conf
+%config(noreplace) /etc/oar/oarnodesetting_ssh
+%config(noreplace) /etc/oar/update_cpuset_id.sh
 %config %attr(0755,root,root) /etc/logrotate.d/oar
 
 %files server -f oar-server.files
 %config %attr(0755,root,root) /etc/rc.d/init.d/oar-server
-%config %attr(0644,root,root) /etc/sysconfig/oar-server
+%config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-server
 %config %attr(0644,root,root) /etc/cron.d/oar-server
-%config /etc/oar/job_resource_manager.pl
-%config /etc/oar/job_resource_manager_cgroups.pl
-%config /etc/oar/oarmonitor_sensor.pl
-%config /etc/oar/server_epilogue
-%config /etc/oar/server_prologue
-%config /etc/oar/suspend_resume_manager.pl
-%config /etc/oar/oar_phoenix.pl
-%config /etc/oar/shut_down_nodes.sh
-%config /etc/oar/wake_up_nodes.sh
+%config(noreplace) /etc/oar/job_resource_manager.pl
+%config(noreplace) /etc/oar/job_resource_manager_cgroups.pl
+%config(noreplace) /etc/oar/oarmonitor_sensor.pl
+%config(noreplace) /etc/oar/server_epilogue
+%config(noreplace) /etc/oar/server_prologue
+%config(noreplace) /etc/oar/suspend_resume_manager.pl
+%config(noreplace) /etc/oar/oar_phoenix.pl
+%config(noreplace) /etc/oar/shut_down_nodes.sh
+%config(noreplace) /etc/oar/wake_up_nodes.sh
 
 %files server-mysql
 
@@ -303,13 +303,13 @@ rm -rf tmp
 
 %files node -f oar-node.files
 %config %attr(0755,root,root) /etc/rc.d/init.d/oar-node
-%config %attr(0644,root,root) /etc/sysconfig/oar-node
+%config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-node
 #%config %attr(0644,root,root) /etc/cron.d/oar-node
-%config /etc/oar/epilogue
-%config /etc/oar/prologue
-%config /etc/oar/sshd_config
-%config /etc/oar/check.d
-%config /var/lib/oar/checklogs
+%config(noreplace) /etc/oar/epilogue
+%config(noreplace) /etc/oar/prologue
+%config(noreplace) /etc/oar/sshd_config
+%config(noreplace) /etc/oar/check.d
+%config(noreplace) /var/lib/oar/checklogs
 
 %files user -f oar-user.files
 
@@ -318,9 +318,9 @@ rm -rf tmp
 %files user-pgsql
 
 %files web-status -f oar-web-status.files
-%config %attr (0600,apache,root) /etc/oar/drawgantt.conf
-%config %attr (0600,apache,root) /etc/oar/monika.conf
-%config %attr (0600,apache,root) /etc/oar/apache.conf
+%config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt.conf
+%config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
+%config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
 
 %files doc -f oar-doc.files
 %docdir /usr/share/doc/oar-doc 
@@ -333,7 +333,7 @@ rm -rf tmp
 %config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
 
 %files restful-api -f oar-restful-api.files
-%config /etc/oar/apache-api.conf
+%config(noreplace) /etc/oar/apache-api.conf
 %config /etc/oar/api_html_header.pl
 %config /etc/oar/api_html_postform.pl
 %config /etc/oar/api_html_postform_resources.pl
