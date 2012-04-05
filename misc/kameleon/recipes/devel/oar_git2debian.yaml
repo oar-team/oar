@@ -76,6 +76,7 @@ steps:
    - frontend
  - oar-2.5/target/debian/oar_debian_config_server
  - oar-2.5/target/debian/oar_debian_config_frontend
+ - oar-2.5/target/debian/oar_debian_config_node
  - oar-2.5/oar_config_node
  - oar-2.5/oar_config_server
  - oar-2.5/oar_config_frontend
