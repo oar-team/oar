@@ -19,6 +19,7 @@ version 2.5.x:
     of cores are too big.
   - Minor changes into API:
       - added cmd_output into POST /jobs
+  - API: Added GET /select_all?query=<query> (read only mode)
 
 version 2.5.1:
 --------------

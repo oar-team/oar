@@ -7102,6 +7102,40 @@ sub job_finishing_sequence($$$$$$){
     OAR::Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
 }
 
+# Generic count of a select query
+# args: database ref, query
+sub sql_count($$){
+    my $dbh = shift;
+    my $query = shift;
+
+    my $sth = $dbh->prepare("   SELECT count(*) $query");
+    $sth->execute();
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
+}
+
+# Generic select query
+# args: database ref, query, limit and offset
+sub sql_select($$$$){
+    my $dbh = shift;
+    my $query = shift;
+    my $limit = shift;
+    my $offset = shift;
+
+    if ($offset != 0) {$offset = "OFFSET $offset";}
+    else {$offset = ""};
+
+    my $sth = $dbh->prepare("SELECT * $query LIMIT $limit $offset");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(\@res);
+}
+
+
+
 
 # END OF THE MODULE
 return 1;
