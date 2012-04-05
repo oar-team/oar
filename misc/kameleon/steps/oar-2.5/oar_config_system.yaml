@@ -24,7 +24,10 @@ oar_config_system:
          $ curl -i -X POST http://kameleon:kameleon@localhost/oarapi-priv/jobs.json \\
              -H'Content-Type: application/json' \\
              -d '{\"resource\":\"/nodes=1,walltime=00:10:00\", \"command\":\"sleep 600\"}'
-         
+        
+       If you installed from the sources, then you can launch the tests with:
+         $ cd ~kameleon/oar_install/tests/rspec && make
+ 
         Notes:
          - if you want to change the keyboard mapping, use: 
          'loadkeys <2_letters_country_code>'
