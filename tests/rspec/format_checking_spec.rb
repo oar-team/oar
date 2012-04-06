@@ -57,7 +57,7 @@ describe OarApi do
 
     it "should have an array of 10 test jobs just submitted" do
       jhash = { 'resource' => "/nodes=1/core=2" , 
-                'property' => 'network_address like "node%"', 
+                'property' => "network_address like 'node%'", 
                 'script' => "ls;pwd;whoami;sleep 60" , 
                 'array' => '10' }
       @api.submit_job(jhash)
