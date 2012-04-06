@@ -1,0 +1,25 @@
+From 4a2fbd18a193978e402f804c1cdcffdd8ab1c746 Mon Sep 17 00:00:00 2001
+From: Philippe Le Brouster <philippe.le-brouster@imag.fr>
+Date: Fri, 6 Apr 2012 13:53:25 +0200
+Subject: [PATCH] Fix a spelling error in the oaradmin manpage.
+
+---
+ sources/core/man/man1/oaradmin.pod.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sources/core/man/man1/oaradmin.pod.in b/sources/core/man/man1/oaradmin.pod.in
+index 58d8c58..bb8fd2d 100644
+--- a/sources/core/man/man1/oaradmin.pod.in
++++ b/sources/core/man/man1/oaradmin.pod.in
+@@ -18,7 +18,7 @@ This command is used to manage OAR configuration.
+ 
+ The command B<oaradmin resources> manages resources in OAR database : add, update and delete many resources in a single command line.
+ 
+-The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. A versioning feature, using Subversion, allows to keep all admission rules changes.
++The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. A versioning feature, using Subversion, allows one to keep all admission rules changes.
+ 
+ The command B<oaradmin conf> is useful for modify OAR conf files, register changes in a Subversion repository and revert to a conf file at a particular revision if needed.
+ 
+-- 
+1.7.9.5
+
