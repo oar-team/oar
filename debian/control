@@ -49,8 +49,8 @@ Description: OAR batch scheduler MySQL server backend package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs the server part of the OAR batch scheduler for the MySQL
- backend
+ This empty package installs the MySQL dependencies for the server part of the
+ OAR batch scheduler.
 
 Package: oar-server-pgsql
 Architecture: any
@@ -61,8 +61,8 @@ Description: OAR batch scheduler PostgreSQL server backend package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs the server part of the OAR batch scheduler for the
- PostgreSQL backend
+ This empty package installs the PostgreSQL dependencies for the server part of
+ the OAR batch scheduler.
 
 Package: oar-node
 Architecture: any
@@ -92,8 +92,8 @@ Description: OAR batch scheduler MySQL user backend package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package install the MySQL backend for the submission and query part of
- the OAR batch scheduler.
+ This empty package installs the MySQL dependencies for the user part of the
+ OAR batch scheduler.
 
 Package: oar-user-pgsql
 Architecture: any
@@ -102,8 +102,8 @@ Description: OAR batch scheduler PostgreSQL user backend package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package install the PostgreSQL backend for the submission and query part
- of the OAR batch scheduler.
+ This empty package installs the PostgreSQL dependences for the user part of
+ the OAR batch scheduler.
 
 Package: oar-web-status
 Architecture: all
