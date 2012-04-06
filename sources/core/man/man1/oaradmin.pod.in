@@ -18,7 +18,7 @@ This command is used to manage OAR configuration.
 
 The command B<oaradmin resources> manages resources in OAR database : add, update and delete many resources in a single command line.
 
-The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. A versioning feature, using Subversion, allows to keep all admission rules changes.
+The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. A versioning feature, using Subversion, allows one to keep all admission rules changes.
 
 The command B<oaradmin conf> is useful for modify OAR conf files, register changes in a Subversion repository and revert to a conf file at a particular revision if needed.
 
