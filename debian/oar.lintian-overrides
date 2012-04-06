@@ -3,3 +3,7 @@ oar-user-mysql binary: empty-binary-package
 oar-user-pgsql binary: empty-binary-package
 oar-server-mysql binary: empty-binary-package
 oar-server-pgsql binary: empty-binary-package
+
+# The INSTALL file contains also the Debian configuration instructions
+oar-common binary: package-contains-upstream-install-documentation
+

@@ -1,6 +1,7 @@
 oar (2.5.1-4) unstable; urgency=low
 
   * Add lintian overrides for empty binary packages.
+  * Add lintian overrides for the install file.
   * Improve the short descriptions. 
 
  -- Philippe Le Brouster <plb@nebkha.net>  Fri, 06 Apr 2012 13:40:16 +0200
