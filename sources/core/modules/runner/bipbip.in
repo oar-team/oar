@@ -364,8 +364,6 @@ if ((defined($types->{cosystem})) or ($#hosts < 0)){
     $host_to_connect_via_ssh = $Deploy_hostname;
 }
 
-my $array_index = OAR::IO::get_job_array_index($base,$Job_id);
-
 oar_debug("[bipbip $Job_id] execute oarexec on node $host_to_connect_via_ssh\n");
 
 my $oarexec_cpuset_path;
@@ -378,7 +376,7 @@ if ((defined($Cpuset_full_path) and (!defined($types->{cosystem})) and (!defined
 my %data_to_transfer = (
         job_id              => $Job_id,
         array_id            => $job->{array_id},
-        array_index         => $array_index,
+        array_index         => $job->{array_index},
         stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
         stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
         launching_directory => $job->{launching_directory},

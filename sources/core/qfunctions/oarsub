@@ -135,7 +135,6 @@ sub connect_job($$$){
     OAR::Sub::open_ro_db_connection();
     my $lusr= $ENV{OARDO_USER};
     my $job = OAR::Sub::get_job($job_id);
-    my $array_index = OAR::Sub::get_job_array_index($job_id);
 
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
         my $hosts_tmp = OAR::Sub::get_job_current_hostnames($job_id);
@@ -179,7 +178,7 @@ sub connect_job($$$){
 					  "node_file" => $node_file,
 					  "job_id" => $job_id,
 					  "array_id" => $job->{array_id},
-					  "array_index" => $array_index,
+					  "array_index" => $job->{array_index},
 					  "user" => $lusr,
 					  "shell" => $shell,
 					  "launching_directory" => $job->{launching_directory},

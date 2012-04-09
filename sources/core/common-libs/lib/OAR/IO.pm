@@ -91,7 +91,6 @@ sub set_moldable_job_max_time($$$);
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
 sub get_job_array_id($$);
-sub get_job_array_index($$);
 sub get_array_subjobs($$);
 sub get_array_job_ids($$);
 
@@ -577,6 +576,7 @@ sub get_jobs_in_state_for_user($$$) {
                                 FROM jobs
                                 WHERE
                                     state = $state $user_query
+                                ORDER BY job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -1324,7 +1324,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         return(-8);
     }
 
-    my $array_index;
+    my $array_index = 1;
     my @Job_id_list;
 
     if(!defined($array_params_ref)){
@@ -1334,13 +1334,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                 push(@Job_id_list, $err);
                 return(\@Job_id_list);
             }
-            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime));
+            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
             if ($Job_id_list[-1] <= 0){
                 return(\@Job_id_list);
             }else{
                 if ($array_id <= 0){
                     $array_id = $Job_id_list[0];
                 }
+                $array_index++;
             }
             if (defined($use_job_key) and ($export_job_key_file ne "")){
                 # we must copy the keys in the directory specified with the right name
@@ -1374,14 +1375,13 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
             }
         }
     }else{
-        $array_index=0;
         foreach my $param (@{$array_params_ref}){
             my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file);
             if ($err != 0){
                 push(@Job_id_list, $err);
                 return(\@Job_id_list);
             }
-            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command." $param", $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime));
+            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command." $param", $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
             if ($Job_id_list[-1] <= 0){
                 return(\@Job_id_list);
             }else{
@@ -1429,7 +1429,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
 
 sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
 
     # Test if properties and resources are coherent
     my @dead_resources;
@@ -1501,8 +1501,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $project = $dbh->quote($project);
     $initial_request_string = $dbh->quote($initial_request_string);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id,array_index)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id,$array_index)
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -1980,8 +1980,8 @@ sub resubmit_job($$){
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,job_env,project,initial_request)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',$jenv,$project,$initial_request_string)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,job_env,project,initial_request,array_id,array_index)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',$jenv,$project,$initial_request_string,$job->{array_id},$job->{array_index})
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
@@ -2930,34 +2930,6 @@ sub get_job_array_id($$){
 }
  
 
-# get_job_array_index($$)
-# Calculate the array_index based on a given job_id
-# parameters : base, job_id
-# return value : array_index of the given jobid
-# side effects : / 
-sub get_job_array_index($$){
-    my $dbh = shift;
-    my $job_id = shift;
-    my $sth;
-
-    my $array_id = get_job_array_id($dbh,$job_id);
-
-    $sth = $dbh->prepare("  SELECT COUNT(job_id)
-                            FROM jobs
-                            WHERE 
-                                array_id = $array_id
-                                and job_id < $job_id
-                         ");
-
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp_array = values(%$ref);
-    $sth->finish();
-
-    return ($tmp_array[0]+1);
-}
-
-
 # get_array_subjobs($$)
 # Get all the jobs of a given array_job
 # parameters : base, array_id
@@ -2971,6 +2943,7 @@ sub get_array_subjobs($$){
                                 FROM jobs
                                 WHERE
                                     array_id = $array_id
+                                ORDER BY job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -2997,6 +2970,7 @@ sub get_array_job_ids($$){
                                 FROM jobs
                                 WHERE
                                     array_id = $array_id
+                                ORDER BY job_id
                             ");
     $sth->execute();
 

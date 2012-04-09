@@ -20,6 +20,9 @@ version 2.5.x:
   - Minor changes into API:
       - added cmd_output into POST /jobs
   - API: Added GET /select_all?query=<query> (read only mode)
+  - Add the field "array_index" into the jobs table. So that resubmit a job
+    from an array will have the right array_index anvironment variable.
+  - oarstat: order the output by job_id.
 
 version 2.5.1:
 --------------
