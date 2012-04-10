@@ -23,6 +23,7 @@ version 2.5.x:
   - Add the field "array_index" into the jobs table. So that resubmit a job
     from an array will have the right array_index anvironment variable.
   - oarstat: order the output by job_id.
+  - Speedup oarnodes
 
 version 2.5.1:
 --------------

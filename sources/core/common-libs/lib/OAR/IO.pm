@@ -3003,8 +3003,15 @@ sub get_resource_job($$) {
                                     AND assigned_resources.resource_id = $resource
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND (jobs.state = \'Waiting\'
+                                           OR jobs.state = \'Hold\'
+                                           OR jobs.state = \'toLaunch\'
+                                           OR jobs.state = \'toAckReservation\'
+                                           OR jobs.state = \'Launching\'
+                                           OR jobs.state = \'Running\'
+                                           OR jobs.state = \'Suspended\'
+                                           OR jobs.state = \'Resuming\'
+                                           OR jobs.state = \'Finishing\')
                             ");
     $sth->execute();
     my @res = ();
