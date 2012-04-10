@@ -221,6 +221,67 @@ sub setup_database() {
     }
 }
 
+sub mysql_ro_user_privileges() {
+    # All except the challenge table (localhost)
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.schema TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.accounting TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.admission_rules TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.assigned_resources TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.event_log_hostnames TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.event_logs TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.files TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.frag_jobs TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_predictions TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_predictions_visu TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_resources TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_resources_visu TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_dependencies TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_resource_descriptions TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_resource_groups TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_state_logs TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_types TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.jobs TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.moldable_job_descriptions TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.queues TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.resource_logs TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.resources TO '$db_ro_user'".'@'."'localhost' IDENTIFIED BY '$db_ro_pass'") ;
+    # All except the challenge table (other hosts)
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.schema TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.accounting TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.admission_rules TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.assigned_resources TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.event_log_hostnames TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.event_logs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.files TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.frag_jobs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_predictions TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_predictions_visu TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_resources TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.gantt_jobs_resources_visu TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_dependencies TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_resource_descriptions TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_resource_groups TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_state_logs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.job_types TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.jobs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.moldable_job_descriptions TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.queues TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.resource_logs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.resources TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+}
+
+sub fix_ro_user_privileges() {
+    # This revokes the wildcard select privilege that was made by previous
+    # versions of this script and set up the correct privileges for the ro user
+    # (the bug affected only mysql databases)
+    if ($db_type eq "mysql") {
+      print "Fixing the ro user privileges...\n";
+      mysql_admin_exec_sql("REVOKE SELECT ON $db_name.* FROM '$db_ro_user'".'@'."'localhost'") ;
+      mysql_admin_exec_sql("REVOKE SELECT ON $db_name.* FROM '$db_ro_user'".'@'."'%'") ;
+      mysql_ro_user_privileges();
+    }
+}
+
 sub create_database() {
 
     if ($db_type eq "mysql") {
@@ -230,12 +291,6 @@ sub create_database() {
         print "Creating the database user...\n";
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' . "'localhost' IDENTIFIED BY '$db_pass'") ;
         mysql_admin_exec_sql("GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user'" . '@' ."'%' IDENTIFIED BY '$db_pass'");
-        if ($db_ro_user and $db_ro_pass) {
-            print "Creating the database read-only user...\n";
-            mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'localhost' IDENTIFIED BY '$db_ro_pass'");
-            mysql_admin_exec_sql("GRANT SELECT ON $db_name.* TO '$db_ro_user'" . '@' . "'%' IDENTIFIED BY '$db_ro_pass'") ;
-        }
-
     } elsif ($db_type eq "Pg") {
         print "Creating the database user...\n";
         pgsql_admin_exec_sql("CREATE ROLE $db_user LOGIN PASSWORD '$db_pass';");
@@ -251,9 +306,12 @@ sub create_database() {
 
     init_database();
 
-    if ($db_type eq "Pg")  {
-        if ($db_ro_user and $db_ro_pass) {
+    if ($db_ro_user and $db_ro_pass) {
+        if ($db_type eq "Pg")  {
             pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+        } elsif ($db_type eq "mysql") {
+            print "Creating the database read-only user...\n";
+            mysql_ro_user_privileges();
         }
     }
 }
@@ -351,6 +409,7 @@ GetOptions ("help|h"                => \$usage,
             "create|c"              => sub { $action = 'create' },
             "drop"                  => sub { $action = 'drop' },
             "check"                 => sub { $action = 'check' },
+            "fix-ro-user-priv"      => sub { $action = 'fix-ro-user-priv' },
             "conf=s"                => \$conffile,
 #            "update-conf"           => sub { $action = 'update-conf' },
             "db-type=s"             => \$db_type,
@@ -461,7 +520,7 @@ unless ($db_name) {
     $db_name = (OAR::Conf::is_conf("DB_BASE_NAME") ? OAR::Conf::get_conf("DB_BASE_NAME") : $DEFAULT_DB_NAME);
 }
 
-if ($action eq "create" or $action eq "drop") {
+if ($action eq "create" or $action eq "drop" or $action eq "fix-ro-user-priv") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user) {
             print "You need to specify the admin user (--db-admin-user) and probably the password (--db-admin-pass) to use. See the manual for more information. Failing.\n";
@@ -571,7 +630,12 @@ if ($action eq "check") {
     create_database();
 } elsif ($action eq "drop") {
     drop_database();
+} elsif ($action eq "fix-ro-user-priv") {
+    fix_ro_user_privileges();
 }
+
+
+
 
 
 
