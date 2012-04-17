@@ -38,15 +38,15 @@ check_if_uncommited_changes() {
 
 set_oar_version_file() {
     local dir version
-    dir=$1
-    version=$2
+    dir="$1"
+    version="$2"
 
-    if [ -e $dir/sources/core/common-libs/lib/OAR/Version.pm ]; then
+    if [ -e "$dir/sources/core/common-libs/lib/OAR/Version.pm" ]; then
         # 2.5.x
-        OAR_VERSION_FILE=$dir/sources/core/common-libs/lib/OAR/Version.pm
-    elif [ -e $dir/Tools/oarversion.pm ]; then
+        OAR_VERSION_FILE="$dir/sources/core/common-libs/lib/OAR/Version.pm"
+    elif [ -e "$dir/Tools/oarversion.pm" ]; then
         # 2.4.x
-        OAR_VERSION_FILE=$dir/Tools/oarversion.pm
+        OAR_VERSION_FILE="$dir/Tools/oarversion.pm"
     else
         echo "The branch $OARPWD seems to not be a OAR source folder"
         exit 1
@@ -72,7 +72,16 @@ while getopts "hqrfu:b:d:" options; do
     *) usage ;;
   esac
 done
+
+
 shift $(($OPTIND - 1))
+
+if [ -z "$TARGET_DIRECTORY" ]; then
+    log_info "you must provide a non-empty target directory"
+    exit 1
+fi
+
+cur_dir=$(pwd)
 
 if [ "$REMOTE" != "yes" ]; then
     git_dir=$(pwd)
@@ -90,32 +99,33 @@ fi
 TMPDIR=$(mktemp -d)
 
 if [ "$REMOTE" = "yes" ]; then
-    git_dir=$TMPDIR/git
-    mkdir -p $git_dir
+    git_dir="$TMPDIR/git"
+    mkdir -p "$git_dir"
     log_info "Using the Git repository '$GIT_URI'"
-    git clone -q  $GIT_URI $git_dir
+    git clone -q  $GIT_URI "$git_dir"
 fi
 
 
-(
-cd $git_dir
+
+cd "$git_dir"
 
 log_info "Using the Git tree-ish   '$GIT_TREEISH'"
 version=$(git describe $GIT_TREEISH)
 
-tarball_dir=$TMPDIR/tarball
+tarball_dir="$TMPDIR/tarball"
 tarball_prefix=oar-$version
-tarball_srcdir=$tarball_dir/$tarball_prefix
+tarball_srcdir="$tarball_dir/$tarball_prefix"
 
-mkdir $tarball_dir
+mkdir "$tarball_dir"
 
-git archive --format tar --prefix "$tarball_prefix/" "$GIT_TREEISH" | tar xf - -C $tarball_dir
+git archive --format tar --prefix "$tarball_prefix/" "$GIT_TREEISH" | tar xf - -C "$tarball_dir"
 set_oar_version_file "$tarball_srcdir" "$version"
-tar czf $TARGET_DIRECTORY/$tarball_prefix.tar.gz -C $tarball_dir .
 
+cd "$cur_dir"
+
+mkdir -p "$TARGET_DIRECTORY"
+tar czf "$TARGET_DIRECTORY/$tarball_prefix.tar.gz" -C "$tarball_dir" .
 echo "$TARGET_DIRECTORY/$tarball_prefix.tar.gz"
-)
 
-
-[ -d "$TMPDIR" ] && rm -rf $TMPDIR
+[ -d "$TMPDIR" ] && rm -rf "$TMPDIR"
 
