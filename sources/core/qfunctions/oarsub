@@ -702,7 +702,6 @@ if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
 
 if (defined($notify) && $notify =~ m/\s*exec:(.+)$/m){
     my $notify_exec_regexp = '[a-zA-Z0-9_.\/ -]+';
-    #unless ($notify =~ m/\s*exec:([a-zA-Z0-9_.\/ ]+)$/m){
     unless ($notify =~ m/\s*exec:($notify_exec_regexp)$/m){
       warn("/!\\ Insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
       exit(16);
