@@ -1,8 +1,0 @@
-  Poar
-  ====
-Poar is an oar's portal.
-Caution, up to now this code is not functional, it's an early experiment to evaluate design choices.
-Only the browser part have been studied. 
-It's based on the use of extjs javascript library.
-The main file is poar.js.
-For question contact olivier.richard@imag.fr or oar-devel@lists.gforge.inria.fr
