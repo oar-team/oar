@@ -1,0 +1,121 @@
+#!/bin/bash
+# build a package (debian) using a git repository
+set -e
+
+usage() {
+    N=$(basename $0)
+    cat <<EOF
+  $N [-h]
+  $N [-q] [-d <directory>] -r [-u <git_uri>] [-t <git_treeish>]
+  $N [-q] [-d <directory>] [-f]
+
+Options:
+  -d   target directory
+  -h   print this message and exit
+  -q   quiet (only write relevant information for automation to stdout)
+  -u   specify the git uri to use
+  -b   specify the git treeish to use
+  -r   use a remote repository
+  -f   make the tarball even if there are uncommited changes (only for local repository)
+EOF
+exit 1
+}
+
+log_info() {
+    if [ "$QUIET" != "yes" ]; then
+        echo "$*" >&2
+    fi
+}
+
+check_if_uncommited_changes() {
+    if [ "$FORCE" != "yes" ] && [ -d ".git" ] && [ "$(git status |grep 'working directory clean')" = "" ]; then
+        echo "You have uncommited local changes. check with 'git status'."
+        echo "(or force the generation with '-f')"
+        exit 1
+    fi
+
+}
+
+set_oar_version_file() {
+    local dir version
+    dir=$1
+    version=$2
+
+    if [ -e $dir/sources/core/common-libs/lib/OAR/Version.pm ]; then
+        # 2.5.x
+        OAR_VERSION_FILE=$dir/sources/core/common-libs/lib/OAR/Version.pm
+    elif [ -e $dir/Tools/oarversion.pm ]; then
+        # 2.4.x
+        OAR_VERSION_FILE=$dir/Tools/oarversion.pm
+    else
+        echo "The branch $OARPWD seems to not be a OAR source folder"
+        exit 1
+    fi
+    sed -e "s/^my \$OARVersion =.*/my \$OARVersion = \"$version\";/" -i "$OAR_VERSION_FILE"
+}
+
+QUIET=no
+TARGET_DIRECTORY=../tarballs
+REMOTE=no
+FORCE=no
+GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
+GIT_TREEISH=2.5
+
+while getopts "hqrfu:b:d:" options; do
+  case $options in
+    q) QUIET=yes ;;
+    r) REMOTE=yes ;;
+    f) FORCE=yes ;; 
+    u) GIT_URI="$OPTARG";;
+    b) GIT_TREEISH="$OPTARG" ;;
+    d) TARGET_DIRECTORY="$OPTARG";;
+    *) usage ;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+if [ "$REMOTE" != "yes" ]; then
+    git_dir=$(pwd)
+
+    if [ ! -d "$git_dir/.git" ]; then
+        echo "$git_dir is not a working git directory. Fail."
+        exit 1;
+    fi
+
+    check_if_uncommited_changes
+    log_info "Using the Git repository '$(pwd)'"
+
+fi
+
+TMPDIR=$(mktemp -d)
+
+if [ "$REMOTE" = "yes" ]; then
+    git_dir=$TMPDIR/git
+    mkdir -p $git_dir
+    log_info "Using the Git repository '$GIT_URI'"
+    git clone -q  $GIT_URI $git_dir
+fi
+
+
+(
+cd $git_dir
+
+log_info "Using the Git tree-ish   '$GIT_TREEISH'"
+version=$(git describe $GIT_TREEISH)
+
+tarball_dir=$TMPDIR/tarball
+tarball_prefix=oar-$version
+tarball_srcdir=$tarball_dir/$tarball_prefix
+
+mkdir $tarball_dir
+
+git archive --format tar --prefix "$tarball_prefix/" "$GIT_TREEISH" | tar xf - -C $tarball_dir
+set_oar_version_file "$tarball_srcdir" "$version"
+tar czf $TARGET_DIRECTORY/$tarball_prefix.tar.gz -C $tarball_dir .
+
+echo "$TARGET_DIRECTORY/$tarball_prefix.tar.gz"
+)
+
+
+[ -d "$TMPDIR" ] && rm -rf $TMPDIR
+
