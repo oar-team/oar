@@ -110,7 +110,8 @@ fi
 cd "$git_dir"
 
 log_info "Using the Git tree-ish   '$GIT_TREEISH'"
-version=$(git describe $GIT_TREEISH)
+last_tag=$(git describe $GIT_TREEISH --abbrev=0)
+version=$(git describe $GIT_TREEISH | sed -e "s/^$last_tag-\([[:digit:]]\+\)-/$last_tag+\1./")
 
 tarball_dir="$TMPDIR/tarball"
 tarball_prefix=oar-$version
