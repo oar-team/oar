@@ -27,6 +27,7 @@ version 2.5.x:
   - Fix a spelling error in the oaradmin manpage
   - Bugfix #14122 : the oar-node init.d script wasn't executing
     start_oar_node/stop_oar_node during the 'restart' action.
+  - Allow the dash  character into the --notify "exec:..." oarsub option.
 
 version 2.5.1:
 --------------
