@@ -8,19 +8,30 @@
 
 set -e
 
+QUIET=no
+TARGET_DIRECTORY=../build-area
+REMOTE=no
+FORCE=no
+GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
+GIT_TREEISH=debian/2.5
+GIT_UPSTREAM_TREEISH=debian-upstream/2.5
+UPSTREAM_TARBALL=
+
+
 usage() {
     N=$(basename $0)
     cat <<EOF
   $N [-h]
-  $N [-q] [-d <directory>] [-m <upstream_tarball>] -r [-u <git_uri>] [-t <git_treeish>]
-  $N [-q] [-d <directory>] [-m <upstream_tarball>] [-f]
+  $N [-q] [-d <directory>] [-m <upstream_tarball>] [-b <git_treeish>] [-t <git_upstream_treeish>] -r [-u <git_uri>]
+  $N [-q] [-d <directory>] [-m <upstream_tarball>] [-b <git_treeish>] [-t <git_upstream_treeish>] [-f]
 
 Options:
-  -d   target directory
+  -d   target directory (by default '$TARGET_DIRECTORY')
   -h   print this message and exit
   -q   quiet (only write relevant information for automation to stdout)
-  -u   specify the git uri to use
-  -b   specify the git treeish to use
+  -u   specify the git uri to use (by default '$GIT_URI')
+  -b   specify the git treeish of the debian branch (by default '$GIT_TREEISH')
+  -t   specify the git treeish of the debian upstream branch (by default '$GIT_UPSTREAM_TREEISH')
   -r   use a remote repository
   -f   make the tarball even if there are uncommited changes (only for local repository)
   -m   merge the given upstream tarball into to debian package (this can fail, if quilt fails)
@@ -52,21 +63,14 @@ check_if_uncommited_changes() {
 
 }
 
-QUIET=no
-TARGET_DIRECTORY=../build-area
-REMOTE=no
-FORCE=no
-GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
-GIT_TREEISH=debian/2.5
-UPSTREAM_TARBALL=
-
-while getopts "hqrfu:b:m:d:" options; do
+while getopts "hqrfu:b:t:m:d:" options; do
   case $options in
     q) QUIET=yes ;;
     r) REMOTE=yes ;;
     f) FORCE=yes ;; 
     u) GIT_URI="$OPTARG";;
     b) GIT_TREEISH="$OPTARG" ;;
+    t) GIT_UPSTREAM_TREEISH="$OPTARG";;
     m) UPSTREAM_TARBALL="$OPTARG" ;;
     d) TARGET_DIRECTORY="$OPTARG";;
     *) usage ;;
@@ -122,10 +126,14 @@ if [ "$last_tag" != "$(git describe $GIT_TREEISH)" ]; then
     is_snapshot=yes
 fi
 
-version=$(git describe $GIT_TREEISH | sed -e "s%^$last_tag-\([[:digit:]]\+\)-%$last_tag+\1.%" | sed -e "s%.*/%%")
+upstream_version_tag=$(git describe $GIT_UPSTREAM_TREEISH)
+upstream_version=$(echo "$upstream_version_tag" | sed -e "s%.*/%%")
 
-upstream_version=$(echo "$version" | sed -e "s%^\(.*\)-.*%\1%")
-debian_revision=$(echo "$version" | sed -e "s%.*-\([^-]+\)%\1%")
+debian_revision_number=$(git log --oneline --ancestry-path --no-merges $upstream_version_tag..$GIT_TREEISH | wc -l)
+debian_revision_hash=$(git log --oneline -n 1 $GIT_TREEISH | cut -d' ' -f 1)
+debian_revision="$debian_revision_number.g$debian_revision_hash"
+
+version="$upstream_version-$debian_revision"
 
 deb_dir="$TMPDIR/deb"
 deb_prefix=oar-$version
