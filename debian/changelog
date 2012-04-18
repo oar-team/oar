@@ -1,3 +1,13 @@
+oar (2.5.1+104.g1969ca3-1~1.gbpb2a752) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @b2a7524a3c27795a723c0874d5abd73c972d69dc **
+
+  * Update the debian copyright file
+  * Imported Upstream version 2.5.1+104.g1969ca3
+  * Remove the patch 0001-Fix-a-spelling-error-in-the-oaradmin-manpage
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
+
 oar (2.5.1-4) unstable; urgency=low
 
   * Add lintian overrides for empty binary packages.
