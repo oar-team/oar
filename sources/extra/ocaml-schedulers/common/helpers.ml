@@ -1,5 +1,8 @@
+(*                                   *)
+(* Main author: Lionel Eyraud-Dubois *)
+(*                                   *)
 
-(** Outils sur les fonctions *)
+(* function manipulations *)
 
 let id x = x
 
@@ -31,10 +34,10 @@ let concatene_sep sep transforme =
     | x::xs -> aux (buf ^ (transforme x) ^ sep) xs in 
     aux ""
 
-(** [arrange p arr l] : examine dans l'ordre les éléments de [l],
-  arrange les deux premiers entre eux par la fonction [arr], enlève le
-  resultat s'il vérifie le prédicat [p]. Renvoie la liste des éléments
-  arrangés. *)
+(** [arrange p arr l] : examine dans l'ordre les Ã©lÃ©ments de [l],
+  arrange les deux premiers entre eux par la fonction [arr], enlÃ¨ve le
+  resultat s'il vÃ©rifie le prÃ©dicat [p]. Renvoie la liste des Ã©lÃ©ments
+  arrangÃ©s. *)
 let arrange p arr l = 
   let rec aux buffer = function
       [] -> buffer
@@ -58,7 +61,7 @@ let cut_string sep s =
     List.rev (cut_aux (drop_sep 0) [])
 
 
-(** Outils sur les listes *)
+(* list manipulations *)
 
 let first_n l n = 
   let rec aux buf l n = match n, l with 
@@ -132,7 +135,8 @@ let filter_map2 f l =
     aux [] [] l
 
 
-(* Attention, c'est bourrin ! *)
+(* Be carefull: it's greedy and heavy *)
+
 let rec cross = function
     [] -> []
   | [ l ] -> List.map (fun x -> [x]) l
@@ -141,7 +145,7 @@ let rec cross = function
 	(List.map (fun x -> List.map (fun a -> x::a) reste) l)
 
 
-(** Outils sur les tableaux *)
+(* array manipulations *)
 
 let swap tab a b = 
   let x = tab.(a) in tab.(a) <- tab.(b); tab.(b) <- x
@@ -156,14 +160,14 @@ let partial_sums ?(transform = id) t =
     done; r
 
 
-(** Outils sur les flottants *)
+(* operations on float *)
 
 let logb b = let l = log b in 
   function x -> (log x) /. l
 
 let log2 = logb 2.
 
-(** Outils divers *)
+(* misc *)
 
 let get_option = function
     Some x -> x
@@ -196,4 +200,5 @@ let filter_map f_filter f_map =
     | x :: l -> if (f_filter x) then find ((f_map x) :: accu) l else find accu l in
     find []
 
-(* *) 
+(* remove quotes from string *)
+let remove_quotes str = replace " " "" str

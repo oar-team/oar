@@ -136,7 +136,7 @@ print $cgi->h6({ -align => "center",
 		 onmouseout => "kill()"
 	       },
 	       "- ".
-	       $cgi->a({ -href => 'http://ka-tools.sourceforge.net'},
+	       $cgi->a({ -href => 'http://oar.imag.fr'},
 		       "Monika").
 	       " - &copy;".
 	       $cgi->a({ -href => 'http://www-id.imag.fr'},

@@ -33,6 +33,7 @@ INSERT INTO `schema` VALUES ('2.5.0', '');
 CREATE TABLE IF NOT EXISTS jobs (
 job_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 array_id INT UNSIGNED NOT NULL DEFAULT 0,
+array_index INT UNSIGNED NOT NULL DEFAULT 1,
 initial_request TEXT,
 job_name VARCHAR( 100 ) ,
 job_env TEXT ,

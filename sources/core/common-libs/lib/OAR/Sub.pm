@@ -66,11 +66,6 @@ sub get_job($){
 	return OAR::IO::get_job($base, $job_id);
 }
 
-sub get_job_array_index($){
-	my $job_id = shift;
-	return OAR::IO::get_job_array_index($base,$job_id);
-}
-
 sub frag_job($){
 	my $job = shift;
 	return OAR::IO::frag_job($base,$job);

@@ -124,13 +124,14 @@ if ($ARGV[0] eq "init"){
         }
 #'MEM= ;for c in '."@Cpuset_cpus".';do MEM=$(cat /sys/devices/system/cpu/cpu$c/topology/physical_package_id),$MEM; done; echo $MEM > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
 #'MEM= ;for c in '."@Cpuset_cpus".';do for n in /sys/devices/system/node/node* ;do if [ -r "$n/cpu$c" ]; then MEM=$(basename $n | sed s/node//g),$MEM; fi; done; done;echo $MEM > /dev/cpuset/'.$Cpuset_path_job.'/mems && '.
+#                    'cat '.$Cgroup_mount_point.'/cpuset.mems > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.mems && '.
 
 # Be careful with the physical_package_id. Is it corresponding to the memory banc?
         if (system( 'oardodo mkdir -p '.$Cgroup_mount_point.'/'.$Cpuset_path_job.' && '.
                     'oardodo chown -R oar '.$Cgroup_mount_point.'/'.$Cpuset_path_job.' && '.
                     '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/notify_on_release && '.
                     '/bin/echo 0 | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
-                    'cat '.$Cgroup_mount_point.'/cpuset.mems > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.mems && '.
+                    'MEM= ;for c in '."@Cpuset_cpus".';do for n in /sys/devices/system/node/node* ;do if [ -r "$n/cpu$c" ]; then MEM=$(basename $n | sed s/node//g),$MEM; fi; done; done;echo $MEM > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.mems && '.
                     '/bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/cpuset.cpus'
                   )){
             exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
@@ -162,10 +163,11 @@ if ($ARGV[0] eq "init"){
         }else{
             exit_myself(5,"Failed to retrieve the cpu list of the node $Cgroup_mount_point/cpuset.cpus");
         }
-        my $IO_ratio = sprintf("%.0f",(($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * 1000)) ;
-        if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/blkio.weight')){
-            exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
-        }
+# Need to do more tests to validate
+#        my $IO_ratio = sprintf("%.0f",(($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * 1000)) ;
+#        if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_mount_point.'/'.$Cpuset_path_job.'/blkio.weight')){
+#            exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
+#        }
     }
 
     # Copy ssh key files
@@ -324,8 +326,8 @@ if ($ARGV[0] eq "init"){
 		                print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
 		                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
 		            }
-		            print_log (3,"Purging /tmp...");
-		            system("oardodo find /tmp/. -user $Cpuset->{user} -delete"); 
+		            print_log (3,"Purging /tmp /dev/shm /var/tmp...");
+		            system("oardodo find /tmp/. /dev/shm/. /var/tmp/. -user $Cpuset->{user} -delete"); 
 		        } else {
 		            print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
 		        }
@@ -385,7 +387,7 @@ if ($ARGV[0] eq "init"){
         }
         print_log(3,"Purging /tmp...");
         #system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
-        system("oardodo find /tmp/. -user $Cpuset->{job_user} -delete"); 
+        system("oardodo find /tmp/. /dev/shm/. /var/tmp/. -user $Cpuset->{job_user} -delete");
         system("oardodo /usr/sbin/userdel -f $Cpuset->{job_user}");
     }
 }else{

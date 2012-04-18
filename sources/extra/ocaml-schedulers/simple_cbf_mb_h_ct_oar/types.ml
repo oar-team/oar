@@ -5,18 +5,20 @@ type time_t = int64 (* 64 bits int because of unix_time use *)
 type jobid_t = int
 
 (* type job_state_t = Running | ToLaunch | Waiting (* Do we need it for simple_cbf_oar ? *) *)
-type resource_state_t = Alive | Suspected | Absent 
+type resource_state_t = Alive | Suspected | Absent | Dead 
 
 let rstate_of_string = function
     "Alive" -> Alive
   | "Suspected" -> Suspected
   | "Absent" -> Absent
+  | "Dead" -> Dead
   | s -> Conf.error (Printf.sprintf "rstate_of_string : unknown state %s" s)
 
 let rstate_to_string  = function 
     Alive -> "Alive"
   | Suspected -> "Suspected"
-  | Absent -> "Absent" 
+  | Absent -> "Absent"
+  | Dead -> "Dead" 
 
 type resource = {
 	resource_id: int;
@@ -29,6 +31,8 @@ type job =  {
   jobid : jobid_t;
   moldable_id : int;
   jobstate : string;
+  user : string;
+  project : string;
 	mutable time_b : time_t;
 	mutable walltime : time_t; (* mutable need to reset besteffort's one*)
   mutable types : (string * string) list;
@@ -53,11 +57,11 @@ type job_required_status = {
 (* Pretty - printing ** TO MOVE in helpers ??? **)
 
 let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in
-(* TODO  (Printf.sprintf "(%d) start_time %s; walltime %s:" t.jobid (ml642int t.time_b) (ml642int t.walltime)) ^ *)
-  (String.concat ", " (List.map itv2str t.set_of_rs)) ^ 
-  (Printf.sprintf " Types: %s\n" (Helpers.concatene_sep "," (fun n -> String.concat "*" [fst(n);snd(n)]) t.types)) ^
-  (Printf.sprintf "h_type: "^ (String.concat "*" (List.flatten t.hy_level_rqt)))^
-  (Printf.sprintf "\nh_type: "^ (String.concat "*" (List.map string_of_int (List.flatten t.hy_nb_rqt)))) 
+  (Printf.sprintf "job_id: %d start_time: %s walltime: %s " t.jobid (Int64.to_string t.time_b) (Int64.to_string t.walltime)) ^ 
+  (Printf.sprintf " res_itv: ") ^ (String.concat ", " (List.map itv2str t.set_of_rs)) ^ 
+  (Printf.sprintf "\n types: %s " (Helpers.concatene_sep "," (fun n -> String.concat "*" [fst(n);snd(n)]) t.types)) ^
+  (Printf.sprintf "h_type: level: "^ (String.concat "*" (List.flatten t.hy_level_rqt)))^
+  (Printf.sprintf " nb: "^ (String.concat "*" (List.map string_of_int (List.flatten t.hy_nb_rqt)))) 
 
 let resource_to_string n = 
   Printf.sprintf "(%d) -%s- %s" n.resource_id (rstate_to_string n.state) n.network_address

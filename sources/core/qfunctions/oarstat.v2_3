@@ -339,10 +339,8 @@ sub get_job_data($$){
     my @job_dependencies;
     my @job_types = OAR::IO::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name;
-    my $array_index;
     
     $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
-    $array_index = OAR::IO::get_job_array_index($dbh,$job_info->{job_id});
 
     my $resources_string = "";
     my $reserved_resources;
@@ -396,7 +394,7 @@ sub get_job_data($$){
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             array_id => $job_info->{array_id},
-            array_index => $array_index,
+            array_index => $job_info->{array_index},
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             job_user => $job_user,
@@ -436,7 +434,7 @@ sub get_job_data($$){
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             array_id => $job_info->{array_id},
-            array_index => $array_index,
+            array_index => $job_info->{array_index},
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             state => $job_info->{state},
@@ -499,7 +497,7 @@ sub print_job_data($$){
                 print("Job Id: $job_info->{job_id}.oar\n");
                 $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
                 print("    job_array_id = $job_info->{array_id}\n");
-                print("    job_array_index =  $data->{$job_info->{job_id}}->{array_index},\n");
+                print("    job_array_index =  $job_info->{array_index},\n");
                 print("    Job_Name = $job_info->{job_name}\n");
                 print("    Job_Owner = $job_info->{job_user}\n");
                 print("    job_state = $hashestat{$job_info->{state}}\n");
@@ -538,7 +536,7 @@ sub print_job_data($$){
                 print("Job_Id: $job_info->{job_id}\n");
                 $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
                 print("    job_array_id = $job_info->{array_id}\n");
-                print("    job_array_index = $data->{$job_info->{job_id}}->{array_index}\n");
+                print("    job_array_index = $job_info->{array_index}\n");
                 print("    name = $job_info->{job_name}\n");
                 print("    project = $job_info->{project}\n");
                 print("    owner = $job_info->{job_user}\n");
@@ -636,7 +634,7 @@ EOS
                     printf("%-9.9s %-9.9s %-9.9s %-10.10s %-8.8s %-19.19s %1.1s %-8.8s\n",
                         $job_info->{'job_id'},
                         $job_info->{'array_id'},
-                        $data->{$job_info->{job_id}}->{array_index},                                    $job_info->{'job_name'},
+                        $job_info->{'array_index'},                                    $job_info->{'job_name'},
                         $job_info->{'job_user'},
                         OAR::IO::local_to_sql($job_info->{'submission_time'}),
                         $hashestat{$job_info->{'state'}},

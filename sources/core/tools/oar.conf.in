@@ -139,7 +139,7 @@ FINAUD_FREQUENCY="300"
 # (sentinelle.pl is like a "for" of ssh but it adds timeout and window to 
 # avoid overloading the server)
 # (sentinelle.pl is provided with OAR in the install directory)
-PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/usr/lib/oar/sentinelle.pl -t 5 -w 20"
+PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 5 -w 20"
 
 # Taktuk
 # taktuk may be used to check aliveness of nodes.

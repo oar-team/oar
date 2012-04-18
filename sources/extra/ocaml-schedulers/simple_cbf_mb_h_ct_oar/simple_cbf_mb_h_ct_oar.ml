@@ -1,5 +1,6 @@
 open Types
-open Interval 
+open Interval
+open Conf
 open Simple_cbf_mb_h_ct
 (*
 TODO
@@ -45,31 +46,45 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
-(*       *)
-(* Karma *)
-(*       *)
+(*                             *)
+(* Karma and Fairsharing stuff *)
+(*                             *)
 
-let karma_window_size = 3600 * 30 * 24
+(* test if Fairsharing  is enabled*)
+let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") 
+let fairsharing_nb_job_limit = Conf.get_default_value "SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER" "30"
 
-let karma_proj_targets =  [| ("first", 75);  ("default", 25) |]  (* TODO Config SCHEDULER_FAIRSHARING_PROJECT_TARGETS *)
-let karma_user_targets = [| ("oar", 100) |] (* TODO Config SCHEDULER_FAIRSHARING_USER_TARGETS *) 
-let karma_coeff_proj_consumption = float_of_int 0 (* TODO Config SCHEDULER_FAIRSHARING_COEF_PROJECT *)
-let karma_coeff_user_consumption = float_of_int 2 (* TODO Config SCHEDULER_FAIRSHARING_COEF_USER *)
-let karma_coeff_user_asked_consumption = float_of_int 1 (* TODO Config SCHEDULER_FAIRSHARING_COEF_USER_ASK *)
+let karma_window_size = Int64.of_int ( 3600 * 30 * 24 ) (* 30 days *)
+(* defaults values for fairsharing *)
+let k_proj_targets = "{default => 21.0}"
+let k_user_targets = "{default => 22.0}"
+let k_coeff_proj_consumption = "0"
+let k_coeff_user_consumption = "1"
+let k_karma_coeff_user_asked_consumption = "1"
+(* get fairsharing config if any *)
+let karma_proj_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_PROJECT_TARGETS" k_proj_targets) float_of_string_e
+let karma_user_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_USER_TARGETS" k_user_targets) float_of_string_e
+let karma_coeff_proj_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_PROJECT" k_coeff_proj_consumption) 
+let karma_coeff_user_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER" k_coeff_user_consumption) 
+let karma_coeff_user_asked_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER_ASK" k_karma_coeff_user_asked_consumption)
 
+(*                                                     *)
+(* Sort jobs accordingly to karma value (fairsharing)  *)
+(*                                                     *)
 let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
-  let start_window = now - karma_window_size and stop_window = now in
+  let start_window = Int64.sub now karma_window_size and stop_window = now in
     let karma_sum_time_asked, karma_sum_time_used = Iolib.get_sum_accounting_window dbh queue start_window stop_window
     and karma_projects_asked, karma_projects_used = Iolib.get_sum_accounting_for_param dbh queue "accounting_project" start_window stop_window
     and karma_users_asked, karma_users_used       = Iolib.get_sum_accounting_for_param dbh queue "accounting_user" start_window stop_window 
     in
-      let karma j = let user = "yop" (*TODO j.user *) and proj = "poy" (*TODO j.project *) in
-        let karma_proj_used_j = try Hashtbl.find karma_projects_used proj  with Not_found -> 0.0
-        (* and karma_proj_asked_j = try Hashtbl.find karma_projects_asked proj  with Not_found -> 0.0 *) (* TODO Not used ???*)
-        and karma_user_used_j = try Hashtbl.find karma_users_used user  with Not_found -> 0.0
+      let karma j = let job = try Hashtbl.find h_jobs j  with Not_found -> failwith "Karma: not found job" in
+        let user = job.user and proj = job.project in
+        let karma_proj_used_j  = try Hashtbl.find karma_projects_used proj  with Not_found -> 0.0
+        and karma_user_used_j  = try Hashtbl.find karma_users_used user  with Not_found -> 0.0
         and karma_user_asked_j = try Hashtbl.find karma_users_asked user  with Not_found -> 0.0
-        and karma_proj_target = 1.0 (* TODO   ($Karma_project_targets->{$j->{project}} *)
-        and karma_user_target = 1.0 (* TODO  $Karma_user_targets->{$j->{job_user}} / 100))  *)
+        (* TODO test *)
+        and karma_proj_target =  try List.assoc proj karma_proj_targets with Not_found -> 0.0 (* TODO  verify in perl 0 also ? *)
+        and karma_user_target = (try List.assoc user karma_user_targets with Not_found -> 0.0  ) /. 100.0 (* TODO   verify in perl 0 also ? *)
         in
           karma_coeff_proj_consumption *. ((karma_proj_used_j /. karma_sum_time_used) -. (karma_proj_target /. 100.0)) +.
           karma_coeff_user_consumption *. ((karma_user_used_j /. karma_sum_time_used) -. (karma_user_target /. 100.0)) +.
@@ -77,24 +92,6 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
       in
       let kompare x y = let kdiff = (karma x) -. (karma y) in if kdiff = 0.0 then 0 else if kdiff > 0.0 then 1 else -1 in
         List.sort kompare jobs_ids;;
-
-(*
-
-my $Karma_projects = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
-my $Karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
-
-sub karma($){
-    my $j = shift;
-
-    my $note = 0;
-    $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-
-    return($note);
-}
-@jobs = sort({karma($a) <=> karma($b)} @jobs);
-*)
 
 (*               *)
 (* Suspend stuff *)
@@ -121,9 +118,35 @@ let argv = if (Array.length(Sys.argv) > 2) then
 
 let resources_init_slots_determination dbh now =
   let potential_resources = Iolib.get_resource_list dbh in
-  let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") in 
+  let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
+                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
+  in 
+    
     if flag_wake_up_cmd then
-      let resources = List.filter (fun n -> ((n.state = Alive) || (n.state = Absent))) potential_resources in
+      (*                                                                                                             *)
+      (* generate initial slot with no dead and suspected resources and with resources (nodes) which can be waked up *)
+      (*                                                                                                             *)
+    begin
+      Conf.log "Energy Saving and Wakeup Mode are enabled";
+      let hash_available_upto_by_resources =  Hashtbl.create 10 in
+      let hash_available_upto_by_resources_populate r =
+          let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
+                        with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.resource_id];[]
+                        in
+                          match res_lst with
+                             [] -> ()
+                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.resource_id]) 
+      in
+      let resources = List.filter (fun n -> if (n.state = Alive) || (n.state = Absent) then
+                                              begin 
+                                                hash_available_upto_by_resources_populate n; 
+                                                true
+                                              end 
+                                            else 
+                                              false
+                                  )
+                                  potential_resources in
+
         let resource_intervals = 
           if ((List.length resources) = 0) then
             begin
@@ -131,27 +154,37 @@ let resources_init_slots_determination dbh now =
             end
           else
             ints2intervals (List.map (fun n -> n.resource_id) resources) 
-          in
-        let available_uptos = Iolib.get_available_uptos dbh in
+        in                     
         (* create corresponding job from available_up parameter of resource *) 
-        let pseudo_job_av_upto a_upto =
-                                    { jobid=0;
-                                      jobstate="";
-                                      moldable_id=0;
-                                      time_b = if (a_upto<now) then now else a_upto;
-                                     (* walltime = Int64.sub max_time_minus_one a_upto; *)
-                                      walltime = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
-                                      types = [];
-                                      constraints = [];
-                                      hy_level_rqt = [];
-                                      hy_nb_rqt = [];
-                                      set_of_rs = (ints2intervals (Helpers.filter_map (fun n -> n.available_upto = a_upto) (fun n -> n.resource_id) resources));} 
+        let pseudo_job_av_upto a_upto res_itv =
+          { jobid=0;
+            jobstate="";
+            moldable_id=0;
+            time_b = if (a_upto<now) then now else a_upto;
+            (* walltime = Int64.sub max_time_minus_one a_upto; *)
+            walltime = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
+            types = [];
+            constraints = [];
+            hy_level_rqt = [];
+            hy_nb_rqt = [];
+            set_of_rs = res_itv;
+            user = "";
+            project = "";
+          } 
           in
-        let pseudo_jobs_resources_available_upto = Helpers.filter_map (fun n -> n < max_time_minus_one) (fun n -> pseudo_job_av_upto n) available_uptos in
-
+        (* create pseudo_jobs from hastable which containts resources' id by distinct available upto *) 
+        let pseudo_jobs_resources_available_upto =  Hashtbl.fold (fun avail_upto r_set acc -> 
+            if (avail_upto < max_time_minus_one)   then
+               (pseudo_job_av_upto avail_upto (ints2intervals r_set)) :: acc 
+            else 
+              acc
+           ) hash_available_upto_by_resources []
+        in
+        (* generate initial slot with no dead and suspected resources and with resources (nodes) which can be waked up *)
         let slot_init = {time_s = now; time_e = max_time; set_of_res = resource_intervals} in
         let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
           (resource_intervals,slots_init_available_upto_resources)
+    end
     else
       let resources = List.filter (fun n -> n.state = Alive) potential_resources in
       let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
@@ -175,10 +208,15 @@ let _ =
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
-
-  		let (waiting_j_ids,h_waiting_jobs) = Iolib.get_job_list conn resource_intervals queue besteffort_duration security_time_overhead in (* TODO 
-      false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
-      Conf.log ("Job waiting ids"^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
+      
+  		let (waiting_j_ids,h_waiting_jobs) =
+        if fairsharing_flag then
+          let limited_job_ids = Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit in
+          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
+        else
+          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag []
+      in (* TODOfalse -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
+      Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
@@ -195,19 +233,33 @@ let _ =
                 (* exclude besteffort jobs *)
                 let besteffort_mem_remove job_id = 
                   let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_id 
-                                                          with Not_found -> failwith "Must no failed here: besteffort_mem").types in
-                                                          if test_bt then Hashtbl.remove  h_prev_scheduled_jobs_types job_id else ();
-                                                          test_bt  
+                                                              with Not_found -> failwith "Must no failed here: besteffort_mem").types in
+                                                              if test_bt then Hashtbl.remove  h_prev_scheduled_jobs_types job_id else ();
+                                                              test_bt  
                   in  
                     List.filter (fun n -> not (besteffort_mem_remove n)) prev_scheduled_job_ids_tmp
  (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
               else
                 prev_scheduled_job_ids_tmp
             in
-             Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots)));
-             Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
+             
+            (* display previous scheduled jobs 
+            Hashtbl.iter (fun k v -> printf "prev job: %s,  %s\n" k ) h_prev_scheduled_jobs_types; 
+            *)
+            (* Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); *)
+            (* 
+            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+            Conf.log ("slots_with_scheduled_jobs_before #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
+         
+            Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
+            *)
+             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids security_time_overhead;
 
-             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids security_time_overhead; 
+            (*             
+             let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+               Conf.log ("slots_with_scheduled_jobs after #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
+            *)  
+
           else ();
 
           Conf.log "go to make a schedule";
@@ -216,18 +268,27 @@ let _ =
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
+          let ordered_waiting_j_ids =
+            if fairsharing_flag then
+              (* ordering jobs indexes accordingly to fairsharing functions *) 
+              jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
+            else
+              waiting_j_ids
+            in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
-          let (assignement_jobs, noscheduled_jids) = schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status waiting_j_ids security_time_overhead
+          let (assignement_jobs, noscheduled_jids) = 
+            schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
-(*          Conf.log ("slot_init:\n  " ^  slot_to_string slot_init); 
-            Conf.log ("slots_with_scheduled_jobs:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
-  				  Conf.log ( "Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) );        
-	  		    Conf.log ( "Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); 
-*)
+            (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)
+            (* let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+            Conf.log ("slots_with_scheduled_jobs #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));*)
 
-            Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
+  				  (* Conf.log ("Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) ); *)     
+	  		    (* Conf.log ("Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); *)
+            (* Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
 		        Conf.log ("Assigns:\n" ^  (Helpers.concatene_sep "\n\n" job_to_string assignement_jobs));
+            *)
             Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );
 
             (* save assignements into db *)

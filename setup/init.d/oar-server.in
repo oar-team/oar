@@ -26,6 +26,9 @@
 # Author: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
 #
 
+LANG=C
+export LANG
+
 PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/usr/sbin:/bin:/usr/bin:$PATH
 NAME=oar-server
 DESC="OAR resource manager (server)"

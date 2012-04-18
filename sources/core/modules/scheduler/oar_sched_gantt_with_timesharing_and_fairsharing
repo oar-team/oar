@@ -262,6 +262,44 @@ foreach my $r (OAR::IO::get_resources_in_state($base,"Alive")){
     vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
 }
 
+# ENERGY SAVING: add fake occupations/holes from energy saving configuration 
+# CM part and Hulot part (wake up nodes in energy saving mode)
+if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [START] Checking EnergySaving occupation\n");
+    # Check the resources that can be waked_up or shut down
+    my $upto_availability = OAR::IO::get_energy_saving_resources_availability($base, $current_time);
+    foreach my $t (keys(%{$upto_availability})){
+        my $vec = '';
+        foreach my $r (@{$upto_availability->{$t}}){
+            vec($alive_resources_vector, $r, 1) = 1;
+            vec($vec,$r,1) = 1;
+        }
+        #Fill all the gantts
+        foreach my $g (keys(%Container_gantt_hash)){
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Add EnergySaving occupation in container $g for available_upto = $t\n");
+            OAR::Schedulers::GanttHoleStorage::set_occupation(  $Container_gantt_hash{$g},
+                                                 $t,
+                                                 OAR::Schedulers::GanttHoleStorage::get_infinity_value(),
+                                                 $vec
+                                              );
+        }
+
+        foreach my $c (keys(%{$timesharing_gantts})){
+            foreach my $u (keys(%{$timesharing_gantts->{$c}})){
+                foreach my $n (keys(%{$timesharing_gantts->{$c}->{$u}})){
+                    OAR::Schedulers::GanttHoleStorage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
+                                                 $t,
+                                                 OAR::Schedulers::GanttHoleStorage::get_infinity_value(),
+                                                 $vec
+                                              );
+                }
+            }
+        }
+    }
+    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [END] Checking EnergySaving occupation\n");
+}
+# CM part
+ 
 my @Dead_resources;
 foreach my $r (OAR::IO::get_resources_in_state($base,"Dead")){
     push(@Dead_resources, $r->{resource_id});
@@ -412,25 +450,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             $duration = $moldable->[1] + $security_time_overhead;
         }
 
-        # CM part and Hulot part (wake up nodes in energy saving mode)
-        my $alive_resources_vector_store = $alive_resources_vector;
-        if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
-            foreach my $r (OAR::IO::get_resources_that_can_be_waked_up($base, OAR::IO::get_date($base) + $duration)){
-                vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
-            }
-            foreach my $r (OAR::IO::get_resources_that_will_be_out($base, OAR::IO::get_date($base) + $duration)){
-                vec($alive_resources_vector, $r->{resource_id}, 1) = 0;
-            }
-            #my $str_tmp = "state_num ASC, available_upto DESC";
-            #if (defined($Order_part)){
-            #    $Order_part = $str_tmp.",".$Order_part;
-            #}else{
-            #    $Order_part = $str_tmp;
-            #}
-        }
-        # CM part
-        
-        #my $resource_id_used_list_vector = '';
         my @tree_list;
         foreach my $m (@{$moldable->[0]}){
             my $tmp_properties = "\'1\'";
@@ -475,9 +494,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                                     duration => $duration,
                                     moldable_id => $moldable->[2]
                                 });
-        # CM part
-        $alive_resources_vector = $alive_resources_vector_store ;
-        # CM part
     }
 
     # Choose moldable job which will finish the first

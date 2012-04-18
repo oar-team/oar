@@ -34,9 +34,9 @@ type slot = {
 }
 
 let slot_to_string slot = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in 
-  (Printf.sprintf "time_s %s, time_e: %s \n" 
+  (Printf.sprintf "slot: time_s %s, time_e: %s itv:={ " 
     (to_string slot.time_s) (to_string slot.time_e) ) ^
-  (String.concat ", " (List.map itv2str slot.set_of_res))
+  (String.concat ", " (List.map itv2str slot.set_of_res)) ^ "}\n"
 
 let slot_max nb_res = {time_s = zero; time_e = max_int; set_of_res = [{b = 1; e = nb_res}]}
 
@@ -114,7 +114,7 @@ let find_first_suitable_contiguous_slots slots j =
  ------
 *)
 
-(* TODO *)
+(* TODO ??? *)
 
 (* generate A slot *) (* slot before job's begin *)
 let slot_before_job_begin slot job = {
@@ -343,7 +343,7 @@ let schedule_id_jobs jids h_jobs slots =
   in
     assign_res_jobs jids [] []
 
-(* function insert previously scheduled job in slots *)
+(* function insert previously occupied slots in slots *)
 (* job must be sorted by start_time *)
 
 let split_slots_prev_scheduled_jobs slots jobs =
@@ -379,10 +379,41 @@ let split_slots_prev_scheduled_jobs slots jobs =
         split_slots_next_job [] slots jobs
 
 
+(* function insert previously one scheduled job in slots *)
+(* job must be sorted by start_time *)
+
+let split_slots_prev_scheduled_one_job slots job =
+
+  let rec find_first_slot left_slots right_slots job = match right_slots with
+    | x::n  when ((x.time_s > job.time_b) || ((x.time_s <= job.time_b) && (job.time_b <= x.time_e))) -> (left_slots,x,n) 
+    | x::n -> find_first_slot (left_slots @ [x]) n job 
+    | [] -> failwith "Argl cannot failed here"
+
+  in
+
+  let rec find_slots_aux encompass_slots r_slots job = match r_slots with
+    (* find timed slots *)
+    | x::n when (x.time_e >  (add job.time_b job.walltime)) -> (encompass_slots @ [x],n) 
+    | x::n -> find_slots_aux (encompass_slots @ [x]) n job
+    | [] -> failwith "Argl cannot failed here"
+   in
+
+  let find_slots_encompass first_slot right_slots job =
+    if (first_slot.time_e >  (add job.time_b job.walltime)) then
+      ([first_slot],right_slots)
+    else find_slots_aux [first_slot] right_slots job
+
+    in
+
+      let (l_slots, first_slot, r_slots) = find_first_slot [] slots job in
+        let (encompass_slots, ri_slots) =  find_slots_encompass first_slot r_slots job in
+          let splitted_slots =  split_slots encompass_slots job in 
+            splitted_slots @ ri_slots 
+
 (* function insert previously scheduled job in slots with containers consideration *)
 (* job must be sorted by start_time *)
 
-(* loop across ordered jobs' id and create new set_slots or split slots when needed *) 
+(* loop across ordered jobs' id by start_time and create new set_slots or split slots when needed *) 
 
 let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs security_time_overhead =
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (set_slots_with_prev_scheduled_jobs)" in 
@@ -402,7 +433,7 @@ let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs security_t
                       time_e = add j.time_b (sub j.walltime security_time_overhead); 
                       set_of_res = j.set_of_rs}];
                   (* TODO perhaps we'll need to optimize split_slots_prev_scheduled_jobs...made for jobs list *) 
-                  Hashtbl.replace h_slots num_set_slots (split_slots_prev_scheduled_jobs (find_slots num_set_slots) [j]);
+                  Hashtbl.replace h_slots num_set_slots (split_slots_prev_scheduled_one_job (find_slots num_set_slots) j); 
                   loop_jobs m
                 end  
   in

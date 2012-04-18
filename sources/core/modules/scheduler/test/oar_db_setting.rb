@@ -1,14 +1,21 @@
+#!/usr/bin/ruby
 require 'dbi'
 require 'yaml'
 require 'rest_client'
+require 'pp'
 
 DEFAULT_JOB_ARGS = {
   :queue => "default",
   :walltime => 7200,
   :res => "resource_id=1",
   :propreties => "",
-  :type => nil
+  :type => nil,
+  :user => "toto"
 }
+
+SCHED_PERL_FS = "/usr/local/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing"
+SCHED_OCAML = "/usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
+SCHED_KAMELOT = "/usr/local/lib/oar/schedulers/kamelot_mysql"
 
 def oar_load_test_config
   puts "### Reading configuration ./oar_test_conf file ..." 
@@ -65,8 +72,8 @@ def oar_job_insert(j_args={})
       args[k]=j_args[k]
     end
   end
-  sth = $dbh.execute("insert into jobs (job_name,state,queue_name,properties,launching_directory,checkpoint_signal) values 
-                                      ('yop','Waiting','#{args[:queue]}','#{args[:properties]}','yop',0)")
+  sth = $dbh.execute("insert into jobs (job_name,state,queue_name,properties,launching_directory,checkpoint_signal,job_user) values 
+                                      ('yop','Waiting','#{args[:queue]}','#{args[:properties]}','yop',0,'#{args[:user]}')")
   sth.finish
 
   job_id= get_last_insert_id('jobs_job_id_seq') 
@@ -173,7 +180,7 @@ def oar_sql_file(file_name)
 end
 
 def oar_resource_insert(args={})
-  if (args.nil?)
+  if (args=={})
     $dbh.execute("insert into resources (state) values ('Alive')").finish
   else
     if !args[:nb_resources].nil?
@@ -255,7 +262,6 @@ end
 # * advance reservation
 # * submission time is not translated
 def reset_job_from_start_time(start_time, now, delay = 10)
- 
   # Running jobs:  
   #   change state
   #   change start time and stop time
@@ -275,7 +281,6 @@ def reset_job_from_start_time(start_time, now, delay = 10)
   delete_assignements_from_start_time(start_time)
   #   change state waiting 
   $dbh.execute("UPDATE jobs SET state='Waiting' WHERE jobs.start_time > #{start_time}")
-
 end
 
 # reset all jobs to state=waiting,  remove assigned resources and switch index to CURRENT
@@ -289,13 +294,10 @@ def oar_reset_all_jobs(state="'Waiting'")
  $dbh.execute("UPDATE job_resource_descriptions SET res_job_index = 'CURRENT'") 
 end
 
-
-#
 # oar_jobs_sleepify:
 # Remove previous allocations 
 # Sets command field by sleep with job execution time as argument and jobs' state to hold.
 # Returns array which contains job_ids and corresponding submission times begin from 0 (first submitted job)
-
 def oar_jobs_sleepify(user=ENV['USER'])
   resume_seq=[]
   # Remove previous allocations 
@@ -417,12 +419,162 @@ def oar_jobs_overlap?
 end
 
 
+def oar_jobs_overlap_after_scheduling?(security_time=60)
+  puts "oar_jobs_overlap_after_scheduling?"
+  puts "/!\\ BE CAREFULL, we suppose moldable_id == job id /!\\"
+  puts "Security_time: #{security_time}"
 
+  #Get already scheduled (with  running, launching or tolaunch jobs)
+
+  q1 = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.state,m.moldable_id
+        FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
+        WHERE
+         m.moldable_index = 'CURRENT'
+         AND g1.moldable_job_id = g2.moldable_job_id
+         AND m.moldable_id = g2.moldable_job_id
+         AND j.job_id = m.moldable_job_id
+        ORDER BY j.start_time, j.job_id;"
+
+  puts "We're scanning 'Running' jobs"
+  r1 = $dbh.execute(q1)
+  end_time={}
+  sched_ressources = {}
+
+  r1.each do |r|
+    if end_time[r[0]].nil?
+      end_time[r[0]] =  r[1] + r[2] + security_time
+      sched_ressources[r[0]] = []
+      raise "/!\\ job_id not equal to .moldable_id : #{r[0]} #{r[5]}" if r[0] != r[5] 
+    end
+    sched_ressources[r[0]] << r[3]
+  end
+  #
+  # Get newly_scheduled jobs
+  # 
+  n_start_time={}
+  n_sched_ressources = {}
+  puts "/!\\ Get scheduled job information. BE CAREFULL, we suppose moldable_id == job id /!\\"
+  q2 = "SELECT moldable_job_id, start_time FROM gantt_jobs_predictions"
+  r2 = $dbh.execute(q2)
+  r2.each do |r|
+    n_start_time[r[0]] = r[1]
+    n_sched_ressources[r[0]] = []
+  end
+  r2.finish
+
+# TODO TOREMOVE ???
+#  q3 = "SELECT moldable_job_id,resource_id FROM gantt_jobs_resources"
+#  r3 = $dbh.execute(q3)
+#  r3.each do |r|
+#    sched_ressources[r[0]] << r[1]
+#  end
+#  r3.finish
+
+  puts "test overlapping"
+  #iterate on newly scheduled job
+  n_start_time.each do |jid,start_time|
+    #iterate on "running" job
+    end_time.each do |r_jid,e_time|
+      if (e_time > start_time)
+        #test resources overlap
+        if (n_sched_ressources[jid] & sched_ressources[r_jid])!=[]
+          puts "jobs overlapping #{rjid} #{jid}"
+          pp [r_jid, end_time, sched_ressources[r_jid]]
+          pp [jid, start_time, n_sched_ressources[jid]]
+        end
+      end  
+    end
+  end
+  puts "oar_jobs_overlap_after_scheduling? end"
+end
+
+#
+# oar_sleepy: populate db from dump (oar.ocaml.12res.20110323.sql), reset jobs' state to wainting, set scheduler to ocaml and re
+#
+def oar_sleepfy 
+  puts "/!\\ BE CAREFULL, not portable action...surely it'll fail /!\\"
+  oar_sql_file("/home/auguste/prog/test_oar_sched/oar.ocaml.12res.20110323.sql")
+  oar_sql_file("/home/auguste/oar/sources/core/database/mysql_default_admission_rules.sql")
+  $dbh.execute("UPDATE queues SET scheduler_policy='simple_cbf_mb_h_ct_oar_mysql', state='Active' WHERE queue_name='default'").finish
+  return oar_jobs_sleepify
+end
+
+def oar_fairsharing_test sched
+  #TODO test if oar running
+  puts "Be carefull be sure to oar-server is stopped"
+  now = Time.now.to_i
+  oar_db_clean
+  users = []
+  if false
+    oar_sql_file("/home/auguste/prog/test_oar_sched/oar_foehn+nanostar-accounting.sql")
+    users = ["debreu","pianezj","lebacq","gallee","drouet","wiesenfe","meunie8x","thibert","chardon","lafaysse"]
+  else
+    10.times do |u|
+      user = "zozo"+u.to_s
+      users.push user
+      10.times do |i|
+        j = 24 * 36000
+        w_start = now - j*(i+1)
+        w_stop = now -  j*(i+1) + j/10
+        consum = 100000 * (10-u)   
+        sth = $dbh.execute("insert into accounting (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type,consumption) values (#{w_start},#{w_stop},'#{user}','default','default','USED',#{consum})")
+        sth.finish
+        sth = $dbh.execute("insert into accounting (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type, consumption) values (#{w_start},#{w_stop},'#{user}','default','default','ASKED',#{consum})")
+        sth.finish
+      end 
+    end
+  end
+  #add ressources
+  nb_r = 12
+  oar_resource_insert({:nb_resources=>nb_r})
+  #add jobs
+  jids = []
+  users.each do |u|
+    puts "add job for user: #{u}"
+    5.times do
+      jids.push oar_job_insert(:res=>"resource_id=#{nb_r}",:walltime=> 300, :user=>u)
+    end
+  end
+  puts jids
+  #execute sched
+  sched_cmd = 'OARCONFFILE="/etc/oar/oar.conf" '+ sched + " default #{Time.now.to_i}" 
+  puts "Launch sched: #{sched}"
+  puts "cmd: #{sched_cmd}"
+  system sched_cmd
+
+  res=$dbh.execute("SELECT * FROM gantt_jobs_predictions")
+  h_job_time = {}
+  res.each do |r|
+    h_job_time[r[0]]=r[1]
+  end
+  job_time_sorted = h_job_time.sort_by { |id, t_start| t_start }
+  return job_time_sorted
+end
+
+#
+# strip oar.conf: remove test config from /etc/oar/oar.conf to /tmp/oar.conf
+#
+def oar_strip_config
+  system("rm /tmp/oar.conf")
+  oar_tmp = File.open("/tmp/oar.conf", "w")
+  end_tag = "#BEGIN TEST CONFIGURATION"
+  File.open("/etc/oar/oar.conf").each do |line|
+    break if line =~ /#{end_tag}/
+    oar_tmp.puts line
+  end
+  oar_tmp.puts end_tag
+  oar_tmp.close
+  system "sudo sh -c 'cat /tmp/oar.conf_tmp >  /etc/oar/oar.conf'"
+end
+
+oar_load_test_config
+oar_db_connect
 
 if ($0=='irb')
   puts 'irb session detected, db connection launched'
-  oar_load_test_config
-  oar_db_connect
+elsif (/oar_db_setting/ =~ $0)
+  puts "oar_db_setting used as command"
+  eval(ARGV[0])
 end
 # 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
 

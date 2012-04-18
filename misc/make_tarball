@@ -2,149 +2,131 @@
 # build a package (debian) using a git repository
 set -e
 
-check_branch() {
-    if [ "`git branch |egrep \" $1\$\"`" = "" ]; then
-        echo "Branch $1 not found!"
-        echo "Maybe, you gave me the name of a remote branch?"
-        echo "You should work into a local branch tracking the corresponding remote one."
-        echo "You can create it this way:"
-        echo "  cd <your repository>"
-        echo "  git branch $1-work $1"
-        echo "  cd .."
-        exit 1
-    fi
-}
-
-get_oar_version() {
-    # Sets up the $OARVersion variable
-    perl -e "require '$OAR_VERSION_FILE'; print $OAR_VERSION_FUNC" | sed -e "s/ .*//"
-}
-
-get_snapshot_version() {
-    BRANCH_NAME=$(git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/\1/")
-    OARVERSION=$(perl -e "require '$OAR_VERSION_FILE'; print $OAR_VERSION_FUNC" | sed -e "s/ .*//")
-    REVISION=$(git log --oneline $OARVERSION..$BRANCH_NAME -- | wc -l)
-    SNAPSHOT_ID=`git log --abbrev-commit --pretty=oneline --max-count=1 $BRANCH_NAME |sed 's/ /./'|cut -d. -f1`
-    if [ "$BRANCH_NAME" != "2.5" ] && [ "$BRANCH_NAME" != "2.4" ]; then
-        PREFIX=$(echo "$BRANCH_NAME" | sed -e "s/[^a-zA-Z0-9.]//g")
-    else
-        PREFIX=dev
-    fi
-        echo "${OARVERSION}+${PREFIX}${REVISION}.${SNAPSHOT_ID}"
-}
-
 usage() {
     N=$(basename $0)
     cat <<EOF
-  $N [-h] [-q] [-s] [-d <directory>]
-  $N [-h] [-q] -r   [-d <directory>]
+  $N [-h]
+  $N [-q] [-d <directory>] -r [-u <git_uri>] [-t <git_treeish>]
+  $N [-q] [-d <directory>] [-f]
+
 Options:
-  -s   snapshot version (default)
-  -r   release version (for publishing)
-  -f   force to generate a tarball with uncommited changes
   -d   target directory
   -h   print this message and exit
   -q   quiet (only write relevant information for automation to stdout)
+  -u   specify the git uri to use
+  -b   specify the git treeish to use
+  -r   use a remote repository
+  -f   make the tarball even if there are uncommited changes (only for local repository)
 EOF
 exit 1
 }
 
 log_info() {
     if [ "$QUIET" != "yes" ]; then
-        echo "$*"
+        echo "$*" >&2
     fi
-}
-
-gen_tarball() {
-    #####################
-    # TARBALL
-    #####################
-    TMPDIR=$(mktemp -d /tmp/oar-tarball.XXXXXX)
-    mkdir -p "${TMPDIR}/oar"
-    tar cf - -C . --exclude=.git * | tar -x -C "${TMPDIR}/oar"
-    #git archive --format=tar --prefix=oar/ $BRANCH_NAME | tar x -C $TMPDIR
-    SNAPSHOTVERSION=$(get_snapshot_version)
-    OARVERSION=$(get_oar_version)
-    cd $TMPDIR/oar
-    if [ "$ACTION" = "snapshot" ]; then
-        VERSION=$SNAPSHOTVERSION
-        sed -e "s/$OARVERSION/$VERSION/" -i $TMPDIR/oar/$OAR_VERSION_FILE
-    else 
-        VERSION=$OARVERSION
-    fi
-    if [ -z "$VERSION" ]; then
-        echo "An error occuring when retrieving the oar version. Version is empty."
-        exit 1
-    fi
-    cd $OARPWD
-    mv $TMPDIR/oar $TMPDIR/oar-$VERSION
-    BUILD_AREA=$TARGET_DIRECTORY/$VERSION
-    if [ -e "$BUILD_AREA" ]; then
-        log_info "The build area $BUILD_AREA exist. Cleaning..."
-        rm -rf $BUILD_AREA
-    fi
-    mkdir -p $BUILD_AREA
-    TARBALL=$BUILD_AREA/oar-$VERSION.tar.gz
-    tar czf $TARBALL -C $TMPDIR .
-    [ -d "$TMPDIR" ] && rm -rf "$TMPDIR"
-    echo "$BUILD_AREA/oar-$VERSION.tar.gz"
 }
 
 check_if_uncommited_changes() {
     if [ "$FORCE" != "yes" ] && [ -d ".git" ] && [ "$(git status |grep 'working directory clean')" = "" ]; then
         echo "You have uncommited local changes. check with 'git status'."
+        echo "(or force the generation with '-f')"
         exit 1
     fi
 
 }
 
-check_if_current_directory_is_oar_source() {
-if [ -e sources/core/common-libs/lib/OAR/Version.pm ]; then
-    # 2.5.x
-    OAR_VERSION_FILE=sources/core/common-libs/lib/OAR/Version.pm
-    OAR_VERSION_FUNC="print OAR::Version::get_version()"
-elif [ -e Tools/oarversion.pm ]; then
-    # 2.4.x
-    OAR_VERSION_FILE=Tools/oarversion.pm
-    OAR_VERSION_FUNC="print oarversion::get_version()"
-else
-    echo "The branch $OARPWD seems to not be a OAR source folder"
-    exit 1
-fi
+set_oar_version_file() {
+    local dir version
+    dir="$1"
+    version="$2"
+
+    if [ -e "$dir/sources/core/common-libs/lib/OAR/Version.pm" ]; then
+        # 2.5.x
+        OAR_VERSION_FILE="$dir/sources/core/common-libs/lib/OAR/Version.pm"
+    elif [ -e "$dir/Tools/oarversion.pm" ]; then
+        # 2.4.x
+        OAR_VERSION_FILE="$dir/Tools/oarversion.pm"
+    else
+        echo "The branch $OARPWD seems to not be a OAR source folder"
+        exit 1
+    fi
+    sed -e "s/^my \$OARVersion =.*/my \$OARVersion = \"$version\";/" -i "$OAR_VERSION_FILE"
 }
 
-ACTION=snapshot
-FORCE=
 QUIET=no
-TARGET_DIRECTORY=../build-area
-while getopts "fqrshd:" options; do
+TARGET_DIRECTORY=../tarballs
+REMOTE=no
+FORCE=no
+GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
+GIT_TREEISH=2.5
+
+while getopts "hqrfu:b:d:" options; do
   case $options in
     q) QUIET=yes ;;
-    s) ACTION=snapshot ;;
-    r) ACTION=release ;;
-    f) FORCE=yes ;;
+    r) REMOTE=yes ;;
+    f) FORCE=yes ;; 
+    u) GIT_URI="$OPTARG";;
+    b) GIT_TREEISH="$OPTARG" ;;
     d) TARGET_DIRECTORY="$OPTARG";;
     *) usage ;;
   esac
 done
+
+
 shift $(($OPTIND - 1))
 
-if [ -z "$ACTION" ]; then
-    usage
+if [ -z "$TARGET_DIRECTORY" ]; then
+    log_info "you must provide a non-empty target directory"
+    exit 1
 fi
 
-OARPWD=$(pwd)
+cur_dir=$(pwd)
 
-if ! check_if_current_directory_is_oar_source; then
-    exit 1;
+if [ "$REMOTE" != "yes" ]; then
+    git_dir=$(pwd)
+
+    if [ ! -d "$git_dir/.git" ]; then
+        echo "$git_dir is not a working git directory. Fail."
+        exit 1;
+    fi
+
+    check_if_uncommited_changes
+    log_info "Using the Git repository '$(pwd)'"
+
 fi
 
-if ! check_if_uncommited_changes; then
-    exit 1;
+TMPDIR=$(mktemp -d)
+
+if [ "$REMOTE" = "yes" ]; then
+    git_dir="$TMPDIR/git"
+    mkdir -p "$git_dir"
+    log_info "Using the Git repository '$GIT_URI'"
+    git clone -q  $GIT_URI "$git_dir"
 fi
 
-mkdir -p $TARGET_DIRECTORY
 
-gen_tarball
 
+cd "$git_dir"
+
+log_info "Using the Git tree-ish   '$GIT_TREEISH'"
+last_tag=$(git describe $GIT_TREEISH --abbrev=0)
+version=$(git describe $GIT_TREEISH | sed -e "s/^$last_tag-\([[:digit:]]\+\)-/$last_tag+\1./")
+
+tarball_dir="$TMPDIR/tarball"
+tarball_prefix=oar-$version
+tarball_srcdir="$tarball_dir/$tarball_prefix"
+
+mkdir "$tarball_dir"
+
+git archive --format tar --prefix "$tarball_prefix/" "$GIT_TREEISH"  | tar xf - -C "$tarball_dir" --exclude .gitignore
+set_oar_version_file "$tarball_srcdir" "$version"
+
+cd "$cur_dir"
+
+mkdir -p "$TARGET_DIRECTORY"
+tar czf "$TARGET_DIRECTORY/$tarball_prefix.tar.gz" -C "$tarball_dir" .
+echo "$TARGET_DIRECTORY/$tarball_prefix.tar.gz"
+
+[ -d "$TMPDIR" ] && rm -rf "$TMPDIR"
 

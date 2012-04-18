@@ -1,6 +1,34 @@
 OAR CHANGELOG
 =============
 
+version 2.5.x:
+--------------
+  - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common
+    setup script.
+  - Bugfix: the PINGCHECKER_COMMAND in oar.conf depends now on %%OARDIR%%.
+  - Bug #13939: the job_resource_manager.pl and job_resource_manager_cgroups.pl
+                now deletes the user files in /tmp, /var/tmp and /dev/shm at
+                the end of the jobs.
+  - Bugfix: in oardodo.c, the preprocessed variables was not defined correclty.
+  - Finaud: fix race condition when there was a PINGCHECKER error jsut before
+    another problem. The node became Alive again when the PINGCHECKER said OK
+    BUT there was another error to resolve.
+  - Bugfix: The feature CHECK_NODES_WITH_RUNNING_JOB=yes never worked before.
+  - Speedup monika (X5).
+  - Monika: Add the conf max_cores_per_line to have several lines if the number
+    of cores are too big.
+  - Minor changes into API:
+      - added cmd_output into POST /jobs
+  - API: Added GET /select_all?query=<query> (read only mode)
+  - Add the field "array_index" into the jobs table. So that resubmit a job
+    from an array will have the right array_index anvironment variable.
+  - oarstat: order the output by job_id.
+  - Speedup oarnodes
+  - Fix a spelling error in the oaradmin manpage
+  - Bugfix #14122 : the oar-node init.d script wasn't executing
+    start_oar_node/stop_oar_node during the 'restart' action.
+  - Allow the dash  character into the --notify "exec:..." oarsub option.
+
 version 2.5.1:
 --------------
   - Sources directories reorganized

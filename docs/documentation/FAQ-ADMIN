@@ -14,7 +14,7 @@ What means the error "Bad configuration option: PermitLocalCommand" when I am us
 
 For security reasons, on the latest OpenSSH releases you are able to execute
 a local command when you are connecting to the remote host and we must
-deactivate this option because the oarsh_ wrapper executes the *ssh* command
+deactivate this option because the oarsh wrapper executes the *ssh* command
 into the user oar.
 
 So if you encounter this error message it means that your OpenSSH does

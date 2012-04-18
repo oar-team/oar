@@ -67,6 +67,14 @@ summary_display = default:nodes_synonym,resource_id
 nodes_per_line = 4
 
 ##############################################################################
+## max_cores_per_line: set the number of cores to be displayed per line in the
+## reservation table
+## - default is 16
+## - ex: max_cores_per_line = 32
+##############################################################################
+max_cores_per_line = 16
+
+##############################################################################
 ## nodename_regex: set the regular expression to extract nodes' short
 ## names (ex: node22 => 22). Use Perl regular expression syntax.
 ## - default is "(\d+)" ie extract the first number from the left in nodenames

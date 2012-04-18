@@ -1,7 +1,0 @@
-1) Install Torque (temporary step)
-2) Install PBS-DRMAA
-3) do cmake -G "Unix Makefiles" in the directory where you have the OAR-DRMAA source files(you have to replace the content of $OUT by the target where you have installed Torque)
-4) do make in the same directory 
-5) recompile the PBS-DRMAA (make clean => make)
-
-6) Now, you can enjoy your self (don't forget to emulate the OAR-LIVE-CD (for example on Virtualbox) and to set a virtual network between your computer(HOST : INTERFACE tap0, IP 192.168.0.254, NETMASK 255.255.255.0) and the emulated OS (GUEST : INTERFACE eth1, IP 192.168.0.1, NETMASK 255.255.255.0))

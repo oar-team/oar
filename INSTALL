@@ -46,7 +46,7 @@ ______________________________
 *For the debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -145,7 +145,7 @@ ______________________________
 *For the debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -436,7 +436,7 @@ ______________________________
 *For the debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -539,7 +539,7 @@ From the packaging
 *For the debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
  
@@ -678,7 +678,7 @@ ______________________________
 *For the debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 

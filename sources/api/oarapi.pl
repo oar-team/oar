@@ -827,7 +827,8 @@ SWITCH: for ($q) {
       print OAR::API::export( { 'id' => int($1),
                       'links' => [ { 'href' => $uri,
                                      'rel' => "self"} ],
-                      'api_timestamp' => time()
+                      'api_timestamp' => time(),
+                      'cmd_output' => "$cmdRes",
                     } , $ext );
     }
     else {
@@ -1952,7 +1953,78 @@ SWITCH: for ($q) {
     print `$OARDODO_CMD rm -rf $file`;
     last;
   };
+  #}}}
+  
+  ###########################################
+  # SQL queries
+  ###########################################
+  # 
+  #{{{ GET /select_all?query=<query>) : Allows select SQL queries into the OAR database (ro) 
+  #
+  $URI = qr{^/select_all\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=OAR::API::set_ext($q,$1);
+    my $header, my $type;
+    ($header, $type)=OAR::API::set_output_format($ext,"GET");
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before looking at jobs" );
+      last;                                     
+    }                                     
+    $authenticated_user = $1;
+    $ENV{OARDO_USER} = $authenticated_user;
+
+    my $query;
+    # GET the query parameter from the uri
+    if (defined($q->param('query'))) {
+        $query = $q->param('query');
+    }else{
+      OAR::API::ERROR(400,"Bad query","The 'query' parameter is mandatory");
+    }
+
+    # GET limit from uri parameter
+    my $limit;
+    if (defined($q->param('limit'))) {
+        $limit = $q->param('limit');
+    }else{
+        $limit=$MAX_ITEMS;
+    }
+
+    # set offset / GET offset from uri parameter
+    my $offset = 0;
+    if (defined($q->param('offset'))) {
+        $offset = $q->param('offset');
+    }
    
+    # Do the query
+    # The query should not contain the "SELECT <something> part". Example:
+    #  query="FROM events,jobs WHERE ..." 
+    my $dbh = OAR::IO::connect_ro() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $count = OAR::IO::sql_count($dbh,$query) or OAR::API::ERROR(500,
+                                                "SQL error",
+                                                "SQL error" # <- add here the sql error output
+                                                 ); 
+    my $result = OAR::IO::sql_select($dbh,$query,$limit,$offset) or OAR::API::ERROR(500,
+                                                "SQL error",
+                                                "SQL error" # <- add here the sql error output
+                                                 );
+
+    #$result = OAR::API::format_select_result($result);
+    $result = OAR::API::add_pagination($result,$count,$q->path_info,$q->query_string,$ext,$limit,$offset,$STRUCTURE);
+
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($result,$ext);
+    last;
+  };
+  #}}}
+
   ###########################################
   # Html stuff
   ###########################################

@@ -1,0 +1,7 @@
+oar_centos_config_devel:
+ - hosts_check_startup:
+   - append_file: 
+     - /etc/sysconfig/oar-server
+     - |
+       cat /etc/hosts | grep node1 2>/dev/null || echo '127.0.0.2 node1 node2' >> /etc/hosts
+
