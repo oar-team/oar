@@ -121,16 +121,17 @@ cd "$git_dir"
 log_info "Using the Git tree-ish   '$GIT_TREEISH'"
 
 
-last_tag=$(git describe $GIT_TREEISH --match "debian/*")
-last_tag_hash=$(git log --oneline -n 1 $last_tag | cut -d' ' -f 1)
-git_treeish_hash=$(git log --oneline -n 1 $GIT_TREEISH | cut -d' ' -f 1)
+last_tag=$(git describe $GIT_TREEISH --match "debian/*" --abbrev=0)
+last_tag_hash=$(git log --oneline -n 1 "$last_tag" | cut -d' ' -f 1)
+git_treeish_hash=$(git log --oneline -n 1 "$GIT_TREEISH" | cut -d' ' -f 1)
 
-is_snapshot=no
-if [ "$last_tag_hash" != "$git_treeish_hash" ]; then
+is_snapshot=
+if [ "$last_tag_hash" = "$git_treeish_hash" ] && [ -n "$(git tag -l $GIT_TREEISH)" ]; then
+    is_snapshot=no
+    log_info "Generating a released package"
+else
     is_snapshot=yes
     log_info "Generating a snapshot package"
-else
-    log_info "Generating a released package"
 fi
 
 upstream_version_tag=$(git describe $GIT_TREEISH --abbrev=0 --match="$GIT_UPSTREAM_TREEISH*")
@@ -138,9 +139,17 @@ upstream_version=$(echo "$upstream_version_tag" | sed -e "s%.*/%%")
 
 if [ "$is_snapshot" = "yes" ]; then
 
+    debian_revision_tag=$(git describe $GIT_TREEISH --abbrev=0 --match="debian/$upstream_version*" 2>/dev/null || true)
+    if [ -n "$debian_revision_tag" ]; then
+        debian_revision=$(echo "$debian_revision_tag" | sed -e "s%.*/.*-%%")
+    else
+        debian_revision="0"
+    fi
+     
+
     debian_revision_number=$(git log --oneline --ancestry-path --no-merges $upstream_version_tag..$GIT_TREEISH | wc -l)
     debian_revision_hash=$(git log --oneline -n 1 $GIT_TREEISH | cut -d' ' -f 1)
-    debian_revision="$debian_revision_number.g$debian_revision_hash"
+    debian_revision="$debian_revision+$debian_revision_number.g$debian_revision_hash"
 else
     debian_revision=$(echo "$GIT_TREEISH" | sed -e "s/.*-//")
 fi
@@ -165,7 +174,7 @@ cd "$deb_srcdir"
 log_info "Generating the source package"
 
 if [ "$is_snapshot" = "yes" ]; then
-    dch -v "$version" "" >/dev/null 2>/dev/null
+    dch -v "$version" "" -b >/dev/null 2>/dev/null
     dch -r "" >/dev/null 2>/dev/null
 fi
 
