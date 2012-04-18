@@ -64,9 +64,10 @@ The "timesharing" oarsub_ command possibilities are enumerated in Timesharing_.
 How can a checkpointable job be resubmitted automatically?
 ----------------------------------------------------------
 
-You have to specify that your job is *idempotent*. So, after a successful
-checkpoint, if the job is resubmitted then all will go right and there will have
-no problem (like file creation, deletion, ...).
+You have to specify that your job is *idempotent* and exit from your script
+with the exit code 99. So, after a successful checkpoint, if the job is
+resubmitted then all will go right and there will have no problem (like file
+creation, deletion, ...).
 
 Example:
 ::
@@ -75,7 +76,7 @@ Example:
 
 So this job will send a signal *SIGINT* (see *man kill* to know signal
 numbers) 10 minutes before the walltime ends. Then if everything goes
-well it will be resubmitted.
+well and the exit code is 99 it will be resubmitted.
 
 How to submit a non disturbing job for other users?
 ---------------------------------------------------

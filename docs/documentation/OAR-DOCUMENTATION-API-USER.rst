@@ -345,7 +345,7 @@ GET /version
 GET /timezone
 -------------
 :description:
-  Gives the timezone of the OAR API server
+  Gives the timezone of the OAR API server. The api_timestamp given in each query is an UTC timestamp (epoch unix time). This timezone information allows you to re-construct the local time.
 
 :formats:
   html , yaml , json
@@ -383,8 +383,7 @@ GET /jobs
   - **state**: comma separated list of states for filtering the jobs. Possible values: Terminated, Running, Error, Waiting, Launching, Hold,...
   - **array** (integer): to get the jobs belonging to an array
   - **from** (timestamp): restrict the list to the jobs that are running or not yet started before this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
-  - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavio
-r of listing only the jobs that are in queue.
+  - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **user**: restrict the list to the jobs owned by this username
 
 :output:
@@ -1056,10 +1055,14 @@ POST /jobs
     ::
 
      ---
-     api_timestamp: 1245858042
-     id: 551
-     status: submitted
-     uri: /jobs/551
+     api_timestamp: 1332323792
+     cmd_output: |
+       [ADMISSION RULE] Modify resource description with type constraints
+       OAR_JOB_ID=4
+     id: 4
+     links:
+       - href: /oarapi-priv/jobs/4
+         rel: self
 
   *note*: more informations about the submited job may be obtained with a GET on the provided *uri*.
 

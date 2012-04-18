@@ -116,7 +116,7 @@ If this method didn't succeed then Leon will flush the OAR database for the
 job and nodes will be "Suspected" by NodeChangeState.
 
 If your job is check pointed and is of the type *idempotent* (oarsub_ "-t"
-option) and its exit code is equal to 0 then another job is automatically
+option) and its exit code is equal to 99 then another job is automatically
 created and scheduled with same behaviours. 
 
 Checkpoint

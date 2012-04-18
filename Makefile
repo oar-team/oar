@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api poar scheduler-ocaml www-conf common common-libs database  
+MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api scheduler-ocaml www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -107,12 +107,6 @@ monika-clean: www-conf-clean
 monika-build: www-conf-build
 monika-uninstall: www-conf-uninstall
 
-poar-setup: www-conf-setup
-poar-install: www-conf-install
-poar-clean: www-conf-clean
-poar-build: www-conf-build
-poar-uninstall: www-conf-uninstall
-
 desktop-computing-cgi-setup: common-setup common-libs-setup
 desktop-computing-cgi-install: sanity-check common-install common-libs-install
 desktop-computing-cgi-clean: common-clean common-libs-clean
@@ -180,10 +174,6 @@ $(P_TARGETS):
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-#	$(MAKE) -f Makefiles/poar.mk $(P_ACTION) \
-#                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-#		DOCDIR=/usr/share/doc/oar-web-status \
-#		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/draw-gantt.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \

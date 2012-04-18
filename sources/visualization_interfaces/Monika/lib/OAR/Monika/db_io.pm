@@ -109,23 +109,26 @@ sub get_properties_values($$) {
 # parameters : base, hostname
 # return value : weight
 # side effects : /
+my %Resources_on_nodes;
 sub get_all_resources_on_node($$) {
     my $dbh = shift;
     my $hostname = shift;
 
-    my $sth = $dbh->prepare("   SELECT resources.resource_id as resource
-                                FROM resources
-                                WHERE
-                                    resources.$nodes_synonym = \'$hostname\'
+    if (defined($Resources_on_nodes{$hostname})){
+        return(@{$Resources_on_nodes{$hostname}});
+    }else{
+        my $sth = $dbh->prepare("   SELECT resources.resource_id as resource, resources.$nodes_synonym as node
+                                    FROM resources
                             ");
-    $sth->execute();
-    my @result;
-    while (my $ref = $sth->fetchrow_hashref()){
-        push(@result, $ref->{resource});
-    }
-    $sth->finish();
+        $sth->execute();
+        my @result;
+        while (my $ref = $sth->fetchrow_hashref()){
+            push(@{$Resources_on_nodes{$ref->{node}}}, $ref->{resource});
+        }
+        $sth->finish();
 
-    return @result;
+        return(@{$Resources_on_nodes{$hostname}});
+    }
 }
 
 # get_queued_jobs
@@ -153,19 +156,26 @@ sub get_queued_jobs($) {
 # parameters : base, job_id
 # return value : list of information
 # side effects : /
+my %Job_stat_infos;
 sub get_job_stat_infos($$) {
     my $dbh = shift;
     my $job= shift;
-    my $sth = $dbh->prepare("   SELECT *
-                                FROM jobs
-                                WHERE
-                                    jobs.job_id = $job
-                            ");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    $sth->finish();
 
-    return $ref;
+    if (defined($Job_stat_infos{$job})){
+        return($Job_stat_infos{$job});
+    }else{
+        my $sth = $dbh->prepare("   SELECT *
+                                    FROM jobs
+                                    WHERE
+                                        jobs.job_id = $job
+                                ");
+        $sth->execute();
+        my $ref = $sth->fetchrow_hashref();
+        $sth->finish();
+        $Job_stat_infos{$job} = $ref;
+
+        return $ref;
+    }
 }
 
 # get_job_cores
@@ -202,26 +212,41 @@ sub get_job_stat_infos($$) {
 # parameters : base, resource
 # return value : list of jobid
 # side effects : /
+my %Resource_job;
+my $Resource_job_init = 0;
 sub get_resource_job($$) {
     my $dbh = shift;
     my $resource = shift;
-    my $sth = $dbh->prepare("   SELECT jobs.job_id
-                                FROM assigned_resources, moldable_job_descriptions, jobs
-                                WHERE
-                                    assigned_resources.assigned_resource_index = \'CURRENT\'
-                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                    AND assigned_resources.resource_id = $resource
-                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+
+    if ($Resource_job_init > 0){
+        if (defined($Resource_job{$resource})){
+            return(@{$Resource_job{$resource}});
+        }else{
+            return(());
+        }
+    }else{
+        my $sth = $dbh->prepare("   SELECT assigned_resources.resource_id, jobs.job_id
+                                    FROM assigned_resources, moldable_job_descriptions, jobs
+                                    WHERE
+                                        assigned_resources.assigned_resource_index = \'CURRENT\'
+                                        AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                        AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                        AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                        AND jobs.state != \'Terminated\'
+                                        AND jobs.state != \'Error\'
                             ");
-    $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{'job_id'});
+        $sth->execute();
+        my @res = ();
+        $Resource_job_init++;
+        while (my $ref = $sth->fetchrow_hashref()) {
+            push(@{$Resource_job{$ref->{'resource_id'}}}, $ref->{'job_id'});
+        }
+        if (defined($Resource_job{$resource})){
+            return(@{$Resource_job{$resource}});
+        }else{
+            return(());
+        }
     }
-    return @res;
 }
 
 # list_nodes
@@ -250,43 +275,60 @@ sub list_nodes($) {
 # parameters : base, resource id
 # return value : ref
 # side effects : /
+my %Resource_info;
 sub get_resource_info($$) {
     my $dbh = shift;
     my $resource = shift;
 
-    my $sth = $dbh->prepare("   SELECT *
-                                FROM resources
-                                WHERE
-                                    resource_id = $resource
+    if (defined($Resource_info{$resource})){
+        return($Resource_info{$resource});
+    }else{
+        my $sth = $dbh->prepare("   SELECT *
+                                    FROM resources
                             ");
-    $sth->execute();
-
-    my $ref = $sth->fetchrow_hashref();
-    $sth->finish();
-
-    return $ref;
+        $sth->execute();
+        while (my $ref = $sth->fetchrow_hashref()) {
+            $Resource_info{$ref->{resource_id}} = $ref;
+        }
+        $sth->finish();
+        return($Resource_info{$resource});
+    }
 }
 
 # Get start_time for a given job
 # args : base, job id
+my %Gantt_job_start_time;
+my $Gantt_job_start_time_init = 0;
 sub get_gantt_job_start_time($$){
     my $dbh = shift;
     my $job = shift;
 
-    my $sth = $dbh->prepare("SELECT gantt_jobs_predictions.start_time, gantt_jobs_predictions.moldable_job_id
-                             FROM gantt_jobs_predictions,moldable_job_descriptions
-                             WHERE
-                                moldable_job_descriptions.moldable_job_id = $job
-                                AND gantt_jobs_predictions.moldable_job_id = moldable_job_descriptions.moldable_id
-                            ");
-    $sth->execute();
-    my @res = $sth->fetchrow_array();
-    $sth->finish();
-    
-    if (defined($res[0])){
-        return($res[0],$res[1]);
+    if ($Gantt_job_start_time_init > 0){
+        if (defined($Gantt_job_start_time{$job})){
+            return($Gantt_job_start_time{$job},$job);
+        }else{
+            return(undef);
+        }
     }else{
-        return(undef);
+        $Gantt_job_start_time_init = 1;
+        my $sth = $dbh->prepare("SELECT gantt_jobs_predictions_visu.start_time, moldable_job_descriptions.moldable_job_id
+                                 FROM gantt_jobs_predictions_visu,moldable_job_descriptions
+                                 WHERE
+                                     moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                     AND moldable_job_descriptions.moldable_id = gantt_jobs_predictions_visu.moldable_job_id
+                                 GROUP BY gantt_jobs_predictions_visu.start_time, moldable_job_descriptions.moldable_job_id
+                                ");
+        $sth->execute();
+        while (my @res = $sth->fetchrow_array()){
+            $Gantt_job_start_time{$res[1]} = $res[0];
+        }
+        $sth->finish();
+    
+        if (defined($Gantt_job_start_time{$job})){
+            return($Gantt_job_start_time{$job},$job);
+        }else{
+            return(undef);
+        }
     }
 }
 
@@ -323,6 +365,7 @@ sub local_to_sql($) {
 #               walltime,
 #               moldable_id
 #           ]
+my %Resources_data_structure_current_job;
 sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
     my $job_id = shift;
@@ -340,49 +383,51 @@ sub get_resources_data_structure_current_job($$){
 #                                ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
 #                            ");
 
-    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
-                                FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
-                                WHERE
-                                    jobs.job_id = $job_id
-                                    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
-                                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                                    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                                ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
-                            ");
- 
-
-
-    $sth->execute();
-    my $result;
-    my $group_index = -1;
-    my $moldable_index = -1;
-    my $previous_group = 0;
-    my $previous_moldable = 0;
-    while (my @ref = $sth->fetchrow_array()){
-        if ($previous_moldable != $ref[0]){
-            $moldable_index++;
-            $previous_moldable = $ref[0];
-            $group_index = 0;
-            $previous_group = $ref[1];
-        }elsif ($previous_group != $ref[1]){
-            $group_index++;
-            $previous_group = $ref[1];
+    if (defined($Resources_data_structure_current_job{$job_id})){
+        return($Resources_data_structure_current_job{$job_id});
+    }else{
+        my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
+                                    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+                                    WHERE
+                                        jobs.job_id = $job_id
+                                        AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+                                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+                                    ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
+                                ");
+        $sth->execute();
+        my $result;
+        my $group_index = -1;
+        my $moldable_index = -1;
+        my $previous_group = 0;
+        my $previous_moldable = 0;
+        while (my @ref = $sth->fetchrow_array()){
+            if ($previous_moldable != $ref[0]){
+                $moldable_index++;
+                $previous_moldable = $ref[0];
+                $group_index = 0;
+                $previous_group = $ref[1];
+            }elsif ($previous_group != $ref[1]){
+                $group_index++;
+                $previous_group = $ref[1];
+            }
+            # Store walltime
+            $result->[$moldable_index]->[1] = $ref[2];
+            $result->[$moldable_index]->[2] = $ref[0];
+            #Store properties group
+            $result->[$moldable_index]->[0]->[$group_index]->{property} = $ref[3];
+            my %tmp_hash =  (
+                    resource    => $ref[4],
+                    value       => $ref[5]
+                            );
+            push(@{$result->[$moldable_index]->[0]->[$group_index]->{resources}}, \%tmp_hash);
+    
         }
-        # Store walltime
-        $result->[$moldable_index]->[1] = $ref[2];
-        $result->[$moldable_index]->[2] = $ref[0];
-        #Store properties group
-        $result->[$moldable_index]->[0]->[$group_index]->{property} = $ref[3];
-        my %tmp_hash =  (
-                resource    => $ref[4],
-                value       => $ref[5]
-                        );
-        push(@{$result->[$moldable_index]->[0]->[$group_index]->{resources}}, \%tmp_hash);
-
+        $sth->finish();
+        $Resources_data_structure_current_job{$job_id} = $result;
+    
+        return($result);
     }
-    $sth->finish();
-
-    return($result);
 }
 
 return 1;

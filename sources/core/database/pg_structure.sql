@@ -194,6 +194,7 @@ CREATE INDEX id_types ON job_types (job_id);
 CREATE TABLE jobs (
   job_id bigserial,
   array_id integer NOT NULL default '0',
+  array_index integer NOT NULL default '1',
   initial_request text,
   job_name varchar(100) ,
   job_env text ,

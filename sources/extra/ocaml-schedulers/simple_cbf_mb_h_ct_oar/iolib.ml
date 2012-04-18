@@ -1,7 +1,7 @@
 (*pp cpp -P -w *)
 (* previous line is to ask OcamlMakefile to preprocess this file with cpp preprocesseur *)
 
-(* Postgresql very sensible ? "type = \"default\""    "type = 'default'" *)
+(* Postgresql very sensitive ? "type = \"default\""    "type = 'default'" *)
 
 (* preprocessor part *)
 
@@ -37,7 +37,12 @@ let get_resource_list dbh  =
   in
     map res get_one_resource ;;
 
-let get_available_uptos dbh =
+(*                                              *)
+(* get distinct availableupto                   *)
+(* to remove, can be obtain from resources list *)
+(*                                              *)
+
+let get_group_available_uptos dbh =
   let query = "SELECT available_upto FROM resources GROUP BY available_upto" in
   let res = execQuery dbh query in 
   let get_one a = NoN Int64.of_string a.(0)  (* available_upto *)
@@ -68,10 +73,10 @@ let get_job_suspended_sum_duration dbh job_id now =
       summation 0L (fetch res);;
 
 (*                                                                             *)
-(* get_job_list: retrieve jobs to schedule with important relative information *)
+(* get_job_list_fairsharing: retrieve jobs to schedule with important relative information *)
 (*                                                                             *)
 
-let get_job_list dbh default_resources queue besteffort_duration security_time_overhead =
+let get_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids =
   let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in      (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
@@ -96,20 +101,21 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
               itv_cts
           end  
   in 
-  let query = Printf.sprintf "
+  let query_base = Printf.sprintf "
     SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties,
         moldable_job_descriptions.moldable_id,  
         job_resource_descriptions.res_job_resource_type,
         job_resource_descriptions.res_job_value,
         job_resource_descriptions.res_job_order, 	
-        job_resource_groups.res_group_property  
+        job_resource_groups.res_group_property,
+        jobs.job_user, 
+        jobs.project
     FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
     WHERE
       moldable_job_descriptions.moldable_index = 'CURRENT'
       AND job_resource_groups.res_group_index = 'CURRENT'
-      AND job_resource_descriptions.res_job_index = 'CURRENT'
-      AND jobs.state = 'Waiting'
-      AND jobs.queue_name =  '%s'
+      AND job_resource_descriptions.res_job_index = 'CURRENT' "
+  and query_end = "
       AND jobs.reservation = 'None'
       AND jobs.job_id = moldable_job_descriptions.moldable_job_id
       AND job_resource_groups.res_group_index = 'CURRENT'
@@ -117,7 +123,13 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
       AND job_resource_descriptions.res_job_index = 'CURRENT'
       AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
       ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
-    queue in
+  in
+    let query =
+      if fairsharing_flag then
+        query_base ^ " AND jobs.job_id IN (" ^ (Helpers.concatene_sep "," id fs_jobids) ^ ") " ^ query_end 
+      else
+        query_base ^ " AND jobs.state = 'Waiting' AND jobs.queue_name = '" ^ queue ^"' "^ query_end 
+    in
   let res = execQuery dbh query in 
 
   let get_one_row a = ( 
@@ -129,7 +141,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
       NoNStr a.(4),                                   (* res_job_resource_type *)
       NoN int_of_string a.(5),                        (* res_job_value *)
       NoN int_of_string a.(6),                        (* res_job_order *)
-      NoNStr a.(7)                                    (* res_group_property *)
+      NoNStr a.(7),                                   (* res_group_property *)
+      NoNStr a.(8),                                   (* job_user *)   
+      NoNStr a.(9)                                    (* job_project *)
   )
 
   in let result = map res get_one_row in
@@ -145,7 +159,7 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
               (List.rev jids, jobs) (* return list of job_ids jobs' hashtable *)
             end 
       | row::m ->
-                let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties) = row in
+                let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties, user, project) = row in
                 if (prev_job.jobid != j_id) then (* next job *)
                   begin
                     (* complete prev job *)
@@ -170,6 +184,8 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
                           hy_level_rqt = [];
                           hy_nb_rqt = [];
                           set_of_rs = [];
+                          user = user;
+                          project = project;
                       } in
                     scan_res m j r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)] (j_id::jids)
                   end                    
@@ -184,9 +200,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
                                            cts
                                            jids
                   end
-  in  scan_res result {jobid=0;jobstate="";moldable_id =0;time_b=Int64.zero;walltime=Int64.zero;
-                      types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[];
-                      set_of_rs =[];} 
+  in  scan_res result {jobid=0;jobstate="";moldable_id =0;time_b=Int64.zero;walltime=Int64.zero; (* the job is used *)
+                      types=[];constraints=[];hy_level_rqt=[];hy_nb_rqt=[]; set_of_rs =[];
+                      user="";project=""} 
                0 [] [] [] [];; 
 
 
@@ -194,10 +210,9 @@ let get_job_list dbh default_resources queue besteffort_duration security_time_o
 (* get_scheduled_jobs_no_suspend : retrieve already previously scheduled jobs *)
 (* OAR::IO::get_gantt_scheduled_jobs            in perl version               *)
 (* without suspend jobs support                                               *)
-(* TODO Remove used field in query ??? *)
 
 let get_scheduled_jobs_no_suspend dbh security_time_overhead =
-   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
+   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended, j.project
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
         m.moldable_index = 'CURRENT'
@@ -220,7 +235,9 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
               and j_walltime = NoN Int64.of_string a.(2)   (* moldable_walltime *)
               and j_moldable_id = NoN int_of_string a.(8)  (* moldable_id *)
               and j_start_time = NoN Int64.of_string a.(1) (* start_time *)
-              and j_nb_res = NoN int_of_string a.(3) in    (*resource_id *)  
+              and j_nb_res = NoN int_of_string a.(3)       (* resource_id *)
+              and j_user =  NoNStr a.(4)                   (* job_user *)
+              and j_project = NoNStr a.(9) in              (* project *)
             
                 ( {
                   jobid = j_id;
@@ -233,6 +250,8 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
                   hy_level_rqt = []; (*  *)
                   hy_nb_rqt = [];    (*  *)
                   set_of_rs = [];    (* will be set when all resource_id are fetched *)
+                  user = j_user;
+                  project = j_project;
                 }, 
                   [j_nb_res]) 
        in
@@ -269,14 +288,15 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
 (* TODO Remove used field in query ??? *)
 
 let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead now =
-   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
+   let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended, j.project
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
         m.moldable_index = 'CURRENT'
         AND g1.moldable_job_id = g2.moldable_job_id
         AND m.moldable_id = g2.moldable_job_id
         AND j.job_id = m.moldable_job_id
-      ORDER BY j.start_time, j.job_id;" in
+        ORDER BY j.start_time, j.job_id;" in
+(*        ORDER BY j.start_time; in *)
 
   let res = execQuery dbh query in
     let first_res = function
@@ -293,7 +313,9 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                     j_walltime_init
                 and j_state = NoNStr a.(5)                         (* job state *)
                 and j_moldable_id = NoN int_of_string a.(8)        (* moldable_id *)
-                and j_nb_res = NoN int_of_string a.(3) in          (*resource_id *)  
+                and j_nb_res = NoN int_of_string a.(3)             (*resource_id *)
+                and j_user =  NoNStr a.(4)                         (* job_user *)
+                and j_project = NoNStr a.(9) in                    (* project *)
                 ( {
                   jobid = j_id;
                   jobstate =  j_state;
@@ -305,6 +327,8 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                   hy_level_rqt = [];                                (*  *)
                   hy_nb_rqt = [];                                   (*  *)
                   set_of_rs = [];                                   (* will be set when all resource_id are fetched *)
+                  user = j_user;
+                  project = j_project;
                 }, 
                   [j_nb_res]) 
        in
@@ -325,7 +349,9 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
       let rec aux result job_l current_job_res = match result with
         | None ->   let job = fst current_job_res in 
                       job.set_of_rs <- job_itv_res_setting job.jobstate (snd current_job_res);
-                      List.rev (job::job_l) 
+(* TODO VERIFY-TEST_overlapping_bug                     List.rev (job::job_l)  *)
+                        job::job_l
+                      
         | Some x -> let j_r = get_job_res x in 
                     let j_current = fst current_job_res in
                       if ((fst j_r) = j_current.jobid) then
@@ -576,12 +602,12 @@ let get_job_current_resources dbh job_id no_type_lst =
 
 let get_sum_accounting_window dbh queue start_window stop_window =
   let query = Printf.sprintf " SELECT consumption_type, SUM(consumption)
-                                FROM accounting
-                                WHERE
-                                    queue_name = '%s' AND
-                                    window_start >= %lld AND
-                                    window_start < %lld
-                                GROUP BY consumption_type" queue start_window stop_window 
+                               FROM accounting
+                               WHERE
+                                   queue_name = '%s' AND
+                                   window_start >= %Lu AND
+                                   window_start < %Lu
+                               GROUP BY consumption_type" queue start_window stop_window 
   in
   let res = execQuery dbh query in
   let get_one a =  (NoNStr a.(0), NoN float_of_string a.(1)) in
@@ -590,8 +616,8 @@ let get_sum_accounting_window dbh queue start_window stop_window =
   let rec scan_results r asked used = match r with
     | []   -> (asked, used)
     | x::m -> let extract = function 
-                | ("ASKED", a) ->  scan_results m a used
-                | ("USED", u)  ->  scan_results m asked u
+                | ("ASKED", a) -> scan_results m a used
+                | ("USED", u)  -> scan_results m asked u
                 | (_,_)        -> failwith "Consumption type is not supported: " 
               in extract x     
   in scan_results results 1.0 1.0 ;;
@@ -607,12 +633,12 @@ let get_sum_accounting_for_param dbh queue param_name start_window stop_window =
                                 FROM accounting
                                 WHERE
                                     queue_name = '%s' AND
-                                    window_start >= %lld AND
-                                    window_start < %lld
+                                    window_start >= %Lu AND
+                                    window_start < %Lu
                                 GROUP BY %s,consumption_type" param_name queue start_window stop_window param_name
   in
   let res = execQuery dbh query in
-  let get_one a = (NoNStr a.(0), NoNStr a.(1), NoN float_of_string a.(2)) in
+  let get_one a = (NoNStr a.(1), NoNStr a.(0), NoN float_of_string a.(2)) in
   let results = map res get_one in
 
   let rec scan_results r  = match r with
@@ -626,95 +652,47 @@ let get_sum_accounting_for_param dbh queue param_name start_window stop_window =
                                         Hashtbl.add karma_asked k v; 
                                         scan_results m
                                       end  
-                | (_,_,_)        -> failwith "Consumption type is not supported: " 
+                | (_,_,_)        -> failwith ("Consumption type is not supported (with param) : " ^ param_name)
               in extract x     
   in scan_results results ;;
 
-(*
-sub get_sum_accounting_window($$$$){
-    my $dbh = shift;
-    my $queue = shift;
-    my $start_window = shift;
-    my $stop_window = shift;
-    
-    my $sth = $dbh->prepare("   SELECT consumption_type, SUM(consumption)
-                                FROM accounting
-                                WHERE
-                                    queue_name = \'$queue\' AND
-                                    window_start >= $start_window AND
-                                    window_start < $stop_window
-                                GROUP BY consumption_type
-                            ");
-    $sth->execute();
-
-    my $results;
-    while (my @r = $sth->fetchrow_array()) {
-        $results->{$r[0]} = $r[1];
-    }
-    $sth->finish();
-
-    return($results);
-}
-
-
-sub get_sum_accounting_for_param($$$$$){
-    my $dbh = shift;
-    my $queue = shift;
-    my $param_name = shift;
-    my $start_window = shift;
-    my $stop_window = shift;
-    
-    my $sth = $dbh->prepare("   SELECT $param_name,consumption_type, SUM(consumption)
-                                FROM accounting
-                                WHERE
-                                    queue_name = \'$queue\' AND
-                                    window_start >= $start_window AND
-                                    window_start < $stop_window
-                                GROUP BY $param_name,consumption_type
-                            ");
-    $sth->execute();
-
-    my $results;
-    while (my @r = $sth->fetchrow_array()) {
-        $results->{$r[0]}->{$r[1]} = $r[2];
-    }
-    $sth->finish();
-
-    return($results);
-}
+(*                                                                *)
+(* get_limited_by_user_job_ids_to_schedule                        *)
+(* Adapted form  OAR::IO::get_fairsharing_jobs_to_schedule        *)
+(* return job indices with limited number of job by user          *)
+(*                                                                *)
+let get_limited_by_user_job_ids_to_schedule dbh queue limit =
+  (* get a limit number of job ids for a given user *)
+  let get_job_ids_user user =
+    let query = Printf.sprintf "
+      SELECT *
+      FROM jobs
+      WHERE
+        state = 'Waiting'
+        AND reservation = 'None'
+        AND queue_name = '%s'
+        AND job_user = '%s'
+        ORDER BY job_id
+        LIMIT %s;"
+    queue user limit in
+  let res = execQuery dbh query in
+  (* let get_one a = NoNStr a.(0) in *)
+    map res (function a ->  NoNStr a.(0) )  
+  in
+  let get_waiting_users =  
+    (* get all users with a waiting job *)
+    let query = Printf.sprintf "
+      SELECT distinct(job_user)
+      FROM jobs
+      WHERE
+        state = 'Waiting'
+        AND reservation = 'None'
+        AND queue_name = '%s';"
+      queue in
+    let res = execQuery dbh query in
+      map res (function a ->  NoNStr a.(0) )
+  in 
+  List.flatten (List.map get_job_ids_user get_waiting_users)
 
 
-
- OAR::IO::get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
-
-*)
-
-
-(*
-my @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
-
- Sort jobs depending on their previous usage
- Karma sort algorithm
-
-my $Karma_sum_time = OAR::IO::get_sum_accounting_window($base,$queue,$current_time - $Karma_window_size,$current_time);
-$Karma_sum_time->{ASKED} = 1 if (!defined($Karma_sum_time->{ASKED}));
-$Karma_sum_time->{USED} = 1 if (!defined($Karma_sum_time->{USED}));
-
-my $Karma_projects = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_project",$current_time - $Karma_window_size,$current_time);
-my $Karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue,"accounting_user",$current_time - $Karma_window_size,$current_time);
-
-sub karma($){
-    my $j = shift;
-
-    my $note = 0;
-    $note = $Karma_coeff_project_consumption * (($Karma_projects->{$j->{project}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_project_targets->{$j->{project}} / 100));
-    $note += $Karma_coeff_user_consumption * (($Karma_users->{$j->{job_user}}->{USED} / $Karma_sum_time->{USED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-    $note += $Karma_coeff_user_asked_consumption * (($Karma_users->{$j->{job_user}}->{ASKED} / $Karma_sum_time->{ASKED}) - ($Karma_user_targets->{$j->{job_user}} / 100));
-
-    return($note);
-}
-
-@jobs = sort({karma($a) <=> karma($b)} @jobs);
-
-*)
 

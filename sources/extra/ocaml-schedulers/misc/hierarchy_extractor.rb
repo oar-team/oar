@@ -2,16 +2,19 @@
 require 'sequel'
 
 DB = Sequel.mysql(
+#DB = Sequel.postgres(
   "oar",
+#  "oargofree",
   :user=>"oar",
   :password=>"oar",  
   :host => "localhost"  
  )
 
 $DEFAULT_LABELS = ['resource_id','cluster','switch','node','cpu','core']
+#$DEFAULT_LABELS = ['resource_id','cluster','cpu','core']
 
 $hierarchy_labels = []
-$hierarchy_set = DB["SELECT * FROM resources"]
+$hierarchy_set = DB["SELECT * FROM resources ORDER BY resource_id ASC"]
 
 $fields = DB[:resources].columns
 
@@ -43,7 +46,7 @@ def h_synth(s)
   nb_block.each_with_index do |nb,i|
     #puts "#{id},#{block_size[i]},#{nb}"
     h << "(#{id},#{block_size[i]},#{nb})"
-    id = id + nb * block_size[i] * nb
+    id = id + nb * block_size[i]
   end
   h.join(',')    
 end

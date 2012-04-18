@@ -358,10 +358,8 @@ sub get_job_data($$){
     my @job_dependencies;
     my @job_types = OAR::IO::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name;
-    my $array_index;
     
     $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
-    $array_index = OAR::IO::get_job_array_index($dbh,$job_info->{job_id});
 
     my $resources_string = "";
     my $reserved_resources;
@@ -418,7 +416,7 @@ sub get_job_data($$){
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             array_id => $job_info->{array_id},
-            array_index => $array_index,
+            array_index => $job_info->{array_index},
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             job_user => $job_user,
@@ -460,7 +458,7 @@ sub get_job_data($$){
         %data_to_display = (
             Job_Id => $job_info->{job_id},
             array_id => $job_info->{array_id},
-            array_index => $array_index,
+            array_index => $job_info->{array_index},
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             state => $job_info->{state},

@@ -1,98 +1,50 @@
 
-Simple schedulers in ocaml
+OAR's scheduler in ocaml
 ---------------------------
 
+The main goal of this scheduler is to provide a better scalabily in comparaison to the schedulers in Perl.Up to now some features are missing see below.
 
-* Actual developed version is simple_cbf_mb_h_ct_oar * 
+This developement of this scheduler borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
-ocaml-schedulers have several goals
-
-* provide scheduler examples
-* provide schedulers with incremental features between each version
-* test alternative design choice (by example use of resource intervals)
-* provide scheduler in native binary code for performance concerns
-
-This work borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
-
-Directories details
-/schoolar:
-Contains two classic schedulers : next-fit and first-fit. There are just examples. There are not suitable for oar.
-Codes come from: http://books.google.fr/books?id=vpDmaVUC6QIC&pg=PA110&lpg=PA110&dq=first-fit+ocaml+next-fit&source=bl&ots=xXK6POXo7b&sig=Lp6sKyODT6afhlAQzZ-ZFfDd_Pg&hl=fr&sa=X&oi=book_result&resnum=1&ct=result#PPA115,M1
-
-/test:
-Some codes to simplify testing 
-
-/simple_cbf: 
-Contains a simple conservative backfilling scheduler. Can't be use directly in oar.
-
-/simple_cbf_oar:
-Uses simple_cbf scheduler and adds necessary oar database interactions to provide an usable simple scheduler
-
-features:
+Features:
  * conservative backfilling
- * respect of reservation
-limitations:
- * all advances features are not implemented:
- - no resources properties matching
- - no besteffort
- - no hierarchies
- - no multiple resource type
- - no multiple resource requests ( + )
- - no time constant guards, timesharing, suspend/resume, job depencies, job arrays, desktop computing, job container, fairesharing...
+ * resources properties matching
+ * besteffort
+ * hierarchies
+ * multiple resource type [TO TEST]
+ * multiple resource requests ( + ) [TO TEST]
+ * time constant guards, [TO TEST]
+ * suspend/resume, 
+ * job depencies [TO TEST]
+ * job container  
+ * fairesharing [TO FINALIZE]
 
-/simple_cbf_mb:
-Based on simple_cbf add job's resource constraints and filtering step to support resources matching 
+Missing:
+ * Timesharing
+ * Placeholder
+ * Best / All resource expression in submission requests
+ * Fairsharing (in progress)
+ * Extensive test (no yet running on production cluster)
+ * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
-/simple_cbf_mb_oar:
-Uses simple_cbf_mb, and provides besteffort support (need deeper test) and resource matching 
+Next (becarefull outdated list) :
 
-
-/simple_cbf_mb_h:
-Take simple_cbf_mb add hierarchy support, remove nb_res in several structure
-
-/simple_cbf_mb_h_oar:
-Uses simple_cbf_mb_h, usable with oar's DB to perform some simple test performance (not suitable for production use) 
-
-/simple_cbf_mb_h_ct:
-The next natural step is to support container features
-Based on simple_cbf_mb_h it will provide container feature.
-
-/simple_cbf_mb_h_ct_oar:
-Uses simple_cbf_mb_h_ct will be usable with oar's DB to perform some simple test performance (and perhaps it will
-be develop up for production usage after test)
-
-Next:
-
- * testing testing 
-  ** DB only testing
-
- * use Bolt to provide LOG facilities ("à la" log4j) ? : http://bolt.x9c.fr/index.html
- * use cpp or m4 or cppo or c4same approach form LOG) for mysql / postgresql switch ??? 
- * ocamlopt -c -pp "cppo -D 'VERSION 1.0'" example.ml for (use cppo for preprocessinrg phase)
-
+ * unit test
+ * better compilation process (for unit tests)
+ * simple performance optimisation (threshold on percent of idle ressource at now and number of scheduled jobs)
  * BEST / ALL 
  * scheduler message (see perl version *)
  * job_error / job_message / scheduler message
- * dependencies
- * suspend job
-
  * need to test multi-resource-type (since >= cbf_mb_h)
  * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
  * Scalability performance testing
- * General documentation in rst format (docutils)
- * Source documentation
- * Code restructuration (Interval in common)
  * compute mode support
  * timesharing, container, faireshare, ComputeMode, Postgresql...
- * add security_time_overhead (beetween jobs ???)
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
  * errors logging (at least same error support as provide in perl scheduler)
-
  * how to emulate resource order ?, need of specifique scheduler for besteffort or use perl scheduler for besteffort ???
  * Do we need global scheduling timeout ??? (at timeout expiration we can save succesfully scheduled job, can also be the way for incremental assignement saving...)
-
  * dump first k ready launchable jobs (for performance /reactivity issue)
-
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
  * time_end_slot(n-1) = time_start_slot(n) for same resource must be time_start_slot(n) = time_end_slot(n-1) + 1 ! rajouter + 1 au walltime des jobs + une garde temporelle ?!! (can be address by the use of security_time_overhead ?) 
 
@@ -106,7 +58,12 @@ To test:
  * multi-request with non exclusive resource selection
 
 ToDo:
-  With 64 bits machine we can use ocaml's int with 63 bits instead of Int64. 
+  * switch name to kamelot
+  * complete fairsharing
+  * test_unit: better compilation process
+  * Ounit (cf archive)
+    * test sub_intevals
+  * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64. 
  
 Done:
 
@@ -118,8 +75,11 @@ Done:
  * multi-request with non exclusive resource selection (since >= cbf_mh_h)
 
 Remarks and misc:
- * 2.2.x series and previous oar's version are NOT SUPPORTED
- * Use of OUNIT for unit testing (cbf_mh_h and above)
-
  * http://martin.jambon.free.fr/ocaml.htm 
- * Forin  Provides a foreach-style replacement of List.iter. Now available through P4ck. [view|save]. [Camlp4 3.10 port: no] License: Public Domain. 
+
+Bugs:
+
+Debug:
+  make bc
+  ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/interval.cmo ../common/helpers.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo ./simple_cbf_mb_h_ct.cmo
+ rlwrap ./yop -I ../common -I .

@@ -1,5 +1,0 @@
-load_lib_create_object:
-   - load_libs:
-     - exec_appliance: write_irb "require '$$rpsec_lib_path'" 
-   - create_objects:
-     - exec_appliance: write_irb "obj = Tests.new(\"$$apiuri\")" 

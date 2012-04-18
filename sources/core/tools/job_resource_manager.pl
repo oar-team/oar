@@ -283,10 +283,10 @@ if ($ARGV[0] eq "init"){
 		                print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
 		                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
 		            }
-		            print_log (3,"Purging /tmp...");
-		            system("oardodo find /tmp/. -user $Cpuset->{user} -delete"); 
+		            print_log (3,"Purging /tmp /dev/shm /var/tmp...");
+		            system("oardodo find /tmp/. /dev/shm/. /var/tmp/. -user $Cpuset->{user} -delete"); 
 		        } else {
-		            print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
+		            print_log(2,"Not purging SysV IPC and files (in /tmp /dev/shm /var/tmp) as $Cpuset->{user} still has a job running on this host.");
 		        }
             }
 	        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
@@ -341,9 +341,9 @@ if ($ARGV[0] eq "init"){
                 exit_myself(14,"Failed to purge IPC: ipcrm $ipcrm_args");
             }
         }
-        print_log(3,"Purging /tmp...");
+        print_log(3,"Purging /tmp /dev/shm /var/tmp ...");
         #system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
-        system("oardodo find /tmp/. -user $Cpuset->{job_user} -delete"); 
+        system("oardodo find /tmp/. /dev/shm/. /var/tmp/. -user $Cpuset->{job_user} -delete"); 
         system("oardodo /usr/sbin/userdel -f $Cpuset->{job_user}");
     }
 }else{

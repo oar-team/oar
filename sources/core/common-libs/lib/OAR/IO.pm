@@ -91,7 +91,6 @@ sub set_moldable_job_max_time($$$);
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
 sub get_job_array_id($$);
-sub get_job_array_index($$);
 sub get_array_subjobs($$);
 sub get_array_job_ids($$);
 
@@ -577,6 +576,7 @@ sub get_jobs_in_state_for_user($$$) {
                                 FROM jobs
                                 WHERE
                                     state = $state $user_query
+                                ORDER BY job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -1324,7 +1324,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         return(-8);
     }
 
-    my $array_index;
+    my $array_index = 1;
     my @Job_id_list;
 
     if(!defined($array_params_ref)){
@@ -1334,13 +1334,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                 push(@Job_id_list, $err);
                 return(\@Job_id_list);
             }
-            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime));
+            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
             if ($Job_id_list[-1] <= 0){
                 return(\@Job_id_list);
             }else{
                 if ($array_id <= 0){
                     $array_id = $Job_id_list[0];
                 }
+                $array_index++;
             }
             if (defined($use_job_key) and ($export_job_key_file ne "")){
                 # we must copy the keys in the directory specified with the right name
@@ -1374,14 +1375,13 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
             }
         }
     }else{
-        $array_index=0;
         foreach my $param (@{$array_params_ref}){
             my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file);
             if ($err != 0){
                 push(@Job_id_list, $err);
                 return(\@Job_id_list);
             }
-            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command." $param", $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime));
+            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command." $param", $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
             if ($Job_id_list[-1] <= 0){
                 return(\@Job_id_list);
             }else{
@@ -1429,7 +1429,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
 
 sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
 
     # Test if properties and resources are coherent
     my @dead_resources;
@@ -1501,8 +1501,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $project = $dbh->quote($project);
     $initial_request_string = $dbh->quote($initial_request_string);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id,array_index)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id,$array_index)
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -1980,8 +1980,8 @@ sub resubmit_job($$){
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
     #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,job_env,project,initial_request)
-              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',$jenv,$project,$initial_request_string)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,job_env,project,initial_request,array_id,array_index)
+              VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',$jenv,$project,$initial_request_string,$job->{array_id},$job->{array_index})
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
     #unlock_table($dbh);
@@ -2930,34 +2930,6 @@ sub get_job_array_id($$){
 }
  
 
-# get_job_array_index($$)
-# Calculate the array_index based on a given job_id
-# parameters : base, job_id
-# return value : array_index of the given jobid
-# side effects : / 
-sub get_job_array_index($$){
-    my $dbh = shift;
-    my $job_id = shift;
-    my $sth;
-
-    my $array_id = get_job_array_id($dbh,$job_id);
-
-    $sth = $dbh->prepare("  SELECT COUNT(job_id)
-                            FROM jobs
-                            WHERE 
-                                array_id = $array_id
-                                and job_id < $job_id
-                         ");
-
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my @tmp_array = values(%$ref);
-    $sth->finish();
-
-    return ($tmp_array[0]+1);
-}
-
-
 # get_array_subjobs($$)
 # Get all the jobs of a given array_job
 # parameters : base, array_id
@@ -2971,6 +2943,7 @@ sub get_array_subjobs($$){
                                 FROM jobs
                                 WHERE
                                     array_id = $array_id
+                                ORDER BY job_id
                             ");
     $sth->execute();
     my @res = ();
@@ -2997,6 +2970,7 @@ sub get_array_job_ids($$){
                                 FROM jobs
                                 WHERE
                                     array_id = $array_id
+                                ORDER BY job_id
                             ");
     $sth->execute();
 
@@ -3029,8 +3003,15 @@ sub get_resource_job($$) {
                                     AND assigned_resources.resource_id = $resource
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND (jobs.state = \'Waiting\'
+                                           OR jobs.state = \'Hold\'
+                                           OR jobs.state = \'toLaunch\'
+                                           OR jobs.state = \'toAckReservation\'
+                                           OR jobs.state = \'Launching\'
+                                           OR jobs.state = \'Running\'
+                                           OR jobs.state = \'Suspended\'
+                                           OR jobs.state = \'Resuming\'
+                                           OR jobs.state = \'Finishing\')
                             ");
     $sth->execute();
     my @res = ();
@@ -3332,6 +3313,30 @@ sub get_resources_that_will_be_out($$) {
     return(@res);
 }
 
+# get_energy_saving_resources_availability
+# returns a list of resources and when they will be available
+# parameters : base, min_start_date
+# return value : end_date_availability => [resource id list]
+sub get_energy_saving_resources_availability($$) {
+    my $dbh = shift;
+    my $current_time = shift;
+    
+    my $sth = $dbh->prepare("   SELECT resource_id, available_upto
+                                FROM resources
+                                WHERE
+                                    (state = \'Absent\' AND
+                                     available_upto > $current_time)
+                                    OR
+                                    (state = \'Alive\' AND
+                                     available_upto < 2147483646)
+                            ");
+    $sth->execute();
+    my %res = ();
+    while (my @ref = $sth->fetchrow_array()) {
+        push(@{$res{$ref[1]}}, $ref[0]);
+    }
+    return(\%res);
+}
 
 # add_resource_job_pair
 # adds a new pair (jobid, resource) to the table assigned_resources
@@ -4437,7 +4442,8 @@ sub set_node_state($$$$) {
                     SET state = \'$state\', finaud_decision = \'$finaud\', state_num = $State_to_num{$state}
                     WHERE
                         network_address = \'$hostname\'
-                        AND state = \'Alive\'
+                        AND (state = \'Alive\'
+                             OR (state = \'Suspected\' AND \'$finaud\' = \'NO\' AND finaud_decision = \'YES\'))
                 ") <= 0){
             # OAR wants to turn the node into Suspected state but it is not in
             # the Alive state --> so we do nothing
@@ -5346,11 +5352,14 @@ sub add_gantt_scheduled_jobs($$$$){
               VALUES ($id_moldable_job,\'$start_time\')
              ");
 
+    my $str = "";
     foreach my $i (@{$resource_list}){
-        $dbh->do("INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)
-                  VALUES ($id_moldable_job,$i)
-                 ");
+        $str .= "($id_moldable_job,$i),";
     }
+    chop($str);
+    $dbh->do("INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)
+              VALUES $str
+             ");
 }
 
 
@@ -6433,7 +6442,7 @@ sub add_new_event_with_host($$$$$){
     my $dbh = shift;
     my $type = shift;
     my $idJob = shift;
-    my $description = shift;
+    my $description = substr(shift,0,254);
     my $hostnames = shift;
     
     my $date = get_date($dbh);
@@ -6850,17 +6859,17 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-            my $types = OAR::IO::get_current_job_types($base,$Jid);
-            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
-                if ($exit_script_value == 0){
-                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
-                }else{
-                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
-                }
-            }
+#            my $types = OAR::IO::get_current_job_types($base,$Jid);
+#            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
+#                if ($exit_script_value == 0){
+#                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
+#                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
+#                }else{
+#                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
+#                }
+#            }
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 42){
@@ -6868,17 +6877,17 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGURG signal; so user process has received the user defined signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-            my $types = OAR::IO::get_current_job_types($base,$Jid);
-            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
-                if ($exit_script_value == 0){
-                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was signaled and it is of the type 'idempotent'.\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was signaled and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
-                }else{
-                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was signaled and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was signaled and it is of the type 'idempotent' but its exit code is $exit_script_value"});
-                }
-            }
+#            my $types = OAR::IO::get_current_job_types($base,$Jid);
+#            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
+#                if ($exit_script_value == 0){
+#                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
+#                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was signaled and it is of the type 'idempotent'.\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was signaled and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
+#                }else{
+#                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was signaled and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was signaled and it is of the type 'idempotent' but its exit code is $exit_script_value"});
+#                }
+#            }
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
 	}elsif ($error == 41){
@@ -6886,17 +6895,17 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
             my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-            my $types = OAR::IO::get_current_job_types($base,$Jid);
-            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
-                if ($exit_script_value == 0){
-                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
-                }else{
-                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
-                }
-            }
+#            my $types = OAR::IO::get_current_job_types($base,$Jid);
+#            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
+#                if ($exit_script_value == 0){
+#                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
+#                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
+#                }else{
+#                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
+#                }
+#            }
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
@@ -7073,6 +7082,40 @@ sub job_finishing_sequence($$$$$$){
 
     OAR::Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
 }
+
+# Generic count of a select query
+# args: database ref, query
+sub sql_count($$){
+    my $dbh = shift;
+    my $query = shift;
+
+    my $sth = $dbh->prepare("   SELECT count(*) $query");
+    $sth->execute();
+    my ($count) = $sth->fetchrow_array();
+    return $count ;
+}
+
+# Generic select query
+# args: database ref, query, limit and offset
+sub sql_select($$$$){
+    my $dbh = shift;
+    my $query = shift;
+    my $limit = shift;
+    my $offset = shift;
+
+    if ($offset != 0) {$offset = "OFFSET $offset";}
+    else {$offset = ""};
+
+    my $sth = $dbh->prepare("SELECT * $query LIMIT $limit $offset");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(\@res);
+}
+
+
 
 
 # END OF THE MODULE

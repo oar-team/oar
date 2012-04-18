@@ -19,6 +19,9 @@
 # Short-Description:    OAR Dedicated Node (launch its own sshd)
 ### END INIT INFO
 
+LANG=C
+export LANG
+
 PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 NAME=oar-node
 DESC=oar-node
@@ -76,14 +79,6 @@ failure()
     exit 0
 }
 
-do_start_node() {
-    start_oar_node
-}
-
-do_stop_node() {
-    stop_oar_node
-}
-
 do_start() {
     begin_msg "Starting $DESC"
     if [ -f "$OAR_SSHD_CONF" ] ; then
@@ -98,9 +93,22 @@ do_start() {
             exit 2
         fi
     fi
+    begin_msg "Executing The $DESC startup actions"
+    if start_oar_node; then
+        succ_msg "The $DESC startup actions has been executed sucessfully."
+    else
+        fail_msg "Failed to execute the $DESC startup actions."
+        exit 2
+    fi
 }
 
 do_stop() {
+    begin_msg "Executing the $DESC shutdown actions"
+    if stop_oar_node; then
+        succ_msg "This $DESC shutdown actions has been executed sucessfully."
+    else
+        fail_msg "Failed to execute the $DESC shutdown actions."
+    fi
     begin_msg "Stopping $DESC "
     if [ -f "$OAR_SSHD_CONF" ] ; then
         if killproc -p  "%%OARHOMEDIR%%/oar_sshd.pid"; then
@@ -117,10 +125,8 @@ do_stop() {
 case "$1" in
     start)
         do_start
-        do_start_node
         ;;
     stop)
-        do_stop_node
         do_stop
         ;;
     reload|force-reload|restart)
@@ -130,7 +136,7 @@ case "$1" in
         ;;
     *)
         N=%%INITDIR%%/$NAME
-        echo "Usage: $N {start|stop|reload|force-reload|restarti|status}"
+        echo "Usage: $N {start|stop|reload|force-reload|restart}"
         exit 1
     ;;
 esac

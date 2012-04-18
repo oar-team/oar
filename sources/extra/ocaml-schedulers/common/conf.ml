@@ -1,9 +1,15 @@
-(* file borrowed from oar 1.6 series, developped by Lionel Eyraud-Dubois*) 
+(*                                                                       *)
+(* Configuration and logging functions                                   *)
+(*                                                                       *)
+(* Code borrowed, in large par from oar 1.6 series and                   *) 
+(* developped by Lionel Eyraud-Dubois                                    *) 
+(*                                                                       *)
+
 let log_file = ref None
 
 let print_log s = 
-  prerr_endline s;
-  flush stderr;
+  prerr_string s;
+  flush stderr; 
   match !log_file with 
       Some d -> output_string d s; flush d
     | None -> ()
@@ -18,13 +24,10 @@ let formatted_time () =
 
 let do_message e s = 
   print_log (Printf.sprintf "[%s] [%s] [Simple-CBF] %s\n" e (formatted_time ()) s)
-    
 
-  
 let error s = 
   do_message "*Fatal Error*" s;
   failwith ("Fatal Error : "^s)
-
 
 let conf_file_name = "oar.conf"
 let besteffortQueueName = "besteffort"
@@ -36,7 +39,6 @@ let conf_file =
   let exists d = Sys.file_exists (Filename.concat d conf_file_name) in 
     try Filename.concat (List.find exists dirs) conf_file_name 
     with Not_found -> error ("Cannot find Conf File "^conf_file_name)
-
 
 let chop s = 
   try 
@@ -75,14 +77,19 @@ let conf_values =
 	  try parse () 
 	  with End_of_file -> t)
     with Sys_error s -> error ("Cannot open conf file "^conf_file^" : "^s)
+
+(* Log is automatically redirected in /var/log/oar.log by metascheduler *)
+(* Use LOG_SCHED_FILE is a separed log file is wished *)
+(*
 let _ = 
-  let f = try Hashtbl.find conf_values "LOG_FILE"
+  let f = try Hashtbl.find conf_values "LOG_SCHED_FILE" 
   with Not_found -> "/var/log/oar.log" in 
     try let d = open_out_gen [ Open_append; Open_text] 0o600 f in 
       log_file := Some d;
       at_exit (fun () -> close_out d);
     with Sys_error s -> 
       ( do_message "Warn" (Printf.sprintf "Cannot open log file '%s': %s" f s) )     
+*)
 
 (* 
 let now, queueName = 
@@ -125,11 +132,13 @@ let get_optional_value s =
       None )
 
 let get_default_value s d = 
+  (*Printf.sprintf "get_default_value: %s\n" s; *)
   try Hashtbl.find conf_values s
   with Not_found -> 
    d
 
-let get_hierarchy_info = 
+let get_hierarchy_info =
+(* ignore(Printf.sprintf "get_hierarchy_info HIERARCHY_LABELS\n"); *)
   let hierarchy_labels = Helpers.split "," (Helpers.replace " " "" (get_value "HIERARCHY_LABELS")) in
     let str_to_triplet y = let z = List.map (fun x-> int_of_string x ) (Helpers.split "," y) in 
       (List.nth z 0,List.nth z 1,List.nth z 2) 
@@ -140,11 +149,33 @@ let get_hierarchy_info =
       let b  =  Helpers.replace "),(" ";" str_ts in 
       let c =  Helpers.replace_regexp "(\\|)\\| " "" b in
       let str_triplets =  Helpers.split ";" c in
-      
 (*      Printf.printf "yop: %s\n" c; *)
       List.map (fun x-> str_to_triplet x) str_triplets
-        
     in
-
       List.map (fun x-> (x, extract_triplet (get_value x))) hierarchy_labels
   ;;
+
+(* function which trasnform a perl string hash in list of couple *)
+(* ex { first => 75, default => 25 } : (string * int) list = [("first", 75); ("default", 25)] *) 
+let str_perl_hash_to_pairs str =
+  let str_pairs =  Helpers.split "," (Helpers.replace_regexp "{\\|}\\| " "" str) in
+    let extraxt_pair s = let str_lpair = Helpers.split "=>" s in
+      (List.hd str_lpair), (List.hd (List.tl str_lpair))
+    in
+      List.map (fun x-> extraxt_pair x) str_pairs
+
+(* function which transform a perl string hash in list of couple with conversion application function*)
+(* ex { first => 75, default => 25 } : (string * int) list = [("first", 75); ("default", 25)] *) 
+let str_perl_hash_to_pairs_w_convert str convert=
+  (* ignore(Printf.sprintf "Str_perl_hash_to_pairs_w_convert: %s" str;) *)
+  let str_pairs =  Helpers.split "," (Helpers.replace_regexp "{\\|}\\| " "" str) in
+    let extraxt_pair s = let str_lpair = Helpers.split "=>" s in
+      (List.hd str_lpair), (convert (List.hd (List.tl str_lpair)))
+    in
+      List.map (fun x-> extraxt_pair x) str_pairs
+
+(* float_of_string_e with exception*)
+let float_of_string_e s =
+  try float_of_string s
+  with _ -> error ("float_of_string failed:"^s)
+

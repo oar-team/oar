@@ -323,27 +323,14 @@ sub delete_tree_nodes_with_not_enough_resources($){
     # Tremaux algorithm (Deep first)
     my $current_node = $tree_ref;
     do{
-        if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
-            or ((get_needed_children_number($current_node) == -1)                # ALL
-                and (get_max_available_children($current_node) > get_current_children_number($current_node)))
-            or ((get_needed_children_number($current_node) == -2)                # BEST
-                and (get_current_children_number($current_node) <= 0))
-        ){
-            # we want to delete the root
-            return(undef) if ($tree_ref == $current_node);
-            # Delete sub tree that does not fit with wanted resources 
-            #print("DELETE ".get_current_resource_value($current_node)."\n");
-            $current_node = delete_subtree($current_node);
-        }
         if (defined(get_initial_child($current_node))){
             # Go to child
             $current_node = get_initial_child($current_node);
             #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
         }else{
             # Treate leaf
-            while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+            while(defined($current_node) and (!defined(get_next_brother($current_node)))){
                 # Step up
-                #print("TOTO ".get_current_children_number($current_node)."\n");
                 #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
                     or ((get_needed_children_number($current_node) == -1)                # ALL
@@ -360,9 +347,8 @@ sub delete_tree_nodes_with_not_enough_resources($){
                     $current_node = get_father($current_node);
                 }
             }
-            if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
+            if (defined(get_next_brother($current_node))){
                 # Treate brother
-                my $brother_node = get_next_brother($current_node);
                 if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
                     or ((get_needed_children_number($current_node) == -1)                # ALL
                         and (get_max_available_children($current_node) > get_current_children_number($current_node)))
@@ -373,7 +359,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
                     # Delete sub tree that does not fit with wanted resources 
                     delete_subtree($current_node);
                 }
-                $current_node = $brother_node;
+                $current_node = get_next_brother($current_node);
                 #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
             }
         }
@@ -412,12 +398,12 @@ sub get_tree_leafs($){
                 #print("Leaf: ".get_current_resource_value($current_node)."\n");
             }
             # Look at brothers
-            while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+            while(defined($current_node) and (!defined(get_next_brother($current_node)))){
                 # Step up
                 $current_node = get_father($current_node);
                 #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
             }
-            if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
+            if (defined(get_next_brother($current_node))){
                 # Treate brother
                 $current_node = get_next_brother($current_node);
                 #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
@@ -452,12 +438,12 @@ sub delete_unnecessary_subtrees($){
                 #print("Go to CHILD =".get_current_resource_value($current_node)."\n");
             }else{
                 # Look at brothers
-                while(defined($current_node) and (!defined(get_father($current_node)) or !defined(get_next_brother($current_node)))){
+                while(defined($current_node) and (!defined(get_next_brother($current_node)))){
                     # Step up
                     $current_node = get_father($current_node);
                     #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 }
-                if (defined(get_father($current_node)) and defined(get_next_brother($current_node))){
+                if (defined(get_next_brother($current_node))){
                     # Treate brother
                     $current_node = get_next_brother($current_node);
                     #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");

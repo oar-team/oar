@@ -135,7 +135,6 @@ sub connect_job($$$){
     OAR::Sub::open_ro_db_connection();
     my $lusr= $ENV{OARDO_USER};
     my $job = OAR::Sub::get_job($job_id);
-    my $array_index = OAR::Sub::get_job_array_index($job_id);
 
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
         my $hosts_tmp = OAR::Sub::get_job_current_hostnames($job_id);
@@ -179,7 +178,7 @@ sub connect_job($$$){
 					  "node_file" => $node_file,
 					  "job_id" => $job_id,
 					  "array_id" => $job->{array_id},
-					  "array_index" => $array_index,
+					  "array_index" => $job->{array_index},
 					  "user" => $lusr,
 					  "shell" => $shell,
 					  "launching_directory" => $job->{launching_directory},
@@ -702,8 +701,9 @@ if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
 }
 
 if (defined($notify) && $notify =~ m/\s*exec:(.+)$/m){
-    unless ($notify =~ m/\s*exec:([a-zA-Z0-9_.\/ ]+)$/m){
-      warn("/!\\ Unsecure characters found in notification method.\n");
+    my $notify_exec_regexp = '[a-zA-Z0-9_.\/ -]+';
+    unless ($notify =~ m/\s*exec:($notify_exec_regexp)$/m){
+      warn("/!\\ Insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
       exit(16);
     }
 }

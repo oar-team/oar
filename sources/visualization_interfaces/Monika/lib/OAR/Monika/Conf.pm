@@ -45,6 +45,10 @@ sub parse {
 		  {
 		   DEFAULT => "Cluster"
 		  });
+  $config->define("max_cores_per_line",
+		  {
+		   DEFAULT => "16"
+		  });
 	$config->define("css_path",
 		  {
 		   DEFAULT => "/monika.css"
@@ -136,6 +140,7 @@ sub parse {
   $config->file($self->{FILE});
 
   $self->{CLUSTERNAME} = $config->clustername();
+  $self->{MAXCORESPERLINE} = $config->max_cores_per_line();
   $self->{CSS_PATH} = $config->css_path();
   $self->{GRIDNAME} = $config->gridname();
   $self->{SUMMARY_DISPLAY} = $config->summary_display();
@@ -190,6 +195,11 @@ sub clustername {
   return $self->{CLUSTERNAME};
 }
 
+## return max cores to display per line
+sub max_cores_per_line {
+  my $self = shift;
+  return $self->{MAXCORESPERLINE};
+}
 ## return css path
 sub css_path {
   my $self = shift;

@@ -20,7 +20,7 @@ Add a new resource.
 
 =item B<-s, --state> STATE
 
-Set the new state of the node.
+Set the new state of the node. The available states are: Alive, Absent and Dead.
 
 =item B<-m, --maintenance> on/off
 
@@ -45,6 +45,16 @@ Set the property of the node to the given value.
 =item B<-n, --nowait>
 
 Do not wait for job ends when the node switches to Absent or Dead.
+
+=back
+
+=head1 EXAMPLES
+
+=over
+
+=item oarnodesetting -s Alive -h node012
+
+=item oarnodesetting -s Absent -h node012
 
 =back
 

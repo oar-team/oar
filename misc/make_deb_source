@@ -1,0 +1,189 @@
+#!/bin/bash
+#
+# OAR
+#
+# build a debian source package from the git repository
+#
+#
+
+set -e
+
+QUIET=no
+TARGET_DIRECTORY=../build-area
+REMOTE=no
+FORCE=no
+GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
+GIT_TREEISH=debian/2.5
+GIT_UPSTREAM_TREEISH=debian-upstream/2.5
+UPSTREAM_TARBALL=
+
+
+usage() {
+    N=$(basename $0)
+    cat <<EOF
+  $N [-h]
+  $N [-q] [-d <directory>] [-m <upstream_tarball>] [-b <git_treeish>] [-t <git_upstream_treeish>] -r [-u <git_uri>]
+  $N [-q] [-d <directory>] [-m <upstream_tarball>] [-b <git_treeish>] [-t <git_upstream_treeish>] [-f]
+
+Options:
+  -d   target directory (by default '$TARGET_DIRECTORY')
+  -h   print this message and exit
+  -q   quiet (only write relevant information for automation to stdout)
+  -u   specify the git uri to use (by default '$GIT_URI')
+  -b   specify the git treeish of the debian branch (by default '$GIT_TREEISH')
+  -t   specify the git treeish of the debian upstream branch (by default '$GIT_UPSTREAM_TREEISH')
+  -r   use a remote repository
+  -f   make the tarball even if there are uncommited changes (only for local repository)
+  -m   merge the given upstream tarball into to debian package (this can fail, if quilt fails)
+
+EOF
+exit 1
+}
+
+log_info() {
+    if [ "$QUIET" != "yes" ]; then
+        echo -e "$*" >&2
+    fi
+}
+
+log_exit() {
+    ret=$1
+    shift
+    log_info $*
+    [ -d "$TMPDIR" ] && rm -rf "$TMPDIR"
+    exit $ret
+}
+
+check_if_uncommited_changes() {
+    if [ "$FORCE" != "yes" ] && [ -d ".git" ] && [ "$(git status |grep 'working directory clean')" = "" ]; then
+        echo "You have uncommited local changes. check with 'git status'."
+        echo "(or force the generation with '-f')"
+        exit 1
+    fi
+
+}
+
+while getopts "hqrfu:b:t:m:d:" options; do
+  case $options in
+    q) QUIET=yes ;;
+    r) REMOTE=yes ;;
+    f) FORCE=yes ;; 
+    u) GIT_URI="$OPTARG";;
+    b) GIT_TREEISH="$OPTARG" ;;
+    t) GIT_UPSTREAM_TREEISH="$OPTARG";;
+    m) UPSTREAM_TARBALL="$OPTARG" ;;
+    d) TARGET_DIRECTORY="$OPTARG";;
+    *) usage ;;
+  esac
+done
+
+
+shift $(($OPTIND - 1))
+
+[ -z "$TARGET_DIRECTORY" ] && log_exit 1 "you must provide an existing target directory"
+target_directory=$(readlink -e "$TARGET_DIRECTORY")
+
+if [ -n "$UPSTREAM_TARBALL" ]; then
+    UPSTREAM_TARBALL=$(readlink -e "$UPSTREAM_TARBALL")
+
+    [ ! -f "$UPSTREAM_TARBALL" ] && log_exit 1 "The file $UPSTREAM_TARBALL doesn't exist"
+fi
+
+
+cur_dir=$(pwd)
+
+if [ "$REMOTE" != "yes" ]; then
+    git_dir=$(pwd)
+
+    if [ ! -d "$git_dir/.git" ]; then
+        echo "$git_dir is not a working git directory. Fail."
+        exit 1;
+    fi
+
+    check_if_uncommited_changes
+    log_info "Using the Git repository '$(pwd)'"
+
+fi
+
+TMPDIR=$(mktemp -d)
+
+if [ "$REMOTE" = "yes" ]; then
+    git_dir="$TMPDIR/git"
+    mkdir -p "$git_dir"
+    log_info "Using the Git repository '$GIT_URI'"
+    git clone -q  $GIT_URI "$git_dir"
+fi
+
+
+
+cd "$git_dir"
+
+log_info "Using the Git tree-ish   '$GIT_TREEISH'"
+last_tag=$(git describe $GIT_TREEISH --abbrev=0)
+
+is_snapshot=no
+if [ "$last_tag" != "$(git describe $GIT_TREEISH)" ]; then
+    is_snapshot=yes
+fi
+
+upstream_version_tag=$(git describe $GIT_UPSTREAM_TREEISH)
+upstream_version=$(echo "$upstream_version_tag" | sed -e "s%.*/%%")
+
+debian_revision_number=$(git log --oneline --ancestry-path --no-merges $upstream_version_tag..$GIT_TREEISH | wc -l)
+debian_revision_hash=$(git log --oneline -n 1 $GIT_TREEISH | cut -d' ' -f 1)
+debian_revision="$debian_revision_number.g$debian_revision_hash"
+
+version="$upstream_version-$debian_revision"
+
+deb_dir="$TMPDIR/deb"
+deb_prefix=oar-$version
+deb_srcdir="$deb_dir/$deb_prefix"
+
+pristine_prefix=oar_$upstream_version
+upstream_tarball=$deb_dir/$pristine_prefix.orig.tar.gz
+
+mkdir "$deb_dir"
+
+git archive --format tar --prefix "$deb_prefix/" "$GIT_TREEISH" | tar xf - -C "$deb_dir"
+pristine-tar checkout $upstream_tarball
+
+cd "$deb_srcdir"
+
+log_info "Generating the snapshot package"
+if [ "$is_snapshot" = "yes" ]; then
+    dch -v "$version" --distribution snapshots --force-distribution "### Snapshot release ###" >/dev/null 2>/dev/null
+fi
+dpkg-buildpackage -S -us -uc > /dev/null
+
+
+log_info "Generating the snapshot package with the merged upstream"
+if [ -n "$UPSTREAM_TARBALL" ]; then
+    upstream_tarball=$UPSTREAM_TARBALL
+    upstream_version=$(echo "$upstream_tarball" | sed -e "s#.*/oar[_-]\(.*\)\(\.orig\)\?\.tar\.gz#\1#")
+    version="$upstream_version-$debian_revision"
+    uupdate $upstream_tarball -u -v $upstream_version > /dev/null
+
+    cd $deb_dir/oar-$upstream_version
+    dch -v "$version" --distribution snapshots --force-distribution "### Snapshot release ###" >/dev/null 2>/dev/null
+    if ! dpkg-buildpackage -S -us -uc >/dev/null; then
+        log_exit 1 "Unable to generate the new source. Fail"
+    fi
+    
+fi
+
+deb_dscfile="$deb_dir/oar_$version.dsc"
+deb_changefile="$deb_dir/oar_${version}_source.changes"
+deb_tarball="$deb_dir/oar_${version}.debian.tar.gz"
+
+mkdir -p $target_directory/oar-$version
+
+cp  $upstream_tarball \
+    $deb_dscfile \
+    $deb_changefile \
+    $deb_tarball \
+    $target_directory/oar-$version
+
+cd $cur_dir
+
+echo "$target_directory/oar-$version"
+log_exit 0 "\n### SUCCESS\n\nThe debian source package are in '$TARGET_DIRECTORY/oar-$version'"
