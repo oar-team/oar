@@ -987,7 +987,9 @@ SWITCH: for ($q) {
         	}
         	else {
         		# resource does not exist
-        		$resources = OAR::API::struct_empty($STRUCTURE);
+        		#$resources = OAR::API::struct_empty($STRUCTURE);
+                        OAR::API::ERROR( 404, "Resource not found",
+                        "Resource not found" );
         	}
         	
         	# do not need to paging resource detail
