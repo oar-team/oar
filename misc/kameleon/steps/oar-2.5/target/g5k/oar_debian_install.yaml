@@ -7,4 +7,5 @@ oar_debian_install:
  - disable_frontend_autostart:
    - exec_chroot: update-rc.d apache2 disable
    - exec_chroot: update-rc.d oidentd disable
-         
+ - install_oar_appliance_setup_scripts:
+   - exec_chroot: cp -a $$oar_git_directory/misc/appliance_setup /root/

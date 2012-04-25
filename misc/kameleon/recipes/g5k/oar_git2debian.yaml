@@ -85,6 +85,7 @@ steps:
     - disable_node_autostart
     - disable_server_autostart
     - disable_frontend_autostart
+    - install_oar_appliance_setup_scripts
  - oar-2.5/oar_clean
 # - kameleon/kameleon_debian_install
  - autologin
