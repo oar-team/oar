@@ -144,7 +144,7 @@ sub check_returned_cmd($$$$$) {
 
         # Suspect node if error
         change_node_state( $base, $tmp_node, "Suspected" );
-        my $str = "[Hulot] Node '$tmp_node' was suspected because an error occurred with a command launched by Hulot";
+        my $str = "[Hulot] Node $tmp_node was suspected because an error occurred with a command launched by Hulot";
         OAR::IO::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $str, [$tmp_node]);
         oar_debug("$str\n");
     }
@@ -431,7 +431,7 @@ sub start_energy_loop() {
                     }
                     elsif (time > $nodes_list_running{$key}->{'timeout'}) {
                         change_node_state( $base, $key, "Suspected" );
-                        my $str = "[Hulot] Node '$key' was suspected because it didn't wake up before the end of the timeout\n";
+                        my $str = "[Hulot] Node $key was suspected because it did not wake up before the end of the timeout\n";
                         OAR::IO::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $str, [$key]);
 
                         # Remove suspected node from the list running nodes
