@@ -68,7 +68,7 @@ server_setup() {
     service mysql start
 
     oar-database --drop --db-admin-user root --db-host localhost || true
-    oar-database --create --db-admin-user root --db-host localhost | true
+    oar-database --create --db-admin-user root --db-host localhost || true
     service oar-server start
 }
 
@@ -113,6 +113,7 @@ case $TYPE in
         server_setup
         frontend_setup
         node_setup
+        ;;
     *)
         echo "$0: The type is not valid (could be server|frontend|node|demo)"
         exit 1
