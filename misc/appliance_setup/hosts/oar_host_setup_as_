@@ -119,4 +119,4 @@ case $TYPE in
         ;;
 esac
 
-touch /root/oar-setup/oar-$TYPE
+touch /root/oar-$TYPE
