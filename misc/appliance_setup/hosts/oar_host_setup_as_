@@ -108,8 +108,13 @@ case $TYPE in
         common_setup
         node_setup
         ;;
+    demo)
+        common_setup
+        server_setup
+        frontend_setup
+        node_setup
     *)
-        echo "$0: The type is not valid (could be server|frontend|node)"
+        echo "$0: The type is not valid (could be server|frontend|node|demo)"
         exit 1
         ;;
 esac
