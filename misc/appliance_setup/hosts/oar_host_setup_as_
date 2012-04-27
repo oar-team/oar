@@ -67,6 +67,8 @@ server_setup() {
     update-rc.d mysql enable
     service mysql start
 
+    sleep 3
+
     oar-database --drop --db-admin-user root --db-host localhost || true
     oar-database --create --db-admin-user root --db-host localhost || true
     service oar-server start
