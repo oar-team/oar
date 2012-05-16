@@ -35,7 +35,7 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(OARDIR)/oarsh_oardo
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 	
-	$(CC) $(CFLAGS) -o $(SRCDIR)/tools/oardodo $(SRCDIR)/tools/oardodo.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $(SRCDIR)/tools/oardodo $(SRCDIR)/tools/oardodo.c
 	
 install: install_shared
 	
