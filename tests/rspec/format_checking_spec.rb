@@ -272,15 +272,20 @@ describe OarApi do
       before(:all) do
         @api = OarApi.new(APIURI)
       end
-      it "should return a 404 error" do
+
+      it "should raise an exception" do
         lambda {
-          begin
             @api.get_hash("jobs/00")
-          rescue => e
-            e.should respond_to('http_code')
-            e.http_code.should == 404
-          end 
         }.should raise_exception
+      end
+
+      it "should return a 404 error" do
+        begin
+          @api.get_hash("jobs/00")
+        rescue => e
+          e.should respond_to('http_code')
+          e.http_code.should == 404
+        end 
       end
     end
   end
@@ -460,6 +465,26 @@ describe OarApi do
       @api.get_hash("resources/3")
     end
     it_should_behave_like "Resource"
+  end
+
+  describe "NON-EXISTENT RESOURCE" do
+    before(:all) do
+      @api = OarApi.new(APIURI)
+    end
+    it "should raise an exception" do
+      lambda {
+          @api.get(@api.api,"resources/00")
+      }.should raise_exception
+    end
+
+    it "should return a 404 error" do
+      begin
+        @api.get(@api.api,"resources/00")
+      rescue => e
+        e.should respond_to('http_code')
+        e.http_code.should == 404
+      end 
+    end
   end
 
   describe "NODE RESOURCES: /resources/nodes/<node>" do

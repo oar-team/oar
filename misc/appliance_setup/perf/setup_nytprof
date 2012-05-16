@@ -1,0 +1,22 @@
+#! /bin/sh
+
+export > /root/env.log
+
+mkdir -p /tmp/oar_profiling/
+chmod 777 /tmp/oar_profiling/
+
+cat >> /etc/default/oar-server << EOF
+NYTPROF=log=/tmp/oar_profiling/nytlog:trace=2:addpid=1:file=/tmp/oar_profiling/nytprof
+PERL5OPT=-d:NYTProf
+EOF
+
+cat >> /etc/environment << EOF
+NYTPROF=log=/tmp/oar_profiling/nytlog:trace=2:addpid=1:file=/tmp/oar_profiling/nytprof
+PERL5OPT=-d:NYTProf
+EOF
+
+cat >> /etc/bash.bashrc << EOF
+NYTPROF=log=/tmp/oar_profiling/nytlog:trace=2:addpid=1:file=/tmp/oar_profiling/nytprof
+PERL5OPT=-d:NYTProf
+EOF
+

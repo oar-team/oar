@@ -37,19 +37,18 @@ end
 ########################################################################
 
 def get(api,uri)
-  uri=rel_uri(uri)
-  begin
-        #puts api[uri]
-        return JSON.parse(api[uri].get(:accept => 'application/json'))
-rescue => e
-    if e.respond_to?('http_code')
-      puts "ERROR #{e.http_code}:\n #{e.response.body}"
-    else
-      puts "Parse error:"
-      puts e.inspect
-    end
-    exit 1
-  end
+    uri=rel_uri(uri)
+#  begin
+    return JSON.parse(api[uri].get(:accept => 'application/json'))
+#  rescue => e
+#    if e.respond_to?('http_code')
+#      puts "ERROR #{e.http_code}:\n #{e.response.body}"
+#    else
+#      puts "Parse error:"
+#      puts e.inspect
+#    end
+#    exit 1
+#  end
 end
 
 ########################################################################

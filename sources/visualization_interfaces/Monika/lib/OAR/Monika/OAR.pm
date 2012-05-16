@@ -121,6 +121,9 @@ sub getJobProperties {
 
   my $start_time= $job->get("start_time");
   $job->set("start_time",OAR::Monika::db_io::local_to_sql($start_time),$cgi);
+
+  my $stop_time= $job->get("stop_time");
+  $job->set("stop_time",OAR::Monika::db_io::local_to_sql($stop_time),$cgi);
   OAR::Monika::db_io::dbDisconnect($dbh);
   return $job;
 }

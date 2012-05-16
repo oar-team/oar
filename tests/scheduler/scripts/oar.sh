@@ -28,12 +28,17 @@ oar_install() {
 	debug "Installing OAR in the build dir"
 	(
 		cd $SRCDIR
-		make server libs \
-		OARCONFDIR=$BUILDDIR/etc/oar \
-		OARUSER=$(id -un) \
-		OAROWNER=$(id -un) \
-		OAROWNERGROUP=$(id -gn) \
-		PREFIX=$BUILDDIR/usr/local > /dev/null
+                make server-install server-setup \
+                    ETCDIR=$BUILDDIR/etc \
+                    VARLIBDIR=$BUILDDIR/var \
+                    RUNDIR=$BUILDDIR/var/run \
+                    LOGDIR=$BUILDDIR/var/log \
+                    OARUSER=$(id -un) \
+                    OAROWNERGROUP=$(id -gn)  \
+                    PREFIX=$BUILDDIR/usr/local \
+                    ROOTUSER=$(id -un) \
+                    ROOTGROUP=$(id -gn) \
+                    > /dev/null
 	)
 	debug "done"
 }
