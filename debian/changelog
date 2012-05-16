@@ -1,6 +1,6 @@
-oar (2.5.1+132.g084f2bb-1~6.gbp7dd583) UNRELEASED; urgency=low
+oar (2.5.1+132.g084f2bb-1~7.gbp71e3e0) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @7dd583cd89e334b9c0c2ba69fea49dbb20e9701c **
+  ** SNAPSHOT build @71e3e042ca70237914ee190615d7d374d5d97481 **
 
   * Update the debian copyright file
   * Imported Upstream version 2.5.1+104.g1969ca3
@@ -22,6 +22,8 @@ oar (2.5.1+132.g084f2bb-1~6.gbp7dd583) UNRELEASED; urgency=low
   * Imported Upstream version 2.5.1+131.g468450b
   * update changelog
   * Imported Upstream version 2.5.1+132.g084f2bb
+  * update the changelog.
+  * Override lintian warning: hardening-no-stackprotector
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
 
