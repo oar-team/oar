@@ -1,4 +1,4 @@
-export CFLAGS?=-g
+export CFLAGS?=-g -Wall
 
 export PREFIX?=/usr/local
 
