@@ -1,6 +1,6 @@
-oar (2.5.1+128.g0038a00-1~3.gbp8ac197) UNRELEASED; urgency=low
+oar (2.5.1+130.g03edb02-1~4.gbpd6ac26) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @8ac1972b76389ce12f982340e9e7b9693d2fe5ce **
+  ** SNAPSHOT build @d6ac26e5f7eaf799e5cea791018c76d5302b3e76 **
 
   * Update the debian copyright file
   * Imported Upstream version 2.5.1+104.g1969ca3
@@ -11,6 +11,12 @@ oar (2.5.1+128.g0038a00-1~3.gbp8ac197) UNRELEASED; urgency=low
   * update the changelog
   * add the copyright for drmaa
   * Imported Upstream version 2.5.1+128.g0038a00
+  * Update the copyright file.
+  * Update the changelog
+  * update the changelog
+  * update the debhelper compatibility to 9
+  * Update the rules
+  * Imported Upstream version 2.5.1+130.g03edb02
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
 
