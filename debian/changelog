@@ -1,6 +1,6 @@
-oar (2.5.1+131.g468450b-1~5.gbpf73cdd) UNRELEASED; urgency=low
+oar (2.5.1+132.g084f2bb-1~6.gbp7dd583) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @f73cdd58e706c398f2adae9996696ee12c29536a **
+  ** SNAPSHOT build @7dd583cd89e334b9c0c2ba69fea49dbb20e9701c **
 
   * Update the debian copyright file
   * Imported Upstream version 2.5.1+104.g1969ca3
@@ -20,6 +20,8 @@ oar (2.5.1+131.g468450b-1~5.gbpf73cdd) UNRELEASED; urgency=low
   * update the changelog
   * Add -Wall by default in CFLAGS
   * Imported Upstream version 2.5.1+131.g468450b
+  * update changelog
+  * Imported Upstream version 2.5.1+132.g084f2bb
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
 
