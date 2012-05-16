@@ -25,6 +25,8 @@ export TARGET_DIST=debian
 #DEB_CFLAGS_APPEND:=-m$(DEB_HOST_ARCH_BITS)
 #export DEB_CFLAGS_APPEND
 #endif
+DEB_CFLAGS_APPEND:=-Wall
+
 
 %:
 	dh $@ 
