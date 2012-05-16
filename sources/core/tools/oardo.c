@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 // Print on stderr a string and exit with the given exit code
 void error(char *error_str, int exit_code){
