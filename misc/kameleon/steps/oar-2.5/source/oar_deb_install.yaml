@@ -4,7 +4,7 @@ oar_deb_install:
      - /etc/apt/sources.list
      - |
        $$oar_deb_repository
-   - exec_chroot: curl http://oar-ftp.imag.fr/oar/oarmaster.asc | apt-key add -
+   - exec_chroot: bash -c "curl http://oar-ftp.imag.fr/oar/oarmaster.asc | apt-key add -"
    - exec_chroot: apt-get update
 
  - server:
