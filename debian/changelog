@@ -1,10 +1,13 @@
-oar (2.5.1+104.g1969ca3-1~1.gbpb2a752) UNRELEASED; urgency=low
+oar (2.5.1+104.g1969ca3-1~2.gbpe39e77) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @b2a7524a3c27795a723c0874d5abd73c972d69dc **
+  ** SNAPSHOT build @e39e7792b65e1adc8c5debd54f3d6e5b7491e807 **
 
   * Update the debian copyright file
   * Imported Upstream version 2.5.1+104.g1969ca3
   * Remove the patch 0001-Fix-a-spelling-error-in-the-oaradmin-manpage
+  * Update the changelog
+  * Add some license information.
+  * Fix the syntax in debian/copyright.
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
 
