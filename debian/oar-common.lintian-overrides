@@ -1,3 +1,6 @@
 # The INSTALL file contains also the Debian configuration instructions
 oar-common binary: package-contains-upstream-install-documentation
 
+# The C file are only C wrapper (there are no character arrays used on the 
+# stack of any routines)
+oar-common binary: hardening-no-stackprotector
