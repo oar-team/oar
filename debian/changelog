@@ -1,6 +1,6 @@
-oar (2.5.1+130.g03edb02-1~4.gbpd6ac26) UNRELEASED; urgency=low
+oar (2.5.1+131.g468450b-1~5.gbpf73cdd) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @d6ac26e5f7eaf799e5cea791018c76d5302b3e76 **
+  ** SNAPSHOT build @f73cdd58e706c398f2adae9996696ee12c29536a **
 
   * Update the debian copyright file
   * Imported Upstream version 2.5.1+104.g1969ca3
@@ -17,6 +17,9 @@ oar (2.5.1+130.g03edb02-1~4.gbpd6ac26) UNRELEASED; urgency=low
   * update the debhelper compatibility to 9
   * Update the rules
   * Imported Upstream version 2.5.1+130.g03edb02
+  * update the changelog
+  * Add -Wall by default in CFLAGS
+  * Imported Upstream version 2.5.1+131.g468450b
 
  -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
 
