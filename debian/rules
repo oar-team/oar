@@ -21,12 +21,8 @@ export VARLIBDIR=/var/lib
 export SETUP_TYPE=deb
 export TARGET_DIST=debian
 
-#ifdef DEB_HOST_ARCH_BITS
-#DEB_CFLAGS_APPEND:=-m$(DEB_HOST_ARCH_BITS)
-#export DEB_CFLAGS_APPEND
-#endif
 DEB_CFLAGS_APPEND:=-Wall
-
+export DEB_CFLAGS_APPEND
 
 %:
 	dh $@ 
