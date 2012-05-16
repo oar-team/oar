@@ -21,16 +21,16 @@ export VARLIBDIR=/var/lib
 export SETUP_TYPE=deb
 export TARGET_DIST=debian
 
-ifdef DEB_HOST_ARCH_BITS
-CFLAGS:=$(CFLAGS) -m$(DEB_HOST_ARCH_BITS)
-endif
-export CFLAGS
+#ifdef DEB_HOST_ARCH_BITS
+#DEB_CFLAGS_APPEND:=-m$(DEB_HOST_ARCH_BITS)
+#export DEB_CFLAGS_APPEND
+#endif
 
 %:
 	dh $@ 
 
 override_dh_auto_build:
-	$(MAKE) -e packages-build   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
+	dh_auto_build -- -e packages-build   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 	
 
 override_dh_auto_install:
