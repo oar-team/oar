@@ -51,14 +51,14 @@ global:
  oar_prefix_install: /usr/local
 
 steps:
+ - chroot_in_tmpfs
  - debian_check_deps
  - check_deps:
    - rsync
    - building_appliance
    - building_kvm_images
  - oar-2.5/oar_precheck
-# - checkpoint_resume
- - bootstrap
+ - bootstrap_if_needed
  - system_config
 # - network_config_static
  - root_passwd
@@ -67,7 +67,6 @@ steps:
  - software_install:
    - extra_packages
  - kernel_install
-# - checkpoint
  - oar-2.5/target/debian/oar_debian_preinstall
  - oar-2.5/source/oar_git_install:
    - fetch_repository
@@ -85,17 +84,18 @@ steps:
     - disable_node_autostart
     - disable_server_autostart
     - disable_frontend_autostart
+    - install_oar_appliance_setup_scripts
  - oar-2.5/oar_clean
 # - kameleon/kameleon_debian_install
  - autologin
  - strip
 # - xen_domu
 # - oar/oar_build_tgz
- - build_appliance:
+ - build_appliance_kpartx:
    - clean_udev
 #   - save_as_tgz
    - create_raw_image
-   - create_nbd_device
+   - attach_kpartx_device
    - mkfs
    - mount_image
    - copy_system_tree

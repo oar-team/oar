@@ -119,19 +119,41 @@ fi
 cd "$git_dir"
 
 log_info "Using the Git tree-ish   '$GIT_TREEISH'"
-last_tag=$(git describe $GIT_TREEISH --abbrev=0)
 
-is_snapshot=no
-if [ "$last_tag" != "$(git describe $GIT_TREEISH)" ]; then
+
+last_tag=$(git describe $GIT_TREEISH --match "debian/*" --abbrev=0)
+last_tag_hash=$(git log --oneline -n 1 "$last_tag" | cut -d' ' -f 1)
+git_treeish_hash=$(git log --oneline -n 1 "$GIT_TREEISH" | cut -d' ' -f 1)
+
+is_snapshot=
+if [ "$last_tag_hash" = "$git_treeish_hash" ] && [ -n "$(git tag -l $GIT_TREEISH)" ]; then
+    is_snapshot=no
+    log_info "Generating a released package"
+else
     is_snapshot=yes
+    log_info "Generating a snapshot package"
 fi
 
-upstream_version_tag=$(git describe $GIT_UPSTREAM_TREEISH)
+upstream_version_tag=$(git describe $GIT_TREEISH --abbrev=0 --match="$GIT_UPSTREAM_TREEISH*")
 upstream_version=$(echo "$upstream_version_tag" | sed -e "s%.*/%%")
 
-debian_revision_number=$(git log --oneline --ancestry-path --no-merges $upstream_version_tag..$GIT_TREEISH | wc -l)
-debian_revision_hash=$(git log --oneline -n 1 $GIT_TREEISH | cut -d' ' -f 1)
-debian_revision="$debian_revision_number.g$debian_revision_hash"
+if [ "$is_snapshot" = "yes" ]; then
+
+    debian_revision_tag=$(git describe $GIT_TREEISH --abbrev=0 --match="debian/$upstream_version*" 2>/dev/null || true)
+    if [ -n "$debian_revision_tag" ]; then
+        debian_revision=$(echo "$debian_revision_tag" | sed -e "s%.*/.*-%%")
+    else
+        debian_revision="0"
+    fi
+     
+
+    debian_revision_number=$(git log --oneline --ancestry-path --no-merges $upstream_version_tag..$GIT_TREEISH | wc -l)
+    debian_revision_hash=$(git log --oneline -n 1 $GIT_TREEISH | cut -d' ' -f 1)
+    debian_revision="$debian_revision+$debian_revision_number.g$debian_revision_hash"
+else
+    debian_revision=$(echo "$GIT_TREEISH" | sed -e "s/.*-//")
+fi
+
 
 version="$upstream_version-$debian_revision"
 
@@ -149,10 +171,13 @@ pristine-tar checkout $upstream_tarball
 
 cd "$deb_srcdir"
 
-log_info "Generating the snapshot package"
+log_info "Generating the source package"
+
 if [ "$is_snapshot" = "yes" ]; then
-    dch -v "$version" --distribution snapshots --force-distribution "### Snapshot release ###" >/dev/null 2>/dev/null
+    dch -v "$version" "" -b >/dev/null 2>/dev/null
+    dch -r "" >/dev/null 2>/dev/null
 fi
+
 dpkg-buildpackage -S -us -uc > /dev/null
 
 
@@ -164,7 +189,8 @@ if [ -n "$UPSTREAM_TARBALL" ]; then
     uupdate $upstream_tarball -u -v $upstream_version > /dev/null
 
     cd $deb_dir/oar-$upstream_version
-    dch -v "$version" --distribution snapshots --force-distribution "### Snapshot release ###" >/dev/null 2>/dev/null
+    dch -v "$version" "" >/dev/null 2>/dev/null
+    dch -r "" >/dev/null 2>/dev/null
     if ! dpkg-buildpackage -S -us -uc >/dev/null; then
         log_exit 1 "Unable to generate the new source. Fail"
     fi
@@ -175,15 +201,15 @@ deb_dscfile="$deb_dir/oar_$version.dsc"
 deb_changefile="$deb_dir/oar_${version}_source.changes"
 deb_tarball="$deb_dir/oar_${version}.debian.tar.gz"
 
-mkdir -p $target_directory/oar-$version
+mkdir -p $target_directory/oar_$version
 
 cp  $upstream_tarball \
     $deb_dscfile \
     $deb_changefile \
     $deb_tarball \
-    $target_directory/oar-$version
+    $target_directory/oar_$version
 
 cd $cur_dir
 
-echo "$target_directory/oar-$version"
-log_exit 0 "\n### SUCCESS\n\nThe debian source package are in '$TARGET_DIRECTORY/oar-$version'"
+echo "$target_directory/oar_$version"
+log_exit 0 "\n### SUCCESS\n\nThe debian source package are in '$TARGET_DIRECTORY/oar_$version'"

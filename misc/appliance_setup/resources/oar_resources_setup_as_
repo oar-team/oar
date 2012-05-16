@@ -1,0 +1,111 @@
+#! /bin/sh
+
+#set -x
+
+# The type of host. Could be :
+#     - server
+#     - frontend
+#     - node
+SCRIPT_PREFIX=oar_resources_setup_as_
+SCRIPT_BASENAME=$(basename $0)
+TYPE=${SCRIPT_BASENAME##$SCRIPT_PREFIX}
+
+THIS_HOSTNAME=$1
+shift
+
+# The first node is the server
+SERVER_HOSTNAME=$1
+shift
+
+# The second node is the frontend
+FRONTEND_HOSTNAME=$1
+shift
+
+# the other nodes are compute nodes.
+NODE_HOSTNAME_LISTFILE=$1
+shift
+
+CORE_FACTOR=$1
+shift
+
+CPU_FACTOR=$1
+shift
+
+
+openssh_cmd() {
+    host=$1
+    shift
+    cmd=$*
+    su - oar -c "ssh -p 6667 $host $cmd"
+}
+
+#
+# Set oar with "normal ressources"
+#
+normal_resources_setup() {
+    if [ ! -f "$NODE_HOSTNAME_LISTFILE" ]; then
+        echo "Unable to read the node file list";
+    fi
+
+    cat "$NODE_HOSTNAME_LISTFILE" > /tmp/compute_nodes
+    oar_resources_init /tmp/compute_nodes << EOF
+yes
+yes
+EOF
+    sh /tmp/oar_resources_init.txt
+}
+
+dummy_resources_setup() {
+    if [ ! -f "$NODE_HOSTNAME_LISTFILE" ]; then
+        echo "Unable to read the node file list";
+    fi
+
+    tot_cpt_cpu=0
+    tot_cpt_core=0
+
+    tmp_res=$(mktemp)
+    chown oar:oar $tmp_res
+
+    PATH=/usr/local/sbin:/usr/sbin:$PATH
+    oarproperty -a cpu
+    oarproperty -a core
+    oarproperty -c -a host
+    oarproperty -a cpuset
+    oarproperty -a mem
+
+    echo -n "[" > $tmp_res
+    for HOST in `cat $NODE_HOSTNAME_LISTFILE|sort -u` ; do
+        CPUS=$(openssh_cmd  $HOST lscpu -p | tail -n+5 | cut -d',' -f 3 | uniq | wc -l)
+        TOTAL_CORES=$(openssh_cmd $HOST lscpu -p | tail -n+5 | cut -d',' -f 2 | uniq | wc -l)
+        CORES=$(($TOTAL_CORES / $CPUS))
+        EMUL_CPUS=$(($CPUS * $CPU_FACTOR))
+        EMUL_CORES=$(($CORES * $CORE_FACTOR))
+
+        for cpt_cpu in $(seq `expr $tot_cpt_cpu` 1 `expr $EMUL_CPUS + $tot_cpt_cpu - 1`); do
+            for cpt_core in $(seq `expr $tot_cpt_core` 1 `expr $EMUL_CORES + $tot_cpt_core - 1`); do
+
+                echo -n "{\"hostname\":\"$HOST\", \"cpu\":\"$cpt_cpu\", \"core\":\"$cpt_core\", \"cpuset\":\"$(expr $cpt_core % $TOTAL_CORES)\"}," >> $tmp_res 
+
+                tot_cpt_core=`expr $tot_cpt_core + 1`
+            done ;
+            tot_cpt_cpu=`expr $tot_cpt_cpu + 1`
+        done ;
+    done
+    sed -e 's/,$/]/' -i $tmp_res
+    su - oar -c "curl -x ''  -i  http://$FRONTEND_HOSTNAME/oarapi/resources -H'Content-Type: application/json' -d @$tmp_res" > /dev/null
+    
+}
+
+
+case $TYPE in
+    normal)
+        normal_resources_setup
+        ;;
+    dummy)
+        dummy_resources_setup
+        ;;
+    *)
+        echo "$0: the type $TYPE is invalid. It could be currently only 'normal'. Failing."
+        exit 1
+        ;;
+esac

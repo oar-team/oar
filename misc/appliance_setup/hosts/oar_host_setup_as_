@@ -1,0 +1,125 @@
+#! /bin/sh
+
+#set -x
+
+# The type of host. Could be :
+#     - server
+#     - frontend
+#     - node
+SCRIPT_PREFIX=oar_host_setup_as_
+SCRIPT_BASENAME=$(basename $0)
+TYPE=${SCRIPT_BASENAME##$SCRIPT_PREFIX}
+
+THIS_HOSTNAME=$1
+shift
+
+# The first node is the server
+SERVER_HOSTNAME=$1
+shift
+
+# The second node is the frontend
+FRONTEND_HOSTNAME=$1
+shift
+
+# the other nodes are compute nodes.
+NODE_HOSTNAME_LISTFILE=$1
+shift
+
+
+configure_database() {
+    sed -e "s/^DB_HOSTNAME=.*/DB_HOSTNAME=\"$SERVER_HOSTNAME\"/" -i /etc/oar/oar.conf
+    sed -e "s/^SERVER_HOSTNAME=.*/SERVER_HOSTNAME=\"$SERVER_HOSTNAME\"/" -i /etc/oar/oar.conf
+}
+
+configure_hostname() {
+    echo "$THIS_HOSTNAME" > /etc/hostname
+    hostname $THIS_HOSTNAME
+    IPV4=$(ip -o -f inet addr show scope global | awk '{print $4;};' | sed -e "s%/.*%%")
+    echo "$IPV4 $THIS_HOSTNAME $(hostname -s)" >> /etc/hosts
+}
+
+configure_user () {
+    adduser --disabled-password --gecos "user" user
+    mkdir /home/user/.ssh
+    touch /home/user/.ssh/authorized_keys
+    chown -R user:user /home/user/.ssh
+    chmod 700 /home/user/.ssh
+    chmod 600 /home/user/.ssh/authorized_keys
+    adduser user sudo
+    cat /root/.ssh/authorized_keys >> /home/user/.ssh/authorized_keys
+}
+
+common_setup() {
+    configure_hostname
+    configure_user
+}
+
+
+server_setup() {
+    service oar-server stop
+    service mysql stop
+
+    configure_database
+    
+    sed -e "s/^\(bind-address.*\)/#\1/" -i /etc/mysql/my.cnf
+    
+    update-rc.d oar-server enable
+    update-rc.d mysql enable
+    service mysql start
+
+    sleep 3
+
+    oar-database --drop --db-admin-user root --db-host localhost || true
+    oar-database --create --db-admin-user root --db-host localhost || true
+    service oar-server start
+}
+
+frontend_setup() {
+    service apache2 stop
+    service oidentd stop
+
+    configure_database
+    
+    sed -e "s/^hostname.*/hostname = $SERVER_HOSTNAME/" -i /etc/oar/monika.conf
+    sed -e "s/^DB_HOSTNAME.*/DB_HOSTNAME: $SERVER_HOSTNAME/" -i /etc/oar/drawgantt.conf
+
+    update-rc.d oidentd enable
+    update-rc.d apache2 enable
+    service oidentd start
+    service apache2 start
+}
+
+node_setup() {
+    service oar-node stop
+    update-rc.d oar-node enable
+    service oar-node start
+}
+
+
+case $TYPE in
+    server)
+        common_setup
+        server_setup
+        ;;
+    frontend)
+        common_setup
+        frontend_setup
+        ;;
+    compute|node)
+        TYPE=node
+        common_setup
+        node_setup
+        ;;
+    demo)
+        common_setup
+        server_setup
+        frontend_setup
+        node_setup
+        ;;
+    *)
+        echo "$0: The type is not valid (could be server|frontend|node|demo)"
+        exit 1
+        ;;
+esac
+
+touch /root/oar-$TYPE

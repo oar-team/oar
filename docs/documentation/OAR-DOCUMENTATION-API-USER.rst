@@ -1025,7 +1025,7 @@ POST /jobs
   user
 
 :input:
-  Only [resource] and [command] are mandatory
+  Only [resource] and [command] are mandatory. Please, refer to the documentation of the *oarsub* command for the resource syntax which correspond to the -l (--resource) option. 
 
   *structure*: hash with possible arrays (for options that may be passed multiple times)
 

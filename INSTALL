@@ -625,10 +625,11 @@ Configuration
     mechanism you want to use. For ident, you may have to install a "identd" daemon
     on your distrib. The steps may be:
 
-        - Install and run a identd daemon on your server
-        - Activate the ident auth mechanism into apache (``a2enmod ident``)
-        - Activate the headers apache module (``a2enmod headers``)
-        - Customize apache-api.conf to allow the hosts you trust for ident
+        - Install and run an identd daemon on your server (like *pidentd*).
+        - Activate the ident auth mechanism into apache (``a2enmod ident``).
+        - Activate the headers apache module (``a2enmod headers``).
+        - Activate the rewrite apache module (``a2enmod rewrite``).
+        - Customize apache-api.conf to allow the hosts you trust for ident.
 
 *YAML, JSON, XML*
 
