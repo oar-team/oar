@@ -21,8 +21,7 @@ export VARLIBDIR=/var/lib
 export SETUP_TYPE=deb
 export TARGET_DIST=debian
 
-DEB_CFLAGS_APPEND:=-Wall
-export DEB_CFLAGS_APPEND
+export CFLAGS = $(shell dpkg-buildflags --get CFLAGS) -Wall
 
 %:
 	dh $@ 
