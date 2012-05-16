@@ -56,7 +56,7 @@ License: Artistic
  software.
  .
  On Debian systems, the complete text of the Artistic License can be found in
-`/usr/share/common-licenses/Artistic'.
+ `/usr/share/common-licenses/Artistic'.
 
 Files: /sources/extra/orpheus/modules/lua-signal/lsignal.c
 Copyright: 2010  Patrick J. Donnelly (batrick@batbytes.com) 
