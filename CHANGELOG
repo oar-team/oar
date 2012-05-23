@@ -1,7 +1,7 @@
 OAR CHANGELOG
 =============
 
-version 2.5.x:
+version 2.5.2:
 --------------
   - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common
     setup script.
