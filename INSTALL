@@ -78,7 +78,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.1
+        OAR_VERSION=2.5.2
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -196,7 +196,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.1
+        OAR_VERSION=2.5.2
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -485,7 +485,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.1
+        OAR_VERSION=2.5.2
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -513,7 +513,7 @@ the user nodes.
 OAR RESTful API Installation
 ____________________________
 
-Since the version 2.5.1, OAR offers an API for users and admins interactions. This api
+Since the version 2.5.2, OAR offers an API for users and admins interactions. This api
 must be installed on a frontend node (with the user module installed).
 
 From the packaging
@@ -593,7 +593,7 @@ From the sources
 
 Get the sources::
 
-        OAR_VERSION=2.5.1
+        OAR_VERSION=2.5.2
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -724,7 +724,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.1
+        OAR_VERSION=2.5.2
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 

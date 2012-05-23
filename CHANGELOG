@@ -1,7 +1,7 @@
 OAR CHANGELOG
 =============
 
-version 2.5.x:
+version 2.5.2:
 --------------
   - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common
     setup script.
@@ -18,16 +18,21 @@ version 2.5.x:
   - Monika: Add the conf max_cores_per_line to have several lines if the number
     of cores are too big.
   - Minor changes into API:
-      - added cmd_output into POST /jobs
-  - API: Added GET /select_all?query=<query> (read only mode)
+      - added cmd_output into POST /jobs.
+  - API: Added GET /select_all?query=<query> (read only mode).
   - Add the field "array_index" into the jobs table. So that resubmit a job
     from an array will have the right array_index anvironment variable.
   - oarstat: order the output by job_id.
-  - Speedup oarnodes
-  - Fix a spelling error in the oaradmin manpage
+  - Speedup oarnodes.
+  - Fix a spelling error in the oaradmin manpage.
   - Bugfix #14122 : the oar-node init.d script wasn't executing
     start_oar_node/stop_oar_node during the 'restart' action.
   - Allow the dash  character into the --notify "exec:..." oarsub option.
+  - Remove some old stuffs from the tarball:
+       - visualization_interfaces/{tgoar,accounting,poar};
+       - scheduler/moldable;
+       - pbs-oar-lib.
+  - Fix some licence issues.
 
 version 2.5.1:
 --------------
