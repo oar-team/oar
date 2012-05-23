@@ -1,36 +1,15 @@
-oar (2.5.1+132.g084f2bb-1~8.gbpd48e48) UNRELEASED; urgency=low
+oar (2.5.2-1~11) unstable; urgency=low
 
-  ** SNAPSHOT build @d48e48808c816ab6c9f969696b52d507799cd471 **
-
-  * Update the debian copyright file
-  * Imported Upstream version 2.5.1+104.g1969ca3
-  * Remove the patch 0001-Fix-a-spelling-error-in-the-oaradmin-manpage
-  * Update the changelog
-  * Add some license information.
-  * Fix the syntax in debian/copyright.
-  * update the changelog
-  * add the copyright for drmaa
-  * Imported Upstream version 2.5.1+128.g0038a00
-  * Update the copyright file.
-  * Update the changelog
-  * update the changelog
-  * update the debhelper compatibility to 9
-  * Update the rules
-  * Imported Upstream version 2.5.1+130.g03edb02
-  * update the changelog
-  * Add -Wall by default in CFLAGS
-  * Imported Upstream version 2.5.1+131.g468450b
-  * update changelog
-  * Imported Upstream version 2.5.1+132.g084f2bb
-  * update the changelog.
-  * Override lintian warning: hardening-no-stackprotector
-  * update changelog
-  * export DEB_CFLAGS_APPEND in debian/rules
-  * Update Build-Depends for debhelper.
-  * Add Vincent Danjean as Uploaders.
+  * Imported Upstream version 2.5.2.
+  * Remove the patch 0001-Fix-a-spelling-error-in-the-oaradmin-manpage (no
+    more needed).
+  * Update the debian copyright file.
+  * Switch to debhelper 9.
   * Update properly CFLAGS
+  * Override lintian warning: hardening-no-stackprotector
+  * Add Vincent Danjean as Uploaders.
 
- -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Wed, 18 Apr 2012 18:08:47 +0200
+ -- Philippe Le Brouster <plb@nebkha.net>  Wed, 23 May 2012 16:06:08 +0200
 
 oar (2.5.1-4) unstable; urgency=low
 
