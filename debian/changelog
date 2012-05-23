@@ -1,4 +1,4 @@
-oar (2.5.2-1~11) unstable; urgency=low
+oar (2.5.2-1) unstable; urgency=low
 
   * Imported Upstream version 2.5.2.
   * Remove the patch 0001-Fix-a-spelling-error-in-the-oaradmin-manpage (no
@@ -9,7 +9,7 @@ oar (2.5.2-1~11) unstable; urgency=low
   * Override lintian warning: hardening-no-stackprotector
   * Add Vincent Danjean as Uploaders.
 
- -- Philippe Le Brouster <plb@nebkha.net>  Wed, 23 May 2012 16:06:08 +0200
+ -- Philippe Le Brouster <plb@nebkha.net>  Wed, 23 May 2012 17:00:53 +0200
 
 oar (2.5.1-4) unstable; urgency=low
 
