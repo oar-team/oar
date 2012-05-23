@@ -14,8 +14,8 @@ oar_config_frontend:
    - write_file:
      - /etc/oar/apache2/oar-restful-api-priv.conf
      - |
-       ScriptAlias /oarapi-priv /usr/local/lib/cgi-bin/oarapi/oarapi.cgi
-       ScriptAlias /oarapi-priv-debug /usr/local/lib/cgi-bin/oarapi/oarapi.cgi
+       ScriptAlias /oarapi-priv $$oar_prefix_install/lib/cgi-bin/oarapi/oarapi.cgi
+       ScriptAlias /oarapi-priv-debug $$oar_prefix_install/lib/cgi-bin/oarapi/oarapi.cgi
 
        <Location /oarapi-priv>
          Options ExecCGI -MultiViews FollowSymLinks

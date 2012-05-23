@@ -4,9 +4,9 @@ all: format_checking job_submit resources_creation
 usage:
 	@echo "usage: make < format_checking | job_submit | resources_creation >"
 format_checking:
-	spec format_checking_spec.rb ${SPEC_OPTS}
+	rspec format_checking_spec.rb ${SPEC_OPTS}
 job_submit:
-	spec job_submit_spec.rb ${SPEC_OPTS}
+	rspec job_submit_spec.rb ${SPEC_OPTS}
 resources_creation:
-	spec resources_creation_spec.rb ${SPEC_OPTS}
+	rspec resources_creation_spec.rb ${SPEC_OPTS}
 
