@@ -1,3 +1,9 @@
+oar (2.5.2-2) unstable; urgency=low
+
+  * Rebuild for the debian archive. (Closes: #663558)
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Thu, 24 May 2012 12:47:49 +0200
+
 oar (2.5.2-1) unstable; urgency=low
 
   * Imported Upstream version 2.5.2.
