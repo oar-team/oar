@@ -239,18 +239,19 @@ sub print_job {
     elsif ( $#job_ids >= 0 ) {
         $jobs = OAR::Stat::get_specific_jobs(\@job_ids);
     }
-    my %data_to_print;
-    foreach my $g (@$jobs) {
-		$data_to_print{ $g->{job_id} } = OAR::Stat::get_job_data($g,$full_view);
-    }
-    print_job_data( \%data_to_print, $jobs );
+    print_job_data( $jobs );
 }
 
-sub print_job_data($$){
-    my $data = shift;
+sub print_job_data($){
     my $job_array = shift;
 
-   
+    my $data;
+    if (defined($DUMPER_mode) or defined($XML_mode) or defined($YAML_mode) or defined($JSON_mode) or defined($full_view)){
+		foreach my $j (@{$job_array}){
+            $data->{ $j->{job_id} } = OAR::Stat::get_job_data($j,$full_view);
+        }
+    }
+ 
     if (defined($DUMPER_mode)){
         print(Dumper($data));
     }elsif(defined($XML_mode)){
