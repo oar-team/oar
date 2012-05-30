@@ -586,6 +586,42 @@ sub get_jobs_in_state_for_user($$$) {
     return(@res);
 }
 
+# get_jobs_in_states_for_user
+# returns the jobs in the specified states for the optionaly specified user
+# parameters : base, job states, user
+# return value : flatened list of hashref jobs
+# side effects : /
+sub get_jobs_in_states_for_user($$$) {
+    my $dbh = shift;
+    my $states = shift;
+    my $user = shift;
+
+    my $user_query="";
+    if (defined $user and "$user" ne "" ) {
+      $user_query="AND job_user =" . $dbh->quote($user);
+    }
+
+    my $instates;
+    foreach my $s (@{$states}){
+        $instates .= $dbh->quote($s);
+        $instates .= ',';
+    }
+    chop($instates);
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state IN (".$instates.")
+                                    $user_query
+                                ORDER BY job_id
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(\@res);
+}
 
 # get_jobs_with_given_properties
 # returns the jobs with specified properties

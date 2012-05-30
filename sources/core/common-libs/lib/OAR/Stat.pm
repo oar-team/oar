@@ -97,14 +97,9 @@ sub get_array_subjobs {
 
 sub get_all_jobs_for_user {
   my $user = shift;
-  my @jobs;
+
   my @states =  ("Finishing", "Running", "Resuming", "Suspended", "Launching", "toLaunch", "Waiting", "toAckReservation", "Hold");
-  my @get_jobs_in_state_for_user;
-  foreach my $current_state (@states){
-    @get_jobs_in_state_for_user = OAR::IO::get_jobs_in_state_for_user($base, $current_state, $user);
-    push( @jobs, @get_jobs_in_state_for_user );
-  }
-  return \@jobs;
+  return(OAR::IO::get_jobs_in_states_for_user($base, \@states, $user));
 }
 
 sub get_jobs_for_user_query {
