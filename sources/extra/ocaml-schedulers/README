@@ -27,7 +27,7 @@ Missing:
  * Extensive test (no yet running on production cluster)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
-Next (becarefull outdated list) :
+Next (be careful outdated list) :
 
  * unit test
  * better compilation process (for unit tests)
@@ -48,14 +48,6 @@ Next (becarefull outdated list) :
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
  * time_end_slot(n-1) = time_start_slot(n) for same resource must be time_start_slot(n) = time_end_slot(n-1) + 1 ! rajouter + 1 au walltime des jobs + une garde temporelle ?!! (can be address by the use of security_time_overhead ?) 
 
-
-To test:
- * DB postgresql / mysql
- * besteffort
- * container
- * available_upto (???)
- * multi-resource-type
- * multi-request with non exclusive resource selection
 
 ToDo:
   * switch name to kamelot

@@ -119,7 +119,7 @@ let argv = if (Array.length(Sys.argv) > 2) then
 let resources_init_slots_determination dbh now =
   let potential_resources = Iolib.get_resource_list dbh in
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
-                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
+                        (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
   in 
     
     if flag_wake_up_cmd then

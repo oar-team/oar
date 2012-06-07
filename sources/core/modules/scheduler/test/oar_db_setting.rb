@@ -8,7 +8,7 @@ DEFAULT_JOB_ARGS = {
   :queue => "default",
   :walltime => 7200,
   :res => "resource_id=1",
-  :propreties => "",
+  :properties => "",
   :type => nil,
   :user => "toto"
 }
@@ -17,6 +17,10 @@ SCHED_PERL_FS = "/usr/local/lib/oar/schedulers/oar_sched_gantt_with_timesharing_
 SCHED_OCAML = "/usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
 SCHED_KAMELOT = "/usr/local/lib/oar/schedulers/kamelot_mysql"
 
+
+##
+# This method load db configuration from ./oar_test.conf file
+#
 def oar_load_test_config
   puts "### Reading configuration ./oar_test_conf file ..." 
   $conf = YAML::load(IO::read('./oar_test.conf'))
@@ -53,16 +57,20 @@ def get_last_insert_id(seq)
   return id
 end
 
-#$jobs = DB[:jobs]
-#$moldable = DB[:moldable_job_descriptions]
-#$job_resource_groups = DB[:job_resource_groups]
-#$job_resource_description = DB[:job_resource_descriptions]
-#$job_types = DB[:job_types]
-#$resources = DB[:resources]
+##
+# Direct database job insertion
+# [Supported args] :queue, :user, :properties
+# [Examples]
+#   oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) 
+#
+#
+#   "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
+#   "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+#   oar_job_insert({:res=>"host=1/cpu=2/core=2+cpu=1/core=2"})
+#
+#    oar_job_insert(:res=>"resource_id=2", :properties=>"network_address='node004'", :walltime=> 300) 
+#
 
-# "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
-# "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
-#  oar_job_insert({:res=>"host=1/cpu=2/core=2+cpu=1/core=2"})
 def oar_job_insert(j_args={})
   args = {}
   DEFAULT_JOB_ARGS.each do |k,v|
@@ -117,6 +125,9 @@ def multiple_requests_execute(reqs)
   end
 end
 
+##
+# This method remove data from all jobs in database
+#
 def oar_truncate_jobs
 #  DB << "
  requests = "
@@ -145,6 +156,9 @@ def oar_truncate_jobs
   multiple_requests_execute(requests)
 end
 
+##
+# Update gantt prediction related tables to provide global gantt data after a scheduling round. 
+#
 def oar_update_visu
   requests = "
     DELETE FROM gantt_jobs_predictions_visu;
@@ -154,6 +168,10 @@ def oar_update_visu
   "
   multiple_requests_execute(requests)
 end
+
+##
+# Truncate gantt prediction related tables. 
+#
 
 def oar_truncate_gantt
  requests = "
@@ -258,6 +276,7 @@ def delete_assignements_from_start_time(start_time)
                 jobs.assigned_moldable_job = assigned_resources.moldable_job_id")
 end
 
+##
 # limitations
 # * advance reservation
 # * submission time is not translated
@@ -294,7 +313,7 @@ def oar_reset_all_jobs(state="'Waiting'")
  $dbh.execute("UPDATE job_resource_descriptions SET res_job_index = 'CURRENT'") 
 end
 
-# oar_jobs_sleepify:
+##
 # Remove previous allocations 
 # Sets command field by sleep with job execution time as argument and jobs' state to hold.
 # Returns array which contains job_ids and corresponding submission times begin from 0 (first submitted job)
@@ -551,7 +570,7 @@ def oar_fairsharing_test sched
   return job_time_sorted
 end
 
-#
+##
 # strip oar.conf: remove test config from /etc/oar/oar.conf to /tmp/oar.conf
 #
 def oar_strip_config
@@ -565,6 +584,26 @@ def oar_strip_config
   oar_tmp.puts end_tag
   oar_tmp.close
   system "sudo sh -c 'cat /tmp/oar.conf_tmp >  /etc/oar/oar.conf'"
+end
+
+
+##
+#  displays predicted startime 
+# 
+#  todo: display resources
+def oar_get_job_pred(job_id)
+  startime = $dbh.execute("SELECT start_time FROM gantt_jobs_predictions WHERE moldable_job_id=#{job_id}")
+  puts "Job id: #{job_id} startime=#{startime.first}    /!\\ Be careful it's assumed that moldable_job_id=job_id, no moldable support"
+  return startime
+end
+
+
+##
+#
+# convert unix time to string (equiv. to Time.at(t))
+#
+def oar_time(t)
+  return Time.at(t)
 end
 
 oar_load_test_config
