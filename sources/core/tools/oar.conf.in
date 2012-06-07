@@ -283,6 +283,9 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 #cpu="(1,8,8)"
 #core="(1,1,64)"
 
+# Number of jobs which will be scheduled by scheduling round (no limit by default)
+#MAX_JOB_PER_SCHEDULING_ROUND=1000
+
 ##############################################
 
 ##############################################################

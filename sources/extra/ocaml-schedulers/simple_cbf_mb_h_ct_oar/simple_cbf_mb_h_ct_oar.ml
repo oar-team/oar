@@ -220,7 +220,7 @@ let _ =
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
-
+          
           (* get types attributs of wating jobs *)
           ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
           
@@ -268,12 +268,21 @@ let _ =
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
-          let ordered_waiting_j_ids =
+          let all_ordered_waiting_j_ids =
             if fairsharing_flag then
               (* ordering jobs indexes accordingly to fairsharing functions *) 
               jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
             else
               waiting_j_ids
+            in
+          let ordered_waiting_j_ids =
+            if Conf.test_key("MAX_JOB_PER_SCHEDULING_ROUND") then
+              begin
+                Conf.log ("MAX_JOB_PER_SCHEDULING_ROUND: " ^  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND"));
+                fst (Helpers.split_at all_ordered_waiting_j_ids (int_of_string  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND")))
+              end
+            else
+              all_ordered_waiting_j_ids
             in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let (assignement_jobs, noscheduled_jids) = 
