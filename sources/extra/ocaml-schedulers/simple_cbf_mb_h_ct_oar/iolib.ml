@@ -396,12 +396,6 @@ let save_assignt_one_job dbh job =
       ignore (execQuery dbh query_pred);
       ignore (execQuery dbh query_job_resources)
 
-(*                        *)
-(* Save jobs' assignemnts *)
-(*                        *)
-let save_assigns dbh jobs =
-  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; 
-
 (*                                                                                           *)
 (* Save jobs assignements into 2 SQL request                                                 *)
 (* Be careful this does not scale after beyond 1 millions of  (moldable_job_id,start_time)   *)
@@ -434,6 +428,19 @@ let save_assigns_2_rqts conn jobs =
 *)
       ignore (execQuery conn query_pred);
       ignore (execQuery conn query_job_resources)
+
+
+(*                        *)
+(* Save jobs' assignemnts *)
+(*                        *)
+let save_assigns dbh jobs =
+(*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
+  save_assigns_2_rqts dbh jobs;;
+
+
+
+
+
 
 (*                                                  *)
 (** retrieve job_type for all jobs in the hashtable *)

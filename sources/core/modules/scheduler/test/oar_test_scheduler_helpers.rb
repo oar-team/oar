@@ -81,23 +81,24 @@ def bench_stairway (steps,sched)
   end
 end
 
-
-def simple_scheduler_test(nb_resources=100, nb_jobs=100)
-  if (nb_jobs > nb_resources)
-    puts "Nb resources must be >= nb jobs"
-  else 
-    oar_db_clean; oar_truncate_gantt; oar_reset_all_jobs
-    puts "Create Ressources"
-    oar_resource_insert(:nb_resources=>nb_resources)
-    oar_conf_modify_hierarchy_1h(nb_resources)
-    puts "Create Jobs"
-    nb_jobs.times do |i|
-      oar_job_insert(:res=>"resource_id=#{i+1}",:walltime=> 300) 
-    end
-    puts "Launch Scheduler"
-    tps, ok = timed_exec "sudo /usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
-    pp [tps, ok]
+#simple_scheduler_test(100,100,SCHED_PERL_TS)
+#simple_scheduler_test(100,100,SCHED_OCAML_A)
+def simple_scheduler_test(nb_resources=100, nb_jobs=100, sched="sudo /usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql")
+  oar_db_clean; oar_truncate_gantt; oar_reset_all_jobs
+  puts "Create Ressources"
+  oar_resource_insert(:nb_resources=>nb_resources)
+  oar_conf_modify_hierarchy_1h(nb_resources)
+  puts "Create Jobs"
+  nb_jobs.times do |i|
+    print "#{i}."
+    oar_job_insert(:res=>"resource_id=#{(i%nb_resources)+1}",:walltime=> 300) 
   end
+  puts
+  print "Launch Scheduler: "
+  sched_cmd = "sudo sh -c '#{OARCONFFILE}; #{sched} default #{Time.now.to_i}'"
+  puts sched_cmd
+  tps, ok = timed_exec sched_cmd
+  pp [tps, ok]
 end
 
 def simple_scheduler_test_dec(nb_resources=100, nb_jobs=100)

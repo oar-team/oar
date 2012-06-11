@@ -13,8 +13,12 @@ DEFAULT_JOB_ARGS = {
   :user => "toto"
 }
 
-SCHED_PERL_FS = "/usr/local/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing"
-SCHED_OCAML = "/usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
+OARCONFFILE =   'export OARCONFFILE="/etc/oar/oar.conf"'
+
+SCHED_PERL_TS = "/usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing"
+SCHED_PERL_FS = "/usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing"
+SCHED_OCAML = "/usr/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
+SCHED_OCAML_A = "/home/auguste/prog/oar/sources/extra/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_mysql"
 SCHED_KAMELOT = "/usr/local/lib/oar/schedulers/kamelot_mysql"
 
 
@@ -38,7 +42,8 @@ def oar_db_connect
   puts  "dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
 				"#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}"
 
-	$dbh = DBI.connect("dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
+#	$dbh = DBI.connect("dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}:mysql_local_infile=1",
+  $dbh = DBI.connect("dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
 										 "#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}")
   puts "DB Connection Establised"
 end
@@ -239,6 +244,26 @@ def oar_test_insert(k,x, alter=false)
   puts "t_insert: #{t_insert}"
 
   puts "t_total:  #{t_string+t_insert} t_string: #{t_string} t_insert: #{t_insert}"
+end
+
+def oar_test_insert_load_infile(k)
+  oar_truncate_gantt
+  puts "nb_insert: #{k}"
+
+  t0 = Time.now
+  f = File.open('/run/shm/massive_insert','w')
+  k.times do |k|
+    f.write("#{k+1},#{k+1000}\n")
+  end
+  f.close
+  t1 = Time.now 
+  t_file = t1 - t0
+  $dbh.execute("LOAD DATA LOCAL INFILE '/run/shm/massive_insert' INTO TABLE gantt_jobs_resources")
+  t_load_data = Time.now - t1
+  puts "t_file: #{t_file}"
+  puts "t_load_data: #{t_load_data}"
+
+  puts "t_total:  #{t_file+t_load_data} t_file: #{t_file} t_insert: #{t_load_data}"
 end
 
 def oar_truncate_resources

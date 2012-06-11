@@ -213,3 +213,11 @@ let split_at l n =
           else ( split_at_2 t (i-1) (f@[h]) )
         in
           split_at_2 l n [];;
+
+(* memoize function *)
+let memo f =  
+  let h = Hashtbl.create 10 in
+  fun x -> try  
+    Hashtbl.find h x  
+    with Not_found ->  
+      let r = f x in ( Hashtbl.add h x r; r ) 

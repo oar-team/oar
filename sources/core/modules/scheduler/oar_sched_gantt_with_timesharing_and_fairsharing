@@ -16,6 +16,7 @@ use Time::HiRes qw(gettimeofday);
 set_current_log_category('scheduler');
 
 init_conf($ENV{OARCONFFILE});
+
 ###############################################################################
 # Fairsharing parameters #
 ##########################

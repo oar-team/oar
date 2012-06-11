@@ -46,6 +46,17 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
+(*                                                                                                                                   *)
+(* for TOKEN feature                                                                                                                 *)
+(* SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh arg1 arg2', soft2 => '/usr/local/bin/check_soft2.sh arg1' }" *)
+(*                                                                                                                                   *)
+let token_scripts =
+  if Conf.test_key("SCHEDULER_TOKEN_SCRIPTS") then
+    try Conf.str_perl_hash_to_pairs (Conf.get_value "SCHEDULER_TOKEN_SCRIPTS")
+    with _ -> failwith "Syntax error in configuration file: SCHEDULER_TOKEN_SCRIPTS"
+  else
+    []
+
 (*                             *)
 (* Karma and Fairsharing stuff *)
 (*                             *)
