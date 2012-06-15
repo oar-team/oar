@@ -21,7 +21,6 @@ SCHED_OCAML = "/usr/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql"
 SCHED_OCAML_A = "/home/auguste/prog/oar/sources/extra/ocaml-schedulers/simple_cbf_mb_h_ct_oar/simple_cbf_mb_h_ct_oar_mysql"
 SCHED_KAMELOT = "/usr/local/lib/oar/schedulers/kamelot_mysql"
 
-
 ##
 # This method load db configuration from ./oar_test.conf file
 #
@@ -52,12 +51,12 @@ def oar_db_disconnect
   $dbh.disconnect
 end
 
-def get_last_insert_id(seq)
+def get_last_insert_id
   id = 0
   if ($db_type == "Mysql" || $db_type == "mysql" )
     id=$dbh.select_one("SELECT LAST_INSERT_ID()")[0]
   else
-    id=$dbh.select_one("SELECT CURRVAL('#{seq}')")[0]
+    id=$dbh.select_one("SELECT CURRVAL('jobs_job_id_seq')")[0]
   end
   return id
 end
@@ -89,7 +88,7 @@ def oar_job_insert(j_args={})
                                       ('yop','Waiting','#{args[:queue]}','#{args[:properties]}','yop',0,'#{args[:user]}')")
   sth.finish
 
-  job_id= get_last_insert_id('jobs_job_id_seq') 
+  job_id= get_last_insert_id() 
 
   #moldable_id = $moldable.insert(:moldable_job_id => job_id, :moldable_walltime => walltime)
   $dbh.execute("insert into moldable_job_descriptions (moldable_job_id,moldable_walltime) values (#{job_id},#{args[:walltime]})").finish 
@@ -119,7 +118,46 @@ def oar_job_insert(j_args={})
 
   return job_id
 end
+##
+#  oar_bulk_job_insert(10) {|i| [(i % max_nb_res) +1,300]} # [nb_res,walltime]
+#
+def oar_bulk_job_insert(nb_jobs,j_args={})
 
+  args = {}
+  DEFAULT_JOB_ARGS.each do |k,v|
+    if j_args[k].nil?
+      args[k]=v
+    else
+      args[k]=j_args[k]
+    end
+  end
+
+  puts "oar_bulk_job_insert:" 
+  puts "/!\\ be carefull, it's suppose that moldable_id=res_group_id=job_id"
+  puts "truncate jobs' tables"
+  oar_truncate_jobs
+  query_jobs = "insert into jobs (job_name,state,queue_name,properties,launching_directory,checkpoint_signal,job_user) values "
+  query_moldable_job_descriptions = "insert into moldable_job_descriptions (moldable_job_id,moldable_walltime) values "
+  query_job_resource_groups = "insert into job_resource_groups (res_group_moldable_id,res_group_property) values "
+  query_job_resource_descriptions = "insert into job_resource_descriptions (res_job_group_id, res_job_resource_type, res_job_value, res_job_order) values "
+
+  nb_jobs.times do |i|
+    job_id = i+1
+    nb_res,walltime = yield job_id
+    query_jobs += "('yop','Waiting','#{args[:queue]}','#{args[:properties]}','yop',0,'#{args[:user]}'),"
+    query_moldable_job_descriptions += "(#{job_id},#{walltime}),"
+    query_job_resource_groups +=  "(#{job_id},'type = ''default'''),"
+    query_job_resource_descriptions += "(#{job_id},'resource_id',#{nb_res},1),"
+  end
+#  puts query_jobs.chop
+#  puts query_moldable_job_descriptions.chop
+#  puts query_job_resource_groups.chop
+#  puts query_job_resource_descriptions.chop
+  $dbh.execute(query_jobs.chop).finish
+  $dbh.execute(query_moldable_job_descriptions.chop).finish
+  $dbh.execute(query_job_resource_groups.chop).finish
+  $dbh.execute(query_job_resource_descriptions.chop).finish
+end
 
 def multiple_requests_execute(reqs)
   #Strange dbi_mysql doesn't accept multiple request in one dbh.execute ???

@@ -84,16 +84,14 @@ end
 #simple_scheduler_test(100,100,SCHED_PERL_TS)
 #simple_scheduler_test(100,100,SCHED_OCAML_A)
 def simple_scheduler_test(nb_resources=100, nb_jobs=100, sched="sudo /usr/local/lib/oar/schedulers/simple_cbf_mb_h_ct_oar_mysql")
-  oar_db_clean; oar_truncate_gantt; oar_reset_all_jobs
-  puts "Create Ressources"
+  #oar_truncate_jobs is called on oar_bulk_job_insert
+  oar_truncate_resources; oar_truncate_gantt;
+  puts "Create Ressources 1h (only resource_id)"
   oar_resource_insert(:nb_resources=>nb_resources)
   oar_conf_modify_hierarchy_1h(nb_resources)
-  puts "Create Jobs"
-  nb_jobs.times do |i|
-    print "#{i}."
-    oar_job_insert(:res=>"resource_id=#{(i%nb_resources)+1}",:walltime=> 300) 
-  end
-  puts
+  puts "Create Jobs w/ oar_bulk_job_insert(#{nb_jobs}) {|i| [(i % #{nb_resources})+1,300]}"
+  #oar_bulk_job_insert(nb_jobs) {|i| [(i % nb_resources) +1,300]}
+  oar_bulk_job_insert(nb_jobs) {|i| [2,300]}
   print "Launch Scheduler: "
   sched_cmd = "sudo sh -c '#{OARCONFFILE}; #{sched} default #{Time.now.to_i}'"
   puts sched_cmd
