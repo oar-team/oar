@@ -586,6 +586,42 @@ sub get_jobs_in_state_for_user($$$) {
     return(@res);
 }
 
+# get_jobs_in_states_for_user
+# returns the jobs in the specified states for the optionaly specified user
+# parameters : base, job states, user
+# return value : flatened list of hashref jobs
+# side effects : /
+sub get_jobs_in_states_for_user($$$) {
+    my $dbh = shift;
+    my $states = shift;
+    my $user = shift;
+
+    my $user_query="";
+    if (defined $user and "$user" ne "" ) {
+      $user_query="AND job_user =" . $dbh->quote($user);
+    }
+
+    my $instates;
+    foreach my $s (@{$states}){
+        $instates .= $dbh->quote($s);
+        $instates .= ',';
+    }
+    chop($instates);
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM jobs
+                                WHERE
+                                    state IN (".$instates.")
+                                    $user_query
+                                ORDER BY job_id
+                            ");
+    $sth->execute();
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    return(\@res);
+}
 
 # get_jobs_with_given_properties
 # returns the jobs with specified properties
@@ -1259,7 +1295,7 @@ sub job_key_management($$$$) {
 #                jobs in the table plus 1, the next (if any) takes the next 
 #                jobid. Array-job submission is atomic and array_index are 
 #                sequential
-#                the admission rules in the base are pieces of perl code directly
+#                the rules in the base are pieces of perl code directly
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
@@ -1327,7 +1363,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my $array_index = 1;
     my @Job_id_list;
 
-    if (0) { #to test  add_micheline_array_simple_job
+    my $use_simple_array_job_sub = get_conf("USE_SIMPLE_ARRAY_JOB_SUBMISSION");
+    if (defined($use_simple_array_job_sub) and ($use_simple_array_job_sub eq "yes")) { #to test  add_micheline_simple_array_job
       #build commands array from array job with same command, ex:  oarsub --array=1000 true 
       my @array_job_commands;
       my $array_job_commands_ref;
@@ -1341,10 +1378,12 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $array_job_commands_ref = $array_params_ref;
       } 
     
-      my $simple_job_id_list = add_micheline_array_simple_job($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
+      my $simple_job_id_list = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
 
-      exit;
+      exit; #TODO to finish
     }
+
+
 
     if(!defined($array_params_ref)){
         for (my $i=0; $i<$array_job_nb; $i++){
@@ -1449,7 +1488,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
 sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
-if (0) { #for test purpose
+
     # Test if properties and resources are coherent
     my @dead_resources;
     foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
@@ -1484,7 +1523,6 @@ if (0) { #for test purpose
                 }
                 return(-5);
             }else{
-                #A quoi ca sert !!!!!!
                 my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
@@ -1492,7 +1530,7 @@ if (0) { #for test purpose
             }
         }
     }
-} #if
+
     lock_table($dbh,["challenges","jobs"]);
     # Verify the content of the ssh keys
     if (($ssh_pub_key ne "") or ($ssh_priv_key ne "")){
@@ -1637,7 +1675,7 @@ if (0) { #for test purpose
 # do we need to test/adapt: $stdout/$stderr
 #
 
-sub add_micheline_array_simple_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
 
 #not supported: moldable, $startTimeReservation, $anterior_ref, ,$ssh_priv_key,$ssh_pub_key
@@ -1811,9 +1849,6 @@ sub add_micheline_array_simple_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     return (\@Job_id_list);
 }
-
-
-
 
 # get_job
 # returns a ref to some hash containing data for the job of id passed in
