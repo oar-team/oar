@@ -1558,6 +1558,50 @@ sub check_configuration_variable($$) {
   return $parameter;
 }
 
+# Check the consistency of a posted chmod query
+sub check_chmod($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $parameter;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $parameter = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $parameter = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $parameter = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Configuration variable description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Parameter must have a "mode" field
+  unless ( $parameter->{mode}) {
+    ERROR 400, 'Missing Required Field',
+      'Chmod query must have a mode field';
+    exit 0;
+  }
+
+  return $parameter;
+}
+
+
+
 ##############################################################################
 # Other functions
 ##############################################################################

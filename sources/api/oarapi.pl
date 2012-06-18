@@ -1812,7 +1812,7 @@ SWITCH: for ($q) {
   # Media (files) download/upload
   ###########################################
   #
-  #{{{ GET /media/<file> : Get a file
+  #{{{ POST /media/<file> : Get a file
   #
   $URI = qr{^/media/(.*)$};
   OAR::API::GET( $_, $URI ) && do {
@@ -1851,6 +1851,52 @@ SWITCH: for ($q) {
     # Output the file
     print $q->header( -status => 200, -type => "application/octet-stream" );
     print `$OARDODO_CMD cat $file`;
+    last;
+  };
+  #}}}
+  #
+  #{{{ POST /media/chmod/<file>?mode=<mode> : Change the unix mode of a file
+  #
+  $URI = qr{^/media/chmod/(.*)$};
+  OAR::API::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename = $1;
+ 
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before deleting an admission rule" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;
+    
+    # Check and get the submitted data
+    # From encoded data
+    my $chmod;
+    if ($q->param('POSTDATA')) {
+      $chmod = OAR::API::check_chmod( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $chmod = OAR::API::check_chmod( $q->Vars, $q->content_type );
+    }
+
+    # Do the chmod
+    my $cmd="$OARDODO_CMD chmod ". $chmod->{mode} ." $file";
+    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
+    if ($? != 0) {
+      OAR::API::ERROR(500, "Chmod error", "Could not set mode $chmod->{mode} on file $file: $cmdRes");
+    }
+    print $q->header( -status => 202, -type => "application/octet-stream" , -location => "/media/$file" );
     last;
   };
   #}}}
