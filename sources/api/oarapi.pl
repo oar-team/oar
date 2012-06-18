@@ -1890,9 +1890,16 @@ SWITCH: for ($q) {
       $chmod = OAR::API::check_chmod( $q->Vars, $q->content_type );
     }
 
+    # Security checking
+    if ( not $chmod->{mode} =~ /^[a-z0-9+]+$/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "Bad mode value: ". $chmod->{mode} );
+      last;
+    }
+
     # Do the chmod
     my $cmd="$OARDODO_CMD chmod ". $chmod->{mode} ." $file";
-    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
+    my $cmdRes = OAR::API::send_cmd($cmd,"chmod");
     if ($? != 0) {
       OAR::API::ERROR(500, "Chmod error", "Could not set mode $chmod->{mode} on file $file: $cmdRes");
     }
