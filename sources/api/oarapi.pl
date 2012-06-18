@@ -1812,7 +1812,7 @@ SWITCH: for ($q) {
   # Media (files) download/upload
   ###########################################
   #
-  #{{{ POST /media/<file> : Get a file
+  #{{{ GET /media/<file> : Get a file
   #
   $URI = qr{^/media/(.*)$};
   OAR::API::GET( $_, $URI ) && do {
