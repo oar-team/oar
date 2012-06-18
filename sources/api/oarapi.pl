@@ -727,24 +727,37 @@ SWITCH: for ($q) {
     my $param_file = "";
     my $tmpfilename = "";
     my $tmpparamfilename = "";
+    my @user_infos;
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
         $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{script_path}\"";
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $command =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "command") {
         # Escapes double quotes
         $job->{command} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{command}\"";
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $command =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "script") {
         $script = $job->{script};
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $script =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "param_file") {
         $param_file = $job->{param_file};
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $workdir =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "resources") {
         $oarcmd .= " --resource=$job->{resources}";
