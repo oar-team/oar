@@ -1932,6 +1932,12 @@ SWITCH: for ($q) {
     my @user_infos=getpwnam($authenticated_user);
     $file =~ s|/~/|$user_infos[7]/|;  
 
+    # Check if the file already exists
+    if (system("$OARDODO_CMD","test","-f","$file") == 0) {
+      OAR::API::ERROR(401, "File already exists", "The file already exists");
+      last;
+    }
+
     # Create the directories if necessary
     my $path=dirname($file);
     if (system("$OARDODO_CMD","mkdir","-p",$path) != 0) {
