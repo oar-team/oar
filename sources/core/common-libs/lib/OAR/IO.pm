@@ -1362,10 +1362,20 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     my $array_index = 1;
     my @Job_id_list;
-
+    my $flag_simple_array_job = 0;
     my $use_simple_array_job_sub = get_conf("USE_SIMPLE_ARRAY_JOB_SUBMISSION");
-    if (defined($use_simple_array_job_sub) and ($use_simple_array_job_sub eq "yes")) { #to test  add_micheline_simple_array_job
-      #build commands array from array job with same command, ex:  oarsub --array=1000 true 
+    if (1 and defined($use_simple_array_job_sub) and ($use_simple_array_job_sub eq "yes")) { #to test  add_micheline_simple_array_job
+      #build commands array from array job with same command, ex:  oarsub --array=1000 true
+      #$flag_simple_array_job = 1;
+      #if ($startTimeReservation > 0) {
+      #  warn("/!\\ Advance reservation is not support by simple array submission\n"); 
+      #  $flag_simple_array_job = 0;
+      #}
+      #if ($startTimeReservation > 0) { 
+      #  warn("/!\\ Advance reservation is not support by simple array submission\n"); 
+      #  $flag_simple_array_job = 0;
+      #}
+
       my @array_job_commands;
       my $array_job_commands_ref;
       if ($array_job_nb>1) {
@@ -1377,13 +1387,16 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
       else {
         $array_job_commands_ref = $array_params_ref;
       } 
-    
-      my $simple_job_id_list = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
 
-      exit; #TODO to finish
+      warn("/!\\ Simple array submission\n"); 
+    
+      my $simple_job_id_list_ref = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
+
+    return($simple_job_id_list_ref );
+      # exit; #TODO to finish
     }
 
-
+    else { #TODO fatorize the code  $array_job_commands_ref = $array_params_ref; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if(!defined($array_params_ref)){
         for (my $i=0; $i<$array_job_nb; $i++){
@@ -1481,7 +1494,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
             }
         }
     }
-
+  }
    return(\@Job_id_list);
 }
 
