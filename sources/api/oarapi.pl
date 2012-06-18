@@ -43,7 +43,7 @@ use IO::Handle;
 use File::Temp qw/ tempfile  /;
 use File::Basename;
 use CGI::Fast qw/ standard /;
-
+use File::Listing qw(parse_dir);
 
 #use Data::Dumper;
 
@@ -727,24 +727,37 @@ SWITCH: for ($q) {
     my $param_file = "";
     my $tmpfilename = "";
     my $tmpparamfilename = "";
+    my @user_infos;
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
         $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{script_path}\"";
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $command =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "command") {
         # Escapes double quotes
         $job->{command} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{command}\"";
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $command =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "script") {
         $script = $job->{script};
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $script =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "param_file") {
         $param_file = $job->{param_file};
       }
       elsif ($option eq "workdir") {
         $workdir = $job->{workdir};
+        # Expand ~ to home directory
+        @user_infos=getpwnam($authenticated_user);
+        $workdir =~ s|/~/|$user_infos[7]/|;  
       }
       elsif ($option eq "resources") {
         $oarcmd .= " --resource=$job->{resources}";
@@ -1811,6 +1824,56 @@ SWITCH: for ($q) {
   ###########################################
   # Media (files) download/upload
   ###########################################
+  # 
+  #{{{ GET /media/ls/<path> : List files
+  #
+  $URI = qr{^/media/ls/(.*)$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $path=$1;
+    my $ext = OAR::API::set_ext($q,undef);
+    (my $header, my $type) = OAR::API::set_output_format($ext);
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before getting files" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $path =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the path and replace "~" by the home directory
+    $path="/".$path;
+    my @user_infos=getpwnam($authenticated_user);
+    $path =~ s|/~/|$user_infos[7]/|;  
+ 
+    # Check file existency
+    if (system("$OARDODO_CMD","test","-d","$path") != 0) {
+      OAR::API::ERROR(404, "Not found", "Path not found: $path");
+      last;  
+    }
+    
+    # Check file readability
+    if (system("$OARDODO_CMD","test","-r","$path") != 0) {
+      OAR::API::ERROR(403, "Forbidden","File could not be read: $path" );
+      last;  
+    }
+
+    # Get the listing
+    my $cmd="$OARDODO_CMD ls -l $path";   
+    my $cmdRes = OAR::API::send_cmd($cmd,"ls");
+    my $listing=parse_dir($cmdRes);
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    $listing = OAR::API::add_pagination($listing,@$listing,$q->path_info,undef,$ext,0,0,$STRUCTURE);
+    print OAR::API::export($listing,$ext);
+    last;
+  };
+  #}}}
   #
   #{{{ GET /media/<file> : Get a file
   #
@@ -1855,6 +1918,59 @@ SWITCH: for ($q) {
   };
   #}}}
   #
+  #{{{ POST /media/chmod/<file>?mode=<mode> : Change the unix mode of a file
+  #
+  $URI = qr{^/media/chmod/(.*)$};
+  OAR::API::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $filename = $1;
+ 
+     # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before deleting an admission rule" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_BECOME_USER} = $authenticated_user;
+
+    # Security escaping 
+    $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+
+    # Get the filename and replace "~" by the home directory
+    my $file="/".$filename;
+    my @user_infos=getpwnam($authenticated_user);
+    $file =~ s|/~/|$user_infos[7]/|;
+    
+    # Check and get the submitted data
+    # From encoded data
+    my $chmod;
+    if ($q->param('POSTDATA')) {
+      $chmod = OAR::API::check_chmod( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $chmod = OAR::API::check_chmod( $q->Vars, $q->content_type );
+    }
+
+    # Security checking
+    if ( not $chmod->{mode} =~ /^[a-z0-9+]+$/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "Bad mode value: ". $chmod->{mode} );
+      last;
+    }
+
+    # Do the chmod
+    my $cmd="$OARDODO_CMD chmod ". $chmod->{mode} ." $file";
+    my $cmdRes = OAR::API::send_cmd($cmd,"chmod");
+    if ($? != 0) {
+      OAR::API::ERROR(500, "Chmod error", "Could not set mode $chmod->{mode} on file $file: $cmdRes");
+    }
+    print $q->header( -status => 202, -type => "application/octet-stream" , -location => "/media/$file" );
+    last;
+  };
+  #}}}
+  #
   #{{{ POST /media/<file> : Upload a file and create underlying directories
   #
   $URI = qr{^/media/(.*)$};
@@ -1878,6 +1994,12 @@ SWITCH: for ($q) {
     my $file="/".$filename;
     my @user_infos=getpwnam($authenticated_user);
     $file =~ s|/~/|$user_infos[7]/|;  
+
+    # Check if the file already exists
+    if (system("$OARDODO_CMD","test","-f","$file") == 0) {
+      OAR::API::ERROR(401, "File already exists", "The file already exists");
+      last;
+    }
 
     # Create the directories if necessary
     my $path=dirname($file);
@@ -2022,7 +2144,7 @@ SWITCH: for ($q) {
 
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export($result,$ext);
+    print OAR::API::export(\$result,$ext);
     last;
   };
   #}}}

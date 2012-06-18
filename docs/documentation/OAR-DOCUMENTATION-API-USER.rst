@@ -2060,6 +2060,30 @@ POST /media/<file_path>
 
    curl -i -X POST -H'Content-Type: application/octet-stream' --data-binary @/etc/group http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir/testfile
 
+POST /media/chmod/<file_path>
+-----------------------------
+:description:
+  Changes the permissions on a file: do a chmod(1) on *file_path*. The special character "~" is expanded as the home of the user that makes the query.
+
+:formats:
+  html , yaml , json  
+
+:authentication:
+  user
+
+:input:
+  A [mode] entry is mandatory
+
+  *mode*: A mode definition as passed to the "chmod" unix command.
+
+:output:
+  202 if ok
+
+:usage example:
+  ::
+
+   curl -i -X POST http://kameleon:kameleon@localhost/oarapi-priv/media/chmod/~/param9  -H'Content-Type: application/json' -d '{"mode":"755"}'
+
 DELETE /media/<file_path>
 -------------------------
 :description:
