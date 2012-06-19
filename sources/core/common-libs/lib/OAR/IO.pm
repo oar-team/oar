@@ -1364,7 +1364,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my @Job_id_list;
     my $flag_simple_array_job = 0;
     my $use_simple_array_job_sub = get_conf("USE_SIMPLE_ARRAY_JOB_SUBMISSION");
-    if (1 and defined($use_simple_array_job_sub) and ($use_simple_array_job_sub eq "yes")) { #to test  add_micheline_simple_array_job
+    if (defined($use_simple_array_job_sub) and ($use_simple_array_job_sub eq "yes")) { #to test  add_micheline_simple_array_job
+
+    #TODO test sshkey and ($startTimeReservation > 0)  ?? and factorize code
+
       #build commands array from array job with same command, ex:  oarsub --array=1000 true
       #$flag_simple_array_job = 1;
       #if ($startTimeReservation > 0) {
@@ -1388,7 +1391,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $array_job_commands_ref = $array_params_ref;
       } 
 
-      warn("/!\\ Simple array submission\n"); 
+      warn("use simple array submission\n"); 
     
       my $simple_job_id_list_ref = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
 
@@ -1608,6 +1611,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     $stdout = $dbh->quote($stdout);
     $stderr = $dbh->quote($stderr);
+
+    #TODO: Why this not directly integrated in "INSERT INTO jobs ..." query ???
     $dbh->do("UPDATE jobs
               SET
                   stdout_file = $stdout,
@@ -1640,7 +1645,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                 $dbh->do("  INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order)
                             VALUES ($res_group_id,\'$l->{resource}\',\'$l->{value}\',$order)
                          ");
-                $order ++;
+                $order++;
             }
         }
     }
@@ -1678,15 +1683,11 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     return($job_id);
 }
 
-#toremove not supported: moldable, $startTimeReservation, $anterior_ref,
-#test if moldaplbe, resa ....
-
 # not supported ssh_ket
 
 # return value : ref. of array of created jobids
-# 
-# do we need to test/adapt: $stdout/$stderr
-#
+# TODO: 
+# test/reject: $startTimeReservation(done in calling function ???), ,$ssh_priv_key,$ssh_pub_key (todo in calling function)
 
 sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
@@ -1749,7 +1750,6 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         }
     }
 
-
     #insert in jobs table
     #prepare parameter request
     my $date = get_date($dbh);
@@ -1762,15 +1762,30 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $project = $dbh->quote($project);
     $initial_request_string = $dbh->quote($initial_request_string);
 
+    if (!defined($stdout) or ($stdout eq "")){
+        $stdout = "OAR";
+        $stdout .= ".$job_name" if (defined($job_name));
+        $stdout .= '.%jobid%.stdout';
+    }
+    if (!defined($stderr) or ($stderr eq "")){
+        $stderr = "OAR";
+        $stderr .= ".$job_name" if (defined($job_name));
+        $stderr .= '.%jobid%.stderr';
+    }
+
+    $stdout = $dbh->quote($stdout);
+    $stderr = $dbh->quote($stderr);
+
     my $query_jobs = "INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id,array_index)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
               VALUES ";
 
     my $nb_jobs = $#{$array_job_commands_ref}+1;
-    print "nb_jobs: $nb_jobs\n";
+    #print "nb_jobs: $nb_jobs\n";
     foreach my $command (@{$array_job_commands_ref}){
       $command = $dbh->quote($command);
-      $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id,$array_index),";
+      $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index),";
+      $array_index++;
     }
     
     chop($query_jobs);
@@ -1780,7 +1795,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     unlock_table($dbh);
 
     #print "$query_jobs\n";
-    print "First_array_job_id: $first_array_job_id\n";
+    #print "First_array_job_id: $first_array_job_id\n";
 
     my $job_id = $first_array_job_id;
     my $random_number;
@@ -1807,7 +1822,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $dbh->do($query_moldable_job_descriptions);
     my $first_moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
     unlock_table($dbh);
-    print "First_moldable_id: $first_moldable_id\n";
+    #print "First_moldable_id: $first_moldable_id\n";
 
     my $moldable_id = $first_moldable_id;
     my $query_job_resource_groups  = "INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property) VALUES ";
@@ -1816,8 +1831,8 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         my $property = $r->{property};
         $property = $dbh->quote($property);
         $query_job_resource_groups = $query_job_resource_groups . "($moldable_id,$property),";
-      }  
-      $moldable_id = $moldable_id++;
+      }
+      $moldable_id++;
     }
 
     my $nb_resource_grp = $#{$moldable_resource->[0]} + 1;
@@ -1826,7 +1841,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $dbh->do($query_job_resource_groups);
     my $first_res_group_id  = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
     unlock_table($dbh);
-    print "First_res_group_id : $first_res_group_id \n";
+    #print "First_res_group_id : $first_res_group_id \n";
 
     my $res_group_id = $first_res_group_id;
     my $query_job_resource_descriptions="INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order) VALUES ";
@@ -1860,6 +1875,50 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
       $dbh->do($query_job_types);
     }
 
+    #  
+    # anterior job setting
+    #
+    if ($#{$anterior_ref} >0) {
+      $job_id = $first_array_job_id;
+      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required) VALUES ";
+      for (my $i=0; $i<$nb_jobs; $i++){
+        foreach my $a (@{$anterior_ref}){
+          $query_job_dependencies = $query_job_dependencies . "($job_id,$a),";
+        } 
+        $job_id++;
+      }
+      chop($query_job_dependencies);
+       $dbh->do($query_job_dependencies);
+    }
+
+    #
+    # Hold/Waiting management and job_state_log setting
+    # Job is inserted with hold state first
+    #
+    my $query_job_state_logs = "INSERT INTO job_state_logs (job_id,job_state,date_start) VALUES ";
+    $job_id = $first_array_job_id;
+    if  (!defined($job_hold)) {
+      #update array_id field and set job to Waiting and insert job_state_log 
+      my $query_array_id = "UPDATE jobs SET state = \'Waiting\', array_id = " . $first_array_job_id . " WHERE job_id IN (";
+      for (my $i=0; $i<$nb_jobs; $i++){
+        $query_job_state_logs = $query_job_state_logs . "($job_id,\'Waiting\',$date),";
+        $query_array_id = $query_array_id . "$job_id,";
+        $job_id++;
+      }
+      chop($query_job_state_logs);
+      chop($query_array_id);
+      $query_array_id = $query_array_id . ")";
+      $dbh->do($query_job_state_logs);
+      $dbh->do($query_array_id);
+    } 
+    else {
+      for (my $i=0; $i<$nb_jobs; $i++){
+        $query_job_state_logs = $query_job_state_logs . "($job_id,\'Hold\',$date),";
+        $job_id++;
+      }
+      chop($query_job_state_logs);
+      $dbh->do($query_job_state_logs);
+    }
     return (\@Job_id_list);
 }
 
