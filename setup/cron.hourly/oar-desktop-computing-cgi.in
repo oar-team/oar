@@ -1,4 +1,0 @@
-#!/bin/bash
-# OAR stagein cache directory clean-up
-
-%%SBINDIR%%/oarcache

@@ -10,6 +10,9 @@ are the list of them.
 module Accounting
 -----------------
 
+desktop_computing
+-----------------
+
 drmaa-c
 -------
 
