@@ -202,3 +202,22 @@ let filter_map f_filter f_map =
 
 (* remove quotes from string *)
 let remove_quotes str = replace " " "" str
+
+(* split list *)
+let split_at l n =
+  let rec split_at_2 l i f =
+      match l with
+        [] -> (f,[])
+        | h::t -> if (i=0)
+          then (f,t)
+          else ( split_at_2 t (i-1) (f@[h]) )
+        in
+          split_at_2 l n [];;
+
+(* memoize function *)
+let memo f =  
+  let h = Hashtbl.create 10 in
+  fun x -> try  
+    Hashtbl.find h x  
+    with Not_found ->  
+      let r = f x in ( Hashtbl.add h x r; r ) 

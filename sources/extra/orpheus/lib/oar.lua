@@ -110,6 +110,7 @@ function oar.set_all_jobs_toLaunch()
 end
 
 function oar.sql(query)
+  print(query)
   assert (con:execute(query))
 end
 

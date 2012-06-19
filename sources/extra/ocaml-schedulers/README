@@ -27,12 +27,13 @@ Missing:
  * Extensive test (no yet running on production cluster)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
-Next (becarefull outdated list) :
+Next (be careful outdated list) :
 
  * unit test
  * better compilation process (for unit tests)
  * simple performance optimisation (threshold on percent of idle ressource at now and number of scheduled jobs)
- * BEST / ALL 
+ * BEST  -2 means BEST (Alive resources at the time) 
+ * ALL   -1 means ALL (Alive + Absent + Suspected resources)
  * scheduler message (see perl version *)
  * job_error / job_message / scheduler message
  * need to test multi-resource-type (since >= cbf_mb_h)
@@ -49,22 +50,21 @@ Next (becarefull outdated list) :
  * time_end_slot(n-1) = time_start_slot(n) for same resource must be time_start_slot(n) = time_end_slot(n-1) + 1 ! rajouter + 1 au walltime des jobs + une garde temporelle ?!! (can be address by the use of security_time_overhead ?) 
 
 
-To test:
- * DB postgresql / mysql
- * besteffort
- * container
- * available_upto (???)
- * multi-resource-type
- * multi-request with non exclusive resource selection
-
 ToDo:
   * switch name to kamelot
-  * complete fairsharing
+  * performance evaluation 
+  * test fairsharing
   * test_unit: better compilation process
   * Ounit (cf archive)
     * test sub_intevals
-  * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64. 
- 
+  * BEST  -2 means BEST (Alive resources at the time)
+  * ALL   -1 means ALL (Alive + Absent + Suspected resources)
+  * caching SQL queries (by example resource properties query per job)
+
+Misc:
+  * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64.
+  * memoizing (see Helpers)/caching SQL queries (by example resource properties query per job)
+
 Done:
 
  * container

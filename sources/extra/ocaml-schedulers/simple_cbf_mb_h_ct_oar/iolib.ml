@@ -90,7 +90,7 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
         try Hashtbl.find constraints sql_cts
         with Not_found ->
           begin  
-            let query = Printf.sprintf "SELECT resource_id FROM resources WHERE state = 'Alive'  AND ( %s )"  sql_cts in
+            let query = Printf.sprintf "SELECT resource_id FROM resources WHERE ( %s )"  sql_cts in
             let res = execQuery dbh query in 
             let get_one_resource a = 
               NoN int_of_string a.(0) (* resource_id *)
@@ -396,12 +396,6 @@ let save_assignt_one_job dbh job =
       ignore (execQuery dbh query_pred);
       ignore (execQuery dbh query_job_resources)
 
-(*                        *)
-(* Save jobs' assignemnts *)
-(*                        *)
-let save_assigns dbh jobs =
-  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; 
-
 (*                                                                                           *)
 (* Save jobs assignements into 2 SQL request                                                 *)
 (* Be careful this does not scale after beyond 1 millions of  (moldable_job_id,start_time)   *)
@@ -434,6 +428,19 @@ let save_assigns_2_rqts conn jobs =
 *)
       ignore (execQuery conn query_pred);
       ignore (execQuery conn query_job_resources)
+
+
+(*                        *)
+(* Save jobs' assignemnts *)
+(*                        *)
+let save_assigns dbh jobs =
+(*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
+  save_assigns_2_rqts dbh jobs;;
+
+
+
+
+
 
 (*                                                  *)
 (** retrieve job_type for all jobs in the hashtable *)

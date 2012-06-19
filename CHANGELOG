@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version 2.5.3:
+--------------
+  - Add the "Name" field on the main Monika page. This is easier for the users
+    to find there jobs.
+
 version 2.5.2:
 --------------
   - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common
