@@ -1866,7 +1866,12 @@ SWITCH: for ($q) {
     # Get the listing
     my $cmd="$OARDODO_CMD ls -l $path";   
     my $cmdRes = OAR::API::send_cmd($cmd,"ls");
-    my $listing=parse_dir($cmdRes);
+    my $listing=[];
+    my ($l_name, $l_type, $l_size, $l_mtime, $l_mode);
+    for (parse_dir($cmdRes)) {
+      ($l_name, $l_type, $l_size, $l_mtime, $l_mode) = @$_;
+      push(@$listing,{'name' => $l_name, 'type' => $l_type, 'size' => $l_size, 'mtime' => $l_mtime, 'mode' => $l_mode });
+    }
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     $listing = OAR::API::add_pagination($listing,@$listing,$q->path_info,undef,$ext,0,0,$STRUCTURE);

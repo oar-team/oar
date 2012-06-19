@@ -2019,6 +2019,75 @@ POST /config/<variable>
 :note:
   config.yaml contains the value of the variable.
 
+GET /media/ls/<file_path>
+-------------------------
+:description:
+  Get a list of the directory from the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+ *structure*: array of hashes giving for each listed file: the name, the mode, the size, the modification time and the type (*f* for a file or *d* for a directory)
+ 
+ *yaml example*:
+  ::
+
+     ---
+     api_timestamp: 1340095354
+     items:
+       - mode: 33188
+         mtime: 1339685040
+         name: API.pm
+         size: 58620
+         type: f
+       - mode: 16877
+         mtime: 1340094660
+         name: bart
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1338993000
+         name: cigri-3
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1340095200
+         name: oar
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1334132940
+         name: oar_install
+         size: ~
+         type: d
+       - mode: 33261
+         mtime: 1339685040
+         name: oarapi.pl
+         size: 75939
+         type: f
+       - mode: 33261
+         mtime: 1340027400
+         name: test.sh
+         size: 43
+         type: f
+     links:
+       - href: /oarapi-priv/media/ls/~/
+         rel: self
+     offset: 0
+     total: 7
+
+:usage example:
+  ::
+
+   curl -i -X GET http://kameleon:kameleon@localhost/oarapi-priv/media/ls/~/  -H'Content-Type: text/yaml'
+   
+:note:
+  returns a 404 if the path does not exist, or a 403 if the path is not readable. Errors in debug mode (with ?debug=1) are formated into yaml.
+
 GET /media/<file_path>
 ----------------------
 :description:
