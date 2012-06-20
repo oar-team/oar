@@ -1,3 +1,10 @@
+oar (2.5.2-3~1) UNRELEASED; urgency=low
+
+  * Remove the desktop-computing packaging because it is no more supported
+    (Closes: #676220).
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Wed, 20 Jun 2012 13:14:07 +0200
+
 oar (2.5.2-2) unstable; urgency=low
 
   * Rebuild for the debian archive. (Closes: #663558)

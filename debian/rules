@@ -43,10 +43,6 @@ override_dh_auto_install:
 	# disable the automatic installation of this cron, by default 
 	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
 		
-	## oar-desktop-computing-agent
-	cat $(CURDIR)/$(INSTALLDIR)/oar-desktop-computing-agent/usr/share/doc/oar-desktop-computing-agent/examples/init.d/oar-desktop-computing-agent > debian/oar-desktop-computing-agent.init
-	## oar-desktop-computing-cgi
-	cat $(CURDIR)/$(INSTALLDIR)/oar-desktop-computing-cgi/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi > debian/oar-desktop-computing-cgi.cron.hourly
 	## oar-common
 	cat $(CURDIR)/$(INSTALLDIR)/oar-common/usr/share/doc/oar-common/examples/logrotate.d/oar-common > debian/oar-common.logrotate
 	## oar-web-status
@@ -65,13 +61,11 @@ override_dh_clean:
 	# Cleaning package
 	rm -f debian/oar-server.init
 	rm -f debian/oar-node.init
-	rm -f debian/oar-desktop-computing-agent.init
 	rm -f debian/oar-server.default
 	rm -f debian/oar-node.default
 	rm -f debian/oar-common.logrotate
 	rm -f debian/oar-server.cron.d
 	rm -f debian/oar-node.cron.d
-	rm -f debian/oar-desktop-computing-cgi.cron.hourly
 
 override_dh_installinit:
 	dh_installinit --no-start

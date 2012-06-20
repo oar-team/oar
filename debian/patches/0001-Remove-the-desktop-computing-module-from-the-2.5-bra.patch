@@ -1,0 +1,3978 @@
+From 48e16b477f8c92326f43b677a2448b76b947f0c3 Mon Sep 17 00:00:00 2001
+From: Philippe Le Brouster <philippe.le-brouster@imag.fr>
+Date: Tue, 19 Jun 2012 17:48:44 +0200
+Subject: [PATCH] Remove the desktop computing module from the 2.5 branch (not
+ tested/supported)
+
+---
+ Makefile                                           |   16 +-
+ Makefiles/desktop-computing-agent.mk               |   40 -
+ Makefiles/desktop-computing-cgi.mk                 |   34 -
+ .../desktop-computing/desktop-computing.lyx        |  425 -------
+ .../desktop-computing/desktop-computing.ps         | 1208 --------------------
+ setup/cron.hourly/oar-desktop-computing-cgi.in     |    4 -
+ setup/desktop-computing-cgi.sh.in                  |    6 -
+ setup/init.d/oar-desktop-computing-agent.in        |  123 --
+ sources/desktop_computing/agent/Rakefile           |    9 -
+ .../desktop_computing/agent/autotest/discover.rb   |    1 -
+ sources/desktop_computing/agent/lib/agent.conf     |    1 -
+ sources/desktop_computing/agent/lib/agent.rb       |   23 -
+ sources/desktop_computing/agent/lib/client.rb      |   40 -
+ sources/desktop_computing/agent/lib/config.rb      |   28 -
+ sources/desktop_computing/agent/lib/daemon.rb      |    5 -
+ sources/desktop_computing/agent/lib/job.rb         |   66 --
+ .../agent/lib/job_execution_exception.rb           |    2 -
+ .../desktop_computing/agent/lib/job_resource.rb    |   39 -
+ .../agent/man/man1/oar-agent-daemon.pod            |   15 -
+ .../desktop_computing/agent/man/man1/oar-agent.pod |   15 -
+ .../desktop_computing/agent/man/man1/oarcache.pod  |   15 -
+ .../agent/spec/job_client_spec.rb                  |   47 -
+ .../agent/spec/job_resource_spec.rb                |   23 -
+ .../desktop_computing/agent/spec/job_set_spec.rb   |    5 -
+ sources/desktop_computing/agent/spec/job_spec.rb   |   86 --
+ sources/desktop_computing/agent/test/forktest.rb   |   11 -
+ sources/desktop_computing/agent/test/forktest2.rb  |    3 -
+ sources/desktop_computing/agent/test/jsontest.rb   |   12 -
+ sources/desktop_computing/agent/test/killtest.rb   |    9 -
+ .../desktop_computing/agent/test/newforktest.rb    |   11 -
+ sources/desktop_computing/agent/test/pstest.rb     |    7 -
+ .../agent/test/rest_client_test.rb                 |    7 -
+ .../desktop_computing/agent/test/restclienttest.rb |    7 -
+ sources/desktop_computing/agent/test/systemtest.rb |    3 -
+ sources/desktop_computing/oar-agent.pl             |  554 ---------
+ sources/desktop_computing/oar-cgi                  |   11 -
+ sources/desktop_computing/oar-cgi.pl               |  301 -----
+ sources/desktop_computing/oarcache.pl              |   29 -
+ sources/desktop_computing/oarfetch.sh              |   57 -
+ sources/desktop_computing/oarres.pl                |   21 -
+ .../recipes/debian_oar_desktop_agent.yaml          |   93 --
+ .../recipes/debian_oar_desktop_server.yaml         |   93 --
+ sources/desktop_computing/steps/client1.conf       |   11 -
+ .../steps/oar_desktop_client.yaml                  |   21 -
+ .../steps/oar_desktop_server.yaml                  |   28 -
+ sources/desktop_computing/steps/server.conf        |   15 -
+ 47 files changed, 4 insertions(+), 3579 deletions(-)
+ delete mode 100644 Makefiles/desktop-computing-agent.mk
+ delete mode 100644 Makefiles/desktop-computing-cgi.mk
+ delete mode 100644 docs/documentation/desktop-computing/desktop-computing.lyx
+ delete mode 100644 docs/documentation/desktop-computing/desktop-computing.ps
+ delete mode 100644 setup/cron.hourly/oar-desktop-computing-cgi.in
+ delete mode 100644 setup/desktop-computing-cgi.sh.in
+ delete mode 100644 setup/init.d/oar-desktop-computing-agent.in
+ delete mode 100644 sources/desktop_computing/agent/Rakefile
+ delete mode 100644 sources/desktop_computing/agent/autotest/discover.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/agent.conf
+ delete mode 100755 sources/desktop_computing/agent/lib/agent.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/client.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/config.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/daemon.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/job.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/job_execution_exception.rb
+ delete mode 100644 sources/desktop_computing/agent/lib/job_resource.rb
+ delete mode 100644 sources/desktop_computing/agent/man/man1/oar-agent-daemon.pod
+ delete mode 100644 sources/desktop_computing/agent/man/man1/oar-agent.pod
+ delete mode 100644 sources/desktop_computing/agent/man/man1/oarcache.pod
+ delete mode 100644 sources/desktop_computing/agent/spec/job_client_spec.rb
+ delete mode 100644 sources/desktop_computing/agent/spec/job_resource_spec.rb
+ delete mode 100644 sources/desktop_computing/agent/spec/job_set_spec.rb
+ delete mode 100644 sources/desktop_computing/agent/spec/job_spec.rb
+ delete mode 100644 sources/desktop_computing/agent/test/forktest.rb
+ delete mode 100644 sources/desktop_computing/agent/test/forktest2.rb
+ delete mode 100644 sources/desktop_computing/agent/test/jsontest.rb
+ delete mode 100644 sources/desktop_computing/agent/test/killtest.rb
+ delete mode 100644 sources/desktop_computing/agent/test/newforktest.rb
+ delete mode 100644 sources/desktop_computing/agent/test/pstest.rb
+ delete mode 100644 sources/desktop_computing/agent/test/rest_client_test.rb
+ delete mode 100644 sources/desktop_computing/agent/test/restclienttest.rb
+ delete mode 100644 sources/desktop_computing/agent/test/systemtest.rb
+ delete mode 100755 sources/desktop_computing/oar-agent.pl
+ delete mode 100755 sources/desktop_computing/oar-cgi
+ delete mode 100755 sources/desktop_computing/oar-cgi.pl
+ delete mode 100755 sources/desktop_computing/oarcache.pl
+ delete mode 100755 sources/desktop_computing/oarfetch.sh
+ delete mode 100755 sources/desktop_computing/oarres.pl
+ delete mode 100755 sources/desktop_computing/recipes/debian_oar_desktop_agent.yaml
+ delete mode 100755 sources/desktop_computing/recipes/debian_oar_desktop_server.yaml
+ delete mode 100644 sources/desktop_computing/steps/client1.conf
+ delete mode 100644 sources/desktop_computing/steps/oar_desktop_client.yaml
+ delete mode 100644 sources/desktop_computing/steps/oar_desktop_server.yaml
+ delete mode 100644 sources/desktop_computing/steps/server.conf
+
+diff --git a/Makefile b/Makefile
+index 7afc54f..883695e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,7 +3,7 @@
+ export SHELL=/bin/bash
+ 
+ # Modules that can be builded
+-MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api scheduler-ocaml www-conf common common-libs database  
++MODULES = server user node monika draw-gantt doc tools api scheduler-ocaml www-conf common common-libs database  
+ 
+ 
+ MODULES_LIST= $(patsubst %,% |, $(MODULES))|
+@@ -107,12 +107,6 @@ monika-clean: www-conf-clean
+ monika-build: www-conf-build
+ monika-uninstall: www-conf-uninstall
+ 
+-desktop-computing-cgi-setup: common-setup common-libs-setup
+-desktop-computing-cgi-install: sanity-check common-install common-libs-install
+-desktop-computing-cgi-clean: common-clean common-libs-clean
+-desktop-computing-cgi-build: common-build common-libs-build
+-desktop-computing-cgi-uninstall: common-uninstall common-libs-uninstall
+-
+ tools-setup: common-setup common-libs-setup
+ tools-install: sanity-check common-install common-libs-install
+ tools-clean: common-clean common-libs-clean
+@@ -188,14 +182,6 @@ $(P_TARGETS):
+                 DESTDIR=$(PACKAGES_DIR)/oar-admin \
+ 		DOCDIR=/usr/share/doc/oar-admin
+ 	
+-	# oar-desktop-computing-agent
+-	$(MAKE) -f Makefiles/desktop-computing-agent.mk $(P_ACTION) \
+-		DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
+-	
+-	# oar-desktop-computing-cgi
+-	$(MAKE) -f Makefiles/desktop-computing-cgi.mk $(P_ACTION) \
+-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
+-	
+ 	# oar-restful-api
+ 	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \
+ 	    DOCDIR=/usr/share/doc/oar-restful-api \
+diff --git a/Makefiles/desktop-computing-agent.mk b/Makefiles/desktop-computing-agent.mk
+deleted file mode 100644
+index e44311f..0000000
+--- a/Makefiles/desktop-computing-agent.mk
++++ /dev/null
+@@ -1,40 +0,0 @@
+-MODULE=desktop-computing-agent
+-SRCDIR=sources/desktop_computing/agent
+-
+-AGENTDIR_FILES = $(SRCDIR)/lib/job.rb \
+-		 $(SRCDIR)/lib/client.rb \
+-		 $(SRCDIR)/lib/config.rb \
+-		 $(SRCDIR)/lib/job_execution_exception.rb \
+-		 $(SRCDIR)/lib/job_resource.rb
+-
+-INITDIR_FILES = setup/init.d/oar-desktop-computing-agent.in
+-
+-MANDIR_FILES = $(SRCDIR)/man/man1/oar-agent.pod \
+-	       $(SRCDIR)/man/man1/oar-agent-daemon.pod
+-
+-include Makefiles/shared/shared.mk
+-
+-build: build_shared
+-	# Nothing to do
+-
+-clean: clean_shared
+-	# Nothing to do
+-
+-install: install_shared
+-	install -d $(DESTDIR)$(OARDIR)/desktop_computing
+-	install -m 0644  $(AGENTDIR_FILES) $(DESTDIR)$(OARDIR)/desktop_computing
+-	
+-	install -d $(DESTDIR)$(BINDIR)
+-	install -m 0755 $(SRCDIR)/lib/agent.rb $(DESTDIR)$(BINDIR)/oar-agent
+-	
+-	install -d $(DESTDIR)$(SBINDIR)
+-	install -m 0755 $(SRCDIR)/lib/daemon.rb $(DESTDIR)$(SBINDIR)/oar-agent-daemon
+-
+-uninstall: uninstall_shared
+-	for file in $(AGENTDIR_FILES); do rm -f $(DESTDIR)$(OARDIR)/desktop_computing/`basename $$file`; done
+-	rm -f $(DESTDIR)$(BINDIR)/oar-agent
+-	rm -f $(DESTDIR)$(SBINDIR)/oar-agent-daemon
+-	rm -rf $(DESTDIR)$(EXAMPLEDIR)
+-	  
+-.PHONY: install setup uninstall build clean
+-	 
+diff --git a/Makefiles/desktop-computing-cgi.mk b/Makefiles/desktop-computing-cgi.mk
+deleted file mode 100644
+index 6561707..0000000
+--- a/Makefiles/desktop-computing-cgi.mk
++++ /dev/null
+@@ -1,34 +0,0 @@
+-MODULE=desktop-computing-cgi
+-SRCDIR=sources/desktop_computing
+-
+-OARDIR_BINFILES = $(SRCDIR)/oarcache.pl \
+-		  $(SRCDIR)/oarres.pl \
+-		  $(SRCDIR)/oar-cgi.pl
+-
+-CRONHOURLYDIR_FILES = setup/cron.hourly/oar-desktop-computing-cgi.in
+-
+-MANDIR_FILES = $(SRCDIR)/agent/man/man1/oarcache.pod
+-
+-include Makefiles/shared/shared.mk
+-
+-clean: clean_shared
+-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
+-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres 
+-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
+-
+-build: build_shared
+-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
+-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
+-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
+-
+-install: install_shared
+-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
+-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
+-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
+-
+-uninstall: uninstall_shared
+-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarcache.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarcache
+-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarres.pl CMD_TARGET=$(DESTDIR)$(OARDIR)/oarres
+-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar-cgi.pl CMD_TARGET=$(DESTDIR)$(CGIDIR)/oar-cgi
+-
+-.PHONY: install setup uninstall build clean
+diff --git a/docs/documentation/desktop-computing/desktop-computing.lyx b/docs/documentation/desktop-computing/desktop-computing.lyx
+deleted file mode 100644
+index 6f3cdc5..0000000
+--- a/docs/documentation/desktop-computing/desktop-computing.lyx
++++ /dev/null
+@@ -1,425 +0,0 @@
+-#LyX 1.3 created this file. For more info see http://www.lyx.org/
+-\lyxformat 221
+-\textclass article
+-\language english
+-\inputencoding auto
+-\fontscheme default
+-\graphics default
+-\paperfontsize default
+-\spacing single 
+-\papersize Default
+-\paperpackage a4
+-\use_geometry 0
+-\use_amsmath 0
+-\use_natbib 0
+-\use_numerical_citations 0
+-\paperorientation portrait
+-\secnumdepth 3
+-\tocdepth 3
+-\paragraph_separation indent
+-\defskip medskip
+-\quotes_language english
+-\quotes_times 2
+-\papercolumns 1
+-\papersides 1
+-\paperpagestyle default
+-
+-\layout Title
+-\added_space_top vfill \added_space_bottom vfill 
+-Module OAR pour le Desktop-Computing
+-\layout Author
+-
+-Pierre Neyron <pierre.neyron@icatis.com> 
+-\layout Date
+-
+-29 octobre 2004
+-\layout Standard
+-
+-Ce papier présente le travail réalisé sur OAR dans le context du contrat
+- ACI CIGRI-Icatis.
+-\layout Standard
+-
+-
+-\begin_inset LatexCommand \tableofcontents{}
+-
+-\end_inset 
+-
+-
+-\layout Section
+-
+-Objectifs
+-\layout Standard
+-
+-Développement d'un client de calcul OAR léger, permettant d'utiliser OAR
+- dans un environnement non cluster, c'est à dire une grille ou internet
+- de manière générale.
+-\layout Section
+-
+-Sous objectifs (cahier des charges)
+-\layout Standard
+-
+-Le client léger de calcul doit:
+-\layout Itemize
+-
+-inter-opérer avec les firewalls (passer les firewalls)
+-\layout Itemize
+-
+-ne pas être dépendant de NFS (environnement non cluster)
+-\layout Itemize
+-
+-être suffisamment dynamique pour fonctionner dans un environnement peu stable
+- comme celui du desktop-computing (mode pull)
+-\layout Itemize
+-
+-être suffisamment propre pour ne pas perturber l'environnement d'exécution
+- de la machine de calcul, celle-ci ne pouvant a priori pas être nettoyée
+- à la main par un administrateur averti, comme un noeud de cluster.
+- 
+-\layout Itemize
+-
+-être léger à déployer sur les machines de calcul
+-\layout Section
+-
+-Architecture
+-\layout Standard
+-
+-Afin de passer les firewalls, le client léger base ses communications réseau
+- sur HTTP.
+- En effet la plupart des firewalls autorise d'une façon directe ou via un
+- proxy HTTP, le transit de messages HTTP.
+- Le module desktop-computing est donc composé de deux éléments, un client
+- (agent) dialoguant en HTTP et un interprète traduisant les messages HTTP
+- en données OAR et réciproquement.
+- Seul le deuxième élément est en contact avec les autres modules OAR, Almighty,
+- base de données, etc.
+- Pour encapsuler dans des messages HTTP les données échangées entre l'agent
+- et l'interprète, une méthode de sérialisation a été mise en place.
+- L'étude de protocoles comme SOAP (web services) a été envisagée, mais un
+- mécanisme plus simple a été préféré (Il est basé sur le module Data::Dumper
+- de Perl).
+-\layout Standard
+-
+-L'absence de système de fichiers partagé implique quant à elle la mise en
+- place de mécanisme de stage-in et de stage-out.
+- Ceux-ci sont réalisés grâce aux possibilités offertes par HTTP pour le
+- download et l'upload de fichiers.
+- Des mécanismes de caches ont également été mis en place.
+- Un mécanisme de sélection en fonction de la bande passante vers les noeuds
+- de calcul légers, et des tailles des données à échanger pourrait être envisagé.
+- Les communications entre l'agent et OAR sont toujours à l'initiative de
+- l'agent.
+- Cela permet d'envisager sereinement un contexte ou des clients peuvent
+- être n'importe où, quitte à ne pas être accessibles directement depuis
+- le serveur OAR (Ex: machines derrière un firewall avec translation d'IP,
+- machines sur un intranet d'entreprise fermé avec proxy HTTP).
+-\layout Standard
+-
+-Des mécanismes d'exécution de style sand-box n'ont pas pu être utilisés
+- pour ce client léger (aucun mécanisme satisfaisant et suffisamment léger
+- de ce type ne semble exister).
+- Les jobs sont donc simplement exécutés en temps qu'un utilisateur normal
+- sur la machine (celui-ci peut cependant être un utilisateur dédié).
+- Il est très difficile de garantir qu'aucun job exécuté sur le noeud de
+- calcul ne perturbera pas un jour le fonctionnement général de la machine.
+- Un minimum de garantie est offert par l'utilisation d'un utilisateur dédié,
+- dont l'élimination de tous les processus supprimera tout désagrément constaté.
+- Pour ce nettoyage, des mécanismes plus fins ont été et sont toujours à
+- étudier.
+-\layout Standard
+-
+-Coté déployement, l'agent est un script Perl indépendant, nécessitant seulement
+- la présence de quelques composants comme la commande `tar' sur le système
+- de la machine de calcul.
+- Le système cible est GNU Linux, un portage vers MS Windows/Cygwin pourrait
+- certainement être envisagé, mais il nécessiterait également le développement
+- d'un mécanisme de sélection supplémentaire au niveau de OAR pour le choix
+- du système d'exécution approprié pour un job (compatibilité d'environnement
+- d'exécution).
+- Des packages RPM et Debian sont disponibles pour une installation.
+-\layout Section
+-
+-Intégration dans le fonctionnement de OAR pré-existant
+-\layout Standard
+-
+-Un des objectifs sous-jasent de ce développement a été de ne pas trop dénaturer,
+- c'est à dire nécessiter de changements, dans le fonctionnement de OAR en
+- mode cluster, tout en permettant un fonctionnement en mode Desktop-Computing.
+- Cela a conduit à un certain nombre de choix et de limitations.
+-\layout Standard
+-
+-Une des principales conséquences est le fait que contrairement à des systèmes
+- comme Seti@Home, c'est toujours le système OAR qui attribue les jobs aux
+- noeuds, et ce de manière asynchrone par rapport aux requêtes des agents
+- de desktop-computing.
+- Un agent signale donc simplement sa présence et ses possibilités d'exécution
+- (à intervalle régulier), puis dans un deuxième temps seulement, récupère
+- des jobs à exécuter si l'ordonnanceur de OAR lui en a attribué.
+- Un mode pull plus classique correspondrait plus à un mécanisme de vol de
+- tache.
+- Quand l'agent s'arrête normalement, il en informe l'infrastructure OAR
+- qui marque le noeud comme absent.
+- Si l'agent est interrompu, il sera marqué absent dans OAR dès que sa date
+- d'expiration sera dépassée, l'agent ne mettant en effet plus celle-ci à
+- jour.
+- 
+-\layout Standard
+-
+-L'agent a d'autre part été restreint aux limitations suivantes: 
+-\layout Itemize
+-
+-un job "Desktop-Computing" ne peut s'exécuter que sur une seule et même
+- machine.
+- S'il requiert un poids supérieur à un, il pourra uniquement être exécuté
+- sur des machines offrant un poids égal ou supérieur.
+- Sans parler des problèmes liés à la dispersion très probables des machines
+- et donc de leur interconnexion non garantie, permettre une exécution de
+- jobs multi-noeud demanderait trop de modifications dans l'infrastructure
+- OAR actuelle pour être supporté (cela nécessiterait notamment l'ajout d'états
+- dans l'automate, et de modifier l'ordonnanceur).
+-\layout Itemize
+-
+-du fait de la dispersion possible des machines de calcul et de la limitation
+- précédente, il est difficile d'envisager des jobs fortement parallèles
+- dans le contexte du desktop computing.
+- L'usage est donc essentiellement prévu pour des jobs séquentiels, avec
+- variation des paramètres.
+-\layout Section
+-
+-Composants et modification de OAR nécessaires
+-\layout Standard
+-
+-Comme dit précédemment, le module de desktop-computing est composé de deux
+- composants: 
+-\layout Itemize
+-
+-oar-agent qui est l'agent lancé sur les noeuds de calcul.
+- 
+-\layout Itemize
+-
+-oar-cgi qui est l'interprète qui interface le système OAR avec le protocole
+- HTTP (CGI Perl).
+- 
+-\layout Standard
+-
+-Ces deux composants sont fournis dans deux packages à part entière (RPM
+- ou Debian).
+- Le premier package (oar-agent), nommé oar-desktop-computing-agent, doit
+- être installé sur les noeuds de calcul.
+- Il est indépendant.
+- Le second, oar-desktop-computing-cgi est dépendant d'un serveur HTTP et
+- du package oar-common.
+- Il doit être installé sur une machine du cluster OAR disposant d'un serveur
+- HTTP.
+- Une installation simple consiste à installer oar-desktop-computing-cgi
+- et Apache sur la même machine où a été installé le package oar-server.
+- 
+-\layout Standard
+-
+-Même si elles ont été le moins intrusives possible, le développement du
+- module de Desktop-Computing a nécessite d'apporter quelques modifications
+- au système OAR.
+- En voici un résumé: 
+-\layout Itemize
+-
+-Ajout d'une propriété "DesktopComputing" sur les noeuds pour identifier
+- les noeuds faisant du Desktop-Computing, et d'une colonne "expiryDate"
+- dans la table nodes pour le mécanisme de détection de la disparition des
+- noeuds.
+- 
+-\layout Itemize
+-
+-Ajout de la table files et d'une colonne dans la table job pour gérer les
+- 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-ins
+-\begin_inset Quotes erd
+-\end_inset 
+-
+-.
+- 
+-\layout Itemize
+-
+-Ajout d'un certain nombre de fonctions dans iolib.
+- Certaines fonctions existantes ont également été modifiées, mais leur nombre
+- a été limité.
+- 
+-\layout Itemize
+-
+-Modification de Leon, Runner, Sarko, oarnodesetting, oarsub pour qu'ils
+- prennent en compte le desktop-computing.
+-\layout Section
+-
+-Utilisation
+-\layout Standard
+-
+-Un fois installé, oar-agent peut être lancé avec comme paramètre l'URL pointant
+- vers 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-oar-cgi
+-\begin_inset Quotes erd
+-\end_inset 
+-
+-.
+- Attention, l'utilisateur qui lance 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-oar-agent
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- exécutera aussi les jobs.
+- L'utilisation d'un utilisateur dédié peut permettre un nettoyage plus rapide
+- en cas de dysfonctionnement.
+- Des options permettent de préciser le nom du noeud (si ce n'est pas le
+- nom donné par `hostname'), le poids (uniquement à la première utilisation),
+- et de passer en mode 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-verbose
+-\begin_inset Quotes erd
+-\end_inset 
+-
+-, etc (voir `oar-agent -h').
+- Un sous répertoire dans le répertoire courant est créé pour stocker les
+- 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-ins
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- (avec un mécanisme de cache), ainsi que pour chaque job à exécuter.
+- Les répertoires des jobs sont supprimés quand ceux-ci se terminent.
+-\layout Standard
+-
+-Pour la soumission de job pour le desktop-computing, la procedure consiste
+- a donner au job la propriété 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-DesktopComputing
+-\begin_inset Quotes erd
+-\end_inset 
+-
+-.
+- Il est de plus possible de preciser l'environnement de 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-in
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- sous forme d'une archive créée au préalable, ou bien en donnant simplement
+- un repertoire.
+- Voici un exemple de soumission:
+-\layout Standard
+-
+-> oarsub -p 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-DesktopComputing='YES'
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- -s my_stage_in_directory 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+- ./my_job.sh param1 param2
+-\begin_inset Quotes erd
+-\end_inset 
+-
+-
+-\layout Standard
+-
+-A noter qu'il sera possible de créér une queue spéciale 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-Desktop-Computing
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- avec une règle d'admission qui positionnera automatiquement la propriété.
+-\layout Section
+-
+-Évolutions envisagées
+-\layout Itemize
+-
+-[Fait] Finir de mettre au point le mécanisme de nettoyage récursif des processus
+- des jobs avec leur descendance dans les cas de la suppression de jobs ou
+- de l'interruption de l'agent.
+- Un mécanisme basé sur les sessions-id des processus peut également être
+- ajoute en deuxième recourt.
+-\layout Itemize
+-
+-[Fait] Améliorer les mécanismes de 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-in
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- et de 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-out
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- pour qu'ils soient interruptibles, par exemple quand le job concerné est
+- tué.
+- Le mécanisme de cache peut également être affiné afin de prendre en compte
+- les temps de téléchargement en plus de la taille et la date de dernier
+- accès aux fichiers.
+-\layout Itemize
+-
+-Voir si il serait vraiment intéressant de rajouter des états sur les jobs
+- pour délimiter les périodes de 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-in
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- (Launching ?), et de 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-stage-out
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- (Terminating ?).
+-\layout Itemize
+-
+-Ajouter un mécanisme d'authentification des noeuds d'exécution légers via
+- une 
+-\begin_inset Quotes eld
+-\end_inset 
+-
+-host key
+-\begin_inset Quotes erd
+-\end_inset 
+-
+- à la SSH par exemple.
+-\layout Itemize
+-
+-Mettre à disposition d'agent sous forme d'un service (démon) UNIX.
+-\layout Itemize
+-
+-Coupler l'agent avec un logiciel d'écran de veille, ou tout autre détecteur
+- de charge ou d'activité d'une machine.
+-\the_end
+diff --git a/docs/documentation/desktop-computing/desktop-computing.ps b/docs/documentation/desktop-computing/desktop-computing.ps
+deleted file mode 100644
+index 68f5898..0000000
+--- a/docs/documentation/desktop-computing/desktop-computing.ps
++++ /dev/null
+@@ -1,1208 +0,0 @@
+-%!PS-Adobe-2.0
+-%%Creator: dvips(k) 5.92b Copyright 2002 Radical Eye Software
+-%%Title: desktop-computing.dvi
+-%%Pages: 5
+-%%PageOrder: Ascend
+-%%BoundingBox: 0 0 596 842
+-%%DocumentFonts: CMSY10
+-%%DocumentPaperSizes: a4
+-%%EndComments
+-%DVIPSWebPage: (www.radicaleye.com)
+-%DVIPSCommandLine: dvips -t a4 -o desktop-computing.ps
+-%+ desktop-computing.dvi
+-%DVIPSParameters: dpi=600, compressed
+-%DVIPSSource:  TeX output 2004.11.15:1355
+-%%BeginProcSet: texc.pro
+-%!
+-/TeXDict 300 dict def TeXDict begin/N{def}def/B{bind def}N/S{exch}N/X{S
+-N}B/A{dup}B/TR{translate}N/isls false N/vsize 11 72 mul N/hsize 8.5 72
+-mul N/landplus90{false}def/@rigin{isls{[0 landplus90{1 -1}{-1 1}ifelse 0
+-0 0]concat}if 72 Resolution div 72 VResolution div neg scale isls{
+-landplus90{VResolution 72 div vsize mul 0 exch}{Resolution -72 div hsize
+-mul 0}ifelse TR}if Resolution VResolution vsize -72 div 1 add mul TR[
+-matrix currentmatrix{A A round sub abs 0.00001 lt{round}if}forall round
+-exch round exch]setmatrix}N/@landscape{/isls true N}B/@manualfeed{
+-statusdict/manualfeed true put}B/@copies{/#copies X}B/FMat[1 0 0 -1 0 0]
+-N/FBB[0 0 0 0]N/nn 0 N/IEn 0 N/ctr 0 N/df-tail{/nn 8 dict N nn begin
+-/FontType 3 N/FontMatrix fntrx N/FontBBox FBB N string/base X array
+-/BitMaps X/BuildChar{CharBuilder}N/Encoding IEn N end A{/foo setfont}2
+-array copy cvx N load 0 nn put/ctr 0 N[}B/sf 0 N/df{/sf 1 N/fntrx FMat N
+-df-tail}B/dfs{div/sf X/fntrx[sf 0 0 sf neg 0 0]N df-tail}B/E{pop nn A
+-definefont setfont}B/Cw{Cd A length 5 sub get}B/Ch{Cd A length 4 sub get
+-}B/Cx{128 Cd A length 3 sub get sub}B/Cy{Cd A length 2 sub get 127 sub}
+-B/Cdx{Cd A length 1 sub get}B/Ci{Cd A type/stringtype ne{ctr get/ctr ctr
+-1 add N}if}B/id 0 N/rw 0 N/rc 0 N/gp 0 N/cp 0 N/G 0 N/CharBuilder{save 3
+-1 roll S A/base get 2 index get S/BitMaps get S get/Cd X pop/ctr 0 N Cdx
+-0 Cx Cy Ch sub Cx Cw add Cy setcachedevice Cw Ch true[1 0 0 -1 -.1 Cx
+-sub Cy .1 sub]/id Ci N/rw Cw 7 add 8 idiv string N/rc 0 N/gp 0 N/cp 0 N{
+-rc 0 ne{rc 1 sub/rc X rw}{G}ifelse}imagemask restore}B/G{{id gp get/gp
+-gp 1 add N A 18 mod S 18 idiv pl S get exec}loop}B/adv{cp add/cp X}B
+-/chg{rw cp id gp 4 index getinterval putinterval A gp add/gp X adv}B/nd{
+-/cp 0 N rw exit}B/lsh{rw cp 2 copy get A 0 eq{pop 1}{A 255 eq{pop 254}{
+-A A add 255 and S 1 and or}ifelse}ifelse put 1 adv}B/rsh{rw cp 2 copy
+-get A 0 eq{pop 128}{A 255 eq{pop 127}{A 2 idiv S 128 and or}ifelse}
+-ifelse put 1 adv}B/clr{rw cp 2 index string putinterval adv}B/set{rw cp
+-fillstr 0 4 index getinterval putinterval adv}B/fillstr 18 string 0 1 17
+-{2 copy 255 put pop}for N/pl[{adv 1 chg}{adv 1 chg nd}{1 add chg}{1 add
+-chg nd}{adv lsh}{adv lsh nd}{adv rsh}{adv rsh nd}{1 add adv}{/rc X nd}{
+-1 add set}{1 add clr}{adv 2 chg}{adv 2 chg nd}{pop nd}]A{bind pop}
+-forall N/D{/cc X A type/stringtype ne{]}if nn/base get cc ctr put nn
+-/BitMaps get S ctr S sf 1 ne{A A length 1 sub A 2 index S get sf div put
+-}if put/ctr ctr 1 add N}B/I{cc 1 add D}B/bop{userdict/bop-hook known{
+-bop-hook}if/SI save N @rigin 0 0 moveto/V matrix currentmatrix A 1 get A
+-mul exch 0 get A mul add .99 lt{/QV}{/RV}ifelse load def pop pop}N/eop{
+-SI restore userdict/eop-hook known{eop-hook}if showpage}N/@start{
+-userdict/start-hook known{start-hook}if pop/VResolution X/Resolution X
+-1000 div/DVImag X/IEn 256 array N 2 string 0 1 255{IEn S A 360 add 36 4
+-index cvrs cvn put}for pop 65781.76 div/vsize X 65781.76 div/hsize X}N
+-/p{show}N/RMat[1 0 0 -1 0 0]N/BDot 260 string N/Rx 0 N/Ry 0 N/V{}B/RV/v{
+-/Ry X/Rx X V}B statusdict begin/product where{pop false[(Display)(NeXT)
+-(LaserWriter 16/600)]{A length product length le{A length product exch 0
+-exch getinterval eq{pop true exit}if}{pop}ifelse}forall}{false}ifelse
+-end{{gsave TR -.1 .1 TR 1 1 scale Rx Ry false RMat{BDot}imagemask
+-grestore}}{{gsave TR -.1 .1 TR Rx Ry scale 1 1 false RMat{BDot}
+-imagemask grestore}}ifelse B/QV{gsave newpath transform round exch round
+-exch itransform moveto Rx 0 rlineto 0 Ry neg rlineto Rx neg 0 rlineto
+-fill grestore}B/a{moveto}B/delta 0 N/tail{A/delta X 0 rmoveto}B/M{S p
+-delta add tail}B/b{S p tail}B/c{-4 M}B/d{-3 M}B/e{-2 M}B/f{-1 M}B/g{0 M}
+-B/h{1 M}B/i{2 M}B/j{3 M}B/k{4 M}B/w{0 rmoveto}B/l{p -4 w}B/m{p -3 w}B/n{
+-p -2 w}B/o{p -1 w}B/q{p 1 w}B/r{p 2 w}B/s{p 3 w}B/t{p 4 w}B/x{0 S
+-rmoveto}B/y{3 2 roll p a}B/bos{/SS save N}B/eos{SS restore}B end
+-
+-%%EndProcSet
+-%%BeginProcSet: bbad153f.enc
+-% Thomas Esser, Dec 2002. public domain
+-%
+-% Encoding for:
+-%     cmsy10 cmsy5 cmsy6 cmsy7 cmsy8 cmsy9
+-%
+-/TeXbbad153fEncoding [
+-/minus /periodcentered /multiply /asteriskmath /divide /diamondmath
+-/plusminus /minusplus /circleplus /circleminus /circlemultiply
+-/circledivide /circledot /circlecopyrt /openbullet /bullet
+-/equivasymptotic /equivalence /reflexsubset /reflexsuperset /lessequal
+-/greaterequal /precedesequal /followsequal /similar /approxequal
+-/propersubset /propersuperset /lessmuch /greatermuch /precedes /follows
+-/arrowleft /arrowright /arrowup /arrowdown /arrowboth /arrownortheast
+-/arrowsoutheast /similarequal /arrowdblleft /arrowdblright /arrowdblup
+-/arrowdbldown /arrowdblboth /arrownorthwest /arrowsouthwest /proportional
+-/prime /infinity /element /owner /triangle /triangleinv /negationslash
+-/mapsto /universal /existential /logicalnot /emptyset /Rfractur /Ifractur
+-/latticetop /perpendicular /aleph /A /B /C /D /E /F /G /H /I /J /K
+-/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /union /intersection
+-/unionmulti /logicaland /logicalor /turnstileleft /turnstileright
+-/floorleft /floorright /ceilingleft /ceilingright /braceleft /braceright
+-/angbracketleft /angbracketright /bar /bardbl /arrowbothv /arrowdblbothv
+-/backslash /wreathproduct /radical /coproduct /nabla /integral
+-/unionsq /intersectionsq /subsetsqequal /supersetsqequal /section
+-/dagger /daggerdbl /paragraph /club /diamond /heart /spade /arrowleft
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/minus /periodcentered /multiply /asteriskmath /divide /diamondmath
+-/plusminus /minusplus /circleplus /circleminus /.notdef /.notdef
+-/circlemultiply /circledivide /circledot /circlecopyrt /openbullet
+-/bullet /equivasymptotic /equivalence /reflexsubset /reflexsuperset
+-/lessequal /greaterequal /precedesequal /followsequal /similar
+-/approxequal /propersubset /propersuperset /lessmuch /greatermuch
+-/precedes /follows /arrowleft /spade /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+-] def
+-
+-%%EndProcSet
+-%%BeginProcSet: texps.pro
+-%!
+-TeXDict begin/rf{findfont dup length 1 add dict begin{1 index/FID ne 2
+-index/UniqueID ne and{def}{pop pop}ifelse}forall[1 index 0 6 -1 roll
+-exec 0 exch 5 -1 roll VResolution Resolution div mul neg 0 0]FontType 0
+-ne{/Metrics exch def dict begin Encoding{exch dup type/integertype ne{
+-pop pop 1 sub dup 0 le{pop}{[}ifelse}{FontMatrix 0 get div Metrics 0 get
+-div def}ifelse}forall Metrics/Metrics currentdict end def}{{1 index type
+-/nametype eq{exit}if exch pop}loop}ifelse[2 index currentdict end
+-definefont 3 -1 roll makefont/setfont cvx]cvx def}def/ObliqueSlant{dup
+-sin S cos div neg}B/SlantFont{4 index mul add}def/ExtendFont{3 -1 roll
+-mul exch}def/ReEncodeFont{CharStrings rcheck{/Encoding false def dup[
+-exch{dup CharStrings exch known not{pop/.notdef/Encoding true def}if}
+-forall Encoding{]exch pop}{cleartomark}ifelse}if/Encoding exch def}def
+-end
+-
+-%%EndProcSet
+-%%BeginFont: CMSY10
+-%!PS-AdobeFont-1.1: CMSY10 1.0
+-%%CreationDate: 1991 Aug 15 07:20:57
+-% Copyright (C) 1997 American Mathematical Society. All Rights Reserved.
+-11 dict begin
+-/FontInfo 7 dict dup begin
+-/version (1.0) readonly def
+-/Notice (Copyright (C) 1997 American Mathematical Society. All Rights Reserved) readonly def
+-/FullName (CMSY10) readonly def
+-/FamilyName (Computer Modern) readonly def
+-/Weight (Medium) readonly def
+-/ItalicAngle -14.035 def
+-/isFixedPitch false def
+-end readonly def
+-/FontName /CMSY10 def
+-/PaintType 0 def
+-/FontType 1 def
+-/FontMatrix [0.001 0 0 0.001 0 0] readonly def
+-/Encoding 256 array
+-0 1 255 {1 index exch /.notdef put} for
+-dup 0 /.notdef put
+-readonly def
+-/FontBBox{-29 -960 1116 775}readonly def
+-/UniqueID 5000820 def
+-currentdict end
+-currentfile eexec
+-D9D66F633B846A97B686A97E45A3D0AA052F09F9C8ADE9D907C058B87E9B6964
+-7D53359E51216774A4EAA1E2B58EC3176BD1184A633B951372B4198D4E8C5EF4
+-A213ACB58AA0A658908035BF2ED8531779838A960DFE2B27EA49C37156989C85
+-E21B3ABF72E39A89232CD9F4237FC80C9E64E8425AA3BEF7DED60B122A52922A
+-221A37D9A807DD01161779DDE7D31FF2B87F97C73D63EECDDA4C49501773468A
+-27D1663E0B62F461F6E40A5D6676D1D12B51E641C1D4E8E2771864FC104F8CBF
+-5B78EC1D88228725F1C453A678F58A7E1B7BD7CA700717D288EB8DA1F57C4F09
+-0ABF1D42C5DDD0C384C7E22F8F8047BE1D4C1CC8E33368FB1AC82B4E96146730
+-DE3302B2E6B819CB6AE455B1AF3187FFE8071AA57EF8A6616B9CB7941D44EC7A
+-71A7BB3DF755178D7D2E4BB69859EFA4BBC30BD6BB1531133FD4D9438FF99F09
+-4ECC068A324D75B5F696B8688EEB2F17E5ED34CCD6D047A4E3806D000C199D7C
+-515DB70A8D4F6146FE068DC1E5DE8BC5703711DA090312BA3FC00A08C453C609
+-C627A8BECD6E1FA14A3B02476E90AAD8B4700C400380BC9AFFBF7847EB28661B
+-9DC3AA0F44C533F2E07DCC4DE19D367BF223E33DC321D0247A0E6EF6ABC8FA52
+-15AE044094EF678A8726CD7C011F02BFF8AB6EAEEE391AD837120823BED0B5D8
+-F8B15245377871A64F78378BB4330149D6941F7A86FBFFC49B93C94155F5FA7D
+-F22E7214511C0A92693F4CDBF38411651540572F2DD70D924AE0F18E1CD581F3
+-C871399127FF5D07A868885B5FF7CDEB50B8323B2533DEF8DC973B1AE84FA0A2
+-
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-0000000000000000000000000000000000000000000000000000000000000000
+-cleartomark
+-%%EndFont 
+-TeXDict begin 39158280 55380996 1000 600 600 (desktop-computing.dvi)
+-@start /Fa 240[42 15[{ TeXbbad153fEncoding ReEncodeFont }1
+-83.022 /CMSY10 rf
+-%DVIPSBitmapFont: Fb ecbx1000 10 41
+-/Fb 41 234 df<913803FFC0027F13F00103B512FC010FEB00FED93FF8133FD97FE0EBFF
+-8049485A5A1480484A13C04A6C1380A36F1300167E93C7FCA592383FFFC0B8FCA4000390
+-C7FCB3ABB5D8FC3F13FFA4303A7EB935>28 D<141C143C14F8EB01F0EB03E01307EB0FC0
+-EB1F8014005B137E13FE5B12015B1203A2485AA2120F5B121FA25B123FA4485AA512FFB1
+-127FA56C7EA4121F7FA2120F7F1207A26C7EA212017F12007F137E7F7F1480EB0FC0EB07
+-E01303EB01F0EB00F8143C141C165377BD25>40 D<12E07E127C7E7E7F6C7E6C7E12037F
+-6C7E7F12007F137E137FA2EB3F80A214C0131F14E0A2130F14F0A4EB07F8A514FCB114F8
+-A5EB0FF0A414E0131FA214C0133F1480A2EB7F00A2137E13FE5B12015B485A5B1207485A
+-485A90C7FC123E5A12F05A16537BBD25>I<B61280A819087F9620>45
+-D<141E143E14FE1307137FB5FCA3138FEA000FB3B3A5007FB61280A4213679B530>49
+-D<EB0FFE90387FFFC048B512F0000714FC390FE03FFF261F800F1380263F000313C0D87F
+-8014E0EBE00100FF6D13F07FA2ED7FF8A46C5A6C5A0006C7FCC8FCEDFFF0A216E05C16C0
+-4A138016004A5A4A5AEC1FF05D4A5A4AC7FC14FE495AD903F01378495A495A495A49C712
+-F8017C14F05B49130148B6FC5A5A5A5A5A4815E0B7FCA425367BB530>I<EB03FF011F13
+-F0017F13FC3901FC07FF2603F003138048486C13C0496C13E0EA0FF86D14F0487EA66C48
+-14E06C5A6C485AC714C04A138016004A5A4A5AEC3FF090380FFFC05D15F090380007FE91
+-3801FF806E13C016E0ED7FF016F8ED3FFCA216FEEA1FC0487E487E487EA416FCA249137F
+-007F15F801C0EBFFF06C5A6C6C4813E0260FFC0713806CB61200000114FC6C6C13F00107
+-90C7FC27377CB530>I<ED07C0150FA2151F153F157F15FF5CA25C5C5C5C143E143C5C5C
+-1301495A5C495A495A5B133E5B13785B485A1203485A5B48C7FC121E5A127C5AB81280A4
+-C70001EBC000AA0103B61280A429367DB530>I<001C15C0D81F80130701F8137F90B612
+-80A216005D5D15F05D15804AC7FC14F090C9FCA7EB03FE90381FFFE0017F13F89038FE07
+-FC9038F003FFD9C0011380496C13C090C7FC000E15E0C8127F16F0A216F8A3121FEA3FC0
+-487E12FF7FA316F05B15FFD87F8014E0007EC713C0003E5B003F4913806C6C481300390F
+-F01FFE6CB512F8000114E06C6C1380D90FF8C7FC25377BB530>I<EC0FF8ECFFFE0103EB
+-FF8090390FF80FC090393FE003E090397F8001F09038FF000F48EC1FF84848133F485A12
+-0F5B121FA2003FEC1FF0ED0FE0484890C7FCA31408EC7FF039FFF1FFFC01F313FFD9F780
+-13809039FF007FC049EB3FE04914F0ED1FF85B16FCA34914FEA4127FA5123F16FCA26C7E
+-16F8000F143F6D14F0000715E06C6CEB7FC03A01FF81FF806C90B51200013F13FC010F13
+-F00101138027377CB530>I<123C123EEA3FE090B71280A41700485D5E5E5E5EA2007CC7
+-EA0FC000784A5A4BC7FC00F8147E485C5D14014A5AC7485A4A5AA24A5A143F4AC8FCA214
+-FEA213015C1303A21307A2130F5CA2131FA5133FA96D5A6D5A6D5A29397BB730>I<ED03
+-E04B7EA24B7EA34B7EA24B7EA34B7EA292B57EA34A8015F302038015E1A202078015C002
+-0F80ED807FA2021F80ED003F4A80023E131FA2027E80027C7F02FC814A7FA20101824A7F
+-49B77EA3498202C0C7FC010F824A147FA2011F8291C8123F4982013E151FA2017E82017C
+-8101FE83B500F80107B61280A4413A7DB948>65 D<DB3FFCEB01C00203B5EAC003021FEC
+-F00791B6EAFC0F01039039FC00FF3F4901C0EB1FFFD91FFEC77E49481403D97FF0804948
+-80485B48177F4849153F4890C9FC181F485A180F123F5B1807127FA24993C7FC12FFAD12
+-7F7FF003C0123FA27F001F1707A26C6C1780180F6C6D16006C6D5D6C173E6C6D157ED97F
+-F85D6D6C4A5A6DB44A5A010701C0EB0FE06D01FCEBFF80010090B548C7FC021F14F80203
+-14E09126003FFEC8FC3A3B7BB945>67 D<B612FCA439007FF800B3B3ADB612FCA41E397D
+-B824>73 D<EDFFF8020FEBFF80027F14F0903A01FFC01FFC010790380007FFD91FFC0101
+-13C0D93FF06D6C7E49486E7E49486E7E48496E7E48834890C86C7EA248486F1380A24848
+-6F13C0A2003F18E0A348486F13F0A400FF18F8AC007F18F06D5DA3003F18E0A26D5D001F
+-18C0A26C6C4B13806C18006E5C6C6D4A5A6C5F6C6D4A5A6D6C4A5AD93FFC49485A6DB401
+-075B0107D9C01F90C7FC010190B512FC6D6C14F0020F1480020001F8C8FC3D3B7BB948>
+-79 D<B712FCEEFFE017FC17FF28007FF8000F13C004017F707F717E717EA2717EA284A7
+-60A24D5A604D5A4D5A04035B041F90C8FC91B612FC17E0839139F8003FFCEE0FFF707F70
+-7F8284A2707FA584A51A601AF084177F1901DD3FFE13E0B600FC011F130394390FFF87C0
+-71EBFF8005011400CBEA1FFC443A7DB848>82 D<D907FF130E013FEBE01E90B5EAF83E00
+-03ECFE7E3A07FC01FFFE390FF0001F4848130F48481303491301007F140090C8FC167E5A
+-163EA27F161E7F7F6D91C7FC13FC387FFFE014FEECFFF06C14FE6F7E6C816C15F06C816C
+-81C681133F010F801301D9000F1480EC007F030F13C01503818100F0157FA3163FA27E17
+-807E167F6C16007E6D14FE01E0495A01F813039039FF801FF800FC90B512E0D8F83F5CD8
+-F00749C7FC39E0007FF02A3B7BB935>I<B600FC011FB512C0A426007FF8C8381FC00072
+-5AB3B3181F013F94C7FC8060011F163E6D6C157E187C6D6C15FC6D6D495A6D6DEB07F06D
+-01F0EB1FE0DA7FFEEBFFC0021FB6C8FC02075C020014F0030F1380423A7DB849>85
+-D<EB3FFE0003B512E0000F14F8391FF00FFE003FEB03FF6D6C7F6E7FA26F7EA26C5A6C5A
+-EA0380C8FCA2EC3FFF010FB5FC137F3901FFF87F00071380380FFE00EA3FF85B485A12FF
+-5BA415FF6D5A127F263FF00713F83B1FFC1FBFFFC0390FFFFE1F0003EBF80F39003FE003
+-2A257DA42E>97 D<13FFB5FCA412077EAF4AB47E020F13F0023F13FC9138FE03FFDAF000
+-13804AEB7FC00280EB3FE091C713F0EE1FF8A217FC160FA217FEAA17FCA3EE1FF8A217F0
+-6E133F6EEB7FE06E14C0903AFDF001FF80903AF8FC07FE009039F03FFFF8D9E00F13E0D9
+-C00390C7FC2F3A7EB935>I<903801FFC0010F13FC017F13FFD9FF8013802603FE0013C0
+-48485AEA0FF8121F13F0123F6E13804848EB7F00151C92C7FC12FFA9127FA27F123FED01
+-E06C7E15036C6CEB07C06C6C14806C6C131FC69038C07E006DB45A010F13F00101138023
+-257DA42A>I<EE7F80ED7FFFA4150381AF903801FF81010F13F1013F13FD9038FFC07F00
+-03EB001FD807FC1307000F8048487F5B123FA2485AA312FFAA127FA27F123FA26C6C5B00
+-0F5C6C6C5B6C6C4913C02701FF80FD13FE39007FFFF9011F13E1010113012F3A7DB935>
+-I<903803FF80011F13F0017F13FC3901FF83FE3A03FE007F804848133F484814C0001FEC
+-1FE05B003FEC0FF0A2485A16F8150712FFA290B6FCA301E0C8FCA4127FA36C7E1678121F
+-6C6C14F86D14F000071403D801FFEB0FE06C9038C07FC06DB51200010F13FC010113E025
+-257DA42C>I<EC1FF0903801FFFC010713FF90391FF87F8090383FE0FFD9FFC113C0A248
+-1381A24813016E1380A2ED3E0092C7FCA8B6FCA4000390C8FCB3ABB512FEA4223A7DB91D
+->I<161FD907FEEBFFC090387FFFE348B6EAEFE02607FE07138F260FF801131F48486C13
+-8F003F15CF4990387FC7C0EEC000007F81A6003F5DA26D13FF001F5D6C6C4890C7FC3907
+-FE07FE48B512F86D13E0261E07FEC8FC90CAFCA2123E123F7F6C7E90B512F8EDFF8016E0
+-6C15F86C816C815A001F81393FC0000F48C8138048157F5A163FA36C157F6C16006D5C6C
+-6C495AD81FF0EB07FCD807FEEB3FF00001B612C06C6C91C7FC010713F02B377DA530>I<
+-13FFB5FCA412077EAFED7FC0913803FFF8020F13FE91381F03FFDA3C01138014784A7E4A
+-14C05CA25CA291C7FCB3A3B5D8FC3F13FFA4303A7DB935>I<EA01F0EA07FC487EA2487E
+-A56C5AA26C5AEA01F0C8FCA913FF127FA412077EB3A9B512F8A4153B7DBA1B>I<141FEC
+-7FC0ECFFE0A24913F0A56D13E0A2EC7FC0EC1F0091C7FCA9EC0FF0EB0FFFA4EB007F143F
+-B3B0121FEA3F80EA7FC0EAFFE0EC7FE0A215C014FF6C481380903883FE006CB45A000F13
+-F0000113801C4B86BA1D>I<13FFB5FCA412077EB3B3ACB512FCA4163A7DB91B>108
+-D<01FED97FE0EB0FFC00FF902601FFFC90383FFF80020701FF90B512E0DA1F81903983F0
+-3FF0DA3C00903887801F000749DACF007F00034914DE6D48D97FFC6D7E4A5CA24A5CA291
+-C75BB3A3B5D8FC1FB50083B512F0A44C257DA451>I<01FEEB7FC000FF903803FFF8020F
+-13FE91381F03FFDA3C011380000713780003497E6D4814C05CA25CA291C7FCB3A3B5D8FC
+-3F13FFA430257DA435>I<903801FFC0010F13F8017F13FFD9FF807F3A03FE003FE04848
+-6D7E48486D7E48486D7EA2003F81491303007F81A300FF1680A9007F1600A3003F5D6D13
+-07001F5DA26C6C495A6C6C495A6C6C495A6C6C6CB45A6C6CB5C7FC011F13FC010113C029
+-257DA430>I<9039FF01FF80B5000F13F0023F13FC9138FE07FFDAF00113800003496C13
+-C00280EB7FE091C713F0EE3FF8A2EE1FFCA3EE0FFEAA17FC161FA217F8163F17F06E137F
+-6E14E06EEBFFC0DAF00313809139FC07FE0091383FFFF8020F13E0020390C7FC91C9FCAC
+-B512FCA42F357EA435>I<9038FE03F000FFEB0FFEEC3FFF91387C7F809138F8FFC00007
+-5B6C6C5A5CA29138807F80ED3F00150C92C7FC91C8FCB3A2B512FEA422257EA427>114
+-D<90383FF0383903FFFEF8000F13FF381FC00F383F0003007E1301007C130012FC15787E
+-7E6D130013FCEBFFE06C13FCECFF806C14C06C14F06C14F81203C614FC131F9038007FFE
+-140700F0130114007E157E7E157C6C14FC6C14F8EB80019038F007F090B512C000F81400
+-38E01FF81F257DA426>I<130FA55BA45BA25B5BA25A1207001FEBFFE0B6FCA3000390C7
+-FCB21578A815F86CEB80F014816CEBC3E090383FFFC06D1380903803FE001D357EB425>
+-I<01FFEC3FC0B5EB3FFFA4000714016C80B3A35DA25DA26C5C6E4813E06CD9C03E13FF90
+-387FFFFC011F13F00103138030257DA435>I<B539F001FFF8A4000390C7EA1F00161E6E
+-133E6C153C6E137C6C15786E13F8017F5CECF001013F5C14F8011F495AA2ECFC07010F5C
+-ECFE0F010791C7FC6E5A6D131E15BE6D13BC15FC6D5BA36E5AA26E5AA26E5AA26E5AA22D
+-257EA432>I<B539F01FFFF0A4000390398003F8006C01C013E06C1407D97FE05B6D6C48
+-5A6E48C7FC90381FFC3E010F5B903807FEFC6D6C5A5D6D5B6D5B6E7E6E7E814A7EA24A7E
+-903801F3FFD903E37FD907C17FEB0FC049486C7E4A6C7E013E80496D7E49130F00016E7E
+-B590383FFFF8A42D257EA432>120 D<EE0F804C7EEE7FE016FF1503030F7F4B5B157F92
+-B5FC6F5B04FCC7FC0338C8FC92C9FCA4B912F0A426007FF8C7FCEF1FF8170717031701A2
+-1700A21878A3043C137C183CA41800167CA216FC150391B5FCA4ECF8031500167CA2163C
+-180FA3181EA293C7FCA2183EA2183C187CA218FCA2EF01F81703170F173FEE01FFB9FC18
+-F0A338497DC83F>201 D<EC07C04A7E4A7E147F4A7E5B495B5B495B495B4948C7FCEB1F
+-F091C8FC130890C9FCA4903803FF80011F13F0017F13FC3901FF83FE3A03FE007F804848
+-133F484814C0001FEC1FE05B003FEC0FF0A2485A16F8150712FFA290B6FCA301E0C8FCA4
+-127FA36C7E1678121F6C6C14F86D14F000071403D801FFEB0FE06C9038C07FC06DB51200
+-010F13FC010113E025377DB62C>233 D E
+-%EndDVIPSBitmapFont
+-%DVIPSBitmapFont: Fc ecbx1440 14.4 41
+-/Fc 41 234 df<EE7FFC031FB57E4AB612E0020715F8023F9038C00FFC913AFFFC0001FE
+-4901F0EB007F010701C0EB03FF4949497F4990C75A5B5C495A4D7F01FF6F5B5CA27190C7
+-FC715AEF00F895C8FCAA0407B512C0BAFCA5C601F8C7120F83B3B3A6B6D8F807B612C0A5
+-42547DD349>28 D<151E153E15FCEC01F8EC03F0EC07E0140FEC1FC0EC3F80EC7F005C5C
+-495A1303495AA2495A131F5C133F5C137F5C13FFA24890C7FCA25A5B1207A25B120FA348
+-5AA4123FA25BA2127FA65B12FFB3A3127F7FA6123FA27FA2121FA46C7EA312077FA21203
+-7F7EA26C7FA2137F80133F80131F80130F6D7EA26D7E13016D7E8080EC3F80EC1FC0EC0F
+-E01407EC03F0EC01F8EC00FC153E151E1F7974D933>40 D<12F07E127E7E6C7E6C7E7F6C
+-7E6C7E6C7E7F1200137F806D7EA26D7E80130F80130780130380A26D7EA215807F15C0A2
+-147F15E0A3EC3FF0A415F8A2141FA215FCA6140F15FEB3A315FC141FA615F8A2143FA215
+-F0A4EC7FE0A315C014FFA215805B1500A2495AA25C13075C130F5C131F5C495AA2495A91
+-C7FC13FE12015B485A485A485A5B485A48C8FC127E12F85A1F7979D933>I<B712E0AB23
+-0B7F9F2C>45 D<151E153E15FE1403140F147FEB07FF0003B5FCB6FCA3EBF87FEAFC00C7
+-FCB3B3B3A6007FB712FCA52E4E76CD42>49 D<EC1FFE49B512F0010F14FC013FECFF8049
+-15E02701FF803F7F2703FC000713FCD807F001017F48486D7FD81F806E138048C87E7013
+-C0D87FE016E001F8806D16F000FF817F7013F8A56C5AA26C5A6C5AEA0380C914F05EA218
+-E05E18C05E18804C13005F4C5A4C5A5F4B5B4B5B4B5B94C7FCED0FFC4B5A4B5AED7FC04B
+-5A4A90C8FCEC03FC4A5A4A4814F84A5A4A5A4AC8FC02FEEC01F0495A495A495A5CD90F80
+-140349C8FC013E1507017FB7FC90B812E05A5A5A5A5A5A5AB9FC18C0A4354E7ACD42>I<
+-913807FFC0027F13FC0103B67E010F15E090261FF80313F890267FC0007F01FEC7EA3FFE
+-48488148486E138013FE486C6C6D13C0804817E080A66C5B18C06C5B6C90C75AD8003816
+-8090C8FC4C1300A24C5A5F4C5A4B5B4B13C0030F5BDB7FFEC7FC91387FFFF816C016FCEE
+-FF80DA000313E09238007FF8EE3FFE707E70138018C07013E018F07013F8A218FC82A218
+-FEA3EA03C0EA0FF0EA3FFC487EA2B5FCA218FCA25E18F8A26C4816F0495C4916E0D83FE0
+-4A13C06C485CD80FF04A1380D807FE91387FFE003B03FFE003FFFC6C90B65A6C6C15E001
+-0F92C7FC010114FCD9001F1380374F7BCD42>I<17FC1601A216031607160FA2161F163F
+-167FA216FF5D5DA25D5D5D167F153E157E15FC15F8EC01F01403EC07E015C0EC0F80141F
+-EC3F00143E5C14FC495A5C495A1307495A5C49C7FC5B137E137C5B1201485A5B485A120F
+-485A90C8FC123E127E5ABA1280A5C901FCC7FCAF021FB71280A5394F7CCE42>I<486C15
+-0601F0153E01FEEC01FED9FFF0133F91B65A5F5F5F5F5F94C7FC16FC5E16E093C8FC15FC
+-01F0138091CAFCAC913807FF80023F13F891B512FE01F36E7E9026FFFC0113E09139E000
+-7FF891C76C7E496E7E01F86E7E5B7013804916C0C9FC18E08218F0A418F8A31203EA0FE0
+-EA3FF8487EA212FF7FA218F0A25B5E6C4816E05B01C016C06CC85A18806C6C4A13007FD8
+-0FF04A5A6C6CECFFFCD803FE4913F02701FFE00F5B6C6CB612806D92C7FC010F14F80101
+-14C09026003FFCC8FC354F7ACD42>I<ED07FE92B512C0020314F0021F14FC91397FFC01
+-FE9139FFE0007F01030180EB3F804990C7121F4948EC7FC0494814FF4948010313E0495A
+-49485B5A485BA2485BA2486F13C091C7FC4803001300177E94C7FC5AA25B127FA2ED3FF0
+-4AB5FC020714C000FF4914F091391F807FF891393E001FFE02786D7E4A6D13807013C06D
+-5A4A6D13E018F05C7013F8A291C813FCA44916FEA3127FA6123FA37F6C17FCA36C17F85E
+-7E6E15F06C17E06C6D5B6E15C06C4B13806D6C491300D93FFC495A6DB4EBFFFC010790B5
+-12F06D5D01001580021F01FCC7FC020313C0374F7BCD42>I<121F7F7FEBFF8091B8FCA4
+-5A18FE18FC18F818F0A218E018C018804817000180C8123E007EC9127E5F007C4B5A4C5A
+-5F16074C5A484B5A4CC7FC167E167CC912FC4B5A4B5AA24B5A150F4B5AA24B5AA24BC8FC
+-5DA25C5D1403A214075D140FA3141FA2143FA34A5AA414FFA65BAB6D5B6E5A6E5A6E5A38
+-5279D042>I<173FA24D7EA34D7EA24C7FA34C7FA24C7FA34C7FA24C7FA34C7F163E8304
+-7E80EE7C3F04FC8016F8830301814C7E03038116E0830307814C7E030F81168083031F81
+-1600834B81033E80037E82157C8403FC824B800201835D840203834B800207835D92B8FC
+-4A83A34A8392C9FC4A83143E85027E84027C8202FC845C850101854A820103855C850107
+-854A82A2494884D93FF082B600F0020FB712C0A55A547CD363>65
+-D<932603FFF01407047F01FF140F0307B600E0131F033F03F8133F92B700FE137F020391
+-26C003FF13FF020F01F8C7EA3FC1023F01C0EC0FE391B5C80003B5FC4901FC8149498149
+-01E082011F498249498292CA7E4948834948835A4A83485B4885A24849187FA2485B1B3F
+-A2485B1B1FA25AA21B0091CDFCA2B5FCAE7EA280A36C1A1FA36C7FA21B3F6C7F1B3E6C7F
+-1B7E6C6D187C6C1AFC6E18F86C19016D6CEF03F06D7E6FEE07E06D6DEE0FC001076DEE1F
+-806D01F8EE3F006D6D16FE6D01FF4B5A023F01C0EC07F8020F01FCEC3FF00203903AFFC0
+-01FFC0020091B6C7FC033F15FC030715F0DB007F1480040301F0C8FC505479D25F>67
+-D<B81280A5D8000701F0C7FCB3B3B3B2B81280A529527DD130>73
+-D<93381FFF800303B512FC033FECFFC092B712F00207D9F80113FE021F903A80001FFF80
+-4A48C700077FDAFFF8020113F049496E7F4901C0ED3FFC49496F7E4990C96C7E4948707F
+-013F854948707F4948707F48864A8248864A177F48864849717EA3481B804A83481BC0A4
+-4890CB6C13E0A5B51AF0AF6C1BE06E5FA46C1BC0A26E5F6C1B80A36C6D4D1300A26C6D4D
+-5AA26C626C6D4C5B6E5E6C626D6C4C5B6E5E6D6D4B5B6D6D4B5B6D6D4B90C7FC6D6D4B5A
+-01016D4A13F86D01FE02075B91263FFFC0013F13C06ED9F801B55A020790B648C8FC0201
+-16F8DA003F15C003074AC9FCDB001F1380545479D263>79 D<B912E018FF19F019FE737E
+-D8000701F0C714E0060F7F060313FC06007F737E737F8587737FA28785A287A863A26163
+-6361634F90C8FC4F5A4F5A06035B060F13E095B5128092B748C9FC19F019C019F09226F0
+-000713FC050013FF063F7F727F727F727F727FA2727FA28486A886A71D707513F8A2851C
+-017301C013F0A273EBE003B86C6D9038F007E0739038FC1FC0070190B51280736C140008
+-0F5BCE13F85D537CD162>82 D<DA0FFE141C91B500F0133C010702FC137C011F02FF13FC
+-017F15C19026FFF00113E148903980001FFB4890C7EA07FFD807FC14014848804848153F
+-171F4848150FA2007F1607491503A2170112FFA217007FA26D167CA27F7F6D93C7FC6C7E
+-14C014F8ECFF806C14F8EDFFC06C15FC6CEDFF8017F06C16FC6C826C707E6C836D82011F
+-8201078213016D6C81020781EC007F030380ED003F040314801600173F837113C0838312
+-F883A3837EA319807EA26C5E19007F6D4B5A7F6D4B5A01FC4B5A6D151FD9FFC04A5AD97F
+-F8ECFFE028FE1FFF80075B010790B6C7FCD8FC0115FC486C6C14F048010F14C048902600
+-7FFCC8FC3A5479D249>I<B700FE4AB612F0A5D8000F01E0CA387FC000091FC7FCB3B3B2
+-6D611B3E811B7E6D197CA26D6D17FC636D6D1601027F4D5A6F4C5A023F170F6E6C4C5A6E
+-6D4B5A6E01E003FFC8FC6E01F8EC03FE020001FEEC1FFC923B7FFFE001FFF8031F90B612
+-E00307168003004BC9FC041F14F0040091CAFC5C537CD165>85 D<EC3FFE0107B512E001
+-1F14FC017F14FF2701FFC00F13C02703FE00037F486C01007F6E6D7E486D80707EA2707E
+-A3707F6C5B6C90C7FC6C5AC9FCA60307B5FC0203B6FC147F0103B7FC011FEBF00F017F13
+-00EBFFFC000313F04813C0485B4890C7FC5A5B485AF081F012FF5BA35EA26D5C127F6D5C
+-003F03F713C36DD901E314E06CD9C00714FF00079026F01F8114C06C90B5C61480C602FC
+-6D1300011F01F0EB3FFC01010180EB07F03C387CB642>97 D<EB3FF8B5FCA51203C6FCB3
+-A4EE7FF00307B5FC031F14C0037F14F0913AF9FF007FFCDAFFF8EB1FFF03E001077F0380
+-6D7F92C76C7F4A6E7F5C4A6F7E85183F85A38584A31A80AD1A00A36061A261187F616E15
+-FF616E4A5B6E4A5B6F495BDACFE04990C7FCDA87F0EB3FFE913A01FE01FFF8496CB65A49
+-013F14C049010749C8FC90C813E041547DD249>I<913803FFE0023F13FE91B67E010315
+-E0010F9038003FF8D93FFCEB07FC4948497E4948131F4849497E485B485BA24890C7FC5A
+-5B003F6F5A705A705A007F92C8FC5BA312FFAD127F7FA3123F7F6CEE0F80A26C6D141F18
+-006C6D5C6C6D143E6C6D147E6C6D5C6D6C495A6DB4EB07F0010F9038C01FE06D90B51280
+-01014AC7FCD9003F13F80203138031387CB63A>I<943803FF80040FB5FCA5EE003F170F
+-B3A4913803FF80023F13F849B512FE0107ECFF8F011F9038C03FEF90273FFE0007B5FCD9
+-7FF8130149487F484980484980484980488291C8FC5A5B123FA2127F5BA312FFAD127FA3
+-7F123FA3121F7F6C5E6C6D5C5F6C6D91B5FC6C6D5B6C6D4914E0D97FFCD90FEFEBFF80D9
+-1FFFEB7F8F010790B5120F010114FC6D6C13E00207010049C7FC41547CD249>I<913807
+-FF80027F13F849B512FE01076E7E011F010313E0903A3FFC007FF0D97FF06D7E49486D7E
+-4849130F48496D7E48824890C77E1880485A82003F17C0A3485A18E082A212FFA290B8FC
+-A401FCCAFCA6127FA37F123FA2EF03E06C7E17076C17C06C6D140F18806C6D141F6C6DEC
+-3F006C6D147ED97FFC495AD91FFFEB07F86D9038E03FF0010390B512C001005D023F01FC
+-C7FC020113E033387CB63C>I<ED1FF8913803FFFE020FEBFF80023F14C09139FFF83FE0
+-01039038E0FFF049138049010113F85BEB3FFEA2EB7FFCA26F13F0495AEE7FE0EE1F8093
+-C7FCAEB712C0A5C601F8C8FCB3B3A7B612FEA52D547CD328>I<DA1FFE14FE49B539E007
+-FF80010FDAFC1F13C0013FDAFF7F13E090267FF807EBFF072701FFE001EBF07F48497E48
+-4990387FF83F91C7003F14C048EEFC1F489338FE070049021F90C7FCA2003F82A9001F5E
+-A26D143F6C5E6C5E6E137F6C6D495A6C6D485B6CD9F80713804890B6C8FCD803EF14FC01
+-C114E02707C01FFEC9FC49CBFCA2487EA37FA27F13FC90B612FE6CEDFFF017FCEFFF806C
+-8318F06C836C837F48B87E1207D80FFCC700037F4848EC003F4848150F48486F13808348
+-5A83A56D5D007F18006D5D003F5F6C6C4B5A01FE153FD807FFED7FF06C01C049485AC601
+-FC011F1380013FB648C7FC010F15F8010115C0D9000F01F8C8FC3B4F7CB542>I<EB3FF8
+-B5FCA51203C6FCB3A4EE1FFC93B57E030314E0030F14F892391FC07FFC92397E003FFE03
+-F86D7EECF9F04B6D7FECFBC0ECFF8092C76C7FA25CA25CA45CB3ACB6D8F807B612C0A542
+-537CD249>I<133FEBFFC0487F487FA2487FA66C5BA26C5B6C5B013FC7FC90C8FCAEEB1F
+-F8B5FCA512017EB3B3A6B612F0A51C547CD324>I<153FEDFFC04A13E04A13F0A24A13F8
+-A66E13F0A26E13E06E13C0ED3F0092C7FCAEED3FF849B5FCA5EB00031400B3B3B1EA0780
+-EA1FE0487E487E486C14F05CA216E0A24A13C0D87FF814804A13006C48485A001FEB3FFC
+-6CB512F06C5C000191C7FC38003FF8256C87D328>I<EB3FF8B5FCA51203C6FCB3B3B3B1
+-B612F8A51D537CD224>108 D<D93FF0D91FF84AB47EB591B56C010F13F8030302E0013F
+-13FE030F6E90B6FCDB3F809027F803F80F7F922A7E007FFC07E0077F000302F890283FFE
+-0F80037FC6D9F1F0011F49487EDAF3E0DAFF3E814B153CDAF7805D92C76C496D7F14FF4A
+-5EA24A5EA34A5EB3ADB6D8F80FB66CB612F8A565367BB56E>I<D93FF0EB1FFCB591B57E
+-030314E0030F14F892391FC07FFC92397E003FFE000302F86D7EC6EBF1F04B6D7FECF3C0
+-ECF78092C76C7F14FF5CA25CA45CB3ACB6D8F807B612C0A542367CB549>I<913801FFC0
+-023F13FE91B67E010315E0010F018013F8903A3FFC001FFED97FF0EB07FF49486D7F4849
+-6D7F48496D7F91C8127F4883488349153F001F83A2003F8349151FA2007F83A400FF1880
+-AC007F1800A3003F5F6D153FA2001F5FA26C6C4B5AA26C6D4A5A6C5F6C6D495B6C6D495B
+-6D6C4990C7FCD93FFCEB1FFE6DB46CB45A010790B512F0010115C0D9003F49C8FC020313
+-E039387CB642>I<D93FF8EB7FF0B50107B5FC031F14C0037F14F09126F9FF0013FCDAFF
+-F8EB3FFF000302E0010F7FC602806D7F92C76C7F4A824A804A6E7F85187F85A2183F85A4
+-721380AD4E1300A44E5AA26118FF616E5C616E4A5B6E4A5B6F495B03E04990C7FC6FEB7F
+-FE913AF9FE01FFF802F8B65A033F14C0030749C8FC030013E093CAFCB1B612F8A5414D7D
+-B549>I<90393FF001FCB590380FFF804B13E0037F13F09238FE1FF89138F1F83F000191
+-38F07FFC6CEBF3E015C0ECF780A2ECFF00EE3FF84AEB1FF0EE0FE093C7FC5CA45CB3ABB6
+-12FEA52E367DB535>114 D<903903FFC00E011FEBFC1E90B6127E000315FE3907FE003F
+-D80FF0130F4848130348481301491300127F90C8127EA248153EA27FA27F01F091C7FC13
+-FCEBFF806C13FEECFFF06C14FE6F7E6C15E06C816C15FC6C81C681133F010F15801301D9
+-000F14C0EC003F030713E0150100F880167F6C153FA2161F7EA217C07E6D143F17807F6D
+-EC7F0001F85C6DEB03FE9039FF801FFC486CB512F0D8F81F14C0D8F00791C7FC39E0007F
+-F02B387CB634>I<147CA614FCA41301A31303A21307A2130F131F133F137F13FF120300
+-0F90B512FEB7FCA426007FFCC8FCB3A9EE0F80ABEE1F006D7EA2011F143E806D6D5A6DEB
+-C1F86DEBFFF001005C023F1380DA03FEC7FC294D7ECB33>I<D93FF8913801FFC0B50207
+-B5FCA50003ED001FC61607B3AE5FA35FA25F137F5F6D6C14F7DC01E713F06D6CD907C7EB
+-FFC0903A0FFF801F876D90B51207010114FC6D6C13F0020701C091C7FC42377CB549>I<
+-B600E090381FFFFCA5000101F8C7000113006CEE007C6E15FC017F5E8017016D6C5D1703
+-6D5E6F13076D5E6F130FA26D6D5C171F6D93C7FC6F5B6D153E6F137E6D157C8117FC027F
+-5CEDFE01023F5CEDFF036E5C168316876E5C16CF6E5C16FF6E91C8FCA36E5BA26E5BA26F
+-5AA36F5AA26F5AA26F5AA23E367DB445>I<B6D8F001B512FCA5C66C48C7381FF8006D6C
+-EC0FE06D6D495A606D6D49C7FC6D6D137E6D6D13FE6D6D485A4C5A6D01FC5B6E6C485A6E
+-6C485A161F6EEBBF806E01FFC8FC6E5B5E6E5B806E7F6F7EA26F7E834B7F92B5FC83DA01
+-FB7FDA03F17FDA07F07F4A5A4A486C7E4B6C7E4A486C7F147E02FE6D7F49486D7F49486D
+-7F4A8149487F49486D7F011F6F7ED97FE06E7EB500FE0107B6FCA540357EB445>120
+-D<183FF0FF804D7F05077F5F173F4D7F4CB5FC4C5C160F5E047F5C96C8FC7013E005FCC9
+-FC70CAFC93CBFCA6BB12FEA5D8000F01E0C700077FF0007F191F190785858586A2F23F80
+-A21A1FA31A0FA4DD01F014C01A07A497C7FCA21703A31707170F171F17FF92B6FCA5EDE0
+-00171F170F17071703A317011BF8A3F201F0A394C8FCA21A03A21BE0A21A07A31A0F1BC0
+-1A1F1A3FA21A7F1AFF4F13801907191F197F060FB5FCBCFCA21B00A34D687CE756>201
+-D<ED03C0ED07F0ED1FF84B7E157F4B7E5C5C5C5C4A5B4A5B4A5B91B512C04949C8FC4913
+-F815C06D48C9FC14F8EB00C091CAFCA4913807FF80027F13F849B512FE01076E7E011F01
+-0313E0903A3FFC007FF0D97FF06D7E49486D7E4849130F48496D7E48824890C77E188048
+-5A82003F17C0A3485A18E082A212FFA290B8FCA401FCCAFCA6127FA37F123FA2EF03E06C
+-7E17076C17C06C6D140F18806C6D141F6C6DEC3F006C6D147ED97FFC495AD91FFFEB07F8
+-6D9038E03FF0010390B512C001005D023F01FCC7FC020113E033507CCE3C>233
+-D E
+-%EndDVIPSBitmapFont
+-%DVIPSBitmapFont: Fd ecrm1000 10 81
+-/Fd 81 250 df<486C1360000314E039070001C0000EEB038048EB070000181306003813
+-0E0030130C0070131C00601318A200E01338481330A400CEEB338039FF803FE001C013F0
+-A3007F131FA2393F800FE0390E0003801C1981B91C>16 D<001C1307007FEB1FC039FF80
+-3FE0A201C013F0A3007F131F001CEB073000001300A400011470491360A2000314E090C7
+-12C048130100061480000E130348EB070048130E485B006013181C1980B91C>I<DA0FF8
+-13FC91397FFF07FF903B01F807DF83C0903A07E001FF0F903B1F8007FE1FE090393F000F
+-FC137E16F85B9338F007804848010790C7FC1503ACB812F8A32801F80003F0C7FCB3AB48
+-6C497E267FFFE0B512F0A3333B7FBA30>27 D<EC0FF8EC7FFE903901F80780903907E001
+-C090391F8000E090383F0007017E497EA25BA2485A6F5AED018092C8FCA9ED03F0B7FCA3
+-3901F8000F1503B3AA486C497E267FFFE0B512C0A32A3B7FBA2E>I<DA0FF0EB1FF0DA7F
+-FEEBFFFC903B01F80F83F00F903C07E001CFC00380903C1F8000FF0001C090273F0007FE
+-130F017E4948497EA2495CA248485C03076E5A03030203C7FC95C8FCA9F007E0BAFCA33C
+-01F80003F0001F1807B3AA486C496C497E267FFFE0B500C1B51280A3413B7FBA45>30
+-D<007C137C00FE13FEEAFF01A3EAFE00A7007E13FC007C137CA8003C137800381338A700
+-181330171E77BA2A>34 D<121C127FEAFF80A213C0A3127F121C1200A412011380A21203
+-13005A1206120E5A5A5A12600A1979B917>39 D<146014E0EB01C0EB0380EB0700130E13
+-1E5B5BA25B485AA2485AA212075B120F90C7FCA25A121EA2123EA35AA65AB2127CA67EA3
+-121EA2121F7EA27F12077F1203A26C7EA26C7E1378A27F7F130E7FEB0380EB01C0EB00E0
+-1460135278BD20>I<12C07E12707E7E7E120F6C7E6C7EA26C7E6C7EA21378A2137C133C
+-133E131EA2131F7FA21480A3EB07C0A6EB03E0B2EB07C0A6EB0F80A31400A25B131EA213
+-3E133C137C1378A25BA2485A485AA2485A48C7FC120E5A5A5A5A5A13527CBD20>I<121C
+-127FEAFF80A213C0A3127F121C1200A412011380A2120313005A1206120E5A5A5A12600A
+-19798817>44 D<B512FCA516057F941C>I<121C127FEAFF80A5EA7F00121C0909798817>
+-I<1506A2150E150CA2151C151815381530A215701560A215E015C0A214011580A2140315
+-005C1406A2140E140CA2141C1418A214381430A21470146014E05CA213015CA2130391C7
+-FCA25B1306A2130E130C131C1318A213381330A213701360A213E05BA212015B120390C8
+-FCA25A1206A2120E120CA2121C1218A21238123012701260A212E05AA21F537BBD2A>I<
+-EB01C013031307131F13FFB5FCA2131F1200B3B3A7497E007FB512F0A31C3779B62A>49
+-D<EB0FF0EB7FFE48B57E3903E03FE0390F000FF0001E6D7E001C6D7E486D7E5A6E7E1260
+-12FE6CEC7F807FA56CC7FC121CC8FCEDFF00A25D14015D14035D4A5A4A5A5D4A5A4AC7FC
+-147E5C495A14E0495A495A49C8FC011EEB01805B5B49130348481400485A485A90C75A48
+-B6FC5A5A485CB6FCA321377CB62A>I<EB07F8EB3FFF90B512C03901F80FF03903C007F8
+-48486C7E390E0001FEEA0F80391FE000FF7FA56C5A6C5AC7485AA25D14035D4A5A5DEC0F
+-80027FC7FCEB1FFCECFF809038000FE06E7EEC01FC816E7EED7F80A216C0A2153F16E0A2
+-121EEA7F80A2487EA316C0157F491480007EC7FC0070ECFF006C495A121E390F8003F839
+-07F00FF00001B512C06C6C90C7FCEB0FF823397DB62A>I<1538A2157815F8A214011403
+-1407A2140F141F141B14331473146314C313011483EB030313071306130C131C13181330
+-1370136013C01201EA038013005A120E120C5A123812305A12E0B712F8A3C73803F800AA
+-4A7E0103B512F8A325387EB72A>I<0006140CD80780133C9038F003F890B5FC5D5D1580
+-92C7FC14FC38067FE090C9FCAAEB07F8EB1FFE9038780F809038E007E03907C003F0496C
+-7E130000066D7E81C8FC8181A21680A4121C127F5A7FA390C713005D12FC00605C12704A
+-5A6C5C6C1303001E495A6C6C485A3907E03F800001B5C7FC38007FFCEB1FE021397CB62A
+->I<121C127FEAFF80A5EA7F00121CC7FCB2121C127FEAFF80A5EA7F00121C092479A317>
+-58 D<007FB812F8B912FCCCFCB0B912FC6C17F836147B9E41>61
+-D<12E01278121EEA07C0EA01F0EA003C130FEB03C0EB00F0143C140FEC03E0EC00F8151E
+-ED0780ED01E0ED0078161EEE07C0EE01F0EE003C170FEF03C0A2EF0F00173CEE01F0EE07
+-C0041EC7FC1678ED01E0ED0780031EC8FC15F8EC03E0020FC9FC143C14F0EB03C0010FCA
+-FC133CEA01F0EA07C0001ECBFC127812E0322E79AB41>I<EB3FE03801FFFE3907C03F80
+-390E000FC0003CEB07F000301303007014F8007C130100FE14FC7EA4127E003CEB03F8C7
+-FCEC07F0A2EC0FE0EC1F80EC3F00147E147C5C495A5C495A5CA249C7FCA31306AA90C8FC
+-A8130EEB3F80497EA56D5A010EC7FC1E3B7CBA27>I<EC03FF021F13E09138FC00FCD901
+-E0131ED90780EB0780011EC7EA01E00138EC00704981498148488148488190C97E48D901
+-FC1480000ED907FFEB01C0000C90391F03C000001C90267E00E013E00018490170136026
+-3801F86D13700030496D13300103EC0FE0267007E00107133800601718495AA200E0171C
+-484848150CAA6C6C7E1260A26D6C151C00701718263003F0130F0101141F00386D013F13
+-38261800FC01771330001C017E9038E3F070000C90261F03C113E0000E903A07FF00FFC0
+-6CD901FCEB3F006C90CAFC7F6C7E6C7E13706D167C011EED03FCD90780EC1FF0D901E0EC
+-FF80D900FC90383FFC00021FB51280020301E0C7FC363C7BBA41>I<1538A3157CA315FE
+-A34A7EA34A6C7EA202077FEC063FA2020E7FEC0C1FA2021C7FEC180FA202387FEC3007A2
+-02707FEC6003A202C07F1501A2D901807F81A249C77F167FA20106810107B6FCA2498101
+-0CC7121FA2496E7EA3496E7EA3496E7EA213E0707E1201486C81D80FFC02071380B56C90
+-B512FEA3373C7DBB3E>I<913A01FF800180020FEBE003027F13F8903A01FF807E07903A
+-03FC000F0FD90FF0EB039F4948EB01DFD93F80EB00FF49C8127F01FE153F12014848151F
+-4848150FA248481507A2485A1703123F5B007F1601A35B00FF93C7FCAD127F6DED0180A3
+-123F7F001F160318006C7E5F6C7E17066C6C150E6C6C5D00001618017F15386D6C5CD91F
+-E05C6D6CEB03C0D903FCEB0F80902701FF803FC7FC9039007FFFFC020F13F00201138031
+-3D7BBA3C>67 D<B712C016F816FE000190398001FF806C90C7EA3FE0EE0FF0EE03F8707E
+-707E177FA2EF3F8018C0171F18E0170F18F0A3EF07F8A418FCAC18F8A4EF0FF0A218E0A2
+-171F18C0EF3F80A2EF7F0017FE4C5A4C5AEE0FF0EE3FE0486DEBFF80B8C7FC16F816C036
+-397DB83F>I<B812FEA3000190388000076C90C8FC173F838383A383A31880170116C0A3
+-94C7FCA31501A21503150F91B5FCA3EC000F15031501A21500A21860A318E093C712C0A4
+-1701A3EF0380A21707A2170F173F177F486D903807FF00B9FCA333397EB838>I<B812F8
+-A30001903880001F6C90C71201EE00FC177C173C171CA2170CA4170E1706A2ED0180A217
+-00A41503A21507151F91B5FCA3EC001F15071503A21501A692C8FCAD4813C0B612C0A32F
+-397DB836>I<DBFF8013C0020FEBF001023F13FC9139FF803F03903A03FC000787D90FF0
+-EB03CF4948EB00EF4948147F4948143F49C8121F485A4848150F48481507A248481503A2
+-485A1701123F5B007F1600A448481600AB93B6FCA26C7E9338007FE0EF3FC0A2123F7F12
+-1FA26C7EA26C7EA26C7E6C7E6C6C157F6D7E6D6C14FF6D6C14EFD90FF8EB03C7D903FEEB
+-0783903A00FFC03F0191393FFFFC00020F01F0130002001380383D7CBA41>I<B648B512
+-FEA30001902680000313006C90C76C5AB3A491B6FCA391C71201B3A6486D497EB648B512
+-FEA337397DB83E>I<B612C0A3C6EBC0006D5AB3B3AD497EB612C0A31A397EB81E>I<B612
+-E0A3000101C0C8FC6C90C9FCB3AD1718A517381730A31770A317F0A216011603160FEE1F
+-E0486D13FFB8FCA32D397DB834>76 D<B5933807FFF86E5DA20001F0FC002600DFC0ED1B
+-F8A2D9CFE01533A3D9C7F01563A3D9C3F815C3A2D9C1FCEC0183A3D9C0FEEC0303A2027F
+-1406A36E6C130CA36E6C1318A26E6C1330A36E6C1360A26E6C13C0A3913901FC0180A391
+-3900FE0300A2ED7F06A3ED3F8CA2ED1FD8A3ED0FF0A3486C6D5A487ED80FFC6D48497EB5
+-00C00203B512F8A2ED018045397DB84C>I<B5913807FFFE8080C69238007FE06EEC1F80
+-D9DFF0EC0F001706EBCFF8EBC7FCA2EBC3FEEBC1FFA201C07F6E7EA26E7E6E7E81140F6E
+-7E8114036E7E168080ED7FC016E0153FED1FF0ED0FF8A2ED07FCED03FEA2ED01FF6F1386
+-A2EE7FC6EE3FE6A2EE1FF6EE0FFEA216071603A216011600A2177E486C153E487ED80FFC
+-151EB500C0140EA2170637397DB83E>I<EC03FF021F13E09138FE01FC903901F8007ED9
+-07E0EB1F8049486D7ED93F80EB07F049C76C7E01FE6E7E48486E7E49157E0003167F4848
+-ED3F80A24848ED1FC0A2001F17E049150F003F17F0A3007F17F8491507A300FF17FCAC00
+-7F17F86D150FA3003F17F0A26C6CED1FE0A36C6CED3FC0000717806D157F000317006C6C
+-15FEA26C6C4A5A017F4A5A6D6C495A6D6C495AD907E0EB1F80D903F8017FC7FC903900FE
+-01FC91381FFFE0020390C8FC363D7BBA41>I<B712C016FC16FF0001D9800013C06C90C7
+-EA1FE0707EEE03F883707EA2707EA21880A71800A24C5AA24C5A5FEE0FF04C5AEEFF8091
+-B548C7FC16F091CAFCB3A5487FB6FCA331397EB838>I<EC03FF021F13E09138FE01FC90
+-3901F8007ED907E0EB1F8049486D7ED93F80EB07F049C76C7E01FE6E7E48486E7EA24848
+-157F0007178049153F000F17C049151F001F17E0A24848ED0FF0A3007F17F8A2491507A2
+-00FF17FCAC007F17F8A26D150FA2003F17F0A26C6CED1FE0A36C6CED3FC00007027C1480
+-4AB4FC3C03F80383807F003B01FC0701C0FEEC0E002600FE0CEBE1FC017FEC63F8D93F8C
+-EB77F0D91FCCEB3FE0D907EE14806DB449C7FC0100D981FC130CEC1FFF0203131C91C700
+-1E131C161F183CEF807CEFC0F8EE0FFFA318F08218E07013C07013809338007E00364B7B
+-BA41>I<B612FEEDFFE016F8000190388007FE6C90C76C7EEE3FC0707E707E707EA2707E
+-A283A65FA24C5AA24C5A4C5AEE3F8004FFC8FCED07FC91B512E05E9138000FF0ED03F8ED
+-00FE82707E707EA2161F83A583A6F00180A217F8160F1803486D01071400B66D6C5A0401
+-1306933800FE0ECAEA3FFCEF07F0393B7DB83D>I<D90FF813C090383FFE0190B5128139
+-03F807E33907E000F74848137F4848133F48C7121F003E140F007E1407A2007C140312FC
+-1501A36C1400A37E6D14006C7E7F13F86CB47E6C13F8ECFF806C14E06C14F86C14FEC680
+-013F1480010714C0EB007F020713E0EC007FED3FF0151F150FED07F8A200C01403A21501
+-A37EA216F07E15036C15E06C14076C15C06C140F6DEB1F80D8FBF0EB3F00D8F0FE13FE39
+-E03FFFF8010F13E0D8C00190C7FC253D7CBA2E>I<003FB812E0A3D9C003EB001F273E00
+-01FE130348EE01F00078160000701770A300601730A400E01738481718A4C71600B3B091
+-3807FF80011FB612E0A335397DB83C>I<B6903807FFFEA3000101809038007FE06C90C8
+-EA1F80EF0F001706B3B2170E6D150C80171C133F17186D6C14385F6D6C14F06D6C5C6D6C
+-495A6D6CEB07806D6C49C7FC91387F807E91381FFFF8020713E09138007F80373B7DB83E
+->I<B500FC91387FFF80A30003018091380FFC006C90C8EA07E0715A6C705A6E1403017F
+-93C7FCA280013F1506A26E140E011F150C80010F5DA28001075DA26E147001031560A26D
+-6C5CA2806D4A5AA2ED8003027F91C8FCA291383FC006A215E0021F5BA2EDF01C020F1318
+-A26E6C5AA215FC02035BA2EDFEE002015BA26E6C5AA36FC9FCA3153EA2151CA3393B7EB8
+-3E>I<B5D8FC07B5D8F001B5FCA30007902780001FFEC7EA1FF86C48C7D80FF8EC07E000
+-010307ED03C01B807F6C6F6C1500A26E5F017F6E6C1406A280013F4A6C5CA280011F4A6D
+-5BEE067FA26D6C010E6D5BEE0C3FA26D6C011C6D5BEE181FA26D6C6F5BEE300FA26D6C6F
+-485AEE6007A26D6C4CC7FC9338C003FCA203805D913B7F818001FE06A203C1150EDA3FC3
+-C7EAFF0CA203E3151CDA1FE6EC7F98A215F6DA0FFCEC3FF0A302075E4B141FA202035E4B
+-140FA202015E4B1407A2020093C8FC4B80503B7EB855>I<007FB590383FFFFCA3C601F8
+-01071380D97FE0D903FCC7FC013FEC01F06D6C5C5F6D6C5C6D6C13034CC8FC6D6C130616
+-0E6D6C5B6DEB8018163891387FC0306E6C5A16E06E6C5A91380FF18015FB6EB4C9FC5D14
+-036E7EA26E7F6F7EA24B7E15DF9138019FF09138038FF8150F91380607FC91380E03FE14
+-0C4A6C7EEC38000230804A6D7E14E04A6D7E49486D7E130391C76C7E01066E7E130E010C
+-6E7E011C1401013C8101FE822607FF80010713E0B500E0013FEBFF80A339397EB83E>I<
+-B500FE91383FFFE0A3000301E0913807FE00C649EC03F0017F6F5A606D6C5D6D6C140395
+-C7FC6D6C1406A26D6C5C6D6C141C17186D6C143817306D6D5B6E6C13E05F91383FE0015F
+-91381FF003DA0FF890C8FC1606913807FC0E160C913803FE1C913801FF185E6E13B016E0
+-157F6F5AB3A24B7E023FB512C0A33B397FB83E>I<EAFFFCA2EAFC00B3B3B3B3A7EAFFFC
+-A20E5379BD17>91 D<EAFFFCA21200B3B3B3B3A712FFA20E537FBD17>93
+-D<007FB81280B912C0A26C17803204797041>95 D<EA01801203EA0700120E5A12181238
+-123012701260A212E05AA412CEEAFF8013C0A3127FA2EA3F80EA0E000A197AB917>I<EB
+-1FE0EBFFFC3803E03F3907000F80390F8007E0486C6C7E13E06E7EA26E7E6C5A6C5AC8FC
+-A4147FEB07FFEB3FE0EBFE00EA03F8EA0FF0EA1FC0123F485A90C7FC160C12FEA31401A2
+-6C13036CEB077C903980063E18383FC01E3A0FE0781FF03A03FFF00FE03A007F8007C026
+-277DA52A>I<EA03F012FFA3120F1203B0EC1FE0EC7FF89038F1E03E9039F3801F809039
+-F7000FC001FEEB07E049EB03F049EB01F85BED00FCA216FEA2167E167FAA167E16FEA216
+-FC15016D14F8ED03F07F01EEEB07E001C6EB0FC09039C7801F00903881E07E903800FFF8
+-C7EA1FC0283B7EB92E>I<EB03FC90381FFF8090387E03E03901F80070484813F83907E0
+-01FC380FC003A2EA1F80123F90380001F848EB00F01500A2127E12FEAA127E127FA26C14
+-067F001F140E6D130C000F141C6C6C13386C6C13706C6C13E039007C07C090381FFF00EB
+-07F81F277DA525>I<ED0FC0EC03FFA3EC003F150FB0EB03F8EB1FFF90387E078F9038F8
+-01EF3903F0007F4848133F4848131FA24848130F123F90C7FC5AA2127E12FEAA127E127F
+-A27EA26C6C131FA26C6C133F6C6C137F6C6CEBEFF03A01F801CFFF39007C078F90381FFE
+-0FD907F813C0283B7DB92E>I<EB07F8EB1FFF90387C0FC03901F803E03903F001F0D807
+-E013F8380FC0004848137CA248C7127E153E5A153F127E12FEA3B7FCA248C8FCA5127EA2
+-127FA26C14037F001F14076C6C13060007140E6D131CD801F013386C6C137090387E03E0
+-90381FFF80903803FC0020277EA525>I<147E903803FF8090380FC1E0EB1F8790383F0F
+-F0137EA213FCA23901F803C091C7FCADB512FCA3D801F8C7FCB3AB487E387FFFF8A31C3B
+-7FBA19>I<ED03F090390FF00FF890393FFC3C3C9039F81F707C3901F00FE03903E007C0
+-3A07C003E010000FECF000A248486C7EA86C6C485AA200075C6C6C485A6D485A6D48C7FC
+-38073FFC38060FF0000EC9FCA4120FA213C06CB512C015F86C14FE6CECFF804815C03A0F
+-80007FE048C7EA0FF0003E140348140116F8481400A56C1401007C15F06CEC03E0003F14
+-07D80F80EB0F80D807E0EB3F003901FC01FC39007FFFF0010790C7FC26387EA52A>I<EA
+-03F012FFA3120F1203B0EC0FF0EC3FFCECF03F9039F1C01F809039F3800FC0EBF70013FE
+-496D7EA25BA35BB3A3486C497EB500C1B51280A3293A7EB92E>I<EA0380EA0FE0487EA5
+-6C5AEA0380C8FCAAEA03F012FFA312071203B3AA487EB512C0A312387EB717>I<EB01C0
+-EB07F0EB0FF8A5EB07F0EB01C090C7FCAAEB01F813FFA313071301B3B3A2123C127E00FF
+-13F01303A214E038FE07C0127C383C0F00EA0FFEEA03F8154984B719>I<EA03F012FFA3
+-120F1203B1913801FFFCA39138007FC01600157C15705D4A5A4A5A4AC7FC141E14381478
+-14FC13F1EBF3FEEBF73F01FE7FEBF81F496C7E8114076E7E6E7E811400157E157F811680
+-ED1FC0486CEB3FF0B500C0B5FCA3283A7EB92C>I<EA03F012FFA3120F1203B3B3AD487E
+-B512C0A3123A7EB917>I<2703F00FF0EB1FE000FFD93FFCEB7FF8913AF03F01E07E903B
+-F1C01F83803F3D0FF3800FC7001F802603F70013CE01FE14DC49D907F8EB0FC0A2495CA3
+-495CB3A3486C496CEB1FE0B500C1B50083B5FCA340257EA445>I<3903F00FF000FFEB3F
+-FCECF03F9039F1C01F803A0FF3800FC03803F70013FE496D7EA25BA35BB3A3486C497EB5
+-00C1B51280A329257EA42E>I<EB03FE90380FFF8090383E03E09038F800F84848137C48
+-487F48487F4848EB0F80001F15C090C712074815E0A2007EEC03F0A400FE15F8A9007E15
+-F0A2007F14076C15E0A26C6CEB0FC0000F15806D131F6C6CEB3F006C6C137EC66C13F890
+-387E03F090381FFFC0D903FEC7FC25277EA52A>I<3903F01FE000FFEB7FF89038F1E07E
+-9039F3801F803A07F7000FC0D803FEEB07E049EB03F04914F849130116FC150016FEA316
+-7FAA16FEA3ED01FCA26DEB03F816F06D13076DEB0FE001F614C09039F7803F009038F1E0
+-7E9038F0FFF8EC1FC091C8FCAB487EB512C0A328357EA42E>I<D903F813C090381FFE01
+-90387E07819038FC01C33903F000E3000714774848133749133F001F141F485A150F48C7
+-FCA312FEAA127FA37E6D131F121F6D133F120F6C6C137F6C6C13EF3901F801CF39007E07
+-8F90381FFE0FEB07F890C7FCABED1FE00203B5FCA328357DA42C>I<3807E01F00FFEB7F
+-C09038E1E3E09038E387F0380FE707EA03E613EE9038EC03E09038FC0080491300A45BB3
+-A2487EB512F0A31C257EA421>I<EBFF03000313E7380F80FF381E003F487F487F00707F
+-12F0A2807EA27EB490C7FCEA7FE013FF6C13E06C13F86C7F00037FC67F01071380EB007F
+-141F00C0EB0FC01407A26C1303A37E15806C13077EEC0F00B4131E38F3C07C38E1FFF038
+-C03F801A277DA521>I<1318A51338A31378A313F8120112031207001FB5FCB6FCA2D801
+-F8C7FCB215C0A93800FC011580EB7C03017E13006D5AEB0FFEEB01F81A347FB220>I<D8
+-03F0EB07E000FFEB01FFA3000FEB001F00031407B3A4150FA3151F12016D133F0000EC77
+-F86D9038E7FF8090383F03C790381FFF87903A03FC07E00029267EA42E>I<B538803FFE
+-A33A0FF8000FF06C48EB07E00003EC03C06D148000011500A26C6C1306A26D130E017E13
+-0CA26D5BA2EC8038011F1330A26D6C5AA214E001075BA2903803F180A3D901FBC7FCA214
+-FF6D5AA2147CA31438A227257EA32C>I<B53A1FFFE03FFEA3260FF8009038000FF86C48
+-017EEB03E018C00003023EEB0180A26C6C013FEB0300A36C6CEC8006156FA2017E9038EF
+-C00C15C7171CD93F01EBE01815830281EBF038D91F831430150102C3EBF87090260FC600
+-1360A2D907E66D5A02EC137CA2D903FCEB7F804A133FA2010192C7FC4A7FA20100141E4A
+-130E0260130C37257EA33C>I<B538807FFFA33A03FE003FF00001EC1F80000092C7FC01
+-7E131C6D13186D6C5AECC070010F5B6D6C5AECF180EB03FB6DB4C8FC6D5AA2147F804A7E
+-8114CF903801C7E090380383F090380703F8EB0601496C7E011C137E49137F01787F496D
+-7E486C80000FEC3FF0D8FFFE90B51280A329247FA32C>I<B538803FFEA33A0FF8000FF0
+-6C48EB07C00003EC03806C7E16007F00001406A2017E5BA2137F6D5BA26D6C5AA2ECC070
+-010F1360A26D6C5AA214F101035BA2D901FBC7FCA214FF6D5AA2147CA31438A21430A214
+-701460A25CA2EA7C0100FE5B130391C8FC1306EAFC0EEA701C6C5AEA1FF0EA0FC027357E
+-A32C>I<1318133E137F80806D7EEB0FF0EB03F86D7EEB007E141F1407140191C8FCA3EB
+-1FE0EBFFFC3803E03F3907000F80390F8007E0486C6C7E13E06E7EA26E7E6C5A6C5AC8FC
+-A4147FEB07FFEB3FE0EBFE00EA03F8EA0FF0EA1FC0123F485A90C7FC160C12FEA31401A2
+-6C13036CEB077C903980063E18383FC01E3A0FE0781FF03A03FFF00FE03A007F8007C026
+-377DB52A>224 D<1303497E497E497EEB3CF0EB7878497EEBE01C48487E48487E48486C
+-7E000E6D7E00046D5ACAFCA2EB1FE0EBFFFC3803E03F3907000F80390F8007E0486C6C7E
+-13E06E7EA26E7E6C5A6C5AC8FCA4147FEB07FFEB3FE0EBFE00EA03F8EA0FF0EA1FC0123F
+-485A90C7FC160C12FEA31401A26C13036CEB077C903980063E18383FC01E3A0FE0781FF0
+-3A03FFF00FE03A007F8007C026367DB42A>226 D<EB03FC90381FFF8090387E03E03901
+-F80070484813F83907E001FC380FC003A2EA1F80123F90380001F848EB00F01500A2127E
+-12FEAA127E127FA26C14067F001F140E6D130C000F141C6C6C13386C6C13706C6C13E039
+-007C07C090381FFF00EB07F86D5AA414FE9038003F80EC1FC0EC0FE01407A3140FEC1FC0
+-ECFF809038FFFE0014E01F377DA525>231 D<1306130F497E80806D7E6D7EEB01FCEB00
+-7E141FEC0F80140314001500A3EB07F8EB1FFF90387C0FC03901F803E03903F001F0D807
+-E013F8380FC0004848137CA248C7127E153E5A153F127E12FEA3B7FCA248C8FCA5127EA2
+-127FA26C14037F001F14076C6C13060007140E6D131CD801F013386C6C137090387E03E0
+-90381FFF80903803FC0020377EB525>I<1418143C147E14FE1301495A495AEB0FE0EB1F
+-80013EC7FC5B1370134090C8FCA3EB07F8EB1FFF90387C0FC03901F803E03903F001F0D8
+-07E013F8380FC0004848137CA248C7127E153E5A153F127E12FEA3B7FCA248C8FCA5127E
+-A2127FA26C14037F001F14076C6C13060007140E6D131CD801F013386C6C137090387E03
+-E090381FFF80903803FC0020377EB525>I<497E497E497E497EEB1E78497EEB381C497E
+-497E3901C0038039038001C048C712E000021440C9FCA2EB07F8EB1FFF90387C0FC03901
+-F803E03903F001F0D807E013F8380FC0004848137CA248C7127E153E5A153F127E12FEA3
+-B7FCA248C8FCA5127EA2127FA26C14037F001F14076C6C13060007140E6D131CD801F013
+-386C6C137090387E03E090381FFF80903803FC0020367EB425>I<1303497E497E80806D
+-7E6D7EEB00FE143FEC0F806E7E1401EC004092C8FCA4D803F0EB07E000FFEB01FFA3000F
+-EB001F00031407B3A4150FA3151F12016D133F0000EC77F86D9038E7FF8090383F03C790
+-381FFF87903A03FC07E00029377EB52E>249 D E
+-%EndDVIPSBitmapFont
+-%DVIPSBitmapFont: Fe ecrm1200 12 23
+-/Fe 23 122 df<121EEA7F80A2EAFFC0A4EA7F80A2EA1E000A0A78891B>46
+-D<14FF010713E090381F81F890383E007C01FC133F4848EB1F8049130F4848EB07C04848
+-EB03E0A2000F15F0491301001F15F8A2003F15FCA390C8FC4815FEA54815FFB3A46C15FE
+-A56D1301003F15FCA3001F15F8A26C6CEB03F0A36C6CEB07E0000315C06D130F6C6CEB1F
+-806C6CEB3F00013E137C90381F81F8903807FFE0010090C7FC28447CC131>48
+-D<EB03FE90381FFFC0017F13F03901F80FFC3903C001FE48486C7E000EC7EA7F8048EC3F
+-C0ED1FE04815F00030140F007015F800601407126CB415FC7F7F1503A46C4813076CC7FC
+-C8FC16F8A2150F16F0151F16E0A2ED3FC0ED7F8016005D5D4A5A4A5A4A5A5D4A5A4A5A4A
+-C7FC147C5C5C495A495A495A49C7120C131E5B013814185B5B485A4848143848C8123000
+-0E1570001FB612F0A25A5AB712E0A326427BC131>50 D<ED0380A21507150FA2151F153F
+-A2157F15FFA25CEC03BF153F14071406140C141C141814301470146014C013011480EB03
+-005B13065B131C13185B1370136013E0485A5B120390C7FC1206120E120C5A123812305A
+-12E0B812C0A3C8383F8000ADEDFFE0027FEBFFC0A32A437DC231>52
+-D<14FF010713E0011F13F890387F80FC9038FC007E48487F4848EB1F804848EB0FC0000F
+-EC07E0485AED03F0485A16F8007F140190C713FCA25AA216FE1500A516FFA46C5CA36C7E
+-5D121F7F000F5C6C6C1306150E6C6C5B6C6C5BD8007C5B90383F01E090390FFF80FE9038
+-01FE0090C8FC150116FCA4ED03F8A216F0D80F801307486C14E0486C130F16C0ED1F80A2
+-49EB3F0049137E001EC75A001C495A000F495A3907E01FE06CB51280C649C7FCEB1FF028
+-447CC131>57 D<1960F001E0F00780F03E0018F8EF03C0050FC7FC173CEE01F0EE07C004
+-1EC8FC1678ED01E0ED0F80033EC9FC15F0EC03C0020FCAFC147CEB01F0EB0780011ECBFC
+-1378EA03E0EA0F80003CCCFC12F0A2123CEA0F80EA03E0EA0078131EEB0780EB01F0EB00
+-7C140FEC03C0EC00F0153EED0F80ED01E0ED0078161EEE07C0EE01F0EE003C170FEF03C0
+-EF00F8183EF00780F001E0F000603B3678B34C>60 D<12C012F0123CEA0F80EA03E0EA00
+-78131EEB0780EB01F0EB007C140FEC03C0EC00F0153EED0F80ED01E0ED0078161EEE07C0
+-EE01F0EE003C170FEF03C0EF00F8183EF00780F001E0A2F00780F03E0018F8EF03C0050F
+-C7FC173CEE01F0EE07C0041EC8FC1678ED01E0ED0F80033EC9FC15F0EC03C0020FCAFC14
+-7CEB01F0EB0780011ECBFC1378EA03E0EA0F80003CCCFC12F012C03B3678B34C>62
+-D<ED1FFC4AB512C0913907E003F0021EC7123C0278140FD901E0EC03C0D90380EC00E001
+-0FC91278011C161C4982498249707E4916010001844848D90FF06D7E90C7D83FFC146048
+-DAFC0F1470000E902703F003C07F000C902707C000E01318001CD91F800170131C001801
+-3F6E130C003891C76C130E0030017E91380FF00614FE00704902071307D8600183A2495A
+-A200E019804848481601AB6C6C7E1260A26D7E1903D87000180000306D140F147E00386D
+-141F00186E013F5B001C011F02771306000CD907C09038E3F80E000E902703F003C35B6C
+-903B00FC0F00FC386CDA3FFCEB7FF06DD90FF0EB0FC06C6C90CBFC12007F13707F7F010F
+-EF1F80D90380167FD901E0923803FE00D90078ED1FF0021E913801FF80DA07E0D97FF8C7
+-FC0201B6C8FCDA001F13C041477BC54C>64 D<B56C020FB5FC8080C6040013F06D6CED1F
+-80D96FF8ED0F00A2D967FC1506EB63FEA2EB61FF01607FA26E7E6E7EA26E7E6E7EA26E7E
+-6E7EA26E7E6E7FA26F7E6F7EA26F7E6F7EA26F7E6F7EA26F7E6F1380A2EE7FC0EE3FE0A2
+-EE1FF0EE0FF8A2EE07FCEE03FEA2EE01FF701386A2EF7FC6EF3FE6A2EF1FF6EF0FFEA217
+-071703A217011700A201F0167E183E487ED80FFF161EB500F0150EA2180640447CC349>
+-78 D<B712FCEEFFC017F800019039C0000FFC6C6C48EB01FF9338007F80EF1FE0170FEF
+-07F018F8EF03FCA218FE1701A218FFA718FEA2170318FCA2EF07F818F0EF0FE0EF1FC0EF
+-7F80933801FE00EE0FFC91B612F017800280C9FCB3AA3801FFE0B612C0A338447CC342>
+-80 D<EB07FC90383FFF809038F80FE03903C003F048C66C7E000E6D7ED80FC0137E486C
+-137F6D6D7EA36F7EA26C5AEA0380C8FCA4EC0FFF49B5FC90380FFE1FEB3FC0EBFF00EA03
+-FC485A485A485A485A127F5B176048C7FCA3153FA36D137F007F14EF6D9038C7E0C0003F
+-13013A1FE00783F13B07F81E03FF802701FFFC0113003A001FE0007C2B2E7CAC31>97
+-D<EA01FC12FFA3120712031201B3EC03FC91380FFF8091383C07E091387001F89039FDE0
+-007E02807F01FFEC1F8091C713C049EC0FE049140717F0A2EE03F8A217FCA2160117FEAB
+-17FC1603A217F8A2EE07F0A26DEC0FE017C06D141F01FBEC3F80D9F380EB7E00D9E1C05B
+-9039E0F001F89039C03C07E09039801FFF80C7D803FCC7FC2F467DC436>I<EC7F809038
+-03FFF090380FC07C90383F000F01FCEB03804848EB01C00003140F4848EB1FE049133F12
+-0F485AA2485AED1FC0007FEC070092C7FCA290C9FC5AAB7E7FA2123F16307F001F15706C
+-6C146016E06C6C14C06C6C13010001EC03806C6CEB0700013F131E90381FC078903807FF
+-F001001380242E7DAC2B>I<EB01FE903807FFC090381F03F090387E00FC49137E48487F
+-485A4848EB1F80000F15C049130F121F484814E01507A2007F15F090C7FCA25AA390B6FC
+-A290C9FCA67EA27FA2123F16306C7E1670000F15606D14E06C6C14C0000314016C6CEB03
+-806C6CEB0700013E131E90381F80F8903803FFE0010090C7FC242E7DAC2B>101
+-D<EA01E0EA07F8A2487EA46C5AA2EA01E0C8FCADEA01FC12FFA3120712031201B3B0487E
+-B512F8A315437DC21C>105 D<D801FC01FFEC1FE000FF010701E0EBFFFC913B0F03F801
+-E07F913C3C01FC07803F800007903C7000FE0E001FC0000349D97E1C130F2601FDC0D97F
+-38804A143001FFDA3FF06D7E91C75BA2495DA3495DB3A8486C4A6C497EB5D8F81FB50003
+-B512E0A34B2C7DAB52>109 D<3901FC01FE00FF903807FFC091381E07F091383801F800
+-0701707F0003EBE0002601FDC07F5C01FF147F91C7FCA25BA35BB3A8486CECFF80B5D8F8
+-3F13FEA32F2C7DAB36>I<EC7F80903803FFF090380FC0FC90383E001F496D7E496D7E48
+-486D7E48486D7E48486D7E000F81A24848147E003F157FA290C87E481680A44816C0AA6C
+-1680A26D147F003F1600A2001F157E6D14FE000F5D6D130100075D6C6C495A6C6C495A6C
+-6C495A013E49C7FC90381FC0FE903807FFF89038007F802A2E7DAC31>I<3901FC03FC00
+-FF90380FFF8091383C07E091387001F83A07FDE000FE00010180137F01FFEC3F8091C7EA
+-1FC04915E049140F17F0160717F8160317FCA3EE01FEABEE03FCA3EE07F8A217F0160F6D
+-15E0EE1FC06D143F17806EEB7E00D9FDC05B9039FCF003F891383C0FE091381FFF80DA03
+-FCC7FC91C9FCAE487EB512F8A32F3F7DAB36>I<3903F803F000FFEB1FFCEC3C3EEC707F
+-0007EBE0FF3803F9C000015B13FBEC007E153C01FF13005BA45BB3A748B4FCB512FEA320
+-2C7DAB26>114 D<90383FE0183901FFFC383907E01F78390F0003F8001E130148130000
+-7C1478127800F81438A21518A27EA27E6C6C13006C7E13FC383FFFE06C13FC6C13FF6C14
+-C06C14E0C614F0011F13F81300EC0FFC140300C0EB01FE1400157E7E153EA27EA36C143C
+-6C147C15786C14F86CEB01F039F38003E039F1F00F8039E07FFE0038C00FF01F2E7DAC26
+->I<1306A5130EA4131EA3133E137EA213FE12011207001FB512F0B6FCA2C648C7FCB3A4
+-150CAA017E131C017F1318A26D133890381F8030ECC070903807E0E0903801FFC0903800
+-7F001E3E7EBC26>I<B539F001FFFCA3000790C7EA7FE06C48EC1F8000011600160E0000
+-150C6D141C6D1418A26E1338013F1430A26D6C5BA26E13E0010F5CA26D6C485AA2ECF803
+-010391C7FCA2903801FC06A2ECFE0E0100130CA2EC7F18A215B8EC3FB0A2EC1FE0A36E5A
+-A26E5AA36EC8FCA21406A35CA25CA2123C007E5BB4FC5CA25CEAFE01387C0380D87007C9
+-FCEA3C1EEA0FFCEA03F02E3F7EAA33>121 D E
+-%EndDVIPSBitmapFont
+-%DVIPSBitmapFont: Ff ecrm1728 17.28 21
+-/Ff 21 118 df<B712F0A724077FA12D>45 D<170FA34D7EA24D7EA34D7EA34D7EA34C7F
+-17DFA29338039FFC178FA29338070FFE1707040F7FEE0E03A2041E80EE1C01A2043C80EE
+-3800A24C80187FA24C80183FA24B4880181F0303814C130FA203078193C71207A24B8103
+-0E80A24B8284A24B8284A24B82197F03F0824B153FA20201834B151FA202038392B8FCA2
+-4A83A292C91207020E8385A24A8485023C84023882A20278840270177FA202F0844A173F
+-A24948841A1FA24948841A0FA249CB7F1A074985865B496C85497E48486C4D7F000F01F8
+-051F13F0B60407B612F0A45C657CE465>65 D<DDFFF015C0040F01FF1401047F14E00303
+-B600F81303030F9038E003FEDB3FFCC7007F1307DBFFE0EC0FC002030180913803E00F4A
+-48C83801F01F4A48ED0078DA3FF0EE3C3F4A48161E4A48EE0F7F4949EE07FF4990CA7E49
+-5A4948834948835C013F197F4948183F495A1B1F485B1B0F4890CCFCA248481907A2485A
+-1B03121F5BA2123F1B015BA2127F98C7FCA35B12FFB0127F7FA4123FF301C07FA2121FA2
+-7F000F1A031C806C7EA26C7E1B076C6D1900636C7F1B0E6D6C181E6D6C181C011F193C6E
+-606D7E6D6C606D6C4D5A6D6D4C5A6D6D16076E6C4C5A6E6C4CC7FCDA0FFC163E6E6C16FC
+-6E6C6CEC01F0020001F0EC07E0DB3FFCEC3F8092280FFFE003FFC8FC030390B512FCDB00
+-7F14F0040F1480040001F8C9FC526679E361>67 D<B912F018FF19E019F8C601FCC8EA7F
+-FED93FF892380FFF80011F04017F9538007FF0F11FF8737EF103FE737E737F747E747E74
+-7E1A0F87747E1A0387747EA2741380A2F37FC0A21CE01B3FA21CF0A21B1F1CF8A31CFCA2
+-1B0FA41CFEAF1CFCA51B1F1CF8A4F33FF0A21CE0A21B7F1CC01BFF1C80A2501300A2505A
+-505AA2505A505A505A505A1AFF4F5B4F90C7FCF107FCF11FF8F17FF0953801FFC0013F04
+-075BD9FFFCDB7FFEC8FCBA12F819E096C9FC18F0576278E167>I<B500FC071FB51280A3
+-6E61C6F58000013F51C7FCD91DFFF177FCA2011C6D18E7A36E6CEF01C7A36E6CEF0387A3
+-6E6CEF0707A26E6C170EA36E6C171CA36E6C1738A36E6C1770A26E6D16E0A36F6CED01C0
+-A36F6CED0380A36F6CED0700A26F6C150EA36F6C5DA36F6C5DA36F6C5DA26F6D5CA3706C
+-495AA3706C495AA3706C49C7FCA2706C130EA3706C5BA3706C5BA3706C5BA3706D5AA294
+-387FC1C0A394383FE380A3DD1FF7C8FCA3EF0FFEA2013E6F5AA2137F715A2601FFC04F7E
+-000701F096383FFF80B66C6D48023FB61280A3715A696277E17C>77
+-D<933801FFE0043F13FF4BB612E003079038003FF8DB1FF0EB03FEDB7FC0903800FF804A
+-48C8EA3FE0DA03FCED0FF0DA0FF0ED03FC4A486F7E4A486F7E4A48707E4ACA6C7E494871
+-7E4948717E4948717E4948717E4948717E013F854A83017F864948727EA24890CC6C7EA2
+-4848737EA24848737EA2000F87491907001F87A34848737EA4007F1C80A24985A400FF1C
+-C0AF6C6C4F1380A5003F1C006D61A3001F63A26D190F000F63A26C6C4F5AA36C6C4F5AA2
+-6C6D4E5A6C636E18FF017F626D6C4D90C7FC6E5F011F616D6C4D5A6D6C4D5A0103616E17
+-1F6D6C4D5A6D6D4C5ADA3FC04CC8FCDA1FF0ED03FE6E6C4B5A6E6C4B5ADA01FFED3FE091
+-26007FC0ECFF80DB1FF0D903FEC9FCDB07FFEB3FF8030190B512E0DB003F91CAFC040113
+-E05A6679E369>79 D<B812F8EFFFC018F818FFC601FCC7000F13C0D93FF8020013F0011F
+-EE1FF8F007FE727E06007F737E737E86737E737EA2737EA286A28587A998C8FC61A262A2
+-4F5A62191F4F5A624F5A4E485A4E48C9FC4E5AF03FF0F0FFC0050F90CAFC91B712FC18C0
+-18F002F8C7EA1FFCEF03FF050013C0727EF01FF0727E727E85727E727FA2727FA3737EAA
+-86AAF401C086193FA3071F1403741480070F1407496C8390B50407EC0F00B76F6C131E73
+-EB803E9639007FE07C97381FFFF8CD000713E09738007F805A6478E163>82
+-D<181EEF3FFEEE07FFA4EE000F1703A21701B3AAEDFF80020F13F8023F13FE9139FF803F
+-81903A03FC0007C14948EB01E1D91FE0EB00F94948147D4948143D49C8121F4848150F49
+-1507120348481503491501120F121F5BA2123F5B127FA45B12FFAD127F7FA3123FA27F12
+-1FA26C6C1503A26C6C150712036D150F6C6C151F0000163D137F6D6CECF9FF6D6CEB01F1
+-D90FF0D903C113C06D6CD90F81EBFF80D901FFEB7F019039007FFFFC021F13E002010100
+-91C7FC41657BE34B>100 D<EC03FE91381FFFE091B512F8903901FE03FE903A07F0007F
+-8049486D7ED93FC06D7E49C76C7E496E7E49140348488148481401000782491400000F82
+-83485A1880123F49153FA2007F17C0A35BA212FF90B8FCA30180CAFCA9127F7FA3123FA2
+-7F121FEF01C06C7E17036C6C1680A26C6C15070001EE0F006D150E6C6C151E6D6C5C6D6C
+-5C6D6C5CD907F0EB03E0D903FC495A902700FF803FC7FC91383FFFFC020F13F002011380
+-32417BBF3C>I<187FDA07FC903803FFC091273FFF800F13E091B539E01F83F0903B03FC
+-07F87C07903A07F001FCF0903A0FC0007FC04948EB3F80013FEE03E049C76C6CC7FC01FE
+-6E7EA248486E7EA2000382A2491403000782AA00035E6D1407A200015EA26C6C4A5AA201
+-7F4A5A6D6C495A011F92C8FC496C137E903937F001FC903973FC07F80160B512E0D9E03F
+-1380DA07FCC9FC4848CBFCA57FA37F7F7F6CB4FC91B512FC6DECFFE017FC6D15FF6D16C0
+-6D16F0013F8201FEC700037FD803F89138001FFED807E015074848ED01FF484881003FEF
+-7F8090CA123F127EF01FC012FE48170FA66C171F007E1880A2007F173F6C6CEE7F00001F
+-177E6C6C5E6D1501D803F8ED07F06C6C4B5A6CB4ED3FC0D93FE049B4C7FCD90FFEEB1FFC
+-0103B612F0D9007F1480020301F0C8FC3C5E7CBF43>103 D<1378EA01FE487E487FA66C
+-90C7FC6C5AEA007890C8FCB3A2EB0780EA0FFFB5FCA41203C6FCA2137FB3B3AC497E487F
+-B61280A4195F7BDE25>105 D<EB03C0EA07FFB5FCA41201EA007FA2133FB3AB0403B512
+-F8A40400148094387FFC0018E06095C7FC177E5F17F04C5A4C5A4C5A4CC8FC163E5E5E4B
+-5A4B5A4B5A4B5A151F4B7E4B7E15FF02C17F9138C3CFF8ECC7879138CF07FC9138FE03FE
+-ECFC0102F87F4A6C7F4A137F4A80707E161F83707E160783707E160183707F177F84717E
+-171F84717E84A284496CEDFF80496C4A13E0B600F090B6FCA440647CE347>107
+-D<EB0780EA0FFFB5FCA41203C6FCA2137FB3B3B3B3AD497E487FB612C0A41A647BE325>
+-I<D903C0D97FE04AB47ED807FF902603FFFC020F13F0B5010F01FF023F13FCDB3F0001C0
+-9038FC03FF0378903C1FE001E0007F804B6D6C48486D7E0001D9C1C06D6C48C76C7E2700
+-7FC380DAFC0E8102C7C7000349140FD93FCE6F48810501160702DC5E02D8166002F89126
+-00FFE06E7E4A5EA34A5EA34A93C8FCB3B3496C4A6D4A7E496C4A6D4A7EB6D8F003B6D8C0
+-0FB6FCA4683F7CBE71>I<D903C0EB7FE0D807FF903803FFFCB5010F13FFDB3F0013C003
+-78EB1FE04B6D7E0001D9C1C06D7E27007FC3808002C7C71203D93FCE81170114DC14D802
+-F86E7E5CA35CA35CB3B3496C4A7F496C4A7FB6D8F003B612C0A4423F7CBE4B>I<4AB47E
+-020F13F0027F13FE4AC67ED903F8EB1FC0D907E0EB07E0D91FC0EB03F849486D7E49C87E
+-01FE157F49814848ED1F80000317C04848ED0FE0A24848ED07F0A2001F17F8491503003F
+-17FCA3007F17FE491501A400FF17FFAC007F17FEA26D1503A3003F17FCA2001F17F86D15
+-07A2000F17F06D150F000717E06C6CED1FC0A26C6CED3F806C6CED7F00017F15FE6D6C49
+-5A6D6C495A6D6C495AD903F8EB1FC06DB4EBFF806D6CB448C7FC020F13F0020113803841
+-7BBF43>I<D903C0EB7FC0D807FF903807FFFCB5011F13FFDB7F0013C003F8EB1FF0DAC3
+-E0EB07F80001D9C7806D7E26007FCFC76C7E02DE6E7ED93FFC6F7E4A6F7E4A82181F4A82
+-727E5C727EA2727EA3727EA41A8084AC4E1300A54E5AA2611807A24E5A6E5E181F6E4B5A
+-6E5E187F6E4B5A02DE4A90C7FC02CF4A5ADAC780495ADAC3C0EB0FF0DAC1F0EB3FE0913A
+-C07E01FF806FB448C8FC030F13F80300138093CAFCB3A3497E497EB612F0A4415B7CBE4B
+->I<010FEB07F8D80FFFEB1FFEB590387FFF809238F81FC0913801E03F913903C07FE000
+-03EB0780C6EB0F00140E6D5A0218EB3FC00238EB1F800230EB0600027090C7FCA2146014
+-E0A25CA55CB3B0497E4813F0B612F8A42B3F7BBE34>114 D<9138FFC003010FEBF80701
+-7FEBFE0F3A01FF003F9FD803F0EB07DF48486DB4FCD80F801300001F8148C8FC003E8100
+-7E81127C00FC81A4827EA27E7F6C7E6D91C7FC13F8EA3FFE381FFFE06C13FF15F0000314
+-FE6C6E7E6C6C14E0011F14F801078001008002077FDA003F13801507030113C0ED007F00
+-E0ED3FE0161F17F06C150F1607A36C1503A37EA26C16E016077E17C06D140F6D15806D14
+-1FD8FDF0EC3F00D8F8F8147E017C495A3AF01F801FF06DB512C0D8E00391C7FC39C0007F
+-F02C417CBF35>I<1470A714F0A51301A31303A21307A2130FA2131F133F137F13FF1203
+-000F90B6FCB8FCA326000FF0C8FCB3AEEE01C0AE6D6CEB0380A316076D6C14005E6D6C13
+-0E6D6C131E6E6C5A91383FE0F86EB45A020713C0020090C7FC2A597ED734>I<D903C015
+-0FD807FFED1FFFB50203B5FCA40001ED0007D8007F1501A2013F81B3B25FA35FA35F011F
+-15066E140E5F130F6E4A7F01075D6D6C494813E0D901FE4948EBFFC0903A00FFC01F8091
+-393FFFFE00020F13F8020001C0EC800042407CBE4B>I E
+-%EndDVIPSBitmapFont
+-end
+-%%EndProlog
+-%%BeginSetup
+-%%Feature: *Resolution 600dpi
+-TeXDict begin
+-%%BeginPaperSize: a4
+-a4
+-%%EndPaperSize
+- end
+-%%EndSetup
+-%%Page: 1 1
+-TeXDict begin 1 0 bop 707 872 a Ff(Mo)t(dule)45 b(O)l(AR)g(p)t(our)g
+-(le)h(Desktop-Computing)1026 1112 y Fe(Pierre)33 b(Neyron)g
+-(<pierre.neyron@icatis.com>)1610 1307 y(29)f(o)s(ctobre)g(2004)639
+-1614 y Fd(Ce)24 b(papier)f(pr\351sen)n(te)f(le)i(tra)n(v)-5
+-b(ail)22 b(r\351alis\351)h(sur)g(O)n(AR)g(dans)g(le)h(con)n(text)f(du)h
+-(con)n(trat)e(A)n(CI)515 1714 y(CIGRI-Icatis.)515 1989
+-y Fc(Con)l(ten)l(ts)515 2171 y Fb(1)76 b(Ob)5 b(jectifs)2316
+-b(1)515 2354 y(2)76 b(Sous)31 b(ob)5 b(jectifs)32 b(\(cahier)h(des)e(c)
+-m(harges\))1254 b(1)515 2536 y(3)76 b(Arc)m(hitecture)2166
+-b(2)515 2719 y(4)76 b(In)m(t\351gration)32 b(dans)g(le)f(fonctionnemen)
+-m(t)f(de)i(O)m(AR)g(pr\351-existan)m(t)324 b(3)515 2902
+-y(5)76 b(Comp)s(osan)m(ts)30 b(et)i(mo)s(di\034cation)d(de)j(O)m(AR)f
+-(n\351cessaires)665 b(3)515 3084 y(6)76 b(Utilisation)2252
+-b(4)515 3267 y(7)76 b(\311v)m(olutions)31 b(en)m(visag\351es)1791
+-b(5)515 3541 y Fc(1)131 b(Ob)7 b(jectifs)515 3723 y Fd(D\351v)n(elopp)r
+-(emen)n(t)20 b(d'un)g(clien)n(t)g(de)h(calcul)e(O)n(AR)h(l\351ger,)h(p)
+-r(ermettan)n(t)f(d'utiliser)g(O)n(AR)g(dans)515 3823
+-y(un)37 b(en)n(vironnemen)n(t)f(non)h(cluster,)j(c'est)d(\340)g(dire)g
+-(une)g(grille)f(ou)h(in)n(ternet)h(de)f(mani\350re)515
+-3922 y(g\351n\351rale.)515 4197 y Fc(2)131 b(Sous)43
+-b(ob)7 b(jectifs)45 b(\(cahier)g(des)f(c)l(harges\))515
+-4379 y Fd(Le)27 b(clien)n(t)h(l\351ger)e(de)i(calcul)f(doit:)639
+-4561 y Fa(\017)41 b Fd(in)n(ter-op)r(\351rer)26 b(a)n(v)n(ec)g(les)h
+-(\034rew)n(alls)g(\(passer)f(les)h(\034rew)n(alls\))639
+-4728 y Fa(\017)41 b Fd(ne)28 b(pas)f(\352tre)g(d\351p)r(endan)n(t)h(de)
+-g(NFS)g(\(en)n(vironnemen)n(t)f(non)g(cluster\))639 4894
+-y Fa(\017)41 b Fd(\352tre)f(su\036sammen)n(t)f(dynamique)h(p)r(our)f
+-(fonctionner)h(dans)f(un)h(en)n(vironnemen)n(t)722 4993
+-y(p)r(eu)28 b(stable)g(comme)f(celui)h(du)f(desktop-computing)g(\(mo)r
+-(de)h(pull\))1926 5255 y(1)p eop end
+-%%Page: 2 2
+-TeXDict begin 2 1 bop 639 523 a Fa(\017)41 b Fd(\352tre)18
+-b(su\036sammen)n(t)g(propre)f(p)r(our)h(ne)h(pas)f(p)r(erturb)r(er)g
+-(l'en)n(vironnemen)n(t)f(d'ex\351cution)722 623 y(de)27
+-b(la)f(mac)n(hine)g(de)g(calcul,)g(celle-ci)g(ne)h(p)r(ouv)-5
+-b(an)n(t)26 b(a)g(priori)f(pas)h(\352tre)g(netto)n(y)n(\351e)f(\340)h
+-(la)722 722 y(main)i(par)f(un)g(administrateur)g(a)n(v)n(erti,)f(comme)
+-h(un)h(no)r(eud)g(de)g(cluster.)639 888 y Fa(\017)41
+-b Fd(\352tre)28 b(l\351ger)e(\340)h(d\351plo)n(y)n(er)f(sur)h(les)h
+-(mac)n(hines)e(de)i(calcul)515 1163 y Fc(3)131 b(Arc)l(hitecture)515
+-1345 y Fd(A\034n)32 b(de)h(passer)d(les)i(\034rew)n(alls,)g(le)g(clien)
+-n(t)g(l\351ger)f(base)g(ses)h(comm)n(unications)f(r\351seau)g(sur)515
+-1444 y(HTTP)-7 b(.)31 b(En)h(e\033et)f(la)g(plupart)f(des)h(\034rew)n
+-(alls)e(autorise)h(d'une)h(fa\347on)f(directe)h(ou)f(via)h(un)515
+-1544 y(pro)n(xy)d(HTTP)-7 b(,)30 b(le)g(transit)f(de)g(messages)f(HTTP)
+--7 b(.)31 b(Le)e(mo)r(dule)h(desktop-computing)e(est)515
+-1644 y(donc)j(comp)r(os\351)g(de)h(deux)g(\351l\351men)n(ts,)h(un)f
+-(clien)n(t)g(\(agen)n(t\))f(dialoguan)n(t)f(en)i(HTTP)h(et)f(un)515
+-1743 y(in)n(terpr\350te)e(traduisan)n(t)f(les)h(messages)f(HTTP)j(en)e
+-(donn\351es)g(O)n(AR)g(et)h(r\351cipro)r(quemen)n(t.)515
+-1843 y(Seul)21 b(le)g(deuxi\350me)h(\351l\351men)n(t)f(est)g(en)h(con)n
+-(tact)e(a)n(v)n(ec)g(les)h(autres)f(mo)r(dules)h(O)n(AR,)g(Almigh)n(t)n
+-(y)-7 b(,)515 1942 y(base)34 b(de)h(donn\351es,)h(etc.)58
+-b(P)n(our)34 b(encapsuler)g(dans)g(des)h(messages)e(HTTP)i(les)g
+-(donn\351es)515 2042 y(\351c)n(hang\351es)19 b(en)n(tre)h(l'agen)n(t)f
+-(et)i(l'in)n(terpr\350te,)h(une)e(m\351tho)r(de)h(de)g
+-(s\351rialisation)e(a)h(\351t\351)g(mise)h(en)515 2142
+-y(place.)36 b(L'\351tude)26 b(de)g(proto)r(coles)e(comme)i(SO)n(AP)g
+-(\(w)n(eb)g(services\))f(a)h(\351t\351)g(en)n(visag\351e,)f(mais)515
+-2241 y(un)e(m\351canisme)g(plus)g(simple)h(a)f(\351t\351)g
+-(pr\351f\351r\351)g(\(Il)g(est)h(bas\351)e(sur)h(le)g(mo)r(dule)h
+-(Data::Dump)r(er)515 2341 y(de)j(P)n(erl\).)639 2441
+-y(L'absence)35 b(de)g(syst\350me)g(de)g(\034c)n(hiers)f(partag\351)g
+-(implique)h(quan)n(t)g(\340)g(elle)g(la)g(mise)g(en)515
+-2540 y(place)j(de)h(m\351canisme)f(de)h(stage-in)e(et)i(de)g
+-(stage-out.)69 b(Ceux-ci)38 b(son)n(t)h(r\351alis\351s)e(gr\342ce)515
+-2640 y(aux)h(p)r(ossibilit\351s)h(o\033ertes)f(par)g(HTTP)h(p)r(our)f
+-(le)h(do)n(wnload)f(et)h(l'upload)f(de)h(\034c)n(hiers.)515
+-2739 y(Des)32 b(m\351canismes)g(de)h(cac)n(hes)e(on)n(t)h(\351galemen)n
+-(t)f(\351t\351)i(mis)g(en)f(place.)51 b(Un)33 b(m\351canisme)f(de)515
+-2839 y(s\351lection)22 b(en)g(fonction)h(de)f(la)g(bande)h(passan)n(te)
+-e(v)n(ers)g(les)h(no)r(euds)h(de)f(calcul)g(l\351gers,)h(et)f(des)515
+-2939 y(tailles)h(des)g(donn\351es)f(\340)h(\351c)n(hanger)e(p)r
+-(ourrait)h(\352tre)h(en)n(visag\351.)34 b(Les)23 b(comm)n(unications)f
+-(en)n(tre)515 3038 y(l'agen)n(t)29 b(et)h(O)n(AR)f(son)n(t)g(toujours)g
+-(\340)g(l'initiativ)n(e)h(de)g(l'agen)n(t.)42 b(Cela)29
+-b(p)r(ermet)h(d'en)n(visager)515 3138 y(sereinemen)n(t)h(un)h(con)n
+-(texte)f(ou)g(des)g(clien)n(ts)h(p)r(euv)n(en)n(t)f(\352tre)h(n'imp)r
+-(orte)f(o\371,)i(quitte)f(\340)f(ne)515 3238 y(pas)d(\352tre)h
+-(accessibles)e(directemen)n(t)i(depuis)g(le)g(serv)n(eur)e(O)n(AR)h
+-(\(Ex:)41 b(mac)n(hines)28 b(derri\350re)515 3337 y(un)35
+-b(\034rew)n(all)e(a)n(v)n(ec)g(translation)g(d'IP)-7
+-b(,)36 b(mac)n(hines)e(sur)g(un)h(in)n(tranet)f(d'en)n(treprise)f
+-(ferm\351)515 3437 y(a)n(v)n(ec)26 b(pro)n(xy)g(HTTP\).)639
+-3536 y(Des)c(m\351canismes)f(d'ex\351cution)g(de)h(st)n(yle)f(sand-b)r
+-(o)n(x)f(n'on)n(t)h(pas)g(pu)h(\352tre)f(utilis\351s)g(p)r(our)515
+-3636 y(ce)31 b(clien)n(t)h(l\351ger)f(\(aucun)h(m\351canisme)f
+-(satisfaisan)n(t)f(et)i(su\036sammen)n(t)g(l\351ger)e(de)i(ce)g(t)n(yp)
+-r(e)515 3736 y(ne)37 b(sem)n(ble)f(exister\).)65 b(Les)37
+-b(jobs)f(son)n(t)h(donc)g(simplemen)n(t)g(ex\351cut\351s)f(en)i(temps)f
+-(qu'un)515 3835 y(utilisateur)d(normal)g(sur)g(la)h(mac)n(hine)f
+-(\(celui-ci)h(p)r(eut)g(cep)r(endan)n(t)g(\352tre)f(un)h(utilisateur)
+-515 3935 y(d\351di\351\).)66 b(Il)38 b(est)f(tr\350s)g(di\036cile)g(de)
+-h(garan)n(tir)d(qu'aucun)i(job)g(ex\351cut\351)g(sur)g(le)h(no)r(eud)f
+-(de)515 4035 y(calcul)29 b(ne)h(p)r(erturb)r(era)f(pas)h(un)g(jour)g
+-(le)g(fonctionnemen)n(t)g(g\351n\351ral)e(de)i(la)g(mac)n(hine.)44
+-b(Un)515 4134 y(minim)n(um)d(de)g(garan)n(tie)e(est)i(o\033ert)g(par)f
+-(l'utilisation)h(d'un)g(utilisateur)g(d\351di\351,)j(don)n(t)515
+-4234 y(l'\351limination)25 b(de)g(tous)g(les)f(pro)r(cessus)g
+-(supprimera)g(tout)h(d\351sagr\351men)n(t)e(constat\351.)36
+-b(P)n(our)515 4333 y(ce)27 b(netto)n(y)n(age,)f(des)h(m\351canismes)g
+-(plus)h(\034ns)g(on)n(t)f(\351t\351)h(et)f(son)n(t)g(toujours)g(\340)g
+-(\351tudier.)639 4433 y(Cot\351)f(d\351plo)n(y)n(emen)n(t,)g(l'agen)n
+-(t)g(est)g(un)h(script)f(P)n(erl)g(ind\351p)r(endan)n(t,)h
+-(n\351cessitan)n(t)f(seule-)515 4533 y(men)n(t)i(la)f(pr\351sence)g(de)
+-h(quelques)f(comp)r(osan)n(ts)f(comme)i(la)f(commande)g(`tar')g(sur)g
+-(le)h(sys-)515 4632 y(t\350me)d(de)f(la)h(mac)n(hine)f(de)g(calcul.)36
+-b(Le)24 b(syst\350me)h(cible)f(est)h(GNU)g(Lin)n(ux,)g(un)g(p)r(ortage)
+-e(v)n(ers)515 4732 y(MS)j(Windo)n(ws/Cygwin)f(p)r(ourrait)g
+-(certainemen)n(t)g(\352tre)h(en)n(visag\351,)e(mais)i(il)g
+-(n\351cessiterait)515 4832 y(\351galemen)n(t)39 b(le)h(d\351v)n(elopp)r
+-(emen)n(t)g(d'un)h(m\351canisme)e(de)h(s\351lection)g(suppl\351men)n
+-(taire)f(au)515 4931 y(niv)n(eau)c(de)h(O)n(AR)g(p)r(our)g(le)g(c)n
+-(hoix)f(du)h(syst\350me)g(d'ex\351cution)g(appropri\351)e(p)r(our)i(un)
+-g(job)1926 5255 y(2)p eop end
+-%%Page: 3 3
+-TeXDict begin 3 2 bop 515 523 a Fd(\(compatibilit\351)41
+-b(d'en)n(vironnemen)n(t)e(d'ex\351cution\).)76 b(Des)41
+-b(pac)n(k)-5 b(ages)39 b(RPM)i(et)g(Debian)515 623 y(son)n(t)27
+-b(disp)r(onibles)g(p)r(our)g(une)h(installation.)515
+-894 y Fc(4)131 b(In)l(t\351gration)72 b(dans)f(le)g(fonctionnemen)l(t)h
+-(de)f(O)l(AR)712 1043 y(pr\351-existan)l(t)515 1225 y
+-Fd(Un)22 b(des)g(ob)5 b(jectifs)22 b(sous-jasen)n(t)e(de)i(ce)g(d\351v)
+-n(elopp)r(emen)n(t)f(a)g(\351t\351)h(de)g(ne)g(pas)g(trop)f
+-(d\351naturer,)515 1324 y(c'est)h(\340)h(dire)f(n\351cessiter)g(de)h(c)
+-n(hangemen)n(ts,)g(dans)f(le)h(fonctionnemen)n(t)g(de)g(O)n(AR)f(en)h
+-(mo)r(de)515 1424 y(cluster,)35 b(tout)g(en)f(p)r(ermettan)n(t)h(un)g
+-(fonctionnemen)n(t)f(en)g(mo)r(de)h(Desktop-Computing.)515
+-1524 y(Cela)27 b(a)g(conduit)h(\340)f(un)h(certain)f(nom)n(bre)f(de)i
+-(c)n(hoix)f(et)h(de)f(limitations.)639 1623 y(Une)38
+-b(des)f(principales)f(cons\351quences)g(est)h(le)g(fait)g(que)g(con)n
+-(trairemen)n(t)e(\340)i(des)g(sys-)515 1723 y(t\350mes)30
+-b(comme)g(Seti@Home,)h(c'est)f(toujours)g(le)g(syst\350me)g(O)n(AR)g
+-(qui)g(attribue)g(les)g(jobs)515 1823 y(aux)g(no)r(euds,)i(et)g(ce)f
+-(de)g(mani\350re)f(async)n(hrone)f(par)h(rapp)r(ort)g(aux)h
+-(requ\352tes)f(des)h(agen)n(ts)515 1922 y(de)36 b(desktop-computing.)60
+-b(Un)36 b(agen)n(t)f(signale)g(donc)g(simplemen)n(t)i(sa)e(pr\351sence)
+-g(et)h(ses)515 2022 y(p)r(ossibilit\351s)j(d'ex\351cution)g(\(\340)h
+-(in)n(terv)-5 b(alle)38 b(r\351gulier\),)k(puis)d(dans)g(un)h
+-(deuxi\350me)g(temps)515 2121 y(seulemen)n(t,)30 b(r\351cup)r(\350re)f
+-(des)h(jobs)f(\340)g(ex\351cuter)h(si)f(l'ordonnanceur)f(de)i(O)n(AR)f
+-(lui)h(en)g(a)g(at-)515 2221 y(tribu\351.)65 b(Un)37
+-b(mo)r(de)g(pull)g(plus)g(classique)f(corresp)r(ondrait)f(plus)i(\340)f
+-(un)i(m\351canisme)e(de)515 2321 y(v)n(ol)24 b(de)h(tac)n(he.)36
+-b(Quand)24 b(l'agen)n(t)h(s'arr\352te)e(normalemen)n(t,)i(il)g(en)g
+-(informe)g(l'infrastructure)515 2420 y(O)n(AR)37 b(qui)g(marque)f(le)h
+-(no)r(eud)g(comme)g(absen)n(t.)65 b(Si)37 b(l'agen)n(t)f(est)i(in)n
+-(terrompu,)g(il)f(sera)515 2520 y(marqu\351)23 b(absen)n(t)i(dans)f(O)n
+-(AR)g(d\350s)h(que)f(sa)g(date)h(d'expiration)e(sera)h(d\351pass\351e,)
+-g(l'agen)n(t)g(ne)515 2620 y(mettan)n(t)k(en)f(e\033et)h(plus)g
+-(celle-ci)f(\340)g(jour.)639 2719 y(L'agen)n(t)g(a)g(d'autre)g(part)g
+-(\351t\351)h(restrein)n(t)f(aux)g(limitations)g(suiv)-5
+-b(an)n(tes:)639 2881 y Fa(\017)41 b Fd(un)20 b(job)f
+-("Desktop-Computing")e(ne)i(p)r(eut)h(s'ex\351cuter)e(que)g(sur)h(une)g
+-(seule)g(et)g(m\352me)722 2981 y(mac)n(hine.)76 b(S'il)42
+-b(requiert)d(un)j(p)r(oids)e(sup)r(\351rieur)g(\340)h(un,)j(il)d(p)r
+-(ourra)f(uniquemen)n(t)722 3080 y(\352tre)35 b(ex\351cut\351)g(sur)g
+-(des)g(mac)n(hines)f(o\033ran)n(t)g(un)i(p)r(oids)f(\351gal)f(ou)h(sup)
+-r(\351rieur.)59 b(Sans)722 3180 y(parler)34 b(des)g(probl\350mes)g
+-(li\351s)g(\340)h(la)f(disp)r(ersion)g(tr\350s)g(probables)f(des)i(mac)
+-n(hines)f(et)722 3279 y(donc)22 b(de)h(leur)f(in)n(terconnexion)f(non)h
+-(garan)n(tie,)f(p)r(ermettre)h(une)h(ex\351cution)f(de)g(jobs)722
+-3379 y(m)n(ulti-no)r(eud)g(demanderait)f(trop)h(de)g(mo)r
+-(di\034cations)f(dans)g(l'infrastructure)g(O)n(AR)722
+-3479 y(actuelle)31 b(p)r(our)f(\352tre)h(supp)r(ort\351)f(\(cela)h
+-(n\351cessiterait)e(notammen)n(t)i(l'a)5 b(jout)30 b(d'\351tats)722
+-3578 y(dans)d(l'automate,)g(et)h(de)g(mo)r(di\034er)f
+-(l'ordonnanceur\).)639 3736 y Fa(\017)41 b Fd(du)27 b(fait)f(de)g(la)g
+-(disp)r(ersion)f(p)r(ossible)g(des)h(mac)n(hines)f(de)h(calcul)g(et)g
+-(de)g(la)g(limitation)722 3836 y(pr\351c\351den)n(te,)g(il)h(est)f
+-(di\036cile)h(d'en)n(visager)d(des)i(jobs)g(fortemen)n(t)g
+-(parall\350les)f(dans)h(le)722 3935 y(con)n(texte)33
+-b(du)g(desktop)f(computing.)52 b(L'usage)32 b(est)h(donc)f(essen)n
+-(tiellemen)n(t)h(pr\351vu)722 4035 y(p)r(our)27 b(des)h(jobs)f
+-(s\351quen)n(tiels,)g(a)n(v)n(ec)f(v)-5 b(ariation)27
+-b(des)g(param\350tres.)515 4306 y Fc(5)131 b(Comp)t(osan)l(ts)28
+-b(et)h(mo)t(di\034cation)g(de)g(O)l(AR)h(n\351cessaires)515
+-4488 y Fd(Comme)38 b(dit)h(pr\351c\351demmen)n(t,)i(le)d(mo)r(dule)h
+-(de)g(desktop-computing)e(est)h(comp)r(os\351)g(de)515
+-4587 y(deux)27 b(comp)r(osan)n(ts:)639 4749 y Fa(\017)41
+-b Fd(oar-agen)n(t)25 b(qui)j(est)f(l'agen)n(t)g(lanc\351)g(sur)g(les)h
+-(no)r(euds)f(de)h(calcul.)639 4907 y Fa(\017)41 b Fd(oar-cgi)25
+-b(qui)i(est)g(l'in)n(terpr\350te)f(qui)h(in)n(terface)f(le)h
+-(syst\350me)g(O)n(AR)f(a)n(v)n(ec)g(le)g(proto)r(cole)722
+-5006 y(HTTP)j(\(CGI)f(P)n(erl\).)1926 5255 y(3)p eop
+-end
+-%%Page: 4 4
+-TeXDict begin 4 3 bop 515 523 a Fd(Ces)38 b(deux)h(comp)r(osan)n(ts)e
+-(son)n(t)i(fournis)f(dans)g(deux)h(pac)n(k)-5 b(ages)37
+-b(\340)i(part)f(en)n(ti\350re)g(\(RPM)515 623 y(ou)c(Debian\).)58
+-b(Le)34 b(premier)g(pac)n(k)-5 b(age)33 b(\(oar-agen)n(t\),)h(nomm\351)
+-g(oar-desktop-computing-)515 722 y(agen)n(t,)25 b(doit)h(\352tre)f
+-(install\351)h(sur)f(les)h(no)r(euds)g(de)g(calcul.)36
+-b(Il)25 b(est)h(ind\351p)r(endan)n(t.)37 b(Le)26 b(second,)515
+-822 y(oar-desktop-computing-cgi)36 b(est)k(d\351p)r(endan)n(t)g(d'un)g
+-(serv)n(eur)f(HTTP)h(et)g(du)h(pac)n(k)-5 b(age)515 922
+-y(oar-common.)55 b(Il)34 b(doit)h(\352tre)f(install\351)g(sur)g(une)g
+-(mac)n(hine)g(du)h(cluster)f(O)n(AR)g(disp)r(osan)n(t)515
+-1021 y(d'un)k(serv)n(eur)e(HTTP)-7 b(.)39 b(Une)f(installation)f
+-(simple)h(consiste)f(\340)h(installer)f(oar-desktop-)515
+-1121 y(computing-cgi)j(et)h(Apac)n(he)g(sur)g(la)f(m\352me)i(mac)n
+-(hine)f(o\371)f(a)h(\351t\351)h(install\351)e(le)i(pac)n(k)-5
+-b(age)515 1220 y(oar-serv)n(er.)639 1320 y(M\352me)24
+-b(si)g(elles)f(on)n(t)g(\351t\351)h(le)g(moins)f(in)n(trusiv)n(es)f(p)r
+-(ossible,)i(le)g(d\351v)n(elopp)r(emen)n(t)f(du)h(mo)r(d-)515
+-1420 y(ule)41 b(de)g(Desktop-Computing)f(a)h(n\351cessite)f(d'app)r
+-(orter)g(quelques)h(mo)r(di\034cations)f(au)515 1519
+-y(syst\350me)27 b(O)n(AR.)g(En)i(v)n(oici)d(un)i(r\351sum\351:)639
+-1702 y Fa(\017)41 b Fd(Ajout)25 b(d'une)f(propri\351t\351)f
+-("DesktopComputing")g(sur)g(les)h(no)r(euds)g(p)r(our)f(iden)n
+-(ti\034er)722 1802 y(les)i(no)r(euds)h(faisan)n(t)e(du)i
+-(Desktop-Computing,)f(et)h(d'une)f(colonne)g("expiryDate")722
+-1901 y(dans)k(la)g(table)g(no)r(des)g(p)r(our)g(le)h(m\351canisme)f(de)
+-g(d\351tection)g(de)h(la)f(disparition)f(des)722 2001
+-y(no)r(euds.)639 2167 y Fa(\017)41 b Fd(Ajout)35 b(de)f(la)g(table)g
+-(\034les)g(et)g(d'une)h(colonne)e(dans)g(la)h(table)g(job)g(p)r(our)g
+-(g\351rer)e(les)722 2267 y(\020stage-ins\021.)639 2433
+-y Fa(\017)41 b Fd(Ajout)36 b(d'un)h(certain)d(nom)n(bre)h(de)h
+-(fonctions)f(dans)g(iolib.)61 b(Certaines)34 b(fonctions)722
+-2532 y(existan)n(tes)27 b(on)n(t)g(\351galemen)n(t)g(\351t\351)h(mo)r
+-(di\034\351es,)f(mais)g(leur)g(nom)n(bre)g(a)g(\351t\351)h(limit\351.)
+-639 2698 y Fa(\017)41 b Fd(Mo)r(di\034cation)30 b(de)g(Leon,)g(Runner,)
+-g(Sark)n(o,)f(oarno)r(desetting,)g(oarsub)g(p)r(our)g(qu'ils)722
+-2798 y(prennen)n(t)f(en)f(compte)h(le)f(desktop-computing.)515
+-3072 y Fc(6)131 b(Utilisation)515 3254 y Fd(Un)20 b(fois)g
+-(install\351,)h(oar-agen)n(t)c(p)r(eut)j(\352tre)g(lanc\351)f(a)n(v)n
+-(ec)f(comme)i(param\350tre)e(l'URL)i(p)r(oin)n(tan)n(t)515
+-3354 y(v)n(ers)30 b(\020oar-cgi\021.)45 b(A)n(tten)n(tion,)32
+-b(l'utilisateur)f(qui)g(lance)g(\020oar-agen)n(t\021)k(ex\351cutera)30
+-b(aussi)g(les)515 3453 y(jobs.)82 b(L'utilisation)43
+-b(d'un)g(utilisateur)f(d\351di\351)h(p)r(eut)h(p)r(ermettre)f(un)g
+-(netto)n(y)n(age)e(plus)515 3553 y(rapide)24 b(en)g(cas)g(de)h
+-(dysfonctionnemen)n(t.)35 b(Des)25 b(options)f(p)r(ermetten)n(t)h(de)f
+-(pr\351ciser)g(le)g(nom)515 3653 y(du)30 b(no)r(eud)g(\(si)g(ce)g
+-(n'est)g(pas)f(le)h(nom)g(donn\351)f(par)g(`hostname'\),)i(le)f(p)r
+-(oids)f(\(uniquemen)n(t)515 3752 y(\340)i(la)g(premi\350re)g
+-(utilisation\),)i(et)f(de)f(passer)g(en)g(mo)r(de)h(\020v)n(erb)r
+-(ose\021,)e(etc)i(\(v)n(oir)f(`oar-agen)n(t)515 3852
+-y(-h'\).)67 b(Un)38 b(sous)f(r\351p)r(ertoire)f(dans)h(le)h(r\351p)r
+-(ertoire)e(couran)n(t)g(est)i(cr\351\351)f(p)r(our)g(sto)r(c)n(k)n(er)f
+-(les)515 3952 y(\020stage-ins\021)29 b(\(a)n(v)n(ec)23
+-b(un)h(m\351canisme)g(de)g(cac)n(he\),)g(ainsi)g(que)g(p)r(our)g(c)n
+-(haque)f(job)h(\340)g(ex\351cuter.)515 4051 y(Les)j(r\351p)r(ertoires)f
+-(des)h(jobs)h(son)n(t)f(supprim\351s)g(quand)g(ceux-ci)g(se)g(terminen)
+-n(t.)639 4151 y(P)n(our)g(la)f(soumission)g(de)h(job)g(p)r(our)f(le)h
+-(desktop-computing,)f(la)h(pro)r(cedure)f(consiste)515
+-4250 y(a)c(donner)f(au)h(job)g(la)g(propri\351t\351)f
+-(\020DesktopComputing\021.)34 b(Il)23 b(est)f(de)g(plus)h(p)r(ossible)e
+-(de)i(pre-)515 4350 y(ciser)i(l'en)n(vironnemen)n(t)h(de)g
+-(\020stage-in\021)32 b(sous)25 b(forme)h(d'une)h(arc)n(hiv)n(e)e
+-(cr\351\351e)g(au)h(pr\351alable,)515 4450 y(ou)g(bien)h(en)f(donnan)n
+-(t)g(simplemen)n(t)h(un)g(rep)r(ertoire.)35 b(V)-7 b(oici)26
+-b(un)h(exemple)g(de)f(soumission:)639 4549 y(>)18 b(oarsub)f(-p)h
+-(\020DesktopComputing='YES\021)9 b(')18 b(-s)g(m)n
+-(y_stage_in_directory)d(\020)25 b(./m)n(y_job.sh)515
+-4649 y(param1)h(param2\021)639 4749 y(A)e(noter)e(qu'il)h(sera)f(p)r
+-(ossible)h(de)g(cr\351\351r)f(une)h(queue)g(sp)r(\351ciale)g
+-(\020Desktop-Computing\021)515 4848 y(a)n(v)n(ec)j(une)i(r\350gle)e
+-(d'admission)h(qui)h(p)r(ositionnera)e(automatiquemen)n(t)h(la)g
+-(propri\351t\351.)1926 5255 y(4)p eop end
+-%%Page: 5 5
+-TeXDict begin 5 4 bop 515 545 a Fc(7)131 b(\311v)l(olutions)45
+-b(en)l(visag\351es)639 726 y Fa(\017)c Fd([F)-7 b(ait])39
+-b(Finir)f(de)h(mettre)f(au)g(p)r(oin)n(t)h(le)f(m\351canisme)g(de)g
+-(netto)n(y)n(age)f(r\351cursif)g(des)722 826 y(pro)r(cessus)24
+-b(des)h(jobs)g(a)n(v)n(ec)e(leur)i(descendance)f(dans)h(les)f(cas)h(de)
+-g(la)f(suppression)g(de)722 926 y(jobs)g(ou)f(de)h(l'in)n(terruption)f
+-(de)g(l'agen)n(t.)35 b(Un)24 b(m\351canisme)f(bas\351)g(sur)g(les)h
+-(sessions-id)722 1025 y(des)k(pro)r(cessus)e(p)r(eut)i(\351galemen)n(t)
+-f(\352tre)g(a)5 b(joute)27 b(en)h(deuxi\350me)f(recourt.)639
+-1191 y Fa(\017)41 b Fd([F)-7 b(ait])26 b(Am\351liorer)f(les)g
+-(m\351canismes)g(de)g(\020stage-in\021)31 b(et)26 b(de)g
+-(\020stage-out\021)k(p)r(our)25 b(qu'ils)722 1291 y(soien)n(t)30
+-b(in)n(terruptibles,)h(par)e(exemple)h(quand)g(le)h(job)f(concern\351)f
+-(est)i(tu\351.)45 b(Le)30 b(m\351-)722 1391 y(canisme)25
+-b(de)g(cac)n(he)f(p)r(eut)i(\351galemen)n(t)e(\352tre)g(a\036n\351)h
+-(a\034n)g(de)g(prendre)f(en)h(compte)g(les)722 1490 y(temps)34
+-b(de)g(t\351l\351c)n(hargemen)n(t)f(en)h(plus)g(de)g(la)f(taille)h(et)g
+-(la)f(date)h(de)g(dernier)f(acc\350s)722 1590 y(aux)27
+-b(\034c)n(hiers.)639 1756 y Fa(\017)41 b Fd(V)-7 b(oir)39
+-b(si)h(il)f(serait)g(vraimen)n(t)f(in)n(t\351ressan)n(t)g(de)i(ra)5
+-b(jouter)38 b(des)h(\351tats)g(sur)g(les)g(jobs)722 1856
+-y(p)r(our)29 b(d\351limiter)h(les)f(p)r(\351rio)r(des)g(de)g
+-(\020stage-in\021)34 b(\(Launc)n(hing)29 b(?\),)h(et)g(de)f
+-(\020stage-out\021)722 1955 y(\(T)-7 b(erminating)27
+-b(?\).)639 2121 y Fa(\017)41 b Fd(Ajouter)21 b(un)g(m\351canisme)e
+-(d'authen)n(ti\034cation)i(des)f(no)r(euds)g(d'ex\351cution)h
+-(l\351gers)e(via)722 2221 y(une)28 b(\020host)f(k)n(ey\021)33
+-b(\340)28 b(la)f(SSH)h(par)f(exemple.)639 2387 y Fa(\017)41
+-b Fd(Mettre)28 b(\340)f(disp)r(osition)g(d'agen)n(t)g(sous)g(forme)g
+-(d'un)h(service)e(\(d\351mon\))i(UNIX.)639 2553 y Fa(\017)41
+-b Fd(Coupler)28 b(l'agen)n(t)f(a)n(v)n(ec)g(un)i(logiciel)f(d'\351cran)
+-f(de)i(v)n(eille,)f(ou)g(tout)g(autre)g(d\351tecteur)722
+-2653 y(de)g(c)n(harge)e(ou)h(d'activit\351)h(d'une)g(mac)n(hine.)1926
+-5255 y(5)p eop end
+-%%Trailer
+-
+-userdict /end-hook known{end-hook}if
+-%%EOF
+diff --git a/setup/cron.hourly/oar-desktop-computing-cgi.in b/setup/cron.hourly/oar-desktop-computing-cgi.in
+deleted file mode 100644
+index 51606d2..0000000
+--- a/setup/cron.hourly/oar-desktop-computing-cgi.in
++++ /dev/null
+@@ -1,4 +0,0 @@
+-#!/bin/bash
+-# OAR stagein cache directory clean-up
+-
+-%%SBINDIR%%/oarcache
+diff --git a/setup/desktop-computing-cgi.sh.in b/setup/desktop-computing-cgi.sh.in
+deleted file mode 100644
+index 069f1f4..0000000
+--- a/setup/desktop-computing-cgi.sh.in
++++ /dev/null
+@@ -1,6 +0,0 @@
+-
+-desktop_computing_cgi_setup() {
+-    set_rights ${SBINDIR}/oarcache 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
+-    set_rights ${OARDIR}/oarres    6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
+-    set_rights ${CGIDIR}/oar-cgi   6754 ${OARDO_DEFAULTUSER} ${WWWUSER} 
+-}
+diff --git a/setup/init.d/oar-desktop-computing-agent.in b/setup/init.d/oar-desktop-computing-agent.in
+deleted file mode 100644
+index 5fbebc0..0000000
+--- a/setup/init.d/oar-desktop-computing-agent.in
++++ /dev/null
+@@ -1,123 +0,0 @@
+-#! /bin/sh
+-#
+-# desktop-computing-agent
+-#
+-# --/--/----: Based on startup scripts from Bruno Bzeznik <bruno.bzeznik@imag.fr>
+-# 02/09/2011: Merge RPM and Debian scripts by Philippe Le Brouster <philippe.le-brouster@imag.fr>
+-#
+-
+-# chkconfig: 2345 90 10
+-# description: This script starts or stops the desktop computing agent
+-# processname: oar-agent-daemon
+-# pidfile: %%OARHOMEDIR%%/oar_agent.pid
+-
+-
+-### BEGIN INIT INFO
+-# Provides:         oar-desktop-computing-agent
+-# Required-Start:   $network $local_fs $remote_fs
+-# Required-Stop:    $network $local_fs $remote_fs
+-# Default-Start:    2 3 4 5
+-# Default-Stop:     0 1 6
+-# Short-Description:    OAR desktop computing agent daemon starting
+-### END INIT INFO
+-
+-PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/usr/sbin:/usr/bin
+-NAME=oar-desktop-computing-agent
+-DESC=desktop-computing-agent
+-DAEMON=%%SBINDIR%%/oar-agent-daemon
+-DAEMON_NAME=oar-agent-daemon
+-PIDFILE=%%OARHOMEDIR%%/oar_agent.pid
+-SCRIPTNAME=%%INITDIR%%/$NAME
+-NOLSB=
+-
+-[ -f /lib/lsb/init-functions ] || NOLSB=yes
+-
+-if [ -f /etc/debian_version ]; then
+-    system=debian
+-elif [ -f /etc/redhat-release ]; then
+-    system=redhat
+-elif [ -f /etc/SuSE-release ]; then
+-    system=suse
+-elif [ -f /etc/gentoo-release ]; then
+-    system=gentoo
+-fi
+-
+-# Exit if the package is not installed
+-[ -x "$DAEMON" ] || exit 0
+-
+-if [ -z "$NOLSB" ]; then
+-    . /lib/lsb/init-functions
+-    fail_msg() {
+-        echo ""
+-        log_failure_msg "$@"
+-    }
+-    warn_msg() {
+-        log_warning_msg "$@"
+-    }
+-    succ_msg() {
+-        log_success_msg "$@"
+-    }
+-    begin_msg() {
+-        echo -n "$@:"
+-    }
+-else
+-    echo "This system doesn't provide the LSB functions. Failing"
+-    exit 2
+-fi
+-
+-
+-do_start() {
+-    begin_msg "Starting $DESC"
+-    if pidofproc -p $PIDFILE > /dev/null; then
+-        fail_msg " already running"
+-        exit 1
+-    fi
+-    start_daemon -p "$PIDFILE" -n "-20" "$DAEMON" start
+-    RET=$?
+-    if [ "$RET" != 0 ]; then
+-        fail_msg "Unable to start"
+-    else
+-        succ_msg
+-    fi
+-}
+-
+-do_stop() {
+-    begin_msg "Stopping $DESC"
+-    killproc -p $PIDFILE
+-    RETVAL="$?"
+-    if [ "$RETVAL" = 2 ]; then
+-        fail_msg "Unable to stop $DESC"
+-        exit 2
+-    fi
+-    killproc $DAEMON_NAME
+-    if [ "$?" = 2 ]; then
+-        fail_msg "Unable to stop $DESC"
+-        exit 2
+-    fi
+-    rm -f $PIDFILE
+-
+-    succ_msg
+-    exit "$RETVAL"
+-}
+-
+-case "$1" in
+-    start)
+-        do_start
+-        ;;
+-    stop)
+-        do_stop
+-        ;;
+-    reload|restart|force-reload)
+-        if do_stop; then
+-            sleep 1
+-            do_start
+-        fi
+-        ;;
+-    *)
+-        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-
+-exit 0
+diff --git a/sources/desktop_computing/agent/Rakefile b/sources/desktop_computing/agent/Rakefile
+deleted file mode 100644
+index edd46e7..0000000
+--- a/sources/desktop_computing/agent/Rakefile
++++ /dev/null
+@@ -1,9 +0,0 @@
+-require 'rake'
+-require 'spec/rake/spectask'
+-
+-desc "Run all examples with RCov"
+-Spec::Rake::SpecTask.new('spec') do |t|
+-  t.spec_files = FileList['spec/*']
+-  t.rcov = true
+-  t.rcov_opts = ['--exclude','examples']
+-end
+diff --git a/sources/desktop_computing/agent/autotest/discover.rb b/sources/desktop_computing/agent/autotest/discover.rb
+deleted file mode 100644
+index cd6892c..0000000
+--- a/sources/desktop_computing/agent/autotest/discover.rb
++++ /dev/null
+@@ -1 +0,0 @@
+-Autotest.add_discovery { "rspec2" }
+diff --git a/sources/desktop_computing/agent/lib/agent.conf b/sources/desktop_computing/agent/lib/agent.conf
+deleted file mode 100644
+index d066fec..0000000
+--- a/sources/desktop_computing/agent/lib/agent.conf
++++ /dev/null
+@@ -1 +0,0 @@
+-192.168.56.101
+diff --git a/sources/desktop_computing/agent/lib/agent.rb b/sources/desktop_computing/agent/lib/agent.rb
+deleted file mode 100755
+index 1dfd7e1..0000000
+--- a/sources/desktop_computing/agent/lib/agent.rb
++++ /dev/null
+@@ -1,23 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-$LOAD_PATH.unshift '/usr/lib/oar/desktop_computing'
+-
+-require 'client'
+-require 'singleton'
+-require 'config'
+-
+-class Agent
+-  def run
+-    client = Client.new
+-    while true do
+-      client.get_jobs_to_run
+-      client.get_jobs_to_kill
+-      sleep 30
+-    end
+-  end
+-end
+-
+-
+-Configuration.instance.check
+-agent = Agent.new
+-agent.run
+diff --git a/sources/desktop_computing/agent/lib/client.rb b/sources/desktop_computing/agent/lib/client.rb
+deleted file mode 100644
+index 798a55a..0000000
+--- a/sources/desktop_computing/agent/lib/client.rb
++++ /dev/null
+@@ -1,40 +0,0 @@
+-require 'rest_client'
+-require 'json'
+-require File.join(File.dirname(__FILE__), "job.rb")
+-require File.join(File.dirname(__FILE__), "job_resource.rb")
+-
+-class Client
+-
+-  attr_accessor :remotehost, :localhost
+-
+-  def initialize
+-    @remotehost = Configuration.instance.host
+-    @localhost = get_hostname
+-  end
+-
+-
+-  def get_jobs_to_run
+-    jobs = get_jobs
+-    jobs.each do |item|
+-      Job.new(item['id']).fork
+-    end
+-  end
+-  def get_jobs_to_kill
+-
+-    response = RestClient.get "http://#@remotehost/oarapi/resources/nodes/#@localhost/jobs.json?state=toKill"
+-    JSON.parse(response.body)['items']
+-  end
+-
+-  # Get a hostname from the server
+-  # The server will add this hostname to the resource pool
+-  def get_hostname
+-    response = RestClient.get "http://#@remotehost/oarapi/desktop/agents.json"
+-    JSON.parse(response.body)['hostname']
+-  end
+-
+-  # Get the jobs for the given hostname
+-  def get_jobs
+-    response = RestClient.get "http://#@remotehost/oarapi/resources/nodes/#@localhost/jobs.json?state=toLaunch"
+-    JSON.parse(response.body)['items']
+-  end
+-end
+diff --git a/sources/desktop_computing/agent/lib/config.rb b/sources/desktop_computing/agent/lib/config.rb
+deleted file mode 100644
+index ab5c9a4..0000000
+--- a/sources/desktop_computing/agent/lib/config.rb
++++ /dev/null
+@@ -1,28 +0,0 @@
+-class Configuration
+-  include Singleton
+-  attr_reader :host, :user, :pass
+-  def initialize
+-    file = File.open('/etc/oar/oar.conf')
+-
+-    server_hostname = nil
+-
+-    file.each_line do |line|
+-      if line =~ /OAR_REST_SERVER=(.*)/
+-        @host = $1
+-      elsif line =~ /DESKTOP_COMPUTING_AGENT_USERNAME=(.*)/
+-        @user = $1
+-      elsif line =~ /DESKTOP_COMPUTING_AGENT_PASSWORD=(.*)/
+-        @pass = $1
+-      end
+-    end
+-
+-    file.close
+-
+-  end
+-
+-  def check
+-    raise "Please set the OAR_REST_SERVER, DESKTOP_COMPUTING_AGENT_USERNAME and DESKTOP_COMPUTING_AGENT_PASSWORD properties on /etc/oar/oar.conf" unless (@host && @user && @pass)
+-  end
+-end
+-
+-
+diff --git a/sources/desktop_computing/agent/lib/daemon.rb b/sources/desktop_computing/agent/lib/daemon.rb
+deleted file mode 100644
+index 227b07b..0000000
+--- a/sources/desktop_computing/agent/lib/daemon.rb
++++ /dev/null
+@@ -1,5 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-require 'daemons'
+-
+-Daemons.run('/usr/bin/oar-agent')
+diff --git a/sources/desktop_computing/agent/lib/job.rb b/sources/desktop_computing/agent/lib/job.rb
+deleted file mode 100644
+index 6c94706..0000000
+--- a/sources/desktop_computing/agent/lib/job.rb
++++ /dev/null
+@@ -1,66 +0,0 @@
+-def Process.descendant_processes(base=Process.pid)
+-  descendants = Hash.new{|ht,k| ht[k]=[k]}
+-  Hash[*`ps -eo pid,ppid`.scan(/\d+/).map{|x|x.to_i}].each{|pid,ppid|
+-    descendants[ppid] << descendants[pid]
+-  }
+-  descendants[base].flatten - [base]
+-end
+-
+-class Job
+-
+-  attr_accessor :id, :client
+-
+-  def initialize(job_id=nil, remotehost=nil)
+-    @job = JobResource.new(job_id)
+-  end
+-
+-
+-  # 
+-  def run
+-    @job.run
+-    
+-    system "mkdir #{@job.id}"
+-    if @job.has_stagein
+-      # Extracts and delete the tarball
+-      @job.get_stagein
+-      system "tar zxvf #{@job.id}/stagein.tgz -C ./#{@job.id} 1>/dev/null 2>/dev/null "
+-      system "rm -rf #{@job.id}stagein.tgz"
+-    end
+-
+-    begin
+-      execute_command
+-
+-      @job.terminate
+-    rescue
+-      @job.error
+-    end
+-
+-
+-    # Packs the stageout
+-    system "tar cvzf #{@job.id}.tgz #{@job.id}/ 1>/dev/null 2>/dev/null"
+-    @job.send_stageout
+-
+-    # Clean
+-    system "rm -rf #{@job.id}.tgz"
+-    system "rm -rf #{@job.id}"
+-
+-  end
+-
+-  def kill
+-    children = Process.descendant_processes(@worker_pid)
+-    children.each{|pid| Process.kill("TERM", pid) }
+-    Process.kill("TERM", @worker_pid)
+-    @job.error
+-  end
+-
+-  def fork
+-    @worker_pid = Process.fork { run }
+-  end
+-  private
+-    def execute_command
+-      if system("cd #{@job.id} && #{@job.get_command} 1>stdout 2>stderr") != true
+-        raise JobExecutionException
+-      end
+-    end
+-end
+-
+diff --git a/sources/desktop_computing/agent/lib/job_execution_exception.rb b/sources/desktop_computing/agent/lib/job_execution_exception.rb
+deleted file mode 100644
+index 934729e..0000000
+--- a/sources/desktop_computing/agent/lib/job_execution_exception.rb
++++ /dev/null
+@@ -1,2 +0,0 @@
+-class JobExecutionException < Exception
+-end
+diff --git a/sources/desktop_computing/agent/lib/job_resource.rb b/sources/desktop_computing/agent/lib/job_resource.rb
+deleted file mode 100644
+index c875dd6..0000000
+--- a/sources/desktop_computing/agent/lib/job_resource.rb
++++ /dev/null
+@@ -1,39 +0,0 @@
+-class JobResource
+-
+-  attr_accessor :id
+-  def initialize(id)
+-    @id = id
+-    @remotehost = Configuration.instance.host
+-    @user = Configuration.instance.user
+-    @pass = Configuration.instance.pass
+-    @resource = RestClient::Resource.new "http://#@user:#@pass@#{@remotehost}/oarapi-priv/jobs/#{id}"
+-  end
+-  def get_command
+-    response = RestClient.get "http://#@user:#@pass@#{@remotehost}/oarapi-priv/jobs/#@id.json"
+-    job_hash = JSON.parse(response.body)['command']
+-  end
+-
+-  def has_stagein
+-    begin
+-      resp = RestClient.head "#{@resource.url}/stagein.tgz"
+-      return resp.code == 200
+-    rescue
+-      return false
+-    end
+-  end
+-  def get_stagein
+-    system "wget -P #@id #{@resource.url}/stagein.tgz 1>/dev/null 2>/dev/null"
+-  end
+-  def send_stageout
+-    @resource['stageout.tgz'].post :myfile => File.new("#@id.tgz", 'rb')
+-  end
+-  def run
+-    @resource['state.json'].post({ 'state' => 'running' }.to_json, :content_type => :json)
+-  end
+-  def terminate
+-    @resource['state.json'].post({'state'=>'terminated'}.to_json, :content_type => :json)
+-  end
+-  def error
+-    @resource['state.json'].post({'state'=>'error'}.to_json, :content_type => :json)
+-  end
+-end
+diff --git a/sources/desktop_computing/agent/man/man1/oar-agent-daemon.pod b/sources/desktop_computing/agent/man/man1/oar-agent-daemon.pod
+deleted file mode 100644
+index 4aab063..0000000
+--- a/sources/desktop_computing/agent/man/man1/oar-agent-daemon.pod
++++ /dev/null
+@@ -1,15 +0,0 @@
+-=head1 NAME
+-
+-oar-agent-daemon - OAR agent daemon
+-
+-=head1 SYNOPSIS
+-
+-B<oar-agent-daemon>
+-
+-=head1 DESCRIPTION
+-
+-oar-agent-daemon
+-
+-=head1 COPYRIGHTS
+-
+- Copyright 2003-2012 LIG http://lig.imag.fr This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+diff --git a/sources/desktop_computing/agent/man/man1/oar-agent.pod b/sources/desktop_computing/agent/man/man1/oar-agent.pod
+deleted file mode 100644
+index b95a4f5..0000000
+--- a/sources/desktop_computing/agent/man/man1/oar-agent.pod
++++ /dev/null
+@@ -1,15 +0,0 @@
+-=head1 NAME
+-
+-oaragent - OAR Desktop Computing Agent
+-
+-=head1 SYNOPSIS
+-
+-B<oaragent>
+-
+-=head1 DESCRIPTION
+-
+-
+-
+-=head1 COPYRIGHTS
+-
+- Copyright 2003-2012 LIG http://lig.imag.fr This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+diff --git a/sources/desktop_computing/agent/man/man1/oarcache.pod b/sources/desktop_computing/agent/man/man1/oarcache.pod
+deleted file mode 100644
+index ff1781d..0000000
+--- a/sources/desktop_computing/agent/man/man1/oarcache.pod
++++ /dev/null
+@@ -1,15 +0,0 @@
+-=head1 NAME
+-
+-oarcache - clean stagein cache up
+-
+-=head1 SYNOPSIS
+-
+-B<oarcache>
+-
+-=head1 DESCRIPTION
+-
+-This command is a part of the OAR desktop computing system. 
+-
+-=head1 COPYRIGHTS
+-
+- Copyright 2003-2012 LIG http://lig.imag.fr This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+diff --git a/sources/desktop_computing/agent/spec/job_client_spec.rb b/sources/desktop_computing/agent/spec/job_client_spec.rb
+deleted file mode 100644
+index e4951f9..0000000
+--- a/sources/desktop_computing/agent/spec/job_client_spec.rb
++++ /dev/null
+@@ -1,47 +0,0 @@
+-require 'job_client.rb'
+-
+-describe JobClient, "#get_jobs" do
+-  context 'there is a job to be run' do
+-
+-    before(:each) do
+-      # Once for the agent sign up and another for the job list
+-      RestClient.should_receive(:get).with('http://192.168.56.101/oarapi/resources/nodes/vnode1/jobs.json').and_return('{
+-     "api_timestamp" : 1285582177,
+-     "total" : 1,
+-     "links" : [
+-        {
+-           "rel" : "self",
+-           "href" : "/resources/nodes/vnodg1/jobs.json"
+-        }
+-     ],
+-     "offset" : 0,
+-     "items" : [
+-        {
+-           "api_timestamp" : 1285582177,
+-           "id" : 72,
+-           "links" : [
+-              {
+-                 "rel" : "self",
+-                 "href" : "/jobs/72"
+-              },
+-              {
+-                 "rel" : "resources",
+-                 "href" : "/jobs/72/resources"
+-              }
+-           ]
+-        }
+-     ]
+-  }')
+-      RestClient.should_receive(:get).with('http://192.168.56.101/oarapi/desktop/agents.json').and_return('{
+-     "hostname" : "vnode1"
+-  }')
+-      @client = JobClient.new('192.168.56.101')
+-    end
+-    it "should return a empty JobSet to run" do
+-      @client.get_jobs_to_run.should be_empty
+-    end
+-    it "should return an empty JobSet to kill" do
+-      @client.get_jobs_to_kill.should be_empty
+-    end
+-  end
+-  end
+diff --git a/sources/desktop_computing/agent/spec/job_resource_spec.rb b/sources/desktop_computing/agent/spec/job_resource_spec.rb
+deleted file mode 100644
+index 7ee8bd7..0000000
+--- a/sources/desktop_computing/agent/spec/job_resource_spec.rb
++++ /dev/null
+@@ -1,23 +0,0 @@
+-require 'rest_client'
+-
+-require 'job_resource.rb'
+-
+-
+-describe JobResource, "#has_stagein" do
+-  context "there is a stagein" do
+-    before :each do
+-     @job = JobResource.new("75")
+-    end
+-    it "should return true" do
+-      @job.has_stagein.should be_true
+-    end
+-  end
+-  context "there is no stagein" do
+-    before :each do
+-     @job = JobResource.new(74)
+-    end
+-    it "should return true" do
+-      @job.has_stagein.should be_false
+-    end
+-  end
+-end
+diff --git a/sources/desktop_computing/agent/spec/job_set_spec.rb b/sources/desktop_computing/agent/spec/job_set_spec.rb
+deleted file mode 100644
+index 96641e9..0000000
+--- a/sources/desktop_computing/agent/spec/job_set_spec.rb
++++ /dev/null
+@@ -1,5 +0,0 @@
+-require 'job_set.rb'
+-require 'job_client.rb'
+-
+-describe JobSet, '#run' do
+-end
+diff --git a/sources/desktop_computing/agent/spec/job_spec.rb b/sources/desktop_computing/agent/spec/job_spec.rb
+deleted file mode 100644
+index b8b114b..0000000
+--- a/sources/desktop_computing/agent/spec/job_spec.rb
++++ /dev/null
+@@ -1,86 +0,0 @@
+-require 'job.rb'
+-require 'client.rb'
+-
+-describe Job, "#new" do
+-  it "should create a new job instance" do
+-    @job = Job.new("72")
+-    @job.should_not be_nil
+-    @job.should be_instance_of(Job)
+-  end
+-  it "should get the job details from the server" do
+-    RestClient.should_receive(:get).and_return('{
+-   "job_uid" : null,
+-   "reservation" : "None",
+-   "dependencies" : [],
+-   "state" : "toLaunch",
+-   "job_user" : "kameleon",
+-   "id" : 72,
+-   "startTime" : "1285579830",
+-   "links" : [
+-      {
+-         "rel" : "self",
+-         "href" : "/jobs/72"
+-      },
+-      {
+-         "rel" : "resources",
+-         "href" : "/jobs/72/resources"
+-      }
+-   ],
+-   "initial_request" : "oarsub -t desktop_computing date",
+-   "name" : null,
+-   "jobType" : "PASSIVE",
+-   "properties" : "desktop_computing = \'YES\'",
+-   "queue" : "default",
+-   "Job_Id" : 72,
+-   "walltime" : "7200",
+-   "resubmit_job_id" : 0,
+-   "types" : [
+-      "desktop_computing"
+-   ],
+-   "array_index" : 1,
+-   "assigned_network_address" : [
+-      "vnodg1"
+-   ],
+-   "project" : "default",
+-   "submissionTime" : "1285579829",
+-   "scheduledStart" : "1285579830",
+-   "array_id" : 72,
+-   "wanted_resources" : "-l \"{type = \'default\'}/resource_id=1,walltime=2:0:0\" ",
+-   "exit_code" : null,
+-   "command" : "date",
+-   "owner" : "kameleon",
+-   "cpuset_name" : "kameleon_72",
+-   "api_timestamp" : 1285586457,
+-   "message" : "FIFO scheduling OK",
+-   "assigned_resources" : [
+-      "38"
+-   ],
+-   "events" : [],
+-   "launchingDirectory" : "/root"
+-}
+-')
+-    @job = Job.new("72")
+-  end
+-end
+-
+-describe Job, "#run" do
+-  context "there is no stagein file" do
+-    before :each do
+-      @job_resource = double(RestClient::Resource).as_null_object
+-      @job_resource.stub!(:has_stagein).and_return(false)
+-      RestClient::Resource.stub!(:new).and_return(@job_resource)
+-      @job = Job.new("1")
+-    end
+-    it "should not get the stagein" do
+-      @job_resource.should_not_receive(:get_stagein)
+-      @job.run
+-    end
+-    it "should not signalize error" do
+-      @job_resource.should_not_receive(:error)
+-      @job.run
+-    end
+-    it "should not raise exceptions" do
+-      lambda { @job.run }.should_not raise_exception
+-    end
+-  end
+-end
+diff --git a/sources/desktop_computing/agent/test/forktest.rb b/sources/desktop_computing/agent/test/forktest.rb
+deleted file mode 100644
+index 1b62563..0000000
+--- a/sources/desktop_computing/agent/test/forktest.rb
++++ /dev/null
+@@ -1,11 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-require 'job'
+-job = Job.new("4", {      "stderr_file" => "OAR.4.stderr",      "stdout_file" => "OAR.4.stdout",      "directory" => "/home/thiago/myjob",      "command" => "sleep 90",      "state" => "toLaunch"   })
+-
+-job2 = Job.new("1", {      "stderr_file" => "OAR.4.stderr",      "stdout_file" => "OAR.4.stdout",      "directory" => "/home/thiago/myjob",      "command" => "sleep 90",      "state" => "toLaunch"   })
+-pid = job.fork
+-puts pid
+-pid = job2.fork
+-puts pid
+-sleep 60
+diff --git a/sources/desktop_computing/agent/test/forktest2.rb b/sources/desktop_computing/agent/test/forktest2.rb
+deleted file mode 100644
+index 1637e6e..0000000
+--- a/sources/desktop_computing/agent/test/forktest2.rb
++++ /dev/null
+@@ -1,3 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-puts Process.fork { exec "pwd && sleep 60" }
+diff --git a/sources/desktop_computing/agent/test/jsontest.rb b/sources/desktop_computing/agent/test/jsontest.rb
+deleted file mode 100644
+index 565a1a1..0000000
+--- a/sources/desktop_computing/agent/test/jsontest.rb
++++ /dev/null
+@@ -1,12 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-require 'rubygems'
+-require 'json'
+-
+-job_hash = JSON.parse('{   "1" : {      "stderr_file" : "OAR.1.stderr",      "stdout_file" : "OAR.1.stdout",      "directory" : "/root",      "command" : "date",      "state" : "toLaunch"   }}')
+-
+-job_hash.each_key do |k|
+-  system job_hash[k]["command"]
+-end
+-
+-puts 'working!'
+diff --git a/sources/desktop_computing/agent/test/killtest.rb b/sources/desktop_computing/agent/test/killtest.rb
+deleted file mode 100644
+index a03df27..0000000
+--- a/sources/desktop_computing/agent/test/killtest.rb
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-require 'job'
+-
+-job = Job.new("1", {"command"=>"sleep 60", "directory"=>"/root", "stdout_file"=>"OAR.1.stdout", "stderr_file"=>"OAR.1.stderr", "state"=>"toLaunch"})
+-pid = job.fork
+-sleep 5
+-
+-Process.kill("HUP", pid)
+diff --git a/sources/desktop_computing/agent/test/newforktest.rb b/sources/desktop_computing/agent/test/newforktest.rb
+deleted file mode 100644
+index f654877..0000000
+--- a/sources/desktop_computing/agent/test/newforktest.rb
++++ /dev/null
+@@ -1,11 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-require 'job'
+-
+-job = Job.new("1", {"command"=>"sleep 60", "directory"=>"/root", "stdout_file"=>"OAR.1.stdout", "stderr_file"=>"OAR.1.stderr", "state"=>"toLaunch"})
+-
+-Signal.trap("TERM") do
+-  job.kill
+-  exit
+-end
+-pid = job.wrap "sleep 60"
+diff --git a/sources/desktop_computing/agent/test/pstest.rb b/sources/desktop_computing/agent/test/pstest.rb
+deleted file mode 100644
+index 0ec0d60..0000000
+--- a/sources/desktop_computing/agent/test/pstest.rb
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-if system "ps -o pid,state -p #{ARGV[0]} 1>/dev/null 2>/dev/null"
+-  puts "sim"
+-else
+-  puts "nao"
+-end
+diff --git a/sources/desktop_computing/agent/test/rest_client_test.rb b/sources/desktop_computing/agent/test/rest_client_test.rb
+deleted file mode 100644
+index b5d5a7c..0000000
+--- a/sources/desktop_computing/agent/test/rest_client_test.rb
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#!/usr/bin/ruby
+-
+-require 'rubygems'
+-require 'rest_client'
+-
+-result = RestClient.get 'http://192.168.56.101/oarapi/resources/nodes/192.168.56.1/jobs.json'
+-puts result
+diff --git a/sources/desktop_computing/agent/test/restclienttest.rb b/sources/desktop_computing/agent/test/restclienttest.rb
+deleted file mode 100644
+index 013ae41..0000000
+--- a/sources/desktop_computing/agent/test/restclienttest.rb
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-require 'rubygems'
+-require 'rest_client'
+-
+-    response = RestClient.get "http://192.168.56.101/oarapi/jobs/4/stagein.tgz"
+-    File.open("4.tgz", 'w') {|f| f.write(response) }
+diff --git a/sources/desktop_computing/agent/test/systemtest.rb b/sources/desktop_computing/agent/test/systemtest.rb
+deleted file mode 100644
+index 6513f77..0000000
+--- a/sources/desktop_computing/agent/test/systemtest.rb
++++ /dev/null
+@@ -1,3 +0,0 @@
+-#!/usr/bin/env ruby
+-
+-system "sleep 30"
+diff --git a/sources/desktop_computing/oar-agent.pl b/sources/desktop_computing/oar-agent.pl
+deleted file mode 100755
+index 2460e2a..0000000
+--- a/sources/desktop_computing/oar-agent.pl
++++ /dev/null
+@@ -1,554 +0,0 @@
+-#!/usr/bin/perl
+-# $Id$
+-# OAR agent for Desktop Computing
+-#####
+-# use packages
+-#####
+-# {{{
+-use warnings;
+-use strict;
+-use Sys::Hostname;
+-use POSIX qw(:signal_h :errno_h :sys_wait_h);
+-use Data::Dumper;
+-use LWP::UserAgent;
+-use HTTP::Request::Common qw(POST $DYNAMIC_FILE_UPLOAD);
+-use URI::URL;
+-use Fcntl ':flock';
+-use IO::Handle;
+-use Getopt::Long;
+-use File::Basename;
+-use REST::Client;
+-use JSON;
+-use File::Slurp qw ( slurp ) ;
+-# }}}
+-
+-######
+-# Command line arameters...
+-######
+-# {{{
+-my $hostname;
+-my $sleep_next_pull;
+-my $stageindir;
+-my $cache_timeout;
+-my $pidfile;
+-my $verbose;
+-my $help;
+-
+-my $client = REST::Client->new();
+-
+-Getopt::Long::Configure ("gnu_getopt");
+-
+-GetOptions ("nodename|n=s" => \$hostname,
+-            "pull-interval|i=i"  => \$sleep_next_pull,
+-            "stagein-directory|d=s" => \$stageindir,
+-            "stagein-timeout|t=s" => \$cache_timeout,
+-            "pidfile|p=s" => \$pidfile,
+-            "verbose|v" => \$verbose,
+-            "help|h" => \$help,
+-           );
+-
+-sub usage() {
+-    print <<EOS;
+-Usage: $0 [OPTIONS] <URL>
+-Run OAR Desktop Computing HTTP agent, using URL as the CGI proxy to OAR server
+-Options are:
+- -n, --nodename=           OAR node hostname (default: system hostname)
+- -i, --pull-interval=      OAR server pull interval in seconds (default: 30)
+- -d, --stagein-directory=  directory where stageins are stored (default: ./stageins)
+- -r, --stagein-timeout=    how long do we keep a stagein in cache (default: 300)
+- -p, --pidfile=            write the main process pid in this file
+- -v, --verbose             increase verbosity
+- -h, --help                show this message
+-EOS
+-    exit 1;
+-}
+-
+-(defined $help) and usage();
+-my $url = $ARGV[0];
+-(defined $url) or usage();
+-(defined $hostname) or $hostname = hostname();
+-(defined $sleep_next_pull) or $sleep_next_pull = 30;
+-(defined $stageindir) or $stageindir = "stageins";
+-system "mkdir -p $stageindir";
+-(defined $cache_timeout) or $cache_timeout = 300;
+-if (defined $pidfile) {
+-  open F, "> $pidfile" or die "Open pidfile $pidfile failed: $!\n";
+-  print F "$$\n";
+-  close F;
+-}
+-# }}}
+-
+-######
+-# Miscelanious common functions
+-######
+-# {{{ 
+-# prints messages on STDERR if in verbose mode
+-# parameters: a message
+-sub message($) {
+-  my $msg = shift;
+-  (defined $verbose) and warn $msg;
+-}
+-
+-# blocks a list of signals (unused currently)
+-# parameters: a list of signals
+-# return: sigset to use to unblock
+-sub sigBlock(@) {
+-  my $sigset = POSIX::SigSet->new(@_);
+-  my $old_sigset = POSIX::SigSet->new;
+-  unless (defined sigprocmask(SIG_BLOCK, $sigset, $old_sigset)) {
+-    die "Could not block signals\n";
+-  }
+-  return $old_sigset;
+-}
+-
+-# unblocks signals previously blocked (unused currently)
+-# parameters: the return of the previous sigBlock function call
+-sub sigUnblock($) {
+-  my $old_sigset = shift;
+-  unless (defined sigprocmask(SIG_UNBLOCK, $old_sigset)) {
+-    die "Could not unblock signals\n";
+-  }
+-}
+-
+-# serialize data
+-# parameters: perl data
+-# return: serialized data
+-sub serialize($) {
+-  my $data = shift;
+-  my $serialized = Dumper($data);
+-  return $serialized;
+-}
+-
+-# unserialize data
+-# parameters: serialized data
+-# return: perl data
+-sub unserialize($) {
+-  my $serialized = shift;
+-  my $data = eval($serialized);
+-  return $data;
+-}
+-# }}}
+-
+-######
+-# Internal data
+-######
+-# {{{
+-# suitable Data::Dumper configuration for serialization
+-$Data::Dumper::Purity = 1;
+-$Data::Dumper::Terse = 1;
+-$Data::Dumper::Indent = 0;
+-$Data::Dumper::Deepcopy = 1;
+-
+-# HTTP user agent
+-my $cgiUrl = new URI::URL($url);
+-my $userAgent = LWP::UserAgent->new();
+-$userAgent->agent("OAR-Agent/0.1 ");
+-my $maxretry=4;
+-
+-my $kill_timeout = 5;
+-my %childs;
+-my %job2pid;
+-my %borndead;
+-my $launch_job_pid = undef;
+-my $killchild = undef;
+-my $stageintime;
+-my $quit=0;
+-my $stageinprefix = "oar-";
+-my $reader = undef;
+-my $writer = undef;
+-# }}}
+-
+-######
+-# Signal handlers
+-######
+-
+-sub sigQuitHandler();
+-# {{{
+-$SIG{QUIT} = \&sigQuitHandler;
+-sub sigQuitHandler() {
+-  $SIG{QUIT} = \&sigQuitHandler;
+-  #$quit++;
+-# we should not do system calls in a handler !:(
+-}
+-# }}}
+-
+-sub sigIntHandler();
+-# {{{
+-$SIG{INT} = \&sigIntHandler;
+-sub sigIntHandler() {
+-  $SIG{INT} = \&sigIntHandler;
+-  #$quit++;
+-# we should not do system calls in a handler !:(
+-}
+-# }}}
+-
+-sub sigUSR1Handler();
+-# {{{
+-$SIG{USR1} = \&sigUSR1Handler;
+-sub sigUSR1Handler() {
+-  $SIG{USR1} = \&sigUSR1Handler;
+-  message "\t\tUSR1:".serialize(\%childs)."\n";
+-# we should not do system calls in a handler !:(
+-}
+-# }}}
+-
+-sub sigChildHandler;
+-# {{{
+-$SIG{CHLD} = \&sigChildHandler;
+-sub sigChildHandler {
+-  $SIG{CHLD} = \&sigChildHandler;
+-# we should not do system calls in a handler !:(
+-# warn "#CHLD";
+-}
+-# }}}
+-
+-sub sigTermHandler;
+-# {{{
+-$SIG{TERM} = 'DEFAULT';
+-sub sigTermHandler {
+-  $SIG{TERM} = \&sigTermHandler;
+-# we should not do system calls in a handler !:(
+-  $killchild = 1;
+-# warn "#TERM";
+-}
+-# }}}
+-
+-######
+-# Main process (agent) functions
+-######
+-
+-# gets information from OAR server via CGI proxy: oar-cgi
+-sub request($$$);
+-# {{{
+-sub request($$$) {
+-    my $retry = $maxretry;
+-    $client->GET("$url/oarapi/resources/nodes/$hostname/jobs.json");
+-    my $result;
+-    do {
+-        unless ($client->responseCode() eq '200') {
+-            $retry and print "HTTP request failed, retrying ($retry)\n" or die "HTTP request failed\n";
+-            $retry--;
+-        }
+-    } until ($client->responseCode() eq '200');
+-    $result = decode_json $client->responseContent();
+-    return ($result, 'application/json');
+-}
+-
+-sub do_fork($$) {
+-    my $jobid = shift;
+-    my $toLaunchJobs = shift;
+-    my $pid = fork();
+-    if ($pid > 0) {
+-        $client->POST($url."oarapi/jobs/$jobid/run.json");
+-    } elsif ($pid == 0) {
+-        launch_job($jobid,$toLaunchJobs->{$jobid});
+-        exit 0;
+-    } else {
+-        die "fork";
+-    }
+-}
+-# }}}
+-
+-# processes pulled job information
+-# setups job child processes
+-# handles to kill then to launch jobs.
+-sub process_jobs();
+-# {{{
+-sub process_jobs() {
+-    # Get the list of jobs to launch
+-    $client->GET("$url/oarapi/resources/nodes/$hostname/jobs.json");
+-    $client->responseCode() == 200 or die "Couldn't get the job list";
+-    my $toLaunchJobs = decode_json $client->responseContent();
+-    my $toKillJobs;
+-    foreach my $jobid (keys %$toKillJobs) {
+-        message "\t\tKilling job $jobid\n";
+-        my $pid = $job2pid{$jobid};
+-        if (defined ($pid)) {
+-            kill TERM => $pid;
+-        } else {
+-            $borndead{$jobid}=1;
+-        }
+-    }
+-    foreach my $jobid (keys %$toLaunchJobs) {
+-        do_fork($jobid, $toLaunchJobs);
+-    }
+-}
+-# }}}
+-
+-# cleans up stageins cache directory 
+-# to old stagein files are removed
+-sub stagein_cleanup ();
+-# {{{
+-sub stagein_cleanup () {
+-  opendir DIR, "$stageindir/" or die "Can't open $stageindir: $!";
+-  while( defined (my $file = readdir DIR) ) {
+-    if ($file =~ /^$stageinprefix/ and not ($file =~ /\.lock$/ or $file eq ".." or $file eq ".")) {
+-      # lock to be sure no new job will try to use this file while we are removing it.
+-      my $lockfile = "$file.lock";
+-      open LOCKFILE,"> $lockfile" or warn "Open lockfile failed: $!\n";
+-      flock LOCKFILE,LOCK_EX or warn "Lock lockfile failed: $!\n";
+-      if (time - (stat "$stageindir/$file")[8] > $cache_timeout) {
+-        message "\t\tCache cleanup: deleting stagein file: $file\n";
+-        unlink "$stageindir/$file";
+-      }
+-      flock LOCKFILE,LOCK_UN or warn "Unlock lockfile failed: $!\n";
+-      close LOCKFILE or warn "Close lockfile failed: $!\n";
+-      (-e $lockfile ) and ( unlink $lockfile or warn "Unlink lockfile failed: $!\n" );
+-    }
+-  }
+-  closedir(DIR);
+-}
+-# }}}
+-
+-# send a signal to all jobs child processes
+-sub kill_them_all($);
+-# {{{
+-sub kill_them_all($) {
+-  my $killsignal = shift;
+-  foreach my $pid (keys %childs) {
+-    message "\t\tKilling $pid with $killsignal...\n"; 
+-    kill $killsignal => $pid;
+-  }
+-}
+-# }}}
+-
+-######
+-# Child processes (jobs) functions
+-######
+-
+-# recursive function use to build a child process hierarchy, given the father.
+-# may be used to clean up job exec in case of INT or oardel
+-# not use yet
+-sub psLoop($);
+-# {{{
+-sub psLoop($) {
+-  my $pid = shift;
+-  my $ptree = {};
+-  my @plist;
+-  message "\t($$) Suspending process $pid\n";
+-  kill STOP => $pid or die "kill -STOP $pid failed: $!\n";
+-  open PS, "ps --ppid $pid -opid |" or die "open ps command pipe failed: $!\n";
+-  <PS>;
+-  foreach my $p (<PS>) {
+-    chomp $p;
+-    push @plist,$p;
+-  }
+-  close PS;
+-  foreach my $p (@plist) {
+-    $ptree->{$p} = psLoop($p);
+-  }
+-  return $ptree;
+-}
+-# }}}
+-
+-# recursive function use to kill a child process hierarchy, given the hierarchy built with psLoop.
+-# may be used to clean up job exec in case of INT or oardel
+-# not use yet
+-sub killLoop($);
+-# {{{
+-sub killLoop($) {
+-  my $ptree = shift;
+-  foreach my $p (keys %$ptree) {
+-    killLoop($ptree->{$p});
+-    message "\t($$) Killing process $p\n";
+-    kill KILL => $p or die "kill -KILL $p failed: $!\n";
+-  }
+-}
+-# }}}
+-
+-# stagein prcessed
+-sub stagein($$);
+-# {{{
+-sub stagein($$) {
+-  my $jobid = shift;
+-  my $job = shift;
+-  if (defined $job->{'stagein'}) {
+-    (-d $stageindir) or mkdir $stageindir;
+-    my $file = "$stageindir/$stageinprefix".$job->{'stagein'}->{'md5sum'};
+-    # locks file to insure no other job or stagein_cleanup is not messing everything up.
+-    my $lockfile = "$file.lock";
+-    open LOCKFILE,"> $lockfile" or warn "($$)Open lockfile failed: $!\n";
+-    flock LOCKFILE,LOCK_EX or warn "($$)Lock lockfile failed: $!\n";
+-    $launch_job_pid = fork();
+-    if ($launch_job_pid == 0) {
+-      $SIG{CHLD}='DEFAULT';
+-      $SIG{TERM}='DEFAULT';
+-      if ( -r $file and (stat $file)[7] == $job->{'stagein'}->{'size'} ) {
+-        message "($$)Job $jobid stagein already fetched\n";
+-      } else {
+-        message "($$)Fetching job $jobid stagein (".$job->{'stagein'}->{'size'}." bytes)\n";
+-        request("form-data",[ 'REQTYPE' => 'STAGEIN', 'JOBID' => $jobid ],$file);
+-      }
+-      message "($$)Deploying job $jobid stagein\n";
+-      if ($job->{'stagein'}->{'compression'} eq "tar.gz") {
+-        exec "tar xfz $file -m -C $jobid/ && touch $jobid";
+-        die "($$)Exec Failed: $!\n";
+-      } else {
+-        die "($$)Stagein compression method ".$job->{'stagein'}->{'compression'}." not yet implemented\n";
+-      }
+-    }
+-    message "\t($$)Forked stagein process with pid: $launch_job_pid\n";
+-    my $status = undef;
+-    my $rin = '';
+-    do {
+-      my $pid = waitpid(-1,WNOHANG);
+-      if ($pid == $launch_job_pid) {
+-        # stagein child teminated
+-        $status = $?;
+-      } elsif (defined $killchild ) {
+-        # got a kill signal
+-        kill KILL => $launch_job_pid;
+-      }
+-    } until (defined $status);
+-    $launch_job_pid = undef;
+-    #until (wait == $launch_job_pid) {};
+-    #my $status = $?;
+-    #$launch_job_pid = undef;
+-    if ($status == 0) {
+-      $stageintime=(stat $jobid)[9]+1;
+-      sleep 1;
+-    } else {
+-      message "\t($$)Stagein failed or aborted, cleaning up...\n";
+-      if ( -r $file ) {
+-        unless ((stat $file)[7] == $job->{'stagein'}->{'size'} ) {
+-          unlink $file;   
+-        }
+-      }
+-    }
+-    flock LOCKFILE,LOCK_UN or warn "($$)Unlock lockfile failed: $!\n";
+-    close LOCKFILE or warn "($$)Close lockfile failed: $!\n";
+-    ( -e $lockfile ) and ( unlink $lockfile or warn "($$)Unlink lockfile failed: $!\n" );
+-    return $status;
+-  } else {
+-    return 0;
+-  }
+-}
+-# }}}
+-
+-# home brewed version of the system command
+-sub runcmd($$);
+-# {{{
+-sub runcmd($$) {
+-  my $jobid = shift;
+-  my $job = shift;
+-  my $cmd =  $job->{'command'};
+-  my $directory = $job->{'directory'};
+-  $cmd =~ s#^$directory/?##;
+-  $launch_job_pid = fork();
+-  if ($launch_job_pid == 0) {
+-    $ENV{'OAR_JOBID'} = $jobid;
+-    message "($$)Executing '$cmd'\n";
+-        if ((!open(STDOUT, ">>$job->{'stdout_file'}")) or (!open(STDERR, ">>$job->{'stderr_file'}"))){
+-            die("($$)Cannot write stdout and stderr files: $job->{'stdout_file'} $job->{'stderr_file'}\n");
+-        }
+-    exec $cmd;
+-    die "($$)Exec Failed: $!\n";
+-  }
+-  message "\t($$)Forked process pid: $launch_job_pid\n";
+-  my $already_killed = undef;
+-  my $status = undef;
+-  my $rin = '';
+-  do {
+-    my $pid = waitpid(-1,WNOHANG);
+-    if ($pid == $launch_job_pid) {
+-      # runcmd child teminated
+-      $status = $?;
+-    } elsif (defined $killchild and not defined $already_killed ) {
+-      # got a kill signal
+-      my $ptree = {};
+-      $ptree->{$launch_job_pid} = psLoop($launch_job_pid);
+-      killLoop($ptree);
+-      $already_killed = 1;
+-    }
+-  } until (defined $status);
+-  $launch_job_pid = undef;
+-  message "\t($$)Cmd exit: $status\n";
+-  return $status;
+-}
+-# }}}
+-
+-# stageout processed
+-sub stageout($$);
+-# {{{
+-sub stageout($$) {
+-  my $jobid = shift;
+-  my $job = shift;
+-  # we pack only files created after the stagein unarchiving
+-  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($stageintime); 
+-  my $date = sprintf("%04d-%02d-%02d %02d:%02d:%02d",$year+1900,$mon+1,$mday,$hour,$min,$sec);
+-  my $stageout = $jobid.".tgz";
+-  system "tar cfz $stageout -C $jobid --newer-mtime \"$date\" .";
+-  $client->addHeader("Content-Type", "application/gzip");
+-  $client->POST("$url/oarapi/jobs/$jobid/stageout.json", scalar slurp("$jobid.tgz"));
+-  $client->POST("$url/oarapi/jobs/$jobid/terminate.json");
+-  return 0;
+-}
+-# }}}
+-
+-# launches a job: manages stagein, runcmd, and stageout
+-sub launch_job($$);
+-# {{{
+-sub launch_job($$) {
+-    my $jobid = shift;
+-    my $job = shift;
+-    my $in = serialize($jobid);
+-    # if we already receive the order to kill the job
+-    if ($borndead{$jobid}) {
+-        message "\t($$)Job $jobid is borndead\n";
+-        exit 1;
+-    }
+-    mkdir $jobid or warn "($$)Cannot create job $jobid directory: $!\n";
+-    # fetch and setup stagein is there is one
+-    $stageintime=(stat $jobid)[9];
+-    my $stagein_status = stagein($jobid, $job);
+-    if ($stagein_status != 0 or $killchild ) {
+-        message "\t($$)Job $jobid killed during its stagein\n";
+-        system "rm -rf $jobid $jobid.tgz";
+-        exit 2;
+-    }
+-    # execute the job
+-    chdir $jobid or warn "($$)Cannot change directory to $jobid: $!\n";
+-    my $runcmd_status = runcmd($jobid, $job);
+-    chdir ".." or warn "($$)Cannot change directory: $!\n";
+-    # handle stageout
+-    my $stageout_status = stageout($jobid, $job);
+-    if ($stageout_status != 0 or $killchild) {
+-        message "\t($$)Job $jobid killed during its stageout\n";
+-        system "rm -rf $jobid $jobid.tgz";
+-        exit 4;
+-    }
+-    # clean up and exit
+-    system "rm -rf $jobid $jobid.tgz";
+-    exit 0;
+-}
+-# }}}
+-
+-sub sign_in(){
+-    $client->addHeader("Content-Type", "application/json");
+-    $client->POST("$url/oarapi/desktop/agents.json", "{\"hostname\": \"$hostname\" }");
+-    if ($client->responseCode() ne '200') {
+-      die "Couldn't connect with the oar server";
+-    }
+-}
+-
+-######
+-# main function
+-######
+-sub main();
+-# {{{
+-sub main() {
+-    sign_in();
+-    while(1){
+-        #maybe inline?
+-        process_jobs();
+-        sleep 5;
+-    }
+-    kill_them_all('TERM');
+-    exit 0;
+-}
+-# }}}
+-
+-######
+-# Here we go !
+-######
+-main();
+diff --git a/sources/desktop_computing/oar-cgi b/sources/desktop_computing/oar-cgi
+deleted file mode 100755
+index 805bc12..0000000
+--- a/sources/desktop_computing/oar-cgi
++++ /dev/null
+@@ -1,11 +0,0 @@
+-#!/bin/bash
+-# $Id$
+-
+-OARDIR=/usr/local/oar
+-OARUSER=oar
+-
+-export PERL5LIB=$OARDIR:$PERL5LIB
+-export OARDIR
+-
+-exec sudo -u $OARUSER /home/neyron/huron/oar-dc/DesktopComputing/oar-cgi.pl
+-
+diff --git a/sources/desktop_computing/oar-cgi.pl b/sources/desktop_computing/oar-cgi.pl
+deleted file mode 100755
+index 0773687..0000000
+--- a/sources/desktop_computing/oar-cgi.pl
++++ /dev/null
+@@ -1,301 +0,0 @@
+-#!/usr/bin/perl
+-# $Id$
+-
+-use strict;
+-use Data::Dumper;
+-use OAR::IO;
+-use DBI();
+-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error);
+-use IO::Socket::INET;
+-use CGI;
+-use File::Copy;
+-use OAR::Tools;
+-
+-######
+-# parameters
+-######
+-init_conf($ENV{OARCONFFILE});
+-my $remote_host = get_conf("SERVER_HOSTNAME");
+-my $remote_port = get_conf("SERVER_PORT");
+-my $expiry = get_conf("DESKTOP_COMPUTING_EXPIRY");
+-my $allow_create_node = get_conf("DESKTOP_COMPUTING_ALLOW_CREATE_NODE");
+-my $stageout_dir = get_conf("STAGEOUT_DIR");
+-my $stagein_dir = get_conf("STAGEIN_DIR");
+-my $log_level = get_conf("LOG_LEVEL");
+-
+-(defined $remote_host) or die "Missing configuration parameter: server hostname.\n";
+-(defined $remote_port) or die "Missing configuration parameter: server port.\n";
+-(defined $expiry) or die "Missing configuration parameter: desktop computing expiry delay.\n";
+-(defined $allow_create_node) or die "Missing configuration parameter: allow create node.\n";
+-(defined $stageout_dir) or die "Missing configuration parameter: job stageouts storage directory.\n";
+-(defined $stagein_dir) or die "Missing configuration parameter: job stageins storage directory.\n";
+-(defined $log_level) or die "Missing configuration parameter: log level.\n";
+-
+-unless (-d $stageout_dir and -w $stageout_dir) {
+-    system "mkdir -p $stageout_dir" and die "Cannot create directory $stageout_dir: $!\n";
+-}
+-unless (-d $stagein_dir and -w $stagein_dir) {
+-    system "mkdir -p $stagein_dir" and die "Cannot create directory $stagein_dir: $!\n";
+-}
+-
+-######
+-# Internal data
+-######
+-
+-# suitable Data::Dumper configuration for serialization
+-$Data::Dumper::Purity = 1;
+-$Data::Dumper::Terse = 1;
+-$Data::Dumper::Indent = 0;
+-$Data::Dumper::Deepcopy = 1;
+-
+-my $cgi = new CGI;
+-
+-######
+-# Miscelanious common functions
+-######
+-
+-# prints messages on STDERR if in verbose mode
+-# parameters: a message
+-sub message($) {
+-    my $msg = shift;
+-    ($log_level > 2) and warn $msg;
+-}
+-
+-# serialize data
+-# parameters: perl data
+-# return: serialized data
+-sub serialize($) {
+-    my $data = shift;
+-    my $serialized = Dumper($data);
+-    return $serialized;
+-}
+-
+-# unserialize data
+-# parameters: serialized data
+-# return: perl data
+-sub unserialize($) {
+-    my $serialized = shift;
+-
+-    my $data = eval($serialized);
+-
+-    return $data;
+-}
+-
+-# write http message
+-# parameters: content, content-type
+-sub httpwrite($$) {
+-    my $content = shift;
+-    my $content_type = shift;
+-    defined $content_type or $content_type = 'text/plain';
+-    print $cgi->header($content_type);
+-    print $content;
+-}
+-
+-######
+-# pull request handling
+-######
+-
+-# pull function
+-# First update node status in OAR database -> Alive + expiry-data++ unless we actually quit
+-# if node does not exist yet, we try to declare it, if the configuration allows that.
+-# Then process jobs, to kill or to launch, with error handling
+-sub pull() {
+-    my $quit=$cgi->param('QUIT');
+-    my $hostname=$cgi->param('HOSTNAME') or die "Node hostname missing.";
+-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
+-    my $is_desktop_computing = OAR::IO::is_node_desktop_computing($base,$hostname);
+-    my $do_notify;
+-    $do_notify=undef;
+-    if ($quit) {
+-        if (defined $is_desktop_computing and $is_desktop_computing eq 'YES') {
+-            OAR::IO::lock_table($base,["resources"]);
+-            OAR::IO::set_node_nextState($base,$hostname,"Absent");
+-            OAR::IO::set_node_expiryDate($base,$hostname,OAR::IO::get_date($base));
+-            OAR::IO::unlock_table($base);
+-            $do_notify=1;
+-	} else {
+-            OAR::IO::disconnect($base);
+-            my $msg = "$hostname is not declared as a Desktop Computing node in OAR database.\n";
+-            my $data = { 'error' => $msg };
+-            httpwrite(serialize($data),'application/data');
+-            exit 0;
+-        }
+-    } else {
+-        if (defined $is_desktop_computing) {
+-            if ($is_desktop_computing eq 'YES') {
+-                OAR::IO::lock_table($base,["resources"]);
+-                if (OAR::IO::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
+-                    $do_notify=1;
+-                }
+-                OAR::IO::set_node_expiryDate($base,$hostname, OAR::IO::get_date($base) + $expiry);
+-                OAR::IO::unlock_table($base);
+-	    } else {
+-                OAR::IO::disconnect($base);
+-                my $msg = "$hostname is not declared as a Desktop Computing node in OAR database.\n";
+-                my $data = { 'error' => $msg };
+-                httpwrite(serialize($data),'application/data');
+-                exit 0;
+-            }
+-        } else {
+-            if ($allow_create_node) {
+-                message "Trying to add $hostname to OAR database...\n";
+-                my $resource = OAR::IO::add_resource($base, $hostname, "Alive");
+-                OAR::IO::set_resource_property($base,$resource,"desktop_computing","YES");
+-                OAR::IO::set_resource_nextState($base,$resource,"Alive");
+-                OAR::IO::set_node_expiryDate($base,$hostname, OAR::IO::get_date($base) + $expiry);
+-                $do_notify=1;
+-            } else {
+-                OAR::IO::disconnect($base);
+-                my $msg = "$hostname is not a known Desktop Computing node, declare it in OAR database first.\n";
+-                my $data = { 'error' => $msg };
+-                httpwrite(serialize($data),'application/data');
+-                exit 0;
+-            }
+-        }
+-    }
+-    if ($do_notify) {
+-        OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+-    }
+-
+-    my $agentJobs=unserialize($cgi->param('JOBS'));
+-    my $dbJobs = OAR::IO::get_desktop_computing_host_jobs($base,$hostname);
+-    my $toLaunchJobs = undef;
+-    my $toKillJobs = undef;
+-    foreach my $jobid (keys %$dbJobs) {
+-        if (OAR::IO::is_tokill_job($base, $jobid)) {
+-            message "$jobid must be killed\n";
+-            $toKillJobs->{$jobid}=$dbJobs->{$jobid};
+-            OAR::IO::job_arm_leon_timer($base, $jobid)
+-        } else {
+-            message "$jobid must be kept running\n";
+-        }
+-        if (not $quit and $dbJobs->{$jobid}->{'state'} eq "toLaunch") {
+-            $toLaunchJobs->{$jobid}=$dbJobs->{$jobid};
+-#			$toLaunchJobs->{$jobid}->{'pulltime'} = OAR::IO::get_unix_timestamp($base);
+-            my $stagein = OAR::IO::get_job_stagein($base,$jobid);
+-            if (defined $stagein->{'md5sum'}) {
+-                $toLaunchJobs->{$jobid}->{'stagein'}->{'md5sum'}=$stagein->{'md5sum'};
+-                $toLaunchJobs->{$jobid}->{'stagein'}->{'compression'}=$stagein->{'compression'};
+-                $toLaunchJobs->{$jobid}->{'stagein'}->{'size'}=$stagein->{'size'};
+-            }
+-#			OAR::IO::set_job_state($base,$jobid,"Launching");
+-            OAR::IO::set_running_date($base,$jobid);
+-            OAR::IO::set_job_state($base,$jobid,"Running");
+-        } elsif ($dbJobs->{$jobid}->{'state'} eq "Launching" or $dbJobs->{$jobid}->{'state'} eq "Running" ) {
+-            unless (grep $jobid, keys %$agentJobs) {
+-                message("[oar-cgi $jobid] Job $jobid terminated\n");
+-                OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+-                OAR::IO::set_finish_date($base,$jobid);
+-                my $strWARN = "[oar-cgi $jobid] Job was killed";
+-                message("$strWARN\n");
+-                OAR::IO::set_job_state($base,$jobid,"Error");
+-                OAR::IO::set_job_message($base,$jobid,"$strWARN");
+-                OAR::IO::unlock_table($base);
+-            }
+-        } 
+-    }
+-    $do_notify=undef;
+-    foreach my $jobid (keys %$agentJobs) {
+-        if (defined $agentJobs->{$jobid}->{'terminated'}) {
+-            $do_notify = 1;
+-            # TODO: As soon as BibBip becomes a library, replace this copy of BipBip code by a function call.
+-            #	my $base = OAR::IO::connect() or die "cgi-job-end: cannot connect to the data base\n";
+-            message("Job $jobid terminated\n");
+-            OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+-            my $refJob = OAR::IO::get_job($base,$jobid);
+-            if ($refJob->{'state'} eq "Running"){
+-                OAR::IO::set_finish_date($base,$jobid);
+-                message("Release nodes for $jobid\n");
+-                if ($agentJobs->{$jobid}->{'terminated'} eq 'exit' and $agentJobs->{$jobid}->{'exitstatus'} == 0) {
+-                    message("Launch completed OK for $jobid\n");
+-                    OAR::IO::set_job_state($base,$jobid,"Terminated");
+-                    OAR::IO::set_job_message($base,$jobid,"ALL is GOOD");
+-                } else {
+-                    my $strWARN = "Job $jobid failed (maybe killed)";
+-                    message("$strWARN\n");
+-                    OAR::IO::set_job_state($base,$jobid,"Error");
+-                    OAR::IO::set_job_message($base,$jobid,"$strWARN");
+-                }
+-            } else {
+-                message("Job $jobid was previously killed or Terminated but I did not know that!!\n");
+-            }
+-            OAR::IO::unlock_table($base);
+-        }	
+-    }
+-    OAR::IO::disconnect($base);
+-    if ($do_notify) {
+-        OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
+-    }
+-    # End of BipBip code.
+-
+-    my $data = {
+-                'launch' => $toLaunchJobs,
+-                'kill' => $toKillJobs,
+-                };
+-    message "toLaunchJobs=".serialize($toLaunchJobs)."\n";
+-    message "toKillJobs=".serialize($toKillJobs)."\n";
+-#	message "pull=".serialize($data)."\n";
+-    httpwrite(serialize($data),'application/data');
+-}
+-
+-######
+-# stagein request handling
+-######
+-
+-# job stagein function
+-# gives the stagein for a job
+-sub jobStageIn() {
+-    my $jobid =$cgi->param('JOBID') or die "JOBID not found.\n";
+-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
+-    my $stagein = OAR::IO::get_job_stagein($base,$jobid);
+-    OAR::IO::disconnect($base);
+-    if ($stagein->{'method'} eq "FILE") {
+-        httpwrite("","data/binary");
+-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
+-        print <F>;
+-        close F;
+-    } else {
+-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
+-    } 
+-#	OAR::IO::set_running_date($base,$jobid);
+-#	OAR::IO::set_job_state($base,$jobid,"Running");
+-#	OAR::IO::disconnect($base);
+-}
+-
+-######
+-# stageout request handling
+-######
+-
+-# job stageout function
+-# retrieve a job stageout
+-sub jobStageOut() {
+-    my $jobid =$cgi->param('JOBID');
+-    defined $jobid or die "JOBID not found.\n";
+-    my $out = $cgi->upload('STAGEOUT');
+-    my $filename = $stageout_dir.$jobid.".tgz";
+-    copy($out,$filename) or message "Job $jobid stageout retrieval failed $!\n";
+-    httpwrite("Job $jobid stageout.","text/plain");
+-    system "$ENV{OARDIR}/oarres $jobid $filename < /dev/null >& /dev/null &";
+-}
+-
+-#####
+-# main function
+-#####
+-sub main() {
+-    my $reqtype = $cgi->param('REQTYPE') or "REQTYPE not found.\n";
+-    if ($reqtype eq 'PULL') {
+-        pull();
+-    } elsif ( $reqtype eq 'STAGEIN') {
+-        jobStageIn();
+-    } elsif ( $reqtype eq 'STAGEOUT') {
+-        jobStageOut();
+-    } else {
+-        die "Invalid REQTYPE: ".$reqtype."\n";
+-    }
+-}
+-
+-#####
+-# Here we go !
+-#####
+-main();
+diff --git a/sources/desktop_computing/oarcache.pl b/sources/desktop_computing/oarcache.pl
+deleted file mode 100755
+index e0533c3..0000000
+--- a/sources/desktop_computing/oarcache.pl
++++ /dev/null
+@@ -1,29 +0,0 @@
+-#!/usr/bin/perl
+-# $Id$
+-#
+-# Cleans stagein cache up
+-
+-use strict;
+-use DBI();
+-use OAR::IO;
+-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+-
+-my $base;
+-init_conf($ENV{OARCONFFILE});
+-my $stageindir = get_conf("STAGEIN_DIR");
+-my $expiry = get_conf("STAGEIN_CACHE_EXPIRY");
+-
+-$base = OAR::IO::connect();
+-opendir DIR, "$stageindir/" or die "Can't open $stageindir: $!";
+-while( defined (my $file = readdir DIR) ) {
+-    my $md5sum = $file;
+-    OAR::IO::get_lock($base,$md5sum,3600) or die "Failed to lock stagein\n";
+-    if (OAR::IO::is_stagein_deprecated($base,$md5sum,$expiry) == 1) {
+-        print "Stagein file \"$file\" is deprecated, removing.\n";
+-        unlink "$stageindir/$file" or die "Delete failed: $?\n";
+-        OAR::IO::del_stagein($base,$md5sum);
+-    }
+-    OAR::IO::release_lock($base,$md5sum) or die "Failed to unlock stagein\n";
+-}
+-close DIR;
+-OAR::IO::disconnect($base);
+diff --git a/sources/desktop_computing/oarfetch.sh b/sources/desktop_computing/oarfetch.sh
+deleted file mode 100755
+index 68f1f65..0000000
+--- a/sources/desktop_computing/oarfetch.sh
++++ /dev/null
+@@ -1,57 +0,0 @@
+-#!/bin/bash
+-# this script allows to retrieve desktop computing jobs results
+-# $Id$
+-
+-usage() {
+-	cat <<EOF
+-Usage: `basename $0` <jobId>
+-Please provide the Id of the desktop computing job you want to retrieve the results of.
+-EOF
+-	exit 1
+-}
+-
+-JOBID=$1
+-[ -n "$JOBID" ] || usage
+-
+-SERVER_HOSTNAME=`grep SERVER_HOSTNAME /etc/oar.conf| cut -f2 -d=`
+-ssh -T $SERVER_HOSTNAME <<SSHEOF | sudo -u $SUDO_USER tar xvz 2> /dev/null
+-DB_HOSTNAME=\`grep DB_HOSTNAME /etc/oar.conf | cut -f2 -d=\`
+-DB_BASE_NAME=\`grep DB_BASE_NAME /etc/oar.conf | cut -f2 -d=\`
+-DB_BASE_LOGIN=\`grep DB_BASE_LOGIN /etc/oar.conf | cut -f2 -d=\`
+-DB_BASE_PASSWD=\`grep DB_BASE_PASSWD /etc/oar.conf | cut -f2 -d=\`
+-JOBUSER=\$(mysql -u\$DB_BASE_LOGIN -p\$DB_BASE_PASSWD -h\$DB_HOSTNAME <<EOF | tail +2
+-connect \$DB_BASE_NAME
+-select user from jobs where idJob=$JOBID;
+-exit
+-EOF)
+-if [ "x\$JOBUSER" != "x$SUDO_USER" ]; then
+-	echo "Sorry, you ($SUDO_USER) are not the owner of job $JOBID." 1>&2
+-	exit 3
+-fi
+-STAGEOUT_DIR=\`grep STAGEOUT_DIR /etc/oar.conf | cut -f2 -d=\`
+-STAGEOUT=\$STAGEOUT_DIR/$JOBID.tgz
+-if [ ! -r \$STAGEOUT ]; then 
+-	echo "Sorry, no stageout file found for job $JOBID." 1>&2
+-	exit 4
+-fi
+-cat \$STAGEOUT
+-exit 0
+-SSHEOF
+-if [ $? != 0 ]; then
+-	echo "Error !" 2>&1
+-	exit 1
+-fi
+-
+-#
+-exit 0
+-#
+-
+-read -p "Purge this job result data on server ? [Y/n]" -n 1 -s PURGE
+-if [ "x$PURGE" != "xn" -a "x$PURGE" != "xN" ]; then
+-	ssh -T $SERVER_HOSTNAME <<EOF
+-STAGEOUT_DIR=\`grep STAGEOUT_DIR /etc/oar.conf| cut -f2 -d=\`
+-STAGEOUT=\$STAGEOUT_DIR/$JOBID.tgz
+-rm \$STAGEOUT
+-EOF
+-fi
+-echo 
+diff --git a/sources/desktop_computing/oarres.pl b/sources/desktop_computing/oarres.pl
+deleted file mode 100755
+index a15ef08..0000000
+--- a/sources/desktop_computing/oarres.pl
++++ /dev/null
+@@ -1,21 +0,0 @@
+-#!/usr/bin/perl
+-# $Id$
+-#
+-#	job stageout delivery
+-
+-use strict;
+-use DBI();
+-use OAR::IO;
+-
+-my $jobid = shift or die "Job id is missing.\n";
+-my $stageoutfile = shift or die "Job stageout filename is missing.\n";
+-( -r $stageoutfile ) or die "Stageout file not found.\n"; 
+-
+-my $base = OAR::IO::connect();
+-my $job = OAR::IO::get_job($base,$jobid) or die "Failed to get job information\n";
+-((defined $job->{'job_user'}) and (defined $job->{'launching_directory'})) or die "Some of the job information are missing\n";
+-#system "sudo -u ".$job->{'user'}." tar xvfz $stageoutfile -C ".$job->{'launchingDirectory'}." && rm -v $stageoutfile" and die "Stageout delivery failed: $!\n";
+-#system "sudo -u ".$job->{'job_user'}." tar xfz $stageoutfile -C ".$job->{'launching_directory'}.">& /dev/null && rm $stageoutfile" and die "Stageout delivery failed: $!\n";
+-$ENV{OARDO_BECOME_USER} = $job->{job_user};
+-system "oardodo tar xfz $stageoutfile -C $job->{'launching_directory'} >& /dev/null && rm $stageoutfile" and die "Stageout delivery failed: $!\n";
+-OAR::IO::disconnect($base);
+diff --git a/sources/desktop_computing/recipes/debian_oar_desktop_agent.yaml b/sources/desktop_computing/recipes/debian_oar_desktop_agent.yaml
+deleted file mode 100755
+index 5e5364a..0000000
+--- a/sources/desktop_computing/recipes/debian_oar_desktop_agent.yaml
++++ /dev/null
+@@ -1,93 +0,0 @@
+-# ### debian.yaml Kameleon recipe ###
+-# This recipe can be used to create any Debian appliance. It has been
+-# tested succesfully to generate etch, lenny and squeeze as of April 2010.
+-# The steps and variables beginning with "oar" can be activated to make
+-# a OAR client/server demo/test appliance.
+-# By default, it makes a tgz image and a qcow2 directly bootable into KVM.
+-#
+-global:
+- #
+- # Where Kameleon stores tmp files and appliances
+- workdir_base: /var/tmp/kameleon
+- # 
+- # Debian specific
+- distrib: debian
+- debian_version_name: squeeze
+- distrib_repository: http://ftp.fr.debian.org/debian/
+- #
+- # Architecture
+- arch: i386
+- kernel_arch: "686"
+- #
+- # Extra packages to install on the minimal base system
+- #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
+- # If you're building a OAR appliance, use this package list:
+- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd console-tools mingetty curl libcrypt-ssleay-perl libfile-slurp-perl"
+- #
+- # Network configuration
+- network_hostname: oar
+- # Following variables are used by the "network_config_static" step
+- #network_eth0_ip: 129.88.70.251
+- #network_eth0_mask: 255.255.255.248
+- #network_gateway: 129.88.70.249
+- #network_dns: 129.88.30.10
+- #network_domain: imag.fr
+- #
+- # If you're building a Xen appliance, it may help:
+- #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
+- # 
+- # You can start with a "checkpoint_resume" step if you want
+- # to start form a pre-built image. The image can be made
+- # with the "checkpoint" step.
+- #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
+- # 
+- # OAR specific
+- oar_repository: "deb http://oar.imag.fr/debian/2.5 unstable main"
+- 
+-steps:
+- - debian_check_deps
+- - check_deps:
+-   - rsync
+-   - building_appliance
+-   - building_kvm_images
+- - oar/oar_precheck
+-# - checkpoint_resume
+- - bootstrap
+- - system_config
+-# - network_config_static
+- - root_passwd
+- - mount_proc
+- - software_install:
+-   - extra_packages
+- - kernel_install
+-# - checkpoint
+- - oar/oar_debian_install
+- - oar/oar_system_config
+- - oar/oar_config
+- - oar/oar_devel
+- - oar/oar_desktop_client
+- - oar/oar_clean
+-# - kameleon/kameleon_debian_install
+- - autologin
+- - strip
+- - umount_proc
+-# - xen_domu
+-# - oar/oar_build_tgz
+- - build_appliance:
+-   - clean_udev
+-#   - save_as_tgz
+-   - create_raw_image
+-   - create_nbd_device
+-   - mkfs
+-   - mount_image
+-   - copy_system_tree
+-#   - grub_197_workaround
+-   - install_grub
+-   - umount_image
+-#   - save_as_raw
+-#   - save_as_vmdk
+-#   - save_as_qcow2
+-   - save_as_vdi
+-#   - save_as_iso
+- - clean
+-
+diff --git a/sources/desktop_computing/recipes/debian_oar_desktop_server.yaml b/sources/desktop_computing/recipes/debian_oar_desktop_server.yaml
+deleted file mode 100755
+index b2e5bd1..0000000
+--- a/sources/desktop_computing/recipes/debian_oar_desktop_server.yaml
++++ /dev/null
+@@ -1,93 +0,0 @@
+-# ### debian.yaml Kameleon recipe ###
+-# This recipe can be used to create any Debian appliance. It has been
+-# tested succesfully to generate etch, lenny and squeeze as of April 2010.
+-# The steps and variables beginning with "oar" can be activated to make
+-# a OAR client/server demo/test appliance.
+-# By default, it makes a tgz image and a qcow2 directly bootable into KVM.
+-#
+-global:
+- #
+- # Where Kameleon stores tmp files and appliances
+- workdir_base: /var/tmp/kameleon
+- # 
+- # Debian specific
+- distrib: debian
+- debian_version_name: squeeze
+- distrib_repository: http://ftp.fr.debian.org/debian/
+- #
+- # Architecture
+- arch: i386
+- kernel_arch: "686"
+- #
+- # Extra packages to install on the minimal base system
+- #extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring console-tools mingetty"
+- # If you're building a OAR appliance, use this package list:
+- extra_packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl mysql-server mysql-client sudo libdbi-perl libdbd-mysql-perl perl-suid taktuk pidentd console-tools mingetty curl"
+- #
+- # Network configuration
+- network_hostname: oar
+- # Following variables are used by the "network_config_static" step
+- #network_eth0_ip: 129.88.70.251
+- #network_eth0_mask: 255.255.255.248
+- #network_gateway: 129.88.70.249
+- #network_dns: 129.88.30.10
+- #network_domain: imag.fr
+- #
+- # If you're building a Xen appliance, it may help:
+- #xen_domu_modules: /lib/modules/2.6.32-4-xen-amd64
+- # 
+- # You can start with a "checkpoint_resume" step if you want
+- # to start form a pre-built image. The image can be made
+- # with the "checkpoint" step.
+- #checkpoint_file: /var/tmp/kameleon_checkpoint.tgz
+- # 
+- # OAR specific
+- oar_repository: "deb http://oar.imag.fr/debian/2.5 unstable main"
+- 
+-steps:
+- - debian_check_deps
+- - check_deps:
+-   - rsync
+-   - building_appliance
+-   - building_kvm_images
+- - oar/oar_precheck
+-# - checkpoint_resume
+- - bootstrap
+- - system_config
+-# - network_config_static
+- - root_passwd
+- - mount_proc
+- - software_install:
+-   - extra_packages
+- - kernel_install
+-# - checkpoint
+- - oar/oar_debian_install
+- - oar/oar_system_config
+- - oar/oar_config
+- - oar/oar_devel
+- - oar/oar_desktop_server
+- - oar/oar_clean
+-# - kameleon/kameleon_debian_install
+- - autologin
+- - strip
+- - umount_proc
+-# - xen_domu
+-# - oar/oar_build_tgz
+- - build_appliance:
+-   - clean_udev
+-#   - save_as_tgz
+-   - create_raw_image
+-   - create_nbd_device
+-   - mkfs
+-   - mount_image
+-   - copy_system_tree
+-#   - grub_197_workaround
+-   - install_grub
+-   - umount_image
+-#   - save_as_raw
+-#   - save_as_vmdk
+-#   - save_as_qcow2
+-   - save_as_vdi
+-#   - save_as_iso
+- - clean
+-
+diff --git a/sources/desktop_computing/steps/client1.conf b/sources/desktop_computing/steps/client1.conf
+deleted file mode 100644
+index 3905fef..0000000
+--- a/sources/desktop_computing/steps/client1.conf
++++ /dev/null
+@@ -1,11 +0,0 @@
+-dev tap
+-proto udp
+-remote 192.168.56.101
+-tls-client
+-ca /etc/openvpn/keys/ca.crt
+-cert /etc/openvpn/keys/192.168.56.102.crt
+-key /etc/openvpn/keys/192.168.56.102.key
+-tls-auth /etc/openvpn/keys/ta.key 1
+-cipher BF-CBC
+-comp-lzo
+-pull
+diff --git a/sources/desktop_computing/steps/oar_desktop_client.yaml b/sources/desktop_computing/steps/oar_desktop_client.yaml
+deleted file mode 100644
+index a7e7aca..0000000
+--- a/sources/desktop_computing/steps/oar_desktop_client.yaml
++++ /dev/null
+@@ -1,21 +0,0 @@
+-oar_desktop_client:
+- - oar_desktop_client:
+-   - append_file:
+-     - /etc/apt/sources.list
+-     - |
+-       $$oar_repository
+-   - exec_chroot: apt-get update
+-   - exec_chroot: apt-get install -y --force-yes oar-desktop-computing-agent openvpn subversion
+-   - exec_chroot: svn export svn://scm.gforge.inria.fr/svn/oar/branches/gsoc-2010/desktop_computing/oar-agent.pl /usr/bin/oar-agent
+-   - write_file:
+-     - /etc/openvpn/client1.conf
+-     - |
+-      ## openvpn client1.conf
+-      remote 192.168.56.101
+-      dev tun
+-      proto udp
+-      ifconfig 10.0.0.2 10.0.0.1
+-      secret /etc/openvpn/keys/static.key
+-      comp-lzo
+-      keepalive 10 60
+-
+diff --git a/sources/desktop_computing/steps/oar_desktop_server.yaml b/sources/desktop_computing/steps/oar_desktop_server.yaml
+deleted file mode 100644
+index 859cf10..0000000
+--- a/sources/desktop_computing/steps/oar_desktop_server.yaml
++++ /dev/null
+@@ -1,28 +0,0 @@
+-oar_desktop_server:
+- - oar_desktop_server:
+-   - exec_chroot: apt-get install -y --force-yes openvpn #bind9
+-   - write_file:
+-     - /etc/openvpn/server.conf
+-     - |
+-       local 192.168.56.1
+-       dev tap
+-       daemon
+-       server 10.0.0.1 255.255.255.0
+-       push "route 192.168.56.0 255.255.255.0"
+-       push "dhcp-option DNS 192.168.1.50"
+-       max-clients 25
+-       ca
+-       /etc/openvpn/keys/ca.crt
+-       cert /etc/openvpn/keys/xena.crt
+-       key /etc/openvpn/keys/xena.key
+-       dh
+-       /etc/openvpn/keys/dh1024.pem
+-       tls-auth /etc/openvpn/keys/ta.key 0
+-       cipher BF-CBC
+-       comp-lzo
+-       keepalive 10 120
+-       log-append /var/log/openvpn.log
+-       status /var/log/openvpn-status.log
+-       ifconfig-pool-persist /etc/openvpn/ipp.txt
+-       mute 20
+-       verb 4
+diff --git a/sources/desktop_computing/steps/server.conf b/sources/desktop_computing/steps/server.conf
+deleted file mode 100644
+index 5e06684..0000000
+--- a/sources/desktop_computing/steps/server.conf
++++ /dev/null
+@@ -1,15 +0,0 @@
+-local 192.168.56.101
+-tls-server
+-dev tap
+-server 10.0.0.0 255.255.255.0
+-max-clients 25
+-ca /etc/openvpn/easy-rsa/2.0/keys/ca.crt
+-cert /etc/openvpn/easy-rsa/2.0/keys/192.168.56.101.crt
+-key /etc/openvpn/easy-rsa/2.0/keys/192.168.56.101.key
+-dh /etc/openvpn/easy-rsa/2.0/keys/dh1024.pem
+-tls-auth /etc/openvpn/easy-rsa/2.0/keys/ta.key 0
+-cipher BF-CBC
+-comp-lzo
+-keepalive 10 120
+-log-append /var/log/openvpn.log
+-status /var/log/openvpn-status.log
+-- 
+1.7.10
+
