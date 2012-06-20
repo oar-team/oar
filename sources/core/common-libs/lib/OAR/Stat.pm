@@ -172,17 +172,6 @@ sub get_specific_admission_rule {
     return $rule;
 }
 
-sub add_admission_rule {
-	my $rule = shift;
-	my $id = OAR::IO::add_admission_rule($base,$rule);
-	return $id;
-}
-
-sub delete_specific_admission_rule {
-	my $rule_id = shift;
-	OAR::IO::delete_admission_rule($base,$rule_id);
-}
-
 sub get_duration($){
 # Converts a number of seconds in a human readable duration (years,days,hours,mins,secs)
     my $time=shift;

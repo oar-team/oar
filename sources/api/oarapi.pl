@@ -1521,12 +1521,14 @@ SWITCH: for ($q) {
       $admission_rule = OAR::API::check_admission_rule( $q->Vars, $q->content_type );
     }
 
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my $id = OAR::Stat::add_admission_rule($admission_rule->{rule});
+    my $id = OAR::IO::add_admission_rule($dbh,$admission_rule->{rule});
     if ( $id && $id > 0) {
+        print $q->header( -status => 201, -type => OAR::API::get_content_type($ext) , -location => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext) );
+
       	print $header;
       	print $HTML_HEADER if ($ext eq "html");
       	print OAR::API::export( { 
@@ -1535,7 +1537,7 @@ SWITCH: for ($q) {
                       'api_timestamp' => time(),
                       'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)
                     } , $ext );
-      	OAR::Stat::close_db_connection; 
+      	OAR::IO::disconnect($dbh); 
     }
     else {
       OAR::API::ERROR(
@@ -1595,9 +1597,7 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ POST /admission_rules/<id>?method=delete : Delete an admission rule
-  # Should not be used unless for delete from an http browser
-  # (better to use the URI above)
+  #{{{ POST /admission_rules/<id>[?method=delete]: Erase or Delete an admission rule
   #
   $URI = qr{^/admission_rules/(\d+)(\.yaml|\.json|\.html)*$};
   OAR::API::POST( $_, $URI ) && do {
@@ -1615,7 +1615,7 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
     
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1631,17 +1631,44 @@ SWITCH: for ($q) {
     }
 
     # Delete (alternative way to DELETE request, for html forms)
-    print $header;
-    if ($admission_rule->{method} eq "delete" ) {
-    	OAR::Stat::delete_specific_admission_rule($rule_id);
-    	print $HTML_HEADER if ($ext eq "html");
-    	print OAR::API::export( { 'id' => "$rule_id",
+    if (defined($admission_rule->{method}) && $admission_rule->{method} eq "delete" ) {
+        print $q->header( -status => 202, -type => OAR::API::get_content_type($ext) );
+    	my $id=OAR::IO::delete_admission_rule($dbh,$rule_id);
+        OAR::IO::disconnect($dbh);
+        if ( $id && $id > 0) {
+    	   print $HTML_HEADER if ($ext eq "html");
+    	   print OAR::API::export( { 'id' => "$rule_id",
                     			'status' => "deleted",
                     			'api_timestamp' => time()
     						  } , $ext );
-        OAR::Stat::close_db_connection;
-    }
-    else {
+        }else{
+          OAR::API::ERROR(
+            404,
+            "Admission rule not found",
+            "Could not find admission rule to delete: id=$rule_id"
+          );
+        }
+    }elsif (defined($admission_rule->{rule})) {
+      my $id = OAR::IO::update_admission_rule($dbh,$rule_id,$admission_rule->{rule});
+      OAR::IO::disconnect($dbh);
+      if ( $id && $id > 0) {
+          print $q->header( -status => 201, -type => OAR::API::get_content_type($ext) , -location => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext) );
+          print $HTML_HEADER if ($ext eq "html");
+          print OAR::API::export( {
+                      'id' => "$id",
+                      'rule' => OAR::API::nl2br($admission_rule->{rule}),
+                      'api_timestamp' => time(),
+                      'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)
+                    } , $ext );
+      }
+      else {
+        OAR::API::ERROR(
+          404,
+          "Admission rule not found",
+          "Could not find admission rule to update: id=$rule_id"
+        );
+      }
+    }else {
       OAR::API::ERROR(400,"Bad query","Could not understand ". $admission_rule->{method} ." method");
     }
     last;

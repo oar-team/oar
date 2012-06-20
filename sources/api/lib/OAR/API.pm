@@ -1506,10 +1506,10 @@ sub check_admission_rule_update($$) {
     exit 0;
   }
   
-  # Admission rule must have a "method" field
-  unless ( $admission_rule->{method} ) {
+  # Admission rule must have a "method" or "rule" field
+  unless ( $admission_rule->{method} or $admission_rule->{rule} ) {
     ERROR 400, 'Missing Required Field',
-      'An admission rule update must have a "method" field!';
+      'An admission rule update must have a "method=delete" or "rule"=<rule> field!';
     exit 0;
   }
 

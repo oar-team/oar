@@ -153,6 +153,7 @@ sub get_admission_rule($$);
 sub get_requested_admission_rules($$$);
 sub count_all_admission_rules($);
 sub delete_admission_rule($$);
+sub update_admission_rule($$$);
 
 # TIME CONVERSION
 sub ymdhms_to_sql($$$$$$);
@@ -4249,18 +4250,50 @@ sub get_admission_rule($$) {
 # delete_admission_rule
 # parameter
 # parameters : base, admission_rule_id
+# return value : id of the deleted admission rule if ok, undef else
 sub delete_admission_rule($$) {
-	my $dbh = shift;
-    my $rule_id = shift;
-    
-    my $sth = $dbh->prepare("   DELETE
+    my $dbh = shift;
+    my $id = shift;
+
+    my $sth = $dbh->prepare("       SELECT COUNT(*)
+                                    FROM admission_rules where id=$id
+                                ");
+    $sth->execute();
+    if($sth->fetchrow_array() > 0) {
+      my $sth2 = $dbh->prepare("   DELETE
                                 FROM admission_rules
                                 WHERE
-                                    id = $rule_id
+                                    id = $id
                             ");
-    $sth->execute();
+      $sth2->execute();
+      return $id;
+    }else{
+      return undef;
+    }
 }
 
+# update_admission_rule
+# updates an existing rule in the table admission_rule
+# parameters : base, rule id, rule
+# return value : id of the updated admission rule if ok, undef else
+sub update_admission_rule($$$) {
+    my $dbh = shift;
+    my $id = shift;
+    my $rule = $dbh->quote(shift);
+
+    my $sth = $dbh->prepare("       SELECT COUNT(*)
+                                    FROM admission_rules where id=$id
+                                ");
+    $sth->execute();
+    if($sth->fetchrow_array() > 0) {
+      $dbh->do("  UPDATE admission_rules
+                SET rule=$rule WHERE id=$id
+               ");
+      return($id);
+    }else{
+      return undef;
+    }
+}
 
 # NODES MANAGEMENT
 

@@ -1870,6 +1870,78 @@ DELETE /admission_rule/<id>
   	Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /admission_rule/<id> rule.
   	If the admission rule could not be deleted, returns a 403 and the reason into the message body.
 
+POST /admission_rules
+---------------------
+:description:
+  Add a new admission rule
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  *structure*: hash 
+
+  *fields*:
+     - **rule** (*text*): The admission rule to add
+
+  *yaml example*:
+    ::
+
+     ---
+     rule: |
+       echo "This is a test rule"
+
+:output:
+  A 201 (created) header is returned if the rule is successfully created, with a location value.
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1340180126
+     id: 19
+     rule: echo "This is a test rule"
+     uri: /oarapi-priv/admission_rules/19
+
+POST /admission_rules/<id>
+--------------------------
+:description:
+  Update or delete the admission rule given by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  *structure*: hash 
+
+  *fields*:
+     - **rule** (*text*): The content of the admission rule to update
+     - **method=delete** : If given, the admission rule is deleted
+
+  *yaml example*:
+    ::
+
+     ---
+     rule: |
+       echo "This is a test rule"
+
+:output:
+  A 201 (created) header is returned if the rule is successfully updated, with a location value.
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1340180126
+     id: 19
+     rule: echo"test rule"
+     uri: /oarapi-priv/admission_rules/19
+
+
 GET /config
 -----------
 :description:
