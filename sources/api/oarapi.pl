@@ -1474,13 +1474,16 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                                  );
     my $admission_rule = OAR::Stat::get_specific_admission_rule($rule_id);
-    OAR::API::add_admission_rule_uris($admission_rule,$ext);
-    $admission_rule = OAR::API::struct_admission_rule($admission_rule,$STRUCTURE);
-
-    OAR::Stat::close_db_connection; 
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export($admission_rule,$ext);
+    if (defined($admission_rule->{id})) {
+      OAR::API::add_admission_rule_uris($admission_rule,$ext);
+      $admission_rule = OAR::API::struct_admission_rule($admission_rule,$STRUCTURE);
+      OAR::Stat::close_db_connection; 
+      print $header;
+      print $HTML_HEADER if ($ext eq "html");
+      print OAR::API::export($admission_rule,$ext);
+    }else{
+      OAR::API::ERROR(404,"Admission rule not found","No admission rule corresponding to id=$rule_id");
+    }
     last;
   };
   #}}}
