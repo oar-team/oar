@@ -5,6 +5,9 @@ version 2.5.3:
 --------------
   - Add the "Name" field on the main Monika page. This is easier for the users
     to find there jobs.
+  - Add MAX_CONCURRENT_JOB_TERMINATIONS into the oar.conf ofthe master. This
+    limits the number of concurrent processes launched by the Almighty when the
+    the jobs finish.
 
 version 2.5.2:
 --------------
