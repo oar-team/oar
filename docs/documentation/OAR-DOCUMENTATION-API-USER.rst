@@ -1896,6 +1896,7 @@ POST /admission_rules
 
 :output:
   A 201 (created) header is returned if the rule is successfully created, with a location value.
+
   *yaml example*:
     ::
 
@@ -1932,6 +1933,7 @@ POST /admission_rules/<id>
 
 :output:
   A 201 (created) header is returned if the rule is successfully updated, with a location value.
+
   *yaml example*:
     ::
 
