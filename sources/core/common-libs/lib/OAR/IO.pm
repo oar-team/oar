@@ -1360,148 +1360,76 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         warn("ERROR : The queue $queue_name does not exist\n");
         return(-8);
     }
+      
+    my @array_job_commands;
+    if ($#{$array_params_ref}>0) {
+        foreach my $params (@{$array_params_ref}){
+            push(@array_job_commands, $command." ".$params);
+        }
+    } else {
+        for (my $i=0; $i<$array_job_nb; $i++){ 
+            push(@array_job_commands,$command);
+        }
+    } 
 
     my $array_index = 1;
     my @Job_id_list;
-    my $flag_simple_array_job = 0;
-    my $use_simple_array_job_sub = get_conf("USE_SIMPLE_ARRAY_JOB_SUBMISSION");
-    if (defined($use_simple_array_job_sub) and ($use_simple_array_job_sub eq "yes")) { #to test  add_micheline_simple_array_job
-
-    #TODO test sshkey and ($startTimeReservation > 0)  ?? and factorize code
-
-      #build commands array from array job with same command, ex:  oarsub --array=1000 true
-      #$flag_simple_array_job = 1;
-      #if ($startTimeReservation > 0) {
-      #  warn("/!\\ Advance reservation is not support by simple array submission\n"); 
-      #  $flag_simple_array_job = 0;
-      #}
-      #if ($startTimeReservation > 0) { 
-      #  warn("/!\\ Advance reservation is not support by simple array submission\n"); 
-      #  $flag_simple_array_job = 0;
-      #}
-
-      my @array_job_commands;
-      my $array_job_commands_ref;
-      if ($array_job_nb>1) {
-        for (my $i=0; $i<$array_job_nb; $i++){ 
-          push(@array_job_commands,$command);
+    if (($array_job_nb>1)  and (not defined($use_job_key))) { #to test  add_micheline_simple_array_job
+      warn("Simple array job submission is used\n"); 
+      my $simple_job_id_list_ref = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
+    return($simple_job_id_list_ref);
+    } else {
+      # single job to submit and when job key is used with array job 
+      foreach my $command (@array_job_commands){
+      my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file);
+        if ($err != 0){
+          push(@Job_id_list, $err);
+          return(\@Job_id_list);
         }
-        $array_job_commands_ref = \@array_job_commands;
-      } 
-      else {
-        $array_job_commands_ref = $array_params_ref;
-      } 
-
-      warn("use simple array submission\n"); 
-    
-      my $simple_job_id_list_ref = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
-
-    return($simple_job_id_list_ref );
-      # exit; #TODO to finish
-    }
-
-    else { #TODO fatorize the code  $array_job_commands_ref = $array_params_ref; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    if(!defined($array_params_ref)){
-        for (my $i=0; $i<$array_job_nb; $i++){
-            my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file);
-            if ($err != 0){
-                push(@Job_id_list, $err);
-                return(\@Job_id_list);
-            }
-            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
-            if ($Job_id_list[-1] <= 0){
-                return(\@Job_id_list);
-            }else{
-                if ($array_id <= 0){
-                    $array_id = $Job_id_list[0];
-                }
-                $array_index++;
-            }
-            if (defined($use_job_key) and ($export_job_key_file ne "")){
-                # we must copy the keys in the directory specified with the right name
-                my $export_job_key_file_tmp = $export_job_key_file;
-                $export_job_key_file_tmp =~ s/%jobid%/$Job_id_list[-1]/g;
-    
-                my $lusr= $ENV{OARDO_USER};
-                my $pid;
-                # write the private job key with the user ownership
-                unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
-                    warn ("Error: Cannot open pipe ($?)");
-                    exit(-14);
-                }
-                if ($pid == 0) {
-                    umask(oct("177"));
-                    $ENV{OARDO_BECOME_USER} = $lusr;
-                    open(STDERR, ">/dev/null");
-                    unless (exec({"oardodo"} "oardodo","dd of=$export_job_key_file_tmp")) {
-                        warn ("Error: Cannot exec user shell ($?)");
-                        exit(-14);
-                    }
-                }else{
-                    print SAFE_CHILD $ssh_priv_key;
-                    unless (close(SAFE_CHILD)) { 
-                        warn ("Error: Cannot close pipe {$?}");
-                        push(@Job_id_list,-14);
-                        return(@Job_id_list);
-                    }
-                }
-                print "Export job key to file: ".$export_job_key_file_tmp."\n";
-            }
+        push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
+        if ($Job_id_list[-1] <= 0){
+          return(\@Job_id_list);
+        } else {
+          if ($array_id <= 0){
+            $array_id = $Job_id_list[0];
+          }
+          $array_index++;
         }
-    }else{
-        foreach my $param (@{$array_params_ref}){
-            my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file);
-            if ($err != 0){
-                push(@Job_id_list, $err);
-                return(\@Job_id_list);
-            }
-            push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command." $param", $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
-            if ($Job_id_list[-1] <= 0){
-                return(\@Job_id_list);
-            }else{
-                $array_index++;
-                if ($array_id <= 0){
-                    $array_id = $Job_id_list[0];
-                }
-            }
-            if (defined($use_job_key) and ($export_job_key_file ne "")){
-                # we must copy the keys in the directory specified with the right name
-                my $export_job_key_file_tmp = $export_job_key_file;
-                $export_job_key_file_tmp =~ s/%jobid%/$Job_id_list[-1]/g;
+        if (defined($use_job_key) and ($export_job_key_file ne "")){
+          # we must copy the keys in the directory specified with the right name
+          my $export_job_key_file_tmp = $export_job_key_file;
+          $export_job_key_file_tmp =~ s/%jobid%/$Job_id_list[-1]/g;
     
-                my $lusr= $ENV{OARDO_USER};
-                my $pid;
-                # write the private job key with the user ownership
-                unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
-                    warn ("Error: Cannot open pipe ($?)");
-                    exit(-14);
-                }
-                if ($pid == 0) {
-                    umask(oct("177"));
-                    $ENV{OARDO_BECOME_USER} = $lusr;
-                    open(STDERR, ">/dev/null");
-                    unless (exec({"oardodo"} "oardodo","dd of=$export_job_key_file_tmp")) {
-                        warn ("Error: Cannot exec user shell ($?)");
-                        push(@Job_id_list,-14);
-                        return(@Job_id_list);
-                    }
-                }else{
-                    print SAFE_CHILD $ssh_priv_key;
-                    unless (close(SAFE_CHILD)) { 
-                        warn ("Error: Cannot close pipe {$?}");
-                        push(@Job_id_list,-14);
-                        return(@Job_id_list);
-                    }
-                }
-                print "Export job key to file: ".$export_job_key_file_tmp."\n";
-            }
+          my $lusr= $ENV{OARDO_USER};
+          my $pid;
+          # write the private job key with the user ownership
+          unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
+            warn ("Error: Cannot open pipe ($?)");
+            exit(-14);
+          }
+          if ($pid == 0) {
+              umask(oct("177"));
+              $ENV{OARDO_BECOME_USER} = $lusr;
+              open(STDERR, ">/dev/null");
+                  unless (exec({"oardodo"} "oardodo","dd of=$export_job_key_file_tmp")) {
+                  warn ("Error: Cannot exec user shell ($?)");
+                  push(@Job_id_list,-14);
+                  return(@Job_id_list);
+              }
+          } else {
+              print SAFE_CHILD $ssh_priv_key;
+              unless (close(SAFE_CHILD)) { 
+                  warn ("Error: Cannot close pipe {$?}");
+                  push(@Job_id_list,-14);
+                  return(@Job_id_list);
+              }
+          }
+          print "Export job key to file: ".$export_job_key_file_tmp."\n";
         }
-    }
-  }
+      }
+   }
    return(\@Job_id_list);
 }
-
 
 sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
