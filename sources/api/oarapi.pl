@@ -1503,7 +1503,7 @@ SWITCH: for ($q) {
     (my $header) = OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
-    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
+    OAR::API::authenticate_user($authenticated_user,"create admission rules","oar");
   
     # Check and get the submited admission rule
     # From encoded data
@@ -1559,7 +1559,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext);
 
     # Must be administrator (oar user)
-    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
+    OAR::API::authenticate_user($authenticated_user,"delete admission rules","oar");
 
     OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
@@ -1594,7 +1594,7 @@ SWITCH: for ($q) {
     (my $header, my $type) = OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
-    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
+    OAR::API::authenticate_user($authenticated_user,"edit admission rules","oar");
 
     my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
