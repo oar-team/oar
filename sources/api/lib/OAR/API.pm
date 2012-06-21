@@ -1938,5 +1938,31 @@ sub sign_in($$$$$) {
     OAR::IO::disconnect($base);
 }
 
+# Stop if the user is not authenticated
+# Args: 
+# - #1 : the user as identified by the api
+# - #2 : an informative message
+# - #3 : "undef" or "oar". If "oar", then, it means that the user must be admin
+sub authenticate_user($$$) {
+    my $authenticated_user = shift;
+    my $msg = shift;
+    my $user = shift;
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done to $msg" );
+      return 1;
+    }
+    if (defined($user)) {
+      if ( not $authenticated_user eq "$user" ) {
+        OAR::API::ERROR( 401, "Permission denied",
+          "Only the $user user can $msg" );
+        $ENV{OARDO_BECOME_USER} = "$user";
+        return 2;
+      }
+    }
+    return 0;
+}
+
+
 
 return 1;

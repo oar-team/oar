@@ -1428,6 +1428,9 @@ SWITCH: for ($q) {
     my $ext = OAR::API::set_ext($q,$1);
     (my $header, my $type) = OAR::API::set_output_format($ext);
     
+    # Must be administrator (oar user)
+    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
+
     # GET limit from uri parameter
     if (defined($q->param('limit'))) {
         $MAX_ITEMS = $q->param('limit');
@@ -1468,6 +1471,9 @@ SWITCH: for ($q) {
     my $rule_id = $1;
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
  
     OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
@@ -1497,17 +1503,7 @@ SWITCH: for ($q) {
     (my $header) = OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before creating new admission rules" );
-      last;
-    }
-    if ( not $authenticated_user eq "oar" ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "Only the oar user can create new admission rules" );
-      last;
-    }
-    $ENV{OARDO_BECOME_USER} = "oar";
+    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
   
     # Check and get the submited admission rule
     # From encoded data
@@ -1563,19 +1559,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext);
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before deleting an admission rule" );
-      last;
-    }
-    if ( not $authenticated_user eq "oar" ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "Only the oar user can delete admission rules" );
-      last;
-    }
-    $authenticated_user = $1;
-    $ENV{OARDO_BECOME_USER} = $authenticated_user;
-    
+    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
 
     OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
@@ -1608,16 +1592,10 @@ SWITCH: for ($q) {
     my $rule_id = $1;
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type) = OAR::API::set_output_format($ext,"GET, POST");
- 
-     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before deleting an admission rule" );
-      last;
-    }
-    $authenticated_user = $1;
-    $ENV{OARDO_BECOME_USER} = $authenticated_user;
-    
+
+    # Must be administrator (oar user)
+    OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
+
     my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
