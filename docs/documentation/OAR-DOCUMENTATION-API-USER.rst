@@ -2019,6 +2019,29 @@ GET /config
 
    curl -i -X GET http://login:password@localhost/oarapi-priv/config.yaml
 
+GET /config/file
+----------------
+:description:
+  Get the raw config file of OAR. It also output the path of the file used by the API.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash
+
+  *fields*:
+     - **path** : The path of the config file
+     - **file** : The raw content of the config file (text)
+
+:usage example:
+  ::
+
+   curl -i -X GET http://kameleon:kameleon@localhost/oarapi-priv/config/file.yaml
+
 GET /config/<variable>
 ----------------------
 :description:

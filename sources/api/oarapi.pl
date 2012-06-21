@@ -55,6 +55,7 @@ my $VERSION="1.0.1alpha1";
 
 # Load config
 my $oardir;
+my $config_file;
 if (defined($ENV{OARDIR})){
     $oardir = $ENV{OARDIR}."/";
 }else{
@@ -62,8 +63,10 @@ if (defined($ENV{OARDIR})){
 }
 if (defined($ENV{OARCONFFILE})){
   init_conf($ENV{OARCONFFILE});
+  $config_file=$ENV{OARCONFFILE};
 }else{
   init_conf("/etc/oar/oar.conf");
+  $config_file="/etc/oar/oar.conf";
 }
 
 # Oar commands
@@ -1667,20 +1670,10 @@ SWITCH: for ($q) {
   	$_->path_info =~ m/$URI/;
     my $ext = OAR::API::set_ext($q,$1);
     (my $header, my $type) = OAR::API::set_output_format($ext);
-    
-    # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done before getting configuration parameters" );
-      last;
-    }
-    if ( not $authenticated_user eq "oar" ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "Only the oar user can get configuration parameters" );
-      last;
-    }
-    $ENV{OARDO_BECOME_USER} = "oar";
 
+    # Must be administrator (oar user)
+    OAR::API::authenticate_user($authenticated_user,"get configuration variables","oar");
+    
     # get all configured parameters
     my $list_params = get_conf_list();
     # parameters hash result
@@ -1700,6 +1693,28 @@ SWITCH: for ($q) {
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($parameters,$ext);
+    last;
+  };
+  #}}}
+  #
+  #{{{ GET /config/file : Get the raw configuration file
+  #
+  $URI = qr{^/config/file\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+  	$_->path_info =~ m/$URI/;
+    my $ext = OAR::API::set_ext($q,$1);
+    (my $header, my $type) = OAR::API::set_output_format($ext);
+
+    # Must be administrator (oar user)
+    OAR::API::authenticate_user($authenticated_user,"get configuration variables","oar");
+  
+    my $cmd="$OARDODO_CMD cat $config_file";   
+    my $cmdRes = OAR::API::send_cmd($cmd,"cat $config_file");
+    my $file= { 'path' => $config_file, 'file' => $cmdRes };
+ 
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($file,$ext);
     last;
   };
   #}}}
