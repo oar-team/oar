@@ -11,7 +11,21 @@ case "$1" in
 	    rm -f /etc/apache2/conf.d/oar-web-status.conf || true
         ;;
 	purge)
-	    rm -rf /var/lib/drawgantt-files
+
+            # remove possible conffile
+            for file in /etc/oar/drawgantt.conf /etc/oar/monika.conf /etc/oar/apache2/oar-web-status.conf; do
+                if [ -x "/usr/bin/ucf" ]; then
+                    ucf --purge $file
+                fi
+                if [ -e "$file" ]; then
+                    rm -f "$file"
+                fi
+            done
+
+            # Remove the drawgantt-files
+            if [ -d "/var/lib/oar/drawgantt-files" ]; then
+                rm -rf /var/lib/oar/drawgantt-files
+            fi
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2

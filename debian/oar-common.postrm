@@ -59,8 +59,25 @@ case "$1" in
             fi
         fi
 
-        rm -f /var/log/oar.log* || true
+          # Remove the possible conffiles 
+	  for file in /etc/oar/oar.conf \
+                      /etc/oar/oarnodesetting_ssh \
+                      /etc/oar/update_cpuset_id.sh; do 
+              if [ -x "/usr/bin/ucf" ]; then
+                  ucf --purge $file
+              fi
+              if [ -e "$file" ]; then
+                  rm -f "$file"
+              fi
+          done
+
+
+        rm -f /var/log/oar.log{,.0,.[1234567].gz}
         rm -rf /var/run/oar
+        rm -f /var/lib/oar/.bash_oar
+        rm -f /var/lib/oar/.bash_profile
+        rm -f /var/lib/oar/.bashrc
+        rm -rf /var/lib/oar/.ssh
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2

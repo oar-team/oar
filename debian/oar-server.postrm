@@ -11,7 +11,27 @@ case "$1" in
 	  true
         ;;
 	purge)
-	  true
+
+          # Remove the possible conffiles 
+	  for file in /etc/oar/job_resource_manager.pl \
+                      /etc/oar/job_resource_manager_cgroups.pl \
+                      /etc/oar/suspend_resume_manager.pl \
+                      /etc/oar/oarmonitor_sensor.pl \
+                      /etc/oar/wake_up_nodes.sh \
+                      /etc/oar/shut_down_nodes.sh \
+                      /etc/oar/server_prologue \
+                      /etc/oar/server_epilogue; do 
+              if [ -x "/usr/bin/ucf" ]; then
+                  ucf --purge $file
+              fi
+              if [ -e "$file" ]; then
+                  rm -f "$file"
+              fi
+          done
+
+        # Remove directories in var
+        rm -rf /var/lib/oar/phoenix
+
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2
