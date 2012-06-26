@@ -31,6 +31,12 @@ case "$1" in
                     ucfr --purge oar-node $conffile
                 fi
             done
+
+            # Remove the ssh keys.
+            rm -f /etc/oar/oar_ssh_host_dsa_key
+            rm -f /etc/oar/oar_ssh_host_dsa_key.pub
+            rm -f /etc/oar/oar_ssh_host_rsa_key
+            rm -f /etc/oar/oar_ssh_host_rsa_key.pub
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2

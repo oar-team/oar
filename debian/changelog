@@ -1,12 +1,13 @@
-oar (2.5.2-3~8) UNRELEASED; urgency=low
+oar (2.5.2-3~10) UNRELEASED; urgency=low
 
   * Remove the desktop-computing packaging because it is no more supported
     (Closes: #676220).
   * Remove the conffiles  when purging the binary packages (Closes: #674657).
   * Override dh_compress to prevent debhelper to compress examples.
   * Use ucfr to register conffile.
+  * Remove the ssh keys when purgin oar-node 
 
- -- Philippe Le Brouster <plb@nebkha.net>  Tue, 26 Jun 2012 11:46:29 +0200
+ -- Philippe Le Brouster <plb@nebkha.net>  Tue, 26 Jun 2012 12:02:03 +0200
 
 oar (2.5.2-2) unstable; urgency=low
 
