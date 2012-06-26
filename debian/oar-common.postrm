@@ -59,20 +59,31 @@ case "$1" in
             fi
         fi
 
-          # Remove the possible conffiles 
-	  for file in /etc/oar/oar.conf \
-                      /etc/oar/oarnodesetting_ssh \
-                      /etc/oar/update_cpuset_id.sh; do 
-              if [ -x "/usr/bin/ucf" ]; then
-                  ucf --purge $file
-              fi
-              if [ -e "$file" ]; then
-                  rm -f "$file"
-              fi
-          done
+        # Remove the possible conffiles 
+        for conffile in /etc/oar/oar.conf \
+                        /etc/oar/oarnodesetting_ssh \
+                        /etc/oar/update_cpuset_id.sh; do 
+            # we mimic dpkg as closely as possible, so we remove configuration
+            # files with dpkg backup extensions too:
+            ### Some of the following is from Tore Anderson:
+            for ext in '~' '%' .bak .dpkg-tmp .dpkg-new .dpkg-old .dpkg-dist .ucf-old .ucf-new .ucf-dist;  do
+                    rm -f $conffile$ext
+            done
+            # remove the configuration file itself
+            rm -f $conffile
+            # and finally clear it out from the ucf database
+            if which ucf >/dev/null; then
+                    ucf --purge $conffile
+            fi
+            if which ucfr >/dev/null; then
+                    ucfr --purge oar-common $conffile
+            fi
+        done
 
-
-        rm -f /var/log/oar.log{,.0,.[1234567].gz}
+        for ext in .0 .1.gz .2.gz .3.gz .4.gz .5.gz .6.gz .7.gz; do
+            rm -f /var/log/oar.log$ext
+        done
+        rm -f /var/log/oar.log
         rm -rf /var/run/oar
         rm -f /var/lib/oar/.bash_oar
         rm -f /var/lib/oar/.bash_profile
