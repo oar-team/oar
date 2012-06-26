@@ -1300,6 +1300,9 @@ sub job_key_management($$$$) {
 #                evaluated here, so in theory any side effect is possible
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
+
+#TODO: moldable and array job, mysql LOAD INFILE, pg COPY or test limit
+
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref) = @_;
 

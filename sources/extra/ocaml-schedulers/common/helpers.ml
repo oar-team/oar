@@ -184,7 +184,10 @@ let replace input output = Str.global_replace (Str.regexp_string input) output
 let replace_regexp input output = Str.global_replace (Str.regexp input) output
 let split a = Str.split (Str.regexp_string a);;
 
-let hash_iter f l h = List.iter (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find " in f j) l 
+let hash_iter f l h = List.iter (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find in hash_iter" in f j) l 
+let hash_map  f l h = List.map  (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find in hash_map" in f j) l 
+
+let hash2couple h = Hashtbl.fold (fun k v acc -> (k, v) :: acc) h []
 
 let couples2hash l = 
   let h = Hashtbl.create 10 in

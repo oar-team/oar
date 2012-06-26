@@ -196,7 +196,7 @@ let resources_init_slots_determination dbh now =
         let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
           (resource_intervals,slots_init_available_upto_resources)
     end
-    else
+  else
       let resources = List.filter (fun n -> n.state = Alive) potential_resources in
       let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
         (resource_intervals,[{time_s = now; time_e = max_time; set_of_res = resource_intervals}])
@@ -210,7 +210,7 @@ let _ =
 
     (* get hierarchy description from oar.conf and convert it in hierarchy levels and set master_top (toplevel interval) *)
     Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
-    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; 
+    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; (* TODO: why *) 
 
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)

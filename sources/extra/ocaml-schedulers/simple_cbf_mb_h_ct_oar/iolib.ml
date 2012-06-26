@@ -25,7 +25,9 @@ open Helpers
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
-
+(*                      *)
+(* get resource from db *)
+(*                      *)
 let get_resource_list dbh  = 
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
@@ -33,6 +35,49 @@ let get_resource_list dbh  =
     { resource_id = NoN int_of_string a.(0); (* resource_id *)
       network_address = NoNStr a.(1); (* network_address *)
       state = NoN rstate_of_string a.(2); (* state *)
+      available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
+  in
+    map res get_one_resource ;;
+
+(*                                                                 *)
+(* get resource from db with hierarchy information                 *)
+(* label of fields must be provide for scattered hierarchy support *)
+
+(* TODO: exclude resource_id hy_labels sure ?*)
+
+let get_resource_list_w_hierarchy dbh hy_labels scheduler_resource_order =
+  (* h_value_order hash stores for each hy label the occurence order of different hy values *)
+  let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
+  let i = ref 0 in (* count for ordererd resourced_id *) 
+
+  (*let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
+  (* list of hashs to compute scattered hierarchy *)
+
+  let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*)
+  let ary = Array.make (List.length hy_labels) 0 in
+  let hy_id_array = Array.map (fun x -> Hashtbl.create 10) ary in
+  let query = "SELECT resource_id, network_address, state, available_upto" ^ 
+               (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER " ^
+               scheduler_resource_order in
+  let res = execQuery dbh query in
+  let get_one_resource a = 
+     (* populate hashes of hy_id_ary array and h_value_order hash*)
+      i := !i + 1;
+      for var = 4 to Array.length a do
+        let h_label = hy_ary_labels.(var) in
+        let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
+        if not (List.mem a.(var) ordered_values) then
+          Hashtbl.replace h_value_order h_label (ordered_values @ [a.(var)]);
+        
+        let add_res_id h value = 
+          let lst_value = try Hashtbl.find h value with Not_found -> [] in
+            Hashtbl.replace h value (lst_value @ [!i])
+        in 
+          add_res_id (hy_id_array.(var-4)) a.(var)
+      done;
+    { resource_id = NoN int_of_string a.(0);        (* resource_id *)
+      network_address = NoNStr a.(1);               (* network_address *)
+      state = NoN rstate_of_string a.(2);           (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
     map res get_one_resource ;;
@@ -92,13 +137,11 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
           begin  
             let query = Printf.sprintf "SELECT resource_id FROM resources WHERE ( %s )"  sql_cts in
             let res = execQuery dbh query in 
-            let get_one_resource a = 
-              NoN int_of_string a.(0) (* resource_id *)
-            in
+            let get_one_resource a = NoN int_of_string a.(0) in (* resource_id *)
             let matching_resources = (map res get_one_resource) in 
             let itv_cts = ints2intervals matching_resources in
               Hashtbl.add constraints sql_cts itv_cts;
-              itv_cts
+            itv_cts
           end  
   in 
   let query_base = Printf.sprintf "
