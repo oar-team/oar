@@ -1,0 +1,37 @@
+From 128dc78cf1698a39c9d7b39c2a743c1cefbd5c20 Mon Sep 17 00:00:00 2001
+From: Philippe Le Brouster <philippe.le-brouster@imag.fr>
+Date: Tue, 26 Jun 2012 09:50:49 +0200
+Subject: [PATCH] Use ucfr to register conffile for debian.
+
+---
+ setup/templates/header.sh.in |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/setup/templates/header.sh.in b/setup/templates/header.sh.in
+index c507f9c..3616e41 100644
+--- a/setup/templates/header.sh.in
++++ b/setup/templates/header.sh.in
+@@ -62,13 +62,18 @@ install_conffile() {
+ 
+ 
+ install_deb_conffile() {
+-    local src dst rights owner tmpfile
++    local src dst rights owner tmpfile package
+     src=$1
+     dst=$2
+     rights=$3
+     owner=$4
+ 
+-    ucf --debconf-ok $src $dst 
++    # PACKAGE need to be defined in the postinst before calling *-setup.
++    package=$PACKAGE
++
++    ucf --debconf-ok --three-way $src $dst
++    ucfr $package $dst
++
+     if [ -n "$rights" ]; then
+         chmod $rights $dst
+     fi
+-- 
+1.7.10
+

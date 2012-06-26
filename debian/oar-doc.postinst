@@ -4,6 +4,8 @@ set -e
 
 . /usr/share/debconf/confmodule
 
+PACKAGE=oar-doc
+
 case "$1" in
     configure)
         ;;

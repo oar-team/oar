@@ -6,6 +6,8 @@ set -e
 
 . /usr/lib/oar/setup/node.sh
 
+PACKAGE=oar-node
+
 case "$1" in
     configure)
         node_setup

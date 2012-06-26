@@ -6,6 +6,8 @@ set -e
 
 . /usr/lib/oar/setup/common.sh
 
+PACKAGE=oar-common
+
 case "$1" in
     configure)
         common_setup

@@ -6,6 +6,8 @@ set -e
 
 . /usr/lib/oar/setup/api.sh
 
+PACKAGE=oar-restful-api
+
 print_api_installation_message () {
     echo "
 

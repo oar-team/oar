@@ -6,6 +6,8 @@ set -e
 
 . /usr/lib/oar/setup/user.sh
 
+PACKAGE=oar-user
+
 case "$1" in
     configure)
         user_setup

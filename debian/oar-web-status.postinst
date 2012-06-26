@@ -8,6 +8,8 @@ set -e
 . /usr/lib/oar/setup/monika.sh
 . /usr/lib/oar/setup/draw-gantt.sh
 
+PACKAGE=oar-web-status
+
 case "$1" in
     configure)
         www_conf_setup

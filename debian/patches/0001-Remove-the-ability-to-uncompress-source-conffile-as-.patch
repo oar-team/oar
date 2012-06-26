@@ -1,0 +1,33 @@
+From 759b1f892e8c12a8cc4d9381a9afa74120b2b222 Mon Sep 17 00:00:00 2001
+From: Philippe Le Brouster <philippe.le-brouster@imag.fr>
+Date: Tue, 26 Jun 2012 09:46:56 +0200
+Subject: [PATCH 1/2] Remove the ability to uncompress source conffile as it
+ is no more needed.
+
+    we prevent dh_compress from compressing examples.
+---
+ setup/templates/header.sh.in |    8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/setup/templates/header.sh.in b/setup/templates/header.sh.in
+index 143b7f7..c507f9c 100644
+--- a/setup/templates/header.sh.in
++++ b/setup/templates/header.sh.in
+@@ -68,14 +68,6 @@ install_deb_conffile() {
+     rights=$3
+     owner=$4
+ 
+-    # Decompress the file, if compressed
+-    tmpfile=
+-    if [ ! -f "$src" ] && [ -f "${src}.gz" ]; then
+-        tmpfile=$(tempfile)
+-        zcat ${src}.gz > $tmpfile
+-        src=$tmpfile
+-    fi
+-
+     ucf --debconf-ok $src $dst 
+     if [ -n "$rights" ]; then
+         chmod $rights $dst
+-- 
+1.7.10
+

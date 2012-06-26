@@ -7,6 +7,8 @@ set -e
 
 . /usr/lib/oar/setup/tools.sh
 
+PACKAGE=oar-admin
+
 case "$1" in
     configure)
         tools_setup
