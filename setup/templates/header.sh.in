@@ -62,13 +62,18 @@ install_conffile() {
 
 
 install_deb_conffile() {
-    local src dst rights owner tmpfile
+    local src dst rights owner tmpfile package
     src=$1
     dst=$2
     rights=$3
     owner=$4
 
-    ucf --debconf-ok $src $dst 
+    # PACKAGE need to be defined in the postinst before calling *-setup.
+    package=$PACKAGE
+
+    ucf --debconf-ok --three-way $src $dst
+    ucfr $package $dst
+
     if [ -n "$rights" ]; then
         chmod $rights $dst
     fi
