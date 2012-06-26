@@ -68,14 +68,6 @@ install_deb_conffile() {
     rights=$3
     owner=$4
 
-    # Decompress the file, if compressed
-    tmpfile=
-    if [ ! -f "$src" ] && [ -f "${src}.gz" ]; then
-        tmpfile=$(tempfile)
-        zcat ${src}.gz > $tmpfile
-        src=$tmpfile
-    fi
-
     ucf --debconf-ok $src $dst 
     if [ -n "$rights" ]; then
         chmod $rights $dst
