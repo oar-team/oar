@@ -1628,6 +1628,9 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     my @Job_id_list;
 
+    my $pg=0;
+    if ($Db_type eq "Pg") {$pg=1}
+
     # Check the user validity
     if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
       warn("/!\\ Invalid username: '$user'\n");
@@ -1729,7 +1732,9 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #print "$query_jobs\n";
     #print "First_array_job_id: $first_array_job_id\n";
 
+    if ($pg) {$first_array_job_id  -= $nb_jobs-1}
     my $job_id = $first_array_job_id;
+
     my $random_number;
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
@@ -1757,6 +1762,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #print "First_moldable_id: $first_moldable_id\n";
 
     my $moldable_id = $first_moldable_id;
+    if ($pg) {$moldable_id -= $nb_jobs-1}
     my $query_job_resource_groups  = "INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property) VALUES ";
     for (my $i=0; $i<$nb_jobs; $i++){
       foreach my $r (@{$moldable_resource->[0]}){
@@ -1776,6 +1782,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #print "First_res_group_id : $first_res_group_id \n";
 
     my $res_group_id = $first_res_group_id;
+     if ($pg) {$res_group_id -= $nb_resource_grp -1}
     my $query_job_resource_descriptions="INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order) VALUES ";
     
     for (my $i=0; $i<$nb_jobs; $i++){

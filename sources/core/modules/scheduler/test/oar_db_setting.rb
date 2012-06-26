@@ -33,11 +33,13 @@ def oar_load_test_config
 end
 
 def oar_db_connect
-#	if $db_type == "mysql"
-#		$db_type = "Mysql"
-#	else 
-#    $db_type = "Pg" #postgresql
-#  end
+	if ($db_type == "Mysql")
+    $PG = false
+    $MYSQL = true
+	else 
+    $PG = true
+    $MYSQL = false
+  end
   puts  "dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
 				"#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}"
 
@@ -173,28 +175,30 @@ end
 #
 def oar_truncate_jobs
 #  DB << "
+ rst_id = ""
+ rst_id = "RESTART IDENTITY" if $PG
  requests = "
-    TRUNCATE accounting;
-    TRUNCATE assigned_resources;
-    TRUNCATE challenges;
-    TRUNCATE event_logs;
-    TRUNCATE event_log_hostnames;
-    TRUNCATE files;
-    TRUNCATE frag_jobs;
-    TRUNCATE gantt_jobs_predictions;
-    TRUNCATE gantt_jobs_predictions_log;
-    TRUNCATE gantt_jobs_predictions_visu;
-    TRUNCATE gantt_jobs_resources;
-    TRUNCATE gantt_jobs_resources_log;
-    TRUNCATE gantt_jobs_resources_visu;
-    TRUNCATE jobs;
-    TRUNCATE job_dependencies;
-    TRUNCATE job_resource_descriptions;
-    TRUNCATE job_resource_groups;
-    TRUNCATE job_state_logs;
-    TRUNCATE job_types;
-    TRUNCATE moldable_job_descriptions;
-    TRUNCATE resource_logs;
+    TRUNCATE accounting #{rst_id};
+    TRUNCATE assigned_resources #{rst_id};
+    TRUNCATE challenges #{rst_id};
+    TRUNCATE event_logs #{rst_id};
+    TRUNCATE event_log_hostnames #{rst_id};
+    TRUNCATE files #{rst_id};
+    TRUNCATE frag_jobs #{rst_id};
+    TRUNCATE gantt_jobs_predictions #{rst_id};
+    TRUNCATE gantt_jobs_predictions_log #{rst_id};
+    TRUNCATE gantt_jobs_predictions_visu #{rst_id};
+    TRUNCATE gantt_jobs_resources #{rst_id};
+    TRUNCATE gantt_jobs_resources_log #{rst_id};
+    TRUNCATE gantt_jobs_resources_visu #{rst_id};
+    TRUNCATE jobs #{rst_id};
+    TRUNCATE job_dependencies #{rst_id};
+    TRUNCATE job_resource_descriptions #{rst_id};
+    TRUNCATE job_resource_groups #{rst_id};
+    TRUNCATE job_state_logs #{rst_id};
+    TRUNCATE job_types #{rst_id};
+    TRUNCATE moldable_job_descriptions #{rst_id};
+    TRUNCATE resource_logs #{rst_id};
 "
   multiple_requests_execute(requests)
 end
@@ -217,6 +221,7 @@ end
 #
 
 def oar_truncate_gantt
+  
  requests = "
     TRUNCATE gantt_jobs_predictions;
     TRUNCATE gantt_jobs_predictions_log;
@@ -306,9 +311,11 @@ end
 
 def oar_truncate_resources
 #  DB << "
+  rst_id = ""
+  rst_id = "RESTART IDENTITY" if $PG
   requests = "
-    TRUNCATE resources;
-    TRUNCATE resource_logs;
+    TRUNCATE resources #{rst_id};
+    TRUNCATE resource_logs #{rst_id};
     "
   multiple_requests_execute(requests)
 end
