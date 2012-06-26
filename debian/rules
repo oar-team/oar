@@ -70,3 +70,6 @@ override_dh_clean:
 override_dh_installinit:
 	dh_installinit --no-start
 
+override_dh_compress:
+	# avoid to compress examples as we use ucf after.
+	dh_compress -Xexamples

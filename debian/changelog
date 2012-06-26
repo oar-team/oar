@@ -4,6 +4,7 @@ oar (2.5.2-3~3) UNRELEASED; urgency=low
     (Closes: #676220).
   * Remove the conffiles for oar-web-status and oar-common when purging the
     packages (Closes: #674657).
+  * Override dh_compress to prevent debhelper to compress examples.
 
  -- Philippe Le Brouster <plb@nebkha.net>  Sun, 24 Jun 2012 14:59:21 +0200
 
