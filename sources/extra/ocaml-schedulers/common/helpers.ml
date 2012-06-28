@@ -145,6 +145,14 @@ let rec cross = function
 	(List.map (fun x -> List.map (fun a -> x::a) reste) l)
 
 
+(* as map without [] is f return it *)
+let rec map_wo_empty f = function
+    [] -> []
+  | a::l -> let r = f a in
+    match r with 
+      [] -> map_wo_empty f l
+     | x -> r :: map_wo_empty f l
+
 (* array manipulations *)
 
 let swap tab a b = 

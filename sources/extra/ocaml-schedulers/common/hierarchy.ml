@@ -32,8 +32,8 @@ let h_desc_to_h_levels h_desc =
 (*                                                                                          *)
 (* Converter hierarchy ressource_id by field values to hierarchy levels (list of intervals) *)
 (*                                                                                          *)
-(* let h = Helpers.couples2hash [(1,[1;2;3]);(2,[5;6;7])];; *)
-(* let h_desc = Hierarchy.hy_array2hy_itvs [|h|] ["resource_id"];; *)
+(* let h = Helpers.couples2hash [(1,[1;2;3]);(2,[5;6;7])];;                                 *)
+(* let h_desc = Hierarchy.hy_array2hy_itvs [|h|] ["resource_id"];;                          *)
 
 (* TODO: need to keep order on id value *)
 
@@ -42,7 +42,6 @@ let hy_array2hy_itvs_old hy_id_array hy_labels =
     let h_scat_to_itvs h = Hashtbl.fold (fun k v acc -> (ints2intervals v)::acc) h [] in 
     let h_scat_label hy_ids hy_label = (hy_label,(h_scat_to_itvs hy_ids))
       in List.rev (List.map2 h_scat_label hy_id_lst hy_labels);;
-
 
 (* 
 
@@ -65,12 +64,10 @@ let hy_array2hy_itvs hy_id_array h_val_order hy_labels =
     let h_scat_label hy_ids hy_label = (hy_label,(h_scat_to_itvs hy_ids hy_label))
       in List.rev (List.map2 h_scat_label hy_id_lst hy_labels);;
 
-
-
 (*                                                                                                        *)
 (* One a the core function                                                                                *)
 (* Find ressources accordingly to resource requirements, hierarchy structures and available resources itv *)
-(* Notes: hierarchy blocks are contiguous not scattereds                                                  *)
+(* Notes: hierarchy blocks are contiguous not scattered                                                   *)
 (*                                                                                                        *)
 let find_resource_hierarchies itv_l hy r_rqt_l =
  let rec find_resource_n_h (top: Interval.interval) h r = match (h, r) with
@@ -110,27 +107,50 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
           in iter_n_find [] n0 available_bk
     in
       if (List.length hy) = 1 then
-        extract_n_block_itv itv_l (List.hd hy) (List.hd r_rqt_l) 
+        extract_n_block_itv itv_l (List.hd hy) (List.hd r_rqt_l)
       else
         List.flatten (find_resource_n_h !toplevel_itv hy r_rqt_l);;
 
-let find_resource_hierarchies_scatterd itv_l hy_scat r_rqt_l =
- let rec find_resource_n_h (top: Interval.interval) h r = match (h, r) with
+(*
+let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
+let h1 = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}];;
+
+# h0;;
+- : Interval.interval list = [{b = 1; e = 16}; {b = 17; e = 32}]
+# h1;;
+- : Interval.interval list =
+[{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}]
+
+find_resource_hierarchies [{b = 1; e = 32}] [h0;h1] [2; 1;];
+
+- : Interval.interval list = [{b = 1; e = 8}; {b = 17; e = 24}]
+
+*)
+
+(* *)
+(* *)
+(* *)
+(* TODO: remove !toplevel_itv ? use first level hierarchy ????  *)
+
+let find_resource_hierarchies_scattered itv_l (hy_scat: interval list list list)  (r_rqt_l: int list) =
+ let rec find_resource_n_h (top: interval list) (h: interval list list list)  r = match (h, r) with
   | ([],_) | (_,[]) -> failwith "Bug ??- need to raise exception ???\n"; (* TODO *)
-  | (tops::tl_h, n0::m) ->  (* ???? *)
-      let h_itv = inter_intervals tops [top] in
-      let available_bk = extract_no_empty_bk itv_l h_itv in
-      if (List.length available_bk) < n0 then
+  | (sh_tops::tl_h, n0::m) ->  (* ???? *)
+      let scat_h_itvs = Helpers.map_wo_empty (fun sh_top -> inter_intervals sh_top top) sh_tops in (* remove resources which are present in upper level *)
+      let available_bk = keep_no_empty_scat_bks itv_l scat_h_itvs  in                              (* remove empty scattered blocks                     *) 
+      if (List.length available_bk) < n0 then (* not enough scattered blocks *)
         []
       else
-        if List.length m = 1 then
+        if List.length m = 1 then (* reach last level hierarchy of requested resources *)
           (* iter sur top *)
           let rec iter_n_no_empty result n bks = match (bks,n) with
             | (_,0) -> List.rev result (* win *)
-            | (bk::tl_bks, nn) -> 
+            | (scat_bk::tl_bks, nn) -> 
               begin
-                let h_itv = inter_intervals (List.hd tl_h)  [bk] in
-                let sub_result = extract_n_block_itv itv_l h_itv (List.hd m) in
+                (* remove resources which are present in upper level *)
+                let scat_h_itvs = Helpers.map_wo_empty (fun x -> inter_intervals x scat_bk) (List.hd tl_h) in
+                (* remove empty scattered blocks  *)
+                let sub_result = extract_n_scattered_block_itv itv_l scat_h_itvs (List.hd m) in (*   extract_n_scattered_block_itv ;)*)
                 match sub_result with 
                   | [] -> iter_n_no_empty result nn tl_bks
                   | x  -> iter_n_no_empty (sub_result::result) (nn-1) tl_bks
@@ -138,12 +158,12 @@ let find_resource_hierarchies_scatterd itv_l hy_scat r_rqt_l =
             | ([],_) -> [] (* failed*)
             
           in iter_n_no_empty [] n0 available_bk
-        else
-          let rec iter_n_find (result: Interval.interval list list) n (bks: Interval.interval list)  = match (bks,n) with
+        else (* next hierarchy level *)
+          let rec iter_n_find (result: Interval.interval list list) n (scat_bks: Interval.interval list list)  = match (scat_bks,n) with
             | (_,0) -> List.rev result (* win *)
-            | (bk::tl_bks, nn) -> 
+            | (scat_bk::tl_bks, nn) -> 
               begin
-                let sub_result = find_resource_n_h bk tl_h m in
+                let sub_result = find_resource_n_h scat_bk tl_h m in
                 match sub_result with 
                   | [] -> iter_n_find result nn tl_bks
                   | x  -> iter_n_find ((List.flatten x)::result) (nn-1) tl_bks
@@ -152,9 +172,31 @@ let find_resource_hierarchies_scatterd itv_l hy_scat r_rqt_l =
           in iter_n_find [] n0 available_bk
     in
       if (List.length hy_scat) = 1 then
-        extract_n_block_itv itv_l (List.hd hy_scat) (List.hd r_rqt_l) 
+        extract_n_scattered_block_itv itv_l (List.hd hy_scat) (List.hd r_rqt_l) (*   extract_n_scattered_block_itv ;)*) 
       else
-        List.flatten (find_resource_n_h !toplevel_itv hy_scat r_rqt_l);;
+        List.flatten (find_resource_n_h [!toplevel_itv] hy_scat r_rqt_l);;
+
+(*
+let h0 = [[{b = 1; e = 16}];[{b = 17; e = 32}]];;
+let h1 = [[{b = 1; e = 8}];[{b = 9; e = 16}];[{b = 17; e = 24}];[{b = 25; e = 32}]];;
+
+find_resource_hierarchies_scattered  [{b = 1; e = 32}] [h0] [2]
+- : Interval.interval list = [{b = 1; e = 16}; {b = 17; e = 32}]
+
+
+find_resource_hierarchies_scattered  [{b = 1; e = 32}] [h0;h1] [2; 1;];
+- : Interval.interval list = [{b = 1; e = 8}; {b = 17; e = 24}]
+
+let h01 = [[{b = 1; e = 7};{b = 41; e =47 }];[{b = 17; e = 32}]];;
+
+# find_resource_hierarchies_scattered  [{b = 1; e = 50}] [h01] [1];;
+- : Interval.interval list = [{b = 1; e = 7}; {b = 41; e = 47}]
+# find_resource_hierarchies_scattered  [{b = 1; e = 50}] [h01] [2];; 
+- : Interval.interval list = [{b = 1; e = 7}; {b = 17; e = 32}; {b = 41; e = 47}]
+
+*)
+
+
 
 (*
 let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
@@ -175,10 +217,6 @@ let h2 = [{b = 1; e = 4}; {b = 5; e = 6}; {b = 17; e = 24}; {b = 25; e = 32}];;
 
 #   find_resource_hierarchies [{b = 1; e = 32}] [h0;h1] [2; 1;];;
 - : Interval.interval list = [{b = 1; e = 6}; {b = 17; e = 24}]
-
-
-
-
 
 *)
 
