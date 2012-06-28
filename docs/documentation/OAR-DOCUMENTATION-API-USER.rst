@@ -1749,7 +1749,7 @@ GET /admission_rules
   html , yaml , json
 
 :authentication:
-  public
+  oar
 
 :output:
   *structure*: hash
@@ -1817,7 +1817,7 @@ GET /admission_rules/<id>
   html , yaml , json
 
 :authentication:
-  public
+  oar
 
 :output:
   *structure*: 1 element array of hash
