@@ -8,6 +8,7 @@ version 2.5.3:
   - Add MAX_CONCURRENT_JOB_TERMINATIONS into the oar.conf ofthe master. This
     limits the number of concurrent processes launched by the Almighty when the
     the jobs finish.
+  - Bug fix in ssh key feature in oarsub.
 
 version 2.5.2:
 --------------

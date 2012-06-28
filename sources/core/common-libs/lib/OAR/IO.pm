@@ -1205,8 +1205,8 @@ sub job_key_management($$$$) {
                 die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
                 if ($pid == 0) {
                     $ENV{OARDO_BECOME_USER} = $lusr;
-                    unless (exec({"oardodo"} "oardodo","cat $import_job_key_file")) {
-                        warn ("Error: Cannot cannot read key file:$import_job_key_file\n");
+                    unless (exec("oardodo cat $import_job_key_file")) {
+                        warn ("Error: Cannot read key file:$import_job_key_file\n");
                         exit(-14);
                     }
                     exit(0);
@@ -1414,7 +1414,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
               umask(oct("177"));
               $ENV{OARDO_BECOME_USER} = $lusr;
               open(STDERR, ">/dev/null");
-                  unless (exec({"oardodo"} "oardodo","dd of=$export_job_key_file_tmp")) {
+                  unless (exec("oardodo dd of=$export_job_key_file_tmp")) {
                   warn ("Error: Cannot exec user shell ($?)");
                   push(@Job_id_list,-14);
                   return(@Job_id_list);
