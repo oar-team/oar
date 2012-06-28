@@ -1721,7 +1721,7 @@ SWITCH: for ($q) {
   #
   #{{{ GET /config/<variable_name> : Get a configuration variable value
   #
-  $URI = qr{^/config/(\w+)\.(yaml|json|html)*$};
+  $URI = qr{^/config/(\w+)\.*(yaml|json|html)*$};
   OAR::API::GET( $_, $URI ) && do {
   	$_->path_info =~ m/$URI/;
   	my $variable = $1;
@@ -1762,7 +1762,7 @@ SWITCH: for ($q) {
   #
   #{{{ POST /config/<variable_name> : Change the value of a configuration parameter
   #
-  $URI = qr{^/config/(\w+)\.(yaml|json|html)*$};
+  $URI = qr{^/config/(\w+)\.*(yaml|json|html)*$};
   OAR::API::POST( $_, $URI ) && do {
   	$_->path_info =~ m/$URI/;
   	my $variable = $1;
@@ -1797,14 +1797,15 @@ SWITCH: for ($q) {
     }
 
     my $result;
+    set_value($variable, $parameter->{value});
     if (is_conf($variable)) {
-    	set_value($variable, $parameter->{value});
-    	$result->{$variable} = $parameter;
+      print $q->header( -status => 202, -type => $type , -location => "/config/$variable" );
+      $result={"status" => "accepted"};
     }
     else {
-    	$result->{$variable} = OAR::API::struct_empty($STRUCTURE);
+      print $q->header( -status => 201, -type => $type , -location => "/config/$variable" );
+      $result={"status" => "created"};
     }
-
     print OAR::API::export($result,$ext);
     last;
   };
