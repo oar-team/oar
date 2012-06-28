@@ -62,21 +62,18 @@ install_conffile() {
 
 
 install_deb_conffile() {
-    local src dst rights owner tmpfile
+    local src dst rights owner tmpfile package
     src=$1
     dst=$2
     rights=$3
     owner=$4
 
-    # Decompress the file, if compressed
-    tmpfile=
-    if [ ! -f "$src" ] && [ -f "${src}.gz" ]; then
-        tmpfile=$(tempfile)
-        zcat ${src}.gz > $tmpfile
-        src=$tmpfile
-    fi
+    # PACKAGE need to be defined in the postinst before calling *-setup.
+    package=$PACKAGE
 
-    ucf --debconf-ok $src $dst 
+    ucf --debconf-ok --three-way $src $dst
+    ucfr $package $dst
+
     if [ -n "$rights" ]; then
         chmod $rights $dst
     fi
