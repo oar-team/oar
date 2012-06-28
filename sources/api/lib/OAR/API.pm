@@ -935,6 +935,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/octet-stream")  { return "yaml"; }
+  elsif ($content_type eq "multipart/form-data")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
   elsif ($content_type eq "application/x-gzip")  { return "tgz"; }
   #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
