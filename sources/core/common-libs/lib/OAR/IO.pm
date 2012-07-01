@@ -1615,16 +1615,12 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     return($job_id);
 }
 
-# not supported ssh_ket
-
 # return value : ref. of array of created jobids
 # TODO: moldable, very large insertion,   
-# test/reject: $startTimeReservation(done in calling function ???), ,$ssh_priv_key,$ssh_pub_key (todo in calling function)
+# ssh_key by job is not supported (,$ssh_priv_key,$ssh_pub_key)
 
 sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
-
-#not supported: moldable, $startTimeReservation, $anterior_ref, ,$ssh_priv_key,$ssh_pub_key
 
     my @Job_id_list;
 
@@ -1782,7 +1778,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #print "First_res_group_id : $first_res_group_id \n";
 
     my $res_group_id = $first_res_group_id;
-     if ($pg) {$res_group_id -= $nb_resource_grp -1}
+     if ($pg) {$res_group_id -= $nb_resource_grp*$nb_jobs-1} #TODO: add *nb_moldable for moldable support 
     my $query_job_resource_descriptions="INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order) VALUES ";
     
     for (my $i=0; $i<$nb_jobs; $i++){
