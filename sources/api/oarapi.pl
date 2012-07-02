@@ -439,6 +439,7 @@ SWITCH: for ($q) {
                                                  );
     my $job = OAR::Stat::get_specific_jobs([$jobid]);
     if (@$job == 0 ) {
+      OAR::Stat::close_db_connection; 
       OAR::API::ERROR( 404, "Job not found",
         "Job not found" );
       last;
@@ -1004,6 +1005,7 @@ SWITCH: for ($q) {
         	else {
         		# resource does not exist
         		#$resources = OAR::API::struct_empty($STRUCTURE);
+                        OAR::Nodes::close_db_connection;
                         OAR::API::ERROR( 404, "Resource not found",
                         "Resource not found" );
         	}
@@ -1013,6 +1015,7 @@ SWITCH: for ($q) {
                 $compact = 1;
         }
         else {
+                OAR::Nodes::close_db_connection;
         	OAR::API::ERROR(500,"Error 666!","Error 666");           
         }
     }
@@ -1191,6 +1194,7 @@ SWITCH: for ($q) {
                                                 "Could not create asked resources"
                                                  );
     if ($ids[0] =~ /^Error.*/) {
+      OAR::IO::disconnect($dbh);
       OAR::API::ERROR(500,"SQL query failed into resources creation",$ids[0]);
     } 
     my $result=[];
@@ -1306,6 +1310,7 @@ SWITCH: for ($q) {
     my @res = $sth->fetchrow_array();
     if ($res[0]) { $Resource=$res[0];}
     else { 
+      OAR::IO::disconnect($base);
       OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($id,$node,$cpuset)");
       last;
     }
@@ -1340,9 +1345,11 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print OAR::API::export( { 'status' => "deleted",'api_timestamp' => time() } , $ext );
     }else{
+      OAR::IO::disconnect($base);
       OAR::API::ERROR(403,"Forbidden","The resource $Resource must be in the Dead status"); 
       last;
     }
+    OAR::IO::disconnect($base);
     last;
   };
   #}}}
@@ -1491,6 +1498,7 @@ SWITCH: for ($q) {
       print $HTML_HEADER if ($ext eq "html");
       print OAR::API::export($admission_rule,$ext);
     }else{
+      OAR::Stat::close_db_connection; 
       OAR::API::ERROR(404,"Admission rule not found","No admission rule corresponding to id=$rule_id");
     }
     last;
@@ -1542,6 +1550,7 @@ SWITCH: for ($q) {
       	OAR::IO::disconnect($dbh); 
     }
     else {
+      OAR::IO::disconnect($dbh); 
       OAR::API::ERROR(
         500,
         "Admission rule not created",
@@ -1581,6 +1590,7 @@ SWITCH: for ($q) {
         OAR::Stat::close_db_connection; 
     }
     else {
+        OAR::Stat::close_db_connection; 
     	OAR::API::ERROR(404,"Not found","Corresponding admission rule could not be found");
     }
     last;
