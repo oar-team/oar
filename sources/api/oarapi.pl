@@ -1194,12 +1194,12 @@ SWITCH: for ($q) {
                                                 "Could not create asked resources",
                                                 "Could not create asked resources"
                                                  );
-    if ($ids[0] =~ /^Error.*/) {
-      OAR::IO::disconnect($dbh);
-      OAR::API::ERROR(500,"SQL query failed into resources creation",$ids[0]);
-    } 
     my $result=[];
     foreach my $id (@ids) {
+      if (not $id =~ /^\d+$/) {
+        OAR::IO::disconnect($dbh);
+        OAR::API::ERROR(500,"SQL query failed into resources creation",$id);
+      } 
       push(@$result,{ id => $id, links => [ { rel => "self", href => "resources/$id" } ] });
     }
     $result = OAR::API::add_pagination($result,@ids,$q->path_info,$q->query_string,$ext,0,0,$STRUCTURE);
