@@ -1190,7 +1190,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my @ids=OAR::IO::add_resources($dbh,$resources) or OAR::API::ERROR(500,
+    my @ids=OAR::IO::add_resources($dbh,$resources) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
                                                 "Could not create asked resources",
                                                 "Could not create asked resources"
                                                  );
@@ -2170,11 +2170,11 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my $count = OAR::IO::sql_count($dbh,$query) or OAR::API::ERROR(500,
+    my $count = OAR::IO::sql_count($dbh,$query) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
                                                 "SQL error",
                                                 "SQL error" # <- add here the sql error output
                                                  ); 
-    my $result = OAR::IO::sql_select($dbh,$query,$limit,$offset) or OAR::API::ERROR(500,
+    my $result = OAR::IO::sql_select($dbh,$query,$limit,$offset) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
                                                 "SQL error",
                                                 "SQL error" # <- add here the sql error output
                                                  );
@@ -2185,6 +2185,7 @@ SWITCH: for ($q) {
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export(\$result,$ext);
+    OAR::IO::disconnect($dbh);
     last;
   };
   #}}}
