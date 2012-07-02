@@ -591,8 +591,29 @@ sub struct_job_nodes($$) {
   my $resources=shift;
   my $structure=shift;
   my $result=[];
+  my $network_addresses={};
+  my $network_address;
   foreach my $n (@{$resources->{assigned_hostnames}}) {
-    push(@$result,{'network_address' => $n, 'id' => 0});
+    push(@$result,{'network_address' => $n, 'status' => 'assigned'});
+  }
+  if (ref($resources->{reserved_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{reserved_resources}})) {
+      $network_address=$resources->{reserved_resources}->{$r}->{network_address};
+      if (!defined($network_addresses->{$network_address})) {;      
+        push(@$result,{'network_address' => $network_address, 'status' => 'reserved'});
+        $network_addresses->{$network_address}=1;
+      }
+    }
+  }
+  $network_addresses={};
+  if (ref($resources->{scheduled_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
+      $network_address=$resources->{scheduled_resources}->{$r}->{network_address};
+      if (!defined($network_addresses->{$network_address})) {;      
+        push(@$result,{'network_address' => $network_address, 'status' => 'scheduled'});
+        $network_addresses->{$network_address}=1;
+      }
+    }
   }
   return $result;
 }
