@@ -11,7 +11,7 @@
 # to be interpreted by vim or just type the :set command given
 # by this modeline.
 #
-#    Copyright (C) 2009-2010  <Bruno Bzeznik> Bruno.Bzeznik@imag.fr
+#    Copyright (C) 2009-2012  <Bruno Bzeznik> Bruno.Bzeznik@imag.fr
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ use File::Listing qw(parse_dir);
 
 #use Data::Dumper;
 
-my $VERSION="1.0.1alpha1";
+my $VERSION="1.0.2";
 
 ##############################################################################
 # CONFIGURATION AND INITIALIZATION STUFF

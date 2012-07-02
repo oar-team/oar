@@ -2,7 +2,7 @@
 package OAR::API;
 require Exporter;
 
-my $VERSION="1.0.1alpha1";
+my $VERSION="1.0.2";
 
 use strict;
 #use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
