@@ -481,6 +481,7 @@ SWITCH: for ($q) {
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($resources,$ext);
+    OAR::Stat::close_db_connection;
     last;
   };
   #}}}
