@@ -1827,33 +1827,34 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     #
-    # Hold/Waiting management and job_state_log setting
+    # Hold/Waiting management, array_id and job_state_log setting
     # Job is inserted with hold state first
     #
     my $query_job_state_logs = "INSERT INTO job_state_logs (job_id,job_state,date_start) VALUES ";
     $job_id = $first_array_job_id;
-    if  (!defined($job_hold)) {
-      #update array_id field and set job to Waiting and insert job_state_log 
-      my $query_array_id = "UPDATE jobs SET state = \'Waiting\', array_id = " . $first_array_job_id . " WHERE job_id IN (";
-      for (my $i=0; $i<$nb_jobs; $i++){
-        $query_job_state_logs = $query_job_state_logs . "($job_id,\'Waiting\',$date),";
-        $query_array_id = $query_array_id . "$job_id,";
-        $job_id++;
-      }
-      chop($query_job_state_logs);
-      chop($query_array_id);
-      $query_array_id = $query_array_id . ")";
-      $dbh->do($query_job_state_logs);
-      $dbh->do($query_array_id);
-    } 
-    else {
-      for (my $i=0; $i<$nb_jobs; $i++){
-        $query_job_state_logs = $query_job_state_logs . "($job_id,\'Hold\',$date),";
-        $job_id++;
-      }
-      chop($query_job_state_logs);
-      $dbh->do($query_job_state_logs);
+    my $query_array_id = "UPDATE jobs SET ";
+    my $state_log = "\'Hold\'";
+
+    if  (defined($job_hold)) {
+      $query_array_id =  $query_array_id . " array_id = ". $first_array_job_id . " WHERE job_id IN (";
     }
+    else {
+      $query_array_id =  $query_array_id . "state = \'Waiting\', array_id = " . $first_array_job_id . " WHERE job_id IN (";
+      $state_log = "\'Waiting\'";
+    }
+  
+    #update array_id field and set job to state if waiting and insert job_state_log 
+    for (my $i=0; $i<$nb_jobs; $i++){
+      $query_job_state_logs = $query_job_state_logs . "($job_id,$state_log,$date),";
+      $query_array_id = $query_array_id . "$job_id,";
+      $job_id++;
+    }
+    chop($query_job_state_logs);
+    chop($query_array_id);
+    $query_array_id = $query_array_id . ")";
+    $dbh->do($query_job_state_logs);
+    $dbh->do($query_array_id);
+
     return (\@Job_id_list);
 }
 
