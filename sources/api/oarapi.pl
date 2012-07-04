@@ -2018,7 +2018,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $filename=$1;
 
-    # Must be authenticated
+    #Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before getting files" );
@@ -2048,31 +2048,46 @@ SWITCH: for ($q) {
       last; 
     }
 
-    # Upload the file if any 
-    #my $fh = $q->upload('file');
-    #if (defined $fh) {
-    #    my $io_handle = $fh->handle;
-    #    my $buffer;
-    #    open (OUTFILE, "|", "$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
-    #    while (my $bytesread = $io_handle->read($buffer, 1024)) {
-    #      print OUTFILE $buffer;
-    #    }
-    #    close(OUTFILE);
-    if ($q->param('POSTDATA')) {
-      if (system("$OARDODO_CMD","touch",$file) != 0) {
-        OAR::API::ERROR(500, "write error", "Error creating file: $file");
-        close(OUTFILE);
-        last; 
-      }
-      open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
-      print OUTFILE $q->param('POSTDATA');
-      close(OUTFILE);
-    }else{
-        # If no file is given, then create an empty one
-        `$OARDODO_CMD touch $file`;
+   # Touch the file 
+   if (system("$OARDODO_CMD","touch",$file) != 0) {
+       OAR::API::ERROR(500, "write error", "Error creating file: $file");
+       close(OUTFILE);
+       last; 
     }
-    print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
-    last;
+ 
+    # Upload file from an html form
+    if ($q->content_type =~ /^multipart\/form-data.*/) {
+      my $fh = $q->upload('file');
+      if (defined $fh) {
+        my $io_handle = $fh->handle;
+        my $buffer;
+        open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
+        while (my $bytesread = $io_handle->read($buffer, 1024)) {
+          print OUTFILE $buffer;
+        }
+        close(OUTFILE);
+      }
+      print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
+      last;
+
+    # Upload file from a direct octet-streaam
+    }elsif ($q->content_type eq "application/octet-stream") {
+      if ($q->param('POSTDATA')) {
+        if (system("$OARDODO_CMD","touch",$file) != 0) {
+          OAR::API::ERROR(500, "write error", "Error creating file: $file");
+          close(OUTFILE);
+          last; 
+        }
+        open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
+        print OUTFILE $q->param('POSTDATA');
+        close(OUTFILE);
+      }
+      print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
+      last;
+    }else{
+      OAR::API::ERROR(406, "Bad content type", $q->content_type ." not allowed for file upload");
+      last;
+    }
   };
   #}}}
   #
