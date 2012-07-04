@@ -49,6 +49,7 @@ my $Printed_jobs = 0;
 
 my @job_ids;
 my $array_id;
+my $compact;
 my $full_view;
 my $state;
 my $sql_property;
@@ -78,6 +79,7 @@ GetOptions ("help|h" => \$usage,
             "state|s"  => \$state,
             "user|u:s" => \$user,
             "array:i" => \$array_id,
+            "compact|c" => \$compact,
             "gantt|g=s"   => \$gantt_query,
             "events|e" => \$events_query,
             "properties|p" => \$properties_query,
@@ -119,6 +121,11 @@ if (defined($array_id) && $array_id !=0 && (scalar @job_ids > 0)){
     exit(1);
 }
 
+if (defined($compact) && (defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode) || defined($full_view))) {
+    warn("/!\\ ERROR : compact view cannot be used with exports or full view\n");
+    exit(1);
+}
+
 OAR::Stat::open_db_connection() or die "DB connection error, exiting.\n";
 
 if (defined ($gantt_query)) {
@@ -145,7 +152,7 @@ exit(0);
 
 sub print_usage{
     print <<EOS;
-Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array]
+Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array] [--compact]
        oarstat [-e|-p] [-j jobid|--array array_id] 
        oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
@@ -159,6 +166,7 @@ Options:
   -u, --user                show informations for this user only
       --array               show informations for the specified array_job(s) and
                             toggle array view in
+  -c, --compact             prints a single line for array jobs
   -g, --gantt               show job informations between two date-times
   -e, --events              show job events
   -p, --properties          show job properties
@@ -234,6 +242,9 @@ sub print_job {
 			$jobs = OAR::Stat::get_array_subjobs($array_id);
         }else{
             $jobs = OAR::Stat::get_all_jobs_for_user($user);
+            if ($compact) {
+              $jobs = OAR::Stat::compact_arrays($jobs);
+            }
         }
     }
     elsif ( $#job_ids >= 0 ) {
@@ -275,7 +286,8 @@ sub print_job_data($){
 			'Finishing' => 'F',
 			'Suspended' => 'S',
 			'Resuming' => 'S',
-			'toAckReservation' => 'W'
+			'toAckReservation' => 'W',
+			'NA' => '-'
         );
 		
 		foreach my $job_info (@{$job_array}){
