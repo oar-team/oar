@@ -330,6 +330,7 @@ SWITCH: for ($q) {
     my $state = $q->param('state');
     my $user = $q->param('user');
     my $array = $q->param('array');
+    my $max_items = $MAX_ITEMS;
 
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('array'))) {
         my $param = qr{.*from=(.*?)(&|$)};
@@ -353,12 +354,12 @@ SWITCH: for ($q) {
         my $param = qr{.*limit=(.*?)(&|$)};
         
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
-        	$MAX_ITEMS = $1;
+        	$max_items = $1;
         }
     }
     # GET max items from uri parameter
     if (defined($q->param('limit'))) {
-        $MAX_ITEMS = $q->param('limit');
+        $max_items = $q->param('limit');
     }
     # set offset / GET offset from uri parameter
     my $offset = 0;
@@ -366,7 +367,7 @@ SWITCH: for ($q) {
         $offset = $q->param('offset');
     }
     # requested user jobs
-    my $jobs = OAR::Stat::get_jobs_for_user_query($user,$from,$to,$state,$MAX_ITEMS,$offset,$array);
+    my $jobs = OAR::Stat::get_jobs_for_user_query($user,$from,$to,$state,$max_items,$offset,$array);
     my $total_jobs = OAR::Stat::count_jobs_for_user_query($user,$from,$to,$state,$array);
     
     if ( !defined $jobs || keys %$jobs == 0 ) {
@@ -407,7 +408,7 @@ SWITCH: for ($q) {
     OAR::Stat::close_db_connection();
     
     # add pagination informations
-    $jobs = OAR::API::add_pagination($jobs,$total_jobs,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
+    $jobs = OAR::API::add_pagination($jobs,$total_jobs,$q->path_info,$q->query_string,$ext,$max_items,$offset,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($jobs,$ext);
@@ -976,10 +977,11 @@ SWITCH: for ($q) {
     # by default resources results are paged
     my $paged = 1;
     my $compact = 0;
+    my $max_items = $MAX_ITEMS;
     
     # GET limit from uri parameter
     if (defined($q->param('limit'))) {
-        $MAX_ITEMS = $q->param('limit');
+        $max_items = $q->param('limit');
     }
     # set offset / GET offset from uri parameter
     my $offset = 0;
@@ -995,7 +997,7 @@ SWITCH: for ($q) {
     if (defined($1)) {
     	if ($1 eq "/full") {
     		# get specified intervals of resources
-    		$resources = OAR::Nodes::get_requested_resources($MAX_ITEMS,$offset);
+    		$resources = OAR::Nodes::get_requested_resources($max_items,$offset);
     	}
         elsif ($1 =~ /\/([0-9]+)/)  {
         	# get the resources infos
@@ -1023,7 +1025,7 @@ SWITCH: for ($q) {
     else
     {
     	# get specified intervals of resources
-    	$resources = OAR::Nodes::get_requested_resources($MAX_ITEMS,$offset); 
+    	$resources = OAR::Nodes::get_requested_resources($max_items,$offset); 
         $resources = OAR::API::filter_resource_list($resources); 
     }
     OAR::API::fix_resource_ids($resources);
@@ -1035,7 +1037,7 @@ SWITCH: for ($q) {
     	# get the total number of resources
     	my $total_resources = OAR::Nodes::count_all_resources();
     	# add pagination informations
-    	$resources = OAR::API::add_pagination($resources,$total_resources,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
+    	$resources = OAR::API::add_pagination($resources,$total_resources,$q->path_info,$q->query_string,$ext,$max_items,$offset,$STRUCTURE);
     }
     OAR::Nodes::close_db_connection;
 
@@ -1443,8 +1445,9 @@ SWITCH: for ($q) {
     OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
 
     # GET limit from uri parameter
+    my $max_items=$MAX_ITEMS;
     if (defined($q->param('limit'))) {
-        $MAX_ITEMS = $q->param('limit');
+        $max_items = $q->param('limit');
     }
     # set offset / GET offset from uri parameter
     my $offset = 0;
@@ -1456,7 +1459,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                           );
     # get specified intervals of admission rules
-    my $admissions_rules = OAR::Stat::get_requested_admission_rules($MAX_ITEMS,$offset);
+    my $admissions_rules = OAR::Stat::get_requested_admission_rules($max_items,$offset);
     
     OAR::API::add_admission_rules_uris($admissions_rules,$ext);
     $admissions_rules = OAR::API::struct_admission_rule_list($admissions_rules,$STRUCTURE);
@@ -1466,7 +1469,7 @@ SWITCH: for ($q) {
     OAR::Stat::close_db_connection();
     
     # add pagination informations
-    $admissions_rules = OAR::API::add_pagination($admissions_rules,$total_rules,$q->path_info,$q->query_string,$ext,$MAX_ITEMS,$offset,$STRUCTURE);
+    $admissions_rules = OAR::API::add_pagination($admissions_rules,$total_rules,$q->path_info,$q->query_string,$ext,$max_items,$offset,$STRUCTURE);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($admissions_rules,$ext);
