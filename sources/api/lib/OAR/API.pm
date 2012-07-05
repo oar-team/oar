@@ -166,7 +166,7 @@ sub make_uri($$$) {
   my $path = shift;
   my $ext = shift;
   my $absolute = shift; # deprecated, left here for compatibility
-  if ($ext eq "html") { $path.=".html"; }
+  if (defined($ext) && $ext eq "html") { $path.=".html"; }
   if (our $ABSOLUTE_URIS == 1) {
     return $q->url(-absolute => 1)."/".$path;
   }
