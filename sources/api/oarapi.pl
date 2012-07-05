@@ -2089,13 +2089,13 @@ SWITCH: for ($q) {
       last;
     }
     print $q->header( -status => 201, -type => $type, -location => "media/$file" );
-    print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export( {
-                        'status' => "created",
-                        'links' => [ { "rel" => "self", 
-                                       "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
-                                   } ]
-                      } , $ext );
+   # print $HTML_HEADER if ($ext eq "html");
+   # print OAR::API::export( {
+   #                     'status' => "created",
+   #                     'links' => [ { "rel" => "self", 
+   #                                    "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
+   #                                } ]
+   #                  } , $ext );
     last;
   };
   #}}}
