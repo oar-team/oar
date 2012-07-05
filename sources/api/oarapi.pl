@@ -2020,6 +2020,8 @@ SWITCH: for ($q) {
   OAR::API::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $filename=$1;
+    my $ext = OAR::API::set_ext($q,undef);
+    (my $header, my $type) = OAR::API::set_output_format($ext);
 
     #Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -2070,9 +2072,6 @@ SWITCH: for ($q) {
         }
         close(OUTFILE);
       }
-      print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
-      last;
-
     # Upload file from a direct octet-streaam
     }elsif ($q->content_type eq "application/octet-stream") {
       if ($q->param('POSTDATA')) {
@@ -2085,12 +2084,19 @@ SWITCH: for ($q) {
         print OUTFILE $q->param('POSTDATA');
         close(OUTFILE);
       }
-      print $q->header( -status => 201, -type => "application/octet-stream" , -location => "/media/$file" );
-      last;
     }else{
       OAR::API::ERROR(406, "Bad content type", $q->content_type ." not allowed for file upload");
       last;
     }
+    print $q->header( -status => 201, -type => $type, -location => "media/$file" );
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export( {
+                        'status' => "created",
+                        'links' => [ { "rel" => "self", 
+                                       "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
+                                   } ]
+                      } , $ext );
+    last;
   };
   #}}}
   #
