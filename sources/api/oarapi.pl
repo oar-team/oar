@@ -2032,6 +2032,13 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
+    # For frameworks that can't set the Accept header field:
+    if (defined($q->param('Accept'))) {
+        $type=$q->param('Accept');
+        $ext=OAR::API::get_ext($type);
+        $OAR::API::extension=$ext;
+    }
+
     # Security escaping 
     $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
 
