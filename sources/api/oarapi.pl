@@ -2099,8 +2099,10 @@ SWITCH: for ($q) {
     # But ajax queries form popular browsers add <pre></pre> tags
     # (http://dotclear.placeoweb.com/post/json-error-pre-tag-added-undesirable)
     print $HTML_HEADER if ($ext eq "html");
+    # Warning: for extjs, we need to send a "success => 'true'"
     print OAR::API::export( {
                         'status' => "created",
+                        'success' => "true",
                         'links' => [ { "rel" => "self", 
                                        "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
                                    } ]
