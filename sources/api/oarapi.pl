@@ -2042,7 +2042,7 @@ SWITCH: for ($q) {
 
     # Check if the file already exists
     if (system("$OARDODO_CMD","test","-f","$file") == 0) {
-      OAR::API::ERROR(401, "File already exists", "The file already exists");
+      OAR::API::ERROR(403, "File already exists", "The file already exists");
       last;
     }
 
@@ -2056,7 +2056,6 @@ SWITCH: for ($q) {
    # Touch the file 
    if (system("$OARDODO_CMD","touch",$file) != 0) {
        OAR::API::ERROR(500, "write error", "Error creating file: $file");
-       close(OUTFILE);
        last; 
     }
  
@@ -2077,7 +2076,6 @@ SWITCH: for ($q) {
       if ($q->param('POSTDATA')) {
         if (system("$OARDODO_CMD","touch",$file) != 0) {
           OAR::API::ERROR(500, "write error", "Error creating file: $file");
-          close(OUTFILE);
           last; 
         }
         open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
@@ -2089,13 +2087,13 @@ SWITCH: for ($q) {
       last;
     }
     print $q->header( -status => 201, -type => $type, -location => "media/$file" );
-   # print $HTML_HEADER if ($ext eq "html");
-   # print OAR::API::export( {
-   #                     'status' => "created",
-   #                     'links' => [ { "rel" => "self", 
-   #                                    "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
-   #                                } ]
-   #                  } , $ext );
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export( {
+                        'status' => "created",
+                        'links' => [ { "rel" => "self", 
+                                       "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
+                                   } ]
+                     } , $ext );
     last;
   };
   #}}}
