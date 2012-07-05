@@ -2093,7 +2093,11 @@ SWITCH: for ($q) {
       OAR::API::ERROR(406, "Bad content type", $q->content_type ." not allowed for file upload");
       last;
     }
-    print $q->header( -status => 201, -type => $type, -location => "media/$file" );
+    print $q->header( -status => 201, -location => "media/$file" );
+    # Warning: we should do this: 
+    #print $q->header( -status => 201, -type => $type, -location => "media/$file" );
+    # But ajax queries form popular browsers add <pre></pre> tags
+    # (http://dotclear.placeoweb.com/post/json-error-pre-tag-added-undesirable)
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export( {
                         'status' => "created",
