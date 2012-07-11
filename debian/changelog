@@ -1,3 +1,9 @@
+oar (2.5.2+62.gbe79467-0) UNRELEASED; urgency=low
+
+  * Remove the patches merged in upstream. 
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Wed, 11 Jul 2012 16:29:59 +0200
+
 oar (2.5.2-3) unstable; urgency=low
 
   * Remove the desktop-computing packaging because it is no more supported
