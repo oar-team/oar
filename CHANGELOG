@@ -1,6 +1,20 @@
 OAR CHANGELOG
 =============
 
+version 2.5.3:
+--------------
+  - Add the "Name" field on the main Monika page. This is easier for the users
+    to find there jobs.
+  - Add MAX_CONCURRENT_JOB_TERMINATIONS into the oar.conf ofthe master. This
+    limits the number of concurrent processes launched by the Almighty when the
+    the jobs finish.
+  - Bug fix in ssh key feature in oarsub.
+  - Added --compact, -c option to oarstat (compact view or array jobs)
+  - Improvements of the API: media upload from html forms, listing of files, 
+    security fixes, add of new configuration options, listing of the scheduled
+    nodes into jobs, fixe bad reinitialization of the limit parameter... 
+    See OAR-DOCUMENTATION-API-USER for more informations.
+
 version 2.5.2:
 --------------
   - Bugfix: /var/lib/oar/.bash_oar was empty due to an error in the common

@@ -109,6 +109,7 @@ sub htmlTableRow {
   my $walltime=$self->get("walltime");
   my $state= $self->get("state");
   my $queue= $self->get("queue_name");
+  my $name= $self->get("job_name");
   my $type= $self->get("job_type");
   my $properties= $self->get("properties");
   my $reservation= $self->get("reservation");
@@ -129,6 +130,7 @@ sub htmlTableRow {
 
   $output .= $cgi->td({-align => "center"},$state);
   $output .= $cgi->td({-align => "center"},$queue);
+  $output .= $cgi->td({-align => "center"},$name);
   $output .= $cgi->td({-align => "center"},$wanted_resources);
   $output .= $cgi->td({-align => "center"},$type);
   $output .= $cgi->td({-align => "center"},$properties);

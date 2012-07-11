@@ -1,2 +1,0 @@
-class JobExecutionException < Exception
-end

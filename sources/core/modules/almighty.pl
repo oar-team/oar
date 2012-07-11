@@ -99,7 +99,7 @@ my $villainstimeout = 10;
 my $checknodestimeout = get_conf_with_default_param("FINAUD_FREQUENCY", 300);
 
 # Max number of concurrent bipbip processes
-my $Max_bipbip_processes = 100;
+my $Max_bipbip_processes = get_conf_with_default_param("MAX_CONCURRENT_JOB_TERMINATIONS", 25);
 my %bipbip_children = ();
 
 # Internal stuff, not relevant for average user

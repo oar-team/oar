@@ -46,6 +46,17 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
+(*                                                                                                                                   *)
+(* for TOKEN feature                                                                                                                 *)
+(* SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh arg1 arg2', soft2 => '/usr/local/bin/check_soft2.sh arg1' }" *)
+(*                                                                                                                                   *)
+let token_scripts =
+  if Conf.test_key("SCHEDULER_TOKEN_SCRIPTS") then
+    try Conf.str_perl_hash_to_pairs (Conf.get_value "SCHEDULER_TOKEN_SCRIPTS")
+    with _ -> failwith "Syntax error in configuration file: SCHEDULER_TOKEN_SCRIPTS"
+  else
+    []
+
 (*                             *)
 (* Karma and Fairsharing stuff *)
 (*                             *)
@@ -119,7 +130,7 @@ let argv = if (Array.length(Sys.argv) > 2) then
 let resources_init_slots_determination dbh now =
   let potential_resources = Iolib.get_resource_list dbh in
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
-                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
+                        (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
   in 
     
     if flag_wake_up_cmd then
@@ -185,7 +196,7 @@ let resources_init_slots_determination dbh now =
         let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
           (resource_intervals,slots_init_available_upto_resources)
     end
-    else
+  else
       let resources = List.filter (fun n -> n.state = Alive) potential_resources in
       let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
         (resource_intervals,[{time_s = now; time_e = max_time; set_of_res = resource_intervals}])
@@ -199,7 +210,7 @@ let _ =
 
     (* get hierarchy description from oar.conf and convert it in hierarchy levels and set master_top (toplevel interval) *)
     Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
-    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; 
+    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; (* TODO: why *) 
 
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
@@ -220,7 +231,7 @@ let _ =
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
-
+          
           (* get types attributs of wating jobs *)
           ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
           
@@ -268,12 +279,21 @@ let _ =
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
-          let ordered_waiting_j_ids =
+          let all_ordered_waiting_j_ids =
             if fairsharing_flag then
               (* ordering jobs indexes accordingly to fairsharing functions *) 
               jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
             else
               waiting_j_ids
+            in
+          let ordered_waiting_j_ids =
+            if Conf.test_key("MAX_JOB_PER_SCHEDULING_ROUND") then
+              begin
+                Conf.log ("MAX_JOB_PER_SCHEDULING_ROUND: " ^  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND"));
+                fst (Helpers.split_at all_ordered_waiting_j_ids (int_of_string  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND")))
+              end
+            else
+              all_ordered_waiting_j_ids
             in
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           let (assignement_jobs, noscheduled_jids) = 

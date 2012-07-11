@@ -318,6 +318,9 @@ describe OarApi do
           @api.value=@api.value['nodes'][0]
         end
         it_should_behave_like "Node"
+        it "should have a status" do
+          @api.value.should have_key('status')
+        end
       end
     end
   end

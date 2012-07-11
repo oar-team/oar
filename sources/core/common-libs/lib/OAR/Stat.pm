@@ -97,14 +97,9 @@ sub get_array_subjobs {
 
 sub get_all_jobs_for_user {
   my $user = shift;
-  my @jobs;
+
   my @states =  ("Finishing", "Running", "Resuming", "Suspended", "Launching", "toLaunch", "Waiting", "toAckReservation", "Hold");
-  my @get_jobs_in_state_for_user;
-  foreach my $current_state (@states){
-    @get_jobs_in_state_for_user = OAR::IO::get_jobs_in_state_for_user($base, $current_state, $user);
-    push( @jobs, @get_jobs_in_state_for_user );
-  }
-  return \@jobs;
+  return(OAR::IO::get_jobs_in_states_for_user($base, \@states, $user));
 }
 
 sub get_jobs_for_user_query {
@@ -175,17 +170,6 @@ sub get_specific_admission_rule {
     my $rule;
     $rule = OAR::IO::get_admission_rule($base,$rule_id);
     return $rule;
-}
-
-sub add_admission_rule {
-	my $rule = shift;
-	my $id = OAR::IO::add_admission_rule($base,$rule);
-	return $id;
-}
-
-sub delete_specific_admission_rule {
-	my $rule_id = shift;
-	OAR::IO::delete_admission_rule($base,$rule_id);
 }
 
 sub get_duration($){
@@ -535,5 +519,51 @@ sub get_job_state($) {
 	#exit 0;
 	#return(\%default_job_infos);
 #}
+
+# Compact the array jobs
+# Replaces all jobs from an array by a single virtual job
+# having "N@array_id" as job_id, with N the number of jobs
+# into the array
+sub compact_arrays($){
+  my $jobs=shift;
+  my $array_job={};
+  my $newjobs=[];
+
+  # Parse all the jobs to search for arrays of more than 1 job
+  foreach my $job (@{$jobs}){
+    if (defined($job->{array_id}) && $job->{array_id} != $job->{job_id}) {
+      if (defined($array_job->{$job->{array_id}})) {
+        # New element of an array found, increasing the counter
+        $array_job->{$job->{array_id}}->{n} = $array_job->{$job->{array_id}}->{n} + 1;
+      }else{
+        # New job array found. It has at least 2 elements and the state
+        # is not relevant.
+        $array_job->{$job->{array_id}}=$job;
+        $array_job->{$job->{array_id}}->{n}=2;
+        $array_job->{$job->{array_id}}->{state}="NA";
+      }
+    }
+  }
+  # Create the new virtual id "n@id"
+  foreach my $ar_id (keys(%{$array_job})) {
+    $array_job->{$ar_id}->{job_id}=$array_job->{$ar_id}->{n}."@".$ar_id;
+  }
+  # Generate the new list of jobs
+  foreach my $job (@{$jobs}){
+    if (defined($array_job->{$job->{array_id}})) {
+      # Do not output the jobs inside an array, but output the virtual job only once
+      if (!defined($array_job->{$job->{array_id}}->{already_printed})) {
+        push (@{$newjobs}, $array_job->{$job->{array_id}});
+        $array_job->{$job->{array_id}}->{already_printed}=1;
+      }
+    }else{
+      # jobs not comming from an array are outputed normally
+      push (@{$newjobs}, $job);
+    }
+  }
+  return $newjobs;
+}
+
+
 
 1;

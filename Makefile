@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api scheduler-ocaml www-conf common common-libs database  
+MODULES = server user node monika draw-gantt doc tools api scheduler-ocaml www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -107,12 +107,6 @@ monika-clean: www-conf-clean
 monika-build: www-conf-build
 monika-uninstall: www-conf-uninstall
 
-desktop-computing-cgi-setup: common-setup common-libs-setup
-desktop-computing-cgi-install: sanity-check common-install common-libs-install
-desktop-computing-cgi-clean: common-clean common-libs-clean
-desktop-computing-cgi-build: common-build common-libs-build
-desktop-computing-cgi-uninstall: common-uninstall common-libs-uninstall
-
 tools-setup: common-setup common-libs-setup
 tools-install: sanity-check common-install common-libs-install
 tools-clean: common-clean common-libs-clean
@@ -187,14 +181,6 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/tools.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-admin \
 		DOCDIR=/usr/share/doc/oar-admin
-	
-	# oar-desktop-computing-agent
-	$(MAKE) -f Makefiles/desktop-computing-agent.mk $(P_ACTION) \
-		DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
-	
-	# oar-desktop-computing-cgi
-	$(MAKE) -f Makefiles/desktop-computing-cgi.mk $(P_ACTION) \
-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
 	
 	# oar-restful-api
 	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \

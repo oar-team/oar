@@ -84,10 +84,11 @@ end
 
 # Node structure minimum requirements
 shared_examples_for "Node" do
-      it_should_behave_like "Item"
+      it_should_behave_like "All structures"
+      specify('should have a self link') { @api.get_self_link_href.should be_a(String) }
       specify('self link should be correct') { 
            @api.get_self_link_href.should == "/oarapi-priv/resources/nodes/#{@api.value['network_address']}"
       }
-      
+      specify { @api.value.should have_key('network_address') }
 end
 
