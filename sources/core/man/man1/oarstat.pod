@@ -6,6 +6,8 @@ oarstat - show information about jobs
 
 B<oarstat> [-X|-Y|-J|-D|-f] [-j jobid|--array arrayid] [--sql SQL_properties] [-u user] [--array]
 
+B<oarstat> [--sql SQL_properties] [-u user] [--compact]
+
 B<oarstat> [-e|-p] [-j jobid | --array arrayid]
 
 B<oarstat> -s [-X|-Y|-J|-D] -j jobid
@@ -50,7 +52,11 @@ If used with --accounting, print a more detailed accounting report for the user.
 =item B<--array> [array_id]
  
 Toggle the visualization of array information on.  If an array_id is provided, print information relative to the subjobs of the given array job.
- 
+
+=item B<-c, --compact>
+
+Prints only one line for all the jobs belonging to a same array. The id is replaced by <N>@<id> where "N" is the number of jobs inside the array and "id" is the id of the array. The state is not relevant for an array of jobs (as some jobs may be waiting while others are running for example), so the state column always shows a dash.
+
 =item B<--sql>
 
 Restricts display with the SQL where clause on the table jobs (ex: "project = 'p1'")

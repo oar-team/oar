@@ -1257,3 +1257,5 @@ Each configuration tag found in /etc/oar.conf is now described:
 
 .. include:: CHANGELOG
 
+.. include:: doc_archives.rst
+

@@ -20,23 +20,22 @@ Orpheus provides some basic IO contention simple. Up to now only one IO model is
 Limitations:
 ------------
 
- * no support of Interactive job (no way)
- * besteffort and kill/delete job (in todo)
- * does not read oar.conf for db parameters and almighty port (aloso todo)
- * not validated/extensively tested
+ * Interactive job cannot be supported (be definition).
+ * No besteffort and kill/delete job (in todo)
+ * does not read oar.conf for db parameters and almighty port (hardcoded)
+ * not validated/extensively tested (very experimental)
 
 Installation:
 -------------
 
- Note: execute following commands as oar user
  * cd /usr/lib/oar/
- * mv runner orig.runner #backup the orignal runner script
- * sudo -u oar touch /tmp/orpheus_signal_sender
- * ln -s /tmp/orpheus_signal_sender runner
+ * sudo mv runner orig.runner #backup the orignal runner script
+ * sudo -u oar touch /tmp/orpheus_signal_sender #this file will be automatically replaced by orpheus script
+ * sudo ln -s /tmp/orpheus_signal_sender runner
  * in oar.conf you must stop periodic node checking by setting FINAUD_FREQUENCY="0"
  * orpheus.lua and oar.lua must be located in the same directory (oar.lua is in /libs)
  
- * install lua5.1 liblua5.1-socket2
+ * install lua5.1 liblua5.1-socket2 liblua5.1-sql-mysql-2
  * as root:
     * cd lua-signal
     * make && make install
@@ -47,24 +46,24 @@ Running and usage:
 -------------------
 
  Launch the orpheus daemon. It's needed before first submition either some resources will be suspected.
- * sudo -u oar lua orpheus.lua
+ * sudo -u oar lua orpheus.lua             #if oar.lua is in same directory
+or 
+ * sudo -u oar lua ../modules/orpheus.lua  #if lib directory where is oar.lua 
 
- Submit a fake script (yop) with default resource requirement (depending of actual oar configuration oar.conf or/and admission rules). 
-The fake yop script does not exist. 
- * oarsub yop 
+ Submit a fake script (yop) with default resource requirement (depending of actual oar configuration oar.conf or/and admission rules).  The fake yop script does not exist but no error will be raised. The execution time will fixed by default in orpheus at 10 second.
+  * oarsub yop 
 
  Submit a fake script with its execution time specified in second and one node required
- * oarsub -l nodes=1 "yop {exec_time=100}"  
+ * oarsub -l resource_id=1 "yop {exec_time=30}"  
 
- Submit a fake script with execution time and io settings, io=1 to indicate the job is an io one and io workload paramter according to io model.
+ Submit a fake script with execution time and io settings, io=1 to indicate the job is an io one and io workload paramter according to io model (experimental, unfinished).
  * oarsub "yop {exec_time=10,io=1,io_workload=20}"
 
 Todo:
 -----
 
- * Support Killing job (for best effort and enerfy saving)
+ * Support Killing job (for best effort and energy saving)
  * More test
- * support Hulot (energy saving)?
  * job and node faults
  * install/uninstall(active/unactive?) script
  * kameleon step

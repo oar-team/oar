@@ -2,7 +2,7 @@
 package OAR::API;
 require Exporter;
 
-my $VERSION="1.0.1alpha1";
+my $VERSION="1.0.2";
 
 use strict;
 #use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
@@ -166,7 +166,7 @@ sub make_uri($$$) {
   my $path = shift;
   my $ext = shift;
   my $absolute = shift; # deprecated, left here for compatibility
-  if ($ext eq "html") { $path.=".html"; }
+  if (defined($ext) && $ext eq "html") { $path.=".html"; }
   if (our $ABSOLUTE_URIS == 1) {
     return $q->url(-absolute => 1)."/".$path;
   }
@@ -591,8 +591,29 @@ sub struct_job_nodes($$) {
   my $resources=shift;
   my $structure=shift;
   my $result=[];
+  my $network_addresses={};
+  my $network_address;
   foreach my $n (@{$resources->{assigned_hostnames}}) {
-    push(@$result,{'network_address' => $n, 'id' => 0});
+    push(@$result,{'network_address' => $n, 'status' => 'assigned'});
+  }
+  if (ref($resources->{reserved_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{reserved_resources}})) {
+      $network_address=$resources->{reserved_resources}->{$r}->{network_address};
+      if (!defined($network_addresses->{$network_address})) {;      
+        push(@$result,{'network_address' => $network_address, 'status' => 'reserved'});
+        $network_addresses->{$network_address}=1;
+      }
+    }
+  }
+  $network_addresses={};
+  if (ref($resources->{scheduled_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
+      $network_address=$resources->{scheduled_resources}->{$r}->{network_address};
+      if (!defined($network_addresses->{$network_address})) {;      
+        push(@$result,{'network_address' => $network_address, 'status' => 'scheduled'});
+        $network_addresses->{$network_address}=1;
+      }
+    }
   }
   return $result;
 }
@@ -935,6 +956,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/octet-stream")  { return "yaml"; }
+  elsif ($content_type eq "multipart/form-data")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
   elsif ($content_type eq "application/x-gzip")  { return "tgz"; }
   #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
@@ -1506,10 +1528,10 @@ sub check_admission_rule_update($$) {
     exit 0;
   }
   
-  # Admission rule must have a "method" field
-  unless ( $admission_rule->{method} ) {
+  # Admission rule must have a "method" or "rule" field
+  unless ( $admission_rule->{method} or $admission_rule->{rule} ) {
     ERROR 400, 'Missing Required Field',
-      'An admission rule update must have a "method" field!';
+      'An admission rule update must have a "method=delete" or "rule"=<rule> field!';
     exit 0;
   }
 
@@ -1557,6 +1579,50 @@ sub check_configuration_variable($$) {
 
   return $parameter;
 }
+
+# Check the consistency of a posted chmod query
+sub check_chmod($$) {
+  my $data         = shift;
+  my $content_type = shift;
+  my $parameter;
+
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $parameter = import_yaml($data);
+  }
+
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json' ) {
+    $parameter = import_json($data);
+  }
+
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $parameter = import_html_form($data);
+  }
+
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, 'Configuration variable description must be in YAML or JSON',
+      "The correct format for a job request is text/yaml or application/json. "
+      . $content_type;
+    exit 0;
+  }
+
+  # Parameter must have a "mode" field
+  unless ( $parameter->{mode}) {
+    ERROR 400, 'Missing Required Field',
+      'Chmod query must have a mode field';
+    exit 0;
+  }
+
+  return $parameter;
+}
+
+
 
 ##############################################################################
 # Other functions
@@ -1893,6 +1959,32 @@ sub sign_in($$$$$) {
 
     OAR::IO::disconnect($base);
 }
+
+# Stop if the user is not authenticated
+# Args: 
+# - #1 : the user as identified by the api
+# - #2 : an informative message
+# - #3 : "undef" or "oar". If "oar", then, it means that the user must be admin
+sub authenticate_user($$$) {
+    my $authenticated_user = shift;
+    my $msg = shift;
+    my $user = shift;
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done to $msg" );
+      return 1;
+    }
+    if (defined($user)) {
+      if ( not $authenticated_user eq "$user" ) {
+        OAR::API::ERROR( 401, "Permission denied",
+          "Only the $user user can $msg" );
+        $ENV{OARDO_BECOME_USER} = "$user";
+        return 2;
+      }
+    }
+    return 0;
+}
+
 
 
 return 1;

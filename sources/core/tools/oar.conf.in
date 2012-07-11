@@ -90,6 +90,12 @@ DETACH_JOB_FROM_SERVER="1"
 # to this tag.
 #RUNNER_SLIDING_WINDOW_SIZE="5"
 
+# If DETACH_JOB_FROM_SERVER=1 then OAR will treate the end of each job
+# asynchronously.
+# MAX_CONCURRENT_JOB_TERMINATIONS is the maximum number of jobs treated
+# simultaneously (default is 25).
+#MAX_CONCURRENT_JOB_TERMINATIONS=25
+
 # Command to use to connect to other nodes (default is "ssh" in the PATH)
 OPENSSH_CMD="/usr/bin/ssh -p 6667"
 
@@ -282,6 +288,9 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 #node="(1,16,2), (33,8,4)" 
 #cpu="(1,8,8)"
 #core="(1,1,64)"
+
+# Number of jobs which will be scheduled by scheduling round (no limit by default)
+#MAX_JOB_PER_SCHEDULING_ROUND=1000
 
 ##############################################
 

@@ -1749,7 +1749,7 @@ GET /admission_rules
   html , yaml , json
 
 :authentication:
-  public
+  oar
 
 :output:
   *structure*: hash
@@ -1817,7 +1817,7 @@ GET /admission_rules/<id>
   html , yaml , json
 
 :authentication:
-  public
+  oar
 
 :output:
   *structure*: 1 element array of hash
@@ -1869,6 +1869,80 @@ DELETE /admission_rule/<id>
   :note:
   	Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /admission_rule/<id> rule.
   	If the admission rule could not be deleted, returns a 403 and the reason into the message body.
+
+POST /admission_rules
+---------------------
+:description:
+  Add a new admission rule
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  *structure*: hash 
+
+  *fields*:
+     - **rule** (*text*): The admission rule to add
+
+  *yaml example*:
+    ::
+
+     ---
+     rule: |
+       echo "This is a test rule"
+
+:output:
+  A 201 (created) header is returned if the rule is successfully created, with a location value.
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1340180126
+     id: 19
+     rule: echo "This is a test rule"
+     uri: /oarapi-priv/admission_rules/19
+
+POST /admission_rules/<id>
+--------------------------
+:description:
+  Update or delete the admission rule given by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  *structure*: hash 
+
+  *fields*:
+     - **rule** (*text*): The content of the admission rule to update
+     - **method=delete** : If given, the admission rule is deleted
+
+  *yaml example*:
+    ::
+
+     ---
+     rule: |
+       echo "This is a test rule"
+
+:output:
+  A 201 (created) header is returned if the rule is successfully updated, with a location value.
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1340180126
+     id: 19
+     rule: echo"test rule"
+     uri: /oarapi-priv/admission_rules/19
+
 
 GET /config
 -----------
@@ -1947,6 +2021,29 @@ GET /config
 
    curl -i -X GET http://login:password@localhost/oarapi-priv/config.yaml
 
+GET /config/file
+----------------
+:description:
+  Get the raw config file of OAR. It also output the path of the file used by the API.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash
+
+  *fields*:
+     - **path** : The path of the config file
+     - **file** : The raw content of the config file (text)
+
+:usage example:
+  ::
+
+   curl -i -X GET http://kameleon:kameleon@localhost/oarapi-priv/config/file.yaml
+
 GET /config/<variable>
 ----------------------
 :description:
@@ -2019,6 +2116,75 @@ POST /config/<variable>
 :note:
   config.yaml contains the value of the variable.
 
+GET /media/ls/<file_path>
+-------------------------
+:description:
+  Get a list of the directory from the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+ *structure*: array of hashes giving for each listed file: the name, the mode, the size, the modification time and the type (*f* for a file or *d* for a directory)
+ 
+ *yaml example*:
+  ::
+
+     ---
+     api_timestamp: 1340095354
+     items:
+       - mode: 33188
+         mtime: 1339685040
+         name: API.pm
+         size: 58620
+         type: f
+       - mode: 16877
+         mtime: 1340094660
+         name: bart
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1338993000
+         name: cigri-3
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1340095200
+         name: oar
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1334132940
+         name: oar_install
+         size: ~
+         type: d
+       - mode: 33261
+         mtime: 1339685040
+         name: oarapi.pl
+         size: 75939
+         type: f
+       - mode: 33261
+         mtime: 1340027400
+         name: test.sh
+         size: 43
+         type: f
+     links:
+       - href: /oarapi-priv/media/ls/~/
+         rel: self
+     offset: 0
+     total: 7
+
+:usage example:
+  ::
+
+   curl -i -X GET http://kameleon:kameleon@localhost/oarapi-priv/media/ls/~/  -H'Content-Type: text/yaml'
+   
+:note:
+  returns a 404 if the path does not exist, or a 403 if the path is not readable. Errors in debug mode (with ?debug=1) are formated into yaml.
+
 GET /media/<file_path>
 ----------------------
 :description:
@@ -2059,6 +2225,30 @@ POST /media/<file_path>
   ::
 
    curl -i -X POST -H'Content-Type: application/octet-stream' --data-binary @/etc/group http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir/testfile
+
+POST /media/chmod/<file_path>
+-----------------------------
+:description:
+  Changes the permissions on a file: do a chmod(1) on *file_path*. The special character "~" is expanded as the home of the user that makes the query.
+
+:formats:
+  html , yaml , json  
+
+:authentication:
+  user
+
+:input:
+  A [mode] entry is mandatory
+
+  *mode*: A mode definition as passed to the "chmod" unix command.
+
+:output:
+  202 if ok
+
+:usage example:
+  ::
+
+   curl -i -X POST http://kameleon:kameleon@localhost/oarapi-priv/media/chmod/~/param9  -H'Content-Type: application/json' -d '{"mode":"755"}'
 
 DELETE /media/<file_path>
 -------------------------
