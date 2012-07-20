@@ -474,7 +474,7 @@ sub struct_job($$) {
   my $result;
   if    ($structure eq 'oar')    { return $job; }
   elsif ($structure eq 'simple') { 
-    if ($job->{(keys(%{$job}))[0]} eq "HASH") {
+    if ($job->{(keys(%{$job}))[0]}  and $job->{(keys(%{$job}))[0]} eq "HASH") {
       $job=$job->{(keys(%{$job}))[0]};
     }
     fix_job_integers($job);
