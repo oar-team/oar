@@ -82,4 +82,12 @@ Bugs:
 Debug:
   make bc
   ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo ./simple_cbf_mb_h_ct.cmo
+
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo \
+            ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo \
+            ./simple_cbf_mb_h_ct.cmo mysql/mysql.cma ./mysql_driver.cmo iolib.cmo ./simple_cbf_mb_h_ct_oar.cmo
+
  rlwrap ./yop -I ../common -I .
+
+
+
