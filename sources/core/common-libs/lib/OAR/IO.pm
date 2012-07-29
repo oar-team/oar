@@ -1379,7 +1379,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my @Job_id_list;
     if (($array_job_nb>1)  and (not defined($use_job_key))) { #to test  add_micheline_simple_array_job
       warn("Simple array job submission is used\n"); 
-      my $simple_job_id_list_ref = add_micheline_simple_array_job($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
+      my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
     return($simple_job_id_list_ref);
     } else {
       # single job to submit and when job key is used with array job 
@@ -1618,6 +1618,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 # return value : ref. of array of created jobids
 # TODO: moldable, very large insertion,   
 # ssh_key by job is not supported (,$ssh_priv_key,$ssh_pub_key)
+# /!\ this function supposes that database engine provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
+# 
 
 sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
@@ -1795,6 +1797,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     chop($query_job_resource_descriptions);
     $dbh->do($query_job_resource_descriptions);
 
+    #populate job_types table
     if  ($#{$type_list}>-1) {
       $job_id = $first_array_job_id;
       my $query_job_types = "INSERT INTO job_types (job_id,type) VALUES "; 
@@ -1823,7 +1826,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $job_id++;
       }
       chop($query_job_dependencies);
-       $dbh->do($query_job_dependencies);
+      $dbh->do($query_job_dependencies);
     }
 
     #
@@ -1854,6 +1857,269 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $query_array_id = $query_array_id . ")";
     $dbh->do($query_job_state_logs);
     $dbh->do($query_array_id);
+
+    return (\@Job_id_list);
+}
+
+# return value : ref. of array of created jobids
+# TODO: moldable, very large insertion,   
+# ssh_key by job is not supported (,$ssh_priv_key,$ssh_pub_key)
+# This function doesn't imply that database engine must provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
+# 
+
+sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
+
+    my @Job_id_list;
+    my $nb_jobs = $#{$array_job_commands_ref}+1;
+
+    my $pg=0;
+    if ($Db_type eq "Pg") {$pg=1}
+
+    # Check the user validity
+    if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
+      warn("/!\\ Invalid username: '$user'\n");
+      return(-11);
+    }
+
+    # Check the jobs are no moldable
+    if ($#{$ref_resource_list}>1) {
+      die ("/!\\ array jobs cannot be moldable\n");
+    }
+
+    # Test if properties and resources are coherent
+    my @dead_resources;
+    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
+        push(@dead_resources, $r->{resource_id});
+    }
+    my $wanted_resources;
+    foreach my $moldable_resource (@{$ref_resource_list}){
+        if (!defined($moldable_resource->[1])){
+            $moldable_resource->[1] = $default_walltime;
+        }
+        my $resource_id_list_vector = '';
+        foreach my $r (@{$moldable_resource->[0]}){
+            # SECURITY : we must use read only database access for this request
+            my $tmp_properties = $r->{property};
+            if ((defined($jobproperties)) and ($jobproperties ne "")){
+                if (!defined($tmp_properties)){
+                    $tmp_properties = $jobproperties;
+                }else{
+                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
+                }
+            }
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
+            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
+            if (!defined($tree)){
+                # Resource description does not match with the content of the database
+                if ($DBI::errstr ne ""){
+                    my $tmp_err = $DBI::errstr;
+                    chop($tmp_err);
+                    warn("Bad resource request ($tmp_err)\n");
+                }else{
+                    warn("There are not enough resources for your request\n");
+                }
+                return(-5);
+            }else{
+                #A quoi ca sert !!!!!!
+                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
+                foreach my $l (@leafs){
+                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
+                }
+            }
+        }
+    }
+
+    #insert in jobs table
+    #prepare parameter request
+    my $date = get_date($dbh);
+    my $job_name_quoted = $dbh->quote($job_name);
+    $notify = $dbh->quote($notify);
+    #$command = $dbh->quote($command);
+    $job_env = $dbh->quote($job_env);
+    $jobproperties = $dbh->quote($jobproperties);
+    $launching_directory = $dbh->quote($launching_directory);
+    $project = $dbh->quote($project);
+    $initial_request_string = $dbh->quote($initial_request_string);
+
+    if (!defined($stdout) or ($stdout eq "")){
+        $stdout = "OAR";
+        $stdout .= ".$job_name" if (defined($job_name));
+        $stdout .= '.%jobid%.stdout';
+    }
+    if (!defined($stderr) or ($stderr eq "")){
+        $stderr = "OAR";
+        $stderr .= ".$job_name" if (defined($job_name));
+        $stderr .= '.%jobid%.stderr';
+    }
+
+    $stdout = $dbh->quote($stdout);
+    $stderr = $dbh->quote($stderr);
+
+    my $query_jobs = "INSERT INTO jobs
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
+              VALUES ";
+
+    my $command = $dbh->quote(@{$array_job_commands_ref}[0]);
+    my $query_first_job =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index)";
+    $dbh->do($query_first_job);
+    #get the job id which will be also be the array_id
+    my $first_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
+    $array_id = $first_job_id;
+    #update array_id
+    my $query_array_id = "UPDATE jobs SET array_id = $array_id WHERE job_id = $array_id";
+    $dbh->do($query_array_id);
+
+    #insert remaining array jobs with array_id
+    my $query_jobs = "INSERT INTO jobs
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,               job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
+              VALUES ";
+
+    foreach my $command (@{$array_job_commands_ref}){
+      if ($array_index > 1) {
+        $command = $dbh->quote($command);
+        $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index),";
+      }
+      $array_index++;
+    }
+    chop($query_jobs);
+    $dbh->do($query_jobs);
+
+    #retreive job_ids thanks to array_id value
+    my $query_job_ids = $dbh->prepare("SELECT job_id FROM jobs WHERE array_id = $array_id ORDER BY job_id ASC");
+    $query_job_ids->execute();
+    my @Job_id_list = ();
+    while (my @ref = $query_job_ids->fetchrow_array()){
+      push(@Job_id_list,$ref[0]);
+    }
+    $query_job_ids->finish();
+
+    # populate challenges and moldable_job_descriptions tables and build str_job_ids
+    my $random_number;
+    my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
+
+    my $moldable_resource =  @{$ref_resource_list}[0];  
+    my $walltime = $moldable_resource->[1];
+    my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
+
+    my $str_job_ids = ""; 
+
+    foreach my $job_id (@Job_id_list){
+      $random_number = int(rand(1000000000000));
+      $query_challenges = $query_challenges . "($job_id,\'$random_number\',\'\',\'\'),"; #TODO $ssh_priv_key,$ssh_pub_key
+      $query_moldable_job_descriptions = $query_moldable_job_descriptions . "($job_id,\'$walltime\'),";
+      $str_job_ids = $str_job_ids . "$job_id,";
+    }
+    
+    chop($query_challenges);
+    $dbh->do($query_challenges);
+
+    chop($query_moldable_job_descriptions);
+    $dbh->do($query_moldable_job_descriptions);
+
+    chop($str_job_ids);
+
+    #retreive moldable_ids thanks to job_ids 
+    my $query_moldable_ids = $dbh->prepare("SELECT moldable_id FROM moldable_job_descriptions WHERE moldable_job_id IN ($str_job_ids) ORDER BY moldable_id ASC");
+    $query_moldable_ids->execute();
+    my @moldable_ids = ();
+    while (my @ref = $query_moldable_ids->fetchrow_array()){
+      push(@moldable_ids,$ref[0]);
+    }
+    $query_moldable_ids->finish();
+
+    # populate job_resource_groups table and build str_moldable_ids
+    my $query_job_resource_groups  = "INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property) VALUES ";
+    my $str_moldable_ids = "";
+    foreach my $moldable_id (@moldable_ids) {
+      foreach my $r (@{$moldable_resource->[0]}){
+        my $property = $r->{property};
+        $property = $dbh->quote($property);
+        $query_job_resource_groups = $query_job_resource_groups . "($moldable_id,$property),";
+      }
+       $str_moldable_ids = $str_moldable_ids . "$moldable_id,";
+    }
+
+    my $nb_resource_grp = $#{$moldable_resource->[0]} + 1;
+    chop($query_job_resource_groups);
+    $dbh->do($query_job_resource_groups);
+
+    chop($str_moldable_ids);
+
+    #retreive res_group_ids thanks to moldable_ids 
+    my $query_res_group_ids =  $dbh->prepare("SELECT res_group_id FROM job_resource_groups WHERE res_group_moldable_id IN ($str_moldable_ids) ORDER BY res_group_id ASC");
+    $query_res_group_ids->execute();
+    my @res_group_ids = ();
+    while (my @ref = $query_res_group_ids->fetchrow_array()){
+      push(@res_group_ids,$ref[0]);
+    }
+    $query_res_group_ids->finish();
+
+    # number of resource group
+    #my $nb_resource_grp = $#{$moldable_resource->[0]} + 1;
+
+    #populate job_resource_descriptions table
+    my $query_job_resource_descriptions="INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order) VALUES ";
+    my $k=0;
+    for (my $i=0; $i<$nb_jobs; $i++){
+      foreach my $r (@{$moldable_resource->[0]}){
+        my $order = 0;
+        foreach my $l (@{$r->{resources}}){
+          $query_job_resource_descriptions = $query_job_resource_descriptions . "($res_group_ids[$k],\'$l->{resource}\',\'$l->{value}\',$order),";
+          $order++;
+        }
+        $k++;
+      }
+    }
+
+    chop($query_job_resource_descriptions);
+    $dbh->do($query_job_resource_descriptions);
+
+    #populate job_types table
+    if  ($#{$type_list}>-1) {
+      my $query_job_types = "INSERT INTO job_types (job_id,type) VALUES "; 
+      foreach my $job_id (@Job_id_list){
+        foreach my $t (@{$type_list}){
+          my $quoted_t = $dbh->quote($t);
+          $query_job_types = $query_job_types . "($job_id,$quoted_t),";
+        }
+      }
+    
+      chop($query_job_types);
+      $dbh->do($query_job_types);
+    }
+
+    #  
+    # anterior job setting
+    #
+    if ($#{$anterior_ref} >0) {
+      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required) VALUES ";
+      foreach my $job_id (@Job_id_list){
+        foreach my $a (@{$anterior_ref}){
+          $query_job_dependencies = $query_job_dependencies . "($job_id,$a),";
+        } 
+      }
+      chop($query_job_dependencies);
+      $dbh->do($query_job_dependencies); 
+    }
+
+    # Hold/Waiting management, job_state_log setting
+    # Job is inserted with hold state first
+    my $query_job_state_logs = "INSERT INTO job_state_logs (job_id,job_state,date_start) VALUES ";
+    my $state_log = "\'Hold\'";
+
+    if  (!defined($job_hold)) {
+      $dbh->do("UPDATE jobs SET state = \'Waiting\' WHERE array_id = $array_id");
+      $state_log = "\'Waiting\'";
+    }
+  
+    #update array_id field and set job to state if waiting and insert job_state_log 
+    foreach my $job_id (@Job_id_list){
+      $query_job_state_logs = $query_job_state_logs . "($job_id,$state_log,$date),";
+    }
+    chop($query_job_state_logs);
+    $query_array_id = $query_array_id . ")";
+    $dbh->do($query_job_state_logs);
 
     return (\@Job_id_list);
 }
