@@ -44,8 +44,11 @@ let get_resource_list dbh  =
 (* label of fields must be provide for scattered hierarchy support *)
 
 (* TODO: exclude resource_id hy_labels sure ?*)
-
-let get_resource_list_w_hierarchy dbh hy_labels scheduler_resource_order =
+(* hy_labels -> array ???? *)
+let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resource_order =
+  Conf.log ("SELECT resource_id, network_address, state, available_upto, " ^ 
+               (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
+               scheduler_resource_order);
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
   let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
   let i = ref 0 in (* count for ordererd resourced_id *) 
@@ -56,15 +59,15 @@ let get_resource_list_w_hierarchy dbh hy_labels scheduler_resource_order =
   let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*)
   let ary = Array.make (List.length hy_labels) 0 in
   let hy_id_array = Array.map (fun x -> Hashtbl.create 10) ary in
-  let query = "SELECT resource_id, network_address, state, available_upto" ^ 
-               (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER " ^
+  let query = "SELECT resource_id, network_address, state, available_upto, " ^ 
+               (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
                scheduler_resource_order in
   let res = execQuery dbh query in
   let get_one_resource a = 
      (* populate hashes of hy_id_ary array and h_value_order hash*)
       i := !i + 1;
-      for var = 4 to Array.length a do
-        let h_label = hy_ary_labels.(var) in
+      for var = 4 to ((Array.length a)-1) do
+        let h_label = hy_ary_labels.(var-4) in
         let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
         if not (List.mem a.(var) ordered_values) then
           Hashtbl.replace h_value_order h_label (ordered_values @ [a.(var)]);
@@ -80,7 +83,7 @@ let get_resource_list_w_hierarchy dbh hy_labels scheduler_resource_order =
       state = NoN rstate_of_string a.(2);           (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
-    map res get_one_resource ;;
+    ((map res get_one_resource), hy_id_array) ;;
 
 (*                                              *)
 (* get distinct availableupto                   *)

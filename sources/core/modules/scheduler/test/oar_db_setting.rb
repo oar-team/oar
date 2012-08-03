@@ -33,7 +33,7 @@ def oar_load_test_config
 end
 
 def oar_db_connect
-	if ($db_type == "Mysql")
+	if ($db_type == "Mysql"||$db_type == "mysql")
     $PG = false
     $MYSQL = true
 	else 
