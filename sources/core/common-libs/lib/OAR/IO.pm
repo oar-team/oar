@@ -1870,7 +1870,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
 
-    my @Job_id_list;
+    my @Job_id_list = ();
     my $nb_jobs = $#{$array_job_commands_ref}+1;
 
     my $pg=0;
@@ -1971,7 +1971,7 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     $dbh->do($query_array_id);
 
     #insert remaining array jobs with array_id
-    my $query_jobs = "INSERT INTO jobs
+    $query_jobs = "INSERT INTO jobs
               (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,               job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
               VALUES ";
 
@@ -1988,7 +1988,6 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     #retreive job_ids thanks to array_id value
     my $query_job_ids = $dbh->prepare("SELECT job_id FROM jobs WHERE array_id = $array_id ORDER BY job_id ASC");
     $query_job_ids->execute();
-    my @Job_id_list = ();
     while (my @ref = $query_job_ids->fetchrow_array()){
       push(@Job_id_list,$ref[0]);
     }
