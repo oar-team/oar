@@ -100,43 +100,38 @@ oardrmaa_session_new( const char *contact )
         oardrmaa_session_t *volatile self = NULL;
 
 	if( contact == NULL )
-		contact = "";
-	TRY
-	 {
-                self = (oardrmaa_session_t*)fsd_drmaa_session_new(contact);
-                fsd_realloc( self, 1, oardrmaa_session_t );
-		self->super_wait_thread = NULL;
+    contact = "";
+	  TRY
+	  {
+      self = (oardrmaa_session_t*)fsd_drmaa_session_new(contact);
+      fsd_realloc( self, 1, oardrmaa_session_t );
+		  self->super_wait_thread = NULL;
 
-                self->oar_conn = -1;
+      self->oar_conn = -1;
 
-        /*	self->status_attrl = NULL;*/ /* to remove ??? */
+      /*	self->status_attrl = NULL;*/ /* to remove ??? */
 		
-		self->super_destroy = self->super.destroy;
-                self->super.destroy = oardrmaa_session_destroy;
-                self->super.new_job = oardrmaa_session_new_job;
-		self->super.update_all_jobs_status
-                                = oardrmaa_session_update_all_jobs_status;
-                self->super.run_impl = oardrmaa_session_run_impl;
+		  self->super_destroy = self->super.destroy;
+      self->super.destroy = oardrmaa_session_destroy;
+      self->super.new_job = oardrmaa_session_new_job;
+		  self->super.update_all_jobs_status = oardrmaa_session_update_all_jobs_status;
+      self->super.run_impl = oardrmaa_session_run_impl;
+		  self->super_apply_configuration = self->super.apply_configuration;
+      self->super.apply_configuration = oardrmaa_session_apply_configuration;
 
-		self->super_apply_configuration = self->super.apply_configuration;
-                self->super.apply_configuration = oardrmaa_session_apply_configuration;
+		  self->do_drm_keeps_completed_jobs = oardrmaa_session_do_drm_keeps_completed_jobs;
+      /* to remove
+        self->status_attrl = oardrmaa_create_status_attrl();
+      */
+      self->oar_conn = oar_connect( self->super.contact );
+                
+      fsd_log_info(( "oar_connect(%s) =%d", self->super.contact, self->oar_conn ));
+      if( self->oar_conn < 0 ) oardrmaa_exc_raise_oar( "oar_connect" );
 
-		self->do_drm_keeps_completed_jobs =
-                        oardrmaa_session_do_drm_keeps_completed_jobs;
-                /* to remove
-                self->status_attrl = oardrmaa_create_status_attrl();
-                */
-                self->oar_conn = oar_connect( self->super.contact );
-                fsd_log_info(( "oar_connect(%s) =%d", self->super.contact,
-                                        self->oar_conn ));
-                if( self->oar_conn < 0 )
-                        oardrmaa_exc_raise_oar( "oar_connect" );
+      self->super.load_configuration( &self->super, "oar_drmaa" );
 
-                self->super.load_configuration( &self->super, "oar_drmaa" );
-
-		self->super.missing_jobs = FSD_IGNORE_MISSING_JOBS;
-		if( self->do_drm_keeps_completed_jobs( self ) )
-			self->super.missing_jobs = FSD_IGNORE_QUEUED_MISSING_JOBS;
+		  self->super.missing_jobs = FSD_IGNORE_MISSING_JOBS;
+		  if( self->do_drm_keeps_completed_jobs( self ) ) self->super.missing_jobs = FSD_IGNORE_QUEUED_MISSING_JOBS;
 	 }
 	EXCEPT_DEFAULT
 	 {
@@ -154,12 +149,13 @@ oardrmaa_session_new( const char *contact )
 void
 oardrmaa_session_destroy( fsd_drmaa_session_t *self )
 {
-        oardrmaa_session_t *oarself = (oardrmaa_session_t*)self;
+  oardrmaa_session_t *oarself = (oardrmaa_session_t*)self;
 	self->stop_wait_thread( self );
-        if( oarself->oar_conn >= 0 )
-                oar_disconnect( oarself->oar_conn );
-        /* fsd_free( oarself->status_attrl ); */ /* TODO: to remove */
-        oarself->super_destroy( self );
+  if( oarself->oar_conn >= 0 )
+    oar_disconnect( oarself->oar_conn );
+  
+  /* fsd_free( oarself->status_attrl ); */ /* TODO: to remove */
+  oarself->super_destroy( self );
 }
 
 

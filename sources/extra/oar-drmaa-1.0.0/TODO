@@ -1,0 +1,12 @@
+TODO
+- minimal doc: buildind/installation/usage/limitation
+- job category 
+- native specfication: oardrmaa_submit_apply_native_specification/parse_additional_attr/parse_resources/example
+- configuration: oar api server
+- implementation of bulk with oar job array 
+- better: contact/drmsInfo/drmaaImplementation/version
+- remove debug info
+- demo: appliance, kameleon step 
+- debian package (see pbs-drmaa or/and slurm-drmaa)
+- user newer pbs-drmaa
+DONE

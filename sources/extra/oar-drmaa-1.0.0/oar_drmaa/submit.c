@@ -85,31 +85,30 @@ oardrmaa_submit_new( fsd_drmaa_session_t *session,
         oardrmaa_submit_t *volatile self = NULL;
 	TRY
 	 {
-                fsd_malloc( self, oardrmaa_submit_t );
+    fsd_malloc( self, oardrmaa_submit_t );
 		self->session = session;
 		self->job_template = job_template;
-                self->script_path = NULL;
-                self->workdir = NULL;
+    self->script_path = NULL;
+    self->workdir = NULL;
 		self->destination_queue = NULL;
-                self->oar_job_attributes = NULL;
+    self->oar_job_attributes = NULL;
 		self->expand_ph = NULL;
-                self->destroy = oardrmaa_submit_destroy;
-                self->submit = oardrmaa_submit_submit;
-                self->eval = oardrmaa_submit_eval;
-                self->set = oardrmaa_submit_set;
-                self->apply_defaults = oardrmaa_submit_apply_defaults;
-                self->apply_job_category = oardrmaa_submit_apply_job_category;
-                self->apply_job_script = oardrmaa_submit_apply_job_script;
-                self->apply_job_state = oardrmaa_submit_apply_job_state;
-                self->apply_job_files = oardrmaa_submit_apply_job_files;
-                self->apply_file_staging = oardrmaa_submit_apply_file_staging;
-                self->apply_job_resources = oardrmaa_submit_apply_job_resources;
-                self->apply_job_environment = oardrmaa_submit_apply_job_environment;
-                self->apply_email_notification = oardrmaa_submit_apply_email_notification;
-		self->apply_native_specification =
-                        oardrmaa_submit_apply_native_specification;
+    self->destroy = oardrmaa_submit_destroy;
+    self->submit = oardrmaa_submit_submit;
+    self->eval = oardrmaa_submit_eval;
+    self->set = oardrmaa_submit_set;
+    self->apply_defaults = oardrmaa_submit_apply_defaults;
+    self->apply_job_category = oardrmaa_submit_apply_job_category;
+    self->apply_job_script = oardrmaa_submit_apply_job_script;
+    self->apply_job_state = oardrmaa_submit_apply_job_state;
+    self->apply_job_files = oardrmaa_submit_apply_job_files;
+    self->apply_file_staging = oardrmaa_submit_apply_file_staging;
+    self->apply_job_resources = oardrmaa_submit_apply_job_resources;
+    self->apply_job_environment = oardrmaa_submit_apply_job_environment;
+    self->apply_email_notification = oardrmaa_submit_apply_email_notification;
+		self->apply_native_specification = oardrmaa_submit_apply_native_specification;
 
-                self->oar_job_attributes = oardrmaa_oar_template_new();
+    self->oar_job_attributes = oardrmaa_oar_template_new();
 		self->expand_ph = fsd_expand_drmaa_ph_new( NULL, NULL,
 				(bulk_idx >= 0) ? fsd_asprintf("%d", bulk_idx) : NULL );
 	 }
@@ -143,26 +142,26 @@ char *
 oardrmaa_submit_submit( oardrmaa_submit_t *self )
 {
 	volatile bool conn_lock = false;
-        struct attrl *volatile oar_attr = NULL;
+  struct attrl *volatile oar_attr = NULL;
 	char *volatile job_id = NULL;
 	TRY
 	 {
-                const fsd_template_t *oar_tmpl = self->oar_job_attributes;
+    const fsd_template_t *oar_tmpl = self->oar_job_attributes;
 		unsigned i;
 
-                for( i = 0;  i < OARDRMAA_N_OAR_ATTRIBUTES;  i++ )
+    for( i = 0;  i < OARDRMAA_N_OAR_ATTRIBUTES;  i++ )
 		 {
-                        const char *name = oar_tmpl->by_code( oar_tmpl, i )->name;
-                        if( name  &&  name[0] != '!' && oar_tmpl->get_attr( oar_tmpl, name ) )
+      const char *name = oar_tmpl->by_code( oar_tmpl, i )->name;
+      if( name  &&  name[0] != '!' && oar_tmpl->get_attr( oar_tmpl, name ) )
 			 {
 				struct attrl *p;
 				const char *resource;
 				const char *value;
-                                value = oar_tmpl->get_attr( oar_tmpl, name );
+        value = oar_tmpl->get_attr( oar_tmpl, name );
 				fsd_malloc( p, struct attrl );
 				memset( p, 0, sizeof(struct attrl) );
-                                p->next = oar_attr;
-                                oar_attr = p;
+        p->next = oar_attr;
+        oar_attr = p;
 				resource = strchr( name, '.' );
 				if( resource )
 				 {
@@ -173,35 +172,35 @@ oardrmaa_submit_submit( oardrmaa_submit_t *self )
 					p->name = fsd_strdup( name );
 				fsd_log_debug(("set attr: %s = %s", name, value));
 				p->value = fsd_strdup( value );
-                                /* p->op = SET; */ /* TODO: can we remove ir ?*/
+        /* p->op = SET; */ /* TODO: can we remove it ?*/
 			 }
 		 }
 
 		conn_lock = fsd_mutex_lock( &self->session->drm_connection_mutex );
 retry:
-                job_id = oar_submit( ((oardrmaa_session_t*)self->session)->oar_conn,
+    job_id = oar_submit( ((oardrmaa_session_t*)self->session)->oar_conn,
                                 (struct attropl*)oar_attr, self->script_path,
                                 self->workdir, self->destination_queue );
 
-                fsd_log_info(("oar_submit() =%s", job_id));
+    fsd_log_info(("oar_submit() =%s", job_id));
 
 		if( job_id == NULL )
-		{
-                        if (oar_errno == OAR_ERRNO_PROTOCOL || oar_errno == OAR_ERRNO_EXPIRED)
+		 {
+      if (oar_errno == OAR_ERRNO_PROTOCOL || oar_errno == OAR_ERRNO_EXPIRED)
 			 {
-                                oardrmaa_session_t *oarself = (oardrmaa_session_t*)self->session;
-                                if (oarself->oar_conn >= 0 )
-                                        oar_disconnect( oarself->oar_conn );
+        oardrmaa_session_t *oarself = (oardrmaa_session_t*)self->session;
+        if (oarself->oar_conn >= 0 )
+          oar_disconnect( oarself->oar_conn );
 				sleep(1);
-                                oarself->oar_conn = oar_connect( oarself->super.contact );
-                                if( oarself->oar_conn < 0 )
-                                        oardrmaa_exc_raise_oar( "oar_connect" );
+        oarself->oar_conn = oar_connect( oarself->super.contact );
+        if( oarself->oar_conn < 0 )
+          oardrmaa_exc_raise_oar( "oar_connect" );
 				else
 					goto retry;
 			 }
 			else
 			 {
-                                oardrmaa_exc_raise_oar( "oar_submit" );
+        oardrmaa_exc_raise_oar( "oar_submit" );
 			 }
 		}
 		conn_lock = fsd_mutex_unlock( &self->session->drm_connection_mutex );
@@ -215,16 +214,15 @@ retry:
 	 {
 		if( conn_lock )
 			conn_lock = fsd_mutex_unlock( &self->session->drm_connection_mutex );
-                if( oar_attr )
-                        oardrmaa_free_attrl( oar_attr );
+      if( oar_attr )
+        oardrmaa_free_attrl( oar_attr );
 	 }
 	END_TRY
 	return job_id;
 }
 
 
-void
-oardrmaa_submit_eval( oardrmaa_submit_t *self )
+void oardrmaa_submit_eval( oardrmaa_submit_t *self )
 {
 	self->apply_defaults( self );
 	self->apply_job_category( self );
@@ -239,10 +237,9 @@ oardrmaa_submit_eval( oardrmaa_submit_t *self )
 }
 
 
-void
-oardrmaa_submit_set( oardrmaa_submit_t *self, const char *name, char *value, unsigned placeholders )
+void oardrmaa_submit_set( oardrmaa_submit_t *self, const char *name, char *value, unsigned placeholders )
 {
-        fsd_template_t *oar_attr = self->oar_job_attributes;
+  fsd_template_t *oar_attr = self->oar_job_attributes;
 	TRY
 	 {
 		if( placeholders )
@@ -275,40 +272,38 @@ oardrmaa_submit_apply_defaults( oardrmaa_submit_t *self )
 
 }
 
-
-void
-oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
+void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
 
-        char *script_path = NULL;
-        size_t script_path_len;
+  char *script_path = NULL;
+  size_t script_path_len;
 
-        const char *executable;
+  const char *executable;
 	const char *wd;
 	const char *const *argv;
-        const char *input_path;
-        const char *const *i;
+  const char *input_path;
+  const char *const *i;
 
-        executable   = jt->get_attr( jt, DRMAA_REMOTE_COMMAND );
+  executable   = jt->get_attr( jt, DRMAA_REMOTE_COMMAND );
 	wd           = jt->get_attr( jt, DRMAA_WD );
-        argv         = jt->get_v_attr( jt, DRMAA_V_ARGV );
-        input_path   = jt->get_attr( jt, DRMAA_INPUT_PATH );
+  argv         = jt->get_v_attr( jt, DRMAA_V_ARGV );
+  input_path   = jt->get_attr( jt, DRMAA_INPUT_PATH );
 
 	if( wd )
-         {
-            self->workdir = fsd_strdup(wd);
+   {
+    self->workdir = fsd_strdup(wd);
 	 }
 
-        if( input_path != NULL )
-         {
-                if( input_path[0] == ':' )
-                        input_path++;
-         }
+   if( input_path != NULL )
+    {
+     if( input_path[0] == ':' )
+      input_path++;
+    }
 
 	if( executable == NULL )
 		fsd_exc_raise_code( FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE );
-        if (argv)
+    if (argv)
         {
             /* compute script_lengh length */
             /* script_path_len = 1;*/ /* begining double quote */ /* TODO: to remove ? */
@@ -341,11 +336,10 @@ oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
         }
 }
 
-void
-oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
+void oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
-        fsd_template_t *oar_attr = self->oar_job_attributes;
+  fsd_template_t *oar_attr = self->oar_job_attributes;
 	const char *job_name = NULL;
 	const char *submit_state = NULL;
 	const char *drmaa_start_time = NULL;
@@ -359,11 +353,11 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 
 	if( submit_state != NULL )
 	 {
-            printf("TODO hold_types\n");
-            if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_HOLD) )
-                oar_attr->set_attr( oar_attr, OARDRMAA_HOLD, "1" );
+    printf("TODO hold_types\n");
+    if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_HOLD) )
+      oar_attr->set_attr( oar_attr, OARDRMAA_HOLD, "1" );
 
-            /* TODO
+    /* TODO
 		const char *hold_types;
 		if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_ACTIVE) )
 			hold_types = "n";
@@ -374,8 +368,8 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 					"invalid value of %s attribute (%s|%s)",
 					DRMAA_JS_STATE, DRMAA_SUBMISSION_STATE_ACTIVE,
 					DRMAA_SUBMISSION_STATE_HOLD );
-                oar_attr->set_attr( oar_attr, OARDRMAA_HOLD_TYPES, hold_types );
-                */
+              oar_attr->set_attr( oar_attr, OARDRMAA_HOLD_TYPES, hold_types );
+     */
 	 }
 
 	if( drmaa_start_time != NULL )
@@ -404,12 +398,11 @@ oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 }
 
 
-void
-oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
+void oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 {
-    /* TODO STDOUT....*/
+   /* TODO STDOUT....*/
 	const fsd_template_t *jt = self->job_template;
-        fsd_template_t *oar_attr = self->oar_job_attributes;
+  fsd_template_t *oar_attr = self->oar_job_attributes;
 	const char *join_files;
 	bool b_join_files;
 	int i;
@@ -417,18 +410,18 @@ oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 	for( i = 0;  i < 2;  i++ )
 	 {
 		const char *drmaa_name;
-                const char *oar_name;
+    const char *oar_name;
 		const char *path;
 
 		if( i == 0 )
 		 {
 			drmaa_name = DRMAA_OUTPUT_PATH;
-                        oar_name = OARDRMAA_STDOUT_FILE;
+      oar_name   = OARDRMAA_STDOUT_FILE;
 		 }
 		else
 		 {
 			drmaa_name = DRMAA_ERROR_PATH;
-                        oar_name = OARDRMAA_STDERR_FILE;
+      oar_name   = OARDRMAA_STDERR_FILE;
 		 }
 
 		path = jt->get_attr( jt, drmaa_name );
@@ -447,36 +440,32 @@ oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 */
 }
 
-
-void
-oardrmaa_submit_apply_file_staging( oardrmaa_submit_t *self )
+void oardrmaa_submit_apply_file_staging( oardrmaa_submit_t *self )
 {
     /*TODO: Do we need it ? */
 }
 
 
-void
-oardrmaa_submit_apply_job_resources( oardrmaa_submit_t *self )
+void oardrmaa_submit_apply_job_resources( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
         fsd_template_t *oar_attr = self->oar_job_attributes;
 	const char *cpu_time_limit = NULL;
 	const char *walltime_limit = NULL;
 
-        /*TODO: In OAR we haven't a cpu_time_limit */
+  /*TODO: In OAR we haven't a cpu_time_limit */
 	cpu_time_limit = jt->get_attr( jt, DRMAA_DURATION_HLIMIT );
 	walltime_limit = jt->get_attr( jt, DRMAA_WCT_HLIMIT );
 	if( cpu_time_limit )
 	 {
-                oar_attr->set_attr( oar_attr, "Resource_List.pcput", cpu_time_limit ); /*TODO no resource...*/
-                oar_attr->set_attr( oar_attr, "Resource_List.cput", cpu_time_limit );
+    oar_attr->set_attr( oar_attr, "Resource_List.pcput", cpu_time_limit ); /*TODO no resource...*/
+    oar_attr->set_attr( oar_attr, "Resource_List.cput", cpu_time_limit );
 	 }
 	if( walltime_limit )
-                oar_attr->set_attr( oar_attr, "Resource_List.walltime", walltime_limit );
+    oar_attr->set_attr( oar_attr, "Resource_List.walltime", walltime_limit );
 }
 
-void
-oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
+void oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
 	const char *const *env_v;
@@ -506,7 +495,7 @@ oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
 
 		env_c[strlen(env_c) -1 ] = '\0'; /*remove the last ',' */
 /* TODO */
-                self->oar_job_attributes->set_attr(self->oar_job_attributes, "Variable_List", env_c);
+    self->oar_job_attributes->set_attr(self->oar_job_attributes, "Variable_List", env_c);
 
 		fsd_free(env_c);
 	}
@@ -558,14 +547,13 @@ static void parse_resources(fsd_template_t *oar_attr,const char *resources)
 				*psep = '\0';
 				name = fsd_asprintf("Resource_List.%s", arg);
 				value = ++psep;
-                                oar_attr->set_attr( oar_attr, name , value );
+        oar_attr->set_attr( oar_attr, name , value );
 				fsd_free(name);
 				name = NULL;
 			}
 			else
 			{
-                                fsd_exc_raise_fmt(FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE, "Invalid native specification: %s (Invalid resource specification: %s)", resources, arg);
-
+          fsd_exc_raise_fmt(FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE, "Invalid native specification: %s (Invalid resource specification: %s)", resources, arg);
 			}
 		}
 	  }
@@ -591,7 +579,7 @@ static void parse_additional_attr(fsd_template_t *oar_attr,const char *add_attr)
 		{
 			name = fsd_strdup(strtok_r(arg, "=", &ctxt2));
 			value = strtok_r(NULL, "=", &ctxt2);
-                        oar_attr->set_attr( oar_attr, name , value );
+      oar_attr->set_attr( oar_attr, name , value );
 			fsd_free(name);
 			name = NULL;
 		}
@@ -610,14 +598,13 @@ oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self,
 		const char *native_specification )
 {
 	if( native_specification == NULL )
-		native_specification = self->job_template->get_attr(
-				self->job_template, DRMAA_NATIVE_SPECIFICATION );
+		native_specification = self->job_template->get_attr(self->job_template, DRMAA_NATIVE_SPECIFICATION );
 	if( native_specification == NULL )
 		return;
 
 	{
 		fsd_iter_t * volatile args_list = fsd_iter_new(NULL, 0);
-                fsd_template_t *oar_attr = self->oar_job_attributes;
+    fsd_template_t *oar_attr = self->oar_job_attributes;
 		char *arg = NULL;
 		volatile char * native_spec_copy = fsd_strdup(native_specification);
 		char * ctxt = NULL;
@@ -632,72 +619,71 @@ oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self,
 								"Invalid native specification: %s",
 								native_specification);
 					if(arg[1] == '-') {
-                                                parse_additional_attr(oar_attr, arg+2);
+            parse_additional_attr(oar_attr, arg+2);
 					}
 					else {
 						opt = arg[1];
 					}
 					
 				} else {
-					switch (opt) {
-						
+					switch (opt) {				
 						case 'W' :
-                                                        parse_additional_attr(oar_attr, arg);
+              parse_additional_attr(oar_attr, arg);
 							break;
 						case 'N' :
-                                                        oar_attr->set_attr( oar_attr, "Job_Name" , arg );
+              oar_attr->set_attr( oar_attr, "Job_Name" , arg );
 							break;
 						case 'o' :
-                                                        oar_attr->set_attr( oar_attr, "Output_Path" , arg );
+              oar_attr->set_attr( oar_attr, "Output_Path" , arg );
 							break;
 						case 'e' :
-                                                        oar_attr->set_attr( oar_attr, "Error_Path" , arg );
+              oar_attr->set_attr( oar_attr, "Error_Path" , arg );
 							break;
 						case 'j' :
-                                                        oar_attr->set_attr( oar_attr, "Join_Path" , arg );
+              oar_attr->set_attr( oar_attr, "Join_Path" , arg );
 							break;
 						case 'm' :
-                                                        oar_attr->set_attr( oar_attr, "Mail_Points" , arg );
+              oar_attr->set_attr( oar_attr, "Mail_Points" , arg );
 							break;
 						case 'a' :
-                                                        oar_attr->set_attr( oar_attr, "Execution_Time" , arg );
+              oar_attr->set_attr( oar_attr, "Execution_Time" , arg );
 							break;
 						case 'h' :
-                                                        oar_attr->set_attr( oar_attr, "Hold_Types" , arg );
+              oar_attr->set_attr( oar_attr, "Hold_Types" , arg );
 							break;
 						case 'A' :
-                                                        oar_attr->set_attr( oar_attr, "Account_Name" , arg );
+              oar_attr->set_attr( oar_attr, "Account_Name" , arg );
 							break;
 						case 'c' :
-                                                        oar_attr->set_attr( oar_attr, "Checkpoint" , arg );
+              oar_attr->set_attr( oar_attr, "Checkpoint" , arg );
 							break;
 						case 'k' :
-                                                        oar_attr->set_attr( oar_attr, "Keep_Files" , arg );
+              oar_attr->set_attr( oar_attr, "Keep_Files" , arg );
 							break;
 						case 'p' :
-                                                        oar_attr->set_attr( oar_attr, "Priority" , arg );
+              oar_attr->set_attr( oar_attr, "Priority" , arg );
 							break;
 						case 'q' :
 							self->destination_queue = fsd_strdup( arg );
 							break;
 						case 'r' :
-                                                        oar_attr->set_attr( oar_attr, "Rerunable" , arg );
+              oar_attr->set_attr( oar_attr, "Rerunable" , arg );
 							break;
 						case 'S' :
-                                                        oar_attr->set_attr( oar_attr, "Shell_Path_List" , arg );
+              oar_attr->set_attr( oar_attr, "Shell_Path_List" , arg );
 							break;
 						case 'u' :
-                                                        oar_attr->set_attr( oar_attr, "User_List" , arg );
+              oar_attr->set_attr( oar_attr, "User_List" , arg );
 							break;
 						case 'v' :
 						case 'V' :
-                                                        oar_attr->set_attr( oar_attr, "Variable_List" , arg );
+              oar_attr->set_attr( oar_attr, "Variable_List" , arg );
 							break;
 						case 'M' :
-                                                        oar_attr->set_attr( oar_attr, "Mail_Users" , arg );
+              oar_attr->set_attr( oar_attr, "Mail_Users" , arg );
 							break;
 						case 'l' :
-                                                        parse_resources(oar_attr, arg);
+              parse_resources(oar_attr, arg);
 							break;							
 						default :
 							

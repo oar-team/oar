@@ -33,6 +33,9 @@ static char rcsid[]
 
 int oar_errno = 0;
 
+char *oar_api_server_url;
+char oar_api_server_url_default[]="http://localhost";
+
 const char *drmaa_control_to_oar_rest[]={
     "/rholds/new.json",         /* DRMAA_CONTROL_SUSPEND   0 */
     "/resumptions/new.json",    /* DRMAA_CONTROL_RESUME    1 */
@@ -72,7 +75,6 @@ write_memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 struct memory_struct recv_data;
 
-
 void init_recv_data()
 {
 
@@ -89,22 +91,28 @@ void init_recv_data()
 
 }
 
-/* perform oar_api_request */
-int
-oar_api_request(int request_type)
-{
-    long http_code = 0;
-    char *rest_url[256];
-    struct curl_slist *headers = NULL;
-}
-
 int
 oar_connect(char *server)
 {
-    g_type_init (); /* only once */
-    JsonParser *parser = json_parser_new ();
-    JsonReader *reader = json_reader_new (NULL);
+    JsonParser *parser; 
+    JsonReader *reader;
     GError *error = NULL;
+    char *env_oar_api_server_url;
+    char rest_url[256];
+
+    g_type_init (); /* only once */
+    parser = json_parser_new ();
+    reader = json_reader_new (NULL);
+
+    
+    /* set oar_api_server_url */
+    env_oar_api_server_url = getenv("OAR_API_SERVER_URL");
+    if (env_oar_api_server_url != NULL) {
+       oar_api_server_url = env_oar_api_server_url;
+    } else {
+      oar_api_server_url = oar_api_server_url_default; /* set default url as server url */
+    }
+
 
     /* intialize recv_data in memory storage */
     recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
@@ -124,22 +132,20 @@ oar_connect(char *server)
     /* some servers don't like requests that are made without a user-agent field, so we provide one */
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
+    sprintf(rest_url,"%s/oarapi/resources.json",oar_api_server_url);
 
-
-    curl_easy_setopt(curl_handle, CURLOPT_URL, "http://localhost/oarapi/resources.json");
+    curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
     res = curl_easy_perform(curl_handle); /* */
 
-    printf("%lu bytes retrieved\n", (long)recv_data.size);
+    /* printf("%lu bytes retrieved\n", (long)recv_data.size); */
 
     json_parser_load_from_data (parser, recv_data.memory, -1, &error);
     json_reader_set_root (reader, json_parser_get_root (parser));
 
-    printf("number of members: %d\n", json_reader_count_members (reader));
-
+    /* printf("number of members: %d\n", json_reader_count_members (reader)); */
     json_reader_read_member (reader, "total");
     json_reader_is_value (reader);
-    printf("total: %d\n",json_reader_get_int_value (reader));
-
+    /* printf("total: %d\n",json_reader_get_int_value (reader)); */
     g_object_unref (reader);
     g_object_unref (parser);
 
@@ -158,27 +164,20 @@ oar_connect(char *server)
 }
 
 int oar_disconnect(int connect)
-{
-    printf("TODO: oar_disconnect\n");
-
+{ 
     /* we're done with libcurl, so clean it up */
     curl_global_cleanup();
-
-
     return 0;
 }
 
 int oar_control_job(int connect, char *job_id, int action)
 {
-
-    printf("oar_job_control: job_id: %s action: %i  drmaa_control: %s\n",
-           job_id, action, drmaa_control_to_str(action));
-
+    /* printf("oar_job_control: job_id: %s action: %i  drmaa_control: %s\n", job_id, action, drmaa_control_to_str(action)); */
     /* CURL */
     long http_code = 0;
     char rest_url[256];
     struct curl_slist *headers = NULL;
-    sprintf(rest_url,"http://localhost/oarapi/jobs/%s%s",job_id,drmaa_control_to_oar_rest[action]);
+    sprintf(rest_url,"%s/oarapi/jobs/%s%s",oar_api_server_url,job_id,drmaa_control_to_oar_rest[action]);
     /*printf("url:%s\n",rest_url); */
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
@@ -186,44 +185,50 @@ int oar_control_job(int connect, char *job_id, int action)
     curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
     res = curl_easy_perform(curl_handle);
     curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
-    printf("http code %ld\n",http_code);
+    /* printf("http code %ld\n",http_code); */
 
     /* read response */
     JsonParser *parser = json_parser_new ();
     JsonReader *reader = json_reader_new (NULL);
     GError *error = NULL;
 
-    printf("%lu bytes retrieved\n", (long)recv_data.size);
+    /* printf("%lu bytes retrieved\n", (long)recv_data.size); */
     json_parser_load_from_data (parser, recv_data.memory, -1, &error);
     json_reader_set_root (reader, json_parser_get_root (parser));
 
     /* test return http status */
     if (http_code >= 200 && http_code < 300) /* http successful */
     {
+      /*
         json_reader_read_member (reader,"id");
         int job_id = json_reader_get_int_value (reader);
         json_reader_end_element (reader);
         printf("Http request successfull OK: job id: %d\n",job_id);
+      */
     } else
     {
         char *title=NULL;
         char *message=NULL;
         int code=0;
+
         json_reader_read_member(reader,"title");
-        title = json_reader_get_string_value(reader);
+        title = (char *)json_reader_get_string_value(reader);
         json_reader_end_element (reader);
 
         json_reader_read_member(reader,"message");
-        message = json_reader_get_string_value (reader);
+        message = (char *)json_reader_get_string_value (reader);
         json_reader_end_element (reader);
 
         json_reader_read_member(reader,"code");
         code = json_reader_get_int_value (reader);
         json_reader_end_element (reader);
-
-        /*
-        printf("title: %s\nmessage: %s\ncode: %d\n",title,message,code);
-        */
+        
+        fsd_log_debug("title: ");
+        fsd_log_debug(title);
+        fsd_log_debug("\nmessage: ");
+        fsd_log_debug(message);
+        fsd_log_debug("\ncode: ");
+        fsd_log_debug(code);
 
     }
     /* clean recv/reader/parser stuff */
@@ -256,7 +261,7 @@ struct batch_status *oar_statjob(int connect, char *id)
     char rest_url[256];
     char *exit_code_str;
     struct curl_slist *headers = NULL;
-    sprintf(rest_url,"http://localhost/oarapi/jobs/%s.json",id);
+    sprintf(rest_url,"%s/oarapi/jobs/%s.json",oar_api_server_url,id);
     /* fsd_log_debug(("url:%s\n",rest_url)); */
     headers = curl_slist_append(headers, "Content-Type: application/json");
 
@@ -317,7 +322,7 @@ struct batch_status *oar_statjob(int connect, char *id)
         queue = json_reader_get_string_value(reader);
         json_reader_end_element (reader);
 
-        printf("job state: %s\n",state);
+        /*printf("job state: %s\n",state);*/
         fsd_log_debug(("job state: %s\n",state));
     } else
     {
@@ -410,7 +415,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     json_builder_set_member_name (builder, "script_path");
     json_builder_add_string_value (builder, script_path);
 
-
+    /* TODO native spec and array */
     for( i = attrib;  i != NULL;  i = i->next )
     {
         json_builder_set_member_name (builder, i->name);
@@ -430,13 +435,17 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     json_node_free (node);
     g_object_unref (generator);
 
+
+    char rest_url[256];
+    sprintf(rest_url,"%s/oarapi/jobs.json",oar_api_server_url);
+
     /* CURL */
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 
     curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
-    curl_easy_setopt(curl_handle, CURLOPT_URL, "http://localhost/oarapi/jobs.json");
+    curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
 
     res = curl_easy_perform(curl_handle);
 
