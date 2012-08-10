@@ -37,10 +37,10 @@
 #
 
 
-pkgdatadir = $(datadir)/pbs-drmaa
-pkgincludedir = $(includedir)/pbs-drmaa
-pkglibdir = $(libdir)/pbs-drmaa
-pkglibexecdir = $(libexecdir)/pbs-drmaa
+pkgdatadir = $(datadir)/oar-drmaa
+pkgincludedir = $(includedir)/oar-drmaa
+pkglibdir = $(libdir)/oar-drmaa
+pkglibexecdir = $(libexecdir)/oar-drmaa
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 install_sh_DATA = $(install_sh) -c -m 644
 install_sh_PROGRAM = $(install_sh) -c
@@ -180,13 +180,13 @@ OBJDUMP = objdump
 OBJEXT = o
 OTOOL = 
 OTOOL64 = 
-PACKAGE = pbs-drmaa
-PACKAGE_BUGREPORT = mamonski@man.poznan.pl
-PACKAGE_NAME = DRMAA for PBS Pro
-PACKAGE_STRING = DRMAA for PBS Pro 1.0.6
-PACKAGE_TARNAME = pbs-drmaa
+PACKAGE = oar-drmaa
+PACKAGE_BUGREPORT = http://oar.imag.fr
+PACKAGE_NAME = DRMAA for OAR
+PACKAGE_STRING = DRMAA for OAR 1.0.0
+PACKAGE_TARNAME = oar-drmaa
 PACKAGE_URL = 
-PACKAGE_VERSION = 1.0.6
+PACKAGE_VERSION = 1.0.0
 PATH_SEPARATOR = :
 PTHREAD_CFLAGS = -pthread
 PTHREAD_LIBS = -pthread
@@ -197,7 +197,7 @@ SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = strip
-VERSION = 1.0.6
+VERSION = 1.0.0
 abs_builddir = /home/auguste/prog/oar/sources/extra/oar-drmaa-1.0.0/oar_drmaa
 abs_srcdir = /home/auguste/prog/oar/sources/extra/oar-drmaa-1.0.0/oar_drmaa
 abs_top_builddir = /home/auguste/prog/oar/sources/extra/oar-drmaa-1.0.0

@@ -412,8 +412,21 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     json_builder_begin_object (builder);
 
+    /* set script path is interpreted as commands with args by oar api*/ 
     json_builder_set_member_name (builder, "script_path");
     json_builder_add_string_value (builder, script_path);
+
+    /* set workdir */
+    if (workdir) {
+      json_builder_set_member_name (builder, "workdir");
+      json_builder_add_string_value (builder, workdir);
+    }
+
+     /* set queue */
+    if (queue_destination) {
+      json_builder_set_member_name (builder, "queue");
+      json_builder_add_string_value (builder, queue_destination);
+    }
 
     /* TODO native spec and array */
     for( i = attrib;  i != NULL;  i = i->next )

@@ -23,6 +23,7 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = \
  autoclean.sh \
  autogen.sh \
- m4/missing-dev-prog.sh
+ m4/missing-dev-prog.sh\
+ doc_drmaa1.rst
 
 SUBDIRS = drmaa_utils oar_drmaa

@@ -76,8 +76,7 @@ oardrmaa_get_DRM_system( fsd_drmaa_singletone_t *self )
 static const char *
 oardrmaa_get_DRMAA_implementation( fsd_drmaa_singletone_t *self )
 {
-	return PACKAGE_NAME" v. "PACKAGE_VERSION
-                                        " <http://oar.imag.fr/>";
+	return PACKAGE_NAME" v. "PACKAGE_VERSION" <http://oar.imag.fr/>";
 }
 
 

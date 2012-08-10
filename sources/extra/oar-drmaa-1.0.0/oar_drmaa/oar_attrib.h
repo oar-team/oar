@@ -38,7 +38,7 @@ int oardrmaa_oar_attrib_by_name( const char *name );
 #define OARDRMAA_JOB_NAME       "job_name"
 #define OARDRMAA_STDOUT_FILE    "stdout"
 #define OARDRMAA_STDERR_FILE    "stderr"
-#define OARDRMAA_WALLTIME       "walltime"
+#define OARDRMAA_RESOURCE       "resource"
 #define OARDRMAA_ARGS           "args"
 #define OARDRMAA_JOB_STATE      "job_state"
 #define OARDRMAA_HOLD           "hold"
@@ -47,7 +47,7 @@ typedef enum {
         OARDRMAA_ATTR_JOB_NAME,
         OARDRMAA_ATTR_STDOUT_FILE,
         OARDRMAA_ATTR_STDERR_FILE,
-        OARDRMAA_ATTR_WALLTIME,
+        OARDRMAA_ATTR_RESOURCE,
         OARDRMAA_ATTR_ARGS,
         OARDRMAA_ATTR_JOB_STATE,
         OARDRMAA_ATTR_HOLD,

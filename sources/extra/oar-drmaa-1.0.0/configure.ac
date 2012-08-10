@@ -1,7 +1,9 @@
-AC_INIT([DRMAA for PBS Pro], [1.0.6], [mamonski@man.poznan.pl], [pbs-drmaa])
+AC_INIT([DRMAA for OAR], [1.0.0], [http://oar.imag.fr], [oar-drmaa])
 AC_PREREQ(2.59)
-AC_REVISION([$Id: configure.ac 2694 2009-09-12 17:17:35Z mmamonski $])
+AC_REVISION([$Id: $])
 AC_COPYRIGHT([
+DRMAA for OAR Copyright (C) 2011-2012 Joseph Fourier University
+based on
 DRMAA for PBS Pro
 Copyright (C) 2006-2009  FedStage Systems
 

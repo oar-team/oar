@@ -53,10 +53,10 @@ extern const fsd_attribute_t oardrmaa_oar_attributes[];
 struct oar_attrib { int name; const fsd_attribute_t *attr; }
 
 %%
-job_name,   t(OARDRMAA_ATTR_JOB_NAME)
+name,       t(OARDRMAA_ATTR_JOB_NAME)
 stdout,     t(OARDRMAA_ATTR_STDOUT_FILE)
 stderr,     t(OARDRMAA_ATTR_STDERR_FILE)
-walltime,   t(OARDRMAA_ATTR_WALLTIME)
+resource,   t(OARDRMAA_ATTR_RESOURCE)
 args,       t(OARDRMAA_ATTR_ARGS)
 job_state,  t(OARDRMAA_ATTR_JOB_STATE)
 hold,       t(OARDRMAA_ATTR_HOLD)
@@ -119,10 +119,10 @@ oardrmaa_oar_template_new(void)
 }
 
 const fsd_attribute_t oardrmaa_oar_attributes[ OARDRMAA_N_OAR_ATTRIBUTES ] = {
-    {"job_name",    OARDRMAA_ATTR_JOB_NAME, false },
+    {"name",    OARDRMAA_ATTR_JOB_NAME, false },
     {"stdout",      OARDRMAA_ATTR_STDOUT_FILE, false },
     {"stderr",      OARDRMAA_ATTR_STDERR_FILE, false },
-    {"walltime",    OARDRMAA_ATTR_WALLTIME,false },
+    {"resource",    OARDRMAA_ATTR_RESOURCE,false },
     {"args",        OARDRMAA_ATTR_ARGS, false },
     {"job_state",   OARDRMAA_ATTR_JOB_STATE, false },
     {"hold",        OARDRMAA_ATTR_HOLD, false },

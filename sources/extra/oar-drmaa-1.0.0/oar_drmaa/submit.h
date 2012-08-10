@@ -18,7 +18,7 @@
  */
 
 /*
- * Adpated from pbs_drmaa/submit.h
+ * Adpated for oar from pbs_drmaa/submit.h by august
  */
 
 #ifndef __OAR_DRMAA__SUBMIT_H
@@ -32,50 +32,43 @@
 
 typedef struct oardrmaa_submit_s oardrmaa_submit_t;
 
-oardrmaa_submit_t *
-oardrmaa_submit_new( fsd_drmaa_session_t *session,
-		const fsd_template_t *job_template, int bulk_idx );
+oardrmaa_submit_t * oardrmaa_submit_new( fsd_drmaa_session_t *session, const fsd_template_t *job_template, int bulk_idx );
 
 struct oardrmaa_submit_s {
-	void (*
-        destroy)( oardrmaa_submit_t *self );
+	void (*destroy)( oardrmaa_submit_t *self );
 
-	char * (*
-        submit)( oardrmaa_submit_t *self );
+	char * (*submit)( oardrmaa_submit_t *self );
 
-	void (*
-        eval)( oardrmaa_submit_t *self );
+	void (*eval)( oardrmaa_submit_t *self );
 
-        void (*apply_defaults)( oardrmaa_submit_t *self );
-        void (*apply_job_script)( oardrmaa_submit_t *self );
-        void (*apply_job_state)( oardrmaa_submit_t *self );
-        void (*apply_job_files)( oardrmaa_submit_t *self );
-        void (*apply_file_staging)( oardrmaa_submit_t *self );
-        void (*apply_job_resources)( oardrmaa_submit_t *self );
-        void (*apply_job_environment)( oardrmaa_submit_t *self );
-        void (*apply_email_notification)( oardrmaa_submit_t *self );
-        void (*apply_job_category)( oardrmaa_submit_t *self );
-	void (*apply_native_specification)(
-                        oardrmaa_submit_t *self, const char *native_specification );
+  void (*apply_defaults)( oardrmaa_submit_t *self );
+  void (*apply_job_script)( oardrmaa_submit_t *self );
+  void (*apply_job_state)( oardrmaa_submit_t *self );
+  void (*apply_job_files)( oardrmaa_submit_t *self );
+  void (*apply_file_staging)( oardrmaa_submit_t *self );
+  void (*apply_job_resources)( oardrmaa_submit_t *self );
+  void (*apply_job_environment)( oardrmaa_submit_t *self );
+  void (*apply_email_notification)( oardrmaa_submit_t *self );
+  void (*apply_job_category)( oardrmaa_submit_t *self );
+	void (*apply_native_specification)(oardrmaa_submit_t *self, const char *native_specification );
 
-        void (*set)( oardrmaa_submit_t *self, const char *oar_attr,
-                        char *value, unsigned placeholders );
+  void (*set)( oardrmaa_submit_t *self, const char *oar_attr, char *value, unsigned placeholders );
 
 	fsd_drmaa_session_t *session;
 	const fsd_template_t *job_template;
 
-        char *script_path; /* oar job parameter */
-        char *workdir; /* oar job parameter */
+  char *script_path; /* job script command with path and args */
+  char *workdir;     /* work directory */
+  char *walltime;
 
 	char *destination_queue;
-        fsd_template_t *oar_job_attributes;
+  
+  fsd_template_t *oar_job_attributes;
 	fsd_expand_drmaa_ph_t *expand_ph;
-        /* struct attrl *oar_attribs; */
-        /* uint32_t oar_attribs_bitset[ PBS_ATTRIBS_BITSET_SIZE ]; */ /*TODO: What is it ?*/
+  /* struct attrl *oar_attribs; */
 };
 
-void oardrmaa_submit_apply_native_specification(
-                oardrmaa_submit_t *self, const char *native_specification );
+void oardrmaa_submit_apply_native_specification(oardrmaa_submit_t *self, const char *native_specification );
 
 #endif /* __OAR_DRMAA__SUBMIT_H */
 

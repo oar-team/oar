@@ -1,12 +1,48 @@
 TODO
-- minimal doc: buildind/installation/usage/limitation
+- minimal doc: building/installation/usage/limitation
 - job category 
 - native specfication: oardrmaa_submit_apply_native_specification/parse_additional_attr/parse_resources/example
-- configuration: oar api server
-- implementation of bulk with oar job array 
-- better: contact/drmsInfo/drmaaImplementation/version
+- configuration: getenv oar_api_server_url --> to test 
 - remove debug info
-- demo: appliance, kameleon step 
+
+- clean compilation 
+
+
+- OARDRMAA_STDOUT_FILE / OARDRMAA_STDERR_FILE;
+-  DRMAA_JOIN_FILES test status
+
+
+ wait_thread
+    Value 1 enables single "wait thread" for updating jobs status. 
+    With ``pbs_home`` set enables wait_thread which reads PBS log files (instead of polling PBS daemons).
+     
+     Type: integer, Default: 0
+
+  pbs_home
+    Path to Torque/PBS Pro spool directory that contains server logs (e.g.: /var/spool/pbs).
+    
+     Type: string, Default: not set
+
+- demo: appliance / kameleon step (w/ testsuite) / tgz 
+
 - debian package (see pbs-drmaa or/and slurm-drmaa)
+- implementation of bulk with oar job array
 - user newer pbs-drmaa
+
 DONE
+- better: contact/drmsInfo/drmaaImplementation/version
+
+TEST
+- test native specification
+ jt.nativeSpecification = 
+  '-N yop' OK
+  'q poy'  OK
+
+
+NOTE:
+- DRMAA_DURATION_HLIMIT: not implemented
+- DRMAA_V_ENV: not implemented
+- DRMAA_WCT_HLIMIT: (not to use with moldable job)
+- email_notification: not implemented
+- start_time: not implementedi
+-  DRMAA_JOIN_FILES 
