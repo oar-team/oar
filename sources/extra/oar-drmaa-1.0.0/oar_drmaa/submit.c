@@ -584,7 +584,7 @@ static void parse_additional_attr(fsd_template_t *oar_attr,const char *add_attr)
 	END_TRY
 }
 
-/* TODO TODO TODO */
+/* TODO complete */
 void oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self, const char *native_specification )
 {
 	if( native_specification == NULL )
@@ -600,7 +600,8 @@ void oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self, const 
 	int opt = 0;
   const char *walltime = self->walltime;
   char * resource = NULL;
-
+  char c1 = ' ';
+  char c2 = ' ';
 		TRY
 		 {
 			for (arg = strtok_r(native_spec_copy, " \t", &ctxt); arg; arg = strtok_r(NULL, " \t",&ctxt) ) {
@@ -610,18 +611,49 @@ void oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self, const 
 								"Invalid native specification: %s",
 								native_specification);
 					if(arg[1] == '-') {
-            parse_additional_attr(oar_attr, arg+2);
+            /*parse_additional_attr(oar_attr, arg+2); TODO to remove*/
+            /* to manage long option */
+            c1 = arg[2];
+            c2 = arg[3];
+            if (c1 == 'r' && c2== 'e') {
+              opt = 'r'; /* reservation */
+            } else if  (c1 == 's' && c2== 'i') {
+              opt = 's'; /* signal */ 
+            } else if  (c1 == 't' && c2== 'y') {
+              opt = 't'; /* type */
+            } else if  (c1 == 'd' && c2== 'i') {
+              opt = 'd'; /* directory */
+            } else if  (c1 == 'p' && c2== 'r') {
+              opt = 'j'; /* project */
+            } else if  (c1 == 'n' && c2== 'a') {
+              opt = 'n'; /* name */
+            } else if  (c1 == 'a' && c2== 'n') {
+              opt = 'a'; /* anterior */
+            } else if  (c1 == 'n' && c2== 'o') {
+              opt = 'o'; /* notify */
+            } else if  (c1 == 'r' && c2== 'e') {
+              opt = 'u'; /* resubmit */
+            } else if  (c1 == 'u' && c2== 's') {
+              opt = 'k'; /* use-job-key */
+            } else if  (c1 == 'i' && arg[17]== 'f') {
+              opt = 'i'; /* import-job-key-from-file" */
+            } else if  (c1 == 'i' && arg[17]== 'i') {
+              opt = 'm'; /* import-job-key-inline */
+            } else if  (c1 == 'h' && c2== 'o') {
+              opt = 'h'; /* hold */
+            }
 					}
 					else {
 						opt = arg[1];
 					}
 					
 				} else {
-					switch (opt) {				
+					switch (opt) {
+            /*				
 						case 'W' :
               parse_additional_attr(oar_attr, arg);
 							break;
-
+            */
             case 'l' :
               if (walltime) {/* add walltime is present */
                 asprintf(&resource, "%s,walltime=%s", arg, walltime);
@@ -631,38 +663,51 @@ void oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self, const 
                 oar_attr->set_attr( oar_attr, "resource" , arg );
               }
 							break;
-						case 'N' :
-              oar_attr->set_attr( oar_attr, "name" , arg );
-							break;
-						case 'o' :
-              oar_attr->set_attr( oar_attr, "Output_Path" , arg );
-							break;
-						case 'e' :
-              oar_attr->set_attr( oar_attr, "Error_Path" , arg );
-							break;
-              oar_attr->set_attr( oar_attr, "Hold_Types" , arg );
-							break;
-						case 'c' :
-              oar_attr->set_attr( oar_attr, "Checkpoint" , arg );
-							break;
-						case 'q' :
+          	case 'q' :
 							self->destination_queue = fsd_strdup( arg );
 							break;
+            case 'p' :
+							oar_attr->set_attr( oar_attr, "property" , arg );
+							break;
 						case 'r' :
-              oar_attr->set_attr( oar_attr, "Rerunable" , arg );
+              oar_attr->set_attr( oar_attr, "reservation" , arg );
 							break;
-						case 'u' :
-              oar_attr->set_attr( oar_attr, "User_List" , arg );
+            case 'c': /* bind (artificially) to checkpoint */
+              oar_attr->set_attr( oar_attr, "checkpoint" , arg );
 							break;
-						case 'v' :
-						case 'V' :
-              oar_attr->set_attr( oar_attr, "Variable_List" , arg );
+            case 's': /* bind (artificially) to signal */
+              oar_attr->set_attr( oar_attr, "signal" , arg );
 							break;
-            /*
-						case 'l' :
-              parse_resources(oar_attr, arg);
+            case 't' : /* TODO transform to json ....*/
+              oar_attr->set_attr( oar_attr, "type" , arg );
 							break;
-            */							
+						case 'd' :
+              oar_attr->set_attr( oar_attr, "directory" , arg );
+            case 'j' :/* bind (artificially) to project */
+              oar_attr->set_attr( oar_attr, "project" , arg );
+							break;
+						case 'n' :
+              oar_attr->set_attr( oar_attr, "name" , arg );
+							break;
+						case 'a' :
+              oar_attr->set_attr( oar_attr, "anterior" , arg );
+							break;
+						case 'o' : /* bind (artificially) to notify */
+              oar_attr->set_attr( oar_attr, "notify" , arg );
+							break;
+						case 'u' : /* bind (artificially) to resubmit */
+              oar_attr->set_attr( oar_attr, "resubmit" , arg );
+							break;
+            case 'i' : /* import-job-key-from-file" */ 
+              oar_attr->set_attr( oar_attr, "import-job-key-from-file" , arg );
+            case 'm' : /* bind (artificially) to import-job-key-inline */
+              oar_attr->set_attr( oar_attr, "import-job-key-inline" , arg );
+						case 'O' :
+              oar_attr->set_attr( oar_attr, "stdout" , arg );
+							break;
+						case 'E' :
+              oar_attr->set_attr( oar_attr, "stderr" , arg );
+							break;
 						default :
 							
 							fsd_exc_raise_fmt(FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE,
@@ -674,12 +719,21 @@ void oardrmaa_submit_apply_native_specification( oardrmaa_submit_t *self, const 
 				}
 			}
 
-			if (opt) /* option without optarg */
-				fsd_exc_raise_fmt(FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE,
-						"Invalid native specification: %s",
-						native_specification);
+			if (opt) /* option without optarg */ {
+        switch (opt) {
+          case 'h' : /* bind (artificially) to hold */
+            oar_attr->set_attr( oar_attr, "hold" , "1" );
+					  break;
+          case 'k' : /* use-job-key */ 
+            oar_attr->set_attr( oar_attr, "use-job-key" , "1" );
 
-		 }
+          default :
+				    fsd_exc_raise_fmt(FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE,
+						  "Invalid native specification: %s  (Unsupported option: -%c)",
+			        native_specification, opt);
+        }
+		  }
+    }
 		FINALLY
 		 {
 			args_list->destroy(args_list);

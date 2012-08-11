@@ -9,7 +9,23 @@ TODO
 
 
 - OARDRMAA_STDOUT_FILE / OARDRMAA_STDERR_FILE;
--  DRMAA_JOIN_FILES test status
+-  DRMAA_JOIN_FILES test status:
+
+  join files ( string )
+Specifies if the error stream should be intermixed with the output stream.
+If not explicitly set in the job template the attribute defaults to 'n'.
+Either 'y' or 'n' can be specified.
+If 'y' is specified the underlying DRM system SHALL ignore the value of the
+drmaa_error_path attribute and intermix the standard error stream with the
+standard output stream as specified with drmaa_output_path.
+The attribute name is drmaa_join_files.
+
+
+wall clock time limit ( string ): h:m:s and not [[h:]m:]s
+
+case "type" : /* TODO transform to json ....*/
+
+
 
 
  wait_thread

@@ -53,13 +53,26 @@ extern const fsd_attribute_t oardrmaa_oar_attributes[];
 struct oar_attrib { int name; const fsd_attribute_t *attr; }
 
 %%
-name,       t(OARDRMAA_ATTR_JOB_NAME)
-stdout,     t(OARDRMAA_ATTR_STDOUT_FILE)
-stderr,     t(OARDRMAA_ATTR_STDERR_FILE)
-resource,   t(OARDRMAA_ATTR_RESOURCE)
-args,       t(OARDRMAA_ATTR_ARGS)
-job_state,  t(OARDRMAA_ATTR_JOB_STATE)
-hold,       t(OARDRMAA_ATTR_HOLD)
+name,        t(OARDRMAA_ATTR_JOB_NAME)
+stdout,      t(OARDRMAA_ATTR_STDOUT_FILE)
+stderr,      t(OARDRMAA_ATTR_STDERR_FILE)
+resource,    t(OARDRMAA_ATTR_RESOURCE)
+args,        t(OARDRMAA_ATTR_ARGS)
+job_state,   t(OARDRMAA_ATTR_JOB_STATE)
+hold,        t(OARDRMAA_ATTR_HOLD)
+property,    t(OARDRMAA_ATTR_PROPERTY)
+reservation, t(OARDRMAA_ATTR_RESERVATION)
+checkpoint,  t(OARDRMAA_ATTR_CHECKPOINT)
+signal,      t(OARDRMAA_ATTR_SIGNAL)
+type,        t(OARDRMAA_ATTR_TYPE)
+directory,   t(OARDRMAA_ATTR_DIRECTORY)
+project,     t(OARDRMAA_ATTR_PROJECT)
+anterior,    t(OARDRMAA_ATTR_ANTERIOR)
+notify,      t(OARDRMAA_ATTR_NOTIFY)
+resubmit,    t(OARDRMAA_ATTR_RESUBMIT)
+import-job-key-from-file,  t(OARDRMAA_ATTR_I_JOB_KEY_FROM_FILE)
+import-job-key-inline,     t(OARDRMAA_ATTR_I_JOB_KEY_INLINE)
+use-job-key,               t(OARDRMAA_ATTR_USE_JOB_KEY)
 %%
 #undef t
 
@@ -119,13 +132,26 @@ oardrmaa_oar_template_new(void)
 }
 
 const fsd_attribute_t oardrmaa_oar_attributes[ OARDRMAA_N_OAR_ATTRIBUTES ] = {
-    {"name",    OARDRMAA_ATTR_JOB_NAME, false },
+    {"name",        OARDRMAA_ATTR_JOB_NAME, false },
     {"stdout",      OARDRMAA_ATTR_STDOUT_FILE, false },
     {"stderr",      OARDRMAA_ATTR_STDERR_FILE, false },
     {"resource",    OARDRMAA_ATTR_RESOURCE,false },
     {"args",        OARDRMAA_ATTR_ARGS, false },
     {"job_state",   OARDRMAA_ATTR_JOB_STATE, false },
     {"hold",        OARDRMAA_ATTR_HOLD, false },
+    {"property",    OARDRMAA_ATTR_PROPERTY, false },
+    {"reservation", OARDRMAA_ATTR_RESERVATION, false },
+    {"checkpoint",  OARDRMAA_ATTR_CHECKPOINT, false },
+    {"signal",      OARDRMAA_ATTR_SIGNAL, false },
+    {"type",        OARDRMAA_ATTR_TYPE, false },
+    {"directory",   OARDRMAA_ATTR_DIRECTORY, false },
+    {"project",     OARDRMAA_ATTR_PROJECT, false },
+    {"anterior",    OARDRMAA_ATTR_ANTERIOR, false },
+    {"notify",      OARDRMAA_ATTR_NOTIFY, false },
+    {"resubmit",    OARDRMAA_ATTR_RESUBMIT, false },
+    {"import-job-key-from-file",  OARDRMAA_ATTR_I_JOB_KEY_FROM_FILE, false },
+    {"import-job-key-inline",     OARDRMAA_ATTR_I_JOB_KEY_INLINE, false },
+    {"use-job-key",               OARDRMAA_ATTR_USE_JOB_KEY, false }
 };
 
 /* vim: set ft=c: */
