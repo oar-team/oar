@@ -62,7 +62,7 @@ write_memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
   mem->memory = realloc(mem->memory, mem->size + realsize + 1);
   if (mem->memory == NULL) {
     /* out of memory! */
-    printf("not enough memory (realloc returned NULL)\n");
+    fsd_log_fatal(("not enough memory (realloc returned NULL)\n"));
     exit(EXIT_FAILURE);
   }
 
@@ -128,6 +128,10 @@ int oar_connect(char *server)
     char rest_url[256];
     long http_code = 0;
 
+#ifdef DEBUG
+    fsd_set_verbosity_level(FSD_LOG_ALL);
+#endif
+
     g_type_init (); /* only once */
     parser = json_parser_new ();
     reader = json_reader_new (NULL);
@@ -149,7 +153,7 @@ int oar_connect(char *server)
     curl_global_init(CURL_GLOBAL_ALL);
     curl_handle = curl_easy_init();
     if(!curl_handle) {
-        printf("no curl handle\n");
+        fsd_log_fatal(("no curl handle\n"));
         exit(EXIT_FAILURE);
     }
 
@@ -167,7 +171,7 @@ int oar_connect(char *server)
     curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
 
     if (res != CURLE_OK)
-      fprintf(stderr, "Curl curl_easy_getinfo failed: %s\n", curl_easy_strerror(res));
+      fsd_log_error(("Curl curl_easy_getinfo failed: %s\n", curl_easy_strerror(res)));
  
     /* printf("%lu bytes retrieved\n", (long)recv_data.size); */
 
@@ -191,9 +195,7 @@ int oar_connect(char *server)
         recv_data.size = 0;
     }
 
-    fsd_set_verbosity_level(FSD_LOG_ALL);
-
-    fsd_log_debug(( "OAR-CONNECT\n"));
+    fsd_log_debug(( "oar-connect\n"));
 
     return 0;
 }
@@ -243,8 +245,6 @@ int oar_control_job(int connect, char *job_id, int action)
         recv_data.memory = malloc(1);  /* will be grown as needed by the realloc above */
         recv_data.size = 0;
     }
-
-    /* TODO */
 
     return 0;
 }
@@ -426,7 +426,6 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     if (workdir) { 
       json_builder_set_member_name (builder, "workdir");
       json_builder_add_string_value (builder, workdir);
-      printf("workdir %s\n",workdir);
     } 
 
      /* set queue */
@@ -458,8 +457,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     char rest_url[256];
     sprintf(rest_url,"%s/oarapi/jobs.json",oar_api_server_url);
-
-    printf("rest_url:%s\n", rest_url);
+    /*printf("rest_url:%s\n", rest_url); */
 
     /* CURL */
     struct curl_slist *headers = NULL;
@@ -471,7 +469,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     res = curl_easy_perform(curl_handle);
     if (res != CURLE_OK)
-      fprintf(stderr, "Curl curl_easy_getinfo failed: %s\n", curl_easy_strerror(res));
+      fsd_log_error(("Curl curl_easy_getinfo failed: %s\n", curl_easy_strerror(res)));
 
     curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
 
@@ -544,6 +542,6 @@ void oar_statfree(struct batch_status *stat)
 
 char *oar_errno_to_txt(int err_no)
 {
-    printf("TODO: oar_errno_to_txt\n");
-    return 0;
+    /*TODO: oar_errno_to_txt*/
+    return "oar_errno_to_txt: not implemented\n";
 }

@@ -37,6 +37,7 @@
 #
 
 
+
 pkgdatadir = $(datadir)/oar-drmaa
 pkgincludedir = $(includedir)/oar-drmaa
 pkglibdir = $(libdir)/oar-drmaa
@@ -56,7 +57,8 @@ POST_UNINSTALL = :
 build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
 subdir = oar_drmaa
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(dist_sysconf_DATA) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/ax_docutils.m4 \
@@ -98,7 +100,7 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(libdir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(sysconfdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdrmaa_la_DEPENDENCIES =  \
 	../drmaa_utils/drmaa_utils/libdrmaa_utils.la
@@ -123,6 +125,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libdrmaa_la_SOURCES)
 DIST_SOURCES = $(libdrmaa_la_SOURCES)
+DATA = $(dist_sysconf_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -253,7 +256,6 @@ top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 GPERFFLAGS = --readonly-tables
-#AM_CPPFLAGS = -I$(top_srcdir)/drmaa_utils -I /home/auguste/prog/json-glib-0.12.0/include/json-glib-1.0/ -I /usr/include/glib-2.0/ -I /usr/lib/glib-2.0/include/  -fPIC
 AM_CPPFLAGS = -I$(top_srcdir)/drmaa_utils `pkg-config --cflags --libs json-glib-1.0 glib-2.0` -fPIC
 lib_LTLIBRARIES = libdrmaa.la
 
@@ -270,9 +272,8 @@ libdrmaa_la_SOURCES = \
 
 BUILT_SOURCES = oar_attrib.c
 EXTRA_DIST = oar_attrib.c
-#dist_sysconf_DATA   = oar_drmaa.conf.example
+dist_sysconf_DATA = oar_drmaa.conf.example
 libdrmaa_la_LIBADD = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la 
-#liboardrmaa_la_LDFLAGS = -lcurl -version-info 1:0:0  -L/home/auguste/prog/json-glib-0.12.0/lib/ -ljson-glib-1.0
 libdrmaa_la_LDFLAGS = -lcurl -version-info 1:0:0 -ljson-glib-1.0
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -383,6 +384,24 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+install-dist_sysconfDATA: $(dist_sysconf_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(sysconfdir)" || $(MKDIR_P) "$(DESTDIR)$(sysconfdir)"
+	@list='$(dist_sysconf_DATA)'; test -n "$(sysconfdir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(sysconfdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(sysconfdir)" || exit $$?; \
+	done
+
+uninstall-dist_sysconfDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_sysconf_DATA)'; test -n "$(sysconfdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(sysconfdir)'; $(am__uninstall_files_from_dir)
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -469,9 +488,9 @@ distdir: $(DISTFILES)
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(LTLIBRARIES)
+all-am: Makefile $(LTLIBRARIES) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(sysconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -535,7 +554,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am: install-dist_sysconfDATA install-libLTLIBRARIES
 
 install-html: install-html-am
 
@@ -575,7 +594,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES
+uninstall-am: uninstall-dist_sysconfDATA uninstall-libLTLIBRARIES
 
 .MAKE: all check install install-am install-strip
 
@@ -583,15 +602,17 @@ uninstall-am: uninstall-libLTLIBRARIES
 	clean-libLTLIBRARIES clean-libtool ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-libLTLIBRARIES
+	install install-am install-data install-data-am \
+	install-dist_sysconfDATA install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-dist_sysconfDATA \
+	uninstall-libLTLIBRARIES
 
 
 # see ../m4/ax_pbs.m4 for @OAR_xxx@ 

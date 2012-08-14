@@ -283,8 +283,6 @@ void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 				FSD_DRMAA_PH_HD | FSD_DRMAA_PH_INCR );
 		expand->set( expand, FSD_DRMAA_PH_WD, cwd );
     self->workdir = fsd_strdup(cwd);
-    printf("-------------------CWD:%s\n", cwd);
-
 	 }
 
    if( input_path != NULL )
@@ -345,7 +343,6 @@ void oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 
 	if( submit_state != NULL )
 	 {
-    printf("TODO hold_types\n");
     if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_HOLD) )
       oar_attr->set_attr( oar_attr, OARDRMAA_HOLD, "1" );
 
@@ -371,7 +368,7 @@ void oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
                 char oar_start_time[20];
 		struct tm start_time_tm;
                 */
-                 printf("NOT YET IMPLEMENTED --- TODO hold_types\n");
+      fsd_log_error((" drmaa_start_time NOT YET IMPLEMENTED\n"));
                 /*
 		start_time = fsd_datetime_parse( drmaa_start_time );
 		localtime_r( &start_time, &start_time_tm );
@@ -392,7 +389,6 @@ void oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 
 void oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 {
-   /* TODO STDOUT....*/
 	const fsd_template_t *jt = self->job_template;
   fsd_template_t *oar_attr = self->oar_job_attributes;
 	const char *join_files;

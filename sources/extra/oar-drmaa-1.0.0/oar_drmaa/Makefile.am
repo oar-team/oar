@@ -21,7 +21,6 @@
 
 GPERF       = @GPERF@
 GPERFFLAGS  = --readonly-tables
-#AM_CPPFLAGS = -I$(top_srcdir)/drmaa_utils -I /home/auguste/prog/json-glib-0.12.0/include/json-glib-1.0/ -I /usr/include/glib-2.0/ -I /usr/lib/glib-2.0/include/  -fPIC
 AM_CPPFLAGS = -I$(top_srcdir)/drmaa_utils `pkg-config --cflags --libs json-glib-1.0 glib-2.0` -fPIC
 
 lib_LTLIBRARIES = libdrmaa.la
@@ -39,10 +38,9 @@ libdrmaa_la_SOURCES = \
 
 BUILT_SOURCES       = oar_attrib.c
 EXTRA_DIST          = oar_attrib.c
-#dist_sysconf_DATA   = oar_drmaa.conf.example
+dist_sysconf_DATA   = oar_drmaa.conf.example
 
 libdrmaa_la_LIBADD  = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la 
-#liboardrmaa_la_LDFLAGS = -lcurl -version-info @OAR_DRMAA_VERSION_INFO@  -L/home/auguste/prog/json-glib-0.12.0/lib/ -ljson-glib-1.0
 libdrmaa_la_LDFLAGS = -lcurl -version-info @OAR_DRMAA_VERSION_INFO@ -ljson-glib-1.0
 
 
