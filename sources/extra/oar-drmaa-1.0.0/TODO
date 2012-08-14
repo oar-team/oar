@@ -3,6 +3,9 @@ TODO
 - job category 
 - native specfication: oardrmaa_submit_apply_native_specification/parse_additional_attr/parse_resources/example
 - configuration: getenv oar_api_server_url --> to test 
+
+- error http / oar (if # 299 / 404 / 300 500) / pb workdir ($drmaa_hd_... $)
+
 - remove debug info
 
 - clean compilation 

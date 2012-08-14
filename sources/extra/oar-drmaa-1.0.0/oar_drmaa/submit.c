@@ -125,12 +125,12 @@ oardrmaa_submit_new( fsd_drmaa_session_t *session, const fsd_template_t *job_tem
 void
 oardrmaa_submit_destroy( oardrmaa_submit_t *self )
 {
-        if( self-> script_path)
-                fsd_free( self->script_path );
-        if( self-> workdir)
-                fsd_free( self->workdir );
-        if( self->oar_job_attributes )
-                self->oar_job_attributes->destroy( self->oar_job_attributes );
+  if( self-> script_path)
+    fsd_free( self->script_path );
+  if( self-> workdir)
+    fsd_free( self->workdir );
+  if( self->oar_job_attributes )
+    self->oar_job_attributes->destroy( self->oar_job_attributes );
 	if( self->expand_ph )
 		self->expand_ph->destroy( self->expand_ph );
 	fsd_free( self->destination_queue );
@@ -260,6 +260,7 @@ void oardrmaa_submit_apply_defaults( oardrmaa_submit_t *self )
 void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
+  fsd_expand_drmaa_ph_t *expand = self->expand_ph;
 
   char *script_path = NULL;
   size_t script_path_len;
@@ -275,9 +276,15 @@ void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
   argv         = jt->get_v_attr( jt, DRMAA_V_ARGV );
   input_path   = jt->get_attr( jt, DRMAA_INPUT_PATH );
 
-	if( wd )
-   {
-    self->workdir = fsd_strdup(wd);
+  if( wd )
+	 {
+		char *cwd = NULL;
+		cwd = expand->expand( expand, fsd_strdup(wd),
+				FSD_DRMAA_PH_HD | FSD_DRMAA_PH_INCR );
+		expand->set( expand, FSD_DRMAA_PH_WD, cwd );
+    self->workdir = fsd_strdup(cwd);
+    printf("-------------------CWD:%s\n", cwd);
+
 	 }
 
    if( input_path != NULL )

@@ -77,7 +77,6 @@ struct memory_struct recv_data;
 
 void init_recv_data()
 {
-
     if(recv_data.memory) {
         free(recv_data.memory);
         /* ready for next receive */
@@ -88,17 +87,46 @@ void init_recv_data()
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_memory_callback);
     /* we pass our 'recv_data' struct to the callback function */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&recv_data);
-
 }
 
-int
-oar_connect(char *server)
+void oar_api_http_error(long http_code, JsonReader *reader) {
+
+  char *title=NULL;
+  char *message=NULL;
+  int code=0;
+
+  if (http_code < 200 || http_code > 299) {
+
+    json_reader_read_member(reader,"title");
+    title = (char *)json_reader_get_string_value(reader);
+    json_reader_end_element (reader);
+
+    json_reader_read_member(reader,"message");
+    message = (char *)json_reader_get_string_value (reader);
+    json_reader_end_element (reader);
+
+    json_reader_read_member(reader,"code");
+    code = json_reader_get_int_value (reader);
+    json_reader_end_element (reader);
+  
+    fsd_log_error(("HTTP error code: %ld", http_code));
+    fsd_log_error(("title: %s", title));
+    fsd_log_error(("message: %s", message));
+    fsd_log_error(("code: %d", code));
+  }
+}
+
+
+
+
+int oar_connect(char *server)
 {
     JsonParser *parser; 
     JsonReader *reader;
     GError *error = NULL;
     char *env_oar_api_server_url;
     char rest_url[256];
+    long http_code = 0;
 
     g_type_init (); /* only once */
     parser = json_parser_new ();
@@ -136,11 +164,18 @@ oar_connect(char *server)
 
     curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
     res = curl_easy_perform(curl_handle); /* */
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
 
+    if (res != CURLE_OK)
+      fprintf(stderr, "Curl curl_easy_getinfo failed: %s\n", curl_easy_strerror(res));
+ 
     /* printf("%lu bytes retrieved\n", (long)recv_data.size); */
 
     json_parser_load_from_data (parser, recv_data.memory, -1, &error);
     json_reader_set_root (reader, json_parser_get_root (parser));
+
+    /* test http error from oar-api reponse */
+    oar_api_http_error(http_code, reader);
 
     /* printf("number of members: %d\n", json_reader_count_members (reader)); */
     json_reader_read_member (reader, "total");
@@ -197,40 +232,8 @@ int oar_control_job(int connect, char *job_id, int action)
     json_reader_set_root (reader, json_parser_get_root (parser));
 
     /* test return http status */
-    if (http_code >= 200 && http_code < 300) /* http successful */
-    {
-      /*
-        json_reader_read_member (reader,"id");
-        int job_id = json_reader_get_int_value (reader);
-        json_reader_end_element (reader);
-        printf("Http request successfull OK: job id: %d\n",job_id);
-      */
-    } else
-    {
-        char *title=NULL;
-        char *message=NULL;
-        int code=0;
+    oar_api_http_error(http_code, reader);
 
-        json_reader_read_member(reader,"title");
-        title = (char *)json_reader_get_string_value(reader);
-        json_reader_end_element (reader);
-
-        json_reader_read_member(reader,"message");
-        message = (char *)json_reader_get_string_value (reader);
-        json_reader_end_element (reader);
-
-        json_reader_read_member(reader,"code");
-        code = json_reader_get_int_value (reader);
-        json_reader_end_element (reader);
-        
-        fsd_log_debug("title: ");
-        fsd_log_debug(title);
-        fsd_log_debug("\nmessage: ");
-        fsd_log_debug(message);
-        fsd_log_debug("\ncode: ");
-        fsd_log_debug(code);
-
-    }
     /* clean recv/reader/parser stuff */
     g_object_unref (reader);
     g_object_unref (parser);
@@ -283,6 +286,7 @@ struct batch_status *oar_statjob(int connect, char *id)
     json_reader_set_root (reader, json_parser_get_root (parser));
 
     /* test return http status */
+
     if (http_code >= 200 && http_code < 300) /* http successful */
     {
         json_reader_read_member (reader,"id");
@@ -326,7 +330,9 @@ struct batch_status *oar_statjob(int connect, char *id)
         fsd_log_debug(("job state: %s\n",state));
     } else
     {
-        /* TODO */
+        /* test return http status */
+      oar_api_http_error(http_code, reader);
+
     }
 
     struct oar_job_status *j_status = malloc(sizeof(struct oar_job_status ));
@@ -390,11 +396,11 @@ struct batch_status * oar_multiple_statjob(int connect, char **job_ids)
 char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *workdir, char *queue_destination)
 {
     struct attropl *i;
-    fsd_log_info(("oar_submit: script_path: %s \nqueue_destination %s\n", script_path, queue_destination));
-
-    oardrmaa_dump_attrl( attrib, NULL );
-
+    long http_code = 0;
     char *job_id_str;
+
+    fsd_log_info(("oar_submit: script_path: %s \nqueue_destination %s\n", script_path, queue_destination));
+    oardrmaa_dump_attrl( attrib, NULL );
 
     /* builder */
     JsonBuilder *builder = json_builder_new ();
@@ -417,16 +423,17 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     json_builder_add_string_value (builder, script_path);
 
     /* set workdir */
-    if (workdir) {
+    if (workdir) { 
       json_builder_set_member_name (builder, "workdir");
       json_builder_add_string_value (builder, workdir);
-    }
+      printf("workdir %s\n",workdir);
+    } 
 
      /* set queue */
-    if (queue_destination) {
+    /* if (queue_destination) { */
       json_builder_set_member_name (builder, "queue");
       json_builder_add_string_value (builder, queue_destination);
-    }
+    /* } */
 
     /* TODO native spec and array */
     for( i = attrib;  i != NULL;  i = i->next )
@@ -452,6 +459,8 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     char rest_url[256];
     sprintf(rest_url,"%s/oarapi/jobs.json",oar_api_server_url);
 
+    printf("rest_url:%s\n", rest_url);
+
     /* CURL */
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -461,6 +470,10 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
 
     res = curl_easy_perform(curl_handle);
+    if (res != CURLE_OK)
+      fprintf(stderr, "Curl curl_easy_getinfo failed: %s\n", curl_easy_strerror(res));
+
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
 
     fsd_log_debug(("%lu bytes retrieved\n", (long)recv_data.size));
 
@@ -468,6 +481,9 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
 
     json_parser_load_from_data (parser, recv_data.memory, -1, &error);
     json_reader_set_root (reader, json_parser_get_root (parser));
+
+    oar_api_http_error(http_code, reader);
+
     json_reader_read_member (reader,"id");
     int job_id = json_reader_get_int_value (reader);
 
