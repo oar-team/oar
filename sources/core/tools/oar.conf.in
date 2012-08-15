@@ -485,6 +485,11 @@ ENERGY_SAVING_INTERNAL="no"
 # Timeout for the two previous scripts
 #SUSPEND_RESUME_SCRIPT_TIMEOUT="60"
 
+
+# To allow users to hold or resume their jobs. By default it's restricted to oar and
+# root users due to global scheduling impact and possible priority bypassing.  
+#USERS_ALLOWED_HOLD_RESUME="yes"
+
 ###############################################################################
 
 ################################

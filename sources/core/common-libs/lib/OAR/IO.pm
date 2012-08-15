@@ -2824,11 +2824,13 @@ sub hold_job($$$) {
     my $lusr = $ENV{OARDO_USER};
 
     my $job = get_job($dbh, $idJob);
-    
+  
+    my $user_allowed_hold_resume =  (lc(get_conf("USERS_ALLOWED_HOLD_RESUME")) eq "yes");
+  
     my $event_type = "HOLD_WAITING_JOB";
     $event_type = "HOLD_RUNNING_JOB" if (defined($waiting_and_running));
     if (defined($job)){
-        if (defined($waiting_and_running) and ($lusr ne "oar") and ($lusr ne "root")){
+        if (defined($waiting_and_running) and (not $user_allowed_hold_resume) and ($lusr ne "oar") and ($lusr ne "root")){
             return(-4);
         }elsif (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if (($job->{'state'} eq "Waiting") or ($job->{'state'} eq "Resuming")){
@@ -2867,8 +2869,10 @@ sub resume_job($$) {
 
     my $job = get_job($dbh, $idJob);
 
+    my $user_allowed_hold_resume =  (lc(get_conf("USERS_ALLOWED_HOLD_RESUME")) eq "yes");
+
     if (defined($job)){
-        if (($job->{'state'} eq "Suspended") and ($lusr ne "oar") and ($lusr ne "root")){
+        if (($job->{'state'} eq "Suspended") and (not $user_allowed_hold_resume) and ($lusr ne "oar") and ($lusr ne "root")){
             return(-4);
         }elsif (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if (($job->{'state'} eq "Hold") or ($job->{'state'} eq "Suspended")){
