@@ -90,6 +90,7 @@ oardrmaa_submit_new( fsd_drmaa_session_t *session, const fsd_template_t *job_tem
     self->script_path = NULL;
     self->workdir = NULL;
     self->walltime = NULL;
+    self->environment = NULL;
 		self->destination_queue = NULL;
     self->oar_job_attributes = NULL;
 		self->expand_ph = NULL;
@@ -129,6 +130,10 @@ oardrmaa_submit_destroy( oardrmaa_submit_t *self )
     fsd_free( self->script_path );
   if( self-> workdir)
     fsd_free( self->workdir );
+  if( self-> walltime)
+    fsd_free( self->walltime );
+  if( self-> environment)
+    fsd_free( self->environment );
   if( self->oar_job_attributes )
     self->oar_job_attributes->destroy( self->oar_job_attributes );
 	if( self->expand_ph )
@@ -226,11 +231,10 @@ void oardrmaa_submit_eval( oardrmaa_submit_t *self )
 	/* self->apply_defaults( self ); useless for OAR*/
   self->apply_job_resources( self ); /* upto now set only walltime */
 	self->apply_job_category( self );
+  self->apply_job_environment( self ); /* not implemented */
 	self->apply_job_script( self );
-	self->apply_job_state( self );
+	self->apply_job_state( self ); /* not implemented */
 	self->apply_job_files( self );
-	/* self->apply_file_staging( self ); not implemented */
-	/* self->apply_job_environment( self ); not implemented */
 	/* self->apply_email_notification( self ); not implemented */
 	self->apply_native_specification( self, NULL );
 }
@@ -270,13 +274,17 @@ void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 	const char *const *argv;
   const char *input_path;
   const char *const *i;
+  char *environment;
+  char *str_tmp = NULL;
 
   executable   = jt->get_attr( jt, DRMAA_REMOTE_COMMAND );
 	wd           = jt->get_attr( jt, DRMAA_WD );
   argv         = jt->get_v_attr( jt, DRMAA_V_ARGV );
   input_path   = jt->get_attr( jt, DRMAA_INPUT_PATH );
+  
+  environment   = self->environment;
 
-  if( wd )
+  if( wd ) /* TODO: to move ? */
 	 {
 		char *cwd = NULL;
 		cwd = expand->expand( expand, fsd_strdup(wd),
@@ -293,11 +301,12 @@ void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
 
 	if( executable == NULL )
 		fsd_exc_raise_code( FSD_DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE );
-    if (argv)
-        {
-            /* compute script_lengh length */
-            /* script_path_len = 1;*/ /* begining double quote */ /* TODO: to remove ? */
-            script_path_len += strlen(executable);
+
+  if (argv)
+    {
+      /* compute script_lengh length */
+      /* script_path_len = 1;*/ /* begining double quote */ /* TODO: to remove ? */
+      script_path_len += strlen(executable);
             for( i = argv;  *i != NULL;  i++ )
                     script_path_len += 3+strlen(*i);
             if( input_path != NULL )
@@ -324,6 +333,17 @@ void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
         {
             self->script_path = fsd_strdup(executable);
         }
+
+      if (environment) {
+        fsd_calloc(str_tmp, strlen(environment) + strlen(self->script_path) +1, char);
+        str_tmp[0] = '\0';
+        strcat(str_tmp, environment);
+        strcat(str_tmp, self->script_path);
+        fsd_free(self->script_path);
+       
+        self->script_path = fsd_strdup(str_tmp);
+        fsd_free(str_tmp);
+      }
 }
 
 void oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
@@ -467,8 +487,9 @@ void oardrmaa_submit_apply_job_resources( oardrmaa_submit_t *self )
     */
     
 	 }
-	if( walltime_limit ) 
+	if( walltime_limit ) { 
     self->walltime = fsd_strdup(walltime_limit);
+  }
     /*
     oar_attr->set_attr( oar_attr, "Resource_List.walltime", walltime_limit );
     */
@@ -478,6 +499,7 @@ void oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
 {
 	const fsd_template_t *jt = self->job_template;
 	const char *const *env_v;
+  char export[] = "export ";
 
 	env_v = jt->get_v_attr( jt, DRMAA_V_ENV);
 
@@ -486,25 +508,29 @@ void oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
 		char *env_c = NULL;
 		int ii = 0, len = 0;
 
+    len = strlen(export);
+
 		ii = 0;
 		while (env_v[ii]) {
 			len += strlen(env_v[ii]) + 1;
 			ii++;
 		}
 
-		fsd_calloc(env_c, len + 1, char);
+		fsd_calloc(env_c, len + 1 + 1, char);
 		env_c[0] = '\0';
+
+	  strcat(env_c, export); /* copy export */
 
 		ii = 0;
 		while (env_v[ii]) {
 			strcat(env_c, env_v[ii]);
-			strcat(env_c, ",");
+			strcat(env_c, " ");
 			ii++;
 		}
 
-		env_c[strlen(env_c) -1 ] = '\0'; /*remove the last ',' */
-    /* TODO not yet implemented */
-    /* self->oar_job_attributes->set_attr(self->oar_job_attributes, "Variable_List", env_c); */
+		env_c[strlen(env_c) -1 ] = ';'; /*replace the last ',' */
+    self->environment=fsd_strdup(env_c);
+    /* printf("env_c: %s\n",env_c);*/
 
 		fsd_free(env_c);
 	}

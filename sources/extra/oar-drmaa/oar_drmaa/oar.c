@@ -399,7 +399,7 @@ char *oar_submit(int connect, struct attropl *attrib, char *script_path, char *w
     long http_code = 0;
     char *job_id_str;
 
-    fsd_log_info(("oar_submit: script_path: %s \nqueue_destination %s\n", script_path, queue_destination));
+    fsd_log_info(("oar_submit: script_path: %s\n%s\nqueue_destination %s\nattributs:\n", script_path, queue_destination));
     oardrmaa_dump_attrl( attrib, NULL );
 
     /* builder */

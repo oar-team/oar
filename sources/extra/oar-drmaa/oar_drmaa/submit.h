@@ -59,7 +59,8 @@ struct oardrmaa_submit_s {
 
   char *script_path; /* job script command with path and args */
   char *workdir;     /* work directory */
-  char *walltime;
+  char *walltime;    /* oar walltime */
+  char *environment; /* export 'variables environment';  to begin script_path if not null */
 
 	char *destination_queue;
   
