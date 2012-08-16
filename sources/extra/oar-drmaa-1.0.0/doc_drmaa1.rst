@@ -5,43 +5,59 @@ DRMAAv1 for OAR
 :Authors: Olivier Richard <olivier.richard _at_ imag _ fr>  
 :Contact: <oar-contact@lists.gforge.inria.fr>
 
-:Copyright:     Copyright (C) 2012 Joseph Fourier University - France
-                Copyright (C) 2006-2008 FedStage Systems for inital version
+:Copyright:     Copyright (C) 2012 Joseph Fourier University - France for specific OAR parts.
+                Copyright (C) 2006-2008 FedStage Systems for other parts.
 
 
 :Abstract: This document describes installation, configuration and usage
-  of `DRMAA for OAR`_ , *which is based on* `DRMAA for Torque/PBS Pro`_ library (PBS DRMAA for short).
+  of DRMAA for OAR_, which is based on `DRMAA for Torque/PBS Pro`_ library (PBS DRMAA for short).
 
 
-
-Drmaa v1 for OAR
-=================
+.. contents::
 
 Introduction
 ============
 
 DRMAA for OAR is an implementation of `Open Grid Forum`_ DRMAA_
-(Distributed Resource Management Application API) specification_ for
-submission and control jobs to OAR_ resource anf task management system (also known as batch scheduler).  
+(Distributed Resource Management Application API) specification_ (version 1) for
+submission and control jobs to OAR_ resources and tasks management system (also known as *batch scheduler*).  
 
 Using DRMAA, grid applications builders, portal developers
 and ISVs can use the same high-level API to link their software with
 different cluster/resource management systems.
 
-**This implemtation is based on `DRMAA for Torque/PBS Pro`_ library developed by  FedStage Systems**
+**This implemtation is based on** `DRMAA for Torque/PBS Pro`_ library developed by `FedStage Computing`_ and `Poznan Supercomputing and Networking Center`_.
 
 Installation
 ============
 
-  require oar api
+The required librairies to compilation are following:
+  * json-glib (version **0.12 or higher**)
+  * libcurl
+  * glib 2.0
+  
+Other required tools are :
+ * GNU autotools (autoconf, automake, libtool),
+ * GUN m4 macro processeur
+ * gperf perfect hash function generator,
+  
+All these requirements are availble in major GNU/Linux distribution. 
+ 
+To compile the library just go to main source directory and type::
+
+  $ ./configure [--prefix=/installation/directory] && make
+
 
 Configuration
 =============
 
+This librairy exploits the `OAR Restfull API`_ to communicate with OAR system. The machine where DRMAA will be use must have access to the server API (see `OAR Restfull API`_ documentation). By default the location of the API is ``http://localhost/oarapi``, it can be change by ``OAR_API_SERVER_URL`` environment variable.  
+
+
 During DRMAA session initialization (``drmaa_init``) library tries to read
 its configuration parameters from locations:
 ``/etc/oar_drmaa.conf``, ``~/.oar_drmaa.conf`` and from file given in
-``PBS_DRMAA_CONF`` environment variable (if set to non-empty string).
+``OAR_DRMAA_CONF`` environment variable (if set to non-empty string).
 If multiple configuration sources are present then all configurations
 are merged with values from user-defined files taking precedence
 (in following order: ``$OAR_DRMAA_CONF``, ``~/.oar_drmaa.conf``,
@@ -53,6 +69,11 @@ Currently recognized configuration parameters are:
     Amount of time (in seconds) between successive checks of unfinished job(s).
 
      Type: integer, Default: 5
+
+  wait_thread
+    Value 1 enables single "wait thread" for updating jobs status. 
+     
+     Type: integer, Default: 0
      
   job_categories
     Dictionary of job categories.  It's keys are job categories names
@@ -71,7 +92,6 @@ Currently recognized configuration parameters are:
 
     Type: integer, default: 0
 
-
 .. table::
   Different modes of operation
 
@@ -80,7 +100,7 @@ Currently recognized configuration parameters are:
   =========== ======== ======================= ===================================
        0       polling           yes              default configuration
        1       polling           yes              more effective than above
-  =========== ================================ ===================================
+  =========== ======== ======================= ===================================
   
 
 Configuration file syntax
@@ -114,12 +134,9 @@ Configuration file example
   #pool_delay: 5,
 
   job_categories: {
-	#default: "-k n", # delete output files from execution hosts
-	longterm: "-p -100 -l nice=5",
-	amd64: "-l arch=amd64",
-	python: "-l software=python",
-	java: "-l software=java,vmem=500mb -v PATH=/opt/sun-jdk-1.6:/usr/bin:/bin",
-	#test: "-u test -q testing",
+	#default: "-q default", # 
+	be: "-t besteffort",
+	#test: "-N test -q testing",
   },
   
 
@@ -148,7 +165,7 @@ attributes.
   ===================== =============== ============ ====================
                       Attributes which get overridden                   
   -----------------------------------------------------------------------
-  drmaa_job_name        name                     `-N` job name       
+  drmaa_job_name        name                         `-N` job name       
   drmaa_output_path     Output_Path                  `-o` output path    
   drmaa_error_path      Error_Path                   `-e` error path     
   drmaa_join_files      Join_Path                    `-j` join options   
@@ -170,9 +187,6 @@ attributes.
   drmaa_duration_hlimit Resource_List   cput         `-l cput=`\limit    
   drmaa_wct_hlimit      Resource_List   walltime     `-l walltime=`\limit
   ..                    Resource_List                `-l` resources      
-  ..                    depend                       `--depend=`\dependency
-  ..                    stagein                      `--stagein=`\stagein 
-  ..                    stageout                     `--stageout=`\stageout
   ===================== =============== ============ ====================
 
 Limitations
@@ -183,58 +197,8 @@ listed below.  It passes the `official DRMAA test-suite`_ .
 Test-suite
 ==========
 
-The DRMAA for OAR library was successfully tested with OAR_ 2.5.2 on Linux OS.  Following
+The DRMAA for OAR library was successfully tested with OAR_ 2.5.4 on Linux OS.  Following
 table presents results of tests from `Official DRMAA test-suite`_ (originally developed for Sun Grid Engine).
-
-.. table::
-  Mode - Polling
-
-  =============================================== =========== ============ 
-                  Test name                        PBS Pro 10  Torque 2.5.1 
-  =============================================== =========== ============ 
-  test_mt_exit_during_submit                        passed       passed           
-  test_mt_exit_during_submit_or_wait                passed       passed           
-  test_mt_submit_before_init_wait                   passed       passed            
-  test_mt_submit_mt_wait                            passed       passed            
-  test_mt_submit_wait                               passed       passed            
-  test_st_attribute_change                          passed       passed            
-  test_st_bulk_singlesubmit_wait_individual         passed       passed            
-  test_st_bulk_submit_in_hold_session_delete        passed       passed            
-  test_st_bulk_submit_in_hold_session_release       passed       passed            
-  test_st_bulk_submit_in_hold_single_delete         passed       passed            
-  test_st_bulk_submit_in_hold_single_release        passed       passed            
-  test_st_bulk_submit_wait                          passed       passed            
-  test_st_contact                                   passed       passed            
-  test_st_drm_system                                passed       passed            
-  test_st_drmaa_impl                                passed       passed            
-  test_st_empty_session_control                     passed       passed            
-  test_st_empty_session_synchronize_dispose         passed       passed            
-  test_st_empty_session_synchronize_nodispose       passed       passed            
-  test_st_empty_session_wait                        passed       passed            
-  test_st_error_file_failure                      FAILED [1]_    passed       
-  test_st_exit_status                             FAILED [1]_    passed       
-  test_st_input_file_failure                      FAILED [1]_    passed       
-  test_st_mult_exit                                 passed       passed        
-  test_st_mult_init                                 passed       passed         
-  test_st_output_file_failure                     FAILED [1]_    passed      
-  test_st_submit_in_hold_delete                     passed       passed         
-  test_st_submit_in_hold_release                    passed       passed         
-  test_st_submit_kill_sig                         FAILED [1]_    passed       
-  test_st_submit_polling_synchronize_timeout        passed       passed        
-  test_st_submit_polling_synchronize_zerotimeout    passed       passed        
-  test_st_submit_polling_wait_timeout               passed       passed        
-  test_st_submit_polling_wait_zerotimeout           passed       passed       
-  test_st_submit_suspend_resume_wait                passed       passed       
-  test_st_submit_wait                               passed       passed       
-  test_st_submitmixture_sync_all_dispose            passed       passed      
-  test_st_submitmixture_sync_all_nodispose          passed       passed       
-  test_st_submitmixture_sync_allids_dispose         passed       passed      
-  test_st_submitmixture_sync_allids_nodispose       passed       passed     
-  test_st_supported_attr                            passed       passed    
-  test_st_supported_vattr                           passed       passed    
-  test_st_usage_check                               passed       passed    
-  test_st_version                                   passed       passed    
-  =============================================== =========== ============ 
 
 
 Developers
@@ -260,16 +224,22 @@ if you intend to develop DRMAA for Torque/PBS Pro library or run tests:
 Contact
 =======
 
+Acknowledgments
+===============
+
 Release notes
 =============
 
 
 
 .. _OAR: http:oar.imag.fr
+.. _OAR Restfull API: http:oar.imag.fr/documentation/
 .. _DRMAA: http://drmaa.org/
 .. _Open Grid Forum: http://www.gridforum.org/
 .. _specification: http://www.ogf.org/documents/GFD.22.pdf
 .. _Official DRMAA test-suite: http://www.drmaa.org/wiki/index.php?pagename=DrmaaTestsuite
+.. _DRMAA for Torque/PBS Pro: http://apps.man.poznan.pl/trac/pbs-drmaa/
+
 .. _FedStage DRMAA for PBS Pro:
   http://www.fedstage.com/wiki/FedStage_DRMAA_for_PBS_Pro
 .. _PBS DRMAA: http://www.fedstage.com/wiki/FedStage_DRMAA_for_PBS_Pro
@@ -280,12 +250,12 @@ Release notes
 .. _Torque: http://www.clusterresources.com/pages/products/torque-resource-manager.php
 .. _OpenPBS: http://www.openpbs.org/
 .. _Poznan Supercomputing and Networking Center: http://www.man.poznan.pl/online/en/
-.. _OAR: http:oar.imag.fr
 
 License
 =======
 
-Copyright (C) 2006-2008 FedStage Systems
+Copyright (C) 2012 Joseph Fourier University - France for OAR parts
+Copyright (C) 2006-2008 FedStage Systems for other parts
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the `GNU General Public License`_ as published

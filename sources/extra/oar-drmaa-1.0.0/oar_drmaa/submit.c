@@ -417,15 +417,27 @@ void oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
 		 {
 			if( path[0] == ':' )
 				path++;
-        self->set(self, oar_name, fsd_strdup(path), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR);
+      self->set(self, oar_name, fsd_strdup(path), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR);
 		 }
 	 }
-/* TODO*/
-        /*
-	join_files = jt->get_attr( jt, DRMAA_JOIN_FILES );
-	b_join_files = join_files != NULL  &&  !strcmp(join_files,"1");
-        oar_attr->set_attr( oar_attr, OARDRMAA_JOIN_FILES, (b_join_files ? "y" : "n") );
-*/
+
+   join_files = jt->get_attr( jt, DRMAA_JOIN_FILES );
+	 b_join_files = join_files != NULL  &&  !strcmp(join_files,"y");
+
+    if (b_join_files) { 
+
+    const char *path;
+    path = jt->get_attr( jt, DRMAA_OUTPUT_PATH );
+    if  ( path != NULL ) { /* STDOUT is fixed*/
+      if( path[0] == ':' )
+		    path++;
+      /* copy value to OARDRMAA_STDERR_FILE */
+      self->set(self,OARDRMAA_STDERR_FILE , fsd_strdup(path), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
+		} else {
+      self->set(self,OARDRMAA_STDOUT_FILE , fsd_strdup("OAR.\%jobid\%.stdout_stderr"), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
+      self->set(self,OARDRMAA_STDERR_FILE , fsd_strdup("OAR.\%jobid\%.stdout_stderr"), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
+    }
+  }
 }
 
 void oardrmaa_submit_apply_file_staging( oardrmaa_submit_t *self )
