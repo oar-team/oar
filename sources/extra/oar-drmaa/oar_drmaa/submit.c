@@ -267,7 +267,7 @@ void oardrmaa_submit_apply_job_script( oardrmaa_submit_t *self )
   fsd_expand_drmaa_ph_t *expand = self->expand_ph;
 
   char *script_path = NULL;
-  size_t script_path_len;
+  size_t script_path_len=0;
 
   const char *executable;
 	const char *wd;
@@ -365,20 +365,13 @@ void oardrmaa_submit_apply_job_state( oardrmaa_submit_t *self )
 	 {
     if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_HOLD) )
       oar_attr->set_attr( oar_attr, OARDRMAA_HOLD, "1" );
+    else if ( strcmp(submit_state, DRMAA_SUBMISSION_STATE_ACTIVE) ) {
+	    fsd_exc_raise_fmt( FSD_ERRNO_INVALID_VALUE,
+		    "invalid value of %s attribute (%s|%s)",
+				DRMAA_JS_STATE, DRMAA_SUBMISSION_STATE_ACTIVE,
+				DRMAA_SUBMISSION_STATE_HOLD );
+    }
 
-    /* TODO
-		const char *hold_types;
-		if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_ACTIVE) )
-			hold_types = "n";
-		else if( !strcmp(submit_state, DRMAA_SUBMISSION_STATE_HOLD) )
-			hold_types = "u";
-		else
-			fsd_exc_raise_fmt( FSD_ERRNO_INVALID_VALUE,
-					"invalid value of %s attribute (%s|%s)",
-					DRMAA_JS_STATE, DRMAA_SUBMISSION_STATE_ACTIVE,
-					DRMAA_SUBMISSION_STATE_HOLD );
-              oar_attr->set_attr( oar_attr, OARDRMAA_HOLD_TYPES, hold_types );
-     */
 	 }
 
 	if( drmaa_start_time != NULL )
@@ -454,8 +447,8 @@ void oardrmaa_submit_apply_job_files( oardrmaa_submit_t *self )
       /* copy value to OARDRMAA_STDERR_FILE */
       self->set(self,OARDRMAA_STDERR_FILE , fsd_strdup(path), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
 		} else {
-      self->set(self,OARDRMAA_STDOUT_FILE , fsd_strdup("OAR.\%jobid\%.stdout_stderr"), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
-      self->set(self,OARDRMAA_STDERR_FILE , fsd_strdup("OAR.\%jobid\%.stdout_stderr"), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
+      self->set(self,OARDRMAA_STDOUT_FILE , fsd_strdup("OAR.%jobid%.stdout_stderr"), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
+      self->set(self,OARDRMAA_STDERR_FILE , fsd_strdup("OAR.%jobid%.stdout_stderr"), FSD_DRMAA_PH_HD | FSD_DRMAA_PH_WD | FSD_DRMAA_PH_INCR); 
     }
   }
 }
@@ -475,24 +468,21 @@ void oardrmaa_submit_apply_job_resources( oardrmaa_submit_t *self )
   fsd_template_t *oar_attr = self->oar_job_attributes;
 
 
-  /*TODO: In OAR we haven't a cpu_time_limit */
+  /* NOTE: In OAR DRMAA_DURATION_HLIMIT corresponds to walltime */
 	cpu_time_limit = jt->get_attr( jt, DRMAA_DURATION_HLIMIT );
 	walltime_limit = jt->get_attr( jt, DRMAA_WCT_HLIMIT ); /* addressed a just before submission */
   
-	if( cpu_time_limit )
+	if( walltime_limit )
 	 {
+    fsd_log_error(("DRMAA_WCT_HLIMIT NOT YET IMPLEMENTED\n"));
     /* not supported in OAR
     oar_attr->set_attr( oar_attr, "Resource_List.pcput", cpu_time_limit ); 
     oar_attr->set_attr( oar_attr, "Resource_List.cput", cpu_time_limit );
     */
-    
 	 }
-	if( walltime_limit ) { 
-    self->walltime = fsd_strdup(walltime_limit);
+	if( cpu_time_limit) { 
+    self->walltime = fsd_strdup(cpu_time_limit);
   }
-    /*
-    oar_attr->set_attr( oar_attr, "Resource_List.walltime", walltime_limit );
-    */
 }
 
 void oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
@@ -530,7 +520,7 @@ void oardrmaa_submit_apply_job_environment( oardrmaa_submit_t *self )
 
 		env_c[strlen(env_c) -1 ] = ';'; /*replace the last ',' */
     self->environment=fsd_strdup(env_c);
-    /* printf("env_c: %s\n",env_c);*/
+    /* printf("env_c: %s\n",env_c); */
 
 		fsd_free(env_c);
 	}

@@ -1,23 +1,10 @@
 TODO
-- minimal doc: building/installation/usage/limitation
 - job category ->  to test
 - configuration: getenv oar_api_server_url --> to test 
--  DRMAA_JOIN_FILES test status: ???
-
-  join files ( string )
-Specifies if the error stream should be intermixed with the output stream.
-If not explicitly set in the job template the attribute defaults to 'n'.
-Either 'y' or 'n' can be specified.
-If 'y' is specified the underlying DRM system SHALL ignore the value of the
-drmaa_error_path attribute and intermix the standard error stream with the
-standard output stream as specified with drmaa_output_path.
-The attribute name is drmaa_join_files.
-
-- add oar.conf variable to allow suspend/resume by user
-
-wall clock time limit ( string ): h:m:s and not [[h:]m:]s walltime -> to document
-
-case "type" : /* TODO transform to json ....*/
+- wallitime ( string ): h:m:s and not [[h:]m:]s walltime -> to document
+- case "type" : /* TODO transform to json ....*/ only one type -> to document
+- drmaa attribute: v_mail and block_mail support
+- drmaa attribute: start_time
 
 - demo: appliance / kameleon step (w/ testsuite) / tgz 
 
@@ -25,16 +12,7 @@ case "type" : /* TODO transform to json ....*/
 - implementation of bulk with oar job array / (need not trivial modification of array job support)
 - use newer pbs-drmaa and drmaa-utils
 
-TEST
-- test native specification
- jt.nativeSpecification = 
-  '-N yop' OK
-  'q poy'  OK
+- inform PSCN
+- inform drmaa mailing-list
 
-NOTE:
-- DRMAA_DURATION_HLIMIT: not implemented
-- DRMAA_V_ENV: not implemented
-- DRMAA_WCT_HLIMIT: (not to use with moldable job)
-- email_notification: not implemented (use notify)
-- start_time: not implementedi (use advance reservation but it's not the same)
--  DRMAA_JOIN_FILES 
+  'q poy'  OK

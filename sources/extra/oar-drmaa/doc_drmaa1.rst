@@ -51,7 +51,7 @@ To compile the library just go to main source directory and type::
 Configuration
 =============
 
-This librairy exploits the `OAR Restfull API`_ to communicate with OAR system. The machine where DRMAA will be use must have access to the server API (see `OAR Restfull API`_ documentation). By default the location of the API is ``http://localhost/oarapi``, it can be change by ``OAR_API_SERVER_URL`` environment variable.  
+This librairy exploits the `OAR Restful API`_ to communicate with OAR system. The machine where DRMAA will be use must have access to the server API (see `OAR Restful API`_ documentation). By default the location of the API is ``http://localhost/oarapi``, it can be change by ``OAR_API_SERVER_URL`` environment variable.  
 
 
 During DRMAA session initialization (``drmaa_init``) library tries to read
@@ -77,7 +77,7 @@ Currently recognized configuration parameters are:
      
   job_categories
     Dictionary of job categories.  It's keys are job categories names
-    mapped to `native specification`_ strings.  Attributes set by
+    mapped to `native specification` strings.  Attributes set by
     job category can be overridden by corresponding DRMAA attributes
     or native specification.  Special category name ``default``
     is used when ``drmaa_job_category`` job attribute was not set.
@@ -140,109 +140,131 @@ Configuration file example
   },
   
 
-Native specification
-====================
+DRMAA attributes support and Native Specification
+==================================================
+
+DRMAA for OAR support main DRMAA attributes at the exception of `drmaa_start_time`, `drmaa_block_email` and `drmaa_block_email`.
+The two laters will be implemented in a next release, for `drmaa_start_time` is not planned in the OAR roadmap if you please contact the developers. 
 
 DRMAA interface allows to pass DRM dependant job submission options.
-Those options may be specified by settings ``drmaa_native_specification``. ``drmaa_native_specification``
-accepts space delimited ``qsub``. ``qsub``
-options which does not set job attributes (`-b`, `-z`, `-C`) as
-well as meant for submission of interactive jobs (`-I`, `-X`) or
-to specify directories (`-d`, `-D`) are *not* supported.
-Also instead of `-W` option following long options are accepted
-within native specification: `--depend`, `--group-list`, `--stagein`
-and `--stageout`.  For detailed description of each option see PBS
-documentation.
+Those options may be specified by settings ``drmaa_native_specification`` and corresponds to `oarsub` 
+command (the submission CLI tool). Note that all `oarsub` options are not available (see table below). 
+For detailed description of each option see OAR documentation. Also note that all DRMAA attributes have not direct equivalent in `oarsub` options but remains. 
 
-Attributes set in native specification overrides corresponding DRMAA job
-attributes.
+Attributes set in native specification overrides corresponding DRMAA job attributes.
 
 .. table::
-  Native specification strings with corresponding DRMAA attributes.
+  DRMAA attributes with native specification equivalent when available or comment.
 
-  ===================== =============== ============ ====================
-  DRMAA attribute       OAR attribute   OAR resource native specification
-  ===================== =============== ============ ====================
-                      Attributes which get overridden                   
-  -----------------------------------------------------------------------
-  drmaa_job_name        name                         `-N` job name       
-  drmaa_output_path     Output_Path                  `-o` output path    
-  drmaa_error_path      Error_Path                   `-e` error path     
-  drmaa_join_files      Join_Path                    `-j` join options   
-  drmaa_block_email     Mail_Points                  `-m` mail options   
-  drmaa_start_time      Execution_Time               `-a` start time     
-  drmaa_js_state        Hold_Types                   `-h`                
-  ..                    Account_Name                 `-A` account string 
-  ..                    Checkpoint                   `-c` interval       
-  ..                    Keep_Files                   `-k` keep           
-  ..                    Priority                     `-p` priority       
-  ..                    destination                  `-q` queue          
-  ..                    Rerunable                    `-r` y/n            
-  ..                    Shell_Path_List              `-S` path list      
-  ..                    User_List                    `-u` user list      
-  ..                    group_list                   `--group_list=`\groups 
-  drmaa_v_env           Variable_List                `-v` variable list  
-  ..                    Variable_List                `-V`                
-  drmaa_v_email         Mail_Users                   `-M` user list      
-  drmaa_duration_hlimit Resource_List   cput         `-l cput=`\limit    
-  drmaa_wct_hlimit      Resource_List   walltime     `-l walltime=`\limit
-  ..                    Resource_List                `-l` resources      
-  ===================== =============== ============ ====================
-
-Limitations
-===========
-Library covers nearly all DRMAA 1.0 specification_ with exceptions
-listed below.  It passes the `official DRMAA test-suite`_ .
+  ========================== ========================================================
+  DRMAA attributes            OAR native specification and/or comment
+  ========================== ========================================================
+  drmaa_remote_command        job executable (submitted remote command)
+  drmaa_v_argv                added to submitted remote command
+  drmaa_job_name              `-n` job name
+  drmaa_output_path           `-O` stdout   
+  drmaa_error_path            `-E` stderr
+  drmaa_input_path            added to submitted remote command
+  drmaa_job_category          provided by drmaa library
+  drmaa_join_files            added to submitted remote command
+  drmaa_v_email               not yet available see --notify option as alternative                 
+  drmaa_block_email           not yet available   
+  drmaa_start_time            not yet available see -r (advance reservation) 
+                              as alternative      
+  drmaa_js_state              `-h`         
+  drmaa_v_env                 added to submitted remote command
+  drmaa_wd                    `-d` working directory
+  drmaa_run_duration_hlimit   -l walltime=h:m:s
+  ..                          `-l` resources for the job
+  ..                          `-p` properties for the job,
+  ..                          `-r` <DATE> The job will starts at a specified time
+  ..                          `-checkpoint` <DELAY> Enable the checkpointing 
+                              mechanism for the job. 
+  ..                          `--signal` <#SIG> Specify the signal to use when 
+                              checkpointing
+  ..                          `-t` Specify a specific type for job
+  ..                          `--project` <TXT> Specify a name of a project
+  ..                          `-a` <OAR JOB ID> Job dependency
+  ..                          `--notify` <TXT> Specify a notification method 
+                              (mail or command to execute)
+  ..                          `--resubmit` <OAR JOB ID> Resubmit the given job
+  ..                          `--use-job-key`  Activate the job-key mechanism (see
+                              oarsub manpage)
+  ..                          `--import-job-key-from-file`  (see oarsub manpage)
+  ..                          `--import-job-key-inline`  (see oarsub manpage)
+  ========================== ========================================================
 
 Test-suite
 ==========
 
-The DRMAA for OAR library was successfully tested with OAR_ 2.5.4 on Linux OS.  Following
+The DRMAA for OAR library was successfully tested with OAR_ 2.5.3 on Linux OS.  Following
 table presents results of tests from `Official DRMAA test-suite`_ (originally developed for Sun Grid Engine).
+Note, that tests with Suspending/Resuming job test need particular setting (see OAR configuration file `oar.conf`).
 
+Known bugs and limitations
+==========================
+
+ * Job termination (when job is running) is realized by PBS
+   by sending SIGTERM and/or SIGKILL therefore retrieving
+   those signals cannot be distinguished from abort using
+   ``drmaa_control(DRMAA_CONTROL_TERMINATE)``.  Then job termination
+   state is marked as "aborted" and "signaled" whatever is the state.
+
+ * ``drmaa_wcoredump()`` always returns ``false``.
+
+ * Waiting functions (``drmaa_wait()`` and ``drmaa_synchronize()``)
+   must pool DRM to find out whether job finished.
+
+
+Release notes
+=============
+
+ * 1.0.0 first release
 
 Developers
 ==========
 
-This library is based on `DRMAA for Torque/PBS Pro`_ and the core functionality of DRMAA is put into ``drmaa_utils`` library. `OAR`_ exploits the Rest OAR API .
+This library is based on `DRMAA for Torque/PBS Pro`_ and the core functionality of DRMAA is put into ``drmaa_utils`` library. `OAR`_ exploits the `OAR Restful API`_.
 
 Developer tools
 ---------------
 Although not needed for library user the following tools may be required
-if you intend to develop DRMAA for Torque/PBS Pro library or run tests:
+if you intend to develop DRMAA library for OAR or run tests:
 
- * GNU autotools (autoconf, automake, libtool),
+ * GNU autotools (autoconf, automake, libtool, m4),
  * gperf_ perfect hash function generator,
  * glib
  * curl
  * glib_json
 
+To initialize OAR DRMAA source files from OAR git repositoty go to ``sources/extra/oar-drmaa`` directory, launch ``./extract_from_pbs-drmaa_tgz.sh`` followed by  ``./autogen.sh``. To clean source files execute ``make clean`` and ``./extract_from_pbs-drmaa_tgz.sh rm``. 
+
 .. _gperf:     http://www.gnu.org/software/gperf/
 
+Contact and Bug Report
+=======================
+ 
+  For support or bug report:
 
+      ``oar-users _at_ lists.gforge.inria.fr``
 
-Contact
-=======
+  For others concerns:
+
+      ``oar-contact _at_ lists.gforge.inria.fr``
 
 Acknowledgments
 ===============
 
-Release notes
-=============
-
-
+  The `Poznan Supercomputing and Networking Center` and `FedStage Computing`_ compagny and their respective implied members for providing and open sourced  `PBS DRMAA`_  
 
 .. _OAR: http:oar.imag.fr
-.. _OAR Restfull API: http:oar.imag.fr/documentation/
+.. _OAR Restful API: http:oar.imag.fr/documentation/
 .. _DRMAA: http://drmaa.org/
 .. _Open Grid Forum: http://www.gridforum.org/
 .. _specification: http://www.ogf.org/documents/GFD.22.pdf
 .. _Official DRMAA test-suite: http://www.drmaa.org/wiki/index.php?pagename=DrmaaTestsuite
 .. _DRMAA for Torque/PBS Pro: http://apps.man.poznan.pl/trac/pbs-drmaa/
-
-.. _FedStage DRMAA for PBS Pro:
-  http://www.fedstage.com/wiki/FedStage_DRMAA_for_PBS_Pro
-.. _PBS DRMAA: http://www.fedstage.com/wiki/FedStage_DRMAA_for_PBS_Pro
+.. _PBS DRMAA: http://apps.man.poznan.pl/trac/pbs-drmaa/
 .. _FedStage Computing: http://www.fedstage.com/wiki/FedStage_Computing
 .. _PBS: http://en.wikipedia.org/wiki/Portable_Batch_System
 .. _PBS Professional: http://www.pbsgridworks.com/
@@ -258,7 +280,7 @@ Copyright (C) 2012 Joseph Fourier University - France for OAR parts
 Copyright (C) 2006-2008 FedStage Systems for other parts
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the `GNU General Public License`_ as published
+it under the terms of the `GNU General Public License` as published
 by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
@@ -267,7 +289,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the `GNU General Public License`_
+You should have received a copy of the `GNU General Public License`
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
