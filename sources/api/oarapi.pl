@@ -1918,7 +1918,7 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /media/<file> : Get a file
+  #{{{ GET /media/<file>?tail=<n> : Get a file (tail it to <n> lines if specified)
   #
   $URI = qr{^/media/(.*)$};
   OAR::API::GET( $_, $URI ) && do {

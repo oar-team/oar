@@ -2190,6 +2190,9 @@ GET /media/<file_path>
 :description:
   Get a file located on the API host, into the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. 
 
+:parameters:
+  - **tail**: specifies an optional number of lines for printing only the tail of a text file  
+
 :formats:
   application/octet-stream
 
