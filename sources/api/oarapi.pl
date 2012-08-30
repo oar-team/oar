@@ -1936,6 +1936,12 @@ SWITCH: for ($q) {
 
     # Security escaping 
     $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
+    
+    # Tail parameter
+    my $tail=0;
+    if (defined($q->param('tail')) && $q->param('tail') =~ /^\d+$/) {
+      $tail=$q->param('tail');
+    }
 
     # Get the filename and replace "~" by the home directory
     my $file="/".$filename;
@@ -1956,7 +1962,11 @@ SWITCH: for ($q) {
 
     # Output the file
     print $q->header( -status => 200, -type => "application/octet-stream" );
-    print `$OARDODO_CMD cat $file`;
+    if ($tail != 0) {
+      print `$OARDODO_CMD tail -n $tail $file`;
+    }else{
+      print `$OARDODO_CMD cat $file`;
+    }
     last;
   };
   #}}}
