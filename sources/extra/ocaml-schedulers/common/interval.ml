@@ -2,8 +2,6 @@
 (* suppress the result list in inter_interval list argument !!! *) 
 (* need to propage in all directory !!! *)
 
-(*  interval  type and some operations on them         *)
-
 (* interval is the basic unit to construct set of resources *)
 type interval = {b : int; e : int}
 type set_of_resources = interval list
@@ -15,7 +13,7 @@ let itvs2str itvs = "["^(String.concat ", " (List.map itv2str itvs))^"]";;
 (* Convert array of interval to string*)
 let itva2str itva = "[|"^(String.concat ", " (List.map itv2str (Array.to_list itva)))^"|]" ;;
 
-(* generate list of intervals for list of unordered ints with greedy approach *)
+(* generate list of intervals from list of unordered ints with greedy approach *)
 (* must be quicker with a dichotomic approach in most cases *)
 let ints2intervals ints =   
 	let ordered_ints = List.sort Pervasives.compare ints in 
@@ -288,7 +286,7 @@ let y = [{b = 5; e = 13}; {b = 15; e = 16}; {b = 19; e = 19}]
 *)
  
 (*                                                                                           *)
-(* test if a list of intervals if a prefix of another list of instevals and substract prefix *)
+(* test if a list of intervals if a prefix of another list of instervals and substract prefix *)
 (*                                                                                           *)
 let test_and_sub_prefix_itvs prefix_itvs (lst_itvs: interval list)  =
 (*

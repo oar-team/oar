@@ -21,6 +21,7 @@ let rstate_to_string  = function
   | Dead -> "Dead" 
 
 type resource = {
+  ord_r_id: int;
 	resource_id: int;
 	network_address: string;
   state: resource_state_t;

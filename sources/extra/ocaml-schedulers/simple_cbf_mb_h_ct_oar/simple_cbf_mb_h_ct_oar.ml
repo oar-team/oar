@@ -46,6 +46,10 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
+
+
+
+
 (*                                                                                                                                   *)
 (* for TOKEN feature                                                                                                                 *)
 (* SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh arg1 arg2', soft2 => '/usr/local/bin/check_soft2.sh arg1' }" *)
@@ -127,8 +131,8 @@ let argv = if (Array.length(Sys.argv) > 2) then
 (* with or without resource availabilty (field available_upto in resources table) *)
 (*                                                                                *)
 
-let resources_init_slots_determination dbh now =
-  let potential_resources = Iolib.get_resource_list dbh in
+let resources_init_slots_determination dbh now potential_resources =
+  (* TODO: rm let potential_resources = Iolib.get_resource_list dbh in *)
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
   in 
@@ -142,11 +146,11 @@ let resources_init_slots_determination dbh now =
       let hash_available_upto_by_resources =  Hashtbl.create 10 in
       let hash_available_upto_by_resources_populate r =
           let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
-                        with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.resource_id];[]
+                        with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.ord_r_id];[]
                         in
                           match res_lst with
                              [] -> ()
-                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.resource_id]) 
+                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.ord_r_id]) 
       in
       let resources = List.filter (fun n -> if (n.state = Alive) || (n.state = Absent) then
                                               begin 
@@ -164,7 +168,7 @@ let resources_init_slots_determination dbh now =
               Conf.log "none available ressources for scheduling any jobs"; exit 0
             end
           else
-            ints2intervals (List.map (fun n -> n.resource_id) resources) 
+            ints2intervals (List.map (fun n -> n.ord_r_id) resources) 
         in                     
         (* create corresponding job from available_up parameter of resource *) 
         let pseudo_job_av_upto a_upto res_itv =
@@ -198,7 +202,7 @@ let resources_init_slots_determination dbh now =
     end
   else
       let resources = List.filter (fun n -> n.state = Alive) potential_resources in
-      let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
+      let resource_intervals = ints2intervals (List.map (fun n -> n.ord_r_id) resources) in
         (resource_intervals,[{time_s = now; time_e = max_time; set_of_res = resource_intervals}])
 
 (*               *)
@@ -210,14 +214,16 @@ let _ =
 
     (* get hierarchy description from oar.conf and convert it in hierarchy levels and set master_top (toplevel interval) *)
     Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
-    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; (* TODO: why *) 
+    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; 
 
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
+    (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
+      let (potential_resources, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn ["network_address";"cpu";"core"] "scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address DESC, resource_id ASC" in 
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
-      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
+      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
       
   		let (waiting_j_ids,h_waiting_jobs) =
@@ -236,7 +242,7 @@ let _ =
           ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
           
           (* fill slots with prev scheduled jobs  *)
-          let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
+          let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn init2ord_ids [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
           if not ( prev_scheduled_jobs = []) then
             let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =

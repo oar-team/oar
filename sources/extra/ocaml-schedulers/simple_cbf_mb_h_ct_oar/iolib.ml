@@ -21,7 +21,6 @@ open Types
 open Interval
 open Helpers
 
-
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
@@ -32,7 +31,8 @@ let get_resource_list dbh  =
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
   let get_one_resource a =
-    { resource_id = NoN int_of_string a.(0); (* resource_id *)
+    { ord_r_id = NoN int_of_string a.(0); (* for use to suppport order_by *)
+      resource_id = NoN int_of_string a.(0); (* resource_id *)
       network_address = NoNStr a.(1); (* network_address *)
       state = NoN rstate_of_string a.(2); (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
@@ -40,17 +40,21 @@ let get_resource_list dbh  =
     map res get_one_resource ;;
 
 (*                                                                 *)
-(* get resource from db with hierarchy information                 *)
+(* get resource and return from db with hierarchy information      *)
 (* label of fields must be provide for scattered hierarchy support *)
+(* returns:                                                        *)
+(*  - flat resource list: id state networks adress                 *)
+(*  - hierarchy_info array(h_labels)->hash(h_values)->list(id)     *)
+(*  - array ord2init_ids[r_order_by_id]=r_init_id                  *)
+(*  - array init2ord_ids[r_init_id]=r_order_by_id                  *) 
 
-(* TODO: exclude resource_id hy_labels sure ?*)
-(* hy_labels -> array ???? *)
 let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resource_order =
   Conf.log ("SELECT resource_id, network_address, state, available_upto, " ^ 
                (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
                scheduler_resource_order);
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
   let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
+  let ord2init_ids = Array.make 200000 0 and init2ord_ids = Array.make 200000 0  in (* arrays to translate resource id intial/ordered*) 
   let i = ref 0 in (* count for ordererd resourced_id *) 
 
   (*let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
@@ -78,12 +82,15 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
         in 
           add_res_id (hy_id_array.(var-4)) a.(var)
       done;
-    { resource_id = NoN int_of_string a.(0);        (* resource_id *)
+      ord2init_ids.(!i) <- NoN int_of_string a.(0); 
+      init2ord_ids.(NoN int_of_string a.(0)) <- !i;
+    { ord_r_id = !i;                                (* id resulting from order_by ordering *)
+      resource_id = NoN int_of_string a.(0);        (* resource_id *)
       network_address = NoNStr a.(1);               (* network_address *)
       state = NoN rstate_of_string a.(2);           (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
-    ((map res get_one_resource), hy_id_array) ;;
+    ((map res get_one_resource), hy_id_array, ord2init_ids, init2ord_ids) ;;
 
 (*                                              *)
 (* get distinct availableupto                   *)
@@ -333,7 +340,7 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
 (* with suspend jobs support                                      *)
 (* TODO Remove used field in query ??? *)
 
-let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead now =
+let get_scheduled_jobs dbh init2ord_ids available_suspended_res_itvs security_time_overhead now =
    let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended, j.project
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
@@ -357,11 +364,11 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                     add j_walltime_init (get_job_suspended_sum_duration dbh j_id now)
                   else
                     j_walltime_init
-                and j_state = NoNStr a.(5)                         (* job state *)
-                and j_moldable_id = NoN int_of_string a.(8)        (* moldable_id *)
-                and j_nb_res = NoN int_of_string a.(3)             (*resource_id *)
-                and j_user =  NoNStr a.(4)                         (* job_user *)
-                and j_project = NoNStr a.(9) in                    (* project *)
+                and j_state = NoNStr a.(5)                          (* job state *)
+                and j_moldable_id = NoN int_of_string a.(8)         (* moldable_id *)
+                and j_r_id = init2ord_ids.(NoN int_of_string a.(3)) (* resource_id translated to order_by_resource_id *)
+                and j_user =  NoNStr a.(4)                          (* job_user *)
+                and j_project = NoNStr a.(9) in                     (* project *)
                 ( {
                   jobid = j_id;
                   jobstate =  j_state;
@@ -376,13 +383,13 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                   user = j_user;
                   project = j_project;
                 }, 
-                  [j_nb_res]) 
+                  [j_r_id]) 
        in
 
         let get_job_res a =
-          let j_id = NoN int_of_string a.(0)         (* job_id *)
-          and j_nb_res =  NoN int_of_string a.(3) in (* resource_id *)
-          (j_id, j_nb_res)
+          let j_id = NoN int_of_string a.(0)                     (* job_id *)
+          and j_r_id = init2ord_ids.(NoN int_of_string a.(3)) in (* resource_id translated to order_by_resource_id *)
+          (j_id, j_r_id)
         in   
       let job_itv_res_setting state job_res =
           let  set_res =  ints2intervals job_res in
