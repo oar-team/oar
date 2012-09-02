@@ -46,12 +46,10 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
-
-
-
+let hy_labels = ["resource_id";"network_address";"cpu";"core"] (*TODO: get_conf*)
 
 (*                                                                                                                                   *)
-(* for TOKEN feature                                                                                                                 *)
+(* for TOKEN feature                                                                                                                *)
 (* SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh arg1 arg2', soft2 => '/usr/local/bin/check_soft2.sh arg1' }" *)
 (*                                                                                                                                   *)
 let token_scripts =
@@ -112,7 +110,7 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
 (* Suspend stuff *)
 (*               *)
 
-(*
+(* TODO: to finish for SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE support
 my $sched_available_suspended_resource_type_tmp = get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE");
 if (!defined($sched_available_suspended_resource_type_tmp)){
     push(@Sched_available_suspended_resource_type, "default");
@@ -132,7 +130,6 @@ let argv = if (Array.length(Sys.argv) > 2) then
 (*                                                                                *)
 
 let resources_init_slots_determination dbh now potential_resources =
-  (* TODO: rm let potential_resources = Iolib.get_resource_list dbh in *)
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
   in 
@@ -212,15 +209,13 @@ let _ =
 	try
 		Conf.log "Starting";
 
-    (* get hierarchy description from oar.conf and convert it in hierarchy levels and set master_top (toplevel interval) *)
-    Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
-    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; 
-
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
     (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
-      let (potential_resources, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn ["network_address";"cpu";"core"] "scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address DESC, resource_id ASC" in 
+      let (potential_resources, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels "scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address DESC, resource_id ASC" in
+      (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
+      let hierarchy_levels = Hierarchy.hy_iolib2hy_level hierarchy_info hy_labels in
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
@@ -301,9 +296,11 @@ let _ =
             else
               all_ordered_waiting_j_ids
             in
+          (*                                                               *)
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
+          (*                                                               *)
           let (assignement_jobs, noscheduled_jids) = 
-            schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
+            schedule_id_jobs_ct_dep h_slots h_waiting_jobs hierarchy_levels h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
             (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)

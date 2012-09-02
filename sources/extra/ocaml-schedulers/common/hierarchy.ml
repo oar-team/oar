@@ -36,6 +36,7 @@ let h_desc_to_h_levels h_desc =
 (* let h_desc = Hierarchy.hy_array2hy_itvs [|h|] ["resource_id"];;                          *)
 
 (* TODO: need to keep order on id value *)
+(* TODO: not use ??? *)
 
 let hy_array2hy_itvs_old hy_id_array hy_labels =
     let hy_id_lst = Array.to_list hy_id_array in
@@ -57,18 +58,39 @@ let h_desc = Hierarchy.hy_array2hy_itvs [|h|] k ["r_id"];;
  [{Interval.b = 1; Interval.e = 3}; {Interval.b = 7; Interval.e = 8}; {Interval.b = 10; Interval.e = 11}]])]
 
 *)
-let hy_array2hy_itvs hy_id_array h_val_order hy_labels =
+(* TODO: not use ??? *)
+let hy_array2hy_itvs hy_id_array h_val_order hy_labels = 
     let hy_id_lst = Array.to_list hy_id_array in
     let ordered_val k = try Hashtbl.find h_val_order k with Not_found -> failwith ("Can't Hashtbl.find h_val_order for "^k) in  
     let h_scat_to_itvs h h_lbl = Helpers.hash_map (fun x -> ints2intervals x) (ordered_val h_lbl) h in  
     let h_scat_label hy_ids hy_label = (hy_label,(h_scat_to_itvs hy_ids hy_label))
       in List.rev (List.map2 h_scat_label hy_id_lst hy_labels);;
 
+(*                                                                                                                           *)
+(* hy_iolib2hy_level: function to generate hierarchy_level from the result provides by get_resource_list_w_hierarchy function *) 
+(*                                                                                                                           *)
+
+let hy_iolib2hy_level_old hy_iolib =
+  let  h1_io2_h1_lvl lvl_name h1_io_value  = (* give list of res interval by scattered block for a hierarchy level *)
+    (*  second term is list of list of res interval for  scattered block for one hy level *)
+    (lvl_name, ( Hashtbl.fold (fun k1 r_ids acc1 -> (Interval.ints2intervals r_ids)::acc1) h1_io_value []) )
+  in
+    Hashtbl.fold (fun k v acc -> (h1_io2_h1_lvl k v)::acc) hy_iolib [];;
+
+(* let hy_iolib2hy_level hy_iolib (hy_labels: string list) = *)
+let hy_iolib2hy_level hy_iolib hy_labels =
+  let  h1_io2h1_lvl h1_io_value =
+    (* list of list of res interval for  scattered block for one hy level *)
+    Hashtbl.fold (fun k1 r_ids acc1 -> (Interval.ints2intervals r_ids)::acc1) h1_io_value [] in
+  let h1_lvls =  Array.to_list hy_iolib in
+    List.rev_map2 (fun x y -> (x,(h1_io2h1_lvl y))) hy_labels h1_lvls ;; 
+
 (*                                                                                                        *)
 (* One a the core function                                                                                *)
 (* Find ressources accordingly to resource requirements, hierarchy structures and available resources itv *)
 (* Notes: hierarchy blocks are contiguous not scattered                                                   *)
 (*                                                                                                        *)
+(* TODO: not use ??? *)
 let find_resource_hierarchies itv_l hy r_rqt_l =
  let rec find_resource_n_h (top: Interval.interval) h r = match (h, r) with
   | ([],_) | (_,[]) -> failwith "Bug ??- need to raise exception ???\n"; (* TODO *)

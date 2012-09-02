@@ -52,15 +52,17 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
   Conf.log ("SELECT resource_id, network_address, state, available_upto, " ^ 
                (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
                scheduler_resource_order);
+  (*                                                                                        *)
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
-  let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
+  (*                                                                                        *)
+  let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;(* block value by hy_label/ TODO: why order ??? *)
   let ord2init_ids = Array.make 200000 0 and init2ord_ids = Array.make 200000 0  in (* arrays to translate resource id intial/ordered*) 
   let i = ref 0 in (* count for ordererd resourced_id *) 
 
   (*let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
   (* list of hashs to compute scattered hierarchy *)
 
-  let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*)
+  let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*) 
   let ary = Array.make (List.length hy_labels) 0 in
   let hy_id_array = Array.map (fun x -> Hashtbl.create 10) ary in
   let query = "SELECT resource_id, network_address, state, available_upto, " ^ 
@@ -489,10 +491,6 @@ let save_assigns_2_rqts conn jobs =
 let save_assigns dbh jobs =
 (*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
   save_assigns_2_rqts dbh jobs;;
-
-
-
-
 
 
 (*                                                  *)
