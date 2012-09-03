@@ -114,7 +114,7 @@ Option are: ::
   -E                  active all queues
   -D                  inactive all queues
   --add_queue         add a new queue; syntax is name,priority,scheduler
-                      (ex: "name,3,"oar_sched_gantt_with_timesharing"
+                      (ex: "name,3,oar_sched_gantt_with_timesharing"
   --remove_queue      remove an existing queue
   -l                  list all queues and there status
   -h                  show this help screen

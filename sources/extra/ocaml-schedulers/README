@@ -60,7 +60,6 @@ ToDo:
     Test/Debug
 
     [D] use of order_by_idx in save assignements 
-
     [D] get_conf HIERARCHY_LABELS
     [D] get_conf SCHEDULER_RESOURCE_ORDER
     [D] generate hierarchy_level from  get_resource_list_w_hierarchy
