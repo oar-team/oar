@@ -57,11 +57,11 @@ Next:
 ToDo:
 -----
   * [IP] ORDER_BY
-    get_conf HIERARCHY_LABELS
-    get_conf ORDER_BY
     use of order_by_idx in save assignements 
     Test/Debug
-    
+
+    [D] get_conf HIERARCHY_LABELS
+    [D] get_conf SCHEDULER_RESOURCE_ORDER
     [D] generate hierarchy_level from  get_resource_list_w_hierarchy
     [D] use find_resource_hierarchies_scattered
     [D] add ord2init_ids, init2ord_ids in get_resource_list_w_hierarchy

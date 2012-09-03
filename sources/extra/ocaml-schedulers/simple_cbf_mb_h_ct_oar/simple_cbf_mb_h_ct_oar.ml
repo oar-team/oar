@@ -46,7 +46,8 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
-let hy_labels = ["resource_id";"network_address";"cpu";"core"] (*TODO: get_conf*)
+let hy_labels = Conf.get_default_value "HIERARCHY_LABELS" ["resource_id";"network_address";"cpu";"core"] (*TODO: get_conf*)
+let sched_resource_order = Conf.get_default_value "SCHEDULER_RESOURCE_ORDER" "resource_id ASC"
 
 (*                                                                                                                                   *)
 (* for TOKEN feature                                                                                                                *)
@@ -213,7 +214,7 @@ let _ =
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
     (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
-      let (potential_resources, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels "scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address DESC, resource_id ASC" in
+      let (potential_resources, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
       (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
       let hierarchy_levels = Hierarchy.hy_iolib2hy_level hierarchy_info hy_labels in
       let h_slots = Hashtbl.create 10 in
