@@ -46,7 +46,7 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
-let hy_labels = Conf.get_default_value "HIERARCHY_LABELS" ["resource_id";"network_address";"cpu";"core"] (*TODO: get_conf*)
+let hy_labels = Conf.get_hierarchy_info "resource_id,network_address,cpu,core"  (* "HIERARCHY_LABELS" order doesn't matter*)
 let sched_resource_order = Conf.get_default_value "SCHEDULER_RESOURCE_ORDER" "resource_id ASC"
 
 (*                                                                                                                                   *)
@@ -225,7 +225,7 @@ let _ =
   		let (waiting_j_ids,h_waiting_jobs) =
         if fairsharing_flag then
           let limited_job_ids = Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit in
-          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
+          Iolib.get_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
         else
           Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag []
       in (* TODOfalse -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
@@ -316,7 +316,7 @@ let _ =
             Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );
 
             (* save assignements into db *)
-            Iolib.save_assigns conn assignement_jobs;  
+            Iolib.save_assigns conn assignement_jobs ord2init_ids;  
             Conf.log "Terminated";
  		        exit 0
           end

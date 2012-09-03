@@ -455,7 +455,7 @@ let save_assignt_one_job dbh job =
 (* Save jobs assignements into 2 SQL request                                                 *)
 (* Be careful this does not scale after beyond 1 millions of  (moldable_job_id,start_time)   *)
 (*                                                                                           *)
-let save_assigns_2_rqts conn jobs =
+let save_assigns_2_rqts conn jobs ord2init_ids=
   let  moldable_job_id_start_time j =
     (* Printf.sprintf "(%s, %s)" (ml2int j.moldable_id) (ml642int j.time_b) in *)
     "(" ^ (string_of_int j.moldable_id) ^ "," ^ (Int64.to_string j.time_b) ^ ")" in
@@ -470,7 +470,7 @@ let save_assigns_2_rqts conn jobs =
       let moldable_id = string_of_int j.moldable_id in 
       let resource_to_value res = 
 	      (* Printf.sprintf "(%s, %s)" moldable_id (ml2int res) in *)
-        "(" ^ moldable_id ^ "," ^ (string_of_int res) ^ ")" in
+        "(" ^ moldable_id ^ "," ^ (string_of_int ord2init_ids.(res)) ^ ")" in
         String.concat ", " (List.map resource_to_value (intervals2ints j.set_of_rs)) in 
 
 	    let query_job_resources =
@@ -488,9 +488,9 @@ let save_assigns_2_rqts conn jobs =
 (*                        *)
 (* Save jobs' assignemnts *)
 (*                        *)
-let save_assigns dbh jobs =
+let save_assigns dbh jobs ord2init_ids =
 (*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
-  save_assigns_2_rqts dbh jobs;;
+  save_assigns_2_rqts dbh jobs ord2init_ids;;
 
 
 (*                                                  *)
